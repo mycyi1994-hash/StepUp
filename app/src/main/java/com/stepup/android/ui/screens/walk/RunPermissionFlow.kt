@@ -99,11 +99,12 @@ import kotlinx.coroutines.launch
  * 부른 쪽이 러닝을 고른 동안에만 이 composable 을 둔다. [onReady] · [onCancel] · [onHome] 중 하나가 불리면
  * 부른 쪽이 내리고, 그걸로 그 러닝 의도도 끝난다(다른 화면으로 가도 마찬가지 — 돌아와서 저절로 시작하지 않는다).
  *
- * - 활동 → 위치 → 알림 차례. 이미 허용했거나 이미 고른 선택 권한(위치 · 알림)은 건너뛴다.
+ * - 활동 → 위치 → 알림 차례. 이미 허용한 권한 · 이미 고른 알림은 건너뛴다.
  * - 시스템 권한 창은 안내의 주 버튼을 눌렀을 때만 띄운다. 창이 떠 있는 동안 우리 시트는 내린다.
  * - 허용 여부를 앱 표시로 대신하지 않는다 — 매번, 그리고 설정 · 다른 앱에서 돌아올 때마다 OS 에서 다시 읽는다.
- * - 위치 · 알림을 거절해도 러닝은 막지 않는다. 닫기(X · 뒤로 · 바깥 · 아래로 끌기)는 아무것도 시작하지 않는다.
- * - 러닝 서비스는 여기서 켜지 않는다. [onReady] 가 한 번만 불리고, 부른 쪽이 3-2-1 로 간다.
+ * - 정확한 위치가 없으면 시작하지 않는다(2026-10-16 — 러닝은 GPS 로 잰다). 위치 안내의 보조 버튼은 "취소"다.
+ *   알림은 거절해도 러닝을 막지 않는다. 닫기(X · 뒤로 · 바깥 · 아래로 끌기)는 아무것도 시작하지 않는다.
+ * - 러닝 서비스는 여기서 켜지 않는다. [onReady] 가 한 번만 불리고, 부른 쪽이 위치 기능 · GPS 신호를 확인하고 3-2-1 로 간다.
  */
 @Composable
 internal fun RunPermissionFlow(
@@ -135,7 +136,6 @@ internal fun RunPermissionFlow(
         notificationsGranted = StepPermissions.hasNotificationPermission(context),
         activityHistory = prefs.runActivityHistory.first(),
         activityRationale = context.activityRationale(),
-        locationChosen = prefs.runLocationChosen.first(),
         notificationChosen = prefs.runNotificationChosen.first(),
     )
 
@@ -169,7 +169,6 @@ internal fun RunPermissionFlow(
     val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         requesting = false
         scope.launch {
-            prefs.setRunLocationChosen()
             val outcome = RunPermissionRules.afterLocationRequest(
                 StepPermissions.hasPreciseLocation(context), StepPermissions.hasLocation(context),
             )
@@ -250,10 +249,8 @@ internal fun RunPermissionFlow(
                     RunPermissionSheet.ActivityRationale, RunPermissionSheet.ActivityDenied -> requestActivity()
                     RunPermissionSheet.ActivitySettings -> openSettings()
                     RunPermissionSheet.LocationRationale -> requestLocation()
-                    // 이대로 계속 — 위치 고르기는 끝났다
-                    RunPermissionSheet.ApproximateLocation -> choose { prefs.setRunLocationChosen() }
-                    // 설정에서 위치 켜기(L02 의 주 버튼) — 돌아오면 다시 읽는다
-                    RunPermissionSheet.WithoutLocation -> openSettings()
+                    // 설정에서 정확한 위치 켜기 · 위치 허용(L02 의 주 버튼) — 돌아오면 다시 읽는다
+                    RunPermissionSheet.ApproximateLocation, RunPermissionSheet.WithoutLocation -> openSettings()
                     RunPermissionSheet.NotificationRationale -> requestNotifications()
                 }
             },
@@ -262,11 +259,9 @@ internal fun RunPermissionFlow(
                     // 나중에 — 아직 시작하지 않은 러닝을 거둔다(메뉴로)
                     RunPermissionSheet.ActivityRationale -> cancel()
                     RunPermissionSheet.ActivityDenied, RunPermissionSheet.ActivitySettings -> home()
-                    // 경로 없이 계속 — 이미 뜻을 밝혔으니 18 을 다시 보이지 않는다
-                    RunPermissionSheet.LocationRationale -> choose { prefs.setRunLocationChosen() }
-                    RunPermissionSheet.ApproximateLocation -> openSettings()
-                    // 위치 없이 시간만 기록 — 위치 고르기는 끝났다
-                    RunPermissionSheet.WithoutLocation -> choose { prefs.setRunLocationChosen() }
+                    // 취소 — 위치 없이는 달리지 않는다(시간만 기록하는 길은 없다). 아직 시작하지 않은 러닝을 거둔다
+                    RunPermissionSheet.LocationRationale, RunPermissionSheet.ApproximateLocation,
+                    RunPermissionSheet.WithoutLocation -> cancel()
                     // 나중에 — 권한을 묻지 않고 러닝으로. 이 선택을 매번 다시 묻지 않는다(설정에서 바꾼다)
                     RunPermissionSheet.NotificationRationale -> choose { prefs.setRunNotificationChosen() }
                 }
@@ -350,16 +345,17 @@ private fun specOf(sheet: RunPermissionSheet): SheetSpec = when (sheet) {
     )
     RunPermissionSheet.LocationRationale -> SheetSpec(
         "location", PermLook.Sheet, R.string.run_pm_location_head, R.string.run_pm_location_body,
-        R.string.run_pm_location_allow, R.string.run_pm_location_later, note = R.string.run_pm_location_sheet, hero = true,
+        R.string.run_pm_location_allow, R.string.common_cancel, note = R.string.run_pm_location_sheet, hero = true,
     )
+    // 대략적인 위치만(P04) — 주 버튼은 설정에서 정확한 위치 켜기, 보조는 취소
     RunPermissionSheet.ApproximateLocation -> SheetSpec(
         "location-approximate", PermLook.Page, R.string.run_pm_approx_title, R.string.run_pm_approx_body,
-        R.string.run_pm_continue, R.string.run_pm_location_settings,
+        R.string.run_pm_open_settings, R.string.common_cancel,
     )
-    // 앱 위치 권한 없음(L02) — 주 버튼은 설정에서 위치 켜기, 위치 없이 시간만 기록은 보조
+    // 앱 위치 권한 없음(L02) — 주 버튼은 설정에서 위치 켜기, 보조는 취소
     RunPermissionSheet.WithoutLocation -> SheetSpec(
         "location-off", PermLook.Page, R.string.run_pm_no_location_title, R.string.run_pm_no_location_body,
-        R.string.run_pm_turn_on_location, R.string.run_pm_time_only, hero = true,
+        R.string.run_pm_turn_on_location, R.string.common_cancel, hero = true,
     )
     RunPermissionSheet.NotificationRationale -> SheetSpec(
         "notification", PermLook.Page, R.string.run_pm_notify_title, R.string.run_pm_notify_body,
@@ -445,8 +441,6 @@ private class MinimalSpec(
     val icon: ImageVector,
     /** 예외 장면(전달본 12) — 빨간 빼기(거부 · 설정 · 위치 권한 없음) · 노란 느낌표(대략적 위치). null 이면 안내(11) */
     val badge: MinimalBadge? = null,
-    /** 보이는 주 버튼이 보조 행동을 한다 — 위치 권한 없음은 "경로 없이 시작"이 앞이고 "위치 설정"이 옆(뜻은 그대로) */
-    val swapped: Boolean = false,
 )
 
 private fun minimalSpecOf(sheet: RunPermissionSheet): MinimalSpec = when (sheet) {
@@ -464,15 +458,15 @@ private fun minimalSpecOf(sheet: RunPermissionSheet): MinimalSpec = when (sheet)
     )
     RunPermissionSheet.LocationRationale -> MinimalSpec(
         R.string.run_free_pm_location_title, R.string.run_free_pm_location_body, R.string.run_free_pm_location_allow,
-        R.string.run_free_pm_no_route, Icons.Outlined.LocationOn,
+        R.string.common_cancel, Icons.Outlined.LocationOn,
     )
     RunPermissionSheet.ApproximateLocation -> MinimalSpec(
-        R.string.run_free_pm_approx_title, R.string.run_free_pm_approx_body, R.string.run_free_pm_keep_going,
-        R.string.run_pm_location_settings, Icons.Filled.LocationOn, MinimalBadge.Caution,
+        R.string.run_free_pm_approx_title, R.string.run_free_pm_approx_body, R.string.run_pm_open_settings,
+        R.string.common_cancel, Icons.Filled.LocationOn, MinimalBadge.Caution,
     )
     RunPermissionSheet.WithoutLocation -> MinimalSpec(
-        R.string.run_free_pm_no_location_title, R.string.run_free_pm_no_location_body, R.string.run_free_pm_no_route,
-        R.string.run_pm_location_settings, Icons.Filled.LocationOn, MinimalBadge.Minus, swapped = true,
+        R.string.run_free_pm_no_location_title, R.string.run_free_pm_no_location_body, R.string.run_pm_open_settings,
+        R.string.common_cancel, Icons.Filled.LocationOn, MinimalBadge.Minus,
     )
     RunPermissionSheet.NotificationRationale -> MinimalSpec(
         R.string.run_free_pm_notify_title, R.string.run_free_pm_notify_body, R.string.run_pm_notify_allow, R.string.run_perm_later,
@@ -495,8 +489,6 @@ private fun MinimalPermissionCard(
     val spec = specOf(sheet)
     val m = minimalSpecOf(sheet)
     val t = runTone()
-    val shownPrimary = if (m.swapped) onSecondary else onPrimary
-    val shownSecondary = if (m.swapped) onPrimary else onSecondary
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(
@@ -519,16 +511,16 @@ private fun MinimalPermissionCard(
                 Spacer(Modifier.height(6.dp))
                 Text(stringResource(m.body), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(20.dp))
-                // 큰 글씨에서는 예외 카드도 위아래로 — 나란히 두면 "경로 없이 시작"이 잘린다
+                // 큰 글씨에서는 예외 카드도 위아래로 — 나란히 두면 버튼 글이 잘린다
                 if (m.badge == null || androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) {
-                    FreeRunButton(stringResource(m.primary), shownPrimary, Modifier.fillMaxWidth().testTag("perm-primary"))
+                    FreeRunButton(stringResource(m.primary), onPrimary, Modifier.fillMaxWidth().testTag("perm-primary"))
                     Spacer(Modifier.height(10.dp))
-                    FreeRunButton(stringResource(m.secondary), shownSecondary, Modifier.fillMaxWidth().testTag("perm-secondary"),
+                    FreeRunButton(stringResource(m.secondary), onSecondary, Modifier.fillMaxWidth().testTag("perm-secondary"),
                         kind = FreeButtonKind.Secondary)
                 } else {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        FreeRunButton(stringResource(m.primary), shownPrimary, Modifier.weight(1f).testTag("perm-primary"))
-                        FreeRunButton(stringResource(m.secondary), shownSecondary, Modifier.weight(1f).testTag("perm-secondary"),
+                        FreeRunButton(stringResource(m.primary), onPrimary, Modifier.weight(1f).testTag("perm-primary"))
+                        FreeRunButton(stringResource(m.secondary), onSecondary, Modifier.weight(1f).testTag("perm-secondary"),
                             kind = FreeButtonKind.Secondary)
                     }
                 }

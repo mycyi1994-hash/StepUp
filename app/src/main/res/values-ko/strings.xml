@@ -1509,8 +1509,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_countdown_kicker">러닝 시작</string>
     <string name="run_countdown_kicker_course">러닝 시작 · %1$s</string>
     <string name="run_countdown_tap">화면을 누르면 바로 시작해요</string>
-    <string name="run_countdown_gps_on">위치 사용 중 · 시작하면 GPS를 찾아요</string>
-    <string name="run_countdown_gps_off">위치 꺼짐 · 경로 없이 걸음으로만 기록해요</string>
+    <string name="run_countdown_gps_on">GPS 연결됨 · 경로를 기록해요</string>
     <string name="settings_body">신체 정보 · 목표</string>
     <string name="settings_body_clear">모두 지우기</string>
     <string name="settings_mode">모드</string>
@@ -1591,7 +1590,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_location_off_hint">휴대폰 위치가 꺼져 있어 위치를 받을 수 없어요. 켜면 경로가 기록돼요.</string>
     <string name="run_location_off_action">위치 켜기</string>
     <string name="run_location_approx_hint">대략적인 위치만 허용돼 GPS를 쓸 수 없어요. 정확한 위치를 허용하면 경로가 정확해져요.</string>
-    <string name="run_countdown_location_services_off">휴대폰 위치 꺼짐 · 켜기 전까지 걸음으로만 기록해요</string>
     <string name="home_k1_empty_title">아직 오늘 활동이 없어요</string>
     <string name="home_k1_empty_body">러닝을 시작하면 걸음 · 거리 · SUP가 여기에 쌓여요.</string>
     <string name="home_k1_left_title">목표까지 %1$s걸음 남았어요</string>

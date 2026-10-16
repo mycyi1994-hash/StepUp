@@ -1510,8 +1510,7 @@ StepUp と走り出そう。</string>
     <string name="run_countdown_kicker">ラン開始</string>
     <string name="run_countdown_kicker_course">ラン開始 · %1$s</string>
     <string name="run_countdown_tap">タップですぐ開始</string>
-    <string name="run_countdown_gps_on">位置情報オン · 開始するとGPSを探します</string>
-    <string name="run_countdown_gps_off">位置情報オフ · ルートなしで歩数のみ記録</string>
+    <string name="run_countdown_gps_on">GPS接続済み · ルートを記録します</string>
     <string name="settings_body">身体情報・目標</string>
     <string name="settings_body_clear">すべて削除</string>
     <string name="settings_mode">モード</string>
@@ -1592,7 +1591,6 @@ StepUp と走り出そう。</string>
     <string name="run_location_off_hint">端末の位置情報がオフのため位置を取得できません。オンにするとルートが記録されます。</string>
     <string name="run_location_off_action">位置情報をオン</string>
     <string name="run_location_approx_hint">おおよその位置のみ許可されているためGPSを使えません。正確な位置を許可するとルートが正確になります。</string>
-    <string name="run_countdown_location_services_off">端末の位置情報オフ・オンにするまで歩数のみ記録</string>
     <string name="home_k1_empty_title">今日はまだ活動がありません</string>
     <string name="home_k1_empty_body">ランを始めると歩数・距離・SUPがここに表示されます。</string>
     <string name="home_k1_left_title">目標まであと%1$s歩</string>
