@@ -1509,7 +1509,7 @@
     <string name="run_countdown_kicker">开始跑步</string>
     <string name="run_countdown_kicker_course">开始跑步 · %1$s</string>
     <string name="run_countdown_tap">轻触立即开始</string>
-    <string name="run_countdown_gps_on">GPS 已连接 · 记录路线</string>
+    <string name="run_countdown_gps_on">位置已连接 · 记录路线</string>
     <string name="settings_body">身体信息与目标</string>
     <string name="settings_body_clear">全部删除</string>
     <string name="settings_mode">模式</string>

@@ -1,33 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pre-run GPS wait (2026-10-16 decision — no run starts without GPS). There is no time-only path. -->
+<!-- Pre-run location wait (2026-10-16 decision — like Google Maps, any GPS, Wi-Fi or cell location starts the run). There is no time-only path. -->
 <resources>
-    <string name="run_gps_wait_title">Finding GPS</string>
-    <string name="run_gps_wait_found">GPS found</string>
-    <string name="run_gps_wait_body">Wait a moment where you can see the sky.\nYour run starts as soon as GPS is found.</string>
-    <string name="run_gps_lobby_body">You\'ll be marked ready as soon as GPS is found.</string>
-    <string name="run_gps_wait_satellites">Satellites</string>
-    <string name="run_gps_wait_satellites_value">%1$d in use · %2$d heard</string>
-    <string name="run_gps_wait_checking">Checking</string>
+    <string name="run_gps_wait_title">Finding your location</string>
+    <string name="run_gps_wait_found">Location found</string>
+    <string name="run_gps_wait_body">Just a moment.\nYour run starts as soon as your location is found.</string>
+    <string name="run_gps_lobby_body">You\'ll be marked ready as soon as your location is found.</string>
     <string name="run_gps_wait_accuracy">Accuracy</string>
     <string name="run_gps_wait_accuracy_value">±%1$dm</string>
-    <string name="run_gps_wait_accuracy_need">Starts within %1$dm</string>
     <string name="run_gps_wait_time">Waiting</string>
-    <string name="run_gps_wait_rough">Wi-Fi location</string>
-    <string name="run_gps_wait_rough_note">Not used for run distance</string>
-    <string name="run_gps_wait_rough_found">Found</string>
-    <string name="run_gps_hint_no_gps_title">This phone has no GPS</string>
-    <string name="run_gps_hint_no_gps_body">Runs measure distance and route with GPS. Please run with a phone that has GPS.</string>
-    <string name="run_gps_hint_gps_off_title">GPS is off</string>
-    <string name="run_gps_hint_gps_off_body">In location settings, set the mode to “High accuracy” or “GPS”.</string>
     <string name="run_gps_hint_mock_title">A mock location app is on</string>
     <string name="run_gps_hint_mock_body">Turn off the mock location app in developer options to use real GPS.</string>
-    <string name="run_gps_hint_wifi_only_title">Only Wi-Fi location so far</string>
-    <string name="run_gps_hint_wifi_only_body">Maps can show your location from Wi-Fi, but runs measure distance with satellite GPS. If you\'re indoors, step outside where you can see the sky.</string>
-    <string name="run_gps_hint_no_satellites_title">No satellite signal</string>
-    <string name="run_gps_hint_no_satellites_body">GPS doesn\'t work indoors or underground. Step outside where you can see the sky.</string>
-    <string name="run_gps_hint_weak_title">Signal is still weak</string>
-    <string name="run_gps_hint_weak_body">Move a little away from tall buildings or trees. Your run starts once accuracy is within %1$dm.</string>
-    <string name="run_gps_hint_slow_title">The first fix can take a few minutes</string>
-    <string name="run_gps_hint_slow_body">Phones without a SIM, or that haven\'t used GPS in a while, take longer the first time. Connect to Wi-Fi and wait outside.</string>
+    <string name="run_gps_hint_no_fix_title">Location not found yet</string>
+    <string name="run_gps_hint_no_fix_body">Turn on Wi-Fi or mobile data, or move somewhere with a view of the sky.</string>
     <string name="run_gps_need_precise">Allow precise location to run together. Turn on “Use precise location” in Settings › Permissions › Location.</string>
 </resources>

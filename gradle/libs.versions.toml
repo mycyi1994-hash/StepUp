@@ -15,6 +15,8 @@ serialization = "1.7.3"
 work = "2.9.1"
 credentials = "1.3.0"
 googleid = "1.1.1"
+# 구글 위치 서비스(구글 지도와 같은 위치 엔진 — GPS · 와이파이 · 기지국을 섞는다). 러닝 위치를 받는다
+playServicesLocation = "21.3.0"
 # 푸시(FCM)와 사용자 분석. BoM 이 개별 라이브러리 판을 맞춘다.
 # Kotlin 2.0 과 맞는 판 — 더 새 판은 Kotlin 2.1+ 로 컴파일돼 이 프로젝트에서 읽지 못한다.
 firebaseBom = "33.7.0"
@@ -53,6 +55,7 @@ androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx"
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 google-id = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }

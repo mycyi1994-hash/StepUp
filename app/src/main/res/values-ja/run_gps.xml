@@ -1,33 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 開始前の GPS 待ち(2026-10-16 — GPS がなければランを始めない)。時間だけ記録する道はない。 -->
+<!-- 開始前の位置待ち(2026-10-16 — Googleマップのように GPS・Wi-Fi・基地局のどの位置でも始める)。時間だけ記録する道はない。 -->
 <resources>
-    <string name="run_gps_wait_title">GPSを探しています</string>
-    <string name="run_gps_wait_found">GPSが見つかりました</string>
-    <string name="run_gps_wait_body">空が見える場所で少しお待ちください。\nGPSがつかまるとすぐに始まります。</string>
-    <string name="run_gps_lobby_body">GPSがつかまるとすぐに準備完了になります。</string>
-    <string name="run_gps_wait_satellites">衛星</string>
-    <string name="run_gps_wait_satellites_value">使用 %1$d · 受信 %2$d</string>
-    <string name="run_gps_wait_checking">確認中</string>
+    <string name="run_gps_wait_title">位置を探しています</string>
+    <string name="run_gps_wait_found">位置が見つかりました</string>
+    <string name="run_gps_wait_body">少しお待ちください。\n位置がわかるとすぐに始まります。</string>
+    <string name="run_gps_lobby_body">位置がわかるとすぐに準備完了になります。</string>
     <string name="run_gps_wait_accuracy">精度</string>
     <string name="run_gps_wait_accuracy_value">±%1$dm</string>
-    <string name="run_gps_wait_accuracy_need">%1$dm以内で開始</string>
     <string name="run_gps_wait_time">待ち時間</string>
-    <string name="run_gps_wait_rough">Wi-Fiの位置</string>
-    <string name="run_gps_wait_rough_note">ランの距離には使いません</string>
-    <string name="run_gps_wait_rough_found">取得済み</string>
-    <string name="run_gps_hint_no_gps_title">このスマホにはGPSがありません</string>
-    <string name="run_gps_hint_no_gps_body">ランはGPSで距離とルートを測ります。GPSのあるスマホで走ってください。</string>
-    <string name="run_gps_hint_gps_off_title">GPSがオフです</string>
-    <string name="run_gps_hint_gps_off_body">位置情報の設定でモードを「高精度」または「GPS」にしてください。</string>
     <string name="run_gps_hint_mock_title">仮の位置情報アプリがオンです</string>
     <string name="run_gps_hint_mock_body">開発者向けオプションの「仮の現在地情報アプリ」をオフにすると実際のGPSを使えます。</string>
-    <string name="run_gps_hint_wifi_only_title">Wi-Fiの位置だけ取得できています</string>
-    <string name="run_gps_hint_wifi_only_body">地図アプリはWi-Fiでも位置を表示しますが、ランの距離は衛星GPSで測ります。屋内なら外に出て空が見える場所でお待ちください。</string>
-    <string name="run_gps_hint_no_satellites_title">衛星の信号がありません</string>
-    <string name="run_gps_hint_no_satellites_body">屋内や地下ではGPSがつかまりません。外に出て空が見える場所に立ってください。</string>
-    <string name="run_gps_hint_weak_title">信号がまだ弱いです</string>
-    <string name="run_gps_hint_weak_body">高い建物や木から少し離れてください。精度が%1$dm以内になると始まります。</string>
-    <string name="run_gps_hint_slow_title">最初は数分かかることがあります</string>
-    <string name="run_gps_hint_slow_body">SIMのないスマホや、長くGPSを使っていないスマホは最初に時間がかかります。Wi-Fiにつないで外でお待ちください。</string>
+    <string name="run_gps_hint_no_fix_title">まだ位置がわかりません</string>
+    <string name="run_gps_hint_no_fix_body">Wi-Fiかモバイルデータをオンにするか、空が見える場所に移動してください。</string>
     <string name="run_gps_need_precise">一緒に走るには正確な位置情報が必要です。設定 › 権限 › 位置情報で「正確な位置情報を使用」をオンにしてください。</string>
 </resources>

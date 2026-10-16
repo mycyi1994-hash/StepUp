@@ -1509,7 +1509,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="run_countdown_kicker">러닝 시작</string>
     <string name="run_countdown_kicker_course">러닝 시작 · %1$s</string>
     <string name="run_countdown_tap">화면을 누르면 바로 시작해요</string>
-    <string name="run_countdown_gps_on">GPS 연결됨 · 경로를 기록해요</string>
+    <string name="run_countdown_gps_on">위치 연결됨 · 경로를 기록해요</string>
     <string name="settings_body">신체 정보 · 목표</string>
     <string name="settings_body_clear">모두 지우기</string>
     <string name="settings_mode">모드</string>
