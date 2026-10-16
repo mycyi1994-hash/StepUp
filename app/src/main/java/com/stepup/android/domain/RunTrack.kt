@@ -66,6 +66,21 @@ object RunTrack {
 /** 시각을 떼고 모양만 넘긴다 — 지도 그리기와 코스 만들기가 쓰는 형태다. */
 fun List<TrackPoint>.toGeoPoints(): List<GeoPoint> = map { it.toGeoPoint() }
 
+/** [liveHead] 가 내 점을 경로 끝에서 떼어 둘 가장 먼 거리(m) — 경로 점이 생기기 전 거리([TrackFixRule], 오차 50m 의 두 배)까지 */
+const val LIVE_HEAD_MAX_M = 100.0
+
+/**
+ * 달리는 중 지도의 내 점 · 화살표를 둘 자리 — 받은 위치([here]). 그리기만 하고 거리 · 저장에는 쓰지 않는다.
+ *
+ * 구글 위치 서비스의 위치는 기준점에서 오차보다 크게 움직여야 경로 점이 된다([TrackFixRule]) — 그동안 내 점이 경로 끝에
+ * 멈춰 있지 않고 받은 위치마다 따라간다(구글 지도처럼). 경로가 없거나 · 지금 자리를 모르거나 · 경로 끝에서 [LIVE_HEAD_MAX_M]
+ * 보다 멀면(튄 위치) null — 예전처럼 경로 끝에 둔다.
+ */
+fun liveHead(track: List<GeoPoint>, here: GeoPoint?): GeoPoint? {
+    val last = track.lastOrNull() ?: return null
+    return here?.takeIf { haversineMeters(last, it) <= LIVE_HEAD_MAX_M }
+}
+
 /**
  * 위치 신호가 끊겼다 돌아온 자리(시안 L04) — 앞 점과 이어 그리지 않을 점의 번호들.
  *

@@ -32,6 +32,34 @@ class TrackFixRuleTest {
         assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 2f, anchorDistanceM = 8.0, anchorAccuracyM = 2f))
     }
 
+    @Test fun `a much sharper fix inside the anchor's error moves the anchor instead of stalling`() {
+        // 와이파이(오차 35m)로 잡힌 출발점 근처에 GPS(오차 5m)가 왔다 — 같은 자리를 더 정확히 안 것: 기준점만 옮긴다(거리는 더하지 않는다).
+        // 예전엔 70m(35m 의 두 배)를 움직일 때까지 거리가 0 에 멈춰 있었다(2026-10-16 "인식도 잘 안 되고 느려")
+        assertEquals(TrackFixRule.Fix.REFINE, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 28.0, anchorAccuracyM = 35f))
+        // 두 오차의 합(40m)까지가 같은 자리다
+        assertEquals(TrackFixRule.Fix.REFINE, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 40.0, anchorAccuracyM = 35f))
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 41.0, anchorAccuracyM = 35f))
+        // 기준점 오차의 절반보다 흐리면 더 정확하다고 볼 수 없다 — 그대로 기다린다
+        assertEquals(TrackFixRule.Fix.REFINE, TrackFixRule.decide(accuracyM = 17.5f, anchorDistanceM = 10.0, anchorAccuracyM = 35f))
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = 20f, anchorDistanceM = 10.0, anchorAccuracyM = 35f))
+        // 오차를 알려 주지 않는 위치로는 다시 잡지 않는다
+        assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 10.0, anchorAccuracyM = 50f))
+        // 기준점 오차의 두 배를 넘게 움직였으면 예전처럼 경로 · 거리에 넣는다
+        assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 70.0, anchorAccuracyM = 35f))
+    }
+
+    @Test fun `a blurry fix does not move the map dot once the route has begun`() {
+        // 경로가 생긴 뒤 30초 안에 좋은 위치가 있었으면 기지국 위치로 내 점 · 크루에게 보내는 위치를 옮기지 않는다
+        assertEquals(true, TrackFixRule.keepHere(hasTrack = true, hereAgeMs = 2_500))
+        assertEquals(true, TrackFixRule.keepHere(hasTrack = true, hereAgeMs = 29_999))
+        // 30초 넘게 좋은 위치가 없으면 흐린 위치라도 쓴다
+        assertEquals(false, TrackFixRule.keepHere(hasTrack = true, hereAgeMs = 30_000))
+        // 경로 전(대략적인 자리를 먼저 보인다) · 받은 적 없음 · 시계가 뒤로 감
+        assertEquals(false, TrackFixRule.keepHere(hasTrack = false, hereAgeMs = 1_000))
+        assertEquals(false, TrackFixRule.keepHere(hasTrack = true, hereAgeMs = Long.MAX_VALUE))
+        assertEquals(false, TrackFixRule.keepHere(hasTrack = true, hereAgeMs = -5))
+    }
+
     @Test fun `fixes without accuracy are treated as 30m`() {
         assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 59.0, anchorAccuracyM = null))
         assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 60.0, anchorAccuracyM = null))

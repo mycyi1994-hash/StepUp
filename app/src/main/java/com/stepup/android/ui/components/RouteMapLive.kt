@@ -127,11 +127,17 @@ fun LiveRouteMap(
     markers: RouteMarkers = RouteMarkers.Classic,
     /** 같이 뛰는 사람 점을 크루 달리기 v2 모습으로 — 남색 원 · 흰 테 · 흰 머리글자(시안 CR09). false 면 예전 흰 점 */
     crewPins: Boolean = false,
+    /**
+     * 달리는 중 지금 자리(받은 위치, [live] 일 때) — 주면 내 점 · 화살표와 [follow] 가 경로 끝이 아니라 이 자리에 선다.
+     * 경로 선은 [points](거리로 센 점)까지만 긋는다 — 제자리 떨림에 선 끝 · 화살표가 돌지 않게. 화살표 방향은 경로의 마지막 움직임이다.
+     */
+    head: GeoPoint? = null,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
+    val lead = head?.takeIf { live && points.isNotEmpty() }
     StepUpMap(
-        focus = if (follow && points.isNotEmpty()) followFrame(points.last(), around) else points + around + course,
+        focus = if (follow && points.isNotEmpty()) followFrame(lead ?: points.last(), around) else points + listOfNotNull(lead) + around + course,
         modifier = modifier,
         seed = seed,
         interactive = interactive,
@@ -143,7 +149,7 @@ fun LiveRouteMap(
         tileRoads = tileRoads,
     ) { plan ->
         if (course.size >= 2) drawCourseGuide(plan, course)
-        drawRoute(plan, points, progress, routeColor, breaks, live, routeOutline, markers)
+        drawRoute(plan, points, progress, routeColor, breaks, live, routeOutline, markers, lead)
         if (endpointLabels != null && points.size >= 2) {
             val start = plan.toScreen(points.first())
             val end = plan.toScreen(points.last())
@@ -238,12 +244,15 @@ private fun DrawScope.drawRoute(
     live: Boolean = false,
     outline: Color? = null,
     markers: RouteMarkers = RouteMarkers.Classic,
+    /** 달리는 중 지금 자리 — 내 점 · 화살표를 경로 끝 대신 여기에 둔다(LiveRouteMap 의 head) */
+    head: GeoPoint? = null,
 ) {
     if (points.isEmpty()) return
+    val headAt = head?.let { plan.toScreen(it) }
     if (points.size < 2) {
         val at = plan.toScreen(points.first())
         // 점 하나뿐이면 아직 길이 없다 — 지금 자리만 보인다(가짜 경로를 그리지 않는다)
-        if (live) drawHereDot(at) else if (markers == RouteMarkers.Pin) drawStartRing(at, color, outline) else {
+        if (live) drawHereDot(headAt ?: at) else if (markers == RouteMarkers.Pin) drawStartRing(at, color, outline) else {
             drawCircle(color.copy(alpha = 0.30f), radius = 9.dp.toPx(), center = at)
             drawCircle(color, radius = 4.5f.dp.toPx(), center = at)
         }
@@ -280,12 +289,12 @@ private fun DrawScope.drawRoute(
 
     if (markers == RouteMarkers.Pin) {
         drawStartRing(screen.first(), color, outline)
-        drawArrowEnd(screen, color, outline)
+        drawArrowEnd(screen, color, outline, at = headAt ?: screen.last())
     } else {
         drawCircle(color.copy(alpha = 0.28f), radius = 8.dp.toPx(), center = screen.first())
         drawCircle(color, radius = 4.5f.dp.toPx(), center = screen.first())
         drawCircle(Color.White, radius = 2.dp.toPx(), center = screen.first())
-        if (live) drawHereDot(screen.last()) else drawRouteFlag(screen.last())
+        if (live) drawHereDot(headAt ?: screen.last()) else drawRouteFlag(screen.last())
     }
 
     progress?.let { f ->
@@ -346,12 +355,13 @@ private fun DrawScope.drawStartRing(at: Offset, color: Color, outline: Color?) {
 }
 
 /** 끝점 — 경로 색 원 안에 마지막 구간 방향으로 돌린 흰 화살표(자유 러닝의 지금 자리 · 도착) */
-private fun DrawScope.drawArrowEnd(screen: List<Offset>, color: Color, outline: Color?) {
-    val at = screen.last()
-    // 마지막으로 움직인 방향 — 같은 자리에 겹친 점은 건너뛴다
+private fun DrawScope.drawArrowEnd(screen: List<Offset>, color: Color, outline: Color?, at: Offset = screen.last()) {
+    // 마지막으로 움직인 방향 — 경로(거리로 센 점)의 끝에서 잰다. 같은 자리에 겹친 점은 건너뛴다.
+    // 화살표는 지금 자리([at])에 서지만 방향은 경로에서 — 제자리에 섰을 때 위치가 흔들려도 화살표가 돌지 않는다
+    val end = screen.last()
     var from = screen.lastIndex - 1
-    while (from > 0 && (screen[from] - at).getDistance() < 0.5f) from--
-    val delta = at - screen[from]
+    while (from > 0 && (screen[from] - end).getDistance() < 0.5f) from--
+    val delta = end - screen[from]
     val degrees = if (delta.getDistance() < 0.5f) -90f else Math.toDegrees(kotlin.math.atan2(delta.y, delta.x).toDouble()).toFloat()
     drawCircle(outline ?: Color(0xFF05213B), radius = 14.dp.toPx(), center = at)
     drawCircle(color, radius = 12.dp.toPx(), center = at)
