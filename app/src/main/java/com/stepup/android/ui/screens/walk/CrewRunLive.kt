@@ -1,6 +1,7 @@
 package com.stepup.android.ui.screens.walk
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -16,11 +17,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -52,7 +53,6 @@ import com.stepup.android.data.repo.PartyMember
 import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.data.repo.PartyState
 import com.stepup.android.ui.components.LocalMapTone
-import com.stepup.android.ui.components.MapTone
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
@@ -60,8 +60,9 @@ import com.stepup.android.ui.experience.feedbackClickable
 /*
  * 크루 달리기 v2 — 달리는 중(CR09) · 함께 달리는 사람(CR10) · 내 러닝 일시정지(CR11) · 내 러닝 종료(CR12) · 연결 끊김(CR18).
  *
- * 위에서부터 크루 이름 머리와 "크루 달리기" 배지, (띠 한 줄), 지도(내 경로 · 위치를 공유한 사람), 같이 달리는 사람 줄,
- * 거리 | 시간 | 페이스, 내 목표 진행률, 작은 보상 · 내구도 줄, 일시정지 | 종료.
+ * 위에서부터 크루 이름 머리("참여 n명")와 "크루 달리기" 배지, (띠 한 줄), 밝은 실제 지도 카드(내 경로 · 위치를 공유한 사람),
+ * 같이 달리는 사람 줄, 거리 | 시간 | 평균 페이스 카드, 내 목표 진행률 카드(러닝 정보 ›), 일시정지 | 종료(2026-10-16 크루 전달본).
+ * 예상 보상 · 내구도는 정상 화면에 두지 않는다 — 러닝 정보(E03)가 지금 값을 보인다.
  *
  * 다른 사람이 달리는지 멈췄는지는 서버가 알려 주지 않는다 — "참여 n명"만 적고 "모두 달리는 중"이라 하지 않는다.
  * 내 일시정지는 내 기록만 멈춘다. 연결이 끊기거나 방이 닫히면 옛 명단 · 위치를 지금 것처럼 보이지 않는다(내 기록은 이어진다).
@@ -127,13 +128,11 @@ internal data class CrewLiveUi(
     val goalKm: Double,
     /** 내 목표 진행(0..1) — 거리를 모르면 null */
     val goalFraction: Float?,
-    /** 작은 보조 줄 — 예상 보상(확인 전) · 내구도 */
-    val reward: String,
 )
 
 /**
  * 크루 달리기 중 화면 — 상태 없이 그린다. [problemBand] 는 지도 위 노란 띠(위치 · 측정 문제 — 자유 러닝과 같은 띠).
- * [onPrimary] 는 일시정지 · 다시 달리기, [onFinish] 는 종료(멈추고 묻는다).
+ * [onPrimary] 는 일시정지 · 다시 달리기, [onFinish] 는 종료(멈추고 묻는다), [onDetails] 는 러닝 정보(E03 — 예상 보상 · 내구도).
  */
 @Composable
 internal fun CrewRunLive(
@@ -153,6 +152,7 @@ internal fun CrewRunLive(
     val t = runTone()
     BoxWithConstraints(modifier.fillMaxSize().background(c.screen).testTag("run-live")) {
         val compact = maxHeight < 640.dp
+        val gap = if (compact) 8.dp else 12.dp
         Column(Modifier.fillMaxSize()) {
             CrewHeader(
                 title = ui.crewName,
@@ -169,37 +169,42 @@ internal fun CrewRunLive(
                 },
                 modifier = Modifier.statusBarsPadding(),
             )
+            // 띠 한 줄 — 지도 카드와 같은 여백 · 둥근 모서리
+            val band = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp).clip(RoundedCornerShape(12.dp))
             when {
-                mode == CrewLiveMode.Failed -> CrewBand(stringResource(R.string.run_free_save_failed), Icons.Filled.Warning, "run-save-error")
+                mode == CrewLiveMode.Failed ->
+                    CrewBand(stringResource(R.string.run_free_save_failed), Icons.Filled.Warning, "run-save-error", band)
                 mode == CrewLiveMode.Saving -> Unit
-                ui.link == CrewLink.Offline -> CrewBand(stringResource(R.string.run_crew_offline_band), Icons.Outlined.WifiOff, "run-crew-offline")
-                ui.link == CrewLink.Closed -> CrewBand(stringResource(R.string.run_crew_closed_band), Icons.Outlined.PeopleAlt, "run-crew-closed")
-                ui.link == CrewLink.Detached -> CrewBand(stringResource(R.string.run_crew_detached_band), Icons.Outlined.LinkOff, "run-crew-detached")
-                ui.paused -> CrewBand(stringResource(R.string.run_crew_paused_band), Icons.Filled.Pause, "run-crew-others")
+                ui.link == CrewLink.Offline ->
+                    CrewBand(stringResource(R.string.run_crew_offline_band), Icons.Outlined.WifiOff, "run-crew-offline", band)
+                ui.link == CrewLink.Closed ->
+                    CrewBand(stringResource(R.string.run_crew_closed_band), Icons.Outlined.PeopleAlt, "run-crew-closed", band)
+                ui.link == CrewLink.Detached ->
+                    CrewBand(stringResource(R.string.run_crew_detached_band), Icons.Outlined.LinkOff, "run-crew-detached", band)
+                ui.paused -> CrewBand(stringResource(R.string.run_crew_paused_band), Icons.Filled.Pause, "run-crew-others", band)
             }
-            // 지도 — 남는 높이를 모두 쓴다(버튼은 늘 화면 안)
-            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds().background(t.inset)) {
-                CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
+            // 지도 카드 — 남는 높이를 모두 쓴다(버튼 · 기록은 늘 화면 안). 밝은 실제 지도 그대로(어두운 덧칠 없음)
+            val shape = RoundedCornerShape(16.dp)
+            Box(
+                Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp).clip(shape).background(t.inset)
+                    .border(1.dp, c.line, shape).clipToBounds(),
+            ) {
+                CompositionLocalProvider(LocalMapTone provides CrewBrightMap) {
                     Box(Modifier.fillMaxSize().testTag("run-live-map"), content = map)
                 }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 10.dp), verticalAlignment = Alignment.Top) {
-                    Box(Modifier.weight(1f)) { problemBand?.invoke() }
-                    Spacer(Modifier.padding(start = 8.dp))
-                    if (mode == CrewLiveMode.Live) {
-                        FreeMapButton(Icons.Filled.MoreHoriz, stringResource(R.string.run_details), "run-details-open", onDetails)
-                    }
+                if (problemBand != null) {
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 10.dp).padding(top = 10.dp)) { problemBand() }
                 }
                 if (onExpandMap != null) {
                     FreeMapButton(
                         Icons.Filled.OpenInFull, stringResource(R.string.run_map_expand), "run-map-expand", onExpandMap,
-                        Modifier.align(Alignment.BottomEnd).padding(12.dp),
+                        Modifier.align(Alignment.BottomEnd).padding(10.dp),
                     )
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(c.line))
             Column(
                 Modifier.fillMaxWidth().background(c.screen).navigationBarsPadding()
-                    .padding(horizontal = 18.dp).padding(top = if (compact) 8.dp else 12.dp, bottom = if (compact) 8.dp else 12.dp),
+                    .padding(horizontal = 16.dp).padding(top = gap, bottom = gap),
             ) {
                 when (ui.link) {
                     CrewLink.Linked -> CrewRoster(ui.members, onTogether, compact = compact)
@@ -208,15 +213,16 @@ internal fun CrewRunLive(
                     CrewLink.Detached -> CrewNote(stringResource(R.string.run_crew_detached_note), icon = Icons.Outlined.LinkOff,
                         tag = "run-crew-detached-note")
                 }
-                Spacer(Modifier.height(if (compact) 8.dp else 12.dp))
-                CrewStatsRow(ui.distance, ui.time, ui.pace, if (compact) 24.sp else 28.sp)
-                Spacer(Modifier.height(if (compact) 8.dp else 12.dp))
-                CrewGoal(ui.goalKm, ui.goalFraction)
-                Text(
-                    ui.reward, style = runTextStyle(13.sp, c.label, FontWeight.Medium), maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = if (compact) 6.dp else 10.dp).testTag("run-crew-reward"),
-                )
-                Spacer(Modifier.height(if (compact) 8.dp else 12.dp))
+                Spacer(Modifier.height(gap))
+                CrewCard(padding = 12.dp) {
+                    Spacer(Modifier.height(if (compact) 2.dp else 6.dp))
+                    CrewStatsRow(ui.distance, ui.time, ui.pace, if (compact) 24.sp else 28.sp, center = true)
+                    Spacer(Modifier.height(if (compact) 2.dp else 6.dp))
+                }
+                Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
+                // 러닝 정보(E03)는 달리는 동안에만 — 저장 중 · 저장 실패에는 열 것이 없다
+                CrewGoal(ui.goalKm, ui.goalFraction, onDetails.takeIf { mode == CrewLiveMode.Live })
+                Spacer(Modifier.height(gap))
                 when (mode) {
                     // 기록 저장 중 — 버튼 하나(누를 수 없음). 보상을 기다리는 것이 아니다
                     CrewLiveMode.Saving -> FreeRunButton(
@@ -229,6 +235,7 @@ internal fun CrewRunLive(
                             modifier = Modifier.padding(bottom = 8.dp).testTag("run-save-kept"))
                         FreeRunButton(stringResource(R.string.runflow_save_again), onPrimary, Modifier.fillMaxWidth().testTag("run-primary-action"))
                     }
+                    // 일시정지 · 다시 달리기가 주 행동, 종료는 보조
                     CrewLiveMode.Live -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         FreeRunButton(
                             stringResource(if (ui.paused) R.string.run_free_resume else R.string.run_pause), onPrimary,
@@ -261,17 +268,21 @@ internal fun CrewStatsRow(
     size: androidx.compose.ui.unit.TextUnit = 28.sp,
     /** 칸마다 붙이는 이름표(검사용) — 마칠까요 시트는 러닝 중 화면과 겹치지 않게 다른 이름 */
     tags: List<String> = listOf("run-distance-value", "run-hero-value", "run-pace-value"),
+    center: Boolean = false,
 ) {
     DividedRow(columns = 3, gap = 14.dp) {
-        CrewStat(stringResource(R.string.run_label_distance), distance, "km", tags[0], size)
-        CrewStat(stringResource(R.string.stat_time), time, null, tags[1], size)
-        CrewStat(stringResource(R.string.run_label_pace), pace, "/km", tags[2], size)
+        CrewStat(stringResource(R.string.run_label_distance), distance, "km", tags[0], size, center)
+        CrewStat(stringResource(R.string.stat_time), time, null, tags[1], size, center)
+        CrewStat(stringResource(R.string.run_label_pace), pace, "/km", tags[2], size, center)
     }
 }
 
-/** 내 목표 {n}km · 진행률 — 거리를 모르면 "확인할 수 없어요"(막대는 비운다) */
+/**
+ * 내 목표 {n}km · 진행률 카드 — 거리를 모르면 "확인할 수 없어요"(막대는 비운다). 오른쪽은 러닝 정보(E03) 입구 —
+ * 예상 보상 · 내구도 · 측정 까닭은 거기서 본다. [onDetails] 가 없으면(저장 중 · 실패) 입구를 두지 않는다.
+ */
 @Composable
-private fun CrewGoal(goalKm: Double, fraction: Float?) {
+private fun CrewGoal(goalKm: Double, fraction: Float?, onDetails: (() -> Unit)?) {
     val c = crewColors()
     val goal = if (goalKm % 1.0 == 0.0) "%.0f".format(goalKm) else "%.1f".format(goalKm)
     val line = if (fraction != null) {
@@ -279,15 +290,23 @@ private fun CrewGoal(goalKm: Double, fraction: Float?) {
     } else {
         stringResource(R.string.run_crew_goal_unknown, goal)
     }
-    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
-        contentDescription = line
-        if (fraction != null) progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
-    }.testTag("run-goal-bar")) {
-        Text(line, style = runTextStyle(13.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(7.dp))
-        Box(Modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(5.dp)).background(c.goalTrack)) {
-            if (fraction != null && fraction > 0f) {
-                Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(9.dp).clip(RoundedCornerShape(5.dp)).background(c.goal))
+    CrewCard(padding = 14.dp) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(vertical = 6.dp).semantics(mergeDescendants = true) {
+                contentDescription = line
+                if (fraction != null) progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+            }.testTag("run-goal-bar")) {
+                Text(line, style = runTextStyle(14.sp, c.text, FontWeight.SemiBold), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.goalTrack)) {
+                    if (fraction != null && fraction > 0f) {
+                        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.badge))
+                    }
+                }
+            }
+            if (onDetails != null) {
+                Spacer(Modifier.width(10.dp))
+                CrewTextAction(stringResource(R.string.run_details), onDetails, Modifier.testTag("run-details-open"), chevron = true)
             }
         }
     }

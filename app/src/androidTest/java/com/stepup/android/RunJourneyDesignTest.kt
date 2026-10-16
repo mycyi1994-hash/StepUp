@@ -889,12 +889,16 @@ class RunJourneyDesignTest {
             // CR21 — 크루에 기록 공유(경로는 처음에 꺼져 있다)
             show("CR21", "crew-share") {
                 com.stepup.android.ui.screens.walk.CrewShareContent(
-                    name, "1.56", "12:30", "8'01\"", label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""),
+                    name, label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""),
                     includeRoute = false, hasRoute = true, preview = null, state = com.stepup.android.ui.screens.walk.CrewSend.Idle,
-                    onRoute = {}, onShare = {}, onClose = {},
+                    onRoute = {}, onShare = {}, onClose = {}, monogram = "YD",
                 )
             }
             compose.onNodeWithTag("crew-share-route-toggle").assertIsOff()
+            // 미리보기는 하나 — 보낼 글 그대로(경로를 끄면 그림이 없다)
+            compose.onNodeWithTag("crew-share-text", useUnmergedTree = true)
+                .assertTextEquals(label(R.string.run_cr_share_message, "1.56", "12:30", "8'01\""))
+            compose.onAllNodesWithTag("crew-share-image", useUnmergedTree = true).assertCountEquals(0)
 
             // CR09 · CR10 · CR11 · CR12 · CR18 · CR13 — 실제 앱에서 같이 달리는 중(표시용 러닝 · 방)
             val now = System.currentTimeMillis()
@@ -996,7 +1000,12 @@ class RunJourneyDesignTest {
             awaitTag("run-result-crew")
             signedIn()
             compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
-            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_result_line, name, 4))
+            // 크루 이름 · 함께 출발한 인원(출발 명단) — 큰 완료 제목 · 체크는 두지 않는다
+            compose.onNodeWithTag("run-result-crew-name", useUnmergedTree = true).assertTextEquals(name)
+            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_started_n, 4))
+            compose.onAllNodesWithTag("run-result-title", useUnmergedTree = true).assertCountEquals(0)
+            // 저장 표시는 한 번
+            compose.onAllNodesWithTag("run-result-saved", useUnmergedTree = true).assertCountEquals(1)
             // 보상은 서버가 확인하기 전 "예상 · 확인 중"
             compose.onNodeWithTag("run-result-settle-pending", useUnmergedTree = true).assertExists()
             assertResultFits("CR13")
@@ -1011,7 +1020,7 @@ class RunJourneyDesignTest {
             repo.showPartyForTest(com.stepup.android.data.repo.PartyState())
             WalkSessionService.showStateForTest(crewDone.copy(lastPartySize = 1, lastGroupSize = 1))
             awaitTag("run-result-crew")
-            compose.onNodeWithTag("run-result-title", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_result_solo))
+            compose.onNodeWithTag("run-result-crew", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_started_solo))
             compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_crew_share))
             shot("CR13-solo")
         } finally {

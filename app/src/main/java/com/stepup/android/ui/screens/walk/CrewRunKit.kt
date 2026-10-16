@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.PeopleAlt
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.data.repo.PartyMember
+import com.stepup.android.ui.components.MapTone
 import com.stepup.android.ui.components.RunBackButton
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.experience.feedbackClickable
@@ -141,6 +144,12 @@ private val CrewLight = CrewColors(
 
 @Composable
 internal fun crewColors(): CrewColors = if (StepUpColors.dark) CrewDark else CrewLight
+
+/**
+ * 크루 달리기의 지도 색 — 밝은 실제 지도 그대로(2026-10-16 크루 전달본: 어두운 덧칠로 길 · 공원 · 경로를 가리지 않는다).
+ * 러닝 화면의 남색 지도 필터(RunTone.mapFilter)는 크루 달리기 중 · 결과 지도에 쓰지 않는다.
+ */
+internal val CrewBrightMap = MapTone(filter = null, shade = 0f, roads = null)
 
 // ── 머리 · 배지 ────────────────────────────────────────────────────
 
@@ -330,6 +339,97 @@ internal fun CrewReadyMark(ready: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
+// ── 대기실 참가자 그리드(2026-10-16 승인 이미지) ─────────────────────
+
+/**
+ * 준비 표시 점 — 준비한 사람 수만큼 채운다(사람 수가 많으면 두지 않는다 — 글이 같은 수를 말한다). 화면 낭독은 글만 읽는다.
+ */
+@Composable
+internal fun CrewReadyDots(ready: Int, total: Int, modifier: Modifier = Modifier) {
+    val c = crewColors()
+    Row(modifier.testTag("party-ready-dots").clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        repeat(total) { i ->
+            Box(Modifier.size(11.dp).clip(CircleShape).background(if (i < ready) c.ready else c.switchOff))
+        }
+    }
+}
+
+/**
+ * 참가자 한 칸 — 큰 이니셜 원(준비하면 파란 면) · 오른쪽 아래 준비 표시(체크 · 시계) · 이름(나는 "나") · 짧은 준비 상태.
+ * 진행자는 "진행자 · 준비 완료"처럼 역할을 앞에. 일반 참가자에게 "크루원" 같은 역할 글을 되풀이하지 않는다.
+ * 파티 응답에 사진 주소가 없어 이니셜로 그린다(예시 인물 사진을 넣지 않는다).
+ */
+@Composable
+internal fun CrewGridCell(member: PartyMember, avatar: Dp, modifier: Modifier = Modifier) {
+    val c = crewColors()
+    val status = stringResource(if (member.ready) R.string.run_cr_ready else R.string.run_cr_not_ready)
+    val line = if (member.isHost) stringResource(R.string.run_cr_host) + " · " + status else status
+    val name = if (member.isMe) stringResource(R.string.run_cr_me_only) else member.name
+    Column(
+        modifier.semantics(mergeDescendants = true) {}.testTag("party-member-${member.id}"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(avatar + 6.dp)) {
+            // 준비하면 파란 면 · 흰 글자, 준비 전은 흐린 면(색만으로 가르지 않는다 — 오른쪽 아래 표시 · 아래 글이 같은 말을 한다)
+            val face = if (member.ready) c.badge else c.switchOff
+            Box(
+                Modifier.size(avatar).align(Alignment.Center).clip(CircleShape).background(face)
+                    .border(if (member.isMe) 3.dp else 1.dp, if (member.isMe) c.avatarMeEdge else c.line, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (member.isMe) stringResource(R.string.run_cr_me_only) else initialsOf(member.name),
+                    style = runTextStyle((avatar.value * 0.3f).sp, if (member.ready) c.badgeInk else c.text, FontWeight.ExtraBold, 1.1f),
+                    maxLines = 1,
+                )
+            }
+            val mark = avatar * 0.34f
+            Box(
+                Modifier.size(mark).align(Alignment.BottomEnd).clip(CircleShape)
+                    .background(if (member.ready) c.ready else c.label).border(2.dp, c.screen, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (member.ready) Icons.Filled.Check else Icons.Outlined.Schedule, contentDescription = null,
+                    tint = c.screen, modifier = Modifier.size(mark * 0.62f),
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            name, style = runTextStyle(16.sp, c.text, FontWeight.Bold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            line, style = runTextStyle(13.sp, if (member.ready) c.ready else c.muted, FontWeight.SemiBold, 1.25f),
+            maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** "+N" 칸 — 그리드에 다 들어가지 않은 사람 수. 누르면 전체 명단 */
+@Composable
+internal fun CrewMoreCell(rest: Int, avatar: Dp, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = crewColors()
+    val label = stringResource(R.string.run_crew_roster_all)
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).feedbackClickable(onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label }.testTag("party-more"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(avatar + 6.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.size(avatar).clip(CircleShape).background(c.card).border(1.dp, c.line, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("+$rest", style = runTextStyle((avatar.value * 0.28f).sp, c.text, FontWeight.ExtraBold, 1.1f))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(label, style = runTextStyle(13.sp, c.link, FontWeight.SemiBold, 1.25f), maxLines = 2, textAlign = TextAlign.Center)
+    }
+}
+
 // ── 판 · 줄 ────────────────────────────────────────────────────────
 
 /** 테 두른 카드 — 명단 · 기록 · 미리보기 */
@@ -408,9 +508,14 @@ internal fun CrewToggleRow(
     switchTag: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    icon: ImageVector? = null,
 ) {
     val c = crewColors()
     Row(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = c.label, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(12.dp))
+        }
         Column(Modifier.weight(1f)) {
             Text(title, style = runTextStyle(16.sp, c.text, FontWeight.SemiBold, 1.3f))
             if (body != null) Text(body, style = runTextStyle(13.sp, c.label, FontWeight.Normal, 1.4f))
@@ -479,7 +584,7 @@ internal fun CrewSheetTitle(title: String, body: String? = null, modifier: Modif
     }
 }
 
-/** 큰 수 한 칸 — 이름 위, 수 + 작은 단위(시안의 거리 · 시간 · 페이스) */
+/** 큰 수 한 칸 — 이름 위, 수 + 작은 단위(시안의 거리 · 시간 · 페이스). [center] 는 칸 가운데(달리는 중 기록 카드) */
 @Composable
 internal fun androidx.compose.foundation.layout.RowScope.CrewStat(
     label: String,
@@ -487,12 +592,17 @@ internal fun androidx.compose.foundation.layout.RowScope.CrewStat(
     unit: String?,
     tag: String,
     size: TextUnit = 28.sp,
+    center: Boolean = false,
 ) {
     val c = crewColors()
-    Column(Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "$label $value ${unit.orEmpty()}".trim() }) {
+    Column(
+        Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "$label $value ${unit.orEmpty()}".trim() },
+        horizontalAlignment = if (center) Alignment.CenterHorizontally else Alignment.Start,
+    ) {
         Text(label, style = runTextStyle(13.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // 가운데면 수의 폭만큼(칸보다 넓으면 줄인다) — 칸 폭을 다 쓰면 왼쪽에 붙는다
         FitNumber(value, unit, valueSize = size, unitSize = size * 0.45f, valueColor = c.text, unitColor = c.label,
-            modifier = Modifier.fillMaxWidth(), valueTag = tag)
+            modifier = if (center) Modifier else Modifier.fillMaxWidth(), valueTag = tag)
     }
 }
 

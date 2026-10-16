@@ -3,12 +3,14 @@ package com.stepup.android.ui.screens.walk
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -19,11 +21,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Chat
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,11 +38,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -44,6 +53,7 @@ import com.stepup.android.data.repo.PartyMember
 import com.stepup.android.data.repo.PartyPhase
 import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.data.repo.PartyState
+import com.stepup.android.ui.components.RunSheet
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpSans
@@ -81,9 +91,13 @@ internal fun CrewLobbyContent(
     }
     val alone = party.partySize <= 1
     val lobby = party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.IDLE
+    // 전체 명단(그리드에 다 들어가지 않을 때 · 진행자의 내보내기) · 함께 달린 인원 기준 — 화면 안 상태(고르기만)
+    var roster by rememberSaveable { mutableStateOf(false) }
+    var rule by rememberSaveable { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(c.screen).testTag("party-lobby")) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            CrewHeader(title, subtitle = stringResource(R.string.run_cr_room_title), onBack = onBack)
+            // 크루 이름 + 정확히 "크루 달리기" 배지(승인 이미지) — 설명 부제는 두지 않는다
+            CrewHeader(title, onBack = onBack)
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                 Spacer(Modifier.height(6.dp))
                 // 방에 못 들어갔거나 멈췄으면 왜인지부터
@@ -95,42 +109,48 @@ internal fun CrewLobbyContent(
                     PartyPhase.FINISHED -> CrewLobbyResult(resultPoints)
                     PartyPhase.RUNNING -> CrewNote(stringResource(R.string.run_crew_started), tag = "party-running")
                     else -> if (party.partyId != null) {
-                        CrewCounts(party)
-                        Spacer(Modifier.height(14.dp))
-                        CrewCard(Modifier.testTag("party-members"), padding = 14.dp) {
-                            crewOrder(party.members).forEachIndexed { index, member ->
-                                if (index > 0) CrewLine()
-                                CrewLobbyRow(member, canKick = lobby && party.isHost && !member.isMe, onKick = { onKick(member.id) })
-                            }
-                            if (alone) {
-                                CrewLine()
-                                Text(
-                                    stringResource(R.string.run_crew_alone_hint), style = runTextStyle(14.sp, c.muted, FontWeight.Medium),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp).testTag("party-alone"),
-                                )
-                            }
+                        Text(
+                            stringResource(R.string.run_crew_lobby_title),
+                            style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp, lineHeight = 1.2.em,
+                                letterSpacing = (-0.04).em, color = c.text),
+                            modifier = Modifier.semantics { heading() }.testTag("party-lobby-title"),
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        CrewReadyLine(party)
+                        Spacer(Modifier.height(20.dp))
+                        CrewGrid(party.members, onMore = { roster = true })
+                        if (alone) {
+                            Text(
+                                stringResource(R.string.run_crew_alone_hint), style = runTextStyle(14.sp, c.muted, FontWeight.Medium),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(top = 14.dp).testTag("party-alone"),
+                            )
                         }
-                        Spacer(Modifier.height(8.dp))
+                        // 그리드에 다 들어가지 않거나 진행자가 내보낼 사람이 있으면 전체 명단
+                        if (party.partySize > CREW_GRID_MAX || (lobby && party.isHost && party.members.any { !it.isMe })) {
+                            CrewTextAction(
+                                stringResource(R.string.run_crew_roster_all), { roster = true },
+                                Modifier.padding(top = 6.dp).testTag("party-roster-open"), chevron = true,
+                            )
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        CrewLine()
+                        Spacer(Modifier.height(4.dp))
                         CrewToggleRow(
                             stringResource(R.string.run_my_share), stringResource(R.string.run_crew_share_body), party.myShare, onShare,
-                            "party-share-toggle", Modifier.testTag("party-share-location"),
+                            "party-share-toggle", Modifier.testTag("party-share-location"), icon = Icons.Outlined.LocationOn,
                         )
-                        Text(stringResource(R.string.run_crew_share_note), style = runTextStyle(13.sp, c.muted, FontWeight.Normal, 1.45f))
-                        if (canNotify && lobby) {
-                            Spacer(Modifier.height(10.dp))
-                            if (alone) {
-                                CrewNote(stringResource(R.string.run_crew_alone_note), tag = "party-alone-note")
-                            } else {
-                                CrewTextAction(
-                                    stringResource(R.string.run_cr_notify), onNotify, Modifier.testTag("party-notify-link"),
-                                    icon = Icons.AutoMirrored.Outlined.Chat, chevron = true,
-                                )
-                            }
+                        // 혼자면 아래 버튼이 알리기를 맡는다 — 같은 행동을 두 번 두지 않는다
+                        if (canNotify && lobby && !alone) {
+                            CrewTextAction(
+                                stringResource(R.string.run_cr_notify), onNotify, Modifier.testTag("party-notify-link"),
+                                icon = Icons.AutoMirrored.Outlined.Chat, chevron = true,
+                            )
                         }
-                        Text(
-                            stringResource(R.string.run_crew_gps_rule, com.stepup.android.data.repo.CrewRepository.NEAR_DISTANCE_M),
-                            style = runTextStyle(12.sp, c.muted), modifier = Modifier.padding(top = 10.dp),
+                        // 함께 달린 인원 기준(서버 규칙)은 열어 볼 때만 — 정상 화면에 문단으로 펼쳐 두지 않는다
+                        CrewTextAction(
+                            stringResource(R.string.run_crew_rule_link), { rule = true }, Modifier.testTag("party-rule-open"),
+                            icon = Icons.Outlined.Info, chevron = true,
                         )
                     }
                 }
@@ -177,36 +197,87 @@ internal fun CrewLobbyContent(
             }
         }
     }
+    if (roster) CrewRosterSheet(party, canKick = lobby && party.isHost, onKick = onKick, onClose = { roster = false })
+    if (rule) CrewRuleSheet(onClose = { rule = false })
 }
 
-/** 함께 출발할 크루원 · N명 참여 | ✓ 준비 완료 M명 */
+/** 그리드에 두는 칸 — 3 × 2. 더 많으면 다섯 사람과 "+N"(전체 명단) */
+internal const val CREW_GRID_MAX = 6
+
+/** 준비 점을 두는 최대 인원 — 더 많으면 글만(점이 줄을 넘지 않게) */
+private const val CREW_DOTS_MAX = 8
+
+/** "4 / 6명 준비" + 준비 점 — 버튼 · 그리드와 같은 명단에서 센다(readyCount · partySize) */
 @Composable
-private fun CrewCounts(party: PartyState) {
+private fun CrewReadyLine(party: PartyState) {
     val c = crewColors()
-    Row(Modifier.fillMaxWidth().testTag("party-counts"), verticalAlignment = Alignment.Bottom) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.run_crew_lobby_label), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    "${party.partySize}",
-                    style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, color = c.text,
-                        letterSpacing = (-0.04).em),
-                )
-                Spacer(Modifier.width(1.dp))
-                Text(stringResource(R.string.run_crew_joined_unit), style = runTextStyle(17.sp, c.label, FontWeight.Medium),
-                    modifier = Modifier.padding(bottom = 4.dp))
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }.testTag("party-counts"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.run_crew_ready_of, party.readyCount, party.partySize),
+            style = runTextStyle(20.sp, c.ready, FontWeight.ExtraBold, 1.25f),
+            modifier = Modifier.weight(1f).testTag("party-ready-count"),
+        )
+        if (party.partySize in 2..CREW_DOTS_MAX) {
+            Spacer(Modifier.width(10.dp))
+            CrewReadyDots(party.readyCount, party.partySize)
+        }
+    }
+}
+
+/** 참가자 그리드 — 진행자 · 나 · 나머지 순서. 칸 크기는 화면 폭에서(작은 화면에서도 세 칸) */
+@Composable
+private fun CrewGrid(members: List<PartyMember>, onMore: () -> Unit) {
+    val ordered = crewOrder(members)
+    val shown = if (ordered.size > CREW_GRID_MAX) ordered.take(CREW_GRID_MAX - 1) else ordered
+    val rest = ordered.size - shown.size
+    BoxWithConstraints(Modifier.fillMaxWidth().testTag("party-members")) {
+        val gap = 10.dp
+        val avatar = ((maxWidth - gap * 2) / 3 - 20.dp).coerceIn(56.dp, 92.dp)
+        val cells: List<PartyMember?> = shown + if (rest > 0) listOf(null) else emptyList()
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            cells.chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                    row.forEach { member ->
+                        if (member != null) CrewGridCell(member, avatar, Modifier.weight(1f))
+                        else CrewMoreCell(rest, avatar, onMore, Modifier.weight(1f))
+                    }
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
             }
         }
-        Row(
-            Modifier.clip(RoundedCornerShape(20.dp)).background(c.readyFace).padding(horizontal = 12.dp, vertical = 7.dp)
-                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = c.ready, modifier = Modifier.size(17.dp))
-            Spacer(Modifier.width(5.dp))
-            Text(stringResource(R.string.run_cr_ready_count, party.readyCount), style = runTextStyle(13.sp, c.ready, FontWeight.Bold))
+    }
+}
+
+/** 전체 명단 — 그리드와 같은 순서 · 준비 상태. 진행자는 대기실에서 내보낼 수 있다(예전 명단 줄 그대로) */
+@Composable
+private fun CrewRosterSheet(party: PartyState, canKick: Boolean, onKick: (String) -> Unit, onClose: () -> Unit) {
+    RunSheet(onDismiss = onClose, modifier = Modifier.testTag("party-roster-sheet")) {
+        CrewSheetTitle(stringResource(R.string.run_crew_lobby_label))
+        Spacer(Modifier.height(12.dp))
+        CrewCard(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()).testTag("party-roster-list"), padding = 14.dp) {
+            crewOrder(party.members).forEachIndexed { index, member ->
+                if (index > 0) CrewLine()
+                CrewLobbyRow(member, canKick = canKick && !member.isMe, onKick = { onKick(member.id) })
+            }
         }
+        Spacer(Modifier.height(14.dp))
+        FreeRunButton(stringResource(R.string.common_confirm), onClose, Modifier.fillMaxWidth().testTag("party-roster-close"))
+    }
+}
+
+/** 함께 달린 인원 기준(서버 0056 party_near) — 열어 볼 때만 */
+@Composable
+private fun CrewRuleSheet(onClose: () -> Unit) {
+    RunSheet(onDismiss = onClose, modifier = Modifier.testTag("party-rule-sheet")) {
+        CrewSheetTitle(
+            stringResource(R.string.run_crew_rule_link),
+            body = stringResource(R.string.run_crew_gps_rule, com.stepup.android.data.repo.CrewRepository.NEAR_DISTANCE_M),
+        )
+        Spacer(Modifier.height(16.dp))
+        FreeRunButton(stringResource(R.string.common_confirm), onClose, Modifier.fillMaxWidth().testTag("party-rule-close"))
     }
 }
 
@@ -308,10 +379,6 @@ private fun CrewCountdown(party: PartyState, title: String, onBack: () -> Unit) 
                     letterSpacing = (-0.03).em),
                 textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 20.dp).testTag("party-countdown-together"),
             )
-            if (going.size > 1) {
-                Text(stringResource(R.string.run_crew_go_same), style = runTextStyle(15.sp, c.label, FontWeight.Medium),
-                    modifier = Modifier.padding(top = 6.dp))
-            }
             Text(
                 "${party.countdown.coerceAtLeast(1)}",
                 style = TextStyle(fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 150.sp, color = c.text,
@@ -325,10 +392,6 @@ private fun CrewCountdown(party: PartyState, title: String, onBack: () -> Unit) 
                 if (going.size > shown.size) {
                     Text("+${going.size - shown.size}", style = runTextStyle(15.sp, c.label, FontWeight.Bold))
                 }
-            }
-            if (going.size > 1) {
-                Text(stringResource(R.string.run_crew_go_caption), style = runTextStyle(14.sp, c.label, FontWeight.Medium),
-                    textAlign = TextAlign.Center, modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp))
             }
             Spacer(Modifier.weight(1.2f))
         }

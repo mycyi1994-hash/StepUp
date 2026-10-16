@@ -424,7 +424,6 @@
     <string name="run_loc_off_time_only">시간만 기록하기</string>
     <string name="run_cr_room_title">크루 러닝 대기실</string>
     <string name="run_cr_enter_title">크루와 함께 출발해요</string>
-    <string name="run_cr_enter_body">대기실에서 모인 크루원과 함께 준비해요. 열린 대기실이 없으면 들어갈 때 새로 열려요.</string>
     <string name="run_cr_enter_note">누르기 전에는 대기실을 만들거나 참여하지 않아요.</string>
     <string name="run_cr_enter">대기실 들어가기</string>
     <string name="run_cr_change">크루 바꾸기</string>
@@ -487,8 +486,7 @@
     <string name="run_cr_share_target_body">크루 채팅으로 공유됩니다.</string>
     <string name="run_cr_share_route">경로도 함께 공유하기</string>
     <string name="run_cr_share_route_body">러닝 경로 지도를 크루 채팅에 함께 공유합니다.</string>
-    <string name="run_cr_share_do">공유하기</string>
-    <string name="run_cr_share_message">크루 러닝 · %1$s km · %2$s · %3$s</string>
+    <string name="run_cr_share_message">크루 러닝 · %1$s km\n%2$s · 평균 페이스 %3$s /km</string>
     <string name="run_cr_shared">크루 채팅에 공유했어요.</string>
     <string name="run_cr_result_points">확인된 보상</string>
     <string name="run_cr_area">지역</string>

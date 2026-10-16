@@ -424,7 +424,6 @@
     <string name="run_loc_off_time_only">仅记录时间</string>
     <string name="run_cr_room_title">跑团跑步等候室</string>
     <string name="run_cr_enter_title">和跑团一起出发</string>
-    <string name="run_cr_enter_body">在等候室和到场的成员一起准备。如果没有开放的等候室，进入时会新开一个。</string>
     <string name="run_cr_enter_note">点击之前不会创建或加入等候室。</string>
     <string name="run_cr_enter">进入等候室</string>
     <string name="run_cr_change">更换跑团</string>
@@ -487,8 +486,7 @@
     <string name="run_cr_share_target_body">将分享到跑团聊天。</string>
     <string name="run_cr_share_route">同时分享路线</string>
     <string name="run_cr_share_route_body">同时把跑步路线地图分享到跑团聊天。</string>
-    <string name="run_cr_share_do">分享</string>
-    <string name="run_cr_share_message">跑团跑步 · %1$s km · %2$s · %3$s</string>
+    <string name="run_cr_share_message">跑团跑步 · %1$s km\n%2$s · 平均配速 %3$s /km</string>
     <string name="run_cr_shared">已分享到跑团聊天。</string>
     <string name="run_cr_result_points">已确认的奖励</string>
     <string name="run_cr_area">地区</string>
