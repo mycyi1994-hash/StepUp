@@ -26,7 +26,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey coaching; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -277,6 +277,12 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p "screen-gallery/run-journey-results/performance"
   cp -R app/build/outputs/androidTest-results/. "screen-gallery/run-journey-results/performance/" || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/run-journey/. screen-gallery/run-journey/ || status=1
+  # AI 코칭 16장(2026-10-16) — 가짜 서버(0060 응답 모양) · 시험 계정 기록으로 오늘 · 분석 · 변화 · 시트 · 동의 · 목표 · 설정 · 계획 · 훈련
+  timeout 20s adb shell am force-stop com.stepup.android || true
+  run_instrumentation coaching "com.stepup.android.CoachingDesignTest"
+  mkdir -p screen-gallery/coaching-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/coaching-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/coaching/. screen-gallery/coaching/ || status=1
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"

@@ -676,3 +676,11 @@ class CoachingSetupViewModel(
 
 /** 동의 문구에 이름을 쓸 수 있는 공급자 — 정해지지 않았으면(none) 동의를 받지 않는다 */
 internal fun providerKnown(provider: String): Boolean = provider == "anthropic" || provider == "mock"
+
+/**
+ * 화면에 보일 AI 칸 — 운영자가 코칭을 꺼 두었거나(coaching_enabled=false) 공급자가 정해지지 않았으면 동의를 받을 수 없다
+ * (동의 화면은 "준비 중"). 그동안 "동의 필요" · "AI 추천 받기" 같은 칸을 숨긴다 — 서버는 동의를 먼저 보아(no_consent) 꺼진 것을
+ * 알리지 않으므로 화면이 가린다. 전에 받아 둔 결과(Ready)는 그대로 보인다. 서버 상태를 모르면(아직 · 오프라인) 그대로 둔다.
+ */
+internal fun shownAi(ai: CoachAi, snapshot: CoachServerSnapshot?): CoachAi =
+    if (snapshot != null && !(snapshot.enabled && providerKnown(snapshot.provider)) && ai !is CoachAi.Ready) CoachAi.Hidden else ai

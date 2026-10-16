@@ -196,7 +196,7 @@ private fun TodayTab(viewModel: CoachingHubViewModel, account: CoachAccount, act
             if (latest == null) {
                 NoRecords(actions)
             } else {
-                TodayContent(viewModel, load.value.days, latest, account, rec, actions, onOpenRun)
+                TodayContent(viewModel, load.value.days, latest, account, shownAi(rec, account.snapshot), actions, onOpenRun)
             }
         }
     }
@@ -497,7 +497,7 @@ private fun AnalysisTab(viewModel: CoachingHubViewModel, account: CoachAccount, 
         list.isEmpty() -> NoAnalysis(actions.onGoRun)
         shown == null -> CoachLoading()
         else -> AnalysisContent(
-            viewModel, shown, ai, actions,
+            viewModel, shown, shownAi(ai, account.snapshot), actions,
             onPick = { picking = true },
             onPace = { result ->
                 viewModel.closePace()
@@ -990,7 +990,7 @@ private fun ChangeTab(viewModel: CoachingHubViewModel, account: CoachAccount, ac
         when (val load = change) {
             Loaded.Loading -> CoachLoading()
             Loaded.Failed -> CoachLoadFailed()
-            is Loaded.Ready -> ChangeContent(load.value, week, thisMonday, account, ai, viewModel, actions)
+            is Loaded.Ready -> ChangeContent(load.value, week, thisMonday, account, shownAi(ai, account.snapshot), viewModel, actions)
         }
         Spacer(Modifier.height(24.dp))
     }

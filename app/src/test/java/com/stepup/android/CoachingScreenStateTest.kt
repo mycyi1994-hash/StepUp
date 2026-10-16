@@ -17,6 +17,7 @@ import com.stepup.android.ui.screens.coaching.TodaySource
 import com.stepup.android.ui.screens.coaching.accountOf
 import com.stepup.android.ui.screens.coaching.aiOf
 import com.stepup.android.ui.screens.coaching.providerKnown
+import com.stepup.android.ui.screens.coaching.shownAi
 import com.stepup.android.ui.screens.coaching.todayWorkout
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
@@ -49,6 +50,25 @@ class CoachingScreenStateTest {
         candidates = listOf(CoachCandidate(candidateId, emptyMap())), candidateId = candidateId,
         actionReason = reason, limitation = null, provider = provider,
     )
+
+    // ── 꺼진 서버(운영 기본값) ──────────────────────────────────────
+
+    @Test
+    fun ai_cells_hide_while_coaching_is_off_but_keep_saved_results() {
+        // 서버는 동의를 먼저 본다(no_consent) — 꺼진 동안 "동의 필요"를 보이면 동의 화면("준비 중")에서 막힌다
+        val off = snapshot(consented = false).copy(enabled = false, provider = "none")
+        assertEquals(CoachAi.Hidden, shownAi(CoachAi.NeedsConsent, off))
+        assertEquals(CoachAi.Hidden, shownAi(CoachAi.Requestable, off))
+        assertEquals(CoachAi.Hidden, shownAi(CoachAi.Failed(null, true), off))
+        // 켜져 있어도 공급자가 정해지지 않았으면 동의를 받을 수 없다
+        assertEquals(CoachAi.Hidden, shownAi(CoachAi.NeedsConsent, snapshot(consented = false).copy(provider = "none")))
+        // 전에 받아 둔 결과는 그대로
+        val saved = CoachAi.Ready(rec(CoachIds.CAND_TEMPLATE_PREFIX + "easy_25"), 1L, false, false)
+        assertEquals(saved, shownAi(saved, off))
+        // 켜져 있으면 · 서버 상태를 모르면 그대로
+        assertEquals(CoachAi.NeedsConsent, shownAi(CoachAi.NeedsConsent, snapshot(consented = false)))
+        assertEquals(CoachAi.NeedsConsent, shownAi(CoachAi.NeedsConsent, null))
+    }
 
     // ── 계정 상태 ────────────────────────────────────────────────
 
