@@ -172,8 +172,9 @@ data class WalkSessionState(
      */
     val gpsLost: Boolean = false,
     /**
-     * 지금 위치(화면 표시용) — GPS 가 잡히기 전에는 기지국 · 마지막으로 알던 위치로 먼저 채운다.
-     * 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
+     * 지금 위치(화면 표시용) — GPS 가 잡히기 전에는 기지국 · 마지막으로 알던 위치로 먼저 채운다. 달리는 중 지도의 내 점 · 화살표는
+     * 경로 끝이 아니라 이 자리를 따라간다(경로 점은 오차보다 크게 움직여야 생겨 몇 초 늦다). 경로가 생긴 뒤에는 흐린 위치(오차 50m
+     * 초과)가 와도 30초 동안 옮기지 않는다([TrackFixRule.keepHere]). 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
      */
     val here: GeoPoint? = null,
     /**
@@ -269,6 +270,8 @@ class WalkSessionService : Service() {
      * 위성 GPS(LocationManager 의 GPS)는 예전 그대로 받는다. 그 밖의 위치는 오차가 클 수 있어 [TrackFixRule] 로 거른다 —
      * 오차가 50m 보다 크면 지도의 지금 자리만 옮기고, 기준점에서 오차(둘 중 큰 쪽)의 두 배보다 멀리 움직였을 때만 경로 · 거리에
      * 넣는다. 실내에서 제자리에 있어도 흔들리는 와이파이 위치가 거리로 쌓이지 않게(2026-10-16 사용자 결정 "그래 다 되도록 만들어").
+     * 훨씬 정확한 위치가 기준점의 오차 안에 오면(와이파이 → GPS) 기준점만 옮긴다 — 흐린 출발점에 묶여 거리가 멈춰 있지 않게
+     * (2026-10-16 "인식도 잘 안 되고 느려"). 지도의 내 점은 경로 끝이 아니라 받은 위치([WalkSessionState.here])를 따라간다.
      */
     private fun onFix(location: Location) {
         if (isMockLocation(location)) {
@@ -299,10 +302,26 @@ class WalkSessionService : Service() {
         if (!satellite) {
             val fix = TrackFixRule.decide(accuracy, speedAnchor?.let { haversineMeters(it, p) }, speedAnchorAccuracy)
             if (fix != TrackFixRule.Fix.COMMIT) {
-                // 지도의 지금 자리만 — 경로 · 거리 · 속도 판정에는 넣지 않는다(기준점은 그대로)
+                // 같은 자리를 더 정확히 알았다(와이파이 → GPS) — 기준점만 이 위치로. 거리 · 경로 점은 더하지 않는다
+                if (fix == TrackFixRule.Fix.REFINE) {
+                    speedAnchor = p
+                    speedAnchorAt = now
+                    speedAnchorAccuracy = accuracy
+                }
+                // 지도의 지금 자리만 — 경로 · 거리 · 속도 판정에는 넣지 않는다
                 _state.update { current ->
-                    if (!current.isActive || current.isPaused) current
-                    else current.copy(gpsFix = true, gpsLost = false, here = p, hereAt = now)
+                    if (!current.isActive || current.isPaused) return@update current
+                    // 경로가 생긴 뒤의 흐린 위치(오차 50m 초과)는 지금 자리를 옮기지 않는다 — 지도의 내 점 · 크루에게 보내는 위치가 튀지 않게
+                    if (fix == TrackFixRule.Fix.MAP_ONLY && TrackFixRule.keepHere(current.track.isNotEmpty(), now - current.hereAt)) {
+                        return@update current.copy(gpsFix = true, gpsLost = false)
+                    }
+                    // 출발점이 흐린 와이파이 위치였으면 더 정확한 자리로 옮긴다 — 아직 점이 하나뿐일 때만(거리는 그대로 0)
+                    val track = if (fix == TrackFixRule.Fix.REFINE && current.track.size == 1) {
+                        listOf(current.track[0].copy(lat = p.lat, lng = p.lng))
+                    } else {
+                        current.track
+                    }
+                    current.copy(track = track, gpsFix = true, gpsLost = false, here = p, hereAt = now)
                 }
                 return
             }

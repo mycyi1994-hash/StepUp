@@ -1,7 +1,9 @@
 package com.stepup.android
 
+import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.TrackPoint
+import com.stepup.android.domain.liveRoute
 import com.stepup.android.domain.toGeoPoints
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -80,5 +82,20 @@ class RunTrackTest {
         assertEquals(hour.size, RunTrack.decode(encoded).size)
         // SQLite 한 행에 넣기에 무리 없는 크기인지 못 박아 둔다.
         assertTrue("경로 문자열이 너무 크다: ${encoded.length}", encoded.length < 60_000)
+    }
+
+    @Test
+    fun `달리는 중 지도의 길은 받은 위치에서 끝난다 - 내 점이 경로 점을 기다리지 않는다`() {
+        val a = GeoPoint(37.5283, 126.9326)
+        val b = GeoPoint(37.5284, 126.9326) // a 에서 북쪽으로 약 11m
+        val here = GeoPoint(37.52848, 126.9326) // b 에서 약 9m — 아직 경로 점이 되지 못한 위치
+        assertEquals(listOf(a, b, here), liveRoute(listOf(a, b), here))
+        // 같은 자리 · 모르는 자리 · 경로 전 — 그대로
+        assertEquals(listOf(a, b), liveRoute(listOf(a, b), b))
+        assertEquals(listOf(a, b), liveRoute(listOf(a, b), null))
+        assertEquals(emptyList<GeoPoint>(), liveRoute(emptyList(), here))
+        // 100m 넘게 떨어진 위치(튄 위치 · 끊겼다 돌아온 위치)는 잇지 않는다
+        val far = GeoPoint(37.5300, 126.9326) // b 에서 약 180m
+        assertEquals(listOf(a, b), liveRoute(listOf(a, b), far))
     }
 }

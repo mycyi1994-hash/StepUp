@@ -21,12 +21,25 @@ object TrackFixRule {
     /** 경로 점 사이 가장 짧은 거리(m) — 서비스가 경로에 점을 더하는 기준과 같다 */
     const val MIN_STEP_M = 8.0
 
+    /** 기준점보다 이만큼(배) 이상 정확해야 [Fix.REFINE] — 와이파이(수십 m) → GPS(몇 m)처럼 확실히 나아졌을 때만 */
+    const val REFINE_RATIO = 0.5f
+
+    /** 경로가 생긴 뒤 흐린 위치([Fix.MAP_ONLY])가 와도 지금 자리를 이만큼(ms) 그대로 둔다 — 그보다 오래 좋은 위치가 없으면 흐린 위치라도 쓴다 */
+    const val KEEP_HERE_MS = 30_000L
+
     enum class Fix {
         /** 오차가 너무 크다 — 지도의 지금 자리만 */
         MAP_ONLY,
 
         /** 기준점에서 오차만큼도 안 움직였다 — 지도의 지금 자리만(기준점은 그대로) */
         HOLD,
+
+        /**
+         * 기준점보다 훨씬 정확한 위치가 기준점의 오차 안에 왔다 — 같은 자리를 더 정확히 알게 된 것이다. 기준점만 이 위치로 옮기고
+         * 거리 · 경로 점은 더하지 않는다. 시작할 때 와이파이 위치(오차 수십 m)로 잡힌 기준점에 묶여, GPS 가 잡힌 뒤에도 그 오차의
+         * 두 배를 움직일 때까지 거리가 0 에 멈춰 있던 것(걸으면 40~60초)을 막는다.
+         */
+        REFINE,
 
         /** 경로 · 거리에 넣는다(기준점을 옮긴다) */
         COMMIT,
@@ -42,6 +55,18 @@ object TrackFixRule {
         if (anchorDistanceM == null) return Fix.COMMIT
         // 두 점의 오차 중 큰 쪽의 두 배 — 흔들림만으로는 넘기 어렵고, 실제로 달리면 몇 초 안에 넘는다
         val threshold = maxOf(MIN_STEP_M, 2.0 * maxOf(accuracy, anchorAccuracyM ?: accuracy))
-        return if (anchorDistanceM >= threshold) Fix.COMMIT else Fix.HOLD
+        if (anchorDistanceM >= threshold) return Fix.COMMIT
+        // 오차를 알려 준 위치만 기준점을 다시 잡는다(모르는 위치는 30m 로 볼 뿐 더 정확하다고 할 수 없다)
+        val refines = accuracyM != null && anchorAccuracyM != null &&
+            accuracyM <= anchorAccuracyM * REFINE_RATIO && anchorDistanceM <= anchorAccuracyM + accuracyM
+        return if (refines) Fix.REFINE else Fix.HOLD
     }
+
+    /**
+     * 흐린 위치([Fix.MAP_ONLY])가 왔을 때 지금 자리를 그대로 둘까 — 경로가 생긴 뒤, 좋은 위치를 받은 지 [KEEP_HERE_MS] 안이면.
+     * 지도의 내 점 · 크루에게 보내는 위치가 기지국 위치로 수백 m 튀지 않게.
+     *
+     * @param hereAgeMs 지금 자리를 받은 지(ms). 모르면(받은 적 없음) 아주 큰 값
+     */
+    fun keepHere(hasTrack: Boolean, hereAgeMs: Long): Boolean = hasTrack && hereAgeMs in 0 until KEEP_HERE_MS
 }
