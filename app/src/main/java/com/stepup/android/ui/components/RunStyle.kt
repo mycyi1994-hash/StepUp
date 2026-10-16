@@ -554,8 +554,11 @@ fun RunTopBar(
     trailing: (@Composable () -> Unit)? = null,
     /** 뒤로 버튼 꼬리표 — 권한 안내처럼 닫기와 같은 뜻이면 그 이름으로 */
     backTag: String = "kit-back",
+    /** 테마와 상관없이 늘 짙은 남색인 화면(리더보드) — 흰 화살표 · 흰 워드마크(시안 92 너비) */
+    onNavy: Boolean = false,
 ) {
     val t = runTone()
+    val ink = if (onNavy) Color.White else t.text
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 4.dp, end = RunSpec.Gutter - 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -567,7 +570,7 @@ fun RunTopBar(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = t.text,
+                    Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = ink,
                     modifier = Modifier.size(20.dp).offset(x = 3.dp),
                 )
             }
@@ -581,7 +584,7 @@ fun RunTopBar(
             )
             Wordmark(BrandLogoRole.Card)
         } else {
-            Wordmark(BrandLogoRole.Header, Modifier.weight(1f, fill = false))
+            if (onNavy) RunStartWordmark(92.dp) else Wordmark(BrandLogoRole.Header, Modifier.weight(1f, fill = false))
             Spacer(Modifier.weight(1f))
             trailing?.invoke()
         }

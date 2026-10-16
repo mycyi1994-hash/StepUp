@@ -230,6 +230,16 @@ object ServiceLocator {
     lateinit var rankingRepository: RankingRepository
         private set
 
+    /** 리더보드 세 화면(2026-10-17) — 크루 · 개인은 서버 주간 순위(0061), 주간 포인트는 서버 순위가 없어 '준비 중' */
+    lateinit var leaderboards: com.stepup.android.data.repo.LeaderboardSource
+        private set
+
+    /** 기기 검사용 — 리더보드를 개발용 고정 값으로 돌린다(LeaderboardDesignTest). 앱 코드는 부르지 않는다. */
+    @androidx.annotation.VisibleForTesting
+    fun useLeaderboardsForTest(source: com.stepup.android.data.repo.LeaderboardSource) {
+        leaderboards = source
+    }
+
     /** 지금 누구로 로그인해 있는지. 화면이 로그인 상태를 물을 때 쓴다. */
     lateinit var sessionHolder: SessionHolder
 
@@ -341,6 +351,7 @@ object ServiceLocator {
             ),
         )
         rankingRepository = RankingRepository(server)
+        leaderboards = com.stepup.android.data.repo.ServerLeaderboardSource(com.stepup.android.data.remote.LeaderboardApi(server))
         stepTracker = StepTracker(app, userPrefs) { day ->
             database.stepDao().byDay(day)?.steps ?: 0
         }

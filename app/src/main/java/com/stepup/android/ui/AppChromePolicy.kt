@@ -52,7 +52,8 @@ object AppChromePolicy {
         Destination(Routes.SNEAKER_UPGRADE, Screen.Customize, Header.Detail),
         Destination(Routes.MARKET_MODEL, Screen.Customize, Header.Detail),
         Destination(Routes.MAP, Screen.Community, Header.Detail),
-        Destination(Routes.RANKING, Screen.Community, Header.Detail),
+        // 리더보드(2026-10-17) — 러닝 시작 메뉴에서 연다. 늘 남색 전면 화면이라 하단 탭 없이
+        Destination(Routes.RANKING, Screen.Run, Header.Focus),
         Destination(Routes.CREW_BOARD, Screen.Community, Header.Detail),
         // 크루 러닝 대기실(러닝 리메이크 CR04–CR08) — 러닝 화면 머리, 하단 탭 없이
         Destination(Routes.LOBBY, Screen.Community, Header.Focus),

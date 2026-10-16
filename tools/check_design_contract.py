@@ -101,9 +101,9 @@ for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt',
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
     if 'DetailPage(' not in detail or 'ArrowBack' in detail:
         errors.append(f'{relative}: use shared detail chrome')
-# 러닝 전체 리메이크(2026-10-02) — 코스 허브 · 크루 러닝 대기실은 러닝 화면 공통 머리(RunTopBar · RunPage, 뒤로 · 공식 로고)를 쓴다.
+# 러닝 전체 리메이크(2026-10-02) — 코스 허브 · 크루 러닝 대기실 · 리더보드(2026-10-17)는 러닝 화면 공통 머리(RunTopBar · RunPage, 뒤로 · 공식 로고)를 쓴다.
 # 공용 머리를 쓰는지만 본다 — 화면마다 따로 그린 뒤로 화살표는 여전히 막는다.
-for relative in ('walk/CourseHubScreen.kt', 'community/PartyLobbyScreen.kt'):
+for relative in ('walk/CourseHubScreen.kt', 'community/PartyLobbyScreen.kt', 'leaderboard/LeaderboardScreen.kt'):
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
     shared = any(marker in detail for marker in ('DetailPage(', 'RunTopBar(', 'RunPage('))
     if not shared or 'ArrowBack' in detail:

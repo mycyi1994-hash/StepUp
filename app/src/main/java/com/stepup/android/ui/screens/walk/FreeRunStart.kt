@@ -455,8 +455,10 @@ internal fun FreeRunStartStage(
     reduced: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val digit by remember { derivedStateOf { FreeRunStartMotion.digitAt(clock()) } }
-    val launched by remember { derivedStateOf { clock() >= FreeRunStartMotion.LAUNCH_AT } }
+    // 기억해 둔 계산이 처음 받은 시계에 묶이지 않게 — 시계(함수)가 바뀌면 그 시계로 다시 센다(시각을 고정해 찍는 검사가 장면마다 새 시계를 준다)
+    val currentClock by rememberUpdatedState(clock)
+    val digit by remember { derivedStateOf { FreeRunStartMotion.digitAt(currentClock()) } }
+    val launched by remember { derivedStateOf { currentClock() >= FreeRunStartMotion.LAUNCH_AT } }
     val wordmark = stringResource(R.string.run_free_start_wordmark)
     BoxWithConstraints(
         modifier.fillMaxSize()

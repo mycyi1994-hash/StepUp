@@ -99,7 +99,6 @@ import com.stepup.android.ui.screens.community.FlashRunDetailScreen
 import com.stepup.android.ui.screens.community.FocusedCommentSheetHost
 import com.stepup.android.ui.screens.community.PartyLobbyScreen
 import com.stepup.android.ui.screens.community.PostComposeScreen
-import com.stepup.android.ui.screens.community.RankingScreen
 import com.stepup.android.ui.screens.events.EventsScreen
 import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
@@ -1055,6 +1054,8 @@ internal fun MainScaffold(
                     onCoaching = {
                         navController.navigate(com.stepup.android.ui.screens.coaching.CoachingRoutes.home()) { launchSingleTop = true }
                     },
+                    // 리더보드(2026-10-17) — AI 코칭 아래 링크 한 줄. 러닝을 시작하지 않는다
+                    onLeaderboard = { navController.navigate(Routes.RANKING) { launchSingleTop = true } },
                     // 크루 달리기 — 달리던 러닝이 있으면 그 러닝, 들어가 있던 대기실이 있으면 그 대기실, 아니면 크루 입구
                     onCrew = {
                         val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value
@@ -1440,8 +1441,9 @@ internal fun MainScaffold(
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                 )
             }
+            // 리더보드(2026-10-17 전달본) — 크루 순위 · 개인 러닝 순위 · 주간 포인트. 러닝 시작 메뉴(U01)의 링크 한 줄에서 연다
             composable(Routes.RANKING) {
-                RankingScreen(onBack = { navController.popBackStack() })
+                com.stepup.android.ui.screens.leaderboard.LeaderboardScreen(onBack = { navController.popBackStack() })
             }
             // 예전 "모임 만들기" 길 — 크루 명함형의 만들기(1 / 3 · 크루 소개)를 연다
             composable(Routes.CREW_CREATE) { entry ->

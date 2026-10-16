@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "status": "proposed UI adapter requirements, not a verified existing API schema",
+  "common": {
+    "period": ["startInstant", "endInstantExclusive", "timezone", "displayLabel"],
+    "asOfInstant": "same aggregation snapshot for ranking, own rank and gaps",
+    "policyId": "existing server policy; do not silently replace",
+    "pagination": ["cursor", "hasMore"],
+    "rankSemantics": "existing server tie and ordering policy",
+    "states": ["loading", "ready", "empty", "notRanked", "unavailable", "error"]
+  },
+  "rankedEntry": {
+    "subjectId": "stable runner or crew identifier",
+    "displayName": "actual profile/crew name",
+    "avatarOrCrewImage": "existing image resource or fallback",
+    "rank": "server rank, nullable when unranked",
+    "previousPeriodRank": "nullable; missing is not zero",
+    "rawMetric": "full precision value used by the service",
+    "displayMetric": "formatted for UI without changing rank ordering"
+  },
+  "crew": {
+    "proposedMetric": "weekly valid distance divided by participating runners",
+    "policyConfirmationRequired": true,
+    "additionalFields": ["totalDistanceMeters", "participatingRunnerCount", "registeredMemberCount", "membershipState"],
+    "views": ["top-three", "following-ranked-rows", "own-crew", "own-crew-neighbors"],
+    "displayUnit": "km, one decimal",
+    "zeroParticipantCase": "unranked according to service policy; never divide by zero"
+  },
+  "personal": {
+    "proposedMetric": "weekly valid cumulative distance",
+    "additionalFields": ["weeklyDistanceMeters", "weeklyRunCount", "nextRankedRunner", "weeklyRunRecords"],
+    "views": ["own-hero", "two-above-self-two-below", "top-runners", "weekly-record-detail"],
+    "gap": "next raw distance minus own raw distance from same snapshot",
+    "displayUnit": "km, one decimal",
+    "recordFields": ["sessionId", "startedAt", "validDistanceMeters", "existingSessionStatus"]
+  },
+  "points": {
+    "proposedMetric": "points credited in the selected week under current service policy",
+    "additionalFields": ["weeklyCreditedPoints", "previousWeekCreditedPoints", "scope", "ownCrewId", "nextRankedRunner"],
+    "scopes": ["all-runners", "own-crew"],
+    "views": ["own-weekly-total", "top-rankings", "own-neighbors"],
+    "gap": "next weekly points minus own weekly points from same scope and snapshot",
+    "displayUnit": "P, grouped integer; adapt to confirmed product unit",
+    "mustNotAssume": ["P equals SUP token balance", "wallet balance equals weekly credits", "token value or fiat conversion", "missing previous-week value equals zero"],
+    "servicePolicyToVerify": ["refunds", "reversals", "adjustments", "carryover", "invalid activity exclusion"]
+  },
+  "uiDerivedValues": {
+    "rankRise": "previousPeriodRank - currentRank; positive rise, negative decline, null if either missing",
+    "pointDelta": "weeklyCreditedPoints - previousWeekCreditedPoints; nullable",
+    "gapAtFirstRank": "no invented rank zero",
+    "zeroGap": "tie handling under service policy",
+    "scopeSwitch": "replace list, own rank, neighbors and gap together; ignore stale request responses"
+  },
+  "implementationBoundary": "map current app repositories/services into this UI shape; do not invent endpoint names or replace backend ranking with the currently loaded page index"
+}

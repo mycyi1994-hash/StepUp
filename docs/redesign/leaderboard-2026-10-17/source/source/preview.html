@@ -1,0 +1,239 @@
+<style>
+#stepup-rankings-refined .lb-stage{height:864px}
+#stepup-rankings-refined .lb-phone{height:824px}
+#stepup-rankings-refined .lb-body{position:relative;z-index:2}
+#stepup-rankings-refined .lb-status{z-index:4}
+#stepup-rankings-refined .lb-footer{z-index:3}
+#stepup-rankings-refined .lr-motion-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:var(--lr-motion-opacity,.8);mask-image:linear-gradient(180deg,transparent 1%,#000 13%,#000 51%,transparent 73%)}
+#stepup-rankings-refined .lr-glow{position:absolute;width:430px;height:430px;right:-195px;top:35px;background:radial-gradient(ellipse at center,#1450ff66 0%,#1450ff22 43%,transparent 71%);animation:lr-glow-breathe 16s cubic-bezier(.77,0,.175,1) -5s infinite alternate;will-change:transform,opacity}
+#stepup-rankings-refined .lr-track-field{position:absolute;width:560px;height:336px;right:-270px;top:105px;transform:rotate(-29deg);opacity:.9}
+#stepup-rankings-refined .lr-track-lane{position:absolute;inset:0;padding:2px;border-radius:168px;overflow:hidden;background:#3f79e544;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude}
+#stepup-rankings-refined .lr-track-lane:nth-child(2){inset:20px;border-radius:148px}
+#stepup-rankings-refined .lr-track-lane:nth-child(3){inset:40px;border-radius:128px}
+#stepup-rankings-refined .lr-track-ray{position:absolute;width:660px;height:660px;left:calc(50% - 330px);top:calc(50% - 330px);background:conic-gradient(from -90deg,transparent 0deg 235deg,#1450ff1a 260deg,#1450ff88 320deg,#75a9ff 354deg,#dae9ff 359deg,transparent 360deg);animation:lr-track-orbit 18s linear -1s infinite;will-change:transform}
+#stepup-rankings-refined .lr-track-lane:nth-child(2) .lr-track-ray{animation-delay:-7s}
+#stepup-rankings-refined .lr-track-lane:nth-child(3) .lr-track-ray{animation-delay:-13s}
+#stepup-rankings-refined [data-design="personal"] .lr-track-field{top:145px;right:-200px;transform:rotate(-36deg)}
+#stepup-rankings-refined [data-design="personal"] .lr-glow{top:90px;right:-175px}
+#stepup-rankings-refined [data-design="points"] .lr-track-field{top:155px;right:-230px;transform:rotate(-63deg)}
+#stepup-rankings-refined [data-design="points"] .lr-glow{top:85px;right:-220px}
+#stepup-rankings-refined .lb-ladder,#stepup-rankings-refined .lr-points-list{background:var(--lb-navy)}
+#stepup-rankings-refined .lr-winner{position:relative;min-height:190px;margin-top:18px;padding:18px 20px;border-radius:22px;background:var(--lb-blue);overflow:hidden;isolation:isolate}
+#stepup-rankings-refined .lr-winner:before{content:'';position:absolute;left:-160px;top:-100px;width:90px;height:420px;z-index:-1;pointer-events:none;background:linear-gradient(90deg,transparent,#c1d7ff44,transparent);animation:lr-champion-sheen 10s linear -3s infinite;will-change:transform,opacity}
+#stepup-rankings-refined .lr-winner-number{position:absolute;right:10px;bottom:-15px;color:#ffffff38;font:850 italic 188px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-10px;z-index:-1}
+#stepup-rankings-refined .lr-winner-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:650}
+#stepup-rankings-refined .lr-winner-head span{display:flex;align-items:center;gap:7px}
+#stepup-rankings-refined .lr-winner-head svg{width:17px;height:17px;stroke-width:2}
+#stepup-rankings-refined .lr-winner-head .lb-move{color:#dbe8ff;font-size:11px}
+#stepup-rankings-refined .lr-winner-person{display:flex;align-items:center;gap:13px;margin-top:16px;position:relative}
+#stepup-rankings-refined .lr-winner-person .lb-avatar{width:52px;height:52px;background:#ffffff23;border-radius:14px;font-size:27px}
+#stepup-rankings-refined .lr-winner-name{font-size:23px;font-weight:750;letter-spacing:-.8px;white-space:nowrap}
+#stepup-rankings-refined .lr-winner-sub{font-size:12px;color:#dfebff;margin-top:4px}
+#stepup-rankings-refined .lr-winner-score{display:flex;align-items:baseline;gap:5px;margin-top:13px}
+#stepup-rankings-refined .lr-winner-score strong{font:700 44px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+#stepup-rankings-refined .lr-winner-score span{font-size:14px;font-weight:600}
+#stepup-rankings-refined .lr-winner-score small{font-size:11px;color:#dbe8ff;margin-left:7px}
+#stepup-rankings-refined .lr-winner-head .lb-move,#stepup-rankings-refined .lr-winner-sub,#stepup-rankings-refined .lr-winner-score small{color:var(--lb-white)}
+#stepup-rankings-refined .lr-runners-up{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+#stepup-rankings-refined .lr-runner-up{display:flex;align-items:center;gap:10px;min-height:87px;padding:13px 12px;border-radius:16px;background:#153752}
+#stepup-rankings-refined .lr-runner-up.third{background:#102c46}
+#stepup-rankings-refined .lr-runner-rank{font:700 italic 37px/1 Bahnschrift,Pretendard,sans-serif;color:#c9e0ff;flex:none;width:25px;letter-spacing:-2px}
+#stepup-rankings-refined .third .lr-runner-rank{color:#99b6d3}
+#stepup-rankings-refined .lr-runner-info{min-width:0}
+#stepup-rankings-refined .lr-runner-info .lb-name{font-size:12px;font-weight:650;letter-spacing:-.2px}
+#stepup-rankings-refined .lr-runner-info .lb-value{font-size:24px;text-align:left;margin-top:7px}
+#stepup-rankings-refined .lr-runner-info .lb-value small{display:inline;font-size:11px;margin-left:3px}
+#stepup-rankings-refined [data-design="crew"] .lb-list-head{margin-top:18px}
+#stepup-rankings-refined .lr-period-switch{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--lb-muted)}
+#stepup-rankings-refined .lr-period-switch strong{font-weight:650;color:var(--lb-ice)}
+#stepup-rankings-refined .lr-personal-hero{position:relative;min-height:152px;margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;padding:8px 0 10px;gap:10px}
+#stepup-rankings-refined .lr-personal-label{font-size:12px;color:var(--lb-muted);margin-bottom:6px}
+#stepup-rankings-refined .lr-personal-rank{display:flex;align-items:baseline;gap:7px;font:750 italic 112px/.95 Bahnschrift,Pretendard,sans-serif;letter-spacing:-6px;font-variant-numeric:tabular-nums}
+#stepup-rankings-refined .lr-personal-rank small{font:600 17px/1 Pretendard,sans-serif;letter-spacing:0}
+#stepup-rankings-refined .lr-rise{padding-bottom:9px;text-align:right;flex:none}
+#stepup-rankings-refined .lr-rise-number{display:flex;align-items:center;justify-content:flex-end;gap:2px;color:#8bb3ff;font:650 34px/1 Bahnschrift,Pretendard,sans-serif}
+#stepup-rankings-refined .lr-rise-number svg{width:22px;height:22px;stroke-width:2.4}
+#stepup-rankings-refined .lr-rise p{font-size:11px;line-height:1.5;color:var(--lb-muted);margin-top:6px}
+#stepup-rankings-refined .lr-next{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:66px;border-radius:14px;background:var(--lb-blue);padding:12px 15px;margin-top:9px}
+#stepup-rankings-refined .lr-next-name{font-size:13px;font-weight:650}
+#stepup-rankings-refined .lr-next-sub{font-size:11px;color:#dce8ff;margin-top:4px}
+#stepup-rankings-refined .lr-next-value{text-align:right;font:650 35px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-.8px;white-space:nowrap}
+#stepup-rankings-refined .lr-next-value small{font:500 12px/1 Pretendard,sans-serif;margin-left:4px;letter-spacing:0}
+#stepup-rankings-refined .lr-next-value span{display:block;font:400 11px/1.2 Pretendard,sans-serif;margin-top:3px;letter-spacing:0;color:#dce8ff}
+#stepup-rankings-refined [data-design="personal"] .lb-local-toggle{margin-top:12px;margin-bottom:4px;height:44px}
+#stepup-rankings-refined [data-design="personal"] .lb-local-toggle button{min-height:44px}
+#stepup-rankings-refined [data-design="personal"] .lb-ladder .lb-row{min-height:var(--lb-row-height);gap:10px}
+#stepup-rankings-refined [data-design="personal"] .lb-ladder .lb-value{font-size:21px}
+#stepup-rankings-refined [data-design="personal"] .lb-ladder .lb-name{font-size:14px}
+#stepup-rankings-refined [data-design="personal"] .lb-ladder .lb-rank{color:#a9bfd8}
+#stepup-rankings-refined [data-design="personal"] .lb-row.is-me .lb-rank{color:#fff;font-weight:700}
+#stepup-rankings-refined .lr-personal-footer{width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:14px 0 0!important;border-top:1px solid var(--lb-line)!important}
+#stepup-rankings-refined .lr-personal-footer .lb-person{min-width:0}
+#stepup-rankings-refined .lr-personal-footer .lb-value{font-size:32px}
+#stepup-rankings-refined .lr-personal-footer .lb-value small{font-size:11px}
+#stepup-rankings-refined .lr-personal-footer .lb-avatar{background:#1c4779}
+#stepup-rankings-refined .lr-points-hero{margin-top:11px;padding:16px 0 18px;border-bottom:1px solid var(--lb-line)}
+#stepup-rankings-refined .lr-points-label{font-size:12px;color:var(--lb-muted)}
+#stepup-rankings-refined .lr-points-main{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:9px}
+#stepup-rankings-refined .lr-points-number{font:700 62px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#stepup-rankings-refined .lr-points-number span{font:650 23px/1 Pretendard,sans-serif;color:#82abff;letter-spacing:0;margin-left:6px}
+#stepup-rankings-refined .lr-points-rank{display:flex;align-items:baseline;justify-content:center;gap:3px;flex:none;min-width:65px;border-radius:16px;background:var(--lb-blue);padding:16px 10px;font:650 29px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-.7px}
+#stepup-rankings-refined .lr-points-rank small{font:500 12px/1 Pretendard,sans-serif;letter-spacing:0}
+#stepup-rankings-refined .lr-points-change{font-size:12px;color:var(--lb-ice);margin-top:10px;display:flex;align-items:center;gap:6px}
+#stepup-rankings-refined .lr-points-change svg{width:14px;height:14px;color:#82abff}
+#stepup-rankings-refined .lr-scope{display:flex;align-items:center;gap:18px;min-height:44px;margin-top:9px}
+#stepup-rankings-refined .lr-scope button{min-height:44px;font-size:13px;font-weight:600;color:var(--lb-muted)}
+#stepup-rankings-refined .lr-scope button[aria-pressed="true"]{color:#fff;border-bottom:2px solid #6599ff}
+#stepup-rankings-refined .lr-scope span{margin-left:auto;font-size:11px;color:var(--lb-muted)}
+#stepup-rankings-refined [data-design="points"] .lb-list-head{margin-top:12px;margin-bottom:3px}
+#stepup-rankings-refined .lr-points-list .lb-row{min-height:var(--lb-row-height)}
+#stepup-rankings-refined .lr-points-list .lb-row:first-child{min-height:63px;margin:0 -9px 4px;padding:0 9px;background:#113454;border-radius:13px;border-bottom:0}
+#stepup-rankings-refined .lr-points-list .lb-row:first-child .lb-rank{font-size:29px;font-style:italic;color:#fff}
+#stepup-rankings-refined .lr-points-list .lb-row:first-child .lb-avatar{background:var(--lb-blue)}
+#stepup-rankings-refined .lr-points-list .lb-row:first-child .lb-value{font-size:25px;color:#fff}
+#stepup-rankings-refined .lr-points-list .lb-row:first-child .lb-sub{color:#8eb7ff}
+#stepup-rankings-refined .lr-points-list .lb-value small{display:inline;margin-left:4px}
+#stepup-rankings-refined .lr-points-list .lb-value{font-size:22px}
+#stepup-rankings-refined .lr-gap-footer{width:100%;display:flex;align-items:center;gap:12px;padding:14px 15px!important;background:#153b62!important;border-radius:16px;text-align:left;min-height:70px}
+#stepup-rankings-refined .lr-gap-footer .lb-person p{font-size:12px;color:#e2ecff}
+#stepup-rankings-refined .lr-gap-footer .lb-person small{display:block;font-size:11px;color:var(--lb-muted);margin-top:4px}
+#stepup-rankings-refined .lr-gap-footer strong{font:650 29px/1 Bahnschrift,Pretendard,sans-serif;letter-spacing:-.6px;white-space:nowrap}
+#stepup-rankings-refined .lr-gap-footer strong small{font:500 12px/1 Pretendard,sans-serif;letter-spacing:0;margin-left:3px}
+#stepup-rankings-refined .lr-gap-footer>svg{width:16px;height:16px;flex:none;color:var(--lb-ice)}
+#stepup-rankings-refined .lr-run-record{display:flex;align-items:center;justify-content:space-between;min-height:61px;border-bottom:1px solid #34516b}
+#stepup-rankings-refined .lr-run-record p{font-size:14px;font-weight:600}
+#stepup-rankings-refined .lr-run-record small{display:block;font-size:11px;color:var(--lb-muted);margin-top:4px}
+#stepup-rankings-refined .lr-run-record strong{font:600 22px/1 Bahnschrift,Pretendard,sans-serif}
+#stepup-rankings-refined .lr-run-record strong small{display:inline;margin-left:4px;font-size:11px}
+#stepup-rankings-refined .lb-phone[data-motion-active="false"] .lr-track-ray,#stepup-rankings-refined .lb-phone[data-motion-active="false"] .lr-glow,#stepup-rankings-refined .lb-phone[data-motion-active="false"] .lr-winner:before{animation-play-state:paused}
+#stepup-rankings-refined[data-background="off"] .lr-motion-bg{opacity:0}
+#stepup-rankings-refined[data-background="off"] .lr-winner:before{display:none}
+@keyframes lr-track-orbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes lr-glow-breathe{from{opacity:.58;transform:translate(0,0)}to{opacity:1;transform:translate(-12px,10px)}}
+@keyframes lr-champion-sheen{0%{transform:translateX(0) rotate(-22deg);opacity:0}10%{opacity:.2}50%{opacity:.65}90%{opacity:.2}100%{transform:translateX(640px) rotate(-22deg);opacity:0}}
+@supports not (mask-composite:exclude){#stepup-rankings-refined .lr-track-lane{mask:none;background:none;border:2px solid #3f79e544;padding:0}#stepup-rankings-refined .lr-track-ray{display:none}}
+@media(prefers-reduced-motion:reduce){#stepup-rankings-refined .lr-track-ray,#stepup-rankings-refined .lr-glow,#stepup-rankings-refined .lr-winner:before{animation:none!important}#stepup-rankings-refined .lr-winner:before{display:none}#stepup-rankings-refined .lr-glow{opacity:.7}}
+@media(max-width:380px){#stepup-rankings-refined .lr-winner{padding-left:16px;padding-right:16px}#stepup-rankings-refined .lr-winner-name{font-size:21px}#stepup-rankings-refined .lr-runner-up{padding-left:10px;padding-right:10px;gap:8px}#stepup-rankings-refined .lr-runner-info .lb-value{font-size:22px}#stepup-rankings-refined .lr-personal-rank{font-size:104px}#stepup-rankings-refined .lr-rise-number{font-size:30px}#stepup-rankings-refined .lr-points-number{font-size:58px}#stepup-rankings-refined .lr-points-rank{min-width:62px;padding-left:8px;padding-right:8px}}
+</style>
+<div id="stepup-rankings-refined" data-background="on">
+  <div class="viz-controls" aria-label="배경 효과 비교"><label class="form-check form-switch"><input type="checkbox" class="form-check-input" data-background-toggle checked><span class="form-check-label">애니메이션 배경</span></label></div>
+  <div class="viz-carousel viz-dotted-background" aria-label="StepUp 리더보드 수정 시안 3장" data-previous-label="이전 화면" data-next-label="다음 화면">
+    <section data-variant="크루 순위" aria-label="상위 세 크루를 강조한 순위 화면">
+      <div class="lb-stage"><div class="lb-phone" data-design="crew" aria-label="크루 순위 시안" style="--lb-row-height:58px">
+        <div class="lr-motion-bg" aria-hidden="true"><div class="lr-glow"></div><div class="lr-track-field"><div class="lr-track-lane"><span class="lr-track-ray"></span></div><div class="lr-track-lane"><span class="lr-track-ray"></span></div><div class="lr-track-lane"><span class="lr-track-ray"></span></div></div></div>
+        <div class="lb-status"><span>9:41</span><span class="lb-status-icons"><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></span></div>
+        <div class="lb-body"><div class="lb-appbar"><img class="lb-logo" src="__LOGO__" alt="StepUp"><button type="button" class="lb-info cursor-interaction" data-action="rules" aria-label="순위 기준 보기"><i data-lucide="info" aria-hidden="true"></i></button></div>
+          <header class="lb-heading"><h2>크루 리더보드</h2><p>함께 달린 크루의 주간 순위.</p></header>
+          <div class="lb-period"><strong>이번 주 10.12–10.18</strong><span>1인당 러닝 거리</span></div>
+          <div data-content></div>
+        </div><div class="lb-footer" data-footer></div><span class="lb-indicator" aria-hidden="true"></span>
+        <div class="lb-overlay" hidden role="dialog" aria-modal="true" aria-label="크루 순위 상세"><div class="lb-sheet"><div class="lb-sheet-head"><h3 data-sheet-title>순위 기준</h3><button type="button" class="lb-close cursor-interaction" data-action="close" aria-label="닫기"><i data-lucide="x" aria-hidden="true"></i></button></div><div data-sheet-content></div></div></div>
+      </div></div>
+    </section>
+    <section data-variant="개인 러닝 순위" aria-label="내 순위와 바로 앞 기록을 강조한 개인 러닝 화면" hidden>
+      <div class="lb-stage"><div class="lb-phone" data-design="personal" aria-label="개인 러닝 순위 시안" style="--lb-row-height:46px">
+        <div class="lr-motion-bg" aria-hidden="true"><div class="lr-glow"></div><div class="lr-track-field"><div class="lr-track-lane"><span class="lr-track-ray"></span></div><div class="lr-track-lane"><span class="lr-track-ray"></span></div><div class="lr-track-lane"><span class="lr-track-ray"></span></div></div></div>
+        <div class="lb-status"><span>9:41</span><span class="lb-status-icons"><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></span></div>
+        <div class="lb-body"><div class="lb-appbar"><img class="lb-logo" src="__LOGO__" alt="StepUp"><button type="button" class="lb-info cursor-interaction" data-action="rules" aria-label="순위 기준 보기"><i data-lucide="info" aria-hidden="true"></i></button></div>
+          <header class="lb-heading"><h2>개인 러닝 순위</h2></header>
+          <div class="lb-period"><strong>이번 주 10.12–10.18</strong><span>누적 러닝 거리</span></div>
+          <div data-content></div>
+        </div><div class="lb-footer" data-footer></div><span class="lb-indicator" aria-hidden="true"></span>
+        <div class="lb-overlay" hidden role="dialog" aria-modal="true" aria-label="개인 순위 상세"><div class="lb-sheet"><div class="lb-sheet-head"><h3 data-sheet-title>순위 기준</h3><button type="button" class="lb-close cursor-interaction" data-action="close" aria-label="닫기"><i data-lucide="x" aria-hidden="true"></i></button></div><div data-sheet-content></div></div></div>
+      </div></div>
+    </section>
+    <section data-variant="주간 포인트" aria-label="주간 적립량과 포인트 순위를 보여주는 새 화면" hidden>
+      <div class="lb-stage"><div class="lb-phone" data-design="points" aria-label="주간 포인트 순위 시안" style="--lb-row-height:48px">
+        <div class="lr-motion-bg" aria-hidden="true"><div class="lr-glow"></div><div class="lr-track-field"><div class="lr-track-lane"><span class="lr-track-ray"></span></div><div class="lr-track-lane"><span class="lr-track-ray"></span></div><div class="lr-track-lane"><span class="lr-track-ray"></span></div></div></div>
+        <div class="lb-status"><span>9:41</span><span class="lb-status-icons"><i data-lucide="signal" aria-hidden="true"></i><i data-lucide="wifi" aria-hidden="true"></i><i data-lucide="battery-full" aria-hidden="true"></i></span></div>
+        <div class="lb-body"><div class="lb-appbar"><img class="lb-logo" src="__LOGO__" alt="StepUp"><button type="button" class="lb-info cursor-interaction" data-action="rules" aria-label="순위 기준 보기"><i data-lucide="info" aria-hidden="true"></i></button></div>
+          <header class="lb-heading"><h2>주간 포인트 순위</h2><p>이번 주 쌓은 포인트로 비교해요.</p></header>
+          <div class="lb-period"><strong>이번 주 10.12–10.18</strong><span>주간 적립 기준</span></div>
+          <div data-content></div>
+        </div><div class="lb-footer" data-footer></div><span class="lb-indicator" aria-hidden="true"></span>
+        <div class="lb-overlay" hidden role="dialog" aria-modal="true" aria-label="포인트 순위 상세"><div class="lb-sheet"><div class="lb-sheet-head"><h3 data-sheet-title>순위 기준</h3><button type="button" class="lb-close cursor-interaction" data-action="close" aria-label="닫기"><i data-lucide="x" aria-hidden="true"></i></button></div><div data-sheet-content></div></div></div>
+      </div></div>
+    </section>
+  </div>
+  <p class="lb-sample text-small text-muted">이름·기록·포인트는 시안용 데이터</p>
+  <div class="sr-only" role="status" aria-live="polite" data-live></div>
+</div>
+<script>
+(() => {
+  const root=document.getElementById('stepup-rankings-refined');
+  const phones=[...root.querySelectorAll('[data-design]')];
+  const state={crew:{rowHeight:58,bgIntensity:80},personal:{mode:'nearby',rowHeight:46,bgIntensity:90},points:{scope:'all',rowHeight:48,bgIntensity:80}};
+  const motionState={enabled:true};
+  const backgroundToggle=root.querySelector('[data-background-toggle]');
+  const onScreen=new Map(phones.map(phone=>[phone,false]));
+  const ranges={crew:[56,62],personal:[44,48],points:[46,50]};
+  const context=new Map();
+  const topCrew=[['서울러닝클럽','S',32.6,'42명 참여',2],['새벽다섯시','5',29.8,'31명 참여',1],['러닝메이트','M',27.4,'28명 참여',-1],['반포페이스','B',26.1,'24명 참여',2],['성수스트라이드','S',25.7,'36명 참여',-1]].map((v,i)=>({name:v[0],mark:v[1],score:v[2],sub:v[3],move:v[4],rank:i+1}));
+  const crewNearby=[['서촌러너스','S',19.8],['라이트페이스','L',18.9],['한강러너스','H',18.4],['반포러닝','B',17.6],['오후다섯시','5',16.7]].map((v,i)=>({name:v[0],mark:v[1],score:v[2],sub:i===2?'우리 크루 · 38명 참여':'1인당 러닝 거리',rank:10+i,isMe:i===2}));
+  const nearby=[['예린','예',34.8],['서연','서',33.4],['가나','가',32.6],['민수','민',31.9],['은지','은',31.4]].map((v,i)=>({name:v[0],mark:v[1],score:v[2],rank:125+i,isMe:i===2}));
+  const topPersonal=[['지훈','지',128.4],['서윤','서',116.8],['민재','민',108.2],['지수','지',96.7],['현우','현',92.5]].map((v,i)=>({name:v[0],mark:v[1],score:v[2],rank:i+1}));
+  const pointRows={all:[['지훈','지',9840,'서울러닝클럽'],['지수','지',9120,'한강러너스'],['서윤','서',8880,'새벽다섯시'],['현우','현',8450,'한강러너스'],['민재','민',8210,'러닝메이트']],crew:[['지수','지',9120,'한강러너스'],['현우','현',8450,'한강러너스'],['서연','서',5800,'한강러너스'],['예린','예',4210,'한강러너스'],['민수','민',3120,'한강러너스']]};
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt=(n,kind)=>new Intl.NumberFormat('ko-KR',{minimumFractionDigits:kind==='points'?0:1,maximumFractionDigits:kind==='points'?0:1}).format(n);
+  const unit=kind=>kind==='points'?'P':'km';
+  const icons=()=>{if(globalThis.lucide)globalThis.lucide.createIcons({attrs:{width:16,height:16}});};
+  const avatar=(r,kind)=>`<span class="lb-avatar ${kind==='crew'?'crew':''}" aria-hidden="true">${esc(r.mark)}</span>`;
+  function row(r,kind,compact=false){return `<div class="lb-row ${r.isMe?'is-me':''}"><span class="lb-rank">${r.rank}</span>${avatar(r,kind)}<div class="lb-person"><p class="lb-name">${esc(r.name)}${r.isMe?' <span class="sr-only">나의 순위</span>':''}</p>${!compact&&r.sub?`<p class="lb-sub">${esc(r.sub)}</p>`:''}</div><p class="lb-value">${fmt(r.score,kind)}<small>${unit(kind)}</small></p></div>`;}
+  function render(phone){
+    const design=phone.dataset.design,s=state[design],content=phone.querySelector('[data-content]'),footer=phone.querySelector('[data-footer]');phone.style.setProperty('--lb-row-height',s.rowHeight+'px');phone.style.setProperty('--lr-motion-opacity',s.bgIntensity/100);
+    if(design==='crew'){
+      const first=topCrew[0];
+      content.innerHTML=`<section class="lr-winner" aria-label="1위 ${first.name}, 1인당 ${first.score}km"><span class="lr-winner-number" aria-hidden="true">1</span><div class="lr-winner-head"><span><i data-lucide="crown" aria-hidden="true"></i>이번 주 1위</span><span class="lb-move"><i data-lucide="chevron-up" aria-hidden="true"></i>2계단 상승</span></div><div class="lr-winner-person">${avatar(first,'crew')}<div><p class="lr-winner-name">${first.name}</p><p class="lr-winner-sub">42명의 러너가 함께 만든 기록</p></div></div><p class="lr-winner-score"><strong>${fmt(first.score,'crew')}</strong><span>km</span><small>참여 러너 1인당</small></p></section><div class="lr-runners-up">${topCrew.slice(1,3).map((r,i)=>`<div class="lr-runner-up ${i?'third':''}"><span class="lr-runner-rank">${r.rank}</span><div class="lr-runner-info"><p class="lb-name">${r.name}</p><p class="lb-value">${fmt(r.score,'crew')}<small>km</small></p></div></div>`).join('')}</div><div class="lb-list-head"><b>이번 주 크루 순위</b><span>1인당 거리</span></div>${topCrew.slice(3,5).map(r=>row(r,'crew')).join('')}`;
+      footer.innerHTML='<button type="button" class="lb-mybar cursor-interaction" data-action="crew-nearby" aria-label="우리 크루 주변 순위 보기"><span class="lb-rank">12</span><div class="lb-person"><p class="lb-name">한강러너스</p><p class="lb-sub">우리 크루 · 3계단 상승</p></div><p class="lb-value">18.4<small>km</small></p><i class="lb-chevron" data-lucide="chevron-right" aria-hidden="true"></i></button>';
+    }else if(design==='personal'){
+      content.innerHTML=`<section class="lr-personal-hero" aria-label="나의 주간 순위 127위, 지난주보다 12계단 상승"><div><p class="lr-personal-label">가나, 이번 주 나의 순위</p><p class="lr-personal-rank">127<small>위</small></p></div><div class="lr-rise"><div class="lr-rise-number"><i data-lucide="arrow-up-right" aria-hidden="true"></i>12</div><p>지난주보다<br>12계단 상승</p></div></section><div class="lr-next"><div><p class="lr-next-name">바로 앞은 서연</p><p class="lr-next-sub">126위 · 이번 주 33.4km</p></div><p class="lr-next-value">0.8<small>km</small><span>현재 기록 차이</span></p></div><div class="lb-local-toggle" role="group" aria-label="개인 러닝 순위 범위"><button type="button" class="cursor-interaction" data-mode="nearby" aria-pressed="${s.mode==='nearby'}">내 주변 순위</button><button type="button" class="cursor-interaction" data-mode="top" aria-pressed="${s.mode==='top'}">상위 러너</button></div><div class="lb-ladder">${(s.mode==='top'?topPersonal:nearby).map(r=>row(r,'personal',true)).join('')}</div>`;
+      footer.innerHTML='<button type="button" class="lr-personal-footer cursor-interaction" data-action="records" aria-label="나의 이번 주 러닝 기록 보기"><span class="lb-avatar" aria-hidden="true">가</span><div class="lb-person"><p class="lb-name">가나</p><p class="lb-sub">이번 주 4회 러닝</p></div><p class="lb-value">32.6<small>km</small></p></button>';
+    }else{
+      const local=s.scope==='crew',rank=local?8:84,rows=pointRows[s.scope].map((v,i)=>({name:v[0],mark:v[1],score:v[2],sub:i===0?'이번 주 1위':v[3],rank:i+1}));
+      content.innerHTML=`<section class="lr-points-hero" aria-label="이번 주 적립 2680포인트, ${rank}위"><p class="lr-points-label">가나의 이번 주 적립 포인트</p><div class="lr-points-main"><p class="lr-points-number">2,680<span>P</span></p><p class="lr-points-rank">${rank}<small>위</small></p></div><p class="lr-points-change"><i data-lucide="trending-up" aria-hidden="true"></i>지난주보다 310P 더 적립했어요</p></section><div class="lr-scope" role="group" aria-label="포인트 순위 범위"><button type="button" class="cursor-interaction" data-scope="all" aria-pressed="${!local}">전체 러너</button><button type="button" class="cursor-interaction" data-scope="crew" aria-pressed="${local}">우리 크루</button><span>${local?'한강러너스':'주간 포인트'}</span></div><div class="lb-list-head"><b>${local?'크루 내 포인트 순위':'이번 주 포인트 순위'}</b><span>적립 포인트</span></div><div class="lr-points-list">${rows.map(r=>row(r,'points')).join('')}</div>`;
+      footer.innerHTML=`<button type="button" class="lr-gap-footer cursor-interaction" data-action="point-nearby"><div class="lb-person"><p>${rank-1}위와의 포인트 차이</p><small>내 주변 순위 보기</small></div><strong>80<small>P</small></strong><i data-lucide="chevron-right" aria-hidden="true"></i></button>`;
+    }
+    icons();
+  }
+  function save(design){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{refinedLeaderboard:design,animatedBackground:motionState.enabled},privateContent:{refinedRankings:state,motionEnabled:motionState.enabled}}).catch(()=>{});}
+  function restore(saved){if(!saved||typeof saved!=='object')return;for(const [design,s]of Object.entries(saved)){if(!Object.hasOwn(state,design)||!s||typeof s!=='object')continue;if(design==='personal'&&['nearby','top'].includes(s.mode))state.personal.mode=s.mode;if(design==='points'&&['all','crew'].includes(s.scope))state.points.scope=s.scope;if(Number.isFinite(s.rowHeight))state[design].rowHeight=Math.max(ranges[design][0],Math.min(ranges[design][1],s.rowHeight));if(Number.isFinite(s.bgIntensity))state[design].bgIntensity=Math.max(35,Math.min(100,s.bgIntensity));}}
+  function syncMotion(){phones.forEach(phone=>{phone.dataset.motionActive=String(motionState.enabled&&!document.hidden&&onScreen.get(phone)&&phone.querySelector('.lb-overlay').hidden);});}
+  function applyBackground(){root.dataset.background=motionState.enabled?'on':'off';backgroundToggle.checked=motionState.enabled;syncMotion();}
+  function open(phone,title,body){context.set(phone,document.activeElement);phone.querySelector('[data-sheet-title]').textContent=title;phone.querySelector('[data-sheet-content]').innerHTML=body;phone.querySelector('.lb-overlay').hidden=false;phone.querySelector('.lb-body').inert=true;phone.querySelector('.lb-footer').inert=true;syncMotion();icons();phone.querySelector('[data-action="close"]').focus({preventScroll:true});}
+  function close(phone){phone.querySelector('.lb-overlay').hidden=true;phone.querySelector('.lb-body').inert=false;phone.querySelector('.lb-footer').inert=false;syncMotion();const target=context.get(phone);if(target?.isConnected)target.focus({preventScroll:true});}
+  const rules={crew:'<div class="lb-rule"><h4>참여 러너 1인당 거리</h4><p>이번 주 크루 전체 러닝 거리 ÷ 이번 주 달린 크루원 수로 비교해요. 크루 규모와 함께 실제 참여 인원을 보여줘요.</p></div>',personal:'<div class="lb-rule"><h4>이번 주 누적 러닝 거리</h4><p>이번 주에 달린 거리를 모두 더해 비교해요. 바로 앞 러너와의 차이는 현재 집계된 기록 기준이에요.</p></div>',points:'<div class="lb-rule"><h4>이번 주 적립 포인트</h4><p>이번 주에 적립한 포인트로만 순위를 매겨요. 보유 잔액과는 다른 숫자예요. 전체 러너와 크루 내 순위를 각각 볼 수 있어요.</p></div>'};
+  restore(window.openai?.widgetState?.privateContent?.refinedRankings);
+  if(typeof window.openai?.widgetState?.privateContent?.motionEnabled==='boolean')motionState.enabled=window.openai.widgetState.privateContent.motionEnabled;
+  applyBackground();
+  phones.forEach(phone=>{
+    const design=phone.dataset.design;render(phone);
+    phone.addEventListener('click',e=>{
+      const b=e.target.closest('button');if(!b||!phone.contains(b))return;
+      if(b.dataset.mode){state.personal.mode=b.dataset.mode;render(phone);phone.querySelector(`[data-mode="${state.personal.mode}"]`).focus({preventScroll:true});save(design);root.querySelector('[data-live]').textContent=state.personal.mode==='top'?'상위 러너 순위':'내 주변 순위';return;}
+      if(b.dataset.scope){state.points.scope=b.dataset.scope;render(phone);phone.querySelector(`[data-scope="${state.points.scope}"]`).focus({preventScroll:true});save(design);root.querySelector('[data-live]').textContent=state.points.scope==='crew'?'우리 크루 포인트 순위':'전체 러너 포인트 순위';return;}
+      if(b.dataset.action==='close'){close(phone);return;}
+      if(b.dataset.action==='rules'){open(phone,'순위 기준',rules[design]);return;}
+      if(b.dataset.action==='crew-nearby'){open(phone,'우리 크루 주변 순위','<p class="lb-sheet-note">이번 주 · 참여 러너 1인당 거리</p>'+crewNearby.map(r=>row(r,'crew')).join(''));return;}
+      if(b.dataset.action==='records'){
+        const records=[['10월 17일','토요일',12.8],['10월 15일','목요일',4.8],['10월 14일','수요일',8.6],['10월 12일','월요일',6.4]];
+        open(phone,'이번 주 나의 러닝','<p class="lb-sheet-note">4회 러닝 · 총 32.6km</p>'+records.map(r=>`<div class="lr-run-record"><p>${r[0]}<small>${r[1]}</small></p><strong>${fmt(r[2],'personal')}<small>km</small></strong></div>`).join(''));return;
+      }
+      if(b.dataset.action==='point-nearby'){
+        const local=state.points.scope==='crew',mine=local?8:84,values=local?[['하린','하',2860],['다은','다',2760],['가나','가',2680],['정우','정',2630],['은지','은',2560]]:[['다은','다',2860],['서연','서',2760],['가나','가',2680],['민수','민',2630],['정우','정',2560]],neighbors=values.map((v,i)=>({name:v[0],mark:v[1],score:v[2],rank:mine+i-2,isMe:i===2,sub:i===2?'나의 이번 주 적립':'이번 주 적립'}));
+        open(phone,'내 주변 포인트 순위',`<p class="lb-sheet-note">${state.points.scope==='crew'?'한강러너스':'전체 러너'} · 이번 주 적립 기준</p>`+neighbors.map(r=>row(r,'points')).join(''));
+      }
+    });
+    phone.querySelector('.lb-overlay').addEventListener('click',e=>{if(e.target.classList.contains('lb-overlay'))close(phone);});
+    phone.addEventListener('keydown',e=>{if(phone.querySelector('.lb-overlay').hidden)return;if(e.key==='Escape'){e.preventDefault();close(phone);}if(e.key==='Tab'){e.preventDefault();phone.querySelector('[data-action="close"]').focus();}});
+    if(globalThis.Tweak){const tweak=new Tweak({container:phone,onChange:()=>{phone.style.setProperty('--lb-row-height',state[design].rowHeight+'px');phone.style.setProperty('--lr-motion-opacity',state[design].bgIntensity/100);}});tweak.addSlider(state[design],'rowHeight',{label:'목록 행 간격',min:ranges[design][0],max:ranges[design][1],step:1,unit:'px',reference:'--lb-row-height'});tweak.addSlider(state[design],'bgIntensity',{label:'배경 밝기',min:35,max:100,step:5,unit:'%',reference:'--lr-motion-opacity'});}
+  });
+  backgroundToggle.addEventListener('change',()=>{motionState.enabled=backgroundToggle.checked;applyBackground();const active=phones.find(phone=>onScreen.get(phone));save(active?.dataset.design||'crew');});
+  let observer=null;
+  if(typeof IntersectionObserver==='function'){observer=new IntersectionObserver(entries=>{entries.forEach(entry=>onScreen.set(entry.target,entry.isIntersecting&&entry.intersectionRatio>=.05));syncMotion();},{threshold:.05});phones.forEach(phone=>observer.observe(phone));}
+  else{phones.forEach(phone=>onScreen.set(phone,!phone.closest('[data-variant]').hidden));syncMotion();}
+  document.addEventListener('visibilitychange',syncMotion);
+  window.addEventListener('pagehide',()=>{observer?.disconnect();phones.forEach(phone=>phone.dataset.motionActive='false');});
+  window.addEventListener('pageshow',()=>{if(observer)phones.forEach(phone=>observer.observe(phone));syncMotion();});
+  window.addEventListener('openai:set_globals',e=>{const saved=e.detail?.globals?.widgetState?.privateContent;restore(saved?.refinedRankings);if(typeof saved?.motionEnabled==='boolean')motionState.enabled=saved.motionEnabled;phones.forEach(render);applyBackground();});
+})();
+</script>

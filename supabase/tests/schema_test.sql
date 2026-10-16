@@ -7161,6 +7161,173 @@ end $$;
 reset role;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 주간 리더보드(0061) ──────────────────────────────────────────'
+-- ════════════════════════════════════════════════════════════════════
+
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('61000000-0000-0000-0000-000000000001', 'lb1@test', '{"full_name":"가람"}'),
+  ('61000000-0000-0000-0000-000000000002', 'lb2@test', '{"full_name":"나래"}'),
+  ('61000000-0000-0000-0000-000000000003', 'lb3@test', '{"full_name":"다온"}'),
+  ('61000000-0000-0000-0000-000000000004', 'lb4@test', '{"full_name":"라온"}'),
+  ('61000000-0000-0000-0000-000000000005', 'lb5@test', '{"full_name":"마루"}');
+
+do $$
+begin
+  perform pg_temp.ok(
+    not has_function_privilege('anon', 'public.weekly_runner_board(int)', 'execute')
+    and not has_function_privilege('anon', 'public.weekly_crew_board(int)', 'execute')
+    and has_function_privilege('authenticated', 'public.weekly_runner_board(int)', 'execute')
+    and has_function_privilege('authenticated', 'public.weekly_crew_board(int)', 'execute')
+    and not has_function_privilege('authenticated', 'public.lb_week_start(int)', 'execute'),
+    '로그인 전에는 주간 순위를 못 부르고, 주 경계 도움 함수는 앱이 부르지 못한다');
+  perform pg_temp.ok(public.lb_week_start(0) = public.crew_week_start()
+                     and public.lb_week_start(-1) = public.crew_week_start() - interval '7 days'
+                     and public.lb_week_start(1) = public.crew_week_start() + interval '7 days',
+    '주는 크루 홈과 같은 한국 시간 월요일부터 7일');
+end $$;
+
+-- 가람 · 나래는 크루 A, 다온은 크루 B, 마루는 크루 C(이번 주 기록 없음), 라온은 크루도 기록도 없다
+set role authenticated;
+call pg_temp.login('61000000-0000-0000-0000-000000000001');
+do $$
+declare v uuid;
+begin
+  v := public.crew_create_card('주간A', '한 주 함께', '같이 달려요', null, null, '마포', null, null, 0, null, null, '{}', 30, true, 100);
+  insert into fix (k, v) values ('lbA', v::text);
+end $$;
+call pg_temp.login('61000000-0000-0000-0000-000000000003');
+do $$
+declare v uuid;
+begin
+  v := public.crew_create_card('주간B', '한 주 함께', '같이 달려요', null, null, '성수', null, null, 0, null, null, '{}', 30, true, 100);
+  insert into fix (k, v) values ('lbB', v::text);
+end $$;
+call pg_temp.login('61000000-0000-0000-0000-000000000005');
+do $$
+declare v uuid;
+begin
+  v := public.crew_create_card('주간C', '한 주 함께', '같이 달려요', null, null, '합정', null, null, 0, null, null, '{}', 30, true, 100);
+  insert into fix (k, v) values ('lbC', v::text);
+end $$;
+
+reset role;
+insert into public.crew_members (crew_id, user_id, role)
+values (pg_temp.fx('lbA')::uuid, '61000000-0000-0000-0000-000000000002', 'MEMBER');
+
+do $$
+declare
+  ws timestamptz := public.crew_week_start();
+  span interval := now() - public.crew_week_start();
+  a uuid := pg_temp.fx('lbA')::uuid;
+  b uuid := pg_temp.fx('lbB')::uuid;
+begin
+  -- 이번 주 — 가람 900km(크루 A) · 나래 800km(크루 A) · 다온 800km(크루 B, 나래와 같은 거리)
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict, crew_id) values
+    ('61000000-0000-0000-0000-000000000001', ws + span * 0.2, ws + span * 0.3, 3600, 9000, 900000, 'CLEAN', a),
+    ('61000000-0000-0000-0000-000000000002', ws + span * 0.3, ws + span * 0.4, 3600, 9000, 800000, 'CLEAN', a),
+    ('61000000-0000-0000-0000-000000000003', ws + span * 0.4, ws + span * 0.5, 3600, 9000, 800000, 'CLEAN', b),
+    -- 무효 판정은 세지 않는다
+    ('61000000-0000-0000-0000-000000000001', ws + span * 0.5, ws + span * 0.6, 600, 900, 5000000, 'VOID', a),
+    -- 지난주 — 나래 600km(크루 A) · 가람 500km(크루 A) · 다온 650km(크루 B)
+    ('61000000-0000-0000-0000-000000000002', ws - interval '2 days', ws - interval '2 days' + interval '1 hour', 3600, 9000, 600000, 'CLEAN', a),
+    ('61000000-0000-0000-0000-000000000001', ws - interval '1 day', ws - interval '1 day' + interval '1 hour', 3600, 9000, 500000, 'CLEAN', a),
+    ('61000000-0000-0000-0000-000000000003', ws - interval '3 days', ws - interval '3 days' + interval '1 hour', 3600, 9000, 1150000, 'CLEAN', b);
+end $$;
+set role authenticated;
+
+call pg_temp.login('61000000-0000-0000-0000-000000000001');
+do $$
+declare
+  r jsonb := public.weekly_runner_board(2);
+  v_this date := (public.crew_week_start() at time zone 'Asia/Seoul')::date;
+begin
+  perform pg_temp.ok((r->>'week_start')::date = v_this and (r->>'week_end')::date = v_this + 7 and r->>'timezone' = 'Asia/Seoul'
+                     and r ? 'as_of',
+    '개인 순위 — 기간(시작 · 끝(제외) · 시간대)과 집계 시각이 함께 온다');
+  perform pg_temp.ok((r->'me'->>'rank')::int = 1 and (r->'me'->>'meters')::numeric = 900000 and (r->'me'->>'is_me')::boolean
+                     and r->'me'->>'name' = '가람' and (r->'me'->>'runs')::int = 1,
+    '무효 러닝은 빼고 이번 주 거리로 1위');
+  perform pg_temp.ok((r->'me'->>'previous_rank')::int = 3,
+    '지난주 순위는 같은 규칙으로 다시 센 값(다온 1150 · 나래 600 · 가람 500km → 3위)');
+  perform pg_temp.ok(r->'ahead' = 'null'::jsonb or r->'ahead' is null, '1위에게는 바로 앞이 없다(0위를 만들지 않는다)');
+  perform pg_temp.ok(jsonb_array_length(r->'top') = 2 and (r->'top'->0->>'rank')::int = 1 and (r->'top'->1->>'rank')::int = 2,
+    '상위는 요청한 수만큼, 순위 순');
+  perform pg_temp.ok(jsonb_array_length(r->'nearby') = 3 and (r->'nearby'->0->>'is_me')::boolean,
+    '내 앞뒤 둘 — 1위면 나와 뒤 둘');
+  perform pg_temp.ok((r->>'my_meters')::numeric = 900000 and (r->>'my_runs')::int = 1 and jsonb_array_length(r->'my_run_list') = 1
+                     and (r->'my_run_list'->0->>'meters')::numeric = 900000,
+    '이번 주 내 러닝 — 무효를 뺀 목록과 합이 순위 거리와 같다');
+  perform pg_temp.ok((r->>'total')::int >= 3, '순위에 든 전체 인원이 함께 온다');
+end $$;
+
+call pg_temp.login('61000000-0000-0000-0000-000000000003');
+do $$
+declare r jsonb := public.weekly_runner_board(20);
+begin
+  perform pg_temp.ok((r->'me'->>'rank')::int = 3 and (r->'ahead'->>'rank')::int = 2 and r->'ahead'->>'name' = '나래',
+    '같은 거리면 기존 순위표처럼 이름 순 — 다온은 나래 다음');
+  perform pg_temp.ok((r->'ahead'->>'meters')::numeric = (r->'me'->>'meters')::numeric,
+    '바로 앞과 같은 값이면 차이 0(동점) — 앱이 같은 답의 두 값으로 뺀다');
+  perform pg_temp.ok((r->'me'->>'previous_rank')::int = 1, '지난주 1위(1150km)');
+  perform pg_temp.ok((r->'nearby'->0->>'rank')::int = 1 and (r->'nearby'->2->>'is_me')::boolean
+                     and (select bool_and((e->>'rank')::int between 1 and 5) from jsonb_array_elements(r->'nearby') e),
+    '내 앞뒤 둘 — 내 순위 ± 2 안의 줄만');
+end $$;
+
+call pg_temp.login('61000000-0000-0000-0000-000000000004');
+do $$
+declare r jsonb := public.weekly_runner_board(20);
+begin
+  perform pg_temp.ok((r->'me') = 'null'::jsonb and (r->'ahead') = 'null'::jsonb and jsonb_array_length(r->'nearby') = 0
+                     and (r->>'my_meters')::numeric = 0 and (r->>'my_runs')::int = 0 and jsonb_array_length(r->'my_run_list') = 0,
+    '이번 주에 달리지 않았으면 순위 없음(0위 · 가짜 줄 없음)');
+  perform pg_temp.ok(r->>'my_name' = '라온', '순위가 없어도 내 이름은 온다(화면의 "라온, 이번 주 나의 순위")');
+  perform pg_temp.ok(not exists (select 1 from jsonb_array_elements(r->'top') e where (e->>'meters')::numeric <= 0),
+    '0 m 인 사람은 순위에 넣지 않는다');
+end $$;
+
+-- 크루 순위
+call pg_temp.login('61000000-0000-0000-0000-000000000002');
+do $$
+declare
+  c jsonb := public.weekly_crew_board(30);
+  a jsonb;
+begin
+  select e into a from jsonb_array_elements(c->'top') e where e->>'crew_id' = pg_temp.fx('lbA');
+  perform pg_temp.ok((a->>'rank')::int = 1 and (a->>'meters')::numeric = 1700000 and (a->>'runners')::int = 2,
+    '크루 순위는 크루 전체 거리(지금 크루원이 그 크루로 달린 것, 무효 제외) — 1인당이 아니다');
+  perform pg_temp.ok((a->>'previous_rank')::int = 2, '지난주 크루 순위(B 1150km · A 1100km → A 2위)');
+  perform pg_temp.ok(c->'my_crew'->>'crew_id' = pg_temp.fx('lbA') and (c->'my_crew'->>'rank')::int = 1
+                     and (c->'my_crew'->>'is_mine')::boolean,
+    '우리 크루는 대표 크루(가장 먼저 가입한 크루)');
+  perform pg_temp.ok(jsonb_array_length(c->'nearby') >= 2 and (c->'nearby'->0->>'rank')::int = 1,
+    '우리 크루 앞뒤 둘');
+  perform pg_temp.ok((c->>'week_start')::date = (public.crew_week_start() at time zone 'Asia/Seoul')::date,
+    '크루 순위도 같은 주');
+end $$;
+
+call pg_temp.login('61000000-0000-0000-0000-000000000005');
+do $$
+declare c jsonb := public.weekly_crew_board(30);
+begin
+  perform pg_temp.ok(c->'my_crew'->>'crew_id' = pg_temp.fx('lbC') and c->'my_crew'->'rank' = 'null'::jsonb
+                     and (c->'my_crew'->>'meters')::numeric = 0 and jsonb_array_length(c->'nearby') = 0,
+    '이번 주 기록이 없는 우리 크루는 순위 없이(0위가 아니다)');
+  perform pg_temp.ok(not exists (select 1 from jsonb_array_elements(c->'top') e where e->>'crew_id' = pg_temp.fx('lbC')),
+    '기록 없는 크루는 순위 목록에 없다');
+end $$;
+
+call pg_temp.login('61000000-0000-0000-0000-000000000004');
+do $$
+declare c jsonb := public.weekly_crew_board(1);
+begin
+  perform pg_temp.ok(c->'my_crew' = 'null'::jsonb and jsonb_array_length(c->'nearby') = 0, '크루가 없으면 우리 크루가 없다');
+  perform pg_temp.ok(jsonb_array_length(c->'top') = 1 and (c->>'total')::int >= 2, '상위는 요청한 수만큼, 전체 수는 따로');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

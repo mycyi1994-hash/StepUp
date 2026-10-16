@@ -100,6 +100,10 @@ jobs:
           for f in screen-gallery/coaching/*.png; do
             if [ -f "$f" ]; then cp "$f" "review/coach-$(basename "$f")"; fi
           done
+          # 리더보드(LeaderboardDesignTest — 개발용 고정 값 L01~L16 · 배경 프레임 M01~M04)
+          for f in screen-gallery/leaderboard/*.png; do
+            if [ -f "$f" ]; then cp "$f" "review/leaderboard-$(basename "$f")"; fi
+          done
           cp qa-captures/layout-audit.jsonl qa-captures/android-crashes.txt review/ 2>/dev/null || true
           count=$(ls review | wc -l)
           echo "review files: $count"
