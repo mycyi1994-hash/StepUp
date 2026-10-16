@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시작 전 GPS 대기(2026-10-16 사용자 결정 — GPS 가 없으면 러닝을 시작하지 않는다). 시간만 기록하는 길은 없다. -->
+<resources>
+    <string name="run_gps_wait_title">GPS를 찾고 있어요</string>
+    <string name="run_gps_wait_found">GPS를 찾았어요</string>
+    <string name="run_gps_wait_body">하늘이 트인 곳에서 잠시 기다려 주세요.\nGPS가 잡히면 바로 시작해요.</string>
+    <string name="run_gps_lobby_body">GPS가 잡히면 바로 준비 완료로 바뀌어요.</string>
+    <string name="run_gps_wait_satellites">위성</string>
+    <string name="run_gps_wait_satellites_value">%1$d개 사용 · %2$d개 수신</string>
+    <string name="run_gps_wait_checking">확인 중</string>
+    <string name="run_gps_wait_accuracy">정확도</string>
+    <string name="run_gps_wait_accuracy_value">±%1$dm</string>
+    <string name="run_gps_wait_accuracy_need">%1$dm 안이면 시작해요</string>
+    <string name="run_gps_wait_time">기다린 시간</string>
+    <string name="run_gps_hint_no_gps_title">이 휴대폰에는 GPS가 없어요</string>
+    <string name="run_gps_hint_no_gps_body">러닝은 GPS로 거리와 경로를 재요. GPS가 있는 휴대폰에서 달려 주세요.</string>
+    <string name="run_gps_hint_gps_off_title">GPS가 꺼져 있어요</string>
+    <string name="run_gps_hint_gps_off_body">위치 설정에서 위치 방식을 ‘높은 정확도’ 또는 ‘GPS’로 바꿔 주세요.</string>
+    <string name="run_gps_hint_mock_title">가짜 위치 앱이 켜져 있어요</string>
+    <string name="run_gps_hint_mock_body">개발자 옵션의 ‘모의 위치 앱’을 끄면 실제 GPS를 쓸 수 있어요.</string>
+    <string name="run_gps_hint_no_satellites_title">위성 신호가 없어요</string>
+    <string name="run_gps_hint_no_satellites_body">실내 · 지하에서는 GPS가 잡히지 않아요. 밖으로 나가 하늘이 보이는 곳에 서 주세요.</string>
+    <string name="run_gps_hint_weak_title">신호가 아직 약해요</string>
+    <string name="run_gps_hint_weak_body">높은 건물이나 나무에서 조금 떨어져 주세요. 정확도가 %1$dm 안으로 들어오면 시작해요.</string>
+    <string name="run_gps_hint_slow_title">처음엔 몇 분 걸릴 수 있어요</string>
+    <string name="run_gps_hint_slow_body">유심이 없거나 GPS를 오래 안 쓴 휴대폰은 처음 잡을 때 오래 걸려요. 와이파이에 연결하고 밖에서 기다려 주세요.</string>
+    <string name="run_gps_need_precise">정확한 위치를 허용해야 함께 달릴 수 있어요. 설정 › 권한 › 위치에서 ‘정확한 위치 사용’을 켜 주세요.</string>
+</resources>

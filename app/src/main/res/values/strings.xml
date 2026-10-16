@@ -1511,8 +1511,7 @@ Start running with StepUp.</string>
     <string name="run_countdown_kicker">Starting your run</string>
     <string name="run_countdown_kicker_course">Starting · %1$s</string>
     <string name="run_countdown_tap">Tap to start now</string>
-    <string name="run_countdown_gps_on">Location on · GPS search begins when you start</string>
-    <string name="run_countdown_gps_off">Location off · steps only, no route</string>
+    <string name="run_countdown_gps_on">GPS connected · recording your route</string>
     <string name="settings_body">Body info &amp; goal</string>
     <string name="settings_body_clear">Delete all</string>
     <string name="settings_mode">Mode</string>
@@ -1593,7 +1592,6 @@ Start running with StepUp.</string>
     <string name="run_location_off_hint">Your phone’s location is off, so no position can arrive. Turn it on to record your route.</string>
     <string name="run_location_off_action">Turn on location</string>
     <string name="run_location_approx_hint">Only approximate location is allowed, so GPS can’t be used. Allow precise location for an accurate route.</string>
-    <string name="run_countdown_location_services_off">Phone location is off · steps only until you turn it on</string>
     <string name="home_k1_empty_title">No activity yet today</string>
     <string name="home_k1_empty_body">Start a run and your steps, distance and SUP will show here.</string>
     <string name="home_k1_left_title">%1$s steps to your goal</string>

@@ -1509,8 +1509,7 @@
     <string name="run_countdown_kicker">开始跑步</string>
     <string name="run_countdown_kicker_course">开始跑步 · %1$s</string>
     <string name="run_countdown_tap">轻触立即开始</string>
-    <string name="run_countdown_gps_on">位置已开启 · 开始后搜索 GPS</string>
-    <string name="run_countdown_gps_off">位置已关闭 · 仅记录步数，无路线</string>
+    <string name="run_countdown_gps_on">GPS 已连接 · 记录路线</string>
     <string name="settings_body">身体信息与目标</string>
     <string name="settings_body_clear">全部删除</string>
     <string name="settings_mode">模式</string>
@@ -1591,7 +1590,6 @@
     <string name="run_location_off_hint">手机定位已关闭，无法获取位置。开启后即可记录路线。</string>
     <string name="run_location_off_action">开启定位</string>
     <string name="run_location_approx_hint">仅允许大致位置，无法使用 GPS。允许精确位置可使路线更准确。</string>
-    <string name="run_countdown_location_services_off">手机定位已关闭 · 开启前仅记录步数</string>
     <string name="home_k1_empty_title">今天还没有活动</string>
     <string name="home_k1_empty_body">开始跑步后，步数、距离和 SUP 会显示在这里。</string>
     <string name="home_k1_left_title">距目标还差 %1$s 步</string>

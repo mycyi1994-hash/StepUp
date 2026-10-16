@@ -18,13 +18,13 @@ enum class RunPermissionSheet {
     /** 15 시스템 창을 다시 띄울 수 없다 — 휴대폰 설정에서 */
     ActivitySettings,
 
-    /** 16 달린 길도 기록할까요?(선택) */
+    /** 16 위치를 허용해 주세요 — 러닝은 GPS 로 잰다(2026-10-16 부터 꼭 필요) */
     LocationRationale,
 
-    /** 17 대략적인 위치만 허용했다 — 그대로 계속할 수 있다 */
+    /** 17 대략적인 위치만 허용했다 — 설정에서 정확한 위치를 켜야 시작한다 */
     ApproximateLocation,
 
-    /** 18 위치 없이 — 경로 없이 계속 */
+    /** 18 위치 권한이 없다(시스템 창도 다시 뜨지 않는다) — 설정에서 허용해야 시작한다 */
     WithoutLocation,
 
     /** 19 러닝 소식(알림, 선택) */
@@ -49,8 +49,6 @@ data class RunPermissionState(
     val activityHistory: ActivityRequestHistory = ActivityRequestHistory.NEVER,
     /** OS 가 지금 설명을 권하는가(shouldShowRequestPermissionRationale) — 이 값 하나로 거절을 단정하지 않는다 */
     val activityRationale: Boolean = false,
-    /** 위치 안내(16)에서 이미 골랐다 — 허용 · 거절 · 경로 없이 계속 */
-    val locationChosen: Boolean = false,
     /** 알림 안내(19)에서 이미 골랐다 — 허용 · 거절 · 나중에 */
     val notificationChosen: Boolean = false,
 ) {
@@ -61,7 +59,10 @@ data class RunPermissionState(
 sealed interface RunPermissionStep {
     data class Show(val sheet: RunPermissionSheet) : RunPermissionStep
 
-    /** 걸음 권한이 있고 선택 단계도 끝났다. 러닝 서비스는 여기서 켜지 않는다 — 3-2-1 이 끝나야 켠다 */
+    /**
+     * 걸음 권한 · 정확한 위치가 있고 알림 단계도 끝났다. 러닝 서비스는 여기서 켜지 않는다 — 위치 기능 · GPS 신호를 확인하고
+     * 3-2-1 이 끝나야 켠다
+     */
     data object Ready : RunPermissionStep
 }
 
@@ -73,8 +74,11 @@ object RunPermissionRules {
     const val NOTIFICATION_API = 33
 
     /**
-     * 활동 → 위치 → 알림 차례. 이미 허용했거나 이미 고른 선택 권한(위치 · 알림)은 건너뛴다 —
-     * 허용한 사람에게 매번 안내 세 장을 보이지 않는다. 위치 · 알림을 거절해도 러닝은 막지 않는다.
+     * 활동 → 위치 → 알림 차례. 이미 허용한 권한 · 이미 고른 알림은 건너뛴다 — 허용한 사람에게 매번 안내 세 장을 보이지 않는다.
+     *
+     * 러닝은 GPS 로 잰다(2026-10-16 사용자 결정 — "GPS 안 되면 못 하는 거야"). 정확한 위치가 없으면 시작하지 않는다 —
+     * 권한이 아예 없으면 매번 시스템 창부터(창이 다시 뜨지 않으면 그 결과로 18), 대략적인 위치만 있으면 설정에서 켜게(17).
+     * 위치 없이 시간만 기록하는 길은 없다. 알림은 거절해도 러닝을 막지 않는다.
      */
     fun next(s: RunPermissionState): RunPermissionStep = when {
         s.api >= ACTIVITY_API && !s.activityGranted -> RunPermissionStep.Show(
@@ -82,7 +86,8 @@ object RunPermissionRules {
             if (s.activityHistory == ActivityRequestHistory.BLOCKED && !s.activityRationale) RunPermissionSheet.ActivitySettings
             else RunPermissionSheet.ActivityRationale,
         )
-        !s.hasLocation && !s.locationChosen -> RunPermissionStep.Show(RunPermissionSheet.LocationRationale)
+        !s.hasLocation -> RunPermissionStep.Show(RunPermissionSheet.LocationRationale)
+        !s.preciseLocation -> RunPermissionStep.Show(RunPermissionSheet.ApproximateLocation)
         s.api >= NOTIFICATION_API && !s.notificationsGranted && !s.notificationChosen ->
             RunPermissionStep.Show(RunPermissionSheet.NotificationRationale)
         else -> RunPermissionStep.Ready

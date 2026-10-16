@@ -61,6 +61,7 @@ import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.ui.screens.walk.CrewNotifyBody
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
+import com.stepup.android.ui.screens.walk.GpsWaitSheetBody
 import java.io.File
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
@@ -199,7 +200,7 @@ class RunJourneyDesignTest {
             assertNoRewardText("run-live")
             shot("E06b-void")
 
-            // R02_TIME — 위치 없이 기록(거리 · 페이스는 재지 않는다)
+            // R02_TIME — 달리는 중 휴대폰 위치를 껐다(거리 · 페이스는 재지 않는다). 위치 없이 시작하는 길은 없다(2026-10-16)
             WalkSessionService.showStateForTest(timeOnly(now))
             awaitTag("run-no-location")
             compose.onNodeWithTag("run-distance-value", useUnmergedTree = true).assertTextEquals("—")
@@ -726,7 +727,7 @@ class RunJourneyDesignTest {
         }
     }
 
-    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · L03 · K01 · K17 · K18 · U04 · K02) */
+    /** 앱에서 잠깐만 지나가거나 서버 없이 만들 수 없는 상태 — 같은 화면 부품을 그 상태로 그려 찍는다(D04 · D05 · R01 · E07 · G01~G08 · CR17g · L03 · K01 · K17 · K18 · U04 · K02) */
     @Test fun states() {
         seed()
         val repo = ServiceLocator.courseRepository
@@ -751,9 +752,40 @@ class RunJourneyDesignTest {
                     caption = label(R.string.run_countdown_gps_on), here = spot, onCancel = {},
                 )
             }
-            // E07 — 휴대폰 위치 기능 꺼짐(앱 권한은 있음). 위치가 없으니 지도를 그리지 않는다
+            // E07 — 휴대폰 위치 기능 꺼짐(앱 권한은 있음). 위치가 없으니 지도를 그리지 않는다. 위치 없이 시작하는 버튼은 없다(2026-10-16)
             show("E07", "run-location-off-gate") {
-                com.stepup.android.ui.screens.walk.RunLocationOffContent(label(R.string.runflow_free), {}, {}, {})
+                com.stepup.android.ui.screens.walk.RunLocationOffContent(label(R.string.runflow_free), {}, {})
+            }
+            compose.onNodeWithTag("run-location-off-open").assertIsDisplayed()
+            compose.onAllNodesWithTag("run-location-off-time").assertCountEquals(0)
+            // G01~G08 — 시작 전 GPS 대기(2026-10-16 — GPS 가 없으면 러닝을 시작하지 않는다). 휴대폰이 알려 준 값을 그대로 그린다
+            fun gate(wait: com.stepup.android.domain.GpsWait): @Composable () -> Unit = {
+                com.stepup.android.ui.screens.walk.RunGpsGateContent(label(R.string.runflow_free), wait, {}, {})
+            }
+            val gps = com.stepup.android.domain.GpsWait()
+            show("G01", "run-gps-gate", gate(gps.copy(elapsedSec = 4, satellitesSeen = 9, satellitesUsed = 0)))
+            compose.onNodeWithTag("run-gps-satellites").assertTextEquals(label(R.string.run_gps_wait_satellites_value, 0, 9))
+            compose.onNodeWithTag("run-gps-accuracy").assertTextEquals("—")
+            compose.onNodeWithTag("run-gps-gate-cancel").assertIsDisplayed().assertHasClickAction()
+            show("G02", "run-gps-hint-weak", gate(gps.copy(elapsedSec = 35, satellitesSeen = 11, satellitesUsed = 5, accuracyM = 118f)))
+            compose.onNodeWithTag("run-gps-accuracy").assertTextEquals(label(R.string.run_gps_wait_accuracy_value, 118))
+            show("G03", "run-gps-hint-no_satellites", gate(gps.copy(elapsedSec = 41, satellitesSeen = 0, satellitesUsed = 0)))
+            show("G04", "run-gps-hint-slow", gate(gps.copy(elapsedSec = 95, satellitesSeen = 7, satellitesUsed = 0)))
+            show("G05", "run-gps-hint-mock", gate(gps.copy(elapsedSec = 3, mock = true)))
+            show("G06", "run-gps-hint-gps_off", gate(gps.copy(elapsedSec = 2, gpsOn = false)))
+            show("G07", "run-gps-hint-no_gps", gate(gps.copy(hasGps = false)))
+            compose.onAllNodesWithTag("run-gps-status").assertCountEquals(0)
+            show("G08", "run-gps-gate-title", gate(gps.copy(fixed = true, elapsedSec = 12, satellitesSeen = 12, satellitesUsed = 8, accuracyM = 6f)))
+            compose.onNodeWithTag("run-gps-gate-title").assertTextEquals(label(R.string.run_gps_wait_found))
+            // CR17g — 크루 대기실의 준비 전 GPS 확인(시트 안). 잡히면 준비 완료로 바뀐다
+            show("CR17g", "run-gps-wait-cancel") {
+                Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
+                    com.stepup.android.ui.components.RunSheetPanel(onClose = {}) {
+                        GpsWaitSheetBody(
+                            gps.copy(elapsedSec = 26, satellitesSeen = 10, satellitesUsed = 4, accuracyM = 64f), {}, {},
+                        )
+                    }
+                }
             }
             // L03 — 추천 코스 전 지금 자리 확인 중(자리를 모르면 지도에 아무 자리도 그리지 않는다) · K01 — 자리를 알고 코스를 찾는 중
             show("L03", "run-course-locating") {
@@ -1080,7 +1112,7 @@ class RunJourneyDesignTest {
         track = route(now - 750_000, now - 2_000),
     )
 
-    /** 위치 없이 기록 중 — 휴대폰 위치가 꺼져 있고 경로가 없다(시간 · 걸음만) */
+    /** 달리는 중 휴대폰 위치를 껐다 — 경로가 없다(시간 · 걸음만). 시작은 GPS 가 잡혀야 한다 */
     private fun timeOnly(now: Long) = WalkSessionState(
         isActive = true, steps = 2_100, elapsedSec = 750, startedAt = now - 750_000,
         gpsFix = false, locationOn = false,

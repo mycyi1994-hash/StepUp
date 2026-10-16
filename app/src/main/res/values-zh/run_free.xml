@@ -32,9 +32,8 @@
     <string name="run_free_pm_activity_title">我们将记录步数</string>
     <string name="run_free_pm_activity_body">需要身体活动权限。</string>
     <string name="run_free_pm_location_title">在地图上记录你的路线</string>
-    <string name="run_free_pm_location_body">没有定位权限将不会记录路线。</string>
+    <string name="run_free_pm_location_body">跑步用 GPS 记录。允许位置后才能开始。</string>
     <string name="run_free_pm_location_allow">允许定位</string>
-    <string name="run_free_pm_no_route">不记录路线开始</string>
     <string name="run_free_pm_notify_title">为你通知跑步状态</string>
     <string name="run_free_pm_notify_body">可在通知中查看进度。</string>
     <string name="run_free_pm_denied_title">需要步数权限</string>
@@ -44,8 +43,7 @@
     <string name="run_free_pm_settings_title">请在设置中开启权限</string>
     <string name="run_free_pm_settings_body">请检查身体活动权限。</string>
     <string name="run_free_pm_approx_title">已开启大致位置</string>
-    <string name="run_free_pm_approx_body">路线可能不准确。</string>
-    <string name="run_free_pm_keep_going">照常继续</string>
-    <string name="run_free_pm_no_location_title">不记录路线开始吗？</string>
-    <string name="run_free_pm_no_location_body">仍会记录时间和步数。</string>
+    <string name="run_free_pm_approx_body">开启精确位置后才能开始。</string>
+    <string name="run_free_pm_no_location_title">需要位置权限</string>
+    <string name="run_free_pm_no_location_body">在设置中允许位置后才能开始。</string>
 </resources>

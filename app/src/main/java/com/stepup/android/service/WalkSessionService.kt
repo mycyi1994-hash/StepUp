@@ -251,6 +251,9 @@ class WalkSessionService : Service() {
     private var timerJob: Job? = null
     private var locationManager: LocationManager? = null
 
+    /** 전경 서비스에 위치 종류(location)를 선언했는가 — 시작할 때 위치 권한이 없었으면 false, 허용하면 그때 더한다 */
+    @Volatile private var foregroundHasLocation = false
+
     /**
      * GPS 리스너 — 8m 이상 움직였을 때만 경로에 점을 추가해
      * 제자리 노이즈로 트랙이 지저분해지는 것을 막는다.
@@ -553,7 +556,8 @@ class WalkSessionService : Service() {
         // 권한 없이 선언하면 API 34+에서 시작 자체가 거부된다.
         // location 타입은 API 29(Q)부터 있다. 29~33 에서 빼 두면 화면을 끄거나 앱을
         // 벗어나는 순간 GPS 가 멈춰, 멀쩡한 러닝이 "GPS 거리 부족"으로 깎인다.
-        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && hasLocationPermission()) {
+        val withLocation = hasLocationPermission()
+        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && withLocation) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
         } else {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
@@ -564,6 +568,26 @@ class WalkSessionService : Service() {
             buildNotification(0),
             fgsType,
         )
+        foregroundHasLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || withLocation
+    }
+
+    /**
+     * 러닝 중에 위치 권한을 허용했다 — 시작할 때 권한이 없어 위치를 켜지 못한 러닝도 지금 GPS 를 켠다. 예전엔 위치를
+     * 러닝을 시작할 때 한 번만 켜서, 그 뒤 설정에서 허용해도 그 러닝 내내 "GPS 찾는 중"이었다. 메인 스레드에서 부른다.
+     * 전경 서비스에도 위치 종류를 더한다 — 빼 두면 화면을 끄거나 앱을 벗어나는 순간 GPS 가 멈춘다. 앱이 뒤에 있어
+     * 더하지 못하면(Android 14+) 다음에 다시 해 본다.
+     */
+    private fun catchUpLocation() {
+        if (!_state.value.isActive || settling || !hasLocationPermission()) return
+        if (locationManager == null) startLocation()
+        if (!foregroundHasLocation) {
+            foregroundHasLocation = runCatching {
+                ServiceCompat.startForeground(
+                    this, NOTIFICATION_ID, buildNotification(_state.value.steps),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
+                )
+            }.isSuccess
+        }
     }
 
     private fun beginTracking(
@@ -640,6 +664,10 @@ class WalkSessionService : Service() {
                 // 제자리 · 러닝머신에서는 6m 를 못 움직여 좌표 알림이 오지 않는다 — GPS 가 실제로 고친
                 // 마지막 위치(알림 거리와 무관)도 본다. 그것까지 오래됐을 때만 신호가 약하다고 본다
                 if (seconds % 5 == 0L) lastKnownFixElapsed = lastKnownGpsFixElapsed()
+                // 러닝 중에 위치 권한을 허용했으면 GPS 를 켠다(위의 catchUpLocation)
+                if (seconds % 5 == 0L && (locationManager == null || !foregroundHasLocation)) {
+                    launch(Dispatchers.Main) { catchUpLocation() }
+                }
                 val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)
                 _state.update {
                     if (!it.isActive || it.isPaused) it

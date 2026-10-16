@@ -32,9 +32,8 @@
     <string name="run_free_pm_activity_title">歩数を記録します</string>
     <string name="run_free_pm_activity_body">身体活動の権限が必要です。</string>
     <string name="run_free_pm_location_title">ルートを地図に残します</string>
-    <string name="run_free_pm_location_body">位置情報の権限がないとルートは記録されません。</string>
+    <string name="run_free_pm_location_body">ランはGPSで記録します。位置情報を許可すると始められます。</string>
     <string name="run_free_pm_location_allow">位置情報を許可</string>
-    <string name="run_free_pm_no_route">ルートなしで開始</string>
     <string name="run_free_pm_notify_title">ランの状態をお知らせします</string>
     <string name="run_free_pm_notify_body">通知で進行状況を確認できます。</string>
     <string name="run_free_pm_denied_title">歩数の権限が必要です</string>
@@ -44,8 +43,7 @@
     <string name="run_free_pm_settings_title">設定で権限をオンにしてください</string>
     <string name="run_free_pm_settings_body">身体活動の権限を確認してください。</string>
     <string name="run_free_pm_approx_title">おおよその位置情報がオンです</string>
-    <string name="run_free_pm_approx_body">ルートが不正確になる場合があります。</string>
-    <string name="run_free_pm_keep_going">このまま続ける</string>
-    <string name="run_free_pm_no_location_title">ルートなしで開始しますか？</string>
-    <string name="run_free_pm_no_location_body">時間と歩数は記録されます。</string>
+    <string name="run_free_pm_approx_body">正確な位置情報をオンにすると始められます。</string>
+    <string name="run_free_pm_no_location_title">位置情報の権限が必要です</string>
+    <string name="run_free_pm_no_location_body">設定で位置情報を許可すると始められます。</string>
 </resources>
