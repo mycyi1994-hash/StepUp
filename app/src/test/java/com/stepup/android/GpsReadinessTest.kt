@@ -52,6 +52,19 @@ class GpsReadinessTest {
         assertEquals(GpsHint.SLOW, gpsHintOf(waited))
     }
 
+    @Test fun `wifi location alone explains why maps works indoors but the run waits for satellites`() {
+        val waited = GpsWait(elapsedSec = GpsFixRule.HINT_AFTER_SEC)
+        // 실내 — 와이파이 위치는 있는데 위성은 하나도 쓰지 못한다(구글 지도는 이걸로 위치를 보인다)
+        assertEquals(GpsHint.WIFI_ONLY, gpsHintOf(waited.copy(roughFix = true, roughAccuracyM = 22f, satellitesSeen = 0, satellitesUsed = 0)))
+        assertEquals(GpsHint.WIFI_ONLY, gpsHintOf(waited.copy(roughFix = true)))
+        // 와이파이 위치만으로는 잡힘이 아니다 — 20초 전에는 알리지도 않는다
+        assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(elapsedSec = 5, roughFix = true, roughAccuracyM = 15f)))
+        // GPS 위치가 오기 시작했으면 신호 약함이 더 정확한 까닭이다
+        assertEquals(GpsHint.WEAK, gpsHintOf(waited.copy(roughFix = true, accuracyM = 80f, satellitesUsed = 3)))
+        // 위성을 쓰기 시작했으면 곧 잡힌다 — 첫 위치 늦음
+        assertEquals(GpsHint.SLOW, gpsHintOf(waited.copy(roughFix = true, satellitesSeen = 9, satellitesUsed = 4)))
+    }
+
     @Test fun `once fixed nothing is hinted`() {
         assertEquals(GpsHint.NONE, gpsHintOf(GpsWait(fixed = true, elapsedSec = 300, satellitesSeen = 0, accuracyM = 30f)))
     }

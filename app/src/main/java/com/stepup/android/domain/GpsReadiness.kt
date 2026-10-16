@@ -13,6 +13,12 @@ data class GpsWait(
     val fixed: Boolean = false,
     /** 마지막으로 받은 GPS 위치의 정확도(m). 아직 못 받았으면 null */
     val accuracyM: Float? = null,
+    /**
+     * 와이파이 · 기지국으로 잡은 대략적인 위치가 있다 — 보이기만 한다. 구글 지도는 실내에서 이것으로 위치를 보이지만,
+     * 러닝은 위성 GPS 로만 시작한다(2026-10-16 사용자 결정 "위성 GPS만"). [roughAccuracyM] 은 그 정확도(모르면 null)
+     */
+    val roughFix: Boolean = false,
+    val roughAccuracyM: Float? = null,
     /** 신호를 받는 위성 수 · 위치 계산에 쓰는 위성 수. 휴대폰이 알려 주지 않으면 null */
     val satellitesSeen: Int? = null,
     val satellitesUsed: Int? = null,
@@ -63,6 +69,9 @@ enum class GpsHint {
     /** 가짜 위치만 들어온다 — 모의 위치 앱을 끈다 */
     MOCK,
 
+    /** 와이파이 · 기지국 위치만 있고 위성은 아직 — 구글 지도는 되는데 러닝은 안 되는 까닭(실내) */
+    WIFI_ONLY,
+
     /** 받는 위성이 하나도 없다 — 실내 · 지하 */
     NO_SATELLITES,
 
@@ -82,6 +91,7 @@ fun gpsHintOf(w: GpsWait): GpsHint = when {
     w.mock -> GpsHint.MOCK
     w.elapsedSec < GpsFixRule.HINT_AFTER_SEC -> GpsHint.NONE
     w.accuracyM != null -> GpsHint.WEAK
+    w.roughFix && (w.satellitesUsed ?: 0) == 0 -> GpsHint.WIFI_ONLY
     w.satellitesSeen == 0 -> GpsHint.NO_SATELLITES
     else -> GpsHint.SLOW
 }

@@ -70,8 +70,10 @@ import kotlinx.coroutines.delay
  * 시작 전 GPS 대기(2026-10-16 사용자 결정 — "GPS 안 되면 못 하는 거야").
  *
  * 권한(정확한 위치)과 위치 기능을 확인한 뒤, 3-2-1 전에 실제 GPS 위치를 하나 받을 때까지 기다린다. 시간만 기록하는 길은 없다.
- * 기다리는 동안 휴대폰이 알려 주는 위성 수 · 정확도 · 기다린 시간을 그대로 보이고, 오래 걸리면 까닭과 할 일을 알린다
- * (실내 · 유심 없는 휴대폰의 첫 위치 · 가짜 위치 앱 · Android 8 이하 절전 위치 방식). 받아들이는 기준은 [GpsFixRule].
+ * 기다리는 동안 휴대폰이 알려 주는 위성 수 · 정확도 · 와이파이 위치 · 기다린 시간을 그대로 보이고, 오래 걸리면 까닭과 할 일을 알린다
+ * (실내 · 와이파이 위치만 잡힘 · 유심 없는 휴대폰의 첫 위치 · 가짜 위치 앱 · Android 8 이하 절전 위치 방식). 받아들이는 기준은 [GpsFixRule].
+ * 와이파이 · 기지국 위치는 보이기만 한다 — 구글 지도는 실내에서 이것으로 위치를 보이지만, 러닝은 위성 GPS 로만 시작한다
+ * (2026-10-16 사용자 결정 "위성 GPS만").
  */
 
 /**
@@ -97,17 +99,29 @@ internal fun rememberGpsWait(enabled: Boolean): GpsWait {
         }
         wait = GpsWait(locationOn = lm.locationOn(), gpsOn = lm.gpsOn())
 
+        fun ageMs(location: Location): Long = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
+
+        fun accepted(location: Location): Boolean = GpsFixRule.accepts(
+            location.provider == LocationManager.GPS_PROVIDER, isMockLocation(location),
+            if (location.hasAccuracy()) location.accuracy else null, ageMs(location),
+        )
+
         fun take(location: Location) {
             val mock = isMockLocation(location)
-            val ageMs = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
             val accuracy = if (location.hasAccuracy()) location.accuracy else null
-            val ok = GpsFixRule.accepts(location.provider == LocationManager.GPS_PROVIDER, mock, accuracy, ageMs)
             wait = wait.copy(
-                fixed = wait.fixed || ok,
+                fixed = wait.fixed || accepted(location),
                 // 가짜 위치의 정확도는 보이지 않는다 — 받아들이지 않는 값이다
                 accuracyM = if (mock) wait.accuracyM else accuracy ?: wait.accuracyM,
                 mock = mock,
             )
+        }
+
+        // 와이파이 · 기지국 위치(대략) — 보이기만 한다. 위성 GPS 가 아니라 잡힘으로 세지 않는다(사용자 결정 "위성 GPS만")
+        fun takeRough(location: Location) {
+            if (isMockLocation(location) || location.provider == LocationManager.GPS_PROVIDER) return
+            if (ageMs(location) > ROUGH_FRESH_MS) return
+            wait = wait.copy(roughFix = true, roughAccuracyM = if (location.hasAccuracy()) location.accuracy else wait.roughAccuracyM)
         }
 
         // API 29 이하에서는 넷 모두 추상 메서드다 — 하나라도 빠지면 위치를 켜고 끌 때 앱이 죽는다
@@ -119,6 +133,14 @@ internal fun rememberGpsWait(enabled: Boolean): GpsWait {
             override fun onProviderDisabled(provider: String) {
                 wait = wait.copy(gpsOn = lm.gpsOn(), locationOn = lm.locationOn())
             }
+
+            @Deprecated("Deprecated in Java")
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        }
+        val roughListener = object : LocationListener {
+            override fun onLocationChanged(location: Location) = takeRough(location)
+            override fun onProviderEnabled(provider: String) = Unit
+            override fun onProviderDisabled(provider: String) = Unit
 
             @Deprecated("Deprecated in Java")
             override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
@@ -136,10 +158,18 @@ internal fun rememberGpsWait(enabled: Boolean): GpsWait {
             }
         }
 
+        // 휴대폰이 이미 알던 GPS 위치 — 새것이면 바로 잡힘. 오래된 것은 지금 신호가 아니니 정확도도 보이지 않는다
         try {
-            lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let(::take)
+            lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.takeIf(::accepted)?.let(::take)
         } catch (_: SecurityException) {
         } catch (_: IllegalArgumentException) {
+        }
+        for (provider in listOf(LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)) {
+            try {
+                lm.getLastKnownLocation(provider)?.let(::takeRough)
+            } catch (_: SecurityException) {
+            } catch (_: IllegalArgumentException) {
+            }
         }
         try {
             // 1초 · 0m — 첫 위치를 받는 대로 알고, 정확도가 좋아지는 것을 바로 보인다
@@ -154,9 +184,18 @@ internal fun rememberGpsWait(enabled: Boolean): GpsWait {
         } catch (_: SecurityException) {
             false
         }
+        val roughOn = LocationManager.NETWORK_PROVIDER in providers && try {
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2_000L, 0f, roughListener, Looper.getMainLooper())
+            true
+        } catch (_: SecurityException) {
+            false
+        } catch (_: IllegalArgumentException) {
+            false
+        }
 
         onDispose {
             runCatching { lm.removeUpdates(listener) }
+            if (roughOn) runCatching { lm.removeUpdates(roughListener) }
             if (satellitesOn) runCatching { LocationManagerCompat.unregisterGnssStatusCallback(lm, satellites) }
         }
     }
@@ -177,6 +216,9 @@ internal fun rememberGpsWait(enabled: Boolean): GpsWait {
     }
     return wait
 }
+
+/** 와이파이 · 기지국 위치는 이만큼 새것만 보인다(ms) — 보이기만 하는 값이라 GPS([GpsFixRule.FRESH_MS])보다 느슨하다 */
+private const val ROUGH_FRESH_MS = 2 * 60_000L
 
 private fun LocationManager.locationOn(): Boolean =
     runCatching { LocationManagerCompat.isLocationEnabled(this) }.getOrDefault(true)
@@ -306,6 +348,17 @@ private fun ColumnScope.GpsWaitDetails(wait: GpsWait, onOpenLocationSettings: ()
                 "run-gps-accuracy",
                 note = stringResource(R.string.run_gps_wait_accuracy_need, GpsFixRule.MAX_ACCURACY_M.toInt()),
             )
+            // 와이파이 위치 — 구글 지도가 실내에서 보이는 위치. 러닝 거리에는 쓰지 않는다
+            GpsStatusRow(
+                stringResource(R.string.run_gps_wait_rough),
+                when {
+                    !wait.roughFix -> "—"
+                    wait.roughAccuracyM != null -> stringResource(R.string.run_gps_wait_accuracy_value, Math.round(wait.roughAccuracyM))
+                    else -> stringResource(R.string.run_gps_wait_rough_found)
+                },
+                "run-gps-rough",
+                note = stringResource(R.string.run_gps_wait_rough_note),
+            )
             GpsStatusRow(
                 stringResource(R.string.run_gps_wait_time), "%d:%02d".format(wait.elapsedSec / 60, wait.elapsedSec % 60), "run-gps-elapsed",
             )
@@ -319,6 +372,7 @@ private fun ColumnScope.GpsWaitDetails(wait: GpsWait, onOpenLocationSettings: ()
             GpsHint.LOCATION_OFF -> R.string.run_loc_off_title to R.string.run_loc_off_body
             GpsHint.GPS_OFF -> R.string.run_gps_hint_gps_off_title to R.string.run_gps_hint_gps_off_body
             GpsHint.MOCK -> R.string.run_gps_hint_mock_title to R.string.run_gps_hint_mock_body
+            GpsHint.WIFI_ONLY -> R.string.run_gps_hint_wifi_only_title to R.string.run_gps_hint_wifi_only_body
             GpsHint.NO_SATELLITES -> R.string.run_gps_hint_no_satellites_title to R.string.run_gps_hint_no_satellites_body
             GpsHint.WEAK -> R.string.run_gps_hint_weak_title to R.string.run_gps_hint_weak_body
             GpsHint.SLOW, GpsHint.NONE -> R.string.run_gps_hint_slow_title to R.string.run_gps_hint_slow_body
