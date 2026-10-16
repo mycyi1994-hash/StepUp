@@ -372,6 +372,12 @@ class CrewChatDesignTest {
         launch(DOYUN)
         guard {
             openRoom("afterwork")
+            // 지연이 계정을 지웠다(0058) — 메시지는 남고 작성자만 "탈퇴한 사용자"로, 다음 따라오기에서 바뀐다
+            awaitText("지연")
+            server.deleteAccount(JIYEON)
+            awaitText(InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.chat_author_deleted))
+            awaitText("저도 오늘 함께할게요!")
+            shot("45-deleted-author")
             // 크루장이 내보냈다 · 크루가 해산됐다 — 다음 확인에서 32, 그 방의 대화는 이 폰에서도 지운다
             server.leave("afterwork", DOYUN)
             server.dissolve("hanbakwi")
@@ -709,6 +715,8 @@ class CrewChatDesignTest {
             var state: String = "VISIBLE",
             val createdAt: String,
             val image: String? = null,
+            /** 계정을 지운 사람의 메시지(0058) — 서버는 작성자만 비우고 이름에 "탈퇴한 사용자"를 싣는다 */
+            val authorDeleted: Boolean = false,
         )
 
         class Room(val id: String, val name: String, var ownerId: String, val bg: Int, val hasImage: Boolean) {
@@ -828,11 +836,33 @@ class CrewChatDesignTest {
             rooms.remove(crew)
         }
 
+        /** 계정 삭제(0058) — 크루에서 빠지고(나간 줄), 그 사람의 메시지는 남기고 작성자만 비운다. 인용한 답장까지 다시 받게 변경 번호를 올린다 */
+        fun deleteAccount(user: String) {
+            for (room in rooms.values) synchronized(room) {
+                val person = room.members.firstOrNull { it.id == user } ?: return@synchronized
+                room.members.remove(person)
+                val rev = ++room.lastRev
+                val gone = room.messages.filter { it.authorId == user }.map { it.id }.toSet()
+                room.messages.replaceAll { m ->
+                    when {
+                        m.id in gone -> Msg(
+                            m.id, m.seq, rev, null, "탈퇴한 사용자", m.kind, m.body, m.replyTo, m.event, m.eventName,
+                            null, m.state, m.createdAt, m.image, authorDeleted = true,
+                        )
+                        m.replyTo in gone -> m.also { it.rev = rev }
+                        else -> m
+                    }
+                }
+                val left = ++room.lastRev
+                room.messages += Msg(nextId++, left, left, null, null, "SYSTEM", null, event = "MEMBER_LEFT", eventName = person.name, createdAt = now())
+            }
+        }
+
         private fun Room.member(user: String) = members.any { it.id == user }
 
         private fun msgJson(room: Room, m: Msg): JsonObject = buildJsonObject {
             put("id", m.id); put("seq", m.seq); put("rev", m.rev)
-            put("author_id", m.authorId); put("author_name", m.authorName)
+            put("author_id", m.authorId); put("author_name", m.authorName); put("author_deleted", m.authorDeleted)
             put("kind", m.kind); put("state", m.state)
             put("body", if (m.state == "VISIBLE") m.body else null)
             put("has_image", m.kind == "IMAGE" && m.state == "VISIBLE")
@@ -841,6 +871,7 @@ class CrewChatDesignTest {
                 room.messages.firstOrNull { it.id == rid }?.let { r ->
                     put("reply", buildJsonObject {
                         put("id", r.id); put("seq", r.seq); put("author_id", r.authorId); put("author_name", r.authorName)
+                        put("author_deleted", r.authorDeleted)
                         put("kind", r.kind); put("state", r.state); put("body", if (r.state == "VISIBLE") r.body?.take(120) else null)
                     })
                 }

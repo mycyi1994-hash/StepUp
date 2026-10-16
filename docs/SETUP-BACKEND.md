@@ -212,8 +212,12 @@ https://pupjzcmybuoyhzfwrsdf.supabase.co/auth/v1/callback
 > 나중에 Play 스토어에 올릴 때는 구글이 주는 **다른 지문**을 하나 더 등록해야
 > 하는데, 그건 Play Console 등록이 끝난 뒤에 알려드리겠습니다.
 
+> **테스트 APK 전용 키(2026-10-16)**: 폰에 까는 테스트 APK 는 이제 저장소 밖의 키로 서명합니다.
+> 같은 방법으로 Android 클라이언트를 하나 더 만들어 SHA-1 `91:4B:36:0F:54:DD:FA:87:7E:AD:2B:8A:61:A4:03:FF:EC:16:23:16`
+> 을 등록하세요(이름 `StepUp Android (test key)`). 위의 것은 지우지 않습니다 — [TEST-APK-SIGNING.md](TEST-APK-SIGNING.md)
+
 ✅ **확인:** 사용자 인증 정보 목록에 `StepUp Web` 과 `StepUp Android` **두 개**가
-보이면 2단계 끝입니다.
+보이면 2단계 끝입니다(테스트 키까지 등록했으면 Android 가 둘).
 
 ---
 

@@ -255,6 +255,49 @@ class CrewChatTest {
         ).toDomain()
         assertEquals(ChatEvent.MEMBER_LEFT, system.event)
         assertNull(system.clientId)
+        assertFalse(system.authorDeleted)
+    }
+
+    @Test
+    fun `계정을 지운 사람의 메시지 · 인용 · 공지는 작성자 없이 남고 탈퇴한 사용자로 읽힌다`() {
+        // 0058 — 서버는 글을 남기고 작성자만 비운다. 예전 앱도 보이게 이름에는 "탈퇴한 사용자"를 싣는다
+        val gone = serverJson.decodeFromString<ChatMessageRow>(
+            """
+            {"id":7,"seq":7,"rev":31,"author_id":null,"author_name":"탈퇴한 사용자","author_deleted":true,"kind":"TEXT",
+             "state":"VISIBLE","body":"내일 비 오면 쉬어요","has_image":false,"event":null,"event_name":null,"reply":null,
+             "client_id":null,"can_delete":false,"created_at":"2026-10-16T07:00:00+09:00"}
+            """.trimIndent(),
+        ).toDomain()
+        assertTrue(gone.authorDeleted)
+        assertNull(gone.authorId)
+        assertFalse(gone.canDelete)
+        assertEquals("내일 비 오면 쉬어요", gone.body)
+        val reply = serverJson.decodeFromString<ChatMessageRow>(
+            """
+            {"id":8,"seq":8,"rev":31,"author_id":"u-me","author_name":"하린","author_deleted":false,"kind":"TEXT","state":"VISIBLE",
+             "body":"네","reply":{"id":7,"seq":7,"author_id":null,"author_name":"탈퇴한 사용자","author_deleted":true,"kind":"TEXT",
+             "state":"VISIBLE","body":"내일 비 오면 쉬어요"},"can_delete":true,"created_at":"2026-10-16T07:01:00+09:00"}
+            """.trimIndent(),
+        ).toDomain()
+        assertFalse(reply.authorDeleted)
+        assertTrue(reply.reply!!.authorDeleted)
+        val notice = serverJson.decodeFromString<com.stepup.android.data.remote.ChatNoticeRow>(
+            """{"id":3,"crew_id":"c","title":"토요일 6시","body":"","pinned":true,"author_id":null,"author_name":"탈퇴한 사용자",
+               "author_deleted":true,"created_at":"2026-10-16T07:00:00+09:00","updated_at":"2026-10-16T07:00:00+09:00"}""",
+        ).toDomain()
+        assertTrue(notice.authorDeleted)
+        assertNull(notice.authorId)
+        // 0058 전의 서버(표시 없음)는 지금처럼 읽는다
+        val before = serverJson.decodeFromString<ChatMessageRow>(
+            """{"id":9,"seq":9,"author_id":"u-a","author_name":"민수","kind":"TEXT","created_at":"2026-10-16T07:02:00+09:00"}""",
+        ).toDomain()
+        assertFalse(before.authorDeleted)
+
+        // 탈퇴한 사용자의 연이은 메시지는 한 묶음이고, 내 메시지 · 크루장 표시로 보지 않는다
+        val items = ChatRules.timeline(listOf(gone, gone.copy(id = 10, seq = 10)), meta(owner = "u-owner"), me, zone)
+            .filterIsInstance<ChatItem.Bubble>()
+        assertEquals(listOf(true, false), items.map { it.header })
+        assertTrue(items.none { it.mine || it.owner })
     }
 
     @Test

@@ -182,11 +182,11 @@ private fun ChatSearchRow(message: ChatMessage, meta: ChatRoomMeta?, query: Stri
     val body = message.body?.takeIf { it.isNotBlank() } ?: if (message.kind == ChatKind.IMAGE) stringResource(R.string.chat_photo) else ""
     Column(Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).testTag("chat-search-row")) {
         Row(Modifier.fillMaxWidth().padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-            ChatFace(message.authorName, owner, 50.dp)
+            ChatFace(chatFaceName(message.authorName, message.authorDeleted), owner, 50.dp)
             Column(Modifier.weight(1f).padding(start = 16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
+                        chatAuthorName(message.authorName, message.authorDeleted),
                         style = blueText(17.sp, ink.text, FontWeight.Bold, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )

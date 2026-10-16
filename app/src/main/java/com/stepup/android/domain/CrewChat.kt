@@ -56,6 +56,8 @@ data class ChatReply(
     val kind: ChatKind,
     val state: ChatState,
     val body: String?,
+    /** 계정을 지운 사람의 글(0058) — 이름 대신 "탈퇴한 사용자" */
+    val authorDeleted: Boolean = false,
 )
 
 data class ChatMessage(
@@ -67,6 +69,8 @@ data class ChatMessage(
     val rev: Long = 0,
     val authorId: String?,
     val authorName: String?,
+    /** 계정을 지운 사람의 메시지(0058) — 서버는 남기고 작성자만 비운다. 이름 대신 "탈퇴한 사용자" */
+    val authorDeleted: Boolean = false,
     val kind: ChatKind,
     val state: ChatState = ChatState.VISIBLE,
     val body: String?,
@@ -100,6 +104,8 @@ data class ChatNotice(
     val updatedAt: Long,
     /** 이은 모임(크루 홈 4번) — 없으면 공지에서 모임 버튼을 숨긴다 */
     val meeting: ChatNoticeMeeting? = null,
+    /** 계정을 지운 크루장의 공지(0058) — 이름 대신 "탈퇴한 사용자" */
+    val authorDeleted: Boolean = false,
 ) {
     /** 목록 · 모아보기에 보일 한 줄 — 내용의 첫 줄(비었으면 없음) */
     val preview: String get() = body.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() }.orEmpty()

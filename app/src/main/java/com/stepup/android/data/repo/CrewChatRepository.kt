@@ -184,7 +184,7 @@ class CrewChatRepository(
         reply = replyTo?.let {
             com.stepup.android.domain.ChatReply(
                 id = it.id ?: 0L, seq = it.seq ?: 0L, authorId = it.authorId, authorName = it.authorName.orEmpty(),
-                kind = it.kind, state = it.state, body = it.body,
+                kind = it.kind, state = it.state, body = it.body, authorDeleted = it.authorDeleted,
             )
         },
         clientId = UUID.randomUUID().toString(),

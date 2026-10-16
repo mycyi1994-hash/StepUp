@@ -94,6 +94,7 @@
     <string name="set_delete_item_places">コース・場所の表示</string>
     <string name="set_delete_cannot_undo">削除した情報は元に戻せません。</string>
     <string name="set_delete_crew_leader">クルーリーダーの場合、最も古いメンバーがリーダーになります。</string>
+    <string name="set_delete_crew_chat">クルーチャットに残したメッセージ・お知らせは残り、投稿者は「退会したユーザー」と表示されます。</string>
     <string name="set_delete_phone_note">このスマホに残った記録はアプリを削除すると消えます。</string>
     <string name="set_delete_action">アカウントを削除</string>
     <string name="set_deleting">削除しています…</string>

@@ -123,7 +123,7 @@ private fun PinnedNoticeCard(notice: ChatNotice, onClick: () -> Unit) {
                 Text(notice.preview, style = blueText(15.sp, ink.secondary, FontWeight.Medium), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.height(12.dp))
-            Text(stringResource(R.string.chat_notice_meta, notice.authorName, noticeDay(notice.createdAt)), style = blueText(13.5.sp, ink.secondary, FontWeight.Medium))
+            Text(stringResource(R.string.chat_notice_meta, chatAuthorName(notice.authorName, notice.authorDeleted), noticeDay(notice.createdAt)), style = blueText(13.5.sp, ink.secondary, FontWeight.Medium))
         }
     }
     Spacer(Modifier.height(12.dp))
@@ -141,7 +141,7 @@ private fun NoticeRow(notice: ChatNotice, onClick: () -> Unit) {
                     Text(notice.preview, style = blueText(15.sp, ink.secondary, FontWeight.Medium), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
                 Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.chat_notice_meta, notice.authorName, noticeDay(notice.createdAt)), style = blueText(13.5.sp, ink.secondary, FontWeight.Medium))
+                Text(stringResource(R.string.chat_notice_meta, chatAuthorName(notice.authorName, notice.authorDeleted), noticeDay(notice.createdAt)), style = blueText(13.5.sp, ink.secondary, FontWeight.Medium))
             }
             androidx.compose.material3.Icon(
                 androidx.compose.material.icons.Icons.Filled.ChevronRight, null, tint = ink.secondary,
@@ -220,11 +220,11 @@ private fun NoticeBody(notice: ChatNotice, meta: ChatRoomMeta?, modifier: Modifi
         Text(notice.title, style = blueText(32.sp, ink.text, FontWeight.ExtraBold, 1.25f), modifier = Modifier.testTag("chat-notice-title"))
         Spacer(Modifier.height(20.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ChatFace(notice.authorName, authorOwner, 46.dp)
+            ChatFace(chatFaceName(notice.authorName, notice.authorDeleted), authorOwner, 46.dp)
             Spacer(Modifier.width(14.dp))
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(notice.authorName, style = blueText(16.sp, ink.text, FontWeight.Bold))
+                    Text(chatAuthorName(notice.authorName, notice.authorDeleted), style = blueText(16.sp, ink.text, FontWeight.Bold))
                     if (authorOwner) {
                         Spacer(Modifier.width(8.dp))
                         ChatOwnerBadge()

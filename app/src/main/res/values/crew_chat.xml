@@ -36,6 +36,7 @@
     <string name="chat_line_notice">%1$s posted a new notice.</string>
     <string name="chat_line_left">%1$s left the crew.</string>
     <string name="chat_unknown_name">Unknown</string>
+    <string name="chat_author_deleted">Deleted user</string>
     <string name="chat_input_hint">Message</string>
     <string name="chat_input_offline_hint">You can send once connected</string>
     <string name="chat_attach">Attach photo</string>

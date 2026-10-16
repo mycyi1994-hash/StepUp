@@ -38,6 +38,7 @@
     <string name="chat_line_notice">%1$s 님이 새 공지를 등록했어요.</string>
     <string name="chat_line_left">%1$s 님이 크루에서 나갔어요.</string>
     <string name="chat_unknown_name">알 수 없음</string>
+    <string name="chat_author_deleted">탈퇴한 사용자</string>
     <string name="chat_input_hint">메시지 입력</string>
     <string name="chat_input_offline_hint">연결되면 보낼 수 있어요</string>
     <string name="chat_attach">사진 첨부</string>

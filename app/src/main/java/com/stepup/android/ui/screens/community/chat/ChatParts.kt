@@ -336,6 +336,15 @@ internal fun ChatUnreadBadge(count: Int, modifier: Modifier = Modifier) {
     }
 }
 
+/** 보일 작성자 이름 — 계정을 지운 사람은 "탈퇴한 사용자"(서버는 글을 남기고 작성자만 비운다, 0058), 이름을 모르면 "알 수 없음" */
+@Composable
+internal fun chatAuthorName(name: String?, deleted: Boolean): String =
+    if (deleted) stringResource(R.string.chat_author_deleted)
+    else name?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name)
+
+/** 첫 글자 동그라미에 쓸 이름 — 탈퇴한 사용자는 이름이 없다("?") */
+internal fun chatFaceName(name: String?, deleted: Boolean): String? = if (deleted) null else name
+
 /** 말풍선 옆 첫 글자 동그라미 — 지금의 크루장은 따뜻한 색 */
 @Composable
 internal fun ChatFace(name: String?, owner: Boolean, size: Dp, modifier: Modifier = Modifier) {
@@ -462,14 +471,14 @@ internal fun ChatBubbleRow(
                             Modifier.size(width = 48.dp, height = 48.dp).offset(x = (-4).dp).clip(CircleShape)
                                 .feedbackClickable(role = Role.Button, onClick = onFace).testTag("chat-face"),
                             contentAlignment = Alignment.Center,
-                        ) { ChatFace(message.authorName, owner, 40.dp) }
+                        ) { ChatFace(chatFaceName(message.authorName, message.authorDeleted), owner, 40.dp) }
                     }
                 }
                 Column(Modifier.weight(1f)) {
                     if (header) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                             Text(
-                                message.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name),
+                                chatAuthorName(message.authorName, message.authorDeleted),
                                 style = blueText(15.sp, ink.text, FontWeight.Bold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
@@ -572,7 +581,7 @@ private fun BubbleBody(
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(
-                            stringResource(R.string.chat_reply_to, reply.authorName.ifBlank { stringResource(R.string.chat_unknown_name) }),
+                            stringResource(R.string.chat_reply_to, chatAuthorName(reply.authorName, reply.authorDeleted)),
                             style = blueText(12.5.sp, if (mine) chat.outgoingText else ink.info, FontWeight.Bold, 1.3f), maxLines = 1,
                         )
                         Text(
@@ -695,7 +704,7 @@ internal fun ChatComposer(
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            stringResource(R.string.chat_reply_to, replyTo.authorName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.chat_unknown_name)),
+                            stringResource(R.string.chat_reply_to, chatAuthorName(replyTo.authorName, replyTo.authorDeleted)),
                             style = blueText(14.sp, ink.info, FontWeight.Bold, 1.3f), maxLines = 1,
                         )
                         Text(

@@ -8,8 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# 빌드는 읽기 권한만(2026-10-16) — PR · 작업 브랜치의 코드가 저장소에 쓸 수 있는 토큰을 받지 않는다.
+# 테스트 APK 를 올리는 일(test-apk 릴리스 · apk-dist 브랜치)은 main 에서만 도는 아래 publish 작업이 쓰기 권한으로 한다.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-apk-${{ github.ref }}
@@ -135,6 +137,53 @@ jobs:
           name: StepUp-room-schemas
           path: app/schemas/
 
+  # main 에 들어간 빌드만 폰에 올린다 — 쓰기 권한과 테스트 APK 서명 키는 이 작업에만 있다.
+  publish:
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    # 테스트 APK 서명 키(TEST_APK_SIGNING_KEY)는 이 환경의 비밀에 둔다. 저장소 Settings › Environments › test-apk 에서
+    # "Deployment branches" 를 main 으로 묶으면 작업 브랜치가 워크플로를 고쳐도 키에 닿지 못한다(docs/TEST-APK-SIGNING.md).
+    environment: test-apk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download qa APK
+        uses: actions/download-artifact@v4
+        with:
+          name: StepUp-qa-apk
+          path: built
+
+      # 저장소 밖의 새 키로 다시 서명한다(옛 공개 키 → 새 키 서명 이력을 붙여 깔린 앱 위에 그대로 덮어 설치된다).
+      # 키를 아직 넣지 않았으면 전처럼 공개 debug 키 서명 그대로 올리고 경고만 남긴다.
+      - name: Sign test APK with the private test key
+        env:
+          TEST_APK_SIGNING_KEY: ${{ secrets.TEST_APK_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TEST_APK_SIGNING_KEY" ]; then
+            cp built/app-qa.apk StepUp-test.apk
+            echo "SIGNED_WITH=debug" >> "$GITHUB_ENV"
+            echo "::warning::TEST_APK_SIGNING_KEY 가 없어 공개 debug 키 서명 그대로 올립니다 — docs/TEST-APK-SIGNING.md"
+            exit 0
+          fi
+          umask 077
+          key="$RUNNER_TEMP/test-apk.pk8"
+          printf '%s' "$TEST_APK_SIGNING_KEY" | tr -d ' \r\n' | base64 -d > "$key"
+          bash tools/sign_test_apk.sh built/app-qa.apk StepUp-test.apk "$key" app/test-apk-signing.x509.pem
+          rm -f "$key"
+          echo "SIGNED_WITH=test-key" >> "$GITHUB_ENV"
+
       # 폰에서 주소 하나로 바로 받을 수 있게 릴리스에 붙인다.
       #
       # 위의 아티팩트는 깃허브에 로그인해 zip 을 받아 풀어야 한다. 폰에서
@@ -148,24 +197,34 @@ jobs:
       # 주소를 번갈아 덮어써서, 받을 때마다 다른 브랜치의 앱(예전 디자인)이 나온다.
       # 작업 브랜치의 APK 는 위의 아티팩트에서 받는다.
       - name: Publish test APK release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           SHORT=${GITHUB_SHA:0:7}
-          cp app/build/outputs/apk/qa/app-qa.apk StepUp-test.apk
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1)
           # 앱의 새 버전 알림이 읽는 빌드 정보. 앱에 들어간 BUILD_COMMIT_TIME 과 같은 커밋 시각이다.
+          # versionCode 는 데이터베이스 판을 담는다 — 앱은 더 낮은 것(데이터베이스가 더 옛 빌드)을 새 버전으로 알리지 않는다.
           COMMIT_TIME=$(git log -1 --format=%ct)
-          printf '{"commitTime":%s,"commit":"%s","version":"%s"}\n' "$COMMIT_TIME" "$SHORT" "$VERSION" > StepUp-test.json
+          # 출력을 먼저 받아 두고 고른다 — 파이프 중간에서 끊으면 aapt2 가 SIGPIPE 로 죽어 단계가 실패한다
+          BADGING=$("$(dirname "$APKSIGNER")/aapt2" dump badging StepUp-test.apk)
+          VERSION_CODE=$(grep -oP "^package: .*? versionCode='\K[0-9]+" <<<"$BADGING")
+          printf '{"commitTime":%s,"commit":"%s","version":"%s","versionCode":%s}\n' "$COMMIT_TIME" "$SHORT" "$VERSION" "$VERSION_CODE" > StepUp-test.json
           cat StepUp-test.json
 
           # 서명 지문은 공개 값이다. 구글 클라우드에 등록한 값과 맞는지
           # 받는 사람이 바로 대조할 수 있게 적어 둔다 — 여기가 어긋나면
           # 앱은 멀쩡히 깔리는데 구글 로그인만 조용히 실패한다.
-          SHA1=$(keytool -list -v -keystore app/debug.keystore -storepass android \
-            | grep 'SHA1:' | head -1 | sed 's/.*SHA1: //')
+          # 안드로이드 9 이상이 쓰는 서명(새 키면 새 키)의 지문을 적는다.
+          CERTS=$("$APKSIGNER" verify --print-certs StepUp-test.apk)
+          SHA1=$(grep -m1 'certificate SHA-1 digest' <<<"$CERTS" | sed 's/.*: //' | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')
+          if [ "$SIGNED_WITH" = "test-key" ]; then
+            SIGNED_NOTE="테스트 전용 키(저장소 밖) — 예전 테스트 APK(공개 debug 키) 위에도 그대로 덮어 설치됩니다(안드로이드 9 이상, 서명 이력 포함)"
+          else
+            SIGNED_NOTE="공개 debug 키 — 테스트 전용 키를 아직 넣지 않았습니다"
+          fi
 
           cat > notes.md <<EOF
           **StepUp ${VERSION}** · 테스트 빌드(최적화)
@@ -175,7 +234,8 @@ jobs:
           | 브랜치 | \`${GITHUB_REF_NAME}\` |
           | 커밋 | \`${SHORT}\` |
           | 빌드(UTC) | $(date -u '+%Y-%m-%d %H:%M') |
-          | 패키지 | \`com.stepup.android\` |
+          | 패키지 | \`com.stepup.android\` (versionCode ${VERSION_CODE}) |
+          | 서명 | ${SIGNED_NOTE} |
           | 서명 SHA-1 | \`${SHA1}\` |
 
           ## 설치
@@ -184,7 +244,7 @@ jobs:
           처음이면 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 합니다.
 
           > 스토어에 올릴 빌드가 아니라 동작을 보기 위한 것입니다. 스토어 빌드처럼 최적화(R8)해 화면이 끊기지 않게 했고,
-          > 서명은 예전 테스트 APK 와 같아 그 위에 그대로 덮어 설치됩니다.
+          > 예전 테스트 APK 위에 그대로 덮어 설치됩니다.
           > 이 파일은 푸시할 때마다 같은 주소에서 최신으로 바뀝니다.
           > 한 번 설치한 뒤로는 앱이 새 버전을 알려 줍니다(내 정보 › 설정 › 테스트 빌드 업데이트).
           EOF
@@ -205,28 +265,31 @@ jobs:
             echo "### 테스트 APK 받는 곳"
             echo
             echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/test-apk/StepUp-test.apk"
+            echo
+            echo "서명: ${SIGNED_NOTE}"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # 컨테이너/사용자가 git으로 바로 받아갈 수 있도록 APK를 배포 전용 브랜치에 커밋한다.
       # 배포 브랜치는 하나여야 한다. 개발 브랜치 푸시가 apk-dist를 덮어쓰면
       # README의 다운로드 링크가 검증되지 않은 빌드를 가리키게 된다.
+      # 예전 링크(README · 소개 문서의 StepUp-debug.apk)가 받는 파일도 이제 위의 테스트 APK 와 같다(2026-10-16) —
+      # 공개 debug 키로 서명한 디버그 빌드를 내보내면 그 앱은 누구나 만든 "업데이트"로 덮어쓸 수 있다.
       - name: Publish APK to apk-dist branch
-        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/dist
-          cp app/build/outputs/apk/debug/app-debug.apk /tmp/dist/StepUp-debug.apk
+          cp StepUp-test.apk /tmp/dist/StepUp-debug.apk
           # 예전 링크(StrideUp-debug.apk)를 공유한 곳이 있어 같은 파일을 옛 이름으로도 남긴다
-          cp app/build/outputs/apk/debug/app-debug.apk /tmp/dist/StrideUp-debug.apk
+          cp StepUp-test.apk /tmp/dist/StrideUp-debug.apk
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' "${GITHUB_WORKSPACE}/app/build.gradle.kts" | head -1 || true)
           VERSION=${VERSION:-unknown}
           cd /tmp/dist
           {
             echo "# StepUp APK 배포 브랜치"
             echo
-            echo "CI가 빌드한 디버그 APK가 커밋됩니다. 최신 빌드 직접 링크:"
+            echo "CI가 빌드한 테스트 APK가 커밋됩니다(test-apk 릴리스의 StepUp-test.apk 와 같은 파일). 최신 빌드 직접 링크:"
             echo
             echo '```'
             echo "https://github.com/${GITHUB_REPOSITORY}/raw/apk-dist/StepUp-debug.apk"
@@ -236,11 +299,11 @@ jobs:
             echo "- 원본 커밋: ${GITHUB_SHA}"
             echo "- 빌드 시각(UTC): $(date -u '+%Y-%m-%d %H:%M:%S')"
             echo
-            echo "\`StrideUp-debug.apk\`는 예전 이름으로 남겨둔 동일한 파일입니다."
+            echo "파일 이름은 예전 링크를 위해 그대로 둡니다. \`StrideUp-debug.apk\`는 예전 이름으로 남겨둔 동일한 파일입니다."
           } > README.md
           git init -b apk-dist
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "StepUp debug APK ${VERSION} (${GITHUB_SHA:0:7})"
+          git commit -m "StepUp test APK ${VERSION} (${GITHUB_SHA:0:7})"
           git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" apk-dist

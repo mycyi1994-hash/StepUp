@@ -94,6 +94,7 @@
     <string name="set_delete_item_places">路线 · 地点标记</string>
     <string name="set_delete_cannot_undo">删除的信息无法恢复。</string>
     <string name="set_delete_crew_leader">如果你是跑团团长，最早加入的成员会成为团长。</string>
+    <string name="set_delete_crew_chat">你在跑团聊天中留下的消息和公告会保留，发送者显示为“已注销用户”。</string>
     <string name="set_delete_phone_note">留在这部手机上的记录会在删除应用时清除。</string>
     <string name="set_delete_action">删除账号</string>
     <string name="set_deleting">正在删除…</string>

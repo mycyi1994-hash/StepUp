@@ -165,13 +165,15 @@ data class ChatReplyRow(
     val seq: Long = 0,
     @SerialName("author_id") val authorId: String? = null,
     @SerialName("author_name") val authorName: String? = null,
+    /** 계정을 지운 사람의 글(0058) — 이름 대신 "탈퇴한 사용자" */
+    @SerialName("author_deleted") val authorDeleted: Boolean = false,
     val kind: String = "TEXT",
     val state: String = "VISIBLE",
     val body: String? = null,
 ) {
     fun toDomain() = ChatReply(
         id = id, seq = seq, authorId = authorId, authorName = authorName.orEmpty(),
-        kind = ChatKind.of(kind), state = ChatState.of(state), body = body,
+        kind = ChatKind.of(kind), state = ChatState.of(state), body = body, authorDeleted = authorDeleted,
     )
 }
 
@@ -182,6 +184,8 @@ data class ChatMessageRow(
     val rev: Long = 0,
     @SerialName("author_id") val authorId: String? = null,
     @SerialName("author_name") val authorName: String? = null,
+    /** 계정을 지운 사람의 메시지(0058) — 이름 대신 "탈퇴한 사용자" */
+    @SerialName("author_deleted") val authorDeleted: Boolean = false,
     val kind: String = "TEXT",
     val state: String = "VISIBLE",
     val body: String? = null,
@@ -199,6 +203,7 @@ data class ChatMessageRow(
         rev = rev,
         authorId = authorId,
         authorName = authorName,
+        authorDeleted = authorDeleted,
         kind = ChatKind.of(kind),
         state = ChatState.of(state),
         body = body,
@@ -221,6 +226,8 @@ data class ChatNoticeRow(
     val pinned: Boolean = false,
     @SerialName("author_id") val authorId: String? = null,
     @SerialName("author_name") val authorName: String? = null,
+    /** 계정을 지운 크루장의 공지(0058) — 이름 대신 "탈퇴한 사용자" */
+    @SerialName("author_deleted") val authorDeleted: Boolean = false,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
     val meeting: ChatNoticeMeetingRow? = null,
@@ -228,7 +235,7 @@ data class ChatNoticeRow(
     fun toDomain() = ChatNotice(
         id = id, crewId = crewId, title = title, body = body, pinned = pinned, authorId = authorId,
         authorName = authorName.orEmpty(), createdAt = createdAt.chatMillis(), updatedAt = updatedAt.chatMillis(),
-        meeting = meeting?.toDomain(),
+        meeting = meeting?.toDomain(), authorDeleted = authorDeleted,
     )
 }
 

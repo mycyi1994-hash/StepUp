@@ -42,6 +42,16 @@ fun gitOutput(vararg args: String): String? = runCatching {
 val buildCommitTime = gitOutput("log", "-1", "--format=%ct")?.toLongOrNull() ?: 0L
 val buildCommit = gitOutput("rev-parse", "--short=7", "HEAD") ?: ""
 
+// 스토어 빌드(release)의 versionCode — 출시할 때 손으로 올린다
+val releaseVersionCode = 25
+
+// 앱 안 Room 데이터베이스의 판(AppDatabase 의 @Database(version = …)). 테스트 · 개발 빌드의 versionCode 에 담는다(아래 androidComponents)
+val roomSchemaVersion: Int = Regex("""(?m)^\s*version\s*=\s*(\d+)\s*,?\s*$""")
+    .find(file("src/main/java/com/stepup/android/data/local/AppDatabase.kt").readText())
+    ?.groupValues?.get(1)?.toInt()
+    ?: error("AppDatabase.kt 에서 데이터베이스 판(version = …)을 찾지 못했습니다")
+check(releaseVersionCode in 1..999) { "versionCode 는 1~999 — 테스트 빌드는 데이터베이스 판 × 1000 을 더한다" }
+
 android {
     namespace = "com.stepup.android"
     compileSdk = 35
@@ -50,7 +60,7 @@ android {
         applicationId = "com.stepup.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 25
+        versionCode = releaseVersionCode
         versionName = "1.17.0"
 
         // 러닝 증명을 받을 서버 주소. 배포 전에는 비어 있고, 비어 있으면 앱은
@@ -200,6 +210,20 @@ android {
         language { enableSplit = false } // 앱 내 언어 설정이 있으므로 분리하면 안 된다
         density { enableSplit = true }
         abi { enableSplit = true }
+    }
+}
+
+// 테스트 · 개발 빌드(debug · qa)의 versionCode = 데이터베이스 판 × 1000 + 스토어 versionCode (2026-10-16).
+// 모두 25 였을 때는 데이터베이스가 더 새 빌드(작업 브랜치 APK) 위에 더 옛 빌드(main 의 테스트 APK)를 덮어 깔 수 있었고,
+// Room 은 판을 내리는 길을 몰라 앱이 켜지자마자 죽었다(지우고 다시 깔면 이 폰의 기록이 사라진다).
+// 이제 안드로이드가 설치 단계에서 "더 낮은 버전"으로 막는다. 판이 같으면 versionCode 도 같아 서로 덮어 깔 수 있다.
+// 스토어 빌드는 그대로 둔다 — 스토어는 내려가는 설치를 스스로 막고, 올린 번호는 되돌릴 수 없다.
+val testVersionCode = roomSchemaVersion * 1000 + releaseVersionCode
+androidComponents {
+    onVariants { variant ->
+        if (variant.buildType == "debug" || variant.buildType == "qa") {
+            variant.outputs.forEach { it.versionCode.set(testVersionCode) }
+        }
     }
 }
 

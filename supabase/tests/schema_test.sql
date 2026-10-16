@@ -6681,6 +6681,176 @@ do $$ begin
 end $$;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+--  0058 계정을 지운 사람의 크루 채팅 — 메시지 · 공지는 남고 작성자만 빈다("탈퇴한 사용자"),
+--  다른 폰이 다시 받게 변경 번호가 오른다(인용한 답장도)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 탈퇴한 사용자의 크루 채팅(0058) ──────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('58000000-0000-0000-0000-000000000001', 'leaver58@test', '{"full_name":"서진"}'),
+  ('58000000-0000-0000-0000-000000000002', 'stay58@test', '{"full_name":"하린"}'),
+  ('58000000-0000-0000-0000-000000000003', 'next58@test', '{"full_name":"태오"}'),
+  ('58000000-0000-0000-0000-000000000004', 'gone58@test', '{"full_name":"유나"}');
+
+-- 서진(크루장)이 크루를 만들고 공지 · 글 · 사진을 남긴다. 하린이 서진의 글에 답장한다
+set role authenticated;
+call pg_temp.login('58000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid;
+begin
+  v_crew := public.crew_create_card('새벽런', '해 뜨기 전 한 바퀴', '', null, null, '망원동', null, null, 0, null, null, '{}', 30);
+  insert into fix (k, v) values ('dc', v_crew::text);
+end $$;
+reset role;
+insert into public.crew_members (crew_id, user_id, role, joined_at) values
+  (pg_temp.fx('dc')::uuid, '58000000-0000-0000-0000-000000000003', 'MEMBER', now() - interval '2 days'),
+  (pg_temp.fx('dc')::uuid, '58000000-0000-0000-0000-000000000002', 'MEMBER', now() - interval '1 day'),
+  (pg_temp.fx('dc')::uuid, '58000000-0000-0000-0000-000000000004', 'MEMBER', now() - interval '1 hour');
+set role authenticated;
+call pg_temp.login('58000000-0000-0000-0000-000000000001');
+do $$
+declare v_crew uuid := pg_temp.fx('dc')::uuid;
+begin
+  insert into fix (k, v) values ('dn', public.crew_chat_notice_save(v_crew, null, '토요일 6시 망원 한강공원', '늦으면 먼저 출발해요', true) ->> 'id');
+  insert into fix (k, v) values ('dm1',
+    public.crew_chat_send(v_crew, 'c5800000-0000-0000-0000-000000000001', '내일 비 오면 쉬어요') ->> 'id');
+  insert into fix (k, v) values ('dm2',
+    public.crew_chat_send(v_crew, 'c5800000-0000-0000-0000-000000000002', '코스 사진', null, '/9j/4AAQSkZJRgABAQ==') ->> 'id');
+end $$;
+call pg_temp.login('58000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('dc')::uuid; s jsonb;
+begin
+  insert into fix (k, v) values ('dr',
+    public.crew_chat_send(v_crew, 'c5800000-0000-0000-0000-000000000003', '네 알겠어요', pg_temp.fx('dm1')::bigint) ->> 'id');
+  s := public.crew_chat_sync(v_crew, null);
+  insert into fix (k, v) values ('d_rev', s ->> 'last_rev');
+end $$;
+
+-- 서진이 앱에서 계정을 지운다
+call pg_temp.login('58000000-0000-0000-0000-000000000001');
+do $$ begin perform public.account_delete(); end $$;
+
+reset role;
+do $$
+declare r record; v_since bigint := pg_temp.fx('d_rev')::bigint;
+begin
+  select * into r from public.crew_chat_messages where id = pg_temp.fx('dm1')::bigint;
+  perform pg_temp.ok(found and r.author_id is null and r.body = '내일 비 오면 쉬어요' and r.client_id is null and r.rev > v_since,
+    '계정을 지워도 메시지는 남고 작성자 · 요청 키만 빈다 — 변경 번호가 올라 다른 폰이 다시 받는다');
+  perform pg_temp.ok(exists (select 1 from public.crew_chat_images where message_id = pg_temp.fx('dm2')::bigint),
+    '탈퇴한 사용자의 사진도 남는다');
+  perform pg_temp.ok((select rev from public.crew_chat_messages where id = pg_temp.fx('dr')::bigint) > v_since
+                     and (select author_id from public.crew_chat_messages where id = pg_temp.fx('dr')::bigint)
+                         = '58000000-0000-0000-0000-000000000002',
+    '탈퇴한 사용자의 글을 인용한 답장도 다시 받는다(답장 작성자는 그대로)');
+  select * into r from public.crew_chat_notices where id = pg_temp.fx('dn')::bigint;
+  perform pg_temp.ok(found and r.author_id is null and r.pinned, '공지도 남는다(고정 그대로, 작성자만 빈다)');
+  perform pg_temp.ok((select owner_id from public.crews where id = pg_temp.fx('dc')::uuid) = '58000000-0000-0000-0000-000000000003',
+    '크루장 자리는 가장 오래된 크루원에게 넘어간다(0021 그대로)');
+end $$;
+
+set role authenticated;
+call pg_temp.login('58000000-0000-0000-0000-000000000002');
+do $$
+declare v_crew uuid := pg_temp.fx('dc')::uuid; s jsonb; m jsonb; v_left boolean;
+begin
+  s := public.crew_chat_sync(v_crew, pg_temp.fx('d_rev')::bigint);
+  perform pg_temp.ok(not (s ->> 'reset')::boolean, '따라오기로 받는다(처음부터 다시 받지 않는다)');
+  select x into m from jsonb_array_elements(s -> 'messages') x where (x ->> 'id')::bigint = pg_temp.fx('dm1')::bigint;
+  perform pg_temp.ok(m is not null and m -> 'author_id' = 'null'::jsonb and m ->> 'author_name' = '탈퇴한 사용자'
+                     and (m ->> 'author_deleted')::boolean and m ->> 'body' = '내일 비 오면 쉬어요',
+    '따라오기에 탈퇴한 사용자의 메시지가 이름 "탈퇴한 사용자"와 표시로 온다(내용은 그대로)');
+  perform pg_temp.ok(jsonb_typeof(m -> 'can_delete') = 'boolean' and not (m ->> 'can_delete')::boolean
+                     and m -> 'client_id' = 'null'::jsonb,
+    '지울 수 있는가는 null 이 아니라 false 로 온다(예전 앱이 방을 읽지 못하는 일이 없게)');
+  select x into m from jsonb_array_elements(s -> 'messages') x where (x ->> 'id')::bigint = pg_temp.fx('dr')::bigint;
+  perform pg_temp.ok(m is not null and m -> 'reply' ->> 'author_name' = '탈퇴한 사용자'
+                     and (m -> 'reply' ->> 'author_deleted')::boolean and not (m ->> 'author_deleted')::boolean
+                     and (m ->> 'can_delete')::boolean,
+    '답장의 인용도 "탈퇴한 사용자"로 바뀌어 온다(답장은 내 것 그대로)');
+  select exists (select 1 from jsonb_array_elements(s -> 'messages') x
+                  where x ->> 'kind' = 'SYSTEM' and x ->> 'event' = 'MEMBER_LEFT' and not (x ->> 'author_deleted')::boolean
+                    and x -> 'author_name' = 'null'::jsonb) into v_left;
+  perform pg_temp.ok(v_left, '나갔다는 알림 줄은 그대로 알림 줄이다(탈퇴한 사용자 표시 없음)');
+  m := public.crew_chat_notice(pg_temp.fx('dn')::bigint);
+  perform pg_temp.ok(m -> 'author_id' = 'null'::jsonb and m ->> 'author_name' = '탈퇴한 사용자' and (m ->> 'author_deleted')::boolean,
+    '공지도 "탈퇴한 사용자"로 온다');
+  perform pg_temp.ok((public.crew_chat_sync(v_crew, null) -> 'room' -> 'pinned' ->> 'author_name') = '탈퇴한 사용자',
+    '방 정보의 고정 공지도 같다');
+end $$;
+call pg_temp.must_fail(format($q$ select public.crew_chat_delete(%s) $q$, pg_temp.fx('dm1')),
+  '탈퇴한 사용자의 메시지는 다른 사람이 지울 수 없다');
+do $$
+begin
+  perform public.crew_chat_report(pg_temp.fx('dm1')::bigint, 'SPAM');
+  perform pg_temp.ok(true, '탈퇴한 사용자의 메시지도 신고할 수 있다');
+end $$;
+-- 새 크루장(태오)은 탈퇴한 사용자의 메시지를 숨길 수 있다
+call pg_temp.login('58000000-0000-0000-0000-000000000003');
+do $$
+begin
+  perform pg_temp.ok(public.crew_chat_hide(pg_temp.fx('dm2')::bigint) ->> 'state' = 'HIDDEN',
+    '새 크루장은 탈퇴한 사용자의 메시지를 숨길 수 있다');
+end $$;
+
+-- 대시보드에서 계정을 지워도(0021 함수를 거치지 않아도) 같다
+call pg_temp.login('58000000-0000-0000-0000-000000000004');
+do $$
+begin
+  insert into fix (k, v) values ('dm4',
+    public.crew_chat_send(pg_temp.fx('dc')::uuid, 'c5800000-0000-0000-0000-000000000004', '먼저 갈게요') ->> 'id');
+end $$;
+reset role;
+do $$
+declare v_before bigint := (select rev from public.crew_chat_messages where id = pg_temp.fx('dm4')::bigint);
+begin
+  delete from auth.users where id = '58000000-0000-0000-0000-000000000004';
+  perform pg_temp.ok((select author_id is null and rev > v_before from public.crew_chat_messages where id = pg_temp.fx('dm4')::bigint),
+    '대시보드에서 지워도 메시지는 남고 다시 받게 된다');
+end $$;
+
+-- 모양 검사는 그대로 — 알림 줄에는 작성자가 없고, 글에는 알림 종류가 없다
+call pg_temp.must_fail(format($q$
+  insert into public.crew_chat_messages (crew_id, seq, rev, author_id, kind, event)
+  values ('%s', 999001, 999001, '58000000-0000-0000-0000-000000000002', 'SYSTEM', 'MEMBER_LEFT') $q$, pg_temp.fx('dc')),
+  '알림 줄에는 작성자가 없다');
+call pg_temp.must_fail(format($q$
+  insert into public.crew_chat_messages (crew_id, seq, rev, kind, event, body)
+  values ('%s', 999002, 999002, 'TEXT', 'MEMBER_LEFT', '글') $q$, pg_temp.fx('dc')),
+  '글에는 알림 종류가 없다');
+do $$
+begin
+  perform pg_temp.ok(not has_function_privilege('authenticated', 'public.crew_chat_on_author_gone()', 'execute')
+                     and not has_function_privilege('authenticated', 'public.crew_chat_on_author_gone_replies()', 'execute'),
+    '작성자 비우기 트리거 함수는 앱이 부르지 못한다');
+end $$;
+
+-- 크루가 함께 사라지는 계정 삭제(혼자인 크루장)는 막히지 않는다 — 크루가 먼저 지워지고 방 · 메시지는 뒤에 지워진다.
+-- (앱에서는 메시지를 보낸 요청과 계정 삭제 요청이 따로다 — 여기서도 따로 커밋한다)
+insert into auth.users (id, email) values ('58000000-0000-0000-0000-000000000005', 'solo58@test');
+set role authenticated;
+call pg_temp.login('58000000-0000-0000-0000-000000000005');
+do $$
+declare v_crew uuid;
+begin
+  v_crew := public.crew_create_card('혼자런', '혼자 달려요', '', null, null, '연남동', null, null, 0, null, null, '{}', 30);
+  perform public.crew_chat_send(v_crew, 'c5800000-0000-0000-0000-000000000005', '혼자 인사');
+  insert into fix (k, v) values ('dsolo', v_crew::text);
+end $$;
+do $$ begin perform public.account_delete(); end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.crews where id = pg_temp.fx('dsolo')::uuid)
+                     and not exists (select 1 from public.crew_chat_messages where crew_id = pg_temp.fx('dsolo')::uuid),
+    '크루원이 없던 크루장이 지우면 크루와 대화가 함께 사라진다(전과 같다)');
+end $$;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
