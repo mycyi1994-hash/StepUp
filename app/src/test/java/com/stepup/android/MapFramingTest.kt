@@ -2,6 +2,8 @@ package com.stepup.android
 
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.haversineMeters
+import com.stepup.android.ui.components.MapTiles
+import com.stepup.android.ui.components.TilePlan
 import com.stepup.android.ui.components.followAnchor
 import com.stepup.android.ui.components.followFrame
 import com.stepup.android.ui.screens.community.stories.rangeSpan
@@ -59,5 +61,26 @@ class MapFramingTest {
         // 가장 최근이 여행지면 그 동네를 연다
         assertEquals(busan, historyFocus(listOf(busan, latest)))
         assertTrue(historyFocus(emptyList()).isEmpty())
+    }
+
+    @Test fun followMapIsThirtyPercentCloserByDefault() {
+        // 2026-10-17 "초반에 내가 어디 있는지 지도 자체가 너무 뒤로 · 지금 기본보다 약 30% 더 확대"
+        val plain = TilePlan.of(listOf(here), 1080, 1600, density = 3f)
+        val closer = TilePlan.of(listOf(here), 1080, 1600, density = 3f, magnify = MapTiles.FOLLOW_MAGNIFY)
+        assertEquals(MapTiles.DEFAULT_ZOOM, plain.zoom)
+        assertEquals(plain.zoom, closer.zoom)
+        assertEquals(plain.scale * 1.3f, closer.scale, 1e-4f)
+        // 지금 자리는 그대로 화면 가운데
+        assertEquals(540f, closer.toScreen(here).x, 0.5f)
+        assertEquals(800f, closer.toScreen(here).y, 0.5f)
+    }
+
+    @Test fun zoomingPastTheClosestTilesKeepsMagnifying() {
+        // 가장 가까운 타일 줌(18)보다 더 당기면 줌을 막지 않고 타일을 크게 그린다 — 배율이 갑자기 줄지 않게
+        val at18 = TilePlan.of(listOf(here), 1080, 1600, density = 3f, zoomDelta = 1)
+        val past = TilePlan.of(listOf(here), 1080, 1600, density = 3f, zoomDelta = 2)
+        assertEquals(MapTiles.MAX_ZOOM, at18.zoom)
+        assertEquals(MapTiles.MAX_ZOOM, past.zoom)
+        assertEquals(at18.scale * 2f, past.scale, 1e-4f)
     }
 }

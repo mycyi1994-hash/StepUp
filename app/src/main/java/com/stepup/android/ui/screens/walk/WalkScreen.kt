@@ -615,17 +615,20 @@ fun RunScreen(
         com.stepup.android.domain.liveHead(session.track, session.here, session.hereAt)
     }
     val breaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
+    // 달리는 중 지도의 두 손가락 확대 · 축소(1 = 기본, 기본은 30% 가까이 — MapTiles.FOLLOW_MAGNIFY). 러닝마다 처음부터.
+    // 화면이 들고 있어야 첫 경로 점이 생겨 지도가 "지금 자리"에서 "경로"로 바뀌어도 고른 배율이 남는다
+    val liveMapZoom = rememberSaveable(session.startedAt) { androidx.compose.runtime.mutableFloatStateOf(1f) }
     val liveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
         val here = session.here
         when {
             timeOnly && geoTrack.isEmpty() -> NoLocationMap()
             geoTrack.isNotEmpty() -> LiveRouteMap(
                 points = geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true,
-                breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true, head = liveHead,
+                breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true, pinchZoom = liveMapZoom, head = liveHead,
             )
             here != null -> LiveRouteMap(
                 points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others,
-                follow = true, course = coursePoints, routeColor = tone.cyan, live = true,
+                follow = true, course = coursePoints, routeColor = tone.cyan, live = true, pinchZoom = liveMapZoom,
             )
             coursePoints.isNotEmpty() -> LiveRouteMap(points = emptyList(), course = coursePoints, modifier = Modifier.fillMaxSize())
             else -> MapWaiting(Modifier.fillMaxSize())
@@ -638,12 +641,12 @@ fun RunScreen(
             timeOnly && geoTrack.isEmpty() -> NoLocationMap()
             geoTrack.isNotEmpty() -> LiveRouteMap(
                 points = geoTrack, modifier = Modifier.fillMaxSize(), follow = true, breaks = breaks, routeColor = FreeRunRoute,
-                live = true, routeOutline = FreeRunRouteOutline, markers = com.stepup.android.ui.components.RouteMarkers.Pin,
+                live = true, pinchZoom = liveMapZoom, routeOutline = FreeRunRouteOutline, markers = com.stepup.android.ui.components.RouteMarkers.Pin,
                 head = liveHead,
             )
             here != null -> LiveRouteMap(
                 points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), follow = true,
-                routeColor = FreeRunRoute, live = true,
+                routeColor = FreeRunRoute, live = true, pinchZoom = liveMapZoom,
             )
             else -> MapWaiting(Modifier.fillMaxSize())
         }
@@ -655,12 +658,12 @@ fun RunScreen(
             timeOnly && geoTrack.isEmpty() -> NoLocationMap()
             geoTrack.isNotEmpty() -> LiveRouteMap(
                 points = geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true, breaks = breaks,
-                routeColor = FreeRunRoute, live = true, routeOutline = FreeRunRouteOutline,
+                routeColor = FreeRunRoute, live = true, pinchZoom = liveMapZoom, routeOutline = FreeRunRouteOutline,
                 markers = com.stepup.android.ui.components.RouteMarkers.Pin, crewPins = true, head = liveHead,
             )
             here != null -> LiveRouteMap(
                 points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others, follow = true,
-                routeColor = FreeRunRoute, live = true, crewPins = true,
+                routeColor = FreeRunRoute, live = true, pinchZoom = liveMapZoom, crewPins = true,
             )
             else -> MapWaiting(Modifier.fillMaxSize())
         }
