@@ -8,6 +8,7 @@
     <string name="notification_channel_community">크루·번개 소식</string>
     <string name="notification_walk_title">러닝 진행 중</string>
     <string name="notification_steps">%1$d걸음</string>
+    <string name="notification_run_still">30초 넘게 멈춰 있어요 · 쉬는 중이면 일시정지해 주세요</string>
 
     <!-- Tabs -->
     <string name="tab_home">홈</string>

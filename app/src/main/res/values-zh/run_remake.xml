@@ -61,6 +61,8 @@
     <string name="run_paused_caption">稍作休息</string>
     <string name="run_paused_title">已暂停</string>
     <string name="run_pause">暂停</string>
+    <string name="run_still_title">已停止超过30秒</string>
+    <string name="run_still_body">如果在休息，请暂停。在此之前时间会继续记录。</string>
     <string name="run_resume">继续跑</string>
     <string name="run_finish_run">结束跑步</string>
     <string name="run_finish_mine">结束我的跑步</string>

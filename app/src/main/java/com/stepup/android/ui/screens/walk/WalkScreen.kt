@@ -295,6 +295,10 @@ fun RunScreen(
         // 구간이 바뀌면 소리로도 알린다 — 화면을 보지 않고 달려도 알 수 있게
         if (dietPos != null && dietPos.index > 0 && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Lap)
     }
+    LaunchedEffect(session.still) {
+        // 30초 넘게 서 있으면(RunStill) 소리 · 진동으로 한 번 알린다 — 화면을 보지 않고 서 있어도 알 수 있게(2026-10-17)
+        if (session.still && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+    }
     var dietDoneFor by rememberSaveable { mutableLongStateOf(0L) }
     LaunchedEffect(dietDone, session.startedAt) {
         // 루틴을 다 마치면 한 번 멈추고 완료 화면(D10)을 보인다 — 저장은 사용자가 누른다
@@ -554,7 +558,7 @@ fun RunScreen(
     val freeBandNow = freeBand(
         active = session.isActive, paused = session.isPaused, asking = confirmStop || discardDialog,
         locationAllowed = locationAllowed, locationOn = session.locationOn, gpsLost = session.gpsLost,
-        precise = session.precise, void = freeVoid,
+        precise = session.precise, void = freeVoid, still = session.still,
         // 방금 읽은 속도가 사람 속도를 넘어 버려졌다 — 사람 속도의 점이 다시 들어올 때까지(현재 속도와 같은 신호)
         speedFlagged = !session.isPaused && session.lastFlaggedAt > (session.track.lastOrNull()?.at ?: 0L),
     )
@@ -660,7 +664,12 @@ fun RunScreen(
         liveTop(
             band, paused = false, noLocation = !locationAllowed, onBandTap = { showDetails = true },
             onBandAction = {
-                if (band == FreeBand.LocationOff) ExternalIntents.openLocationSettings(context) else ExternalIntents.openAppSettings(context)
+                when (band) {
+                    // 오래 서 있음 — 띠의 알약이 일시정지다
+                    FreeBand.Still -> WalkSessionService.pause(context)
+                    FreeBand.LocationOff -> ExternalIntents.openLocationSettings(context)
+                    else -> ExternalIntents.openAppSettings(context)
+                }
             },
         )
     }
@@ -1048,8 +1057,12 @@ fun RunScreen(
                     onExpandMap = if (!session.isActive || (timeOnly && geoTrack.isEmpty())) null else ({ showFullMap = true }),
                     onBandTap = { showDetails = true },
                     onBandAction = {
-                        if (freeBandNow == FreeBand.LocationOff) ExternalIntents.openLocationSettings(context)
-                        else ExternalIntents.openAppSettings(context)
+                        when (freeBandNow) {
+                            // 오래 서 있음 — 띠의 알약이 일시정지다
+                            FreeBand.Still -> WalkSessionService.pause(context)
+                            FreeBand.LocationOff -> ExternalIntents.openLocationSettings(context)
+                            else -> ExternalIntents.openAppSettings(context)
+                        }
                     },
                 )
             }
@@ -1090,6 +1103,12 @@ fun RunScreen(
                             RunNotice(stringResource(R.string.run_flag_title), body = stringResource(R.string.run_flag_body),
                                 kind = RunNoticeKind.Warn, action = stringResource(R.string.run_details_more), onAction = { showDetails = true },
                                 tag = "run-speed-banner")
+                        }
+                        // 30초 넘게 서 있음(RunStill) — 쉬는 중이면 일시정지를 권한다. 다시 움직이면 사라진다
+                        if (session.isActive && !session.isPaused && session.still && !voidNow) {
+                            RunNotice(stringResource(R.string.run_still_title), body = stringResource(R.string.run_still_body),
+                                kind = RunNoticeKind.Warn, action = stringResource(R.string.run_pause),
+                                onAction = { WalkSessionService.pause(context) }, tag = "run-still")
                         }
                         if (recordingCourse && !readyToSaveCourse) {
                             RunNotice(stringResource(R.string.course_rec_title),

@@ -61,6 +61,8 @@
     <string name="run_paused_caption">잠깐 쉬어가요</string>
     <string name="run_paused_title">일시정지</string>
     <string name="run_pause">일시정지</string>
+    <string name="run_still_title">30초 넘게 멈춰 있어요</string>
+    <string name="run_still_body">쉬는 중이면 일시정지해 주세요. 그동안 시간은 계속 기록돼요.</string>
     <string name="run_resume">이어서 달리기</string>
     <string name="run_finish_run">러닝 마치기</string>
     <string name="run_finish_mine">내 러닝 마치기</string>

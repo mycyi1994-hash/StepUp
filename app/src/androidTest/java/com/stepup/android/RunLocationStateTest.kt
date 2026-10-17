@@ -105,6 +105,19 @@ class RunLocationStateTest {
         capture("run-location-approx.png")
     }
 
+    @Test fun standingStillIsWarned() {
+        // 30초 넘게 서 있음(2026-10-17) — 지도 위 띠 하나와 일시정지 알약
+        show(running.copy(here = GeoPoint(37.5283, 126.9326), gpsFix = true, still = true))
+        compose.onNodeWithTag("run-still").assertIsDisplayed()
+        compose.onNode(
+            hasText(compose.activity.getString(R.string.run_still_title)) and hasAnyAncestor(hasTestTag("run-still")),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
+        compose.onNodeWithTag("run-still-action").assertIsDisplayed().assertHasClickAction()
+            .assertTextEquals(compose.activity.getString(R.string.run_pause))
+        capture("run-still.png")
+    }
+
     private fun capture(name: String) {
         compose.waitForIdle()
         val directory = File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }

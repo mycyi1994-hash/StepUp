@@ -89,12 +89,13 @@ import com.stepup.android.ui.theme.StepUpColors
 // ── 판단(화면 밖에서 검사한다 — FreeRunUiTest) ──────────────────────
 
 /** 지도 위 띠 — 위에서부터 앞선다. 문제 띠가 일시정지 띠보다 앞선다 */
-internal enum class FreeBand { None, LocationOff, MeasureInvalid, SpeedError, Weak, Approx, Paused }
+internal enum class FreeBand { None, LocationOff, MeasureInvalid, SpeedError, Still, Weak, Approx, Paused }
 
 /**
  * 지금 보일 띠 하나. 마칠지 묻는 동안([asking] — 시트가 덮는다)과 러닝 전에는 띠가 없다.
  * 위치 권한이 없어 시간만 기록하는 러닝은 문제가 아니라 고른 방식이다 — 칩("위치 없이 기록 중")만 둔다.
  * 위치를 찾는 동안에도 띠가 없다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고").
+ * 30초 넘게 서 있으면([still], RunStill) "멈춰 있어요" 띠와 일시정지 알약 — 신호 약함 · 대략 위치보다 앞선다(지금 할 수 있는 일이라서).
  */
 internal fun freeBand(
     active: Boolean,
@@ -106,12 +107,14 @@ internal fun freeBand(
     precise: Boolean,
     void: Boolean,
     speedFlagged: Boolean,
+    still: Boolean = false,
 ): FreeBand = when {
     !active || asking -> FreeBand.None
     // 달리다 휴대폰 위치를 꺼도(GPS 가 잡혀 있었어도) 알린다 — 그동안 속도 · 페이스는 "—"
     locationAllowed && !locationOn -> FreeBand.LocationOff
     void -> FreeBand.MeasureInvalid
     speedFlagged -> FreeBand.SpeedError
+    still && !paused -> FreeBand.Still
     locationAllowed && gpsLost -> FreeBand.Weak
     locationAllowed && !precise -> FreeBand.Approx
     paused -> FreeBand.Paused
@@ -423,6 +426,10 @@ internal fun liveTop(
     }
     FreeBand.SpeedError -> {
         { FreeRunBand(stringResource(R.string.run_speed_error), "run-speed-banner", onClick = onBandTap) }
+    }
+    FreeBand.Still -> {
+        { FreeRunBand(stringResource(R.string.run_still_title), "run-still", icon = Icons.Filled.Pause,
+            action = stringResource(R.string.run_pause), onAction = onBandAction) }
     }
     FreeBand.Weak -> {
         { FreeRunBand(stringResource(R.string.run_free_gps_weak), "run-gps-weak") }
