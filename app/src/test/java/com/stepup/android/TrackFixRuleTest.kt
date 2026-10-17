@@ -60,6 +60,17 @@ class TrackFixRuleTest {
         assertEquals(false, TrackFixRule.keepHere(hasTrack = true, hereAgeMs = -5))
     }
 
+    @Test fun `a fresh sharp fix caught on the run tab counts as located at the start`() {
+        // 러닝 탭에서 미리 잡은 위치(2026-10-17 "키자마자 잡아두면 안되냐") — 10초 안 · 오차 50m 안이면 시작하자마자 잡힌 것으로 본다
+        assertEquals(true, TrackFixRule.warmFix(accuracyM = 6f, ageMs = 1_200))
+        assertEquals(true, TrackFixRule.warmFix(accuracyM = 50f, ageMs = 10_000))
+        assertEquals(true, TrackFixRule.warmFix(accuracyM = null, ageMs = 0))
+        // 오래됐거나 · 흐리거나 · 시각이 거꾸로면 쓰지 않는다(러닝이 직접 찾는다)
+        assertEquals(false, TrackFixRule.warmFix(accuracyM = 6f, ageMs = 10_001))
+        assertEquals(false, TrackFixRule.warmFix(accuracyM = 51f, ageMs = 1_000))
+        assertEquals(false, TrackFixRule.warmFix(accuracyM = 6f, ageMs = -1))
+    }
+
     @Test fun `fixes without accuracy are treated as 30m`() {
         assertEquals(TrackFixRule.Fix.HOLD, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 59.0, anchorAccuracyM = null))
         assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = null, anchorDistanceM = 60.0, anchorAccuracyM = null))

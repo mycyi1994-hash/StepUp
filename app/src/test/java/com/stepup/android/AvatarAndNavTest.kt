@@ -112,6 +112,17 @@ class AvatarAndNavTest {
         assertFalse(com.stepup.android.ui.AppChromePolicy.destination(Routes.runRecordMap(7))!!.showBottomBar)
     }
 
+    @Test
+    fun `러닝 탭 · 시작 흐름 · 대기실에서만 위치를 미리 잡는다`() {
+        val policy = com.stepup.android.ui.AppChromePolicy
+        // 앱의 첫 화면(러닝 탭) · 시작 메뉴 · 3-2-1 과 러닝 중 · 크루 · 번개 대기실
+        listOf(Screen.Run.route, Routes.RUN_MENU, Routes.RUN_ROUTE, Routes.RUN_NOW, Routes.lobby("c1"), Routes.flashLobby(7))
+            .forEach { assertTrue(it, policy.warmsLocation(it)) }
+        // 다른 탭과 그 아래 · 길을 모를 때는 GPS 를 켜 두지 않는다
+        listOf(Screen.Customize.route, Routes.MYSTERY_BOX, Screen.Community.route, Screen.Profile.route, Routes.SETTINGS, null)
+            .forEach { assertFalse("$it", policy.warmsLocation(it)) }
+    }
+
     // ── 데모 ────────────────────────────────────────────────────
 
     @Test

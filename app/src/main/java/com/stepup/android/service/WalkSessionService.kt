@@ -27,6 +27,7 @@ import com.google.android.gms.location.Priority
 import com.stepup.android.MainActivity
 import com.stepup.android.R
 import com.stepup.android.core.LocationEngine
+import com.stepup.android.core.LocationWarmup
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.domain.Faction
@@ -462,11 +463,27 @@ class WalkSessionService : Service() {
         val fine = hasFineLocation()
         // 구글 지도와 같은 위치 엔진을 먼저 쓴다 — 실내에서는 와이파이로, 밖에서는 GPS 로 잡힌다. 없으면 휴대폰 위치로
         if (!startFused()) startLocationManagerFeed(lm, fine)
-        val seed = if (_state.value.here == null) freshLastKnown(lm) else null
+        // 러닝 탭에서 미리 잡아 둔 위치(LocationWarmup) — 10초 안 · 오차 50m 안이면 GPS 가 이미 잡힌 것으로 보고 내 점을 바로 놓는다
+        // (2026-10-17 "시작하고도 10초를 찾는다"). 경로 · 거리 · 속도 기준점에는 넣지 않는다 — 러닝 전 위치다
+        val warm = LocationWarmup.fresh(TrackFixRule.WARM_MAX_AGE_MS)?.takeIf {
+            TrackFixRule.warmFix(if (it.hasAccuracy()) it.accuracy else null, LocationWarmup.ageMs(it))
+        }?.takeIf { !_state.value.gpsFix }
+        if (warm != null) {
+            lastFixElapsed = warm.elapsedRealtimeNanos / 1_000_000
+            stepsAtLastFix = _state.value.steps
+        }
+        val seed = if (_state.value.here == null && warm == null) freshLastKnown(lm) else null
         val on = runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
         _state.update { current ->
-            if (!current.isActive) current
-            else current.copy(precise = fine, locationOn = on, here = current.here ?: seed)
+            when {
+                !current.isActive -> current
+                warm != null && !current.gpsFix -> current.copy(
+                    precise = fine, locationOn = on, gpsFix = true,
+                    here = GeoPoint(warm.latitude, warm.longitude),
+                    hereAt = System.currentTimeMillis() - LocationWarmup.ageMs(warm),
+                )
+                else -> current.copy(precise = fine, locationOn = on, here = current.here ?: seed)
+            }
         }
     }
 

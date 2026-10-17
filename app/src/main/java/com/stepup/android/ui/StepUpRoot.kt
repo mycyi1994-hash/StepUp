@@ -457,6 +457,8 @@ internal fun MainScaffold(
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val chrome = AppChromePolicy.destination(currentRoute)
+    // 러닝 탭(앱의 첫 화면) · 시작 흐름 · 크루 대기실이 화면에 있는 동안 위치를 미리 잡아 둔다 — 러닝을 누를 때 GPS 가 이미 잡혀 있게
+    com.stepup.android.ui.components.RunLocationWarmup(enabled = AppChromePolicy.warmsLocation(currentRoute))
     // 뽑기 요청 · 상자 열기 · 결과 · 확인은 화면을 다 쓴다 — 그동안만 공통 머리 · 하단 탭을 걷는다
     val immersive = AppChromePolicy.immersiveAt(currentRoute)
     val showBar = chrome?.showBottomBar == true && !immersive

@@ -110,6 +110,15 @@ object AppChromePolicy {
         Destination(Routes.CHALLENGE_HISTORY, Screen.Profile, Header.Detail),
     )
 
+    /**
+     * 이 길에서 위치를 미리 잡아 둘까(`LocationWarmup`, 2026-10-17 "키자마자 잡아두면 안되냐") — 러닝 탭(앱의 첫 화면)과 그 아래
+     * 화면(시작 메뉴 · 3-2-1 · 러닝 중 등), 크루 · 번개 대기실. 다른 탭에서는 GPS 를 켜 두지 않는다.
+     */
+    fun warmsLocation(route: String?): Boolean {
+        val destination = destination(route) ?: return false
+        return destination.parent == Screen.Run || destination.route == Routes.LOBBY || destination.route == Routes.FLASH_LOBBY
+    }
+
     /** Accept both NavHost route templates and concrete/deep-link route values. */
     fun destination(route: String?): Destination? {
         if (route == null) return null

@@ -21,14 +21,14 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.stepup.android.core.LocationEngine
+import com.stepup.android.core.LocationWarmup
 import com.stepup.android.domain.GeoPoint
 
 /**
  * 지금 내가 있는 자리. 아직 모르면 null 이다.
  *
- * 러닝을 시작하기 전에는 위치 서비스가 돌지 않는다 — 그건 전경 서비스의 일이고,
- * 시작도 안 한 러닝이 배터리를 먹게 둘 수는 없다. 그런데 "코스를 안 골랐을 때
- * 내가 선 자리를 지도로 보여 준다"에는 좌표 하나면 된다.
+ * 지도가 떠 있는 화면이 쓴다 — "코스를 안 골랐을 때 내가 선 자리를 지도로 보여 준다"에는 좌표 하나면 된다.
+ * (러닝 탭에 있는 동안은 [RunLocationWarmup] 이 따로 위치를 잡아 두어, 여기서도 마지막 위치가 바로 맞게 나온다.)
  *
  * 그래서 두 단계로 받는다.
  *  1. 마지막으로 알려진 위치 — 즉시 나온다. 대개 몇 분 전 것이고, 지도를
@@ -134,6 +134,35 @@ fun rememberCurrentLocation(enabled: Boolean = true): GeoPoint? {
     }
 
     return here
+}
+
+/**
+ * [enabled] 인 동안, 앱이 화면에 있을 때만 위치를 미리 잡아 둔다([LocationWarmup] — 러닝 탭 · 시작 흐름 · 크루 대기실).
+ * 앱이 뒤로 가면 끄고 돌아오면 다시 켠다. 위치 권한 · 위치 기능을 허용하고 돌아온 때(ON_RESUME)에도 다시 켜 본다.
+ */
+@Composable
+fun RunLocationWarmup(enabled: Boolean) {
+    val context = LocalContext.current
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(enabled, lifecycle) {
+        if (!enabled) {
+            LocationWarmup.stop()
+            return@DisposableEffect onDispose { }
+        }
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START, androidx.lifecycle.Lifecycle.Event.ON_RESUME -> LocationWarmup.start(context)
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> LocationWarmup.stop()
+                else -> Unit
+            }
+        }
+        // 붙이는 순간 지금 상태까지의 일(ON_START · ON_RESUME)을 다시 받는다 — 화면에 있으면 바로 켜진다
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            LocationWarmup.stop()
+        }
+    }
 }
 
 private fun Context.canReadLocation(): Boolean =
