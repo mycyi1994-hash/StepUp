@@ -17,6 +17,7 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.TradeRow
 import java.time.OffsetDateTime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -45,6 +46,10 @@ sealed interface MarketOutcome {
 
     data object SignInRequired : MarketOutcome
 
+    /**
+     * 답을 받지 못했다 — 보내지 못했거나 응답만 잃었다(서버에서는 됐을 수 있다). [reason] 은 통신 글("통신 실패: …")이라
+     * 화면에 그대로 보이지 않는다. 같은 거래를 다시 누르면 같은 요청 번호라 서버가 두 번 하지 않는다(0062).
+     */
     data class Offline(val reason: String) : MarketOutcome
 }
 
@@ -135,6 +140,12 @@ class MarketRepository(
     // ── 하기 ────────────────────────────────────────────────────────
 
     /**
+     * 값이 오가는 넷(내놓기 · 즉시 구매 · 구매 입찰 · 즉시 판매)의 요청 번호(0062). 응답을 잃은 거래를 다시 누르면 같은
+     * 번호로 보내 서버가 처음 결과를 돌려준다 — 구매 입찰이 같은 값을 두 번 묶거나, 된 구매가 "이미 끝난 매물"로 보이지 않게.
+     */
+    private val requestKeys = RequestKeys()
+
+    /**
      * 내 신발을 판다고 내놓는다.
      *
      * 거래소가 모르는 신발이면 먼저 장부에 올린다. 열어 보기만 해도 전부
@@ -146,38 +157,43 @@ class MarketRepository(
         if (local.equipped) return MarketOutcome.Equipped
 
         val serverId = ensureRegistered(local) ?: return lastProblem
-        return when (val result = api.list(serverId, price)) {
+        return when (val result = requestKeys.sendOnce("LIST:$serverId:$price") { key -> api.list(serverId, price, key) }) {
             is ServerResult.Ok -> {
-                sync()
+                syncQuietly()
                 MarketOutcome.Ok(traded = result.value == null)
             }
-            else -> result.toOutcome()
+            else -> result.unsettled()
         }
     }
 
     suspend fun cancelListing(listingId: Long): MarketOutcome =
-        api.cancelListing(listingId).finish()
+        // 거둔 뒤 같은 값으로 다시 내놓으면 새 요청이다(옛 번호의 영수증을 받지 않게)
+        api.cancelListing(listingId).finish().also { if (it is MarketOutcome.Ok) requestKeys.forget("LIST:") }
 
     suspend fun buy(listingId: Long): MarketOutcome =
-        when (val result = api.buyNow(listingId)) {
+        when (val result = requestKeys.sendOnce("BUY:$listingId") { key -> api.buyNow(listingId, key) }) {
             is ServerResult.Ok -> {
-                sync()
+                syncQuietly()
                 MarketOutcome.Ok(traded = true)
             }
-            else -> result.toOutcome()
+            else -> result.unsettled()
         }
 
-    suspend fun placeBid(model: ModelKey, minLevel: Int, price: Double): MarketOutcome =
-        when (val result = api.bid(model, minLevel, price)) {
+    suspend fun placeBid(model: ModelKey, minLevel: Int, price: Double): MarketOutcome {
+        val action = "BID:${model.faction}:${model.rarity}:${model.variant}:$minLevel:$price"
+        return when (val result = requestKeys.sendOnce(action) { key -> api.bid(model, minLevel, price, key) }) {
             is ServerResult.Ok -> {
-                sync()
+                syncQuietly()
                 // 번호가 없으면 기다리지 않고 바로 산 것이다
                 MarketOutcome.Ok(traded = result.value == null)
             }
-            else -> result.toOutcome()
+            else -> result.unsettled()
         }
+    }
 
-    suspend fun cancelBid(bidId: Long): MarketOutcome = api.cancelBid(bidId).finish()
+    // 거둔 뒤 같은 값으로 다시 걸면 새 요청이다(옛 번호의 영수증을 받지 않게)
+    suspend fun cancelBid(bidId: Long): MarketOutcome =
+        api.cancelBid(bidId).finish().also { if (it is MarketOutcome.Ok) requestKeys.forget("BID:") }
 
     /** 걸려 있는 구매 입찰에 내 신발을 판다. */
     suspend fun sellInto(localId: Long, bidId: Long): MarketOutcome {
@@ -185,12 +201,12 @@ class MarketRepository(
         if (local.equipped) return MarketOutcome.Equipped
 
         val serverId = ensureRegistered(local) ?: return lastProblem
-        return when (val result = api.sellNow(serverId, bidId)) {
+        return when (val result = requestKeys.sendOnce("SELL:$serverId:$bidId") { key -> api.sellNow(serverId, bidId, key) }) {
             is ServerResult.Ok -> {
-                sync()
+                syncQuietly()
                 MarketOutcome.Ok(traded = true)
             }
-            else -> result.toOutcome()
+            else -> result.unsettled()
         }
     }
 
@@ -215,6 +231,20 @@ class MarketRepository(
     // 화면 여러 곳(아이템·거래소·모델 화면)이 동시에 부른다. 겹치면 둘이 같은
     // 커서를 읽어 같은 거래 줄을 두 번 적고(잔고가 늘어난다), 산 신발도 두 켤레가 된다.
     private val syncLock = Mutex()
+
+    /**
+     * 거래 뒤에 맞춘다. 맞추다 앱 쪽에서 실패해도(읽기 · 저장) 거래의 결말은 그대로 돌려준다 — 된 거래를 실패로 보이면
+     * 다시 누르게 되고, 그때는 새 요청 번호라 서버가 한 번 더 한다. 맞추지 못한 것은 다음에 열 때 맞춰진다.
+     */
+    private suspend fun syncQuietly() {
+        try {
+            sync()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // 다음에 열 때 맞춘다
+        }
+    }
 
     private suspend fun reconcileSneakers() {
         val mine = api.mySneakers()
@@ -334,15 +364,34 @@ class MarketRepository(
 
     private suspend fun ServerResult<Unit>.finish(): MarketOutcome = when (this) {
         is ServerResult.Ok -> {
-            sync()
+            syncQuietly()
             MarketOutcome.Ok(traded = false)
         }
-        else -> toOutcome()
+        else -> unsettled()
+    }
+
+    /**
+     * 성공이 아닌 결말. 응답을 잃었으면(Retry) 서버에서는 이미 됐을 수 있다 — 신발 · 잔고를 서버 값으로 맞춰 두고
+     * (연결이 없으면 맞추지 못해도 된다) "결과를 모름"으로 알린다.
+     */
+    private suspend fun ServerResult<*>.unsettled(): MarketOutcome {
+        if (this is ServerResult.Retry) syncQuietly()
+        return toOutcome()
     }
 
     /** 성공이 아닌 결말을 다른 형태의 결말로 그대로 옮긴다. */
     @Suppress("UNCHECKED_CAST")
     private fun <T> ServerResult<*>.carry(): ServerResult<T> = this as ServerResult<T>
+}
+
+/**
+ * [action] 의 요청 번호를 붙여 [call] 을 부른다(0062 — 서버는 같은 번호에 처음 결과를 돌려준다).
+ * 응답을 잃으면(Retry) 번호를 남겨, 같은 거래를 다시 보내면 같은 번호로 간다. 답을 받으면(성공 · 거절 · 로그인 필요)
+ * 버린다 — 다음은 새 거래다(잃은 번호도 10분 뒤에는 버린다, [RequestKeys]).
+ */
+internal suspend fun <T> RequestKeys.sendOnce(action: String, call: suspend (String) -> ServerResult<T>): ServerResult<T> {
+    val key = keyFor(action)
+    return call(key).also { if (it !is ServerResult.Retry) done(action, key) }
 }
 
 /**

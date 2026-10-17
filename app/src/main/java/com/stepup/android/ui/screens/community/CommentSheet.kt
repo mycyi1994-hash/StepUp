@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
@@ -32,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -95,20 +99,42 @@ fun CommentSheetHost(viewModel: CommunityViewModel) {
     val openId by viewModel.openCommentsFor.collectAsStateWithLifecycle()
     val posts by viewModel.allPosts.collectAsStateWithLifecycle()
     val focusId by viewModel.focusCommentId.collectAsStateWithLifecycle()
+    val sending by viewModel.commentSending.collectAsStateWithLifecycle()
     val id = openId ?: return
     val post = posts.firstOrNull { it.id == id } ?: return
     val stream = remember(id) { viewModel.commentThreads(id) }
     val threads by stream.collectAsStateWithLifecycle(emptyList())
+    // 쓰는 말은 서버가 받아 준 뒤에만 비운다 — 실패하면 그대로 남아 다시 보낼 수 있다
+    val input = remember(id) { CommentInput() }
 
     CommentSheet(
         post = post,
         threads = threads,
         focusCommentId = focusId,
-        onSend = { body, parentId -> viewModel.sendComment(id, body, parentId) },
+        onSend = { body, parentId -> viewModel.sendComment(id, body, parentId) { input.sent(body) } },
         onDeleteComment = viewModel::deleteComment,
         onReportComment = { viewModel.askReport(it) },
         onDismiss = viewModel::closeComments,
+        sending = sending,
+        input = input,
     )
+}
+
+/**
+ * 댓글 창에 쓰는 말과 답글 대상. 창을 띄운 쪽이 들고 있다가 서버가 받아 준 뒤에만 비운다([sent]) —
+ * 보내자마자 비우면 연결이 끊겼을 때 쓴 말이 사라진다.
+ */
+@Stable
+class CommentInput {
+    var text by mutableStateOf("")
+    var replyTo by mutableStateOf<Comment?>(null)
+
+    /** 서버가 [body] 를 받아 줬다 — 보내는 사이 고쳐 쓴 말이면 그대로 둔다 */
+    fun sent(body: String) {
+        if (text.trim() != body) return
+        text = ""
+        replyTo = null
+    }
 }
 
 /**
@@ -127,9 +153,11 @@ fun CommentSheet(
     onReportComment: (Comment) -> Unit = {},
     /** 알림에서 들어왔다면 그 댓글. 0이면 없음. */
     focusCommentId: Long = 0L,
+    /** 댓글을 보내는 중 — 보내기를 막는다(같은 댓글이 두 번 가지 않게) */
+    sending: Boolean = false,
+    /** 쓰는 말 · 답글 대상 — 띄운 쪽이 서버가 받아 준 뒤에만 비운다 */
+    input: CommentInput = remember { CommentInput() },
 ) {
-    var input by remember { mutableStateOf("") }
-    var replyTo by remember { mutableStateOf<Comment?>(null) }
     val total = threads.sumOf { it.size }
     val listState = rememberLazyListState()
 
@@ -242,7 +270,7 @@ fun CommentSheet(
                             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                                 CommentRow(
                                     comment = thread.comment,
-                                    onReply = { replyTo = thread.comment },
+                                    onReply = { input.replyTo = thread.comment },
                                     onDelete = { onDeleteComment(thread.comment.id) },
                                     onReport = { onReportComment(thread.comment) },
                                     highlighted = thread.comment.id == focusCommentId,
@@ -250,7 +278,7 @@ fun CommentSheet(
                                 thread.replies.forEach { reply ->
                                     CommentRow(
                                         comment = reply,
-                                        onReply = { replyTo = thread.comment },
+                                        onReply = { input.replyTo = thread.comment },
                                         onDelete = { onDeleteComment(reply.id) },
                                         onReport = { onReportComment(reply) },
                                         modifier = Modifier.padding(start = 30.dp),
@@ -262,7 +290,7 @@ fun CommentSheet(
                     }
                 }
 
-                replyTo?.let { target ->
+                input.replyTo?.let { target ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -283,7 +311,7 @@ fun CommentSheet(
                             color = Silver,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { replyTo = null }) {
+                        IconButton(onClick = { input.replyTo = null }) {
                             Icon(Icons.Filled.Close, stringResource(R.string.common_cancel), tint = Silver, modifier = Modifier.size(22.dp))
                         }
                     }
@@ -298,22 +326,28 @@ fun CommentSheet(
                     horizontalArrangement = Arrangement.spacedBy(9.dp),
                 ) {
                     com.stepup.android.ui.components.FormField(
-                        label = stringResource(if (replyTo != null) R.string.comments_reply_hint else R.string.comments_hint),
-                        value = input, onValueChange = { input = it },
+                        label = stringResource(if (input.replyTo != null) R.string.comments_reply_hint else R.string.comments_hint),
+                        value = input.text, onValueChange = { input.text = it },
                         modifier = Modifier.weight(1f), singleLine = false, minLines = 1, maxLines = 4,
                     )
-                    val canSend = input.isNotBlank()
+                    val canSend = input.text.isNotBlank() && !sending
                     IconButton(
                         enabled = canSend,
-                        onClick = {
-                            onSend(input.trim(), replyTo?.id ?: 0L)
-                            input = ""
-                            replyTo = null
-                        },
+                        // 비우지 않는다 — 서버가 받아 준 뒤에 띄운 쪽이 비운다(실패하면 쓴 말이 그대로 남는다)
+                        onClick = { onSend(input.text.trim(), input.replyTo?.id ?: 0L) },
                         modifier = Modifier.size(48.dp).background(if (canSend) Volt else CarbonHigh, CircleShape),
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.comments_send),
-                            tint = if (canSend) OnVolt else Slate, modifier = Modifier.size(22.dp))
+                        val sendLabel = stringResource(R.string.comments_send)
+                        if (sending) {
+                            // 보내는 동안은 도는 표시만 — 이름은 그대로 읽힌다
+                            CircularProgressIndicator(
+                                Modifier.size(20.dp).semantics { contentDescription = sendLabel },
+                                color = Silver, strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(Icons.AutoMirrored.Filled.Send, sendLabel,
+                                tint = if (canSend) OnVolt else Slate, modifier = Modifier.size(22.dp))
+                        }
                     }
                 }
             }

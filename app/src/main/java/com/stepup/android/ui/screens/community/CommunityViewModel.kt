@@ -46,7 +46,17 @@ import kotlinx.coroutines.launch
 enum class CrewNotice { JOINED, REQUESTED, CANCELLED, LEFT, SAVED, APPROVED, REJECTED, FAILED, SIGN_IN }
 
 /** 게시판에서 무언가를 한 뒤 화면에 잠깐 띄울 말 */
-enum class BoardNotice { REPORTED, BLOCKED, FAILED, SIGN_IN }
+sealed interface BoardNotice {
+    data object Reported : BoardNotice
+    data object Blocked : BoardNotice
+
+    /** 서버에 닿지 못했거나 결과를 모른다 — 연결 안내 */
+    data object Failed : BoardNotice
+    data object SignIn : BoardNotice
+
+    /** 서버가 받아 보고 거절했다 — 서버가 적어 보낸 이유(정원 마감 · 도배 제한 등)를 그대로 보인다 */
+    data class Rejected(val reason: String) : BoardNotice
+}
 
 /** 신고 창이 가리키는 것 — 글 또는 댓글 */
 sealed interface ReportTarget {
@@ -303,10 +313,30 @@ class CommunityViewModel(
         emit(communityRepository.roster(postId))
     }
 
-    fun sendComment(postId: Long, body: String, parentId: Long) {
+    private val _commentSending = MutableStateFlow(false)
+
+    /** 댓글을 보내는 중 — 보내기를 막는다(같은 댓글이 두 번 가지 않게) */
+    val commentSending: StateFlow<Boolean> = _commentSending
+
+    /**
+     * 댓글 · 답글 보내기. 서버가 받아 준 뒤에만 [onSent] 로 입력을 비운다 — 실패하면 쓴 말이 그대로 남아 다시 보낼 수
+     * 있고, 다시 보내도 같은 요청 키로 가서(저장소) 응답만 잃었던 댓글이 둘이 되지 않는다.
+     */
+    fun sendComment(postId: Long, body: String, parentId: Long, onSent: () -> Unit = {}) {
+        if (_commentSending.value) return
+        _commentSending.value = true
         viewModelScope.launch {
-            val result = communityRepository.addComment(postId, body, parentId)
-            if (result is BoardResult.Ok) ExperienceEvents.emit(FeedbackCue.Success) else noticeFailure(result)
+            try {
+                val result = communityRepository.addComment(postId, body, parentId)
+                if (result is BoardResult.Ok) {
+                    onSent()
+                    ExperienceEvents.emit(FeedbackCue.Success)
+                } else {
+                    noticeFailure(result)
+                }
+            } finally {
+                _commentSending.value = false
+            }
         }
     }
 
@@ -339,7 +369,7 @@ class CommunityViewModel(
                 is ReportTarget.OfComment ->
                     communityRepository.reportComment(target.postId, target.commentId, reason)
             }
-            if (result is BoardResult.Ok) _boardNotice.value = BoardNotice.REPORTED else noticeFailure(result)
+            if (result is BoardResult.Ok) _boardNotice.value = BoardNotice.Reported else noticeFailure(result)
         }
     }
 
@@ -349,14 +379,21 @@ class CommunityViewModel(
         _reportTarget.value = null
         viewModelScope.launch {
             val result = communityRepository.block(target.authorId)
-            if (result is BoardResult.Ok) _boardNotice.value = BoardNotice.BLOCKED else noticeFailure(result)
+            if (result is BoardResult.Ok) _boardNotice.value = BoardNotice.Blocked else noticeFailure(result)
         }
     }
 
-    /** 실패했으면 이유를 띄운다. 성공이면 아무것도 하지 않는다. */
+    /**
+     * 실패했으면 이유를 띄운다 — 서버가 거절했으면 서버가 적어 보낸 이유를, 닿지 못했거나 결과를 모르면 연결 안내를.
+     * 성공이면 아무것도 하지 않는다.
+     */
     private fun noticeFailure(result: BoardResult) {
         if (result is BoardResult.Failed) {
-            _boardNotice.value = if (result.signIn) BoardNotice.SIGN_IN else BoardNotice.FAILED
+            _boardNotice.value = when {
+                result.signIn -> BoardNotice.SignIn
+                result.rejected && result.reason.isNotBlank() -> BoardNotice.Rejected(result.reason)
+                else -> BoardNotice.Failed
+            }
         }
     }
 
@@ -461,6 +498,8 @@ class CommunityViewModel(
      *
      * 화면을 먼저 닫으면 이 뷰모델이 함께 사라지면서 요청도 끊긴다. 그래서
      * 올라간 것을 확인한 뒤에 닫는다.
+     *
+     * @param clientKey 글쓰기 화면마다 하나인 요청 키 — 응답을 못 받고 다시 올려도 같은 글이다
      */
     fun writePost(
         category: PostCategory,
@@ -473,6 +512,7 @@ class CommunityViewModel(
         capacity: Int,
         lat: Double?,
         lng: Double?,
+        clientKey: String? = null,
         onDone: () -> Unit,
     ) {
         if (_posting.value) return
@@ -490,6 +530,7 @@ class CommunityViewModel(
                 capacity = capacity,
                 lat = lat,
                 lng = lng,
+                clientKey = clientKey,
             )
             if (result is BoardResult.Ok) {
                 ExperienceEvents.emit(FeedbackCue.Success)
@@ -500,7 +541,7 @@ class CommunityViewModel(
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                _boardNotice.value = BoardNotice.FAILED
+                _boardNotice.value = BoardNotice.Failed
             } finally {
                 _posting.value = false
             }

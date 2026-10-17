@@ -6,14 +6,17 @@ import com.stepup.android.data.remote.AuthUser
 import com.stepup.android.data.remote.CommunityApi
 import com.stepup.android.data.remote.HttpPoster
 import com.stepup.android.data.remote.HttpResponse
+import com.stepup.android.data.remote.PostLikeRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
+import com.stepup.android.data.repo.asBoardFailure
 import com.stepup.android.data.repo.toDomain
 import com.stepup.android.domain.PostCategory
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,6 +42,24 @@ class CommunityApiTest {
         override suspend fun get(url: String, headers: Map<String, String>) = post(url, "", headers)
     }
 
+    /** 부를 때마다 주소 · 몸통을 적고 그에 맞춰 답한다 — 한 번 더 보내는 길(예전 서버)을 본다 */
+    private class ScriptedHttp(private val answer: (url: String, body: String) -> HttpResponse) : HttpPoster {
+        val calls = mutableListOf<Pair<String, String>>()
+
+        override suspend fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+            calls += url to body
+            return answer(url, body)
+        }
+
+        override suspend fun get(url: String, headers: Map<String, String>) = post(url, "", headers)
+    }
+
+    /** PostgREST 가 이름 · 인자에 맞는 서버 함수를 못 찾을 때(서버에 0062 가 아직 없다)의 답 */
+    private fun missing(function: String) = HttpResponse(
+        404,
+        """{"code":"PGRST202","message":"Could not find the function public.$function in the schema cache"}""",
+    )
+
     private class LoggedIn : AuthSessionStore {
         override suspend fun load() = AuthSession(
             accessToken = "token",
@@ -52,7 +73,7 @@ class CommunityApiTest {
         override suspend fun clear() = Unit
     }
 
-    private fun api(http: FakeHttp) = CommunityApi(
+    private fun api(http: HttpPoster) = CommunityApi(
         StepUpServer(
             baseUrl = "https://test.supabase.co",
             apiKey = "sb_publishable_test",
@@ -168,5 +189,100 @@ class CommunityApiTest {
     fun `정원이 찬 번개는 서버가 적어 보낸 이유로 거절된다`() = runBlocking {
         val http = FakeHttp(HttpResponse(400, """{"message":"정원이 찼습니다 (8명)"}"""))
         assertEquals(ServerResult.Rejected("정원이 찼습니다 (8명)"), api(http).joinFlash(7))
+    }
+
+    // ── 응답을 잃고 다시 보내도 한 번만(0062) ─────────────────────────────
+
+    @Test
+    fun `글쓰기는 요청 키를 함께 보내고 키가 없으면 예전 모양 그대로다`() = runBlocking {
+        val http = FakeHttp(HttpResponse(200, "8"))
+        api(http).createPost("FLASH", "", "번개", "", "여의도", 5.0, "2026-09-23T10:00:00Z", 6,
+            clientKey = "11111111-2222-3333-4444-555555555555")
+        assertTrue(http.lastUrl.endsWith("/rpc/post_create"))
+        assertTrue(http.lastBody, http.lastBody.endsWith(""""p_lng":null,"p_client_key":"11111111-2222-3333-4444-555555555555"}"""))
+
+        api(http).createPost("FREE", "", "제목", "본문", "", 0.0, "", 0)
+        assertFalse(http.lastBody, http.lastBody.contains("p_client_key"))
+    }
+
+    @Test
+    fun `서버에 0062 가 아직 없으면 글은 요청 키 없이 한 번 더 보낸다`() = runBlocking {
+        val http = ScriptedHttp { _, body -> if ("p_client_key" in body) missing("post_create") else HttpResponse(200, "43") }
+        val result = api(http).createPost("FREE", "", "제목", "본문", "", 0.0, "", 0, clientKey = "k-1")
+
+        assertEquals(ServerResult.Ok(43L), result)
+        assertEquals(2, http.calls.size)
+        assertFalse(http.calls[1].second, http.calls[1].second.contains("p_client_key"))
+    }
+
+    @Test
+    fun `댓글은 요청 키를 함께 보내고 예전 서버에는 키 없이 다시 보낸다`() = runBlocking {
+        val http = FakeHttp(HttpResponse(200, "4100"))
+        assertEquals(ServerResult.Ok(4100L), api(http).createComment(7, 0, "저도 갈래요", "k-2"))
+        assertTrue(http.lastUrl.endsWith("/rpc/comment_create"))
+        assertEquals("""{"p_post":7,"p_parent":0,"p_body":"저도 갈래요","p_client_key":"k-2"}""", http.lastBody)
+
+        val old = ScriptedHttp { _, body -> if ("p_client_key" in body) missing("comment_create") else HttpResponse(200, "4101") }
+        assertEquals(ServerResult.Ok(4101L), api(old).createComment(7, 11, "같이 가요", "k-3"))
+        assertEquals(2, old.calls.size)
+        assertEquals("""{"p_post":7,"p_parent":11,"p_body":"같이 가요"}""", old.calls[1].second)
+    }
+
+    @Test
+    fun `좋아요는 뒤집지 않고 바라는 상태를 보낸다`() = runBlocking {
+        val http = FakeHttp(HttpResponse(200, "true"))
+        assertEquals(ServerResult.Ok(true), api(http).setLike(7, true))
+        assertTrue(http.lastUrl.endsWith("/rpc/post_set_like"))
+        assertEquals("""{"p_post":7,"p_liked":true}""", http.lastBody)
+    }
+
+    @Test
+    fun `서버에 0062 가 아직 없으면 좋아요는 예전 함수로 바라는 상태까지만 뒤집는다`() = runBlocking {
+        // 응답을 잃은 누름이 이미 닿아 서버는 눌린 상태다 — 한 번 뒤집으면 거꾸로 되므로 한 번 더 뒤집는다
+        var liked = true
+        val http = ScriptedHttp { url, _ ->
+            when {
+                url.endsWith("/rpc/post_set_like") -> missing("post_set_like")
+                url.endsWith("/rpc/post_toggle_like") -> {
+                    liked = !liked
+                    HttpResponse(200, "$liked")
+                }
+                else -> HttpResponse(404, "")
+            }
+        }
+        assertEquals(ServerResult.Ok(true), api(http).setLike(7, true))
+        assertTrue(liked)
+        assertEquals(
+            listOf("post_set_like", "post_toggle_like", "post_toggle_like"),
+            http.calls.map { it.first.substringAfterLast("/rpc/") },
+        )
+
+        // 바라는 상태가 아니었으면 한 번만 뒤집는다
+        http.calls.clear()
+        assertEquals(ServerResult.Ok(false), api(http).setLike(7, false))
+        assertFalse(liked)
+        assertEquals(2, http.calls.size)
+    }
+
+    @Test
+    fun `좋아요의 응답을 잃으면 그 글의 수와 누름만 다시 읽는다`() = runBlocking {
+        val http = FakeHttp(HttpResponse(200, """[{"likes":4,"liked":true}]"""))
+        assertEquals(ServerResult.Ok(PostLikeRow(likes = 4, liked = true)), api(http).likeState(7))
+        assertTrue(http.lastUrl, http.lastUrl.endsWith("/post_feed?select=likes,liked&id=eq.7"))
+
+        // 볼 수 없는 글(지워짐 · 가려짐)은 확인하지 못한 것이다 — 누르지 않은 것으로 단정하지 않는다
+        assertTrue(api(FakeHttp(HttpResponse(200, "[]"))).likeState(7) is ServerResult.Retry)
+    }
+
+    @Test
+    fun `서버가 거절한 이유와 닿지 못한 것을 가른다`() {
+        val rejected = ServerResult.Rejected("글을 너무 자주 쓰고 있습니다. 잠시 뒤에 다시 써 주세요").asBoardFailure()
+        assertTrue(rejected.rejected)
+        assertEquals("글을 너무 자주 쓰고 있습니다. 잠시 뒤에 다시 써 주세요", rejected.reason)
+
+        assertFalse(ServerResult.Retry("통신 실패: timeout").asBoardFailure().rejected)
+        val signIn = ServerResult.SignInRequired("로그인이 필요합니다").asBoardFailure()
+        assertTrue(signIn.signIn)
+        assertFalse(signIn.rejected)
     }
 }

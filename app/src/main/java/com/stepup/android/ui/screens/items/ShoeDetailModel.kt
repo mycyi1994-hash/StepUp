@@ -88,9 +88,27 @@ fun formatStat(value: Double): String = String.format(Locale.ROOT, "%.2f", value
 fun durabilityPercent(shoe: Sneaker): Int =
     (shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability).coerceIn(0, 100)
 
+/** 달린 1분마다 닳는 내구도 — 서버 0064 `economy.durability_wear_time` 과 같다(2026-10-17 사용자 결정 "1분마다 5씩") */
+const val DURABILITY_WEAR_PER_MINUTE = 5
+
+/** [activeSec](멈춘 시간 뺀 달린 시간) 동안 닳는 내구도 — 다 채운 1분마다 [DURABILITY_WEAR_PER_MINUTE] */
+fun durabilityWear(activeSec: Long): Int = (activeSec.coerceAtLeast(0L) / 60 * DURABILITY_WEAR_PER_MINUTE).toInt()
+
 /**
- * 남은 내구도(1 = 10m, 서버 0059 — 100m 달리면 10 준다). 서버가 아직 최대 내구도를 보내지 않았거나(예전 서버)
- * 폰에만 있던 신발이면 남은 비율(100 기준)을 그대로 쓴다.
+ * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼([durabilityWear])을 미리 뺀다. 정산 때 서버가 같은 규칙으로 뺀다.
+ * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 [durabilityPercent] 그대로다 — 폰에서 닳는 양을 비율로 셀 수 없다.
+ */
+fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long): Int {
+    val wear = durabilityWear(activeSec)
+    val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 }
+    if (wear == 0 || server == null) return durabilityPercent(shoe)
+    val left = (server.durabilityNow - wear).coerceIn(0, server.durabilityMax)
+    return kotlin.math.floor(100.0 * left / server.durabilityMax).toInt().coerceIn(0, durabilityPercent(shoe))
+}
+
+/**
+ * 남은 내구도(서버 0059 — 신발마다 최대가 다르다. 0064 부터 달린 1분마다 5 준다). 서버가 아직 최대 내구도를 보내지 않았거나
+ * (예전 서버) 폰에만 있던 신발이면 남은 비율(100 기준)을 그대로 쓴다.
  */
 fun durabilityLeft(shoe: Sneaker): Int {
     val server = shoe.server?.takeIf { it.hasDurabilityMax } ?: return durabilityPercent(shoe)

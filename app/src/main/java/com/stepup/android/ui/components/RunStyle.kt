@@ -74,7 +74,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -193,44 +192,13 @@ class RunTone(
     val errorIcon: Color,
     /**
      * 지도 타일 색 — 실제 타일(MapTiler streets · OSM)의 색만 옮긴다(길 · 물 · 이름은 그대로). null 이면 앱 테마의 지도 색.
-     * 남색 시안: 땅은 짙은 남색, 물은 파랑, 지명은 밝은 글자.
+     * 러닝 화면은 두 테마 모두 밝은 거리 지도([BrightMapFilter], 2026-10-17 — 예전 남색 지도를 대신한다).
      */
     val mapFilter: ColorFilter? = null,
-    /** 타일 위에 덮는 바탕색의 짙기 — 남색 지도는 이미 어두워 덮지 않는다 */
+    /** 타일 위에 덮는 바탕색의 짙기 — 밝은 거리 지도는 덮지 않는다 */
     val mapShade: Float = 0.30f,
-    /** 길만 밝히는 두 번째 겹(더하기) — 남색 지도에서 길이 땅보다 밝게(시안 4번). null 이면 한 겹 */
+    /** 길만 밝히는 두 번째 겹(더하기, [mapFilter] 와 짝). null 이면 한 겹 */
     val mapRoads: ColorFilter? = null,
-)
-
-/**
- * 밝은 길거리 타일(땅 #F5F0E4 · 물 #85CAF9 · 길 흰색 · 공원 #D7E9C8 · 글자 회색)을 남색 지도(땅 #235180 쯤 · 물 #1B5EAF ·
- * 공원 청록 · 글자 #CBD8EF)로 옮기는 4x5 행렬 — 실제 MapTiler 타일 색과 자유 러닝 시안(2026-10-14) 색을 짝지어 맞췄다.
- * 예전 값(땅 #08223E)은 너무 어둡고 길이 땅보다 어두워 지도를 알아보기 어려웠다.
- */
-private val NavyMapFilter = ColorFilter.colorMatrix(
-    ColorMatrix(
-        floatArrayOf(
-            0.7081f, -1.8423f, 0.0662f, 0f, 289.1f,
-            0.0599f, -0.6625f, -0.2608f, 0f, 285.5f,
-            0.1568f, -1.3727f, 0.5622f, 0f, 291.7f,
-            0f, 0f, 0f, 1f, 0f,
-        ),
-    ),
-)
-
-/**
- * 길(흰색 · 노란색 — 빨강 값 247 이상)에만 밝은 파랑을 더한다 — 남색 위 길이 땅보다 밝게(시안의 밝은 길).
- * 글자 둘레(흰 테)도 같은 색이라 함께 밝아진다 — 지명이 묻히지 않게 길을 #3268A9 쯤까지만 띄운다(더 밝히면 글자가 흐려진다).
- */
-private val NavyRoadFilter = ColorFilter.colorMatrix(
-    ColorMatrix(
-        floatArrayOf(
-            4.6433f, 0f, 0f, 0f, -1146.9f,
-            5.4689f, 0f, 0f, 0f, -1350.82f,
-            6.2006f, 0f, 0f, 0f, -1531.54f,
-            0f, 0f, 0f, 1f, 0f,
-        ),
-    ),
 )
 
 val NavyRunTone = RunTone(
@@ -254,7 +222,8 @@ val NavyRunTone = RunTone(
     chipFace = Color(0xFF16305A), chipEdge = Color(0xFF2C4C7E), chipInk = Color(0xFFD6E2F8),
     warnFace = Color(0xFF0C2B55), warnEdge = Color(0xFF2B6BE0), warnIcon = Color(0xFF48D9FA),
     errorFace = Color(0xFF3A1323), errorEdge = Color(0xFFB83246), errorIcon = Color(0xFFFF5C6B),
-    mapFilter = NavyMapFilter, mapShade = 0f, mapRoads = NavyRoadFilter,
+    // 지도는 밝은 거리 지도(2026-10-17 사용자 "지도가 더 밝아야 한다. 네이버지도처럼") — 예전 남색 지도 필터는 뺐다
+    mapFilter = BrightMapFilter, mapShade = 0f, mapRoads = null,
 )
 
 val LightRunTone = RunTone(
@@ -278,6 +247,7 @@ val LightRunTone = RunTone(
     chipFace = Color(0xFFE6EEFC), chipEdge = Color(0xFFC3D3EE), chipInk = Color(0xFF2A3E62),
     warnFace = Color(0xFFE8F1FF), warnEdge = Color(0xFF8DB2F5), warnIcon = Color(0xFF0748D6),
     errorFace = Color(0xFFFFECEE), errorEdge = Color(0xFFE59AA4), errorIcon = Color(0xFFC62337),
+    mapFilter = BrightMapFilter, mapShade = 0f,
 )
 
 @Composable

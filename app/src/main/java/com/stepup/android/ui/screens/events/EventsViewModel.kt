@@ -131,12 +131,21 @@ class EventsViewModel(
         viewModelScope.launch {
           try {
             // 서버가 목표를 다시 재고 지급한다. 지급이 확인된 뒤에만 "받음"이 된다.
-            val result = when (val r = eventRepository.claim(def, progress)) {
-                is EventClaimResult.Paid -> ClaimResult.Success(r.amount)
+            val claimed = eventRepository.claim(def, progress)
+            // 서버가 이미 줬거나(다른 기기 · 응답을 잃은 앞의 받기) 줬을 수 있으면(응답을 잃었다) 잔고를 서버 값으로 다시 받는다 —
+            // 폰의 원장에는 그 금액이 없어, 다시 맞출 때까지 잔고가 지급을 빠뜨린 채 보였다
+            if (ServiceLocator.serverEconomyOn &&
+                (claimed == EventClaimResult.AlreadyClaimed || claimed == EventClaimResult.Unconfirmed)
+            ) {
+                ServiceLocator.refreshEconomyInBackground()
+            }
+            val result = when (claimed) {
+                is EventClaimResult.Paid -> ClaimResult.Success(claimed.amount)
                 EventClaimResult.NotFinished -> ClaimResult.NotFinished
                 EventClaimResult.AlreadyClaimed -> ClaimResult.AlreadyClaimed
                 EventClaimResult.SignInRequired -> ClaimResult.SignInRequired
-                EventClaimResult.Failed -> ClaimResult.Failed
+                // 닿지 못했거나 답을 못 받았다 — 다시 눌러도 서버는 기간마다 한 번만 준다
+                EventClaimResult.Failed, EventClaimResult.Unconfirmed -> ClaimResult.Failed
             }
             ExperienceEvents.emit(if (result is ClaimResult.Success) FeedbackCue.Reward else FeedbackCue.Error)
             claimResult.value = result

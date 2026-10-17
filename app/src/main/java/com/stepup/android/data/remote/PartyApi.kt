@@ -46,7 +46,15 @@ data class PartyStateRow(
  * 방은 크루 하나 또는 번개 글 하나에 붙는다. 같은 크루의 로비를 연 사람들은
  * 같은 방에 모인다. 앱은 몇 초마다 [state] 를 물어 준비·출발·거리를 맞춘다.
  */
-class PartyApi(private val server: StepUpServer) {
+class PartyApi(
+    private val server: StepUpServer,
+    /**
+     * 파티 물음을 보내는 쪽 — 오래 기다리지 않는다([TIMEOUT_MS]). 앱 기본(연결 20초 + 읽기 20초)을 기다리면 같이 뛰는 중
+     * 끊긴 것을 늦게 알았고, 그동안 다른 사람의 옛 위치 · 인원이 지금 것처럼 보였다. 방 상태는 몇 초마다 다시 묻는다.
+     * 서버에 흉내 낸 연결을 넣은 검사는 그것을 그대로 쓴다.
+     */
+    internal val http: HttpPoster = server.http.let { if (it is UrlConnectionPoster) UrlConnectionPoster(timeoutMillis = TIMEOUT_MS) else it },
+) {
 
     /** 방에 들어간다. 열린 방이 없으면 새로 연다. 방 번호가 돌아온다. */
     suspend fun open(crewId: String?, flashPostId: Long?): ServerResult<Long> = rpc(
@@ -124,6 +132,11 @@ class PartyApi(private val server: StepUpServer) {
         parse: (String) -> T?,
     ): ServerResult<T> =
         server.authed { token ->
-            server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
+            http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
+
+    companion object {
+        /** 파티 물음 하나를 기다리는 시간(ms) — 연결 · 읽기 각각 */
+        const val TIMEOUT_MS = 8_000
+    }
 }

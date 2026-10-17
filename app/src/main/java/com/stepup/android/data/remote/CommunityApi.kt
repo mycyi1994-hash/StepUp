@@ -148,6 +148,7 @@ class CommunityApi(private val server: StepUpServer) {
      * @param crewId 비어 있으면 전체 게시판
      * @param meetAtIso 번개러닝의 모임 시각(ISO-8601). 번개가 아니면 비워 둔다.
      * @param lat 번개 모임 장소. 모르면 null — 거리는 읽는 사람이 이 좌표에서 잰다.
+     * @param clientKey 글쓰기마다 만든 요청 키(0062) — 응답을 못 받고 다시 올려도 같은 글 번호가 온다(번개 모임이 둘이 되지 않는다)
      */
     suspend fun createPost(
         category: String,
@@ -160,9 +161,9 @@ class CommunityApi(private val server: StepUpServer) {
         capacity: Int,
         lat: Double? = null,
         lng: Double? = null,
-    ): ServerResult<Long> = rpc(
-        "post_create",
-        jsonBody {
+        clientKey: String? = null,
+    ): ServerResult<Long> {
+        fun request(key: String?) = jsonBody {
             put("p_category", category)
             put("p_crew", crewId.ifBlank { null } ?: JsonNull)
             put("p_title", title)
@@ -173,8 +174,15 @@ class CommunityApi(private val server: StepUpServer) {
             put("p_capacity", capacity)
             put("p_lat", lat ?: JsonNull)
             put("p_lng", lng ?: JsonNull)
-        },
-    ) { it.trim().toLongOrNull() }
+            if (!key.isNullOrBlank()) put("p_client_key", key)
+        }
+        val result = rpc("post_create", request(clientKey)) { it.trim().toLongOrNull() }
+        // 서버에 0062 가 아직 없다 — 예전 모양으로 한 번 더(요청 키 없이) 보낸다
+        if (!clientKey.isNullOrBlank() && result.isMissingFunction()) {
+            return rpc("post_create", request(null)) { it.trim().toLongOrNull() }
+        }
+        return result
+    }
 
     /**
      * 동네 이야기 쓰기(0041 story_create, 0046 러닝 첨부) — 장소가 있는 전체 게시판 자유 글. 새 글 번호를 돌려받는다.
@@ -255,9 +263,41 @@ class CommunityApi(private val server: StepUpServer) {
     suspend fun deletePost(postId: Long): ServerResult<Unit> =
         rpc("post_delete", jsonBody { put("p_post", postId) }) { }
 
-    /** 좋아요를 누르거나 거둔다. 누른 뒤의 상태가 돌아온다. */
+    /**
+     * 좋아요를 누르거나 거둔다. 누른 뒤의 상태가 돌아온다.
+     * 응답을 잃고 다시 부르면 거꾸로 된다 — 앱은 [setLike] 를 쓰고, 이것은 0062 전 서버에서만 쓴다.
+     */
     suspend fun toggleLike(postId: Long): ServerResult<Boolean> =
         rpc("post_toggle_like", jsonBody { put("p_post", postId) }) { it.trim().toBooleanStrictOrNull() }
+
+    /**
+     * 좋아요를 바라는 상태로 맞춘다(0062 post_set_like) — 몇 번을 다시 보내도 같다. 그 뒤의 상태가 돌아온다.
+     * 서버에 0062 가 아직 없으면 예전 함수로 뒤집고, 뒤집은 상태가 바라던 것이 아니면 한 번 더 뒤집는다.
+     */
+    suspend fun setLike(postId: Long, liked: Boolean): ServerResult<Boolean> {
+        val result = rpc(
+            "post_set_like",
+            jsonBody {
+                put("p_post", postId)
+                put("p_liked", liked)
+            },
+        ) { it.trim().toBooleanStrictOrNull() }
+        if (!result.isMissingFunction()) return result
+        val flipped = toggleLike(postId)
+        return if (flipped is ServerResult.Ok && flipped.value != liked) toggleLike(postId) else flipped
+    }
+
+    /**
+     * 이 글의 좋아요 수와 내가 눌렀는지 — 좋아요의 응답을 잃었을 때 서버에 닿았는지 다시 읽는다.
+     * 볼 수 없는 글(지워짐 · 가려짐)이면 확인하지 못한 것으로 둔다(Retry).
+     */
+    suspend fun likeState(postId: Long): ServerResult<PostLikeRow> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/post_feed?select=likes,liked&id=eq.$postId",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<PostLikeRow>>(it).firstOrNull() }
 
     /** 번개러닝 참가. 참가 뒤의 인원이 돌아온다. 정원이 차면 거절된다. */
     suspend fun joinFlash(postId: Long): ServerResult<Int> =
@@ -266,16 +306,25 @@ class CommunityApi(private val server: StepUpServer) {
     suspend fun leaveFlash(postId: Long): ServerResult<Int> =
         rpc("leave_flash", jsonBody { put("p_post_id", postId) }) { it.trim().toIntOrNull() }
 
-    /** 댓글·답글 쓰기. [parentId] 가 0 이면 새 댓글. */
-    suspend fun createComment(postId: Long, parentId: Long, body: String): ServerResult<Long> =
-        rpc(
-            "comment_create",
-            jsonBody {
-                put("p_post", postId)
-                put("p_parent", parentId)
-                put("p_body", body)
-            },
-        ) { it.trim().toLongOrNull() }
+    /**
+     * 댓글·답글 쓰기. [parentId] 가 0 이면 새 댓글.
+     *
+     * @param clientKey 쓰던 댓글의 요청 키(0062) — 응답을 못 받고 다시 보내도 같은 댓글 번호가 온다(댓글이 둘이 되지 않는다)
+     */
+    suspend fun createComment(postId: Long, parentId: Long, body: String, clientKey: String? = null): ServerResult<Long> {
+        fun request(key: String?) = jsonBody {
+            put("p_post", postId)
+            put("p_parent", parentId)
+            put("p_body", body)
+            if (!key.isNullOrBlank()) put("p_client_key", key)
+        }
+        val result = rpc("comment_create", request(clientKey)) { it.trim().toLongOrNull() }
+        // 서버에 0062 가 아직 없다 — 예전 모양으로 한 번 더(요청 키 없이) 보낸다
+        if (!clientKey.isNullOrBlank() && result.isMissingFunction()) {
+            return rpc("comment_create", request(null)) { it.trim().toLongOrNull() }
+        }
+        return result
+    }
 
     suspend fun deleteComment(commentId: Long): ServerResult<Unit> =
         rpc("comment_delete", jsonBody { put("p_comment", commentId) }) { }
@@ -319,3 +368,7 @@ private fun ServerResult<*>.isMissingFunction(): Boolean =
 /** 글이 있는지만 볼 때 받는 한 줄 */
 @Serializable
 data class PostIdRow(val id: Long)
+
+/** 좋아요 상태만 다시 읽을 때 받는 한 줄 — `post_feed` 의 likes · liked */
+@Serializable
+data class PostLikeRow(val likes: Int = 0, val liked: Boolean = false)

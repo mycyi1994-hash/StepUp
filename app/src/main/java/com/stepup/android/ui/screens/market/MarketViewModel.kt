@@ -131,6 +131,12 @@ class MarketViewModel(private val repo: MarketRepository) : ViewModel() {
             try {
                 message.value = block().say()
                 refresh()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // 앱 쪽 문제(읽기 · 저장)로 끝을 보지 못했다 — 앱이 죽지 않게 알리고 서버 값으로 다시 불러온다
+                message.value = MarketMessage.Res(R.string.market_msg_unfinished)
+                refresh()
             } finally {
                 acting = false
             }
@@ -247,6 +253,12 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
             try {
                 message.value = block().say()
                 load()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // 앱 쪽 문제(읽기 · 저장)로 끝을 보지 못했다 — 앱이 죽지 않게 알리고 서버 값으로 다시 불러온다
+                message.value = MarketMessage.Res(R.string.market_msg_unfinished)
+                load()
             } finally {
                 acting = false
             }
@@ -282,6 +294,8 @@ private fun MarketOutcome.say(): MarketMessage? = when (this) {
     is MarketOutcome.Ok -> if (traded) MarketMessage.Res(R.string.market_msg_traded) else null
     MarketOutcome.Equipped -> MarketMessage.Res(R.string.market_msg_equipped)
     is MarketOutcome.Failed -> MarketMessage.Text(reason)
-    is MarketOutcome.Offline -> MarketMessage.Text(reason)
+    // 통신 글("통신 실패: Read timed out")은 서버의 이유가 아니다 — 응답만 잃었을 수 있어 실패라고 하지 않고,
+    // 같은 버튼을 다시 눌러도 두 번 되지 않는다고 알린다(요청 번호, 0062)
+    is MarketOutcome.Offline -> MarketMessage.Res(R.string.market_msg_offline)
     MarketOutcome.SignInRequired -> MarketMessage.Res(R.string.market_msg_sign_in)
 }

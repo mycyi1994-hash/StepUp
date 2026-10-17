@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 网络中断时(2026-10-17 检查) — 市场提示。只丢失了回应的请求会用同一请求编号重新发送，只处理一次(服务器 0062) -->
+<resources>
+    <string name="market_msg_offline">连接中断，未能确认结果。再次点按同一按钮不会重复处理，并会显示结果。</string>
+    <string name="market_msg_unfinished">未能完成请求，请稍后重试。</string>
+</resources>

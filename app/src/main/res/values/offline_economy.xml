@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lost connection (2026-10-17 audit) — market messages. A request whose reply was lost is sent again with the same request key and runs only once (server 0062). -->
+<resources>
+    <string name="market_msg_offline">The connection dropped before we could confirm the result. Tap the same button again — it won\'t go through twice, and you\'ll see the result.</string>
+    <string name="market_msg_unfinished">Couldn\'t finish the request. Please try again in a moment.</string>
+</resources>

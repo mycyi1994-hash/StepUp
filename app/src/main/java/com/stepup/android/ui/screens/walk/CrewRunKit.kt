@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.data.repo.PartyMember
-import com.stepup.android.ui.components.MapTone
+import com.stepup.android.ui.components.BrightMapTone
 import com.stepup.android.ui.components.RunBackButton
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.experience.feedbackClickable
@@ -146,10 +146,10 @@ private val CrewLight = CrewColors(
 internal fun crewColors(): CrewColors = if (StepUpColors.dark) CrewDark else CrewLight
 
 /**
- * 크루 달리기의 지도 색 — 밝은 실제 지도 그대로(2026-10-16 크루 전달본: 어두운 덧칠로 길 · 공원 · 경로를 가리지 않는다).
- * 러닝 화면의 남색 지도 필터(RunTone.mapFilter)는 크루 달리기 중 · 결과 지도에 쓰지 않는다.
+ * 크루 달리기의 지도 색 — 밝은 실제 지도(2026-10-16 크루 전달본: 어두운 덧칠로 길 · 공원 · 경로를 가리지 않는다). 러닝 화면과 같은
+ * 밝은 거리 지도다(2026-10-17). 예전 값(필터 없음)은 어두운 테마에서 앱 테마의 어두운 지도 색이 되어 밝지 않았다.
  */
-internal val CrewBrightMap = MapTone(filter = null, shade = 0f, roads = null)
+internal val CrewBrightMap = BrightMapTone
 
 // ── 머리 · 배지 ────────────────────────────────────────────────────
 

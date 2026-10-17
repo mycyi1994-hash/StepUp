@@ -74,8 +74,11 @@ sealed interface BoardResult {
     /** @param id 새로 생긴 글·댓글 번호. 해당 없으면 0. */
     data class Ok(val id: Long = 0L) : BoardResult
 
-    /** @param signIn 로그인해야 할 수 있는 일이었다 */
-    data class Failed(val reason: String, val signIn: Boolean = false) : BoardResult
+    /**
+     * @param signIn 로그인해야 할 수 있는 일이었다
+     * @param rejected 서버가 받아 보고 거절했다 — [reason] 은 서버가 적어 보낸 이유다. 아니면 닿지 못했거나 결과를 모른다
+     */
+    data class Failed(val reason: String, val signIn: Boolean = false, val rejected: Boolean = false) : BoardResult
 }
 
 /** 동네 이야기 목록에 잠깐 띄울 확인 메시지 */
@@ -195,19 +198,43 @@ class CommunityRepository(
         next
     }
 
-    /** 좋아요를 누르거나 거둔다. 서버가 돌려준 상태를 그 글에 바로 반영한다. */
-    suspend fun toggleLike(id: Long): BoardResult =
-        when (val result = api.toggleLike(id)) {
-            is ServerResult.Ok -> {
-                val liked = result.value
-                updatePost(id) {
-                    if (it.liked == liked) it
-                    else it.copy(liked = liked, likes = (it.likes + if (liked) 1 else -1).coerceAtLeast(0))
-                }
-                BoardResult.Ok()
+    /**
+     * 좋아요를 누르거나 거둔다 — 지금 보이는 상태의 반대를 바라는 상태로 보낸다. 응답을 잃은 뒤 다시 눌러도 같은 상태가
+     * 가서 거꾸로 취소되지 않는다. 서버가 확인한 상태를 그 글에 바로 반영한다.
+     */
+    suspend fun toggleLike(id: Long): BoardResult {
+        val post = _posts.value.firstOrNull { it.id == id } ?: return BoardResult.Failed("")
+        return sendLike(id, !post.liked, rollback = null)
+    }
+
+    /**
+     * 좋아요를 [wanted] 상태로 맞춘다(0062 post_set_like) — 몇 번을 다시 보내도 같은 상태다.
+     * 응답을 잃었으면(서버에 닿았을 수 있다) 그 글의 지금 상태를 다시 읽어 그대로 보인다. 읽지 못하면 미리 바꿔 보인
+     * 것을 [rollback] 으로 되돌린다 — 다시 누르면 같은 상태를 다시 보낸다.
+     */
+    private suspend fun sendLike(id: Long, wanted: Boolean, rollback: Post?): BoardResult {
+        val result = api.setLike(id, wanted)
+        if (result is ServerResult.Ok) {
+            val liked = result.value
+            // 미리 바꿔 보이지 않았으면(게시판) 여기서 바꾼다
+            updatePost(id) { now ->
+                if (now.liked == liked) now
+                else now.copy(liked = liked, likes = (now.likes + if (liked) 1 else -1).coerceAtLeast(0))
             }
-            else -> result.asBoardFailure()
+            return BoardResult.Ok()
         }
+        // 결과를 모른다(연결 끊김 · 시간 초과) — 서버에 닿았는지 그 글을 다시 읽어 본다
+        val actual = if (result is ServerResult.Retry) (api.likeState(id) as? ServerResult.Ok)?.value else null
+        when {
+            actual != null -> {
+                updatePost(id) { it.copy(liked = actual.liked, likes = actual.likes) }
+                // 다시 읽어 보니 바라던 상태다 — 응답만 잃었던 것
+                if (actual.liked == wanted) return BoardResult.Ok()
+            }
+            rollback != null -> updatePost(id) { it.copy(liked = rollback.liked, likes = rollback.likes) }
+        }
+        return result.asBoardFailure()
+    }
 
     /** 번개러닝 참가/취소. 정원은 서버가 지킨다 — 마지막 한 자리를 둘이 노려도 한 명만 들어간다. */
     suspend fun toggleJoinFlash(id: Long): BoardResult {
@@ -233,6 +260,7 @@ class CommunityRepository(
      * 글쓰기.
      *
      * @param meetInMinutes 번개러닝이 몇 분 뒤에 모이는지
+     * @param clientKey 글쓰기마다 만든 요청 키 — 결과를 모른 채 다시 올려도 두 편(번개는 모임 둘)이 되지 않는다
      */
     suspend fun write(
         category: PostCategory,
@@ -245,6 +273,7 @@ class CommunityRepository(
         capacity: Int = 0,
         lat: Double? = null,
         lng: Double? = null,
+        clientKey: String? = null,
     ): BoardResult {
         val flash = category == PostCategory.FLASH
         val meetAt = if (flash) {
@@ -264,6 +293,7 @@ class CommunityRepository(
             capacity = if (flash) capacity.coerceAtLeast(2) else 0,
             lat = if (flash) lat else null,
             lng = if (flash) lng else null,
+            clientKey = clientKey,
         )
         return when (result) {
             is ServerResult.Ok -> {
@@ -422,13 +452,28 @@ class CommunityRepository(
     suspend fun addComment(postId: Long, body: String, parentId: Long = 0L): BoardResult {
         val text = body.trim()
         if (text.isEmpty()) return BoardResult.Failed("")
-        return when (val result = api.createComment(postId, parentId, text)) {
+        return when (val result = createComment(postId, parentId, text)) {
             is ServerResult.Ok -> {
                 loadComments(postId)
                 BoardResult.Ok(result.value)
             }
             else -> result.asBoardFailure()
         }
+    }
+
+    /** 댓글 쓰기의 요청 키 — 쓰던 댓글을 다시 보내면 같은 키, 답을 받으면 버린다 */
+    private val commentKeys = RequestKeys()
+
+    /**
+     * 댓글을 단다. 같은 글 · 부모 · 내용을 다시 보내면 같은 요청 키라, 응답만 잃었던 댓글이 서버(0062)에서 둘이 되지 않는다.
+     * 결과를 모르면(연결 끊김) 목록을 다시 받는다 — 실제로 달린 댓글이 보여야 다시 보낼지 고를 수 있다.
+     */
+    private suspend fun createComment(postId: Long, parentId: Long, text: String): ServerResult<Long> {
+        val action = "COMMENT:$postId:$parentId:$text"
+        val key = commentKeys.keyFor(action)
+        val result = api.createComment(postId, parentId, text, key)
+        if (result is ServerResult.Retry) scope.launch { loadComments(postId) } else commentKeys.done(action, key)
+        return result
     }
 
     suspend fun deleteComment(postId: Long, id: Long): BoardResult =
@@ -594,7 +639,8 @@ class CommunityRepository(
     private val likeInFlight = mutableSetOf<Long>()
 
     /**
-     * 좋아요 — 누르는 순간 표시와 개수를 함께 바꾸고, 서버가 거절하면 되돌린다.
+     * 좋아요 — 누르는 순간 표시와 개수를 함께 바꾸고, 서버가 거절하면 되돌린다. 바라는 상태를 보내므로 응답을 잃은 뒤
+     * 다시 눌러도 거꾸로 취소되지 않고, 결과를 모르면 그 글의 지금 상태를 다시 읽어 맞춘다([sendLike]).
      * 같은 글에 요청이 가는 동안의 두 번째 누름은 무시한다(개수가 어긋나지 않게).
      */
     suspend fun toggleStoryLike(id: Long): BoardResult {
@@ -603,21 +649,7 @@ class CommunityRepository(
         try {
             val wanted = !before.liked
             updatePost(id) { it.copy(liked = wanted, likes = (it.likes + if (wanted) 1 else -1).coerceAtLeast(0)) }
-            return when (val result = api.toggleLike(id)) {
-                is ServerResult.Ok -> {
-                    val liked = result.value
-                    // 서버가 다른 상태를 돌려주면(다른 기기에서 눌렀다) 그 상태에 맞춘다
-                    updatePost(id) { now ->
-                        if (now.liked == liked) now
-                        else now.copy(liked = liked, likes = (now.likes + if (liked) 1 else -1).coerceAtLeast(0))
-                    }
-                    BoardResult.Ok()
-                }
-                else -> {
-                    updatePost(id) { it.copy(liked = before.liked, likes = before.likes) }
-                    result.asBoardFailure()
-                }
-            }
+            return sendLike(id, wanted, rollback = before)
         } finally {
             synchronized(likeInFlight) { likeInFlight.remove(id) }
         }
@@ -625,12 +657,12 @@ class CommunityRepository(
 
     /**
      * 동네 이야기 댓글 — 성공하면 목록을 다시 받는다. 다시 받지 못하면 서버가 준 번호로 내 댓글을
-     * 한 번만 더한다(두 번 세지 않게).
+     * 한 번만 더한다(두 번 세지 않게). 다시 보내도 같은 요청 키라 둘이 되지 않는다([createComment]).
      */
     suspend fun addStoryComment(postId: Long, body: String): BoardResult {
         val text = body.trim()
         if (text.isEmpty()) return BoardResult.Failed("")
-        return when (val result = api.createComment(postId, 0L, text)) {
+        return when (val result = createComment(postId, 0L, text)) {
             is ServerResult.Ok -> {
                 val id = result.value
                 if (!loadComments(postId)) {
@@ -786,7 +818,7 @@ fun CommentRow.toDomain(): Comment = Comment(
 /** 서버가 받아 주지 않은 결말을 화면이 쓰는 실패로 */
 internal fun ServerResult<*>.asBoardFailure(): BoardResult.Failed = when (this) {
     is ServerResult.SignInRequired -> BoardResult.Failed(reason, signIn = true)
-    is ServerResult.Rejected -> BoardResult.Failed(reason)
+    is ServerResult.Rejected -> BoardResult.Failed(reason, rejected = true)
     is ServerResult.Retry -> BoardResult.Failed(reason)
     is ServerResult.Ok -> BoardResult.Failed("")
 }

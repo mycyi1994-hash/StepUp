@@ -2,6 +2,7 @@ package com.stepup.android.sync
 
 import android.content.Context
 import android.util.Log
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
@@ -10,6 +11,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.stepup.android.core.ServiceLocator
+import java.util.concurrent.TimeUnit
 
 /**
  * 쌓인 러닝 세션을 증명 서버로 밀어 올리는 일꾼.
@@ -62,6 +64,9 @@ class SessionUploadWorker(
         /** 같은 일을 여러 번 예약하지 않도록 하나의 이름으로 묶는다 */
         private const val WORK_NAME = "session-upload"
 
+        /** 실패한 뒤 다시 하기까지 — n 번째 실패 뒤 n × 이만큼(초) */
+        private const val BACKOFF_SECONDS = 30L
+
         /**
          * 대기열을 처리하도록 예약한다.
          *
@@ -76,6 +81,9 @@ class SessionUploadWorker(
                         .setRequiredNetworkType(NetworkType.CONNECTED)
                         .build(),
                 )
+                // 실패할 때마다 30초씩 더 기다린다(기본은 두 배씩 — 몇 번 끊긴 뒤엔 와이파이에서 끝낸 러닝도 몇 시간씩
+                // "정산 대기"였다, 2026-10-17 점검). 끊긴 동안은 연결 조건이 두드리지 않게 막는다
+                .setBackoffCriteria(BackoffPolicy.LINEAR, BACKOFF_SECONDS, TimeUnit.SECONDS)
                 .build()
 
             WorkManager.getInstance(context)

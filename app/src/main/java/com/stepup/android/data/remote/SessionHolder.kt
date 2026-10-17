@@ -31,11 +31,20 @@ class SessionHolder(
     private val auth: SupabaseAuth,
     private val store: AuthSessionStore,
     private val now: () -> Long = { System.currentTimeMillis() / 1000 },
+    /** 갱신 실패 뒤 쉬는 시간을 재는 시계(ms) — 폰 시계를 바꿔도 틀리지 않게 단조 시계. 검사에서 갈아끼운다 */
+    private val monotonicMs: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
 
     // 여러 화면이 동시에 요청하면 갱신이 겹친다. 겹치면 한쪽의 refresh token 이
     // 무효가 되어 그 요청부터 로그아웃된다. 한 번에 하나만 들어가게 한다.
     private val mutex = Mutex()
+
+    /**
+     * 네트워크 문제로 갱신하지 못한 때(단조 ms)와 그 까닭 — [REFRESH_PAUSE_MS] 동안은 다시 두드리지 않고 바로 "나중에"를
+     * 돌려준다. 느린 연결에서는 갱신 한 번이 40초까지 걸리는데, 줄 서 있던 요청이 차례로 다시 갱신하면 그 곱만큼 막혔다
+     * (2026-10-17 점검 "인터넷이 중간에 끊어졌을 때"). 잠금 안에서만 읽고 쓴다.
+     */
+    private var refreshFailure: Pair<Long, String>? = null
 
     /** 쓸 수 있는 출입증. 만료가 가까우면 갱신한다. */
     /**
@@ -50,8 +59,14 @@ class SessionHolder(
             return@withLock TokenResult.Ok(current.accessToken, current.user?.id)
         }
 
+        // 방금 연결 문제로 갱신하지 못했다 — 잠깐은 다시 두드리지 않는다
+        refreshFailure?.let { (at, reason) ->
+            if (monotonicMs() - at in 0 until REFRESH_PAUSE_MS) return@withLock TokenResult.Unavailable(reason)
+        }
+
         when (val refreshed = auth.refresh(current.refreshToken)) {
             is AuthResult.Ok -> {
+                refreshFailure = null
                 // 갱신 응답에 user 가 빠져 오는 경우가 있다. 이전 값을 잃지 않게 이어 붙인다.
                 val merged = refreshed.session.copy(
                     user = refreshed.session.user ?: current.user,
@@ -65,7 +80,10 @@ class SessionHolder(
             // 멀쩡한 세션을 잃는다. 로그인에 성공하면 어차피 덮어써진다.
             is AuthResult.Rejected -> TokenResult.SignInRequired(refreshed.reason)
 
-            is AuthResult.Retry -> TokenResult.Unavailable(refreshed.reason)
+            is AuthResult.Retry -> {
+                refreshFailure = monotonicMs() to refreshed.reason
+                TokenResult.Unavailable(refreshed.reason)
+            }
         }
     }
 
@@ -74,6 +92,7 @@ class SessionHolder(
         when (val result = auth.signInWithGoogle(idToken, nonce)) {
             is AuthResult.Ok -> {
                 val session = result.session
+                refreshFailure = null
                 store.save(session)
                 TokenResult.Ok(session.accessToken, session.user?.id)
             }
@@ -100,10 +119,14 @@ class SessionHolder(
 
     suspend fun currentUserId(): String? = store.load()?.user?.id
 
-    /** A local snapshot, including offline sessions; no refresh or account creation. */
-    suspend fun recordingOwner(): String = mutex.withLock {
-        val current = store.load() ?: return@withLock com.stepup.android.domain.RecordingOwner.GUEST
-        current.user?.id?.takeIf { it.isNotBlank() }
+    /**
+     * A local snapshot, including offline sessions; no refresh or account creation.
+     * 잠금을 잡지 않는다 — 저장된 세션 하나를 읽을 뿐이다. 잠금을 기다리면 느린 연결에서 출입증 갱신(네트워크, 40초까지)이
+     * 끝날 때까지 러닝 시작 · 저장 · 되살리기가 함께 멈췄다(2026-10-17 점검).
+     */
+    suspend fun recordingOwner(): String {
+        val current = store.load() ?: return com.stepup.android.domain.RecordingOwner.GUEST
+        return current.user?.id?.takeIf { it.isNotBlank() }
             ?.let(com.stepup.android.domain.RecordingOwner::account)
             ?: com.stepup.android.domain.RecordingOwner.LEGACY
     }
@@ -112,7 +135,15 @@ class SessionHolder(
     suspend fun isSignedIn(): Boolean = store.load() != null
 
     /** 로그아웃. 저장된 세션을 지운다. */
-    suspend fun signOut() = mutex.withLock { store.clear() }
+    suspend fun signOut() = mutex.withLock {
+        refreshFailure = null
+        store.clear()
+    }
+
+    companion object {
+        /** 연결 문제로 갱신하지 못하면 이만큼(ms)은 다시 두드리지 않는다 */
+        const val REFRESH_PAUSE_MS = 20_000L
+    }
 }
 
 sealed interface TokenResult {

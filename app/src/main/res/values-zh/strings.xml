@@ -594,7 +594,7 @@
     <string name="notif_crew_invite">%1$s 邀请你加入跑团</string>
     <string name="notif_party_invite">%1$s 邀请你参加组队跑</string>
     <string name="notif_event_reward">活动奖励已到账：%1$s · %2$s SUP</string>
-    <string name="notif_party_member_left">%1$s 掉队太远，已离开队伍</string>
+    <string name="notif_party_member_left">%1$s 已离开队伍</string>
 
     <!-- Achievement grades -->
     <string name="ach_total_progress">总进度</string>

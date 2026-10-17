@@ -6,7 +6,7 @@
     <string name="points_per_level">レベルごとに4</string>
     <string name="points_hint_efficiency" formatted="false">1ポイント = +0.25%p</string>
     <string name="points_hint_comfort" formatted="false">1ポイント = +0.1%p · 最大20%</string>
-    <string name="points_hint_durability">1ポイント = 最大 +100(1km)</string>
+    <string name="points_hint_durability">1ポイント = 最大 +100(20分)</string>
     <string name="points_add_cd">%1$sに1ポイント足す</string>
     <string name="points_remove_cd">%1$sから1ポイント減らす</string>
     <string name="points_count_cd">%1$s %2$dポイント</string>

@@ -83,6 +83,8 @@ internal fun CrewLobbyContent(
     onRetry: () -> Unit,
     onLeave: () -> Unit,
     onDismissResult: () -> Unit,
+    /** 서버에 닿지 못한 동안 "다시 연결하기" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
+    onReconnect: () -> Unit = {},
 ) {
     val c = crewColors()
     if (party.phase == PartyPhase.COUNTDOWN) {
@@ -102,7 +104,7 @@ internal fun CrewLobbyContent(
                 Spacer(Modifier.height(6.dp))
                 // 방에 못 들어갔거나 멈췄으면 왜인지부터
                 party.problem?.let { problem ->
-                    CrewProblem(problem, onRetry, onLeave)
+                    CrewProblem(problem, onRetry, onReconnect, onLeave)
                     Spacer(Modifier.height(12.dp))
                 }
                 when (party.phase) {
@@ -305,9 +307,9 @@ private fun CrewLobbyRow(member: PartyMember, canKick: Boolean, onKick: () -> Un
     }
 }
 
-/** 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다. 나머지는 사람이 정한다 */
+/** 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다(기다리지 않으려면 다시 연결). 나머지는 사람이 정한다 */
 @Composable
-private fun CrewProblem(problem: PartyProblem, onRetry: () -> Unit, onLeave: () -> Unit) {
+private fun CrewProblem(problem: PartyProblem, onRetry: () -> Unit, onReconnect: () -> Unit, onLeave: () -> Unit) {
     val message = stringResource(
         when (problem) {
             PartyProblem.SIGN_IN -> R.string.party_problem_sign_in
@@ -323,6 +325,10 @@ private fun CrewProblem(problem: PartyProblem, onRetry: () -> Unit, onLeave: () 
         if (problem == PartyProblem.MISSED_START) CrewNote(message, tag = "party-problem") else CrewError(message, tag = "party-problem")
         if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) {
             FreeRunButton(stringResource(R.string.crew_retry), onRetry, Modifier.fillMaxWidth().testTag("party-retry"))
+        }
+        // 연결이 끊긴 동안 — 저절로도 다시 묻지만, 걸려 있던 물음을 기다리지 않고 지금 묻는다(나가기만 있으면 기다리거나 떠나야 했다)
+        if (problem == PartyProblem.NETWORK) {
+            FreeRunButton(stringResource(R.string.run_crew_reconnect_again), onReconnect, Modifier.fillMaxWidth().testTag("party-reconnect"))
         }
         // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
         if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START) {

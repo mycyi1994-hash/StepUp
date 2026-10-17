@@ -1,6 +1,9 @@
 package com.stepup.android
 
+import com.stepup.android.data.local.SneakerEntity
 import com.stepup.android.data.repo.EconomyOutcome
+import com.stepup.android.data.repo.RequestKeys
+import com.stepup.android.data.repo.repairAction
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.ForgePending
 import com.stepup.android.domain.ForgeStats
@@ -27,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -173,6 +177,43 @@ class ShoeCareTest {
         assertTrue(store.repair.value[ID] is RepairPhase.Done)
     }
 
+    @Test fun `서버가 처리했다고 답한 수리는 그새 달려 100 아래로 닳았어도 처음 맞춘 값으로 끝낸다`() {
+        val backend = FakeBackend(server(durability = 68.0), balance = 83.07)
+        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
+        store.openRepair(ID)
+        // 서버는 고쳤다고 답했지만 뒤이은 동기화를 못 해 폰 사본은 옛 값이다
+        backend.onRepair = { EconomyOutcome.Ok }
+        store.confirmRepair(ID)
+        assertTrue((store.repair.value[ID] as RepairPhase.Unknown).accepted)
+        // 아직 맞추지 못하면 확인 중 그대로 — 신발을 붙잡는다
+        backend.refreshOutcome = EconomyOutcome.Offline
+        store.recheckRepair(ID)
+        assertTrue(store.busy(ID))
+        // 그사이 달려 서버 값이 96 으로 닳았다 — 100 을 기다리지 않고 한 번 맞추면 끝나고 신발이 풀린다
+        backend.refreshOutcome = EconomyOutcome.Ok
+        backend.shoe = server(durability = 96.0)
+        backend.balance = 33.07
+        store.recheckRepair(ID)
+        val done = store.repair.value[ID] as RepairPhase.Done
+        assertEquals(96.0, done.durability, 0.0)
+        assertEquals(33.07, done.balance, 1e-9)
+        assertFalse(store.busy(ID))
+        assertEquals(1, backend.repairs)
+    }
+
+    @Test fun `수리 요청 번호는 고치기 전 내구도로 나뉜다 — 응답을 잃은 수리 뒤 다시 닳았으면 새 번호`() {
+        val keys = RequestKeys()
+        val worn = shoeRow(now = 900, max = 1_000, pts = 90.0)
+        // 응답을 잃은 수리 — 같은 상태에서 다시 누르면 같은 번호라 서버가 한 번만 치른다
+        val lost = keys.keyFor(repairAction(worn))
+        assertEquals(lost, keys.keyFor(repairAction(worn.copy())))
+        // 그 수리가 됐고 그 뒤 달려 다시 닳았다 — 새 번호여야 옛 영수증("됐어요", 고치지 않음) 대신 실제로 고친다
+        assertNotEquals(lost, keys.keyFor(repairAction(worn.copy(durabilityNow = 950, durabilityPts = 95.0))))
+        // 최대 내구도를 보내지 않는 예전 서버(남은 · 최대가 0)도 남은 비율로 나뉜다
+        val legacy = worn.copy(durabilityNow = 0, durabilityMax = 0, durabilityPts = 68.0)
+        assertNotEquals(repairAction(legacy), repairAction(legacy.copy(durabilityPts = 92.0)))
+    }
+
     @Test fun `조회 실패는 RP07, 로그인 필요는 RP11 — 수리를 보내지 않는다`() {
         val backend = FakeBackend(server(durability = 68.0), balance = 83.07)
         val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
@@ -246,6 +287,13 @@ class ShoeCareTest {
                 ),
             )
         }
+
+        /** 폰 사본(sneakers 표)의 서버 신발 — 수리 요청 번호가 보는 남은 · 최대 내구도(1 = 10m)와 남은 비율 */
+        fun shoeRow(now: Int, max: Int, pts: Double) = SneakerEntity(
+            id = ID, factionId = "WIND", rarity = "RARE", variant = 0, level = 5, mintNumber = 7,
+            luck = 1.0, comfort = 1.0, durability = pts.toInt(), equipped = false, acquiredAt = 0L,
+            serverId = ID, origin = "DRAW", durabilityPts = pts, durabilityNow = now, durabilityMax = max,
+        )
 
         /** 레어 Lv5 — 서버 단가 (1 + 0.25 × 1) × (1 + 0.05 × 5) = 1.5625 */
         fun server(

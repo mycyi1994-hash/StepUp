@@ -28,6 +28,14 @@ internal class RequestKeys(private val now: () -> Long = System::currentTimeMill
         entries.computeIfPresent(action) { _, entry -> if (entry.key == key) null else entry }
     }
 
+    /**
+     * [prefix] 로 시작하는 요청의 번호를 버린다 — 사용자가 그 일을 스스로 거뒀다(입찰 · 매물 거두기). 응답을 잃은 입찰을 거둔 뒤
+     * 같은 값으로 다시 걸면 새 요청이어야 한다 — 옛 번호를 쓰면 서버가 거둔 입찰의 영수증을 돌려줘 아무것도 걸리지 않았다.
+     */
+    fun forget(prefix: String) {
+        entries.keys.removeIf { it.startsWith(prefix) }
+    }
+
     companion object {
         const val TTL_MS = 10 * 60_000L
     }

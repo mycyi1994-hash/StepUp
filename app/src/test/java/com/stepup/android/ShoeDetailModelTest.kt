@@ -25,6 +25,8 @@ import com.stepup.android.ui.screens.items.durabilityFraction
 import com.stepup.android.ui.screens.items.durabilityLeft
 import com.stepup.android.ui.screens.items.durabilityMax
 import com.stepup.android.ui.screens.items.durabilityPercent
+import com.stepup.android.ui.screens.items.durabilityPercentDuringRun
+import com.stepup.android.ui.screens.items.durabilityWear
 import com.stepup.android.ui.screens.items.formatCount
 import com.stepup.android.ui.screens.items.formatDurability
 import com.stepup.android.ui.screens.items.formatPercent
@@ -127,6 +129,24 @@ class ShoeDetailModelTest {
         assertEquals(47, durabilityPercent(shoe))
         assertEquals(0.7, shoe.server!!.durabilityFactor, 0.0)
         assertEquals("12,345", formatCount(12_345))
+    }
+
+    @Test
+    fun `달리는 중 내구도는 1분마다 5씩 미리 줄어 보인다 - 서버 0064 와 같은 규칙`() {
+        assertEquals(0, durabilityWear(59))
+        assertEquals(5, durabilityWear(60))
+        assertEquals(100, durabilityWear(1_201))
+        assertEquals(0, durabilityWear(-5))
+        val shoe = server(durability = 100.0).let {
+            it.copy(server = it.server!!.copy(durabilityNow = 1_000, durabilityMax = 1_000, durabilityBase = 1_000))
+        }
+        // 1분 전에는 그대로, 20분이면 1,000 중 100 → 90%
+        assertEquals(100, durabilityPercentDuringRun(shoe, 59))
+        assertEquals(90, durabilityPercentDuringRun(shoe, 1_200))
+        // 다 닳으면 0 에서 멈춘다
+        assertEquals(0, durabilityPercentDuringRun(shoe, 5 * 60 * 60))
+        // 최대 내구도를 모르는 신발은 폰에서 셀 수 없어 그대로
+        assertEquals(100, durabilityPercentDuringRun(legacy(), 1_200))
     }
 
     // ── 체인 ───────────────────────────────────────────────────

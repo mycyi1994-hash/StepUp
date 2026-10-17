@@ -16,10 +16,15 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.core.Analytics
 import com.stepup.android.domain.RankPeriod
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +32,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -438,8 +446,10 @@ class CrewRepository(
     // 방에 모이고, 처음 연 사람이 방장이다. 앱은 몇 초마다 방의 상태를 물어
     // 준비·출발을 맞춘다 — 로비에서는 2초, 카운트다운은 서버 시각으로 폰이 세고,
     // 달리는 동안은 5초마다 내 위치를 보내며 묻는다.
+    // 물음 하나는 오래 기다리지 않고(PartyApi), 하나라도 닿지 않거나 LINK_LOST_MS 동안 방 상태를 받지 못하면 바로 끊겼다고
+    // 적는다 — 내 러닝은 그대로 이어지고, 다음에 방 상태를 받으면 풀린다.
     //
-    // 달리는 동안 소식이 STALE_SEC 넘게 끊긴 사람은 이 폰의 명단에서 잠시 빠진다(다시 소식이 오면 돌아온다).
+    // 달리는 동안 소식이 STALE_SEC 넘게 끊긴 사람은 이 폰의 명단에서 잠시 빠진다(다시 소식이 오면 돌아온다 — 알리지 않는다).
     // 적립 보너스 인원은 서버가 센다 — 출발 2분 뒤에도 서로 NEAR_DISTANCE_M 안에서 같이 뛴 사람들(0056).
     // 이 폰의 인원은 화면 예상일 뿐이다.
 
@@ -448,11 +458,26 @@ class CrewRepository(
 
     private var pollJob: Job? = null
 
-    /** 방에 무언가를 한 뒤 기다리지 말고 바로 다시 물으라는 신호 */
+    /** 방에 무언가를 한 뒤 기다리지 말고 바로 다시 물으라는 신호 — "다시 연결"이면 걸려 있던 물음도 기다리지 않는다([ask]) */
     private val wake = Channel<Unit>(Channel.CONFLATED)
 
-    /** 달리는 동안 "나갔어요"를 이미 알린 사람 — 다시 끊겨도 한 번만 알린다 */
-    private val droppedIds = mutableSetOf<String>()
+    /**
+     * 앞서 받은 방의 서버 명단(방 번호와 함께) — 소식이 끊겨 화면 명단에서 잠시 뺀 사람도 들어 있다.
+     * 출발한 뒤 이 명단에서 줄이 실제로 없어진 사람만 "나갔어요"로 알린다([partyDepartures]).
+     */
+    @Volatile private var lastRoster: Pair<Long, List<PartyMember>>? = null
+
+    /** 마지막으로 방 상태를 받은 때(단조 ms) — 물음이 걸려 있는 동안에도 [watchLink] 가 이것으로 끊김을 잰다 */
+    @Volatile private var heardAt = 0L
+
+    /** 답을 받지 못한 준비 · 준비 취소의 누른 값 — 다음 방 상태가 같으면 닿은 것, 다르면 닿지 않았다([lobbyProblem]) */
+    @Volatile private var readyTap: Boolean? = null
+
+    /** 준비를 누른 차례 — 앞서 누른 것의 늦은 답이 나중에 누른 것을 덮지 않게 */
+    private val readyTaps = AtomicInteger()
+
+    /** 나가기가 아직 서버에 닿지 않은 방 → 다시 보내는 일([leaveLater]). 서버가 그 방을 다시 내줘도 붙지 않는다 */
+    private val leaving = ConcurrentHashMap<Long, Job>()
 
     /** 출발을 보낸 방 — 두 번 눌러도 한 번만 보낸다(두 번째는 서버가 거절해 실패 안내가 남았다) */
     private var startingParty: Long? = null
@@ -482,8 +507,12 @@ class CrewRepository(
             return // 이미 이 방에 있음
         }
         pollJob?.cancel()
-        current.partyId?.let { old -> if (!sameRoom) scope.launch { partyApi.leave(old) } }
-        droppedIds.clear()
+        // 앞 방에 남은 "바로 다시 물어라"는 버린다 — 새 대기실의 첫 열기가 그 신호에 버려지지 않게
+        wake.tryReceive()
+        // 다른 대기실로 옮긴다 — 앞 방의 나가기는 서버에 닿을 때까지 뒤에서 보낸다
+        current.partyId?.let { old -> if (!sameRoom) leaveLater(old) }
+        lastRoster = null
+        readyTap = null
         startingParty = null
         _party.value = PartyState(
             phase = PartyPhase.LOBBY,
@@ -492,33 +521,52 @@ class CrewRepository(
             crewName = title,
             problem = notice,
         )
+        val epoch = accountEpoch
         pollJob = scope.launch {
             var wait = OPEN_RETRY_MS
             var rejoined = false
             while (true) {
-                when (val result = partyApi.open(crewId, flashPostId)) {
+                // 방 번호를 받기 전에 읽어 둔다 — 받은 뒤에는 멈추지 않고 바로 적어, 그사이 대기실을 떠나도 받은 방이 남지 않는다
+                val exited = exitedParties()
+                val share = shareByDefault()
+                // "다시 연결"(null) — 걸려 있던 열기를 두고 바로 다시 연다
+                val result = openRoom(crewId, flashPostId) ?: continue
+                when (result) {
                     is ServerResult.Ok -> {
                         val id = result.value
-                        // 러닝을 마치고 나온 방을 서버가 다시 내줬다 — 나가기가 서버에 닿지 않았다.
-                        // 그 방에 다시 붙으면 새 러닝이 옛 명단 · 크루로 켜진다. 다시 나오고 새 대기실을 연다.
-                        if (!rejoined && id in exitedParties()) {
-                            rejoined = true
-                            partyApi.leave(id)
+                        // 나온 방을 서버가 다시 내줬다 — 러닝을 마치고 나왔거나 대기실을 나왔는데 나가기가 서버에 닿지 않았다.
+                        // 그 방에 다시 붙으면 새 러닝이 옛 명단 · 크루로 켜지거나, 뒤늦게 닿은 나가기가 다시 들어온 나를 뺀다.
+                        // 지금 다시 나간 뒤 새로 연다(그 대기실이 아직 열려 있으면 다시 들어간다)
+                        if (!rejoined && (id in exited || leaving.containsKey(id))) {
+                            if (leaveNow(id, epoch)) {
+                                rejoined = true
+                            } else {
+                                // 나가기도 닿지 않았다 — 그 방에 붙지 않는다(나가기는 뒤에서 이어 보낸다). 조금 뒤 다시 연다
+                                _party.value = _party.value.copy(problem = PartyProblem.NETWORK)
+                                withTimeoutOrNull(wait) { wake.receive() }
+                                wait = (wait * 2).coerceAtMost(OPEN_RETRY_MAX_MS)
+                            }
                             continue
+                        }
+                        // 그사이 대기실을 떠났다(나가기와 이 열기가 엇갈렸다) — 받은 방에서 나온다
+                        if (!_party.value.inLobby(crewId, flashPostId)) {
+                            leaveLater(id, epoch)
+                            return@launch
                         }
                         _party.value = _party.value.copy(
                             partyId = id,
                             // 새 대기실 안내(놓친 출발)는 그사이 연결이 잠깐 끊겨 "다시 시도"가 대신 보였어도 되살린다
                             problem = notice.takeIf { _party.value.problem == notice || _party.value.problem == PartyProblem.NETWORK },
+                            // 위치 공유 기본값은 물을 때마다 서버가 받을 때까지 보낸다(poll) — 한 번 보내고 잃으면 고른 값이 방에 없었다
+                            pendingShare = true.takeIf { share },
                         )
-                        if (shareByDefault()) partyApi.share(id, true)
                         poll(id)
                         return@launch
                     }
-                    // 서버에 닿지 못했다 — "다시 시도하는 중"이라고 말한 대로 조금씩 늦추며 다시 연다
+                    // 서버에 닿지 못했다 — "다시 시도하는 중"이라고 말한 대로 조금씩 늦추며 다시 연다("다시 연결"을 누르면 바로)
                     is ServerResult.Retry -> {
                         _party.value = _party.value.copy(problem = PartyProblem.NETWORK)
-                        delay(wait)
+                        withTimeoutOrNull(wait) { wake.receive() }
                         wait = (wait * 2).coerceAtMost(OPEN_RETRY_MAX_MS)
                     }
                     else -> {
@@ -530,65 +578,190 @@ class CrewRepository(
         }
     }
 
-    private suspend fun poll(partyId: Long) {
-        while (true) {
-            val before = _party.value
-            if (before.partyId != partyId) return
-            // 이 폰이 이 모임의 러닝을 실제로 뛰는 중일 때만 위치를 보낸다 — 서버는 출발 2분 뒤에도 서로 곁에서
-            // 위치를 보낸 사람을 인원으로 센다(0056). 준비만 누르고 뛰지 않는 폰이나, 대기실을 떠나 따로 켠 자유
-            // 러닝이 방에 위치를 보내면 남의 보너스가 된다.
-            val running = com.stepup.android.service.WalkSessionService.state.value
-                .let { it.isActive && !it.isPaused && it.group != com.stepup.android.service.RunGroup.NONE }
-            if (before.phase == PartyPhase.RUNNING && running) {
-                // GPS 를 잃었으면(마지막 점이 오래됐다) 위치 없이 보낸다 — 서버가 옛 점을 지워 다른 사람에게 지금
-                // 위치처럼 보이지 않게
-                val here = currentLocation()
-                partyApi.ping(partyId, here?.lat, here?.lng)
-                // 공유를 켠 사람만 화면용 거리를 보낸다 — 적립 계산에는 쓰이지 않는다
-                if (before.myShare) currentKm()?.let { km -> partyApi.live(partyId, km.coerceIn(0.0, 300.0)) }
+    /**
+     * 방에 들어간다(party_open). "다시 연결"을 누르면 걸려 있던 열기를 기다리지 않고 null — 부른 쪽이 바로 다시 연다.
+     * 답을 쓰지 않으면(다시 연결 · 기다리는 사이 대기실을 떠남) 서버는 이미 나를 그 방에 넣었을 수 있다 — 늦게 온 방에서 나온다
+     * (처음 연 사람이면 진행자로 남아 뒤에 온 사람이 출발하지 못했다). 같은 대기실에 아직 있으면 같은 방을 받으니 둔다.
+     */
+    private suspend fun openRoom(crewId: String?, flashPostId: Long?): ServerResult<Long>? {
+        val epoch = accountEpoch
+        val call = scope.async { partyApi.open(crewId, flashPostId) }
+        var used = false
+        try {
+            val answer = select<ServerResult<Long>?> {
+                call.onAwait { it }
+                wake.onReceive { null }
             }
-            // 위치 공유 선택이 아직 서버에 닿지 않았으면 다시 보낸다(서버 값이 같아질 때까지)
-            before.pendingShare?.let { partyApi.share(partyId, it) }
-            when (val result = partyApi.state(partyId)) {
-                is ServerResult.Ok -> applyRoom(result.value)
-                // 방장이 내보냈거나 방이 없어졌다. 더 물어도 같다.
-                // 서버에 닿기는 했다 — 같이 뛰는 중 "연결 끊김"(CR18)은 풀어 둔다(더 묻지 않으니 다시 켜질 일도 없다).
-                // 같이 뛰는 중에도 방과 끊겼다고 적는다 — 더 묻지 않아 굳은 명단 · 위치를 화면이 지금 것처럼 보이지 않게(내 러닝은 이어진다)
-                is ServerResult.Rejected -> {
-                    _party.value = _party.value.copy(problem = PartyProblem.REMOVED, liveOffline = false)
-                    return
-                }
-                is ServerResult.SignInRequired -> {
-                    _party.value = _party.value.copy(problem = PartyProblem.SIGN_IN, liveOffline = false)
-                    return
-                }
-                is ServerResult.Retry -> {
-                    if (_party.value.phase != PartyPhase.RUNNING) {
-                        _party.value = _party.value.copy(problem = PartyProblem.NETWORK)
-                    } else {
-                        _party.value = _party.value.copy(liveOffline = true)
-                    }
+            used = answer != null
+            return answer
+        } finally {
+            if (!used) {
+                scope.launch {
+                    val room = (call.await() as? ServerResult.Ok)?.value ?: return@launch
+                    if (leaveLateRoom(_party.value, crewId, flashPostId, room)) leaveLater(room, epoch)
                 }
             }
-
-            val now = _party.value
-            if (now.partyId != partyId) return
-            when (now.phase) {
-                PartyPhase.COUNTDOWN -> countDown(partyId)
-                PartyPhase.FINISHED, PartyPhase.IDLE -> return
-                else -> Unit
-            }
-            // 방장이 방을 닫았으면 방은 더 묻지 않는다. 내 러닝은 내가 멈출 때까지 간다 — 그동안 위치만 계속 보낸다.
-            // 서버는 출발 2분 뒤에도 곁에서 뛴 사람을 함께 달린 인원으로 센다(0056). 진행자가 2분 전에 마치면
-            // 남은 사람들이 끝까지 같이 달려도 보너스를 잃었다. 방 · 명단은 다시 열지 않는다(닫힌 방은 아무에게도 보이지 않는다)
-            if (_party.value.roomClosed) {
-                pingWhileRunning(partyId)
-                return
-            }
-            val interval = if (_party.value.phase == PartyPhase.RUNNING) RUN_POLL_MS else LOBBY_POLL_MS
-            withTimeoutOrNull(interval) { wake.receive() }
         }
     }
+
+    /**
+     * 방에서 나오기를 뒤에서 보낸다 — 서버에 닿을 때까지 조금씩 늦추며 다시(party_leave 는 여러 번 보내도 같다).
+     * 한 번만 보내고 잃으면 떠난 사람이 방에 남았다 — 진행자였으면 뒤에 온 사람이 출발하지 못했다.
+     * 나온 방은 적어 둔다(exitedParties) — 나가기가 닿기 전에 대기실을 다시 열어도 그 방에 말없이 붙지 않게.
+     * 계정이 바뀌면 그만둔다 — 새 계정으로 앞 계정의 방을 나가지 않는다.
+     */
+    private fun leaveLater(id: Long, epoch: Int = accountEpoch) {
+        if (epoch != accountEpoch || leaving[id]?.isCompleted == false) return
+        val job = scope.launch(start = CoroutineStart.LAZY) {
+            rememberExit(id)
+            var attempt = 0
+            while (epoch == accountEpoch && partyApi.leave(id) is ServerResult.Retry && ++attempt < LEAVE_TRIES) {
+                delay(leaveRetryDelayMs(attempt))
+            }
+            leaving.remove(id, coroutineContext.job)
+        }
+        leaving[id] = job
+        job.start()
+    }
+
+    /**
+     * 방에서 지금 나온다 — 뒤에서 다시 보내던 나가기는 멈추고(보내던 것은 끝나기를 기다린다 — 늦게 닿아 다시 들어온 나를 빼지
+     * 않게) 한 번 보낸다. 닿지 않았거나 그사이 멈추면(대기실을 떠남) 뒤에서 닿을 때까지 이어 보낸다.
+     * @return 이번 나가기가 서버에 닿았다
+     */
+    private suspend fun leaveNow(id: Long, epoch: Int): Boolean {
+        var landed = false
+        try {
+            leaving.remove(id)?.cancelAndJoin()
+            rememberExit(id)
+            landed = epoch == accountEpoch && partyApi.leave(id) !is ServerResult.Retry
+        } finally {
+            if (!landed) leaveLater(id, epoch)
+        }
+        return landed
+    }
+
+    private suspend fun poll(partyId: Long) {
+        // 방과의 연결은 물음과 따로 잰다 — 물음이 시간 제한까지 걸려 있는 동안에도 LINK_LOST_MS 동안 방 상태를 받지 못하면
+        // 끊겼다고 적는다(예전에는 실패한 방 상태 물음만 보아, 같이 뛰는 중 끊긴 것을 40초~2분 늦게 알았다)
+        heardAt = monotonicMs()
+        val watch = scope.launch { watchLink(partyId) }
+        try {
+            while (true) {
+                val before = _party.value
+                if (before.partyId != partyId) return
+                // 이 폰이 이 모임의 러닝을 실제로 뛰는 중일 때만 위치를 보낸다 — 서버는 출발 2분 뒤에도 서로 곁에서
+                // 위치를 보낸 사람을 인원으로 센다(0056). 준비만 누르고 뛰지 않는 폰이나, 대기실을 떠나 따로 켠 자유
+                // 러닝이 방에 위치를 보내면 남의 보너스가 된다.
+                val running = com.stepup.android.service.WalkSessionService.state.value
+                    .let { it.isActive && !it.isPaused && it.group != com.stepup.android.service.RunGroup.NONE }
+                // 이번 차례의 보내기가 하나라도 서버에 닿지 못하면 바로 끊겼다고 적고, 남은 보내기는 건너뛰어 방 상태부터 묻는다.
+                // 묻는 사이 "다시 연결"(null)을 누르면 걸려 있던 것을 두고 처음부터 다시 한다
+                var reached = true
+                if (before.phase == PartyPhase.RUNNING && running) {
+                    // GPS 를 잃었으면(마지막 점이 오래됐다) 위치 없이 보낸다 — 서버가 옛 점을 지워 다른 사람에게 지금
+                    // 위치처럼 보이지 않게
+                    val here = currentLocation()
+                    val ping = ask { partyApi.ping(partyId, here?.lat, here?.lng) } ?: continue
+                    reached = ping !is ServerResult.Retry
+                    // 공유를 켠 사람만 화면용 거리를 보낸다 — 적립 계산에는 쓰이지 않는다
+                    val km = if (reached && before.myShare) currentKm() else null
+                    if (km != null) {
+                        val live = ask { partyApi.live(partyId, km.coerceIn(0.0, 300.0)) } ?: continue
+                        reached = live !is ServerResult.Retry
+                    }
+                }
+                // 위치 공유 선택이 아직 서버에 닿지 않았으면 다시 보낸다(서버 값이 같아질 때까지)
+                val share = before.pendingShare
+                if (reached && share != null) {
+                    val sent = ask { partyApi.share(partyId, share) } ?: continue
+                    reached = sent !is ServerResult.Retry
+                }
+                if (partyOffline(missed = !reached, heardAtMs = heardAt, nowMs = monotonicMs())) markOffline(partyId)
+                val result = ask { partyApi.state(partyId) } ?: continue
+                when (result) {
+                    is ServerResult.Ok -> {
+                        heardAt = monotonicMs()
+                        applyRoom(result.value)
+                    }
+                    // 방장이 내보냈거나 방이 없어졌다. 더 물어도 같다.
+                    // 서버에 닿기는 했다 — 같이 뛰는 중 "연결 끊김"(CR18)은 풀어 둔다(더 묻지 않으니 다시 켜질 일도 없다).
+                    // 같이 뛰는 중에도 방과 끊겼다고 적는다 — 더 묻지 않아 굳은 명단 · 위치를 화면이 지금 것처럼 보이지 않게(내 러닝은 이어진다)
+                    is ServerResult.Rejected -> {
+                        _party.value = _party.value.copy(problem = PartyProblem.REMOVED, liveOffline = false)
+                        return
+                    }
+                    is ServerResult.SignInRequired -> {
+                        _party.value = _party.value.copy(problem = PartyProblem.SIGN_IN, liveOffline = false)
+                        return
+                    }
+                    is ServerResult.Retry -> markOffline(partyId)
+                }
+
+                val now = _party.value
+                if (now.partyId != partyId) return
+                when (now.phase) {
+                    PartyPhase.COUNTDOWN -> countDown(partyId)
+                    PartyPhase.FINISHED, PartyPhase.IDLE -> return
+                    else -> Unit
+                }
+                // 방장이 방을 닫았으면 방은 더 묻지 않는다. 내 러닝은 내가 멈출 때까지 간다 — 그동안 위치만 계속 보낸다.
+                // 서버는 출발 2분 뒤에도 곁에서 뛴 사람을 함께 달린 인원으로 센다(0056). 진행자가 2분 전에 마치면
+                // 남은 사람들이 끝까지 같이 달려도 보너스를 잃었다. 방 · 명단은 다시 열지 않는다(닫힌 방은 아무에게도 보이지 않는다)
+                if (_party.value.roomClosed) {
+                    watch.cancel()
+                    pingWhileRunning(partyId)
+                    return
+                }
+                val interval = if (_party.value.phase == PartyPhase.RUNNING) RUN_POLL_MS else LOBBY_POLL_MS
+                withTimeoutOrNull(interval) { wake.receive() }
+            }
+        } finally {
+            watch.cancel()
+        }
+    }
+
+    /**
+     * 방에 한 번 묻거나 보낸다. "다시 연결"(또는 방금 누른 것)이 깨우면 걸려 있던 물음을 기다리지 않고 null — 부른 쪽이 새로 묻는다.
+     * 버린 물음은 제 시간 제한(PartyApi)까지 뒤에서 끝나고 답은 쓰지 않는다(와이파이 → LTE 처럼 길이 바뀌면 옛 연결은 시간이
+     * 다 될 때까지 답이 없다).
+     */
+    private suspend fun <T> ask(call: suspend () -> ServerResult<T>): ServerResult<T>? {
+        val answer = scope.async { call() }
+        return select<ServerResult<T>?> {
+            answer.onAwait { it }
+            wake.onReceive { null }
+        }
+    }
+
+    /** 물음과 따로 방과의 연결을 잰다 — 마지막으로 방 상태를 받은 지 LINK_LOST_MS 가 지나면 끊겼다고 적는다(물음이 걸려 있어도) */
+    private suspend fun watchLink(partyId: Long) {
+        while (_party.value.partyId == partyId) {
+            delay(LINK_CHECK_MS)
+            val heard = heardAt
+            if (partyOffline(missed = false, heardAtMs = heard, nowMs = monotonicMs())) markOffline(partyId, heard)
+        }
+    }
+
+    /**
+     * 방과 끊겼다고 적는다 — 달리는 중이면 띠(liveOffline — 다른 사람의 옛 위치 · 인원을 지금 것처럼 보이지 않는다),
+     * 대기실이면 "서버에 닿지 못했어요". 내 러닝은 그대로다. 다음에 방 상태를 받으면 풀린다(applyRoom).
+     * [heard] 를 주면 그 뒤에 방 상태를 받았을 때는 두지 않는다(물음과 엇갈려 막 받은 상태를 끊겼다고 덮지 않게).
+     */
+    private fun markOffline(partyId: Long, heard: Long? = null) {
+        _party.update { now ->
+            when {
+                now.partyId != partyId || now.roomClosed -> now
+                heard != null && heardAt != heard -> now
+                now.phase == PartyPhase.RUNNING -> now.copy(liveOffline = true)
+                now.phase == PartyPhase.LOBBY || now.phase == PartyPhase.COUNTDOWN -> now.copy(problem = PartyProblem.NETWORK)
+                else -> now
+            }
+        }
+    }
+
+    /** 단조 시계(ms) — 폰 시계를 바꿔도 끊김을 틀리게 재지 않는다 */
+    private fun monotonicMs(): Long = System.nanoTime() / 1_000_000
 
     /** 닫힌 방에 내 러닝이 끝날 때까지 위치만 보낸다(곁 판정용) — 마치면([finishParty]) · 다른 방으로 가면 멈춘다 */
     private suspend fun pingWhileRunning(partyId: Long) {
@@ -659,24 +832,18 @@ class CrewRepository(
         if (before.phase == PartyPhase.FINISHED) phase = PartyPhase.FINISHED
 
         val closed = row.status == "FINISHED"
-        var visible = members
-        val newlyDropped = mutableListOf<PartyMember>()
-        if (phase == PartyPhase.RUNNING) {
-            // 소식이 끊긴 사람은 명단에서 잠시 뺀다. 다시 소식이 오면 돌아온다 — 진행자가 1~2분 끊겼다고
-            // 남은 사람을 끝까지 빼던 것(진행자의 굳은 점 기준 거리)은 없앴다. 보너스 인원은 서버가 곁으로 센다(0056).
-            visible = members.filter { m ->
-                if (m.isMe) return@filter true
-                val gone = m.seenSec > STALE_SEC
-                if (gone && droppedIds.add(m.id)) newlyDropped += m
-                !gone
-            }
-        }
-        // 출발 때 준비 안 한 사람은 서버가 방에서 뺀다. 조용히 사라지면 본인은
-        // 앱이 고장 난 줄 알고, 남은 사람은 왜 줄었는지 모른다.
-        if (before.phase == PartyPhase.LOBBY && phase != PartyPhase.LOBBY) {
-            val stayed = members.mapTo(HashSet()) { it.id }
-            newlyDropped += before.members.filter { !it.isMe && it.id !in stayed }
-        }
+        // 소식이 끊긴 사람(굴다리 · 지하도)은 달리는 동안 명단에서 잠시 뺀다. 다시 소식이 오면 돌아온다 — 아직 방에 있으니
+        // 알리지 않는다(예전에는 1분 끊기면 "거리가 벌어져 파티에서 빠졌어요"가 남았다). 진행자가 1~2분 끊겼다고
+        // 남은 사람을 끝까지 빼던 것(진행자의 굳은 점 기준 거리)은 없앴다. 보너스 인원은 서버가 곁으로 센다(0056).
+        val visible = if (phase == PartyPhase.RUNNING) members.filter { it.isMe || it.seenSec <= STALE_SEC } else members
+        // 나간 사람 — 출발한 뒤 서버 명단에서 줄이 실제로 없어진 사람만 알린다. 출발 때 준비하지 않아 서버가 뺀 사람은
+        // 알리지 않는다(나간 것이 아니다 — 출발 화면이 함께 출발하는 사람을 보인다)
+        val left = partyDepartures(lastRoster?.takeIf { it.first == row.id }?.second.orEmpty(), before.phase, members, phase)
+        lastRoster = row.id to members
+        // 답을 받지 못한 준비 · 준비 취소 — 서버 값이 누른 것과 같아졌거나 출발했으면 더 보지 않는다
+        val tap = readyTap
+        val serverReady = row.members.firstOrNull { it.isMe }?.ready
+        if (tap != null && (phase != PartyPhase.LOBBY || serverReady == tap)) readyTap = null
 
         _party.value = before.copy(
             phase = phase,
@@ -689,20 +856,20 @@ class CrewRepository(
             roomClosed = closed,
             liveOffline = false,
             pendingShare = pendingShare,
-            problem = when {
-                closed && phase == PartyPhase.LOBBY -> PartyProblem.CLOSED
-                // 누른 것이 막혔다는 알림 · 새 대기실 안내는 대기실에서만, 다음에 무언가를 누를 때까지 둔다
-                // (출발 뒤까지 남으면 달리는 내내 실패 안내가 남았다)
-                phase == PartyPhase.LOBBY && before.problem == PartyProblem.FAILED -> PartyProblem.FAILED
-                phase == PartyPhase.LOBBY && before.problem == PartyProblem.MISSED_START -> PartyProblem.MISSED_START
-                else -> null
-            },
+            problem = lobbyProblem(closed, phase, before.problem, tap, serverReady),
         )
-        newlyDropped.forEach { rewardRepository.notify(NotificationType.PARTY_MEMBER_LEFT, it.name) }
+        left.forEach { rewardRepository.notify(NotificationType.PARTY_MEMBER_LEFT, it.name) }
     }
 
-    /** 방에 무언가를 하고, 된 뒤에 바로 방을 다시 묻는다. */
-    private fun act(call: suspend (Long) -> ServerResult<Unit>) {
+    /**
+     * 방에 무언가를 하고, 된 뒤에 바로 방을 다시 묻는다. 서버가 받지 않았으면 실패를 알리고 [undo] 로 화면을 되돌린다.
+     * [lost] 가 있으면 답을 받지 못했을 때(연결) 실패라 하지 않고 그것에 맡긴다 — 서버가 이미 받았을 수 있다(다음 방 상태로 본다).
+     */
+    private fun act(
+        undo: (PartyState) -> PartyState = { it },
+        lost: (() -> Unit)? = null,
+        call: suspend (Long) -> ServerResult<Unit>,
+    ) {
         val id = _party.value.partyId ?: return
         val problem = _party.value.problem
         if (problem == PartyProblem.FAILED || problem == PartyProblem.MISSED_START) {
@@ -712,16 +879,25 @@ class CrewRepository(
             val result = call(id)
             // 그새 다른 방으로 옮겼으면 이 방의 실패를 지금 방에 적지 않는다
             if (result !is ServerResult.Ok && _party.value.partyId == id) {
-                val failed = if (result is ServerResult.SignInRequired) PartyProblem.SIGN_IN else PartyProblem.FAILED
-                _party.value = _party.value.copy(problem = failed)
+                if (result is ServerResult.Retry && lost != null) {
+                    lost()
+                } else {
+                    val failed = if (result is ServerResult.SignInRequired) PartyProblem.SIGN_IN else PartyProblem.FAILED
+                    _party.value = undo(_party.value).copy(problem = failed)
+                }
             }
             wake.trySend(Unit)
         }
     }
 
+    /**
+     * 대기실에서 나온다. 나가기는 서버에 닿을 때까지 뒤에서 다시 보낸다([leaveLater]) — 한 번만 보내고 잃으면 떠난 사람이 방에
+     * 남았다(진행자였으면 뒤에 온 사람이 출발하지 못했다). 방에 들어가는 중이었으면 그 열기가 내준 방에서 나온다([openRoom]).
+     */
     fun leaveLobby() {
         pollJob?.cancel()
-        _party.value.partyId?.let { id -> scope.launch { partyApi.leave(id) } }
+        _party.value.partyId?.let { leaveLater(it) }
+        readyTap = null
         _party.value = PartyState()
     }
 
@@ -751,14 +927,26 @@ class CrewRepository(
         }
     }
 
-    /** 내 준비 상태. 화면은 바로 바꾸고, 서버가 거절하면 다음 물음에서 되돌아간다. */
+    /**
+     * 내 준비 상태. 화면은 바로 바꾼다. 서버가 받지 않았으면 바로 되돌리고 실패를 알린다.
+     * 답을 받지 못했으면(연결) 방을 다시 물어 서버 값으로 정한다 — 이미 받았으면 그대로 두고(답만 잃었다), 아니면 실패를 알린다
+     * (예전에는 답만 잃어도 "처리되지 않았어요"가 다음에 누를 때까지 남았다).
+     */
     fun setMyReady(ready: Boolean) {
         val state = _party.value
         if (state.phase != PartyPhase.LOBBY) return
+        val tap = readyTaps.incrementAndGet()
+        readyTap = null
         _party.value = state.copy(
             members = state.members.map { if (it.isMe) it.copy(ready = ready) else it },
         )
-        act { partyApi.ready(it, ready) }
+        act(
+            // 그사이 다시 눌렀으면 나중 것을 그대로 둔다
+            undo = { now ->
+                if (readyTaps.get() != tap) now else now.copy(members = now.members.map { if (it.isMe) it.copy(ready = !ready) else it })
+            },
+            lost = { if (readyTaps.get() == tap) readyTap = ready },
+        ) { partyApi.ready(it, ready) }
     }
 
     /**
@@ -795,11 +983,12 @@ class CrewRepository(
         if (state.phase != PartyPhase.RUNNING) return
         pollJob?.cancel()
         _party.value = state.copy(phase = PartyPhase.IDLE)
+        val epoch = accountEpoch
         // pollJob 에 둔다 — 나오는 사이 대기실을 떠나거나(leaveLobby) 계정이 바뀌면(resetForAccount) 이 일도 멈춘다.
-        // 멈추지 않으면 사용자가 떠난 뒤에 새 대기실이 열려 보이지 않는 방을 앱이 꺼질 때까지 물었다
+        // 멈추지 않으면 사용자가 떠난 뒤에 새 대기실이 열려 보이지 않는 방을 앱이 꺼질 때까지 물었다.
+        // 나가기는 적어 두고 보낸다 — 닿지 않았거나 그사이 멈추면 뒤에서 닿을 때까지 이어 보낸다
         pollJob = scope.launch {
-            rememberExit(id)
-            partyApi.leave(id)
+            leaveNow(id, epoch)
             val now = _party.value
             if (now.partyId != id || now.phase != PartyPhase.IDLE) return@launch
             open(state.crewId, state.flashPostId, state.crewName, notice = PartyProblem.MISSED_START)
@@ -809,7 +998,8 @@ class CrewRepository(
     /** 계정이 바뀌었다 — 앞 계정의 대기실 · 크루 목록 · 가입 표시를 남기지 않는다(옛 방을 새 계정으로 묻지 않게) */
     fun resetForAccount() {
         pollJob?.cancel()
-        droppedIds.clear()
+        lastRoster = null
+        readyTap = null
         startingParty = null
         _party.value = PartyState()
         // 앞 계정의 가입 · 신청 표시가 남으면 다음 목록에서 "신청 → 가입"으로 읽혀 새 계정에 가입 알림이 갔다(announceApprovals)
@@ -819,7 +1009,10 @@ class CrewRepository(
         clearCards()
     }
 
-    /** 지금 방을 다시 묻는다 — 같이 뛰는 중 연결이 끊겼을 때 "다시 연결"(CR18). 기다리던 물음을 앞당길 뿐이다. */
+    /**
+     * 지금 방을 다시 묻는다 — 연결이 끊겼을 때 "다시 연결"(같이 뛰는 중 CR18 · 대기실). 기다리던 물음을 앞당기고, 걸려 있던
+     * 물음 · 방 열기는 기다리지 않고 새로 한다(길이 바뀌면 옛 연결은 시간 제한까지 답이 없다).
+     */
     fun wakeParty() {
         // 묻기가 이미 끝났으면(서버가 거절 · 로그인 필요로 멈춘 뒤) 깨울 것이 없다 — 같이 뛰는 중이면 다시 묻기 시작한다
         val now = _party.value
@@ -929,20 +1122,91 @@ class CrewRepository(
         /** 서버가 함께 달린 사람으로 세는 거리(m) — 출발 2분 뒤에도 서로 이만큼 안에서 위치를 보냈다(0056 party_ping) */
         const val NEAR_DISTANCE_M = 200
 
-        /** 달리는 동안 이만큼(초) 소식이 없으면 이 폰의 명단에서 잠시 빠진다 */
+        /** 달리는 동안 이만큼(초) 소식이 없으면 이 폰의 명단에서 잠시 빠진다(알리지 않는다 — 다시 소식이 오면 돌아온다) */
         const val STALE_SEC = 60
 
         /** 출발한 지 이만큼 안이면 늦게 본 폰도 러닝을 켠다(화면이 꺼져 카운트다운을 놓친 경우). 넘으면 새 대기실 */
         const val LATE_START_MS = 120_000L
 
+        /** 이만큼(ms) 방 상태를 받지 못하면 물음이 걸려 있어도 끊겼다고 적는다(같이 뛰는 중 CR18 · 대기실) */
+        const val LINK_LOST_MS = 15_000L
+
+        /** 나가기를 보내는 횟수 · 다시 보내는 간격 — 2초부터 두 배씩 30초까지, 모두 4분쯤([leaveRetryDelayMs]) */
+        const val LEAVE_TRIES = 12
+        const val LEAVE_RETRY_MS = 2_000L
+        const val LEAVE_RETRY_MAX_MS = 30_000L
+
         private const val LOBBY_POLL_MS = 2_000L
         private const val RUN_POLL_MS = 5_000L
+        private const val LINK_CHECK_MS = 1_000L
         private const val OPEN_RETRY_MS = 2_000L
         private const val OPEN_RETRY_MAX_MS = 30_000L
         private const val EXIT_TRIES = 3
         private const val EXIT_RETRY_MS = 2_000L
     }
 }
+
+// ── 파티 판단(화면 · 서버 밖에서 검사한다 — PartyLinkTest) ───────────────
+
+/**
+ * 같이 뛰는 방(대기실)과 끊겼다고 볼까 — 이번 차례에 서버에 닿지 못한 보내기 · 물음이 있었으면 바로,
+ * 마지막으로 방 상태를 받은 지 [CrewRepository.LINK_LOST_MS] 가 지났으면 물음이 아직 걸려 있어도.
+ */
+internal fun partyOffline(missed: Boolean, heardAtMs: Long, nowMs: Long): Boolean =
+    missed || nowMs - heardAtMs >= CrewRepository.LINK_LOST_MS
+
+/**
+ * 방에서 나간 사람 — 출발한 뒤(카운트다운 · 달리는 중) 서버 명단에서 줄이 실제로 없어진 사람만. "나갔어요" 알림에 쓴다.
+ * 소식이 잠시 끊긴 사람(굴다리 · 지하도)은 줄이 남아 있다 — 아직 방에 있다. 대기실에서 오가는 사람, 출발하며 서버가 뺀
+ * 준비 전 인원은 나간 사람이 아니다.
+ *
+ * @param previous 앞서 받은 같은 방의 서버 명단(화면 명단에서 잠시 뺀 사람 포함) — [wasPhase] 는 그때의 단계
+ */
+internal fun partyDepartures(
+    previous: List<PartyMember>,
+    wasPhase: PartyPhase,
+    now: List<PartyMember>,
+    phase: PartyPhase,
+): List<PartyMember> {
+    val started = listOf(PartyPhase.COUNTDOWN, PartyPhase.RUNNING)
+    if (wasPhase !in started || phase !in started) return emptyList()
+    val stayed = now.mapTo(HashSet()) { it.id }
+    return previous.filter { !it.isMe && it.id !in stayed }
+}
+
+/**
+ * 방 상태를 받은 뒤의 안내. 닫힌 대기실은 "방이 닫혔어요". 누른 것이 막혔다는 알림 · 새 대기실 안내는 대기실에서만, 다음에
+ * 무언가를 누를 때까지 둔다(출발 뒤까지 남으면 달리는 내내 실패 안내가 남았다). 답을 받지 못한 준비 · 준비 취소([readyTap])는
+ * 서버 값이 누른 것과 같으면 닿은 것(답만 잃었다 — 안내 없음), 다르면 닿지 않은 것이다. 연결 · 로그인 안내는 받았으니 푼다.
+ */
+internal fun lobbyProblem(
+    closed: Boolean,
+    phase: PartyPhase,
+    before: PartyProblem?,
+    readyTap: Boolean?,
+    serverReady: Boolean?,
+): PartyProblem? = when {
+    closed && phase == PartyPhase.LOBBY -> PartyProblem.CLOSED
+    phase != PartyPhase.LOBBY -> null
+    readyTap != null -> PartyProblem.FAILED.takeIf { serverReady != readyTap }
+    before == PartyProblem.FAILED || before == PartyProblem.MISSED_START -> before
+    else -> null
+}
+
+/** 지금 상태가 아직 이 대기실(크루 · 번개 글)인가 — 떠났거나(빈 상태) 다른 대기실로 옮겼으면 아니다 */
+internal fun PartyState.inLobby(crewId: String?, flashPostId: Long?): Boolean =
+    phase != PartyPhase.IDLE && this.crewId == crewId && this.flashPostId == flashPostId
+
+/**
+ * 답을 쓰지 않은 방 열기(기다리는 사이 대기실을 떠났거나 "다시 연결"로 버렸다)가 뒤늦게 [room] 을 내줬다 — 그 방에서 나올까.
+ * 같은 대기실에 아직(또는 다시) 있고 그 방을 쓰거나 아직 방을 받기 전이면 둔다 — 같은 대기실은 같은 방을 받는다.
+ */
+internal fun leaveLateRoom(now: PartyState, crewId: String?, flashPostId: Long?, room: Long): Boolean =
+    !now.inLobby(crewId, flashPostId) || (now.partyId ?: room) != room
+
+/** [attempt] 번째 나가기가 닿지 않았을 때 다시 보내기까지(ms) — 2초부터 두 배씩, 30초까지 */
+internal fun leaveRetryDelayMs(attempt: Int): Long =
+    (CrewRepository.LEAVE_RETRY_MS shl (attempt - 1).coerceIn(0, 5)).coerceAtMost(CrewRepository.LEAVE_RETRY_MAX_MS)
 
 /** 서버 줄 → 도메인 모델 */
 fun CrewRow.toDomain(): Crew = Crew(
