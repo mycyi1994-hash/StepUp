@@ -10,6 +10,7 @@
     <string name="notification_channel_community">Crew &amp; flash run news</string>
     <string name="notification_walk_title">Run in progress</string>
     <string name="notification_steps">%1$d steps</string>
+    <string name="notification_run_still">Stopped for over 30 seconds · pause if you\'re taking a break</string>
 
     <!-- Tabs -->
     <string name="tab_home">Home</string>

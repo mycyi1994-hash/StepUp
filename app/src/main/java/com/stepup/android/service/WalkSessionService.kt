@@ -36,6 +36,7 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunIntegrity
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.RunVerdict
+import com.stepup.android.domain.RunStill
 import com.stepup.android.domain.TrackFixRule
 import com.stepup.android.domain.TrackPoint
 import com.stepup.android.domain.haversineMeters
@@ -173,6 +174,11 @@ data class WalkSessionState(
      */
     val gpsLost: Boolean = false,
     /**
+     * 러너가 오래 서 있다([RunStill] — 걸음 · 경로 점이 30초 넘게 그대로) — "30초 넘게 멈춰 있어요"를 알린다(2026-10-17).
+     * 일시정지 · 저장 중에는 false. 화면 표시용이라 저장본에 남기지 않는다.
+     */
+    val still: Boolean = false,
+    /**
      * 지금 위치(화면 표시용) — GPS 가 잡히기 전에는 기지국 · 마지막으로 알던 위치로 먼저 채운다. 달리는 중 지도의 내 점 · 화살표는
      * 경로 끝이 아니라 이 자리를 따라간다(경로 점은 오차보다 크게 움직여야 생겨 몇 초 늦다). 경로가 생긴 뒤에는 흐린 위치(오차 50m
      * 초과)가 와도 30초 동안 옮기지 않는다([TrackFixRule.keepHere]). 경로와 거리에는 들어가지 않는다. 저장본에 남기지 않는다.
@@ -251,6 +257,9 @@ class WalkSessionService : Service() {
     @Volatile private var lastFixElapsed = 0L
     @Volatile private var stepsAtLastFix = 0
     @Volatile private var lastKnownFixElapsed = 0L
+
+    /** 마지막으로 움직인 때(부팅 기준 ms) — 걸음이 늘거나 경로 점이 생긴 때, 시작 · 다시 시작한 때. 오래 서 있음([RunStill]) 판단용 */
+    @Volatile private var lastMoveElapsed = 0L
 
     /** GPS 가 마지막으로 고친 위치의 시각(부팅 기준 ms) — 알림 거리 필터와 상관없이 갱신된다. 없으면 0 */
     private fun lastKnownGpsFixElapsed(): Long = runCatching {
@@ -342,6 +351,7 @@ class WalkSessionService : Service() {
         val plausible = prev == null || RunIntegrity.isPlausible(meters, seconds)
 
         // 걸음 수집기·타이머와 서로 덮어쓰지 않게 원자적으로 갱신한다
+        val trackBefore = _state.value.track.size
         _state.update { current ->
             if (!current.isActive || current.isPaused) return@update current
             if (!plausible) {
@@ -374,6 +384,8 @@ class WalkSessionService : Service() {
                 topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),
             )
         }
+        // 경로 점이 생겼다 — 움직이고 있다(오래 서 있음 판단을 처음부터)
+        if (_state.value.track.size > trackBefore) lastMoveElapsed = SystemClock.elapsedRealtime()
     }
 
     /** 위성 GPS(LocationManager) — 구글 Play 서비스가 없는 휴대폰에서만 쓴다 */
@@ -762,6 +774,7 @@ class WalkSessionService : Service() {
             groupName = group.name,
         )
         activeMs = (restored?.elapsedSec ?: 0L) * 1000
+        lastMoveElapsed = SystemClock.elapsedRealtime()
 
         // 일별 기록/목표 보너스 수집기까지 함께 보장한다 (중복 호출에 안전).
         ServiceLocator.stepRepository.startTracking()
@@ -800,7 +813,11 @@ class WalkSessionService : Service() {
                     stepsAfter = updated.steps
                     updated
                 }
-                if (stepsAfter >= 0) updateNotification(stepsAfter)
+                if (stepsAfter >= 0) {
+                    // 걸음이 늘었다 — 움직이고 있다(오래 서 있음 판단을 처음부터)
+                    lastMoveElapsed = SystemClock.elapsedRealtime()
+                    updateNotification(stepsAfter)
+                }
             }
         }
         timerJob = scope.launch {
@@ -822,14 +839,19 @@ class WalkSessionService : Service() {
                     launch(Dispatchers.Main) { catchUpLocation() }
                 }
                 val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)
+                // 오래 서 있음 — 걸음 · 경로 점이 30초 넘게 그대로면 알린다(2026-10-17). 저장 중이면 알리지 않는다
+                val stillNow = RunStill.isStill(current.saveStatus == RunSaveStatus.IDLE, now - lastMoveElapsed)
                 _state.update {
                     if (!it.isActive || it.isPaused) it
                     else it.copy(
                         elapsedSec = seconds,
                         gpsLost = it.gpsFix && it.locationOn && fixAt > 0 &&
                             GpsSignal.isLost(now - fixAt, it.steps - stepsAtLastFix),
+                        still = stillNow,
                     )
                 }
+                // 화면이 꺼져 있어도 알림 줄에서 보이게 — 바뀔 때만 다시 쓴다
+                if (stillNow != current.still) updateNotification(_state.value.steps)
             }
         }
         startCheckpointLoop()
@@ -863,8 +885,11 @@ class WalkSessionService : Service() {
         // 원자적으로 — 걸음 · 타이머 수집기가 그 사이에 올린 값을 덮어 잃지 않게. 잃으면 저장본보다
         // 작아져 "진행이 거꾸로 갔다"로 이후 저장이 모두 거절된다
         _state.update { current ->
-            if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) current.copy(isPaused = paused) else current
+            if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) current.copy(isPaused = paused, still = false) else current
         }
+        // 멈췄다 다시 달리면 그때부터 센다 — 일시정지한 동안은 서 있어도 알리지 않는다
+        lastMoveElapsed = SystemClock.elapsedRealtime()
+        if (_state.value.isActive) updateNotification(_state.value.steps)
     }
 
     private fun stopSession() {
@@ -877,7 +902,7 @@ class WalkSessionService : Service() {
             return
         }
         settling = true
-        _state.update { it.copy(isPaused = true, saveStatus = RunSaveStatus.SAVING) }
+        _state.update { it.copy(isPaused = true, still = false, saveStatus = RunSaveStatus.SAVING) }
         val session = _state.value
         stepJob?.cancel()
         timerJob?.cancel()
@@ -1134,7 +1159,10 @@ class WalkSessionService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_walk)
             .setContentTitle(getString(R.string.notification_walk_title))
-            .setContentText(getString(R.string.notification_steps, steps))
+            // 오래 서 있으면(RunStill) 알림 줄에서도 알린다 — 화면이 꺼져 있어도 보이게
+            .setContentText(
+                if (_state.value.still) getString(R.string.notification_run_still) else getString(R.string.notification_steps, steps),
+            )
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

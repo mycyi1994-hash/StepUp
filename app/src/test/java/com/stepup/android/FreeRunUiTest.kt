@@ -57,9 +57,10 @@ class FreeRunUiTest {
         precise: Boolean = true,
         void: Boolean = false,
         speedFlagged: Boolean = false,
+        still: Boolean = false,
     ) = freeBand(
         active = active, paused = paused, asking = asking, locationAllowed = locationAllowed, locationOn = locationOn,
-        gpsLost = gpsLost, precise = precise, void = void, speedFlagged = speedFlagged,
+        gpsLost = gpsLost, precise = precise, void = void, speedFlagged = speedFlagged, still = still,
     )
 
     /** 기본은 위치를 재며 달리는 중 */
@@ -111,6 +112,23 @@ class FreeRunUiTest {
             on = on + next
         }
         assertEquals(FreeBand.None, current())
+    }
+
+    @Test
+    fun `30초 넘게 서 있으면 멈춤 띠 — 신호 약함 · 대략 위치보다 앞, 위치 꺼짐 · 무효 · 속도 오류보다 뒤`() {
+        // 2026-10-17 "너무 오래 멈췄을 때(30초 이상) 경고도 떠야"
+        assertEquals(FreeBand.Still, band(still = true))
+        assertEquals(FreeBand.Still, band(still = true, gpsLost = true, precise = false))
+        // 위치 없이 시간만 기록해도 걸음으로 안다
+        assertEquals(FreeBand.Still, band(still = true, locationAllowed = false))
+        assertEquals(FreeBand.LocationOff, band(still = true, locationOn = false))
+        assertEquals(FreeBand.MeasureInvalid, band(still = true, void = true))
+        assertEquals(FreeBand.SpeedError, band(still = true, speedFlagged = true))
+        // 일시정지 중에는 서 있어도 알리지 않는다 — 일시정지 띠
+        assertEquals(FreeBand.Paused, band(still = true, paused = true))
+        // 러닝 전 · 마칠지 묻는 동안에는 띠가 없다
+        assertEquals(FreeBand.None, band(still = true, active = false))
+        assertEquals(FreeBand.None, band(still = true, asking = true))
     }
 
     @Test

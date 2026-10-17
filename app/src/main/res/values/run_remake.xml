@@ -61,6 +61,8 @@
     <string name="run_paused_caption">Take a short break</string>
     <string name="run_paused_title">Paused</string>
     <string name="run_pause">Pause</string>
+    <string name="run_still_title">Stopped for over 30 seconds</string>
+    <string name="run_still_body">Taking a break? Pause the run. Time keeps recording until you do.</string>
     <string name="run_resume">Keep running</string>
     <string name="run_finish_run">Finish run</string>
     <string name="run_finish_mine">Finish my run</string>

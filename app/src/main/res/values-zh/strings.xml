@@ -8,6 +8,7 @@
     <string name="notification_channel_community">跑团与闪电跑消息</string>
     <string name="notification_walk_title">正在跑步</string>
     <string name="notification_steps">%1$d 步</string>
+    <string name="notification_run_still">已停止超过30秒 · 如果在休息，请暂停</string>
 
     <!-- Tabs -->
     <string name="tab_home">首页</string>

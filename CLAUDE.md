@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 최신 — 러닝 중 오래 서 있음 경고 (2026-10-17)
+
+[docs/run-still-warning-2026-10-17.md](docs/run-still-warning-2026-10-17.md) — 사용자 결정 "너무 오래 멈췄을 때(30초 이상) 경고" = 러너가 30초 넘게 서 있음.
+
+- 걸음이 늘지도, 경로 점이 생기지도 않은 지 30초(`domain/RunStill.kt`)면 "30초 넘게 멈춰 있어요" + 일시정지 알약 · 소리 · 진동 한 번 · 알림 글.
+- 저절로 멈추지 않는다. 다시 움직이면 사라진다. 기록 · 보상 규칙은 그대로다(화면 표시용 `WalkSessionState.still`).
+
 ## 최신 — 자유러닝 시작 플로 (2026-10-17 전달본)
 
 [docs/redesign/free-run-start-2026-10-17/README.md](docs/redesign/free-run-start-2026-10-17/README.md) — 자유러닝 시작 → 신발 점검 → 출발 확인 → 3·2·1·0 → StepUP! → 가운데에서 지도 펼침 → 기존 자유 러닝 화면.

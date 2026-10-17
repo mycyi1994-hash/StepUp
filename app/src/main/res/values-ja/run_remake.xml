@@ -61,6 +61,8 @@
     <string name="run_paused_caption">ひと息つきましょう</string>
     <string name="run_paused_title">一時停止</string>
     <string name="run_pause">一時停止</string>
+    <string name="run_still_title">30秒以上止まっています</string>
+    <string name="run_still_body">休憩中なら一時停止してください。それまで時間は記録され続けます。</string>
     <string name="run_resume">続けて走る</string>
     <string name="run_finish_run">ランを終える</string>
     <string name="run_finish_mine">自分のランを終える</string>
