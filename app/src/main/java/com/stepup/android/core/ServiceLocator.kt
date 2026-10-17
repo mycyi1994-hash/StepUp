@@ -343,6 +343,8 @@ object ServiceLocator {
                     economySync.refresh()
                 }
             },
+            // 다시 로그인해야 올릴 수 있다 — 러닝 결과가 "다시 로그인"을 보이게
+            onSignInRequired = { economySync.markSignedOut() },
             recorder = ServerSessionRecorder(
                 server = server,
                 courseApi = CourseApi(server),

@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.os.SystemClock
 import android.util.LruCache
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.stepup.android.BuildConfig
@@ -102,12 +105,34 @@ object MapTiles {
      */
     private val failed = ConcurrentHashMap<String, Long>()
 
-    private const val FAILURE_TTL_MS = 60_000L
+    /** 잠시 실패한 타일을 다시 받기까지(ms) — 지도도 같은 간격으로 빈 칸을 다시 채운다([RETRY_MS]) */
+    private const val FAILURE_TTL_MS = 15_000L
     private const val PERMANENT = Long.MAX_VALUE
+
+    /** 보이는 지도에 빈 칸(받지 못한 타일)이 있으면 이만큼마다 다시 받는다(ms) */
+    const val RETRY_MS = FAILURE_TTL_MS
+
+    /**
+     * 인터넷이 다시 된 횟수 — 지도가 이 값을 읽어, 끊긴 동안 받지 못한 타일을 바로 다시 받는다. 예전에는 보이는 범위가 바뀔
+     * 때까지 빈 칸(격자)으로 남아, 지도가 내 자리를 따라 움직이지 않는 것처럼 보였다(2026-10-17 "인터넷이 끊긴 후 다시
+     * 연결했을 때 … 아무리 움직여도 그냥 그 자리다").
+     */
+    var reconnects by mutableIntStateOf(0)
+        private set
+
+    /** 인터넷이 다시 됐다(NetworkWatch, 메인 스레드) — 잠시 실패로 적어 둔 타일을 잊고 보이는 지도가 다시 받게 한다 */
+    fun networkBack() {
+        failed.entries.removeIf { it.value != PERMANENT }
+        reconnects++
+    }
 
     fun key(zoom: Int, x: Int, y: Int): String = "$zoom/$x/$y"
 
     fun cached(zoom: Int, x: Int, y: Int): ImageBitmap? = memory.get(key(zoom, x, y))
+
+    /** 아직 없는 타일인데 다시 받아 볼 만한가 — 404 · 403 · 깨진 그림으로 못 박은 타일은 다시 받지 않는다 */
+    fun retryable(zoom: Int, x: Int, y: Int): Boolean =
+        memory.get(key(zoom, x, y)) == null && failed[key(zoom, x, y)] != PERMANENT
 
     /**
      * 타일 한 장을 가져온다. 메모리 → 디스크 → 네트워크 순.

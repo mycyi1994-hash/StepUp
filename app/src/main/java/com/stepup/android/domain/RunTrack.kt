@@ -69,16 +69,25 @@ fun List<TrackPoint>.toGeoPoints(): List<GeoPoint> = map { it.toGeoPoint() }
 /** [liveHead] 가 내 점을 경로 끝에서 떼어 둘 가장 먼 거리(m) — 경로 점이 생기기 전 거리([TrackFixRule], 오차 50m 의 두 배)까지 */
 const val LIVE_HEAD_MAX_M = 100.0
 
+/** 경로 끝이 이만큼(ms) 늘지 않는 동안 새로 받은 위치는 [LIVE_HEAD_MAX_M] 보다 멀어도 내 점을 옮긴다 */
+const val LIVE_HEAD_STALE_MS = 20_000L
+
 /**
  * 달리는 중 지도의 내 점 · 화살표를 둘 자리 — 받은 위치([here]). 그리기만 하고 거리 · 저장에는 쓰지 않는다.
  *
  * 구글 위치 서비스의 위치는 기준점에서 오차보다 크게 움직여야 경로 점이 된다([TrackFixRule]) — 그동안 내 점이 경로 끝에
- * 멈춰 있지 않고 받은 위치마다 따라간다(구글 지도처럼). 경로가 없거나 · 지금 자리를 모르거나 · 경로 끝에서 [LIVE_HEAD_MAX_M]
- * 보다 멀면(튄 위치) null — 예전처럼 경로 끝에 둔다.
+ * 멈춰 있지 않고 받은 위치마다 따라간다(구글 지도처럼). 경로가 없거나 · 지금 자리를 모르면 null — 경로 끝에 둔다.
+ * 경로 끝에서 [LIVE_HEAD_MAX_M] 보다 먼 위치는 튄 위치일 수 있어 경로 끝에 두되, 경로 끝이 [LIVE_HEAD_STALE_MS] 넘게 늘지 않은
+ * 뒤에 받은 위치면 옮긴다 — 흐린 위치만 오는 동안(인터넷이 끊겼다 돌아온 뒤 등) 내 점이 옛 경로 끝에 묶여 "아무리 움직여도
+ * 그 자리"이던 것(2026-10-17).
+ *
+ * @param hereAt [here] 를 받은 시각(폰 시계 ms) — [TrackPoint.at] 과 같은 시계
  */
-fun liveHead(track: List<GeoPoint>, here: GeoPoint?): GeoPoint? {
+fun liveHead(track: List<TrackPoint>, here: GeoPoint?, hereAt: Long): GeoPoint? {
     val last = track.lastOrNull() ?: return null
-    return here?.takeIf { haversineMeters(last, it) <= LIVE_HEAD_MAX_M }
+    val at = here ?: return null
+    if (haversineMeters(last.toGeoPoint(), at) <= LIVE_HEAD_MAX_M) return at
+    return at.takeIf { hereAt - last.at >= LIVE_HEAD_STALE_MS }
 }
 
 /**

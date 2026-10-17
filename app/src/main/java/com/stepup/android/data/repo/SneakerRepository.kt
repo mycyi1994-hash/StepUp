@@ -3,6 +3,7 @@ package com.stepup.android.data.repo
 import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.local.AppDatabase
+import com.stepup.android.data.local.SneakerEntity
 import androidx.room.withTransaction
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
@@ -80,7 +81,7 @@ class SneakerRepository(
         val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
         if (local.origin.isBlank()) return EconomyOutcome.SignInRequired
         return afterWrite(
-            payOnce("REPAIR:$id") { key -> api.repair(local.serverId.takeIf { it != 0L } ?: id, key).toEconomyOutcome() },
+            payOnce(repairAction(local)) { key -> api.repair(local.serverId.takeIf { it != 0L } ?: id, key).toEconomyOutcome() },
         )
     }
 
@@ -214,3 +215,12 @@ class SneakerRepository(
         }
     }
 }
+
+/**
+ * 수리 요청 번호의 이름 — 고치기 전 내구도(남은 · 최대 · 남은 비율)를 넣는다. 같은 상태에서 다시 누르면 같은 번호라 서버가
+ * 한 번만 치른다. 응답을 잃은 수리가 실제로 됐고 그 뒤 달려 다시 닳았으면 새 수리다 — 신발 번호만 쓰면 그 10분 동안의 새 수리가
+ * 옛 영수증을 받아, 고치지도 치르지도 않은 채 "됐어요"로 보이고 결과 확인에 머물렀다. 남은 비율은 최대 내구도를 보내지 않는
+ * 예전 서버(남은 · 최대가 0)에서도 나뉘게 한다.
+ */
+internal fun repairAction(shoe: SneakerEntity): String =
+    "REPAIR:${shoe.id}:${shoe.durabilityNow}/${shoe.durabilityMax}/${shoe.durabilityPts}"

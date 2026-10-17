@@ -6,7 +6,7 @@
     <string name="points_per_level">레벨마다 4개</string>
     <string name="points_hint_efficiency" formatted="false">1개 = +0.25%p</string>
     <string name="points_hint_comfort" formatted="false">1개 = +0.1%p · 최대 20%</string>
-    <string name="points_hint_durability">1개 = 최대 +100(1km)</string>
+    <string name="points_hint_durability">1개 = 최대 +100(20분)</string>
     <string name="points_add_cd">%1$s 포인트 하나 더하기</string>
     <string name="points_remove_cd">%1$s 포인트 하나 빼기</string>
     <string name="points_count_cd">%1$s 포인트 %2$d개</string>

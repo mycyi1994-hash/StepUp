@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -586,6 +587,16 @@ class CommunityStoriesTest {
                         val index = rows.indexOfFirst { it.id == id }
                         val liked = !rows[index].liked
                         rows[index] = rows[index].copy(liked = liked, likes = rows[index].likes + if (liked) 1 else -1)
+                        HttpResponse(200, "$liked")
+                    }
+                    // 0062 — 바라는 상태로 맞춘다(같은 값을 다시 보내도 그대로)
+                    "post_set_like" -> {
+                        val id = args!!["p_post"]!!.jsonPrimitive.long
+                        val liked = args["p_liked"]!!.jsonPrimitive.boolean
+                        val index = rows.indexOfFirst { it.id == id }
+                        if (rows[index].liked != liked) {
+                            rows[index] = rows[index].copy(liked = liked, likes = rows[index].likes + if (liked) 1 else -1)
+                        }
                         HttpResponse(200, "$liked")
                     }
                     "comment_create" -> {

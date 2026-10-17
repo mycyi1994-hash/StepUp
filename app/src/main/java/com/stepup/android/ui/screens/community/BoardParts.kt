@@ -40,7 +40,12 @@ import com.stepup.android.ui.theme.Volt
 fun BoardNoticeToast(viewModel: CommunityViewModel) {
     val notice by viewModel.boardNotice.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val text = notice?.let { stringResource(it.messageRes()) }
+    val text = when (val shown = notice) {
+        null -> null
+        // 서버가 거절한 이유(정원 마감 · 도배 제한 등)는 그대로 — "연결하지 못했어요"로 뭉뚱그리지 않는다
+        is BoardNotice.Rejected -> shown.reason
+        else -> stringResource(shown.messageRes())
+    }
     LaunchedEffect(notice) {
         if (text != null) {
             Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -50,10 +55,11 @@ fun BoardNoticeToast(viewModel: CommunityViewModel) {
 }
 
 private fun BoardNotice.messageRes(): Int = when (this) {
-    BoardNotice.REPORTED -> R.string.board_notice_reported
-    BoardNotice.BLOCKED -> R.string.board_notice_blocked
-    BoardNotice.FAILED -> R.string.crew_notice_failed
-    BoardNotice.SIGN_IN -> R.string.board_sign_in_needed
+    BoardNotice.Reported -> R.string.board_notice_reported
+    BoardNotice.Blocked -> R.string.board_notice_blocked
+    // 닿지 못했거나 결과를 모른다. 거절은 [BoardNoticeToast] 가 서버의 이유를 그대로 보인다
+    BoardNotice.Failed, is BoardNotice.Rejected -> R.string.crew_notice_failed
+    BoardNotice.SignIn -> R.string.board_sign_in_needed
 }
 
 /**

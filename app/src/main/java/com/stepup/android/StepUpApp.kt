@@ -37,5 +37,14 @@ class StepUpApp : Application() {
         // 올리지 못한 러닝이 남아 있으면 다시 올린다. 로그아웃 중이었거나 끝난 직후
         // 앱이 죽었으면, 다음 러닝을 끝낼 때까지 아무도 이 일을 예약하지 않는다.
         runCatching { SessionUploadWorker.schedule(this) }
+        // 인터넷이 다시 되면 위의 일(푸시 주소 · 잔고 맞추기 · 러닝 올리기)을 한 번 더 한다 — 앱을 다시 켤 때까지 기다리지 않게.
+        // 보이는 지도는 끊긴 동안 못 받은 타일을 다시 받고, 크루 달리기 · 대기실은 기다리지 않고 방을 다시 묻는다
+        com.stepup.android.core.NetworkWatch.start(this) {
+            ServiceLocator.pushRegistrar.syncInBackground()
+            ServiceLocator.refreshEconomyInBackground()
+            runCatching { SessionUploadWorker.schedule(this) }
+            com.stepup.android.ui.components.MapTiles.networkBack()
+            runCatching { ServiceLocator.crewRepository.wakeParty() }
+        }
     }
 }

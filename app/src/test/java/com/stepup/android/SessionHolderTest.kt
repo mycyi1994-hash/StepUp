@@ -8,6 +8,7 @@ import com.stepup.android.data.remote.HttpResponse
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.SupabaseAuth
 import com.stepup.android.data.remote.TokenResult
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -59,6 +60,7 @@ class SessionHolderTest {
         store: MemoryStore,
         http: FakeHttp,
         nowSeconds: Long = 1_000_000L,
+        monotonicMs: () -> Long = { 0L },
     ) = SessionHolder(
         auth = SupabaseAuth(
             baseUrl = "https://test.supabase.co",
@@ -68,6 +70,7 @@ class SessionHolderTest {
         ),
         store = store,
         now = { nowSeconds },
+        monotonicMs = monotonicMs,
     )
 
     private fun stored(
@@ -205,6 +208,54 @@ class SessionHolderTest {
         assertTrue(result is TokenResult.Unavailable)
         assertEquals("세션을 지우면 안 된다", 0, store.cleared)
         assertEquals("old", store.session?.accessToken)
+    }
+
+    @Test
+    fun `연결 문제로 갱신하지 못하면 잠깐은 다시 두드리지 않는다`() = runBlocking {
+        // 느린 연결에서는 갱신 한 번이 40초까지 걸린다 — 줄 서 있던 요청마다 다시 갱신하면 그 곱만큼 막혔다(2026-10-17 점검)
+        var clock = 0L
+        val store = MemoryStore(stored("old", expiresAt = 0L, anonymous = false))
+        val http = FakeHttp(mapOf("/token" to HttpResponse(0, "통신 실패")))
+        val sessions = holder(store, http, monotonicMs = { clock })
+
+        assertTrue(sessions.accessToken() is TokenResult.Unavailable)
+        clock = SessionHolder.REFRESH_PAUSE_MS - 1
+        assertTrue(sessions.accessToken() is TokenResult.Unavailable)
+        assertEquals("쉬는 동안은 서버를 다시 부르지 않는다", 1, http.calls.size)
+
+        clock = SessionHolder.REFRESH_PAUSE_MS
+        assertTrue(sessions.accessToken() is TokenResult.Unavailable)
+        assertEquals("쉬는 시간이 지나면 다시 갱신해 본다", 2, http.calls.size)
+        assertEquals("세션을 지우면 안 된다", 0, store.cleared)
+    }
+
+    @Test
+    fun `기록 주인은 갱신을 기다리지 않고 저장된 세션에서 바로 읽는다`() = runBlocking {
+        // 느린 연결에서 갱신(네트워크)이 잠금을 쥔 동안 러닝 시작 · 저장이 함께 멈췄다(2026-10-17 점검)
+        val store = MemoryStore(stored("old", expiresAt = 0L, anonymous = false))
+        val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val slow = object : HttpPoster {
+            override suspend fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                entered.complete(Unit)
+                release.await()
+                return HttpResponse(0, "통신 실패")
+            }
+            override suspend fun get(url: String, headers: Map<String, String>) = post(url, "", headers)
+        }
+        val sessions = SessionHolder(
+            auth = SupabaseAuth("https://test.supabase.co", "sb_publishable_test", slow, now = { 1_000_000L }),
+            store = store,
+            now = { 1_000_000L },
+        )
+        val refreshing = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).async { sessions.accessToken() }
+        entered.await()
+
+        val owner = kotlinx.coroutines.withTimeout(2_000) { sessions.recordingOwner() }
+
+        assertEquals(com.stepup.android.domain.RecordingOwner.account("user-1"), owner)
+        release.complete(Unit)
+        assertTrue(refreshing.await() is TokenResult.Unavailable)
     }
 
     // ── 구글 로그인 ─────────────────────────────────────────────────────

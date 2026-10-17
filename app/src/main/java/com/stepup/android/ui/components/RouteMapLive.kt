@@ -67,6 +67,7 @@ import kotlin.math.tan
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 
 /**
  * 진짜 지도 위의 러닝 경로.
@@ -395,6 +396,25 @@ data class MapTone(
 val LocalMapTone = androidx.compose.runtime.staticCompositionLocalOf { MapTone() }
 
 /**
+ * 밝은 거리 지도(2026-10-17 사용자 "지도가 더 밝아야 한다. 네이버지도처럼 해 놔라") — 실제 타일(MapTiler streets) 색을 거의 그대로
+ * 두고 땅의 누런 기만 덜어 흰 바탕 · 흰 길 · 초록 공원 · 파란 물로 보이게 한다. 앱 테마(어두운 테마 포함)와 상관없이 밝다.
+ * 땅 #F5F0E4 → #F5F5F5 · 물 #85CAF9 → #84D1FF · 공원 #D7E9C8 → #D7EFD7 · 큰길 노랑은 그대로, 흰 길 · 검은 글자도 그대로다.
+ */
+val BrightMapFilter = ColorFilter.colorMatrix(
+    androidx.compose.ui.graphics.ColorMatrix(
+        floatArrayOf(
+            1.0311f, -0.0567f, -0.0060f, 0f, 7.65f,
+            -0.0165f, 1.0128f, -0.0060f, 0f, 7.65f,
+            -0.0165f, -0.0567f, 1.1197f, 0f, 7.65f,
+            0f, 0f, 0f, 1f, 0f,
+        ),
+    ),
+)
+
+/** 러닝 · 크루 달리기 지도의 색 — [BrightMapFilter] 만, 덧칠 · 길 겹 없이 */
+val BrightMapTone = MapTone(filter = BrightMapFilter, shade = 0f, roads = null)
+
+/**
  * 지도 한 칸 — 타일을 깔고 그 위에 [overlay] 를 그린다.
  *
  * 러닝 경로, 코스·번개 핀, 땅따먹기 칸, 기록 히트맵이 모두 이 부품 위에 그려진다.
@@ -460,8 +480,10 @@ fun StepUpMap(
         // 달리는 동안 좌표는 계속 늘어나지만 대개 같은 타일 안이다. 효과를 좌표가
         // 아니라 **타일 범위**에 묶어, 몇 초마다 전체를 다시 받는 일을 막는다.
         val tileKey = plan?.rangeKey.orEmpty()
+        // 인터넷이 다시 되면 처음부터 다시 받는다 — 끊긴 동안 못 받은 타일이 빈 칸으로 남지 않게
+        val reconnects = MapTiles.reconnects
 
-        LaunchedEffect(tileKey) {
+        LaunchedEffect(tileKey, reconnects) {
             val current = plan ?: return@LaunchedEffect
             currentOnViewport?.let { report ->
                 val (min, max) = current.bounds(widthPx, heightPx)
@@ -477,13 +499,19 @@ fun StepUpMap(
 
             // 순차로 받으면 타임아웃 하나에 지도 전체가 멈춘다. 4개씩 병렬로 —
             // 타일 서버에 무리를 주지 않으면서 체감이 확 달라진다.
-            for (chunk in wanted.chunked(4)) {
-                coroutineScope {
-                    chunk.map { (tx, ty) ->
-                        async { MapTiles.load(context, current.zoom, tx, ty) }
-                    }.awaitAll()
+            var todo = wanted
+            while (todo.isNotEmpty()) {
+                for (chunk in todo.chunked(4)) {
+                    coroutineScope {
+                        chunk.map { (tx, ty) ->
+                            async { MapTiles.load(context, current.zoom, tx, ty) }
+                        }.awaitAll()
+                    }
+                    arrivals++
                 }
-                arrivals++
+                // 못 받은 타일(끊긴 연결 · 서버 오류)은 잠시 뒤 다시 — 같은 범위에 머무는 동안에도 빈 칸으로 남지 않게
+                todo = wanted.filter { (tx, ty) -> MapTiles.retryable(current.zoom, tx, ty) }
+                if (todo.isNotEmpty()) delay(MapTiles.RETRY_MS)
             }
         }
 
@@ -549,7 +577,8 @@ fun StepUpMap(
 
             // Unloaded tiles show only an abstract grid. Never imply invented streets
             // are real location data when the tile provider is unavailable.
-            drawStreets(seed)
+            // 격자는 지도에 붙인다 — 타일이 없어도(인터넷이 끊겨도) 지도가 내 자리를 따라 흐르는 것이 보이게. 밝은 지도면 밝게
+            if (plan != null) drawBlankGrid(plan, light = tileFilter === BrightMapFilter) else drawStreets(seed)
             // 길 겹은 필터와 짝이다 — 앱 테마 색(필터 null)에는 길 겹이 없다
             val drawn = if (plan != null && revision >= 0) {
                 drawTiles(plan, tileFilter ?: StepUpColors.mapFilter, if (tileFilter == null) null else tileRoads)
@@ -782,6 +811,31 @@ data class TilePlan(
  * 상태에 복사해 두면 LruCache가 비워도 컴포지션이 계속 붙잡고 있어, 크기 제한이
  * 무력해지고 줌을 오갈수록 메모리가 샌다.
  */
+/**
+ * 아직 받지 못한 타일 자리 — 지도에 붙은 옅은 격자(타일 한 장을 넷으로, 줌 17 에서 60m 남짓). 지도가 내 자리를 따라 움직이면
+ * 격자도 함께 흐른다 — 화면에 붙은 격자는 타일이 빠진 동안 지도가 멈춘 것처럼 보였다(2026-10-17). 가짜 길은 그리지 않는다.
+ */
+private fun DrawScope.drawBlankGrid(plan: TilePlan, light: Boolean) {
+    drawRect(if (light) Color(0xFFECEFF2) else Color(0xFF0C1930))
+    val line = if (light) Color(0xFF0B1E3F).copy(alpha = 0.08f) else Snow.copy(alpha = 0.055f)
+    val stroke = 1.dp.toPx()
+    val step = MapTiles.TILE_SIZE / 4.0
+    var wx = floor(plan.originX / step) * step
+    while (true) {
+        val x = ((wx - plan.originX) * plan.scale).toFloat()
+        if (x > size.width) break
+        if (x >= 0f) drawLine(line, Offset(x, 0f), Offset(x, size.height), stroke)
+        wx += step
+    }
+    var wy = floor(plan.originY / step) * step
+    while (true) {
+        val y = ((wy - plan.originY) * plan.scale).toFloat()
+        if (y > size.height) break
+        if (y >= 0f) drawLine(line, Offset(0f, y), Offset(size.width, y), stroke)
+        wy += step
+    }
+}
+
 private fun DrawScope.drawTiles(plan: TilePlan, filter: ColorFilter, roads: ColorFilter? = null): Int {
     var drawn = 0
     val side = (MapTiles.TILE_SIZE * plan.scale).toInt()

@@ -53,6 +53,11 @@ class ClaimRepository(
     private val uploadOwner: suspend () -> String = { "legacy" },
     /** 서버가 러닝을 하나라도 확인했으면 한 번 부른다 — 잔고 · 에너지를 다시 받아 온다 */
     private val onSigned: suspend () -> Unit = {},
+    /**
+     * 다시 로그인해야 올릴 수 있다 — 화면(러닝 결과의 "다시 로그인")이 알게 알린다. 예전엔 일꾼이 조용히 물러나
+     * 결과가 "정산 대기"에 머물렀고, 서버가 7일 지난 러닝을 받지 않아 적립을 잃을 수 있었다(2026-10-17 점검).
+     */
+    private val onSignInRequired: suspend () -> Unit = {},
 ) {
 
     /** 올릴 것이 몇 개 남았는지 — 화면에 보여주기 위한 값 */
@@ -137,6 +142,7 @@ class ClaimRepository(
                     // 시도 횟수만 오른다 — 대기열을 그대로 두고 물러난다.
                     // 그 전에 확인받은 러닝이 있으면 잔고는 다시 받아 둔다.
                     if (signed > 0) runCatching { onSigned() }
+                    runCatching { onSignInRequired() }
                     return UploadRun(
                         signed = signed,
                         rejected = rejected,

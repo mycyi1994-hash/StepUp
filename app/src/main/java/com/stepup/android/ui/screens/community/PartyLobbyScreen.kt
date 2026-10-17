@@ -221,6 +221,8 @@ fun PartyLobbyScreen(
             viewModel.dismissResult()
             onBack()
         },
+        // 서버에 닿지 못한 동안 — 걸려 있던 물음 · 방 열기를 기다리지 않고 지금 다시 묻는다
+        onReconnect = { com.stepup.android.core.ServiceLocator.crewRepository.wakeParty() },
     )
     if (readyCheck && party.phase == PartyPhase.LOBBY) {
         CrewReadyCheckSheet(
@@ -284,6 +286,8 @@ fun PartyLobbyContent(
     onDismissResult: () -> Unit,
     /** 크루가 정한 이니셜(번개러닝이면 비어 있다) */
     monogram: String = "",
+    /** 서버에 닿지 못한 동안 "다시 연결" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
+    onReconnect: () -> Unit = {},
 ) {
     val t = runTone()
     // 크루 대기실 · 동시 출발은 크루 달리기 v2 모습(2026-10-16). 번개러닝 대기실은 아래 예전 모습 그대로
@@ -292,6 +296,7 @@ fun PartyLobbyContent(
             party = party, title = title, resultPoints = resultPoints, canNotify = canNotify,
             onBack = onBack, onReady = onReady, onCancelReady = onCancelReady, onStart = onStart, onShare = onShare,
             onKick = onKick, onNotify = onNotify, onRetry = onRetry, onLeave = onLeave, onDismissResult = onDismissResult,
+            onReconnect = onReconnect,
         )
         return
     }
@@ -371,7 +376,7 @@ fun PartyLobbyContent(
         Spacer(Modifier.height(14.dp))
         // 방에 못 들어갔거나 멈췄으면 왜인지부터
         party.problem?.let { problem ->
-            ProblemNotice(problem, onRetry, onLeave)
+            ProblemNotice(problem, onRetry, onReconnect, onLeave)
             Spacer(Modifier.height(12.dp))
         }
         when (party.phase) {
@@ -491,9 +496,9 @@ private fun ShareRow(share: Boolean, onShare: (Boolean) -> Unit) {
     }
 }
 
-/** 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다. 나머지는 사람이 정한다 */
+/** 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다(기다리지 않으려면 다시 연결). 나머지는 사람이 정한다 */
 @Composable
-private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onLeave: () -> Unit) {
+private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnect: () -> Unit, onLeave: () -> Unit) {
     val message = stringResource(
         when (problem) {
             PartyProblem.SIGN_IN -> R.string.party_problem_sign_in
@@ -504,13 +509,24 @@ private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onLeave: (
             PartyProblem.MISSED_START -> R.string.party_problem_missed_start
         },
     )
+    // 방이 닫혔거나 빠졌으면 다시 열기, 연결이 끊긴 동안이면 지금 다시 묻기(나가기만 있으면 기다리거나 떠나야 했다)
+    val action = when (problem) {
+        PartyProblem.CLOSED, PartyProblem.REMOVED -> stringResource(R.string.crew_retry)
+        PartyProblem.NETWORK -> stringResource(R.string.run_crew_reconnect)
+        else -> null
+    }
+    val onAction = when (problem) {
+        PartyProblem.CLOSED, PartyProblem.REMOVED -> onRetry
+        PartyProblem.NETWORK -> onReconnect
+        else -> null
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         RunNotice(
             message,
             kind = if (problem == PartyProblem.NETWORK || problem == PartyProblem.MISSED_START) RunNoticeKind.Warn else RunNoticeKind.Error,
             tag = "party-problem",
-            action = if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) stringResource(R.string.crew_retry) else null,
-            onAction = if (problem == PartyProblem.CLOSED || problem == PartyProblem.REMOVED) onRetry else null,
+            action = action,
+            onAction = onAction,
         )
         // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
         if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START) {

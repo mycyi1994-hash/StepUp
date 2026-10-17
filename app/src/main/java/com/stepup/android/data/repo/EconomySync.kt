@@ -50,6 +50,14 @@ class EconomySync(
     val state: StateFlow<EconomySyncState> = _state
 
     /**
+     * 러닝을 올리다 서버가 다시 로그인을 요구했다 — 동기화와 같은 "로그인 필요" 상태로 알린다(러닝 결과의 "다시 로그인").
+     * 다음 동기화가 성공하면 그 결과로 바뀐다.
+     */
+    fun markSignedOut() {
+        _state.value = EconomySyncState.SIGNED_OUT
+    }
+
+    /**
      * 기기 검사만 쓴다 — 로그인 전인 CI 에뮬레이터에서 로그인한 사람의 화면(러닝 완료의 정산 대기 등)을 그려 보려고
      * 상태 표시만 바꾼다. 서버 · 원장에는 아무것도 하지 않는다. 앱 코드에서는 부르지 않는다.
      */
@@ -126,7 +134,8 @@ class EconomySync(
 
         // 받아 오는 사이에 다른 계정으로 바뀌었으면 쓰지 않는다 — 두 계정의 잔고 · 신발이 섞이지 않게.
         // 새 계정은 로그인하면서 다시 맞춘다.
-        val stillSame = (sessions.accessToken() as? TokenResult.Ok)?.userId == userId
+        // 저장된 세션만 본다 — 출입증을 다시 받으면(네트워크) 느린 연결에서 다 받아 온 사본을 버렸다(2026-10-17 점검)
+        val stillSame = sessions.currentUserId() == userId
         if (!stillSame) return ServerResult.Retry("계정이 바뀌어 다시 맞춥니다")
 
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }

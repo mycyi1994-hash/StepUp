@@ -3,6 +3,7 @@ package com.stepup.android
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.TrackPoint
+import com.stepup.android.domain.LIVE_HEAD_STALE_MS
 import com.stepup.android.domain.liveHead
 import com.stepup.android.domain.toGeoPoints
 import org.junit.Assert.assertEquals
@@ -86,16 +87,25 @@ class RunTrackTest {
 
     @Test
     fun `달리는 중 지도의 내 점은 받은 위치에 선다 - 경로 점을 기다리지 않는다`() {
-        val a = GeoPoint(37.5283, 126.9326)
-        val b = GeoPoint(37.5284, 126.9326) // a 에서 북쪽으로 약 11m
+        val a = TrackPoint(37.5283, 126.9326, 1_000_000L)
+        val b = TrackPoint(37.5284, 126.9326, 1_005_000L) // a 에서 북쪽으로 약 11m
+        val track = listOf(a, b)
         val here = GeoPoint(37.52848, 126.9326) // b 에서 약 9m — 아직 경로 점이 되지 못한 위치
-        assertEquals(here, liveHead(listOf(a, b), here))
-        assertEquals(b, liveHead(listOf(a, b), b))
+        assertEquals(here, liveHead(track, here, 1_007_000L))
+        assertEquals(b.toGeoPoint(), liveHead(track, b.toGeoPoint(), 1_005_000L))
         // 모르는 자리 · 경로 전(대략적인 자리는 따로 그린다) — 경로 끝에 둔다(null)
-        assertEquals(null, liveHead(listOf(a, b), null))
-        assertEquals(null, liveHead(emptyList(), here))
-        // 100m 넘게 떨어진 위치(튄 위치)로 내 점을 옮기지 않는다
+        assertEquals(null, liveHead(track, null, 1_007_000L))
+        assertEquals(null, liveHead(emptyList(), here, 1_007_000L))
+        // 경로가 늘고 있는 동안 100m 넘게 떨어진 위치(튄 위치)로는 내 점을 옮기지 않는다
         val far = GeoPoint(37.5300, 126.9326) // b 에서 약 180m
-        assertEquals(null, liveHead(listOf(a, b), far))
+        assertEquals(null, liveHead(track, far, 1_007_000L))
+    }
+
+    @Test
+    fun `경로 끝이 20초 넘게 그대로면 먼 위치로도 내 점이 따라간다 - 끊겼다 돌아온 뒤 옛 자리에 묶이지 않게`() {
+        val b = TrackPoint(37.5284, 126.9326, 1_005_000L)
+        val far = GeoPoint(37.5300, 126.9326) // 약 180m — 흐린 위치만 오는 동안 걸어 온 자리
+        assertEquals(null, liveHead(listOf(b), far, 1_005_000L + LIVE_HEAD_STALE_MS - 1))
+        assertEquals(far, liveHead(listOf(b), far, 1_005_000L + LIVE_HEAD_STALE_MS))
     }
 }

@@ -1,5 +1,11 @@
 package com.stepup.android
 
+import com.stepup.android.data.local.ClaimedEventDao
+import com.stepup.android.data.local.ClaimedEventEntity
+import com.stepup.android.data.local.DailyStepsEntity
+import com.stepup.android.data.local.NotificationEntity
+import com.stepup.android.data.local.RewardEntity
+import com.stepup.android.data.local.StepDao
 import com.stepup.android.data.remote.AuthSession
 import com.stepup.android.data.remote.AuthSessionStore
 import com.stepup.android.data.remote.AuthUser
@@ -11,9 +17,13 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
+import com.stepup.android.data.repo.EventClaimResult
+import com.stepup.android.data.repo.EventRepository
 import com.stepup.android.data.repo.Events
 import com.stepup.android.data.repo.eventPeriodKey
 import java.time.LocalDate
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -100,5 +110,57 @@ class EventClaimTest {
     fun `서버가 거절한 이유를 그대로 읽는다`() = runBlocking {
         val http = FakeHttp(HttpResponse(409, """{"code":"23505","message":"이미 받은 보상입니다"}"""))
         assertEquals(ServerResult.Rejected("이미 받은 보상입니다"), api(http).claim("night_quest", "Asia/Seoul"))
+    }
+
+    // ── 받기의 결말(EventRepository) — 응답을 잃은 받기 · 이미 받음 ─────────────
+
+    /** 받은 표시 · 폰 원장 줄 · 알림을 그대로 담아 두는 가짜 */
+    private class FakeClaims : ClaimedEventDao {
+        val rows = mutableListOf<ClaimedEventEntity>()
+        val rewards = mutableListOf<RewardEntity>()
+        val notifications = mutableListOf<NotificationEntity>()
+
+        override suspend fun insert(entity: ClaimedEventEntity) {
+            if (rows.none { it.eventId == entity.eventId }) rows += entity
+        }
+
+        override fun observeAll(): Flow<List<ClaimedEventEntity>> = flowOf(rows.toList())
+        override suspend fun byId(id: String): ClaimedEventEntity? = rows.firstOrNull { it.eventId == id }
+        override suspend fun deleteAll() = rows.clear()
+        override suspend fun insertReward(reward: RewardEntity) { rewards += reward }
+        override suspend fun insertNotification(notification: NotificationEntity) { notifications += notification }
+    }
+
+    /** 받기는 폰 걸음을 쓰지 않는다 — 비어 있는 걸음 표 */
+    private class NoSteps : StepDao {
+        override suspend fun upsert(day: DailyStepsEntity) = Unit
+        override fun observeSince(fromDay: Long): Flow<List<DailyStepsEntity>> = flowOf(emptyList())
+        override suspend fun byDay(day: Long): DailyStepsEntity? = null
+        override fun observeTotalSteps(): Flow<Long> = flowOf(0L)
+        override fun observeStepsSince(fromDay: Long): Flow<Long> = flowOf(0L)
+    }
+
+    @Test
+    fun `응답을 잃은 받기는 닿지 못함이 아니라 모름 — 받음 표시를 남기지 않는다`() = runBlocking {
+        val claims = FakeClaims()
+        val repo = EventRepository(claims, api(FakeHttp(HttpResponse(0, "통신 실패: Read timed out"))), NoSteps())
+
+        // 서버는 이미 지급했을 수 있다 — 화면은 이 결말에 잔고를 서버 값으로 다시 받는다
+        assertEquals(EventClaimResult.Unconfirmed, repo.claim(Events.NIGHT_QUEST, 1f))
+        assertTrue(claims.rows.isEmpty())
+        assertTrue(claims.rewards.isEmpty())
+    }
+
+    @Test
+    fun `이미 받았다는 답은 받음 표시만 남기고 폰 원장에 0 SUP 줄을 만들지 않는다`() = runBlocking {
+        val claims = FakeClaims()
+        val http = FakeHttp(HttpResponse(409, """{"code":"23505","message":"이미 받은 보상입니다"}"""))
+        val repo = EventRepository(claims, api(http), NoSteps())
+
+        assertEquals(EventClaimResult.AlreadyClaimed, repo.claim(Events.NIGHT_QUEST, 1f))
+        assertEquals(listOf("night_quest"), claims.rows.map { it.eventId })
+        // 금액을 지어내지 않는다 — 받은 금액은 서버 원장에 있고 잔고는 다시 맞춰 받는다
+        assertTrue(claims.rewards.isEmpty())
+        assertTrue(claims.notifications.isEmpty())
     }
 }

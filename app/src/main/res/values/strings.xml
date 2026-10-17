@@ -596,7 +596,7 @@
     <string name="notif_crew_invite">%1$s invited you to their crew</string>
     <string name="notif_party_invite">%1$s invited you to a party run</string>
     <string name="notif_event_reward">Event reward arrived: %1$s · %2$s SUP</string>
-    <string name="notif_party_member_left">%1$s fell too far behind and left the party</string>
+    <string name="notif_party_member_left">%1$s left the party</string>
 
     <!-- Achievement grades -->
     <string name="ach_total_progress">Overall progress</string>

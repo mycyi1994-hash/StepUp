@@ -50,6 +50,12 @@ sealed interface EventClaimResult {
 
     /** 서버에 닿지 못했다. 다시 누르면 된다. */
     data object Failed : EventClaimResult
+
+    /**
+     * 답을 받지 못했다 — 보내지 못했거나 응답만 잃었다(서버는 이미 지급했을 수 있다). 다시 눌러도 서버는 기간마다 한 번만 준다.
+     * 폰의 원장에는 받은 금액이 없으므로 화면은 잔고를 서버 값으로 다시 받는다.
+     */
+    data object Unconfirmed : EventClaimResult
 }
 
 /**
@@ -109,6 +115,8 @@ class EventRepository(
                 if (result.reason.contains(ALREADY_CLAIMED)) {
                     // Server says paid, but this response has no receipt amount to reconcile locally.
                     // Do not invent credit. Cross-device/server receipt recovery remains separate work.
+                    // 이 줄은 "받음" 표시뿐이다(금액 0, 원장 줄이 아니다 — 금액은 어디에도 보이거나 더해지지 않는다).
+                    // 받은 금액은 서버 원장에 있으므로 화면이 잔고를 서버 값으로 다시 받는다.
                     dao.insert(ClaimedEventEntity(key, System.currentTimeMillis(), 0.0))
                     EventClaimResult.AlreadyClaimed
                 } else if (result.reason.contains(NOT_FINISHED)) {
@@ -118,7 +126,8 @@ class EventRepository(
                     EventClaimResult.Failed
                 }
             is ServerResult.SignInRequired -> EventClaimResult.SignInRequired
-            is ServerResult.Retry -> EventClaimResult.Failed
+            // 응답만 잃었으면 서버는 이미 지급했을 수 있다 — 실패로 덮지 않고 모름으로 돌려 잔고를 다시 받게 한다
+            is ServerResult.Retry -> EventClaimResult.Unconfirmed
         }
     }
 

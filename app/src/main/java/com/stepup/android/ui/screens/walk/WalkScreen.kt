@@ -553,8 +553,12 @@ fun RunScreen(
         void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt,
     )
     val freeDist = freeDistance(timeOnly, session.gpsKm)
-    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸
-    val freeDurability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPercent(it) }
+    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸. 달리는 동안은 이번 러닝으로 닳을 만큼(1분마다 5, 서버 0064)을 미리 뺀다 —
+    // 끝난 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게)
+    val freeDurability = equipped?.let {
+        if (session.isActive && !freeVoid) com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.elapsedSec)
+        else com.stepup.android.ui.screens.items.durabilityPercent(it)
+    }
     val freeBandNow = freeBand(
         active = session.isActive, paused = session.isPaused, asking = confirmStop || discardDialog,
         locationAllowed = locationAllowed, locationOn = session.locationOn, gpsLost = session.gpsLost,
@@ -593,7 +597,9 @@ fun RunScreen(
     val hereOnly = remember(session.here) { listOfNotNull(session.here) }
     // 지도의 내 점 · 화살표 자리 — 경로 점(오차보다 크게 움직여야 생긴다)을 기다리지 않고 받은 위치마다 따라간다
     // (2026-10-16 "인식도 잘 안 되고 느려"). 경로 선은 거리로 센 점까지만 긋는다
-    val liveHead = remember(geoTrack, session.here) { com.stepup.android.domain.liveHead(geoTrack, session.here) }
+    val liveHead = remember(session.track, session.here, session.hereAt) {
+        com.stepup.android.domain.liveHead(session.track, session.here, session.hereAt)
+    }
     val breaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
     val liveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
         val here = session.here
@@ -1273,7 +1279,7 @@ fun RunScreen(
                     // 자유 러닝에는 보상 칸을 두지 않는다(2026-10-14 v2)
                     estimate = if (freeRunNow) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
                     speed = (if (freeRunNow) freeSpeed else speedKmh)?.let { "%.1f".format(it) } ?: "—",
-                    durability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPercent(it).toString() } ?: "—",
+                    durability = freeDurability?.toString() ?: "—",
                     // 자유 러닝은 측정 까닭만 — 적립 한도 · 부스터 · 크루 보너스 같은 보상 줄은 두지 않는다
                     reasons = if (freeRunNow) buildList {
                         if (freeVoid) add(context.getString(R.string.run_free_measure_invalid))

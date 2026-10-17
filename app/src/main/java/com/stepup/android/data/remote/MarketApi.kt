@@ -87,6 +87,10 @@ class MarketApi(private val server: StepUpServer) {
         }
 
     // ── 쓰기 ────────────────────────────────────────────────────────
+    //
+    // 값이 오가는 넷(내놓기 · 즉시 구매 · 구매 입찰 · 즉시 판매)은 요청 번호(request → p_request, 0062)를 받는다.
+    // 응답을 잃은 같은 요청을 같은 번호로 다시 보내면 서버는 다시 하지 않고 처음 결과(null 도 그대로)를 돌려준다.
+    // 번호 없이 부르면 예전과 같다.
 
     /**
      * 폰의 신발을 거래소 장부에 올린다.
@@ -123,25 +127,27 @@ class MarketApi(private val server: StepUpServer) {
      * 이미 그 값 이상을 부른 사람이 있으면 매물로 서지 않고 바로 팔린다.
      * 그때는 매물 번호가 없으므로 null 이 온다 — 없는 것이 아니라 팔린 것이다.
      */
-    suspend fun list(sneakerId: Long, price: Double): ServerResult<Long?> = rpcNullable(
+    suspend fun list(sneakerId: Long, price: Double, request: String? = null): ServerResult<Long?> = rpcNullable(
         "market_list",
         jsonBody {
             put("p_sneaker_id", sneakerId)
             put("p_price", price)
+            request?.let { put("p_request", it) }
         },
     )
 
     suspend fun cancelListing(listingId: Long): ServerResult<Unit> =
         rpcVoid("market_cancel_listing", jsonBody { put("p_listing_id", listingId) })
 
-    suspend fun buyNow(listingId: Long): ServerResult<Long?> =
-        rpcNullable("market_buy_now", jsonBody { put("p_listing_id", listingId) })
+    suspend fun buyNow(listingId: Long, request: String? = null): ServerResult<Long?> =
+        rpcNullable("market_buy_now", jsonBody { put("p_listing_id", listingId); request?.let { put("p_request", it) } })
 
     /** 모델에 값을 건다. 살 수 있는 매물이 이미 있으면 기다리지 않고 산다. */
     suspend fun bid(
         model: ModelKey,
         minLevel: Int,
         price: Double,
+        request: String? = null,
     ): ServerResult<Long?> = rpcNullable(
         "market_bid",
         jsonBody {
@@ -150,17 +156,19 @@ class MarketApi(private val server: StepUpServer) {
             put("p_variant", model.variant)
             put("p_min_level", minLevel)
             put("p_price", price)
+            request?.let { put("p_request", it) }
         },
     )
 
     suspend fun cancelBid(bidId: Long): ServerResult<Unit> =
         rpcVoid("market_cancel_bid", jsonBody { put("p_bid_id", bidId) })
 
-    suspend fun sellNow(sneakerId: Long, bidId: Long): ServerResult<Long?> = rpcNullable(
+    suspend fun sellNow(sneakerId: Long, bidId: Long, request: String? = null): ServerResult<Long?> = rpcNullable(
         "market_sell_now",
         jsonBody {
             put("p_sneaker_id", sneakerId)
             put("p_bid_id", bidId)
+            request?.let { put("p_request", it) }
         },
     )
 

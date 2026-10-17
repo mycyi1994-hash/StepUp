@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 接続が切れたとき(2026-10-17 点検) — マーケットの案内。応答だけ失ったリクエストは同じリクエスト番号で送り直し、一度だけ処理される(サーバー 0062) -->
+<resources>
+    <string name="market_msg_offline">接続が切れて結果を確認できませんでした。同じボタンをもう一度押しても二重には処理されず、結果を確認できます。</string>
+    <string name="market_msg_unfinished">リクエストを完了できませんでした。しばらくしてからもう一度お試しください。</string>
+</resources>

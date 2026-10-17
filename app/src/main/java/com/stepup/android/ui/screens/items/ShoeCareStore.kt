@@ -114,7 +114,10 @@ class ShoeCareStore(
         }
     }
 
-    /** 서버가 처리했다고 답한 뒤 — 동기화된 사본의 내구도가 가득일 때만 완료(RP04). 아직이면 확인 중으로 남긴다 */
+    /**
+     * 서버가 처리했다고 답한 뒤 — 동기화된 사본의 내구도가 가득일 때만 완료(RP04). 아직이면 확인 중으로 남긴다
+     * (뒤이은 동기화가 됐는지 여기서는 모른다 — 결과 확인이 한 번 맞추면 끝낸다)
+     */
     private suspend fun settledRepair(id: Long, quote: RepairQuote, before: Double): RepairPhase {
         val shoe = backend.shoe(id)
         val durability = shoe?.server?.durabilityPts
@@ -136,7 +139,9 @@ class ShoeCareStore(
             val durability = if (synced) backend.shoe(id)?.server?.durabilityPts else null
             val next = when {
                 !synced -> unknown.copy(checking = false)
-                unknown.accepted && durability != null && durability >= 100.0 -> {
+                // 서버가 처리했다고 답한 수리 — 처음으로 맞춘 값이면 내구도와 상관없이 끝낸다. 그사이 달려 100 아래로 닳았을 수
+                // 있고, 100 만 기다리면 결과 확인이 끝나지 않아 신발이 잠긴 채 남았다
+                unknown.accepted && durability != null -> {
                     val balance = backend.balance()
                     if (balance != null) RepairPhase.Done(unknown.quote, balance, durability) else unknown.copy(checking = false)
                 }

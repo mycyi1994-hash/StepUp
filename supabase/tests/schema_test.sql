@@ -1950,6 +1950,36 @@ begin
   perform public.party_leave(v_party);
 end $$;
 
+-- 0063: 대기실 진행자가 연결이 끊긴 채 사라지면(나가기가 서버에 닿지 않음) 남은 사람에게 넘긴다
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$
+declare v_party bigint;
+begin
+  v_party := public.party_open(pg_temp.fx('crew')::uuid, null);
+  insert into fix (k, v) values ('party_ghost', v_party::text);
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform pg_temp.ok(public.party_open(pg_temp.fx('crew')::uuid, null) = pg_temp.fx('party_ghost')::bigint,
+    '같은 크루의 대기실에 들어간다');
+  perform pg_temp.ok((public.party_state(pg_temp.fx('party_ghost')::bigint)->>'host_id') = '11111111-1111-1111-1111-111111111111',
+    '진행자가 화면에 있으면(방금 보였으면) 진행자는 그대로다 (0063)');
+end $$;
+reset role;
+update public.party_members set last_seen = now() - interval '1 minute'
+ where party_id = pg_temp.fx('party_ghost')::bigint and user_id = '11111111-1111-1111-1111-111111111111';
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$
+begin
+  perform pg_temp.ok((public.party_state(pg_temp.fx('party_ghost')::bigint)->>'host_id') = '22222222-2222-2222-2222-222222222222',
+    '대기실 진행자가 30초 넘게 보이지 않으면 지금 보이는 사람이 진행자를 맡는다 (0063)');
+  perform public.party_leave(pg_temp.fx('party_ghost')::bigint);
+end $$;
+call pg_temp.login('11111111-1111-1111-1111-111111111111');
+do $$ begin perform public.party_leave(pg_temp.fx('party_ghost')::bigint); end $$;
+
 -- 0056: 진행자가 마치면 방에 남은 위치 · 거리를 지운다
 reset role;
 do $$
@@ -7069,7 +7099,7 @@ begin
     '비우면 가득 — 남은 700점(7km) 값');
 end $$;
 
--- 러닝 — 신은 신발이 달린 100m 마다 10 닳고, 남은 비율이 50% 아래면 적립이 30% 준다
+-- 러닝 — 신은 신발이 달린 1분마다 5 닳고(0064 — 0059 의 100m 마다 10 을 대신한다), 남은 비율이 50% 아래면 적립이 30% 준다
 do $$
 declare
   v_id bigint := pg_temp.fx('p59')::bigint;
@@ -7086,9 +7116,8 @@ begin
     pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
   select distance_meters into v_dist from public.walk_sessions where id = r.session_id;
   perform pg_temp.ok(r.verdict = 'CLEAN' and v_dist >= 1000
-                     and (select durability_now from public.my_sneakers() where id = v_id)
-                         = v_now - 10 * floor(v_dist / 100),
-    format('달린 %sm → 남은 내구도 %s 줄었다(100m 마다 10)', round(v_dist), 10 * floor(v_dist / 100)));
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 100,
+    format('%sm 를 1201초(20분) 달렸다 → 남은 내구도 100 줄었다(1분마다 5, 0064)', round(v_dist)));
   perform pg_temp.ok(r.points_awarded = round(2000 * 0.01 * (1 + v_eff / 10000.0), 4),
     '남은 비율 50% 이상 — 적립 그대로(나눈 효율 포인트까지 더해)');
 end $$;
@@ -7325,6 +7354,178 @@ declare c jsonb := public.weekly_crew_board(1);
 begin
   perform pg_temp.ok(c->'my_crew' = 'null'::jsonb and jsonb_array_length(c->'nearby') = 0, '크루가 없으면 우리 크루가 없다');
   perform pg_temp.ok(jsonb_array_length(c->'top') = 1 and (c->>'total')::int >= 2, '상위는 요청한 수만큼, 전체 수는 따로');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 응답을 잃고 다시 보내도 한 번만: 거래소 · 글 · 댓글 · 좋아요 (0062) ──'
+-- ════════════════════════════════════════════════════════════════════
+insert into auth.users (id, email) values
+  ('62000000-0000-0000-0000-000000000001', 'retry1@test'),
+  ('62000000-0000-0000-0000-000000000002', 'retry2@test')
+on conflict do nothing;
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('62000000-0000-0000-0000-000000000002', 'EARN_WALK', 5000, '검사용');
+set role authenticated;
+
+-- 구매 입찰: 같은 요청 번호로 다시 보내도 값을 한 번만 묶는다
+call pg_temp.login('62000000-0000-0000-0000-000000000002');
+do $$
+declare
+  v_me uuid := '62000000-0000-0000-0000-000000000002';
+  v_before numeric := pg_temp.bal(v_me);
+  v_bid bigint;
+  v_again bigint;
+begin
+  v_bid := public.market_bid('LIGHTNING', 'LEGENDARY', 7, 30, 120, '00620000-0000-0000-0000-000000000001');
+  v_again := public.market_bid('LIGHTNING', 'LEGENDARY', 7, 30, 120, '00620000-0000-0000-0000-000000000001');
+  perform pg_temp.ok(v_bid is not null and v_again = v_bid, '같은 요청 번호로 다시 건 입찰은 처음 입찰 번호를 돌려준다 (0062)');
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before - 120, '같은 요청 번호로 다시 건 입찰은 값을 두 번 묶지 않는다 (0062)');
+  perform pg_temp.ok(
+    (select count(*) from public.market_bids where buyer_id = v_me and status = 'OPEN') = 1,
+    '같은 요청 번호로는 입찰이 하나만 생긴다 (0062)');
+  -- 다른 요청 번호는 새 입찰이다
+  v_again := public.market_bid('LIGHTNING', 'LEGENDARY', 7, 30, 120, '00620000-0000-0000-0000-000000000002');
+  perform pg_temp.ok(v_again <> v_bid and pg_temp.bal(v_me) = v_before - 240, '새 요청 번호는 새 입찰이다');
+  perform public.market_cancel_bid(v_bid);
+  perform public.market_cancel_bid(v_again);
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before, '거둔 입찰의 값은 풀린다');
+end $$;
+
+-- 내놓기 · 즉시 구매: 같은 요청 번호로 다시 보내면 처음 결과(매물 번호 · 체결 번호)를 돌려준다
+call pg_temp.login('62000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_sn bigint;
+  v_listing bigint;
+begin
+  v_sn := pg_temp.server_shoe(public.market_import(1, 'WATER', 'RARE', 5, 4, 1, 1, 100));
+  v_listing := public.market_list(v_sn, 300, '00620000-0000-0000-0000-000000000003');
+  perform pg_temp.ok(v_listing is not null, '신발을 내놓는다');
+  perform pg_temp.ok(public.market_list(v_sn, 300, '00620000-0000-0000-0000-000000000003') = v_listing,
+    '응답을 잃고 같은 요청 번호로 다시 내놓으면 "이미 판매 중"이 아니라 처음 매물 번호를 돌려준다 (0062)');
+  insert into fix (k, v) values ('retry_listing', v_listing::text), ('retry_shoe', v_sn::text);
+end $$;
+call pg_temp.must_fail(
+  format($q$ select public.market_list(%s, 300) $q$, pg_temp.fx('retry_shoe')),
+  '번호 없이 부르는 예전 앱은 예전처럼 "이미 판매 중"');
+
+call pg_temp.login('62000000-0000-0000-0000-000000000002');
+do $$
+declare
+  v_me uuid := '62000000-0000-0000-0000-000000000002';
+  v_before numeric := pg_temp.bal(v_me);
+  v_trade bigint;
+begin
+  v_trade := public.market_buy_now(pg_temp.fx('retry_listing')::bigint, '00620000-0000-0000-0000-000000000004');
+  perform pg_temp.ok(v_trade is not null and pg_temp.bal(v_me) = v_before - 300, '매물을 산다');
+  perform pg_temp.ok(
+    public.market_buy_now(pg_temp.fx('retry_listing')::bigint, '00620000-0000-0000-0000-000000000004') = v_trade,
+    '응답을 잃고 같은 요청 번호로 다시 사면 "이미 끝난 매물"이 아니라 처음 체결 번호를 돌려준다 (0062)');
+  perform pg_temp.ok(pg_temp.bal(v_me) = v_before - 300, '다시 보내도 한 번만 치른다 (0062)');
+  perform pg_temp.ok(pg_temp.owner_of(pg_temp.fx('retry_shoe')::bigint) = v_me, '신발은 산 사람에게 간다');
+end $$;
+
+-- 글 · 댓글: 같은 요청 키로 다시 올리면 같은 글 · 댓글
+call pg_temp.login('62000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_post bigint;
+  v_comment bigint;
+begin
+  v_post := public.post_create('FREE', null, '다시 올린 글', '응답을 잃었다', null, null, null, null, null, null,
+    '00620000-0000-0000-0000-0000000000a1');
+  perform pg_temp.ok(
+    public.post_create('FREE', null, '다시 올린 글', '응답을 잃었다', null, null, null, null, null, null,
+      '00620000-0000-0000-0000-0000000000a1') = v_post,
+    '같은 요청 키로 다시 올린 글은 처음 글 번호를 돌려준다 (0062)');
+  perform pg_temp.ok(
+    (select count(*) from public.posts where author_id = '62000000-0000-0000-0000-000000000001') = 1,
+    '같은 요청 키로는 글이 하나만 생긴다 (0062)');
+
+  v_comment := public.comment_create(v_post, null, '같은 댓글', '00620000-0000-0000-0000-0000000000c1');
+  perform pg_temp.ok(public.comment_create(v_post, null, '같은 댓글', '00620000-0000-0000-0000-0000000000c1') = v_comment,
+    '같은 요청 키로 다시 단 댓글은 처음 댓글 번호를 돌려준다 (0062)');
+  perform pg_temp.ok((select count(*) from public.comments where post_id = v_post) = 1, '같은 요청 키로는 댓글이 하나만 생긴다 (0062)');
+  perform pg_temp.ok(public.comment_create(v_post, null, '같은 댓글') <> v_comment, '키 없이 부르는 예전 앱은 예전과 같다');
+
+  -- 좋아요: 바라는 상태를 보내면 몇 번을 다시 보내도 같다
+  perform pg_temp.ok(public.post_set_like(v_post, true), '좋아요를 누른다');
+  perform pg_temp.ok(public.post_set_like(v_post, true), '다시 보내도 눌린 채다 (0062)');
+  perform pg_temp.ok((select count(*) from public.post_likes where post_id = v_post) = 1, '좋아요는 하나다');
+  perform pg_temp.ok(not public.post_set_like(v_post, false), '좋아요를 거둔다');
+  perform pg_temp.ok(not public.post_set_like(v_post, false), '다시 보내도 거둔 채다 (0062)');
+  perform pg_temp.ok((select count(*) from public.post_likes where post_id = v_post) = 0, '좋아요가 없다');
+
+  -- 지우기: 이미 지워졌으면 다시 지워도 된 것이다
+  perform public.comment_delete(v_comment);
+  perform public.comment_delete(v_comment);
+  perform pg_temp.ok(not exists (select 1 from public.comments where id = v_comment),
+    '지운 댓글을 다시 지워도(응답을 잃고 다시 삭제) 오류가 나지 않는다 (0062)');
+  insert into fix (k, v) values ('retry_post', v_post::text);
+end $$;
+call pg_temp.login('62000000-0000-0000-0000-000000000002');
+call pg_temp.must_fail(
+  format($q$ select public.post_delete(%s) $q$, pg_temp.fx('retry_post')),
+  '남의 글은 여전히 지울 수 없다');
+call pg_temp.login('62000000-0000-0000-0000-000000000001');
+do $$
+begin
+  perform public.post_delete(pg_temp.fx('retry_post')::bigint);
+  perform public.post_delete(pg_temp.fx('retry_post')::bigint);
+  perform pg_temp.ok(not exists (select 1 from public.posts where id = pg_temp.fx('retry_post')::bigint),
+    '지운 글을 다시 지워도 오류가 나지 않는다 (0062)');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0064 신발 내구도는 달린 시간으로 — 1분마다 5 (2026-10-17 사용자 결정)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 신발 내구도 1분마다 5(0064) ──────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+do $$
+begin
+  perform pg_temp.ok(economy.durability_wear_time(59) = 0 and economy.durability_wear_time(60) = 5
+                     and economy.durability_wear_time(1201) = 100 and economy.durability_wear_time(1800) = 150
+                     and economy.durability_wear_time(null) = 0 and economy.durability_wear_time(-30) = 0,
+    '다 채운 1분마다 5 닳는다 — 1분이 안 되는 나머지는 닳지 않는다');
+end $$;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('64000000-0000-0000-0000-000000000001', 'wear64@test', '{"full_name":"닳는신발"}');
+insert into fix (k, v) select 'w64', economy.draw_create('64000000-0000-0000-0000-000000000001', 'PAID_DRAW')::text;
+set role authenticated;
+call pg_temp.login('64000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_id bigint := pg_temp.fx('w64')::bigint;
+  r record;
+  v_now int;
+  v_start timestamptz := now() - interval '12 hours';
+begin
+  perform public.sneaker_equip(v_id);
+  select durability_now into v_now from public.my_sneakers() where id = v_id;
+  -- 30분 동안 나가 있었지만 20분은 멈춰 있었다 — 달린 10분 10초만 센다
+  select * into r from public.record_session(v_start, v_start + interval '1800 seconds', 900, 610,
+    pg_temp.track(v_start, 600, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID'
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 50,
+    '멈춘 시간은 빼고 달린 10분만 — 남은 내구도 50 줄었다');
+  -- 59초 러닝 — 1분이 안 되면 닳지 않는다
+  v_start := now() - interval '9 hours';
+  select * into r from public.record_session(v_start, v_start + interval '59 seconds', 80, 59,
+    pg_temp.track(v_start, 59, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID'
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 50,
+    '1분이 안 되는 러닝은 닳지 않는다');
+  -- 무효 러닝(가짜 위치)은 닳지 않는다
+  v_start := now() - interval '6 hours';
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', true);
+  perform pg_temp.ok(r.verdict = 'VOID'
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 50,
+    '무효 러닝은 닳지 않는다');
 end $$;
 reset role;
 

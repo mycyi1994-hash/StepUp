@@ -595,7 +595,7 @@
     <string name="notif_crew_invite">%1$s からクルーへの招待が届きました</string>
     <string name="notif_party_invite">%1$s からパーティランに招待されました</string>
     <string name="notif_event_reward">イベント報酬が届きました: %1$s · %2$s SUP</string>
-    <string name="notif_party_member_left">%1$s さんが離れすぎたためパーティから外れました</string>
+    <string name="notif_party_member_left">%1$s さんがパーティから抜けました</string>
 
     <!-- Achievement grades -->
     <string name="ach_total_progress">全体の進行度</string>

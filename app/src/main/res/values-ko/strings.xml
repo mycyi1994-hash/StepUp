@@ -594,7 +594,7 @@
     <string name="notif_crew_invite">%1$s 크루에서 초대장이 왔어요</string>
     <string name="notif_party_invite">%1$s에서 파티런에 초대했어요</string>
     <string name="notif_event_reward">이벤트 보상 도착: %1$s · %2$s SUP</string>
-    <string name="notif_party_member_left">%1$s님이 거리가 벌어져 파티에서 빠졌어요</string>
+    <string name="notif_party_member_left">%1$s님이 파티에서 나갔어요</string>
 
     <!-- Achievement grades -->
     <string name="ach_total_progress">전체 진행도</string>

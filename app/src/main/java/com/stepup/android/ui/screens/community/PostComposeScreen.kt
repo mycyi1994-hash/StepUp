@@ -22,6 +22,7 @@ import com.stepup.android.ui.components.PillChip
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
+import java.util.UUID
 
 /**
  * 글쓰기.
@@ -44,6 +45,8 @@ fun PostComposeScreen(
     var distance by rememberSaveable { mutableStateOf("1.0") }
     var startsIn by rememberSaveable { mutableStateOf("60") }
     var capacity by rememberSaveable { mutableStateOf("6") }
+    // 글쓰기 화면마다 한 요청 키 — 응답을 못 받고 다시 올려도 서버(0062)가 같은 글 번호를 돌려준다(번개 모임이 둘이 되지 않게)
+    var clientKey by rememberSaveable { mutableStateOf(UUID.randomUUID().toString()) }
 
     val selected = PostCategory.of(category)
     // 번개러닝은 쓰는 자리가 모임 장소다. 읽는 사람의 폰이 이 좌표에서 거리를 잰다.
@@ -76,7 +79,12 @@ fun PostComposeScreen(
                 capacity = if (selected == PostCategory.FLASH) requireNotNull(parsedCapacity) else 0,
                 lat = here?.lat,
                 lng = here?.lng,
-                onDone = onBack,
+                clientKey = clientKey,
+                onDone = {
+                    // 올라갔다 — 이 화면에서 또 쓰면 새 글이다
+                    clientKey = UUID.randomUUID().toString()
+                    onBack()
+                },
             )
         },
     ) {
