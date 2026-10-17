@@ -89,13 +89,14 @@ import com.stepup.android.ui.theme.StepUpColors
 // ── 판단(화면 밖에서 검사한다 — FreeRunUiTest) ──────────────────────
 
 /** 지도 위 띠 — 위에서부터 앞선다. 문제 띠가 일시정지 띠보다 앞선다 */
-internal enum class FreeBand { None, LocationOff, MeasureInvalid, SpeedError, Still, Weak, Approx, Paused }
+internal enum class FreeBand { None, Overspeed, LocationOff, MeasureInvalid, SpeedError, Still, Weak, Approx, Paused }
 
 /**
  * 지금 보일 띠 하나. 마칠지 묻는 동안([asking] — 시트가 덮는다)과 러닝 전에는 띠가 없다.
  * 위치 권한이 없어 시간만 기록하는 러닝은 문제가 아니라 고른 방식이다 — 칩("위치 없이 기록 중")만 둔다.
  * 위치를 찾는 동안에도 띠가 없다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고").
  * 30초 넘게 서 있으면([still], RunStill) "멈춰 있어요" 띠와 일시정지 알약 — 신호 약함 · 대략 위치보다 앞선다(지금 할 수 있는 일이라서).
+ * 과속이 이어지는 동안([overspeed], RunOverspeed)은 "N초 뒤 러닝이 멈춰요" 띠가 가장 앞선다 — 30초를 채우면 러닝이 멈추고 패널티가 있다.
  */
 internal fun freeBand(
     active: Boolean,
@@ -108,8 +109,10 @@ internal fun freeBand(
     void: Boolean,
     speedFlagged: Boolean,
     still: Boolean = false,
+    overspeed: Boolean = false,
 ): FreeBand = when {
     !active || asking -> FreeBand.None
+    overspeed && !paused -> FreeBand.Overspeed
     // 달리다 휴대폰 위치를 꺼도(GPS 가 잡혀 있었어도) 알린다 — 그동안 속도 · 페이스는 "—"
     locationAllowed && !locationOn -> FreeBand.LocationOff
     void -> FreeBand.MeasureInvalid
@@ -316,6 +319,8 @@ internal fun FreeRunLive(
     onBandAction: (() -> Unit)? = null,
     /** 저장 실패의 "화면에 머물기" — 한 번 누르면 숨는다(띠와 다시 저장은 남는다) */
     showSecondary: Boolean = true,
+    /** 과속 띠 — 러닝이 멈추기까지 남은 초 */
+    overspeedLeft: Int = 0,
 ) {
     val top: (@Composable () -> Unit)? = when (mode) {
         FreeLiveMode.Idle, FreeLiveMode.Saving -> null
@@ -325,7 +330,7 @@ internal fun FreeRunLive(
         FreeLiveMode.DiscardFailed -> {
             { FreeRunBand(stringResource(R.string.run_free_delete_failed), "run-discard-failed") }
         }
-        FreeLiveMode.Live -> liveTop(band, paused, noLocation, onBandTap, onBandAction)
+        FreeLiveMode.Live -> liveTop(band, paused, noLocation, onBandTap, onBandAction, overspeedLeft)
     }
     FreeRunFrame(
         rootTag = if (mode == FreeLiveMode.Saving) "run-saving" else "run-live",
@@ -410,12 +415,17 @@ internal fun liveTop(
     noLocation: Boolean,
     onBandTap: (() -> Unit)?,
     onBandAction: (() -> Unit)?,
+    /** 과속 띠 — 러닝이 멈추기까지 남은 초 */
+    overspeedLeft: Int = 0,
 ): (@Composable () -> Unit)? = when (band) {
     FreeBand.None -> if (paused) null else {
         { FreeRunChip(stringResource(if (noLocation) R.string.run_status_no_gps else R.string.run_free_chip_running)) }
     }
     FreeBand.Paused -> {
         { FreeRunBand(stringResource(R.string.run_paused_title), "run-paused-band", calm = true, icon = Icons.Filled.Pause) }
+    }
+    FreeBand.Overspeed -> {
+        { FreeRunBand(stringResource(R.string.run_overspeed_band, overspeedLeft), "run-overspeed", onClick = onBandTap) }
     }
     FreeBand.LocationOff -> {
         { FreeRunBand(stringResource(R.string.run_free_location_off), "run-location-off",
@@ -461,6 +471,8 @@ internal fun FreeRunResult(
     deleting: Boolean = false,
     onRetryDelete: () -> Unit = {},
     onDeleteBack: () -> Unit = {},
+    /** 과속이 30초 이어져 앱이 멈춘 러닝 — 패널티 안내(내구도 절반 · 10분 러닝 금지) */
+    penalty: String? = null,
 ) {
     val c = freeRunColors()
     var more by rememberSaveable { mutableStateOf(false) }
@@ -512,6 +524,10 @@ internal fun FreeRunResult(
                     kind = FreeButtonKind.Secondary, enabled = !deleting)
             }
         } else {
+            if (penalty != null) {
+                FreeCaption(penalty, icon = Icons.Filled.Warning, tag = "run-result-overspeed")
+                Spacer(Modifier.height(8.dp))
+            }
             FreeTopRow(numbers, ResultTags, compact)
             FreeHairline(compact)
             FreeDetailRow(numbers, ResultTags)

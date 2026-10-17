@@ -34,6 +34,7 @@ import com.stepup.android.domain.Faction
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunIntegrity
+import com.stepup.android.domain.RunOverspeed
 import com.stepup.android.domain.RunTrack
 import com.stepup.android.domain.RunVerdict
 import com.stepup.android.domain.RunStill
@@ -55,6 +56,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.cancelAndJoin
@@ -206,6 +208,13 @@ data class WalkSessionState(
      * 그 뒤로 사람 속도의 점이 들어오면 다시 속도를 보인다. 저장본에 남기지 않는다.
      */
     val lastFlaggedAt: Long = 0L,
+    /**
+     * 지금 이어지는 과속([RunOverspeed]) — 사람 한계를 넘는 구간이 끊기지 않고 들어온 첫 때와 마지막 때(벽시계 ms). 없으면 null.
+     * 화면이 "N초 뒤 러닝이 멈춰요"를 세는 근거다. 30초를 채우면 서비스가 러닝을 멈춘다. 저장본에 남기지 않는다.
+     */
+    val overspeed: RunOverspeed.Streak? = null,
+    /** 이 러닝이 과속으로 멈추는 중이다(패널티를 적었다) — 저장이 끝나면 [lastOverspeedStopped] 로 넘어간다 */
+    val overspeedStopped: Boolean = false,
     /** 마지막 세션의 판정 (종료 직후 화면 표시용) */
     val lastVerdict: RunVerdict = RunVerdict.CLEAN,
     val lastTopSpeedKmh: Double = 0.0,
@@ -232,6 +241,8 @@ data class WalkSessionState(
     val simulated: Boolean = false,
     /** 방금 끝난 러닝이 테스트 걸음 때문에 적립 · 업로드에서 빠졌다 — 결과 화면 안내용 */
     val lastSimulated: Boolean = false,
+    /** 방금 끝난 러닝을 과속이 30초 이어져 앱이 멈췄다 — 결과 화면이 패널티(내구도 절반 · 10분 러닝 금지)를 알린다 */
+    val lastOverspeedStopped: Boolean = false,
 ) {
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
     val geoTrack: List<GeoPoint> get() = track.toGeoPoints()
@@ -355,7 +366,7 @@ class WalkSessionService : Service() {
         _state.update { current ->
             if (!current.isActive || current.isPaused) return@update current
             if (!plausible) {
-                // 사람이 낼 수 없는 속도 — 거리도, 경로도 남기지 않는다
+                // 사람이 낼 수 없는 속도 — 거리도, 경로도 남기지 않는다. 경고를 띄우고, 30초 이어지면 러닝을 멈춘다(RunOverspeed)
                 return@update current.copy(
                     gpsFix = true,
                     gpsLost = false,
@@ -363,6 +374,7 @@ class WalkSessionService : Service() {
                     hereAt = now,
                     flaggedSegments = current.flaggedSegments + 1,
                     lastFlaggedAt = now,
+                    overspeed = RunOverspeed.onFlagged(current.overspeed, now),
                 )
             }
             val track = current.track
@@ -382,10 +394,41 @@ class WalkSessionService : Service() {
                 gpsKm = if (counted) current.gpsKm + meters / 1000 else current.gpsKm,
                 validSegments = if (counted) current.validSegments + 1 else current.validSegments,
                 topSpeedKmh = RunIntegrity.updateTopSpeed(current.topSpeedKmh, meters, seconds),
+                // 사람 속도로 움직인 구간 — 속도를 줄였다, 과속 경고를 거둔다. 제자리 노이즈(5m 아래)는 그대로 둔다
+                overspeed = if (counted) null else current.overspeed,
             )
         }
         // 경로 점이 생겼다 — 움직이고 있다(오래 서 있음 판단을 처음부터)
         if (_state.value.track.size > trackBefore) lastMoveElapsed = SystemClock.elapsedRealtime()
+        // 과속이 30초 이어졌다 — 러닝을 멈추고 패널티(2026-10-17 사용자 결정)
+        if (!plausible && RunOverspeed.shouldStop(_state.value.overspeed)) stopForOverspeed(now)
+    }
+
+    /** 과속으로 멈추는 중 — 위치가 계속 와도 한 번만 */
+    @Volatile private var overspeedStopping = false
+
+    /**
+     * 과속이 30초 이어져 러닝을 멈춘다(2026-10-17 사용자 결정). 패널티(신발 남은 내구도 절반 · 멈춘 때부터 10분 러닝 금지)를
+     * 먼저 폰에 적고 나서 평소처럼 저장한다 — 저장이 실패하거나 앱이 죽어도 금지 시간과 서버에 보낼 신고는 남는다.
+     * 서버 신고는 올리기 일꾼이 러닝보다 먼저 보낸다(OverspeedReporter). 무효로 끝나 서버에 올라가지 않는 러닝도 신고는 간다.
+     */
+    private fun stopForOverspeed(stoppedAt: Long) {
+        val session = _state.value
+        if (overspeedStopping || !session.isActive || session.isPaused || session.saveStatus != RunSaveStatus.IDLE) return
+        overspeedStopping = true
+        _state.update { if (it.isActive) it.copy(overspeedStopped = true) else it }
+        scope.launch(Dispatchers.Main.immediate) {
+            try {
+                runCatching {
+                    val prefs = ServiceLocator.userPrefs
+                    prefs.raiseRunBanUntil(stoppedAt + RunOverspeed.BAN_MS)
+                    prefs.addPendingOverspeedStop(session.startedAt, stoppedAt, session.recordingOwner)
+                }
+                stopSession()
+            } finally {
+                overspeedStopping = false
+            }
+        }
     }
 
     /** 위성 GPS(LocationManager) — 구글 Play 서비스가 없는 휴대폰에서만 쓴다 */
@@ -686,6 +729,23 @@ class WalkSessionService : Service() {
                 stopSelf()
                 return@launch
             }
+            // 과속으로 멈춘 뒤 10분은 러닝 금지(2026-10-17 사용자 결정) — 모든 시작(자유 · 챌린지 · 코스 · 크루 · 번개)이 여기를 지난다.
+            // 서버도 그 사이에 시작한 러닝은 무효로 둔다(0065)
+            val banUntil = runCatching { ServiceLocator.userPrefs.runBanUntil.first() }.getOrDefault(0L)
+            val banLeft = RunOverspeed.banLeftMinutes(banUntil, System.currentTimeMillis())
+            if (banLeft > 0) {
+                runCatching {
+                    android.widget.Toast.makeText(
+                        this@WalkSessionService,
+                        resources.getQuantityString(R.plurals.run_overspeed_ban, banLeft, banLeft),
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                }
+                startRefusals.value += 1
+                ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return@launch
+            }
             // Begin tracking only after the recording account has been captured.
             // Finishing later must never read the replacement login account.
             val owner = ServiceLocator.sessionHolder.recordingOwner()
@@ -866,6 +926,8 @@ class WalkSessionService : Service() {
                         gpsLost = it.gpsFix && it.locationOn && fixAt > 0 &&
                             GpsSignal.isLost(now - fixAt, it.steps - stepsAtLastFix),
                         still = stillNow,
+                        // 과속 구간이 10초 넘게 오지 않았다 — 이어진 과속이 아니다(경고를 거둔다)
+                        overspeed = RunOverspeed.live(it.overspeed, System.currentTimeMillis()),
                     )
                 }
                 // 화면이 꺼져 있어도 알림 줄에서 보이게 — 바뀔 때만 다시 쓴다
@@ -903,7 +965,11 @@ class WalkSessionService : Service() {
         // 원자적으로 — 걸음 · 타이머 수집기가 그 사이에 올린 값을 덮어 잃지 않게. 잃으면 저장본보다
         // 작아져 "진행이 거꾸로 갔다"로 이후 저장이 모두 거절된다
         _state.update { current ->
-            if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) current.copy(isPaused = paused, still = false) else current
+            if (current.isActive && current.saveStatus == RunSaveStatus.IDLE) {
+                current.copy(isPaused = paused, still = false, overspeed = null)
+            } else {
+                current
+            }
         }
         // 멈췄다 다시 달리면 그때부터 센다 — 일시정지한 동안은 서 있어도 알리지 않는다
         lastMoveElapsed = SystemClock.elapsedRealtime()
@@ -920,7 +986,7 @@ class WalkSessionService : Service() {
             return
         }
         settling = true
-        _state.update { it.copy(isPaused = true, still = false, saveStatus = RunSaveStatus.SAVING) }
+        _state.update { it.copy(isPaused = true, still = false, overspeed = null, saveStatus = RunSaveStatus.SAVING) }
         val session = _state.value
         stepJob?.cancel()
         timerJob?.cancel()
@@ -1080,6 +1146,7 @@ class WalkSessionService : Service() {
                 lastGroupName = session.groupName,
                 lastGroupSize = session.partySize,
                 lastSimulated = session.simulated,
+                lastOverspeedStopped = session.overspeedStopped,
                 lastVerdict = verdict,
                 lastTopSpeedKmh = session.topSpeedKmh,
                 lastGpsKm = session.gpsKm,

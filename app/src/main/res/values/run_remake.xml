@@ -488,4 +488,12 @@
     <string name="run_cr_result_points">Confirmed reward</string>
     <string name="run_cr_area">Area</string>
     <string name="run_cr_people_unit">people</string>
+    <!-- 과속이 30초 이어지면 멈추고 패널티(2026-10-17, RunOverspeed · 서버 0065) -->
+    <string name="run_overspeed_band">Too fast · run stops in %1$ds</string>
+    <string name="run_overspeed_body">If speed over 25 km/h continues for 30 seconds, the run stops and your shoe loses half of its remaining durability. You can\'t start a run for 10 minutes after that.</string>
+    <string name="run_overspeed_result">Run stopped after 30 seconds over the speed limit · shoe durability halved · no runs for 10 minutes</string>
+    <plurals name="run_overspeed_ban">
+        <item quantity="one">Your run was stopped for speeding. You can run again in %d minute.</item>
+        <item quantity="other">Your run was stopped for speeding. You can run again in %d minutes.</item>
+    </plurals>
 </resources>

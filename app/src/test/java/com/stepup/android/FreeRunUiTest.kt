@@ -58,9 +58,10 @@ class FreeRunUiTest {
         void: Boolean = false,
         speedFlagged: Boolean = false,
         still: Boolean = false,
+        overspeed: Boolean = false,
     ) = freeBand(
         active = active, paused = paused, asking = asking, locationAllowed = locationAllowed, locationOn = locationOn,
-        gpsLost = gpsLost, precise = precise, void = void, speedFlagged = speedFlagged, still = still,
+        gpsLost = gpsLost, precise = precise, void = void, speedFlagged = speedFlagged, still = still, overspeed = overspeed,
     )
 
     /** 기본은 위치를 재며 달리는 중 */
@@ -129,6 +130,20 @@ class FreeRunUiTest {
         // 러닝 전 · 마칠지 묻는 동안에는 띠가 없다
         assertEquals(FreeBand.None, band(still = true, active = false))
         assertEquals(FreeBand.None, band(still = true, asking = true))
+    }
+
+    @Test
+    fun `과속이 이어지는 동안은 과속 띠가 가장 앞선다`() {
+        // 2026-10-17 "애초에 경고가 뜨고 그렇게 유지되면 강제로 멈추고 패널티" — 30초를 채우면 러닝이 멈춘다
+        assertEquals(FreeBand.Overspeed, band(overspeed = true, speedFlagged = true))
+        assertEquals(FreeBand.Overspeed, band(overspeed = true, speedFlagged = true, void = true))
+        assertEquals(FreeBand.Overspeed, band(overspeed = true, locationOn = false, still = true, gpsLost = true))
+        // 일시정지하면 과속을 세지 않는다 — 일시정지 띠
+        assertEquals(FreeBand.Paused, band(overspeed = true, paused = true))
+        assertEquals(FreeBand.None, band(overspeed = true, active = false))
+        assertEquals(FreeBand.None, band(overspeed = true, asking = true))
+        // 과속이 끝나면(사람 속도 구간) 예전 띠로
+        assertEquals(FreeBand.SpeedError, band(speedFlagged = true))
     }
 
     @Test

@@ -487,4 +487,11 @@
     <string name="run_cr_result_points">확인된 보상</string>
     <string name="run_cr_area">지역</string>
     <string name="run_cr_people_unit">명</string>
+    <!-- 과속이 30초 이어지면 멈추고 패널티(2026-10-17, RunOverspeed · 서버 0065) -->
+    <string name="run_overspeed_band">속도가 너무 빨라요 · %1$d초 뒤 러닝이 멈춰요</string>
+    <string name="run_overspeed_body">25km/h를 넘는 속도가 30초 이어지면 러닝이 멈추고, 신은 신발의 남은 내구도가 절반으로 줄어요. 멈춘 뒤 10분 동안은 러닝을 시작할 수 없어요.</string>
+    <string name="run_overspeed_result">과속이 30초 이어져 러닝을 멈췄어요 · 신발 내구도 절반 · 10분 러닝 금지</string>
+    <plurals name="run_overspeed_ban">
+        <item quantity="other">과속으로 러닝이 멈췄어요. %d분 뒤에 다시 달릴 수 있어요.</item>
+    </plurals>
 </resources>
