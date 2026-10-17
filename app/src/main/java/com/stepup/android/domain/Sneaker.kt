@@ -89,10 +89,14 @@ enum class Rarity(
     /** 민팅 가중치 */
     val weight: Int,
 ) {
-    COMMON("COMMON", variantCount = 4, boostPercent = 0.0, maxLevel = 10, weight = 55),
-    RARE("RARE", variantCount = 4, boostPercent = 1.0, maxLevel = 15, weight = 28),
-    EPIC("EPIC", variantCount = 3, boostPercent = 2.0, maxLevel = 20, weight = 13),
-    LEGENDARY("LEGENDARY", variantCount = 2, boostPercent = 3.0, maxLevel = 30, weight = 4);
+    // 최대 레벨은 서버 economy.max_level 과 같다(0066 — 일반 · 레어 20, 에픽부터 26 · 27 · 28 · 30).
+    // 레드라인 · 피니시는 2026-10-17 부터 등급이다(예전에는 레전더리 안의 시리즈). 폰에서만 만드는 예전 신발에는 나오지 않는다(weight 0)
+    COMMON("COMMON", variantCount = 4, boostPercent = 0.0, maxLevel = 20, weight = 55),
+    RARE("RARE", variantCount = 4, boostPercent = 1.0, maxLevel = 20, weight = 28),
+    EPIC("EPIC", variantCount = 3, boostPercent = 2.0, maxLevel = 26, weight = 13),
+    LEGENDARY("LEGENDARY", variantCount = 2, boostPercent = 3.0, maxLevel = 27, weight = 4),
+    REDLINE("REDLINE", variantCount = 2, boostPercent = 4.0, maxLevel = 28, weight = 0),
+    FINISH("FINISH", variantCount = 2, boostPercent = 5.0, maxLevel = 30, weight = 0);
 
     companion object {
         fun of(id: String): Rarity = entries.firstOrNull { it.id == id } ?: COMMON
@@ -113,8 +117,8 @@ enum class Rarity(
     }
 }
 
-/** 속성 하나가 가진 변형 개수 (2+3+4+4 = 13) */
-val VARIANTS_PER_FACTION: Int = Rarity.entries.sumOf { it.variantCount }
+/** 예전 도감(속성 × 변형) 한 속성의 변형 개수 (2+3+4+4 = 13) — 레드라인 · 피니시는 예전 도감에 없다 */
+val VARIANTS_PER_FACTION: Int = listOf(Rarity.COMMON, Rarity.RARE, Rarity.EPIC, Rarity.LEGENDARY).sumOf { it.variantCount }
 
 /** 전체 도감 크기 = 속성 4 × 변형 13 = 52 */
 val TOTAL_COLLECTION: Int = Faction.entries.size * VARIANTS_PER_FACTION
@@ -155,7 +159,8 @@ object SneakerDesigns {
 
     /** 등급·변형 → 속성 안에서의 번호(1부터) */
     fun indexOf(rarity: Rarity, variant: Int): Int = when (rarity) {
-        Rarity.LEGENDARY -> 1 + variant
+        // 레드라인 · 피니시는 예전 도감에 없다 — 도감 모델이 없으면 레전더리 그림으로 그린다
+        Rarity.LEGENDARY, Rarity.REDLINE, Rarity.FINISH -> 1 + variant.coerceIn(0, 1)
         Rarity.EPIC -> 3 + variant
         Rarity.RARE -> 6 + variant
         Rarity.COMMON -> 10 + variant
@@ -337,7 +342,7 @@ object Silhouettes {
             Rarity.COMMON -> common
             Rarity.RARE -> rare
             Rarity.EPIC -> epic
-            Rarity.LEGENDARY -> legendary
+            Rarity.LEGENDARY, Rarity.REDLINE, Rarity.FINISH -> legendary
         }
         return list[variant.coerceIn(0, list.size - 1)]
     }
@@ -459,14 +464,44 @@ data class StatPoints(
     val respec: Boolean = false,
 ) {
     companion object {
-        const val PER_LEVEL = 4
-        const val EFFICIENCY_BPS = 25
-        const val COMFORT_BPS = 10
+        /** 포인트 1 의 값(서버 0066) — 효율 +0.05%p · 착화감 +0.02%p */
+        const val EFFICIENCY_BPS = 5
+        const val COMFORT_BPS = 2
         /** 착화감 상한(economy.comfort_cap_bps) */
         const val COMFORT_CAP_BPS = 2000
 
-        /** 내구도 포인트 1 이 올리는 최대 내구도 — 기본 최대 내구도의 10%(반올림, 적어도 1). 서버 economy.point_durability_of 와 같다 */
-        fun durabilityPerPoint(base: Int): Int = maxOf((base.coerceAtLeast(0) + 5) / 10, 1)
+        /** 내구도 포인트 1 이 올리는 최대 내구도 — 기본 최대 내구도의 1%(반올림, 적어도 1). 서버 economy.point_durability_of 와 같다 */
+        fun durabilityPerPoint(base: Int): Int = maxOf((base.coerceAtLeast(0) + 50) / 100, 1)
+
+        /** 레벨 [level] 에 오를 때 받는 기본 포인트(등급 배수 전) — 서버 economy.points_at_level 과 같다 */
+        fun atLevel(level: Int): Int = when {
+            level <= 1 -> 0
+            level <= 10 -> 1
+            level <= 15 -> 2
+            level <= 20 -> 3
+            level <= 25 -> 5
+            level == 26 -> 15
+            level == 27 -> 30
+            level == 28 -> 60
+            level == 29 -> 100
+            else -> 150
+        }
+
+        /** 등급 배수 — 서버 economy.points_rarity_mult 와 같다 */
+        fun rarityMultiplier(rarity: Rarity): Int = when (rarity) {
+            Rarity.COMMON -> 1
+            Rarity.RARE -> 2
+            Rarity.EPIC -> 3
+            Rarity.LEGENDARY -> 4
+            Rarity.REDLINE -> 6
+            Rarity.FINISH -> 8
+        }
+
+        /** 이 등급 신발이 레벨 [level] 에 오를 때 받는 포인트 */
+        fun gainAt(rarity: Rarity, level: Int): Int = atLevel(level) * rarityMultiplier(rarity)
+
+        /** 레벨 [level] 까지 받은 포인트 — 서버 economy.points_total_of 와 같다 */
+        fun totalAt(rarity: Rarity, level: Int): Int = (2..level).sumOf { gainAt(rarity, it) }
     }
 }
 

@@ -98,21 +98,7 @@ fun ItemFilterSheet(
         },
         onApply = { onApply(draftFaction, draftRarity, draftEquip, draftSort) },
     ) {
-        FilterSection(stringResource(R.string.filter_group_faction)) {
-            ChoiceGrid(
-                values = listOf<String?>(null) + Faction.entries.map { it.id },
-                isSelected = { it == draftFaction },
-                label = { id ->
-                    if (id == null) stringResource(R.string.post_cat_all)
-                    else {
-                        val entry = Faction.entries.first { it.id == id }
-                        entry.label() + " · ${factionProgress[entry] ?: 0} / $VARIANTS_PER_FACTION"
-                    }
-                },
-                onSelect = { draftFaction = it },
-                columns = 2,
-            )
-        }
+        // 속성은 없앴다(2026-10-17 신발 경제 3판) — 거르기는 등급 · 착용만.
         // 레어와 희귀는 서로 다른 등급이다. 같은 칸에 묶지 않는다.
         FilterSection(stringResource(R.string.filter_group_rarity)) {
             ChoiceGrid(

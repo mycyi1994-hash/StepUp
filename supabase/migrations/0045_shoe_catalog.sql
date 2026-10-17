@@ -21,7 +21,7 @@
 
 create table if not exists public.sneaker_models (
   id int primary key check (id >= 1000),
-  rarity text not null check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY')),
+  rarity text not null check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH')),
   series text not null,
   slug text not null,
   name_en text not null,
@@ -39,13 +39,19 @@ create policy sneaker_models_read on public.sneaker_models for select using (tru
 revoke all on public.sneaker_models from anon, authenticated;
 grant select on public.sneaker_models to anon, authenticated;
 
+-- 레드라인 · 피니시는 등급이다(0066). 이미 만들어진 표의 검사도 6등급으로 — 아래 도감 줄이 이 등급을 쓴다
+alter table public.sneaker_models drop constraint if exists sneaker_models_rarity_check;
+alter table public.sneaker_models add constraint sneaker_models_rarity_check
+  check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'));
+
 -- 도감 시작 (tools/gen_shoe_catalog.py 가 design/shoes-2026-09/catalog.json 으로 만든 파일 — 손으로 고치지 않는다.)
--- 체인에 올라간 번호의 등급은 바꿀 수 없다 — 이미 있는 번호의 등급이 다르면 올리지 않는다(이름만 고칠 수 있다)
+-- 체인에 올라간 번호의 등급은 바꿀 수 없다 — 이미 있는 번호의 (체인) 등급이 다르면 올리지 않는다(이름만 고칠 수 있다).
+-- 레드라인 · 피니시는 앱 · 서버에서 등급이고(0066) 체인에서는 레전더리다 — 레전더리 ↔ 레드라인 · 피니시만 바꿀 수 있다
 do $$
 begin
   if exists (select 1 from public.sneaker_models m
               join (values (1101, 'RARE'), (1102, 'RARE'), (1103, 'RARE'), (1104, 'RARE'), (1105, 'RARE'), (1106, 'RARE'), (1107, 'RARE'), (1108, 'RARE'), (1109, 'RARE'), (1110, 'RARE'), (1111, 'RARE'), (1112, 'RARE'), (1113, 'RARE'), (1114, 'RARE'), (1115, 'RARE'), (1116, 'RARE'), (1117, 'RARE'), (1118, 'RARE'), (1119, 'RARE'), (1120, 'RARE'), (1201, 'EPIC'), (1202, 'EPIC'), (1203, 'EPIC'), (1204, 'EPIC'), (1205, 'EPIC'), (1206, 'EPIC'), (1207, 'EPIC'), (1208, 'EPIC'), (1209, 'EPIC'), (1210, 'EPIC'), (1211, 'EPIC'), (1212, 'EPIC'), (1213, 'EPIC'), (1214, 'EPIC'), (1215, 'EPIC'), (1216, 'EPIC'), (1217, 'EPIC'), (1218, 'EPIC'), (1219, 'EPIC'), (1220, 'EPIC'), (1301, 'LEGENDARY'), (1302, 'LEGENDARY'), (1303, 'LEGENDARY'), (1304, 'LEGENDARY'), (1305, 'LEGENDARY'), (1306, 'LEGENDARY'), (1307, 'LEGENDARY'), (1308, 'LEGENDARY'), (1309, 'LEGENDARY'), (1310, 'LEGENDARY'), (1311, 'LEGENDARY'), (1312, 'LEGENDARY'), (1313, 'LEGENDARY'), (1314, 'LEGENDARY'), (1315, 'LEGENDARY'), (1316, 'LEGENDARY'), (1317, 'LEGENDARY'), (1318, 'LEGENDARY'), (1319, 'LEGENDARY'), (1320, 'LEGENDARY'), (1321, 'LEGENDARY'), (1322, 'LEGENDARY'), (1323, 'LEGENDARY'), (1324, 'LEGENDARY'), (1325, 'LEGENDARY'), (1326, 'LEGENDARY'), (1327, 'LEGENDARY'), (1328, 'LEGENDARY'), (1329, 'LEGENDARY'), (1330, 'LEGENDARY')) e(id, rarity) on e.id = m.id
-             where e.rarity <> m.rarity) then
+             where e.rarity <> case when m.rarity in ('REDLINE', 'FINISH') then 'LEGENDARY' else m.rarity end) then
     raise exception '도감 번호의 등급이 바뀌었습니다 — 새 번호를 주세요';
   end if;
 end $$;
@@ -100,28 +106,29 @@ insert into public.sneaker_models (id, rarity, series, slug, name_en, name_ko) v
   (1308, 'LEGENDARY', 'LEGENDARY', 'g3-08-legendary-desert-trail-runner', 'Desert Trail Runner', '데저트 트레일 러너'),
   (1309, 'LEGENDARY', 'LEGENDARY', 'g3-09-legendary-external-heel-cage-stability-trainer', 'Heel Cage Stability Trainer', '힐 케이지 스태빌리티 트레이너'),
   (1310, 'LEGENDARY', 'LEGENDARY', 'g3-10-legendary-full-length-curve-interval-trainer', 'Full-Length Curve Interval Trainer', '풀렝스 커브 인터벌 트레이너'),
-  (1311, 'LEGENDARY', 'REDLINE', 'g3-11-redline-100m-sprint-spike', 'Redline 100m Sprint Spike', '레드라인 100m 스프린트 스파이크'),
-  (1312, 'LEGENDARY', 'REDLINE', 'g3-12-redline-800m-middle-distance-spike', 'Redline 800m Middle Distance Spike', '레드라인 800m 미들 디스턴스 스파이크'),
-  (1313, 'LEGENDARY', 'REDLINE', 'g3-13-redline-5000m-distance-spike', 'Redline 5000m Distance Spike', '레드라인 5000m 디스턴스 스파이크'),
-  (1314, 'LEGENDARY', 'REDLINE', 'g3-14-redline-road-5k10k-racing-flat', 'Redline 5K·10K Racing Flat', '레드라인 5K·10K 레이싱 플랫'),
-  (1315, 'LEGENDARY', 'REDLINE', 'g3-15-redline-full-marathon-carbon-super-shoe', 'Redline Marathon Carbon Super Shoe', '레드라인 마라톤 카본 슈퍼슈'),
-  (1316, 'LEGENDARY', 'REDLINE', 'g3-16-redline-trail-race-shoe', 'Redline Trail Race Shoe', '레드라인 트레일 레이스 슈'),
-  (1317, 'LEGENDARY', 'REDLINE', 'g3-17-redline-triathlon-transition-racer', 'Redline Triathlon Transition Racer', '레드라인 트라이애슬론 트랜지션 레이서'),
-  (1318, 'LEGENDARY', 'REDLINE', 'g3-18-redline-steeplechase-drain-spike', 'Redline Steeplechase Drain Spike', '레드라인 스티플체이스 드레인 스파이크'),
-  (1319, 'LEGENDARY', 'REDLINE', 'g3-19-redline-half-marathon-road-racer', 'Redline Half Marathon Road Racer', '레드라인 하프 마라톤 로드 레이서'),
-  (1320, 'LEGENDARY', 'REDLINE', 'g3-20-redline-cross-country-spike', 'Redline Cross Country Spike', '레드라인 크로스컨트리 스파이크'),
-  (1321, 'LEGENDARY', 'FINISH', 'g3-21-finish-championship-marathon-super-shoe', 'Finish Championship Marathon Super Shoe', '피니시 챔피언십 마라톤 슈퍼슈'),
-  (1322, 'LEGENDARY', 'FINISH', 'g3-22-finish-elite-100m-sprint-spike', 'Finish Elite 100m Sprint Spike', '피니시 엘리트 100m 스프린트 스파이크'),
-  (1323, 'LEGENDARY', 'FINISH', 'g3-23-finish-elite-middle-distance-spike', 'Finish Elite Middle Distance Spike', '피니시 엘리트 미들 디스턴스 스파이크'),
-  (1324, 'LEGENDARY', 'FINISH', 'g3-24-finish-ultratrail-championship-racer', 'Finish Ultratrail Championship Racer', '피니시 울트라트레일 챔피언십 레이서'),
-  (1325, 'LEGENDARY', 'FINISH', 'g3-25-finish-championship-5k-10k-road-flat', 'Finish Championship 5K·10K Road Flat', '피니시 챔피언십 5K·10K 로드 플랫'),
-  (1326, 'LEGENDARY', 'FINISH', 'g3-26-finish-championship-cross-country-spike', 'Finish Championship Cross Country Spike', '피니시 챔피언십 크로스컨트리 스파이크'),
-  (1327, 'LEGENDARY', 'FINISH', 'g3-27-finish-championship-steeplechase-spike', 'Finish Championship Steeplechase Spike', '피니시 챔피언십 스티플체이스 스파이크'),
-  (1328, 'LEGENDARY', 'FINISH', 'g3-28-finish-championship-400m-sprint-spike', 'Finish Championship 400m Sprint Spike', '피니시 챔피언십 400m 스프린트 스파이크'),
-  (1329, 'LEGENDARY', 'FINISH', 'g3-29-finish-championship-800m-middle-distance-spike', 'Finish Championship 800m Middle Distance Spike', '피니시 챔피언십 800m 미들 디스턴스 스파이크'),
-  (1330, 'LEGENDARY', 'FINISH', 'g3-30-finish-championship-half-marathon-carbon-racer', 'Finish Championship Half Marathon Carbon Racer', '피니시 챔피언십 하프 마라톤 카본 레이서')
+  (1311, 'REDLINE', 'REDLINE', 'g3-11-redline-100m-sprint-spike', 'Redline 100m Sprint Spike', '레드라인 100m 스프린트 스파이크'),
+  (1312, 'REDLINE', 'REDLINE', 'g3-12-redline-800m-middle-distance-spike', 'Redline 800m Middle Distance Spike', '레드라인 800m 미들 디스턴스 스파이크'),
+  (1313, 'REDLINE', 'REDLINE', 'g3-13-redline-5000m-distance-spike', 'Redline 5000m Distance Spike', '레드라인 5000m 디스턴스 스파이크'),
+  (1314, 'REDLINE', 'REDLINE', 'g3-14-redline-road-5k10k-racing-flat', 'Redline 5K·10K Racing Flat', '레드라인 5K·10K 레이싱 플랫'),
+  (1315, 'REDLINE', 'REDLINE', 'g3-15-redline-full-marathon-carbon-super-shoe', 'Redline Marathon Carbon Super Shoe', '레드라인 마라톤 카본 슈퍼슈'),
+  (1316, 'REDLINE', 'REDLINE', 'g3-16-redline-trail-race-shoe', 'Redline Trail Race Shoe', '레드라인 트레일 레이스 슈'),
+  (1317, 'REDLINE', 'REDLINE', 'g3-17-redline-triathlon-transition-racer', 'Redline Triathlon Transition Racer', '레드라인 트라이애슬론 트랜지션 레이서'),
+  (1318, 'REDLINE', 'REDLINE', 'g3-18-redline-steeplechase-drain-spike', 'Redline Steeplechase Drain Spike', '레드라인 스티플체이스 드레인 스파이크'),
+  (1319, 'REDLINE', 'REDLINE', 'g3-19-redline-half-marathon-road-racer', 'Redline Half Marathon Road Racer', '레드라인 하프 마라톤 로드 레이서'),
+  (1320, 'REDLINE', 'REDLINE', 'g3-20-redline-cross-country-spike', 'Redline Cross Country Spike', '레드라인 크로스컨트리 스파이크'),
+  (1321, 'FINISH', 'FINISH', 'g3-21-finish-championship-marathon-super-shoe', 'Finish Championship Marathon Super Shoe', '피니시 챔피언십 마라톤 슈퍼슈'),
+  (1322, 'FINISH', 'FINISH', 'g3-22-finish-elite-100m-sprint-spike', 'Finish Elite 100m Sprint Spike', '피니시 엘리트 100m 스프린트 스파이크'),
+  (1323, 'FINISH', 'FINISH', 'g3-23-finish-elite-middle-distance-spike', 'Finish Elite Middle Distance Spike', '피니시 엘리트 미들 디스턴스 스파이크'),
+  (1324, 'FINISH', 'FINISH', 'g3-24-finish-ultratrail-championship-racer', 'Finish Ultratrail Championship Racer', '피니시 울트라트레일 챔피언십 레이서'),
+  (1325, 'FINISH', 'FINISH', 'g3-25-finish-championship-5k-10k-road-flat', 'Finish Championship 5K·10K Road Flat', '피니시 챔피언십 5K·10K 로드 플랫'),
+  (1326, 'FINISH', 'FINISH', 'g3-26-finish-championship-cross-country-spike', 'Finish Championship Cross Country Spike', '피니시 챔피언십 크로스컨트리 스파이크'),
+  (1327, 'FINISH', 'FINISH', 'g3-27-finish-championship-steeplechase-spike', 'Finish Championship Steeplechase Spike', '피니시 챔피언십 스티플체이스 스파이크'),
+  (1328, 'FINISH', 'FINISH', 'g3-28-finish-championship-400m-sprint-spike', 'Finish Championship 400m Sprint Spike', '피니시 챔피언십 400m 스프린트 스파이크'),
+  (1329, 'FINISH', 'FINISH', 'g3-29-finish-championship-800m-middle-distance-spike', 'Finish Championship 800m Middle Distance Spike', '피니시 챔피언십 800m 미들 디스턴스 스파이크'),
+  (1330, 'FINISH', 'FINISH', 'g3-30-finish-championship-half-marathon-carbon-racer', 'Finish Championship Half Marathon Carbon Racer', '피니시 챔피언십 하프 마라톤 카본 레이서')
 on conflict (id) do update
-  set series = excluded.series, slug = excluded.slug, name_en = excluded.name_en, name_ko = excluded.name_ko;
+  set rarity = excluded.rarity, series = excluded.series, slug = excluded.slug, name_en = excluded.name_en,
+      name_ko = excluded.name_ko;
 -- 도감 끝
 
 -- 신발의 도감 번호 — 새 도감에서 뽑은 신발만. 비어 있으면 예전 52종(속성 × 변형)

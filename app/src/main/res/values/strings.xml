@@ -239,7 +239,7 @@
     <string name="sneaker_energy_saving">Energy saving</string>
     <string name="sneaker_durability">Durability</string>
     <string name="sneaker_about">About this NFT</string>
-    <string name="sneaker_about_body" formatted="false">Every pair belongs to one of four factions and a rarity tier. Boosts stay deliberately small — about +1% per tier — so collecting is about the look and the album, not raw power.</string>
+    <string name="sneaker_about_body" formatted="false">Every pair has one of six rarity tiers — Common, Rare, Epic, Legendary, Redline, Finish. Higher tiers run longer, earn more and get many more stat points from level 21 up.</string>
     <string name="rarity_common">COMMON</string>
     <string name="rarity_rare">RARE</string>
     <string name="rarity_epic">EPIC</string>
@@ -795,7 +795,7 @@ Start running with StepUp.</string>
     <string name="guide2_body">During a run session every step earns SUP while energy lasts. Energy refills at midnight — pace yourself through the day.</string>
     <string name="guide2_tip">Tip: your sneaker\'s boost multiplies earnings.</string>
     <string name="guide3_title">Collect sneaker NFTs</string>
-    <string name="guide3_body">Four factions — Fire, Water, Lightning, Wind — with 44 album slots. Mint with SUP, upgrade levels, and equip your favorite pair.</string>
+    <string name="guide3_body">Six rarity tiers from Common to Finish. Draw shoes, upgrade levels, and equip your favorite pair.</string>
     <string name="guide3_tip" formatted="false">Tip: boosts stay small — collect for the look!</string>
     <string name="guide4_title">Community board</string>
     <string name="guide4_body">Join flash runs sorted by distance, share tips, and post freely. The ranking card shows where you stand this week.</string>

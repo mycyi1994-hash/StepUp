@@ -29,7 +29,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 스탯 포인트 나누기(서버 0059) — 레벨마다 4, 1 = 효율 +0.25%p · 착화감 +0.1%p(20% 까지) · 최대 내구도 +100(남은 내구도도 함께).
+ * 스탯 포인트 나누기(서버 0059 · 0066) — 1 = 효율 +0.05%p · 착화감 +0.02%p(20% 까지) · 최대 내구도 + 기본의 1%(남은 내구도도 함께).
  * 나눈 포인트는 줄이지 않는다(0059 전에 강화한 신발만 한 번 처음부터). 서버 sneaker_points_set 과 같은 규칙.
  */
 class ShoePointsModelTest {
@@ -60,32 +60,32 @@ class ShoePointsModelTest {
         assertFalse(basis.lowers(phase.draft))
     }
 
-    @Test fun `미리보기 — 효율 +0_25퍼센트p · 착화감 +0_1퍼센트p · 최대 · 남은 내구도 + 기본의 10퍼센트`() {
-        // 일반 신발 기본 50(10분) — 포인트 1 = +5(1분), 서버 0066
+    @Test fun `미리보기 — 효율 +0_05퍼센트p · 착화감 +0_02퍼센트p · 최대 · 남은 내구도 + 기본의 1퍼센트`() {
+        // 일반 신발 기본 50(10분) — 포인트 1 = +1(최소 1), 서버 0066
         val basis = requireNotNull(pointsBasisOf(shoe(level = 2, total = 4, free = 4, effBase = 300, comfortBase = 100, base = 50, now = 40)))
         val draft = PointsDraft(efficiency = 1, comfort = 1, durability = 2)
-        assertEquals(325, basis.efficiencyBps(draft))
-        assertEquals(110, basis.comfortBps(draft))
-        assertEquals(5, basis.durabilityPerPoint)
-        assertEquals(60, basis.durabilityMax(draft))
-        assertEquals(50, basis.durabilityNow(draft))
-        assertEquals(StatPoints.PER_LEVEL, basis.total)
+        assertEquals(305, basis.efficiencyBps(draft))
+        assertEquals(102, basis.comfortBps(draft))
+        assertEquals(1, basis.durabilityPerPoint)
+        assertEquals(52, basis.durabilityMax(draft))
+        assertEquals(42, basis.durabilityNow(draft))
+        assertEquals(4, basis.total)
     }
 
-    @Test fun `착화감은 20퍼센트까지 — 1200 + 포인트 80 은 되고 81 은 안 된다`() {
-        val basis = requireNotNull(pointsBasisOf(shoe(level = 30, total = 116, free = 116, comfortBase = 1_200)))
-        val at79 = PointsPhase.Editing(basis, PointsDraft(comfort = 79))
-        val at80 = at79.add(PointStat.COMFORT)
-        assertEquals(80, at80.draft.comfort)
-        assertEquals(2_000, basis.comfortBps(at80.draft))
-        assertSame(at80, at80.add(PointStat.COMFORT))
-        assertTrue(basis.valid(at80.draft))
-        assertFalse(basis.valid(PointsDraft(comfort = 81)))
+    @Test fun `착화감은 20퍼센트까지 — 1200 + 포인트 400 은 되고 401 은 안 된다`() {
+        val basis = requireNotNull(pointsBasisOf(shoe(level = 30, total = 3312, free = 3312, comfortBase = 1_200)))
+        val belowCap = PointsPhase.Editing(basis, PointsDraft(comfort = 399))
+        val atCap = belowCap.add(PointStat.COMFORT)
+        assertEquals(400, atCap.draft.comfort)
+        assertEquals(2_000, basis.comfortBps(atCap.draft))
+        assertSame(atCap, atCap.add(PointStat.COMFORT))
+        assertTrue(basis.valid(atCap.draft))
+        assertFalse(basis.valid(PointsDraft(comfort = 401)))
     }
 
     @Test fun `다시 나누기 — 0059 전에 강화한 신발은 한 번 처음부터, 줄이면 다시 나누기를 쓴다`() {
         // Lv5 — 포인트 16 을 효율 8 · 착화감 8 로 나눠 둔 채로 받았다
-        // 레전더리 기본 450(90분) — 포인트 1 = +45(9분)
+        // 기본 450 — 포인트 1 = +5(기본의 1%, 반올림)
         val basis = requireNotNull(pointsBasisOf(shoe(level = 5, total = 16, free = 0, efficiency = 8, comfort = 8, respec = true, base = 450, now = 400)))
         var phase: PointsPhase = startPoints(basis)
         repeat(8) { phase = phase.remove(PointStat.COMFORT) }
@@ -93,8 +93,8 @@ class ShoePointsModelTest {
         assertEquals(PointsDraft(8, 0, 8), phase.draft)
         assertTrue(basis.lowers(phase.draft))
         assertTrue(basis.valid(phase.draft))
-        assertEquals(810, basis.durabilityMax(phase.draft))
-        assertEquals(760, basis.durabilityNow(phase.draft))
+        assertEquals(490, basis.durabilityMax(phase.draft))
+        assertEquals(440, basis.durabilityNow(phase.draft))
         assertEquals(PointsEntry.Respec, pointsEntryOf(shoe(level = 5, total = 16, free = 0, efficiency = 8, comfort = 8, respec = true)))
     }
 
@@ -153,14 +153,14 @@ class ShoePointsModelTest {
         comfortBase: Int = 300,
         base: Int = 1_200,
         now: Int = 1_200,
-        max: Int = base + 100 * durability,
+        max: Int = base + StatPoints.durabilityPerPoint(base) * durability,
         status: String = "OWNED",
         chain: String = "APP",
     ) = Sneaker(
         id = 7, faction = Faction.WIND, rarity = Rarity.COMMON, variant = 0, level = level, mintNumber = 7,
         luck = 1.0, comfort = 1.0, durability = 100, equipped = false, acquiredAt = 0L,
         server = ServerStats(
-            origin = origin, efficiencyBps = effBase + 25 * efficiency, comfortBps = comfortBase + 10 * comfort,
+            origin = origin, efficiencyBps = effBase + StatPoints.EFFICIENCY_BPS * efficiency, comfortBps = comfortBase + StatPoints.COMFORT_BPS * comfort,
             durabilityPts = if (max > 0) Math.round(10_000.0 * now / max) / 100.0 else 100.0,
             maxLevel = 20, status = status, chainState = chain, canWithdraw = false, upgradeCost = 0.0,
             repairCostPerPoint = 0.0, genesisNo = 0,

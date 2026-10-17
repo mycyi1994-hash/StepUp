@@ -238,7 +238,7 @@
     <string name="sneaker_energy_saving">エナジー節約</string>
     <string name="sneaker_durability">耐久度</string>
     <string name="sneaker_about">このNFTについて</string>
-    <string name="sneaker_about_body" formatted="false">すべてのスニーカーは4つの属性と等級を持ちます。ブーストは等級ごとに約+1%と控えめ。集める楽しさは性能ではなく、見た目と図鑑の完成にあります。</string>
+    <string name="sneaker_about_body" formatted="false">すべてのシューズは6つの等級(コモン・レア・エピック・レジェンダリー・レッドライン・フィニッシュ)のいずれか。上の等級ほど長く走れて多く稼げ、21レベルからはレベルアップのポイントが大きく増えます。</string>
     <string name="rarity_common">コモン</string>
     <string name="rarity_rare">レア</string>
     <string name="rarity_epic">エピック</string>
@@ -794,7 +794,7 @@ StepUp と走り出そう。</string>
     <string name="guide2_body">ランセッション中はエナジーがある限り、一歩ごとに SUP が貯まります。エナジーは深夜0時に回復。</string>
     <string name="guide2_tip">ヒント: スニーカーのブーストぶん多く貯まります。</string>
     <string name="guide3_title">スニーカー NFT を集める</string>
-    <string name="guide3_body">炎・水・雷・風の4属性、図鑑は44枠。SUP でミントして強化し、お気に入りを装備しよう。</string>
+    <string name="guide3_body">コモンからフィニッシュまで6等級。シューズを引いて強化し、お気に入りを履こう。</string>
     <string name="guide3_tip" formatted="false">ヒント: ブースト差は等級ごとに1%だけ — 集める楽しさが本体!</string>
     <string name="guide4_title">コミュニティ掲示板</string>
     <string name="guide4_body">近い順のフラッシュランに参加して、お役立ち情報や雑談を投稿。ランキングカードで今週の順位もチェック。</string>

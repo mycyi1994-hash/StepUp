@@ -293,10 +293,10 @@ class ShoeDetailModelTest {
     @Test
     fun `서버 상한이 없으면 등급 기본 레벨 상한, 막대는 0 에서 1 사이`() {
         val rare = legacy(rarity = Rarity.RARE, level = 5)
-        assertEquals("5 / 15", detailStatRows(rare)[0].value)
-        assertEquals(5f / 15f, detailStatRows(rare)[0].fraction, 0.0001f)
-        assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.LEGENDARY, level = 30))[0].value)
-        assertEquals(1f, detailStatRows(legacy(rarity = Rarity.LEGENDARY, level = 30))[0].fraction, 0f)
+        assertEquals("5 / 20", detailStatRows(rare)[0].value)
+        assertEquals(5f / 20f, detailStatRows(rare)[0].fraction, 0.0001f)
+        assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].value)
+        assertEquals(1f, detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].fraction, 0f)
         // 상한을 넘는 값 · 음수 내구도는 막대 끝 · 0 에서 멈춘다
         assertEquals(1f, detailStatRows(server(efficiencyBps = 4_000))[1].fraction, 0f)
         assertEquals(0f, detailStatRows(server(durability = -3.0))[3].fraction, 0f)

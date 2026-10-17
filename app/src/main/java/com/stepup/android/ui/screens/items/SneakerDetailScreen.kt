@@ -630,7 +630,6 @@ private fun RecordSheet(shoe: Sneaker, zone: ZoneId, onClose: () -> Unit) {
             }
             CareInfoRow(stringResource(R.string.sdv_info_level), "${shoe.level} / ${shoe.maxLevel}", "shoe-info-level")
             // 속성은 예전 52종에만 있다 — 새 도감 신발에 자리 값을 보이지 않는다
-            if (shoe.modelId == null) CareInfoRow(stringResource(R.string.sdv_info_faction), shoe.faction.label(), "shoe-info-faction")
             CareInfoRow(stringResource(R.string.care_record_received), received, "shoe-info-received")
             val chain = chainMarkOf(shoe.tokenId)
             CareInfoRow(

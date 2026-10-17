@@ -11471,6 +11471,8 @@ select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id,
  where s.origin in ('FREE_DRAW', 'PAID_DRAW', 'BONUS_DRAW')
    and s.token_id is null and s.owner_id is not null
    and economy.chain_jobs_on()
+   -- 신발 체인 기록이 멈춰 있으면(0066 shoe_chain_enabled = false) 줄 세우지 않는다. 0066 전에는 칸이 없어 그대로 간다
+   and coalesce((select (e.value #>> '{}')::boolean from public.economy_settings e where e.key = 'shoe_chain_enabled'), true)
 on conflict (kind, ref) do nothing;
 
 -- ══════════════════════════════════════════════════════════════════
@@ -12156,7 +12158,7 @@ grant execute on function public.admin_chain_jobs_stats() to authenticated;
 
 create table if not exists public.sneaker_models (
   id int primary key check (id >= 1000),
-  rarity text not null check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY')),
+  rarity text not null check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH')),
   series text not null,
   slug text not null,
   name_en text not null,
@@ -12174,13 +12176,19 @@ create policy sneaker_models_read on public.sneaker_models for select using (tru
 revoke all on public.sneaker_models from anon, authenticated;
 grant select on public.sneaker_models to anon, authenticated;
 
+-- 레드라인 · 피니시는 등급이다(0066). 이미 만들어진 표의 검사도 6등급으로 — 아래 도감 줄이 이 등급을 쓴다
+alter table public.sneaker_models drop constraint if exists sneaker_models_rarity_check;
+alter table public.sneaker_models add constraint sneaker_models_rarity_check
+  check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'));
+
 -- 도감 시작 (tools/gen_shoe_catalog.py 가 design/shoes-2026-09/catalog.json 으로 만든 파일 — 손으로 고치지 않는다.)
--- 체인에 올라간 번호의 등급은 바꿀 수 없다 — 이미 있는 번호의 등급이 다르면 올리지 않는다(이름만 고칠 수 있다)
+-- 체인에 올라간 번호의 등급은 바꿀 수 없다 — 이미 있는 번호의 (체인) 등급이 다르면 올리지 않는다(이름만 고칠 수 있다).
+-- 레드라인 · 피니시는 앱 · 서버에서 등급이고(0066) 체인에서는 레전더리다 — 레전더리 ↔ 레드라인 · 피니시만 바꿀 수 있다
 do $$
 begin
   if exists (select 1 from public.sneaker_models m
               join (values (1101, 'RARE'), (1102, 'RARE'), (1103, 'RARE'), (1104, 'RARE'), (1105, 'RARE'), (1106, 'RARE'), (1107, 'RARE'), (1108, 'RARE'), (1109, 'RARE'), (1110, 'RARE'), (1111, 'RARE'), (1112, 'RARE'), (1113, 'RARE'), (1114, 'RARE'), (1115, 'RARE'), (1116, 'RARE'), (1117, 'RARE'), (1118, 'RARE'), (1119, 'RARE'), (1120, 'RARE'), (1201, 'EPIC'), (1202, 'EPIC'), (1203, 'EPIC'), (1204, 'EPIC'), (1205, 'EPIC'), (1206, 'EPIC'), (1207, 'EPIC'), (1208, 'EPIC'), (1209, 'EPIC'), (1210, 'EPIC'), (1211, 'EPIC'), (1212, 'EPIC'), (1213, 'EPIC'), (1214, 'EPIC'), (1215, 'EPIC'), (1216, 'EPIC'), (1217, 'EPIC'), (1218, 'EPIC'), (1219, 'EPIC'), (1220, 'EPIC'), (1301, 'LEGENDARY'), (1302, 'LEGENDARY'), (1303, 'LEGENDARY'), (1304, 'LEGENDARY'), (1305, 'LEGENDARY'), (1306, 'LEGENDARY'), (1307, 'LEGENDARY'), (1308, 'LEGENDARY'), (1309, 'LEGENDARY'), (1310, 'LEGENDARY'), (1311, 'LEGENDARY'), (1312, 'LEGENDARY'), (1313, 'LEGENDARY'), (1314, 'LEGENDARY'), (1315, 'LEGENDARY'), (1316, 'LEGENDARY'), (1317, 'LEGENDARY'), (1318, 'LEGENDARY'), (1319, 'LEGENDARY'), (1320, 'LEGENDARY'), (1321, 'LEGENDARY'), (1322, 'LEGENDARY'), (1323, 'LEGENDARY'), (1324, 'LEGENDARY'), (1325, 'LEGENDARY'), (1326, 'LEGENDARY'), (1327, 'LEGENDARY'), (1328, 'LEGENDARY'), (1329, 'LEGENDARY'), (1330, 'LEGENDARY')) e(id, rarity) on e.id = m.id
-             where e.rarity <> m.rarity) then
+             where e.rarity <> case when m.rarity in ('REDLINE', 'FINISH') then 'LEGENDARY' else m.rarity end) then
     raise exception '도감 번호의 등급이 바뀌었습니다 — 새 번호를 주세요';
   end if;
 end $$;
@@ -12235,28 +12243,29 @@ insert into public.sneaker_models (id, rarity, series, slug, name_en, name_ko) v
   (1308, 'LEGENDARY', 'LEGENDARY', 'g3-08-legendary-desert-trail-runner', 'Desert Trail Runner', '데저트 트레일 러너'),
   (1309, 'LEGENDARY', 'LEGENDARY', 'g3-09-legendary-external-heel-cage-stability-trainer', 'Heel Cage Stability Trainer', '힐 케이지 스태빌리티 트레이너'),
   (1310, 'LEGENDARY', 'LEGENDARY', 'g3-10-legendary-full-length-curve-interval-trainer', 'Full-Length Curve Interval Trainer', '풀렝스 커브 인터벌 트레이너'),
-  (1311, 'LEGENDARY', 'REDLINE', 'g3-11-redline-100m-sprint-spike', 'Redline 100m Sprint Spike', '레드라인 100m 스프린트 스파이크'),
-  (1312, 'LEGENDARY', 'REDLINE', 'g3-12-redline-800m-middle-distance-spike', 'Redline 800m Middle Distance Spike', '레드라인 800m 미들 디스턴스 스파이크'),
-  (1313, 'LEGENDARY', 'REDLINE', 'g3-13-redline-5000m-distance-spike', 'Redline 5000m Distance Spike', '레드라인 5000m 디스턴스 스파이크'),
-  (1314, 'LEGENDARY', 'REDLINE', 'g3-14-redline-road-5k10k-racing-flat', 'Redline 5K·10K Racing Flat', '레드라인 5K·10K 레이싱 플랫'),
-  (1315, 'LEGENDARY', 'REDLINE', 'g3-15-redline-full-marathon-carbon-super-shoe', 'Redline Marathon Carbon Super Shoe', '레드라인 마라톤 카본 슈퍼슈'),
-  (1316, 'LEGENDARY', 'REDLINE', 'g3-16-redline-trail-race-shoe', 'Redline Trail Race Shoe', '레드라인 트레일 레이스 슈'),
-  (1317, 'LEGENDARY', 'REDLINE', 'g3-17-redline-triathlon-transition-racer', 'Redline Triathlon Transition Racer', '레드라인 트라이애슬론 트랜지션 레이서'),
-  (1318, 'LEGENDARY', 'REDLINE', 'g3-18-redline-steeplechase-drain-spike', 'Redline Steeplechase Drain Spike', '레드라인 스티플체이스 드레인 스파이크'),
-  (1319, 'LEGENDARY', 'REDLINE', 'g3-19-redline-half-marathon-road-racer', 'Redline Half Marathon Road Racer', '레드라인 하프 마라톤 로드 레이서'),
-  (1320, 'LEGENDARY', 'REDLINE', 'g3-20-redline-cross-country-spike', 'Redline Cross Country Spike', '레드라인 크로스컨트리 스파이크'),
-  (1321, 'LEGENDARY', 'FINISH', 'g3-21-finish-championship-marathon-super-shoe', 'Finish Championship Marathon Super Shoe', '피니시 챔피언십 마라톤 슈퍼슈'),
-  (1322, 'LEGENDARY', 'FINISH', 'g3-22-finish-elite-100m-sprint-spike', 'Finish Elite 100m Sprint Spike', '피니시 엘리트 100m 스프린트 스파이크'),
-  (1323, 'LEGENDARY', 'FINISH', 'g3-23-finish-elite-middle-distance-spike', 'Finish Elite Middle Distance Spike', '피니시 엘리트 미들 디스턴스 스파이크'),
-  (1324, 'LEGENDARY', 'FINISH', 'g3-24-finish-ultratrail-championship-racer', 'Finish Ultratrail Championship Racer', '피니시 울트라트레일 챔피언십 레이서'),
-  (1325, 'LEGENDARY', 'FINISH', 'g3-25-finish-championship-5k-10k-road-flat', 'Finish Championship 5K·10K Road Flat', '피니시 챔피언십 5K·10K 로드 플랫'),
-  (1326, 'LEGENDARY', 'FINISH', 'g3-26-finish-championship-cross-country-spike', 'Finish Championship Cross Country Spike', '피니시 챔피언십 크로스컨트리 스파이크'),
-  (1327, 'LEGENDARY', 'FINISH', 'g3-27-finish-championship-steeplechase-spike', 'Finish Championship Steeplechase Spike', '피니시 챔피언십 스티플체이스 스파이크'),
-  (1328, 'LEGENDARY', 'FINISH', 'g3-28-finish-championship-400m-sprint-spike', 'Finish Championship 400m Sprint Spike', '피니시 챔피언십 400m 스프린트 스파이크'),
-  (1329, 'LEGENDARY', 'FINISH', 'g3-29-finish-championship-800m-middle-distance-spike', 'Finish Championship 800m Middle Distance Spike', '피니시 챔피언십 800m 미들 디스턴스 스파이크'),
-  (1330, 'LEGENDARY', 'FINISH', 'g3-30-finish-championship-half-marathon-carbon-racer', 'Finish Championship Half Marathon Carbon Racer', '피니시 챔피언십 하프 마라톤 카본 레이서')
+  (1311, 'REDLINE', 'REDLINE', 'g3-11-redline-100m-sprint-spike', 'Redline 100m Sprint Spike', '레드라인 100m 스프린트 스파이크'),
+  (1312, 'REDLINE', 'REDLINE', 'g3-12-redline-800m-middle-distance-spike', 'Redline 800m Middle Distance Spike', '레드라인 800m 미들 디스턴스 스파이크'),
+  (1313, 'REDLINE', 'REDLINE', 'g3-13-redline-5000m-distance-spike', 'Redline 5000m Distance Spike', '레드라인 5000m 디스턴스 스파이크'),
+  (1314, 'REDLINE', 'REDLINE', 'g3-14-redline-road-5k10k-racing-flat', 'Redline 5K·10K Racing Flat', '레드라인 5K·10K 레이싱 플랫'),
+  (1315, 'REDLINE', 'REDLINE', 'g3-15-redline-full-marathon-carbon-super-shoe', 'Redline Marathon Carbon Super Shoe', '레드라인 마라톤 카본 슈퍼슈'),
+  (1316, 'REDLINE', 'REDLINE', 'g3-16-redline-trail-race-shoe', 'Redline Trail Race Shoe', '레드라인 트레일 레이스 슈'),
+  (1317, 'REDLINE', 'REDLINE', 'g3-17-redline-triathlon-transition-racer', 'Redline Triathlon Transition Racer', '레드라인 트라이애슬론 트랜지션 레이서'),
+  (1318, 'REDLINE', 'REDLINE', 'g3-18-redline-steeplechase-drain-spike', 'Redline Steeplechase Drain Spike', '레드라인 스티플체이스 드레인 스파이크'),
+  (1319, 'REDLINE', 'REDLINE', 'g3-19-redline-half-marathon-road-racer', 'Redline Half Marathon Road Racer', '레드라인 하프 마라톤 로드 레이서'),
+  (1320, 'REDLINE', 'REDLINE', 'g3-20-redline-cross-country-spike', 'Redline Cross Country Spike', '레드라인 크로스컨트리 스파이크'),
+  (1321, 'FINISH', 'FINISH', 'g3-21-finish-championship-marathon-super-shoe', 'Finish Championship Marathon Super Shoe', '피니시 챔피언십 마라톤 슈퍼슈'),
+  (1322, 'FINISH', 'FINISH', 'g3-22-finish-elite-100m-sprint-spike', 'Finish Elite 100m Sprint Spike', '피니시 엘리트 100m 스프린트 스파이크'),
+  (1323, 'FINISH', 'FINISH', 'g3-23-finish-elite-middle-distance-spike', 'Finish Elite Middle Distance Spike', '피니시 엘리트 미들 디스턴스 스파이크'),
+  (1324, 'FINISH', 'FINISH', 'g3-24-finish-ultratrail-championship-racer', 'Finish Ultratrail Championship Racer', '피니시 울트라트레일 챔피언십 레이서'),
+  (1325, 'FINISH', 'FINISH', 'g3-25-finish-championship-5k-10k-road-flat', 'Finish Championship 5K·10K Road Flat', '피니시 챔피언십 5K·10K 로드 플랫'),
+  (1326, 'FINISH', 'FINISH', 'g3-26-finish-championship-cross-country-spike', 'Finish Championship Cross Country Spike', '피니시 챔피언십 크로스컨트리 스파이크'),
+  (1327, 'FINISH', 'FINISH', 'g3-27-finish-championship-steeplechase-spike', 'Finish Championship Steeplechase Spike', '피니시 챔피언십 스티플체이스 스파이크'),
+  (1328, 'FINISH', 'FINISH', 'g3-28-finish-championship-400m-sprint-spike', 'Finish Championship 400m Sprint Spike', '피니시 챔피언십 400m 스프린트 스파이크'),
+  (1329, 'FINISH', 'FINISH', 'g3-29-finish-championship-800m-middle-distance-spike', 'Finish Championship 800m Middle Distance Spike', '피니시 챔피언십 800m 미들 디스턴스 스파이크'),
+  (1330, 'FINISH', 'FINISH', 'g3-30-finish-championship-half-marathon-carbon-racer', 'Finish Championship Half Marathon Carbon Racer', '피니시 챔피언십 하프 마라톤 카본 레이서')
 on conflict (id) do update
-  set series = excluded.series, slug = excluded.slug, name_en = excluded.name_en, name_ko = excluded.name_ko;
+  set rarity = excluded.rarity, series = excluded.series, slug = excluded.slug, name_en = excluded.name_en,
+      name_ko = excluded.name_ko;
 -- 도감 끝
 
 -- 신발의 도감 번호 — 새 도감에서 뽑은 신발만. 비어 있으면 예전 52종(속성 × 변형)
@@ -21322,35 +21331,106 @@ grant execute on function public.record_session(timestamptz, timestamptz, int, i
   to authenticated;
 
 -- ══════════════════════════════════════════════════════════════════
--- 0066_shoe_durability_minutes.sql
+-- 0066_shoe_economy_v3.sql
 -- ══════════════════════════════════════════════════════════════════
 
 -- ════════════════════════════════════════════════════════════════════
---  0066 — 신발 내구도를 "달릴 수 있는 시간"으로 다시 잡는다 (2026-10-17 사용자 결정)
+--  0066 — 신발 경제 3판: 6등급 · 속성 없음 · 새 뽑기 · 레벨 · 포인트 · 내구도 = 시간 · 초기화 (2026-10-17 사용자 결정)
 --
---  사용자: "신발들의 내구도 자체가 말도 안 되게 높네 … 일반이 10분 정도고 가장 높은 등급이 1시간 30분 정도 스타트로
---  (강화 없이) 윗등급으로 갈수록 팍팍 많이 좋아지는 형식". 닳는 빠르기(달린 1분마다 5, 0064)는 그대로 두고
---  최대 내구도를 줄인다.
+--  사용자 결정(이 대화):
+--    · 등급 6개 — 일반 · 레어 · 에픽 · 레전더리 · 레드라인 · 피니시(예전에는 레드라인 · 피니시가 레전더리 안의 시리즈였다).
+--    · 속성(불 · 물 · 번개 · 바람)은 없앤다 — 새 신발은 'NONE'.
+--    · 뽑기 — 무료: 일반 79 · 레어 20 · 에픽 1%. 상급: 레어 60 · 에픽 28 · 레전더리 9 · 레드라인 2.5 · 피니시 0.5%(일반 없음).
+--      지갑 첫 선물의 첫 번(Genesis)은 상급 표의 에픽 이상.
+--    · 새 신발로 달릴 수 있는 시간(1분 = 내구도 5, 0064) — 10 · 15 · 25 · 40 · 60 · 90분, 신발마다 ±10%.
+--    · 효율(적립 보너스) — 에픽부터 급수적으로: 2~4 · 4~6 · 8~11 · 16~20 · 28~35 · 45~55%. 착화감 0~3 … 15~18%(3%p 씩).
+--    · 최대 레벨 — 일반 · 레어 20, 에픽 26 · 레전더리 27 · 레드라인 28 · 피니시 30.
+--    · 레벨업 포인트 — 오른 레벨마다 2~10: 1 · 11~15: 2 · 16~20: 3 · 21~25: 5 · 26: 15 · 27: 30 · 28: 60 · 29: 100 · 30: 150,
+--      등급 배수 ×1 · ×2 · ×3 · ×4 · ×6 · ×8. 포인트 1 = 효율 +0.05%p · 착화감 +0.02%p(20% 까지) · 내구도 기본의 +1%.
+--    · 수리 — 새 신발(레벨 1)을 가득 고치는 값이 일반 : 피니시 = 1 : 4(일반 13.1 · 피니시 52.5 SUP), 레벨마다 +5%.
+--    · 적립은 남은 내구도가 0 일 때만 없다. 한 러닝 안에서 다 닳으면 그 뒤 걸음은 적립하지 않는다.
+--    · 모든 신발 · SUP 를 한 번 비우고 새로 시작한다(지금 쓰는 사람은 직원뿐) — 첫 신발 하나 + 무료 뽑기 10회.
+--    · 잠재능력(21 레벨 위의 해방)은 보류.
 --
---    · 새 신발로 달릴 수 있는 시간(강화 없이) — 일반 10분 · 레어 20분 · 에픽 45분 · 레전더리 90분, 신발마다 ±10%.
---        최대 내구도(1분 = 5): 일반 45 ~ 55 · 레어 90 ~ 110 · 에픽 205 ~ 245 · 레전더리 405 ~ 495(5 단위로 고른다)
---    · 내구도 포인트 1 = 그 신발 기본 최대 내구도의 +10%(예전 +100). 일반은 +1분, 레전더리는 +9분.
---    · 수리비 — 새 신발(레벨 1)을 0% 에서 가득 고치는 값이 일반 : 레전더리 = 1 : 4, 금액은 지금 수준(일반 약 13 SUP).
---        레벨 1 가득 수리: 일반 13.1 · 레어 20.8 · 에픽 33.1 · 레전더리 52.5 SUP. 레벨마다 +5% 는 그대로.
---    · 적립은 남은 비율이 0 일 때만 없다(예전 50% 아래 30% 덜 · 20% 아래 없음). 대신 한 러닝 안에서도 내구도가 다 닳은
---      뒤의 걸음은 적립하지 않는다 — 남은 내구도로 달릴 수 있던 시간만큼만(record_session).
---    · 이미 있는 신발은 모두 새 기준으로 옮기고 100% 로 채운다(사용자 결정 "모두 100% 로 채우기").
---      최대 내구도는 예전 범위 안의 자리를 새 범위의 같은 자리로 옮긴다(뽑기 씨앗으로 고른 값의 순서가 그대로).
---      예전 기준(1,000 이상)인 신발만 옮기므로 setup.sql 을 다시 붙여넣어도 두 번 채우지 않는다.
+--  체인: v3 신발 컨트랙트는 4등급과 예전 스탯 범위만 안다(새 신발은 발행이 거절된다). 새 컨트랙트 전까지 신발의 체인 기록
+--  (금고 발행 · 꺼내기 · 지갑 보너스 발행)을 멈춘다(economy_settings.shoe_chain_enabled = false). 러닝 증명 · 배지는 그대로.
 -- ════════════════════════════════════════════════════════════════════
 
--- ── 규칙 ────────────────────────────────────────────────────────────
+insert into public.economy_settings (key, value) values
+  ('shoe_chain_enabled', 'false'::jsonb)
+on conflict (key) do nothing;
+
+-- 신발을 체인에 기록하는가(금고 발행 · 스탯 갱신 · 꺼내기 · 지갑 보너스 발행)
+create or replace function economy.shoe_chain_on() returns boolean
+  language sql stable security definer set search_path = public, economy as $$
+  select coalesce((economy.setting('shoe_chain_enabled') #>> '{}')::boolean, false)
+$$;
+revoke all on function economy.shoe_chain_on() from public;
+
+-- ── 등급 · 속성 칸 ──────────────────────────────────────────────────
+-- 등급 6개(레드라인 · 피니시를 더한다), 속성은 'NONE'(새 신발). 이름이 정해지지 않은 예전 검사도 찾아서 바꾼다
+do $$
+declare r record;
+begin
+  for r in
+    select c.conrelid::regclass as tbl, c.conname
+      from pg_constraint c
+     where c.contype = 'c'
+       and c.conrelid in ('public.market_sneakers'::regclass, 'public.market_bids'::regclass)
+       and (pg_get_constraintdef(c.oid) ilike '%faction%' or pg_get_constraintdef(c.oid) ilike '%LEGENDARY%')
+  loop
+    execute format('alter table %s drop constraint %I', r.tbl, r.conname);
+  end loop;
+end $$;
+alter table public.market_sneakers add constraint market_sneakers_rarity_check
+  check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'));
+alter table public.market_sneakers add constraint market_sneakers_faction_check
+  check (faction in ('NONE', 'FIRE', 'WATER', 'LIGHTNING', 'WIND'));
+alter table public.market_sneakers alter column faction set default 'NONE';
+alter table public.market_bids add constraint market_bids_rarity_check
+  check (rarity in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'));
+alter table public.market_bids add constraint market_bids_faction_check
+  check (faction in ('NONE', 'FIRE', 'WATER', 'LIGHTNING', 'WIND'));
+
+-- ── 등급 규칙 ────────────────────────────────────────────────────────
+create or replace function economy.rarity_ord(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 0 when 'RARE' then 1 when 'EPIC' then 2
+                       when 'LEGENDARY' then 3 when 'REDLINE' then 4 when 'FINISH' then 5 end
+$$;
+
+create or replace function economy.max_level(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 20 when 'RARE' then 20 when 'EPIC' then 26
+                       when 'LEGENDARY' then 27 when 'REDLINE' then 28 when 'FINISH' then 30 end
+$$;
+
+-- 예전 그림(속성 × 변형)을 고를 때만 쓴다 — 새 신발은 도감 모델(draw_model)로 그린다
+create or replace function economy.variant_count(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 4 when 'RARE' then 4 when 'EPIC' then 3 else 2 end
+$$;
+
+create or replace function economy.efficiency_range(p_rarity text, out lo int, out hi int)
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 200 when 'RARE' then 400 when 'EPIC' then 800
+                       when 'LEGENDARY' then 1600 when 'REDLINE' then 2800 else 4500 end,
+         case p_rarity when 'COMMON' then 400 when 'RARE' then 600 when 'EPIC' then 1100
+                       when 'LEGENDARY' then 2000 when 'REDLINE' then 3500 else 5500 end
+$$;
+
+create or replace function economy.comfort_range(p_rarity text, out lo int, out hi int)
+  language sql immutable as $$
+  select 300 * coalesce(economy.rarity_ord(p_rarity), 0), 300 * coalesce(economy.rarity_ord(p_rarity), 0) + 300
+$$;
+
+-- 새 신발 최대 내구도(달린 1분 = 5) — 10 · 15 · 25 · 40 · 60 · 90분, ±10%
 create or replace function economy.durability_range(p_rarity text, out lo int, out hi int)
   language sql immutable as $$
-  select case p_rarity when 'COMMON' then 45 when 'RARE' then 90
-                       when 'EPIC' then 205 else 405 end,
-         case p_rarity when 'COMMON' then 55 when 'RARE' then 110
-                       when 'EPIC' then 245 else 495 end
+  select case p_rarity when 'COMMON' then 45 when 'RARE' then 70 when 'EPIC' then 115
+                       when 'LEGENDARY' then 180 when 'REDLINE' then 270 else 405 end,
+         case p_rarity when 'COMMON' then 55 when 'RARE' then 80 when 'EPIC' then 135
+                       when 'LEGENDARY' then 220 when 'REDLINE' then 330 else 495 end
 $$;
 
 -- 등급 범위 안에서 5 단위(1분)로 고른다. p_roll 은 0 이상의 아무 정수(씨앗 바이트 · 해시)
@@ -21359,35 +21439,336 @@ create or replace function economy.durability_roll(p_rarity text, p_roll bigint)
   select r.lo + 5 * (abs(p_roll) % ((r.hi - r.lo) / 5 + 1))::int from economy.durability_range(p_rarity) r
 $$;
 
--- 내구도 포인트 1 이 올리는 최대 내구도 — 그 신발 기본 최대 내구도의 10%(반올림, 적어도 1). 앱 StatPoints.durabilityPerPoint 와 같다
-create or replace function economy.point_durability_of(p_base int) returns int
-  language sql immutable as $$ select greatest((coalesce(p_base, 0) + 5) / 10, 1) $$;
-
 -- 내구도 1 로 달릴 수 있는 시간(초) — 1분마다 5 닳는다(0064 economy.durability_wear_time)
 create or replace function economy.durability_sec_per_point() returns int
   language sql immutable as $$ select 12 $$;
 
--- 수리 1점 값 — 새 신발(레벨 1)을 가득 고치는 값이 등급마다 일반의 4^(등급/3) 배(레전더리 = 4 배)가 되게,
--- 등급 범위 가운데 최대 내구도로 나눈다. 레벨마다 +5%(economy.repair_cost_per_point 와 같은 비율)
+-- 수리 1점 값 — 새 신발(레벨 1)을 가득 고치는 값이 일반의 4^(등급/5) 배(피니시 = 4 배)가 되게 등급 범위 가운데로 나눈다.
+-- 레벨마다 +5%
 create or replace function economy.repair_cost_per_unit(p_rarity text, p_level int) returns numeric
   language sql immutable as $$
-  select round(12.5 * power(4::numeric, economy.rarity_ord(p_rarity) / 3.0)
+  select round(12.5 * power(4::numeric, coalesce(economy.rarity_ord(p_rarity), 0) / 5.0)
                / ((r.lo + r.hi) / 2.0) * (1 + 0.05 * p_level), 8)
     from economy.durability_range(p_rarity) r
 $$;
 
--- 적립 배율 — 남은 비율이 0 보다 크면 그대로, 다 닳았으면 없다(예전 50% · 20% 문턱은 없앴다)
+-- 적립 배율 — 남은 비율이 0 보다 크면 그대로, 다 닳았으면 없다
 create or replace function economy.durability_factor(p_durability numeric) returns numeric
   language sql immutable as $$
   select case when coalesce(p_durability, 0) > 0 then 1.0 else 0 end::numeric
 $$;
 
-comment on column public.market_sneakers.dur_base is
-  '만들 때 고른 최대 내구도(달린 1분 = 5, 등급 범위 안). 최대 내구도 dur_max = dur_base + pts_dur × 기본의 10%(0066)';
-comment on column public.market_sneakers.dur_now is
-  '남은 내구도(달린 1분 = 5). durability_pts 는 이 값의 비율(%)이다 — 트리거가 센다';
+-- ── 레벨업 포인트 ────────────────────────────────────────────────────
+-- 레벨 p_level 에 오를 때 받는 기본 포인트(등급 배수 전)
+create or replace function economy.points_at_level(p_level int) returns int
+  language sql immutable as $$
+  select case
+    when p_level is null or p_level <= 1 then 0
+    when p_level <= 10 then 1
+    when p_level <= 15 then 2
+    when p_level <= 20 then 3
+    when p_level <= 25 then 5
+    when p_level = 26 then 15
+    when p_level = 27 then 30
+    when p_level = 28 then 60
+    when p_level = 29 then 100
+    else 150 end
+$$;
 
--- ── 남은 내구도 ↔ 남은 비율 — 0059 그대로 + 포인트 1 = 기본의 10% ──────────
+-- 등급 배수 — 같은 레벨업이라도 등급마다 크게 다르다
+create or replace function economy.points_rarity_mult(p_rarity text) returns int
+  language sql immutable as $$
+  select case p_rarity when 'COMMON' then 1 when 'RARE' then 2 when 'EPIC' then 3
+                       when 'LEGENDARY' then 4 when 'REDLINE' then 6 when 'FINISH' then 8 else 0 end
+$$;
+
+-- 이 레벨까지 받은 포인트. 예전 신발(IMPORT · MINT)은 없다
+create or replace function economy.points_total_of(p_origin text, p_rarity text, p_level int) returns int
+  language sql immutable as $$
+  select case when p_origin in ('IMPORT', 'MINT') then 0
+              else economy.points_rarity_mult(p_rarity)
+                   * coalesce((select sum(economy.points_at_level(l))::int
+                                 from generate_series(2, greatest(coalesce(p_level, 1), 1)) l), 0) end
+$$;
+
+-- 포인트 1 의 값 — 효율 +0.05%p · 착화감 +0.02%p
+create or replace function economy.point_efficiency_bps() returns int
+  language sql immutable as $$ select 5 $$;
+create or replace function economy.point_comfort_bps() returns int
+  language sql immutable as $$ select 2 $$;
+
+-- 내구도 포인트 1 이 올리는 최대 내구도 — 그 신발 기본 최대 내구도의 1%(반올림, 적어도 1). 앱 StatPoints.durabilityPerPoint 와 같다
+create or replace function economy.point_durability_of(p_base int) returns int
+  language sql immutable as $$ select greatest((coalesce(p_base, 0) + 50) / 100, 1) $$;
+
+-- 강화 상한 — 등급의 최대 레벨(신발 체인 기록이 멈춰 있어 금고 토큰의 상한은 보지 않는다)
+create or replace function economy.forge_max_level(p_rarity text, p_token numeric) returns int
+  language sql immutable as $$ select economy.max_level(p_rarity) $$;
+
+-- ── 뽑기 ─────────────────────────────────────────────────────────────
+-- 어떤 표로 굴리는가 — 무료 뽑기 · 첫 신발은 무료, 그 밖(상급 · 예전 유료)은 상급
+create or replace function economy.draw_kind(p_origin text) returns text
+  language sql immutable as $$
+  select case when p_origin in ('FREE_DRAW', 'STARTER') then 'FREE' else 'PREMIUM' end
+$$;
+
+-- 등급 가중치(천분율)
+create or replace function economy.draw_weight_v3(p_kind text, p_rarity text) returns int
+  language sql immutable as $$
+  select case p_kind
+    when 'FREE' then case p_rarity when 'COMMON' then 790 when 'RARE' then 200 when 'EPIC' then 10 else 0 end
+    else case p_rarity when 'RARE' then 600 when 'EPIC' then 280 when 'LEGENDARY' then 90
+                       when 'REDLINE' then 25 when 'FINISH' then 5 else 0 end
+  end
+$$;
+
+-- 씨앗 결과 → 등급. p_min 이 있으면 그 등급 이상만(Genesis 는 에픽 이상) — 표 안의 위 등급끼리 비율은 그대로
+create or replace function economy.roll_rarity_v3(p_roll bigint, p_kind text, p_min text default null) returns text
+  language plpgsql immutable as $$
+declare
+  v_order text[] := array['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'];
+  v_from int := coalesce(economy.rarity_ord(p_min), 0) + 1;
+  v_total int := 0;
+  v_pick int;
+  i int;
+begin
+  for i in v_from .. 6 loop
+    v_total := v_total + economy.draw_weight_v3(p_kind, v_order[i]);
+  end loop;
+  v_pick := (abs(p_roll) % v_total)::int;
+  for i in v_from .. 6 loop
+    v_pick := v_pick - economy.draw_weight_v3(p_kind, v_order[i]);
+    if v_pick < 0 then
+      return v_order[i];
+    end if;
+  end loop;
+  return v_order[6];
+end $$;
+
+-- ── 내 신발 · 효율 · 착화감 · 포인트 · 체인 · 뽑기 ─────────────────────────
+
+create or replace function economy.shoe_effective(
+  s public.market_sneakers,
+  out efficiency_bps int, out comfort_bps int, out level int, out durability numeric,
+  out points_total int, out points_free int
+) language sql immutable as $$
+  select
+    case when s.origin in ('IMPORT', 'MINT') then 200
+         else s.efficiency_bps + economy.point_efficiency_bps() * s.pts_eff end,
+    case when s.origin in ('IMPORT', 'MINT') then 0
+         else least(s.comfort_bps + economy.point_comfort_bps() * s.pts_comfort, economy.comfort_cap_bps()) end,
+    case when s.origin in ('IMPORT', 'MINT') then 1 else s.level end,
+    s.durability_pts,
+    economy.points_total_of(s.origin, s.rarity, s.level),
+    economy.points_total_of(s.origin, s.rarity, s.level) - s.pts_eff - s.pts_comfort - s.pts_dur
+$$;
+
+create or replace function public.economy_bootstrap()
+returns void
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_since timestamptz := (economy.setting('free_draw_since') #>> '{}')::timestamptz;
+  v_id bigint;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform economy.seed_ensure(v_user);
+
+  if not exists (select 1 from public.market_sneakers where owner_id = v_user and origin = 'STARTER') then
+    insert into public.market_sneakers (
+      owner_id, faction, rarity, variant, level, luck, comfort, durability,
+      origin, efficiency_bps, comfort_bps, durability_pts, withdrawable
+    ) values (
+      v_user, 'NONE', 'COMMON', 0, 1, 1, 1.01, 100,
+      'STARTER', 300, 100, 100, false
+    ) returning id into v_id;
+    if not exists (select 1 from public.market_sneakers where owner_id = v_user and equipped) then
+      update public.market_sneakers set equipped = true where id = v_id;
+    end if;
+  end if;
+
+  if (select p.created_at from public.profiles p where p.id = v_user) >= v_since then
+    insert into public.draw_grants (user_id, kind, granted)
+    values (v_user, 'FREE', 10)
+    on conflict (user_id, kind) do nothing;
+  end if;
+end $$;
+
+create or replace function economy.vault_mint_enqueue(p_sneaker bigint) returns void
+language plpgsql security definer set search_path = public, economy as $$
+begin
+  -- 체인 기록이 실패해도 뽑기는 그대로 된다 — 경고만 남긴다
+  begin
+    -- 신발 체인 기록은 멈춰 있다(0066 — v3 컨트랙트는 4등급 · 예전 스탯 범위만 안다)
+    if not economy.chain_jobs_on() or not economy.shoe_chain_on() then
+      return;
+    end if;
+    insert into public.chain_jobs (kind, ref, user_id, sneaker_id)
+    select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id
+      from public.market_sneakers s
+     where s.id = p_sneaker and s.token_id is null
+    on conflict (kind, ref) do nothing;
+  exception when others then
+    raise warning 'vault_mint_enqueue: %', sqlerrm;
+  end;
+  return;
+end $$;
+
+create or replace function public.bonus_draw_request()
+returns uuid
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_wallet text;
+  v_genesis boolean;
+  v_min text := nullif(economy.setting('premium_min_rarity') #>> '{}', '');
+  v_id bigint;
+  v_op uuid := gen_random_uuid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  if not economy.shoe_chain_on() then
+    raise exception '신발을 지갑으로 발행하는 기능은 준비 중입니다' using errcode = '55000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
+  v_wallet := economy.withdraw_gate(v_user, false);
+
+  if economy.mints_today('BONUS_MINT') >= economy.setting_num('bonus_mint_global_daily') then
+    raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
+  end if;
+
+  select g.genesis_used < g.genesis_granted into v_genesis
+    from public.draw_grants g where g.user_id = v_user and g.kind = 'BONUS';
+
+  update public.draw_grants
+     set used = used + 1,
+         genesis_used = genesis_used + case when v_genesis then 1 else 0 end
+   where user_id = v_user and kind = 'BONUS' and used < granted;
+  if not found then
+    raise exception '보너스 뽑기가 남아 있지 않습니다' using errcode = '23514';
+  end if;
+
+  v_id := economy.draw_create(v_user, 'BONUS_DRAW',
+                              case when v_genesis then 'EPIC' else v_min end, coalesce(v_genesis, false));
+  update public.market_sneakers set chain_state = 'WITHDRAWING' where id = v_id;
+
+  insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
+  values (v_op, v_user, 'BONUS_MINT', v_wallet, v_id, economy.op_deadline());
+  return v_op;
+end $$;
+
+create or replace function public.sneaker_withdraw_request(p_sneaker_id bigint)
+returns uuid
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_wallet text;
+  v public.market_sneakers;
+  v_op uuid := gen_random_uuid();
+begin
+  if not economy.shoe_chain_on() then
+    raise exception '신발 꺼내기는 준비 중입니다' using errcode = '55000';
+  end if;
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform pg_advisory_xact_lock(hashtext('chain:withdraw'));
+  v_wallet := economy.withdraw_gate(v_user, true);
+
+  v := economy.my_app_sneaker(v_user, p_sneaker_id);
+  if not v.withdrawable or v.origin in ('IMPORT', 'MINT', 'STARTER') then
+    raise exception '꺼낼 수 없는 신발입니다' using errcode = '22023';
+  end if;
+  if v.km_run < v.lock_km then
+    raise exception '이 신발로 %km 를 더 달려야 꺼낼 수 있습니다', round(v.lock_km - v.km_run, 1)
+      using errcode = '23514';
+  end if;
+  if exists (select 1 from public.chain_jobs j
+              where j.sneaker_id = p_sneaker_id and j.kind in ('VAULT_MINT', 'STATS_SYNC')
+                and j.status in ('CLAIMED', 'SENT')) then
+    raise exception '이 신발을 체인에 기록하는 중입니다. 잠시 뒤에 다시 해 주세요' using errcode = '55000';
+  end if;
+  if v.token_id is null and economy.mints_today('SNEAKER_WITHDRAW') >= economy.setting_num('mint_global_daily') then
+    raise exception '오늘 발행 한도가 찼습니다. 내일 다시 해 주세요' using errcode = '23514';
+  end if;
+
+  update public.market_sneakers
+     set chain_state = 'WITHDRAWING', equipped = false, updated_at = now()
+   where id = p_sneaker_id;
+  -- 신고 있던 신발을 꺼내면 첫 신발로 갈아 신긴다(신발 없이 달리는 틈이 없게)
+  update public.market_sneakers set equipped = true, updated_at = now()
+   where id = (select m.id from public.market_sneakers m
+                where m.owner_id = v_user and m.origin = 'STARTER'
+                  and m.chain_state = 'APP' and m.status = 'OWNED' limit 1)
+     and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
+
+  insert into public.chain_ops (id, user_id, kind, wallet, sneaker_id, deadline)
+  values (v_op, v_user, 'SNEAKER_WITHDRAW', v_wallet, p_sneaker_id, economy.op_deadline());
+  return v_op;
+end $$;
+
+create or replace function economy.draw_create(
+  p_user uuid,
+  p_origin text,
+  p_min_rarity text default null,
+  p_genesis boolean default false
+) returns bigint
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_nonce bigint;
+  v_d bytea;
+  v_rarity text;
+  v_variant int;
+  v_eff_lo int; v_eff_hi int;
+  v_cmf_lo int; v_cmf_hi int;
+  v_id bigint;
+  v_lock numeric := 0;
+begin
+  select n.o_nonce, n.o_digest into v_nonce, v_d from economy.draw_digest(p_user) n;
+
+  -- 무료 뽑기 · 첫 신발은 무료 표, 상급(보너스 · 예전 유료)은 상급 표(0066). 속성은 없다(씨앗 4 ~ 5번째 바이트는 쓰지 않는다)
+  v_rarity := economy.roll_rarity_v3(economy.bytes_int(v_d, 0, 4), economy.draw_kind(p_origin), p_min_rarity);
+  v_variant := (economy.bytes_int(v_d, 6, 2) % economy.variant_count(v_rarity))::int;
+  select lo, hi into v_eff_lo, v_eff_hi from economy.efficiency_range(v_rarity);
+  select lo, hi into v_cmf_lo, v_cmf_hi from economy.comfort_range(v_rarity);
+
+  if p_origin in ('FREE_DRAW', 'BONUS_DRAW') then
+    v_lock := economy.setting_num('free_shoe_lock_km');
+  end if;
+
+  insert into public.market_sneakers (
+    owner_id, faction, rarity, variant, level, luck, comfort, durability,
+    origin, efficiency_bps, comfort_bps, durability_pts,
+    lock_km, withdrawable, draw_nonce, genesis_no, model_id, dur_base
+  ) values (
+    p_user, 'NONE', v_rarity, v_variant, 1, 1,
+    -- 옛 comfort 칸(배율 1.00~1.40)은 옛 앱 화면용으로만 채운다.
+    1 + v_cmf_lo / 10000.0, 100,
+    p_origin,
+    v_eff_lo + (economy.bytes_int(v_d, 8, 2) % (v_eff_hi - v_eff_lo + 1))::int,
+    v_cmf_lo + (economy.bytes_int(v_d, 10, 2) % (v_cmf_hi - v_cmf_lo + 1))::int,
+    100,
+    v_lock, p_origin <> 'STARTER', v_nonce,
+    case when p_genesis then nextval('public.genesis_seq')::int end,
+    economy.draw_model(v_rarity, economy.bytes_int(v_d, 12, 2)),
+    economy.durability_roll(v_rarity, economy.bytes_int(v_d, 14, 2))
+  ) returning id into v_id;
+
+  return v_id;
+end $$;
+
+
+-- ── 남은 내구도 ↔ 남은 비율 — 0059 그대로 + 포인트 1 = 기본의 1% ──────────
+
 create or replace function economy.sneaker_durability_sync() returns trigger
 language plpgsql as $$
 begin
@@ -21414,46 +21795,98 @@ begin
 end $$;
 
 
--- ── 이미 있는 신발 옮기기 — 예전 기준(1,000 이상)인 신발만, 한 번 ─────────────────
--- 예전 범위(등급마다 500 폭: 일반 1,000 · 레어 1,500 · 에픽 2,000 · 레전더리 2,500 부터) 안의 자리를 새 범위의 같은 자리로.
--- 남은 내구도는 새 최대로 가득 채운다(트리거가 최대에 맞춰 자른다)
-alter table public.market_sneakers drop constraint if exists market_sneakers_points_check;
-
-create or replace function economy.shoe_durability_minutes_backfill() returns int
+-- ── 한 번만: 모든 신발 · SUP 를 비우고 새로 시작한다 (2026-10-17 사용자 결정) ──────────────
+-- "지금 앱 설치하고 한 사람 우리 직원들밖에 없음. 그냥 싹 다 초기화해도 됨. SUP 도 초기화해."
+--  · 지우기 전에 economy.backup_0066_* 에 옮겨 둔다(앱 · 워커는 읽지 못한다).
+--  · 체인에 나가 있는(지갑 · 꺼내는 중) 신발이 있으면 멈춘다 — 그 신발은 서버에서 지워도 체인에 남는다.
+--  · 러닝 기록 · 프로필 · 지갑 연결 · 크루 · 글은 그대로다. 러닝 기록의 신발 칸만 빈다.
+--  · 새로 시작: 모든 계정에 첫 신발(일반 · 신은 채로) + 무료 뽑기 10회, 지갑을 연결한 계정은 상급 10회(첫 번 Genesis).
+--  · economy_settings.shoe_economy_v3_reset 에 한 번 했다고 적는다 — setup.sql 을 다시 붙여넣어도 다시 비우지 않는다.
+create or replace function economy.shoe_economy_v3_reset() returns int
 language plpgsql security definer set search_path = public, economy as $$
-declare v_n int;
+declare
+  v_shoes int;
 begin
-  update public.market_sneakers s
-     set dur_base = (
-           select r.lo + 5 * round(
-                    least(greatest(s.dur_base - (case s.rarity when 'COMMON' then 1000 when 'RARE' then 1500
-                                                              when 'EPIC' then 2000 else 2500 end), 0), 500)
-                    / 500.0 * (r.hi - r.lo) / 5)::int
-             from economy.durability_range(s.rarity) r),
-         dur_now = 2147483647,
-         updated_at = now()
-   where s.dur_base >= 1000;
-  get diagnostics v_n = row_count;
-  return v_n;
+  if exists (select 1 from public.market_sneakers where chain_state <> 'APP') then
+    raise exception '체인에 나가 있는 신발이 있어 초기화하지 않습니다 — 먼저 확인하세요' using errcode = '55000';
+  end if;
+
+  create table if not exists economy.backup_0066_market_sneakers as table public.market_sneakers with no data;
+  create table if not exists economy.backup_0066_sup_ledger as table public.sup_ledger with no data;
+  create table if not exists economy.backup_0066_draw_grants as table public.draw_grants with no data;
+  insert into economy.backup_0066_market_sneakers select * from public.market_sneakers;
+  insert into economy.backup_0066_sup_ledger select * from public.sup_ledger;
+  insert into economy.backup_0066_draw_grants select * from public.draw_grants;
+  revoke all on economy.backup_0066_market_sneakers, economy.backup_0066_sup_ledger, economy.backup_0066_draw_grants
+    from public, anon, authenticated;
+
+  -- 신발과 함께 사라지는 것 — 거래소(매물 · 입찰 · 체결), 강화 기록, 신발 체인 일, 꺼내기 · 발행 예약
+  delete from public.market_bids;
+  delete from public.market_listings;
+  delete from public.market_trades;
+  delete from public.forge_requests;
+  delete from public.chain_jobs where kind in ('VAULT_MINT', 'STATS_SYNC');
+  delete from public.chain_ops where kind in ('SNEAKER_WITHDRAW', 'BONUS_MINT');
+  delete from public.market_sneakers;
+  get diagnostics v_shoes = row_count;
+
+  -- SUP — 원장을 비우면 잔고가 0 이다. 같은 요청을 다시 보냈을 때 돌려주던 영수증도 비운다
+  delete from public.sup_ledger;
+  delete from economy.request_receipts;
+
+  -- 뽑기 — 받은 수 · 쓴 수 · 오늘 쓴 수 · 러닝으로 모은 거리
+  delete from public.draw_grants;
+  delete from public.draw_daily;
+  delete from public.premium_run_progress;
+
+  -- 상급 뽑기는 상급 표 전체(레어부터)로 — 예전 운영 값(에픽 이상, 0045)을 비운다. 0045 는 "RARE" 만 "EPIC" 으로 바꾸므로 빈 값은 그대로 남는다
+  update public.economy_settings set value = '""'::jsonb, updated_at = now() where key = 'premium_min_rarity';
+
+  -- 새로 시작 — 첫 신발(신은 채로) · 무료 뽑기 10회 · 지갑을 연결한 계정은 상급 10회(첫 번 Genesis)
+  insert into public.market_sneakers (
+    owner_id, faction, rarity, variant, level, luck, comfort, durability,
+    origin, efficiency_bps, comfort_bps, durability_pts, withdrawable, equipped
+  )
+  select p.id, 'NONE', 'COMMON', 0, 1, 1, 1.01, 100, 'STARTER', 300, 100, 100, false, true
+    from public.profiles p
+    join auth.users u on u.id = p.id;
+  insert into public.draw_grants (user_id, kind, granted)
+  select p.id, 'FREE', 10 from public.profiles p join auth.users u on u.id = p.id;
+  insert into public.draw_grants (user_id, kind, granted, genesis_granted)
+  select w.user_id, 'BONUS', 10, 1 from public.wallet_links w join auth.users u on u.id = w.user_id;
+
+  return v_shoes;
 end $$;
-revoke all on function economy.shoe_durability_minutes_backfill() from public;
+revoke all on function economy.shoe_economy_v3_reset() from public;
 
-select economy.shoe_durability_minutes_backfill();
+-- 표 검사는 비운 뒤에 다시 건다(예전 기준의 신발은 새 식에 맞지 않는다)
+alter table public.market_sneakers drop constraint if exists market_sneakers_points_check;
+do $$
+begin
+  insert into public.economy_settings (key, value) values ('shoe_economy_v3_reset', to_jsonb(now()::text))
+  on conflict (key) do nothing;
+  if found then
+    perform economy.shoe_economy_v3_reset();
+  end if;
+end $$;
 
+
+-- ── 표 검사 — 포인트는 등급 · 레벨 표, 내구도 포인트 1 = 기본의 1% (비운 뒤에 모두 검사한다) ──────────────
+alter table public.market_sneakers drop constraint if exists market_sneakers_points_check;
 alter table public.market_sneakers add constraint market_sneakers_points_check check (
   dur_base > 0
-  and dur_max = dur_base + greatest((dur_base + 5) / 10, 1) * pts_dur
+  and dur_max = dur_base + greatest((dur_base + 50) / 100, 1) * pts_dur
   and dur_now between 0 and dur_max
   and pts_eff >= 0 and pts_comfort >= 0 and pts_dur >= 0
-  -- 한 레벨에 4 (economy.points_per_level)
-  and pts_eff + pts_comfort + pts_dur <= 4 * (level - 1)
+  and pts_eff + pts_comfort + pts_dur <= economy.points_total_of(origin, rarity, level)
 );
 
--- ── 포인트 나누기 — 0059 그대로 + 내구도 포인트 1 = 기본의 10% ───────────────────────────────────────────────────
+
+-- ── 포인트 나누기 — 0059 그대로 + 등급 · 레벨마다 다른 포인트 · 내구도 포인트 1 = 기본의 1% ───────────────────────────────────────────────────
 /*
  * 나눈 뒤의 값(효율 · 착화감 · 내구도 포인트 합계)을 보낸다 — 더하기가 아니라 결과라서 같은 요청이 두 번 와도 두 번 더하지 않는다.
  * 줄이는 것은 받지 않는다. 다시 나누기가 남은 신발(pts_respec)만 한 번 줄일 수 있고, 줄이면 다시 나누기를 쓴 것이다.
- * 내구도 포인트 1 은 최대 · 남은 내구도를 함께 그 신발 기본 최대 내구도의 10% 올린다(줄이면 함께 내린다, 0066).
+ * 내구도 포인트 1 은 최대 · 남은 내구도를 함께 그 신발 기본 최대 내구도의 1% 올린다(줄이면 함께 내린다, 0066).
  * 돌려주는 값: 남은 포인트. 같은 요청 번호로 다시 오면 처음 결과를 돌려준다.
  */
 create or replace function public.sneaker_points_set(
@@ -21494,7 +21927,7 @@ begin
     raise exception '포인트가 올바르지 않습니다' using errcode = '22023';
   end if;
 
-  v_total := economy.points_total(v.origin, v.level);
+  v_total := economy.points_total_of(v.origin, v.rarity, v.level);
   if p_efficiency + p_comfort + p_durability > v_total then
     raise exception '포인트가 모자랍니다' using errcode = '23514';
   end if;
@@ -21525,6 +21958,7 @@ begin
 end $$;
 revoke all on function public.sneaker_points_set(bigint, int, int, int, uuid) from public, anon;
 grant execute on function public.sneaker_points_set(bigint, int, int, int, uuid) to authenticated;
+
 
 -- ── 러닝 기록 — 0065 그대로 + 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 ──────────
 create or replace function public.record_session(

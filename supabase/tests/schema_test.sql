@@ -175,6 +175,10 @@ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════
+-- 신발 체인 기록(금고 발행 · 꺼내기 · 지갑 보너스 발행)은 운영에서 멈춰 있다(0066 shoe_chain_enabled = false).
+-- 그 길의 규칙은 그대로 남아 있으므로 켜고 검사한다 — 멈춘 동안의 막힘은 0066 절이 끄고 본다
+update public.economy_settings set value = 'true'::jsonb where key = 'shoe_chain_enabled';
+
 \echo ''
 \echo '── 준비 ─────────────────────────────────────────────────────────'
 -- ════════════════════════════════════════════════════════════════════
@@ -2966,8 +2970,8 @@ declare v_bad int;
 begin
   select count(*) into v_bad from public.market_sneakers s
    where s.owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and s.origin = 'FREE_DRAW'
-     and s.rarity <> economy.roll_rarity(economy.bytes_int(
-           sha256(decode(pg_temp.fx('seed_hex'), 'hex') || convert_to(':' || s.draw_nonce::text, 'UTF8')), 0, 4));
+     and s.rarity <> economy.roll_rarity_v3(economy.bytes_int(
+           sha256(decode(pg_temp.fx('seed_hex'), 'hex') || convert_to(':' || s.draw_nonce::text, 'UTF8')), 0, 4), 'FREE');
   perform pg_temp.ok(v_bad = 0, '공개된 씨앗으로 다시 계산한 등급이 모두 맞는다');
   -- 최대 내구도(0059)도 같은 씨앗의 14 ~ 15번째 바이트로
   select count(*) into v_bad from public.market_sneakers s
@@ -3451,9 +3455,9 @@ declare v_op uuid; i int; v_first bigint;
 begin
   v_op := public.bonus_draw_request();
   v_first := (select sneaker_id from public.chain_ops where id = v_op);
-  perform pg_temp.ok((select genesis_no is not null and rarity in ('EPIC', 'LEGENDARY')
+  perform pg_temp.ok((select genesis_no is not null and rarity in ('EPIC', 'LEGENDARY', 'REDLINE', 'FINISH')
                         from public.my_sneakers() where id = v_first),
-    'Genesis 는 희귀 이상 확정이고 번호가 붙는다');
+    'Genesis 는 에픽 이상 확정이고 번호가 붙는다');
   for i in 2..10 loop
     v_op := public.bonus_draw_request();
   end loop;
@@ -3594,8 +3598,8 @@ do $$ begin
     '지갑 선물 신발은 새 도감 모델(0045) — 서명 재료에 모델 번호가 실린다(워커가 v3 로 발행)');
   perform pg_temp.ok(not exists (select 1 from public.market_sneakers
                                   where owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and origin = 'BONUS_DRAW'
-                                    and rarity not in ('EPIC', 'LEGENDARY')),
-    '웹 지갑의 보너스 뽑기도 상급과 같은 하한(에픽 이상)');
+                                    and rarity = 'COMMON'),
+    '웹 지갑의 보너스 뽑기도 상급 표(일반 없음, 0066)');
 end $$;
 
 -- 0029 점검 반영 — 모르는 작업 · 어긋난 작업은 멈추고, 취소는 신발을 돌려놓고, 넣기는 버림
@@ -4220,8 +4224,8 @@ begin
   perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW') = 14
                      and not exists (select 1 from public.my_sneakers() where origin = 'BONUS_DRAW' and rarity = 'COMMON'),
     '상급 뽑기 14켤레는 모두 레어 이상');
-  perform pg_temp.ok(not exists (select 1 from public.my_sneakers() where origin = 'BONUS_DRAW' and rarity not in ('EPIC', 'LEGENDARY')),
-    '상급 뽑기는 에픽 이상(0045)');
+  perform pg_temp.ok(not exists (select 1 from public.my_sneakers() where origin = 'BONUS_DRAW' and faction <> 'NONE'),
+    '상급 뽑기 신발에 속성이 없다(0066)');
   perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'BONUS_DRAW' and genesis_no is not null) = 1,
     'Genesis 는 한 켤레뿐');
 end $$;
@@ -4759,48 +4763,55 @@ do $$
 declare
   i int;
   v_r text;
-  c_common int := 0; c_rare int := 0; c_epic int := 0; c_leg int := 0;
+  c jsonb := '{}';
+  v_key text;
 begin
   perform pg_temp.ok((select count(*) from public.sneaker_models) = 70
                      and (select count(*) from public.sneaker_models where rarity = 'RARE') = 20
                      and (select count(*) from public.sneaker_models where rarity = 'EPIC') = 20
-                     and (select count(*) from public.sneaker_models where rarity = 'LEGENDARY') = 30
-                     and (select count(*) from public.sneaker_models where rarity = 'LEGENDARY' and series in ('REDLINE', 'FINISH')) = 20,
-    '도감 70종 — 레어 20 · 에픽 20 · 레전더리 30(레드라인 · 피니시 시리즈 포함)');
-  -- 씨앗 결과를 0..99 로 한 바퀴 굴리면 가중치 그대로 나온다
-  for i in 0..99 loop
-    v_r := economy.roll_rarity(i);
-    c_common := c_common + (v_r = 'COMMON')::int;
-    c_rare := c_rare + (v_r = 'RARE')::int;
-    c_epic := c_epic + (v_r = 'EPIC')::int;
-    c_leg := c_leg + (v_r = 'LEGENDARY')::int;
+                     and (select count(*) from public.sneaker_models where rarity = 'LEGENDARY') = 10
+                     and (select count(*) from public.sneaker_models where rarity = 'REDLINE' and series = 'REDLINE') = 10
+                     and (select count(*) from public.sneaker_models where rarity = 'FINISH' and series = 'FINISH') = 10,
+    '도감 70종 — 레어 20 · 에픽 20 · 레전더리 10 · 레드라인 10 · 피니시 10 (0066)');
+  -- 씨앗 결과를 0..999 로 한 바퀴 굴리면 가중치(천분율) 그대로 나온다 (0066)
+  for i in 0..999 loop
+    v_key := 'F' || economy.roll_rarity_v3(i, 'FREE');
+    c := jsonb_set(c, array[v_key], to_jsonb(coalesce((c ->> v_key)::int, 0) + 1));
+    v_key := 'P' || economy.roll_rarity_v3(i, 'PREMIUM');
+    c := jsonb_set(c, array[v_key], to_jsonb(coalesce((c ->> v_key)::int, 0) + 1));
   end loop;
-  perform pg_temp.ok(c_common = 0 and c_rare = 72 and c_epic = 22 and c_leg = 6,
-    format('무료 뽑기 확률 — 일반 %s · 레어 %s · 에픽 %s · 레전더리 %s (100 중)', c_common, c_rare, c_epic, c_leg));
-  c_epic := 0; c_leg := 0;
-  for i in 0..27 loop
-    v_r := economy.roll_rarity(i, 'EPIC');
-    c_epic := c_epic + (v_r = 'EPIC')::int;
-    c_leg := c_leg + (v_r = 'LEGENDARY')::int;
+  perform pg_temp.ok(c = '{"FCOMMON": 790, "FRARE": 200, "FEPIC": 10,
+                           "PRARE": 600, "PEPIC": 280, "PLEGENDARY": 90, "PREDLINE": 25, "PFINISH": 5}'::jsonb,
+    format('무료 일반 79 · 레어 20 · 에픽 1%%, 상급 레어 60 · 에픽 28 · 레전더리 9 · 레드라인 2.5 · 피니시 0.5%% — %s', c));
+  c := '{}';
+  for i in 0..399 loop
+    v_key := economy.roll_rarity_v3(i, 'PREMIUM', 'EPIC');
+    c := jsonb_set(c, array[v_key], to_jsonb(coalesce((c ->> v_key)::int, 0) + 1));
   end loop;
-  perform pg_temp.ok(c_epic = 22 and c_leg = 6, '상급 · Genesis(에픽 이상) — 에픽 22 · 레전더리 6 (28 중)');
-  perform pg_temp.ok((economy.setting('premium_min_rarity') #>> '{}') = 'EPIC', '상급 뽑기 하한은 에픽');
+  perform pg_temp.ok(c = '{"EPIC": 280, "LEGENDARY": 90, "REDLINE": 25, "FINISH": 5}'::jsonb,
+    'Genesis(에픽 이상) — 상급 표의 에픽 이상 비율 그대로');
+  perform pg_temp.ok(economy.draw_kind('FREE_DRAW') = 'FREE' and economy.draw_kind('BONUS_DRAW') = 'PREMIUM'
+                     and economy.draw_kind('PAID_DRAW') = 'PREMIUM',
+    '무료 뽑기는 무료 표, 상급 · 예전 유료는 상급 표');
+  perform pg_temp.ok(coalesce(economy.setting('premium_min_rarity') #>> '{}', '') = '', '상급 뽑기 하한은 비웠다(상급 표 전체)');
   -- 모델: 굴린 등급 안에서 번호 차례로 — 같은 등급의 모델은 모두 같은 몫
-  perform pg_temp.ok((select count(distinct economy.draw_model('LEGENDARY', g)) from generate_series(0, 29) g) = 30
-                     and (select bool_and(m.rarity = 'LEGENDARY')
-                            from generate_series(0, 299) g
-                            join public.sneaker_models m on m.id = economy.draw_model('LEGENDARY', g)),
-    '레전더리를 굴리면 레전더리 30종 중 하나 — 한 바퀴에 모두 한 번씩');
+  perform pg_temp.ok((select count(distinct economy.draw_model('FINISH', g)) from generate_series(0, 9) g) = 10
+                     and (select bool_and(m.rarity = 'FINISH' and m.series = 'FINISH')
+                            from generate_series(0, 99) g
+                            join public.sneaker_models m on m.id = economy.draw_model('FINISH', g)),
+    '피니시를 굴리면 피니시 10종 중 하나 — 한 바퀴에 모두 한 번씩');
   perform pg_temp.ok((select count(distinct economy.draw_model('RARE', g)) from generate_series(0, 19) g) = 20
-                     and (select count(distinct economy.draw_model('EPIC', g)) from generate_series(0, 19) g) = 20,
-    '레어 · 에픽도 20종이 한 바퀴에 한 번씩');
-  perform pg_temp.ok(economy.draw_model('COMMON', 5) is null, '새 도감에 없는 등급이면 모델 없음(예전 그림)');
+                     and (select count(distinct economy.draw_model('EPIC', g)) from generate_series(0, 19) g) = 20
+                     and (select count(distinct economy.draw_model('LEGENDARY', g)) from generate_series(0, 9) g) = 10
+                     and (select count(distinct economy.draw_model('REDLINE', g)) from generate_series(0, 9) g) = 10,
+    '레어 · 에픽 20종, 레전더리 · 레드라인 10종이 한 바퀴에 한 번씩');
+  perform pg_temp.ok(economy.draw_model('COMMON', 5) is null, '새 도감에 없는 등급(일반)이면 모델 없음(예전 그림)');
 end $$;
 
 -- 뽑을 수 없게 한 모델은 나오지 않는다(이미 가진 신발은 그대로)
 update public.sneaker_models set active = false where id = 1301;
 do $$ begin
-  perform pg_temp.ok((select count(distinct economy.draw_model('LEGENDARY', g)) from generate_series(0, 99) g) = 29
+  perform pg_temp.ok((select count(distinct economy.draw_model('LEGENDARY', g)) from generate_series(0, 99) g) = 9
                      and not exists (select 1 from generate_series(0, 99) g where economy.draw_model('LEGENDARY', g) = 1301),
     '뽑기에서 뺀 모델(active = false)은 나오지 않는다');
 end $$;
@@ -4829,9 +4840,12 @@ begin
   perform pg_temp.ok((select count(*) from public.my_sneakers() where origin = 'FREE_DRAW') = 10
                      and not exists (select 1 from public.my_sneakers() s
                                       where s.origin = 'FREE_DRAW'
-                                        and (s.model_id is null or s.rarity = 'COMMON'
-                                             or s.rarity <> (select m.rarity from public.sneaker_models m where m.id = s.model_id))),
-    '무료 뽑기 10켤레 — 모두 레어 이상, 등급이 같은 새 도감 모델');
+                                        and (s.rarity not in ('COMMON', 'RARE', 'EPIC')
+                                             or (s.rarity <> 'COMMON' and (s.model_id is null
+                                                 or s.rarity <> (select m.rarity from public.sneaker_models m where m.id = s.model_id)))
+                                             or (s.rarity = 'COMMON' and s.model_id is not null)
+                                             or s.faction <> 'NONE')),
+    '무료 뽑기 10켤레 — 에픽까지, 레어 · 에픽은 등급이 같은 새 도감 모델, 일반은 모델 없음, 속성 없음 (0066)');
   perform pg_temp.ok((select model_id is null and rarity = 'COMMON' from public.my_sneakers() where origin = 'STARTER'),
     '첫 신발은 예전 그대로(일반 · 모델 번호 없음)');
 end $$;
@@ -4839,12 +4853,15 @@ reset role;
 do $$ begin
   perform pg_temp.ok((select count(*) from public.chain_jobs
                        where user_id = 'c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6' and kind = 'VAULT_MINT') = 10,
-    '뽑은 신발마다 금고 발행 일');
+    '뽑은 신발마다 금고 발행 일(신발 체인 기록을 켰을 때)');
 end $$;
-update public.chain_jobs set next_at = now() - interval '1 second'
- where user_id = 'c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6' and kind = 'VAULT_MINT';
+-- 무료 뽑기는 대개 일반(모델 없음, 0066)이라 상급 표로 한 켤레를 만들어 그 일을 본다 — 상급은 늘 도감 모델이 있다
+insert into fix (k, v) select 'c6bonus', economy.draw_create('c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6', 'BONUS_DRAW')::text;
+select economy.vault_mint_enqueue(pg_temp.fx('c6bonus')::bigint);
 update public.chain_jobs set next_at = now() + interval '1 day'
- where kind = 'VAULT_MINT' and status = 'QUEUED' and user_id <> 'c6c6c6c6-c6c6-c6c6-c6c6-c6c6c6c6c6c6';
+ where kind = 'VAULT_MINT' and status = 'QUEUED';
+update public.chain_jobs set next_at = now() - interval '1 second'
+ where kind = 'VAULT_MINT' and sneaker_id = pg_temp.fx('c6bonus')::bigint;
 create temp table claimed45 (job_id bigint, op_ref text, kind text, payload jsonb);
 grant all on claimed45 to stepup_attester;
 set role stepup_attester;
@@ -6553,7 +6570,8 @@ insert into fix (k, v) values
   ('fg_c1', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 1)::text),
   ('fg_c2', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 1)::text),
   ('fg_c3', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 10)::text),
-  ('fg_max', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 20)::text),
+  ('fg_max', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 20)::text),
+  ('fg_top', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'FINISH', 30)::text),
   ('fg_over', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'LEGENDARY', 25)::text),
   ('fg_vault', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 15, 'token_id = 1000456')::text),
   ('fg_other', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000002', 'EPIC', 5)::text);
@@ -6569,8 +6587,8 @@ declare
   v_last_usable bigint;
 begin
   v := public.forge_materials(pg_temp.fx('fg_t')::bigint);
-  perform pg_temp.ok((v -> 'target' ->> 'base_permille')::int = 700 and (v -> 'target' ->> 'max_level')::int = 20
-                     and v -> 'target' ->> 'block' is null, '레전더리 Lv10 — 기본 70.0%, 최대 20');
+  perform pg_temp.ok((v -> 'target' ->> 'base_permille')::int = 700 and (v -> 'target' ->> 'max_level')::int = 27
+                     and v -> 'target' ->> 'block' is null, '레전더리 Lv10 — 기본 70.0%, 최대 27 (0066)');
   select jsonb_object_agg(e ->> 'id', coalesce(e ->> 'block', 'OK')), jsonb_object_agg(e ->> 'id', e -> 'bonus_permille')
     into v_blocks, v_bonus from jsonb_array_elements(v -> 'materials') e;
   perform pg_temp.ok(v_blocks ->> pg_temp.fx('fg_a') = 'OK' and v_blocks ->> pg_temp.fx('fg_c') = 'OK'
@@ -6590,8 +6608,9 @@ begin
     into v_last_usable, v_first_blocked
     from jsonb_array_elements(v -> 'materials') with ordinality as x(e, o);
   perform pg_temp.ok(v_last_usable < v_first_blocked
-                     and (v -> 'materials' -> 0 ->> 'id') = pg_temp.fx('fg_over'),
-    '쓸 수 있는 후보가 먼저, 그 안에서는 보정이 큰 것부터');
+                     and (v -> 'materials' -> 0 ->> 'id') = pg_temp.fx('fg_top')
+                     and (v -> 'materials' -> 1 ->> 'id') = pg_temp.fx('fg_over'),
+    '쓸 수 있는 후보가 먼저, 그 안에서는 보정이 큰 것부터(두 등급 위 피니시 Lv30 → 레전더리 Lv25)');
 
   v := public.forge_quote(pg_temp.fx('fg_t')::bigint,
          array[pg_temp.fx('fg_a'), pg_temp.fx('fg_c'), pg_temp.fx('fg_s')]::bigint[]);
@@ -6601,9 +6620,9 @@ begin
                      and (v -> 'after' ->> 'efficiency_bps')::int = (v -> 'before' ->> 'efficiency_bps')::int
                      and (v -> 'after' ->> 'comfort_bps')::int = (v -> 'before' ->> 'comfort_bps')::int
                      and (v -> 'before' ->> 'points_total')::int = 36
-                     and (v -> 'after' ->> 'points_total')::int = 40
-                     and (v -> 'after' ->> 'points_free')::int = (v -> 'before' ->> 'points_free')::int + 4,
-    '성공 시 레벨 +1 · 포인트 +4 — 효율 · 착화감은 저절로 오르지 않는다 (0059)');
+                     and (v -> 'after' ->> 'points_total')::int = 44
+                     and (v -> 'after' ->> 'points_free')::int = (v -> 'before' ->> 'points_free')::int + 8,
+    '레전더리 Lv10 → 11 성공 시 포인트 +8(11 레벨 2 × 레전더리 4) — 효율 · 착화감은 저절로 오르지 않는다 (0066)');
   v := public.forge_quote(pg_temp.fx('fg_t')::bigint,
          array[pg_temp.fx('fg_a'), pg_temp.fx('fg_a'), pg_temp.fx('fg_c')]::bigint[]);
   perform pg_temp.ok(v ->> 'error' = 'MATERIALS_INVALID', '같은 신발을 두 번 넣을 수 없다');
@@ -6619,12 +6638,12 @@ begin
   perform pg_temp.ok((v ->> 'rate_permille')::int = 550 + 30 + 30 + 84,
     '일반 신발도 일반 재료로 강화한다 — Lv15 기본 55% + 3.0 · 3.0 · 8.4 = 69.4%');
   perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_max')::bigint) -> 'target' ->> 'block' = 'MAX_LEVEL',
-    'Lv20 은 강화할 수 없다');
-  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_over')::bigint) -> 'target' ->> 'level' = '25'
-                     and public.forge_materials(pg_temp.fx('fg_over')::bigint) -> 'target' ->> 'block' = 'MAX_LEVEL',
-    '예전에 20을 넘은 신발은 레벨을 그대로 두고 강화만 막는다');
-  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_vault')::bigint) -> 'target' ->> 'max_level' = '15',
-    '금고(v3) 레어는 컨트랙트 상한 15');
+    '일반 Lv20 은 강화할 수 없다(일반 · 레어 최대 20, 0066)');
+  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_over')::bigint) -> 'target' ->> 'block' is null
+                     and public.forge_materials(pg_temp.fx('fg_top')::bigint) -> 'target' ->> 'block' = 'MAX_LEVEL',
+    '레전더리 Lv25 는 27 까지 더 오르고, 피니시 Lv30 은 끝 (0066)');
+  perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_vault')::bigint) -> 'target' ->> 'max_level' = '20',
+    '금고 토큰이 있어도 등급 상한(레어 20) — 신발 체인 기록은 멈춰 있다 (0066)');
   perform pg_temp.ok(public.forge_materials(pg_temp.fx('fg_other')::bigint) -> 'target' ->> 'block' = 'TARGET_GONE',
     '남의 신발은 강화 대상이 아니다');
 end $$;
@@ -6682,10 +6701,11 @@ insert into fix (k, v) values
   ('fg_k1', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'LEGENDARY', 5)::text),
   ('fg_k2', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text),
   ('fg_k3', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 1)::text),
-  ('fg_e', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'EPIC', 19)::text),
-  ('fg_e1', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text),
-  ('fg_e2', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text),
-  ('fg_e3', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 1)::text);
+  -- 레어는 최대 20(0066) — 레어 Lv19 를 일반 재료로
+  ('fg_e', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'RARE', 19)::text),
+  ('fg_e1', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 1)::text),
+  ('fg_e2', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 1)::text),
+  ('fg_e3', pg_temp.shoe('f0f0f0f0-0000-0000-0000-000000000001', 'COMMON', 1)::text);
 set role authenticated;
 call pg_temp.login('f0f0f0f0-0000-0000-0000-000000000001');
 do $$
@@ -6699,12 +6719,12 @@ begin
   v := public.forge_start('aaaaaaaa-0000-0000-0000-000000000004', pg_temp.fx('fg_cap')::bigint, v_k, v_q ->> 'quote_version');
   perform pg_temp.ok(v ->> 'status' = 'SUCCESS' and (v ->> 'level_after')::int = 2, '100% 면 반드시 성공');
   v_q := public.forge_quote(pg_temp.fx('fg_e')::bigint, v_e);
-  perform pg_temp.ok((v_q ->> 'rate_permille')::int = 430 + 60, 'Lv19 기본 43% + 레어 Lv1(한 등급 아래) 2.0%p × 3 = 49%');
+  perform pg_temp.ok((v_q ->> 'rate_permille')::int = 430 + 60, '레어 Lv19 기본 43% + 일반 Lv1(한 등급 아래) 2.0%p × 3 = 49%');
   v := public.forge_start('aaaaaaaa-0000-0000-0000-000000000005', pg_temp.fx('fg_e')::bigint, v_e, v_q ->> 'quote_version');
   perform pg_temp.ok(case when v ->> 'status' = 'SUCCESS'
                        then (public.forge_materials(pg_temp.fx('fg_e')::bigint) -> 'target' ->> 'block') = 'MAX_LEVEL'
                        else (public.forge_materials(pg_temp.fx('fg_e')::bigint) -> 'target' ->> 'level') = '19' end,
-    'Lv19 → 20 이 되면 더는 강화할 수 없다(실패면 19 그대로)');
+    '레어 Lv19 → 20 이 되면 더는 강화할 수 없다(실패면 19 그대로)');
 end $$;
 call pg_temp.must_fail($q$ select * from public.forge_requests $q$, '강화 기록 표는 직접 읽지 못한다');
 call pg_temp.login('f0f0f0f0-0000-0000-0000-000000000002');
@@ -6905,20 +6925,38 @@ begin
                      and economy.durability_wear(5090) = 500 and economy.durability_wear(null) = 0
                      and economy.durability_wear(-30) = 0,
     '100m 마다 10 닳는다 — 100m 가 안 되는 나머지는 닳지 않는다');
-  -- 0066 — 새 신발로 달릴 수 있는 시간(1분 = 5): 일반 9 ~ 11분 · 레어 18 ~ 22 · 에픽 41 ~ 49 · 레전더리 81 ~ 99
+  -- 0066 — 새 신발로 달릴 수 있는 시간(1분 = 5): 일반 10 · 레어 15 · 에픽 25 · 레전더리 40 · 레드라인 60 · 피니시 90분(±10%)
   perform pg_temp.ok(economy.durability_roll('COMMON', 0) = 45 and economy.durability_roll('COMMON', 2) = 55
-                     and economy.durability_roll('COMMON', 3) = 45 and economy.durability_roll('RARE', 7) = 100
-                     and economy.durability_roll('EPIC', 0) = 205 and economy.durability_roll('LEGENDARY', 18) = 495,
-    '최대 내구도는 등급 범위 안에서 5(1분) 단위 — 일반 45 ~ 55(약 10분) · 레전더리 ~ 495(약 90분) (0066)');
+                     and economy.durability_roll('COMMON', 3) = 45 and economy.durability_roll('RARE', 7) = 75
+                     and economy.durability_roll('EPIC', 0) = 115 and economy.durability_roll('LEGENDARY', 8) = 220
+                     and economy.durability_roll('REDLINE', 0) = 270 and economy.durability_roll('FINISH', 18) = 495,
+    '최대 내구도는 등급 범위 안에서 5(1분) 단위 — 일반 45 ~ 55(약 10분) … 피니시 405 ~ 495(약 90분) (0066)');
   perform pg_temp.ok(round(economy.repair_cost_per_unit('COMMON', 1) * 50, 4) = 13.125
-                     and round(economy.repair_cost_per_unit('LEGENDARY', 1) * 450, 4) = 52.5
-                     and round(economy.repair_cost_per_unit('RARE', 1) * 100, 2) = 20.83
+                     and round(economy.repair_cost_per_unit('FINISH', 1) * 450, 4) = 52.5
+                     and round(economy.repair_cost_per_unit('LEGENDARY', 1) * 200, 2) = 30.15
                      and round(economy.repair_cost_per_unit('COMMON', 5) / economy.repair_cost_per_unit('COMMON', 1), 6)
                          = round(1.25 / 1.05, 6),
-    '새 신발 가득 수리 — 일반 Lv1 13.1 : 레전더리 52.5 SUP = 1 : 4, 레벨마다 +5% (0066)');
-  perform pg_temp.ok(economy.point_durability_of(50) = 5 and economy.point_durability_of(55) = 6
-                     and economy.point_durability_of(450) = 45 and economy.point_durability_of(0) = 1,
-    '내구도 포인트 1 = 기본 최대 내구도의 10%(반올림) (0066)');
+    '새 신발 가득 수리 — 일반 Lv1 13.1 : 피니시 52.5 SUP = 1 : 4(레전더리 30.2), 레벨마다 +5% (0066)');
+  perform pg_temp.ok(economy.point_durability_of(50) = 1 and economy.point_durability_of(150) = 2
+                     and economy.point_durability_of(450) = 5 and economy.point_durability_of(0) = 1,
+    '내구도 포인트 1 = 기본 최대 내구도의 1%(반올림, 적어도 1) (0066)');
+  perform pg_temp.ok(economy.max_level('COMMON') = 20 and economy.max_level('RARE') = 20 and economy.max_level('EPIC') = 26
+                     and economy.max_level('LEGENDARY') = 27 and economy.max_level('REDLINE') = 28 and economy.max_level('FINISH') = 30,
+    '최대 레벨 — 일반 · 레어 20, 에픽 26 · 레전더리 27 · 레드라인 28 · 피니시 30 (0066)');
+  perform pg_temp.ok(economy.points_total_of('PAID_DRAW', 'COMMON', 20) = 34
+                     and economy.points_total_of('PAID_DRAW', 'RARE', 20) = 68
+                     and economy.points_total_of('PAID_DRAW', 'EPIC', 26) = 222
+                     and economy.points_total_of('PAID_DRAW', 'LEGENDARY', 27) = 416
+                     and economy.points_total_of('PAID_DRAW', 'REDLINE', 28) = 984
+                     and economy.points_total_of('PAID_DRAW', 'FINISH', 30) = 3312
+                     and economy.points_total_of('PAID_DRAW', 'FINISH', 30) - economy.points_total_of('PAID_DRAW', 'FINISH', 29) = 1200
+                     and economy.points_total_of('PAID_DRAW', 'FINISH', 1) = 0
+                     and economy.points_total_of('IMPORT', 'FINISH', 30) = 0,
+    '레벨업 포인트 — 최대 레벨까지 34 · 68 · 222 · 416 · 984 · 3,312, 피니시 29 → 30 한 번에 1,200 (0066)');
+  perform pg_temp.ok((select lo = 4500 and hi = 5500 from economy.efficiency_range('FINISH'))
+                     and (select lo = 1600 and hi = 2000 from economy.efficiency_range('LEGENDARY'))
+                     and (select lo = 1500 and hi = 1800 from economy.comfort_range('FINISH')),
+    '효율은 에픽부터 급수적으로(레전더리 16 ~ 20% · 피니시 45 ~ 55%), 착화감은 3%p 씩 (0066)');
   perform pg_temp.ok(economy.durability_factor(100) = 1 and economy.durability_factor(0.5) = 1
                      and economy.durability_factor(0) = 0,
     '적립은 남은 비율이 0 일 때만 없다 (0066)');
@@ -6935,82 +6973,9 @@ begin
     '모든 신발의 최대 내구도가 등급 범위 안이고, 남은 비율은 남은 내구도에서 나온다');
 end $$;
 
--- 이미 있던 신발 옮기기 — 옮기는 날 실효 효율 · 착화감 · 남은 비율이 그대로고, 올린 레벨만큼 포인트를 받는다
--- (효율 2 · 착화감 2 씩 나눠 둔 채로 · 한 번 다시 나누기). 0059 전의 줄을 흉내 내고 끝에 되돌린다
+-- (0059 의 '이미 있던 신발 옮기기' 검사는 뺐다 — 0066 이 모든 신발을 비우고 새로 시작해 옮길 신발이 없다)
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('59000000-0000-0000-0000-000000000001', 'legacy59@test', '{"full_name":"옛신발"}'),
   ('59000000-0000-0000-0000-000000000002', 'fresh59@test', '{"full_name":"새신발"}');
-begin;
-alter table public.market_sneakers disable trigger market_sneakers_durability;
-alter table public.market_sneakers drop constraint market_sneakers_points_check;
-alter table public.market_sneakers alter column dur_base drop not null, alter column dur_max drop not null,
-  alter column dur_now drop not null;
-insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin,
-                                    efficiency_bps, comfort_bps, durability_pts) values
-  ('59000000-0000-0000-0000-000000000001', 'WIND', 'COMMON', 0, 5, 87, 'PAID_DRAW', 300, 100, 87.5),
-  ('59000000-0000-0000-0000-000000000001', 'FIRE', 'LEGENDARY', 0, 30, 40, 'PAID_DRAW', 1300, 1200, 40.25),
-  ('59000000-0000-0000-0000-000000000001', 'WATER', 'RARE', 0, 3, 12, 'IMPORT', 500, 400, 12),
-  ('59000000-0000-0000-0000-000000000001', 'WIND', 'EPIC', 0, 1, 100, 'FREE_DRAW', 800, 700, 100);
-alter table public.market_sneakers enable trigger market_sneakers_durability;
-create temp table legacy59 on commit drop as
-  select s.id, s.level, s.origin,
-         -- 옮기기 전의 실효 값(0022: 레벨마다 효율 +50 · 착화감 +20, 착화감 최대 2000. 예전 신발은 일반 1레벨)
-         case when s.origin in ('IMPORT', 'MINT') then 200 else s.efficiency_bps + 50 * (s.level - 1) end as eff,
-         case when s.origin in ('IMPORT', 'MINT') then 0 else least(s.comfort_bps + 20 * (s.level - 1), 2000) end as cmf,
-         s.durability_pts as pct
-    from public.market_sneakers s where s.owner_id = '59000000-0000-0000-0000-000000000001';
-grant select on legacy59 to authenticated;
-do $$
-declare v_bad int;
-begin
-  perform pg_temp.ok(economy.sneaker_points_backfill() = 4, '옮기지 않은 신발만 옮긴다');
-  select count(*) into v_bad
-    from legacy59 l join public.market_sneakers s on s.id = l.id, lateral economy.shoe_effective(s) e
-   where e.efficiency_bps <> l.eff or e.comfort_bps <> l.cmf or e.points_free <> 0
-      -- 최대 내구도가 작아(0066 — 일반 45 ~ 55) 비율은 내구도 1 점 단위로 맞는다 — 반 점 안이면 그대로
-      or abs(s.durability_pts - l.pct) > 50.0 / s.dur_max + 0.01 or s.dur_now <> round(s.dur_max * l.pct / 100);
-  perform pg_temp.ok(v_bad = 0, '옮긴 날 실효 효율 · 착화감 · 남은 비율이 그대로다 — 받은 포인트는 나눠 둔 채로');
-  perform pg_temp.ok((select pts_eff = 8 and pts_comfort = 8 and pts_dur = 0 and pts_respec
-                        from public.market_sneakers s join legacy59 l using (id) where l.level = 5),
-    'Lv5 신발은 포인트 16 — 효율 8 · 착화감 8 로 나눠 두고, 한 번 다시 나눌 수 있다');
-  perform pg_temp.ok((select s.pts_eff = 58 and s.pts_comfort = 58 and e.efficiency_bps = 2750 and e.comfort_bps = 1780
-                        from public.market_sneakers s join legacy59 l using (id), lateral economy.shoe_effective(s) e
-                       where l.level = 30),
-    'Lv30 레전더리도 그대로(효율 +27.5% · 착화감 17.8%)');
-  perform pg_temp.ok((select s.pts_eff + s.pts_comfort + s.pts_dur = 0 and not s.pts_respec
-                        from public.market_sneakers s join legacy59 l using (id) where l.origin = 'IMPORT'),
-    '폰에서 올린 예전 신발은 포인트가 없다');
-  perform pg_temp.ok((select not s.pts_respec and s.dur_now = s.dur_max
-                        from public.market_sneakers s join legacy59 l using (id) where l.level = 1),
-    '1레벨 신발은 다시 나누기가 없고, 가득 찬 채로 옮긴다');
-  perform pg_temp.ok(economy.sneaker_points_backfill() = 0, '다시 불러도(setup.sql 재적용) 이미 옮긴 신발은 그대로');
-  insert into fix (k, v) select 'legacy5', id::text from legacy59 where level = 5;
-end $$;
-set role authenticated;
-call pg_temp.login('59000000-0000-0000-0000-000000000001');
-do $$
-declare
-  v_id bigint := pg_temp.fx('legacy5')::bigint;
-  r record;
-  r2 record;
-begin
-  select * into r from public.my_sneakers() where id = v_id;
-  perform pg_temp.ok(r.points_total = 16 and r.points_free = 0 and r.points_efficiency = 8 and r.points_comfort = 8
-                     and r.points_durability = 0 and r.points_respec,
-    '내 신발에 받은 포인트 · 나눈 포인트 · 다시 나누기가 보인다');
-  perform pg_temp.ok(public.sneaker_points_set(v_id, 0, 0, 16, '59000000-0000-0000-00a0-000000000001') = 0,
-    '다시 나누기 — 포인트 16 을 모두 내구도로');
-  select * into r2 from public.my_sneakers() where id = v_id;
-  perform pg_temp.ok(not r2.points_respec and r2.points_durability = 16
-                     and r2.durability_max = r.durability_max + 16 * greatest((r.durability_base + 5) / 10, 1)
-                     and r2.durability_now = r.durability_now + 16 * greatest((r.durability_base + 5) / 10, 1)
-                     and r2.efficiency_bps = r2.efficiency_base_bps and r2.comfort_bps = r2.comfort_base_bps,
-    '다시 나누면 효율 · 착화감은 레벨 1 값으로, 최대 · 남은 내구도 + 포인트 16 × 기본의 10% — 다시 나누기는 쓴 것');
-end $$;
-call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 1, 0, 15) $q$, pg_temp.fx('legacy5')),
-  '다시 나누기는 한 번뿐 — 그다음에는 줄일 수 없다');
-reset role;
-rollback;
 
 -- 새 신발 · 포인트 나누기
 -- 오래 달려 보는 신발이라 레전더리(약 90분)로 뽑는다(0066)
@@ -7048,11 +7013,11 @@ begin
   perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1, '59000000-0000-0000-00a0-000000000002') = 4,
     '포인트 4 를 나눈다(효율 2 · 착화감 1 · 내구도 1) — 4 남음');
   select * into r2 from public.my_sneakers() where id = v_id;
-  perform pg_temp.ok(r2.efficiency_bps = r.efficiency_base_bps + 50 and r2.comfort_bps = r.comfort_base_bps + 10
-                     and r2.durability_max = r.durability_max + greatest((r.durability_base + 5) / 10, 1)
-                     and r2.durability_now = r.durability_now + greatest((r.durability_base + 5) / 10, 1)
+  perform pg_temp.ok(r2.efficiency_bps = r.efficiency_base_bps + 10 and r2.comfort_bps = r.comfort_base_bps + 2
+                     and r2.durability_max = r.durability_max + greatest((r.durability_base + 50) / 100, 1)
+                     and r2.durability_now = r.durability_now + greatest((r.durability_base + 50) / 100, 1)
                      and r2.points_free = 4 and r2.durability = 100,
-    '효율 +0.5%p · 착화감 +0.1%p · 최대 · 남은 내구도 + 기본의 10%');
+    '효율 +0.1%p · 착화감 +0.02%p · 최대 · 남은 내구도 + 기본의 1% (0066)');
   perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1, '59000000-0000-0000-00a0-000000000002') = 4,
     '같은 요청 번호로 다시 보내면 처음 결과');
   perform pg_temp.ok((select points_free from public.my_sneakers() where id = v_id) = 4, '— 한 번만 나눴다');
@@ -7067,14 +7032,15 @@ call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 4, 2, 3) 
   '받은 포인트보다 많이 나눌 수 없다');
 call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 2, 1, -1) $q$, pg_temp.fx('p59')),
   '음수 포인트는 받지 않는다');
-call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 0, 81, 0) $q$, pg_temp.fx('l59')),
-  '착화감은 20% 까지 — 레벨 1 값 12% + 포인트 81 은 막힌다');
+call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 0, 401, 0) $q$, pg_temp.fx('l59')),
+  '착화감은 20% 까지 — 레벨 1 값 12% + 포인트 401(0.02%p 씩) 은 막힌다');
 do $$
 declare v_free int;
 begin
   -- 고친 뒤의 값은 다음 문장에서 읽는다(한 문장 안의 my_sneakers 는 문장이 시작될 때의 값을 본다)
-  v_free := public.sneaker_points_set(pg_temp.fx('l59')::bigint, 0, 80, 0);
-  perform pg_temp.ok(v_free = 36
+  -- 레전더리 Lv30(예전 줄) — 받은 포인트 4 × 414 = 1,656
+  v_free := public.sneaker_points_set(pg_temp.fx('l59')::bigint, 0, 400, 0);
+  perform pg_temp.ok(v_free = 1256
                      and (select comfort_bps from public.my_sneakers() where id = pg_temp.fx('l59')::bigint) = 2000,
     '착화감 20% 까지는 된다');
 end $$;
@@ -7149,9 +7115,10 @@ declare
 begin
   select efficiency_bps into v_eff from public.my_sneakers() where id = v_id;
   perform pg_temp.ok((select durability between 29 and 30 from public.my_sneakers() where id = v_id), '남은 비율 약 30%');
-  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
-    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
-  perform pg_temp.ok(r.points_awarded = round(2000 * 0.01 * (1 + v_eff / 10000.0), 4),
+  -- 레전더리 최대 약 200(40분)의 30% = 약 12분 — 10분 러닝은 다 닳지 않는다
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 1000, 601,
+    pg_temp.track(v_start, 600, 0.00002), 0, 1, '', false);
+  perform pg_temp.ok(r.points_awarded = round(1000 * 0.01 * (1 + v_eff / 10000.0), 4),
     '남은 비율 30% 라도 그 러닝 동안 다 닳지 않으면 적립 그대로(예전엔 30% 덜, 0066)');
 end $$;
 -- 남은 내구도 50(10분) 으로 20분 달렸다 — 앞의 10분 걸음만 적립
@@ -7197,8 +7164,8 @@ begin
   perform pg_temp.ok(s.dur_now = s.dur_max / 2 and s.durability_pts = 50 and s.durability = 50,
     '남은 비율을 바로 써도 남은 내구도 · 옛 정수 칸이 따라온다');
 end $$;
-call pg_temp.must_fail(format($q$ update public.market_sneakers set pts_eff = 200 where id = %s $q$, pg_temp.fx('l59')),
-  '받은 포인트(레벨 × 4)보다 많이 나눈 줄은 표가 받지 않는다');
+call pg_temp.must_fail(format($q$ update public.market_sneakers set pts_eff = 5000 where id = %s $q$, pg_temp.fx('l59')),
+  '받은 포인트(등급 · 레벨 표)보다 많이 나눈 줄은 표가 받지 않는다');
 
 -- 체인(v3 금고) 신발 — 남은 비율이 오르면(수리 · 내구도 포인트) 스탯 갱신을 줄 세우고, 닳는 것은 올리지 않는다
 -- 앞의 러닝으로 다 닳았다 — 체인에 올리기 전에 채워 둔다
@@ -7527,36 +7494,82 @@ end $$;
 reset role;
 
 -- ════════════════════════════════════════════════════════════════════
---  0066 내구도 = 달릴 수 있는 시간(일반 10분 · 레전더리 90분) — 예전 기준 신발 옮기기
+--  0066 신발 경제 3판 — 한 번만 비우기 · 신발 체인 기록 멈춤
 -- ════════════════════════════════════════════════════════════════════
 \echo ''
-\echo '── 신발 내구도 옮기기(0066) ─────────────────────────────────'
+\echo '── 신발 경제 3판: 초기화 · 체인 멈춤(0066) ─────────────────────────'
 reset role;
 select set_config('request.jwt.claims', '', false);
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'shoe_economy_v3_reset'),
+    '초기화는 한 번 했다고 적혀 있다 — setup.sql 을 다시 붙여넣어도 다시 비우지 않는다');
+end $$;
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('66000000-0000-0000-0000-000000000001', 'minutes66@test', '{"full_name":"분신발"}');
+  ('66000000-0000-0000-0000-000000000001', 'reset66@test', '{"full_name":"초기화"}'),
+  ('66000000-0000-0000-0000-000000000002', 'wallet66@test', '{"full_name":"지갑초기화"}');
+insert into public.wallet_links (user_id, address)
+values ('66000000-0000-0000-0000-000000000002', '0x6666666666666666666666666666666666666666');
 begin;
--- 0066 전의 줄을 흉내 낸다 — 예전 범위의 최대 내구도 · 반쯤 닳은 신발 · 내구도 포인트 1(+100)
-alter table public.market_sneakers disable trigger market_sneakers_durability;
-alter table public.market_sneakers drop constraint market_sneakers_points_check;
-insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin,
-                                    efficiency_bps, comfort_bps, durability_pts, dur_base, dur_max, dur_now, pts_dur)
-values
-  ('66000000-0000-0000-0000-000000000001', 'WIND', 'COMMON', 0, 1, 40, 'PAID_DRAW', 300, 100, 40, 1000, 1000, 400, 0),
-  ('66000000-0000-0000-0000-000000000001', 'FIRE', 'COMMON', 0, 1, 10, 'PAID_DRAW', 300, 100, 10, 1500, 1500, 150, 0),
-  ('66000000-0000-0000-0000-000000000001', 'WATER', 'LEGENDARY', 0, 2, 50, 'PAID_DRAW', 900, 900, 50, 2750, 2850, 1425, 1);
-alter table public.market_sneakers enable trigger market_sneakers_durability;
+-- 앞의 검사가 체인에 내보낸 신발은 운영에는 없다(사용자 확인) — 이 검사 안에서만 앱으로 돌려 둔다
+update public.market_sneakers set chain_state = 'APP' where chain_state <> 'APP';
+-- 비우기 전 — 신발 · SUP · 뽑기가 있다
+insert into fix (k, v) select 'r66', economy.draw_create('66000000-0000-0000-0000-000000000001', 'BONUS_DRAW')::text;
+insert into public.sup_ledger (user_id, kind, amount, description)
+values ('66000000-0000-0000-0000-000000000001', 'EARN_EVENT', 777, '검사용 잔고');
+insert into public.draw_grants (user_id, kind, granted, used) values ('66000000-0000-0000-0000-000000000001', 'FREE', 10, 7)
+on conflict (user_id, kind) do update set used = 7;
 do $$
+declare v_users int;
 begin
-  perform pg_temp.ok(economy.shoe_durability_minutes_backfill() = 3, '예전 기준(1,000 이상) 신발만 옮긴다');
-  perform pg_temp.ok((select array_agg(dur_base order by id) = array[45, 55, 450]
-                        and bool_and(dur_now = dur_max and durability_pts = 100)
-                        and max(dur_max) filter (where rarity = 'LEGENDARY') = 450 + 45
-                        from public.market_sneakers where owner_id = '66000000-0000-0000-0000-000000000001'),
-    '범위 안의 자리를 그대로 새 범위로(일반 1,000 → 45 · 1,500 → 55 · 레전더리 가운데 → 450), 포인트는 기본의 10%, 모두 100%');
-  perform pg_temp.ok(economy.shoe_durability_minutes_backfill() = 0, '다시 불러도(setup.sql 재적용) 두 번 채우지 않는다');
+  perform economy.shoe_economy_v3_reset();
+  select count(*) into v_users from public.profiles p join auth.users u on u.id = p.id;
+  perform pg_temp.ok((select count(*) from public.market_sneakers) = v_users
+                     and not exists (select 1 from public.market_sneakers
+                                      where origin <> 'STARTER' or rarity <> 'COMMON' or faction <> 'NONE' or not equipped
+                                         or dur_now <> dur_max or level <> 1),
+    '모든 신발이 비고, 계정마다 첫 신발 하나(일반 · 속성 없음 · 신은 채로 · 가득)');
+  perform pg_temp.ok(not exists (select 1 from public.sup_ledger) and economy.balance_of('66000000-0000-0000-0000-000000000001') = 0,
+    'SUP 원장이 비어 잔고가 0');
+  perform pg_temp.ok((select granted = 10 and used = 0 from public.draw_grants
+                       where user_id = '66000000-0000-0000-0000-000000000001' and kind = 'FREE')
+                     and not exists (select 1 from public.draw_grants where user_id = '66000000-0000-0000-0000-000000000001' and kind <> 'FREE'),
+    '무료 뽑기 10회로 새로 — 쓴 수는 0');
+  perform pg_temp.ok((select granted = 10 and genesis_granted = 1 from public.draw_grants
+                       where user_id = '66000000-0000-0000-0000-000000000002' and kind = 'BONUS'),
+    '지갑을 연결한 계정은 상급 10회(첫 번 Genesis)');
+  perform pg_temp.ok((select count(*) from economy.backup_0066_market_sneakers where id = pg_temp.fx('r66')::bigint) = 1
+                     and (select count(*) from economy.backup_0066_sup_ledger where amount = 777) = 1,
+    '지운 신발 · 원장은 백업 표에 남는다');
+  perform pg_temp.ok(not exists (select 1 from public.chain_jobs where kind in ('VAULT_MINT', 'STATS_SYNC')),
+    '신발 체인 일도 비운다');
 end $$;
 rollback;
+-- 체인에 나가 있는 신발이 있으면 비우지 않는다
+begin;
+update public.market_sneakers set chain_state = 'ON_CHAIN'
+ where id = (select id from public.market_sneakers where owner_id = '66000000-0000-0000-0000-000000000001' limit 1);
+insert into public.market_sneakers (owner_id, rarity, variant, level, durability, origin, chain_state)
+select '66000000-0000-0000-0000-000000000001', 'RARE', 0, 1, 100, 'PAID_DRAW', 'ON_CHAIN'
+ where not exists (select 1 from public.market_sneakers where chain_state = 'ON_CHAIN');
+call pg_temp.must_fail($q$ select economy.shoe_economy_v3_reset() $q$, '체인에 나가 있는 신발이 있으면 초기화하지 않는다');
+rollback;
+
+-- 신발 체인 기록이 멈춰 있으면(운영 기본값) 금고 발행 · 꺼내기 · 지갑 보너스 발행이 막힌다
+update public.economy_settings set value = 'false'::jsonb where key = 'shoe_chain_enabled';
+insert into fix (k, v) select 'c66', economy.draw_create('66000000-0000-0000-0000-000000000002', 'BONUS_DRAW')::text;
+select economy.vault_mint_enqueue(pg_temp.fx('c66')::bigint);
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from public.chain_jobs where sneaker_id = pg_temp.fx('c66')::bigint),
+    '신발 체인 기록이 멈춰 있으면 금고 발행 일을 만들지 않는다');
+end $$;
+set role authenticated;
+call pg_temp.login('66000000-0000-0000-0000-000000000002');
+call pg_temp.must_fail(format($q$ select public.sneaker_withdraw_request(%s) $q$, pg_temp.fx('c66')),
+  '신발 꺼내기는 준비 중');
+call pg_temp.must_fail($q$ select public.bonus_draw_request() $q$, '지갑 보너스 발행은 준비 중');
+reset role;
+update public.economy_settings set value = 'true'::jsonb where key = 'shoe_chain_enabled';
+
 
 -- ════════════════════════════════════════════════════════════════════
 --  0064 신발 내구도는 달린 시간으로 — 1분마다 5 (2026-10-17 사용자 결정)

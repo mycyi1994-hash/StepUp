@@ -237,7 +237,7 @@
     <string name="sneaker_energy_saving">能量节省</string>
     <string name="sneaker_durability">耐久度</string>
     <string name="sneaker_about">关于这枚 NFT</string>
-    <string name="sneaker_about_body" formatted="false">每双鞋都属于四大属性之一，并有对应稀有度。增幅刻意做得很小 —— 每档约 +1% —— 收集的乐趣在于外观和图鉴，而不是数值。</string>
+    <string name="sneaker_about_body" formatted="false">每双鞋都属于六个等级之一(普通 · 稀有 · 史诗 · 传说 · Redline · Finish)。等级越高跑得越久、赚得越多，21 级起升级点数大幅增加。</string>
     <string name="rarity_common">普通</string>
     <string name="rarity_rare">稀有</string>
     <string name="rarity_epic">史诗</string>
@@ -793,7 +793,7 @@
     <string name="guide2_body">跑步时只要还有能量，每一步都能赚 SUP。能量在午夜恢复，记得合理分配。</string>
     <string name="guide2_tip">提示：球鞋加成会放大收益。</string>
     <string name="guide3_title">收集球鞋 NFT</string>
-    <string name="guide3_body">火、水、雷、风四大属性，共 44 格图鉴。用 SUP 铸造、强化并穿上你喜欢的那双。</string>
+    <string name="guide3_body">从普通到 Finish 共六个等级。抽鞋、强化并穿上你喜欢的那双。</string>
     <string name="guide3_tip" formatted="false">提示：加成差距每档仅 1%——收集才是乐趣！</string>
     <string name="guide4_title">社区论坛</string>
     <string name="guide4_body">参加按距离排序的闪电跑，分享干货和日常。排行卡片显示你本周的名次。</string>

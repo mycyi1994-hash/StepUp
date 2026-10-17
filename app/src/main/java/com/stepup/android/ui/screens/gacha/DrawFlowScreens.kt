@@ -264,5 +264,5 @@ private fun Rarity.revealCue(): FeedbackCue = when (this) {
     Rarity.COMMON -> FeedbackCue.DrawCommon
     Rarity.RARE -> FeedbackCue.DrawRare
     Rarity.EPIC -> FeedbackCue.DrawEpic
-    Rarity.LEGENDARY -> FeedbackCue.DrawLegendary
+    Rarity.LEGENDARY, Rarity.REDLINE, Rarity.FINISH -> FeedbackCue.DrawLegendary
 }
