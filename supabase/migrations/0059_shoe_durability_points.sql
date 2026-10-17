@@ -180,6 +180,8 @@ alter table public.market_sneakers
   alter column dur_max set not null,
   alter column dur_now set not null;
 
+-- 0066 이 내구도 포인트 값을 기본의 10% 로 바꿔 이 검사를 다시 건다. setup.sql 을 다시 붙여넣을 때 이 자리에서 새 기준의 신발을
+-- 옛 식으로 검사해 멈추지 않게, 이미 있는 줄은 검사하지 않는다(not valid — 0066 이 새 식으로 다시 걸며 모두 검사한다)
 alter table public.market_sneakers drop constraint if exists market_sneakers_points_check;
 alter table public.market_sneakers add constraint market_sneakers_points_check check (
   dur_base > 0
@@ -188,7 +190,7 @@ alter table public.market_sneakers add constraint market_sneakers_points_check c
   and pts_eff >= 0 and pts_comfort >= 0 and pts_dur >= 0
   -- 한 레벨에 4 (economy.points_per_level)
   and pts_eff + pts_comfort + pts_dur <= 4 * (level - 1)
-);
+) not valid;
 
 -- 체인 스탯 갱신(0044) — 레벨이 오르거나 남은 비율이 오르면(수리 · 내구도 포인트). 이제 남은 비율은 트리거가 세므로
 -- 남은 내구도 · 최대 내구도를 쓰는 갱신에서도 본다. 달려서 닳는 것은 여전히 올리지 않는다

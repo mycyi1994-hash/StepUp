@@ -464,6 +464,8 @@ select 'VAULT_MINT', 'mint:' || s.id, s.owner_id, s.id,
  where s.origin in ('FREE_DRAW', 'PAID_DRAW', 'BONUS_DRAW')
    and s.token_id is null and s.owner_id is not null
    and economy.chain_jobs_on()
+   -- 신발 체인 기록이 멈춰 있으면(0066 shoe_chain_enabled = false) 줄 세우지 않는다. 0066 전에는 칸이 없어 그대로 간다
+   and coalesce((select (e.value #>> '{}')::boolean from public.economy_settings e where e.key = 'shoe_chain_enabled'), true)
 on conflict (kind, ref) do nothing;
 
 -- ══════════════════════════════════════════════════════════════════

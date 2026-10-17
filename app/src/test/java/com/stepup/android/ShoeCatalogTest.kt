@@ -26,12 +26,14 @@ import org.junit.Test
 class ShoeCatalogTest {
 
     @Test
-    fun `70종 — 레어 20 · 에픽 20 · 레전더리 30, 번호는 예전 52종과 겹치지 않는다`() {
+    fun `70종 — 레어 20 · 에픽 20 · 레전더리 10 · 레드라인 10 · 피니시 10, 번호는 예전 52종과 겹치지 않는다`() {
         assertEquals(70, ShoeCatalog.models.size)
         assertEquals(70, ShoeCatalog.models.map { it.id }.toSet().size)
         assertEquals(20, ShoeCatalog.models.count { it.rarity == Rarity.RARE })
         assertEquals(20, ShoeCatalog.models.count { it.rarity == Rarity.EPIC })
-        assertEquals(30, ShoeCatalog.models.count { it.rarity == Rarity.LEGENDARY })
+        assertEquals(10, ShoeCatalog.models.count { it.rarity == Rarity.LEGENDARY })
+        assertEquals(10, ShoeCatalog.models.count { it.rarity == Rarity.REDLINE })
+        assertEquals(10, ShoeCatalog.models.count { it.rarity == Rarity.FINISH })
         assertTrue(ShoeCatalog.models.all { it.id >= 1000 })
     }
 

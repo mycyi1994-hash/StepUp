@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 属性点（服务器 0059）— 每级 4 点 · 1 点 = 效率 +0.25%p · 舒适度 +0.1%p · 最大耐久度 +100 -->
+<!-- 属性点（服务器 0059）— 每级 4 点 · 1 点 = 效率 +0.05%p · 舒适度 +0.02%p · 最大耐久度 +1%(0066) -->
 <resources>
     <string name="points_title">属性点</string>
     <string name="points_free">剩余点数</string>
-    <string name="points_per_level">每级 4 点</string>
-    <string name="points_hint_efficiency" formatted="false">1 点 = +0.25%p</string>
-    <string name="points_hint_comfort" formatted="false">1 点 = +0.1%p · 最高 20%</string>
-    <string name="points_hint_durability">1 点 = 最大 +100（20 分钟）</string>
+    <string name="points_per_level">等级·品级越高越多</string>
+    <string name="points_hint_efficiency" formatted="false">1 点 = +0.05%p</string>
+    <string name="points_hint_comfort" formatted="false">1 点 = +0.02%p · 最高 20%</string>
+    <string name="points_hint_durability">1 点 = 最大 +1%</string>
     <string name="points_add_cd">给%1$s加 1 点</string>
     <string name="points_remove_cd">从%1$s减 1 点</string>
     <string name="points_count_cd">%1$s %2$d 点</string>

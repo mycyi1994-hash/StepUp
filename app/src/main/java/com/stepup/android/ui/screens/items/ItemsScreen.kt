@@ -259,8 +259,7 @@ fun ItemsScreen(
 
         item {
             FilterSummaryRow(
-                parts = listOfNotNull(Faction.entries.firstOrNull { it.id == factionFilter }?.label()) +
-                    itemFilterParts(rarityFilter, equipFilter),
+                parts = itemFilterParts(rarityFilter, equipFilter),
                 onReset = {
                     factionFilter = null
                     rarityFilter = null

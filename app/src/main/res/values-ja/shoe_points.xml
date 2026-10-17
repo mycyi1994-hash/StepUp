@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ステータスポイント(サーバー 0059) — レベルごとに4 · 1 = 効率 +0.25%p · 履き心地 +0.1%p · 最大耐久度 +100 -->
+<!-- ステータスポイント(サーバー 0059) — レベルごとに4 · 1 = 効率 +0.05%p · 履き心地 +0.02%p · 最大耐久度 +1%(0066) -->
 <resources>
     <string name="points_title">ステータスポイント</string>
     <string name="points_free">残りポイント</string>
-    <string name="points_per_level">レベルごとに4</string>
-    <string name="points_hint_efficiency" formatted="false">1ポイント = +0.25%p</string>
-    <string name="points_hint_comfort" formatted="false">1ポイント = +0.1%p · 最大20%</string>
-    <string name="points_hint_durability">1ポイント = 最大 +100(20分)</string>
+    <string name="points_per_level">レベル・等級が高いほど多く</string>
+    <string name="points_hint_efficiency" formatted="false">1ポイント = +0.05%p</string>
+    <string name="points_hint_comfort" formatted="false">1ポイント = +0.02%p · 最大20%</string>
+    <string name="points_hint_durability">1ポイント = 最大 +1%</string>
     <string name="points_add_cd">%1$sに1ポイント足す</string>
     <string name="points_remove_cd">%1$sから1ポイント減らす</string>
     <string name="points_count_cd">%1$s %2$dポイント</string>

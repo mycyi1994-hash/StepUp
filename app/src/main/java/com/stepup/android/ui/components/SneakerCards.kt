@@ -48,6 +48,9 @@ fun Rarity.tint(): Color = when (this) {
     Rarity.RARE -> Color(0xFF1E8FE8)
     Rarity.EPIC -> Color(0xFF8B4DE8)
     Rarity.LEGENDARY -> Color(0xFFD99A00)
+    // 등급 배지(ShoeGradeBadge)의 레드라인 · 피니시 색과 같다
+    Rarity.REDLINE -> Color(0xFFC74143)
+    Rarity.FINISH -> Color(0xFF128071)
 }
 
 @Composable
@@ -57,6 +60,8 @@ fun Rarity.label(): String = stringResource(
         Rarity.RARE -> R.string.rarity_rare
         Rarity.EPIC -> R.string.rarity_epic
         Rarity.LEGENDARY -> R.string.rarity_legendary
+        Rarity.REDLINE -> R.string.shoe_tier_redline
+        Rarity.FINISH -> R.string.shoe_tier_finish
     }
 )
 
@@ -266,7 +271,6 @@ fun SneakerCollectionCard(
             style = MaterialTheme.typography.titleMedium.copy(color = Snow), maxLines = 2,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(sneaker.faction.label(), style = MaterialTheme.typography.bodyMedium, color = Silver)
         if (sneaker.equipped) Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
         if (count > 1) Text("×$count", style = MaterialTheme.typography.bodyMedium, color = Snow)
         Text(stringResource(R.string.level_chip, sneaker.level) + " · +%.1f%%".format(sneaker.boostPercent), style = MaterialTheme.typography.bodyMedium, color = Snow)

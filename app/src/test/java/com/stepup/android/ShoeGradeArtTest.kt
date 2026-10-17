@@ -14,13 +14,10 @@ import org.junit.Test
 class ShoeGradeArtTest {
     private val gradeArt = R.drawable::class.java.fields.map { it.name }.filter { it.startsWith("shoe_grade_") }.toSet()
 
-    @Test fun theDomainKeepsFourGrades() {
-        assertEquals(listOf("COMMON", "RARE", "EPIC", "LEGENDARY"), Rarity.entries.map { it.id })
-        // 보이는 갈래 여섯은 모두 서버 등급 넷 중 하나다
-        assertEquals(
-            listOf(Rarity.COMMON, Rarity.RARE, Rarity.EPIC, Rarity.LEGENDARY, Rarity.LEGENDARY, Rarity.LEGENDARY),
-            ShoeTier.entries.map { it.rarity },
-        )
+    @Test fun theDomainHasSixGrades() {
+        // 2026-10-17 — 레드라인 · 피니시도 서버 등급이다(서버 0066). 보이는 갈래 여섯 = 등급 여섯
+        assertEquals(listOf("COMMON", "RARE", "EPIC", "LEGENDARY", "REDLINE", "FINISH"), Rarity.entries.map { it.id })
+        assertEquals(Rarity.entries, ShoeTier.entries.map { it.rarity })
     }
 
     @Test fun everyTierHasItsLayersAndNothingElse() {

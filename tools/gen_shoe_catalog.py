@@ -32,7 +32,9 @@ SQL = ROOT / 'supabase/migrations/0045_shoe_catalog.sql'
 WORKER = ROOT / 'attester/src/shoe-catalog.js'
 WEB = ROOT / 'web/assets/sneakers'
 WEB_JS = ROOT / 'web/shoe-catalog.js'
-RARITIES = ('COMMON', 'RARE', 'EPIC', 'LEGENDARY')
+RARITIES = ('COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH')
+# 체인(v3) 도감의 등급 — 컨트랙트는 4등급만 안다. 레드라인 · 피니시(2026-10-17 서버 0066 에서 등급이 됐다)는 체인에서 레전더리다
+CHAIN_RARITY = {'REDLINE': 'LEGENDARY', 'FINISH': 'LEGENDARY'}
 GENERATED = 'tools/gen_shoe_catalog.py 가 design/shoes-2026-09/catalog.json 으로 만든 파일 — 손으로 고치지 않는다.'
 
 
@@ -158,22 +160,24 @@ def server(models):
     rows = ',\n'.join(
         f"  ({m['id']}, {sql(m['rarity'])}, {sql(m['series'])}, {sql(m['file'])}, {sql(m['en'])}, {sql(m['ko'])})"
         for m in models)
-    pairs = ', '.join(f"({m['id']}, {sql(m['rarity'])})" for m in models)
+    pairs = ', '.join(f"({m['id']}, {sql(CHAIN_RARITY.get(m['rarity'], m['rarity']))})" for m in models)
     block = '\n'.join([
         f'{start} ({GENERATED})',
-        '-- 체인에 올라간 번호의 등급은 바꿀 수 없다 — 이미 있는 번호의 등급이 다르면 올리지 않는다(이름만 고칠 수 있다)',
+        '-- 체인에 올라간 번호의 등급은 바꿀 수 없다 — 이미 있는 번호의 (체인) 등급이 다르면 올리지 않는다(이름만 고칠 수 있다).',
+        '-- 레드라인 · 피니시는 앱 · 서버에서 등급이고(0066) 체인에서는 레전더리다 — 레전더리 ↔ 레드라인 · 피니시만 바꿀 수 있다',
         'do $$',
         'begin',
         '  if exists (select 1 from public.sneaker_models m',
         f'              join (values {pairs}) e(id, rarity) on e.id = m.id',
-        '             where e.rarity <> m.rarity) then',
+        "             where e.rarity <> case when m.rarity in ('REDLINE', 'FINISH') then 'LEGENDARY' else m.rarity end) then",
         "    raise exception '도감 번호의 등급이 바뀌었습니다 — 새 번호를 주세요';",
         '  end if;',
         'end $$;',
         'insert into public.sneaker_models (id, rarity, series, slug, name_en, name_ko) values',
         rows,
         'on conflict (id) do update',
-        '  set series = excluded.series, slug = excluded.slug, name_en = excluded.name_en, name_ko = excluded.name_ko;',
+        '  set rarity = excluded.rarity, series = excluded.series, slug = excluded.slug, name_en = excluded.name_en,',
+        '      name_ko = excluded.name_ko;',
         end,
     ])
     head, rest = text.split(start, 1)
@@ -182,7 +186,8 @@ def server(models):
 
 
 def worker(models):
-    rows = [f"  {m['id']}: {{ rarity: {js(m['rarity'])}, series: {js(m['series'])}, en: {js(m['en'])}, ko: {js(m['ko'])}, file: 'shoe_{m['id']}.webp' }},"
+    # 워커는 체인(v3) 도감에 올리는 쪽이라 체인 등급을 쓴다(레드라인 · 피니시 → 레전더리)
+    rows = [f"  {m['id']}: {{ rarity: {js(CHAIN_RARITY.get(m['rarity'], m['rarity']))}, series: {js(m['series'])}, en: {js(m['en'])}, ko: {js(m['ko'])}, file: 'shoe_{m['id']}.webp' }},"
             for m in models]
     write(WORKER, '\n'.join([
         f'// {GENERATED}',

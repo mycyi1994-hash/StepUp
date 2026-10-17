@@ -53,6 +53,20 @@ object RewardEconomy {
     /** XP 부스터 배율 */
     const val XP_BOOST_MULTIPLIER = 2.0
 
+    /** 내구도 1 로 달릴 수 있는 시간(초) — 달린 1분마다 5 닳는다(서버 0064 · economy.durability_sec_per_point) */
+    const val DURABILITY_SEC_PER_POINT = 12
+
+    /**
+     * 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 record_session) — 남은 내구도로 달릴 수 있던 시간만큼의 걸음만.
+     * [durabilityNow] 는 달리기 전 남은 내구도, [activeSec] 는 멈춘 시간을 뺀 달린 시간.
+     */
+    fun stepsWithinDurability(steps: Int, durabilityNow: Int, activeSec: Long): Int {
+        if (steps <= 0 || activeSec <= 0L) return steps
+        val lifeSec = durabilityNow.coerceAtLeast(0).toLong() * DURABILITY_SEC_PER_POINT
+        if (lifeSec >= activeSec) return steps
+        return (steps.toLong() * lifeSec / activeSec).toInt()
+    }
+
     /** 스니커즈 민팅 비용 */
     const val MINT_COST = 500.0
 

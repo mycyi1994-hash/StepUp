@@ -237,7 +237,7 @@
     <string name="sneaker_energy_saving">에너지 절감</string>
     <string name="sneaker_durability">내구도</string>
     <string name="sneaker_about">이 NFT 정보</string>
-    <string name="sneaker_about_body" formatted="false">모든 스니커즈는 네 가지 속성과 등급을 가집니다. 부스트는 등급당 +1% 정도로 작게 잡았어요. 수집의 재미는 성능이 아니라 외형과 도감 완성에 있습니다.</string>
+    <string name="sneaker_about_body" formatted="false">모든 신발은 여섯 등급(일반 · 레어 · 에픽 · 레전더리 · 레드라인 · 피니시) 중 하나예요. 등급이 높을수록 더 오래 달리고 더 많이 벌며, 21레벨부터는 레벨업 포인트가 크게 늘어요.</string>
     <string name="rarity_common">일반</string>
     <string name="rarity_rare">레어</string>
     <string name="rarity_epic">에픽</string>
@@ -793,7 +793,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="guide2_body">러닝 세션 중에는 에너지가 남아 있는 동안 걸음마다 SUP가 쌓여요. 에너지는 자정에 리필되니 하루에 나눠 쓰는 게 유리해요.</string>
     <string name="guide2_tip">팁: 착용 스니커즈의 부스트만큼 더 적립돼요.</string>
     <string name="guide3_title">스니커즈 NFT 수집</string>
-    <string name="guide3_body">불 · 물 · 번개 · 바람 4속성, 도감 44칸. SUP로 민팅하고 강화해서 마음에 드는 신발을 착용하세요.</string>
+    <string name="guide3_body">일반부터 피니시까지 여섯 등급. 신발을 뽑고 강화해서 마음에 드는 신발을 신으세요.</string>
     <string name="guide3_tip" formatted="false">팁: 부스트 차이는 등급당 1%뿐 — 수집이 핵심!</string>
     <string name="guide4_title">커뮤니티 게시판</string>
     <string name="guide4_body">가까운 순으로 정렬된 번개러닝에 참가하고, 꿀팁과 자유 글을 나눠보세요. 랭킹 카드에서 이번 주 내 순위도 확인할 수 있어요.</string>

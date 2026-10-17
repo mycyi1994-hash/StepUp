@@ -271,7 +271,7 @@ private fun EditingBody(state: ShoeUpgradeState, actions: UpgradeActions) {
                 val next = state.quote?.takeIf { it.materialIds.sorted() == state.selection.applied.sorted() }?.after
                     ?: info.previewNext()
                 UpgradeStatRows(forgeRows(info.stats, next), next.maxLevel, Modifier.testTag("upgrade-rows"))
-                PointsGainLine(stringResource(R.string.upg_points_gain, forgePointsGain(info.stats, next)), "upgrade-points-gain")
+                PointsGainLine(stringResource(R.string.upg_points_gain, forgePointsGain(info.stats, next, info.rarity)), "upgrade-points-gain")
             }
         }
         RunDivider()
@@ -362,7 +362,9 @@ private fun SuccessBody(state: ShoeUpgradeState, phase: UpgradePhase.Succeeded) 
             ?: stringResource(R.string.upg_level, level))
         if (after != null) {
             UpgradeStatRows(forgeRows(before ?: after, after), after.maxLevel, Modifier.testTag("upgrade-rows"))
-            val gained = before?.let { forgePointsGain(it, after) } ?: com.stepup.android.domain.StatPoints.PER_LEVEL
+            val rarity = state.shoe?.rarity ?: com.stepup.android.domain.Rarity.COMMON
+            val gained = before?.let { forgePointsGain(it, after, rarity) }
+                ?: com.stepup.android.domain.StatPoints.gainAt(rarity, level)
             PointsGainLine(stringResource(R.string.upg_points_got, gained), "upgrade-points-got")
         }
         RunDivider()

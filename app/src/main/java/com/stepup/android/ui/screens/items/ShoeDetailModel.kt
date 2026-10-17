@@ -115,7 +115,7 @@ fun durabilityLeft(shoe: Sneaker): Int {
     return server.durabilityNow.coerceIn(0, server.durabilityMax)
 }
 
-/** 최대 내구도 — 신발마다 다르다(등급 범위 안에서 정해지고, 내구도 포인트 1 에 +100). 모르면 100 */
+/** 최대 내구도 — 신발마다 다르다(등급 범위 안에서 정해지고, 내구도 포인트 1 에 기본의 +10%). 모르면 100 */
 fun durabilityMax(shoe: Sneaker): Int = shoe.server?.takeIf { it.hasDurabilityMax }?.durabilityMax ?: 100
 
 /** 내구도 막대 길이 — 남은 내구도 ÷ 그 신발의 최대 내구도 */
@@ -132,12 +132,12 @@ fun formatDurability(shoe: Sneaker): String = formatCount(durabilityLeft(shoe)) 
 
 enum class DetailStat { LEVEL, EFFICIENCY, COMFORT, DURABILITY }
 
-/** 상세 본문 한 줄 — 보이는 값("5 / 15"), 막대 길이(0 ~ 1), 막대 끝("15" · "27.5%" · "1,230") */
+/** 상세 본문 한 줄 — 보이는 값("5 / 15"), 막대 길이(0 ~ 1), 막대 끝("20" · "55.0%" · "1,230") */
 data class DetailStatRow(val stat: DetailStat, val value: String, val fraction: Float, val end: String)
 
 /**
  * 레벨 · 효율 · 착화감 · 내구도 — 레벨은 [Sneaker.level] ÷ [Sneaker.maxLevel](서버의 양수 상한 우선, 없으면 등급 기본값),
- * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 27.5% · 착화감 20% · 내구도는 그 신발의 최대 내구도).
+ * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 55% · 착화감 20% · 내구도는 그 신발의 최대 내구도).
  * 행운 · 원시 착화감은 넣지 않는다.
  */
 fun detailStatRows(shoe: Sneaker): List<DetailStatRow> {

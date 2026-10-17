@@ -31,29 +31,28 @@ class MyShoesModelTest {
     // ── 보이는 갈래 ───────────────────────────────────────────────
 
     @Test
-    fun `레드라인 · 피니시는 시리즈로 먼저 가르고 나머지는 실제 등급 그대로`() {
+    fun `보이는 갈래는 서버 등급 그대로 — 여섯 등급(2026-10-17)`() {
         assertEquals(ShoeTier.RARE, shoe(model = 1107, rarity = Rarity.RARE).tier)
         assertEquals(ShoeTier.EPIC, shoe(model = 1201, rarity = Rarity.EPIC).tier)
         assertEquals(ShoeTier.LEGENDARY, shoe(model = 1301, rarity = Rarity.LEGENDARY).tier)
-        assertEquals(ShoeTier.REDLINE, shoe(model = 1311, rarity = Rarity.LEGENDARY).tier)
-        assertEquals(ShoeTier.FINISH, shoe(model = 1329, rarity = Rarity.LEGENDARY).tier)
-        // 예전 52종(모델 번호 없음)은 등급 그대로
+        assertEquals(ShoeTier.REDLINE, shoe(model = 1311, rarity = Rarity.REDLINE).tier)
+        assertEquals(ShoeTier.FINISH, shoe(model = 1329, rarity = Rarity.FINISH).tier)
+        // 모델 번호 없는 신발(일반 · 예전 52종)도 등급 그대로
         assertEquals(ShoeTier.COMMON, shoe(rarity = Rarity.COMMON).tier)
         assertEquals(ShoeTier.LEGENDARY, shoe(rarity = Rarity.LEGENDARY).tier)
-        // 보이는 갈래는 서버 등급을 바꾸지 않는다
-        assertEquals(Rarity.LEGENDARY, shoe(model = 1311, rarity = Rarity.LEGENDARY).tier.rarity)
+        // 갈래와 등급은 하나다
+        for (r in Rarity.entries) assertEquals(r, shoe(rarity = r).tier.rarity)
     }
 
     // ── 막대 ─────────────────────────────────────────────────────
 
     @Test
-    fun `막대 끝은 서버의 최대 · 상한 — 효율 27_5퍼센트 · 에너지 절감 20퍼센트, 내구도는 그 신발의 최대 내구도`() {
-        // 레전더리 최고 효율 1300 + 레벨마다 0.5%p(포인트를 효율 2 · 착화감 2 로 고르게) × 29 = 2750bps
-        assertEquals(27.5, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
-        assertEquals((1300 + 2 * 25 * (StatScale.EFFICIENCY_MAX_LEVEL - 1)) / 100.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
+    fun `막대 끝은 서버의 최대 · 상한 — 효율 55퍼센트 · 에너지 절감 20퍼센트, 내구도는 그 신발의 최대 내구도`() {
+        // 피니시 새 신발 최고 효율 5,500bps(서버 0066)
+        assertEquals(55.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
         assertEquals(20.0, StatScale.ENERGY_MAX_PERCENT, 0.0)
         val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 95.93, now = 1_180, max = 1_230))
-        assertEquals(listOf("27.5%", "20.0%", "1,230"), bars.map { it.end })
+        assertEquals(listOf("55.0%", "20.0%", "1,230"), bars.map { it.end })
         assertEquals("1,180 / 1,230", bars[2].value)
         assertEquals(1_180f / 1_230f, bars[2].fraction, 0.0001f)
         // 최대 내구도를 모르는 예전 서버 · 폰에만 있던 신발은 100 기준
@@ -65,15 +64,15 @@ class MyShoesModelTest {
         val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 92.6))
         assertEquals(listOf(BarStat.EFFICIENCY, BarStat.COMFORT, BarStat.DURABILITY), bars.map { it.stat })
         assertEquals(listOf("+4.8%", "7.5%", "92 / 100"), bars.map { it.value })
-        assertEquals(4.8f / 27.5f, bars[0].fraction, 0.0001f)
+        assertEquals(4.8f / 55f, bars[0].fraction, 0.0001f)
         assertEquals(7.5f / 20f, bars[1].fraction, 0.0001f)
         assertEquals(0.92f, bars[2].fraction, 0.0001f)
     }
 
     @Test
     fun `막대는 0 에서 1 사이로 자른다`() {
-        assertEquals(0f, barFraction(-3.0, 27.5), 0f)
-        assertEquals(1f, barFraction(40.0, 27.5), 0f)
+        assertEquals(0f, barFraction(-3.0, 55.0), 0f)
+        assertEquals(1f, barFraction(60.0, 55.0), 0f)
         assertEquals(0f, barFraction(5.0, 0.0), 0f)
         assertEquals(0f, barFraction(Double.NaN, 20.0), 0f)
         // 서버 상한을 넘는 값(있을 수 없지만)도 막대를 넘치지 않는다
@@ -116,17 +115,17 @@ class MyShoesModelTest {
         shoe(id = 1, rarity = Rarity.COMMON, level = 4, acquired = 1, worn = true),
         shoe(id = 2, model = 1107, rarity = Rarity.RARE, level = 1, acquired = 5),
         shoe(id = 3, model = 1201, rarity = Rarity.EPIC, level = 2, acquired = 4),
-        shoe(id = 4, model = 1329, rarity = Rarity.LEGENDARY, level = 1, acquired = 3),
-        shoe(id = 5, model = 1311, rarity = Rarity.LEGENDARY, level = 6, acquired = 2),
+        shoe(id = 4, model = 1329, rarity = Rarity.FINISH, level = 1, acquired = 3),
+        shoe(id = 5, model = 1311, rarity = Rarity.REDLINE, level = 6, acquired = 2),
         shoe(id = 6, model = 1301, rarity = Rarity.LEGENDARY, level = 1, acquired = 6),
     )
 
     @Test
-    fun `정렬 — 최근 획득순 · 등급 높은순(레드라인 · 피니시를 더 높게 매기지 않는다) · 레벨 높은순`() {
+    fun `정렬 — 최근 획득순 · 등급 높은순(피니시가 가장 높다) · 레벨 높은순`() {
         assertEquals(listOf(6L, 2L, 3L, 4L, 5L, 1L), vaultSorted(vault, ItemSort.RECENT).map { it.id })
-        // 레전더리 셋(레전더리 · 레드라인 · 피니시는 갈래끼리 모을 뿐) → 에픽 → 레어 → 일반. 착용은 순서를 바꾸지 않는다
-        assertEquals(listOf(6L, 5L, 4L, 3L, 2L, 1L), vaultSorted(vault, ItemSort.RARITY).map { it.id })
-        assertEquals(listOf(5L, 1L, 3L, 6L, 4L, 2L), vaultSorted(vault, ItemSort.LEVEL).map { it.id })
+        // 피니시 → 레드라인 → 레전더리 → 에픽 → 레어 → 일반. 착용은 순서를 바꾸지 않는다
+        assertEquals(listOf(4L, 5L, 6L, 3L, 2L, 1L), vaultSorted(vault, ItemSort.RARITY).map { it.id })
+        assertEquals(listOf(5L, 1L, 3L, 4L, 6L, 2L), vaultSorted(vault, ItemSort.LEVEL).map { it.id })
     }
 
     @Test

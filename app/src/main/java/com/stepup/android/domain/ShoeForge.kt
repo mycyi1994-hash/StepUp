@@ -95,7 +95,7 @@ enum class ForgeMaterialBlock {
 
 /**
  * 대상의 능력치 한 벌 — 효율 · 착화감은 서버 실효 값(bps, 레벨 1 값 + 나눈 포인트). [pointsTotal] · [pointsFree] 는 이 레벨까지
- * 받은 · 남은 스탯 포인트(0059 — 레벨마다 4). 예전 서버는 포인트를 보내지 않는다(0).
+ * 받은 · 남은 스탯 포인트(0066 — 등급 · 레벨마다 다르다). 예전 서버는 포인트를 보내지 않는다(0).
  */
 data class ForgeStats(
     val level: Int,
@@ -118,13 +118,13 @@ data class ForgeTarget(
     val block: ForgeTargetBlock?,
 ) {
     /**
-     * 성공 시 값의 미리보기 — 서버 규칙(0059)과 같다: 레벨 +1, 스탯 포인트 +4. 효율 · 착화감은 저절로 오르지 않는다
-     * (받은 포인트를 사용자가 효율 · 착화감 · 내구도에 나눈다). 3개를 고르면 서버 견적의 값으로 바꿔 쓴다.
+     * 성공 시 값의 미리보기 — 서버 규칙(0066)과 같다: 레벨 +1, 스탯 포인트는 오른 레벨 · 등급만큼([StatPoints.gainAt]).
+     * 효율 · 착화감은 저절로 오르지 않는다(받은 포인트를 사용자가 나눈다). 3개를 고르면 서버 견적의 값으로 바꿔 쓴다.
      */
     fun previewNext(): ForgeStats = stats.copy(
         level = stats.level + 1,
-        pointsTotal = stats.pointsTotal + StatPoints.PER_LEVEL,
-        pointsFree = stats.pointsFree + StatPoints.PER_LEVEL,
+        pointsTotal = stats.pointsTotal + StatPoints.gainAt(rarity, stats.level + 1),
+        pointsFree = stats.pointsFree + StatPoints.gainAt(rarity, stats.level + 1),
     )
 }
 

@@ -226,11 +226,11 @@ fun forgeRows(before: ForgeStats, after: ForgeStats?): List<UpgradeRow> {
 }
 
 /**
- * 강화 성공으로 받는 스탯 포인트 — 레벨이 오른 만큼 4 씩(0059). 서버가 포인트를 보내지 않으면(예전 서버) 레벨 차이로 센다.
+ * 강화 성공으로 받는 스탯 포인트 — 오른 레벨 · 등급만큼(0066). 서버가 포인트를 보내지 않으면(예전 서버) 같은 표로 센다.
  * 레벨이 오르지 않으면 0.
  */
-fun forgePointsGain(before: ForgeStats, after: ForgeStats): Int {
-    val levels = (after.level - before.level).coerceAtLeast(0)
+fun forgePointsGain(before: ForgeStats, after: ForgeStats, rarity: com.stepup.android.domain.Rarity): Int {
     val reported = after.pointsTotal - before.pointsTotal
-    return if (reported > 0) reported else levels * com.stepup.android.domain.StatPoints.PER_LEVEL
+    if (reported > 0) return reported
+    return ((before.level + 1)..after.level).sumOf { com.stepup.android.domain.StatPoints.gainAt(rarity, it) }
 }

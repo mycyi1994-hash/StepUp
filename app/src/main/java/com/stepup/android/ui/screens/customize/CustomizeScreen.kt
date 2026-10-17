@@ -605,7 +605,7 @@ private fun StatBasisSheet(onClose: () -> Unit) {
     ) {
         listOf(
             stringResource(R.string.my_shoes_basis_intro),
-            stringResource(R.string.my_shoes_basis_efficiency, formatPercent(StatScale.EFFICIENCY_MAX_PERCENT), StatScale.EFFICIENCY_MAX_LEVEL),
+            stringResource(R.string.my_shoes_basis_efficiency, formatPercent(StatScale.EFFICIENCY_MAX_PERCENT)),
             stringResource(R.string.my_shoes_basis_comfort, formatPercent(StatScale.ENERGY_MAX_PERCENT)),
             stringResource(R.string.my_shoes_basis_durability),
         ).forEach { line ->

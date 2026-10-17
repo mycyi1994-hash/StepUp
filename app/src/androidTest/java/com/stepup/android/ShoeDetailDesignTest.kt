@@ -138,8 +138,8 @@ class ShoeDetailDesignTest {
                 .assertExists()
             compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
                 .assertExists()
-            // 카툰 입체형 네 칸 — 실제 켤레의 값(레벨 1 / 15 · 번호는 이 켤레의 민팅 번호)
-            compose.onNodeWithTag("shoe-cell-level-value", useUnmergedTree = true).assertTextEquals("1 / 15")
+            // 카툰 입체형 네 칸 — 실제 켤레의 값(레벨 1 / 20 — 레어 최대 20, 0066 · 번호는 이 켤레의 민팅 번호)
+            compose.onNodeWithTag("shoe-cell-level-value", useUnmergedTree = true).assertTextEquals("1 / 20")
             val mint = runBlocking { dao.byId(seeded.single)?.mintNumber }
             assertNameHas(String.format(java.util.Locale.ROOT, "No. %04d", mint))
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
@@ -291,7 +291,8 @@ class ShoeDetailDesignTest {
         show("s06b-shoe-information-vault", "shoe-info-sheet", detail(ready(SPIKE), sheet = "Record"))
         compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.care_chain_vault, 1_000_003L))
         show("s06c-shoe-information-legacy", "shoe-info-sheet", detail(ready(WORN), sheet = "Record"))
-        compose.onNodeWithTag("shoe-info-faction").assertExists()
+        // 속성 줄은 없앴다(2026-10-17) — 예전 신발에도 없다
+        compose.onAllNodesWithTag("shoe-info-faction").assertCountEquals(0)
         // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
         show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
         compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true).assertTextContains("#0004", substring = true)

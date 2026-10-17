@@ -26,14 +26,10 @@ import com.stepup.android.ui.screens.items.formatPercent
  */
 object StatScale {
     /**
-     * 효율(SUP 적립 보너스) — 레전더리 최고 효율 1,300bps + 레벨마다 0.5%p(포인트를 효율 2 · 착화감 2 로 고르게 나눈 값,
-     * 0059 전의 자동 증가와 같다) × (최고 30레벨 − 1) = 2,750bps = 27.5%. 포인트를 효율에 더 몰면 이보다 높아질 수 있고,
-     * 그때는 막대가 가득 찬다. supabase/migrations/0022 · 0059 의 economy.efficiency_range · point_efficiency_bps · max_level.
+     * 효율(SUP 적립 보너스) — 피니시 새 신발의 최고 효율 5,500bps = 55%(서버 0066 economy.efficiency_range).
+     * 포인트를 효율에 나누면 이보다 높아질 수 있고, 그때는 막대가 가득 찬다.
      */
-    const val EFFICIENCY_MAX_PERCENT = 27.5
-
-    /** 효율 막대 끝이 되는 레벨 — 레전더리 최고 레벨(economy.max_level) */
-    const val EFFICIENCY_MAX_LEVEL = 30
+    const val EFFICIENCY_MAX_PERCENT = 55.0
 
     /** 착화감(에너지 절감) — economy.comfort_cap_bps() 2,000bps = 20%. 예전 신발은 최대 15%(Sneaker.energyEfficiency) */
     const val ENERGY_MAX_PERCENT = 20.0
