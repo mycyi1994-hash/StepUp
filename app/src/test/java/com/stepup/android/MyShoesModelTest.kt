@@ -47,13 +47,12 @@ class MyShoesModelTest {
     // ── 막대 ─────────────────────────────────────────────────────
 
     @Test
-    fun `막대 끝은 서버의 최대 · 상한 — 효율 27_5퍼센트 · 에너지 절감 20퍼센트, 내구도는 그 신발의 최대 내구도`() {
-        // 레전더리 최고 효율 1300 + 레벨마다 0.5%p(포인트를 효율 2 · 착화감 2 로 고르게) × 29 = 2750bps
-        assertEquals(27.5, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
-        assertEquals((1300 + 2 * 25 * (StatScale.EFFICIENCY_MAX_LEVEL - 1)) / 100.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
+    fun `막대 끝은 서버의 최대 · 상한 — 효율 55퍼센트 · 에너지 절감 20퍼센트, 내구도는 그 신발의 최대 내구도`() {
+        // 피니시 새 신발 최고 효율 5,500bps(서버 0066)
+        assertEquals(55.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
         assertEquals(20.0, StatScale.ENERGY_MAX_PERCENT, 0.0)
         val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 95.93, now = 1_180, max = 1_230))
-        assertEquals(listOf("27.5%", "20.0%", "1,230"), bars.map { it.end })
+        assertEquals(listOf("55.0%", "20.0%", "1,230"), bars.map { it.end })
         assertEquals("1,180 / 1,230", bars[2].value)
         assertEquals(1_180f / 1_230f, bars[2].fraction, 0.0001f)
         // 최대 내구도를 모르는 예전 서버 · 폰에만 있던 신발은 100 기준
@@ -65,15 +64,15 @@ class MyShoesModelTest {
         val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 92.6))
         assertEquals(listOf(BarStat.EFFICIENCY, BarStat.COMFORT, BarStat.DURABILITY), bars.map { it.stat })
         assertEquals(listOf("+4.8%", "7.5%", "92 / 100"), bars.map { it.value })
-        assertEquals(4.8f / 27.5f, bars[0].fraction, 0.0001f)
+        assertEquals(4.8f / 55f, bars[0].fraction, 0.0001f)
         assertEquals(7.5f / 20f, bars[1].fraction, 0.0001f)
         assertEquals(0.92f, bars[2].fraction, 0.0001f)
     }
 
     @Test
     fun `막대는 0 에서 1 사이로 자른다`() {
-        assertEquals(0f, barFraction(-3.0, 27.5), 0f)
-        assertEquals(1f, barFraction(40.0, 27.5), 0f)
+        assertEquals(0f, barFraction(-3.0, 55.0), 0f)
+        assertEquals(1f, barFraction(60.0, 55.0), 0f)
         assertEquals(0f, barFraction(5.0, 0.0), 0f)
         assertEquals(0f, barFraction(Double.NaN, 20.0), 0f)
         // 서버 상한을 넘는 값(있을 수 없지만)도 막대를 넘치지 않는다

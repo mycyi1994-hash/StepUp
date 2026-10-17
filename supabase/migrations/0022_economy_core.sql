@@ -319,8 +319,9 @@ alter table public.market_sneakers add constraint market_sneakers_chain_state_ch
 );
 
 alter table public.market_sneakers drop constraint if exists market_sneakers_stats_check;
+-- 효율 기본값의 위는 10,000(0066 — 피니시 새 신발 45 ~ 55%). 배포마다 다시 걸리므로 여기서 넓힌다.
 alter table public.market_sneakers add constraint market_sneakers_stats_check check (
-  efficiency_bps between 0 and 5000
+  efficiency_bps between 0 and 10000
   and comfort_bps between 0 and 2000
   and durability_pts between 0 and 100
   and km_run >= 0 and lock_km >= 0

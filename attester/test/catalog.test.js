@@ -15,6 +15,7 @@ import { runJobs } from '../src/jobs.js'
 const V3 = V3_DEPLOYMENTS[91342].address
 const WALLET = '0x' + '99'.repeat(20)
 const ROOT = new URL('../../', import.meta.url)
+const CHAIN_RARITY = { REDLINE: 'LEGENDARY', FINISH: 'LEGENDARY' }
 const read = (path) => fs.readFileSync(new URL(path, ROOT), 'utf8')
 
 test('새 도감: catalog.json · 서버 0045 · 워커 표가 같다(번호 · 등급), 그림 파일이 웹에 있다', () => {
@@ -22,7 +23,8 @@ test('새 도감: catalog.json · 서버 0045 · 워커 표가 같다(번호 · 
   assert.equal(catalog.length, 70)
   assert.deepEqual(
     Object.entries(SHOE_MODELS).map(([id, m]) => [Number(id), m.rarity, m.en]),
-    catalog.map((m) => [m.id, m.rarity, m.en]),
+    // 레드라인 · 피니시(서버 0066 의 등급)는 체인에 레전더리로 적는다 — v3 컨트랙트는 4등급만 안다
+    catalog.map((m) => [m.id, CHAIN_RARITY[m.rarity] ?? m.rarity, m.en]),
   )
   const sql = read('supabase/migrations/0045_shoe_catalog.sql')
   for (const m of catalog) {

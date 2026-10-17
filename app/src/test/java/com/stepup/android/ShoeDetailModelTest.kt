@@ -282,7 +282,7 @@ class ShoeDetailModelTest {
         assertEquals("5 / 10", rows[0].value)
         assertEquals(0.5f, rows[0].fraction, 0.0001f)
         assertEquals("+8.0%", rows[1].value)
-        assertEquals((8.0 / 27.5).toFloat(), rows[1].fraction, 0.0001f)
+        assertEquals((8.0 / 55.0).toFloat(), rows[1].fraction, 0.0001f)
         assertEquals(formatPercent(energySavingPercent(shoe)), rows[2].value)
         assertEquals((energySavingPercent(shoe) / 20.0).toFloat(), rows[2].fraction, 0.0001f)
         // 서버 내구도는 내려서 — 92.6 은 92
@@ -298,7 +298,7 @@ class ShoeDetailModelTest {
         assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].value)
         assertEquals(1f, detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].fraction, 0f)
         // 상한을 넘는 값 · 음수 내구도는 막대 끝 · 0 에서 멈춘다
-        assertEquals(1f, detailStatRows(server(efficiencyBps = 4_000))[1].fraction, 0f)
+        assertEquals(1f, detailStatRows(server(efficiencyBps = 6_000))[1].fraction, 0f)
         assertEquals(0f, detailStatRows(server(durability = -3.0))[3].fraction, 0f)
     }
 

@@ -4202,7 +4202,7 @@ begin
                      and r.run_today = 4 and abs(r.run_progress_m - 500) < 0.001,
     format('상급: 선물 %s · 러닝 %s · 오늘 러닝으로 %s · 모은 거리 %sm', r.gift_left, r.run_left, r.run_today, r.run_progress_m));
   v_first := public.premium_draw();
-  perform pg_temp.ok((select origin = 'BONUS_DRAW' and genesis_no is not null and rarity in ('EPIC', 'LEGENDARY')
+  perform pg_temp.ok((select origin = 'BONUS_DRAW' and genesis_no is not null and rarity in ('EPIC', 'LEGENDARY', 'REDLINE', 'FINISH')
                         from public.my_sneakers() where id = v_first),
     '첫 상급 뽑기는 Genesis(에픽 이상)이고 결과 신발 번호를 돌려준다');
   -- 0044: 지갑 발행 예약(BONUS_MINT) 대신 금고 발행(v3) — 신발은 앱에 남아 바로 신는다
@@ -6978,7 +6978,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('59000000-0000-0000-0000-000000000002', 'fresh59@test', '{"full_name":"새신발"}');
 
 -- 새 신발 · 포인트 나누기
--- 오래 달려 보는 신발이라 레전더리(약 90분)로 뽑는다(0066)
+-- 오래 달려 보는 신발이라 레전더리 이상으로 뽑는다(0066) — 레드라인 · 피니시도 나올 수 있어 받은 포인트는 등급 표에서 읽는다
 insert into fix (k, v) select 'p59', economy.draw_create('59000000-0000-0000-0000-000000000002', 'PAID_DRAW', 'LEGENDARY')::text;
 update public.market_sneakers set level = 3 where id = pg_temp.fx('p59')::bigint;
 with x as (
@@ -6992,6 +6992,8 @@ with x as (
   values ('59000000-0000-0000-0000-000000000002', 'WATER', 'RARE', 0, 1, 100, 'IMPORT')
   returning id)
 insert into fix (k, v) select 'i59', id::text from x;
+insert into fix (k, v) select 'p59pts', economy.points_total_of(s.origin, s.rarity, 3)::text
+  from public.market_sneakers s where s.id = pg_temp.fx('p59')::bigint;
 insert into fix (k, v) select 'p59unit', economy.repair_cost_per_unit(s.rarity, 3)::text
   from public.market_sneakers s where s.id = pg_temp.fx('p59')::bigint;
 set role authenticated;
@@ -7001,34 +7003,35 @@ declare
   v_id bigint := pg_temp.fx('p59')::bigint;
   r record;
   r2 record;
+  v_pts int := pg_temp.fx('p59pts')::int;
 begin
   select * into r from public.my_sneakers() where id = v_id;
   perform pg_temp.ok(r.durability = 100 and r.durability_now = r.durability_max and r.durability_max = r.durability_base
-                     and r.points_total = 8 and r.points_free = 8 and not r.points_respec
+                     and v_pts in (8, 12, 16) and r.points_total = v_pts and r.points_free = v_pts and not r.points_respec
                      and r.efficiency_bps = r.efficiency_base_bps and r.comfort_bps = r.comfort_base_bps,
-    '새 신발 — 내구도 가득, Lv3 은 포인트 8 이 남아 있고 효율 · 착화감은 레벨 1 값 그대로');
+    '새 신발 — 내구도 가득, Lv3 은 포인트(레벨 1씩 × 등급 배수)가 남아 있고 효율 · 착화감은 레벨 1 값 그대로');
   perform pg_temp.ok(r.repair_cost_per_unit = pg_temp.fx('p59unit')::numeric
                      and r.repair_cost_per_point = round(r.repair_cost_per_unit * r.durability_max / 100, 4),
     '수리 값 — 10m 값과, 예전 앱이 읽는 1% 값');
-  perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1, '59000000-0000-0000-00a0-000000000002') = 4,
-    '포인트 4 를 나눈다(효율 2 · 착화감 1 · 내구도 1) — 4 남음');
+  perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1, '59000000-0000-0000-00a0-000000000002') = v_pts - 4,
+    '포인트 4 를 나눈다(효율 2 · 착화감 1 · 내구도 1)');
   select * into r2 from public.my_sneakers() where id = v_id;
   perform pg_temp.ok(r2.efficiency_bps = r.efficiency_base_bps + 10 and r2.comfort_bps = r.comfort_base_bps + 2
                      and r2.durability_max = r.durability_max + greatest((r.durability_base + 50) / 100, 1)
                      and r2.durability_now = r.durability_now + greatest((r.durability_base + 50) / 100, 1)
-                     and r2.points_free = 4 and r2.durability = 100,
+                     and r2.points_free = v_pts - 4 and r2.durability = 100,
     '효율 +0.1%p · 착화감 +0.02%p · 최대 · 남은 내구도 + 기본의 1% (0066)');
-  perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1, '59000000-0000-0000-00a0-000000000002') = 4,
+  perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1, '59000000-0000-0000-00a0-000000000002') = v_pts - 4,
     '같은 요청 번호로 다시 보내면 처음 결과');
-  perform pg_temp.ok((select points_free from public.my_sneakers() where id = v_id) = 4, '— 한 번만 나눴다');
-  perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1) = 4, '같은 값을 다시 보내도 된다');
-  perform pg_temp.ok((select durability_max = r2.durability_max and points_free = 4
+  perform pg_temp.ok((select points_free from public.my_sneakers() where id = v_id) = v_pts - 4, '— 한 번만 나눴다');
+  perform pg_temp.ok(public.sneaker_points_set(v_id, 2, 1, 1) = v_pts - 4, '같은 값을 다시 보내도 된다');
+  perform pg_temp.ok((select durability_max = r2.durability_max and points_free = v_pts - 4
                         from public.my_sneakers() where id = v_id), '— 바뀌는 것이 없다');
   insert into fix (k, v) values ('p59max', r2.durability_max::text);
 end $$;
 call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 1, 1, 1) $q$, pg_temp.fx('p59')),
   '나눈 포인트는 줄일 수 없다');
-call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 4, 2, 3) $q$, pg_temp.fx('p59')),
+call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 20, 1, 1) $q$, pg_temp.fx('p59')),
   '받은 포인트보다 많이 나눌 수 없다');
 call pg_temp.must_fail(format($q$ select public.sneaker_points_set(%s, 2, 1, -1) $q$, pg_temp.fx('p59')),
   '음수 포인트는 받지 않는다');
@@ -7504,6 +7507,15 @@ do $$ begin
   perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'shoe_economy_v3_reset'),
     '초기화는 한 번 했다고 적혀 있다 — setup.sql 을 다시 붙여넣어도 다시 비우지 않는다');
 end $$;
+do $$ begin
+  begin
+    insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin, efficiency_bps, comfort_bps)
+    values ('59000000-0000-0000-0000-000000000002', 'NONE', 'FINISH', 0, 1, 100, 'PAID_DRAW', 5500, 1800);
+    raise exception 'stats-fit';
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'stats-fit', format('피니시 최고 효율 55%% · 착화감 18%% 신발도 표에 들어간다 (%s)', sqlerrm));
+  end;
+end $$;
 insert into auth.users (id, email, raw_user_meta_data) values
   ('66000000-0000-0000-0000-000000000001', 'reset66@test', '{"full_name":"초기화"}'),
   ('66000000-0000-0000-0000-000000000002', 'wallet66@test', '{"full_name":"지갑초기화"}');
@@ -7631,7 +7643,8 @@ reset role;
 select set_config('request.jwt.claims', '', false);
 insert into auth.users (id, email, raw_user_meta_data) values
   ('65000000-0000-0000-0000-000000000001', 'speed65@test', '{"full_name":"과속"}');
-insert into fix (k, v) select 'o65', economy.draw_create('65000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'LEGENDARY')::text;
+-- 피니시(405 ~ 495) — 절반을 깎고 20분(100) 달려도 0 아래로 가지 않게(레전더리 180 ~ 220 은 절반이 100 아래일 수 있다)
+insert into fix (k, v) select 'o65', economy.draw_create('65000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
 set role authenticated;
 call pg_temp.login('65000000-0000-0000-0000-000000000001');
 call pg_temp.must_fail($q$insert into public.run_penalties (user_id, run_started_at, stopped_at, banned_until)

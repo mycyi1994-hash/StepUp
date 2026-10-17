@@ -91,6 +91,8 @@ v3 컨트랙트는 등급 넷 · 예전 스탯 범위만 안다. 그래서 `shoe
 - `Rarity` 여섯(`maxLevel` 20 · 20 · 26 · 27 · 28 · 30), `ShoeTier` = 등급 그대로(시리즈로 가르지 않는다).
 - `StatPoints` — `EFFICIENCY_BPS 5` · `COMFORT_BPS 2` · `durabilityPerPoint(base)` · `gainAt(rarity, level)` · `totalAt(rarity, level)`.
   강화 미리보기(`ShoeForge.previewNext`) · 강화 결과(`forgePointsGain`)가 등급별 포인트를 보인다.
+- 효율 막대 끝은 55%(피니시 새 신발의 가장 높은 값) — 포인트로 넘으면 막대가 가득 찬다. 서버 표의 효율 검사는 0 ~ 10,000bps 로 넓혔다(0022, 예전 50% 위가 막혀 피니시 뽑기가 실패했다).
+  보상 계산에는 효율 상한이 없다(러닝 기록의 `boost_bps` 칸만 예전처럼 50% 로 적는다).
 - 카드 색: 레드라인 `#C74143` · 피니시 `#128071`. 뽑기 연출은 레전더리 이상이 같은 큰 연출.
 - 글: 포인트 안내(효율 +0.05%p · 착화감 +0.02%p · 내구도 1개 = 최대 +1%) · 신발 소개 · 시작 안내 — 4개 언어.
 
@@ -100,6 +102,7 @@ v3 컨트랙트는 등급 넷 · 예전 스탯 범위만 안다. 그래서 `shoe
   범위 · 최대 레벨 · 포인트 합 · 포인트 값 · 착화감 상한 400/401, 수리 1 : 4, 다 닳은 뒤 걸음, 초기화(되돌리는 거래 안에서 — 백업 ·
   지움 · 첫 신발 · 지급, 체인 신발이 있으면 멈춤), 체인 멈춤(기록 없음 · 꺼내기 · 발행 거절), setup.sql 재적용.
   다른 체인 검사는 파일 처음에 신발 체인을 켜고 돈다.
+  레전더리 이상으로 뽑는 검사 신발은 레드라인 · 피니시가 나와도 맞게 본다(받은 포인트는 등급 표에서 읽는다). 30번 연달아 돌려 확인했다.
 - 앱: `ShoePointsModelTest` · `ShoeCareTest` · `MyShoesModelTest` · `ShoeCatalogTest` · `ShoeDetailModelTest` · `ShoeGradeArtTest`.
 
 ## 남은 것
