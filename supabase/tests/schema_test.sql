@@ -3176,8 +3176,15 @@ begin
 end $$;
 
 -- 하루 금액 상한 — 가입 7일 안은 절반
+-- 신발이 닳은 정도와 상관없이 상한에 걸리게: 신발을 채우고, 상한은 오늘 앞서 받은 것 + 2 SUP 의 두 배로 둔다(신규는 절반).
+-- 일반 신발(최대 45 ~ 55)도 9분은 달리니 3,000걸음 · 30분 러닝에서 적어도 900걸음(9 SUP)을 센다(0066) — 이번 러닝은 2 SUP 에서 멈춘다
 reset role;
-update public.economy_settings set value = '40' where key = 'daily_earn_cap';
+update public.market_sneakers set dur_now = dur_max where owner_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
+update public.economy_settings
+   set value = to_jsonb(2 * (2 + (select coalesce(sum(points_awarded), 0) from public.walk_sessions
+                                    where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1'
+                                      and economy.game_day(started_at) = economy.game_day(now() - interval '9 hours'))))
+ where key = 'daily_earn_cap';
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 do $$
@@ -3197,8 +3204,8 @@ begin
      and economy.game_day(started_at) = economy.game_day(v_at);
   select points_awarded into v_this from public.walk_sessions
    where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and started_at = v_at;
-  perform pg_temp.ok(v_this = greatest(20 - v_before, 0),
-    format('신규 계정은 하루 적립 상한이 절반(20)이다 (앞서 %s, 이번 %s)', v_before, v_this));
+  perform pg_temp.ok(v_this = 2 and v_this = economy.setting_num('daily_earn_cap') / 2 - v_before,
+    format('신규 계정은 하루 적립 상한이 절반이다 (상한 %s, 앞서 %s, 이번 %s)', economy.setting_num('daily_earn_cap'), v_before, v_this));
 end $$;
 update public.economy_settings set value = '600' where key = 'daily_earn_cap';
 
