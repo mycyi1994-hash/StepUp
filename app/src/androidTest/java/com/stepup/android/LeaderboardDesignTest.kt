@@ -18,8 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -154,6 +158,19 @@ class LeaderboardDesignTest {
         open(FixtureLeaderboards(points = { LeaderLoad.Unavailable }), LeaderBoardKind.POINTS, "lb-unavailable")
         check(!exists("lb-points-footer") && !exists("lb-points-hero")) { "준비 중인 포인트 판에 숫자가 보이면 안 된다" }
         shot("L10-points-unavailable")
+        // ⓘ 순위 기준도 준비 중이라고만 한다 — 정하지 않은 포인트 기준을 설명하지 않는다(2026-10-17 결정)
+        tap("lb-info")
+        awaitTag("lb-sheet-rules")
+        compose.onNode(
+            hasText(text(com.stepup.android.R.string.lb_points_unavailable_title)) and hasAnyAncestor(hasTestTag("lb-rule-0")),
+            useUnmergedTree = true,
+        ).assertExists()
+        check(compose.onAllNodesWithText(text(com.stepup.android.R.string.lb_rules_points_title), useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
+            "준비 중인 포인트 판의 순위 기준에 포인트 기준이 보이면 안 된다"
+        }
+        shot("L10-points-unavailable-rules")
+        tap("lb-sheet-close")
+        awaitGone("lb-sheet-rules")
         // L11 이번 주 아직 달리지 않음 — 내 순위 없이 상위 러너만
         open(FixtureLeaderboards(runners = LeaderLoad.Ready(LeaderboardSamples.runners(ranked = false))), LeaderBoardKind.PERSONAL, "lb-personal-unranked")
         check(!exists("lb-personal-hero") && !exists("lb-runner-list-0")) { "순위가 없으면 큰 순위 · 내 주변이 없다" }

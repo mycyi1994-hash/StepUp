@@ -205,7 +205,7 @@ fun LeaderboardScreen(
             onDismiss = { sheet = null },
         ) {
             when (open) {
-                LbSheet.RULES -> RulesSheet(board)
+                LbSheet.RULES -> RulesSheet(board, pointsReady = points is LeaderLoad.Ready)
                 LbSheet.CREW_NEARBY -> (crew as? LeaderLoad.Ready)?.value?.let { CrewNearbySheet(it) }
                 LbSheet.MY_RUNS -> (runners as? LeaderLoad.Ready)?.value?.let { MyRunsSheet(it) }
                 LbSheet.POINT_NEARBY -> (points as? LeaderLoad.Ready)?.value?.let { PointNearbySheet(it) }
@@ -1004,7 +1004,7 @@ private fun PointNearbySheet(board: PointsBoard) {
 // ── 순위 기준 시트 ────────────────────────────────────────────────
 
 @Composable
-private fun RulesSheet(board: LeaderBoardKind) {
+private fun RulesSheet(board: LeaderBoardKind, pointsReady: Boolean) {
     val rules = when (board) {
         LeaderBoardKind.CREW -> listOf(
             R.string.lb_rules_crew_title to R.string.lb_rules_crew_body,
@@ -1015,7 +1015,12 @@ private fun RulesSheet(board: LeaderBoardKind) {
             R.string.lb_rules_week_title to R.string.lb_rules_week_body,
             R.string.lb_rules_tie_title to R.string.lb_rules_tie_body,
         )
-        LeaderBoardKind.POINTS -> listOf(R.string.lb_rules_points_title to R.string.lb_rules_points_body)
+        // 앱의 주간 포인트는 준비 중이다(2026-10-17 사용자 결정) — 순위가 없으면 정하지 않은 P 기준을 설명하지 않는다
+        LeaderBoardKind.POINTS -> if (pointsReady) {
+            listOf(R.string.lb_rules_points_title to R.string.lb_rules_points_body)
+        } else {
+            listOf(R.string.lb_points_unavailable_title to R.string.lb_points_unavailable_body)
+        }
     }
     rules.forEachIndexed { i, (title, body) ->
         Column(
