@@ -8,6 +8,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,6 +51,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -61,6 +66,8 @@ import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.exp
 import kotlin.math.floor
+import kotlin.math.log2
+import kotlin.math.pow
 import kotlin.math.ln
 import kotlin.math.roundToInt
 import kotlin.math.tan
@@ -133,6 +140,11 @@ fun LiveRouteMap(
      * 경로 선은 [points](거리로 센 점)까지만 긋는다 — 제자리 떨림에 선 끝 · 화살표가 돌지 않게. 화살표 방향은 경로의 마지막 움직임이다.
      */
     head: GeoPoint? = null,
+    /**
+     * 달리는 중 두 손가락으로 벌리고 오므려 확대 · 축소한 배율(1 = 기본) — 화면이 들고 있어야 경로가 처음 생길 때처럼
+     * 지도가 바뀌어도 고른 배율이 남는다. 한 손가락 끌기는 지도가 받지 않는다(화면 스크롤 · 지금 자리 따라가기 그대로).
+     */
+    pinchZoom: MutableFloatState? = null,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
@@ -145,6 +157,9 @@ fun LiveRouteMap(
         controlLabels = controlLabels,
         zooms = if (follow) MapTiles.FOLLOW_ZOOMS else MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
         anchorY = if (follow) followAt else 0.5f,
+        // 지금 자리를 따라가는 지도는 30% 더 가까이(2026-10-17 사용자 "초반에 내 자리 지도가 너무 뒤로 가 있다")
+        magnify = if (follow) MapTiles.FOLLOW_MAGNIFY else 1f,
+        pinchZoom = pinchZoom,
         tileFilter = tileFilter,
         tileShade = tileShade,
         tileRoads = tileRoads,
@@ -443,6 +458,10 @@ fun StepUpMap(
     tileShade: Float = LocalMapTone.current.shade,
     /** 길만 밝히는 두 번째 겹 — [tileFilter] 와 짝(null 필터면 쓰지 않는다) */
     tileRoads: ColorFilter? = LocalMapTone.current.roads,
+    /** 기본보다 이만큼 크게(1.3 = 30% 가까이) — 타일은 정수 줌만 있어 남는 배율은 타일을 크게 그려 맞춘다 */
+    magnify: Float = 1f,
+    /** 두 손가락 확대 · 축소 배율(1 = 기본, [PINCH_ZOOM_RANGE]) — 주면 두 손가락만 받고 한 손가락 끌기는 놓아준다 */
+    pinchZoom: MutableFloatState? = null,
     overlay: DrawScope.(TilePlan) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -465,9 +484,13 @@ fun StepUpMap(
         val widthPx = if (constraints.hasBoundedWidth) constraints.maxWidth else 0
         val heightPx = if (constraints.hasBoundedHeight) constraints.maxHeight else 0
 
-        val plan = remember(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms, anchorY) {
+        // 기본 배율 × 두 손가락 배율을 줌 단계(정수)와 남는 배율(1 ~ 2)로 나눈다 — 손가락을 따라 매끄럽게 커진다
+        val factor = magnify * (pinchZoom?.floatValue ?: 1f)
+        val factorSteps = floor(log2(factor.toDouble())).toInt()
+        val factorRest = (factor / 2.0.pow(factorSteps)).toFloat()
+        val plan = remember(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms, anchorY, factorSteps, factorRest) {
             if (focus.isEmpty() || widthPx <= 0 || heightPx <= 0) null
-            else TilePlan.of(focus, widthPx, heightPx, density, zoomDelta, panX, panY, zooms, anchorY)
+            else TilePlan.of(focus, widthPx, heightPx, density, zoomDelta + factorSteps, panX, panY, zooms, anchorY, factorRest)
         }
         val currentPlan by rememberUpdatedState(plan)
         val currentOnTap by rememberUpdatedState(onTap)
@@ -555,6 +578,29 @@ fun StepUpMap(
                                     panX /= 2
                                     panY /= 2
                                 }
+                            }
+                        }
+                    },
+                )
+                .then(
+                    if (pinchZoom == null) {
+                        Modifier
+                    } else {
+                        // 두 손가락일 때만 받는다 — 한 손가락 끌기는 놓아주어 러닝 화면의 스크롤이 그대로 된다
+                        Modifier.pointerInput(pinchZoom) {
+                            awaitEachGesture {
+                                awaitFirstDown(requireUnconsumed = false)
+                                do {
+                                    val event = awaitPointerEvent()
+                                    if (event.changes.count { it.pressed } >= 2) {
+                                        val change = event.calculateZoom()
+                                        if (change != 1f) {
+                                            pinchZoom.floatValue = (pinchZoom.floatValue * change)
+                                                .coerceIn(PINCH_ZOOM_RANGE.start, PINCH_ZOOM_RANGE.endInclusive)
+                                        }
+                                        event.changes.forEach { if (it.positionChanged()) it.consume() }
+                                    }
+                                } while (event.changes.any { it.pressed })
                             }
                         }
                     },
@@ -657,6 +703,9 @@ data class MapControlLabels(val zoomIn: String, val zoomOut: String, val recente
 
 /** 사용자가 기본 줌에서 더 당길 수 있는 단계 */
 private const val MAX_USER_ZOOM_IN = 4
+
+/** 두 손가락 확대 · 축소 배율의 범위 — 기본(1)에서 4배 멀리 ~ 3배 가까이 */
+val PINCH_ZOOM_RANGE = 0.25f..3f
 
 /** 더 밀어낼 수 있는 단계 (음수) */
 private const val MAX_USER_ZOOM_OUT = -3
@@ -776,15 +825,20 @@ data class TilePlan(
             panY: Double = 0.0,
             zooms: IntRange = MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
             anchorY: Float = 0.5f,
+            magnify: Float = 1f,
         ): TilePlan {
-            val scale = fitScale(widthPx, heightPx, tileScale(density))
+            val base = tileScale(density) * magnify.coerceAtLeast(0.01f)
+            val fitScaled = fitScale(widthPx, heightPx, base)
+            val fitH = heightPx / fitScaled * 2 * minOf(anchorY, 1f - anchorY).coerceIn(0.05f, 0.5f)
+            val fitted = MapTiles.fitZoom(points, (widthPx / fitScaled).toInt(), fitH.toInt()).coerceIn(zooms)
+            val wanted = fitted + zoomDelta
+            val zoom = wanted.coerceIn(MapTiles.MIN_ZOOM, MapTiles.MAX_ZOOM)
+            // 가장 가까운 줌(18)보다 더 당겼으면 그만큼 타일을 크게 그린다 — 줌이 막혀 배율이 갑자기 줄지 않게
+            val beyond = (wanted - MapTiles.MAX_ZOOM).coerceAtLeast(0)
+            val scale = fitScale(widthPx, heightPx, base * (1 shl beyond))
             // 뷰포트를 타일 픽셀 단위로 환산해서 줌과 원점을 잡는다
             val viewW = (widthPx / scale).toDouble()
             val viewH = (heightPx / scale).toDouble()
-
-            val fitH = viewH * 2 * minOf(anchorY, 1f - anchorY).coerceIn(0.05f, 0.5f)
-            val fitted = MapTiles.fitZoom(points, viewW.toInt(), fitH.toInt()).coerceIn(zooms)
-            val zoom = (fitted + zoomDelta).coerceIn(MapTiles.MIN_ZOOM, MapTiles.MAX_ZOOM)
             val xs = points.map { MapTiles.worldX(it.lng, zoom) }
             val ys = points.map { MapTiles.worldY(it.lat, zoom) }
             // 경로의 한가운데가 화면 한가운데(세로는 [anchorY] 높이) 오도록 원점을 잡고, 사용자가

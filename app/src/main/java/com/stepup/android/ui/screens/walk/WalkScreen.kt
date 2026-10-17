@@ -299,6 +299,10 @@ fun RunScreen(
         // 30초 넘게 서 있으면(RunStill) 소리 · 진동으로 한 번 알린다 — 화면을 보지 않고 서 있어도 알 수 있게(2026-10-17)
         if (session.still && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
     }
+    LaunchedEffect(session.overspeed?.since) {
+        // 과속이 시작됐다(RunOverspeed) — 소리 · 진동으로 한 번. 30초 이어지면 러닝이 멈추고 패널티가 있다(2026-10-17)
+        if (session.overspeed != null && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+    }
     var dietDoneFor by rememberSaveable { mutableLongStateOf(0L) }
     LaunchedEffect(dietDone, session.startedAt) {
         // 루틴을 다 마치면 한 번 멈추고 완료 화면(D10)을 보인다 — 저장은 사용자가 누른다
@@ -444,8 +448,15 @@ fun RunScreen(
     // 모임 러닝은 출발할 때 적은 모임으로 가른다 — 대기실을 떠나 따로 켠 러닝은 뒤에서 방이 출발했어도(party.isActive) 자유 러닝이다
     val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !recordingCourse && !focusRun
     // 시작 — 자유러닝은 신발 점검부터(출발을 확인해야 3-2-1), 다른 러닝은 권한 안내부터
+    // 과속으로 멈춘 뒤 10분은 러닝 금지(2026-10-17 사용자 결정) — 점검창 · 3-2-1 을 열기 전에 알린다. 서비스도 시작을 거절한다
+    val runBanUntil by com.stepup.android.core.ServiceLocator.userPrefs.runBanUntil.collectAsStateWithLifecycle(0L)
     val requestStart = {
-        if (!startPending && !countingDown && !locationOffGate && !shoeCheck) {
+        val banLeft = com.stepup.android.domain.RunOverspeed.banLeftMinutes(runBanUntil, System.currentTimeMillis())
+        if (banLeft > 0) {
+            android.widget.Toast.makeText(
+                context, context.resources.getQuantityString(R.plurals.run_overspeed_ban, banLeft, banLeft), android.widget.Toast.LENGTH_LONG,
+            ).show()
+        } else if (!startPending && !countingDown && !locationOffGate && !shoeCheck) {
             if (freeRunNow) shoeCheck = true else startPending = true
         }
     }
@@ -565,7 +576,10 @@ fun RunScreen(
         precise = session.precise, void = freeVoid, still = session.still,
         // 방금 읽은 속도가 사람 속도를 넘어 버려졌다 — 사람 속도의 점이 다시 들어올 때까지(현재 속도와 같은 신호)
         speedFlagged = !session.isPaused && session.lastFlaggedAt > (session.track.lastOrNull()?.at ?: 0L),
+        overspeed = session.overspeed != null,
     )
+    // 과속이 이어지면 러닝이 멈추기까지 남은 초(RunOverspeed) — 1초마다 다시 센다(freeNow 는 러닝 시간과 함께 바뀐다)
+    val overspeedLeft = session.overspeed?.let { com.stepup.android.domain.RunOverspeed.secondsLeft(it, freeNow) } ?: 0
     val freeLiveNumbers = FreeRunNumbers(
         time = formatDuration(session.elapsedSec), paceSec = freePaceSec(freeSpeed), distance = freeDist,
         speedKmh = freeSpeed, durability = freeDurability,
@@ -601,17 +615,20 @@ fun RunScreen(
         com.stepup.android.domain.liveHead(session.track, session.here, session.hereAt)
     }
     val breaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
+    // 달리는 중 지도의 두 손가락 확대 · 축소(1 = 기본, 기본은 30% 가까이 — MapTiles.FOLLOW_MAGNIFY). 러닝마다 처음부터.
+    // 화면이 들고 있어야 첫 경로 점이 생겨 지도가 "지금 자리"에서 "경로"로 바뀌어도 고른 배율이 남는다
+    val liveMapZoom = rememberSaveable(session.startedAt) { androidx.compose.runtime.mutableFloatStateOf(1f) }
     val liveMap: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
         val here = session.here
         when {
             timeOnly && geoTrack.isEmpty() -> NoLocationMap()
             geoTrack.isNotEmpty() -> LiveRouteMap(
                 points = geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true,
-                breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true, head = liveHead,
+                breaks = breaks, course = coursePoints, routeColor = tone.cyan, live = true, pinchZoom = liveMapZoom, head = liveHead,
             )
             here != null -> LiveRouteMap(
                 points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others,
-                follow = true, course = coursePoints, routeColor = tone.cyan, live = true,
+                follow = true, course = coursePoints, routeColor = tone.cyan, live = true, pinchZoom = liveMapZoom,
             )
             coursePoints.isNotEmpty() -> LiveRouteMap(points = emptyList(), course = coursePoints, modifier = Modifier.fillMaxSize())
             else -> MapWaiting(Modifier.fillMaxSize())
@@ -624,12 +641,12 @@ fun RunScreen(
             timeOnly && geoTrack.isEmpty() -> NoLocationMap()
             geoTrack.isNotEmpty() -> LiveRouteMap(
                 points = geoTrack, modifier = Modifier.fillMaxSize(), follow = true, breaks = breaks, routeColor = FreeRunRoute,
-                live = true, routeOutline = FreeRunRouteOutline, markers = com.stepup.android.ui.components.RouteMarkers.Pin,
+                live = true, pinchZoom = liveMapZoom, routeOutline = FreeRunRouteOutline, markers = com.stepup.android.ui.components.RouteMarkers.Pin,
                 head = liveHead,
             )
             here != null -> LiveRouteMap(
                 points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), follow = true,
-                routeColor = FreeRunRoute, live = true,
+                routeColor = FreeRunRoute, live = true, pinchZoom = liveMapZoom,
             )
             else -> MapWaiting(Modifier.fillMaxSize())
         }
@@ -641,12 +658,12 @@ fun RunScreen(
             timeOnly && geoTrack.isEmpty() -> NoLocationMap()
             geoTrack.isNotEmpty() -> LiveRouteMap(
                 points = geoTrack, modifier = Modifier.fillMaxSize(), others = others, follow = true, breaks = breaks,
-                routeColor = FreeRunRoute, live = true, routeOutline = FreeRunRouteOutline,
+                routeColor = FreeRunRoute, live = true, pinchZoom = liveMapZoom, routeOutline = FreeRunRouteOutline,
                 markers = com.stepup.android.ui.components.RouteMarkers.Pin, crewPins = true, head = liveHead,
             )
             here != null -> LiveRouteMap(
                 points = hereOnly, modifier = Modifier.fillMaxSize().testTag("run-rough-location"), others = others, follow = true,
-                routeColor = FreeRunRoute, live = true, crewPins = true,
+                routeColor = FreeRunRoute, live = true, pinchZoom = liveMapZoom, crewPins = true,
             )
             else -> MapWaiting(Modifier.fillMaxSize())
         }
@@ -668,7 +685,7 @@ fun RunScreen(
     // 위치 · 측정 문제는 자유 러닝과 같은 노란 띠로 지도 위에(일시정지는 크루 띠가 맡는다)
     val crewProblemBand = freeBandNow.takeIf { it != FreeBand.None && it != FreeBand.Paused }?.let { band ->
         liveTop(
-            band, paused = false, noLocation = !locationAllowed, onBandTap = { showDetails = true },
+            band, paused = false, noLocation = !locationAllowed, onBandTap = { showDetails = true }, overspeedLeft = overspeedLeft,
             onBandAction = {
                 when (band) {
                     // 오래 서 있음 — 띠의 알약이 일시정지다
@@ -775,6 +792,7 @@ fun RunScreen(
                     deleting = deleting,
                     onRetryDelete = retryFreeDelete,
                     onDeleteBack = { deleteFailed = null },
+                    penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null,
                     modifier = Modifier.reveal(session.lastStartedAt),
                 )
             }
@@ -1036,6 +1054,7 @@ fun RunScreen(
                     numbers = if (discardFailedNow) freeAverageNumbers else freeLiveNumbers,
                     map = freeLiveMap,
                     band = freeBandNow,
+                    overspeedLeft = overspeedLeft,
                     paused = session.isPaused,
                     noLocation = !locationAllowed,
                     onPrimary = {
@@ -1101,7 +1120,13 @@ fun RunScreen(
                     notices = {
                         val voidNow = session.isActive && session.liveVerdict == RunVerdict.VOID
                         val flaggedNow = session.isActive && session.flaggedSegments > 0
-                        if (voidNow) {
+                        if (session.isActive && !session.isPaused && session.overspeed != null) {
+                            // 과속이 이어진다 — 30초를 채우면 러닝이 멈추고 패널티(RunOverspeed). 무효 · 속도 오류 안내보다 앞선다
+                            RunNotice(stringResource(R.string.run_overspeed_band, overspeedLeft),
+                                body = stringResource(R.string.run_overspeed_body), kind = RunNoticeKind.Error,
+                                action = stringResource(R.string.run_details_more), onAction = { showDetails = true },
+                                tag = "run-overspeed")
+                        } else if (voidNow) {
                             RunNotice(stringResource(R.string.run_live_void_title), body = stringResource(R.string.run_void_banner),
                                 kind = RunNoticeKind.Error, action = stringResource(R.string.run_details_more), onAction = { showDetails = true },
                                 tag = "run-void-banner")
@@ -2369,6 +2394,24 @@ private fun finishReward(session: WalkSessionState, points: Double?, upload: Str
     val nothingToUpload = !voided && session.lastSessionSteps <= 0
     val noReward = !voided && upload == UploadState.SIGNED.name && points != null && points <= 0.0
     val reward = stringResource(R.string.result_reward)
+    // 과속이 30초 이어져 앱이 멈춘 러닝 — 패널티를 맨 앞에 알린다(보상 규칙은 그대로다)
+    val penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null
+    return finishRewardLines(session, points, upload, sync, voided, nothingToUpload, noReward, reward).let { r ->
+        if (penalty != null) r.copy(notes = listOf(penalty) + r.notes) else r
+    }
+}
+
+@Composable
+private fun finishRewardLines(
+    session: WalkSessionState,
+    points: Double?,
+    upload: String?,
+    sync: com.stepup.android.data.repo.EconomySyncState,
+    voided: Boolean,
+    nothingToUpload: Boolean,
+    noReward: Boolean,
+    reward: String,
+): ResultReward {
     return when {
         voided -> ResultReward(reward, "0", Settle.VOID,
             listOf(stringResource(if (session.lastSimulated) R.string.finish_simulated else R.string.run_void_body)))

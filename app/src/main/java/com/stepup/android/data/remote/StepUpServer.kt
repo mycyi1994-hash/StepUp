@@ -166,6 +166,20 @@ class StepUpServer(
         }.mapBody { text -> serverJson.decodeFromString<List<LeaderboardRow>>(text) }
     }
 
+    /**
+     * 과속이 30초 이어져 러닝을 멈췄다고 알린다(`report_overspeed_stop`, 서버 0065) — 서버가 신은 신발의 남은 내구도를 절반으로
+     * 줄이고 멈춘 때부터 10분 러닝 금지를 적는다. 같은 러닝(시작 시각)을 다시 보내도 한 번만 깎는다.
+     */
+    suspend fun reportOverspeedStop(startedAtMillis: Long, stoppedAtMillis: Long, expectedUserId: String): ServerResult<Unit> {
+        val body = jsonBody {
+            put("p_started_at", startedAtMillis.toIsoInstant())
+            put("p_stopped_at", stoppedAtMillis.toIsoInstant())
+        }
+        return authed(expectedUserId) { token ->
+            http.post("$restUrl/rpc/report_overspeed_stop", body, headers(token))
+        }.mapBody { }
+    }
+
     /** 방금 올린 러닝이 어느 크루의 러닝이었는지 적는다(`session_tag_crew`). */
     suspend fun tagSessionCrew(startedAtMillis: Long, crewId: String, expectedUserId: String): ServerResult<Unit> {
         val body = jsonBody {

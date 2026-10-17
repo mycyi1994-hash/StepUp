@@ -105,6 +105,10 @@ class UserPrefs(
         val SELECTED_COURSE = longPreferencesKey("selected_course")
         /** 서버에 코스 기록으로 낼 러닝 — "시작시각\t코스 길" 줄들 */
         val PENDING_COURSE_RUNS = stringPreferencesKey("pending_course_runs")
+        /** 과속으로 멈춘 뒤 러닝 금지가 끝나는 때(벽시계 ms) */
+        val RUN_BAN_UNTIL = longPreferencesKey("run_ban_until")
+        /** 서버에 아직 알리지 않은 과속 정지 — 줄마다 "시작\t멈춤\t기록 주인" */
+        val PENDING_OVERSPEED = stringPreferencesKey("pending_overspeed_stops")
         /** 러닝 챌린지(10분 · 1km · 3km) 지난 도전 — GoalAttempt 줄들, 이 폰에만 */
         val GOAL_ATTEMPTS = stringPreferencesKey("goal_attempts")
         /** 다이어트 모드의 러닝 경험(RunExperience.key) — 이 폰에만 */
@@ -641,6 +645,35 @@ class UserPrefs(
             }
         }
         return found
+    }
+
+    /** 과속으로 멈춘 뒤 러닝 금지가 끝나는 때(벽시계 ms, 없으면 0) — 2026-10-17 사용자 결정 "10분 러닝 금지" */
+    val runBanUntil: Flow<Long> = store.data.map { it[Keys.RUN_BAN_UNTIL] ?: 0L }
+
+    /** 러닝 금지를 [until] 까지로 — 이미 더 늦게까지 금지면 그대로 둔다 */
+    suspend fun raiseRunBanUntil(until: Long) {
+        store.edit { if ((it[Keys.RUN_BAN_UNTIL] ?: 0L) < until) it[Keys.RUN_BAN_UNTIL] = until }
+    }
+
+    /** 서버에 알릴 과속 정지를 적어 둔다(보내는 곳: OverspeedReporter). 같은 러닝은 한 줄 */
+    suspend fun addPendingOverspeedStop(startedAt: Long, stoppedAt: Long, owner: String) {
+        store.edit {
+            val rows = OverspeedStop.decodeAll(it[Keys.PENDING_OVERSPEED]).associateBy { row -> row.startedAt }.toMutableMap()
+            rows[startedAt] = OverspeedStop(startedAt, stoppedAt, owner)
+            it[Keys.PENDING_OVERSPEED] = OverspeedStop.encodeAll(rows.values.sortedBy { row -> row.startedAt })
+        }
+    }
+
+    /** 아직 서버에 알리지 않은 과속 정지 — 읽기만 한다(서버가 받은 뒤에 [takePendingOverspeedStop]) */
+    suspend fun pendingOverspeedStops(): List<OverspeedStop> =
+        OverspeedStop.decodeAll(store.data.first()[Keys.PENDING_OVERSPEED])
+
+    /** 서버가 받았다(또는 받을 수 없다고 답했다) — 목록에서 뺀다 */
+    suspend fun takePendingOverspeedStop(startedAt: Long) {
+        store.edit {
+            val rows = OverspeedStop.decodeAll(it[Keys.PENDING_OVERSPEED]).filter { row -> row.startedAt != startedAt }
+            if (rows.isEmpty()) it.remove(Keys.PENDING_OVERSPEED) else it[Keys.PENDING_OVERSPEED] = OverspeedStop.encodeAll(rows)
+        }
     }
 
     private fun decodePendingRuns(raw: String?): Map<Long, String> =
@@ -1258,4 +1291,21 @@ internal object ChatNoticeDraftCodec {
             )
         }
     }.getOrNull()
+}
+
+/** 서버에 알릴 과속 정지 한 건 — 러닝 시작 · 멈춘 때(벽시계 ms)와 그 러닝을 기록한 계정 */
+data class OverspeedStop(val startedAt: Long, val stoppedAt: Long, val owner: String) {
+    companion object {
+        fun encodeAll(rows: List<OverspeedStop>): String =
+            rows.joinToString("\n") { "${it.startedAt}\t${it.stoppedAt}\t${it.owner}" }
+
+        fun decodeAll(raw: String?): List<OverspeedStop> =
+            raw.orEmpty().lineSequence().mapNotNull { line ->
+                val parts = line.split('\t')
+                if (parts.size != 3) return@mapNotNull null
+                val started = parts[0].toLongOrNull() ?: return@mapNotNull null
+                val stopped = parts[1].toLongOrNull() ?: return@mapNotNull null
+                if (parts[2].isBlank()) null else OverspeedStop(started, stopped, parts[2])
+            }.toList()
+    }
 }

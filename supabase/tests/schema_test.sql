@@ -7529,6 +7529,65 @@ begin
 end $$;
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0065 과속이 30초 넘게 이어지면 멈추고 패널티 — 남은 내구도 절반 · 10분 러닝 금지 (2026-10-17 사용자 결정)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 과속 정지 패널티(0065) ───────────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('65000000-0000-0000-0000-000000000001', 'speed65@test', '{"full_name":"과속"}');
+insert into fix (k, v) select 'o65', economy.draw_create('65000000-0000-0000-0000-000000000001', 'PAID_DRAW')::text;
+set role authenticated;
+call pg_temp.login('65000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail($q$insert into public.run_penalties (user_id, run_started_at, stopped_at, banned_until)
+  values ('65000000-0000-0000-0000-000000000001', now(), now(), now())$q$, '패널티 표에 직접 쓸 수 없다');
+call pg_temp.must_fail($q$select public.report_overspeed_stop(now() - interval '1 hour', now() + interval '1 hour')$q$,
+  '미래에 멈췄다는 신고는 받지 않는다');
+call pg_temp.must_fail($q$select public.report_overspeed_stop(now() - interval '1 hour', now() - interval '2 hours')$q$,
+  '시작보다 먼저 멈췄다는 신고는 받지 않는다');
+do $$
+declare
+  v_id bigint := pg_temp.fx('o65')::bigint;
+  r record;
+  j json;
+  v_now int;
+  v_start timestamptz := now() - interval '5 hours';
+  v_stop timestamptz := now() - interval '5 hours' + interval '1201 seconds';
+begin
+  perform public.sneaker_equip(v_id);
+  select durability_now into v_now from public.my_sneakers() where id = v_id;
+  j := public.report_overspeed_stop(v_start, v_stop);
+  perform pg_temp.ok((j->>'durability_before')::int = v_now and (j->>'durability_after')::int = v_now / 2
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now / 2
+                     and (j->>'banned_until')::timestamptz = v_stop + interval '10 minutes',
+    '과속으로 멈췄다 — 남은 내구도가 절반, 멈춘 때부터 10분 러닝 금지');
+  j := public.report_overspeed_stop(v_start, v_stop);
+  perform pg_temp.ok((select durability_now from public.my_sneakers() where id = v_id) = v_now / 2
+                     and (j->>'durability_after')::int = v_now / 2,
+    '같은 러닝을 다시 신고해도 한 번만 깎는다');
+  -- 멈춘 러닝 자체 — 적립 규칙은 그대로, 판정에 까닭을 남긴다
+  select * into r from public.record_session(v_start, v_stop, 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict = 'FLAGGED' and r.points_awarded > 0
+                     and (select verdict_reason from public.walk_sessions where id = r.session_id) like '%과속이 이어져%'
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now / 2 - 100,
+    '멈춘 러닝은 FLAGGED 로 남고 적립 · 닳기는 그대로');
+  -- 금지 시간(멈춘 뒤 5분)에 시작한 러닝은 무효
+  select * into r from public.record_session(v_stop + interval '5 minutes', v_stop + interval '9 minutes', 400, 240,
+    pg_temp.track(v_stop + interval '5 minutes', 240, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict = 'VOID' and r.points_awarded = 0
+                     and (select verdict_reason from public.walk_sessions where id = r.session_id) like '%러닝 금지 시간%',
+    '러닝 금지 10분 안에 시작한 러닝은 무효');
+  -- 금지 시간이 지난 뒤(멈춘 뒤 11분)는 그대로
+  select * into r from public.record_session(v_stop + interval '11 minutes', v_stop + interval '15 minutes', 400, 240,
+    pg_temp.track(v_stop + interval '11 minutes', 240, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID', '금지 시간이 지나면 다시 적립된다');
+  perform pg_temp.ok((select count(*) from public.run_penalties) = 1, '내 패널티 기록은 읽을 수 있다');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

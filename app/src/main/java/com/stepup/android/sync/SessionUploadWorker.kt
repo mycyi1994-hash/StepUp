@@ -29,6 +29,15 @@ class SessionUploadWorker(
     override suspend fun doWork(): Result {
         ServiceLocator.init(applicationContext)
 
+        // 과속으로 멈춘 러닝의 패널티 신고를 러닝보다 먼저 보낸다 — 서버가 금지 시간을 알아야 그 사이 러닝을 무효로 둔다(0065).
+        // 못 보냈으면 러닝도 올리지 않고 다시 시도한다(순서가 뒤바뀌지 않게)
+        val reported = runCatching { ServiceLocator.overspeedReporter.flush() }
+            .getOrElse { error ->
+                Log.w(TAG, "과속 정지 신고 중 예기치 못한 오류", error)
+                false
+            }
+        if (!reported) return Result.retry()
+
         // 한 번에 10개씩 올린다. 더 남았거나 도는 사이 새로 끝난 러닝이 있으면
         // 이어서 올린다 — 여기서 그만두면 남은 것은 다음 러닝을 끝낼 때까지 잠든다.
         while (!isStopped) {

@@ -67,6 +67,12 @@ object MapTiles {
     /** 달리는 중 지도가 지금 자리를 따라갈 때의 줌 — 같이 뛰는 사람이 멀어도 15(폰 너비 약 3km)까지만 물러난다 */
     val FOLLOW_ZOOMS = 15..DEFAULT_ZOOM
 
+    /**
+     * 지금 자리를 따라가는 지도(러닝 중 · 3-2-1 · 러닝 전 내 자리)를 기본 줌보다 이만큼 크게 — 30% 가까이(2026-10-17 사용자
+     * "초반에 내가 어디 있는지 지도 자체가 너무 뒤로 가 있다 · 지금 기본보다 약 30% 더 확대"). 두 손가락으로 더 바꿀 수 있다.
+     */
+    const val FOLLOW_MAGNIFY = 1.3f
+
     const val MIN_ZOOM = 3
     const val MAX_ZOOM = 18
 

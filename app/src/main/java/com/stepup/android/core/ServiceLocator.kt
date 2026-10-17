@@ -225,6 +225,8 @@ object ServiceLocator {
     }
 
     lateinit var claimRepository: ClaimRepository
+    /** 과속으로 멈춘 러닝의 패널티 신고 — 올리기 일꾼이 러닝보다 먼저 보낸다 */
+    lateinit var overspeedReporter: com.stepup.android.data.repo.OverspeedReporter
 
     /** 순위표 — 유일하게 남의 기록이 필요한 화면이라 서버가 계산해 준다 */
     lateinit var rankingRepository: RankingRepository
@@ -351,6 +353,14 @@ object ServiceLocator {
                 readCourseRun = { startedAt -> userPrefs.pendingCourseRun(startedAt) },
                 acknowledgeCourseRun = { startedAt -> userPrefs.takePendingCourseRun(startedAt); Unit },
             ),
+        )
+        overspeedReporter = com.stepup.android.data.repo.OverspeedReporter(
+            read = { userPrefs.pendingOverspeedStops() },
+            acknowledge = { startedAt -> userPrefs.takePendingOverspeedStop(startedAt) },
+            currentOwner = { sessionHolder.recordingOwner() },
+            report = { startedAt, stoppedAt, userId -> server.reportOverspeedStop(startedAt, stoppedAt, userId) },
+            configured = { server.isConfigured },
+            onReported = { if (serverEconomy) economySync.refresh() },
         )
         rankingRepository = RankingRepository(server)
         leaderboards = com.stepup.android.data.repo.ServerLeaderboardSource(com.stepup.android.data.remote.LeaderboardApi(server))
