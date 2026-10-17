@@ -69,16 +69,13 @@ class RunLocationStateTest {
 
     @Test fun roughPositionShowsBeforeGps() {
         show(running.copy(here = GeoPoint(37.5283, 126.9326)))
+        // GPS 전에도 지도에 내 점이 먼저 뜬다
         compose.onNodeWithTag("run-rough-location", useUnmergedTree = true).assertExists()
-        // 대략적인 위치 · GPS 찾는 중 — 지도 위 띠 안의 글
-        compose.onNodeWithTag("run-rough-band").assertIsDisplayed()
-        // 띠는 글을 하나로 읽히게 합친다 — 띠 안의 글 자체는 합치기 전 나무에서 찾는다
-        compose.onNode(
-            hasText(compose.activity.getString(R.string.run_gps_search_rough)) and hasAnyAncestor(hasTestTag("run-rough-band")),
-            useUnmergedTree = true,
-        ).assertIsDisplayed()
-        // 띠는 한 번에 하나 — 대략적인 자리가 있으면 "GPS 찾는 중" 띠는 없다
+        // 찾는 동안 글은 없다 — 지도 앱처럼(2026-10-17 "그 글도 없애고"). 띠 대신 "러닝 중" 칩
+        compose.onNodeWithTag("run-rough-band").assertDoesNotExist()
         compose.onNodeWithTag("run-gps-searching").assertDoesNotExist()
+        compose.onNodeWithText(compose.activity.getString(R.string.run_gps_search_rough)).assertDoesNotExist()
+        compose.onNodeWithTag("run-status", useUnmergedTree = true).assertExists()
         capture("run-rough-location.png")
     }
 

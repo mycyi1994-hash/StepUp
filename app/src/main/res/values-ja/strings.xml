@@ -1372,8 +1372,6 @@ StepUp と走り出そう。</string>
     <string name="news_hero_sub">一緒に走る、もっと大きな楽しさ。</string>
 
     <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
-    <string name="map_waiting_title">現在地を探しています</string>
-    <string name="map_waiting_body">GPSがつながると、実際に走ったルートがここに描かれます。</string>
     <string name="finish_pending_short">サーバー確認中</string>
     <string name="finish_no_reward">サーバー確認済み · 今回のランは付与なし</string>
     <string name="finish_no_steps">歩数が記録されず、今回のランは付与なし</string>

@@ -4,8 +4,6 @@
     <string name="run_free_chip_running">Running</string>
     <string name="run_free_resume">Resume</string>
     <string name="run_free_stop">End</string>
-    <string name="run_free_route_waiting">Waiting for route</string>
-    <string name="run_free_gps_searching">Finding GPS location</string>
     <string name="run_free_gps_weak">Weak GPS signal · reconnecting</string>
     <string name="run_free_location_off">Location is off</string>
     <string name="run_free_settings">Settings</string>

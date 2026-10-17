@@ -444,12 +444,13 @@ class DesignReferenceTest {
             compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
             compose.onNodeWithTag("shoes-section-vault").assertExists()
         }
-        // 자유 러닝 중 지도 위 — 문제가 없으면 "러닝 중" 칩, 멈추면 일시정지 띠, 위치를 찾는 중이면 노란 띠 하나
+        // 자유 러닝 중 지도 위 — 문제가 없으면 "러닝 중" 칩, 멈추면 일시정지 띠. 위치를 찾는 중에도 글 · 띠가 없다(2026-10-17 지도 앱처럼)
         if (s == Scene.RUN_ACTIVE) compose.onNodeWithTag("run-status", useUnmergedTree = true).assertExists()
         if (s == Scene.RUN_PAUSED) compose.onNodeWithTag("run-paused-band", useUnmergedTree = true).assertExists()
         if (s == Scene.RUN_NO_GPS) {
-            compose.onNodeWithText(korean(R.string.map_waiting_title)).assertExists()
-            compose.onNodeWithTag("run-gps-searching", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("run-map-waiting", useUnmergedTree = true).assertExists()
+            compose.onAllNodesWithTag("run-gps-searching", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNodeWithTag("run-status", useUnmergedTree = true).assertExists()
         }
         if (s == Scene.RUN_GPS_LOST) compose.onAllNodesWithTag("run-gps-lost").assertCountEquals(0)
         if (s == Scene.RUN_FINISH) {

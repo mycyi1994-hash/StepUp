@@ -472,7 +472,12 @@ class WalkSessionService : Service() {
             lastFixElapsed = warm.elapsedRealtimeNanos / 1_000_000
             stepsAtLastFix = _state.value.steps
         }
-        val seed = if (_state.value.here == null && warm == null) freshLastKnown(lm) else null
+        // 그만큼 좋지 않아도 미리 잡은 위치(2분 안)가 있으면 내 점부터 놓는다 — 지도 앱처럼 마지막 위치를 바로 보인다
+        val seed = if (_state.value.here == null && warm == null) {
+            LocationWarmup.fresh(2 * 60_000L)?.let { GeoPoint(it.latitude, it.longitude) } ?: freshLastKnown(lm)
+        } else {
+            null
+        }
         val on = runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
         _state.update { current ->
             when {

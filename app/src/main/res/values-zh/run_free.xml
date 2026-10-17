@@ -4,8 +4,6 @@
     <string name="run_free_chip_running">跑步中</string>
     <string name="run_free_resume">继续</string>
     <string name="run_free_stop">结束</string>
-    <string name="run_free_route_waiting">等待路线</string>
-    <string name="run_free_gps_searching">正在搜索GPS位置</string>
     <string name="run_free_gps_weak">GPS信号弱 · 正在重新连接</string>
     <string name="run_free_location_off">定位已关闭</string>
     <string name="run_free_settings">设置</string>

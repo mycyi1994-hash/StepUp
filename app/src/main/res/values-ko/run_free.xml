@@ -4,8 +4,6 @@
     <string name="run_free_chip_running">러닝 중</string>
     <string name="run_free_resume">다시 시작</string>
     <string name="run_free_stop">종료</string>
-    <string name="run_free_route_waiting">경로 대기 중</string>
-    <string name="run_free_gps_searching">GPS 위치 찾는 중</string>
     <string name="run_free_gps_weak">GPS 신호 약함 · 재연결 중</string>
     <string name="run_free_location_off">위치 기능 꺼짐</string>
     <string name="run_free_settings">설정</string>

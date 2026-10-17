@@ -535,9 +535,8 @@ fun RunScreen(
         session.gpsLost -> GpsBadge.Weak
         session.gpsFix && !session.precise -> GpsBadge.Approx
         session.gpsFix -> GpsBadge.Connected
-        // GPS 전에 지도에 먼저 보인 자리는 대략적인 위치라고 알린다
-        session.isActive && session.here != null -> GpsBadge.Rough
-        else -> GpsBadge.Searching
+        // 위치를 찾는 동안은 아무것도 적지 않는다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고")
+        else -> GpsBadge.None
     }
     val distanceStat = RunStat(stringResource(R.string.run_label_distance), liveKmText, "km", caption = distanceCaption, tag = "run-distance-value")
     val paceStat = RunStat(stringResource(R.string.run_label_pace), livePace, "/km", caption = distanceCaption)
@@ -549,13 +548,13 @@ fun RunScreen(
         paused = session.isPaused, locationAllowed = locationAllowed, locationOn = session.locationOn, gpsLost = session.gpsLost,
         void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt,
     )
-    val freeDist = freeDistance(timeOnly, session.gpsKm, geoTrack.isNotEmpty())
+    val freeDist = freeDistance(timeOnly, session.gpsKm)
     // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸
     val freeDurability = equipped?.let { com.stepup.android.ui.screens.items.durabilityPercent(it) }
     val freeBandNow = freeBand(
         active = session.isActive, paused = session.isPaused, asking = confirmStop || discardDialog,
-        locationAllowed = locationAllowed, locationOn = session.locationOn, gpsFix = session.gpsFix, gpsLost = session.gpsLost,
-        precise = session.precise, hasHere = session.here != null, void = freeVoid,
+        locationAllowed = locationAllowed, locationOn = session.locationOn, gpsLost = session.gpsLost,
+        precise = session.precise, void = freeVoid,
         // 방금 읽은 속도가 사람 속도를 넘어 버려졌다 — 사람 속도의 점이 다시 들어올 때까지(현재 속도와 같은 신호)
         speedFlagged = !session.isPaused && session.lastFlaggedAt > (session.track.lastOrNull()?.at ?: 0L),
     )
@@ -567,7 +566,8 @@ fun RunScreen(
     val freeGpsKm = session.gpsKm.takeIf { !timeOnly && it > 0.0 }
     val freeAverageNumbers = FreeRunNumbers(
         time = formatDuration(session.elapsedSec), paceSec = freeAveragePaceSec(freeGpsKm, session.elapsedSec),
-        distance = if (freeDist == FreeDistance.Waiting) FreeDistance.Unknown else freeDist,
+        // 경로 없이 멈췄으면 평균 거리는 모른다("—") — 달리는 중의 0.00 과 다르다
+        distance = if (!timeOnly && session.gpsKm <= 0.0 && geoTrack.isEmpty()) FreeDistance.Unknown else freeDist,
         speedKmh = freeGpsKm?.let { averageSpeedKmh(it, session.elapsedSec) }, durability = freeDurability, average = true,
     )
 
@@ -2118,15 +2118,13 @@ private fun CourseChallengeCard(
 }
 
 /**
- * 위치를 모를 때의 지도 자리 — 안내 한 줄만. 경로처럼 보이는 선 · 가짜 지도는 그리지 않는다.
- * GPS 가 잡히면 [LiveRouteMap] 이 이 자리를 실제 위치와 경로로 바꾼다.
+ * 위치를 아직 하나도 모를 때의 지도 자리 — 위치 그림만 둔다. "찾는 중" 글은 두지 않는다(2026-10-17 "그 글도 없애고" — 지도 앱처럼).
+ * 경로처럼 보이는 선 · 가짜 지도는 그리지 않는다. 위치가 오면 [LiveRouteMap] 이 이 자리를 실제 위치와 경로로 바꾼다.
  */
 @Composable
 private fun MapWaiting(modifier: Modifier = Modifier) {
-    Box(modifier.testTag("run-map-waiting")) {
-        com.stepup.android.ui.components.RunMapPlaceholder(
-            Icons.Filled.GpsFixed, stringResource(R.string.map_waiting_title), stringResource(R.string.map_waiting_body),
-        )
+    Box(modifier.testTag("run-map-waiting"), contentAlignment = Alignment.Center) {
+        com.stepup.android.ui.components.RunStateArt(Icons.Filled.GpsFixed, size = 72.dp)
     }
 }
 

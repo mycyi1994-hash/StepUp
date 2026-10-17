@@ -1371,8 +1371,6 @@
     <string name="news_hero_sub">一起跑，乐趣更多。</string>
 
     <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
-    <string name="map_waiting_title">正在查找你的位置</string>
-    <string name="map_waiting_body">GPS连接后，这里会画出你实际跑过的路线。</string>
     <string name="finish_pending_short">等待服务器确认</string>
     <string name="finish_no_reward">服务器已确认 · 本次跑步无奖励</string>
     <string name="finish_no_steps">未记录到步数 · 本次跑步无奖励</string>

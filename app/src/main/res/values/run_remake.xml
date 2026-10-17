@@ -48,7 +48,6 @@
     <string name="run_status_challenge">In progress</string>
     <string name="run_status_course">On course</string>
     <string name="run_gps_connected">GPS connected</string>
-    <string name="run_gps_searching">Finding GPS</string>
     <string name="run_gps_weak">Weak signal</string>
     <string name="run_gps_off">Location off</string>
     <string name="run_gps_approx">Approximate location</string>
