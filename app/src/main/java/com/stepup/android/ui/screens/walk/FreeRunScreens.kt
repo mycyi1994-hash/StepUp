@@ -89,11 +89,12 @@ import com.stepup.android.ui.theme.StepUpColors
 // ── 판단(화면 밖에서 검사한다 — FreeRunUiTest) ──────────────────────
 
 /** 지도 위 띠 — 위에서부터 앞선다. 문제 띠가 일시정지 띠보다 앞선다 */
-internal enum class FreeBand { None, LocationOff, MeasureInvalid, SpeedError, Weak, Approx, Paused, Rough, Searching }
+internal enum class FreeBand { None, LocationOff, MeasureInvalid, SpeedError, Weak, Approx, Paused }
 
 /**
  * 지금 보일 띠 하나. 마칠지 묻는 동안([asking] — 시트가 덮는다)과 러닝 전에는 띠가 없다.
  * 위치 권한이 없어 시간만 기록하는 러닝은 문제가 아니라 고른 방식이다 — 칩("위치 없이 기록 중")만 둔다.
+ * 위치를 찾는 동안에도 띠가 없다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고").
  */
 internal fun freeBand(
     active: Boolean,
@@ -101,10 +102,8 @@ internal fun freeBand(
     asking: Boolean,
     locationAllowed: Boolean,
     locationOn: Boolean,
-    gpsFix: Boolean,
     gpsLost: Boolean,
     precise: Boolean,
-    hasHere: Boolean,
     void: Boolean,
     speedFlagged: Boolean,
 ): FreeBand = when {
@@ -116,9 +115,6 @@ internal fun freeBand(
     locationAllowed && gpsLost -> FreeBand.Weak
     locationAllowed && !precise -> FreeBand.Approx
     paused -> FreeBand.Paused
-    !locationAllowed -> FreeBand.None
-    !gpsFix && hasHere -> FreeBand.Rough
-    !gpsFix -> FreeBand.Searching
     else -> FreeBand.None
 }
 
@@ -156,20 +152,15 @@ internal fun freeAveragePaceSec(km: Double?, elapsedSec: Long): Long? =
 
 /** 자유 러닝 거리 — GPS 로 잰 거리만. 걸음으로 셈한 거리는 쓰지 않는다 */
 internal sealed interface FreeDistance {
-    /** 위치는 쓰지만 아직 경로가 없다 — "경로 대기 중" */
-    data object Waiting : FreeDistance
-
     /** 위치 없이 기록 — "—" */
     data object Unknown : FreeDistance
 
     data class Km(val km: Double) : FreeDistance
 }
 
-internal fun freeDistance(timeOnly: Boolean, gpsKm: Double, hasTrack: Boolean): FreeDistance = when {
-    timeOnly -> FreeDistance.Unknown
-    gpsKm <= 0.0 && !hasTrack -> FreeDistance.Waiting
-    else -> FreeDistance.Km(gpsKm.coerceAtLeast(0.0))
-}
+/** 경로가 생기기 전에도 0.00 부터 적는다 — "경로 대기 중"을 두지 않는다(2026-10-17 지도 앱처럼) */
+internal fun freeDistance(timeOnly: Boolean, gpsKm: Double): FreeDistance =
+    if (timeOnly) FreeDistance.Unknown else FreeDistance.Km(gpsKm.coerceAtLeast(0.0))
 
 /** 저장한 자유 러닝의 거리 — GPS 거리가 없으면 모른다(null, "—") */
 internal fun freeResultKm(lastGpsKm: Double): Double? = lastGpsKm.takeIf { it > 0.0 }
@@ -440,12 +431,6 @@ internal fun liveTop(
         { FreeRunBand(stringResource(R.string.run_gps_approx), "run-location-approx",
             action = stringResource(R.string.run_free_settings), onAction = onBandAction) }
     }
-    FreeBand.Rough -> {
-        { FreeRunBand(stringResource(R.string.run_gps_search_rough), "run-rough-band") }
-    }
-    FreeBand.Searching -> {
-        { FreeRunBand(stringResource(R.string.run_free_gps_searching), "run-gps-searching") }
-    }
 }
 
 // ── 결과 ───────────────────────────────────────────────────────────
@@ -701,10 +686,6 @@ private fun FreeDetailRow(numbers: FreeRunNumbers, tags: FreeTags) {
                 FreeSmallCell(km, "km", tags.distance, "$distanceLabel $km km", Arrangement.Start)
             }
             FreeDistance.Unknown -> FreeSmallCell("—", "km", tags.distance, "$distanceLabel —", Arrangement.Start)
-            FreeDistance.Waiting -> {
-                val waiting = stringResource(R.string.run_free_route_waiting)
-                FreeSmallCell(waiting, null, tags.distance, "$distanceLabel · $waiting", Arrangement.Start, words = true)
-            }
         }
         val speed = numbers.speedKmh?.let { "%.1f".format(it) }
         FreeSmallCell(
@@ -726,7 +707,6 @@ private fun RowScope.FreeSmallCell(
     spoken: String,
     arrangement: Arrangement.Horizontal,
     lead: String? = null,
-    words: Boolean = false,
 ) {
     val c = freeRunColors()
     Row(
@@ -742,9 +722,6 @@ private fun RowScope.FreeSmallCell(
             FitNumber(
                 value, unit, valueSize = 17.sp, unitSize = 13.sp, valueColor = c.text, unitColor = c.label, valueTag = tag,
             )
-        } else if (words) {
-            Text(value, style = runTextStyle(14.sp, c.label, FontWeight.SemiBold, 1.2f), maxLines = 2,
-                overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag(tag))
         } else {
             FitNumber(
                 value, unit, valueSize = 17.sp, unitSize = 13.sp, valueColor = c.text, unitColor = c.label,

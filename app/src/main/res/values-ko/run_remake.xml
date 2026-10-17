@@ -48,7 +48,6 @@
     <string name="run_status_challenge">진행 중</string>
     <string name="run_status_course">코스 진행 중</string>
     <string name="run_gps_connected">GPS 연결됨</string>
-    <string name="run_gps_searching">GPS 찾는 중</string>
     <string name="run_gps_weak">신호 약함</string>
     <string name="run_gps_off">위치 꺼짐</string>
     <string name="run_gps_approx">대략적 위치</string>

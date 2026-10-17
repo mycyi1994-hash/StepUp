@@ -48,7 +48,6 @@
     <string name="run_status_challenge">進行中</string>
     <string name="run_status_course">コース進行中</string>
     <string name="run_gps_connected">GPS接続済み</string>
-    <string name="run_gps_searching">GPSを検索中</string>
     <string name="run_gps_weak">信号が弱い</string>
     <string name="run_gps_off">位置情報オフ</string>
     <string name="run_gps_approx">おおよその位置</string>

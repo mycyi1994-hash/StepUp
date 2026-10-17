@@ -4,8 +4,6 @@
     <string name="run_free_chip_running">ラン中</string>
     <string name="run_free_resume">再開</string>
     <string name="run_free_stop">終了</string>
-    <string name="run_free_route_waiting">ルート待機中</string>
-    <string name="run_free_gps_searching">GPSで位置を検索中</string>
     <string name="run_free_gps_weak">GPS信号が弱い · 再接続中</string>
     <string name="run_free_location_off">位置情報がオフ</string>
     <string name="run_free_settings">設定</string>
