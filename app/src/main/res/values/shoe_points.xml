@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Stat points (server 0059) — 4 per level · 1 = efficiency +0.25%p · comfort +0.1%p · max durability +100 -->
+<!-- Stat points (server 0059) — 4 per level · 1 = efficiency +0.25%p · comfort +0.1%p · max durability +10% of base (0066) -->
 <resources>
     <string name="points_title">Stat points</string>
     <string name="points_free">Points left</string>
     <string name="points_per_level">4 per level</string>
     <string name="points_hint_efficiency" formatted="false">1 point = +0.25%p</string>
     <string name="points_hint_comfort" formatted="false">1 point = +0.1%p · up to 20%</string>
-    <string name="points_hint_durability">1 point = +100 max (20 min)</string>
+    <string name="points_hint_durability">1 point = +10% max</string>
     <string name="points_add_cd">Add one point to %1$s</string>
     <string name="points_remove_cd">Remove one point from %1$s</string>
     <string name="points_count_cd">%1$s: %2$d points</string>

@@ -125,9 +125,10 @@ class ShoeDetailModelTest {
         assertEquals("590 / 1,230", formatDurability(shoe))
         assertEquals(590 to 1_230, durabilityLeft(shoe) to durabilityMax(shoe))
         assertEquals(590f / 1_230f, durabilityFraction(shoe), 0.0001f)
-        // 러닝 화면의 작은 칸 · 적립 배율(50% · 20%)은 남은 비율
+        // 러닝 화면의 작은 칸은 남은 비율. 적립 배율은 남아 있으면 그대로, 다 닳았으면 0(서버 0066)
         assertEquals(47, durabilityPercent(shoe))
-        assertEquals(0.7, shoe.server!!.durabilityFactor, 0.0)
+        assertEquals(1.0, shoe.server!!.durabilityFactor, 0.0)
+        assertEquals(0.0, shoe.server!!.copy(durabilityPts = 0.0).durabilityFactor, 0.0)
         assertEquals("12,345", formatCount(12_345))
     }
 

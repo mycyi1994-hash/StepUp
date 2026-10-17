@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 스탯 포인트 나누기(서버 0059, 2026-10-16 사용자 결정) — 레벨마다 4 · 1 = 효율 +0.25%p · 착화감 +0.1%p · 최대 내구도 +100 -->
+<!-- 스탯 포인트 나누기(서버 0059, 2026-10-16 사용자 결정) — 레벨마다 4 · 1 = 효율 +0.25%p · 착화감 +0.1%p · 최대 내구도 + 기본의 10%(0066) -->
 <resources>
     <string name="points_title">스탯 포인트</string>
     <string name="points_free">남은 포인트</string>
     <string name="points_per_level">레벨마다 4개</string>
     <string name="points_hint_efficiency" formatted="false">1개 = +0.25%p</string>
     <string name="points_hint_comfort" formatted="false">1개 = +0.1%p · 최대 20%</string>
-    <string name="points_hint_durability">1개 = 최대 +100(20분)</string>
+    <string name="points_hint_durability">1개 = 최대 +10%</string>
     <string name="points_add_cd">%1$s 포인트 하나 더하기</string>
     <string name="points_remove_cd">%1$s 포인트 하나 빼기</string>
     <string name="points_count_cd">%1$s 포인트 %2$d개</string>

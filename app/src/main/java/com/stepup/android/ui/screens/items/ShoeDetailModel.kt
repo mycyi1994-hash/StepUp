@@ -115,7 +115,7 @@ fun durabilityLeft(shoe: Sneaker): Int {
     return server.durabilityNow.coerceIn(0, server.durabilityMax)
 }
 
-/** 최대 내구도 — 신발마다 다르다(등급 범위 안에서 정해지고, 내구도 포인트 1 에 +100). 모르면 100 */
+/** 최대 내구도 — 신발마다 다르다(등급 범위 안에서 정해지고, 내구도 포인트 1 에 기본의 +10%). 모르면 100 */
 fun durabilityMax(shoe: Sneaker): Int = shoe.server?.takeIf { it.hasDurabilityMax }?.durabilityMax ?: 100
 
 /** 내구도 막대 길이 — 남은 내구도 ÷ 그 신발의 최대 내구도 */

@@ -447,7 +447,8 @@ enum class UpgradeBlock {
 
 /**
  * 레벨업 스탯 포인트(서버 0059) — 레벨이 하나 오를 때마다 4. 포인트 1 은 효율 +0.25%p · 착화감 +0.1%p(20% 까지) ·
- * 최대 내구도 +100(1km) 중 하나. 나눈 포인트는 되돌리지 않는다 — [respec] 인 신발(0059 전에 강화한 신발)만 한 번 처음부터 다시 나눈다.
+ * 최대 내구도 + 그 신발 기본의 10%(서버 0066 — 일반 +1분 · 레전더리 +9분) 중 하나. 나눈 포인트는 되돌리지 않는다 —
+ * [respec] 인 신발(0059 전에 강화한 신발)만 한 번 처음부터 다시 나눈다.
  */
 data class StatPoints(
     val total: Int = 0,
@@ -461,9 +462,11 @@ data class StatPoints(
         const val PER_LEVEL = 4
         const val EFFICIENCY_BPS = 25
         const val COMFORT_BPS = 10
-        const val DURABILITY = 100
         /** 착화감 상한(economy.comfort_cap_bps) */
         const val COMFORT_CAP_BPS = 2000
+
+        /** 내구도 포인트 1 이 올리는 최대 내구도 — 기본 최대 내구도의 10%(반올림, 적어도 1). 서버 economy.point_durability_of 와 같다 */
+        fun durabilityPerPoint(base: Int): Int = maxOf((base.coerceAtLeast(0) + 5) / 10, 1)
     }
 }
 
@@ -495,13 +498,9 @@ data class ServerStats(
     /** 내구도 1(10m) 고치는 값 — 0 이면 예전 서버(1% 값 [repairCostPerPoint] 를 쓴다) */
     val repairCostPerUnit: Double = 0.0,
 ) {
-    /** 내구도 계수 — 남은 비율 50% 이상 1, 20% 이상 0.7, 그 아래 0 (서버 economy.durability_factor) */
+    /** 내구도 계수 — 남은 비율이 0 보다 크면 1, 다 닳았으면 0 (서버 economy.durability_factor, 0066) */
     val durabilityFactor: Double
-        get() = when {
-            durabilityPts >= 50 -> 1.0
-            durabilityPts >= 20 -> 0.7
-            else -> 0.0
-        }
+        get() = if (durabilityPts > 0) 1.0 else 0.0
 
     /** 서버가 신발마다 다른 최대 내구도(0059)를 보냈는가 */
     val hasDurabilityMax: Boolean get() = durabilityMax > 0

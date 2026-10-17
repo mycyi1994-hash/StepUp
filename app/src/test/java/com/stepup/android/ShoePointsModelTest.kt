@@ -60,13 +60,15 @@ class ShoePointsModelTest {
         assertFalse(basis.lowers(phase.draft))
     }
 
-    @Test fun `미리보기 — 효율 +0_25퍼센트p · 착화감 +0_1퍼센트p · 최대 · 남은 내구도 +100`() {
-        val basis = requireNotNull(pointsBasisOf(shoe(level = 2, total = 4, free = 4, effBase = 300, comfortBase = 100, base = 1_230, now = 1_000)))
+    @Test fun `미리보기 — 효율 +0_25퍼센트p · 착화감 +0_1퍼센트p · 최대 · 남은 내구도 + 기본의 10퍼센트`() {
+        // 일반 신발 기본 50(10분) — 포인트 1 = +5(1분), 서버 0066
+        val basis = requireNotNull(pointsBasisOf(shoe(level = 2, total = 4, free = 4, effBase = 300, comfortBase = 100, base = 50, now = 40)))
         val draft = PointsDraft(efficiency = 1, comfort = 1, durability = 2)
         assertEquals(325, basis.efficiencyBps(draft))
         assertEquals(110, basis.comfortBps(draft))
-        assertEquals(1_430, basis.durabilityMax(draft))
-        assertEquals(1_200, basis.durabilityNow(draft))
+        assertEquals(5, basis.durabilityPerPoint)
+        assertEquals(60, basis.durabilityMax(draft))
+        assertEquals(50, basis.durabilityNow(draft))
         assertEquals(StatPoints.PER_LEVEL, basis.total)
     }
 
@@ -83,15 +85,16 @@ class ShoePointsModelTest {
 
     @Test fun `다시 나누기 — 0059 전에 강화한 신발은 한 번 처음부터, 줄이면 다시 나누기를 쓴다`() {
         // Lv5 — 포인트 16 을 효율 8 · 착화감 8 로 나눠 둔 채로 받았다
-        val basis = requireNotNull(pointsBasisOf(shoe(level = 5, total = 16, free = 0, efficiency = 8, comfort = 8, respec = true, base = 1_100, now = 900)))
+        // 레전더리 기본 450(90분) — 포인트 1 = +45(9분)
+        val basis = requireNotNull(pointsBasisOf(shoe(level = 5, total = 16, free = 0, efficiency = 8, comfort = 8, respec = true, base = 450, now = 400)))
         var phase: PointsPhase = startPoints(basis)
         repeat(8) { phase = phase.remove(PointStat.COMFORT) }
         repeat(8) { phase = phase.add(PointStat.DURABILITY) }
         assertEquals(PointsDraft(8, 0, 8), phase.draft)
         assertTrue(basis.lowers(phase.draft))
         assertTrue(basis.valid(phase.draft))
-        assertEquals(1_900, basis.durabilityMax(phase.draft))
-        assertEquals(1_700, basis.durabilityNow(phase.draft))
+        assertEquals(810, basis.durabilityMax(phase.draft))
+        assertEquals(760, basis.durabilityNow(phase.draft))
         assertEquals(PointsEntry.Respec, pointsEntryOf(shoe(level = 5, total = 16, free = 0, efficiency = 8, comfort = 8, respec = true)))
     }
 
