@@ -69,4 +69,14 @@ object TrackFixRule {
      * @param hereAgeMs 지금 자리를 받은 지(ms). 모르면(받은 적 없음) 아주 큰 값
      */
     fun keepHere(hasTrack: Boolean, hereAgeMs: Long): Boolean = hasTrack && hereAgeMs in 0 until KEEP_HERE_MS
+
+    /** 러닝 탭에서 미리 잡아 둔 위치(`LocationWarmup`)를 러닝을 시작할 때 "잡힌 위치"로 쓰는 나이(ms) */
+    const val WARM_MAX_AGE_MS = 10_000L
+
+    /**
+     * 러닝을 시작할 때 미리 잡아 둔 위치로 GPS 가 이미 잡힌 것으로 볼까(2026-10-17 "키자마자 잡아두면 안되냐") — [WARM_MAX_AGE_MS]
+     * 안에 받았고 오차가 [MAX_ACCURACY_M] 안이면. 지도의 내 점 · GPS 표시만 채운다 — 경로 · 거리에는 넣지 않는다(러닝 전 위치다).
+     */
+    fun warmFix(accuracyM: Float?, ageMs: Long): Boolean =
+        ageMs in 0..WARM_MAX_AGE_MS && (accuracyM ?: UNKNOWN_ACCURACY_M) <= MAX_ACCURACY_M
 }
