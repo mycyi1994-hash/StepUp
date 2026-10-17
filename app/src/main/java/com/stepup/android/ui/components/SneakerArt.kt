@@ -65,6 +65,8 @@ private fun Rarity.auraAlpha(): Float = when (this) {
     Rarity.RARE -> 0.28f
     Rarity.EPIC -> 0.40f
     Rarity.LEGENDARY -> 0.55f
+    Rarity.REDLINE -> 0.65f
+    Rarity.FINISH -> 0.75f
 }
 
 @Composable
@@ -414,6 +416,8 @@ private fun DrawScope.drawFactionEffect(
         Rarity.RARE -> 9
         Rarity.EPIC -> 13
         Rarity.LEGENDARY -> 18
+        Rarity.REDLINE -> 22
+        Rarity.FINISH -> 26
     }
     when (fa) {
         Faction.FIRE -> {

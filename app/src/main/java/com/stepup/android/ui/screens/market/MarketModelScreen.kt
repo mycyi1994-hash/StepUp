@@ -108,12 +108,10 @@ fun MarketModelScreen(
     }
 
     DetailPage(title = modelName(faction, rarity, variant), onBack = onBack) {
-        // S2 머리 — 계열 · 등급 → 모델 이름 → 등급 무대(프레임 v8) 위 신발
+        // S2 머리 — 모델 이름(속성 줄은 없앴다, 2026-10-17) → 등급 무대(프레임 v8) 위 신발
         item {
             val preview = previewSneaker(faction, rarity, variant)
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                com.stepup.android.ui.components.S2Kicker(preview.faction.label())
-                Spacer(Modifier.height(10.dp))
                 // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 위 한 줄에 글로 쓰지 않는다
                 com.stepup.android.ui.components.ShoeNameWithBadge(
                     name = modelName(faction, rarity, variant),

@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.stepup.android.domain.Faction
+import com.stepup.android.domain.Rarity
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.screens.items.EquipFilter
 import com.stepup.android.ui.screens.items.ItemFilterSheet
@@ -51,7 +52,8 @@ class ItemFilterInteractionTest {
             }
         }
         fun label(id: Int) = compose.activity.getString(id)
-        fun fire() = compose.onNodeWithText(label(R.string.faction_fire), substring = true)
+        // 속성 거르기는 없앴다(2026-10-17) — 등급(피니시)으로 같은 흐름을 본다
+        fun finish() = compose.onNodeWithText(label(R.string.shoe_tier_finish))
         fun reopen() { compose.onNodeWithText("Open filters").performClick() }
         fun assertActionsFullyVisible() {
             val metrics = compose.activity.windowManager.currentWindowMetrics
@@ -66,27 +68,28 @@ class ItemFilterInteractionTest {
                 assertTrue(node.positionInWindow.y >= insets.top)
             }
         }
-        fire().performScrollTo().performClick().assertIsSelected()
+        finish().performScrollTo().performClick().assertIsSelected()
         compose.onNodeWithContentDescription(label(R.string.common_close)).performClick()
         compose.runOnIdle {
-            assertNull(faction)
+            assertNull(rarity)
             assertEquals(0, applies)
         }
         reopen()
-        fire().performScrollTo().assertIsNotSelected().performClick()
+        finish().performScrollTo().assertIsNotSelected().performClick()
         compose.onNodeWithText(label(R.string.filter_apply)).assertIsDisplayed().performClick()
         compose.runOnIdle {
-            assertEquals(Faction.FIRE.id, faction)
+            assertEquals(Rarity.FINISH.id, rarity)
+            assertNull(faction)
             assertEquals(EquipFilter.OFF, equip)
             assertEquals(ItemSort.LEVEL, sort)
             assertEquals(1, applies)
         }
         reopen()
-        fire().performScrollTo().assertIsSelected()
+        finish().performScrollTo().assertIsSelected()
         compose.onNodeWithText(label(R.string.filter_reset)).performClick()
-        fire().assertIsNotSelected()
+        finish().assertIsNotSelected()
         // Reset is also a draft until Show results is pressed.
-        compose.runOnIdle { assertEquals(Faction.FIRE.id, faction) }
+        compose.runOnIdle { assertEquals(Rarity.FINISH.id, rarity) }
         val directory = File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }
         captureDisplay(File(directory, "inventory-filter-reset-$expectedScale.png"))
         assertActionsFullyVisible()

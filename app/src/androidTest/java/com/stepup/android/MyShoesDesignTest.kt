@@ -42,7 +42,6 @@ import com.stepup.android.data.local.SneakerEntity
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.ServerStats
-import com.stepup.android.domain.ShoeCatalog
 import com.stepup.android.domain.ShoeTier
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
@@ -176,10 +175,10 @@ class MyShoesDesignTest {
             shot("07-vault-sort-sheet", whole = true)
             compose.onNodeWithText(string(R.string.items_sort_rarity)).performClick()
             compose.waitForIdle()
-            // 정렬을 바꾸면 격자는 맨 위(새 순서의 첫 켤레)부터 — 왼쪽 위 칸이 등급 높은순의 첫 켤레(레전더리)
+            // 정렬을 바꾸면 격자는 맨 위(새 순서의 첫 켤레)부터 — 왼쪽 위 칸이 등급 높은순의 첫 켤레(피니시)
             val firstId = topLeftCard()
             assertEquals("the grid starts at the first pair of the new order", firstOf(ItemSort.RARITY), firstId)
-            assertEquals("highest rarity first", Rarity.LEGENDARY.id, runBlocking { dao.byId(firstId)?.rarity })
+            assertEquals("highest rarity first", Rarity.FINISH.id, runBlocking { dao.byId(firstId)?.rarity })
             shot("08-vault-sorted-rarity")
 
             // 09 · 10 — 큰 글씨(1.3) 360×800: 무대부터 줄이고, 모자라면 그때만 넘긴다 — 글자는 잘리지 않는다
@@ -416,19 +415,7 @@ class MyShoesDesignTest {
     }
 
     private suspend fun ownedTiers(): List<ShoeTier> =
-        ServiceLocator.database.sneakerDao().allNow().map { entity ->
-            val model = entity.modelId.takeIf { it > 0 }?.let(ShoeCatalog::of)
-            when (model?.series) {
-                "REDLINE" -> ShoeTier.REDLINE
-                "FINISH" -> ShoeTier.FINISH
-                else -> when (Rarity.of(entity.rarity)) {
-                    Rarity.COMMON -> ShoeTier.COMMON
-                    Rarity.RARE -> ShoeTier.RARE
-                    Rarity.EPIC -> ShoeTier.EPIC
-                    Rarity.LEGENDARY -> ShoeTier.LEGENDARY
-                }
-            }
-        }
+        ServiceLocator.database.sneakerDao().allNow().map { entity -> Rarity.of(entity.rarity).tier }
 
     private fun prepare() = runBlocking {
         ServiceLocator.userPrefs.setReducedMotion(true)
@@ -461,8 +448,8 @@ class MyShoesDesignTest {
             ShoeTier.RARE to add(1107, Rarity.RARE, 1, 480, 420, 92.6, 40),
             ShoeTier.EPIC to add(1201, Rarity.EPIC, 3, 860, 740, 88.0, 30),
             ShoeTier.LEGENDARY to add(1301, Rarity.LEGENDARY, 5, 1180, 1010, 76.4, 20),
-            ShoeTier.REDLINE to add(1312, Rarity.LEGENDARY, 1, 1240, 950, 100.0, 10),
-            ShoeTier.FINISH to add(1329, Rarity.LEGENDARY, 2, 1060, 1150, 64.0, 1),
+            ShoeTier.REDLINE to add(1312, Rarity.REDLINE, 1, 1240, 950, 100.0, 10),
+            ShoeTier.FINISH to add(1329, Rarity.FINISH, 2, 1060, 1150, 64.0, 1),
         )
         val worn = byTier.getValue(ShoeTier.RARE)
         dao.equipExclusively(worn)
@@ -542,8 +529,8 @@ class MyShoesDesignTest {
             sample(9101, 1107, Rarity.RARE, 1, 1, 480, 420, 92.6, worn = true),
             sample(9102, 1201, Rarity.EPIC, 2, 3, 860, 740, 88.0),
             sample(9103, 1301, Rarity.LEGENDARY, 3, 5, 1180, 1010, 76.4),
-            sample(9104, 1312, Rarity.LEGENDARY, 4, 1, 1240, 950, 100.0),
-            sample(9105, 1329, Rarity.LEGENDARY, 5, 2, 1060, 1150, 64.0),
+            sample(9104, 1312, Rarity.REDLINE, 4, 1, 1240, 950, 100.0),
+            sample(9105, 1329, Rarity.FINISH, 5, 2, 1060, 1150, 64.0),
             sample(9106, null, Rarity.COMMON, 6, 1, 0, 0, 100.0),
         )
         val LONG = SAMPLES.first { it.modelId == 1329 }

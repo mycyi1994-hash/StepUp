@@ -228,11 +228,12 @@ class ShoeCareTest {
 
     // ── 강화 화면의 세 줄(서버 forge 값) ────────────────────────
 
-    @Test fun `강화 미리보기는 레벨 +1 · 스탯 포인트 +4 — 효율 · 착화감은 저절로 오르지 않고 내구도 줄은 없다`() {
+    @Test fun `강화 미리보기는 레벨 +1 · 등급 · 레벨만큼 스탯 포인트 — 효율 · 착화감은 저절로 오르지 않고 내구도 줄은 없다`() {
         val stats = ForgeStats(level = 10, maxLevel = 20, efficiencyBps = 1_800, comfortBps = 800, pointsTotal = 36, pointsFree = 4)
         val target = ForgeTarget(ID, Rarity.LEGENDARY, stats, basePermille = 700, block = null)
         val next = target.previewNext()
-        assertEquals(listOf(11, 40, 8), listOf(next.level, next.pointsTotal, next.pointsFree))
+        // 레전더리 Lv10 → 11: 11 레벨 2 × 레전더리 4 = 8 (서버 0066)
+        assertEquals(listOf(11, 44, 12), listOf(next.level, next.pointsTotal, next.pointsFree))
         assertEquals(1_800 to 800, next.efficiencyBps to next.comfortBps)
         val rows = forgeRows(stats, next)
         assertEquals(listOf(DetailStat.LEVEL, DetailStat.EFFICIENCY, DetailStat.COMFORT), rows.map { it.stat })
@@ -241,11 +242,12 @@ class ShoeCareTest {
         assertEquals("+18.0%" to null, rows[1].now to rows[1].next)
         assertEquals("8.0%" to null, rows[2].now to rows[2].next)
         assertNull(rows[1].nextFraction)
-        assertEquals(4, forgePointsGain(stats, next))
-        // 포인트를 보내지 않는 예전 서버 — 오른 레벨 × 4 로 센다. 서버가 바뀐 효율을 주면 그대로 보인다
-        assertEquals(4, forgePointsGain(stats.copy(pointsTotal = 0), next.copy(pointsTotal = 0)))
+        assertEquals(8, forgePointsGain(stats, next, Rarity.LEGENDARY))
+        // 포인트를 보내지 않는 예전 서버 — 같은 표(등급 · 레벨)로 센다. 서버가 바뀐 효율을 주면 그대로 보인다
+        assertEquals(8, forgePointsGain(stats.copy(pointsTotal = 0), next.copy(pointsTotal = 0), Rarity.LEGENDARY))
+        assertEquals(1_200, forgePointsGain(stats.copy(level = 29, pointsTotal = 0), next.copy(level = 30, pointsTotal = 0), Rarity.FINISH))
         assertEquals("+18.0%" to "+18.5%", forgeRows(stats, next.copy(efficiencyBps = 1_850))[1].let { it.now to it.next })
-        assertEquals(0, forgePointsGain(stats, stats))
+        assertEquals(0, forgePointsGain(stats, stats, Rarity.LEGENDARY))
         // 레벨 분모는 서버가 준 상한(20)
         assertEquals(10f / 20f, rows[0].nowFraction, 1e-6f)
         assertEquals(11f / 20f, rows[0].nextFraction!!, 1e-6f)

@@ -180,10 +180,19 @@ class RewardRepository(
     }
 
     /** Calculation only; RunSettlementRepository commits the record and local effects together. */
-    suspend fun calculateSessionReward(steps: Int, partySize: Int = 1, today: Long = LocalDate.now().toEpochDay()): SessionReward {
+    suspend fun calculateSessionReward(
+        steps: Int,
+        partySize: Int = 1,
+        today: Long = LocalDate.now().toEpochDay(),
+        /** 멈춘 시간을 뺀 달린 시간(초) — 신발이 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066). 0 이면 빼지 않는다 */
+        activeSec: Long = 0L,
+    ): SessionReward {
         syncEnergyCap()
         val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()
+        // 신발이 다 닳은 뒤의 걸음은 서버가 적립하지 않는다 — 예상 보상도 같은 규칙으로
+        val creditedSteps = equipped?.server?.takeIf { it.hasDurabilityMax }
+            ?.let { RewardEconomy.stepsWithinDurability(steps, it.durabilityNow, activeSec) } ?: steps
 
         val earningMultiplier = equipped?.earningMultiplier
             ?: RewardEconomy.sneakerMultiplier(prefs.sneakerLevel.first())
@@ -194,7 +203,7 @@ class RewardRepository(
         val boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0
 
         val reward = RewardEconomy.sessionReward(
-            walkedSteps = steps,
+            walkedSteps = creditedSteps,
             energyRemaining = energyRemaining,
             earningMultiplier = earningMultiplier,
             energyEfficiency = energyEfficiency,

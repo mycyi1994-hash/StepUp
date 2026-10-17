@@ -92,4 +92,16 @@ class RewardEconomyTest {
         assertEquals(100.0, RewardEconomy.upgradeCost(1), 1e-9)
         assertEquals(300.0, RewardEconomy.upgradeCost(3), 1e-9)
     }
+
+    @Test
+    fun `내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 - 서버 0066 과 같은 규칙`() {
+        // 남은 내구도 50 = 10분(600초). 20분(1201초) 달린 2000걸음 중 앞의 10분 몫만
+        assertEquals(999, RewardEconomy.stepsWithinDurability(2000, 50, 1201))
+        // 다 닳지 않았으면 그대로
+        assertEquals(2000, RewardEconomy.stepsWithinDurability(2000, 50, 600))
+        assertEquals(2000, RewardEconomy.stepsWithinDurability(2000, 450, 1201))
+        // 다 닳은 신발 · 달린 시간을 모르면
+        assertEquals(0, RewardEconomy.stepsWithinDurability(2000, 0, 1201))
+        assertEquals(2000, RewardEconomy.stepsWithinDurability(2000, 0, 0))
+    }
 }

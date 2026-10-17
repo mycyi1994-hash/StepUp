@@ -1105,7 +1105,9 @@ class WalkSessionService : Service() {
                         ""
                     },
                 )
-            ) { energyDay -> ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay) }
+            ) { energyDay ->
+                ServiceLocator.rewardRepository.calculateSessionReward(creditedSteps, settleSize, energyDay, activeSec = session.elapsedSec)
+            }
             // These legacy follow-ups are not durable yet. A same-process save retry
             // must not issue them again after a scheduling failure.
             if (!followupsAttempted && !alreadySettled) {

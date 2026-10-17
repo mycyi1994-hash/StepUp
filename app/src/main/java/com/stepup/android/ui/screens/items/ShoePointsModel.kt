@@ -7,8 +7,8 @@ import com.stepup.android.domain.StatPoints
 /*
  * 스탯 포인트 나누기(서버 0059 sneaker_points_set, 2026-10-16 사용자 결정)가 쓰는 순수 계산.
  *
- * 레벨이 하나 오를 때마다 포인트 4 — 포인트 1 은 효율 +0.25%p · 착화감 +0.1%p(착화감은 20% 까지) · 최대 내구도 +100(1km,
- * 남은 내구도도 같이 +100) 중 하나다. 나눈 포인트는 되돌리지 않는다. 0059 전에 강화한 신발은 지금 스탯이 그대로이도록
+ * 레벨이 하나 오를 때마다 포인트 4 — 포인트 1 은 효율 +0.25%p · 착화감 +0.1%p(착화감은 20% 까지) · 최대 내구도 + 기본의 10%
+ * (남은 내구도도 같이, 서버 0066) 중 하나다. 나눈 포인트는 되돌리지 않는다. 0059 전에 강화한 신발은 지금 스탯이 그대로이도록
  * 효율 2 · 착화감 2 씩 나눠 둔 채로 받았고, 한 번은 처음부터 다시 나눌 수 있다([PointsBasis.respec]).
  * 값은 모두 서버가 준 신발 값에서 온다 — 이 계산은 미리보기이고, 서버가 같은 규칙으로 다시 확인한다.
  */
@@ -58,11 +58,14 @@ data class PointsBasis(
 
     fun efficiencyBps(draft: PointsDraft): Int = efficiencyBaseBps + StatPoints.EFFICIENCY_BPS * draft.efficiency
     fun comfortBps(draft: PointsDraft): Int = minOf(comfortRaw(draft.comfort), StatPoints.COMFORT_CAP_BPS)
-    fun durabilityMax(draft: PointsDraft): Int = durabilityBase + StatPoints.DURABILITY * draft.durability
+    /** 내구도 포인트 1 이 올리는 값 — 이 신발 기본 최대 내구도의 10% */
+    val durabilityPerPoint: Int get() = StatPoints.durabilityPerPoint(durabilityBase)
+
+    fun durabilityMax(draft: PointsDraft): Int = durabilityBase + durabilityPerPoint * draft.durability
 
     /** 내구도 포인트는 최대 · 남은 내구도를 함께 올린다(다시 나누기로 줄이면 함께 내린다) */
     fun durabilityNow(draft: PointsDraft): Int =
-        (durabilityNow + StatPoints.DURABILITY * (draft.durability - saved.durability)).coerceIn(0, durabilityMax(draft))
+        (durabilityNow + durabilityPerPoint * (draft.durability - saved.durability)).coerceIn(0, durabilityMax(draft))
 
     fun changed(draft: PointsDraft): Boolean = draft != saved
 

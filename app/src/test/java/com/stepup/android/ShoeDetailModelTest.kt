@@ -125,9 +125,10 @@ class ShoeDetailModelTest {
         assertEquals("590 / 1,230", formatDurability(shoe))
         assertEquals(590 to 1_230, durabilityLeft(shoe) to durabilityMax(shoe))
         assertEquals(590f / 1_230f, durabilityFraction(shoe), 0.0001f)
-        // 러닝 화면의 작은 칸 · 적립 배율(50% · 20%)은 남은 비율
+        // 러닝 화면의 작은 칸은 남은 비율. 적립 배율은 남아 있으면 그대로, 다 닳았으면 0(서버 0066)
         assertEquals(47, durabilityPercent(shoe))
-        assertEquals(0.7, shoe.server!!.durabilityFactor, 0.0)
+        assertEquals(1.0, shoe.server!!.durabilityFactor, 0.0)
+        assertEquals(0.0, shoe.server!!.copy(durabilityPts = 0.0).durabilityFactor, 0.0)
         assertEquals("12,345", formatCount(12_345))
     }
 
@@ -281,7 +282,7 @@ class ShoeDetailModelTest {
         assertEquals("5 / 10", rows[0].value)
         assertEquals(0.5f, rows[0].fraction, 0.0001f)
         assertEquals("+8.0%", rows[1].value)
-        assertEquals((8.0 / 27.5).toFloat(), rows[1].fraction, 0.0001f)
+        assertEquals((8.0 / 55.0).toFloat(), rows[1].fraction, 0.0001f)
         assertEquals(formatPercent(energySavingPercent(shoe)), rows[2].value)
         assertEquals((energySavingPercent(shoe) / 20.0).toFloat(), rows[2].fraction, 0.0001f)
         // 서버 내구도는 내려서 — 92.6 은 92
@@ -292,12 +293,12 @@ class ShoeDetailModelTest {
     @Test
     fun `서버 상한이 없으면 등급 기본 레벨 상한, 막대는 0 에서 1 사이`() {
         val rare = legacy(rarity = Rarity.RARE, level = 5)
-        assertEquals("5 / 15", detailStatRows(rare)[0].value)
-        assertEquals(5f / 15f, detailStatRows(rare)[0].fraction, 0.0001f)
-        assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.LEGENDARY, level = 30))[0].value)
-        assertEquals(1f, detailStatRows(legacy(rarity = Rarity.LEGENDARY, level = 30))[0].fraction, 0f)
+        assertEquals("5 / 20", detailStatRows(rare)[0].value)
+        assertEquals(5f / 20f, detailStatRows(rare)[0].fraction, 0.0001f)
+        assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].value)
+        assertEquals(1f, detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].fraction, 0f)
         // 상한을 넘는 값 · 음수 내구도는 막대 끝 · 0 에서 멈춘다
-        assertEquals(1f, detailStatRows(server(efficiencyBps = 4_000))[1].fraction, 0f)
+        assertEquals(1f, detailStatRows(server(efficiencyBps = 6_000))[1].fraction, 0f)
         assertEquals(0f, detailStatRows(server(durability = -3.0))[3].fraction, 0f)
     }
 

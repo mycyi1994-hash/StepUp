@@ -23,7 +23,7 @@
     <!-- 막대 기준 — 모든 신발에 같은 기준(서버 economy 함수의 최대 · 상한) -->
     <string name="my_shoes_basis_open">进度条标准</string>
     <string name="my_shoes_basis_intro">效率和舒适度进度条对所有鞋子使用相同标准，方便互相比较。</string>
-    <string name="my_shoes_basis_efficiency">效率（SUP 获取加成）：满格 %1$s — 传说 %2$d 级平均分配点数时的值。把更多点数分给效率会让进度条满格</string>
+    <string name="my_shoes_basis_efficiency">效率（SUP 获取加成）：满格 %1$s — Finish 新鞋的最高值。把点数分给效率可能超过满格</string>
     <string name="my_shoes_basis_comfort">舒适度（能量节省）：满格 %1$s — 服务器上限</string>
     <string name="my_shoes_basis_durability">耐久度：满格是这双鞋的最大耐久度（每双鞋不同）。每跑 1 分钟减少 5</string>
     <string name="my_shoes_basis_note">效率是加成比例，不是数量。实际获得的 SUP 在跑步结束后由服务器确认。</string>
