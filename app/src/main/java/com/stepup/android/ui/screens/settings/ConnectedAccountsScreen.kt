@@ -76,6 +76,11 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     var reads by remember { mutableIntStateOf(0) }
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
     var wallet by remember { mutableStateOf(WalletLink.Checking) }
+    // 지갑 앱에서 연결하고 돌아오면(2026-10-18 지갑 고르기) 연결 상태를 다시 읽는다
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        if (wallet != WalletLink.Checking) reads++
+        onPauseOrDispose { }
+    }
     LaunchedEffect(reads) {
         val now = ServiceLocator.sessionHolder.isSignedIn()
         signedIn = now
@@ -131,6 +136,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
                         // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
                         ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                         ServiceLocator.userPrefs.clearGoalAttempts()
+                        ServiceLocator.userPrefs.clearShoeNicknames()
                         ServiceLocator.userPrefs.setRunExperience(null)
                         // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
                         ServiceLocator.userPrefs.setLoginMethod("")

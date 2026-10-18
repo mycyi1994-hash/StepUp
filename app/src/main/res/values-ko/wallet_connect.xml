@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
+<resources>
+    <string name="wc_title">WEB3 지갑 연결</string>
+    <string name="wc_body">지갑을 고르면 그 지갑 앱 안에서 열려요. 서명 한 번이면 연결돼요. 서명은 거래가 아니라 수수료가 들지 않아요.</string>
+    <string name="wc_note">한 지갑은 한 STEPUP 계정에만 연결돼요. 연결 요청은 10분 동안만 쓸 수 있어요.</string>
+    <string name="wc_sub_open">지갑 앱에서 바로 열려요</string>
+    <string name="wc_sub_paste">링크를 복사해요 — Rabby 브라우저에 붙여 넣어요</string>
+    <string name="wc_soon">준비 중</string>
+    <string name="wc_giwa">GIWA Wallet</string>
+    <string name="wc_metamask">MetaMask</string>
+    <string name="wc_okx">OKX Wallet</string>
+    <string name="wc_rabby">Rabby Wallet</string>
+    <string name="wc_waiting_title">%1$s에서 서명해 주세요</string>
+    <string name="wc_waiting_body">%1$s에 열린 페이지에서 “지갑 연결하기”를 누르고 서명해 주세요. 마치면 이 앱으로 돌아오세요.</string>
+    <string name="wc_copied_body">링크를 복사했어요. %1$s 브라우저 주소창에 붙여 넣어 열고, “지갑 연결하기”를 눌러 서명해 주세요. 마치면 이 앱으로 돌아오세요.</string>
+    <string name="wc_not_yet_body">아직 연결되지 않았어요. %1$s에서 서명을 마친 뒤 다시 확인해 주세요.</string>
+    <string name="wc_check">연결 확인</string>
+    <string name="wc_other_wallet">다른 지갑 고르기</string>
+    <string name="wc_linked_title">지갑을 연결했어요</string>
+    <string name="wc_linked_body">이 STEPUP 계정에 지갑이 연결됐어요.</string>
+    <string name="wc_done">확인</string>
+    <string name="wc_error_title">시작하지 못했어요</string>
+    <string name="wc_error_sign_in">먼저 STEPUP에 로그인해 주세요.</string>
+    <string name="wc_error_offline">인터넷 연결을 확인하고 다시 해 주세요.</string>
+    <string name="wc_error_mfa">이미 연결된 지갑이 있어요. 지갑을 바꾸려면 지갑 페이지에서 2단계 인증이 필요해요.</string>
+    <string name="wc_error_failed">문제가 생겼어요. 다시 해 주세요.</string>
+    <string name="wc_back">돌아가기</string>
+</resources>

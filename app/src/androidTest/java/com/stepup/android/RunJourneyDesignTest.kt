@@ -65,6 +65,7 @@ import java.io.File
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -129,7 +130,33 @@ class RunJourneyDesignTest {
             compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("home-shoe-info")), useUnmergedTree = true)
                 .assertExists()
             compose.onNodeWithTag("home-stat-durability-value", useUnmergedTree = true).assertTextContains("92", substring = true)
+            compose.onNodeWithTag("home-durability-bar").assertExists()
             shot("HOME")
+            // 신발 이름 바꾸기(2026-10-17) — 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
+            val shoeId = requireNotNull(added)
+            tap("home-shoe-rename")
+            awaitTag("home-shoe-rename-sheet")
+            compose.onNodeWithTag("home-shoe-rename-field").performTextClearance()
+            compose.onNodeWithTag("home-shoe-rename-field").performTextInput("나의 아주 긴 첫 레이싱화 이름이에요 정말로")
+            shot("HOME-rename")
+            tap("home-shoe-rename-save")
+            awaitGone("home-shoe-rename-sheet")
+            // 20자에서 자른다 — 그리고 두 줄 안에서 글자를 줄여 다 보인다(… 없이)
+            val saved = runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] }
+            assertEquals("나의 아주 긴 첫 레이싱화 이름이에요", saved)
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true).assertTextEquals(saved!!) }.isSuccess
+            }
+            val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true)
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("long shoe names stay whole: ${layouts.map { it.lineCount }}", layouts.none { it.hasVisualOverflow })
+            shot("HOME-renamed")
+            tap("home-shoe-rename")
+            awaitTag("home-shoe-rename-reset")
+            tap("home-shoe-rename-reset")
+            awaitGone("home-shoe-rename-sheet")
+            compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] } == null }
             tap("home-steps")
             awaitTag("home-details")
             shot("E01")
@@ -499,7 +526,10 @@ class RunJourneyDesignTest {
             awaitTag("run-result")
             shot("S02", settle = 1_500)
         } finally {
-            runBlocking { ServiceLocator.userPrefs.clearGoalAttempts() }
+            runBlocking {
+                ServiceLocator.userPrefs.clearGoalAttempts()
+                added?.let { ServiceLocator.userPrefs.setShoeNickname(it, null) }
+            }
             WalkSessionService.showStateForTest(WalkSessionState())
             RunPlans.clear()
             syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
@@ -511,6 +541,36 @@ class RunJourneyDesignTest {
      * 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 자유 러닝 중은 큰 시간이 버튼 위 · 두 버튼이 화면 안(390×844 · 글자 100% 는
      * 지도가 러닝 화면 높이의 68% 이상), 결과는 완료 · 공유가 화면 안이고 보상 칸 · SUP 가 없다
      */
+    /** 가장 긴 이름(20자, 꽉 찬 한글) — 360dp · 큰 글씨에서도 러닝 탭 신발 이름이 넘치지 않고 다 보인다(2026-10-17) */
+    @Test fun longShoeNameFits() {
+        seed()
+        val shoeId = requireNotNull(added)
+        val longest = "가나다라마바사아자차카타파하가나다라마바"
+        try {
+            runBlocking { ServiceLocator.userPrefs.setShoeNickname(shoeId, longest) }
+            edgeToEdge()
+            compose.setContent { DeviceFrame { MainScaffold() } }
+            for (next in listOf(Viewport(360, 800), Viewport(360, 800, font = 1.3f), Viewport(412, 915))) {
+                compose.runOnIdle { viewport = next }
+                compose.waitForIdle()
+                awaitTag("home-shoe-name")
+                compose.waitUntil(5_000) {
+                    runCatching { compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true).assertTextEquals(longest) }.isSuccess
+                }
+                val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+                compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true)
+                    .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+                assertTrue("${next.label}: the whole name shows (${layouts.map { it.lineCount }})", layouts.none { it.hasVisualOverflow })
+                compose.onNodeWithTag("home-shoe-rename").assertIsDisplayed()
+                shot("HOME-long-name-${next.label}")
+            }
+        } finally {
+            runBlocking { ServiceLocator.userPrefs.setShoeNickname(shoeId, null) }
+            syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
+            restore()
+        }
+    }
+
     @Test fun fitsAtDeviceSizes() {
         seed()
         try {

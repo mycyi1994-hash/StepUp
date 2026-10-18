@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,6 +121,7 @@ private fun DrawScope.drawWindowFrames(windowHeight: Float, t: RunTone) {
 @Composable
 fun ShowroomStage(shoe: Sneaker?, modifier: Modifier = Modifier) {
     val t = runTone()
+    val flash = rememberCeilingFlash()
     BoxWithConstraints(modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
@@ -128,7 +131,7 @@ fun ShowroomStage(shoe: Sneaker?, modifier: Modifier = Modifier) {
         val pedestalTop = h - pedestalTopH - pedestalDepth - h * 0.03f
         Canvas(Modifier.fillMaxSize().testTag("home-stage")) {
             drawFloor(pedestalTop, t)
-            drawCeilingLight(t)
+            drawCeilingLight(t, flash.value)
             drawPedestal(Offset(size.width / 2f, pedestalTop), pedestalWidth, pedestalTopH, pedestalDepth, t)
         }
         if (shoe != null) {
@@ -171,8 +174,57 @@ fun ShowroomStage(shoe: Sneaker?, modifier: Modifier = Modifier) {
     }
 }
 
-/** 천장 조명 — 어두운 틀 안의 밝은 막대, 아래로 번지는 빛과 내려오는 빛기둥 */
-private fun DrawScope.drawCeilingLight(t: RunTone) {
+/**
+ * 천장 조명이 가끔 번쩍인다(2026-10-17 사용자 "위에 등 같은거 가끔씩 번쩍이는 애니메이션") — 6초마다 한 번, 1.4초 동안
+ * 두 번 깜빡인 뒤 밝은 빛이 막대를 따라 훑고 지나간다. 값은 0(쉼) ~ 1(한 번의 진행)이고 그리기 단계에서만 읽는다.
+ * 무한 전환(InfiniteTransition)이라 화면 검사 · 앱이 뒤에 있을 때는 멈추고, 모션 줄이기면 아예 돌지 않는다(0 — 예전 그림).
+ */
+@Composable
+private fun rememberCeilingFlash(): State<Float> {
+    if (!com.stepup.android.ui.experience.LocalMotion.current.decorative) return CeilingAtRest
+    val cycle = androidx.compose.animation.core.rememberInfiniteTransition(label = "ceilingFlash").animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(CeilingCycleMs, easing = androidx.compose.animation.core.LinearEasing),
+        ),
+        label = "ceilingFlashCycle",
+    )
+    // 한 바퀴의 끝 1.4초 동안만 번쩍인다(처음 들어왔을 때 바로 번쩍이지 않게)
+    return androidx.compose.runtime.remember(cycle) {
+        androidx.compose.runtime.derivedStateOf { ceilingFlashOf(cycle.value * CeilingCycleMs) }
+    }
+}
+
+private val CeilingAtRest: State<Float> = androidx.compose.runtime.mutableFloatStateOf(0f)
+
+private const val CeilingFlashMs = 1_400
+private const val CeilingCycleMs = 6_000
+
+/** 한 바퀴 안의 시각([ms], 0 ~ 6,000)을 번쩍임 진행(0 ~ 1)으로 — 끝 1.4초만, 나머지는 0 */
+internal fun ceilingFlashOf(ms: Float): Float {
+    val start = (CeilingCycleMs - CeilingFlashMs).toFloat()
+    return if (ms < start) 0f else ((ms - start) / CeilingFlashMs).coerceIn(0f, 1f)
+}
+
+/** 번쩍임 세기(0 ~ 1) — 진행 [p] 의 앞쪽에서 두 번 깜빡인다 */
+internal fun ceilingFlicker(p: Float): Float = when {
+    p <= 0f || p >= 1f -> 0f
+    p < 0.10f -> kotlin.math.sin(p / 0.10f * Math.PI.toFloat())
+    p < 0.16f -> 0f
+    p < 0.30f -> 0.75f * kotlin.math.sin((p - 0.16f) / 0.14f * Math.PI.toFloat())
+    else -> 0f
+}
+
+/** 막대를 훑는 빛의 위치(0 ~ 1)와 세기 — 깜빡임 뒤(0.30 ~ 1.0)에 왼쪽에서 오른쪽으로 */
+internal fun ceilingSweep(p: Float): Pair<Float, Float> {
+    if (p < 0.30f || p >= 1f) return 0f to 0f
+    val q = (p - 0.30f) / 0.70f
+    return q to kotlin.math.sin(q * Math.PI.toFloat())
+}
+
+/** 천장 조명 — 어두운 틀 안의 밝은 막대, 아래로 번지는 빛과 내려오는 빛기둥. [flash] 는 [rememberCeilingFlash] 의 진행 */
+private fun DrawScope.drawCeilingLight(t: RunTone, flash: Float = 0f) {
+    val flicker = ceilingFlicker(flash)
     val w = size.width
     val barLeft = w * 0.06f
     val barRight = w * 0.94f
@@ -189,7 +241,7 @@ private fun DrawScope.drawCeilingLight(t: RunTone) {
     drawPath(
         cone,
         Brush.verticalGradient(
-            listOf(Color(0xFF9CC8FF).copy(alpha = if (t.dark) 0.20f else 0.18f), Color.Transparent),
+            listOf(Color(0xFF9CC8FF).copy(alpha = ((if (t.dark) 0.20f else 0.18f) + 0.16f * flicker).coerceAtMost(1f)), Color.Transparent),
             startY = barTop, endY = size.height * 0.86f,
         ),
     )
@@ -205,6 +257,29 @@ private fun DrawScope.drawCeilingLight(t: RunTone) {
         Color(0xFFF2FAFF), Offset(barLeft + 6.dp.toPx(), barTop + housing * 0.8f), Offset(barRight - 6.dp.toPx(), barTop + housing * 0.8f),
         strokeWidth = 3.5.dp.toPx(),
     )
+    if (flicker > 0f) {
+        // 깜빡임 — 막대 둘레가 한꺼번에 밝아진다
+        glowLine(Offset(barLeft + 4.dp.toPx(), barTop + housing * 0.78f), Offset(barRight - 4.dp.toPx(), barTop + housing * 0.78f),
+            Color(0xFFDDF0FF), 6.dp.toPx(), 26.dp.toPx(), 0.85f * flicker)
+    }
+    val (at, power) = ceilingSweep(flash)
+    if (power > 0f) {
+        // 훑는 빛 — 막대 위의 밝은 점과 아래로 번지는 작은 빛
+        val x = barLeft + (barRight - barLeft) * at
+        val y = barTop + housing * 0.8f
+        val reach = 46.dp.toPx()
+        drawCircle(
+            Brush.radialGradient(listOf(Color.White.copy(alpha = 0.9f * power), Color(0xFF8EC5FF).copy(alpha = 0.35f * power), Color.Transparent),
+                center = Offset(x, y), radius = reach),
+            radius = reach, center = Offset(x, y),
+        )
+        drawLine(
+            Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = power), Color.Transparent),
+                startX = x - reach, endX = x + reach),
+            Offset((x - reach).coerceAtLeast(barLeft + 6.dp.toPx()), y), Offset((x + reach).coerceAtMost(barRight - 6.dp.toPx()), y),
+            strokeWidth = 4.5.dp.toPx(),
+        )
+    }
 }
 
 /** 반들한 바닥 — 받침보다 조금 위에서 시작해 아래로 어두워진다. 받침 아래 파란 반사 */

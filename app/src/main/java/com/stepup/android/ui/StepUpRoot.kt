@@ -58,7 +58,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -127,7 +126,6 @@ import com.stepup.android.ui.screens.walk.RunScreen
 import com.stepup.android.ui.theme.Carbon
 import com.stepup.android.ui.theme.Night
 import com.stepup.android.ui.theme.Slate
-import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltText
 
 sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector) {
@@ -380,6 +378,19 @@ internal fun MainScaffold(
     initialTab: Screen = Screen.Run,
     initialRoute: String = initialTab.route,
 ) {
+    // 내가 붙인 신발 이름(2026-10-17) — 신발 이름을 쓰는 모든 화면이 같은 값을 본다
+    val nicknames by ServiceLocator.userPrefs.shoeNicknames.collectAsState(initial = emptyMap())
+    androidx.compose.runtime.CompositionLocalProvider(com.stepup.android.ui.components.LocalShoeNicknames provides nicknames) {
+        MainScaffoldContent(startTour, initialTab, initialRoute)
+    }
+}
+
+@Composable
+private fun MainScaffoldContent(
+    startTour: Boolean,
+    initialTab: Screen,
+    initialRoute: String,
+) {
     RunFeedback()
     val motion = LocalMotion.current
     val context = LocalContext.current
@@ -406,6 +417,10 @@ internal fun MainScaffold(
     LaunchedEffect(pendingRun) {
         currentOwner = runCatching { ServiceLocator.sessionHolder.recordingOwner() }.getOrNull()
     }
+    // WEB3 지갑 고르기(2026-10-18) — 앱의 "지갑 연결" 버튼은 모두 이 창을 연다(MetaMask · OKX · Rabby, GIWA 준비 중)
+    var walletPicker by rememberSaveable { mutableStateOf(false) }
+    if (walletPicker) com.stepup.android.ui.screens.rewards.WalletConnectSheet(onDismiss = { walletPicker = false })
+
     pendingRun?.takeIf { currentOwner != null }?.let { checkpoint ->
         if (StepPermissions.hasActivityRecognition(context)) {
             if (checkpoint.phase == com.stepup.android.service.RunCheckpointPhase.SETTLING) {
@@ -716,7 +731,7 @@ internal fun MainScaffold(
                             // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
                             onConnectWallet = {
                                 drawVm.watchWalletLink()
-                                drawScope.openWalletPage(context) { navController.navigate(Routes.WALLET) }
+                                walletPicker = true
                             },
                             onRetry = drawVm::refresh,
                             onCheckPending = drawVm::checkPending,
@@ -929,6 +944,7 @@ internal fun MainScaffold(
                         com.stepup.android.domain.RunPlans.clear()
                         navController.navigate(Routes.RUN_NOW)
                     },
+                    onOpenHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                 )
             }
             composable(Screen.Profile.route) { entry ->
@@ -941,7 +957,6 @@ internal fun MainScaffold(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenAnalytics = { navController.navigate(Routes.RECORDS) },
-                    onOpenChallengeHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
                     nicknameSaved = nicknameSaved,
@@ -1216,6 +1231,7 @@ internal fun MainScaffold(
                             android.widget.Toast.makeText(context, context.getString(R.string.wallet_web_offline), android.widget.Toast.LENGTH_SHORT).show()
                         }
                     },
+                    onConnectWallet = { walletPicker = true },
                 )
             }
             composable(Routes.CHAIN_ACTIVITY) {
@@ -1351,10 +1367,9 @@ internal fun MainScaffold(
                 )
             }
             composable(Routes.SETTINGS_CONNECTED) {
-                val walletScope = rememberCoroutineScope()
                 ConnectedAccountsScreen(
                     onBack = { navController.popBackStack() },
-                    onConnectWallet = { walletScope.openWalletPage(context) { navController.navigate(Routes.WALLET) } },
+                    onConnectWallet = { walletPicker = true },
                 )
             }
             composable(Routes.SETTINGS_EXPERIENCE) {
@@ -1366,7 +1381,10 @@ internal fun MainScaffold(
             composable(Routes.CHALLENGE_HISTORY) {
                 com.stepup.android.ui.screens.events.ChallengeHistoryScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
+                    // 챌린지 화면에서 왔으면 그리로 돌아간다(둘이 번갈아 쌓이지 않게)
+                    onOpenChallenges = {
+                        if (!navController.popBackStack(Routes.EVENTS, inclusive = false)) navController.navigate(Routes.EVENTS)
+                    },
                 )
             }
             composable(Routes.INVITE) {
@@ -1597,6 +1615,9 @@ private fun NavHostController.switchTab(screen: Screen) {
     }
 }
 
+/** 고른 탭 글자를 키우는 배율 */
+private const val NavSelectedLabelScale = 1.1f
+
 /** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
 const val BOTTOM_NAV_TAG = "bottom-nav"
 
@@ -1613,10 +1634,13 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         letterSpacing = 0.sp, textAlign = TextAlign.Center,
     )
     val labels = bottomTabs.map { stringResource(it.labelRes) }
+    // 고른 탭은 글자가 굵어지고 조금 커진다(2026-10-17) — 자리 폭 · 높이는 굵은 글자로 재어 어느 탭을 골라도 줄이 흔들리지 않게
+    val measureStyle = labelStyle.copy(fontWeight = FontWeight.ExtraBold)
     // Allocate spare space to long localized labels without defeating system font scaling.
     val preferredWidths = labels.map { label ->
-        val measured = measurer.measure(text = label, style = labelStyle, softWrap = false)
-        (with(density) { measured.size.width.toDp().value } + 10f)
+        val measured = measurer.measure(text = label, style = measureStyle, softWrap = false)
+        // 고른 글자를 키우는 몫(NavSelectedLabelScale)도 자리에 넣는다
+        (with(density) { measured.size.width.toDp().value } * NavSelectedLabelScale + 10f)
             .coerceAtLeast(StepUpDesign.TouchTarget.value)
     }
     val equalWidth = maxWidth.value / labels.size
@@ -1633,7 +1657,7 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     val labelHeightPx = bottomTabs.mapIndexed { index, screen ->
         val labelWidth = with(density) { (widths[index].dp - 8.dp).roundToPx().coerceAtLeast(1) }
         measurer.measure(
-            text = stringResource(screen.labelRes), style = labelStyle,
+            text = stringResource(screen.labelRes), style = measureStyle,
             constraints = androidx.compose.ui.unit.Constraints(maxWidth = labelWidth),
         ).size.height
     }.maxOrNull() ?: 0
@@ -1710,9 +1734,10 @@ private fun RowScope.NavTab(
         },
         label = "navTabTint",
     )
-    val dotAlpha by animateFloatAsState(
-        targetValue = 0f,
-        label = "navTabDot",
+    // 고른 탭 글자 — 조금 커지고(위 가장자리 기준이라 글자 줄은 그대로) 굵어진다
+    val labelScale by animateFloatAsState(
+        targetValue = if (selected) NavSelectedLabelScale else 1f,
+        label = "navTabLabelScale",
     )
     Column(
         modifier = Modifier.weight(slotWeight)
@@ -1741,7 +1766,8 @@ private fun RowScope.NavTab(
             .heightIn(min = StepUpDesign.NavigationItemHeight)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        // 아이콘 + 글자 묶음을 파란 타일 가운데에(2026-10-17 — 예전엔 위에 붙어 아이콘은 너무 위, 글자는 바닥에서 떠 보였다)
+        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
     ) {
         Icon(
             imageVector = screen.icon,
@@ -1760,16 +1786,15 @@ private fun RowScope.NavTab(
         )
         Text(
             text = stringResource(screen.labelRes),
-            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
+            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}")
+                .graphicsLayer {
+                    scaleX = labelScale
+                    scaleY = labelScale
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+                },
             color = tint,
-            style = labelStyle,
+            style = if (selected) labelStyle.copy(fontWeight = FontWeight.ExtraBold) else labelStyle,
             softWrap = true,
-        )
-        Box(
-            modifier = Modifier
-                .size(width = 17.dp, height = 3.dp)
-                .alpha(dotAlpha)
-                .background(Volt, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
         )
     }
 }

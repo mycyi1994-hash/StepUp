@@ -349,7 +349,7 @@
     },
     {
       "id": "Routes.CHALLENGE_HISTORY",
-      "parent": "Profile",
+      "parent": "Run",
       "chrome": "Detail",
       "implementation": "K2 (user feedback 7): completed challenge rewards from the ledger (goal bonus · challenge rewards), link to current challenges",
       "verification": "new; see PR evidence"
@@ -896,7 +896,7 @@
     {
       "id": "PostComposeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
-      "line": 34,
+      "line": 35,
       "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
       "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1343,7 +1343,7 @@
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 109,
+      "line": 113,
       "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
       "verification": "443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md)",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -1681,14 +1681,14 @@
     {
       "id": "RunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 2497,
+      "line": 2563,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "FreeRunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 2551,
+      "line": 2617,
       "implementation": "pending",
       "verification": "pending"
     }
@@ -1698,14 +1698,14 @@
       "kind": "AlertDialog",
       "owner": "ReportDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt",
-      "line": 132,
+      "line": 138,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "CommentSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt",
-      "line": 148,
+      "line": 176,
       "verification": "pending"
     },
     {
@@ -1726,7 +1726,7 @@
       "kind": "DialogPanel",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 419,
+      "line": 426,
       "verification": "pending"
     },
     {
@@ -1747,28 +1747,28 @@
       "kind": "DialogPanel",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 519,
+      "line": 518,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "LbSheetHost",
       "source": "app/src/main/java/com/stepup/android/ui/screens/leaderboard/LeaderboardScreen.kt",
-      "line": 1026,
+      "line": 1044,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "BidDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 329,
+      "line": 327,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "AskDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 356,
+      "line": 354,
       "verification": "pending"
     },
     {

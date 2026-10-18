@@ -103,8 +103,8 @@ class ProfileRunningPathTest {
                 compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("34.2")
                 compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8")
             }
-            // 순서: 프로필 → 카드 → 기록 보기 → 챌린지 · 지갑 · 설정
-            val order = listOf("profile-edit", "profile-record-card", "profile-records", "profile-challenges", "profile-wallet", "profile-settings")
+            // 순서: 프로필 → 카드 → 기록 보기 → 지갑 · 설정(챌린지 줄은 2026-10-17 뺐다)
+            val order = listOf("profile-edit", "profile-record-card", "profile-records", "profile-wallet", "profile-settings")
                 .map { compose.onNodeWithTag(it).fetchSemanticsNode().positionInRoot.y }
             assertTrue("running-path order $order", order == order.sorted())
             shot("01-profile")
@@ -124,12 +124,7 @@ class ProfileRunningPathTest {
             awaitTag("records-screen")
             shot("03-records")
             pressBack()
-            awaitTag("profile-challenges")
-
-            tapTag("profile-challenges")
-            awaitTag("challenge-history-summary")
-            shot("04-challenges")
-            pressBack()
+            compose.onAllNodesWithTag("profile-challenges").assertCountEquals(0)
             awaitTag("profile-wallet")
 
             tapTag("profile-wallet")
@@ -174,7 +169,7 @@ class ProfileRunningPathTest {
                                 item {
                                     ProfileHome(
                                         state = profile, records = records, onRetryRecords = {}, onEditProfile = {},
-                                        onOpenRecords = {}, onOpenChallenges = {}, onOpenWallet = {}, onOpenSettings = {},
+                                        onOpenRecords = {}, onOpenWallet = {}, onOpenSettings = {},
                                     )
                                 }
                             }

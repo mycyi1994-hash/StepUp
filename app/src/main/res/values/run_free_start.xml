@@ -9,5 +9,5 @@
     <string name="run_free_check_go">Go in these shoes</string>
     <string name="run_free_check_close">Close shoe check</string>
     <string name="run_free_check_grade_level">%1$s · Lv. %2$d</string>
-    <string name="run_free_start_wordmark" translatable="false">StepUP!</string>
+    <string name="run_free_start_wordmark" translatable="false">StepUP</string>
 </resources>

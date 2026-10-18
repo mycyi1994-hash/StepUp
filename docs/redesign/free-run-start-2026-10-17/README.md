@@ -51,7 +51,7 @@
   - 3-2-1 동안 지금 자리를 미리 찾는다(`rememberCurrentLocation` — 구글 위치 서비스, 러닝 서비스가 이어 받는다).
   - 그 둘레 지도 타일을 지도 캐시에 받아 둔다(`prefetchRunMapTiles` → `MapTiles.load`).
   - 어느 것도 기다리지 않는다. 못 받은 칸은 지도가 늘 하던 대로 다시 받는다(그동안 의사 도로망).
-- **로고** — 전달본의 흰색 워드마크 `res/drawable-nodpi/logo_wordmark_white.png`(900×156, 원본 그대로) + 굵은 이탤릭 "!".
+- **로고** — 전달본의 흰색 워드마크 `res/drawable-nodpi/logo_wordmark_white.png`(900×156, 원본 그대로). 시안의 굵은 이탤릭 "!"는 2026-10-18 뺐다(사용자 "UP 옆 흰 일직선 줄 — 없애" — 로고보다 길어 세로 줄로 보였다).
 
 ## 세션 시작 이벤트의 정확한 위치
 

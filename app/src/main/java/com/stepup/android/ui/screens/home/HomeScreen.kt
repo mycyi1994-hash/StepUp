@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Icon
@@ -65,11 +66,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import kotlinx.coroutines.launch
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.StepPermissions
@@ -86,6 +89,7 @@ import com.stepup.android.ui.screens.customize.BarStat
 import com.stepup.android.ui.screens.customize.StatBar
 import com.stepup.android.ui.screens.customize.statBars
 import com.stepup.android.ui.screens.items.shoeName
+import com.stepup.android.ui.screens.items.modelShoeName
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
@@ -359,6 +363,10 @@ private fun StepsBlock(
 /**
  * 전시장 아래 한 줄(시안 HOME) — 왼쪽 신발 이름(굵게 기울임) · 등급 배지 · Lv, 가는 세로선, 오른쪽 내구도 수 · 막대.
  * 배지는 앱 공통 등급 배지(채운 색)다. 신고 있는 신발이 없으면 아무것도 두지 않는다(전시장이 안내한다).
+ *
+ * 2026-10-17 사용자 "이름이 길면 신발 이름이 잘 안 보인다 — 무조건 보이게, 이름 바꿀 수 있게 · 내구도 바를 등급에 따라 멋지게":
+ * 이름은 세 줄까지 쓰고 그래도 길면 글자를 줄여 다 보인다(잘라 "…"를 붙이지 않는다). 배지 줄 끝 연필을 누르면 이름을 바꾼다(이 폰에만).
+ * 내구도 바는 등급 바([TierDurabilityBar]).
  */
 @Composable
 private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
@@ -366,18 +374,24 @@ private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
     val t = com.stepup.android.ui.components.runTone()
     // 남은 비율(%) — 신발마다 최대 내구도가 달라(0059) 좁은 칸에는 비율로 보인다. 남은 · 최대 내구도는 신발 상세에
     val points = com.stepup.android.ui.screens.items.durabilityPercent(shoe)
+    var renaming by androidx.compose.runtime.saveable.rememberSaveable(shoe.id) { mutableStateOf(false) }
     Row(modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("home-shoe-info"), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1.1f)) {
-            Text(
+            val renameLabel = stringResource(R.string.home_shoe_rename)
+            // 이름은 칸 폭을 다 쓴다(연필은 아래 배지 줄 끝) — 360dp · 큰 글씨에서도 20자 이름이 세 줄 안에 들어가게 글자를 줄인다
+            androidx.compose.foundation.text.BasicText(
                 shoe.shoeName(),
                 style = TextStyle(
                     color = t.text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, letterSpacing = (-0.5).sp, lineHeight = 30.sp,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, letterSpacing = (-0.5).sp, lineHeight = 1.15.em,
                 ),
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag("home-shoe-name"),
+                maxLines = 3,
+                autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(
+                    minFontSize = 10.sp, maxFontSize = 26.sp, stepSize = 1.sp,
+                ),
+                modifier = Modifier.fillMaxWidth().testTag("home-shoe-name"),
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 com.stepup.android.ui.components.ShoeGradeBadge(shoe.tier)
                 Text(
@@ -386,6 +400,15 @@ private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
                         .background(if (t.dark) Color(0xFF0A2A52) else Color(0xFFE6F6FD), RoundedCornerShape(50))
                         .padding(horizontal = 12.dp, vertical = 3.dp).testTag("home-shoe-level"),
                 )
+                Box(
+                    Modifier.size(40.dp).clip(CircleShape)
+                        .feedbackClickable(role = Role.Button) { renaming = true }
+                        .semantics { contentDescription = renameLabel }
+                        .testTag("home-shoe-rename"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = null, tint = t.label, modifier = Modifier.size(18.dp))
+                }
             }
         }
         Box(Modifier.padding(horizontal = 14.dp).width(1.dp).height(56.dp).background(t.divider))
@@ -397,15 +420,75 @@ private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
                     modifier = Modifier.alignByBaseline())
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    "$points", color = t.cyan, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
+                    "$points", color = if (t.dark) com.stepup.android.ui.components.tierAccent(shoe.tier) else t.cyan,
+                    fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.alignByBaseline().testTag("home-stat-durability-value"),
                 )
                 Text("%", color = t.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.alignByBaseline())
             }
-            Spacer(Modifier.height(8.dp))
-            com.stepup.android.ui.components.RunMeter(
-                points / 100f, height = 10.dp,
-                fill = listOf(Color(0xFF2FB5F0), t.cyan),
+            Spacer(Modifier.height(4.dp))
+            com.stepup.android.ui.components.TierDurabilityBar(
+                points / 100f, shoe.tier, height = 12.dp, modifier = Modifier.testTag("home-durability-bar"),
+            )
+        }
+    }
+    if (renaming) ShoeRenameSheet(shoe, onDone = { renaming = false })
+}
+
+/**
+ * 신발 이름 바꾸기(2026-10-17) — 이 폰에서만 바뀐다(설정 저장소, domain/ShoeNickname). 비우고 저장하거나 "원래 이름으로"를
+ * 누르면 모델 이름으로 돌아간다. 거래소 · 다른 사람에게는 늘 원래 이름이다.
+ */
+@Composable
+private fun ShoeRenameSheet(shoe: Sneaker, onDone: () -> Unit) {
+    val t = com.stepup.android.ui.components.runTone()
+    val nicknames = com.stepup.android.ui.components.LocalShoeNicknames.current
+    val current = nicknames[shoe.id]
+    // 원래 이름 — 내가 붙인 이름을 빼고 읽는다
+    val original = shoe.modelShoeName()
+    var draft by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(current ?: original) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    fun save(name: String?) {
+        scope.launch {
+            com.stepup.android.core.ServiceLocator.userPrefs.setShoeNickname(shoe.id, name?.takeIf { it.trim() != original })
+            onDone()
+        }
+    }
+    com.stepup.android.ui.components.RunSheet(onDismiss = onDone, modifier = Modifier.testTag("home-shoe-rename-sheet")) {
+        com.stepup.android.ui.components.RunSheetText(
+            stringResource(R.string.shoe_rename_title),
+            body = stringResource(R.string.shoe_rename_body, original),
+        )
+        Spacer(Modifier.height(16.dp))
+        com.stepup.android.ui.components.RunTextField(
+            value = draft,
+            onValueChange = { next ->
+                // 글자 수 상한까지만 받는다(이모지 등은 한 글자로 센다)
+                draft = if (next.codePointCount(0, next.length) <= com.stepup.android.domain.ShoeNickname.MAX_LENGTH) next
+                    else String(next.codePoints().limit(com.stepup.android.domain.ShoeNickname.MAX_LENGTH.toLong()).toArray(), 0,
+                        com.stepup.android.domain.ShoeNickname.MAX_LENGTH)
+            },
+            placeholder = original,
+            clearLabel = stringResource(R.string.run_course_clear_text),
+            onImeAction = { save(draft) },
+            fieldTag = "home-shoe-rename-field",
+        )
+        Text(
+            stringResource(R.string.shoe_rename_count, draft.codePointCount(0, draft.length), com.stepup.android.domain.ShoeNickname.MAX_LENGTH),
+            color = t.label, fontSize = 13.sp, textAlign = TextAlign.End,
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        com.stepup.android.ui.components.RunButton(
+            stringResource(R.string.shoe_rename_save), { save(draft) },
+            modifier = Modifier.fillMaxWidth().testTag("home-shoe-rename-save"),
+        )
+        if (current != null) {
+            Spacer(Modifier.height(10.dp))
+            com.stepup.android.ui.components.RunButton(
+                stringResource(R.string.shoe_rename_reset), { save(null) },
+                kind = com.stepup.android.ui.components.RunButtonKind.Secondary,
+                modifier = Modifier.fillMaxWidth().testTag("home-shoe-rename-reset"),
             )
         }
     }

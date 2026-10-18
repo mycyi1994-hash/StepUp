@@ -16,6 +16,7 @@ import {
  * 사용자 요청 두 가지. 둘 다 로그인한 사람만, 둘 다 서버가 먼저 허락한 것만 한다.
  *
  *   POST /v2/wallet/link          지갑 서명을 확인하고 서버에 지갑을 붙인다
+ *   POST /v2/wallet/link-request  같은 일 — 로그인 토큰 대신 앱이 받은 일회용 확인 번호로(지갑 앱 브라우저용)
  *   POST /v2/ops/:id/execute      서버가 예약한 꺼내기 · 보너스 발행을 서명하고,
  *                                 가스비를 대신 내서 체인에 보낸다
  *
@@ -31,6 +32,24 @@ export async function linkWallet(request, env, deps) {
   const user = await deps.getUser(env, request)
   if (await deps.limitUser?.(env, user.id)) throw new HttpError(429, '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요')
   const body = await request.json().catch(() => null)
+  return finishLink(env, deps, user.id, body)
+}
+
+/**
+ * 앱이 지갑 앱의 브라우저로 넘긴 연결 요청(2026-10-18) — 로그인 토큰 없이 계정 번호 + 확인 번호로 붙인다.
+ *
+ * 확인 번호는 로그인한 앱만 받는다(wallet_link_challenge, 10분 · 한 번만). 서명은 "그 계정 + 그 번호" 문장이어야 하고,
+ * 서버는 번호가 그 계정에 막 준 것인지 다시 본다. 그래서 지갑 브라우저에 로그인 토큰을 넘기지 않아도 된다.
+ */
+export async function linkWalletRequest(request, env, deps) {
+  const body = await request.json().catch(() => null)
+  const user = String(body?.user ?? '')
+  if (!UUID.test(user)) throw new HttpError(400, '요청이 올바르지 않습니다')
+  if (await deps.limitUser?.(env, user)) throw new HttpError(429, '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요')
+  return finishLink(env, deps, user.toLowerCase(), body)
+}
+
+async function finishLink(env, deps, userId, body) {
   const address = String(body?.address ?? '')
   const nonce = String(body?.nonce ?? '')
   const signature = String(body?.signature ?? '')
@@ -38,10 +57,10 @@ export async function linkWallet(request, env, deps) {
     throw new HttpError(400, '요청이 올바르지 않습니다')
   }
 
-  const ok = await verifyMessage({ address, message: walletLinkMessage(user.id, nonce), signature })
+  const ok = await verifyMessage({ address, message: walletLinkMessage(userId, nonce), signature })
   if (!ok) throw new HttpError(400, '지갑 서명이 맞지 않습니다')
 
-  const first = await deps.rpc(env, 'attester_wallet_link', { p_user: user.id, p_address: address, p_nonce: nonce })
+  const first = await deps.rpc(env, 'attester_wallet_link', { p_user: userId, p_address: address, p_nonce: nonce })
 
   // 새 지갑에 가스 조금 — 앱으로 넣기(deposit)는 사용자가 직접 보내는 거래라서.
   // 계정의 첫 지갑에만, 이미 가스가 있는 지갑에는 보내지 않는다(주소를 바꿔 가며 빼 가지

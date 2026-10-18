@@ -111,6 +111,7 @@ class UserPrefs(
         val PENDING_OVERSPEED = stringPreferencesKey("pending_overspeed_stops")
         /** 러닝 챌린지(10분 · 1km · 3km) 지난 도전 — GoalAttempt 줄들, 이 폰에만 */
         val GOAL_ATTEMPTS = stringPreferencesKey("goal_attempts")
+        val SHOE_NICKNAMES = stringPreferencesKey("shoe_nicknames")
         /** 다이어트 모드의 러닝 경험(RunExperience.key) — 이 폰에만 */
         val RUN_EXPERIENCE = stringPreferencesKey("run_experience")
         /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
@@ -617,6 +618,24 @@ class UserPrefs(
 
     suspend fun clearGoalAttempts() {
         store.edit { it.remove(Keys.GOAL_ATTEMPTS) }
+    }
+
+    /** 내가 붙인 신발 이름(2026-10-17) — 서버 신발 번호 → 이름. 이 폰에만 있다 */
+    val shoeNicknames: Flow<Map<Long, String>> =
+        store.data.map { com.stepup.android.domain.ShoeNickname.decode(it[Keys.SHOE_NICKNAMES]) }
+
+    /** [name] 이 비었으면 원래 이름으로 돌린다 */
+    suspend fun setShoeNickname(shoeId: Long, name: String?) {
+        store.edit {
+            val rows = com.stepup.android.domain.ShoeNickname.decode(it[Keys.SHOE_NICKNAMES]).toMutableMap()
+            val clean = com.stepup.android.domain.ShoeNickname.clean(name)
+            if (clean == null) rows.remove(shoeId) else rows[shoeId] = clean
+            if (rows.isEmpty()) it.remove(Keys.SHOE_NICKNAMES) else it[Keys.SHOE_NICKNAMES] = com.stepup.android.domain.ShoeNickname.encode(rows)
+        }
+    }
+
+    suspend fun clearShoeNicknames() {
+        store.edit { it.remove(Keys.SHOE_NICKNAMES) }
     }
 
     suspend fun addPendingCourseRun(startedAt: Long, track: String) {

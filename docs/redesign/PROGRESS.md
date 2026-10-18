@@ -1,5 +1,28 @@
 # Redesign progress
 
+## 2026-10-18 — lock-screen run notification · free-run start "!" removed
+
+- Report: [../run-lock-screen-2026-10-18.md](../run-lock-screen-2026-10-18.md). `service/RunNotification.kt`: Android 16+ standard notification with the Live Updates request (status chip + pinned on the lock screen); below 16, a navy colorized custom notification (logo, running chronometer, distance, pace — `layout/notification_run*.xml`). New silent `run_live` channel (public on the lock screen), pause/resume action only, updates throttled to 3 s (pause/still immediately).
+- Free-run start: the bold italic "!" after the StepUP wordmark is removed (user saw it as a stray white vertical line); the wordmark asset is unchanged.
+- Evidence (local): app compile · device-test compile · unit tests (`RunNotificationTextTest`) · lint, string checks. Not checked on a real lock screen.
+
+## 2026-10-18 — Web3 wallet connect: pick a wallet, sign once
+
+- User ask: show the wallets directly (no WalletConnect) — GIWA Wallet (top, "coming soon"), MetaMask, OKX Wallet, Rabby Wallet. Report: [../wallet-connect-2026-10-18.md](../wallet-connect-2026-10-18.md).
+- App: every "connect wallet" (draw premium, wallet benefit sheet, settings › connected) opens `WalletConnectSheet`; the app asks the server for a one-time 10-minute link code and opens `wallet.html?l=<user>.<nonce>` inside the wallet app's browser (MetaMask dapp link, OKX `okx://` link, Rabby: copy link + open app). No login token is handed to the wallet. On return it re-reads `draw_status.wallet_linked` and only then says connected.
+- Server 0067: first wallet link no longer needs 2FA; changing a linked wallet still needs recent 2FA (web wallet page). Attester `POST /v2/wallet/link-request` verifies the signature for that user + code, the server checks the code. Web page link mode signs without switching networks.
+- Evidence (local): `supabase/tests/run.sh`, `attester` npm test (59), `web` npm test (16) + bundle rebuilt, app compile · device-test compile · unit tests (`WalletAppsTest`) · lint, string/contract checks. Device test `WalletDesignTest` adds the picker scene. Not tried on real wallet apps.
+
+## 2026-10-17 — running tab polish: shoe name · rename · tier durability bar · ceiling light · bottom nav
+
+- User asks (Korean, [../run-tab-polish-2026-10-17.md](../run-tab-polish-2026-10-17.md)): drop the Profile › Challenge row; the running-tab shoe name must always show and be renamable; a tier-styled durability bar; an occasional flash on the showroom ceiling light; bottom-tab icon/label centring and a larger, bolder selected label.
+- Profile: the challenge row is gone. Challenge history (`Routes.CHALLENGE_HISTORY`) now opens from the challenge screen (`Routes.EVENTS`, link at the end) and its chrome parent moved to Running; history → "진행 중인 챌린지" pops back to the challenge screen instead of stacking. The challenge screen itself opens from notifications ("챌린지 보기").
+- Home (`HomeShoeInfo`): the name uses the full column (up to three lines, auto-size 26 → 10sp, no ellipsis); the rename pencil sits at the end of the badge row. Nicknames are device-local (`domain/ShoeNickname.kt`, preference `shoe_nicknames`, 20 code points, cleared on account deletion) and flow through `LocalShoeNicknames` (provided by `MainScaffold`) into every `shoeName()`; market and other users keep the model name.
+- `TierDurabilityBar` (home and run result shoe card): tier fill, gloss, 10 ticks; Epic+ glow and end spark; Legendary+ shimmer (infinite transition, off with reduced motion).
+- Showroom ceiling light: infinite 6 s cycle, flash in the last 1.4 s (two flickers + sweep), off with reduced motion.
+- Bottom nav: icon + label centred in the tile (the invisible 3 dp dot and top-aligned column removed); selected label ExtraBold and 1.1× from its top edge; widths/heights measured with the bold style so the rows stay aligned.
+- Evidence (local, same revision): `compileDebugKotlin`, `compileDebugAndroidTestKotlin`, `testDebugUnitTest` (new `ShoeNicknameTest`), `lintDebug`, `scripts/check-strings.py`, `tools/check_design_contract.py`, `tools/ui_inventory.py` (regenerated). Device tests updated/added: `RunJourneyDesignTest` (rename flow, `longShoeNameFits` at 360/360@1.3/412), `ProfileRunningPathTest`, `ChromeNavigationTest`; device captures come from CI Experience QA on the PR.
+
 ## 2026-10-15 — audit: crew-run comms · crew chat · run records · CI (migrations 0056 · 0057)
 
 - Report (Korean, findings → fixes, user decisions left open): [../점검-2026-10-15-크루-통신-인프라.md](../점검-2026-10-15-크루-통신-인프라.md).

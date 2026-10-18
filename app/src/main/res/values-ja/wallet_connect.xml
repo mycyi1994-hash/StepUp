@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
+<resources>
+    <string name="wc_title">WEB3ウォレットを接続</string>
+    <string name="wc_body">ウォレットを選ぶとそのアプリ内で開きます。署名1回で接続できます。署名は取引ではないので手数料はかかりません。</string>
+    <string name="wc_note">1つのウォレットは1つのSTEPUPアカウントにだけ接続できます。リクエストは10分間有効です。</string>
+    <string name="wc_sub_open">ウォレットアプリで開きます</string>
+    <string name="wc_sub_paste">リンクをコピー — Rabbyのブラウザに貼り付けます</string>
+    <string name="wc_soon">準備中</string>
+    <string name="wc_giwa">GIWA Wallet</string>
+    <string name="wc_metamask">MetaMask</string>
+    <string name="wc_okx">OKX Wallet</string>
+    <string name="wc_rabby">Rabby Wallet</string>
+    <string name="wc_waiting_title">%1$sで署名してください</string>
+    <string name="wc_waiting_body">%1$sで開いたページの「ウォレットを接続」を押して署名してください。終わったらこのアプリに戻ってください。</string>
+    <string name="wc_copied_body">リンクをコピーしました。%1$sのブラウザのアドレス欄に貼り付けて開き、「ウォレットを接続」を押して署名してください。終わったらこのアプリに戻ってください。</string>
+    <string name="wc_not_yet_body">まだ接続されていません。%1$sで署名を終えてから、もう一度確認してください。</string>
+    <string name="wc_check">接続を確認</string>
+    <string name="wc_other_wallet">別のウォレットを選ぶ</string>
+    <string name="wc_linked_title">ウォレットを接続しました</string>
+    <string name="wc_linked_body">このSTEPUPアカウントにウォレットが接続されました。</string>
+    <string name="wc_done">OK</string>
+    <string name="wc_error_title">開始できませんでした</string>
+    <string name="wc_error_sign_in">先にSTEPUPにログインしてください。</string>
+    <string name="wc_error_offline">インターネット接続を確認して、もう一度お試しください。</string>
+    <string name="wc_error_mfa">すでにウォレットが接続されています。変更するにはウォレットページで2段階認証が必要です。</string>
+    <string name="wc_error_failed">問題が発生しました。もう一度お試しください。</string>
+    <string name="wc_back">戻る</string>
+</resources>

@@ -3213,17 +3213,12 @@ update public.economy_settings set value = '600' where key = 'daily_earn_cap';
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 call pg_temp.must_fail($q$ select public.sup_withdraw_request(10) $q$, '지갑이 없으면 꺼낼 수 없다');
-call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '2단계 인증 없이는 지갑을 붙일 수 없다');
--- 0034 — 예전에 한 2단계 인증(로그인이 aal2 로 남아 있을 뿐)은 인정하지 않는다
-select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
-  json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '1 hour')::bigint)))::text, false);
-call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '1시간 전에 한 2단계 인증으로는 지갑을 붙일 수 없다');
-select set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'amr', json_build_array(
-  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+-- 0067 — 처음 붙이는 지갑은 2단계 인증 없이 확인 번호를 받는다(꺼내기는 그대로 2단계 인증)
 do $$
 declare v_msg text;
 begin
   v_msg := public.wallet_link_challenge();
+  perform pg_temp.ok(v_msg ~ '확인 번호: [0-9a-f]{32}', '처음 붙이는 지갑은 2단계 인증 없이 확인 번호를 받는다 (0067)');
   insert into fix (k, v) values ('nonce_a', substring(v_msg from '확인 번호: ([0-9a-f]+)'));
 end $$;
 reset role;
@@ -3250,6 +3245,23 @@ do $$ begin
                        where user_id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1' and kind = 'BONUS'),
     '처음 붙인 지갑이면 보너스 뽑기 10회(Genesis 1)');
 end $$;
+
+-- 붙은 지갑을 바꾸는 것은 방금 한 2단계 인증이 있어야 한다(0034 · 0067)
+set role authenticated;
+select set_config('request.jwt.claims', '{}', false);
+call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
+call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '2단계 인증 없이는 붙은 지갑을 바꿀 수 없다');
+select set_config('request.jwt.claims', json_build_object('sub', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'role', 'authenticated',
+  'aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now() - interval '1 hour')::bigint)))::text, false);
+call pg_temp.must_fail($q$ select public.wallet_link_challenge() $q$, '1시간 전에 한 2단계 인증으로는 붙은 지갑을 바꿀 수 없다');
+select set_config('request.jwt.claims', json_build_object('sub', 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'role', 'authenticated',
+  'aal', 'aal2', 'amr', json_build_array(
+  json_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+do $$ begin
+  perform pg_temp.ok(public.wallet_link_challenge() ~ '확인 번호', '방금 한 2단계 인증이면 지갑을 바꿀 확인 번호를 받는다');
+end $$;
+reset role;
 
 -- 같은 지갑을 다른 계정에 붙일 수 없다
 set role authenticated;

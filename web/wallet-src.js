@@ -5,8 +5,8 @@ import {
 import { createEVMClient } from '@metamask/connect-evm'
 import { SHOE_NAMES_KO } from './shoe-catalog.js'
 import {
-  accountRef, blockRanges, createApi, formatSup, jwtClaims, opStatusLabel, parseSup, recentTotp, sameWallet,
-  sneakerContractFor, sneakerContracts, tokenFromHash,
+  accountRef, blockRanges, createApi, formatSup, jwtClaims, linkRequestFromSearch, opStatusLabel, parseSup, recentTotp, sameWallet,
+  sneakerContractFor, sneakerContracts, tokenFromHash, walletLinkMessage,
 } from './wallet-core.js'
 
 // STEPUP 지갑 페이지 — 지갑 연결 · 보너스 뽑기 · 꺼내기 · 넣기.
@@ -55,6 +55,10 @@ function setToken(t) {
   try { t ? sessionStorage.setItem(STORE, t) : sessionStorage.removeItem(STORE) } catch {}
 }
 const api = createApi(config, () => token)
+
+// ── 앱이 지갑 앱 브라우저로 넘긴 연결 요청(?l=계정.확인 번호, 2026-10-18) — 읽고 주소창에서 지운다 ──
+const linkRequest = linkRequestFromSearch(location.search)
+if (linkRequest) history.replaceState(null, '', location.pathname)
 
 // ── 화면 ──
 const app = document.querySelector('#app')
@@ -399,7 +403,44 @@ async function renderWallet(userId) {
   app.replaceChildren(...sections)
 }
 
+// ── 지갑 앱 브라우저의 연결 요청 — 로그인 · 2단계 인증 없이, 서명 한 번 ──
+function renderLinkRequest(request) {
+  const done = () => app.replaceChildren(card('연결했어요',
+    el('p', {}, '지갑을 STEPUP 계정에 연결했어요. STEPUP 앱으로 돌아가 주세요 — 앱이 연결을 확인해요.'),
+  ))
+  app.replaceChildren(card('지갑 연결',
+    el('p', {}, 'STEPUP 앱에서 보낸 연결 요청이에요. 아래 버튼을 누르고 지갑에서 서명하면 연결돼요. 거래가 아니라 수수료가 들지 않아요.'),
+    el('p', { class: 'note' }, '한 지갑은 한 STEPUP 계정에만 연결돼요. 내가 앱에서 누른 요청이 아니면 연결하지 마세요. 요청은 10분 동안만 쓸 수 있어요.'),
+    el('button', {
+      class: 'primary',
+      onclick: (e) => guard(e.target, async () => {
+        // 지갑 앱 안의 브라우저에는 지갑이 들어 있다(window.ethereum). 서명만 하므로 네트워크를 바꾸지 않는다
+        if (!window.ethereum) {
+          say('지갑 앱(MetaMask · OKX · Rabby) 안의 브라우저에서 열어 주세요.')
+          return
+        }
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+        const account = getAddress(accounts[0])
+        const message = walletLinkMessage(request.user, request.nonce)
+        say('지갑에서 서명해 주세요. 거래가 아니며 수수료가 들지 않습니다.')
+        const signature = await window.ethereum.request({ method: 'personal_sign', params: [stringToHex(message), account] })
+        await api.attesterOpen('/v2/wallet/link-request', { user: request.user, nonce: request.nonce, address: account, signature })
+        say('')
+        done()
+      }),
+    }, '지갑 연결하기'),
+  ))
+}
+
 async function main() {
+  if (linkRequest) {
+    if (!config.attesterUrl) {
+      app.replaceChildren(card('준비 중', el('p', {}, 'GIWA 연결을 준비하고 있습니다.')))
+      return
+    }
+    renderLinkRequest(linkRequest)
+    return
+  }
   if (!configured) {
     app.replaceChildren(card('준비 중', el('p', {}, 'GIWA 연결을 준비하고 있습니다.')))
     return

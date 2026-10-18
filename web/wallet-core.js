@@ -150,7 +150,28 @@ export function createApi(config, getToken, fetchImpl = (...a) => fetch(...a)) {
         method: 'POST', headers: { authorization: `Bearer ${getToken()}`, 'content-type': 'application/json' },
         body: JSON.stringify(body ?? {}),
       }).then(read),
+    // 로그인 없이 부르는 어테스터 길(지갑 앱 브라우저의 연결 요청) — 로그인 머리를 싣지 않는다
+    attesterOpen: (path, body) =>
+      fetchImpl(`${config.attesterUrl.replace(/\/$/, '')}${path}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body ?? {}),
+      }).then(read),
     googleLoginUrl: (redirectTo) =>
       `${base}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`,
   }
+}
+
+/**
+ * 앱이 지갑 앱 브라우저로 넘긴 연결 요청 — `?l=<계정 번호>.<확인 번호>`(2026-10-18). 로그인 토큰은 오지 않는다.
+ * 꼴이 맞지 않으면 null.
+ */
+export function linkRequestFromSearch(search) {
+  const raw = new URLSearchParams(String(search || '')).get('l') || ''
+  const m = raw.toLowerCase().match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.([0-9a-f]{32})$/)
+  return m ? { user: m[1], nonce: m[2] } : null
+}
+
+/** 지갑 연결 문장 — 서버 economy.wallet_link_message · 워커 walletLinkMessage 와 한 글자도 다르면 안 된다 */
+export function walletLinkMessage(userId, nonce) {
+  return `StepUp 지갑 연결\n계정: ${userId}\n확인 번호: ${nonce}\n\n이 서명은 거래가 아니며 수수료가 들지 않습니다.`
 }

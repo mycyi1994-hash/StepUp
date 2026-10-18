@@ -83,6 +83,8 @@ fun EventsScreen(
     onBack: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onStartRun: () -> Unit = {},
+    /** 챌린지 기록(받은 보상 이력) — 내 정보의 챌린지 줄을 뺀 뒤(2026-10-17) 여기서 들어간다 */
+    onOpenHistory: (() -> Unit)? = null,
     viewModel: EventsViewModel = viewModel(factory = EventsViewModel.Factory),
 ) {
     val context = LocalContext.current
@@ -257,6 +259,11 @@ fun EventsScreen(
             )
         }
 
+        if (onOpenHistory != null) item {
+            com.stepup.android.ui.components.RunLinkRow(
+                stringResource(R.string.challenge_history_title), onOpenHistory, Modifier.testTag("challenge-open-history"),
+            )
+        }
     }
             PrimaryCta(
                 // 사용 피드백 9 — 러닝 홈의 "러닝 시작"과 구분: 이 챌린지를 향해 달린다

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
+<resources>
+    <string name="wc_title">连接 WEB3 钱包</string>
+    <string name="wc_body">选择钱包后会在该钱包应用内打开。签名一次即可连接。签名不是交易，不收手续费。</string>
+    <string name="wc_note">一个钱包只能连接一个 STEPUP 账号。连接请求 10 分钟内有效。</string>
+    <string name="wc_sub_open">在钱包应用中打开</string>
+    <string name="wc_sub_paste">复制链接 — 粘贴到 Rabby 浏览器</string>
+    <string name="wc_soon">即将推出</string>
+    <string name="wc_giwa">GIWA Wallet</string>
+    <string name="wc_metamask">MetaMask</string>
+    <string name="wc_okx">OKX Wallet</string>
+    <string name="wc_rabby">Rabby Wallet</string>
+    <string name="wc_waiting_title">请在 %1$s 中签名</string>
+    <string name="wc_waiting_body">在 %1$s 中打开的页面点击“连接钱包”并签名。完成后回到本应用。</string>
+    <string name="wc_copied_body">已复制链接。请在 %1$s 浏览器地址栏粘贴并打开，点击“连接钱包”并签名。完成后回到本应用。</string>
+    <string name="wc_not_yet_body">尚未连接。请在 %1$s 中完成签名后再次确认。</string>
+    <string name="wc_check">确认连接</string>
+    <string name="wc_other_wallet">选择其他钱包</string>
+    <string name="wc_linked_title">钱包已连接</string>
+    <string name="wc_linked_body">钱包已连接到此 STEPUP 账号。</string>
+    <string name="wc_done">确定</string>
+    <string name="wc_error_title">无法开始</string>
+    <string name="wc_error_sign_in">请先登录 STEPUP。</string>
+    <string name="wc_error_offline">请检查网络连接后重试。</string>
+    <string name="wc_error_mfa">已连接钱包。更换钱包需要在钱包页面进行两步验证。</string>
+    <string name="wc_error_failed">出现问题，请重试。</string>
+    <string name="wc_back">返回</string>
+</resources>

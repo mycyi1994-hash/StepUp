@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts'
 import { verifyTypedData } from 'viem'
-import { linkWallet, executeOp } from '../src/handlers.js'
+import { linkWallet, linkWalletRequest, executeOp } from '../src/handlers.js'
 import { HttpError } from '../src/supabase.js'
 import { toServerEvent, indexEvents, expireOps, pauseAll, keepPaused } from '../src/indexer.js'
 import { NONCE_CLASH, ALREADY_KNOWN, nonceBackoffMs } from '../src/handlers.js'
@@ -81,6 +81,27 @@ test('지갑 연결: 그 계정의 문장에 한 서명만 받고 서버에 넘�
     linkWallet(req({ address: wallet.address, nonce, signature: other }), env, fakeDeps()),
     (e) => e.status === 400,
   )
+})
+
+test('지갑 앱 브라우저 연결: 로그인 없이 계정 번호 + 확인 번호, 그 계정 문장의 서명만 받는다', async () => {
+  const wallet = privateKeyToAccount(generatePrivateKey())
+  const nonce = 'c'.repeat(32)
+  const signature = await wallet.signMessage({ message: walletLinkMessage(USER.id, nonce) })
+  const deps = fakeDeps({ firstWallet: true })
+  // 로그인 머리 없이 보낸다
+  const out = await linkWalletRequest(req({ user: USER.id.toUpperCase(), address: wallet.address, nonce, signature }, ''), env, deps)
+  assert.equal(out.ok, true)
+  assert.deepEqual(deps.rpcCalls[0], ['attester_wallet_link', { p_user: USER.id, p_address: wallet.address, p_nonce: nonce }])
+  // 다른 계정 번호를 대면 서명이 맞지 않는다 — 서버까지 가지 않는다
+  const otherDeps = fakeDeps()
+  await assert.rejects(
+    linkWalletRequest(req({ user: 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2', address: wallet.address, nonce, signature }, ''), env, otherDeps),
+    (e) => e.status === 400,
+  )
+  assert.equal(otherDeps.rpcCalls.length, 0)
+  // 계정 번호 · 확인 번호 꼴이 틀리면 받지 않는다
+  await assert.rejects(linkWalletRequest(req({ user: 'x', address: wallet.address, nonce, signature }, ''), env, fakeDeps()), (e) => e.status === 400)
+  await assert.rejects(linkWalletRequest(req({ user: USER.id, address: wallet.address, nonce: 'zz', signature }, ''), env, fakeDeps()), (e) => e.status === 400)
 })
 
 test('작업 실행: 로그인 없이는 안 되고, 서버가 주지 않은 작업은 서명하지 않는다', async () => {
