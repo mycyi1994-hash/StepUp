@@ -541,6 +541,36 @@ class RunJourneyDesignTest {
      * 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 자유 러닝 중은 큰 시간이 버튼 위 · 두 버튼이 화면 안(390×844 · 글자 100% 는
      * 지도가 러닝 화면 높이의 68% 이상), 결과는 완료 · 공유가 화면 안이고 보상 칸 · SUP 가 없다
      */
+    /** 가장 긴 이름(20자, 꽉 찬 한글) — 360dp · 큰 글씨에서도 러닝 탭 신발 이름이 넘치지 않고 다 보인다(2026-10-17) */
+    @Test fun longShoeNameFits() {
+        seed()
+        val shoeId = requireNotNull(added)
+        val longest = "가나다라마바사아자차카타파하가나다라마바"
+        try {
+            runBlocking { ServiceLocator.userPrefs.setShoeNickname(shoeId, longest) }
+            edgeToEdge()
+            compose.setContent { DeviceFrame { MainScaffold() } }
+            for (next in listOf(Viewport(360, 800), Viewport(360, 800, font = 1.3f), Viewport(412, 915))) {
+                compose.runOnIdle { viewport = next }
+                compose.waitForIdle()
+                awaitTag("home-shoe-name")
+                compose.waitUntil(5_000) {
+                    runCatching { compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true).assertTextEquals(longest) }.isSuccess
+                }
+                val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+                compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true)
+                    .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+                assertTrue("${next.label}: the whole name shows (${layouts.map { it.lineCount }})", layouts.none { it.hasVisualOverflow })
+                compose.onNodeWithTag("home-shoe-rename").assertIsDisplayed()
+                shot("HOME-long-name-${next.label}")
+            }
+        } finally {
+            runBlocking { ServiceLocator.userPrefs.setShoeNickname(shoeId, null) }
+            syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }
+            restore()
+        }
+    }
+
     @Test fun fitsAtDeviceSizes() {
         seed()
         try {

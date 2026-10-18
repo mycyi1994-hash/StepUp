@@ -365,7 +365,7 @@ private fun StepsBlock(
  * 배지는 앱 공통 등급 배지(채운 색)다. 신고 있는 신발이 없으면 아무것도 두지 않는다(전시장이 안내한다).
  *
  * 2026-10-17 사용자 "이름이 길면 신발 이름이 잘 안 보인다 — 무조건 보이게, 이름 바꿀 수 있게 · 내구도 바를 등급에 따라 멋지게":
- * 이름은 두 줄까지 쓰고 그래도 길면 글자를 줄여 다 보인다(잘라 "…"를 붙이지 않는다). 연필을 누르면 이름을 바꾼다(이 폰에만).
+ * 이름은 세 줄까지 쓰고 그래도 길면 글자를 줄여 다 보인다(잘라 "…"를 붙이지 않는다). 배지 줄 끝 연필을 누르면 이름을 바꾼다(이 폰에만).
  * 내구도 바는 등급 바([TierDurabilityBar]).
  */
 @Composable
@@ -378,18 +378,27 @@ private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("home-shoe-info"), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1.1f)) {
             val renameLabel = stringResource(R.string.home_shoe_rename)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.foundation.text.BasicText(
-                    shoe.shoeName(),
-                    style = TextStyle(
-                        color = t.text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, letterSpacing = (-0.5).sp, lineHeight = 1.15.em,
-                    ),
-                    maxLines = 2,
-                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(
-                        minFontSize = 13.sp, maxFontSize = 26.sp, stepSize = 1.sp,
-                    ),
-                    modifier = Modifier.weight(1f, fill = false).testTag("home-shoe-name"),
+            // 이름은 칸 폭을 다 쓴다(연필은 아래 배지 줄 끝) — 360dp · 큰 글씨에서도 20자 이름이 세 줄 안에 들어가게 글자를 줄인다
+            androidx.compose.foundation.text.BasicText(
+                shoe.shoeName(),
+                style = TextStyle(
+                    color = t.text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, letterSpacing = (-0.5).sp, lineHeight = 1.15.em,
+                ),
+                maxLines = 3,
+                autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(
+                    minFontSize = 10.sp, maxFontSize = 26.sp, stepSize = 1.sp,
+                ),
+                modifier = Modifier.fillMaxWidth().testTag("home-shoe-name"),
+            )
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.stepup.android.ui.components.ShoeGradeBadge(shoe.tier)
+                Text(
+                    stringResource(R.string.level_chip, shoe.level), color = t.text, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).border(1.5.dp, t.cyan.copy(alpha = 0.85f), RoundedCornerShape(50))
+                        .background(if (t.dark) Color(0xFF0A2A52) else Color(0xFFE6F6FD), RoundedCornerShape(50))
+                        .padding(horizontal = 12.dp, vertical = 3.dp).testTag("home-shoe-level"),
                 )
                 Box(
                     Modifier.size(40.dp).clip(CircleShape)
@@ -400,16 +409,6 @@ private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
                 ) {
                     Icon(Icons.Filled.Edit, contentDescription = null, tint = t.label, modifier = Modifier.size(18.dp))
                 }
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.stepup.android.ui.components.ShoeGradeBadge(shoe.tier)
-                Text(
-                    stringResource(R.string.level_chip, shoe.level), color = t.text, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(50)).border(1.5.dp, t.cyan.copy(alpha = 0.85f), RoundedCornerShape(50))
-                        .background(if (t.dark) Color(0xFF0A2A52) else Color(0xFFE6F6FD), RoundedCornerShape(50))
-                        .padding(horizontal = 12.dp, vertical = 3.dp).testTag("home-shoe-level"),
-                )
             }
         }
         Box(Modifier.padding(horizontal = 14.dp).width(1.dp).height(56.dp).background(t.divider))

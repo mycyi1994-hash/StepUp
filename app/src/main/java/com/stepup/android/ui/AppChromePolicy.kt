@@ -107,7 +107,8 @@ object AppChromePolicy {
         Destination(Routes.SETTINGS_BODY, Screen.Profile, Header.Detail),
         Destination(Routes.SETTINGS_MODE, Screen.Profile, Header.Detail),
         Destination(Routes.INVITE, Screen.Profile, Header.Detail),
-        Destination(Routes.CHALLENGE_HISTORY, Screen.Profile, Header.Detail),
+        // 챌린지 기록은 챌린지 화면(러닝 탭 아래) 안에서 연다(2026-10-17 — 내 정보 줄을 뺐다)
+        Destination(Routes.CHALLENGE_HISTORY, Screen.Run, Header.Detail),
     )
 
     /**

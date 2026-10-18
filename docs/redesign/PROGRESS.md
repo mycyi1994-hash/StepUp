@@ -1,5 +1,15 @@
 # Redesign progress
 
+## 2026-10-17 — running tab polish: shoe name · rename · tier durability bar · ceiling light · bottom nav
+
+- User asks (Korean, [../run-tab-polish-2026-10-17.md](../run-tab-polish-2026-10-17.md)): drop the Profile › Challenge row; the running-tab shoe name must always show and be renamable; a tier-styled durability bar; an occasional flash on the showroom ceiling light; bottom-tab icon/label centring and a larger, bolder selected label.
+- Profile: the challenge row is gone. Challenge history (`Routes.CHALLENGE_HISTORY`) now opens from the challenge screen (`Routes.EVENTS`, link at the end) and its chrome parent moved to Running; history → "진행 중인 챌린지" pops back to the challenge screen instead of stacking. The challenge screen itself opens from notifications ("챌린지 보기").
+- Home (`HomeShoeInfo`): the name uses the full column (up to three lines, auto-size 26 → 10sp, no ellipsis); the rename pencil sits at the end of the badge row. Nicknames are device-local (`domain/ShoeNickname.kt`, preference `shoe_nicknames`, 20 code points, cleared on account deletion) and flow through `LocalShoeNicknames` (provided by `MainScaffold`) into every `shoeName()`; market and other users keep the model name.
+- `TierDurabilityBar` (home and run result shoe card): tier fill, gloss, 10 ticks; Epic+ glow and end spark; Legendary+ shimmer (infinite transition, off with reduced motion).
+- Showroom ceiling light: infinite 6 s cycle, flash in the last 1.4 s (two flickers + sweep), off with reduced motion.
+- Bottom nav: icon + label centred in the tile (the invisible 3 dp dot and top-aligned column removed); selected label ExtraBold and 1.1× from its top edge; widths/heights measured with the bold style so the rows stay aligned.
+- Evidence (local, same revision): `compileDebugKotlin`, `compileDebugAndroidTestKotlin`, `testDebugUnitTest` (new `ShoeNicknameTest`), `lintDebug`, `scripts/check-strings.py`, `tools/check_design_contract.py`, `tools/ui_inventory.py` (regenerated). Device tests updated/added: `RunJourneyDesignTest` (rename flow, `longShoeNameFits` at 360/360@1.3/412), `ProfileRunningPathTest`, `ChromeNavigationTest`; device captures come from CI Experience QA on the PR.
+
 ## 2026-10-15 — audit: crew-run comms · crew chat · run records · CI (migrations 0056 · 0057)
 
 - Report (Korean, findings → fixes, user decisions left open): [../점검-2026-10-15-크루-통신-인프라.md](../점검-2026-10-15-크루-통신-인프라.md).

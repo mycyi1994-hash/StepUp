@@ -940,6 +940,7 @@ private fun MainScaffoldContent(
                         com.stepup.android.domain.RunPlans.clear()
                         navController.navigate(Routes.RUN_NOW)
                     },
+                    onOpenHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                 )
             }
             composable(Screen.Profile.route) { entry ->
@@ -1376,7 +1377,10 @@ private fun MainScaffoldContent(
             composable(Routes.CHALLENGE_HISTORY) {
                 com.stepup.android.ui.screens.events.ChallengeHistoryScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenChallenges = { navController.navigate(Routes.EVENTS) },
+                    // 챌린지 화면에서 왔으면 그리로 돌아간다(둘이 번갈아 쌓이지 않게)
+                    onOpenChallenges = {
+                        if (!navController.popBackStack(Routes.EVENTS, inclusive = false)) navController.navigate(Routes.EVENTS)
+                    },
                 )
             }
             composable(Routes.INVITE) {
