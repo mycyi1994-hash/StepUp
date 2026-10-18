@@ -130,7 +130,7 @@ class RunJourneyDesignTest {
             compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("home-shoe-info")), useUnmergedTree = true)
                 .assertExists()
             compose.onNodeWithTag("home-stat-durability-value", useUnmergedTree = true).assertTextContains("92", substring = true)
-            compose.onNodeWithTag("home-durability-bar").assertExists()
+            compose.onNodeWithTag("home-durability-bar", useUnmergedTree = true).assertExists()
             shot("HOME")
             // 신발 이름 바꾸기(2026-10-17) — 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
             val shoeId = requireNotNull(added)
