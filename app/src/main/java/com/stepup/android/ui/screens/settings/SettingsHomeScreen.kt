@@ -209,6 +209,8 @@ private fun TestUpdateLine() {
         is com.stepup.android.core.TestUpdates.State.Dismissed,
         is com.stepup.android.core.TestUpdates.State.Failed -> stringResource(R.string.test_update_found)
         is com.stepup.android.core.TestUpdates.State.Downloading -> stringResource(R.string.test_update_downloading_short)
+        is com.stepup.android.core.TestUpdates.State.Installing -> stringResource(R.string.test_update_installing_short)
+        is com.stepup.android.core.TestUpdates.State.NeedsPermission -> stringResource(R.string.test_update_permission_short)
         com.stepup.android.core.TestUpdates.State.Idle -> stringResource(R.string.test_update_check)
     }
     Row(

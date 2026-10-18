@@ -1,18 +1,30 @@
 package com.stepup.android.core
 
+import android.app.Activity
+import android.app.Application
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.FileProvider
+import android.content.pm.PackageInfo
+import android.content.pm.PackageInstaller
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
 import com.stepup.android.BuildConfig
 import com.stepup.android.data.remote.UrlConnectionPoster
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -32,10 +44,21 @@ data class TestBuild(
 )
 
 /**
- * 테스트 APK 새 버전 알림(2026-09-26 사용자 요청) — 스토어 밖에서는 몰래 설치할 수 없으므로,
- * 더 새 빌드가 있으면 알리고 받은 뒤 안드로이드 설치 화면을 연다. 사용자는 "설치"만 누른다.
+ * 테스트 APK 스스로 업데이트(2026-09-26 사용자 요청, 2026-10-18 "원격 업데이트 안 된다 — 근본적으로 해결").
  *
- * debug 빌드(= test-apk 로 배포되는 파일)에서만 켜진다. 스토어 빌드에는 설치 권한도 없다.
+ * 예전에는 받은 APK 로 안드로이드 설치 화면을 "열기만" 했다. 그래서 설치가 됐는지 · 취소됐는지 · 왜 막혔는지 몰랐고,
+ * 설치 화면을 연 순간 "나중에"를 누른 것처럼 다시 묻지 않았고, 앱을 켤 때 한 번만 물었다. 이제는:
+ *
+ * - 안드로이드 설치 세션(PackageInstaller)으로 직접 깐다. 결과는 [TestUpdateReceiver] 가 받아 화면에 이유를 보인다.
+ *   취소하면 같은 창이 다시 뜬다. 서명 · 판(versionCode) · 패키지는 깔기 전에 먼저 맞대어 본다.
+ * - 안드로이드 12 이상은 확인 화면 없이 깐다(앱이 자기 자신을 업데이트 — UPDATE_PACKAGES_WITHOUT_USER_ACTION).
+ *   11 이하는 안드로이드 확인 화면에서 "업데이트"를 한 번 더 누른다.
+ * - "출처를 알 수 없는 앱 설치" 허용이 없으면 그 설정을 열고, 허용하고 돌아오면 이어서 깐다.
+ * - 앱을 켤 때 · 돌아올 때(5분에 한 번까지) · 설정에서 누를 때 묻고, 앱이 꺼져 있어도 일꾼([TestUpdateWorker])이 1시간마다 묻는다.
+ *   앱을 쓰지 않고 러닝 중이 아니면 일꾼이 받아서 깔고, 다 깔리면 "업데이트했어요" 알림을 남긴다.
+ * - 러닝 중에는 깔지 않는다 — 깔면 앱이 다시 켜지며 러닝 서비스가 끊긴다.
+ *
+ * debug · qa 빌드(= test-apk 로 배포되는 파일)에서만 켜진다. 스토어 빌드에는 설치 권한도 받는 쪽도 없다(src/debug/AndroidManifest.xml).
  * 계측 테스트 중에는 끈다 — 에뮬레이터 화면 확인에 알림 창이 끼어들지 않게.
  */
 object TestUpdates {
@@ -45,7 +68,26 @@ object TestUpdates {
 
     /** 앱으로 돌아올 때 다시 묻는 가장 짧은 간격 */
     const val RECHECK_MS = 5 * 60_000L
-    private const val APK_MIME = "application/vnd.android.package-archive"
+
+    /** 설치 결과를 받는 방송 — [TestUpdateReceiver] */
+    const val ACTION_INSTALL_STATUS = "com.stepup.android.TEST_UPDATE_STATUS"
+    const val EXTRA_COMMIT = "commit"
+
+    /** 깔지 못한 까닭 — 화면에 그대로 다른 글로 보인다 */
+    enum class Failure {
+        /** 받다가 끊겼다 · 받은 파일이 깨졌다 */
+        DOWNLOAD,
+        /** 이 폰의 앱과 서명이 다르다 — 지우고 새로 깔아야 한다 */
+        SIGNATURE,
+        /** 이 폰의 앱이 더 새 데이터베이스 판이다 */
+        DOWNGRADE,
+        /** 저장 공간이 모자라다 */
+        STORAGE,
+        /** 기기 정책 · 보안 설정이 막았다 */
+        BLOCKED,
+        /** 그 밖 */
+        OTHER,
+    }
 
     sealed interface State {
         data object Idle : State
@@ -55,8 +97,12 @@ object TestUpdates {
         data object CheckFailed : State
         data class Available(val build: TestBuild) : State
         data class Downloading(val build: TestBuild, val progress: Float?) : State
-        data class Failed(val build: TestBuild) : State
-        /** "나중에" — 이번에 앱을 켜 있는 동안은 다시 묻지 않는다 */
+        /** 받은 파일을 안드로이드에 넘겼다 — 곧 앱이 닫히고 새 버전이 깔린다(11 이하는 확인 화면) */
+        data class Installing(val build: TestBuild) : State
+        /** "출처를 알 수 없는 앱 설치"를 허용해야 깔 수 있다 */
+        data class NeedsPermission(val build: TestBuild) : State
+        data class Failed(val build: TestBuild, val reason: Failure = Failure.OTHER, val detail: String = "") : State
+        /** "나중에" — 이 빌드는 앱을 켜 있는 동안 다시 묻지 않는다(설정에서 누르면 다시) */
         data class Dismissed(val build: TestBuild) : State
     }
 
@@ -73,6 +119,9 @@ object TestUpdates {
     private val json = Json { ignoreUnknownKeys = true }
     private val http = UrlConnectionPoster(timeoutMillis = 10_000)
 
+    /** 받기 · 깔기는 한 번에 하나 — 화면의 버튼과 일꾼이 겹치지 않게 */
+    private val installLock = Mutex()
+
     val enabled: Boolean by lazy {
         BuildConfig.SELF_UPDATE && BuildConfig.BUILD_COMMIT_TIME > 0 && !underInstrumentation()
     }
@@ -80,6 +129,31 @@ object TestUpdates {
     /** 이 빌드 표시 — "1.17.0 · abc1234". 커밋을 모르면 버전만. */
     val buildLabel: String
         get() = BuildConfig.VERSION_NAME + BuildConfig.BUILD_COMMIT.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+
+    // ---- 앱이 화면에 있는가 ----
+
+    @Volatile private var startedActivities = 0
+
+    /** 앱 화면이 하나라도 보이는가 — 일꾼은 이때 깔지 않는다(쓰는 중에 앱이 닫히지 않게) */
+    val inForeground: Boolean get() = startedActivities > 0
+
+    /** 앱을 켤 때 한 번 — 화면이 보이는지 세고, 1시간마다 묻는 일꾼을 건다 */
+    fun attach(app: Application) {
+        if (!enabled) return
+        app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityStarted(activity: Activity) { startedActivities++ }
+            override fun onActivityStopped(activity: Activity) { startedActivities = (startedActivities - 1).coerceAtLeast(0) }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
+        TestUpdateWorker.createChannel(app)
+        runCatching { TestUpdateWorker.schedule(app) }
+    }
+
+    // ---- 묻기 ----
 
     fun parse(body: String): TestBuild? = runCatching {
         json.decodeFromString(TestBuild.serializer(), body).takeIf { it.commitTime > 0 }
@@ -97,13 +171,18 @@ object TestUpdates {
     /** 마지막으로 물어본 때(SystemClock.elapsedRealtime) — 앱으로 돌아올 때마다 묻되 너무 자주는 묻지 않는다 */
     @Volatile private var lastCheckAt = 0L
 
+    /** 창이 떠 있는 상태 — 받는 중 · 까는 중 · 허용 기다림 · 실패도 창이다 */
+    private fun State.busy(): Boolean =
+        this is State.Downloading || this == State.Checking || this is State.Available || this is State.Failed ||
+            this is State.Installing || this is State.NeedsPermission
+
     /**
      * 지금 물어볼까. 받는 중 · 묻는 중 · 새 빌드를 알리는 중이면 아니다. 설정에서 누른 것([force])은 늘 묻는다.
      * 앱으로 돌아올 때(2026-10-18 사용자 "원격 업데이트 안 되는데" — 예전엔 앱을 켤 때 한 번만 물어, 켜 둔 앱은 새 빌드를 몰랐다)는
      * 마지막으로 물은 지 [RECHECK_MS] 가 지났을 때만.
      */
-    fun shouldCheck(current: State, force: Boolean, sinceLastMs: Long): Boolean = when (current) {
-        is State.Downloading, State.Checking, is State.Available, is State.Failed -> false
+    fun shouldCheck(current: State, force: Boolean, sinceLastMs: Long): Boolean = when {
+        current.busy() -> false
         else -> force || current == State.Idle && sinceLastMs < 0 || sinceLastMs >= RECHECK_MS
     }
 
@@ -117,6 +196,15 @@ object TestUpdates {
         else -> State.Available(remote)
     }
 
+    /** 올라가 있는 빌드 정보. 못 받으면 null */
+    private suspend fun fetchInfo(): TestBuild? {
+        val response = http.get(INFO_URL, mapOf("Cache-Control" to "no-cache"))
+        return if (response.status in 200..299) parse(response.body) else null
+    }
+
+    private fun newerThanThisApp(remote: TestBuild): Boolean =
+        isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT, BuildConfig.VERSION_CODE)
+
     /**
      * 새 빌드가 있는지 묻는다. 앱을 켤 때 · 앱으로 돌아올 때(5분에 한 번까지), 설정에서 누르면 [force] 로 바로.
      */
@@ -129,10 +217,8 @@ object TestUpdates {
         lastCheckAt = now
         _state.value = State.Checking
         try {
-            val response = http.get(INFO_URL, mapOf("Cache-Control" to "no-cache"))
-            val remote = if (response.status in 200..299) parse(response.body) else null
-            val newer = remote != null &&
-                isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT, BuildConfig.VERSION_CODE)
+            val remote = fetchInfo()
+            val newer = remote != null && newerThanThisApp(remote)
             _state.value = afterCheck(current, remote, newer, force)
         } finally {
             // 중간에 끊겼으면 "확인 중"에 멈추지 않게 되돌린다
@@ -145,13 +231,41 @@ object TestUpdates {
         scope.launch { check(force) }
     }
 
+    /**
+     * 앱으로 돌아올 때 — "출처를 알 수 없는 앱" 설정에서 허용하고 돌아왔으면 이어서 깔고, 아니면 새 빌드를 묻는다.
+     */
+    fun onResume(context: Context) {
+        if (!enabled) return
+        val s = _state.value
+        if (s is State.NeedsPermission && canInstall(context)) {
+            _state.value = State.Available(s.build)
+            startDownload(context)
+            return
+        }
+        startCheck()
+    }
+
     fun dismiss() {
         val build = when (val s = _state.value) {
             is State.Available -> s.build
             is State.Failed -> s.build
+            is State.NeedsPermission -> s.build
             else -> return
         }
         _state.value = State.Dismissed(build)
+    }
+
+    // ---- 받고 깔기 ----
+
+    /** 이 앱이 패키지를 깔 수 있나 — "출처를 알 수 없는 앱 설치" 허용 */
+    fun canInstall(context: Context): Boolean = context.packageManager.canRequestPackageInstalls()
+
+    /** "출처를 알 수 없는 앱 설치"의 이 앱 칸을 연다 */
+    fun openInstallPermission(context: Context) {
+        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+            .onFailure { runCatching { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
     }
 
     /** [downloadAndInstall] 을 앱 수명의 작업으로 시작한다 */
@@ -160,40 +274,101 @@ object TestUpdates {
         scope.launch { downloadAndInstall(app) }
     }
 
-    /** 새 APK 를 받아 확인하고 설치 화면을 연다. 실패하면 [State.Failed] — 다시 누를 수 있다. */
+    /** 화면의 "업데이트" — 받아서 맞대어 보고 안드로이드에 넘긴다. 실패하면 [State.Failed] 에 까닭과 함께 — 다시 누를 수 있다. */
     suspend fun downloadAndInstall(context: Context) {
         val build = when (val s = _state.value) {
             is State.Available -> s.build
             is State.Failed -> s.build
+            is State.NeedsPermission -> s.build
             else -> return
         }
-        _state.value = State.Downloading(build, null)
-        val file = try {
-            download(context) { progress -> _state.value = State.Downloading(build, progress) }
-        } finally {
-            if (_state.value is State.Downloading) _state.value = State.Failed(build)
-        }
-        if (file == null) {
-            _state.value = State.Failed(build)
+        if (runBusy()) return // 화면이 러닝 중에는 창을 숨긴다 — 혹시 눌렸어도 깔지 않는다
+        if (!canInstall(context)) {
+            _state.value = State.NeedsPermission(build)
+            openInstallPermission(context)
             return
         }
-        val opened = runCatching {
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.share", file)
-            context.startActivity(
-                Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(uri, APK_MIME)
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }.isSuccess
-        // 설치 화면이 열렸으면 창을 닫는다. 설치를 취소했으면 다음에 켤 때 다시 알린다.
-        _state.value = if (opened) State.Dismissed(build) else State.Failed(build)
+        installLock.withLock {
+            _state.value = State.Downloading(build, null)
+            val result = try {
+                prepare(context, build) { progress -> _state.value = State.Downloading(build, progress) }
+            } finally {
+                if (_state.value is State.Downloading) _state.value = State.Failed(build, Failure.DOWNLOAD)
+            }
+            when (result) {
+                is Prepared.Ready -> {
+                    _state.value = State.Installing(build)
+                    val committed = commit(context, result.file, build, fromBackground = false)
+                    if (!committed) _state.value = State.Failed(build, Failure.OTHER)
+                }
+                is Prepared.Refused -> _state.value = State.Failed(build, result.reason)
+            }
+        }
     }
 
-    private suspend fun download(context: Context, onProgress: (Float?) -> Unit): File? = withContext(Dispatchers.IO) {
-        val dir = File(context.cacheDir, "updates").apply { mkdirs() }
+    /**
+     * 일꾼(앱이 화면에 없을 때) — 새 빌드가 있으면 받아서 깐다. 안드로이드 12 이상은 확인 없이 깔리고, 다 깔리면
+     * [TestUpdateReceiver] 가 "업데이트했어요" 알림을 남긴다. 확인이 필요한 폰(11 이하 · 허용 없음 · 안드로이드가 확인을
+     * 요구)에는 "새 버전이 있어요 — 눌러서 업데이트" 알림만 남긴다(빌드마다 한 번).
+     */
+    suspend fun backgroundUpdate(context: Context) {
+        if (!enabled || inForeground || runBusy()) return
+        val remote = fetchInfo() ?: return
+        if (!newerThanThisApp(remote)) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !canInstall(context)) {
+            TestUpdateWorker.notifyAvailable(context, remote)
+            return
+        }
+        if (!installLock.tryLock()) return
+        try {
+            when (val result = prepare(context, remote) {}) {
+                is Prepared.Ready -> {
+                    // 받는 사이 앱을 켰거나 러닝을 시작했으면 깔지 않는다 — 다음 차례에 받은 파일을 그대로 쓴다
+                    if (inForeground || runBusy()) return
+                    if (!commit(context, result.file, remote, fromBackground = true)) TestUpdateWorker.notifyAvailable(context, remote)
+                }
+                is Prepared.Refused -> if (result.reason != Failure.DOWNLOAD) TestUpdateWorker.notifyAvailable(context, remote)
+            }
+        } finally {
+            installLock.unlock()
+        }
+    }
+
+    /** 러닝 중이거나 막 끝나 저장하는 중 — 이때 깔면 앱이 다시 켜지며 러닝이 끊긴다 */
+    private fun runBusy(): Boolean {
+        val run = com.stepup.android.service.WalkSessionService.state.value
+        return run.isActive || run.saveStatus == com.stepup.android.service.RunSaveStatus.SAVING
+    }
+
+    private sealed interface Prepared {
+        data class Ready(val file: File) : Prepared
+        data class Refused(val reason: Failure) : Prepared
+    }
+
+    /** 받은(또는 이미 받아 둔) 이 빌드의 APK 를 이 폰의 앱과 맞대어 본다 */
+    private suspend fun prepare(context: Context, build: TestBuild, onProgress: (Float?) -> Unit): Prepared {
+        val file = cached(context, build) ?: download(context, build, onProgress) ?: return Prepared.Refused(Failure.DOWNLOAD)
+        val reason = withContext(Dispatchers.IO) { verify(context, file) }
+        if (reason != null) {
+            file.delete()
+            return Prepared.Refused(reason)
+        }
+        return Prepared.Ready(file)
+    }
+
+    private fun updatesDir(context: Context) = File(context.cacheDir, "updates").apply { mkdirs() }
+    private fun apkFile(context: Context, build: TestBuild) =
+        File(updatesDir(context), "StepUp-test-${build.commit.ifBlank { build.commitTime.toString() }}.apk")
+
+    /** 같은 빌드를 이미 다 받아 두었으면 다시 받지 않는다(취소 뒤 다시 누를 때 · 일꾼이 받아 둔 것) */
+    private fun cached(context: Context, build: TestBuild): File? =
+        apkFile(context, build).takeIf { it.isFile && it.length() > 0 }
+
+    private suspend fun download(context: Context, build: TestBuild, onProgress: (Float?) -> Unit): File? = withContext(Dispatchers.IO) {
+        val dir = updatesDir(context)
         dir.listFiles()?.forEach { it.delete() }
-        val part = File(dir, "StepUp-test.apk.part")
-        val apk = File(dir, "StepUp-test.apk")
+        val part = File(dir, "download.part")
+        val apk = apkFile(context, build)
         val ok = runCatching {
             // github.com → 파일 저장소(https)로 넘겨 준다. HttpURLConnection 은 같은 https 끼리 따라간다.
             val connection = URL(APK_URL).openConnection() as HttpURLConnection
@@ -228,16 +403,216 @@ object TestUpdates {
                 connection.disconnect()
             }
         }.getOrDefault(false)
-        // 받은 파일이 이 앱의 APK 인지 확인한다 — 끊긴 파일 · 다른 파일로 설치 화면을 열지 않는다
-        val valid = ok && runCatching {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageArchiveInfo(apk.path, 0)?.packageName == context.packageName
-        }.getOrDefault(false)
-        if (!valid) {
+        if (!ok) {
             part.delete()
             apk.delete()
         }
-        if (valid) apk else null
+        if (ok) apk else null
+    }
+
+    /**
+     * 받은 APK 가 이 폰의 앱 위에 깔릴 수 있나 — 안드로이드에 넘기기 전에 이유를 알 수 있는 것은 여기서 가른다.
+     * 모르는 값(안드로이드가 서명을 읽어 주지 않는 판)은 막지 않는다 — 그때는 안드로이드의 답을 따른다.
+     */
+    private fun verify(context: Context, apk: File): Failure? {
+        val pm = context.packageManager
+        val archive = runCatching { archiveInfo(pm, apk.path) }.getOrNull() ?: return Failure.DOWNLOAD
+        if (archive.packageName != context.packageName) return Failure.DOWNLOAD
+        val installed = runCatching { installedInfo(pm, context.packageName) }.getOrNull() ?: return null
+        val failure = compatibility(
+            archiveVersion = archive.longVersionCodeCompat(),
+            installedVersion = installed.longVersionCodeCompat(),
+            archiveSigners = signerHistory(archive),
+            installedSigner = currentSigners(installed),
+        )
+        return failure
+    }
+
+    /**
+     * 덮어 깔 수 있나 — 판이 낮으면 [Failure.DOWNGRADE], 이 폰의 앱을 서명한 키가 새 APK 의 서명(이력 포함)에 없으면 [Failure.SIGNATURE].
+     * 서명 값을 모르면(빈 목록) 서명은 보지 않는다.
+     */
+    fun compatibility(
+        archiveVersion: Long,
+        installedVersion: Long,
+        archiveSigners: List<String>,
+        installedSigner: Set<String>,
+    ): Failure? = when {
+        archiveVersion < installedVersion -> Failure.DOWNGRADE
+        archiveSigners.isNotEmpty() && installedSigner.isNotEmpty() && archiveSigners.none { it in installedSigner } -> Failure.SIGNATURE
+        else -> null
+    }
+
+    @Suppress("DEPRECATION")
+    private fun archiveInfo(pm: PackageManager, path: String): PackageInfo? {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES
+        return pm.getPackageArchiveInfo(path, flags)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun installedInfo(pm: PackageManager, packageName: String): PackageInfo? {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES
+        return pm.getPackageInfo(packageName, flags)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun PackageInfo.longVersionCodeCompat(): Long =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) longVersionCode else versionCode.toLong()
+
+    /** 새 APK 가 쓸 수 있다고 증명한 모든 키(서명 이력 포함) */
+    @Suppress("DEPRECATION")
+    private fun signerHistory(info: PackageInfo): List<String> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val signing = info.signingInfo ?: return emptyList()
+            val certs = if (signing.hasMultipleSigners()) signing.apkContentsSigners else signing.signingCertificateHistory
+            return certs.orEmpty().map { sha256(it.toByteArray()) }
+        }
+        return info.signatures.orEmpty().map { sha256(it.toByteArray()) }
+    }
+
+    /** 이 폰의 앱을 지금 서명한 키 — 서명 이력의 맨 끝(지금 키) */
+    @Suppress("DEPRECATION")
+    private fun currentSigners(info: PackageInfo): Set<String> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val signing = info.signingInfo ?: return emptySet()
+            if (signing.hasMultipleSigners()) return signing.apkContentsSigners.orEmpty().map { sha256(it.toByteArray()) }.toSet()
+            return signing.signingCertificateHistory.orEmpty().lastOrNull()?.let { setOf(sha256(it.toByteArray())) }.orEmpty()
+        }
+        return info.signatures.orEmpty().map { sha256(it.toByteArray()) }.toSet()
+    }
+
+    private fun sha256(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    /**
+     * 안드로이드 설치 세션에 APK 를 넣고 맡긴다. 결과는 [TestUpdateReceiver] → [onInstallStatus].
+     * 안드로이드 12 이상은 확인을 요구하지 않는다(자기 자신 업데이트) — 깔리는 순간 이 앱은 닫히고 새 버전으로 바뀐다.
+     */
+    private suspend fun commit(context: Context, apk: File, build: TestBuild, fromBackground: Boolean): Boolean = withContext(Dispatchers.IO) {
+        val installer = context.packageManager.packageInstaller
+        var sessionId = -1
+        runCatching {
+            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
+                setAppPackageName(context.packageName)
+                setSize(apk.length())
+                setInstallReason(PackageManager.INSTALL_REASON_USER)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                }
+            }
+            sessionId = installer.createSession(params)
+            installer.openSession(sessionId).use { session ->
+                session.openWrite("StepUp-test.apk", 0, apk.length()).use { out ->
+                    apk.inputStream().use { it.copyTo(out, 64 * 1024) }
+                    session.fsync(out)
+                }
+                val status = Intent(ACTION_INSTALL_STATUS)
+                    .setClass(context, TestUpdateReceiver::class.java)
+                    .putExtra(EXTRA_COMMIT, build.commit)
+                    .putExtra(EXTRA_BACKGROUND, fromBackground)
+                // 안드로이드가 결과(상태 · 확인 화면)를 채워 넣으므로 바꿀 수 있는 PendingIntent 여야 한다(받는 쪽은 이 앱만 — 명시적)
+                val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+                val pending = PendingIntent.getBroadcast(context, sessionId, status, flags)
+                pendingBuild = build
+                markInstalling(context, build)
+                session.commit(pending.intentSender)
+            }
+            true
+        }.getOrElse {
+            if (sessionId >= 0) runCatching { installer.abandonSession(sessionId) }
+            clearInstalling(context)
+            false
+        }
+    }
+
+    const val EXTRA_BACKGROUND = "background"
+
+    /** 지금 안드로이드에 넘긴 빌드 — 결과를 받을 때 쓴다 */
+    @Volatile private var pendingBuild: TestBuild? = null
+
+    /** 설치 결과가 화면 · 알림에서 무엇이 되나 */
+    sealed interface Outcome {
+        data object NeedsUser : Outcome
+        data object Done : Outcome
+        data object Cancelled : Outcome
+        data class Fail(val reason: Failure) : Outcome
+    }
+
+    /** 안드로이드 설치 세션의 상태 값 → [Outcome] */
+    fun outcomeOf(status: Int): Outcome = when (status) {
+        PackageInstaller.STATUS_PENDING_USER_ACTION -> Outcome.NeedsUser
+        PackageInstaller.STATUS_SUCCESS -> Outcome.Done
+        PackageInstaller.STATUS_FAILURE_ABORTED -> Outcome.Cancelled
+        // 이미 깔린 앱과 부딪힘 — 서명이 다르거나 판이 낮다(먼저 맞대어 보므로 남는 것은 대개 서명)
+        PackageInstaller.STATUS_FAILURE_CONFLICT -> Outcome.Fail(Failure.SIGNATURE)
+        PackageInstaller.STATUS_FAILURE_STORAGE -> Outcome.Fail(Failure.STORAGE)
+        PackageInstaller.STATUS_FAILURE_BLOCKED -> Outcome.Fail(Failure.BLOCKED)
+        PackageInstaller.STATUS_FAILURE_INVALID -> Outcome.Fail(Failure.DOWNLOAD)
+        else -> Outcome.Fail(Failure.OTHER)
+    }
+
+    /** [TestUpdateReceiver] 가 받은 설치 결과 */
+    internal fun onInstallStatus(context: Context, intent: Intent) {
+        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        val detail = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()
+        val background = intent.getBooleanExtra(EXTRA_BACKGROUND, false)
+        val build = pendingBuild ?: TestBuild(commit = intent.getStringExtra(EXTRA_COMMIT).orEmpty())
+        when (val outcome = outcomeOf(status)) {
+            Outcome.NeedsUser -> {
+                // 안드로이드 11 이하 · 안드로이드가 확인을 요구할 때 — 화면에 있으면 확인 화면을 바로, 아니면 알림으로
+                @Suppress("DEPRECATION")
+                val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+                if (confirm != null && inForeground && !background) {
+                    val opened = runCatching { context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
+                    _state.value = if (opened) State.Installing(build) else State.Failed(build, Failure.OTHER, detail)
+                    if (!opened) clearInstalling(context)
+                } else {
+                    clearInstalling(context)
+                    _state.value = State.Available(build)
+                    TestUpdateWorker.notifyAvailable(context, build)
+                }
+            }
+            Outcome.Done -> {
+                // 대개 이 앱이 먼저 닫혀 여기까지 오지 않는다 — 새 버전이 켜질 때 [onReplaced] 가 알린다
+                _state.value = State.UpToDate
+            }
+            Outcome.Cancelled -> {
+                clearInstalling(context)
+                // 취소는 "나중에"가 아니다 — 같은 창을 다시 띄워 바로 다시 누를 수 있게
+                _state.value = if (background) _state.value else State.Available(build)
+            }
+            is Outcome.Fail -> {
+                clearInstalling(context)
+                if (background) TestUpdateWorker.notifyAvailable(context, build)
+                else _state.value = State.Failed(build, outcome.reason, detail)
+            }
+        }
+    }
+
+    // ---- 다 깔린 뒤 ----
+
+    private const val PREFS = "test_updates"
+    private const val KEY_INSTALLING = "installing_commit"
+
+    private fun markInstalling(context: Context, build: TestBuild) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_INSTALLING, build.commit).apply()
+    }
+
+    private fun clearInstalling(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_INSTALLING).apply()
+    }
+
+    /**
+     * 새 버전이 깔린 직후(MY_PACKAGE_REPLACED, 새 버전의 코드로 돈다) — 이 앱이 깐 업데이트면 "업데이트했어요 · 눌러서 열기" 알림.
+     * 브라우저로 손수 깐 것에는 알리지 않는다.
+     */
+    internal fun onReplaced(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.getString(KEY_INSTALLING, null) ?: return
+        prefs.edit().remove(KEY_INSTALLING).apply()
+        updatesDir(context).listFiles()?.forEach { it.delete() }
+        TestUpdateWorker.notifyUpdated(context, buildLabel)
     }
 
     /** 계측 테스트 러너가 같은 프로세스에 올라와 있으면 테스트 중이다 */
