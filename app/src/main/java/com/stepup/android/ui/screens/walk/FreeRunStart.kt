@@ -498,14 +498,6 @@ internal fun FreeRunStartStage(
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
             )
         }
-        val bangStyle = with(LocalDensity.current) {
-            TextStyle(
-                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
-                fontSize = 70.dp.toSp(), lineHeight = 1.em, letterSpacing = (-6).dp.toSp(), color = Color.White,
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
-                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
-            )
-        }
         // 바탕 — 딥 네이비, 가운데 옅은 파란 빛(타원 90% × 46%, 높이 48%)
         Canvas(Modifier.fillMaxSize()) {
             drawRect(StartNavy)
@@ -565,7 +557,7 @@ internal fun FreeRunStartStage(
                     .testTag("run-countdown-digit"),
             )
         }
-        // StepUP! — 실제 워드마크 그림 + 굵은 이탤릭 "!"(투명한 겹, 카드 · 테두리 없음)
+        // StepUP — 실제 워드마크 그림(투명한 겹, 카드 · 테두리 없음)
         val groupWidth = minOf(maxWidth - 48.dp, 296.dp)
         Row(
             Modifier.align(Alignment.Center).width(groupWidth).height(82.dp)
@@ -591,23 +583,8 @@ internal fun FreeRunStartStage(
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            RunStartWordmark(groupWidth - 30.dp)
-            Box(Modifier.width(22.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    "!", style = bangStyle, maxLines = 1, softWrap = false,
-                    modifier = Modifier.wrapContentWidth(unbounded = true).offset(y = (-2).dp)
-                        .drawWithContent {
-                            // 시안의 skewX(-5deg) — 이탤릭 위로 조금 더 기울인다
-                            val c = center
-                            drawContext.canvas.save()
-                            drawContext.canvas.translate(c.x, c.y)
-                            drawContext.canvas.skew(-5f, 0f)
-                            drawContext.canvas.translate(-c.x, -c.y)
-                            drawContent()
-                            drawContext.canvas.restore()
-                        },
-                )
-            }
+            // 워드마크 그림만(2026-10-18 사용자 "UP 옆 흰 일직선 줄 — 없애") — 시안의 굵은 이탤릭 "!"는 로고보다 길어 세로 줄로 보였다
+            RunStartWordmark(groupWidth)
         }
     }
 }
