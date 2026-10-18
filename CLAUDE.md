@@ -1,5 +1,11 @@
 # StepUp — 작업 메모
 
+## 최신 — 러닝 중 잠금화면 알림 (2026-10-18)
+
+[docs/run-lock-screen-2026-10-18.md](docs/run-lock-screen-2026-10-18.md) — `service/RunNotification.kt`. 안드로이드 16 이상은 실시간 알림(상태 표시줄 칩 · 잠금화면 고정),
+그 아래는 남색 우리 모양(로고 · 흐르는 시계 · 거리 · 페이스). 채널 `run_live`(소리 없음, 잠금화면 공개). 버튼은 일시정지 / 다시 달리기만.
+자유러닝 시작의 StepUP 옆 "!"는 뺐다(세로 줄로 보였다).
+
 ## 최신 — WEB3 지갑 연결: 지갑을 고르면 바로 (2026-10-18)
 
 [docs/wallet-connect-2026-10-18.md](docs/wallet-connect-2026-10-18.md) — 사용자 "WalletConnect 빼고 OKX · MetaMask · Rabby · GIWA(맨 위, 준비 중)".

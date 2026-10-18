@@ -5,6 +5,8 @@
     <!-- 걸음 수 센서(API 29+)와 포그라운드 워킹 세션에 필요한 권한 -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 안드로이드 16 실시간 알림(Live Updates) — 러닝 중 알림을 잠금화면 · 상태 표시줄 칩에 고정한다(2026-10-18) -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- Firebase 분석이 광고 ID 를 끌어오지 않게 한다. 광고를 하지 않으므로 필요 없고,
          넣어 두면 Play 스토어에 광고 ID 사용을 신고해야 한다. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />

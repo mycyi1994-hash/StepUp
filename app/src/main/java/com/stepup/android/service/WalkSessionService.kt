@@ -805,7 +805,7 @@ class WalkSessionService : Service() {
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
-            buildNotification(0),
+            buildNotification(),
             fgsType,
         )
         foregroundHasLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || withLocation
@@ -826,7 +826,7 @@ class WalkSessionService : Service() {
         if (!foregroundHasLocation) {
             foregroundHasLocation = runCatching {
                 ServiceCompat.startForeground(
-                    this, NOTIFICATION_ID, buildNotification(_state.value.steps),
+                    this, NOTIFICATION_ID, buildNotification(),
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
                 )
             }.isSuccess
@@ -894,7 +894,7 @@ class WalkSessionService : Service() {
                 if (stepsAfter >= 0) {
                     // 걸음이 늘었다 — 움직이고 있다(오래 서 있음 판단을 처음부터)
                     lastMoveElapsed = SystemClock.elapsedRealtime()
-                    updateNotification(stepsAfter)
+                    updateNotification()
                 }
             }
         }
@@ -930,8 +930,8 @@ class WalkSessionService : Service() {
                         overspeed = RunOverspeed.live(it.overspeed, System.currentTimeMillis()),
                     )
                 }
-                // 화면이 꺼져 있어도 알림 줄에서 보이게 — 바뀔 때만 다시 쓴다
-                if (stillNow != current.still) updateNotification(_state.value.steps)
+                // 화면이 꺼져 있어도 알림 줄에서 보이게 — 멈춤이 바뀌면 바로, 거리 · 페이스는 몇 초마다(잠금화면 알림)
+                if (stillNow != current.still) updateNotification(force = true) else updateNotification()
             }
         }
         startCheckpointLoop()
@@ -973,7 +973,7 @@ class WalkSessionService : Service() {
         }
         // 멈췄다 다시 달리면 그때부터 센다 — 일시정지한 동안은 서 있어도 알리지 않는다
         lastMoveElapsed = SystemClock.elapsedRealtime()
-        if (_state.value.isActive) updateNotification(_state.value.steps)
+        if (_state.value.isActive) updateNotification(force = true)
     }
 
     private fun stopSession() {
@@ -1223,42 +1223,21 @@ class WalkSessionService : Service() {
         super.onDestroy()
     }
 
-    private fun createChannel() {
-        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.notification_channel_walk),
-            NotificationManager.IMPORTANCE_LOW,
-        )
-        manager.createNotificationChannel(channel)
-    }
+    private fun createChannel() = RunNotification.createChannel(this)
 
-    private fun buildNotification(steps: Int): android.app.Notification {
-        val launchIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            launchIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_walk)
-            .setContentTitle(getString(R.string.notification_walk_title))
-            // 오래 서 있으면(RunStill) 알림 줄에서도 알린다 — 화면이 꺼져 있어도 보이게
-            .setContentText(
-                if (_state.value.still) getString(R.string.notification_run_still) else getString(R.string.notification_steps, steps),
-            )
-            .setContentIntent(contentIntent)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .build()
-    }
+    /** 러닝 중 알림(잠금화면에 우리 모양 · 안드로이드 16 실시간 알림 — [RunNotification]) */
+    private fun buildNotification(): android.app.Notification =
+        RunNotification.build(this, _state.value.takeIf { it.isActive } ?: WalkSessionState())
 
-    private fun updateNotification(steps: Int) {
+    /** 마지막으로 알림을 다시 쓴 때 — 걸음 · 거리가 바뀔 때마다 쓰지 않게(시간은 알림의 시계가 스스로 흐른다) */
+    @Volatile private var lastNotifiedAt = 0L
+
+    private fun updateNotification(force: Boolean = false) {
+        val now = SystemClock.elapsedRealtime()
+        if (!force && now - lastNotifiedAt < NOTIFY_EVERY_MS) return
+        lastNotifiedAt = now
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID, buildNotification(steps))
+        manager.notify(NOTIFICATION_ID, buildNotification())
     }
 
     companion object {
@@ -1347,7 +1326,8 @@ class WalkSessionService : Service() {
             )
         }
 
-        private const val CHANNEL_ID = "walk_session"
+        /** 알림을 다시 쓰는 가장 짧은 간격 — 거리 · 페이스 · 걸음 */
+        private const val NOTIFY_EVERY_MS = 3_000L
         private const val NOTIFICATION_ID = 1001
 
         /**

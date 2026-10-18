@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 중 알림 · 잠금화면(2026-10-18) -->
+<resources>
+    <string name="run_notif_title">ラン中</string>
+    <string name="run_notif_title_paused">一時停止中</string>
+    <string name="run_notif_paused">一時停止しました</string>
+    <string name="run_notif_distance">%1$s km</string>
+    <string name="run_notif_pace">ペース %1$s</string>
+    <string name="run_notif_pause">一時停止</string>
+    <string name="run_notif_resume">再開</string>
+    <string name="run_notif_distance_label">距離</string>
+    <string name="run_notif_pace_label">ペース</string>
+</resources>

@@ -1,5 +1,11 @@
 # Redesign progress
 
+## 2026-10-18 — lock-screen run notification · free-run start "!" removed
+
+- Report: [../run-lock-screen-2026-10-18.md](../run-lock-screen-2026-10-18.md). `service/RunNotification.kt`: Android 16+ standard notification with the Live Updates request (status chip + pinned on the lock screen); below 16, a navy colorized custom notification (logo, running chronometer, distance, pace — `layout/notification_run*.xml`). New silent `run_live` channel (public on the lock screen), pause/resume action only, updates throttled to 3 s (pause/still immediately).
+- Free-run start: the bold italic "!" after the StepUP wordmark is removed (user saw it as a stray white vertical line); the wordmark asset is unchanged.
+- Evidence (local): app compile · device-test compile · unit tests (`RunNotificationTextTest`) · lint, string checks. Not checked on a real lock screen.
+
 ## 2026-10-18 — Web3 wallet connect: pick a wallet, sign once
 
 - User ask: show the wallets directly (no WalletConnect) — GIWA Wallet (top, "coming soon"), MetaMask, OKX Wallet, Rabby Wallet. Report: [../wallet-connect-2026-10-18.md](../wallet-connect-2026-10-18.md).
