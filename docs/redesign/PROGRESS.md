@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-10-18 — Web3 wallet connect: pick a wallet, sign once
+
+- User ask: show the wallets directly (no WalletConnect) — GIWA Wallet (top, "coming soon"), MetaMask, OKX Wallet, Rabby Wallet. Report: [../wallet-connect-2026-10-18.md](../wallet-connect-2026-10-18.md).
+- App: every "connect wallet" (draw premium, wallet benefit sheet, settings › connected) opens `WalletConnectSheet`; the app asks the server for a one-time 10-minute link code and opens `wallet.html?l=<user>.<nonce>` inside the wallet app's browser (MetaMask dapp link, OKX `okx://` link, Rabby: copy link + open app). No login token is handed to the wallet. On return it re-reads `draw_status.wallet_linked` and only then says connected.
+- Server 0067: first wallet link no longer needs 2FA; changing a linked wallet still needs recent 2FA (web wallet page). Attester `POST /v2/wallet/link-request` verifies the signature for that user + code, the server checks the code. Web page link mode signs without switching networks.
+- Evidence (local): `supabase/tests/run.sh`, `attester` npm test (59), `web` npm test (16) + bundle rebuilt, app compile · device-test compile · unit tests (`WalletAppsTest`) · lint, string/contract checks. Device test `WalletDesignTest` adds the picker scene. Not tried on real wallet apps.
+
 ## 2026-10-17 — running tab polish: shoe name · rename · tier durability bar · ceiling light · bottom nav
 
 - User asks (Korean, [../run-tab-polish-2026-10-17.md](../run-tab-polish-2026-10-17.md)): drop the Profile › Challenge row; the running-tab shoe name must always show and be renamable; a tier-styled durability bar; an occasional flash on the showroom ceiling light; bottom-tab icon/label centring and a larger, bolder selected label.

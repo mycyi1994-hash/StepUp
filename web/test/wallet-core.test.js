@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { accountRef, jwtClaims, tokenFromHash, parseSup, opStatusLabel, createApi, formatSup, sameWallet, blockRanges } from '../wallet-core.js'
+import { accountRef, jwtClaims, tokenFromHash, parseSup, opStatusLabel, createApi, formatSup, sameWallet, blockRanges, linkRequestFromSearch, walletLinkMessage } from '../wallet-core.js'
+import { walletLinkMessage as workerMessage } from '../../attester/src/typed.js'
 
 const jwt = (claims) => `h.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.s`
 
@@ -90,4 +91,24 @@ test('신발 번호로 컨트랙트를 고른다 — v3 번호(1000001~)는 v3, 
   assert.equal(sneakerContractFor(1000001n, { sneakers: '0xv2' }), null)
   assert.deepEqual(sneakerContracts(config), [['0xv2', 10n], ['0xv3', 20n]])
   assert.deepEqual(sneakerContracts({ sneakers: '0xv2', startBlock: 10 }), [['0xv2', 10n]])
+})
+
+test('앱이 넘긴 연결 요청(?l=계정.번호) — 꼴이 맞을 때만, 문장은 워커와 같다', () => {
+  const uid = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1'
+  const nonce = 'ab'.repeat(16)
+  assert.deepEqual(linkRequestFromSearch(`?l=${uid}.${nonce}`), { user: uid, nonce })
+  assert.deepEqual(linkRequestFromSearch(`?l=${uid.toUpperCase()}.${nonce}`), { user: uid, nonce })
+  for (const bad of ['', '?l=', `?l=${uid}`, `?l=${uid}.zz`, `?l=x.${nonce}`, `?l=${uid}.${nonce}x`]) {
+    assert.equal(linkRequestFromSearch(bad), null, bad)
+  }
+  assert.equal(walletLinkMessage(uid, nonce), workerMessage(uid, nonce))
+})
+
+test('연결 요청 보내기는 로그인 머리를 싣지 않는다', async () => {
+  const seen = []
+  const api = createApi({ supabaseUrl: 'https://s.test', supabaseKey: 'k', attesterUrl: 'https://a.test/' }, () => 'TOKEN',
+    async (url, init) => { seen.push([url, init]); return new Response('{"ok":true}', { status: 200 }) })
+  await api.attesterOpen('/v2/wallet/link-request', { user: 'u' })
+  assert.equal(seen[0][0], 'https://a.test/v2/wallet/link-request')
+  assert.equal(seen[0][1].headers.authorization, undefined)
 })

@@ -236,6 +236,15 @@ class WalletDesignTest {
         // 연결 혜택(기존 뽑기 전달본 06) — 숫자는 서버가 준 것만
         show("s17-benefit-sheet", "wl-benefit-sheet", wallet(sheet = "Benefit"))
         compose.onNodeWithTag("wl-connect").assertHasClickAction()
+        // WEB3 지갑 고르기(2026-10-18) — GIWA(맨 위 · 준비 중 · 누를 수 없음) · MetaMask · OKX · Rabby
+        show("s17b-connect-picker", "wallet-connect-sheet", { com.stepup.android.ui.screens.rewards.WalletConnectSheet(onDismiss = {}) })
+        compose.onNodeWithTag("wallet-option-giwa-soon", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("wallet-option-giwa").assertHasNoClickAction()
+        listOf("metamask", "okx", "rabby").forEach { compose.onNodeWithTag("wallet-option-$it").assertHasClickAction() }
+        val tops = listOf("giwa", "metamask", "okx", "rabby").map {
+            compose.onNodeWithTag("wallet-option-$it").fetchSemanticsNode().boundsInRoot.top
+        }
+        org.junit.Assert.assertEquals("GIWA first, then MetaMask · OKX · Rabby", tops.sorted(), tops)
         show("s18-web3-unknown", "wl-web3-retry", wallet(web3 = Web3State.Unknown))
         show("s19-signed-out", "wl-web3", wallet(web3 = Web3State.SignedOut))
         compose.onNodeWithTag("wl-web3").assertHasNoClickAction()

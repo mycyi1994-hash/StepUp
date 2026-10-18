@@ -98,6 +98,8 @@ fun WalletScreen(
     onBack: () -> Unit = {},
     onOpenDraw: () -> Unit = {},
     onOpenWalletPage: () -> Unit = {},
+    /** 지갑 연결(2026-10-18) — 지갑 고르기 창. 붙은 지갑의 관리 · 꺼내기는 웹 지갑 페이지([onOpenWalletPage]) */
+    onConnectWallet: () -> Unit = onOpenWalletPage,
     onOpenChain: () -> Unit = {},
     viewModel: RewardsViewModel = viewModel(factory = RewardsViewModel.Factory),
 ) {
@@ -115,7 +117,7 @@ fun WalletScreen(
         totals = totals, history = history, filter = filter, web3 = web3, status = status,
         onBack = onBack, onFilter = viewModel::setFilter, onLoadMore = viewModel::loadMore,
         onReloadHistory = viewModel::reloadHistory, onReload = viewModel::reload, onRetryWeb3 = viewModel::refreshWeb3,
-        onOpenDraw = onOpenDraw, onOpenWalletPage = onOpenWalletPage, onOpenChain = onOpenChain,
+        onOpenDraw = onOpenDraw, onOpenWalletPage = onOpenWalletPage, onConnectWallet = onConnectWallet, onOpenChain = onOpenChain,
     )
 }
 
@@ -134,6 +136,7 @@ fun WalletContent(
     onRetryWeb3: () -> Unit = {},
     onOpenDraw: () -> Unit = {},
     onOpenWalletPage: () -> Unit = {},
+    onConnectWallet: () -> Unit = onOpenWalletPage,
     onOpenChain: () -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
     zone: ZoneId = ZoneId.systemDefault(),
@@ -241,7 +244,7 @@ fun WalletContent(
             status = status,
             onConnect = {
                 sheet = WalletSheet.None
-                onOpenWalletPage()
+                onConnectWallet()
             },
             onClose = { sheet = WalletSheet.None },
         )

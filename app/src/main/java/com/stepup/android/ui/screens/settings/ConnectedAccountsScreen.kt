@@ -76,6 +76,11 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     var reads by remember { mutableIntStateOf(0) }
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
     var wallet by remember { mutableStateOf(WalletLink.Checking) }
+    // 지갑 앱에서 연결하고 돌아오면(2026-10-18 지갑 고르기) 연결 상태를 다시 읽는다
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        if (wallet != WalletLink.Checking) reads++
+        onPauseOrDispose { }
+    }
     LaunchedEffect(reads) {
         val now = ServiceLocator.sessionHolder.isSignedIn()
         signedIn = now

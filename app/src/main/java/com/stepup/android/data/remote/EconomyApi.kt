@@ -61,6 +61,10 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     /** 상급 뽑기(0042) — 지갑 첫 연결 선물부터, 그다음 러닝으로 받은 기회. 새 신발의 번호를 돌려준다. */
     suspend fun drawPremium(): ServerResult<Long> = rpc("premium_draw", "{}") { it.trim().toLongOrNull() }
 
+    /** 지갑 연결 문장(0025 · 0067) — 계정 번호와 10분짜리 일회용 확인 번호가 들어 있다. 처음 연결은 2단계 인증이 필요 없다 */
+    suspend fun walletLinkChallenge(): ServerResult<String> =
+        rpc("wallet_link_challenge", "{}") { runCatching { serverJson.decodeFromString<String>(it) }.getOrNull() }
+
     /** 뽑기 화면의 현황(0042) — 오늘 무료 · 가입 선물 · 지갑 선물 · 러닝으로 받은 상급 · 모은 거리 */
     suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> =
         rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }

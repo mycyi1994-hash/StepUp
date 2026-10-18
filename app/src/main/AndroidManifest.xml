@@ -27,6 +27,14 @@
 
     <!-- 번개러닝 집결지를 지도 앱으로 열기 위한 패키지 가시성 (Android 11+) -->
     <queries>
+        <!-- WEB3 지갑 연결(2026-10-18) — 지갑 앱이 깔려 있는지 보고 연다(MetaMask · OKX · Rabby) -->
+        <package android:name="io.metamask" />
+        <package android:name="com.okinc.okex.gp" />
+        <package android:name="com.debank.rabbymobile" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="okx" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />

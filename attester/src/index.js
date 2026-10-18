@@ -1,6 +1,6 @@
 import { clients } from './chain.js'
 import { getUser, rpc, HttpError } from './supabase.js'
-import { linkWallet, executeOp } from './handlers.js'
+import { linkWallet, linkWalletRequest, executeOp } from './handlers.js'
 import { indexEvents, expireOps, reconcile, keepPaused } from './indexer.js'
 import { sneakerMetadata } from './meta.js'
 import { JOBS_CRON, runJobs } from './jobs.js'
@@ -149,6 +149,9 @@ export default {
 
       if (url.pathname === '/v2/wallet/link' && request.method === 'POST') {
         return json(request, env, await linkWallet(request, env, deps))
+      }
+      if (url.pathname === '/v2/wallet/link-request' && request.method === 'POST') {
+        return json(request, env, await linkWalletRequest(request, env, deps))
       }
 
       const m = url.pathname.match(/^\/v2\/ops\/([^/]+)\/execute$/)

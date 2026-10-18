@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
+<resources>
+    <string name="wc_title">Connect a Web3 wallet</string>
+    <string name="wc_body">Pick your wallet. It opens inside the wallet app — sign once and you’re connected. Signing isn’t a transaction and costs nothing.</string>
+    <string name="wc_note">One wallet links to one STEPUP account. The request is valid for 10 minutes.</string>
+    <string name="wc_sub_open">Opens in the wallet app</string>
+    <string name="wc_sub_paste">Copies the link — paste it in Rabby’s browser</string>
+    <string name="wc_soon">Coming soon</string>
+    <string name="wc_giwa">GIWA Wallet</string>
+    <string name="wc_metamask">MetaMask</string>
+    <string name="wc_okx">OKX Wallet</string>
+    <string name="wc_rabby">Rabby Wallet</string>
+    <string name="wc_waiting_title">Sign in %1$s</string>
+    <string name="wc_waiting_body">Tap “Connect wallet” on the page that opened in %1$s, then sign. Come back here when you’re done.</string>
+    <string name="wc_copied_body">We copied the link. In %1$s, paste it into the browser’s address bar, open it, tap “Connect wallet” and sign. Then come back here.</string>
+    <string name="wc_not_yet_body">Not connected yet. Finish signing in %1$s, then check again.</string>
+    <string name="wc_check">Check connection</string>
+    <string name="wc_other_wallet">Choose another wallet</string>
+    <string name="wc_linked_title">Wallet connected</string>
+    <string name="wc_linked_body">Your wallet is linked to this STEPUP account.</string>
+    <string name="wc_done">Done</string>
+    <string name="wc_error_title">Couldn’t start</string>
+    <string name="wc_error_sign_in">Please sign in to STEPUP first.</string>
+    <string name="wc_error_offline">Check your internet connection and try again.</string>
+    <string name="wc_error_mfa">A wallet is already linked. Changing it needs two-step verification on the wallet page.</string>
+    <string name="wc_error_failed">Something went wrong. Please try again.</string>
+    <string name="wc_back">Back</string>
+</resources>

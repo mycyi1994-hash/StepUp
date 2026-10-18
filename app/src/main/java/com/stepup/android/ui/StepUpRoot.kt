@@ -417,6 +417,10 @@ private fun MainScaffoldContent(
     LaunchedEffect(pendingRun) {
         currentOwner = runCatching { ServiceLocator.sessionHolder.recordingOwner() }.getOrNull()
     }
+    // WEB3 지갑 고르기(2026-10-18) — 앱의 "지갑 연결" 버튼은 모두 이 창을 연다(MetaMask · OKX · Rabby, GIWA 준비 중)
+    var walletPicker by rememberSaveable { mutableStateOf(false) }
+    if (walletPicker) com.stepup.android.ui.screens.rewards.WalletConnectSheet(onDismiss = { walletPicker = false })
+
     pendingRun?.takeIf { currentOwner != null }?.let { checkpoint ->
         if (StepPermissions.hasActivityRecognition(context)) {
             if (checkpoint.phase == com.stepup.android.service.RunCheckpointPhase.SETTLING) {
@@ -727,7 +731,7 @@ private fun MainScaffoldContent(
                             // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
                             onConnectWallet = {
                                 drawVm.watchWalletLink()
-                                drawScope.openWalletPage(context) { navController.navigate(Routes.WALLET) }
+                                walletPicker = true
                             },
                             onRetry = drawVm::refresh,
                             onCheckPending = drawVm::checkPending,
@@ -1227,6 +1231,7 @@ private fun MainScaffoldContent(
                             android.widget.Toast.makeText(context, context.getString(R.string.wallet_web_offline), android.widget.Toast.LENGTH_SHORT).show()
                         }
                     },
+                    onConnectWallet = { walletPicker = true },
                 )
             }
             composable(Routes.CHAIN_ACTIVITY) {
@@ -1362,10 +1367,9 @@ private fun MainScaffoldContent(
                 )
             }
             composable(Routes.SETTINGS_CONNECTED) {
-                val walletScope = rememberCoroutineScope()
                 ConnectedAccountsScreen(
                     onBack = { navController.popBackStack() },
-                    onConnectWallet = { walletScope.openWalletPage(context) { navController.navigate(Routes.WALLET) } },
+                    onConnectWallet = { walletPicker = true },
                 )
             }
             composable(Routes.SETTINGS_EXPERIENCE) {
