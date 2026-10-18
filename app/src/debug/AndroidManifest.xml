@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 테스트 APK(debug · qa) 에만 들어간다 — 새 버전을 받아 안드로이드 설치 화면을 여는 데 필요하다.
-     스토어 빌드(release)에는 이 권한이 없다. -->
+<!-- 테스트 APK(debug · qa) 에만 들어간다 — 새 버전을 받아 스스로 업데이트하는 데 필요하다(core/TestUpdates.kt).
+     스토어 빌드(release)에는 이 권한도 받는 쪽도 없다. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- 안드로이드 12 이상: 자기 자신을 업데이트할 때 확인 화면 없이 -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+
+    <application>
+        <!-- 설치 세션 결과 · 새 버전이 깔린 직후 -->
+        <receiver
+            android:name="com.stepup.android.core.TestUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

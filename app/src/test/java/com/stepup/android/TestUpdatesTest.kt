@@ -49,4 +49,64 @@ class TestUpdatesTest {
         assertEquals(newest, BuildConfig.VERSION_CODE / 1000)
         assertTrue(BuildConfig.VERSION_CODE % 1000 in 1..999)
     }
+
+    @Test fun checksAgainWhenTheAppComesBackButNotTooOften() {
+        val build = TestBuild(2_000, "bbbbbbb", "1.17.0")
+        // 처음 켤 때는 바로
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.Idle, force = false, sinceLastMs = -1))
+        // 돌아올 때는 5분이 지났을 때만 — 최신이었어도, "나중에"를 눌렀어도
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.UpToDate, false, 60_000))
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.UpToDate, false, TestUpdates.RECHECK_MS))
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.Dismissed(build), false, TestUpdates.RECHECK_MS))
+        // 받는 중 · 알리는 중에는 묻지 않는다. 설정에서 누르면 바로
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.Available(build), true, TestUpdates.RECHECK_MS))
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.Downloading(build, null), true, TestUpdates.RECHECK_MS))
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.UpToDate, true, 0))
+    }
+
+    @Test fun aDismissedBuildStaysQuietUntilANewerOneIsUp() {
+        val dismissed = TestUpdates.State.Dismissed(TestBuild(2_000, "bbbbbbb", "1.17.0"))
+        val same = TestBuild(2_000, "bbbbbbb", "1.17.0")
+        val next = TestBuild(3_000, "ccccccc", "1.17.0")
+        assertEquals(dismissed, TestUpdates.afterCheck(dismissed, same, newer = true, force = false))
+        assertEquals(TestUpdates.State.Available(next), TestUpdates.afterCheck(dismissed, next, newer = true, force = false))
+        assertEquals(TestUpdates.State.Available(same), TestUpdates.afterCheck(dismissed, same, newer = true, force = true))
+        assertEquals(TestUpdates.State.UpToDate, TestUpdates.afterCheck(TestUpdates.State.Idle, same, newer = false, force = false))
+        assertEquals(dismissed, TestUpdates.afterCheck(dismissed, null, newer = false, force = false))
+        assertEquals(TestUpdates.State.CheckFailed, TestUpdates.afterCheck(TestUpdates.State.Idle, null, newer = false, force = true))
+    }
+
+    @Test fun installingOrWaitingForPermissionIsNotInterruptedByAnotherCheck() {
+        val build = TestBuild(2_000, "bbbbbbb", "1.17.0")
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.Installing(build), true, TestUpdates.RECHECK_MS))
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.NeedsPermission(build), false, TestUpdates.RECHECK_MS))
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.Failed(build, TestUpdates.Failure.SIGNATURE), false, TestUpdates.RECHECK_MS))
+    }
+
+    @Test fun anApkThatCannotGoOverThisAppIsRefusedBeforeAndroidSeesIt() {
+        val old = "old-debug-key"
+        val new = "new-test-key"
+        // 같은 키 · 서명 이력(옛 키 → 새 키)으로 넘어가는 키는 덮어 깔린다
+        assertNull(TestUpdates.compatibility(19025, 19025, listOf(old), setOf(old)))
+        assertNull(TestUpdates.compatibility(19025, 19025, listOf(old, new), setOf(old)))
+        assertNull(TestUpdates.compatibility(20025, 19025, listOf(old, new), setOf(new)))
+        // 새 키로 올라간 폰에 옛 키만의 APK · 전혀 다른 키
+        assertEquals(TestUpdates.Failure.SIGNATURE, TestUpdates.compatibility(19025, 19025, listOf(old), setOf(new)))
+        assertEquals(TestUpdates.Failure.SIGNATURE, TestUpdates.compatibility(19025, 19025, listOf("someone-else"), setOf(old)))
+        // 데이터베이스가 더 옛 빌드
+        assertEquals(TestUpdates.Failure.DOWNGRADE, TestUpdates.compatibility(18025, 19025, listOf(old), setOf(old)))
+        // 서명을 읽지 못한 판은 안드로이드의 답을 따른다
+        assertNull(TestUpdates.compatibility(19025, 19025, emptyList(), setOf(old)))
+    }
+
+    @Test fun androidInstallResultsBecomeSomethingThePersonCanActOn() {
+        assertEquals(TestUpdates.Outcome.NeedsUser, TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION))
+        assertEquals(TestUpdates.Outcome.Done, TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_SUCCESS))
+        // 확인 화면에서 취소 — "나중에"가 아니라 다시 누를 수 있는 창으로
+        assertEquals(TestUpdates.Outcome.Cancelled, TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED))
+        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.SIGNATURE), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_CONFLICT))
+        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.STORAGE), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_STORAGE))
+        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.BLOCKED), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_BLOCKED))
+        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.OTHER), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE))
+    }
 }
