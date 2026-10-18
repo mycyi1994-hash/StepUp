@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
@@ -91,7 +90,6 @@ internal fun ProfileHome(
     onRetryRecords: () -> Unit,
     onEditProfile: () -> Unit,
     onOpenRecords: () -> Unit,
-    onOpenChallenges: () -> Unit,
     onOpenWallet: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -117,10 +115,7 @@ internal fun ProfileHome(
         )
         Spacer(Modifier.height(16.dp))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            MenuCard(
-                icon = Icons.AutoMirrored.Filled.DirectionsRun, label = stringResource(R.string.challenge_title),
-                onClick = onOpenChallenges, tag = "profile-challenges",
-            )
+            // 챌린지 줄은 뺐다(2026-10-17 사용자 "내 정보에 있는 러닝 챌린지는 없애자") — 러닝 챌린지는 러닝 시작에 있다
             MenuCard(
                 icon = Icons.Outlined.AccountBalanceWallet, label = stringResource(R.string.me_path_wallet),
                 // 읽기 전에 "0 SUP"을 보이면 잔액이 사라진 것처럼 읽힌다

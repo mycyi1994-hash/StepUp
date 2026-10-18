@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 이름 바꾸기 · 러닝 탭(2026-10-17) -->
+<resources>
+    <string name="home_shoe_rename">신발 이름 바꾸기</string>
+    <string name="shoe_rename_title">신발 이름 바꾸기</string>
+    <string name="shoe_rename_body">이 폰에서만 바뀌어요. 다른 사람과 거래소에는 원래 이름(%1$s)이 보여요.</string>
+    <string name="shoe_rename_save">저장</string>
+    <string name="shoe_rename_reset">원래 이름으로</string>
+    <string name="shoe_rename_count">%1$d / %2$d</string>
+</resources>

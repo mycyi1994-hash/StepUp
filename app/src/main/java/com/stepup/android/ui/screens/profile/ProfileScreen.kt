@@ -141,7 +141,6 @@ fun ProfileScreen(
     onOpenChallenges: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenAnalytics: () -> Unit = {},
-    onOpenChallengeHistory: () -> Unit = {},
     /** 설정 첫 목록(설정 v1) — 알림 · 개인정보 · 언어 · 테마 · 계정 · 도움말과 예전 목록의 길은 모두 거기서 */
     onOpenSettings: () -> Unit = {},
     onChangeBackground: () -> Unit = {},
@@ -184,8 +183,6 @@ fun ProfileScreen(
                 onRetryRecords = viewModel::retryRecords,
                 onEditProfile = onOpenProfileEdit,
                 onOpenRecords = onOpenAnalytics,
-                // 내 정보의 챌린지는 기록 · 이력(사용 피드백 7) — 거기서 진행 중인 챌린지로 간다
-                onOpenChallenges = onOpenChallengeHistory,
                 onOpenWallet = onOpenWallet,
                 onOpenSettings = onOpenSettings,
             )

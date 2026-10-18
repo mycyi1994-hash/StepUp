@@ -65,6 +65,7 @@ import java.io.File
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -129,7 +130,33 @@ class RunJourneyDesignTest {
             compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("home-shoe-info")), useUnmergedTree = true)
                 .assertExists()
             compose.onNodeWithTag("home-stat-durability-value", useUnmergedTree = true).assertTextContains("92", substring = true)
+            compose.onNodeWithTag("home-durability-bar").assertExists()
             shot("HOME")
+            // 신발 이름 바꾸기(2026-10-17) — 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
+            val shoeId = requireNotNull(added)
+            tap("home-shoe-rename")
+            awaitTag("home-shoe-rename-sheet")
+            compose.onNodeWithTag("home-shoe-rename-field").performTextClearance()
+            compose.onNodeWithTag("home-shoe-rename-field").performTextInput("나의 아주 긴 첫 레이싱화 이름이에요 정말로")
+            shot("HOME-rename")
+            tap("home-shoe-rename-save")
+            awaitGone("home-shoe-rename-sheet")
+            // 20자에서 자른다 — 그리고 두 줄 안에서 글자를 줄여 다 보인다(… 없이)
+            val saved = runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] }
+            assertEquals("나의 아주 긴 첫 레이싱화 이름이에요", saved)
+            compose.waitUntil(5_000) {
+                runCatching { compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true).assertTextEquals(saved!!) }.isSuccess
+            }
+            val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true)
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("long shoe names stay whole: ${layouts.map { it.lineCount }}", layouts.none { it.hasVisualOverflow })
+            shot("HOME-renamed")
+            tap("home-shoe-rename")
+            awaitTag("home-shoe-rename-reset")
+            tap("home-shoe-rename-reset")
+            awaitGone("home-shoe-rename-sheet")
+            compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] } == null }
             tap("home-steps")
             awaitTag("home-details")
             shot("E01")
@@ -499,7 +526,10 @@ class RunJourneyDesignTest {
             awaitTag("run-result")
             shot("S02", settle = 1_500)
         } finally {
-            runBlocking { ServiceLocator.userPrefs.clearGoalAttempts() }
+            runBlocking {
+                ServiceLocator.userPrefs.clearGoalAttempts()
+                added?.let { ServiceLocator.userPrefs.setShoeNickname(it, null) }
+            }
             WalkSessionService.showStateForTest(WalkSessionState())
             RunPlans.clear()
             syncBefore?.let { ServiceLocator.economySync.showStateForTest(it) }

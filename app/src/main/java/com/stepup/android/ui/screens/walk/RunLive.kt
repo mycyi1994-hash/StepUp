@@ -927,11 +927,13 @@ internal fun ResultShoeCard(shoe: Sneaker) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(stringResource(R.string.run_durability), style = runTextStyle(12.sp, t.label))
                     Spacer(Modifier.width(6.dp))
-                    Text("$points", style = runTextStyle(14.sp, t.cyan, FontWeight.ExtraBold), modifier = Modifier.testTag("run-result-durability"))
+                    Text("$points", style = runTextStyle(14.sp, if (t.dark) com.stepup.android.ui.components.tierAccent(shoe.tier) else t.cyan, FontWeight.ExtraBold),
+                        modifier = Modifier.testTag("run-result-durability"))
                     Text("%", style = runTextStyle(12.sp, t.label))
                 }
-                Spacer(Modifier.height(6.dp))
-                RunMeter(points / 100f, height = 8.dp, fill = listOf(Color(0xFF2FB5F0), t.cyan))
+                Spacer(Modifier.height(4.dp))
+                // 등급 내구도 바(2026-10-17) — 러닝 탭과 같은 모양
+                com.stepup.android.ui.components.TierDurabilityBar(points / 100f, shoe.tier, height = 8.dp)
             }
         }
     }

@@ -126,26 +126,8 @@ class ChromeNavigationTest {
                     compose.waitForIdle()
                     compose.onNodeWithTag("profile-settings").assertIsDisplayed()
                     assertEquals("settings Back returns to profile", logo, bounds("brand-wordmark"))
-                    // 내 정보의 챌린지는 기록(K2) — 거기서 진행 중인 챌린지로 간다
-                    compose.onNodeWithTag("profile-challenges").performScrollTo().performClick()
-                    compose.waitForIdle()
-                    compose.onNodeWithTag("challenge-history-summary").assertIsDisplayed()
-                    capture("${next.width}-${next.font}-${next.mode}-challenge-history")
-                    compose.onNodeWithTag("detail-primary-action").performClick()
-                    compose.waitForIdle()
-                    compose.onNodeWithTag("challenge-hero").assertIsDisplayed()
-                    compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed().assertHasClickAction()
-                    (0..2).forEach { choice ->
-                        compose.onNodeWithTag("challenge-choice-$choice").performScrollTo().performClick()
-                        compose.waitForIdle()
-                        compose.onNodeWithTag("challenge-primary-action").assertIsDisplayed()
-                        capture("${next.width}-${next.font}-${next.mode}-challenge-$choice")
-                    }
-                    pressBack()
-                    compose.waitForIdle()
-                    pressBack()
-                    compose.waitForIdle()
-                    assertEquals("challenge returns to profile chrome", bar, bounds(BOTTOM_NAV_TAG))
+                    // 내 정보의 챌린지 줄은 뺐다(2026-10-17)
+                    compose.onAllNodesWithTag("profile-challenges").assertCountEquals(0)
                 }
                 if (tab == R.string.tab_community) {
                     // 첫 화면은 러닝 이야기 — 번개 모임 · 내 크루(예전 "함께 뛰기")는 크루 모집 목록 끝 안쪽에 있다

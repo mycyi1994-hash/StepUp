@@ -829,7 +829,13 @@ internal fun ShoeStatePanel(
  * 화면에 쓰는 신발 이름 — 기존 현지화 이름([variantLabel]). 이 앱이 모르는 새 도감 번호면 다른 신발 이름 대신 "신발 모델 1401".
  */
 @Composable
-internal fun Sneaker.shoeName(): String {
+internal fun Sneaker.shoeName(): String =
+    // 내가 붙인 이름(2026-10-17)이 있으면 그것 — 이 폰에만 있다(domain/ShoeNickname)
+    com.stepup.android.ui.components.LocalShoeNicknames.current[id] ?: modelShoeName()
+
+/** 내가 붙인 이름을 빼고 읽은 원래 이름(모델 이름) */
+@Composable
+internal fun Sneaker.modelShoeName(): String {
     val model = modelId
     return if (model != null && shoeModelNameRes(model) == null) stringResource(R.string.sdv_unknown_model, model) else variantLabel()
 }
