@@ -10,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -37,7 +36,11 @@ fun TestUpdatePrompt() {
     if (!TestUpdates.enabled) return
     val context = LocalContext.current
     val state by TestUpdates.state.collectAsState()
-    LaunchedEffect(Unit) { TestUpdates.startCheck() }
+    // 앱을 켤 때와 앱으로 돌아올 때마다(5분에 한 번까지) 새 빌드를 묻는다 — 켜 둔 앱도 새 APK 를 알게
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        TestUpdates.startCheck()
+        onPauseOrDispose { }
+    }
 
     val build = when (val s = state) {
         is TestUpdates.State.Available -> s.build

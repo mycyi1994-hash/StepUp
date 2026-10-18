@@ -42,6 +42,9 @@ object TestUpdates {
     private const val RELEASE = "https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk"
     const val INFO_URL = "$RELEASE/StepUp-test.json"
     const val APK_URL = "$RELEASE/StepUp-test.apk"
+
+    /** 앱으로 돌아올 때 다시 묻는 가장 짧은 간격 */
+    const val RECHECK_MS = 5 * 60_000L
     private const val APK_MIME = "application/vnd.android.package-archive"
 
     sealed interface State {
@@ -91,27 +94,49 @@ object TestUpdates {
             (localCommit.isBlank() || !remote.commit.startsWith(localCommit)) &&
             (remote.versionCode == 0 || remote.versionCode >= localVersionCode)
 
+    /** 마지막으로 물어본 때(SystemClock.elapsedRealtime) — 앱으로 돌아올 때마다 묻되 너무 자주는 묻지 않는다 */
+    @Volatile private var lastCheckAt = 0L
+
     /**
-     * 새 빌드가 있는지 묻는다. 앱을 켤 때 한 번, 설정에서 누르면 [force] 로 다시.
-     * 이미 받는 중이거나 "나중에"를 눌렀으면 켤 때의 확인은 건너뛴다.
+     * 지금 물어볼까. 받는 중 · 묻는 중 · 새 빌드를 알리는 중이면 아니다. 설정에서 누른 것([force])은 늘 묻는다.
+     * 앱으로 돌아올 때(2026-10-18 사용자 "원격 업데이트 안 되는데" — 예전엔 앱을 켤 때 한 번만 물어, 켜 둔 앱은 새 빌드를 몰랐다)는
+     * 마지막으로 물은 지 [RECHECK_MS] 가 지났을 때만.
+     */
+    fun shouldCheck(current: State, force: Boolean, sinceLastMs: Long): Boolean = when (current) {
+        is State.Downloading, State.Checking, is State.Available, is State.Failed -> false
+        else -> force || current == State.Idle && sinceLastMs < 0 || sinceLastMs >= RECHECK_MS
+    }
+
+    /**
+     * 물어본 뒤의 상태. "나중에"를 누른 빌드와 같은 빌드면 다시 묻지 않고, 그 뒤에 또 새 빌드가 올라왔으면 다시 알린다.
+     */
+    fun afterCheck(current: State, remote: TestBuild?, newer: Boolean, force: Boolean): State = when {
+        remote == null -> if (force) State.CheckFailed else (current.takeIf { it is State.Dismissed } ?: State.Idle)
+        !newer -> State.UpToDate
+        !force && current is State.Dismissed && current.build.commit == remote.commit -> current
+        else -> State.Available(remote)
+    }
+
+    /**
+     * 새 빌드가 있는지 묻는다. 앱을 켤 때 · 앱으로 돌아올 때(5분에 한 번까지), 설정에서 누르면 [force] 로 바로.
      */
     suspend fun check(force: Boolean = false) {
         if (!enabled) return
         val current = _state.value
-        if (current is State.Downloading || current is State.Checking) return
-        if (!force && current !is State.Idle) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        val since = if (lastCheckAt == 0L) -1L else now - lastCheckAt
+        if (!shouldCheck(current, force, since)) return
+        lastCheckAt = now
         _state.value = State.Checking
         try {
             val response = http.get(INFO_URL, mapOf("Cache-Control" to "no-cache"))
             val remote = if (response.status in 200..299) parse(response.body) else null
-            _state.value = when {
-                remote == null -> if (force) State.CheckFailed else State.Idle
-                isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT, BuildConfig.VERSION_CODE) -> State.Available(remote)
-                else -> State.UpToDate
-            }
+            val newer = remote != null &&
+                isNewer(remote, BuildConfig.BUILD_COMMIT_TIME, BuildConfig.BUILD_COMMIT, BuildConfig.VERSION_CODE)
+            _state.value = afterCheck(current, remote, newer, force)
         } finally {
             // 중간에 끊겼으면 "확인 중"에 멈추지 않게 되돌린다
-            if (_state.value == State.Checking) _state.value = State.Idle
+            if (_state.value == State.Checking) _state.value = if (current is State.Dismissed) current else State.Idle
         }
     }
 

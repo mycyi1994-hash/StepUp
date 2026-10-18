@@ -49,4 +49,30 @@ class TestUpdatesTest {
         assertEquals(newest, BuildConfig.VERSION_CODE / 1000)
         assertTrue(BuildConfig.VERSION_CODE % 1000 in 1..999)
     }
+
+    @Test fun checksAgainWhenTheAppComesBackButNotTooOften() {
+        val build = TestBuild(2_000, "bbbbbbb", "1.17.0")
+        // 처음 켤 때는 바로
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.Idle, force = false, sinceLastMs = -1))
+        // 돌아올 때는 5분이 지났을 때만 — 최신이었어도, "나중에"를 눌렀어도
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.UpToDate, false, 60_000))
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.UpToDate, false, TestUpdates.RECHECK_MS))
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.Dismissed(build), false, TestUpdates.RECHECK_MS))
+        // 받는 중 · 알리는 중에는 묻지 않는다. 설정에서 누르면 바로
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.Available(build), true, TestUpdates.RECHECK_MS))
+        assertFalse(TestUpdates.shouldCheck(TestUpdates.State.Downloading(build, null), true, TestUpdates.RECHECK_MS))
+        assertTrue(TestUpdates.shouldCheck(TestUpdates.State.UpToDate, true, 0))
+    }
+
+    @Test fun aDismissedBuildStaysQuietUntilANewerOneIsUp() {
+        val dismissed = TestUpdates.State.Dismissed(TestBuild(2_000, "bbbbbbb", "1.17.0"))
+        val same = TestBuild(2_000, "bbbbbbb", "1.17.0")
+        val next = TestBuild(3_000, "ccccccc", "1.17.0")
+        assertEquals(dismissed, TestUpdates.afterCheck(dismissed, same, newer = true, force = false))
+        assertEquals(TestUpdates.State.Available(next), TestUpdates.afterCheck(dismissed, next, newer = true, force = false))
+        assertEquals(TestUpdates.State.Available(same), TestUpdates.afterCheck(dismissed, same, newer = true, force = true))
+        assertEquals(TestUpdates.State.UpToDate, TestUpdates.afterCheck(TestUpdates.State.Idle, same, newer = false, force = false))
+        assertEquals(dismissed, TestUpdates.afterCheck(dismissed, null, newer = false, force = false))
+        assertEquals(TestUpdates.State.CheckFailed, TestUpdates.afterCheck(TestUpdates.State.Idle, null, newer = false, force = true))
+    }
 }
