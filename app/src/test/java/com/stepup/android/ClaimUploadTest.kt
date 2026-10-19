@@ -86,6 +86,9 @@ class ClaimUploadTest {
         override suspend fun idForStart(owner: String, startedAt: Long): Long? =
             rows.values.filter { it.startedAt == startedAt }.maxOfOrNull { it.id }
         override suspend fun deleteRecord(owner: String, id: Long): Int = if (rows.remove(id) != null) 1 else 0
+        override suspend fun signedWithFollowUp(owner: String, marker: String, limit: Int): List<WalkSessionEntity> =
+            rows.values.filter { it.recordingOwner == owner && it.uploadState == UploadState.SIGNED.name && it.uploadError == marker }
+                .sortedBy { it.startedAt }.take(limit)
         override suspend fun countFor(owner: String): Int = rows.values.count { it.recordingOwner == owner || it.recordingOwner == "legacy" }
         override suspend fun pendingSince(owner: String, since: Long): Int = rows.values.count {
             it.recordingOwner == owner && it.uploadState in setOf("PENDING", "FAILED") && it.steps > 0 && it.endedAt >= since

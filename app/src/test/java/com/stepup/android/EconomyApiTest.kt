@@ -202,27 +202,37 @@ class EconomyApiTest {
         assertTrue("다른 거절은 오늘 보너스로 바꾸지 않는다", http.calls.none { it.first.endsWith("/rpc/goal_claim") })
     }
 
-    @Test fun goalDaysAreTheKoreanStartDaysOldestFirst() {
+    @Test fun goalDaysAreTheServerWindowOldestFirstInKoreanDays() {
         val seoul = java.time.ZoneId.of("Asia/Seoul")
         fun kst(at: String) = java.time.LocalDateTime.parse(at).atZone(seoul).toInstant().toEpochMilli()
-        val days = EconomyApi.goalDays(
-            listOf(
-                kst("2026-10-18T10:00"),
-                // 자정을 넘긴 러닝 — 시작한 날(10-17)의 목표에 든다
-                kst("2026-10-17T23:30"),
-                kst("2026-10-18T00:10"),
-                kst("2026-10-16T08:00"),
-            ),
-        )
-        assertEquals(
-            listOf(java.time.LocalDate.of(2026, 10, 16), java.time.LocalDate.of(2026, 10, 17), java.time.LocalDate.of(2026, 10, 18)),
-            days,
-        )
+        fun day(d: Int) = java.time.LocalDate.of(2026, 10, d)
+        val now = kst("2026-10-18T12:00")
+        // 서버가 받는 최근 7일(10-11)부터 오늘까지, 오래된 날부터 — 자정을 넘긴 러닝(10-17 23:30 시작)의 날도 든다
+        val days = EconomyApi.goalDays(listOf(kst("2026-10-18T10:00"), kst("2026-10-17T23:30")), now = now)
+        assertEquals((11..18).map { day(it) }, days)
         // 폰 시간대와 상관없이 한국 날짜로 — 2026-10-17T15:30Z 는 한국 10-18 00:30
+        val justAfterMidnight = java.time.Instant.parse("2026-10-17T15:30:00Z").toEpochMilli()
+        assertEquals(day(18), EconomyApi.goalDays(listOf(justAfterMidnight), now = justAfterMidnight).last())
+        // 확인받은 러닝이 없으면 청구하지 않는다
+        assertTrue(EconomyApi.goalDays(emptyList(), now = now).isEmpty())
+    }
+
+    @Test fun goalDaysWaitForAnOlderPendingRunInsideTheWindow() {
+        val seoul = java.time.ZoneId.of("Asia/Seoul")
+        fun kst(at: String) = java.time.LocalDateTime.parse(at).atZone(seoul).toInstant().toEpochMilli()
+        fun day(d: Int) = java.time.LocalDate.of(2026, 10, d)
+        val now = kst("2026-10-19T09:00")
+        // 10-17 러닝이 아직 올라가지 못했다 — 10-18 · 오늘은 미룬다(먼저 받으면 10-17 이 빠진 짧은 연속 일수로 굳는다)
         assertEquals(
-            listOf(java.time.LocalDate.of(2026, 10, 18)),
-            EconomyApi.goalDays(listOf(java.time.Instant.parse("2026-10-17T15:30:00Z").toEpochMilli())),
+            (12..17).map { day(it) },
+            EconomyApi.goalDays(listOf(kst("2026-10-18T08:00")), pendingStartedAt = listOf(kst("2026-10-17T21:00")), now = now),
         )
-        assertTrue(EconomyApi.goalDays(emptyList()).isEmpty())
+        // 그 러닝이 올라가면 미뤘던 날까지 다시 청구한다
+        assertEquals((12..19).map { day(it) }, EconomyApi.goalDays(listOf(kst("2026-10-17T21:00")), now = now))
+        // 7일 밖에서 막힌 러닝은 기다리지 않는다 — 그날은 더 받을 수 없고, 기다리면 그 뒤 날들이 창 밖으로 밀려 사라진다
+        assertEquals(
+            (12..19).map { day(it) },
+            EconomyApi.goalDays(listOf(kst("2026-10-19T08:00")), pendingStartedAt = listOf(kst("2026-10-05T08:00")), now = now),
+        )
     }
 }

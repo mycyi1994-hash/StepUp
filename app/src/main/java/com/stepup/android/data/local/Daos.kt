@@ -186,6 +186,16 @@ interface WalkSessionDao {
     @Query("SELECT MIN(startedAt) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
     fun observeFirstRecordAt(owner: String): Flow<Long?>
 
+    /**
+     * 서버가 확인했지만 뒤 일(크루 표시 · 코스 기록)이 남은 이 계정의 러닝 — 오래된 것부터 [limit] 개(ClaimRepository.FOLLOW_UP_PENDING).
+     * 최근 러닝 목록에서 거르지 않는다 — 뒤 일이 오래 막힌 동안 러닝이 많이 쌓이면 오래된 것이 목록 밖으로 밀려 영영 다시 나가지 않았다.
+     */
+    @Query(
+        "SELECT * FROM walk_sessions WHERE recordingOwner = :owner AND uploadState = 'SIGNED' AND uploadError = :marker " +
+            "ORDER BY startedAt ASC LIMIT :limit",
+    )
+    suspend fun signedWithFollowUp(owner: String, marker: String, limit: Int): List<WalkSessionEntity>
+
     /** 러닝 이야기 — 지금 계정(+ 옛 기록)의 러닝 수. 서버가 0이어도 폰에 있으면 "처음"이라 하지 않는다 */
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
     suspend fun countFor(owner: String): Int

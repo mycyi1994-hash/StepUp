@@ -51,29 +51,30 @@ class AchievementBestTest {
 
     @Test
     fun `최고값은 믿을 수 있는 카테고리에서 더 클 때만 오른다`() {
-        val metrics = AchievementMetrics(steps = 5_000, streak = 2, crews = 3, supEarned = 120.0)
-        val best = mapOf("STEPS" to 9_000.0, "STREAK" to 1.0)
+        val metrics = AchievementMetrics(steps = 5_000, sessions = 4, streak = 2, crews = 3, supEarned = 120.0)
+        val best = mapOf("SESSIONS" to 2.0)
         // 크루 목록을 받지 못했고 경제 사본도 이 계정 것이 아니다
         val trusted = AchievementBook.trusted(economyMine = false, crewsLoaded = false, postsLoaded = false)
 
         val raised = AchievementBook.raised(metrics, best, trusted)
-        // 걸음은 이미 더 큰 값이 있고, 크루 · SUP 는 믿을 수 없어 적지 않는다
-        assertEquals(mapOf("STREAK" to 2.0), raised)
+        // 러닝 수(이 계정)만 오른다 — 걸음 · 연속 달성은 이 폰의 값이라 계정마다 적지 않고, 크루 · SUP 는 믿을 수 없다
+        assertEquals(mapOf("SESSIONS" to 4.0), raised)
     }
 
     @Test
     fun `받지 못한 크루 · 글과 다른 계정의 경제 사본은 적지 않는다`() {
         val none = AchievementBook.trusted(economyMine = false, crewsLoaded = false, postsLoaded = false)
-        assertTrue(AchievementCategory.STEPS in none)
         assertTrue(AchievementCategory.SESSIONS in none)
-        assertTrue(AchievementCategory.STREAK in none)
         listOf(
             AchievementCategory.SUP, AchievementCategory.COLLECTION, AchievementCategory.LEVEL, AchievementCategory.UPGRADE,
             AchievementCategory.CREW, AchievementCategory.POST,
         ).forEach { assertFalse("$it", it in none) }
 
         val all = AchievementBook.trusted(economyMine = true, crewsLoaded = true, postsLoaded = true)
-        assertEquals(AchievementCategory.entries.toSet(), all)
+        // 이 폰의 값(걸음 · 거리 · 연속 달성)은 계정마다 적지 않는다 — 한 폰을 두 계정이 쓰면 앞 계정의 값이 뒤 계정에 굳었다
+        val deviceWide = setOf(AchievementCategory.STEPS, AchievementCategory.DISTANCE, AchievementCategory.STREAK)
+        assertEquals(AchievementCategory.entries.toSet() - deviceWide, all)
+        deviceWide.forEach { assertFalse("$it", it in all) }
     }
 
     @Test

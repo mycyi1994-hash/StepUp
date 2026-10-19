@@ -6,7 +6,6 @@ import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionRecorded
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 
 /**
  * 한 번 돌린 업로드의 결말.
@@ -213,9 +212,9 @@ class ClaimRepository(
      */
     private suspend fun retryFollowUps(owner: String, skip: Set<Long>) {
         if (!followUpsClear.add(owner)) return
-        val marked = sessionDao.observeRecentFor(owner, FOLLOW_UP_SCAN).first().filter {
-            it.recordingOwner == owner && it.uploadState == UploadState.SIGNED.name && it.uploadError == FOLLOW_UP_PENDING
-        }
+        val marked = sessionDao.signedWithFollowUp(owner, FOLLOW_UP_PENDING, FOLLOW_UP_SCAN)
+        // 한 번에 다 보지 못했다 — 다음 차례에 이어 본다
+        if (marked.size >= FOLLOW_UP_SCAN) followUpsClear.remove(owner)
         var retriesInRow = 0
         for (row in marked) {
             if (row.id in skip) {
@@ -242,7 +241,7 @@ class ClaimRepository(
         /** 확인받은 러닝(SIGNED)의 뒤 일이 남았다는 표시 — 그 줄의 uploadError 에 둔다(확인된 줄의 이 칸은 화면이 읽지 않는다) */
         const val FOLLOW_UP_PENDING = "follow-up"
 
-        /** 뒤 일을 다시 볼 이 계정의 최근 러닝 수 */
+        /** 한 차례에 뒤 일을 다시 낼 러닝 수(오래된 것부터) */
         private const val FOLLOW_UP_SCAN = 30
     }
 }

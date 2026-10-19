@@ -144,10 +144,12 @@ object AchievementBook {
             }
         }
 
-    /** 폰 기록(걸음 · 러닝 · 연속 달성)으로 세는 카테고리 — 읽은 값이 곧 그 기록이다 */
-    private val LOCAL = setOf(
-        AchievementCategory.STEPS, AchievementCategory.DISTANCE, AchievementCategory.SESSIONS, AchievementCategory.STREAK,
-    )
+    /**
+     * 이 계정의 폰 기록으로 세는 카테고리 — 러닝 수는 계정마다 센다. 걸음 · 거리(하루 걸음 표) · 연속 달성(설정)은 이 폰의 값이라
+     * 계정마다 적지 않는다 — 한 폰을 두 계정이 쓰면 앞 계정의 값이 뒤 계정의 최고값으로 굳었다(Codex 리뷰). 그 값들은 줄지 않으므로
+     * 적지 않아도 다시 잠기지 않는다.
+     */
+    private val LOCAL = setOf(AchievementCategory.SESSIONS)
 
     /** 서버 경제의 사본(원장 · 신발)으로 세는 카테고리 — 사본이 지금 계정 것일 때만 믿는다(계정을 바꾼 직후엔 앞 계정 것이다) */
     private val ECONOMY = setOf(

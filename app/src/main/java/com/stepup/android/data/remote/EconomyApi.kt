@@ -160,12 +160,32 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
         /** 게임의 하루 — 한국 시각(서버 economy.game_day) */
         private val GAME_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")
 
+        /** 서버가 목표 보너스를 받는 지난날 수(0068 goal_claim_day — 오늘과 그 전 7일) */
+        const val GOAL_CLAIM_WINDOW_DAYS = 7L
+
         /**
-         * 서버가 방금 확인한 러닝들의 목표 보너스 날 — 러닝을 시작한 한국 날짜, 겹치지 않게 오래된 날부터.
-         * 오래된 날부터 받아야 뒷날의 연속 일수가 앞날의 보너스를 센다(서버는 그 전날부터 거꾸로 센다).
+         * 러닝이 확인받았을 때([signedStartedAt]) 목표 보너스를 청구할 날 — 서버가 받는 최근 7일부터 [now] 의 오늘까지, 오래된 날부터.
+         * 러닝은 시작한 날(한국 시각)의 목표에 들고, 오래된 날부터 받아야 뒷날의 연속 일수가 앞날의 보너스를 센다(서버는 그 전날부터
+         * 거꾸로 센다 — 0068). 이미 받은 날 · 못 채운 날은 서버가 거절할 뿐 다른 일은 없다(같은 날은 한 번).
+         * 아직 올리지 못한 러닝([pendingStartedAt])이 있으면 그 러닝이 시작한 날 뒤는 미룬다 — 먼저 받으면 그날이 빠진 짧은 연속 일수로
+         * 굳는다(Codex 리뷰). 그 러닝이 올라가거나 7일 밖으로 나가면(그날은 더 받을 수 없다) 미룬 날을 다음 확인 때 받는다 — 창 전체를
+         * 다시 보므로 막혔던 날도 7일 안이면 빠지지 않는다.
          */
-        fun goalDays(startedAtMillis: Collection<Long>): List<java.time.LocalDate> =
-            startedAtMillis.map { java.time.Instant.ofEpochMilli(it).atZone(GAME_ZONE).toLocalDate() }.distinct().sorted()
+        fun goalDays(
+            signedStartedAt: Collection<Long>,
+            pendingStartedAt: Collection<Long> = emptyList(),
+            now: Long = System.currentTimeMillis(),
+        ): List<java.time.LocalDate> {
+            if (signedStartedAt.isEmpty()) return emptyList()
+            val today = gameDay(now)
+            val from = today.minusDays(GOAL_CLAIM_WINDOW_DAYS)
+            val waiting = pendingStartedAt.map { gameDay(it) }.filter { !it.isBefore(from) }.minOrNull()
+            val until = if (waiting == null) today else minOf(today, waiting)
+            return generateSequence(from) { it.plusDays(1) }.takeWhile { !it.isAfter(until) }.toList()
+        }
+
+        private fun gameDay(epochMs: Long): java.time.LocalDate =
+            java.time.Instant.ofEpochMilli(epochMs).atZone(GAME_ZONE).toLocalDate()
     }
 }
 

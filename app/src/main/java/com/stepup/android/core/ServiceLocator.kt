@@ -47,6 +47,8 @@ import com.stepup.android.service.WalkSessionService
 
 /** 간단한 수동 DI 컨테이너. Application.onCreate에서 [init]을 호출한다. */
 object ServiceLocator {
+    /** 목표 보너스를 미룰지 볼 때 읽는 이 계정의 올리기 대기 러닝 수 */
+    private const val GOAL_PENDING_SCAN = 200
 
     lateinit var appContext: Context
         private set
@@ -342,10 +344,12 @@ object ServiceLocator {
                 coachAfterUpload()
                 if (serverEconomy) {
                     // 러닝은 시작한 날(한국 시각)의 목표에 든다 — 자정을 넘긴 러닝 · 자정 뒤에 올린 러닝도 그날 보너스를 받게
-                    // 확인받은 러닝들이 시작한 날마다, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068). 오늘도 함께 —
-                    // 예전처럼 올릴 때마다 오늘 몫을 다시 청구한다(앞서 끊겨 못 받은 것 · 이미 받았거나 못 채웠으면 서버가 거절한다)
-                    val days = signedStartedAt + System.currentTimeMillis()
-                    for (day in com.stepup.android.data.remote.EconomyApi.goalDays(days)) {
+                    // 서버가 받는 최근 7일부터 오늘까지, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068).
+                    // 아직 올리지 못한 이 계정의 러닝이 있으면 그날 뒤는 미룬다 — 짧은 연속 일수로 굳지 않게(EconomyApi.goalDays)
+                    val pending = runCatching {
+                        database.walkSessionDao().pendingUploads(GOAL_PENDING_SCAN, sessionHolder.recordingOwner()).map { it.startedAt }
+                    }.getOrDefault(emptyList())
+                    for (day in com.stepup.android.data.remote.EconomyApi.goalDays(signedStartedAt, pending)) {
                         economyApi.goalClaimDay(day)
                     }
                     economySync.refresh()
