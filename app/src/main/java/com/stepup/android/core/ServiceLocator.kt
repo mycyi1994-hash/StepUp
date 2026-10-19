@@ -342,8 +342,10 @@ object ServiceLocator {
                 coachAfterUpload()
                 if (serverEconomy) {
                     // 러닝은 시작한 날(한국 시각)의 목표에 든다 — 자정을 넘긴 러닝 · 자정 뒤에 올린 러닝도 그날 보너스를 받게
-                    // 확인받은 러닝들이 시작한 날마다, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068)
-                    for (day in com.stepup.android.data.remote.EconomyApi.goalDays(signedStartedAt)) {
+                    // 확인받은 러닝들이 시작한 날마다, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068). 오늘도 함께 —
+                    // 예전처럼 올릴 때마다 오늘 몫을 다시 청구한다(앞서 끊겨 못 받은 것 · 이미 받았거나 못 채웠으면 서버가 거절한다)
+                    val days = signedStartedAt + System.currentTimeMillis()
+                    for (day in com.stepup.android.data.remote.EconomyApi.goalDays(days)) {
                         economyApi.goalClaimDay(day)
                     }
                     economySync.refresh()

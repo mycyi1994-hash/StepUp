@@ -429,4 +429,32 @@ class ClaimUploadTest {
         assertEquals(listOf(1_700_000_000_000L, 1_700_000_100_000L), announced.sorted())
         assertTrue(dao.rows.values.all { it.uploadState == UploadState.SIGNED.name && it.uploadError == "" })
     }
+
+    // ── 목표 보너스는 러닝을 시작한 날마다(0068) — 확인받은 러닝의 시작 시각만 넘긴다 ─────────────
+
+    @Test
+    fun `확인받은 러닝의 시작 시각만 onSigned 로 넘긴다`() = runBlocking {
+        val dao = FakeDao(
+            listOf(
+                session(1, startedAt = 1_700_000_000_000L),
+                session(2, startedAt = 1_700_000_100_000L),
+                session(3, startedAt = 1_700_000_200_000L),
+            ),
+        )
+        val recorder = FakeRecorder { if (it.id == 2L) ServerResult.Rejected("러닝으로 확인되지 않았습니다") else okAnswer(it) }
+        val announced = mutableListOf<List<Long>>()
+        ClaimRepository(dao, recorder, now = { 42L }, onSigned = { announced.add(it) }).uploadPending()
+
+        assertEquals("한 번, 거절된 러닝은 빼고", listOf(listOf(1_700_000_000_000L, 1_700_000_200_000L)), announced)
+    }
+
+    @Test
+    fun `다시 로그인해야 해서 멈춰도 그 전에 확인받은 러닝은 넘긴다`() = runBlocking {
+        val dao = FakeDao(listOf(session(1, startedAt = 1_700_000_000_000L), session(2, startedAt = 1_700_000_100_000L)))
+        val recorder = FakeRecorder { if (it.id == 2L) ServerResult.SignInRequired("로그인이 만료되었습니다") else okAnswer(it) }
+        val announced = mutableListOf<List<Long>>()
+        ClaimRepository(dao, recorder, now = { 42L }, onSigned = { announced.add(it) }).uploadPending()
+
+        assertEquals(listOf(listOf(1_700_000_000_000L)), announced)
+    }
 }
