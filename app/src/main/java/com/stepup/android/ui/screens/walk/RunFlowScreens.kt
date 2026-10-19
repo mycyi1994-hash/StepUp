@@ -333,9 +333,9 @@ private fun GoalAttemptRow(attempt: GoalAttempt, expanded: Boolean, onOpen: () -
         }
         if (expanded) {
             Spacer(Modifier.height(12.dp))
-            val pace = if (attempt.distanceKm >= 0.01 && attempt.elapsedSec > 0) {
-                formatPace((attempt.elapsedSec / attempt.distanceKm).toLong())
-            } else "—"
+            // 50m 이상일 때만 — 러닝 중 · 결과와 같은 기준(RunPace). 몇 m 로 나누면 1분 도전이 수십 분/km 로 보였다
+            val pace = com.stepup.android.domain.RunPace.secPerKm(attempt.elapsedSec, attempt.distanceKm * 1000)
+                ?.let { formatPace(it.toLong()) } ?: "—"
             RunStatRow(
                 listOf(
                     RunStat(stringResource(R.string.runflow_time_label), formatDuration(attempt.elapsedSec)),

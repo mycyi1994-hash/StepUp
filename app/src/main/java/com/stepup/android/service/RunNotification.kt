@@ -75,6 +75,8 @@ internal object RunNotification {
         val status = when {
             paused -> context.getString(R.string.run_notif_paused)
             state.still -> context.getString(R.string.notification_run_still)
+            // 신발 내구도를 다 썼다 — 잠금화면에서도 보이게(2026-10-19 "내구도 다 소모하면 따로 안내")
+            state.shoeWornOut -> context.getString(R.string.notification_run_shoe_worn)
             else -> context.getString(R.string.notification_steps, state.steps)
         }
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)

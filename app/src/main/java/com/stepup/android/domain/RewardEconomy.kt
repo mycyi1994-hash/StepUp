@@ -58,7 +58,7 @@ object RewardEconomy {
 
     /**
      * 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 record_session) — 남은 내구도로 달릴 수 있던 시간만큼의 걸음만.
-     * [durabilityNow] 는 달리기 전 남은 내구도, [activeSec] 는 멈춘 시간을 뺀 달린 시간.
+     * [durabilityNow] 는 달리기 전 남은 내구도, [activeSec] 는 멈춘 시간을 뺀 달린 시간(움직였든 서 있었든).
      */
     fun stepsWithinDurability(steps: Int, durabilityNow: Int, activeSec: Long): Int {
         if (steps <= 0 || activeSec <= 0L) return steps

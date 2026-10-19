@@ -47,6 +47,8 @@ import com.stepup.android.service.WalkSessionService
 
 /** 간단한 수동 DI 컨테이너. Application.onCreate에서 [init]을 호출한다. */
 object ServiceLocator {
+    /** 목표 보너스를 미룰지 볼 때 읽는 이 계정의 올리기 대기 러닝 수 */
+    private const val GOAL_PENDING_SCAN = 200
 
     lateinit var appContext: Context
         private set
@@ -337,11 +339,19 @@ object ServiceLocator {
             sessionDao = database.walkSessionDao(),
             uploadOwner = { sessionHolder.recordingOwner() },
             // 서버가 러닝을 확인했으면 목표 보너스를 청구해 보고 잔고 · 에너지를 다시 받는다
-            onSigned = {
+            onSigned = { signedStartedAt ->
                 // AI 코칭 자동 분석(켠 사람만) — 따로 돌아 올리기 · 잔고 맞추기를 늦추거나 막지 않는다
                 coachAfterUpload()
                 if (serverEconomy) {
-                    economyApi.goalClaim()
+                    // 러닝은 시작한 날(한국 시각)의 목표에 든다 — 자정을 넘긴 러닝 · 자정 뒤에 올린 러닝도 그날 보너스를 받게
+                    // 서버가 받는 최근 7일부터 오늘까지, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068).
+                    // 아직 올리지 못한 이 계정의 러닝이 있으면 그날 뒤는 미룬다 — 짧은 연속 일수로 굳지 않게(EconomyApi.goalDays)
+                    val pending = runCatching {
+                        database.walkSessionDao().pendingUploads(GOAL_PENDING_SCAN, sessionHolder.recordingOwner()).map { it.startedAt }
+                    }.getOrDefault(emptyList())
+                    for (day in com.stepup.android.data.remote.EconomyApi.goalDays(signedStartedAt, pending)) {
+                        economyApi.goalClaimDay(day)
+                    }
                     economySync.refresh()
                 }
             },
@@ -423,14 +433,14 @@ object ServiceLocator {
             currentLocation = {
                 // 지금 GPS 위치 — 마지막 GPS 점이 30초 안일 때만. 경로 점(8m 움직여야 생긴다)으로 재면 신호등에서 30초 넘게
                 // 서 있는 사람이 위치를 잃은 것으로 보내져 다른 사람 지도에서 사라지고 곁 판정에서도 빠졌다
+                // 흐린 위치(오차 50m 초과 — 기지국 등)는 보내지 않는다 — 수백 m 틀린 자리가 다른 사람 지도 · 곁 판정에 들어갔다(2026-10-17 점검)
                 WalkSessionService.state.value.let { s ->
-                    s.here?.takeIf { s.hereAt > 0 && System.currentTimeMillis() - s.hereAt <= 30_000L }
+                    s.here?.takeIf { s.hereAccurate && s.hereAt > 0 && System.currentTimeMillis() - s.hereAt <= 30_000L }
                 }
             },
             currentKm = {
-                WalkSessionService.state.value.let { s ->
-                    if (s.gpsKm > 0) s.gpsKm else com.stepup.android.domain.RewardEconomy.distanceMeters(s.steps) / 1000
-                }
+                // 화면 · 결과 · 기록과 같은 거리(RunDistance — 경로 100m 부터 GPS, 그 전엔 걸음)
+                WalkSessionService.state.value.let { s -> com.stepup.android.domain.RunDistance.liveKm(s.gpsKm, s.steps) }
             },
             shareByDefault = { userPrefs.partyShareLocation.first() },
             exitedParties = { userPrefs.exitedParties.first() },

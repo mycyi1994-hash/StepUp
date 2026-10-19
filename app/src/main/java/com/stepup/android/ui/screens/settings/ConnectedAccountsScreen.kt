@@ -137,6 +137,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
                         ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
                         ServiceLocator.userPrefs.clearGoalAttempts()
                         ServiceLocator.userPrefs.clearShoeNicknames()
+                        // 업적 최고값(계정마다)도 이 폰에서 지운다
+                        ServiceLocator.userPrefs.clearAchievementBest()
                         ServiceLocator.userPrefs.setRunExperience(null)
                         // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
                         ServiceLocator.userPrefs.setLoginMethod("")

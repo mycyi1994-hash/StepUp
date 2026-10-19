@@ -916,12 +916,16 @@ private fun RunStatsCard(sessions: List<WalkSessionEntity>) {
     val totalSec = sessions.sumOf { it.durationSec }
     val totalKm = sessions.sumOf { it.distanceMeters } / 1000.0
     val longest = sessions.maxOfOrNull { it.durationSec } ?: 0L
-    // 페이스는 거리가 있어야 뜻이 있다. 0km 세션이 섞이면 평균이 무너진다.
-    val pace = if (totalKm > 0.05) (totalSec / totalKm).toInt() else 0
+    // 페이스 · 평균 속도는 거리와 시간이 모두 있는 러닝만으로 — 기록 통계(observeRecordTotals)와 같은 바탕(서버가 무효로 본
+    // 러닝도 뺀다). 시간만 잰 러닝(거리 0)의 시간까지 나누면 평균이 느리게 나왔다(2026-10-17 점검).
+    val (pacedSec, pacedMeters) = com.stepup.android.domain.RunPace.pacedTotals(
+        sessions.filter { it.verdict != "VOID" }.map { it.durationSec to it.distanceMeters },
+    )
+    val pace = com.stepup.android.domain.RunPace.secPerKm(pacedSec, pacedMeters)?.toInt() ?: 0
     // 최고 속도가 아니라 평균 속도다. 구간 최고 속도는 서버가 GPS 경로에서
     // 재는 값이고, 폰에 저장된 세션에는 그 값이 없다. 없는 값을 있는 척
     // 그리는 대신 가진 것으로 낼 수 있는 값을 낸다.
-    val avgSpeed = if (totalSec > 0) totalKm / (totalSec / 3600.0) else 0.0
+    val avgSpeed = com.stepup.android.domain.RunPace.kmh(pacedSec, pacedMeters) ?: 0.0
 
     GlowCard(contentPadding = PaddingValues(vertical = 18.dp, horizontal = 10.dp), spacing = 16.dp) {
         Row(modifier = Modifier.fillMaxWidth()) {

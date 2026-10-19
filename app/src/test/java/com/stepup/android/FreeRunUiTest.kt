@@ -116,6 +116,20 @@ class FreeRunUiTest {
     }
 
     @Test
+    fun `신발 내구도를 다 쓰면 띠 — 다른 문제 띠보다 뒤, 일시정지보다 앞`() {
+        // 2026-10-19 "내구도 다 소모하면 따로 안내" — 남은 러닝 내내 이어지므로 다른 문제를 가리지 않는다
+        fun worn(still: Boolean = false, gpsLost: Boolean = false, paused: Boolean = false, active: Boolean = true) = freeBand(
+            active = active, paused = paused, asking = false, locationAllowed = true, locationOn = true, gpsLost = gpsLost,
+            precise = true, void = false, speedFlagged = false, still = still, shoeWorn = true,
+        )
+        assertEquals(FreeBand.Worn, worn())
+        assertEquals(FreeBand.Still, worn(still = true))
+        assertEquals(FreeBand.Weak, worn(gpsLost = true))
+        assertEquals(FreeBand.Paused, worn(paused = true))
+        assertEquals(FreeBand.None, worn(active = false))
+    }
+
+    @Test
     fun `30초 넘게 서 있으면 멈춤 띠 — 신호 약함 · 대략 위치보다 앞, 위치 꺼짐 · 무효 · 속도 오류보다 뒤`() {
         // 2026-10-17 "너무 오래 멈췄을 때(30초 이상) 경고도 떠야"
         assertEquals(FreeBand.Still, band(still = true))

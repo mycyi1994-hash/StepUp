@@ -610,6 +610,10 @@ internal data class RunDetailsUi(
     val km: String,
     val goalKm: Double,
     val goalFraction: Float,
+    /** 시간 목표(10분 챌린지 등)면 그 초 — 목표 칸에 거리 대신 시간을 보인다 */
+    val goalSeconds: Long? = null,
+    /** 목표를 고칠 수 있는가 — 챌린지 · 코스의 목표는 그 러닝이 정한 것이라 여기서 고치지 않는다 */
+    val goalEditable: Boolean = true,
     /** 예상 SUP — null 이면 보상 칸을 두지 않는다(자유 러닝) */
     val estimate: String?,
     val courseName: String?,
@@ -636,19 +640,27 @@ internal fun ColumnScope.RunDetailsContent(
         RunCard(padding = PaddingValues(16.dp), tag = "run-details-goal") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.run_goal_distance), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
-                    RunNumber("%.1f".format(ui.goalKm), unit = "km", size = 34.sp)
+                    val seconds = ui.goalSeconds
+                    if (seconds != null) {
+                        Text(stringResource(R.string.run_goal_time), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+                        RunNumber(formatDuration(seconds), size = 34.sp)
+                    } else {
+                        Text(stringResource(R.string.run_goal_distance), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+                        RunNumber("%.1f".format(ui.goalKm), unit = "km", size = 34.sp)
+                    }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.run_goal_rate), style = runTextStyle(13.sp, t.label, FontWeight.Medium))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            stringResource(R.string.run_goal_edit), style = runTextStyle(13.sp, t.text, FontWeight.SemiBold),
-                            modifier = Modifier.clip(RoundedCornerShape(50)).border(1.dp, t.secondaryEdge, RoundedCornerShape(50))
-                                .feedbackClickable(onClick = onEditGoal).padding(horizontal = 12.dp, vertical = 4.dp)
-                                .testTag("run-details-goal-edit"),
-                        )
+                        if (ui.goalEditable) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.run_goal_edit), style = runTextStyle(13.sp, t.text, FontWeight.SemiBold),
+                                modifier = Modifier.clip(RoundedCornerShape(50)).border(1.dp, t.secondaryEdge, RoundedCornerShape(50))
+                                    .feedbackClickable(onClick = onEditGoal).padding(horizontal = 12.dp, vertical = 4.dp)
+                                    .testTag("run-details-goal-edit"),
+                            )
+                        }
                     }
                     RunNumber("${(ui.goalFraction * 100).toInt()}", unit = "%", size = 34.sp, color = t.cyan, unitColor = t.cyan)
                 }
@@ -904,11 +916,13 @@ internal fun ResultRewardCard(reward: ResultReward, onReason: () -> Unit, onHist
     }
 }
 
-/** 결과의 신발 칸 — 그림 · 이름 · 등급 배지 · Lv · 내구도 */
+/**
+ * 결과의 신발 칸 — 그림 · 이름 · 등급 배지 · Lv · 내구도.
+ * [points] 는 남은 비율(%) — 서버가 이 러닝을 확인하기 전에는 이번 러닝으로 닳을 만큼을 미리 뺀 값을 넘긴다(WalkScreen)
+ */
 @Composable
-internal fun ResultShoeCard(shoe: Sneaker) {
+internal fun ResultShoeCard(shoe: Sneaker, points: Int = durabilityPercent(shoe)) {
     val t = runTone()
-    val points = durabilityPercent(shoe)
     RunCard(padding = PaddingValues(horizontal = 12.dp, vertical = 10.dp), tag = "run-result-shoe") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ShoeArtThumbnail(shoe, Modifier.width(96.dp).height(58.dp).testTag("run-result-shoe-image"))

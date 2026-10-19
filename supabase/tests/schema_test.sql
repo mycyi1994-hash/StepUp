@@ -3945,9 +3945,10 @@ call pg_temp.must_fail($q$ select public.invite_redeem('STEP-ZZZZZZ') $q$, '없�
 reset role;
 
 -- 적립액 0: 러닝을 마쳐도 적립하지 않고 확정도 적지 않는다
+-- (0068 부터 초대 적립은 경로가 받쳐 준 걸음만 센다 — 아래 러닝은 모두 경로가 받쳐 준 러닝으로 넣는다)
 update economy.invite_config set reward_sup = 0;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
-values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '3 hours', now() - interval '170 minutes', 600, 2000, 'CLEAN');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '3 hours', now() - interval '170 minutes', 600, 2000, 'CLEAN', true, 2000);
 do $$
 begin
   perform pg_temp.ok(not exists (select 1 from public.sup_ledger where kind = 'EARN_INVITE'), '적립액이 0이면 초대 적립이 없다');
@@ -3955,17 +3956,17 @@ begin
     where invitee = '1a1a1a1a-0000-0000-0000-000000000002'), '적립액이 0이면 확정도 적지 않는다');
 end $$;
 update economy.invite_config set reward_sup = 5;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
-values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '160 minutes', now() - interval '150 minutes', 600, 5000, 'VOID'),
-       ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '140 minutes', now() - interval '130 minutes', 600, 400, 'CLEAN');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '160 minutes', now() - interval '150 minutes', 600, 5000, 'VOID', false, 0),
+       ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '140 minutes', now() - interval '130 minutes', 600, 400, 'CLEAN', true, 400);
 do $$
 begin
   perform pg_temp.ok(not exists (select 1 from public.sup_ledger where kind = 'EARN_INVITE'),
     '무효 러닝 · 1,000걸음 미만 러닝으로는 초대 적립이 없다');
 end $$;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
-values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '120 minutes', now() - interval '100 minutes', 1200, 2400, 'CLEAN'),
-       ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '90 minutes', now() - interval '70 minutes', 1200, 2400, 'CLEAN');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '120 minutes', now() - interval '100 minutes', 1200, 2400, 'CLEAN', true, 2400),
+       ('1a1a1a1a-0000-0000-0000-000000000002', now() - interval '90 minutes', now() - interval '70 minutes', 1200, 2400, 'CLEAN', true, 2400);
 do $$
 begin
   perform pg_temp.ok((select sum(amount) from public.sup_ledger where kind = 'EARN_INVITE'
@@ -3990,8 +3991,8 @@ insert into public.invite_redemptions (invitee, inviter)
 values ('1a1a1a1a-0000-0000-0000-000000000003', '1a1a1a1a-0000-0000-0000-000000000001');
 insert into public.sup_ledger (user_id, kind, amount, description, ref)
 values ('1a1a1a1a-0000-0000-0000-000000000003', 'EARN_INVITE', 5, '이미 있는 줄', 'invite:joined');
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
-values ('1a1a1a1a-0000-0000-0000-000000000003', now() - interval '60 minutes', now() - interval '40 minutes', 1200, 2400, 'CLEAN');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('1a1a1a1a-0000-0000-0000-000000000003', now() - interval '60 minutes', now() - interval '40 minutes', 1200, 2400, 'CLEAN', true, 2400);
 do $$
 begin
   perform pg_temp.ok((select count(*) from public.sup_ledger
@@ -4008,8 +4009,8 @@ insert into auth.users (id, created_at) values ('1a1a1a1a-0000-0000-0000-0000000
 insert into public.invite_redemptions (invitee, inviter)
 values ('1a1a1a1a-0000-0000-0000-000000000004', '1a1a1a1a-0000-0000-0000-000000000001');
 alter table public.sup_ledger add constraint tmp_block_invite check (kind <> 'EARN_INVITE') not valid;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
-values ('1a1a1a1a-0000-0000-0000-000000000004', now() - interval '30 minutes', now() - interval '10 minutes', 1200, 2400, 'CLEAN');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('1a1a1a1a-0000-0000-0000-000000000004', now() - interval '30 minutes', now() - interval '10 minutes', 1200, 2400, 'CLEAN', true, 2400);
 alter table public.sup_ledger drop constraint tmp_block_invite;
 do $$
 begin
@@ -4020,8 +4021,8 @@ begin
   perform pg_temp.ok(not exists (select 1 from public.sup_ledger
     where ref = 'invite:1a1a1a1a-0000-0000-0000-000000000004'), '실패하면 두 사람 적립 모두 되돌린다');
 end $$;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict)
-values ('1a1a1a1a-0000-0000-0000-000000000004', now() - interval '8 minutes', now() - interval '1 minutes', 600, 1500, 'CLEAN');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('1a1a1a1a-0000-0000-0000-000000000004', now() - interval '8 minutes', now() - interval '1 minutes', 600, 1500, 'CLEAN', true, 1500);
 do $$
 begin
   perform pg_temp.ok((select rewarded_at is not null from public.invite_redemptions
@@ -7712,6 +7713,357 @@ begin
   perform pg_temp.ok((select count(*) from public.run_penalties) = 1, '내 패널티 기록은 읽을 수 있다');
 end $$;
 reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0068 러닝 정산 점검 — 거리와 상관없이 1분마다 5 · 상한에 걸린 러닝의 에너지 ·
+--  자정을 넘긴 목표 보너스 · 경로 없는 초대 적립 · 코칭 거리 (2026-10-19)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 러닝 정산 점검(0068) ──────────────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('68000000-0000-0000-0000-000000000001', 'life68@test', '{"full_name":"신발수명"}'),
+  ('68000000-0000-0000-0000-000000000002', 'cap68@test', '{"full_name":"상한"}'),
+  ('68000000-0000-0000-0000-000000000003', 'idle68@test', '{"full_name":"주머니"}'),
+  ('68000000-0000-0000-0000-000000000004', 'goal68@test', '{"full_name":"자정"}'),
+  ('68000000-0000-0000-0000-000000000005', 'inviter68@test', '{"full_name":"초대한"}'),
+  ('68000000-0000-0000-0000-000000000006', 'invitee68@test', '{"full_name":"초대받은"}'),
+  ('68000000-0000-0000-0000-000000000007', 'coach68@test', '{"full_name":"코칭"}');
+-- 어제(한국 시각) 10시 — 검사가 도는 시각과 상관없이 러닝이 한 게임의 하루에 들고 올릴 수 있는 7일 안이다
+insert into fix (k, v) values
+  ('d68', (economy.game_day_start(economy.game_day(now()) - 1) + interval '10 hours')::text);
+-- 신발 둘 — 등급마다 최대 내구도가 달라(0066) 검사에 맞는 내구도로 맞춰 둔다(최대 = 기본, 포인트 없음)
+insert into fix (k, v) select 's68a', economy.draw_create('68000000-0000-0000-0000-000000000001', 'PAID_DRAW')::text;
+insert into fix (k, v) select 's68c', economy.draw_create('68000000-0000-0000-0000-000000000003', 'PAID_DRAW')::text;
+update public.market_sneakers set equipped = true, dur_base = 600, dur_now = 0 where id = pg_temp.fx('s68a')::bigint;
+update public.market_sneakers set equipped = true, dur_base = 600, dur_now = 600 where id = pg_temp.fx('s68c')::bigint;
+-- 상한 검사는 기준값으로(신규 계정 절반은 끈다) — 이 절 끝에서 되돌린다
+update public.economy_settings set value = '0' where key = 'new_account_days';
+do $$
+begin
+  perform pg_temp.ok((select dur_max = 600 and dur_now = 0 from public.market_sneakers where id = pg_temp.fx('s68a')::bigint)
+                     and (select dur_max = 600 and dur_now = 600 from public.market_sneakers where id = pg_temp.fx('s68c')::bigint),
+    '검사용 신발 — 최대 내구도 600(120분), 하나는 다 닳았다');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.goal_claim_day(date)', 'execute')
+                     and has_function_privilege('authenticated', 'public.goal_claim_day(date)', 'execute'),
+    '날을 고르는 목표 보너스는 로그인한 사람만 부른다');
+end $$;
+
+-- ── 1. 다 닳은 신발(남은 내구도 0) — SUP 도 에너지도 없다(0066 수명 자르기, 판정 · 검사한 걸음은 그대로) ─────
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000001');
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz;
+begin
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+  insert into fix (k, v) values ('worn68', r.session_id::text);
+end $$;
+reset role;
+do $$
+declare w public.walk_sessions;
+begin
+  select * into w from public.walk_sessions where id = pg_temp.fx('worn68')::bigint;
+  perform pg_temp.ok(w.verdict = 'CLEAN' and w.points_awarded = 0 and w.energy_used = 0 and w.rewarded_steps = 0
+                     and w.verdict_reason like '%다 닳은 뒤%',
+    '다 닳은 신발로 달린 러닝은 0 SUP 이고 에너지도 쓰지 않는다 — 판정은 그대로(CLEAN)');
+  perform pg_temp.ok(w.verified_steps = 2000 and w.backed_steps = 2000 and w.gps_backed,
+    '검사한 걸음 · 경로가 받쳐 준 걸음은 그대로 남는다(목표 보너스 · 도전은 센다)');
+  perform pg_temp.ok(not exists (select 1 from public.energy_days
+                                  where user_id = '68000000-0000-0000-0000-000000000001' and used > 0),
+    '그날 쓴 에너지가 없다 — 고친 뒤 다시 달려 받을 수 있다');
+end $$;
+
+-- ── 1. 신발 수명은 달린 시간과 견준다(0066 그대로) ─────────────────────────
+-- 60분 켜 두고 앞 20분만 걸었다 — 남은 내구도 230(2,760초)은 달린 60분보다 짧아 2,760초 몫의 걸음만 받는다
+update public.market_sneakers set dur_now = 230 where id = pg_temp.fx('s68a')::bigint;
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000001');
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz + interval '1 hour';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '3600 seconds', 2000, 3600,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+  insert into fix (k, v) values ('life68a', r.session_id::text);
+end $$;
+reset role;
+do $$
+declare a public.walk_sessions;
+begin
+  select * into a from public.walk_sessions where id = pg_temp.fx('life68a')::bigint;
+  perform pg_temp.ok(a.verdict = 'CLEAN' and a.rewarded_steps = floor(2000 * 230 * 12 / 3600.0)::int
+                     and a.verdict_reason like '%다 닳은 뒤%',
+    format('남은 수명 2,760초 몫(%s걸음)만 받는다 — 서 있던 시간도 수명을 쓴다', a.rewarded_steps));
+  perform pg_temp.ok((select dur_now from public.market_sneakers where id = pg_temp.fx('s68a')::bigint) = 0,
+    '60분 러닝은 300 닳아 남은 230 이 다 닳았다');
+end $$;
+
+-- ── 2. 상한에 걸려 덜 받은 러닝은 받은 몫만큼만 에너지를 쓴다 ─────────────────────
+-- 신발 없이 2,000걸음 = 20 SUP 에 에너지 3.3333칸(600걸음에 1칸)
+update public.economy_settings set value = '10' where key = 'daily_earn_cap';
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000002');
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz;
+begin
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+  insert into fix (k, v) values ('cap68a', r.session_id::text);
+  select * into r from public.record_session(v_start + interval '1 hour', v_start + interval '1 hour 1201 seconds',
+    2000, 1201, pg_temp.track(v_start + interval '1 hour', 1200, 0.00001), 0, 1, '', false);
+  insert into fix (k, v) values ('cap68b', r.session_id::text);
+end $$;
+reset role;
+update public.economy_settings set value = '600' where key = 'daily_earn_cap';
+update public.economy_settings set value = '5' where key = 'no_gps_daily_cap';
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000002');
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz - interval '1 day';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    '', 0, 1, '', false);
+  insert into fix (k, v) values ('cap68c', r.session_id::text);
+end $$;
+reset role;
+update public.economy_settings set value = '60' where key = 'no_gps_daily_cap';
+do $$
+declare a public.walk_sessions; b public.walk_sessions; c public.walk_sessions; v_full numeric := round(2000.0 / 600, 4);
+begin
+  select * into a from public.walk_sessions where id = pg_temp.fx('cap68a')::bigint;
+  select * into b from public.walk_sessions where id = pg_temp.fx('cap68b')::bigint;
+  select * into c from public.walk_sessions where id = pg_temp.fx('cap68c')::bigint;
+  perform pg_temp.ok(a.points_awarded = 10 and a.energy_used = round(v_full * 10 / 20, 4),
+    format('하루 금액 상한(10)에 걸려 20 SUP 중 10 만 받은 러닝은 에너지도 절반만 쓴다 (%s칸) (0068)', a.energy_used));
+  perform pg_temp.ok(b.points_awarded = 0 and b.energy_used = 0 and b.verdict = 'FLAGGED',
+    '상한을 다 쓴 날의 러닝은 에너지를 쓰지 않는다');
+  perform pg_temp.ok((select used from public.energy_days where user_id = '68000000-0000-0000-0000-000000000002'
+                       and day = economy.game_day(a.started_at)) = a.energy_used,
+    '그날 쓴 에너지는 받은 몫만큼이다');
+  perform pg_temp.ok(not c.gps_backed and c.points_awarded = 5 and c.energy_used = round(v_full * 5 / 20, 4),
+    format('경로 없는 러닝의 하루 상한(5)에 걸린 러닝도 받은 몫(4분의 1)만큼만 에너지를 쓴다 (%s칸)', c.energy_used));
+  perform pg_temp.ok(a.rewarded_steps = 2000 and c.rewarded_steps = 2000, '적립 걸음(하루 걸음 상한)은 그대로 센다');
+end $$;
+
+-- ── 1. 거리 · 걸음과 상관없이 달린 1분마다 5 (2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데") ──
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000003');
+do $$
+declare
+  v_id bigint := pg_temp.fx('s68c')::bigint;
+  r record;
+  v_now int;
+  v_start timestamptz := pg_temp.fx('d68')::timestamptz - interval '1 day';
+begin
+  select durability_now into v_now from public.my_sneakers() where id = v_id;
+  -- 30분 켜 두고 걸음 0 · 경로 없음(폰을 두고 왔다) — 거리 0 이어도 30분 = 150
+  select * into r from public.record_session(v_start, v_start + interval '1800 seconds', 0, 1800, '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID' and r.points_awarded = 0
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 150,
+    '걸음 0 · 거리 0 인 러닝도 켜 둔 30분만큼(150) 닳는다 — 예전엔 닳지 않았다 (0068)');
+  -- 20분을 걸었다 — 그대로 20분(100)
+  v_now := v_now - 150;
+  v_start := v_start + interval '2 hours';
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 100,
+    '걷기 · 달리기도 달린 1분마다 5');
+  -- 8시간 켜 둔 채 주머니에 — 100걸음뿐이어도 8시간(2,400) 몫이라 남은 350 이 다 닳는다
+  v_start := v_start + interval '1 hour';
+  select * into r from public.record_session(v_start, v_start + interval '8 hours', 100, 28800, '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_id) = 0,
+    '8시간 켜 둔 러닝은 100걸음이어도 1분마다 5 — 남은 내구도가 다 닳는다 (0068)');
+end $$;
+reset role;
+
+-- ── 3. 목표 보너스 — 러닝을 시작한 날(한국 시각)로 ───────────────────────
+-- 그저께 낮 러닝과, 어제 23:30 에 시작해 오늘 00:10 에 끝난 러닝(어제의 목표에 든다)
+update public.profiles set daily_goal = 1000 where id = '68000000-0000-0000-0000-000000000004';
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
+                                  backed_steps, gps_backed, rewarded_steps, verdict)
+values
+  ('68000000-0000-0000-0000-000000000004',
+   economy.game_day_start(economy.game_day(now()) - 2) + interval '12 hours',
+   economy.game_day_start(economy.game_day(now()) - 2) + interval '12 hours 20 minutes', 1200, 1500, 1500, 1500, true, 0, 'CLEAN'),
+  ('68000000-0000-0000-0000-000000000004',
+   economy.game_day_start(economy.game_day(now())) - interval '30 minutes',
+   economy.game_day_start(economy.game_day(now())) + interval '10 minutes', 2400, 3000, 3000, 3000, true, 0, 'CLEAN');
+-- 오늘(한국 시각 게임의 하루) — 앱 권한으로는 economy.game_day 를 부르지 못해 준비물로 둔다
+insert into fix (k, v) values ('today68', economy.game_day(now())::text);
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000004');
+call pg_temp.must_fail($q$ select public.goal_claim() $q$,
+  '자정을 넘긴 러닝은 오늘(끝난 날)의 목표에 들지 않는다');
+do $$
+declare v_today date := pg_temp.fx('today68')::date;
+begin
+  perform pg_temp.ok(public.goal_claim_day(v_today - 2) = 2.5, '그저께의 목표 보너스 — 첫날 2.5 SUP');
+  perform pg_temp.ok(public.goal_claim_day(v_today - 1) = 2.75,
+    '자정을 넘긴 러닝은 시작한 날(어제)의 목표로 받는다 — 그저께와 이어 2일 연속(+10%) (0068)');
+end $$;
+call pg_temp.must_fail(format($q$ select public.goal_claim_day('%s'::date) $q$, pg_temp.fx('today68')::date - 1),
+  '같은 날의 목표 보너스는 두 번 받지 못한다');
+call pg_temp.must_fail(format($q$ select public.goal_claim_day('%s'::date) $q$, pg_temp.fx('today68')::date - 8),
+  '7일(올릴 수 있는 기간)보다 오래된 날은 받지 않는다');
+call pg_temp.must_fail(format($q$ select public.goal_claim_day('%s'::date) $q$, pg_temp.fx('today68')::date + 1),
+  '오지 않은 날은 받지 않는다');
+reset role;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
+                                  backed_steps, gps_backed, rewarded_steps, verdict)
+values ('68000000-0000-0000-0000-000000000004',
+        economy.game_day_start(economy.game_day(now())) + interval '20 minutes',
+        economy.game_day_start(economy.game_day(now())) + interval '21 minutes', 60, 1000, 1000, 1000, true, 0, 'CLEAN');
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000004');
+do $$
+begin
+  perform pg_temp.ok(public.goal_claim() = 3.0,
+    '예전 앱의 goal_claim() 은 오늘의 목표 — 자정 뒤에 받은 어제까지 이어 3일 연속(+20%)');
+end $$;
+call pg_temp.must_fail(format($q$ select public.goal_claim_day('%s'::date) $q$, pg_temp.fx('today68')::date),
+  'goal_claim() 으로 받은 오늘을 goal_claim_day 로 또 받지 못한다(같은 꼬리표)');
+reset role;
+do $$
+declare v_today date := economy.game_day(now());
+begin
+  perform pg_temp.ok((select count(*) = 3 and sum(amount) = 8.25 from public.sup_ledger
+                       where user_id = '68000000-0000-0000-0000-000000000004' and kind = 'BONUS_GOAL'),
+    '사흘 보너스가 한 번씩 — 2.5 + 2.75 + 3.0');
+  perform pg_temp.ok((select occurred_at from public.sup_ledger
+                       where user_id = '68000000-0000-0000-0000-000000000004' and ref = 'goal:' || (v_today - 1))
+                     = economy.game_day_start(v_today) - interval '1 second',
+    '지난날의 보너스는 그날의 마지막 시각으로 적힌다 — 앱의 "오늘 받은 보너스"에 섞이지 않는다');
+end $$;
+
+-- ── 4. 초대 적립 — 경로가 받쳐 준 걸음 1,000 이상인 러닝만 ───────────────────
+insert into public.invite_redemptions (invitee, inviter)
+values ('68000000-0000-0000-0000-000000000006', '68000000-0000-0000-0000-000000000005');
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000006');
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz - interval '2 days';
+begin
+  -- 경로 없이 걸음만 2,400 — 예전엔 두 사람이 100 SUP 씩 받았다
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2400, 1201,
+    '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID', '경로 없는 러닝도 러닝으로는 기록된다');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.sup_ledger where kind = 'EARN_INVITE'
+                                    and user_id in ('68000000-0000-0000-0000-000000000005', '68000000-0000-0000-0000-000000000006'))
+                     and (select rewarded_at is null from public.invite_redemptions
+                           where invitee = '68000000-0000-0000-0000-000000000006'),
+    '경로 없는 러닝(걸음만 1,000 이상)으로는 초대 적립이 없고 확정도 적지 않는다 (0068)');
+end $$;
+-- 경로는 있지만 경로가 받쳐 준 걸음이 1,000 에 못 미친다(나머지는 경로보다 많은 걸음)
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, gps_backed, backed_steps)
+values ('68000000-0000-0000-0000-000000000006', pg_temp.fx('d68')::timestamptz - interval '2 days' + interval '2 hours',
+        pg_temp.fx('d68')::timestamptz - interval '2 days' + interval '2 hours 10 minutes', 600, 2400, 'FLAGGED', true, 900);
+do $$
+begin
+  perform pg_temp.ok(not exists (select 1 from public.sup_ledger where kind = 'EARN_INVITE'
+                                    and user_id in ('68000000-0000-0000-0000-000000000005', '68000000-0000-0000-0000-000000000006')),
+    '경로가 받쳐 준 걸음이 1,000 에 못 미치면 초대 적립이 없다');
+end $$;
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000006');
+do $$
+declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz - interval '2 days' + interval '4 hours';
+begin
+  select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
+    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict = 'CLEAN', '경로가 있는 러닝');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select sum(amount) from public.sup_ledger where kind = 'EARN_INVITE'
+                       and user_id = '68000000-0000-0000-0000-000000000006' and ref = 'invite:joined') = 100
+                     and (select sum(amount) from public.sup_ledger where kind = 'EARN_INVITE'
+                           and user_id = '68000000-0000-0000-0000-000000000005'
+                           and ref = 'invite:68000000-0000-0000-0000-000000000006') = 100
+                     and (select rewarded_at is not null from public.invite_redemptions
+                           where invitee = '68000000-0000-0000-0000-000000000006'),
+    '경로가 받쳐 준 첫 러닝에 두 사람이 100 SUP 씩 받고 확정한다');
+end $$;
+
+-- ── 5. AI 코칭 거리 — 걸음 거리가 아니라 러닝의 인정 거리(distance_meters) ─────────────
+-- 지난주 화요일(한국 시각)의 러닝 넷. 걸음 거리(걸음 × 0.762)와 인정 거리가 다르다
+insert into public.coaching_consents (user_id, version)
+values ('68000000-0000-0000-0000-000000000007', coaching.setting_text('coaching_consent_version'));
+do $$
+declare
+  v_day date := coaching.monday(coaching.today('Asia/Seoul')) - 6;
+  v_id bigint;
+  t record;
+begin
+  insert into fix (k, v) values ('c68_week', (v_day - 1)::text);
+  for t in select * from (values
+      -- 걸음 1.52km · 인정 3.24km(경로)
+      ('c68a', 7, 2000, 3240.0, 1458),
+      -- 걸음 2.29km · 인정 0.95km — 1km 미만
+      ('c68b', 9, 3000, 950.0, 600),
+      -- 인정 2.95km — 폰은 3km 를 넘겨 랩 셋을 쟀다
+      ('c68c', 11, 1500, 2950.0, 1200),
+      -- 인정 3.1km — 폰은 랩 둘만 쟀다
+      ('c68d', 13, 4000, 3100.0, 1300)) as x(k, hour, steps, meters, secs)
+  loop
+    insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+    values ('68000000-0000-0000-0000-000000000007',
+            (v_day::timestamp + make_interval(hours => t.hour)) at time zone 'Asia/Seoul',
+            (v_day::timestamp + make_interval(hours => t.hour)) at time zone 'Asia/Seoul' + make_interval(secs => t.secs + 30),
+            t.secs, t.steps, t.meters, 'CLEAN')
+    returning id into v_id;
+    insert into fix (k, v) values (t.k, v_id::text),
+      (t.k || '_at', (select started_at::text from public.walk_sessions where id = v_id));
+  end loop;
+end $$;
+set role authenticated;
+call pg_temp.login('68000000-0000-0000-0000-000000000007');
+do $$
+begin
+  perform pg_temp.ok(public.coaching_splits_put(pg_temp.fx('c68a_at')::timestamptz, array[432, 878, 1350]) = 'stored',
+    '랩 수는 걸음 거리(1.52km → 1)가 아니라 인정 거리(3.24km → 3)의 정수 km 로 맞춘다 (0068)');
+  perform pg_temp.ok(public.coaching_run(pg_temp.fx('c68b_at')::timestamptz, 'ko', false) ->> 'reason' = 'too_short'
+                     and public.coaching_splits_put(pg_temp.fx('c68b_at')::timestamptz, array[400]) = 'too_short',
+    '걸음 거리가 2.29km 여도 인정 거리가 1km 미만이면 1km 미만이다');
+  perform pg_temp.ok(public.coaching_run(pg_temp.fx('c68a_at')::timestamptz, 'ko', false) ->> 'state' = 'disabled',
+    '인정 거리 1km 이상 — 1km 미만으로 건너뛰지 않는다(꺼져 있어 작업은 만들지 않는다)');
+  perform pg_temp.ok(public.coaching_splits_put(pg_temp.fx('c68d_at')::timestamptz, array[600]) = 'mismatch'
+                     and public.coaching_splits_put(pg_temp.fx('c68d_at')::timestamptz, array[250, 500, 750, 1000, 1250]) = 'mismatch',
+    '랩 수가 서버 거리의 정수 km 와 둘 이상 다르면 받지 않는다');
+  perform pg_temp.ok(public.coaching_splits_put(pg_temp.fx('c68d_at')::timestamptz, array[640, 1280]) = 'stored',
+    '폰이 조금 짧게 재 랩이 하나 적어도 받는다(3.1km 에 랩 둘)');
+  perform pg_temp.ok(public.coaching_splits_put(pg_temp.fx('c68c_at')::timestamptz, array[400, 800, 1190]) = 'stored',
+    '폰이 조금 길게 재 랩이 하나 많아도 받는다(2.95km 에 랩 셋)');
+end $$;
+reset role;
+do $$
+declare
+  s public.walk_sessions;
+  v jsonb;
+  t record;
+begin
+  select * into s from public.walk_sessions where id = pg_temp.fx('c68a')::bigint;
+  v := coaching.run_input(s, array[432, 878, 1350], 'ko');
+  perform pg_temp.ok(v -> 'run' ->> 'distance_m' = '3240' and v -> 'run' ->> 'avg_pace_sec' = '450'
+                     and v -> 'run' -> 'partial' = '{"meters": 240, "seconds": 108}'::jsonb,
+    '코칭 입력의 거리 · 페이스 · 남은 구간은 인정 거리로 — 3.24km, 450초/km, 남은 0.24km 108초');
+  select * into s from public.walk_sessions where id = pg_temp.fx('c68c')::bigint;
+  v := coaching.run_input(s, array[400, 800, 1190], 'ko');
+  perform pg_temp.ok(v -> 'run' ->> 'distance_m' = '2950' and v -> 'run' -> 'splits_sec' = '[400, 400, 390]'::jsonb
+                     and v -> 'run' -> 'partial' = 'null'::jsonb,
+    '랩이 서버 거리보다 하나 많아도 남은 거리가 0 아래로 가지 않는다(남은 구간 없음)');
+  select * into t from coaching.week_totals('68000000-0000-0000-0000-000000000007', pg_temp.fx('c68_week')::date, 'Asia/Seoul');
+  perform pg_temp.ok(t.runs = 4 and t.meters = 10240,
+    format('주간 거리는 인정 거리의 합(10.24km — 걸음 거리로는 8.0km) (%s)', t.meters));
+end $$;
+delete from auth.users where id = '68000000-0000-0000-0000-000000000007';
+
+update public.economy_settings set value = '7' where key = 'new_account_days';
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

@@ -79,9 +79,13 @@ class SessionUploadWorker(
         /**
          * 대기열을 처리하도록 예약한다.
          *
-         * 이미 예약된 것이 있으면 그대로 둔다([ExistingWorkPolicy.KEEP]).
-         * 러닝을 연달아 끝내도 일꾼은 하나면 충분하고, 새로 예약하면 이미
-         * 쌓인 백오프 시간이 초기화되어 끊긴 네트워크를 계속 두드리게 된다.
+         * 돌고 있거나 기다리는(연결 · 백오프) 일꾼이 있으면 그 뒤에 하나를 잇는다([ExistingWorkPolicy.APPEND_OR_REPLACE]).
+         * 앞 일꾼의 백오프는 그대로다 — 새로 예약해 초기화하면 끊긴 네트워크를 계속 두드린다. 이은 일꾼은 앞 일꾼이 끝난 뒤
+         * 대기열을 한 번 보고, 비었으면 바로 끝난다.
+         *
+         * 예전엔 있던 일꾼을 그대로 두고 새 예약을 버렸다(KEEP). 앞 일꾼이 대기열을 마지막으로 본 직후 끝난 러닝은 그 예약이
+         * 버려져 다음 러닝 · 앱을 다시 켤 때까지 "정산 대기"로 남았다(2026-10-17 점검). 끝내기 직전에 한 번 더 보는 것으로는
+         * 그 틈이 옮겨 갈 뿐 닫히지 않는다.
          */
         fun schedule(context: Context) {
             val request = OneTimeWorkRequestBuilder<SessionUploadWorker>()
@@ -96,7 +100,7 @@ class SessionUploadWorker(
                 .build()
 
             WorkManager.getInstance(context)
-                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.KEEP, request)
+                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
         }
     }
 }

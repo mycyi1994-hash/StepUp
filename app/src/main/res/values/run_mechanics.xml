@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 메카닉 점검(2026-10-17~19) -->
+<resources>
+    <string name="run_goal_time">Goal time</string>
+    <string name="run_free_check_low_durability_none">This shoe is worn out, so this run earns nothing. Repair it to earn again.</string>
+    <string name="run_free_check_low_durability_minutes">The durability left earns rewards for about %d min. Repair the shoe to earn for longer.</string>
+    <string name="run_shoe_worn_band">Shoe durability used up · steps no longer earn</string>
+    <string name="run_shoe_worn_body">Repair the shoe to earn again. Your run keeps recording.</string>
+    <string name="run_shoe_worn_result">The shoe ran out of durability, so steps after that didn\'t earn.</string>
+    <string name="notification_run_shoe_worn">Durability used up · no rewards</string>
+</resources>

@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -104,6 +105,8 @@ import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.screens.items.LOW_DURABILITY_WARN_MIN
+import com.stepup.android.ui.screens.items.durabilityEarnMinutes
 import com.stepup.android.ui.screens.items.durabilityPercent
 import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.StepUpSans
@@ -140,6 +143,8 @@ private val CheckMeterTrack = Color(0xFF294663)
 private val CheckMeterFill = Color(0xFF4ED2E8)
 private val CheckReadyIcon = Color(0xFF61D6B6)
 private val CheckReadyText = Color(0xFFADC4DA)
+private val CheckWarnIcon = Color(0xFFFFC65C)
+private val CheckWarnText = Color(0xFFFFE2A8)
 private val CheckBack = Color(0xFFB5C6DA)
 private val CheckFloor = Color(0x55436B8B)
 
@@ -311,10 +316,29 @@ private fun CheckShoeFacts(shoe: Sneaker) {
             Box(Modifier.fillMaxWidth(points / 100f).height(7.dp).clip(RoundedCornerShape(8.dp)).background(CheckMeterFill))
         }
     }
-    Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = CheckReadyIcon, modifier = Modifier.size(15.dp))
-        Spacer(Modifier.width(7.dp))
-        Text(stringResource(R.string.run_free_check_ready), style = checkText(12.sp, CheckReadyText))
+    // 내구도가 다 닳았거나 곧 닳으면 출발 전에 알린다 — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 예전엔 0% 에서도
+    // "달릴 준비가 됐어요"라, 보상 0 의 까닭을 결과에서도 몰랐다(2026-10-17 점검)
+    val worn = (shoe.server?.durabilityFactor ?: 1.0) <= 0.0
+    val earnMinutes = durabilityEarnMinutes(shoe)?.takeIf { it < LOW_DURABILITY_WARN_MIN }
+    if (worn || earnMinutes != null) {
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-low-durability"), verticalAlignment = Alignment.Top) {
+            Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
+            Spacer(Modifier.width(7.dp))
+            Text(
+                if (worn || earnMinutes == null) {
+                    stringResource(R.string.run_free_check_low_durability_none)
+                } else {
+                    stringResource(R.string.run_free_check_low_durability_minutes, earnMinutes.coerceAtLeast(1))
+                },
+                style = checkText(12.sp, CheckWarnText),
+            )
+        }
+    } else {
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = CheckReadyIcon, modifier = Modifier.size(15.dp))
+            Spacer(Modifier.width(7.dp))
+            Text(stringResource(R.string.run_free_check_ready), style = checkText(12.sp, CheckReadyText))
+        }
     }
 }
 

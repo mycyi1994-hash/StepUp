@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 메카닉 점검(2026-10-17~19) -->
+<resources>
+    <string name="run_goal_time">목표 시간</string>
+    <string name="run_free_check_low_durability_none">내구도가 다 닳아 이번 러닝은 보상이 없어요. 수리하면 다시 받아요</string>
+    <string name="run_free_check_low_durability_minutes">남은 내구도로 약 %d분만 보상을 받아요. 수리하면 더 오래 받아요</string>
+    <string name="run_shoe_worn_band">신발 내구도를 다 썼어요 · 이제 걸음은 보상이 없어요</string>
+    <string name="run_shoe_worn_body">수리하면 다시 보상을 받아요. 기록은 그대로 이어져요</string>
+    <string name="run_shoe_worn_result">신발 내구도를 다 써서 그 뒤 걸음은 보상에 들지 않았어요</string>
+    <string name="notification_run_shoe_worn">내구도를 다 써서 보상이 없어요</string>
+</resources>

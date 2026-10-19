@@ -38,10 +38,21 @@ class ServerSessionRecorder(
         )
         // 서버가 이 러닝까지 반영해 돌려준 잔고 — 원장 동기화가 늦어도 결과 화면이 옛 잔고를 보이지 않게
         if (result is ServerResult.Ok) RecordedBalances.put(session.startedAt, owner, result.value.balance)
+        // 크루 표시 · 코스 기록은 [followUp] 이 따로 낸다 — 그것이 끊겨도 서버는 이미 기록 · 지급했으므로 이 러닝은 확인된 것이다.
+        // 예전엔 여기서 뒤 일의 실패를 돌려줘 러닝이 "정산 대기"에 머물고 일꾼의 기다림만 길어졌다(2026-10-17 점검)
+        return result
+    }
+
+    /**
+     * 서버가 기록한 러닝의 뒤 일 — 둘 다 같은 러닝으로 몇 번을 다시 보내도 한 번만 된다(session_tag_crew 는 비어 있을 때만 적고,
+     * course_run_submit 은 같은 러닝을 한 줄로 친다).
+     * 다른 계정의 출입증으로는 보내지 않는다 — 그 계정으로 다시 로그인하면 낸다.
+     */
+    override suspend fun followUp(session: WalkSessionEntity): ServerResult<Unit> {
+        val owner = com.stepup.android.domain.RecordingOwner.userId(session.recordingOwner)
+            ?: return ServerResult.SignInRequired("이 러닝의 계정 소유권을 확인해야 합니다")
         // 크루 러닝이었으면 어느 크루였는지 적는다. 크루 순위가 이 값으로 센다.
-        // Retry the idempotent run when a follow-up is temporarily unavailable.
-        // Never send a follow-up using another account's token.
-        if (result is ServerResult.Ok && session.crewId.isNotBlank()) {
+        if (session.crewId.isNotBlank()) {
             when (val tagged = server.tagSessionCrew(session.startedAt, session.crewId, owner)) {
                 is ServerResult.SignInRequired -> return tagged
                 is ServerResult.Retry -> return tagged
@@ -50,7 +61,7 @@ class ServerSessionRecorder(
         }
         // 코스를 완주한 러닝이었으면 코스 기록으로 낸다. 서버가 올라온 경로로
         // 코스를 따라갔는지 직접 보고 순위에 넣는다. 성공 전에는 대기 항목을 지우지 않는다.
-        if (result is ServerResult.Ok && courseApi != null) {
+        if (courseApi != null) {
             readCourseRun(session.startedAt)?.let { track ->
                 when (val submitted = courseApi.submitRun(track, session.startedAt, owner)) {
                     is ServerResult.Ok -> acknowledgeCourseRun(session.startedAt)
@@ -60,6 +71,6 @@ class ServerSessionRecorder(
                 }
             }
         }
-        return result
+        return ServerResult.Ok(Unit)
     }
 }

@@ -95,10 +95,20 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     override suspend fun forgeResult(key: String): ServerResult<String> =
         rpc("forge_result", "{\"p_key\":${key.asJsonString()}}") { it }
 
-    /** 내구도를 가득 채운다. 채운 뒤의 내구도를 돌려준다. */
-    /** 수리. [request] 는 요청 번호 — 응답을 잃은 같은 요청을 다시 보낼 때 같은 번호면 서버가 다시 치르지 않는다(0057) */
-    suspend fun repair(id: Long, request: String? = null): ServerResult<Double> =
-        rpc("sneaker_repair", jsonBody { put("p_id", id); request?.let { put("p_request", it) } }) { it.trim().toDoubleOrNull() }
+    /**
+     * 수리. 고친 뒤의 남은 비율(%)을 돌려준다. [points] 는 고칠 내구도(서버 p_points, 0059) — 화면이 보인 견적만큼만 고치고
+     * 치른다. 비우면(null) 서버가 그때 빈 만큼 가득 고친다 — 견적과 실행 사이에 러닝이 올라가 더 닳았으면 견적보다 많이 치렀다.
+     * [request] 는 요청 번호 — 응답을 잃은 같은 요청을 다시 보낼 때 같은 번호면 서버가 다시 치르지 않는다(0057)
+     */
+    suspend fun repair(id: Long, points: Int? = null, request: String? = null): ServerResult<Double> =
+        rpc(
+            "sneaker_repair",
+            jsonBody {
+                put("p_id", id)
+                points?.let { put("p_points", it) }
+                request?.let { put("p_request", it) }
+            },
+        ) { it.trim().toDoubleOrNull() }
 
     suspend fun equip(id: Long): ServerResult<Unit> =
         rpc("sneaker_equip", jsonBody { put("p_id", id) }) { Unit }
@@ -131,11 +141,57 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun goalClaim(): ServerResult<Double> =
         rpc("goal_claim", "{}") { it.trim().toDoubleOrNull() }
 
+    /**
+     * [day](한국 시각 게임의 하루)의 목표 달성 보너스(0068) — 러닝은 시작한 날의 목표에 든다. 자정을 넘긴 러닝 · 자정 뒤에 올린
+     * 러닝도 그날 보너스를 받는다. 서버는 최근 7일 안의 날만 받고, 같은 날은 한 번만 준다(goal_claim 과 같은 꼬리표).
+     * 서버에 아직 이 함수가 없으면(PostgREST PGRST202 "Could not find the function") 예전처럼 오늘의 보너스를 청구한다.
+     */
+    suspend fun goalClaimDay(day: java.time.LocalDate): ServerResult<Double> {
+        val result = rpc("goal_claim_day", jsonBody { put("p_day", day.toString()) }) { it.trim().toDoubleOrNull() }
+        return if (result.missingServerFunction()) goalClaim() else result
+    }
+
     private suspend fun <T> rpc(name: String, body: String, parse: (String) -> T?): ServerResult<T> =
         server.authed { token ->
             server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
+
+    companion object {
+        /** 게임의 하루 — 한국 시각(서버 economy.game_day) */
+        private val GAME_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")
+
+        /** 서버가 목표 보너스를 받는 지난날 수(0068 goal_claim_day — 오늘과 그 전 7일) */
+        const val GOAL_CLAIM_WINDOW_DAYS = 7L
+
+        /**
+         * 러닝이 확인받았을 때([signedStartedAt]) 목표 보너스를 청구할 날 — 서버가 받는 최근 7일부터 [now] 의 오늘까지, 오래된 날부터.
+         * 러닝은 시작한 날(한국 시각)의 목표에 들고, 오래된 날부터 받아야 뒷날의 연속 일수가 앞날의 보너스를 센다(서버는 그 전날부터
+         * 거꾸로 센다 — 0068). 이미 받은 날 · 못 채운 날은 서버가 거절할 뿐 다른 일은 없다(같은 날은 한 번).
+         * 아직 올리지 못한 러닝([pendingStartedAt])이 있으면 그 러닝이 시작한 날 뒤는 미룬다 — 먼저 받으면 그날이 빠진 짧은 연속 일수로
+         * 굳는다(Codex 리뷰). 그 러닝이 올라가거나 7일 밖으로 나가면(그날은 더 받을 수 없다) 미룬 날을 다음 확인 때 받는다 — 창 전체를
+         * 다시 보므로 막혔던 날도 7일 안이면 빠지지 않는다.
+         */
+        fun goalDays(
+            signedStartedAt: Collection<Long>,
+            pendingStartedAt: Collection<Long> = emptyList(),
+            now: Long = System.currentTimeMillis(),
+        ): List<java.time.LocalDate> {
+            if (signedStartedAt.isEmpty()) return emptyList()
+            val today = gameDay(now)
+            val from = today.minusDays(GOAL_CLAIM_WINDOW_DAYS)
+            val waiting = pendingStartedAt.map { gameDay(it) }.filter { !it.isBefore(from) }.minOrNull()
+            val until = if (waiting == null) today else minOf(today, waiting)
+            return generateSequence(from) { it.plusDays(1) }.takeWhile { !it.isAfter(until) }.toList()
+        }
+
+        private fun gameDay(epochMs: Long): java.time.LocalDate =
+            java.time.Instant.ofEpochMilli(epochMs).atZone(GAME_ZONE).toLocalDate()
+    }
 }
+
+/** PostgREST 가 이름 · 인자에 맞는 서버 함수를 못 찾았다(PGRST202 — 서버에 새 함수가 아직 없다) */
+private fun ServerResult<*>.missingServerFunction(): Boolean =
+    this is ServerResult.Rejected && ("Could not find the function" in reason || "PGRST202" in reason)
 
 @Serializable
 data class EconomyRow(

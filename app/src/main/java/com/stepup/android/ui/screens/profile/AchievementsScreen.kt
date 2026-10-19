@@ -79,9 +79,18 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
+import com.stepup.android.data.prefs.UserPrefs
+import com.stepup.android.data.repo.BoardSyncState
+import com.stepup.android.data.repo.CrewSyncState
+import com.stepup.android.domain.RecordingOwner
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
 
@@ -94,29 +103,36 @@ class AchievementsViewModel(
     stepRepository: StepRepository,
     sneakerRepository: SneakerRepository,
     crewRepository: CrewRepository,
-    walkSessionDao: WalkSessionDao,
+    private val walkSessionDao: WalkSessionDao,
     rewardDao: RewardDao,
     communityRepository: CommunityRepository,
+    /** 지금 계정의 기록 주인(account:… · guest · legacy) — 업적 최고값을 계정마다 둔다 */
+    owner: Flow<String>,
+    private val prefs: UserPrefs,
 ) : ViewModel() {
+
+    // 크루와 글은 서버에만 있다 — 이 화면에서 새로 받아 끝났을 때(Ready)만 그 수를 최고값으로 적는다.
+    // 받기 전 · 못 받은 목록은 비었거나(0) 앞 계정 것일 수 있다
+    private val crewsLoaded = MutableStateFlow(false)
+    private val postsLoaded = MutableStateFlow(false)
 
     init {
         // 크루와 글은 서버에만 있다. 업적 화면만 먼저 열어도 세어지도록 받아 둔다.
         viewModelScope.launch {
-            crewRepository.refresh()
-            communityRepository.refresh()
+            crewsLoaded.value = crewRepository.refresh() == CrewSyncState.Ready
+            postsLoaded.value = communityRepository.refresh() == BoardSyncState.Ready
         }
     }
 
     private val activity = combine(
         stepRepository.observeLifetimeSteps(),
-        stepRepository.streak,
-        stepRepository.observeSessionCount(),
+        // 연속 달성은 가장 길었던 값으로 연다 — 지금 이어진 값은 하루를 놓치면 0 이 된다
+        stepRepository.bestStreak,
         rewardDao.observeEarnedTotal(),
-    ) { steps, streak, sessions, earned ->
+    ) { steps, streak, earned ->
         AchievementMetrics(
             steps = steps,
             km = steps * RewardEconomy.STRIDE_METERS / 1000.0,
-            sessions = sessions,
             streak = streak,
             supEarned = earned,
         )
@@ -140,23 +156,40 @@ class AchievementsViewModel(
         Triple(inventory, crews.size, posts)
     }
 
-    val achievements: StateFlow<List<Achievement>> = combine(
+    private val metrics = combine(
         activity,
         economy,
         social,
     ) { act, eco, (inventory, crewCount, postCount) ->
-        AchievementBook.build(
-            act.copy(
-                mints = eco[0],
-                upgrades = eco[1],
-                partyRuns = eco[2],
-                eventClaims = eco[3],
-                collectionSlots = inventory.map { it.slotKey }.toSet().size,
-                crews = crewCount,
-                posts = postCount,
-                maxSneakerLevel = inventory.maxOfOrNull { it.level } ?: 0,
-            )
+        act.copy(
+            mints = eco[0],
+            // 강화(0054)는 재료 신발을 태우고 원장에 줄을 남기지 않는다 — 이 수는 예전 SUP 강화만 센다(앱에 강화 이력이 없다)
+            upgrades = eco[1],
+            partyRuns = eco[2],
+            eventClaims = eco[3],
+            collectionSlots = inventory.map { it.slotKey }.toSet().size,
+            crews = crewCount,
+            posts = postCount,
+            maxSneakerLevel = inventory.maxOfOrNull { it.level } ?: 0,
         )
+    }
+
+    /**
+     * 지금 값과 그 계정이 닿은 가장 큰 값 중 큰 쪽으로 연다 — 스트릭이 끊기거나 크루를 나가거나 강화 재료로 신발을 태워도,
+     * 연결이 없어 0 을 읽어도 한 번 연 업적은 다시 잠기지 않는다(2026-10-17 점검). 최고값은 믿을 수 있는 값만 올린다.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val achievements: StateFlow<List<Achievement>> = owner.distinctUntilChanged().flatMapLatest { who ->
+        // 러닝 수도 같은 계정으로 센다 — 계정이 바뀌는 사이 앞 계정의 수를 새 계정에 적지 않게
+        val current = combine(metrics, walkSessionDao.observeSessionCountFor(who)) { m, sessions -> m.copy(sessions = sessions) }
+        val trusted = combine(prefs.economyOwnerFlow.distinctUntilChanged(), crewsLoaded, postsLoaded) { economyOwner, crews, posts ->
+            AchievementBook.trusted(economyMine = RecordingOwner.userId(who) == economyOwner, crewsLoaded = crews, postsLoaded = posts)
+        }
+        combine(current, trusted, prefs.achievementBest(who).distinctUntilChanged()) { m, trust, best ->
+            val raised = AchievementBook.raised(m, best, trust)
+            if (raised.isNotEmpty()) prefs.raiseAchievementBest(who, raised)
+            AchievementBook.build(m, AchievementBook.mergeBest(best, raised))
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     companion object {
@@ -169,6 +202,8 @@ class AchievementsViewModel(
                     walkSessionDao = ServiceLocator.database.walkSessionDao(),
                     rewardDao = ServiceLocator.database.rewardDao(),
                     communityRepository = ServiceLocator.communityRepository,
+                    owner = ServiceLocator.recordingOwnerFlow(),
+                    prefs = ServiceLocator.userPrefs,
                 )
             }
         }

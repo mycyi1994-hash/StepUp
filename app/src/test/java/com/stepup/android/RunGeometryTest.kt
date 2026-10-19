@@ -20,11 +20,22 @@ class RunGeometryTest {
         val points = listOf(
             TrackPoint(origin.lat, origin.lng, 0L),
             TrackPoint(east(10.0).lat, east(10.0).lng, 5_000L),
-            // 45초 동안 신호가 없다가 200m 떨어진 곳에서 다시 잡혔다
-            TrackPoint(east(210.0).lat, east(210.0).lng, 50_000L),
-            TrackPoint(east(220.0).lat, east(220.0).lng, 55_000L),
+            // 75초 동안 신호가 없다가 200m 떨어진 곳에서 다시 잡혔다(서버도 60초 넘는 빈 구간은 재지 않는다)
+            TrackPoint(east(210.0).lat, east(210.0).lng, 80_000L),
+            TrackPoint(east(220.0).lat, east(220.0).lng, 85_000L),
         )
         assertEquals(setOf(2), segmentBreaks(points))
+    }
+
+    @Test fun `천천히 걸을 때의 드문 점(30~60초 간격)은 끊김이 아니다`() {
+        // 구글 위치 서비스는 오차의 두 배를 움직여야 점을 찍는다 — 오차 20m 로 걸으면 40m 마다 36초 남짓
+        val points = listOf(
+            TrackPoint(origin.lat, origin.lng, 0L),
+            TrackPoint(east(40.0).lat, east(40.0).lng, 36_000L),
+            TrackPoint(east(80.0).lat, east(80.0).lng, 72_000L),
+            TrackPoint(east(135.0).lat, east(135.0).lng, 127_000L),
+        )
+        assertTrue(segmentBreaks(points).isEmpty())
     }
 
     @Test fun `오래 멈췄다 같은 자리에서 다시 달리면 그대로 잇는다`() {

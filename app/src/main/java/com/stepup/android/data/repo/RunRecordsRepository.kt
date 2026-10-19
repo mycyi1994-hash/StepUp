@@ -5,6 +5,7 @@ import com.stepup.android.data.local.RunRecordRow
 import com.stepup.android.data.local.UploadState
 import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.data.local.WalkSessionEntity
+import com.stepup.android.data.local.ZERO_STEP_UPLOAD_FROM_MS
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunMark
 import com.stepup.android.domain.RunTrack
@@ -79,9 +80,11 @@ class RunRecordsRepository(
     }
 }
 
-/** 서버에 올려 보상을 확인받는 중 — 지우면 확인이 끝나지 않는다 */
+/** 서버에 올려 보상을 확인받는 중 — 지우면 확인이 끝나지 않는다. 걸음 0 이어도 달린 시간이 있으면 올린다(신발이 닳는다, 2026-10-19) */
 fun WalkSessionEntity.isUploading(): Boolean =
-    steps > 0 && (uploadState == UploadState.PENDING.name || uploadState == UploadState.FAILED.name)
+    (steps > 0 || (durationSec > 0 && startedAt >= ZERO_STEP_UPLOAD_FROM_MS)) &&
+        (uploadState == UploadState.PENDING.name || uploadState == UploadState.FAILED.name)
 
 fun RunRecordRow.isUploading(): Boolean =
-    steps > 0 && (uploadState == UploadState.PENDING.name || uploadState == UploadState.FAILED.name)
+    (steps > 0 || (durationSec > 0 && startedAt >= ZERO_STEP_UPLOAD_FROM_MS)) &&
+        (uploadState == UploadState.PENDING.name || uploadState == UploadState.FAILED.name)

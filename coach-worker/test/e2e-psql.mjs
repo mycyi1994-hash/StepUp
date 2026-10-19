@@ -43,9 +43,10 @@ const rpc = async (fn, args) => {
 
 psql(`
 insert into auth.users (id, email) values ('${USER}', 'e2e-user@test'), ('${WORKER}', 'e2e-worker@test') on conflict (id) do nothing;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict) values
-  ('${USER}', timestamptz '2026-02-02 07:00+09', timestamptz '2026-02-02 07:30+09', 1458, 4252, 'CLEAN'),
-  ('${USER}', timestamptz '2026-02-04 07:00+09', timestamptz '2026-02-04 07:30+09', 1290, 3937, 'CLEAN');
+-- 코칭 거리는 러닝의 인정 거리(distance_meters, 0068) — 걸음 거리(걸음 × 0.762m)로 넣는다
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict) values
+  ('${USER}', timestamptz '2026-02-02 07:00+09', timestamptz '2026-02-02 07:30+09', 1458, 4252, 3240.024, 'CLEAN'),
+  ('${USER}', timestamptz '2026-02-04 07:00+09', timestamptz '2026-02-04 07:30+09', 1290, 3937, 2999.994, 'CLEAN');
 insert into public.coaching_consents (user_id, version) values ('${USER}', 'draft-2026-10-16');
 insert into public.coaching_preferences (user_id, goal, runs_per_week, minutes) values ('${USER}', 'steady', 3, 25);
 insert into public.coaching_run_splits (session_id, user_id, laps)

@@ -6,6 +6,7 @@ import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RunIntegrity
+import com.stepup.android.domain.StreakRules
 import com.stepup.android.sensor.StepTracker
 import com.stepup.android.service.WalkSessionService
 import java.time.LocalDate
@@ -15,8 +16,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** 걸음 수 추적, 일별 기록 저장, 목표 달성 판정을 담당한다. */
@@ -37,7 +40,22 @@ class StepRepository(
 
     val todaySteps: StateFlow<Int> = tracker.todaySteps
     val dailyGoal: Flow<Int> = prefs.dailyGoal
-    val streak: Flow<Int> = prefs.streak
+
+    /**
+     * 화면에 보이는 연속 달성 일수 — 마지막으로 목표를 채운 날이 어제보다 앞이면(그 사이를 보호막이 덮지 않았으면) 끊겼으므로 0.
+     * 저장된 값은 목표를 채운 날에만 바뀌어, 하루를 놓쳐도 다음에 채울 때까지 옛 값이 보였다(2026-10-17 점검).
+     * 날짜 · 보호막은 [onSteps] 가 이어 셀 때와 같은 규칙이다(StreakRules).
+     */
+    val streak: Flow<Int> = prefs.streakRecord
+        .distinctUntilChanged()
+        .map { (stored, lastMet) ->
+            val today = LocalDate.now().toEpochDay()
+            val shielded = StreakRules.needsShield(lastMet, today) && rewardRepository.streakShieldCovered(today - 1)
+            StreakRules.shown(stored, lastMet, today, shielded)
+        }
+
+    /** 가장 길었던 연속 달성 일수 — 업적(연속 목표 달성)은 지금 이어진 값이 아니라 이 값으로 연다 */
+    val bestStreak: Flow<Int> = prefs.bestStreak
     val energy: Flow<Double> = prefs.energy
 
     val stepSensorAvailable: Boolean get() = tracker.isAvailable

@@ -123,10 +123,14 @@ object AchievementBook {
         }
     }
 
-    /** 실측치로 100종 전체를 판정한다 */
-    fun build(metrics: AchievementMetrics): List<Achievement> =
+    /**
+     * 실측치로 100종 전체를 판정한다. [best] 는 카테고리마다 지금까지 닿은 가장 큰 값(AchievementCategory.id → 값, 계정마다
+     * UserPrefs 에) — 지금 값이 줄어도(스트릭이 끊김 · 크루를 나감 · 강화 재료로 신발을 태움 · 연결 없이 0 을 읽음) 한 번 연
+     * 티어는 다시 잠기지 않고 진행 막대도 뒤로 가지 않는다(2026-10-17 점검).
+     */
+    fun build(metrics: AchievementMetrics, best: Map<String, Double> = emptyMap()): List<Achievement> =
         AchievementCategory.entries.flatMap { category ->
-            val value = metrics.valueOf(category)
+            val value = maxOf(metrics.valueOf(category), best[category.id] ?: 0.0)
             category.tiers.mapIndexed { tier, threshold ->
                 Achievement(
                     category = category,
@@ -139,4 +143,57 @@ object AchievementBook {
                 )
             }
         }
+
+    /**
+     * 이 계정의 폰 기록으로 세는 카테고리 — 러닝 수는 계정마다 센다. 걸음 · 거리(하루 걸음 표) · 연속 달성(설정)은 이 폰의 값이라
+     * 계정마다 적지 않는다 — 한 폰을 두 계정이 쓰면 앞 계정의 값이 뒤 계정의 최고값으로 굳었다(Codex 리뷰). 그 값들은 줄지 않으므로
+     * 적지 않아도 다시 잠기지 않는다.
+     */
+    private val LOCAL = setOf(AchievementCategory.SESSIONS)
+
+    /** 서버 경제의 사본(원장 · 신발)으로 세는 카테고리 — 사본이 지금 계정 것일 때만 믿는다(계정을 바꾼 직후엔 앞 계정 것이다) */
+    private val ECONOMY = setOf(
+        AchievementCategory.SUP, AchievementCategory.MINT, AchievementCategory.UPGRADE, AchievementCategory.PARTY,
+        AchievementCategory.EVENT, AchievementCategory.COLLECTION, AchievementCategory.LEVEL,
+    )
+
+    /**
+     * 최고값으로 적어도 되는 카테고리. 받는 중 · 못 받은 목록(크루 · 글은 서버에만 있다)과 다른 계정의 경제 사본은 적지 않는다 —
+     * 0 이거나 남의 값일 수 있다.
+     */
+    fun trusted(economyMine: Boolean, crewsLoaded: Boolean, postsLoaded: Boolean): Set<AchievementCategory> = buildSet {
+        addAll(LOCAL)
+        if (economyMine) addAll(ECONOMY)
+        if (crewsLoaded) add(AchievementCategory.CREW)
+        if (postsLoaded) add(AchievementCategory.POST)
+    }
+
+    /** 새로 적을 최고값 — [trusted] 카테고리에서 지금 값이 [best] 보다 클 때만. 없으면 빈 맵 */
+    fun raised(metrics: AchievementMetrics, best: Map<String, Double>, trusted: Set<AchievementCategory>): Map<String, Double> =
+        trusted.mapNotNull { category ->
+            val value = metrics.valueOf(category)
+            if (value.isFinite() && value > (best[category.id] ?: 0.0)) category.id to value else null
+        }.toMap()
+
+    /** 두 최고값을 합친다 — 카테고리마다 큰 쪽 */
+    fun mergeBest(now: Map<String, Double>, values: Map<String, Double>): Map<String, Double> {
+        val merged = now.toMutableMap()
+        values.forEach { (id, value) ->
+            if (value.isFinite() && value > (merged[id] ?: 0.0)) merged[id] = value
+        }
+        return merged
+    }
+
+    /** 저장 글자 — "STEPS=12000.0;STREAK=7.0" */
+    fun encodeBest(best: Map<String, Double>): String =
+        best.entries.filter { it.value.isFinite() && it.value > 0.0 }.sortedBy { it.key }
+            .joinToString(";") { "${it.key}=${it.value}" }
+
+    /** [encodeBest] 를 되읽는다. 깨진 칸은 건너뛴다 */
+    fun decodeBest(raw: String?): Map<String, Double> =
+        raw.orEmpty().split(';').mapNotNull { part ->
+            val id = part.substringBefore('=', "").trim()
+            val value = part.substringAfter('=', "").trim().toDoubleOrNull()
+            if (id.isEmpty() || value == null || !value.isFinite() || value <= 0.0) null else id to value
+        }.toMap()
 }
