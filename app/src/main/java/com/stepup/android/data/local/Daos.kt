@@ -59,7 +59,8 @@ interface WalkSessionDao {
     @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
     fun observeSessionCountFor(owner: String): Flow<Int>
 
-    @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(distanceMeters), 0) AS meters FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
+    /** 지금 계정의 러닝 수 · 거리 — 서버가 무효로 본 러닝의 거리는 세지 않는다(리더보드 · 서버 합계와 같게, 2026-10-17 점검) */
+    @Query("SELECT COUNT(*) AS runs, COALESCE(SUM(CASE WHEN verdict != 'VOID' THEN distanceMeters ELSE 0 END), 0) AS meters FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
     fun observeRunTotalsFor(owner: String): Flow<RunTotals>
 
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis AND recordingOwner IN (:owner, 'legacy')")
@@ -144,15 +145,16 @@ interface WalkSessionDao {
     /**
      * 기간 전체의 합계 — 불러온 한 쪽이 아니라 기간 전체. 페이스는 거리와 시간이 모두 있는 러닝만의 시간 합 ÷ 거리 합.
      * [RecordTotals.measured] 는 거리가 있는 러닝 수 — 러닝은 있는데 0이면 거리를 모르는 것이지 0km 가 아니다.
+     * 서버가 무효로 본 러닝의 거리 · 페이스는 세지 않는다(리더보드 · 서버 합계와 같게, 2026-10-17 점검).
      */
     @Query(
         """
         SELECT COUNT(*) AS runs,
-               COALESCE(SUM(CASE WHEN distanceMeters > 0 THEN distanceMeters ELSE 0 END), 0) AS meters,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND verdict != 'VOID' THEN distanceMeters ELSE 0 END), 0) AS meters,
                COALESCE(SUM(durationSec), 0) AS seconds,
-               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND durationSec > 0 THEN distanceMeters ELSE 0 END), 0) AS pacedMeters,
-               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND durationSec > 0 THEN durationSec ELSE 0 END), 0) AS pacedSeconds,
-               COALESCE(SUM(CASE WHEN distanceMeters > 0 THEN 1 ELSE 0 END), 0) AS measured
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND durationSec > 0 AND verdict != 'VOID' THEN distanceMeters ELSE 0 END), 0) AS pacedMeters,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND durationSec > 0 AND verdict != 'VOID' THEN durationSec ELSE 0 END), 0) AS pacedSeconds,
+               COALESCE(SUM(CASE WHEN distanceMeters > 0 AND verdict != 'VOID' THEN 1 ELSE 0 END), 0) AS measured
           FROM walk_sessions
          WHERE recordingOwner IN (:owner, 'legacy') AND startedAt >= :from AND startedAt < :until
         """,
@@ -161,7 +163,7 @@ interface WalkSessionDao {
 
     /** 기간 안 러닝의 시작 시각 · 거리 — 주간 · 월간 막대 */
     @Query(
-        "SELECT id, startedAt, distanceMeters AS meters FROM walk_sessions " +
+        "SELECT id, startedAt, CASE WHEN verdict != 'VOID' THEN distanceMeters ELSE 0 END AS meters FROM walk_sessions " +
             "WHERE recordingOwner IN (:owner, 'legacy') AND startedAt >= :from AND startedAt < :until",
     )
     fun observeRunMarks(owner: String, from: Long, until: Long): Flow<List<com.stepup.android.domain.RunMark>>
@@ -210,7 +212,8 @@ interface WalkSessionDao {
     /** 기간 안의 코칭 러닝 — 거리와 활성 시간이 모두 있는 것(무효 · 걸음 없는 기록은 빼고) */
     @Query(
         "SELECT id, startedAt, distanceMeters AS meters, durationSec AS seconds FROM walk_sessions " +
-            "WHERE recordingOwner = :owner AND startedAt >= :from AND startedAt < :until AND distanceMeters > 0 AND durationSec > 0",
+            "WHERE recordingOwner = :owner AND startedAt >= :from AND startedAt < :until AND distanceMeters > 0 AND durationSec > 0 " +
+            "AND verdict != 'VOID'",
     )
     fun observeCoachRuns(owner: String, from: Long, until: Long): Flow<List<com.stepup.android.domain.coaching.CoachRun>>
 
@@ -482,6 +485,10 @@ interface BoostDao {
 
     @Query("SELECT * FROM boosts WHERE type = :type AND expiresAt > :now LIMIT 1")
     suspend fun activeOf(type: String, now: Long): BoostEntity?
+
+    /** [at] 에 켜져 있던 부스트 — 서버(economy.boost_active)처럼 산 뒤 · 끝나기 전. 러닝의 부스터는 시작 시각으로 본다 */
+    @Query("SELECT * FROM boosts WHERE type = :type AND activatedAt <= :at AND expiresAt > :at LIMIT 1")
+    suspend fun activeAt(type: String, at: Long): BoostEntity?
 
     /** [from]~[to] 사이에 한 번이라도 켜져 있던 [type] 부스트 */
     @Query("SELECT * FROM boosts WHERE type = :type AND activatedAt < :to AND expiresAt > :from LIMIT 1")

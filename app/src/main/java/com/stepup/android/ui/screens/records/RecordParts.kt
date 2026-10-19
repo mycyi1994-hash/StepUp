@@ -153,20 +153,20 @@ internal fun paceText(secondsPerKm: Double?, compact: Boolean = false): String? 
     return String.format(Locale.ROOT, "%d'%02d\"%s/km", total / 60, total % 60, if (compact) "" else " ")
 }
 
-/** 한 러닝의 페이스 — 거리와 시간이 모두 있을 때만 */
+/** 한 러닝의 페이스 — 시간이 있고 거리가 50m(RunPace.MIN_METERS, 러닝 중 · 결과와 같다) 이상일 때만 */
 internal fun runPace(seconds: Long, meters: Double, compact: Boolean = false): String? =
-    if (seconds > 0 && meters > 0) paceText(seconds / (meters / 1000.0), compact) else null
+    paceText(com.stepup.android.domain.RunPace.secPerKm(seconds, meters), compact)
 
-/** 페이스 숫자만 — 8'20"(단위 "/km" 는 작은 글자로 따로) */
+/** 페이스 숫자만 — 8'20"(단위 "/km" 는 작은 글자로 따로). 몇 m 로 나눈 65'37" 같은 값은 보이지 않는다(RunPace) */
 internal fun paceValue(seconds: Long, meters: Double): String? {
-    if (seconds <= 0 || meters <= 0) return null
-    val total = (seconds / (meters / 1000.0)).takeIf { it.isFinite() && it > 0 }?.roundToLong() ?: return null
+    val total = com.stepup.android.domain.RunPace.secPerKm(seconds, meters)
+        ?.takeIf { it.isFinite() && it > 0 }?.roundToLong() ?: return null
     return String.format(Locale.ROOT, "%d'%02d\"", total / 60, total % 60)
 }
 
-/** 평균 속도(km/h) 한 자리 — 거리와 시간이 모두 있을 때만 */
+/** 평균 속도(km/h) 한 자리 — 페이스와 같은 조건(RunPace)일 때만 */
 internal fun speedText(seconds: Long, meters: Double): String? =
-    if (seconds > 0 && meters > 0) String.format(Locale.ROOT, "%.1f", (meters / 1000.0) / (seconds / 3600.0)) else null
+    com.stepup.android.domain.RunPace.kmh(seconds, meters)?.let { String.format(Locale.ROOT, "%.1f", it) }
 
 @Composable
 internal fun rememberFormatter(@StringRes pattern: Int): DateTimeFormatter {

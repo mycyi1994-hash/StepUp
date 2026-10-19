@@ -95,16 +95,22 @@ internal const val SPEED_STILL_MS = 20_000L
 /** 이웃한 두 점이 이보다 멀면(신호가 끊겼다 이어짐) 속도를 모른다 */
 internal const val SPEED_MAX_GAP_MS = 60_000L
 
+/** 걸음이 이만큼(ms) 안에 늘었으면 새 경로 점이 없어도 아직 움직이는 중으로 본다 */
+internal const val SPEED_MOVING_GRACE_MS = 10_000L
+
 /**
  * 지금 속도(km/h) — 경로의 마지막 점과 그 앞 [SPEED_WINDOW_MS] 안의 점들로 잰다. 모르면 null.
  *
  * 마지막으로 버려진 구간([flaggedAt])이 마지막 점보다 늦으면 지금 읽은 속도가 사람 속도를 넘은 것이다 —
- * 그 뒤 사람 속도의 점이 들어올 때까지 모른다고 보인다. 새 점이 한동안 없으면 멈춰 선 것(0).
+ * 그 뒤 사람 속도의 점이 들어올 때까지 모른다고 보인다. 새 점이 한동안 없고 걸음도 늘지 않으면 멈춰 선 것(0).
+ * 걸음이 늘고 있으면([movingAt], 마지막으로 걸음이 는 때) 점이 드문 것뿐이라 마지막 속도를 그대로 보인다 — 구글 위치 서비스는
+ * 오차의 두 배를 움직여야 점을 찍어, 천천히 걸으면 20~40초마다라 속도가 0 과 값을 오갔다(2026-10-17 점검).
  */
-internal fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long): Double? {
+internal fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long, movingAt: Long = 0L): Double? {
     val last = track.lastOrNull() ?: return null
     if (flaggedAt > last.at) return null
-    if (now - last.at > SPEED_STILL_MS) return 0.0
+    if (now - last.at > SPEED_STILL_MS && now - movingAt > SPEED_MOVING_GRACE_MS) return 0.0
+    if (now - last.at > SPEED_MAX_GAP_MS) return null
     if (track.size < 2) return null
     var first = track.lastIndex - 1
     while (first > 0 && track[first - 1].at >= last.at - SPEED_WINDOW_MS) first--

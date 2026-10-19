@@ -179,13 +179,19 @@ class RewardRepository(
         return ((multiplier - 1.0) * 10_000).roundToInt().coerceAtLeast(0)
     }
 
-    /** Calculation only; RunSettlementRepository commits the record and local effects together. */
+    /**
+     * Calculation only; RunSettlementRepository commits the record and local effects together.
+     *
+     * @param startedAt 러닝을 시작한 때 — 부스터는 서버(record_session)처럼 시작할 때 켜져 있었는지로 본다. 러닝 중에 산 부스터를
+     * "×2 예상"으로 보이고 서버는 ×1 로 치르던 것(2026-10-17 점검)
+     */
     suspend fun calculateSessionReward(
         steps: Int,
         partySize: Int = 1,
         today: Long = LocalDate.now().toEpochDay(),
-        /** 멈춘 시간을 뺀 달린 시간(초) — 신발이 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066). 0 이면 빼지 않는다 */
+        /** 신발이 닳는 시간(초, RewardEconomy.wearSeconds — 움직인 시간까지만) — 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066 · 0068). 0 이면 빼지 않는다 */
         activeSec: Long = 0L,
+        startedAt: Long = System.currentTimeMillis(),
     ): SessionReward {
         syncEnergyCap()
         val energyRemaining = prefs.currentEnergy(today)
@@ -198,8 +204,7 @@ class RewardRepository(
             ?: RewardEconomy.sneakerMultiplier(prefs.sneakerLevel.first())
         val energyEfficiency = equipped?.energyEfficiency ?: 1.0
 
-        val now = System.currentTimeMillis()
-        val xpBoosted = boostDao.activeOf(BoostType.XP_BOOSTER.id, now) != null
+        val xpBoosted = boostDao.activeAt(BoostType.XP_BOOSTER.id, startedAt) != null
         val boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0
 
         val reward = RewardEconomy.sessionReward(

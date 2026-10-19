@@ -95,10 +95,20 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     override suspend fun forgeResult(key: String): ServerResult<String> =
         rpc("forge_result", "{\"p_key\":${key.asJsonString()}}") { it }
 
-    /** 내구도를 가득 채운다. 채운 뒤의 내구도를 돌려준다. */
-    /** 수리. [request] 는 요청 번호 — 응답을 잃은 같은 요청을 다시 보낼 때 같은 번호면 서버가 다시 치르지 않는다(0057) */
-    suspend fun repair(id: Long, request: String? = null): ServerResult<Double> =
-        rpc("sneaker_repair", jsonBody { put("p_id", id); request?.let { put("p_request", it) } }) { it.trim().toDoubleOrNull() }
+    /**
+     * 수리. 고친 뒤의 남은 비율(%)을 돌려준다. [points] 는 고칠 내구도(서버 p_points, 0059) — 화면이 보인 견적만큼만 고치고
+     * 치른다. 비우면(null) 서버가 그때 빈 만큼 가득 고친다 — 견적과 실행 사이에 러닝이 올라가 더 닳았으면 견적보다 많이 치렀다.
+     * [request] 는 요청 번호 — 응답을 잃은 같은 요청을 다시 보낼 때 같은 번호면 서버가 다시 치르지 않는다(0057)
+     */
+    suspend fun repair(id: Long, points: Int? = null, request: String? = null): ServerResult<Double> =
+        rpc(
+            "sneaker_repair",
+            jsonBody {
+                put("p_id", id)
+                points?.let { put("p_points", it) }
+                request?.let { put("p_request", it) }
+            },
+        ) { it.trim().toDoubleOrNull() }
 
     suspend fun equip(id: Long): ServerResult<Unit> =
         rpc("sneaker_equip", jsonBody { put("p_id", id) }) { Unit }
@@ -131,11 +141,37 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun goalClaim(): ServerResult<Double> =
         rpc("goal_claim", "{}") { it.trim().toDoubleOrNull() }
 
+    /**
+     * [day](한국 시각 게임의 하루)의 목표 달성 보너스(0068) — 러닝은 시작한 날의 목표에 든다. 자정을 넘긴 러닝 · 자정 뒤에 올린
+     * 러닝도 그날 보너스를 받는다. 서버는 최근 7일 안의 날만 받고, 같은 날은 한 번만 준다(goal_claim 과 같은 꼬리표).
+     * 서버에 아직 이 함수가 없으면(PostgREST PGRST202 "Could not find the function") 예전처럼 오늘의 보너스를 청구한다.
+     */
+    suspend fun goalClaimDay(day: java.time.LocalDate): ServerResult<Double> {
+        val result = rpc("goal_claim_day", jsonBody { put("p_day", day.toString()) }) { it.trim().toDoubleOrNull() }
+        return if (result.missingServerFunction()) goalClaim() else result
+    }
+
     private suspend fun <T> rpc(name: String, body: String, parse: (String) -> T?): ServerResult<T> =
         server.authed { token ->
             server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
+
+    companion object {
+        /** 게임의 하루 — 한국 시각(서버 economy.game_day) */
+        private val GAME_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")
+
+        /**
+         * 서버가 방금 확인한 러닝들의 목표 보너스 날 — 러닝을 시작한 한국 날짜, 겹치지 않게 오래된 날부터.
+         * 오래된 날부터 받아야 뒷날의 연속 일수가 앞날의 보너스를 센다(서버는 그 전날부터 거꾸로 센다).
+         */
+        fun goalDays(startedAtMillis: Collection<Long>): List<java.time.LocalDate> =
+            startedAtMillis.map { java.time.Instant.ofEpochMilli(it).atZone(GAME_ZONE).toLocalDate() }.distinct().sorted()
+    }
 }
+
+/** PostgREST 가 이름 · 인자에 맞는 서버 함수를 못 찾았다(PGRST202 — 서버에 새 함수가 아직 없다) */
+private fun ServerResult<*>.missingServerFunction(): Boolean =
+    this is ServerResult.Rejected && ("Could not find the function" in reason || "PGRST202" in reason)
 
 @Serializable
 data class EconomyRow(

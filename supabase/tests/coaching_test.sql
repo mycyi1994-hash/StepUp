@@ -49,7 +49,8 @@ insert into auth.users (id, email) values
 on conflict (id) do nothing;
 
 -- 가의 러닝 — 지난주(끝난 주): 월 3.24km 24:18(구간 432 · 446 · 472), 수 · 금(FLAGGED), 목 VOID. 그 전 주: 월 · 화(1km 미만) — 이어진 주 2.
--- 걸음 거리 = 걸음 × 0.762m 라 9km 를 딱 맞출 수 없다 — 11811 걸음(8999.98m), 4104초 → 456초/km
+-- 코칭 거리는 러닝의 인정 거리(distance_meters, 0068)다. 여기서는 걸음 거리(걸음 × 0.762m)로 넣어 9km 를 딱 맞출 수 없다
+-- — 11811 걸음(8999.98m), 4104초 → 456초/km. 걸음 거리와 인정 거리가 다른 러닝은 schema_test.sql 의 0068 절이 본다
 do $$
 declare
   v_a uuid := '59000000-0000-0000-0000-00000000000a';
@@ -154,7 +155,8 @@ begin
     '같은 구간을 다시 보내도 그대로(꺼져 있을 때 받은 것)');
   perform pg_temp.ok(public.coaching_splits_put(pg_temp.fx('r1_at')::timestamptz, array[432, 879, 1350]) = 'conflict',
     '먼저 받은 구간을 바꾸지 않는다');
-  perform pg_temp.ok(public.coaching_splits_put(v_at, array[400, 900, 960]) = 'mismatch', '랩 수가 서버 걸음 거리의 정수 km 와 다르면 받지 않는다');
+  -- 0068: 폰이 잰 거리는 서버 거리와 조금 다를 수 있어 정수 km ± 1 까지 받는다 — 2km 러닝에 랩 넷은 받지 않는다
+  perform pg_temp.ok(public.coaching_splits_put(v_at, array[300, 600, 900, 960]) = 'mismatch', '랩 수가 서버 거리의 정수 km 와 둘 이상 다르면 받지 않는다');
   perform pg_temp.ok(public.coaching_splits_put(v_at, array[100, 960]) = 'out_of_range', '사람이 낼 수 없는 구간은 받지 않는다');
   perform pg_temp.ok(public.coaching_splits_put(v_at, array[480, 970]) = 'mismatch', '서버 활성 시간을 넘는 랩은 받지 않는다');
   perform pg_temp.ok(public.coaching_splits_put(v_at, array[480, 470]) = 'mismatch', '거꾸로 가는 랩은 받지 않는다');

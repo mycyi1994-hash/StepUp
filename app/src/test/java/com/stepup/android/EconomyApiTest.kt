@@ -146,4 +146,83 @@ class EconomyApiTest {
             assertEquals(reason, expected, api(http).drawPremium().toEconomyOutcome())
         }
     }
+
+    // ── 수리는 견적에 보인 만큼만(p_points) ─────────────────────────────
+
+    @Test fun repairSendsTheQuotedPoints() = runBlocking {
+        val http = Http { HttpResponse(200, "100") }
+        val api = api(http)
+        assertEquals(ServerResult.Ok(100.0), api.repair(7, points = 30, request = "0057a000-0000-0000-0000-000000000001"))
+        assertEquals(ServerResult.Ok(100.0), api.repair(8))
+        val bodies = http.calls.filter { it.first.endsWith("/rpc/sneaker_repair") }.map { it.second }
+        assertEquals(
+            listOf("""{"p_id":7,"p_points":30,"p_request":"0057a000-0000-0000-0000-000000000001"}""", """{"p_id":8}"""),
+            bodies,
+        )
+    }
+
+    // ── 목표 보너스는 러닝을 시작한 날로(0068) ───────────────────────────
+
+    @Test fun goalClaimDaySendsTheDay() = runBlocking {
+        val http = Http { url -> if (url.endsWith("/rpc/goal_claim_day")) HttpResponse(200, "2.75") else HttpResponse(404, "{}") }
+        assertEquals(ServerResult.Ok(2.75), api(http).goalClaimDay(java.time.LocalDate.of(2026, 10, 18)))
+        assertEquals(listOf("""{"p_day":"2026-10-18"}"""), http.calls.filter { it.first.endsWith("/rpc/goal_claim_day") }.map { it.second })
+        assertTrue("새 함수가 있으면 오늘 보너스를 따로 부르지 않는다", http.calls.none { it.first.endsWith("/rpc/goal_claim") })
+    }
+
+    @Test fun goalClaimDayFallsBackToTodayOnAnOlderServer() = runBlocking {
+        // 서버에 아직 0068 이 없다 — PostgREST 는 404 PGRST202 로 답한다
+        val http = Http { url ->
+            when (url.substringAfterLast('/')) {
+                "goal_claim_day" -> HttpResponse(
+                    404,
+                    """{"code":"PGRST202","details":"Searched for the function public.goal_claim_day with parameter p_day",""" +
+                        """"hint":"Perhaps you meant to call the function public.goal_claim",""" +
+                        """"message":"Could not find the function public.goal_claim_day(p_day) in the schema cache"}""",
+                )
+                "goal_claim" -> HttpResponse(200, "2.5")
+                else -> HttpResponse(404, "{}")
+            }
+        }
+        assertEquals(ServerResult.Ok(2.5), api(http).goalClaimDay(java.time.LocalDate.of(2026, 10, 18)))
+        assertTrue(http.calls.any { it.first.endsWith("/rpc/goal_claim") && it.second == "{}" })
+    }
+
+    @Test fun goalClaimDayKeepsOtherRefusals() = runBlocking {
+        val http = Http { url ->
+            when (url.substringAfterLast('/')) {
+                "goal_claim_day" -> HttpResponse(400, """{"code":"23514","message":"아직 목표를 채우지 않았습니다"}""")
+                else -> HttpResponse(200, "2.5")
+            }
+        }
+        assertEquals(
+            ServerResult.Rejected("아직 목표를 채우지 않았습니다"),
+            api(http).goalClaimDay(java.time.LocalDate.of(2026, 10, 18)),
+        )
+        assertTrue("다른 거절은 오늘 보너스로 바꾸지 않는다", http.calls.none { it.first.endsWith("/rpc/goal_claim") })
+    }
+
+    @Test fun goalDaysAreTheKoreanStartDaysOldestFirst() {
+        val seoul = java.time.ZoneId.of("Asia/Seoul")
+        fun kst(at: String) = java.time.LocalDateTime.parse(at).atZone(seoul).toInstant().toEpochMilli()
+        val days = EconomyApi.goalDays(
+            listOf(
+                kst("2026-10-18T10:00"),
+                // 자정을 넘긴 러닝 — 시작한 날(10-17)의 목표에 든다
+                kst("2026-10-17T23:30"),
+                kst("2026-10-18T00:10"),
+                kst("2026-10-16T08:00"),
+            ),
+        )
+        assertEquals(
+            listOf(java.time.LocalDate.of(2026, 10, 16), java.time.LocalDate.of(2026, 10, 17), java.time.LocalDate.of(2026, 10, 18)),
+            days,
+        )
+        // 폰 시간대와 상관없이 한국 날짜로 — 2026-10-17T15:30Z 는 한국 10-18 00:30
+        assertEquals(
+            listOf(java.time.LocalDate.of(2026, 10, 18)),
+            EconomyApi.goalDays(listOf(java.time.Instant.parse("2026-10-17T15:30:00Z").toEpochMilli())),
+        )
+        assertTrue(EconomyApi.goalDays(emptyList()).isEmpty())
+    }
 }

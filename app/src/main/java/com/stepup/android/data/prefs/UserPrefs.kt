@@ -63,6 +63,8 @@ class UserPrefs(
         val RUN_ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("run_energy_receipts")
         val STREAK = intPreferencesKey("streak")
         val LAST_GOAL_MET_DAY = longPreferencesKey("last_goal_met_day")
+        /** 가장 길었던 연속 달성 일수 — 업적은 지금 이어진 값이 아니라 이 값으로 연다(2026-10-17 점검) */
+        val BEST_STREAK = intPreferencesKey("best_streak")
         val BASELINE_DAY = longPreferencesKey("baseline_day")
         val BASELINE_STEPS = longPreferencesKey("baseline_steps")
         /** 기준점을 잡을 때의 기기 부팅 횟수. 바뀌었으면 재부팅이다(-1 = 모름). */
@@ -920,6 +922,44 @@ class UserPrefs(
 
     val streak: Flow<Int> = store.data.map { it[Keys.STREAK] ?: 0 }
 
+    /** 저장된 연속 달성 일수와 마지막으로 목표를 채운 날(epochDay, 없으면 -1) — 화면은 StreakRules 로 끊겼는지 본다 */
+    val streakRecord: Flow<Pair<Int, Long>> = store.data.map { (it[Keys.STREAK] ?: 0) to (it[Keys.LAST_GOAL_MET_DAY] ?: -1L) }
+
+    /**
+     * 가장 길었던 연속 달성 일수. 이 값을 적기 전의 기록은 저장된 연속 값이 곧 지금까지 닿은 값이다 — 끊긴 뒤 다시 채워
+     * 1 로 돌아갈 때 [setGoalMet] 이 그 값을 여기 남긴다.
+     */
+    val bestStreak: Flow<Int> = store.data.map { maxOf(it[Keys.BEST_STREAK] ?: 0, it[Keys.STREAK] ?: 0) }
+
+    // ── 업적 최고값(2026-10-17 점검) — 계정마다 ─────────────────────────
+    //
+    // 업적은 지금 값으로만 열면 다시 잠긴다(스트릭이 끊김 · 크루를 나감 · 강화 재료로 신발을 태움 · 연결 없이 0 을 읽음).
+    // 카테고리마다 닿은 가장 큰 값을 남기고 업적 화면은 지금 값과 이 값 중 큰 쪽으로 연다.
+
+    private fun achievementBestKey(owner: String) = stringPreferencesKey("achievement_best:$owner")
+
+    /** [owner](기록 주인 — account:… · guest · legacy)가 카테고리마다 닿은 가장 큰 값(AchievementCategory.id → 값) */
+    fun achievementBest(owner: String): Flow<Map<String, Double>> =
+        store.data.map { com.stepup.android.domain.AchievementBook.decodeBest(it[achievementBestKey(owner)]) }
+
+    /** 더 큰 값만 적는다 — 읽기와 쓰기를 한 편집으로(겹쳐 적어도 작은 값이 큰 값을 덮지 않게) */
+    suspend fun raiseAchievementBest(owner: String, values: Map<String, Double>) {
+        if (values.isEmpty()) return
+        store.edit {
+            val now = com.stepup.android.domain.AchievementBook.decodeBest(it[achievementBestKey(owner)])
+            it[achievementBestKey(owner)] = com.stepup.android.domain.AchievementBook.encodeBest(
+                com.stepup.android.domain.AchievementBook.mergeBest(now, values),
+            )
+        }
+    }
+
+    /** 계정을 지웠을 때 — 이 폰에 남은 업적 최고값을 지운다 */
+    suspend fun clearAchievementBest() {
+        store.edit { prefs ->
+            prefs.asMap().keys.filter { it.name.startsWith("achievement_best:") }.forEach { key -> prefs.remove(key) }
+        }
+    }
+
     /**
      * 표시용 에너지. 저장된 날짜가 오늘이 아니면 아직 소모가 없는 것이므로
      * 최대치(= 자정 리필 후 값)로 보여준다. 실제 저장값 갱신은 [currentEnergy]가 담당.
@@ -1028,6 +1068,9 @@ class UserPrefs(
     /** 폰의 서버 경제 사본이 어느 계정 것인가 — 다른 계정으로 로그인하면 사본을 먼저 지운다 */
     suspend fun economyOwner(): String? = store.data.map { it[Keys.ECONOMY_OWNER] }.first()
 
+    /** [economyOwner] 를 따라 본다 — 업적이 원장 · 신발 사본을 지금 계정 것일 때만 최고값으로 적는다 */
+    val economyOwnerFlow: Flow<String?> = store.data.map { it[Keys.ECONOMY_OWNER] }
+
     suspend fun setEconomyOwner(userId: String?) {
         store.edit { if (userId == null) it.remove(Keys.ECONOMY_OWNER) else it[Keys.ECONOMY_OWNER] = userId }
     }
@@ -1128,6 +1171,8 @@ class UserPrefs(
 
     suspend fun setGoalMet(day: Long, newStreak: Int) {
         store.edit {
+            // 끊겨 1 로 돌아가기 전의 값까지 — 가장 길었던 연속은 줄지 않는다
+            it[Keys.BEST_STREAK] = maxOf(it[Keys.BEST_STREAK] ?: 0, it[Keys.STREAK] ?: 0, newStreak)
             it[Keys.LAST_GOAL_MET_DAY] = day
             it[Keys.STREAK] = newStreak
         }

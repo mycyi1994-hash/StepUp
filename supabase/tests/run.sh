@@ -149,9 +149,10 @@ echo "── AI 코칭 요청이 동시에 겹칠 때 ────────�
 COACH_U=59100000-0000-0000-0000-00000000000c
 run <<SQL
 insert into auth.users (id, email) values ('$COACH_U', 'coach-race@test') on conflict (id) do nothing;
-insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict) values
-  ('$COACH_U', timestamptz '2026-01-05 07:00+09', timestamptz '2026-01-05 07:30+09', 1458, 4252, 'CLEAN'),
-  ('$COACH_U', timestamptz '2026-01-07 07:00+09', timestamptz '2026-01-07 07:30+09', 1458, 4252, 'CLEAN');
+-- 코칭 거리는 러닝의 인정 거리(distance_meters, 0068) — 걸음 거리(4252 × 0.762m)로 넣는다
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict) values
+  ('$COACH_U', timestamptz '2026-01-05 07:00+09', timestamptz '2026-01-05 07:30+09', 1458, 4252, 3240.024, 'CLEAN'),
+  ('$COACH_U', timestamptz '2026-01-07 07:00+09', timestamptz '2026-01-07 07:30+09', 1458, 4252, 3240.024, 'CLEAN');
 insert into public.coaching_consents (user_id, version) values ('$COACH_U', 'draft-2026-10-16');
 insert into public.coaching_run_splits (session_id, user_id, laps)
   select id, user_id, array[432, 878, 1350] from public.walk_sessions where user_id = '$COACH_U';

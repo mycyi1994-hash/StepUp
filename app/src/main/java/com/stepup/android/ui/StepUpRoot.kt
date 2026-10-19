@@ -1038,6 +1038,7 @@ private fun MainScaffoldContent(
             }
             composable(Routes.RUN_MENU) {
                 val savedExperience by com.stepup.android.core.ServiceLocator.userPrefs.runExperience.collectAsState(initial = null)
+                val menuScope = rememberCoroutineScope()
                 // 새로 시작하는 러닝은 예전 챌린지 · 계획과 묶지 않는다
                 val startFresh = { plan: com.stepup.android.domain.RunPlan ->
                     com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
@@ -1047,8 +1048,20 @@ private fun MainScaffoldContent(
                 }
                 com.stepup.android.ui.screens.walk.RunStartMenuScreen(
                     onBack = { navController.popBackStack() },
-                    // 자유 러닝 — 이 메뉴 위에서 필요한 권한 안내(시안 13~19)를 마친 뒤에만 불린다
-                    onFreeRun = { startFresh(com.stepup.android.domain.RunPlan.Free) },
+                    // 자유 러닝 — 이 메뉴 위에서 필요한 권한 안내(시안 13~19)를 마친 뒤에만 불린다.
+                    // 코스 안내 없이 — 예전에 고른 코스가 남아 있으면 자유 러닝이 코스 러닝(코스 안내 · 이탈 알림 · 완주 글)으로
+                    // 바뀌었다(2026-10-17 점검). 코스로 달리려면 추천 코스 · 코스 허브에서 다시 고른다
+                    onFreeRun = {
+                        menuScope.launch {
+                            try {
+                                com.stepup.android.core.ServiceLocator.courseRepository.clearSelection()
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                            }
+                            startFresh(com.stepup.android.domain.RunPlan.Free)
+                        }
+                    },
                     onGoals = { navController.navigate(Routes.RUN_GOALS) },
                     onDiet = {
                         // 러닝 경험을 이미 골랐으면 러닝 방법으로 바로, 아니면 입력부터
@@ -1096,12 +1109,21 @@ private fun MainScaffoldContent(
                     onEnterLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) { launchSingleTop = true } },
                     onFindCrew = { navController.switchTab(Screen.Community) },
                     onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
+                    // 자유 러닝으로 시작 — 추천 코스의 "자유 러닝으로 시작"처럼 고른 코스를 풀고 시작한다(코스 러닝으로 바뀌지 않게)
                     onFreeRun = {
-                        com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
-                        com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
-                        navController.navigate(Routes.RUN_NOW) {
-                            popUpTo(Routes.RUN_CREW) { inclusive = true }
-                            launchSingleTop = true
+                        crewScope.launch {
+                            try {
+                                com.stepup.android.core.ServiceLocator.courseRepository.clearSelection()
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                            }
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                            navController.navigate(Routes.RUN_NOW) {
+                                popUpTo(Routes.RUN_CREW) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     },
                     onSignIn = {

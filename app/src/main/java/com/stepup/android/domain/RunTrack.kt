@@ -78,16 +78,18 @@ const val LIVE_HEAD_STALE_MS = 20_000L
  * 구글 위치 서비스의 위치는 기준점에서 오차보다 크게 움직여야 경로 점이 된다([TrackFixRule]) — 그동안 내 점이 경로 끝에
  * 멈춰 있지 않고 받은 위치마다 따라간다(구글 지도처럼). 경로가 없거나 · 지금 자리를 모르면 null — 경로 끝에 둔다.
  * 경로 끝에서 [LIVE_HEAD_MAX_M] 보다 먼 위치는 튄 위치일 수 있어 경로 끝에 두되, 경로 끝이 [LIVE_HEAD_STALE_MS] 넘게 늘지 않은
- * 뒤에 받은 위치면 옮긴다 — 흐린 위치만 오는 동안(인터넷이 끊겼다 돌아온 뒤 등) 내 점이 옛 경로 끝에 묶여 "아무리 움직여도
- * 그 자리"이던 것(2026-10-17).
+ * 뒤에 받은 정확한 위치면 옮긴다 — 경로 점이 드문 동안(인터넷이 끊겼다 돌아온 뒤 등) 내 점이 옛 경로 끝에 묶여 "아무리 움직여도
+ * 그 자리"이던 것(2026-10-17). 흐린 위치(오차 50m 초과, [hereAccurate] false)로는 멀리 옮기지 않는다 — 기지국 위치는 수백 m
+ * 틀려, 지도가 엉뚱한 곳으로 뛰었다(그동안은 "신호 약함"이 알린다).
  *
  * @param hereAt [here] 를 받은 시각(폰 시계 ms) — [TrackPoint.at] 과 같은 시계
+ * @param hereAccurate [here] 가 오차 50m 안의 위치인가
  */
-fun liveHead(track: List<TrackPoint>, here: GeoPoint?, hereAt: Long): GeoPoint? {
+fun liveHead(track: List<TrackPoint>, here: GeoPoint?, hereAt: Long, hereAccurate: Boolean = true): GeoPoint? {
     val last = track.lastOrNull() ?: return null
     val at = here ?: return null
     if (haversineMeters(last.toGeoPoint(), at) <= LIVE_HEAD_MAX_M) return at
-    return at.takeIf { hereAt - last.at >= LIVE_HEAD_STALE_MS }
+    return at.takeIf { hereAccurate && hereAt - last.at >= LIVE_HEAD_STALE_MS }
 }
 
 /**
@@ -95,8 +97,11 @@ fun liveHead(track: List<TrackPoint>, here: GeoPoint?, hereAt: Long): GeoPoint? 
  *
  * 저장된 경로에는 끊김 표시가 없다. 앞 점에서 [gapMs] 넘게 지나 [jumpMeters] 넘게 떨어진 점은 신호가 끊긴 사이에
  * 움직인 것이다 — 그 사이를 직선으로 이으면 달리지 않은 길이 그려진다. 제자리에 섰다 다시 출발한 점(가까운 점)은 잇는다.
+ *
+ * [gapMs] 는 서버가 거리를 재지 않는 빈 구간(economy.track_gap_sec, 60초)과 같다. 예전 30초는 구글 위치 서비스로 천천히 걸을 때의
+ * 보통 점 간격(오차 15m 넘으면 30초 남짓)까지 끊김으로 그려, 걸은 길의 선이 대부분 사라졌다(2026-10-17 점검).
  */
-fun segmentBreaks(points: List<TrackPoint>, gapMs: Long = 30_000L, jumpMeters: Double = 30.0): Set<Int> {
+fun segmentBreaks(points: List<TrackPoint>, gapMs: Long = 60_000L, jumpMeters: Double = 30.0): Set<Int> {
     if (points.size < 2) return emptySet()
     val breaks = mutableSetOf<Int>()
     for (i in 1 until points.size) {

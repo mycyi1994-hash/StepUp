@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 메카닉 점검(2026-10-17~19) -->
+<resources>
+    <string name="run_goal_time">目标时间</string>
+    <string name="run_free_check_low_durability_none">耐久度已耗尽，本次跑步没有奖励。修理后即可获得奖励</string>
+    <string name="run_free_check_low_durability_minutes">剩余耐久度只能获得约 %d 分钟的奖励。修理后可获得更久</string>
+</resources>

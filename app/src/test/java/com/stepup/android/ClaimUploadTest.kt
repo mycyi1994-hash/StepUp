@@ -19,6 +19,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -127,12 +128,20 @@ class ClaimUploadTest {
 
     private class FakeRecorder(
         override val isConfigured: Boolean = true,
+        /** 뒤 일(크루 표시 · 코스 기록)의 답 — 기본은 바로 끝난다 */
+        var followUpAnswer: (WalkSessionEntity) -> ServerResult<Unit> = { ServerResult.Ok(Unit) },
         private val answer: (WalkSessionEntity) -> ServerResult<SessionRecorded>,
     ) : SessionRecorder {
         val seen = mutableListOf<WalkSessionEntity>()
+        val followed = mutableListOf<WalkSessionEntity>()
         override suspend fun record(session: WalkSessionEntity): ServerResult<SessionRecorded> {
             seen += session
             return answer(session)
+        }
+
+        override suspend fun followUp(session: WalkSessionEntity): ServerResult<Unit> {
+            followed += session
+            return followUpAnswer(session)
         }
     }
 
@@ -347,5 +356,77 @@ class ClaimUploadTest {
 
         assertEquals(1, run.signed)
         assertEquals(UploadState.SIGNED.name, dao.rows.getValue(1L).uploadState)
+    }
+
+    // ── 뒤 일(크루 표시 · 코스 기록)은 확인과 따로(2026-10-17 점검) ─────────────
+    //
+    // 예전엔 기록이 끝난 뒤 크루 표시 · 코스 기록이 끊기면 러닝이 FAILED 로 남았다. 서버는 이미 기록 · 지급했는데 결과는
+    // "정산 대기"였고, 일꾼의 기다림이 몇 시간까지 늘어 뒤에 끝낸 러닝까지 늦게 올라갔다.
+
+    @Test
+    fun `뒤 일이 끊겨도 서버가 기록한 러닝은 바로 확인으로 적는다`() = runBlocking {
+        val dao = FakeDao(listOf(session(1)))
+        val recorder = FakeRecorder(followUpAnswer = { ServerResult.Retry("통신 실패") }) { okAnswer(it) }
+        val run = repo(dao, recorder).uploadPending()
+
+        assertEquals(1, run.signed)
+        assertEquals(0, run.failed)
+        assertFalse("뒤 일 때문에 일꾼을 다시 깨우지 않는다", run.shouldRetry)
+        val row = dao.rows.getValue(1L)
+        assertEquals(UploadState.SIGNED.name, row.uploadState)
+        assertEquals("24.64", row.claimAmount)
+        assertEquals("다시 낼 표시가 남는다", ClaimRepository.FOLLOW_UP_PENDING, row.uploadError)
+        assertEquals("이번 차례에는 한 번만 낸다", 1, recorder.followed.size)
+    }
+
+    @Test
+    fun `남은 뒤 일은 다음 차례에 따로 내고 러닝은 다시 올리지 않는다`() = runBlocking {
+        val dao = FakeDao(listOf(session(1)))
+        val recorder = FakeRecorder(followUpAnswer = { ServerResult.Retry("통신 실패") }) { okAnswer(it) }
+        val repo = repo(dao, recorder)
+        repo.uploadPending()
+
+        recorder.followUpAnswer = { ServerResult.Ok(Unit) }
+        val second = repo.uploadPending()
+
+        assertEquals("확인받은 러닝은 다시 올리지 않는다", 1, recorder.seen.size)
+        assertEquals(0, second.signed)
+        assertEquals(2, recorder.followed.size)
+        assertEquals(UploadState.SIGNED.name, dao.rows.getValue(1L).uploadState)
+        assertEquals("", dao.rows.getValue(1L).uploadError)
+
+        // 끝난 뒤 일은 다시 내지 않는다
+        repo.uploadPending()
+        assertEquals(2, recorder.followed.size)
+    }
+
+    @Test
+    fun `앱을 다시 켜도 남은 뒤 일을 다시 낸다`() = runBlocking {
+        val dao = FakeDao(listOf(session(1)))
+        repo(dao, FakeRecorder(followUpAnswer = { ServerResult.Retry("통신 실패") }) { okAnswer(it) }).uploadPending()
+
+        // 새 프로세스의 저장소 — 표시는 그 러닝의 줄에 남아 있다
+        val recorder = FakeRecorder { okAnswer(it) }
+        repo(dao, recorder).uploadPending()
+
+        assertTrue(recorder.seen.isEmpty())
+        assertEquals(listOf(1L), recorder.followed.map { it.id })
+        assertEquals("", dao.rows.getValue(1L).uploadError)
+    }
+
+    @Test
+    fun `확인받은 러닝은 뒤 일을 다시 내도 한 번만 알린다`() = runBlocking {
+        val dao = FakeDao(listOf(session(1), session(2, startedAt = 1_700_000_100_000L)))
+        val recorder = FakeRecorder(followUpAnswer = { ServerResult.Retry("통신 실패") }) { okAnswer(it) }
+        val announced = mutableListOf<Long>()
+        val repo = ClaimRepository(dao, recorder, now = { 42L }, onSigned = { announced += it })
+
+        repo.uploadPending()
+        recorder.followUpAnswer = { ServerResult.Ok(Unit) }
+        repo.uploadPending()
+        repo.uploadPending()
+
+        assertEquals(listOf(1_700_000_000_000L, 1_700_000_100_000L), announced.sorted())
+        assertTrue(dao.rows.values.all { it.uploadState == UploadState.SIGNED.name && it.uploadError == "" })
     }
 }

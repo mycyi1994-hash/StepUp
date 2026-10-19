@@ -94,10 +94,10 @@ class WalkViewModel(
     fun saveRecordedCourse(name: String, area: String, shared: Boolean) {
         val track = WalkSessionService.lastTrack.value
         viewModelScope.launch {
-            val id = courseRepository.saveRecorded(name, area, track, shared)
-            // 방금 만든 코스를 바로 고른 상태로 둔다 — 만들었으면 다음엔 그걸
-            // 뛰려는 것이다.
-            if (id != null) courseRepository.select(id)
+            // 저장만 한다 — 고르지 않는다. 예전엔 방금 만든 코스를 골라 두어, 그 뒤의 모든 자유 러닝이 코스 러닝(코스 안내 ·
+            // 이탈 알림 · "한 바퀴" 결과)으로 바뀌었고 이 러닝의 결과도 완주처럼 보였다(2026-10-17 점검). 달리려면 코스 허브의
+            // 내 코스에서 고른다
+            courseRepository.saveRecorded(name, area, track, shared)
             WalkSessionService.clearLastTrack()
         }
     }

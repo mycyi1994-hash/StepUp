@@ -11,6 +11,8 @@
          넣어 두면 Play 스토어에 광고 ID 사용을 신고해야 한다. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 러닝을 기록하는 동안 화면이 꺼져도 1초 타이머 · 위치 감시가 멈추지 않게(WalkSessionService) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
     <!-- 실제 지도 타일(OpenStreetMap)을 받아 러닝 경로를 도로 위에 그린다 -->
     <uses-permission android:name="android.permission.INTERNET" />

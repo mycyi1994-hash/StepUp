@@ -80,8 +80,17 @@ class SneakerRepository(
         val api = economy ?: return EconomyOutcome.SignInRequired
         val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
         if (local.origin.isBlank()) return EconomyOutcome.SignInRequired
+        // 견적에 보인 만큼만 고친다(최대 − 남은 내구도, 서버 p_points) — 견적과 실행 사이에 러닝이 올라가 더 닳았어도 보인 값보다
+        // 많이 치르지 않는다. 최대 내구도를 보내지 않는 예전 서버(0)는 예전처럼 가득(null)
+        val points = if (local.durabilityMax > 0) {
+            local.durabilityMax - local.durabilityNow.coerceIn(0, local.durabilityMax)
+        } else {
+            null
+        }
         return afterWrite(
-            payOnce(repairAction(local)) { key -> api.repair(local.serverId.takeIf { it != 0L } ?: id, key).toEconomyOutcome() },
+            payOnce(repairAction(local)) { key ->
+                api.repair(local.serverId.takeIf { it != 0L } ?: id, points = points, request = key).toEconomyOutcome()
+            },
         )
     }
 

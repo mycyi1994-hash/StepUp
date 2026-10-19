@@ -137,12 +137,14 @@ internal fun freeSpeedKmh(
     track: List<TrackPoint>,
     now: Long,
     flaggedAt: Long,
+    /** 마지막으로 걸음이 는 때 — 경로 점이 드문 동안에도 걷고 있으면 속도를 0 으로 떨어뜨리지 않는다 */
+    movingAt: Long = 0L,
 ): Double? = when {
     void -> null
     !locationAllowed || !locationOn -> null
     paused -> 0.0
     gpsLost -> null
-    else -> currentSpeedKmh(track, now, flaggedAt)
+    else -> currentSpeedKmh(track, now, flaggedAt, movingAt)
 }
 
 /** 이보다 느리면(서 있거나 거의 멈춤) 페이스를 적지 않는다 — 60분/km 를 넘는 페이스는 뜻이 없다 */

@@ -25,8 +25,15 @@ class RunSettlementRepository(
         reconcileEnergy()
         val receipt = db.withTransaction {
             db.runSettlementDao().find(session.recordingOwner, session.startedAt)?.let { return@withTransaction it }
-            // 서버 경제의 에너지 하루는 한국 시각이다 — 폰 날짜를 쓰면 해외에서 에너지가 가득 찬 것처럼 보인다
-            val energyDay = (if (serverEconomy) LocalDate.now(java.time.ZoneId.of("Asia/Seoul")) else LocalDate.now()).toEpochDay()
+            // 서버 경제의 에너지 하루는 한국 시각이다 — 폰 날짜를 쓰면 해외에서 에너지가 가득 찬 것처럼 보인다. 서버처럼 러닝을
+            // 시작한 날로 센다 — 자정을 넘긴 러닝이 다음 날 에너지(가득)로 "+N 예상"을 보이고 서버는 0 을 치렀다(2026-10-17 점검)
+            val energyDay = (
+                if (serverEconomy) {
+                    java.time.Instant.ofEpochMilli(session.startedAt).atZone(java.time.ZoneId.of("Asia/Seoul")).toLocalDate()
+                } else {
+                    LocalDate.now()
+                }
+                ).toEpochDay()
             val reward = calculate(energyDay)
             require(reward.rewardedSteps in 0..session.steps && reward.points.isFinite() && reward.points >= 0 &&
                 reward.energyUsed.isFinite() && reward.energyUsed >= 0)

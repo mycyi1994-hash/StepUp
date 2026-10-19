@@ -64,15 +64,20 @@ class RecordingOwnershipTest {
         val recorder = ServerSessionRecorder(server(holder, http))
         for (owner in listOf(RecordingOwner.GUEST, RecordingOwner.LEGACY, "account:")) {
             assertTrue(recorder.record(run(owner)) is ServerResult.SignInRequired)
+            assertTrue(recorder.followUp(run(owner, "crew-A")) is ServerResult.SignInRequired)
         }
         assertTrue(http.requests.isEmpty())
     }
 
+    // 기록(record_session)이 끝나면 그 러닝은 확인된 것이다 — 크루 표시 · 코스 기록(뒤 일)은 followUp 이 따로 낸다(2026-10-17 점검)
+
     @Test fun accountSwitchAfterRecordCannotRetagACrewWithTheReplacementToken() = runBlocking {
         val store = Store(login("A")); val http = Http(); val server = server(holder(store, http), http)
         http.onRecord = { store.value = login("B") }
-        val result = ServerSessionRecorder(server).record(run("account:A", "crew-A"))
-        assertTrue(result is ServerResult.SignInRequired)
+        val recorder = ServerSessionRecorder(server)
+        val session = run("account:A", "crew-A")
+        assertTrue(recorder.record(session) is ServerResult.Ok)
+        assertTrue(recorder.followUp(session) is ServerResult.SignInRequired)
         assertEquals(listOf("record_session" to "Bearer token-A"), http.requests)
     }
 
@@ -81,12 +86,16 @@ class RecordingOwnershipTest {
         var acknowledged = false
         http.onRecord = { store.value = login("B") }
         val recorder = ServerSessionRecorder(server, CourseApi(server), { "course" }, { acknowledged = true })
-        assertTrue(recorder.record(run("account:A")) is ServerResult.SignInRequired)
+        val session = run("account:A")
+        assertTrue(recorder.record(session) is ServerResult.Ok)
+        assertTrue(recorder.followUp(session) is ServerResult.SignInRequired)
         assertFalse(acknowledged)
         assertEquals(1, http.requests.size)
         store.save(login("A")); http.onRecord = {}
-        assertTrue(recorder.record(run("account:A")) is ServerResult.Ok)
+        // 러닝은 다시 보내지 않고 뒤 일만 다시 낸다
+        assertTrue(recorder.followUp(session) is ServerResult.Ok)
         assertTrue(acknowledged)
+        assertEquals(listOf("record_session", "course_run_submit"), http.requests.map { it.first })
         assertTrue(http.requests.all { it.second == "Bearer token-A" })
     }
 
@@ -94,18 +103,23 @@ class RecordingOwnershipTest {
         val store = Store(login("A")); val http = Http(); val server = server(holder(store, http), http)
         var acknowledgements = 0
         val recorder = ServerSessionRecorder(server, CourseApi(server), { "course" }, { acknowledgements++ })
+        val session = run("account:A")
         http.courseResponse = HttpResponse(0, "offline")
-        assertTrue(recorder.record(run("account:A")) is ServerResult.Retry)
+        assertTrue(recorder.record(session) is ServerResult.Ok)
+        assertTrue(recorder.followUp(session) is ServerResult.Retry)
         assertEquals(0, acknowledgements)
         http.courseResponse = HttpResponse(200, "[]")
-        assertTrue(recorder.record(run("account:A")) is ServerResult.Ok)
+        assertTrue(recorder.followUp(session) is ServerResult.Ok)
         assertEquals(1, acknowledgements)
     }
 
     @Test fun matchingAccountUsesItsTokenForEveryWrite() = runBlocking {
         val store = Store(login("A")); val http = Http(); val server = server(holder(store, http), http)
         val recorder = ServerSessionRecorder(server, CourseApi(server), { "course" })
-        assertTrue(recorder.record(run("account:A", "crew-A")) is ServerResult.Ok)
+        val session = run("account:A", "crew-A")
+        assertTrue(recorder.record(session) is ServerResult.Ok)
+        assertEquals(listOf("record_session"), http.requests.map { it.first })
+        assertTrue(recorder.followUp(session) is ServerResult.Ok)
         assertEquals(listOf("record_session", "session_tag_crew", "course_run_submit"), http.requests.map { it.first })
         assertTrue(http.requests.all { it.second == "Bearer token-A" })
     }

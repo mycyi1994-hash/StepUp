@@ -203,6 +203,14 @@ fun RunScreen(
     val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    // 잠금 화면(홀드 화면)에서도 러닝 화면 — 지도 · 경로 · 거리 · 시간 · 일시정지(2026-10-19 사용자 "홀드 화면일 때 우리 트랙 나오고
+    // 그런 거 안 되는데?"). 달리는 동안 이 화면에 있을 때만 — 다른 화면으로 가면 잠금 화면이 다시 덮어 지갑 · 설정이 잠금 해제 없이
+    // 열리지 않는다
+    androidx.compose.runtime.DisposableEffect(context, session.isActive) {
+        val activity = context.runActivity()
+        activity?.showOverLockScreen(session.isActive)
+        onDispose { activity?.showOverLockScreen(false) }
+    }
     // 종료는 한 번 더 묻는다 — 뛰다가 손이 스쳐 러닝이 끝나면 되돌릴 수 없다
     var confirmStop by rememberSaveable { mutableStateOf(false) }
     val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f
@@ -235,8 +243,15 @@ fun RunScreen(
     val earningMultiplier = equipped?.earningMultiplier
         ?: RewardEconomy.sneakerMultiplier(sneakerLevel)
     val energyEfficiency = equipped?.energyEfficiency ?: 1.0
+    // 신발이 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 · 0068) — 달리는 중 예상도 같은 규칙으로(정산은 RewardRepository)
+    val estimateSteps = equipped?.server?.takeIf { it.hasDurabilityMax }?.let {
+        RewardEconomy.stepsWithinDurability(
+            session.steps, it.durabilityNow,
+            RewardEconomy.wearSeconds(session.elapsedSec, com.stepup.android.domain.RunDistance.creditedMeters(session.gpsKm, session.steps)),
+        )
+    } ?: session.steps
     val estimate = RewardEconomy.sessionReward(
-        walkedSteps = session.steps,
+        walkedSteps = estimateSteps,
         energyRemaining = energy,
         earningMultiplier = earningMultiplier,
         energyEfficiency = energyEfficiency,
@@ -245,7 +260,9 @@ fun RunScreen(
     )
     val earnableSteps = RewardEconomy.earnableSteps(energy, energyEfficiency)
     val maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: sneakerLevel)
-    val distanceKm = RewardEconomy.distanceMeters(session.steps) / 1000
+    // 이 러닝의 거리 — 화면 · 결과 · 기록 · 서버와 같은 기준(RunDistance: 경로 100m 부터 GPS, 그 전엔 걸음). 나이트 러너 도전 띠의 이번
+    // 러닝 몫도 이것이다(서버가 친 거리로 센다) — 예전엔 걸음 거리라 바깥에서 띠와 서버 진행이 달랐다(2026-10-19 점검)
+    val distanceKm = com.stepup.android.domain.RunDistance.liveKm(session.gpsKm, session.steps)
     val calories = RewardEconomy.calories(session.steps)
     val running = session.isActive && !session.isPaused
 
@@ -283,8 +300,9 @@ fun RunScreen(
         else -> planNow
     }
     val goal = (plan as? RunPlan.Goal)?.goal
-    // 목표 거리는 결과(finishKm)와 같은 기준 — GPS 가 있으면 GPS 거리, 없으면 걸음 거리
-    val goalKmNow = if (session.gpsKm > 0.0) session.gpsKm else distanceKm
+    // 목표 거리는 결과(finishKm) · 기록과 같은 기준 — 경로가 100m 넘으면 GPS 거리, 그 전엔 걸음 거리(RunDistance). 예전엔 GPS 가
+    // 조금이라도 잡히면 바로 GPS 거리로 바뀌어, 러닝머신에서 걸음 2.50km 가 와이파이 떨림 0.04km 로 거꾸로 갔다(2026-10-17 점검)
+    val goalKmNow = com.stepup.android.domain.RunDistance.liveKm(session.gpsKm, session.steps)
     val goalReached = goal != null && goal.reached(session.elapsedSec, goalKmNow)
     // 다이어트 모드(시안 D07~D13) — 구간은 운동 시간에서 계산한다
     val diet = (plan as? RunPlan.Diet)?.let { DietRoutine.forExperience(it.experience) }
@@ -512,8 +530,9 @@ fun RunScreen(
     }
     // 코스에서 벗어났는가(K05) — 지금 자리가 코스 선에서 60m 넘게 15초 넘게 떨어지면 한 번 알린다(기록은 그대로 이어진다)
     // 코스 선까지 거리는 자리가 바뀔 때만 잰다(갱신마다 코스 전체를 돌지 않게)
-    val offCourseMeters = remember(session.here, coursePoints) {
-        session.here?.let { com.stepup.android.domain.distanceToPathMeters(it, coursePoints) }
+    // 흐린 위치(오차 50m 초과 — 터널 · 기지국)로는 코스 이탈을 보지 않는다 — 수백 m 틀린 자리로 "코스 이탈"이 떴다(2026-10-17 점검)
+    val offCourseMeters = remember(session.here, session.hereAccurate, coursePoints) {
+        session.here?.takeIf { session.hereAccurate }?.let { com.stepup.android.domain.distanceToPathMeters(it, coursePoints) }
     }
     val offCourse = courseRun && running && session.gpsFix && offCourseMeters != null && offCourseMeters > OFF_COURSE_METERS
     var offSince by remember { mutableLongStateOf(0L) }
@@ -546,9 +565,11 @@ fun RunScreen(
     val distanceCaption = if (timeOnly) stringResource(R.string.run_needs_location) else null
     val gpsBadge = when {
         !locationAllowed -> GpsBadge.None
-        !session.locationOn && !session.gpsFix -> GpsBadge.Off
+        // 위치 기능을 끄면 한 번 잡혔던 러닝이라도 "꺼짐" — 예전엔 "GPS 연결됨"이 그대로 남았다(2026-10-17 점검)
+        !session.locationOn -> GpsBadge.Off
         session.gpsLost -> GpsBadge.Weak
-        session.gpsFix && !session.precise -> GpsBadge.Approx
+        // 대략적인 위치만 허용했으면 흐린 위치만 와 "잡힌" 적이 없어도 알린다
+        !session.precise -> GpsBadge.Approx
         session.gpsFix -> GpsBadge.Connected
         // 위치를 찾는 동안은 아무것도 적지 않는다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고")
         else -> GpsBadge.None
@@ -561,14 +582,24 @@ fun RunScreen(
     val freeVoid = session.isActive && session.liveVerdict == RunVerdict.VOID
     val freeSpeed = freeSpeedKmh(
         paused = session.isPaused, locationAllowed = locationAllowed, locationOn = session.locationOn, gpsLost = session.gpsLost,
-        void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt,
+        void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt, movingAt = session.movingAt,
     )
     val freeDist = freeDistance(timeOnly, session.gpsKm)
-    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸. 달리는 동안은 이번 러닝으로 닳을 만큼(1분마다 5, 서버 0064)을 미리 뺀다 —
-    // 끝난 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게)
+    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸 · 결과. 달리는 동안은 이번 러닝으로 닳을 만큼(움직인 1분마다 5, 서버 0064 · 0065)을
+    // 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하기 전까지는 미리 뺀 값을 보인다 — 예전엔 결과에서 러닝 전 값(100%)으로 되돌아가
+    // "안 닳는다"로 보였다(2026-10-17 점검). 확인된 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게). 걸음이 없는 러닝은
+    // 서버에 올리지 않으므로(닳지 않는다) 빼지 않는다
     val freeDurability = equipped?.let {
-        if (session.isActive && !freeVoid) com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.elapsedSec)
-        else com.stepup.android.ui.screens.items.durabilityPercent(it)
+        when {
+            session.isActive && !freeVoid && session.steps > 0 -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(
+                it, session.elapsedSec, com.stepup.android.domain.RunDistance.creditedMeters(session.gpsKm, session.steps),
+            )
+            !session.isActive && session.lastSessionSteps > 0 && session.lastVerdict != RunVerdict.VOID &&
+                lastUpload != UploadState.SIGNED.name -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(
+                it, session.lastElapsedSec, com.stepup.android.domain.RunDistance.creditedMeters(session.lastGpsKm, session.lastSessionSteps),
+            )
+            else -> com.stepup.android.ui.screens.items.durabilityPercent(it)
+        }
     }
     val freeBandNow = freeBand(
         active = session.isActive, paused = session.isPaused, asking = confirmStop || discardDialog,
@@ -611,8 +642,8 @@ fun RunScreen(
     val hereOnly = remember(session.here) { listOfNotNull(session.here) }
     // 지도의 내 점 · 화살표 자리 — 경로 점(오차보다 크게 움직여야 생긴다)을 기다리지 않고 받은 위치마다 따라간다
     // (2026-10-16 "인식도 잘 안 되고 느려"). 경로 선은 거리로 센 점까지만 긋는다
-    val liveHead = remember(session.track, session.here, session.hereAt) {
-        com.stepup.android.domain.liveHead(session.track, session.here, session.hereAt)
+    val liveHead = remember(session.track, session.here, session.hereAt, session.hereAccurate) {
+        com.stepup.android.domain.liveHead(session.track, session.here, session.hereAt, session.hereAccurate)
     }
     val breaks = remember(session.track) { com.stepup.android.domain.segmentBreaks(session.track) }
     // 달리는 중 지도의 두 손가락 확대 · 축소(1 = 기본, 기본은 30% 가까이 — MapTiles.FOLLOW_MAGNIFY). 러닝마다 처음부터.
@@ -953,7 +984,7 @@ fun RunScreen(
                             FailureBanner(stringResource(R.string.run_delete_failed), why, "run-delete-failed")
                         }
                         if (flashRun) CrewResultCard(session.lastGroupSize.takeIf { it > 1 })
-                        equipped?.let { ResultShoeCard(it) }
+                        equipped?.let { ResultShoeCard(it, freeDurability ?: com.stepup.android.ui.screens.items.durabilityPercent(it)) }
                         ResultRewardCard(reward, onReason = { voidReason = true }, onHistory = onOpenWallet)
                     },
                     extra = {
@@ -1146,9 +1177,9 @@ fun RunScreen(
                                 body = stringResource(if (session.isActive) R.string.course_rec_running else R.string.course_rec_ready),
                                 action = stringResource(R.string.common_cancel), onAction = viewModel::cancelRecording, tag = "run-course-recording")
                         }
-                        if (session.isActive && locationAllowed && (!session.gpsFix || !session.precise)) {
+                        if (session.isActive && locationAllowed && (!session.gpsFix || !session.precise || !session.locationOn)) {
                             when {
-                                !session.locationOn && !session.gpsFix -> RunNotice(
+                                !session.locationOn -> RunNotice(
                                     stringResource(R.string.run_location_off_hint), kind = RunNoticeKind.Warn,
                                     action = stringResource(R.string.run_location_off_action),
                                     onAction = { ExternalIntents.openLocationSettings(context) }, tag = "run-location-off",
@@ -1180,7 +1211,9 @@ fun RunScreen(
                         val focus = challenge?.takeIf { com.stepup.android.ui.screens.events.ChallengeRunFocus.matches(session.startedAt) }
                         if (focus != null && session.isActive) {
                             com.stepup.android.ui.components.RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
-                                ChallengeRunStrip(focus, focus.expected(session.steps, distanceKm, session.startedAt))
+                                // 나이트 러너는 서버가 경로가 받쳐 준 러닝(경로 100m 이상)의 거리만 센다 — 그 전엔 이번 러닝 몫이 없다
+                                val nightKm = if (session.gpsKm * 1000 >= com.stepup.android.domain.RunDistance.GPS_MIN_M) distanceKm else 0.0
+                                ChallengeRunStrip(focus, focus.expected(session.steps, nightKm, session.startedAt))
                             }
                         }
                     },
@@ -1290,16 +1323,22 @@ fun RunScreen(
     // E03 — 러닝 상세 정보: 시간 · 거리 · 목표와 달성률(수정) · 예상 SUP(확인 중) · 선택한 코스 · 현재 속도 · 내구도
     if (showDetails) {
         val now = remember(session.elapsedSec, session.track.size, session.lastFlaggedAt) { System.currentTimeMillis() }
-        val speedKmh = if (running && !session.gpsLost) currentSpeedKmh(session.track, now, session.lastFlaggedAt) else null
+        val speedKmh = if (running && !session.gpsLost) currentSpeedKmh(session.track, now, session.lastFlaggedAt, session.movingAt) else null
+        // 목표 칸은 이 러닝의 목표 — 챌린지(1km · 3km · 10분) · 코스 거리. 예전엔 늘 하루 목표(기본 5km)라 1km 챌린지에서
+        // 본 화면은 "0.50 / 1km · 50%", 여기는 "5.0km · 10%"였다(2026-10-17 점검)
+        val courseGoalKm = course?.distanceKm?.takeIf { courseRun && it > 0 }
+        val detailsGoalKm = goal?.km ?: courseGoalKm ?: goalKm
         com.stepup.android.ui.components.RunSheet(onDismiss = { showDetails = false }) {
             RunDetailsContent(
                 ui = RunDetailsUi(
                     time = formatDuration(session.elapsedSec),
                     // 자유 러닝은 GPS 거리만(걸음으로 셈한 거리를 쓰지 않는다)
                     km = if (freeRunNow) (freeDist as? FreeDistance.Km)?.let { "%.2f".format(it.km) } ?: "—" else liveKmText,
-                    goalKm = goalKm,
-                    goalFraction = if (goalKm > 0) {
-                        ((if (freeRunNow) (freeDist as? FreeDistance.Km)?.km ?: 0.0 else liveKm) / goalKm).toFloat().coerceIn(0f, 1f)
+                    goalKm = detailsGoalKm,
+                    goalSeconds = goal?.seconds,
+                    goalEditable = goal == null && courseGoalKm == null,
+                    goalFraction = goal?.fraction(session.elapsedSec, goalKmNow) ?: if (detailsGoalKm > 0) {
+                        ((if (freeRunNow) (freeDist as? FreeDistance.Km)?.km ?: 0.0 else liveKm) / detailsGoalKm).toFloat().coerceIn(0f, 1f)
                     } else 0f,
                     // 자유 러닝에는 보상 칸을 두지 않는다(2026-10-14 v2)
                     estimate = if (freeRunNow) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
@@ -2374,8 +2413,32 @@ private fun RunTimeRing(
 private fun finishConfirmed(session: WalkSessionState, points: Double?, upload: String?): Boolean =
     session.lastVerdict != RunVerdict.VOID && upload == UploadState.SIGNED.name && points != null && points > 0.0
 
+private fun android.content.Context.runActivity(): android.app.Activity? {
+    var current: android.content.Context? = this
+    while (current is android.content.ContextWrapper) {
+        if (current is android.app.Activity) return current
+        current = current.baseContext
+    }
+    return null
+}
+
+/** 잠금 화면 위에 이 화면을 보일지 — 켜면 전원 버튼으로 화면을 켰을 때 잠금을 풀지 않아도 러닝 화면이 보인다 */
+private fun android.app.Activity.showOverLockScreen(show: Boolean) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+        setShowWhenLocked(show)
+    } else {
+        @Suppress("DEPRECATION")
+        if (show) {
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+        } else {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+        }
+    }
+}
+
+/** 결과의 거리 — 달리는 중 · 기록과 같은 기준(경로가 100m 넘으면 GPS 거리, 그 전엔 걸음 거리, RunDistance) */
 private fun finishKm(session: WalkSessionState): Double =
-    if (session.lastGpsKm > 0.0) session.lastGpsKm else RewardEconomy.distanceMeters(session.lastSessionSteps) / 1000
+    com.stepup.android.domain.RunDistance.liveKm(session.lastGpsKm, session.lastSessionSteps)
 
 private fun finishPace(session: WalkSessionState): Long? {
     val km = finishKm(session)
