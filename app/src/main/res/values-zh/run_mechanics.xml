@@ -4,4 +4,8 @@
     <string name="run_goal_time">目标时间</string>
     <string name="run_free_check_low_durability_none">耐久度已耗尽，本次跑步没有奖励。修理后即可获得奖励</string>
     <string name="run_free_check_low_durability_minutes">剩余耐久度只能获得约 %d 分钟的奖励。修理后可获得更久</string>
+    <string name="run_shoe_worn_band">鞋子耐久度已用完 · 之后的步数没有奖励</string>
+    <string name="run_shoe_worn_body">修理后可再次获得奖励。记录会继续</string>
+    <string name="run_shoe_worn_result">鞋子耐久度已用完，之后的步数未计入奖励</string>
+    <string name="notification_run_shoe_worn">耐久度已用完 · 无奖励</string>
 </resources>

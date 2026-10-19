@@ -243,12 +243,9 @@ fun RunScreen(
     val earningMultiplier = equipped?.earningMultiplier
         ?: RewardEconomy.sneakerMultiplier(sneakerLevel)
     val energyEfficiency = equipped?.energyEfficiency ?: 1.0
-    // 신발이 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 · 0068) — 달리는 중 예상도 같은 규칙으로(정산은 RewardRepository)
+    // 신발이 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066) — 달리는 중 예상도 같은 규칙으로(정산은 RewardRepository)
     val estimateSteps = equipped?.server?.takeIf { it.hasDurabilityMax }?.let {
-        RewardEconomy.stepsWithinDurability(
-            session.steps, it.durabilityNow,
-            RewardEconomy.wearSeconds(session.elapsedSec, com.stepup.android.domain.RunDistance.creditedMeters(session.gpsKm, session.steps)),
-        )
+        RewardEconomy.stepsWithinDurability(session.steps, it.durabilityNow, session.elapsedSec)
     } ?: session.steps
     val estimate = RewardEconomy.sessionReward(
         walkedSteps = estimateSteps,
@@ -316,6 +313,10 @@ fun RunScreen(
     LaunchedEffect(session.still) {
         // 30초 넘게 서 있으면(RunStill) 소리 · 진동으로 한 번 알린다 — 화면을 보지 않고 서 있어도 알 수 있게(2026-10-17)
         if (session.still && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+    }
+    LaunchedEffect(session.shoeWornOut) {
+        // 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다. 소리 · 진동으로 한 번(2026-10-19 "내구도 다 소모하면 따로 안내")
+        if (session.shoeWornOut && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
     }
     LaunchedEffect(session.overspeed?.since) {
         // 과속이 시작됐다(RunOverspeed) — 소리 · 진동으로 한 번. 30초 이어지면 러닝이 멈추고 패널티가 있다(2026-10-17)
@@ -585,19 +586,16 @@ fun RunScreen(
         void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt, movingAt = session.movingAt,
     )
     val freeDist = freeDistance(timeOnly, session.gpsKm)
-    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸 · 결과. 달리는 동안은 이번 러닝으로 닳을 만큼(움직인 1분마다 5, 서버 0064 · 0065)을
-    // 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하기 전까지는 미리 뺀 값을 보인다 — 예전엔 결과에서 러닝 전 값(100%)으로 되돌아가
-    // "안 닳는다"로 보였다(2026-10-17 점검). 확인된 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게). 걸음이 없는 러닝은
-    // 서버에 올리지 않으므로(닳지 않는다) 빼지 않는다
+    // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸 · 결과. 달리는 동안은 이번 러닝으로 닳을 만큼(달린 1분마다 5 — 움직였든 서 있었든,
+    // 서버 0064 · 0068)을 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하기 전까지는 미리 뺀 값을 보인다 — 예전엔 결과에서 러닝 전
+    // 값(100%)으로 되돌아가 "안 닳는다"로 보였다(2026-10-17 점검). 확인된 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게).
+    // 무효 러닝은 닳지 않는다
     val freeDurability = equipped?.let {
         when {
-            session.isActive && !freeVoid && session.steps > 0 -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(
-                it, session.elapsedSec, com.stepup.android.domain.RunDistance.creditedMeters(session.gpsKm, session.steps),
-            )
-            !session.isActive && session.lastSessionSteps > 0 && session.lastVerdict != RunVerdict.VOID &&
-                lastUpload != UploadState.SIGNED.name -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(
-                it, session.lastElapsedSec, com.stepup.android.domain.RunDistance.creditedMeters(session.lastGpsKm, session.lastSessionSteps),
-            )
+            session.isActive && !freeVoid -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.elapsedSec)
+            !session.isActive && session.lastElapsedSec > 0 && session.lastVerdict != RunVerdict.VOID &&
+                lastUpload != UploadState.SIGNED.name ->
+                com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.lastElapsedSec)
             else -> com.stepup.android.ui.screens.items.durabilityPercent(it)
         }
     }
@@ -608,6 +606,7 @@ fun RunScreen(
         // 방금 읽은 속도가 사람 속도를 넘어 버려졌다 — 사람 속도의 점이 다시 들어올 때까지(현재 속도와 같은 신호)
         speedFlagged = !session.isPaused && session.lastFlaggedAt > (session.track.lastOrNull()?.at ?: 0L),
         overspeed = session.overspeed != null,
+        shoeWorn = session.shoeWornOut,
     )
     // 과속이 이어지면 러닝이 멈추기까지 남은 초(RunOverspeed) — 1초마다 다시 센다(freeNow 는 러닝 시간과 함께 바뀐다)
     val overspeedLeft = session.overspeed?.let { com.stepup.android.domain.RunOverspeed.secondsLeft(it, freeNow) } ?: 0
@@ -824,6 +823,7 @@ fun RunScreen(
                     onRetryDelete = retryFreeDelete,
                     onDeleteBack = { deleteFailed = null },
                     penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null,
+                    shoeNote = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null,
                     modifier = Modifier.reveal(session.lastStartedAt),
                 )
             }
@@ -1171,6 +1171,11 @@ fun RunScreen(
                             RunNotice(stringResource(R.string.run_still_title), body = stringResource(R.string.run_still_body),
                                 kind = RunNoticeKind.Warn, action = stringResource(R.string.run_pause),
                                 onAction = { WalkSessionService.pause(context) }, tag = "run-still")
+                        }
+                        // 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다(기록은 그대로 이어진다, 2026-10-19)
+                        if (session.isActive && session.shoeWornOut && !voidNow) {
+                            RunNotice(stringResource(R.string.run_shoe_worn_band), body = stringResource(R.string.run_shoe_worn_body),
+                                kind = RunNoticeKind.Warn, tag = "run-shoe-worn")
                         }
                         if (recordingCourse && !readyToSaveCourse) {
                             RunNotice(stringResource(R.string.course_rec_title),
@@ -2459,8 +2464,11 @@ private fun finishReward(session: WalkSessionState, points: Double?, upload: Str
     val reward = stringResource(R.string.result_reward)
     // 과속이 30초 이어져 앱이 멈춘 러닝 — 패널티를 맨 앞에 알린다(보상 규칙은 그대로다)
     val penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null
+    // 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 보상에 들지 않았다(2026-10-19 "내구도 다 소모하면 따로 안내")
+    val shoeWorn = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null
+    val extra = listOfNotNull(penalty, shoeWorn)
     return finishRewardLines(session, points, upload, sync, voided, nothingToUpload, noReward, reward).let { r ->
-        if (penalty != null) r.copy(notes = listOf(penalty) + r.notes) else r
+        if (extra.isNotEmpty()) r.copy(notes = extra + r.notes) else r
     }
 }
 

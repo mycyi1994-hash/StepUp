@@ -29,6 +29,12 @@ interface StepDao {
     fun observeStepsSince(fromDay: Long): Flow<Long>
 }
 
+/**
+ * 걸음 0 인 러닝을 올리기 시작한 때(epoch ms, 2026-10-19 00:00 한국 시각) — 신발은 켜 둔 시간만큼 닳는다(서버 0068).
+ * 그 전에 시작한 걸음 0 러닝은 예전처럼 올리지 않는다 — 업데이트하자마자 지난 며칠의 걸음 0 러닝이 한꺼번에 올라가 신발을 닳게 하지 않게.
+ */
+const val ZERO_STEP_UPLOAD_FROM_MS = 1_792_335_600_000L
+
 @Dao
 interface WalkSessionDao {
 
@@ -80,12 +86,14 @@ interface WalkSessionDao {
      *
      * 경로가 없는 세션도 올린다 — 서버가 "경로 없는 러닝"의 하루 상한 안에서만 인정한다.
      * 거르면 그 러닝은 영영 "서버 확인 중"으로 남는다.
+     * 걸음이 0 이어도 달린 시간이 있으면 올린다 — 신발은 켜 둔 시간만큼 닳는다(2026-10-19 사용자 결정, 서버 0068). 폰이 무효로 본
+     * 러닝은 시간을 0 으로 적어(걸음도 0) 올리지 않는다. [ZERO_STEP_UPLOAD_FROM_MS] 전에 시작한 걸음 0 러닝은 예전처럼 올리지 않는다.
      */
     @Query(
         """
         SELECT * FROM walk_sessions
          WHERE uploadState IN ('PENDING', 'FAILED')
-           AND steps > 0
+           AND (steps > 0 OR (durationSec > 0 AND startedAt >= $ZERO_STEP_UPLOAD_FROM_MS))
            AND recordingOwner = :owner
          ORDER BY uploadAttemptedAt ASC, startedAt ASC
          LIMIT :limit
@@ -93,14 +101,17 @@ interface WalkSessionDao {
     )
     suspend fun pendingUploads(limit: Int, owner: String = "legacy"): List<WalkSessionEntity>
 
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND steps > 0")
+    @Query("SELECT COUNT(*) FROM walk_sessions WHERE uploadState IN ('PENDING', 'FAILED') AND (steps > 0 OR (durationSec > 0 AND startedAt >= $ZERO_STEP_UPLOAD_FROM_MS))")
     fun observePendingUploadCount(): Flow<Int>
 
     /**
      * 이 계정의 러닝 중 서버 확인을 기다리는 수 — 러닝 홈의 "확인 중".
      * 주인이 정해지기 전(legacy)의 러닝은 어느 계정으로도 올리지 않으므로 세지 않는다 — 영영 "확인 중"으로 남았다.
      */
-    @Query("SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0")
+    @Query(
+        "SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') " +
+            "AND (steps > 0 OR (durationSec > 0 AND startedAt >= $ZERO_STEP_UPLOAD_FROM_MS))",
+    )
     fun observePendingUploadCountFor(owner: String): Flow<Int>
 
     /**
@@ -182,7 +193,7 @@ interface WalkSessionDao {
     /** 러닝 이야기 — 서버 확인을 기다리는(아직 올리지 못한) 지금 계정의 러닝 중 [since] 뒤에 끝난 것 */
     @Query(
         "SELECT COUNT(*) FROM walk_sessions WHERE recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') " +
-            "AND steps > 0 AND endedAt >= :since",
+            "AND (steps > 0 OR (durationSec > 0 AND startedAt >= $ZERO_STEP_UPLOAD_FROM_MS)) AND endedAt >= :since",
     )
     suspend fun pendingSince(owner: String, since: Long): Int
 
@@ -195,14 +206,14 @@ interface WalkSessionDao {
     suspend fun trackOf(owner: String, id: Long): String?
 
     /**
-     * 이 휴대폰의 러닝 기록에서 하나를 지운다. 서버에 올려 보상을 확인받는 중인 러닝(PENDING · FAILED, 걸음 있음)은
-     * 지우지 않는다 — 지우면 그 러닝의 확인이 영영 끝나지 않는다. 지운 수를 돌려준다(0이면 지우지 않았다).
+     * 이 휴대폰의 러닝 기록에서 하나를 지운다. 서버에 올려 보상을 확인받는 중인 러닝(PENDING · FAILED, 걸음이나 달린 시간 있음)은
+     * 지우지 않는다 — 지우면 그 러닝의 확인이 영영 끝나지 않는다(걸음 0 러닝도 신발이 닳으므로 올라가야 한다). 지운 수를 돌려준다(0이면 지우지 않았다).
      * 지키는 것은 지금 주인이 올릴 러닝뿐이다 — 주인이 정해지기 전(legacy)의 러닝은 계정 · 손님으로는 올라가지 않아 확인을
      * 기다리는 중이어도 지울 수 있다. 지금 주인이 legacy(사용자 번호 없이 저장된 옛 로그인)면 그 러닝이 올라가므로 지킨다.
      */
     @Query(
         "DELETE FROM walk_sessions WHERE id = :id AND recordingOwner IN (:owner, 'legacy') " +
-            "AND NOT (recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND steps > 0)",
+            "AND NOT (recordingOwner = :owner AND uploadState IN ('PENDING', 'FAILED') AND (steps > 0 OR (durationSec > 0 AND startedAt >= $ZERO_STEP_UPLOAD_FROM_MS)))",
     )
     suspend fun deleteRecord(owner: String, id: Long): Int
 

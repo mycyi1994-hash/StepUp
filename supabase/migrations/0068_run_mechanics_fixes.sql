@@ -1,12 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════
---  0068 — 러닝 정산 점검 고치기: 서 있는 시간 마모 · 상한에 걸린 러닝의 에너지 · 자정을 넘긴 목표 보너스 ·
+--  0068 — 러닝 정산 점검 고치기: 거리와 상관없이 1분마다 5 · 상한에 걸린 러닝의 에너지 · 자정을 넘긴 목표 보너스 ·
 --         경로 없는 초대 적립 · 코칭 거리 (2026-10-19 점검)
 --
---  1. 내구도가 달린 시간(멈춘 시간 뺀 값)마다 닳아, 주머니에 넣고 8시간 켜 둔 러닝이 2,400 을 닳게 했다. 이제 닳는 시간은
---     달린 시간과 "거리 ÷ 0.5m/s(시속 1.8km)" 중 짧은 쪽 — 켜 둔 채 서 있던 시간이 길수록 덜 닳는다(움직인 시간의 위 끝이다,
---     시속 1.8km 보다 빠르면 실제로 움직인 시간보다 길게 잡힌다). 걷기 · 달리기만 한 러닝은 그대로 다 채운 1분마다 5 다.
---     0066 의 신발 수명 자르기(다 닳은 뒤의 걸음은 적립하지 않는다)도 같은 시간과 견준다 — 60분 켜 두고 600m 만 움직였으면
---     (20분 몫) 30분 신발로도 다 받는다(예전엔 절반을 잃었다).
+--  1. 신발은 거리 · 걸음과 상관없이 달린 시간(멈춘 시간을 뺀 값) 1분마다 5 닳는다(2026-10-19 사용자 결정 "걍 1분마다 5
+--     닳는거로 바꿔 어떤식으로든간데"). 예전엔(0064 ~ 0066) 거리가 0 인 러닝은 닳지 않았다 — 켜 두고 움직이지 않아도 이제 닳는다.
+--     무효 러닝은 예전처럼 닳지 않는다. 앱은 걸음이 0 이어도 시간이 있는 러닝을 올린다.
 --  2. 하루 금액 · 경로 없는 러닝 · 올린 날 상한에 걸려 덜 받은 러닝도 에너지는 다 썼다(에너지를 상한보다 먼저 깎는다).
 --     이제 받은 몫만큼만 쓴다 — 쓴 에너지 × 받은 SUP ÷ 상한 전 SUP. 다 닳은 신발(남은 내구도 0)은 0066 의 수명 자르기로
 --     이미 적립 걸음이 0 이라 에너지를 쓰지 않는다.
@@ -20,18 +18,14 @@
 --     경로 거리, 아니면 걸음 거리. record_session 이 정한다)로 바꾼다. 앱도 기록 거리 · 1km 랩을 같은 거리로 바꾼다.
 --     폰이 잰 거리는 서버 거리와 조금 다를 수 있어 랩 수는 서버 거리의 정수 km 에서 ±1 까지 받는다.
 --
---  그대로인 것: 판정(CLEAN · FLAGGED · VOID, 0065 과속 금지 · 과속 정지) · 적립 금액 · 상한 · 1분마다 5 · 무효 · 거리 0 러닝은
---  닳지 않음 · 수리 값 · 목표 보너스 금액(1,000보당 2.5 · 연속 하루 +10%, 7일까지) · 초대 적립액(0038) · 코칭의 판정 · 한도 ·
---  출력 검사.
+--  그대로인 것: 판정(CLEAN · FLAGGED · VOID, 0065 과속 금지 · 과속 정지) · 적립 금액 · 상한 · 1분마다 5 · 무효 러닝은
+--  닳지 않음 · 신발 수명 자르기(0066, 달린 시간과 견준다) · 수리 값 · 목표 보너스 금액(1,000보당 2.5 · 연속 하루 +10%,
+--  7일까지) · 초대 적립액(0038) · 코칭의 판정 · 한도 · 출력 검사.
 -- ════════════════════════════════════════════════════════════════════
 
 -- ── 1 · 2 — 러닝 기록 ────────────────────────────────────────────────
 
--- 신발이 닳는 가장 느린 빠르기(m/s) — 시속 1.8km. 달린 시간 가운데 "거리 ÷ 이 빠르기"를 넘는 시간은 서 있던 시간으로 본다
-create or replace function economy.wear_min_speed_mps() returns numeric
-  language sql immutable as $$ select 0.5::numeric $$;
-
--- 0066 그대로(0065 과속 · 0066 신발 수명) + 움직인 시간만 닳고 수명과 견준다 · 상한에 걸린 러닝은 받은 만큼만 에너지
+-- 0066 그대로(0065 과속 · 0066 신발 수명) + 거리와 상관없이 달린 1분마다 5 · 상한에 걸린 러닝은 받은 만큼만 에너지
 create or replace function public.record_session(
   p_started_at timestamptz,
   p_ended_at timestamptz,
@@ -94,8 +88,6 @@ declare
   -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
   v_held boolean := false;
   v_new_account boolean;
-  -- 움직인 시간(초) — 신발이 닳는 시간이자 신발 수명과 견주는 시간 (0068)
-  v_move_sec int;
   -- 상한(하루 금액 · 경로 없는 러닝 · 올린 날)을 걸기 전 금액 — 상한에 걸려 덜 받은 만큼 에너지도 덜 쓴다 (0068)
   v_points_full numeric := 0;
 begin
@@ -267,27 +259,12 @@ begin
       from economy.shoe_effective(v_shoe) e;
   end if;
 
-  -- 러닝의 인정 거리 — 경로가 100m 이상이면 경로로 잰 거리, 아니면 걸음 거리. 무효는 0.
-  -- 0068: 움직인 시간을 세려고 기록 직전에서 여기로 옮겼다 — 들어가는 값(경로 거리 · 검사한 걸음 · 걸음 거리 · 무효)은
-  -- 위의 판정 · 검사에서 정해진 뒤 바뀌지 않으므로 값은 예전과 같다
-  v_distance_m := case
-    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
-    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
-                                          + case when v_verified > 0 then 100 else 0 end)
-    else v_step_m
-  end;
-  if v_verdict = 'VOID' then v_distance_m := 0; end if;
-  -- 움직인 시간 = 달린 시간(멈춘 시간을 뺀 v_elapsed)과 "거리 ÷ 0.5m/s(시속 1.8km)" 중 짧은 쪽 (0068).
-  -- 켜 둔 채 서 있거나 주머니에 든 시간은 신발을 닳게 하지도, 신발 수명을 쓰지도 않는다. 걷기 · 달리기는 달린 시간 그대로다
-  v_move_sec := least(v_elapsed, ceil(v_distance_m::numeric / economy.wear_min_speed_mps()))::int;
-
   -- 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 (0066) — 남은 내구도로 달릴 수 있던 시간(1분마다 5)만큼만.
-  -- 적립 배율은 남은 비율이 0 보다 크면 그대로라(economy.durability_factor) 거의 닳은 신발로 오래 달려도 다 받던 것을 막는다.
-  -- 0068: 달린 시간이 아니라 움직인 시간(v_move_sec)과 견주고 그 시간으로 나눈다 — 60분 켜 두고 600m 만 움직였으면 30분 신발로도 다 받는다
+  -- 적립 배율은 남은 비율이 0 보다 크면 그대로라(economy.durability_factor) 거의 닳은 신발로 오래 달려도 다 받던 것을 막는다
   if v_rewardable > 0 and v_shoe.id is not null
-     and v_shoe.dur_now * economy.durability_sec_per_point() < v_move_sec then
+     and v_shoe.dur_now * economy.durability_sec_per_point() < v_elapsed then
     v_rewardable := floor(v_rewardable * v_shoe.dur_now * economy.durability_sec_per_point()
-                          / greatest(v_move_sec, 1)::numeric)::int;
+                          / greatest(v_elapsed, 1)::numeric)::int;
     v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳은 뒤의 걸음은 적립하지 않습니다');
   end if;
 
@@ -372,6 +349,14 @@ begin
     v_energy_used := round(v_energy_used * v_points / v_points_full, 4);
   end if;
 
+  v_distance_m := case
+    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
+                                          + case when v_verified > 0 then 100 else 0 end)
+    else v_step_m
+  end;
+  if v_verdict = 'VOID' then v_distance_m := 0; end if;
+
   -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
   if v_gps_backed and not v_held then
     select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
@@ -413,13 +398,13 @@ begin
   end if;
 
   -- 신발이 닳는다. 예전 신발(IMPORT·MINT)도 똑같이 닳는다 — 안 닳으면 수리비를 안 내는 신발이 된다.
-  -- 모든 신발이 같은 빠르기로 — 움직인 1분마다 남은 내구도 5 (0064 · 0068).
-  -- 움직인 시간(v_move_sec)은 달린 시간과 "거리 ÷ 0.5m/s" 중 짧은 쪽 — 8시간 켜 둔 러닝이 2,400 을 닳게 했다(0068).
-  -- 남은 비율(durability_pts)은 트리거가 다시 센다
-  if v_shoe.id is not null and v_verdict <> 'VOID' and v_distance_m > 0 then
+  -- 모든 신발이 같은 빠르기로 — 달린 1분마다 남은 내구도 5 (0064). 달린 시간은 멈춘 시간을 뺀 값(v_elapsed).
+  -- 거리 · 걸음과 상관없다 — 켜 두고 움직이지 않아도 닳는다(0068, 2026-10-19 사용자 결정. 예전엔 거리 0 이면 닳지 않았다).
+  -- 무효 러닝은 닳지 않는다. 남은 비율(durability_pts)은 트리거가 다시 센다
+  if v_shoe.id is not null and v_verdict <> 'VOID' then
     update public.market_sneakers s
        set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
-           dur_now = greatest(s.dur_now - economy.durability_wear_time(v_move_sec), 0),
+           dur_now = greatest(s.dur_now - economy.durability_wear_time(v_elapsed), 0),
            updated_at = now()
      where s.id = v_shoe.id;
   end if;

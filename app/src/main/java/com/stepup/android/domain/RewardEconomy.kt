@@ -57,23 +57,8 @@ object RewardEconomy {
     const val DURABILITY_SEC_PER_POINT = 12
 
     /**
-     * 이보다 느린 시간은 서 있는 것으로 본다(m/s, 1.8km/h) — 서버 0068 `economy.wear_min_speed_mps` 와 같다. 러닝을 켜 둔 채 서 있거나
-     * 잊어버린 시간(주머니에 넣고 8시간이면 내구도 2,400)까지 닳지 않게(2026-10-17 점검). 걷기 · 달리기는 그대로 1분마다 5다.
-     */
-    const val WEAR_MIN_SPEED_MPS = 0.5
-
-    /**
-     * 신발이 닳는 시간(초) — 멈춘 시간을 뺀 달린 시간([activeSec])을 넘지 않고, 움직인 거리([distanceMeters], 서버가 쳐 주는 거리)를
-     * [WEAR_MIN_SPEED_MPS] 로 나눈 시간까지만(서버 0068 record_session). 내구도 마모와 다 닳은 뒤의 걸음 빼기가 함께 쓴다.
-     */
-    fun wearSeconds(activeSec: Long, distanceMeters: Double): Long {
-        val movingSec = kotlin.math.ceil(distanceMeters.coerceAtLeast(0.0) / WEAR_MIN_SPEED_MPS)
-        return minOf(activeSec.coerceAtLeast(0L).toDouble(), movingSec).toLong()
-    }
-
-    /**
-     * 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 · 0068 record_session) — 남은 내구도로 달릴 수 있던 시간만큼의 걸음만.
-     * [durabilityNow] 는 달리기 전 남은 내구도, [activeSec] 는 신발이 닳는 시간([wearSeconds] — 움직인 시간까지만).
+     * 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 record_session) — 남은 내구도로 달릴 수 있던 시간만큼의 걸음만.
+     * [durabilityNow] 는 달리기 전 남은 내구도, [activeSec] 는 멈춘 시간을 뺀 달린 시간(움직였든 서 있었든).
      */
     fun stepsWithinDurability(steps: Int, durabilityNow: Int, activeSec: Long): Int {
         if (steps <= 0 || activeSec <= 0L) return steps

@@ -93,11 +93,10 @@ fun durabilityPercent(shoe: Sneaker): Int =
 const val DURABILITY_WEAR_PER_MINUTE = 5
 
 /**
- * [activeSec](멈춘 시간 뺀 달린 시간) 동안 닳는 내구도 — 다 채운 1분마다 [DURABILITY_WEAR_PER_MINUTE]. 시간은 움직인 만큼까지만
- * 센다([RewardEconomy.wearSeconds] — 달린 거리 [distanceMeters] 를 0.5m/s 로 나눈 시간을 넘지 않는다). 거리를 모르면 시간 그대로.
+ * [activeSec](멈춘 시간 뺀 달린 시간) 동안 닳는 내구도 — 다 채운 1분마다 [DURABILITY_WEAR_PER_MINUTE]. 움직였든 서 있었든, 거리가
+ * 0 이어도 같다(2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데", 서버 0068).
  */
-fun durabilityWear(activeSec: Long, distanceMeters: Double = Double.MAX_VALUE): Int =
-    (RewardEconomy.wearSeconds(activeSec, distanceMeters) / 60 * DURABILITY_WEAR_PER_MINUTE).toInt()
+fun durabilityWear(activeSec: Long): Int = (activeSec.coerceAtLeast(0L) / 60 * DURABILITY_WEAR_PER_MINUTE).toInt()
 
 /**
  * 남은 내구도로 보상을 받으며 달릴 수 있는 분(다 채운 분) — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 내구도 1 = 12초.
@@ -115,8 +114,8 @@ const val LOW_DURABILITY_WARN_MIN = 10
  * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼([durabilityWear])을 미리 뺀다. 정산 때 서버가 같은 규칙으로 뺀다.
  * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 [durabilityPercent] 그대로다 — 폰에서 닳는 양을 비율로 셀 수 없다.
  */
-fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long, distanceMeters: Double = Double.MAX_VALUE): Int {
-    val wear = durabilityWear(activeSec, distanceMeters)
+fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long): Int {
+    val wear = durabilityWear(activeSec)
     val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 }
     if (wear == 0 || server == null) return durabilityPercent(shoe)
     val left = (server.durabilityNow - wear).coerceIn(0, server.durabilityMax)

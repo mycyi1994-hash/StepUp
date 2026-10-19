@@ -22,8 +22,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 러닝 메카닉 점검(2026-10-17~19) — 거리 하나의 기준 · 랩 · 움직인 시간만 닳는 내구도 · 드문 점에서의 속도 · 흐린 위치의 내 점 ·
- * 위치 튐으로 걸리는 과속 멈춤 · 출발 전 남은 보상 시간.
+ * 러닝 메카닉 점검(2026-10-17~19) — 거리 하나의 기준 · 랩 · 1분마다 5 닳는 내구도 · 드문 점에서의 속도 · 흐린 위치의 내 점 ·
+ * 위치 튐으로 걸리는 과속 멈춤 · 출발 전 남은 보상 시간 · 신발을 다 쓴 때.
  */
 class RunMechanicsTest {
 
@@ -60,15 +60,13 @@ class RunMechanicsTest {
     }
 
     @Test
-    fun `내구도는 움직인 시간만 1분마다 5 - 켜 둔 채 서 있으면 닳지 않는다`() {
-        // 30분 · 5km — 그대로 150
-        assertEquals(150, durabilityWear(1_800, 5_000.0))
-        // 30분 · 0.6km(카페에 앉아 있었다) — 0.6km ÷ 0.5m/s = 20분 → 100
-        assertEquals(100, durabilityWear(1_800, 600.0))
-        // 8시간 켜 둔 채 주머니에 · 거리 0 — 닳지 않는다
-        assertEquals(0, durabilityWear(8 * 3_600, 0.0))
-        // 거리를 모르면(예전 부름) 시간 그대로
+    fun `내구도는 움직였든 서 있었든 달린 1분마다 5`() {
+        // 2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데"
         assertEquals(150, durabilityWear(1_800))
+        // 8시간 켜 둔 채 주머니에 — 거리와 상관없이 2,400
+        assertEquals(2_400, durabilityWear(8 * 3_600))
+        // 다 채운 분만 — 59초는 0
+        assertEquals(0, durabilityWear(59))
     }
 
     @Test
@@ -155,14 +153,16 @@ class RunMechanicsTest {
     }
 
     @Test
-    fun `닳는 시간과 다 닳은 뒤 걸음 빼기는 같은 움직인 시간으로 잰다`() {
-        // 60분 켜 둠 · 움직인 거리 600m — 닳는 시간은 600m ÷ 0.5m/s = 20분
-        assertEquals(1_200L, RewardEconomy.wearSeconds(3_600, 600.0))
-        // 30분짜리 신발(150) — 움직인 20분으로는 다 닳지 않아 걸음을 빼지 않는다(서버 0068)
-        assertEquals(2_000, RewardEconomy.stepsWithinDurability(2_000, 150, RewardEconomy.wearSeconds(3_600, 600.0)))
-        // 켜 둔 시간(60분)으로 재면 절반을 잃었다(0066)
+    fun `신발 수명은 달린 시간과 견주고 다 쓰면 다 씀으로 본다`() {
+        // 30분짜리 신발(150)로 60분 — 서 있던 시간도 수명을 써서 절반만(서버 0066)
         assertEquals(1_000, RewardEconomy.stepsWithinDurability(2_000, 150, 3_600))
-        // 거리를 모르면 시간 그대로
-        assertEquals(3_600L, RewardEconomy.wearSeconds(3_600, Double.MAX_VALUE))
+        // 신발 수명 600초 — 599초까지는 아직, 600초부터 다 썼다(이제 걸음은 보상이 없다)
+        val running = WalkSessionState(isActive = true, shoeLifeSec = 600, elapsedSec = 599)
+        assertFalse(running.shoeWornOut)
+        assertTrue(running.copy(elapsedSec = 600).shoeWornOut)
+        // 다 닳은 신발로 시작하면 처음부터
+        assertTrue(running.copy(shoeLifeSec = 0, elapsedSec = 0).shoeWornOut)
+        // 신발을 모르면(서버 신발이 아님) 알리지 않는다
+        assertFalse(running.copy(shoeLifeSec = null, elapsedSec = 10_000).shoeWornOut)
     }
 }

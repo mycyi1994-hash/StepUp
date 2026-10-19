@@ -89,7 +89,7 @@ import com.stepup.android.ui.theme.StepUpColors
 // ── 판단(화면 밖에서 검사한다 — FreeRunUiTest) ──────────────────────
 
 /** 지도 위 띠 — 위에서부터 앞선다. 문제 띠가 일시정지 띠보다 앞선다 */
-internal enum class FreeBand { None, Overspeed, LocationOff, MeasureInvalid, SpeedError, Still, Weak, Approx, Paused }
+internal enum class FreeBand { None, Overspeed, LocationOff, MeasureInvalid, SpeedError, Still, Weak, Approx, Worn, Paused }
 
 /**
  * 지금 보일 띠 하나. 마칠지 묻는 동안([asking] — 시트가 덮는다)과 러닝 전에는 띠가 없다.
@@ -97,6 +97,8 @@ internal enum class FreeBand { None, Overspeed, LocationOff, MeasureInvalid, Spe
  * 위치를 찾는 동안에도 띠가 없다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고").
  * 30초 넘게 서 있으면([still], RunStill) "멈춰 있어요" 띠와 일시정지 알약 — 신호 약함 · 대략 위치보다 앞선다(지금 할 수 있는 일이라서).
  * 과속이 이어지는 동안([overspeed], RunOverspeed)은 "N초 뒤 러닝이 멈춰요" 띠가 가장 앞선다 — 30초를 채우면 러닝이 멈추고 패널티가 있다.
+ * 신발 내구도를 다 썼으면([shoeWorn]) "이제 걸음은 보상이 없어요" 띠 — 남은 러닝 내내 이어지므로 다른 문제 띠보다 뒤에 둔다
+ * (2026-10-19 "내구도 다 소모하면 따로 안내").
  */
 internal fun freeBand(
     active: Boolean,
@@ -110,6 +112,7 @@ internal fun freeBand(
     speedFlagged: Boolean,
     still: Boolean = false,
     overspeed: Boolean = false,
+    shoeWorn: Boolean = false,
 ): FreeBand = when {
     !active || asking -> FreeBand.None
     overspeed && !paused -> FreeBand.Overspeed
@@ -120,6 +123,7 @@ internal fun freeBand(
     still && !paused -> FreeBand.Still
     locationAllowed && gpsLost -> FreeBand.Weak
     locationAllowed && !precise -> FreeBand.Approx
+    shoeWorn && !paused -> FreeBand.Worn
     paused -> FreeBand.Paused
     else -> FreeBand.None
 }
@@ -450,6 +454,9 @@ internal fun liveTop(
         { FreeRunBand(stringResource(R.string.run_gps_approx), "run-location-approx",
             action = stringResource(R.string.run_free_settings), onAction = onBandAction) }
     }
+    FreeBand.Worn -> {
+        { FreeRunBand(stringResource(R.string.run_shoe_worn_band), "run-shoe-worn", onClick = onBandTap) }
+    }
 }
 
 // ── 결과 ───────────────────────────────────────────────────────────
@@ -475,6 +482,8 @@ internal fun FreeRunResult(
     onDeleteBack: () -> Unit = {},
     /** 과속이 30초 이어져 앱이 멈춘 러닝 — 패널티 안내(내구도 절반 · 10분 러닝 금지) */
     penalty: String? = null,
+    /** 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 보상에 들지 않았다는 안내 */
+    shoeNote: String? = null,
 ) {
     val c = freeRunColors()
     var more by rememberSaveable { mutableStateOf(false) }
@@ -528,6 +537,10 @@ internal fun FreeRunResult(
         } else {
             if (penalty != null) {
                 FreeCaption(penalty, icon = Icons.Filled.Warning, tag = "run-result-overspeed")
+                Spacer(Modifier.height(8.dp))
+            }
+            if (shoeNote != null) {
+                FreeCaption(shoeNote, icon = Icons.Filled.Warning, tag = "run-result-shoe-worn")
                 Spacer(Modifier.height(8.dp))
             }
             FreeTopRow(numbers, ResultTags, compact)

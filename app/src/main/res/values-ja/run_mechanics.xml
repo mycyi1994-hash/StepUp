@@ -4,4 +4,8 @@
     <string name="run_goal_time">目標時間</string>
     <string name="run_free_check_low_durability_none">耐久度がなくなったため、このランニングは報酬がありません。修理すると受け取れます</string>
     <string name="run_free_check_low_durability_minutes">残りの耐久度で報酬を受け取れるのは約%d分です。修理するともっと長く受け取れます</string>
+    <string name="run_shoe_worn_band">シューズの耐久度を使い切りました・これからの歩数は報酬になりません</string>
+    <string name="run_shoe_worn_body">修理すると再び報酬を受け取れます。記録はそのまま続きます</string>
+    <string name="run_shoe_worn_result">シューズの耐久度を使い切ったため、その後の歩数は報酬に含まれませんでした</string>
+    <string name="notification_run_shoe_worn">耐久度を使い切ったため報酬なし</string>
 </resources>

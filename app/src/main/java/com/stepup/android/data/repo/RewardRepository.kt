@@ -189,7 +189,7 @@ class RewardRepository(
         steps: Int,
         partySize: Int = 1,
         today: Long = LocalDate.now().toEpochDay(),
-        /** 신발이 닳는 시간(초, RewardEconomy.wearSeconds — 움직인 시간까지만) — 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066 · 0068). 0 이면 빼지 않는다 */
+        /** 멈춘 시간을 뺀 달린 시간(초) — 신발이 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066). 0 이면 빼지 않는다 */
         activeSec: Long = 0L,
         startedAt: Long = System.currentTimeMillis(),
     ): SessionReward {

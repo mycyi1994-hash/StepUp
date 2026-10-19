@@ -7715,7 +7715,7 @@ end $$;
 reset role;
 
 -- ════════════════════════════════════════════════════════════════════
---  0068 러닝 정산 점검 — 움직인 시간만 닳기 · 신발 수명도 움직인 시간으로 · 상한에 걸린 러닝의 에너지 ·
+--  0068 러닝 정산 점검 — 거리와 상관없이 1분마다 5 · 상한에 걸린 러닝의 에너지 ·
 --  자정을 넘긴 목표 보너스 · 경로 없는 초대 적립 · 코칭 거리 (2026-10-19)
 -- ════════════════════════════════════════════════════════════════════
 \echo ''
@@ -7742,7 +7742,6 @@ update public.market_sneakers set equipped = true, dur_base = 600, dur_now = 600
 update public.economy_settings set value = '0' where key = 'new_account_days';
 do $$
 begin
-  perform pg_temp.ok(economy.wear_min_speed_mps() = 0.5, '신발이 닳는 가장 느린 빠르기는 0.5m/s(시속 1.8km)');
   perform pg_temp.ok((select dur_max = 600 and dur_now = 0 from public.market_sneakers where id = pg_temp.fx('s68a')::bigint)
                      and (select dur_max = 600 and dur_now = 600 from public.market_sneakers where id = pg_temp.fx('s68c')::bigint),
     '검사용 신발 — 최대 내구도 600(120분), 하나는 다 닳았다');
@@ -7776,9 +7775,8 @@ begin
     '그날 쓴 에너지가 없다 — 고친 뒤 다시 달려 받을 수 있다');
 end $$;
 
--- ── 1. 신발 수명도 움직인 시간과 견준다 ───────────────────────────────
--- 60분 켜 두고 앞 20분만 걸었다(경로 약 1.33km) — 움직인 시간은 1.33km ÷ 0.5m/s ≈ 2,669초.
--- 남은 내구도 230(2,760초)이면 다 닳지 않아 다 받는다(예전엔 달린 60분과 견줘 77% 만 받았다)
+-- ── 1. 신발 수명은 달린 시간과 견준다(0066 그대로) ─────────────────────────
+-- 60분 켜 두고 앞 20분만 걸었다 — 남은 내구도 230(2,760초)은 달린 60분보다 짧아 2,760초 몫의 걸음만 받는다
 update public.market_sneakers set dur_now = 230 where id = pg_temp.fx('s68a')::bigint;
 set role authenticated;
 call pg_temp.login('68000000-0000-0000-0000-000000000001');
@@ -7791,48 +7789,14 @@ begin
 end $$;
 reset role;
 do $$
-declare v_move int := least(3600, ceil((select distance_meters from public.walk_sessions
-                                         where id = pg_temp.fx('life68a')::bigint)::numeric / 0.5))::int;
-begin
-  perform pg_temp.ok((select dur_now from public.market_sneakers where id = pg_temp.fx('s68a')::bigint)
-                     = 230 - economy.durability_wear_time(v_move),
-    format('그 러닝으로 닳은 양도 움직인 %s초 몫(%s) — 달린 60분이면 300', v_move, economy.durability_wear_time(v_move)));
-end $$;
-update public.market_sneakers set dur_now = 100 where id = pg_temp.fx('s68a')::bigint;
-set role authenticated;
-call pg_temp.login('68000000-0000-0000-0000-000000000001');
--- 남은 내구도 100(1,200초)이면 움직인 시간 중 1,200초 몫만 — 달린 60분이 아니라 움직인 시간으로 나눈다
-do $$
-declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz + interval '3 hours';
-begin
-  select * into r from public.record_session(v_start, v_start + interval '3600 seconds', 2000, 3600,
-    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
-  insert into fix (k, v) values ('life68b', r.session_id::text);
-end $$;
-reset role;
-do $$
-declare
-  a public.walk_sessions;
-  b public.walk_sessions;
-  v_eff int := (select efficiency_bps from public.market_sneakers where id = pg_temp.fx('s68a')::bigint);
-  v_move_a int;
-  v_move_b int;
+declare a public.walk_sessions;
 begin
   select * into a from public.walk_sessions where id = pg_temp.fx('life68a')::bigint;
-  select * into b from public.walk_sessions where id = pg_temp.fx('life68b')::bigint;
-  v_move_a := least(3600, ceil(a.distance_meters::numeric / 0.5))::int;
-  v_move_b := least(3600, ceil(b.distance_meters::numeric / 0.5))::int;
-  perform pg_temp.ok(a.verdict = 'CLEAN' and v_move_a between 2600 and 2760 and a.rewarded_steps = 2000
-                     and a.points_awarded = round(2000 * 0.01 * (1 + v_eff / 10000.0), 4)
-                     and a.verdict_reason not like '%다 닳은 뒤%',
-    format('60분 중 움직인 %s초가 남은 수명(2,760초) 안이면 다 받는다 (0068)', v_move_a));
-  perform pg_temp.ok(b.rewarded_steps = floor(2000 * 100 * 12 / v_move_b::numeric)::int
-                     and b.rewarded_steps > floor(2000 * 100 * 12 / 3600.0)::int
-                     and b.verdict_reason like '%다 닳은 뒤%',
-    format('수명을 넘기면 움직인 시간으로 나눠 %s걸음(달린 시간으로 나누면 %s걸음)', b.rewarded_steps,
-           floor(2000 * 100 * 12 / 3600.0)::int));
+  perform pg_temp.ok(a.verdict = 'CLEAN' and a.rewarded_steps = floor(2000 * 230 * 12 / 3600.0)::int
+                     and a.verdict_reason like '%다 닳은 뒤%',
+    format('남은 수명 2,760초 몫(%s걸음)만 받는다 — 서 있던 시간도 수명을 쓴다', a.rewarded_steps));
   perform pg_temp.ok((select dur_now from public.market_sneakers where id = pg_temp.fx('s68a')::bigint) = 0,
-    '수명을 넘긴 러닝으로 신발은 다 닳았다');
+    '60분 러닝은 300 닳아 남은 230 이 다 닳았다');
 end $$;
 
 -- ── 2. 상한에 걸려 덜 받은 러닝은 받은 몫만큼만 에너지를 쓴다 ─────────────────────
@@ -7882,7 +7846,7 @@ begin
   perform pg_temp.ok(a.rewarded_steps = 2000 and c.rewarded_steps = 2000, '적립 걸음(하루 걸음 상한)은 그대로 센다');
 end $$;
 
--- ── 1. 움직인 시간만 닳는다 ───────────────────────────────────────────
+-- ── 1. 거리 · 걸음과 상관없이 달린 1분마다 5 (2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데") ──
 set role authenticated;
 call pg_temp.login('68000000-0000-0000-0000-000000000003');
 do $$
@@ -7890,34 +7854,26 @@ declare
   v_id bigint := pg_temp.fx('s68c')::bigint;
   r record;
   v_now int;
-  v_dist numeric;
   v_start timestamptz := pg_temp.fx('d68')::timestamptz - interval '1 day';
 begin
   select durability_now into v_now from public.my_sneakers() where id = v_id;
-  -- 8시간 켜 둔 채 주머니에 — 100걸음(76.2m)뿐이다. 움직인 시간 = 76.2m ÷ 0.5m/s ≈ 153초 → 다 채운 2분 → 10
-  select * into r from public.record_session(v_start, v_start + interval '8 hours', 100, 28800, '', 0, 1, '', false);
-  perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 10,
-    '8시간 켜 둔 러닝이 100걸음이면 움직인 2분만큼(10) 닳는다 — 예전엔 2,400 (0068)');
-  -- 1시간 켜 두고 앞 10분만 걸었다(경로 약 670m) — 670m ÷ 0.5m/s ≈ 22분만 닳는다(예전엔 60분 = 300)
-  v_now := v_now - 10;
-  v_start := v_start + interval '9 hours';
-  select * into r from public.record_session(v_start, v_start + interval '3600 seconds', 900, 3600,
-    pg_temp.track(v_start, 600, 0.00001), 0, 1, '', false);
-  v_dist := (select distance_meters from public.walk_sessions where id = r.session_id);
-  -- 앱 권한으로는 economy 함수를 부르지 못한다 — 다 채운 1분마다 5 를 여기서 센다
-  perform pg_temp.ok(r.verdict <> 'VOID' and v_dist between 600 and 700
-                     and (select durability_now from public.my_sneakers() where id = v_id)
-                         = v_now - 5 * floor(ceil(v_dist / 0.5) / 60)
-                     and 5 * floor(ceil(v_dist / 0.5) / 60) < 300,
-    format('1시간 켜 두고 %sm 걸었다 → 움직인 %s초 몫(%s)만 닳는다(달린 60분이면 300)', round(v_dist), ceil(v_dist / 0.5),
-           5 * floor(ceil(v_dist / 0.5) / 60)));
-  -- 걷기 · 달리기는 그대로 — 20분을 시속 4km 로 걸으면 20분(100)
-  v_now := (select durability_now from public.my_sneakers() where id = v_id);
+  -- 30분 켜 두고 걸음 0 · 경로 없음(폰을 두고 왔다) — 거리 0 이어도 30분 = 150
+  select * into r from public.record_session(v_start, v_start + interval '1800 seconds', 0, 1800, '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID' and r.points_awarded = 0
+                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 150,
+    '걸음 0 · 거리 0 인 러닝도 켜 둔 30분만큼(150) 닳는다 — 예전엔 닳지 않았다 (0068)');
+  -- 20분을 걸었다 — 그대로 20분(100)
+  v_now := v_now - 150;
   v_start := v_start + interval '2 hours';
   select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
     pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
   perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_id) = v_now - 100,
-    '걷는 빠르기 이상이면 달린 시간 그대로 1분마다 5 닳는다');
+    '걷기 · 달리기도 달린 1분마다 5');
+  -- 8시간 켜 둔 채 주머니에 — 100걸음뿐이어도 8시간(2,400) 몫이라 남은 350 이 다 닳는다
+  v_start := v_start + interval '1 hour';
+  select * into r from public.record_session(v_start, v_start + interval '8 hours', 100, 28800, '', 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_id) = 0,
+    '8시간 켜 둔 러닝은 100걸음이어도 1분마다 5 — 남은 내구도가 다 닳는다 (0068)');
 end $$;
 reset role;
 
