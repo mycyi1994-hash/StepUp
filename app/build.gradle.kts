@@ -54,12 +54,12 @@ check(releaseVersionCode in 1..999) { "versionCode 는 1~999 — 테스트 빌�
 
 android {
     namespace = "com.stepup.android"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.stepup.android"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = releaseVersionCode
         versionName = "1.17.0"
 
