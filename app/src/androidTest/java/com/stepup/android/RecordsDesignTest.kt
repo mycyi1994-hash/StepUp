@@ -125,7 +125,7 @@ class RecordsDesignTest {
                     startedAt = f.startedAt, endedAt = f.startedAt + f.seconds * 1000, steps = (f.meters / 0.762).toInt().coerceAtLeast(1),
                     durationSec = f.seconds, distanceMeters = f.meters, calories = 0.0, pointsEarned = 0.0,
                     track = f.shape?.let { RunTrack.encode(route(it).mapIndexed { i, p -> TrackPoint(p.lat, p.lng, f.startedAt + i * 10_000L) }) }.orEmpty(),
-                    faction = MARK, uploadState = "REJECTED", verdict = "VOID",
+                    faction = MARK, uploadState = "REJECTED",
                 ))
             }
             ServiceLocator.database.query("SELECT id, startedAt, distanceMeters FROM walk_sessions WHERE faction = '$MARK'", null).use { c ->
