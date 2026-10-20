@@ -84,7 +84,7 @@
 <table>
   <tr><th>업체</th><th>맡기는 일</th><th>항목</th></tr>
   <tr><td>Supabase, Inc. (미국 법인 · 서버는 <strong>싱가포르</strong>, AWS ap-southeast-1)</td><td>서버 데이터베이스·로그인·서버 함수</td><td>2장의 서버 보관 항목 전부</td></tr>
-  <tr><td>Google LLC (미국)</td><td>구글 로그인, Firebase 푸시(FCM), Firebase Analytics</td><td>계정, 푸시 토큰, 이용 통계</td></tr>
+  <tr><td>Google LLC (미국)</td><td>구글 로그인, Firebase 푸시(FCM), Firebase Analytics, 장소 검색 보조(지도 검색 결과가 적을 때 안드로이드 기기의 주소 찾기 기능 — 대개 Google 이 처리)</td><td>계정, 푸시 토큰, 이용 통계, 장소 검색어와 검색할 지도 영역</td></tr>
   <tr><td>MapTiler AG (스위스) · OpenStreetMap 재단 (영국)</td><td>지도 이미지, 장소 검색·주소 찾기</td><td>보고 있는 지도 영역, 검색어, 가까운 결과를 위한 현재 위치, IP 주소</td></tr>
   <tr><td>Open-Meteo</td><td>날씨 정보</td><td>소수점 한 자리로 줄인 위치(약 10km), IP 주소</td></tr>
   <tr><td>Cloudflare, Inc. (미국)</td><td>웹사이트(stepupcrew.com) 호스팅</td><td>웹사이트 접속 기록</td></tr>
@@ -170,7 +170,7 @@ routes); place stories and the run route attached to them; crew chat messages an
 
 <h3>2. Processors and international transfer</h3>
 <p>Supabase, Inc. (USA; StepUp data is stored in <strong>Singapore</strong>, AWS ap-southeast-1) — server database, sign-in and server functions; Google LLC (USA) — Google sign-in, Firebase
-Cloud Messaging, Firebase Analytics; MapTiler AG (Switzerland) and the OpenStreetMap Foundation (UK) — map images, place search and address lookup (the map area you view, search text, your current position for nearby results, IP address); Open-Meteo — weather (your position rounded to one decimal, about 10 km, and IP address);
+Cloud Messaging, Firebase Analytics, and backup place search (when map search returns few results, the Android device geocoder — usually run by Google — receives the search text and the map area searched); MapTiler AG (Switzerland) and the OpenStreetMap Foundation (UK) — map images, place search and address lookup (the map area you view, search text, your current position for nearby results, IP address); Open-Meteo — weather (your position rounded to one decimal, about 10 km, and IP address);
 Cloudflare, Inc. (USA) — website hosting. These servers may be outside Korea. All traffic is encrypted (HTTPS).</p>
 
 <h3>3. Retention and deletion</h3>
