@@ -1322,6 +1322,8 @@ class RunJourneyDesignTest {
         return WalkSessionState(
             isActive = true, steps = 1_300, elapsedSec = 492, startedAt = start, gpsFix = true,
             gpsKm = course.distanceKm * 0.4, validSegments = 60, track = track, here = passed.last(),
+            // 정확한 위치로 받은 자리 — 코스 이탈(K05)은 흐린 위치로는 보지 않는다(2026-10-19)
+            hereAccurate = true,
         )
     }
 
