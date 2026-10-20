@@ -143,6 +143,8 @@ fun WalletContent(
     thisYear: Int = Year.now(zone).value,
     initialSheet: String? = null,
     initialEntry: RewardEntity? = null,
+    /** 블록체인 줄(WEB3 지갑 · 체인 안내)을 보이나 — 스토어 판(WEB3 = false)은 SUP 잔액 · 내역만 */
+    web3Enabled: Boolean = com.stepup.android.BuildConfig.WEB3,
 ) {
     val p = settingsPalette()
     var sheet by rememberSaveable { mutableStateOf(initialSheet?.let { WalletSheet.valueOf(it) } ?: WalletSheet.None) }
@@ -172,7 +174,7 @@ fun WalletContent(
             contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 4.dp, bottom = 28.dp),
         ) {
             item(key = "balance") { BalanceCard(totals) }
-            item(key = "web3") {
+            if (web3Enabled) item(key = "web3") {
                 Web3Row(
                     web3,
                     onClick = {
@@ -185,7 +187,7 @@ fun WalletContent(
                     onRetry = onRetryWeb3,
                 )
             }
-            item(key = "chain") { ChainLinkRow(onOpenChain) }
+            if (web3Enabled) item(key = "chain") { ChainLinkRow(onOpenChain) }
             item(key = "history-head") { HistoryHead(filter, onFilter) }
             when (history) {
                 HistoryLoad.Loading -> item(key = "history-loading") { HistorySkeleton() }

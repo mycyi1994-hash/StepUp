@@ -153,7 +153,8 @@ fun SettingsHomeScreen(
                 AboutLine(stringResource(R.string.about_version), "StepUp " + com.stepup.android.core.TestUpdates.buildLabel)
                 // 테스트 APK 에서만 — 운영 빌드에는 나타나지 않는다
                 if (com.stepup.android.core.TestUpdates.enabled) TestUpdateLine()
-                AboutLine(stringResource(R.string.about_network), stringResource(R.string.about_network_value))
+                // 블록체인 안내는 블록체인 기능이 있는 판에만(스토어 판은 WEB3 = false)
+                if (com.stepup.android.BuildConfig.WEB3) AboutLine(stringResource(R.string.about_network), stringResource(R.string.about_network_value))
             }
         }
     }

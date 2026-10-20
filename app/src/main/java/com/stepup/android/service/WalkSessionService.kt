@@ -1,5 +1,6 @@
 package com.stepup.android.service
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -307,6 +308,8 @@ class WalkSessionService : Service() {
     @Volatile private var lastMoveElapsed = 0L
 
     /** GPS 가 마지막으로 고친 위치의 시각(부팅 기준 ms) — 알림 거리 필터와 상관없이 갱신된다. 없으면 0 */
+    // 권한이 회수되면 SecurityException — runCatching · try 가 받는다(AGP 8.10 lint 는 이 감싸기를 알아보지 못한다)
+    @SuppressLint("MissingPermission")
     private fun lastKnownGpsFixElapsed(): Long = runCatching {
         val lm = locationManager ?: return@runCatching 0L
         lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.elapsedRealtimeNanos?.div(1_000_000) ?: 0L
@@ -673,6 +676,8 @@ class WalkSessionService : Service() {
     }
 
     /** 구글 위치 서비스에 위치를 달라고 건다. 권한이 없으면 SecurityException */
+    // 권한이 회수되면 SecurityException — runCatching · try 가 받는다(AGP 8.10 lint 는 이 감싸기를 알아보지 못한다)
+    @SuppressLint("MissingPermission")
     private fun requestFused(client: FusedLocationProviderClient) {
         // 2.5초마다(예전 GPS 와 같다), 거리 거름 없이 — 제자리에서도 위치가 와야 "신호 약함"으로 잘못 보지 않는다.
         // 첫 위치는 정확한 것이 올 때까지 미루지 않는다 — 와이파이 위치라도 먼저 받고, 거리는 onFix 가 거른다
@@ -723,6 +728,8 @@ class WalkSessionService : Service() {
      * 휴대폰 위치(LocationManager) — 위성 GPS 와, GPS 가 잡히기 전 · GPS 가 없을 때의 와이파이 · 기지국 위치.
      * [withNetwork] 면 이미 잡힌 러닝이라도 와이파이 · 기지국 위치를 함께 듣는다(첫 위성 GPS 점이 오면 그만 듣는다).
      */
+    // 권한이 회수되면 SecurityException — runCatching · try 가 받는다(AGP 8.10 lint 는 이 감싸기를 알아보지 못한다)
+    @SuppressLint("MissingPermission")
     private fun startLocationManagerFeed(lm: LocationManager, fine: Boolean, withNetwork: Boolean = false) {
         // 둘을 따로 등록한다 — 대략 위치 권한만 있으면(API 30 이하) GPS 등록이 거절되는데, 그 때문에
         // 기지국 위치까지 못 받으면 안 된다. 권한이 그 사이 회수됐다면 위치 없이 진행한다.
