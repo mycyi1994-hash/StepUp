@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 최신 — 구글 플레이 출시 준비: 목표 API 36 · 스토어 문서 대조 (2026-10-20)
+
+사용자 "스토어 올리기 적합해?" → "바로 시작해". compileSdk · targetSdk 36(AGP 8.10.1) — Play 는 2026-08-31 부터 API 36 을 요구한다.
+[docs/PLAY-STORE.md](docs/PLAY-STORE.md) · `web/privacy.html` · `web/terms.html` 을 지금 앱에 맞췄다(크루 이미지 · 채팅 사진은 서버, 프로필 사진은 기기 ·
+지갑 주소 · 테스트넷 출금 · 뽑기 확률 표 · MapTiler · OpenStreetMap · Open-Meteo). iOS 앱은 없다.
+**사용자 결정 전**: SUP · 지갑 · 출금 · 거래소 법률 검토(지갑 화면의 "메인넷 1:1" 문구 포함), 위치정보 사업 신고.
+
 ## 최신 — 러닝 · 게임 메카닉 전수 점검 · 잠금 화면 러닝 화면 (2026-10-19)
 
 [docs/mechanics-audit-2026-10-19.md](docs/mechanics-audit-2026-10-19.md) — 사용자 "메카닉적으로 문제 없는지 전수조사해봐 심각해" · "홀드화면일때 우리 트랙". 서버 0068.
