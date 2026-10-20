@@ -101,8 +101,11 @@ internal fun DrawHome(
             DrawHomeTitle(subtitle)
             Spacer(Modifier.height(14.dp))
             DrawKindPanel(free, status, actions, onSheet, pendingAny = pending != null)
-            Spacer(Modifier.height(12.dp))
-            DrawKindPanel(premium, status, actions, onSheet, pendingAny = pending != null, Modifier.bringIntoViewRequester(premiumView))
+            // 상급 뽑기는 지갑 연결 혜택이다 — 블록체인 기능이 없는 스토어 판(WEB3 = false)에는 무료 뽑기만
+            if (com.stepup.android.BuildConfig.WEB3) {
+                Spacer(Modifier.height(12.dp))
+                DrawKindPanel(premium, status, actions, onSheet, pendingAny = pending != null, Modifier.bringIntoViewRequester(premiumView))
+            }
             if (status != null) {
                 // 기회 받는 방법 — 서버 값으로 회원에게 해당하는 규칙만(DRAW05)
                 RunTextAction(

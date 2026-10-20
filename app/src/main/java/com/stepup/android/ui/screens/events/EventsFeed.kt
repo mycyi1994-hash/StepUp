@@ -105,13 +105,16 @@ val DEAL_FEED = listOf(
         body = R.string.feed_deal_store_body,
         soon = true,
     ),
-    FeedItem(
-        icon = Icons.Filled.LocalOffer,
-        eyebrow = R.string.feed_eyebrow_notice,
-        title = R.string.feed_deal_trade_title,
-        body = R.string.feed_deal_trade_body,
-        soon = true,
-    ),
+    // 체인 거래 예고 — 블록체인 기능이 있는 판에만(스토어 판은 WEB3 = false)
+    *listOfNotNull(
+        FeedItem(
+            icon = Icons.Filled.LocalOffer,
+            eyebrow = R.string.feed_eyebrow_notice,
+            title = R.string.feed_deal_trade_title,
+            body = R.string.feed_deal_trade_body,
+            soon = true,
+        ).takeIf { com.stepup.android.BuildConfig.WEB3 },
+    ).toTypedArray(),
     FeedItem(
         icon = Icons.Filled.DirectionsRun,
         eyebrow = R.string.feed_eyebrow_notice,

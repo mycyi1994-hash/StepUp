@@ -24,7 +24,7 @@
     <string name="news_section_runs">Runs</string>
     <string name="news_section_deals">Deals</string>
     <string name="news_section_health">Health news</string>
-    <string name="market_tab_nft">NFT market</string>
+    <string name="market_tab_nft">Shoe market</string>
     <string name="nft_sub">Hand a sneaker to another runner</string>
     <string name="feed_run_weekly_title">Weekly challenges reset on Monday</string>
     <string name="feed_run_weekly_body">Step totals start from zero every Monday. The reward for finishing waits in the Events tab.</string>
@@ -185,7 +185,7 @@
 
     <!-- Items -->
     <string name="items_sub">Gear up, earn more</string>
-    <string name="dex_title">NFT Dex</string>
+    <string name="dex_title">Shoe Dex</string>
     <string name="dex_progress">Collected</string>
     <string name="dex_filter_all">All</string>
     <string name="dex_filter_owned">Owned</string>
@@ -206,6 +206,7 @@
     <string name="items_collection_progress">%1$d / %2$d combinations</string>
     <string name="items_mint_title">Mint a new pair</string>
     <string name="items_mint_desc">All draws are free: 10 to start and 3 every day, plus premium draws once you connect a wallet.</string>
+    <string name="items_mint_desc_store">All draws are free: 10 to start and 3 more every day.</string>
     <string name="toast_sign_in_required">Sign in to use SUP and sneakers.</string>
     <string name="toast_offline">Couldn\'t reach the server. Try again in a moment.</string>
     <string name="toast_no_free_draws">No free draws left. You get more tomorrow.</string>
@@ -385,12 +386,6 @@
     <string name="wallet_web_open">Open wallet page</string>
     <string name="wallet_web_sign_in">Sign in first to open the wallet page.</string>
     <string name="wallet_web_offline">Couldn\'t connect. Try again in a moment.</string>
-    <string name="wallet_withdraw">Withdraw</string>
-    <string name="wallet_withdraw_title">Withdraw to GIWA Chain</string>
-    <string name="wallet_withdraw_body">On-chain settlement opens with the mainnet launch. Your balance carries over 1:1 when it does.</string>
-    <string name="wallet_withdraw_min">Minimum withdrawal · 1,000 SUP</string>
-    <string name="wallet_withdraw_eligible">You have enough to withdraw at launch 🎉</string>
-    <string name="wallet_withdraw_short">%1$s SUP more to reach the minimum</string>
     <string name="ledger_earn_walk">Walk &amp; run reward</string>
     <string name="ledger_bonus_goal">Goal bonus</string>
     <string name="ledger_spend_upgrade">Shoe upgrade</string>
@@ -770,8 +765,6 @@ Start running with StepUp.</string>
     <string name="journey_earn_desc">SUP builds up from the steps that count</string>
     <string name="journey_wallet_label">Wallet</string>
     <string name="journey_wallet_desc">Tap the SUP card at the top of home</string>
-    <string name="journey_withdraw_label">Withdraw</string>
-    <string name="journey_withdraw_desc">Inside the wallet · 1,000 SUP minimum</string>
     <string name="journey_soon">Coming soon</string>
     <string name="tour_tab_home_title">① Run tab</string>
     <string name="tour_tab_home_body">Find today’s activity, your goal and Start run here.</string>

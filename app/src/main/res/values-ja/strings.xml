@@ -23,7 +23,7 @@
     <string name="news_section_runs">ランイベント</string>
     <string name="news_section_deals">セール告知</string>
     <string name="news_section_health">健康ニュース</string>
-    <string name="market_tab_nft">NFT マーケット</string>
+    <string name="market_tab_nft">シューズマーケット</string>
     <string name="nft_sub">スニーカーを他のランナーに渡します</string>
     <string name="feed_run_weekly_title">週間チャレンジは月曜にリセットされます</string>
     <string name="feed_run_weekly_body">歩数の合計は毎週月曜に0から始まります。達成報酬はイベントタブで待っています。</string>
@@ -184,7 +184,7 @@
 
     <!-- Items -->
     <string name="items_sub">装備を整えて、もっと稼ごう</string>
-    <string name="dex_title">NFT 図鑑</string>
+    <string name="dex_title">シューズ図鑑</string>
     <string name="dex_progress">収集状況</string>
     <string name="dex_filter_all">すべて</string>
     <string name="dex_filter_owned">所持</string>
@@ -205,6 +205,7 @@
     <string name="items_collection_progress">%1$d / %2$d 組み合わせ</string>
     <string name="items_mint_title">新しいスニーカーをミント</string>
     <string name="items_mint_desc">ガチャはすべて無料です。最初に10回、毎日3回無料で引け、ウォレットを連携すると上級ガチャももらえます。</string>
+    <string name="items_mint_desc_store">ガチャはすべて無料です。最初に10回、毎日3回無料で引けます。</string>
     <string name="toast_sign_in_required">ログインするとSUPとスニーカーを使えます。</string>
     <string name="toast_offline">サーバーに接続できませんでした。しばらくしてからもう一度お試しください。</string>
     <string name="toast_no_free_draws">無料ガチャが残っていません。明日また無料ガチャがもらえます。</string>
@@ -384,12 +385,6 @@
     <string name="wallet_web_open">ウォレットページを開く</string>
     <string name="wallet_web_sign_in">ログインしてからウォレットページを開けます。</string>
     <string name="wallet_web_offline">接続できませんでした。しばらくしてからもう一度お試しください。</string>
-    <string name="wallet_withdraw">出金する</string>
-    <string name="wallet_withdraw_title">GIWA チェーンへ出金</string>
-    <string name="wallet_withdraw_body">オンチェーン決済はメインネットのローンチと同時にスタート。そのとき残高は1:1でそのまま引き継がれます。</string>
-    <string name="wallet_withdraw_min">最低出金額 · 1,000 SUP</string>
-    <string name="wallet_withdraw_eligible">ローンチしたらすぐ出金できます 🎉</string>
-    <string name="wallet_withdraw_short">最低額まであと %1$s SUP</string>
     <string name="ledger_earn_walk">ウォーキング・ランニング報酬</string>
     <string name="ledger_bonus_goal">目標達成ボーナス</string>
     <string name="ledger_spend_upgrade">シューズ強化</string>
@@ -769,8 +764,6 @@ StepUp と走り出そう。</string>
     <string name="journey_earn_desc">認められた歩数の分だけ SUP が貯まります</string>
     <string name="journey_wallet_label">ウォレット</string>
     <string name="journey_wallet_desc">ホーム上部の SUP カードを押すと開きます</string>
-    <string name="journey_withdraw_label">出金</string>
-    <string name="journey_withdraw_desc">ウォレット内の出金・最低 1,000 SUP</string>
     <string name="journey_soon">準備中</string>
     <string name="tour_tab_home_title">① ランタブ</string>
     <string name="tour_tab_home_body">今日の記録と目標を確認し、ランニングを始めましょう。</string>
