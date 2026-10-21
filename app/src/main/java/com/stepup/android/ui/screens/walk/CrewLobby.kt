@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
@@ -53,7 +54,12 @@ import com.stepup.android.data.repo.PartyMember
 import com.stepup.android.data.repo.PartyPhase
 import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.data.repo.PartyState
+import com.stepup.android.domain.CrewPool
+import com.stepup.android.domain.CrewStamina
+import com.stepup.android.domain.CrewStaminaRules
 import com.stepup.android.ui.components.RunSheet
+import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.screens.community.home.crewStaminaMine
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpSans
@@ -85,6 +91,8 @@ internal fun CrewLobbyContent(
     onDismissResult: () -> Unit,
     /** 서버에 닿지 못한 동안 "다시 연결하기" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
     onReconnect: () -> Unit = {},
+    /** 오늘의 크루 체력(0069) — 읽지 못했으면 null(줄을 두지 않는다) */
+    stamina: CrewStamina? = null,
 ) {
     val c = crewColors()
     if (party.phase == PartyPhase.COUNTDOWN) {
@@ -96,6 +104,7 @@ internal fun CrewLobbyContent(
     // 전체 명단(그리드에 다 들어가지 않을 때 · 진행자의 내보내기) · 함께 달린 인원 기준 — 화면 안 상태(고르기만)
     var roster by rememberSaveable { mutableStateOf(false) }
     var rule by rememberSaveable { mutableStateOf(false) }
+    var staminaRule by rememberSaveable { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(c.screen).testTag("party-lobby")) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             // 크루 이름 + 정확히 "크루 달리기" 배지(승인 이미지) — 설명 부제는 두지 않는다
@@ -142,6 +151,14 @@ internal fun CrewLobbyContent(
                             stringResource(R.string.run_my_share), stringResource(R.string.run_crew_share_body), party.myShare, onShare,
                             "party-share-toggle", Modifier.testTag("party-share-location"), icon = Icons.Outlined.LocationOn,
                         )
+                        // 오늘 크루 체력(0069) — 이 크루 러닝이 받쳐 줄 체력. 내 몫을 다 썼으면 출발 전에 알린다(그 뒤 크루 러닝은 적립이 없다).
+                        // 혼자면 두지 않는다 — 혼자 출발한 러닝은 크루 러닝이 아니라 개인 에너지다
+                        if (stamina != null && !alone) {
+                            CrewStaminaRow(stamina, onClick = { staminaRule = true })
+                            if (stamina.pool == CrewPool.CREW_EMPTY) {
+                                CrewError(stringResource(R.string.crew_stamina_my_empty), Modifier.padding(bottom = 6.dp), tag = "party-stamina-empty")
+                            }
+                        }
                         // 혼자면 아래 버튼이 알리기를 맡는다 — 같은 행동을 두 번 두지 않는다
                         if (canNotify && lobby && !alone) {
                             CrewTextAction(
@@ -201,6 +218,57 @@ internal fun CrewLobbyContent(
     }
     if (roster) CrewRosterSheet(party, canKick = lobby && party.isHost, onKick = onKick, onClose = { roster = false })
     if (rule) CrewRuleSheet(onClose = { rule = false })
+    if (staminaRule && stamina != null) CrewStaminaRuleSheet(stamina, onClose = { staminaRule = false })
+}
+
+/** 크루 체력 한 줄 — 내 몫 남음 · 다 씀 · 개인 에너지로. 누르면 규칙(함께 달린 인원 기준과 같은 결) */
+@Composable
+private fun CrewStaminaRow(stamina: CrewStamina, onClick: () -> Unit) {
+    val c = crewColors()
+    val (value, color) = when (stamina.pool) {
+        CrewPool.CREW -> stringResource(R.string.crew_stamina_row_left, CrewStaminaRules.amount(stamina.me.left)) to c.ready
+        CrewPool.CREW_EMPTY -> stringResource(R.string.crew_stamina_row_empty) to runTone().errorIcon
+        CrewPool.PERSONAL -> stringResource(R.string.crew_stamina_row_personal) to c.label
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(onClick = onClick)
+            .padding(vertical = 6.dp).testTag("party-stamina"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Bolt, contentDescription = null, tint = c.label, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(
+            stringResource(R.string.crew_stamina_sheet_title), style = runTextStyle(16.sp, c.text, FontWeight.SemiBold),
+            modifier = Modifier.weight(1f),
+        )
+        Text(value, style = runTextStyle(15.sp, color, FontWeight.Bold), modifier = Modifier.testTag("party-stamina-value"))
+        Text("  ›", style = runTextStyle(15.sp, c.link, FontWeight.SemiBold))
+    }
+}
+
+/** 크루 체력 규칙 — 오늘 크루 체력 · 내 몫, 규칙 네 줄 */
+@Composable
+private fun CrewStaminaRuleSheet(stamina: CrewStamina, onClose: () -> Unit) {
+    val c = crewColors()
+    RunSheet(onDismiss = onClose, modifier = Modifier.testTag("party-stamina-sheet")) {
+        CrewSheetTitle(stringResource(R.string.crew_stamina_sheet_title), body = crewStaminaMine(stamina))
+        Spacer(Modifier.height(12.dp))
+        Text(
+            stringResource(R.string.crew_stamina_title) + "  " +
+                stringResource(R.string.crew_stamina_amount_of, CrewStaminaRules.amount(stamina.left), CrewStaminaRules.amount(stamina.max)),
+            style = runTextStyle(17.sp, c.text, FontWeight.Bold),
+        )
+        if (stamina.contributors > 0) {
+            Text(stringResource(R.string.crew_stamina_sharers, stamina.contributors), style = runTextStyle(14.sp, c.label, FontWeight.Medium))
+        }
+        Spacer(Modifier.height(12.dp))
+        listOf(R.string.crew_stamina_rule, R.string.crew_stamina_rule_empty, R.string.crew_stamina_rule_who, R.string.crew_stamina_rule_solo)
+            .forEach { line ->
+                Text(stringResource(line), style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.5f), modifier = Modifier.padding(bottom = 8.dp))
+            }
+        Spacer(Modifier.height(8.dp))
+        FreeRunButton(stringResource(R.string.common_confirm), onClose, Modifier.fillMaxWidth().testTag("party-stamina-close"))
+    }
 }
 
 /** 그리드에 두는 칸 — 3 × 2. 더 많으면 다섯 사람과 "+N"(전체 명단) */

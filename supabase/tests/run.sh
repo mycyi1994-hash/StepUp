@@ -189,6 +189,83 @@ run -c "delete from auth.users where id = '$COACH_U'" \
     -c "update public.economy_settings set value = '\"none\"'::jsonb where key = 'coaching_provider'" \
     -c "update public.economy_settings set value = 'null'::jsonb where key = 'coaching_user_daily_limit'"
 
+# ── 크루 체력(0069) — 같은 크루의 하루를 두 사람이 동시에 처음 열 때 ─────────────────
+# 크루 체력은 그날 처음 읽거나 쓸 때 한 번 정한다. 둘이 동시에 처음 열어도 둘 다 되고 그날 줄은 하나여야 한다
+# (잠금이 없으면 뒤에 온 쪽이 같은 줄을 넣다 실패한다 — 러닝 올리기가 실패한다).
+echo "── 크루 체력을 동시에 처음 열 때(0069) ──────────────────────────"
+STAMINA_RACE_CREW=69200000-0000-0000-0000-0000000000cc
+STAMINA_RACE_A=69200000-0000-0000-0000-00000000000a
+STAMINA_RACE_B=69200000-0000-0000-0000-00000000000b
+run <<SQL
+insert into auth.users (id, email) values ('$STAMINA_RACE_A', 'stamina-a@test'), ('$STAMINA_RACE_B', 'stamina-b@test')
+on conflict (id) do nothing;
+insert into public.crews (id, owner_id, name) values ('$STAMINA_RACE_CREW', '$STAMINA_RACE_A', '동시 체력');
+update public.crew_members set joined_at = now() - interval '30 days' where crew_id = '$STAMINA_RACE_CREW';
+insert into public.crew_members (crew_id, user_id, role, joined_at)
+values ('$STAMINA_RACE_CREW', '$STAMINA_RACE_B', 'MEMBER', now() - interval '30 days');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict) values
+  ('$STAMINA_RACE_A', now() - interval '3 days', now() - interval '3 days' + interval '20 minutes', 1200, 2000, 1500, 'CLEAN'),
+  ('$STAMINA_RACE_B', now() - interval '3 days', now() - interval '3 days' + interval '20 minutes', 1200, 2000, 1500, 'CLEAN');
+SQL
+STAMINA_DONE=$(race "$STAMINA_RACE_A" "select public.crew_stamina('$STAMINA_RACE_CREW')" \
+                    "$STAMINA_RACE_B" "select public.crew_stamina('$STAMINA_RACE_CREW')")
+run <<SQL
+do \$\$
+declare v_days int; v_members int;
+begin
+  select count(*) into v_days from economy.crew_stamina_days where crew_id = '$STAMINA_RACE_CREW';
+  select count(*) into v_members from economy.crew_stamina_members where crew_id = '$STAMINA_RACE_CREW';
+  if $STAMINA_DONE <> 2 or v_days <> 1 or v_members <> 2 then
+    raise exception 'FAIL  동시에 처음 열기 — 된 일 %개 · 그날 줄 %개 · 크루원 줄 %개', $STAMINA_DONE, v_days, v_members;
+  end if;
+  raise notice '  OK   %', '같은 크루의 하루를 두 사람이 동시에 처음 열어도 둘 다 되고 크루 체력은 한 번만 정한다';
+end \$\$;
+SQL
+run -c "delete from public.crews where id = '$STAMINA_RACE_CREW'" \
+    -c "delete from auth.users where id in ('$STAMINA_RACE_A', '$STAMINA_RACE_B')"
+
+# ── 크루 러닝 거리 채우기(0069) — 다시 붙여넣어도 이미 센 크루는 그대로, 아직 안 센 크루만 지금까지의 크루 러닝으로 ──
+# 위 검사가 크루 러닝으로 쌓은 크루(체력 크루)는 그대로여야 하고, 거리가 0 인 크루는 크루에 묶인 2명 이상 러닝
+# (무효 · 보류 · 혼자 빼고)으로 채운다. 아래 재적용이 이 채우기를 다시 돈다.
+BACKFILL_CREW=69300000-0000-0000-0000-0000000000cc
+BACKFILL_U=69300000-0000-0000-0000-00000000000a
+BACKFILL_V=69300000-0000-0000-0000-00000000000b
+STAMINA_CREW=69000000-0000-0000-0000-0000000000cc
+run <<SQL
+insert into auth.users (id, email) values ('$BACKFILL_U', 'backfill-u@test'), ('$BACKFILL_V', 'backfill-v@test')
+on conflict (id) do nothing;
+insert into public.crews (id, owner_id, name) values ('$BACKFILL_CREW', '$BACKFILL_U', '채우기');
+insert into public.crew_members (crew_id, user_id, role) values ('$BACKFILL_CREW', '$BACKFILL_V', 'MEMBER');
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict,
+                                  verdict_reason, crew_id, party_size) values
+  ('$BACKFILL_U', timestamptz '2026-01-10 07:00+09', timestamptz '2026-01-10 08:00+09', 3600, 9000, 20000, 'CLEAN', '', '$BACKFILL_CREW', 2),
+  ('$BACKFILL_V', timestamptz '2026-01-10 07:00+09', timestamptz '2026-01-10 08:00+09', 3600, 9000, 11000, 'FLAGGED',
+   '하루 적립 상한에 걸렸습니다', '$BACKFILL_CREW', 3),
+  ('$BACKFILL_U', timestamptz '2026-01-11 07:00+09', timestamptz '2026-01-11 08:00+09', 3600, 9000, 5000, 'CLEAN', '', '$BACKFILL_CREW', 1),
+  ('$BACKFILL_V', timestamptz '2026-01-11 07:00+09', timestamptz '2026-01-11 08:00+09', 3600, 9000, 5000, 'VOID',
+   '가짜 위치가 감지되었습니다', '$BACKFILL_CREW', 2),
+  ('$BACKFILL_U', timestamptz '2026-01-12 07:00+09', timestamptz '2026-01-12 08:00+09', 3600, 9000, 5000, 'FLAGGED',
+   '최근 무효 러닝이 많아 적립을 보류합니다', '$BACKFILL_CREW', 2);
+SQL
+STAMINA_KM_BEFORE=$(run -At -c "select run_km from public.crews where id = '$STAMINA_CREW'")
+
 echo "── setup.sql 재적용 (기록이 쌓인 데이터베이스에서도 배포가 멈추지 않는가) ──"
 run -f "$RUNDIR/setup.sql" >/dev/null
 echo "OK"
+
+run <<SQL
+do \$\$
+declare b public.crews; s public.crews;
+begin
+  select * into b from public.crews where id = '$BACKFILL_CREW';
+  select * into s from public.crews where id = '$STAMINA_CREW';
+  if b.run_km <> 31 or b.level <> 2 then
+    raise exception 'FAIL  크루 러닝 거리 채우기 — %km · 레벨 %', b.run_km, b.level;
+  end if;
+  raise notice '  OK   %', '거리가 0 인 크루는 지금까지의 크루 러닝(2명 이상 · 무효 · 보류 · 혼자 빼고)으로 채운다 — 31km · 레벨 2 (0069)';
+  if s.run_km <> $STAMINA_KM_BEFORE then
+    raise exception 'FAIL  다시 붙여넣기 — 이미 센 크루의 거리가 %km 에서 %km 로 바뀌었다', $STAMINA_KM_BEFORE, s.run_km;
+  end if;
+  raise notice '  OK   %', '다시 붙여넣어도 이미 센 크루의 거리는 그대로다 — 두 번 더하지 않는다';
+end \$\$;
+SQL

@@ -1,5 +1,10 @@
-@font-face{font-family:Pretendard;src:url('./assets/fonts/pretendard-regular.otf') format('opentype');font-weight:400 600;font-display:swap}
-@font-face{font-family:Pretendard;src:url('./assets/fonts/pretendard-extrabold.otf') format('opentype');font-weight:700 900;font-display:swap}
+/* Pretendard 공식 KS X 1001 서브셋(WOFF2, 굵기마다 약 0.27 MB — 예전 OTF 는 1.57 MB 씩이라 느린 3G 에서 2분 넘게 걸렸다).
+   숫자 글꼴 Barlow Condensed 는 구글 글꼴 대신 여기서 준다(라틴만, OFL — BARLOW-OFL.txt). */
+@font-face{font-family:Pretendard;src:url('./assets/fonts/pretendard-regular.subset.woff2') format('woff2');font-weight:400 600;font-display:swap}
+@font-face{font-family:Pretendard;src:url('./assets/fonts/pretendard-extrabold.subset.woff2') format('woff2');font-weight:700 900;font-display:swap}
+@font-face{font-family:'Barlow Condensed';src:url('./assets/fonts/barlow-condensed-500-latin.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Barlow Condensed';src:url('./assets/fonts/barlow-condensed-700-latin.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'Barlow Condensed';src:url('./assets/fonts/barlow-condensed-800-latin.woff2') format('woff2');font-weight:800;font-display:swap}
 
 :root{
   --bg:#03060D;--card:#060C18;--surface:#0B1D35;--surface-2:#07142A;--line:#13284A;--line-2:#1A3B61;
@@ -11,6 +16,10 @@
   --page-inset:max(var(--pad-x),88px);
 }
 *{box-sizing:border-box}
+/* hidden 은 언제나 숨긴다(.promo-film{display:block} 같은 규칙이 덮지 않게) */
+[hidden]{display:none!important}
+/* 영어로 볼 사람에게 한국어가 먼저 번쩍이지 않게 — i18n.js 가 바꾸면 푼다(index.html 머리 스크립트) */
+.i18n-pending body{visibility:hidden}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
 a{color:inherit;text-decoration:none}a:hover{color:#fff}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -50,6 +59,11 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .social{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;border:1px solid #ffffff2e;color:var(--text-2);transition:background .2s,color .2s}
 .social:hover{background:#ffffff14;color:#fff}
 .social svg{width:16px;height:16px;fill:currentColor}
+/* 사전 등록 — 어느 화면에서나 보이는 머리 줄의 단 하나의 행동(예전 "출시 준비 중" 자리) */
+.pill-join{border-color:transparent;background:var(--blue);color:#fff;font-weight:800}
+.pill-join:hover{background:var(--blue-hover)}
+.waitlist-joined .pill-join{border-color:#ffffff2e;background:transparent;color:var(--text-2);font-weight:600}
+.lang-switch{min-width:44px;padding:10px 12px}
 
 .dots{position:absolute;right:max(12px,calc((100vw - 1200px) / 2 - 84px));width:56px;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:4px}
 .dots button{display:flex;align-items:center;gap:10px;min-height:44px;border:0;padding:8px;background:none;color:var(--text-2)}
@@ -83,8 +97,10 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-dialog [hidden]{display:none!important}
 .waitlist-dialog a:hover{color:#1b64da}
 .waitlist-dialog :focus-visible{outline:3px solid #3182f6;outline-offset:3px}
-.waitlist-form,.waitlist-share{display:flex;flex-direction:column;gap:14px;padding:40px}
-.waitlist-close{position:absolute;z-index:2;top:17px;right:17px;width:40px;height:40px;border:0;border-radius:50%;background:#f2f4f6;color:#6b7684;font-size:27px;line-height:1}
+.waitlist-form,.waitlist-share{display:flex;flex-direction:column;gap:14px;padding:0 40px 40px}
+/* 닫기는 스크롤해도 내용 위에 겹치지 않는 맨 위 흰 띠에 */
+.waitlist-bar{position:sticky;top:0;z-index:3;display:flex;justify-content:flex-end;padding:14px 14px 4px;background:#fff}
+.waitlist-close{width:44px;height:44px;border:0;border-radius:50%;background:#f2f4f6;color:#6b7684;font-size:27px;line-height:1}
 .waitlist-close:hover{background:#e5e8eb;color:#191f28}
 .waitlist-symbol{display:grid;place-items:center;width:54px;height:54px;margin:2px 0 8px;border-radius:19px;background:#e8f3ff;color:#3182f6;font-size:35px;font-weight:800}
 .waitlist-symbol.is-success{background:#e8faf2;color:#13a574;font-size:30px}
@@ -96,6 +112,10 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-dialog input::placeholder{color:#8b95a1;opacity:1}
 .waitlist-form>input:focus,.waitlist-share-form input:focus{outline:2px solid #3182f6;outline-offset:0;background:#fff}
 .waitlist-field-help{margin:-5px 0 3px;font-size:14px;line-height:1.55;color:#6b7684}
+.waitlist-field-error{margin:-6px 0 2px;color:#c93636;font-size:14px;font-weight:700;line-height:1.55;word-break:keep-all}
+.waitlist-dialog input[aria-invalid=true]{border-color:#e5484d;background:#fff6f6}
+.waitlist-consent:has(input[aria-invalid=true]){color:#c93636}
+.waitlist-consent input[aria-invalid=true]{outline:2px solid #e5484d;outline-offset:2px}
 .waitlist-honeypot{position:absolute!important;left:-10000px;width:1px;height:1px;overflow:hidden}
 .waitlist-consent{display:flex;align-items:flex-start;gap:10px;padding-top:3px;color:#6b7684;font-size:15px;line-height:1.6;cursor:pointer}
 .waitlist-consent input{width:20px;height:20px;margin:1px 0 0;accent-color:#3182f6;flex:none}
@@ -107,7 +127,7 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-terms-body{display:flex;flex-direction:column;gap:16px;max-height:88dvh;overflow-y:auto;padding:30px 26px 22px}
 .waitlist-terms h2{margin:0;font-size:21px;line-height:1.4;letter-spacing:-.03em}
 .waitlist-terms dl{display:flex;flex-direction:column;gap:12px;margin:0;padding:16px;border-radius:16px;background:#f7f8fa}
-.waitlist-terms dl div{display:grid;grid-template-columns:68px 1fr;gap:10px;font-size:15px;line-height:1.55}
+.waitlist-terms dl div{display:grid;grid-template-columns:5.6em 1fr;gap:10px;font-size:15px;line-height:1.55}
 .waitlist-terms dt{color:#6b7684;font-weight:600}
 .waitlist-terms dd{margin:0;color:#333d4b;word-break:keep-all}
 .waitlist-terms dd span{color:#6b7684;font-size:15px}
@@ -115,6 +135,7 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-terms a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 .waitlist-terms :focus-visible{outline:3px solid #3182f6;outline-offset:3px}
 .waitlist-terms .waitlist-submit{margin-top:2px}
+.waitlist-terms-close{min-height:48px;border:0;border-radius:13px;background:#f2f4f6;color:#333d4b;font-size:16px;font-weight:700}
 .waitlist-terms .waitlist-terms-full{align-self:center;color:#8b95a1;font-size:15px}
 .waitlist-dialog .is-error{color:#c93636}
 .waitlist-submit{min-height:56px;padding:14px 18px;border:0;border-radius:13px;background:#3182f6;color:#fff;font-size:16px;font-weight:800;transition:background .2s,transform .15s}
@@ -122,6 +143,16 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-fineprint{margin:0;color:#6b7684;text-align:center;font-size:14px;line-height:1.65}
 .waitlist-share{gap:16px}
 .waitlist-share .waitlist-intro{margin-bottom:0}
+.waitlist-done{display:flex;flex-direction:column;gap:10px;padding-bottom:22px;border-bottom:1px solid #e5e8eb}
+.waitlist-done .waitlist-kicker{color:#087f5b}
+.waitlist-done-email{margin:0;color:#191f28;font-size:17px;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
+.waitlist-done-next{margin:0;color:#4e5968;font-size:15px;line-height:1.6;word-break:keep-all}
+.waitlist-optional{display:flex;flex-direction:column;gap:16px}
+.waitlist-optional-title{margin:6px 0 0;font-size:20px;letter-spacing:-.04em;word-break:keep-all}
+.waitlist-ref-note{margin:8px 0 0;color:#8b95a1;font-size:13px;line-height:1.55;word-break:keep-all}
+.waitlist-done-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.waitlist-done-close{min-height:52px;border:0;border-radius:13px;background:#f2f4f6;color:#333d4b;font-size:16px;font-weight:800}
+.waitlist-done-close:hover{background:#e5e8eb}
 .waitlist-benefit{display:flex;align-items:center;gap:12px;padding:17px 18px;border-radius:16px;background:#e8f3ff;color:#1b64da}
 .waitlist-benefit>div{flex:1}.waitlist-benefit strong{display:block;font-size:15px;line-height:1.5;word-break:keep-all}
 .waitlist-benefit span:not(.waitlist-progress){display:block;font-size:14px;margin-top:4px;line-height:1.6}
@@ -149,7 +180,7 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-social-form-slot:empty,.waitlist-creator-form-slot:empty{display:none}
 .waitlist-materials{border-bottom:1px solid #e5e8eb;padding:0 0 18px}
 .waitlist-materials summary{display:flex;justify-content:space-between;align-items:center;min-height:44px;cursor:pointer;list-style:none;font-size:15px;color:#6b7684}
-.waitlist-materials summary::-webkit-details-marker{display:none}.waitlist-materials summary span{font-size:22px}.waitlist-materials[open] summary span{transform:rotate(45deg)}
+.waitlist-materials summary::-webkit-details-marker{display:none}.waitlist-materials .summary-plus{font-size:22px}.waitlist-materials[open] .summary-plus{transform:rotate(45deg)}
 .waitlist-materials-body{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:9px 0 0}
 .waitlist-materials img{width:100%;height:auto;border-radius:12px}
 .waitlist-share-copy{margin:0;color:#4e5968;font-size:14px;line-height:1.7;white-space:pre-line;overflow-wrap:anywhere}
@@ -177,7 +208,13 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-share-form input{background:#fff;border-color:#e5e8eb}
 .waitlist-share-note{padding-top:5px}.waitlist-change-email{align-self:center;min-height:40px;padding:8px;border:0;background:transparent;color:#6b7684;font-size:14px;text-decoration:underline;text-underline-offset:3px}
 @media(prefers-reduced-motion:reduce){.waitlist-dialog *{transition:none!important;scroll-behavior:auto!important}.waitlist-share-platforms button:hover{transform:none}}
-.film-media{min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:16px;background:var(--bg)}
+.film-media{position:relative;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:16px;background:var(--bg)}
+.film-poster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:var(--bg);border-radius:16px;cursor:pointer}
+.film-poster img{width:100%;height:100%;object-fit:contain;display:block;border-radius:16px}
+.film-play{position:absolute;display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:999px;background:#03060DCC;border:1px solid #ffffff40;color:#fff;font-size:16px;font-weight:800;backdrop-filter:blur(6px)}
+.film-poster:hover .film-play{background:var(--blue)}
+.film-shield{position:absolute;inset:0;z-index:2;cursor:pointer}
+.film-noscript{position:absolute;bottom:16px;left:16px;padding:10px 16px;border-radius:999px;background:var(--blue);color:#fff;font-weight:800}
 .promo-film{display:block;width:100%;height:100%;min-height:0;border:0;object-fit:contain;background:var(--bg);border-radius:16px}
 .film-caption{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 4px 8px}
 .film-copy h1{margin:0;font-size:clamp(25px,2.7vw,36px);line-height:1.25;letter-spacing:-.03em;word-break:keep-all;text-wrap:balance}
@@ -189,12 +226,13 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 
 /* ── 공통 조각 ──────────────────────────────────────── */
 .badge{position:absolute;white-space:nowrap;z-index:5;padding:5px 10px;border-radius:999px;border:1px solid #ffffff22;background:#03060D99;font-size:11px;font-weight:700;color:var(--sub)}
-.badge-top{top:18px;right:22px}.badge-bottom{bottom:14px;right:18px}
+.badge-top{top:18px;right:22px}.badge-bottom{bottom:14px;right:18px}.badge-phone{top:16px;left:16px}
+.waitlist-joined .cta[data-waitlist-open]{background:var(--surface);box-shadow:none;border:1px solid var(--line-2)}
 .eyebrow{display:flex;align-items:center;gap:12px;font-family:var(--num);font-weight:700;font-size:14px;letter-spacing:.06em;color:var(--sub)}
 .live-dot,.crew-dot,.cy-dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red)}
 .cy-dot{background:var(--cyan);box-shadow:none}
 .sq-dot{flex:none;width:9px;height:9px;border-radius:2px;background:var(--cyan)}
-.cta{align-self:flex-start;flex:none;white-space:nowrap;display:flex;align-items:center;gap:12px;padding:16px 28px;border-radius:999px;background:var(--blue);color:#fff;font-size:16px;font-weight:800;box-shadow:0 12px 36px #147BFF55;transition:background .2s,transform .15s}
+.cta{align-self:flex-start;flex:none;white-space:nowrap;display:flex;align-items:center;gap:12px;padding:16px 28px;border:0;border-radius:999px;background:var(--blue);color:#fff;font-size:16px;font-weight:800;box-shadow:0 12px 36px #147BFF55;transition:background .2s,transform .15s}
 .cta:hover{background:var(--blue-hover);color:#fff}.cta:active{transform:scale(.97)}
 .cta:disabled{border:1px solid var(--line-2);background:var(--surface);color:var(--sub);box-shadow:none;transform:none;cursor:default}
 .cta-lg{padding:17px 30px;font-size:17px}.cta-xl{padding:19px 34px;font-size:18px}
@@ -304,7 +342,7 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .r-cap-v{font-size:clamp(18px,2.6vh,22px);font-weight:800}
 .ph0 .r0,.ph0 .r-stamp{opacity:1;transform:none}
 .ph1 .r-line{transform:scaleX(1)}
-.ph1 .r1,.ph3 .r3{opacity:1;transform:none}
+.ph1 .r1,.ph0 .r3{opacity:1;transform:none}
 .ph2 .r-glow,.ph2 .r-orbit,.ph2 .r-caption{opacity:1}
 .ph2 .r-shoe img{opacity:1;transform:rotate(-12deg) scale(1)}
 .flash-on .r-flash{animation:h-flash .9s ease-out both}
@@ -336,7 +374,8 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .c-seg.is-anim i{width:100%;transition:width 5s linear}
 .round{width:46px;height:46px;border-radius:50%;border:1px solid #ffffff40;background:#03060D66;color:#fff;font-size:18px;transition:background .2s}
 .round:hover{background:#ffffff1a}
-.course-phone-wrap,.start-phone-wrap{position:relative;min-height:0;height:100%;display:flex;align-items:center;justify-content:center;padding:clamp(16px,3vh,36px)}
+.course-phone-wrap,.start-phone-wrap{position:relative;min-height:0;height:100%;display:flex;align-items:center;justify-content:center;padding:clamp(16px,3vh,36px);pointer-events:none}
+.c-ctrl{position:relative;z-index:6}
 .course-phone{opacity:0;transform:translateY(60px) rotate(4deg);transition:opacity .9s ease .45s,transform 1.2s var(--enter) .45s}
 .page-course.is-active .course-phone{opacity:1;transform:none}
 .ph-status{position:absolute;top:0;left:0;right:0;z-index:3;height:9%;display:flex;align-items:center;justify-content:space-between;padding:0 9%;font-size:11px;font-weight:700;color:var(--text-2);background:linear-gradient(180deg,#040811,#04081100)}
@@ -408,48 +447,65 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 }
 @media(max-width:680px){
   .streaks{display:none}
-  /* 좁은 화면에서는 신발을 스탯과 제목 사이 빈 곳으로 올려 CTA 옆 안내 문구를 가리지 않게 */
-  .run-shoe{top:48%;bottom:auto;right:-8px;width:min(54vw,32vh,300px)}
+  /* 좁은 화면에서는 신발을 스탯(심박)과 제목 사이 오른쪽 빈 곳에 작게 — 제목("오늘의 한 걸음을") · 심박 값 · CTA 옆 문구를 가리지 않게 */
+  .run-shoe{top:46%;bottom:auto;right:-6px;width:min(40vw,22vh,220px)}
   .r-shoe{top:40%;width:min(60%,70vh)}
 }
-/* 폰 — 머리 줄의 로고 · X · 텔레그램 · 소리 · 출시 준비 중이 한 줄에 들어가게 알약 · 로고 · 칸을 줄인다 */
+/* 폰 — 머리 줄의 로고 · X · 텔레그램 · 소리 · 언어 · 사전 등록이 한 줄에 들어가게. 소리는 점만 남기고(글자는 화면 읽기용으로 남김),
+   누르는 칸은 36px 이상 · 사이 6px(예전 30px · 4px 는 엄지로 잘못 눌렀다) */
 @media(max-width:480px){
   .header-in{gap:8px}
   .header-actions{gap:6px}
   .logo img{height:18px}
-  .pill{padding:10px 12px;font-size:12px}
-  .sound{padding:10px;gap:6px;font-size:12px}
-  .social{width:32px;height:32px}
-  .social svg{width:14px;height:14px}
+  .pill{min-height:36px;padding:8px 11px;font-size:12px}
+  .sound{width:36px;padding:0;justify-content:center}
+  .sound .sound-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .lang-switch{min-width:36px;padding:8px 9px}
+  .social{width:36px;height:36px}
+  .social svg{width:15px;height:15px}
+  .footer-links{gap:4px 14px}
+  .footer-links a{display:inline-flex;align-items:center;min-height:44px}
 }
 @media(max-width:380px){
-  .header-actions{gap:4px}
-  .logo img{height:16px}
-  .social{width:30px;height:30px}
+  .header-actions{gap:5px}
+  .logo img{height:15px}
+  .pill{padding:8px 9px}
 }
-/* 아주 좁은 폭 — 누를 수 없는 "출시 준비 중"은 화면마다 있는 큰 버튼과 같은 말이라 머리 줄에서만 뺀다 */
 @media(max-width:340px){
-  .pill.soon{display:none}
+  .social{width:32px;height:32px}
 }
 /* 두 단이 들어가지 않는 폭(카드 < 680px)에서는 세로 두 줄 */
 @media(max-width:740px){
-  .waitlist-form,.waitlist-share{padding:30px 22px}
+  .waitlist-form,.waitlist-share{padding:0 22px 30px}
+  .waitlist-bar{padding:10px 10px 2px}
   .waitlist-share{gap:16px}.waitlist-dialog h2{font-size:28px}.waitlist-benefit{padding:14px}.waitlist-benefit strong{font-size:15px}.waitlist-materials-body{grid-template-columns:100px 1fr;gap:12px}
   .waitlist-share-platforms{gap:7px}
   .waitlist-share-platforms button{min-height:118px}.waitlist-share-platforms strong{font-size:15px}.platform-status{font-size:12px}
-  .film-card{display:flex;flex-direction:column;justify-content:center;gap:28px}
-  .waitlist-banner{margin-top:0;min-height:0;align-items:stretch;flex-wrap:wrap;gap:10px 13px;padding:15px 18px}
+  /* 넘치면 위에서부터(가운데 맞춤이 위를 머리 줄 밑으로 밀지 않게). 띠는 줄지 않고 영상 칸이 대신 준다 —
+     영어처럼 글이 길면 띠가 줄어 영상 칸(과 그 위의 투명한 막)이 "사전 등록" 버튼을 덮었다 */
+  .film-card{display:flex;flex-direction:column;justify-content:safe center;gap:22px}
+  .waitlist-banner{flex-shrink:0;margin-top:0;min-height:0;align-items:stretch;flex-wrap:wrap;gap:10px 13px;padding:15px 18px}
   .waitlist-accent{height:44px}
   .waitlist-banner-copy{flex-basis:calc(100% - 25px)}
   .waitlist-banner-copy strong{font-size:18px}
   .waitlist-banner-copy span{font-size:12px}
   .waitlist-open{width:100%;min-height:45px;font-size:14px}
-  .film-media{flex:none;aspect-ratio:16/9}
+  .film-media{flex:0 1 auto;aspect-ratio:16/9;min-height:120px}
+  .film-caption{flex-shrink:0}
   .film-caption{flex-direction:column;align-items:flex-start;gap:22px;padding:0 8px}
   .film-copy h1{font-size:clamp(25px,6.6vw,34px)}
   .film-copy p{font-size:14px;max-width:32ch}
   .grid2{grid-template-columns:minmax(0,1fr)}
+  /* 크루 — 명단이 카드 아래로 넘쳐 상태 줄이 지도 밑에 깔리고 버튼이 잘렸다: 지도를 줄이고 명단을 두 줄로 */
   .crew-card{grid-template-rows:36% minmax(0,1fr)}
+  .crew-info{justify-content:flex-start;gap:10px;padding:16px 20px 18px}
+  .crew-num{font-size:min(15vw,9vh,72px)}
+  .crew-of{font-size:min(6vw,4vh,30px)}
+  .roster{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
+  .roster-row{padding:6px 0}
+  .roster-name{font-size:13px;gap:8px}
+  .roster-st{font-size:11px}
+  .crew-spot{top:auto;bottom:10px;padding:6px 11px;font-size:12px}
   .reward-card{grid-template-rows:minmax(0,1fr) 36%}
   .course-card{grid-template-rows:minmax(0,1fr) 44%}
   .start-card{grid-template-rows:44% minmax(0,1fr)}

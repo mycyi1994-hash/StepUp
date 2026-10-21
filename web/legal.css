@@ -1,7 +1,8 @@
-/* StepUp 법적 고지 페이지 공통 스타일 — 랜딩 페이지(index.html)의 Volt 테마를 따른다 */
+/* StepUp 법적 고지 페이지 공통 스타일 — 홈페이지(index.html)의 남색 · 파랑과 같은 로고를 쓴다(예전 연두 글자 로고는
+   다른 사이트처럼 보였다 — 2026-10-19 사용자 점검). 변수 이름(--volt 등)은 페이지 안 인라인 스타일이 쓰므로 그대로 둔다. */
 :root{
-  --black:#060708; --carbon:#0E1113; --carbon-high:#171B1E;
-  --edge:#23282C; --volt:#C3FF3E; --snow:#F2F5F7; --silver:#A9B4BC; --slate:#6B7480;
+  --black:#03060D; --carbon:#060C18; --carbon-high:#0B1D35;
+  --edge:#13284A; --volt:#4C9DFF; --snow:#F4F8FF; --silver:#A8BDD9; --slate:#7E93B3;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -16,7 +17,8 @@ a:hover{text-decoration:underline}
 
 nav{position:sticky;top:0;z-index:10;background:rgba(6,7,8,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--edge)}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:20px}
-.brand{font-weight:900;font-style:italic;letter-spacing:-.5px;font-size:20px;color:var(--snow)}
+.brand{display:block;line-height:0;color:var(--snow)}
+.brand img{height:20px;width:auto;display:block}
 .brand em{color:var(--volt);font-style:italic}
 nav ul{display:flex;gap:22px;list-style:none;font-size:14px}
 nav ul a{color:var(--silver)}

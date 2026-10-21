@@ -2449,8 +2449,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="crew_level_error_body">다른 크루 정보는 계속 볼 수 있어요.\n잠시 후 다시 확인해 주세요.</string>
     <string name="crew_level_retry">다시 확인</string>
     <string name="crew_level_title">크루 레벨</string>
-    <string name="crew_level_about">크루가 함께 쌓아온 활동 단계를 보여줘요.</string>
-    <string name="crew_level_about_new">아직 레벨이 정해지지 않은 새 크루예요.</string>
+    <string name="crew_level_about">크루 방에서 함께 달린 거리로 오르는 크루 레벨이에요.</string>
+    <string name="crew_level_about_new">아직 함께 달린 크루 러닝이 없는 새 크루예요.</string>
     <string name="crew_level_week">이번 주에는 %1$d명이 %2$skm를 달렸어요.</string>
     <string name="crew_level_week_none">이번 주 크루 러닝 기록은 아직 없어요.</string>
     <string name="crew_report_title">신고 사유를 알려주세요</string>

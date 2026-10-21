@@ -210,7 +210,11 @@ class CrewCardRepository(
 
     suspend fun level(crewId: String): CrewOutcome<CrewLevelInfo> = when (val result = api.level(crewId)) {
         is ServerResult.Ok -> CrewOutcome.Ok(
-            CrewLevelInfo(result.value.level, result.value.weekKm, result.value.weekRunners, result.value.memberCount),
+            CrewLevelInfo(
+                result.value.level, result.value.weekKm, result.value.weekRunners, result.value.memberCount,
+                runKm = result.value.runKm, nextLevelKm = result.value.nextLevelKm, levelBonus = result.value.levelBonus,
+                levels = result.value.levels.map { com.stepup.android.domain.CrewLevelStep(it.level, it.km, it.bonus) },
+            ),
         )
         else -> CrewOutcome.Failed(result.problem())
     }

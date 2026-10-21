@@ -7,6 +7,7 @@ import com.stepup.android.domain.CrewMeeting
 import com.stepup.android.domain.CrewRun
 import com.stepup.android.domain.CrewRunDetail
 import com.stepup.android.domain.CrewRunsScope
+import com.stepup.android.domain.CrewStamina
 import com.stepup.android.domain.CrewWeek
 import com.stepup.android.domain.MeetingAttendee
 import com.stepup.android.domain.RecordingOwner
@@ -57,6 +58,9 @@ class CrewHomeRepository(
 ) {
     private val homes = MutableStateFlow<Map<String, CrewHomeSummary>>(emptyMap())
 
+    /** 크루마다 마지막으로 받은 오늘의 크루 체력(0069) — 크루 홈 · 대기실 · 달리는 중 예상이 함께 읽는다 */
+    private val staminas = MutableStateFlow<Map<String, CrewStamina>>(emptyMap())
+
     /** 들고 있는 홈의 주인 — 계정이 바뀌면 앞사람의 홈을 지운다 */
     @Volatile private var holder: String? = null
 
@@ -66,7 +70,10 @@ class CrewHomeRepository(
     private suspend fun ownerNow() {
         val now = owner()
         val before = holder
-        if (before != null && before != now) homes.value = emptyMap()
+        if (before != null && before != now) {
+            homes.value = emptyMap()
+            staminas.value = emptyMap()
+        }
         holder = now
     }
 
@@ -84,6 +91,18 @@ class CrewHomeRepository(
         ownerNow()
         return api.home(crewId).home(crewId) { it.toDomain() }.also { outcome ->
             if (outcome is HomeOutcome.Ok) homes.update { it + (crewId to outcome.value) }
+        }
+    }
+
+    fun staminaNow(crewId: String): CrewStamina? = staminas.value[crewId]
+
+    fun stamina(crewId: String): Flow<CrewStamina?> = staminas.map { it[crewId] }.distinctUntilChanged()
+
+    /** 오늘의 크루 체력을 다시 읽는다 — 실패하면 들고 있던 값을 그대로 둔다(서버가 0069 전이면 화면은 칸을 두지 않는다) */
+    suspend fun loadStamina(crewId: String): HomeOutcome<CrewStamina> {
+        ownerNow()
+        return api.stamina(crewId).home(crewId) { it.toDomain(crewId) }.also { outcome ->
+            if (outcome is HomeOutcome.Ok) staminas.update { it + (crewId to outcome.value) }
         }
     }
 
@@ -144,6 +163,7 @@ class CrewHomeRepository(
     /** 이 크루의 홈을 지운다(나갔다 · 내보내졌다 · 해산됐다) */
     fun forget(crewId: String) {
         homes.update { it - crewId }
+        staminas.update { it - crewId }
     }
 
     private fun patchMeeting(meeting: CrewMeeting) {

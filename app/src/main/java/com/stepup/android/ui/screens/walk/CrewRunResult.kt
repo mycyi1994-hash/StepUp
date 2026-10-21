@@ -96,6 +96,8 @@ internal fun CrewRunResult(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     deleteFailed: String? = null,
+    /** 크루 체력(0069) — 서버가 기록한 뒤 다시 읽은 오늘 내 몫 한 줄. 보상 설명 시트에만 둔다 */
+    staminaNote: String? = null,
 ) {
     val c = crewColors()
     var more by rememberSaveable { mutableStateOf(false) }
@@ -184,7 +186,7 @@ internal fun CrewRunResult(
             }, Modifier.fillMaxWidth().testTag("run-result-delete"), kind = FreeButtonKind.Danger)
         }
     }
-    if (rewardInfo) CrewRewardSheet(reward, onClose = { rewardInfo = false })
+    if (rewardInfo) CrewRewardSheet(reward, staminaNote, onClose = { rewardInfo = false })
 }
 
 /** 크루 표시 · 크루 이름 · 함께 출발한 인원(출발 명단 — 지금 남은 사람 수가 아니다). 혼자 출발했으면 "혼자 출발" */
@@ -324,7 +326,7 @@ private fun CrewSettleChip(settle: Settle) {
 
 /** 보상 설명 — 누를 때만. 지금 상태 · 금액 · 늘 붙던 안내 한 줄(확인 후 반영 · 반영됨 · 기준 미달 · 내역 확인) */
 @Composable
-private fun CrewRewardSheet(reward: ResultReward, onClose: () -> Unit) {
+private fun CrewRewardSheet(reward: ResultReward, staminaNote: String?, onClose: () -> Unit) {
     val c = crewColors()
     val hint = when (reward.settle) {
         Settle.PENDING -> stringResource(R.string.run_reward_note)
@@ -344,6 +346,10 @@ private fun CrewRewardSheet(reward: ResultReward, onClose: () -> Unit) {
         }
         Spacer(Modifier.height(10.dp))
         Text(hint, style = runTextStyle(15.sp, c.label, FontWeight.Medium, 1.5f), modifier = Modifier.testTag("run-result-reward-hint"))
+        if (staminaNote != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(staminaNote, style = runTextStyle(15.sp, c.text, FontWeight.SemiBold, 1.5f), modifier = Modifier.testTag("run-result-stamina"))
+        }
         Spacer(Modifier.height(16.dp))
         FreeRunButton(stringResource(R.string.common_confirm), onClose, Modifier.fillMaxWidth().testTag("run-result-reward-close"))
     }

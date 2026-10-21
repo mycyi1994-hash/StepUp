@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
+import com.stepup.android.ui.screens.community.chat.BlueBar
 import com.stepup.android.ui.screens.community.chat.BlueSurface
 import com.stepup.android.ui.screens.community.chat.blueText
 import com.stepup.android.ui.screens.community.chat.BlueBottomBar
@@ -51,9 +52,11 @@ import com.stepup.android.ui.screens.community.chat.BlueTopBar
 import com.stepup.android.ui.screens.community.chat.blueInk
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewHomeRules
+import com.stepup.android.domain.CrewLevelInfo
 import com.stepup.android.domain.CrewMember
 import com.stepup.android.domain.CrewPersonRole
 import com.stepup.android.domain.CrewRun
+import com.stepup.android.domain.CrewStaminaRules
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.chat.ChatRetryState
 import com.stepup.android.ui.screens.community.crew.CrewAvatar
@@ -135,7 +138,7 @@ fun CrewIntroScreen(
 }
 
 // ─────────────────────────────────────────────────────────────
-// 03 크루 레벨 — 승급 기준은 정해지지 않았다(계산하지 않는다)
+// 03 크루 레벨 — 크루 러닝 누적 거리로 오른다(0069). 기준을 주지 않는 예전 서버면 "승급 기준 준비 중"
 // ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -170,20 +173,25 @@ fun CrewLevelScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onWeekly
                 modifier = Modifier.padding(top = 4.dp).testTag("home-level-now"),
             )
             Spacer(Modifier.height(18.dp))
-            BlueSurface(Modifier.fillMaxWidth().testTag("home-level-next"), selected = true, radius = 20.dp) {
-                Column(Modifier.padding(horizontal = 22.dp, vertical = 20.dp)) {
-                    Text(stringResource(R.string.crewhome_level_next), style = blueText(15.sp, ink.secondary, FontWeight.Bold))
-                    Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (current != null) {
-                            Text(stringResource(R.string.crew_level_value, current + 1), style = blueText(36.sp, ink.text, FontWeight.ExtraBold, 1.15f))
+            val runKm = info?.runKm
+            if (info != null && runKm != null) {
+                CrewLevelNext(info, runKm)
+            } else {
+                BlueSurface(Modifier.fillMaxWidth().testTag("home-level-next"), selected = true, radius = 20.dp) {
+                    Column(Modifier.padding(horizontal = 22.dp, vertical = 20.dp)) {
+                        Text(stringResource(R.string.crewhome_level_next), style = blueText(15.sp, ink.secondary, FontWeight.Bold))
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (current != null) {
+                                Text(stringResource(R.string.crew_level_value, current + 1), style = blueText(36.sp, ink.text, FontWeight.ExtraBold, 1.15f))
+                            }
+                            Spacer(Modifier.weight(1f))
+                            // 기준을 받지 못했다(예전 서버 · 아직 읽는 중) — 필요 거리 · 보상을 앱이 만들지 않는다
+                            Text(stringResource(R.string.crewhome_level_pending), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
                         }
-                        Spacer(Modifier.weight(1f))
-                        // 승급 조건은 정해지지 않았다 — XP · 필요 거리 · 보상을 만들지 않는다
-                        Text(stringResource(R.string.crewhome_level_pending), style = blueText(15.sp, ink.secondary, FontWeight.Medium))
+                        Spacer(Modifier.height(10.dp))
+                        Text(stringResource(R.string.crewhome_level_pending_body), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
                     }
-                    Spacer(Modifier.height(10.dp))
-                    Text(stringResource(R.string.crewhome_level_pending_body), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
                 }
             }
             Spacer(Modifier.height(32.dp))
@@ -213,6 +221,63 @@ fun CrewLevelScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onWeekly
         }
         BlueBottomBar { BlueButton(stringResource(R.string.crewhome_level_weekly), onWeekly, Modifier.testTag("home-level-weekly")) }
     }
+}
+
+/**
+ * 다음 레벨 — 필요 거리 · 진행 막대 · 지금 거리와 남은 거리(마지막 레벨이면 함께 달린 거리), 레벨 기준 한 줄, 레벨이 더하는 크루 체력.
+ * 값은 서버(crew_level)가 준 그대로 — 레벨이 없는 새 크루는 첫 기준(Lv.2)까지 0km 부터 센다.
+ */
+@Composable
+private fun CrewLevelNext(info: CrewLevelInfo, runKm: Double) {
+    val ink = blueInk()
+    val next = info.nextLevelKm
+    BlueSurface(Modifier.fillMaxWidth().testTag("home-level-next"), selected = true, radius = 20.dp) {
+        Column(Modifier.padding(horizontal = 22.dp, vertical = 20.dp)) {
+            Text(
+                stringResource(if (next != null) R.string.crewhome_level_next else R.string.crewhome_level_max),
+                style = blueText(15.sp, ink.secondary, FontWeight.Bold),
+            )
+            Spacer(Modifier.height(8.dp))
+            if (next != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.crew_level_value, (info.level ?: 1) + 1),
+                        style = blueText(36.sp, ink.text, FontWeight.ExtraBold, 1.15f),
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        stringResource(R.string.crewhome_level_goal_km, km(next)), style = blueText(20.sp, ink.info, FontWeight.ExtraBold),
+                        modifier = Modifier.testTag("home-level-goal"),
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                BlueBar(CrewStaminaRules.levelProgress(runKm, info.level, next, info.levels), Modifier.fillMaxWidth().height(10.dp))
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    stringResource(R.string.crewhome_level_progress, km(runKm), km(CrewStaminaRules.kmToNext(runKm, next) ?: 0.0)),
+                    style = blueText(15.sp, ink.text, FontWeight.SemiBold, 1.45f), modifier = Modifier.testTag("home-level-progress"),
+                )
+            } else {
+                Text(stringResource(R.string.crewhome_level_max_body, km(runKm)), style = blueText(16.sp, ink.text, FontWeight.SemiBold, 1.45f))
+            }
+            if (info.level == null) {
+                Spacer(Modifier.height(6.dp))
+                Text(stringResource(R.string.crewhome_level_first), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.crewhome_level_rule), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
+        }
+    }
+    Spacer(Modifier.height(14.dp))
+    // 레벨이 더하는 크루 체력(0069) — 서버가 준 레벨 표에서 한 레벨의 몫을 읽는다
+    val bonusNow = info.levelBonus ?: CrewStaminaRules.levelBonus(info.level)
+    val step = info.levels.getOrNull(1)?.let { second -> second.bonus - info.levels[0].bonus } ?: CrewStaminaRules.LEVEL_BONUS
+    Text(
+        stringResource(R.string.crewhome_level_bonus, CrewStaminaRules.amount(bonusNow)), style = blueText(16.sp, ink.info, FontWeight.Bold),
+        modifier = Modifier.testTag("home-level-bonus"),
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(stringResource(R.string.crewhome_level_bonus_step, CrewStaminaRules.amount(step)), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
 }
 
 // ─────────────────────────────────────────────────────────────

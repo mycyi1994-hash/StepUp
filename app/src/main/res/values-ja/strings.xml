@@ -2450,8 +2450,8 @@ StepUp と走り出そう。</string>
     <string name="crew_level_error_body">ほかのクルー情報は引き続き見られます。\nしばらくしてから再度確認してください。</string>
     <string name="crew_level_retry">もう一度確認</string>
     <string name="crew_level_title">クルーレベル</string>
-    <string name="crew_level_about">クルーが一緒に積み重ねてきた活動の段階です。</string>
-    <string name="crew_level_about_new">まだレベルが決まっていない新しいクルーです。</string>
+    <string name="crew_level_about">クルールームで一緒に走った距離で上がるクルーレベルです。</string>
+    <string name="crew_level_about_new">まだ一緒に走ったクルーランがない新しいクルーです。</string>
     <string name="crew_level_week">今週は%1$d人が%2$skm走りました。</string>
     <string name="crew_level_week_none">今週のクルーランの記録はまだありません。</string>
     <string name="crew_report_title">報告の理由を教えてください</string>
