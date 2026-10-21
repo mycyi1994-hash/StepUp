@@ -327,7 +327,7 @@ fun ItemsScreen(
                             color = Snow,
                         )
                         Text(
-                            text = stringResource(R.string.items_mint_desc),
+                            text = stringResource(if (com.stepup.android.BuildConfig.WEB3) R.string.items_mint_desc else R.string.items_mint_desc_store),
                             style = MaterialTheme.typography.bodyMedium,
                             color = Silver,
                         )

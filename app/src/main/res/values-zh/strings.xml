@@ -22,7 +22,7 @@
     <string name="news_section_runs">跑步活动</string>
     <string name="news_section_deals">特价公告</string>
     <string name="news_section_health">健康资讯</string>
-    <string name="market_tab_nft">NFT 市场</string>
+    <string name="market_tab_nft">跑鞋市场</string>
     <string name="nft_sub">把跑鞋转给其他跑者</string>
     <string name="feed_run_weekly_title">每周挑战在周一重置</string>
     <string name="feed_run_weekly_body">步数合计每周一从零开始。完成奖励在活动标签等着你。</string>
@@ -183,7 +183,7 @@
 
     <!-- Items -->
     <string name="items_sub">装备到位，赚得更多</string>
-    <string name="dex_title">NFT 图鉴</string>
+    <string name="dex_title">跑鞋图鉴</string>
     <string name="dex_progress">收集进度</string>
     <string name="dex_filter_all">全部</string>
     <string name="dex_filter_owned">已拥有</string>
@@ -204,6 +204,7 @@
     <string name="items_collection_progress">%1$d / %2$d 种组合</string>
     <string name="items_mint_title">铸造新球鞋</string>
     <string name="items_mint_desc">所有抽取都免费：首次10次、每天3次，连接钱包后还可获得高级抽取。</string>
+    <string name="items_mint_desc_store">抽取全部免费。开始可抽 10 次，每天再免费抽 3 次。</string>
     <string name="toast_sign_in_required">登录后即可使用 SUP 和运动鞋。</string>
     <string name="toast_offline">无法连接服务器，请稍后再试。</string>
     <string name="toast_no_free_draws">没有剩余的免费抽取，明天会再有免费抽取。</string>
@@ -383,12 +384,6 @@
     <string name="wallet_web_open">打开钱包页面</string>
     <string name="wallet_web_sign_in">请先登录再打开钱包页面。</string>
     <string name="wallet_web_offline">无法连接，请稍后再试。</string>
-    <string name="wallet_withdraw">提现</string>
-    <string name="wallet_withdraw_title">提现到 GIWA 链</string>
-    <string name="wallet_withdraw_body">链上结算会在主网上线时开放。到那时余额会 1:1 平移过去。</string>
-    <string name="wallet_withdraw_min">最低提现 · 1,000 SUP</string>
-    <string name="wallet_withdraw_eligible">上线后你就能直接提现啦 🎉</string>
-    <string name="wallet_withdraw_short">还差 %1$s SUP 就到最低额度</string>
     <string name="ledger_earn_walk">步行·跑步奖励</string>
     <string name="ledger_bonus_goal">目标达成奖励</string>
     <string name="ledger_spend_upgrade">鞋子升级</string>
@@ -768,8 +763,6 @@
     <string name="journey_earn_desc">按认可的步数累积 SUP</string>
     <string name="journey_wallet_label">钱包</string>
     <string name="journey_wallet_desc">点击首页上方的 SUP 卡片即可打开</string>
-    <string name="journey_withdraw_label">提现</string>
-    <string name="journey_withdraw_desc">在钱包内提现 · 最低 1,000 SUP</string>
     <string name="journey_soon">准备中</string>
     <string name="tour_tab_home_title">① 跑步标签</string>
     <string name="tour_tab_home_body">查看今日记录和目标，并开始跑步。</string>

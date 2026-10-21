@@ -79,7 +79,7 @@ class ProfileRunningPathTest {
             RUNS.forEachIndexed { i, meters ->
                 dao.insert(WalkSessionEntity(startedAt = MARKER + i * 60_000L, endedAt = MARKER + i * 60_000L + 1_800_000L,
                     steps = 4000, durationSec = 1800, distanceMeters = meters, calories = 0.0, pointsEarned = 0.0,
-                    uploadState = "REJECTED", verdict = "VOID"))
+                    uploadState = "REJECTED"))
             }
             totals
         }

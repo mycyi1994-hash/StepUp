@@ -142,7 +142,8 @@ val LightPalette = StepUpPalette(
     carbon = Color(0xFFF4F8FF),
     carbonHigh = Color(0xFFE9F0FF),
     edge = Color(0xFFDCE6F7),
-    volt = Color(0xFF145BFF),
+    // 밝은 테마가 기본이 되며 한 단계 쨍하게(2026-10-21, 예전 #145BFF). 흰 글자 4.8:1 — 표면 위 글자는 voltText(그대로)
+    volt = Color(0xFF1166FF),
     voltDeep = Color(0xFF0B3FCC),
     voltSoft = Color(0xFF5B8CFF),
     onVolt = Color(0xFFFFFFFF),

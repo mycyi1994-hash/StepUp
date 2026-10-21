@@ -235,11 +235,14 @@ internal fun RulesSheet(status: DrawStatus, onClose: () -> Unit) {
         SheetGroupLabel(stringResource(R.string.dv2_free))
         if (status.signupGranted > 0) SheetLine(stringResource(R.string.dv2_rules_signup), count(status.signupGranted))
         if (status.dailyTotal > 0) SheetLine(stringResource(R.string.dv2_rules_daily), count(status.dailyTotal))
-        RunDivider()
-        SheetGroupLabel(stringResource(R.string.dv2_premium))
-        if (status.giftOnLink > 0) SheetLine(stringResource(R.string.dv2_rules_first_link), count(status.giftOnLink))
-        if (status.runStepMeters > 0) SheetLine(stringResource(R.string.dv2_rules_run, step), stringResource(R.string.dv2_plus_one))
-        SheetBody(stringResource(R.string.dv2_rules_note), modifier = Modifier.padding(top = 4.dp))
+        // 상급(지갑 연결 혜택)은 블록체인 기능이 있는 판에만
+        if (com.stepup.android.BuildConfig.WEB3) {
+            RunDivider()
+            SheetGroupLabel(stringResource(R.string.dv2_premium))
+            if (status.giftOnLink > 0) SheetLine(stringResource(R.string.dv2_rules_first_link), count(status.giftOnLink))
+            if (status.runStepMeters > 0) SheetLine(stringResource(R.string.dv2_rules_run, step), stringResource(R.string.dv2_plus_one))
+            SheetBody(stringResource(R.string.dv2_rules_note), modifier = Modifier.padding(top = 4.dp))
+        }
     }
 }
 
@@ -302,10 +305,14 @@ internal fun FreeEmptySheet(status: DrawStatus, onSeePremium: () -> Unit, onClos
     DrawSheetFrame(
         title = stringResource(R.string.dv2_free_empty_title), onDismiss = onClose, modifier = Modifier.testTag("draw-sheet-free-empty"),
         actions = {
-            SheetActions(
-                stringResource(R.string.dv2_ok), onClose, "draw-sheet-ok",
-                stringResource(R.string.dv2_see_premium), onSeePremium, secondaryTag = "draw-sheet-see-premium",
-            )
+            if (com.stepup.android.BuildConfig.WEB3) {
+                SheetActions(
+                    stringResource(R.string.dv2_ok), onClose, "draw-sheet-ok",
+                    stringResource(R.string.dv2_see_premium), onSeePremium, secondaryTag = "draw-sheet-see-premium",
+                )
+            } else {
+                SheetActions(stringResource(R.string.dv2_ok), onClose, "draw-sheet-ok")
+            }
         },
     ) {
         if (status.dailyTotal > 0) SheetBody(stringResource(R.string.draw_blue_free_empty_daily, status.dailyTotal), strong = true)

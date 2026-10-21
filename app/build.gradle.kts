@@ -39,6 +39,9 @@ fun gitOutput(vararg args: String): String? = runCatching {
     }.standardOutput.asText.get().trim().takeIf { it.isNotEmpty() }
 }.getOrNull()
 
+// 웹 지갑 페이지 주소 — debug · qa(테스트 APK)만 쓴다. 스토어 판은 비운다(WEB3 = false)
+val walletUrl = secret("WALLET_URL", "stepupWalletUrl") ?: "https://stepupcrew.com/wallet.html"
+
 val buildCommitTime = gitOutput("log", "-1", "--format=%ct")?.toLongOrNull() ?: 0L
 val buildCommit = gitOutput("rev-parse", "--short=7", "HEAD") ?: ""
 
@@ -54,12 +57,12 @@ check(releaseVersionCode in 1..999) { "versionCode 는 1~999 — 테스트 빌�
 
 android {
     namespace = "com.stepup.android"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.stepup.android"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = releaseVersionCode
         versionName = "1.17.0"
 
@@ -76,11 +79,9 @@ android {
         buildConfigField("String", "DRAW_DAPP_URL", "\"${secret("DRAW_DAPP_URL", "stepupDrawDappUrl") ?: ""}\"")
         buildConfigField("String", "DRAW_CONTRACT_ADDRESS", "\"${secret("DRAW_CONTRACT_ADDRESS", "stepupDrawContractAddress") ?: ""}\"")
         // 웹 지갑 페이지 — 지갑 연결 · 보너스 뽑기 · SUP · 신발 꺼내기/넣기 (web/wallet.html)
-        buildConfigField(
-            "String",
-            "WALLET_URL",
-            "\"${secret("WALLET_URL", "stepupWalletUrl") ?: "https://stepupcrew.com/wallet.html"}\"",
-        )
+        buildConfigField("String", "WALLET_URL", "\"$walletUrl\"")
+        // 블록체인 기능(지갑 연결 · 출금 · 상급 뽑기 · 체인 안내). 스토어 판(release)은 끈다 — 아래 release 블록.
+        buildConfigField("boolean", "WEB3", "true")
 
         // ── 서버·로그인 설정 ────────────────────────────────────────
         //
@@ -171,6 +172,11 @@ android {
             if (releaseSigningReady) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            // 스토어 판에는 블록체인 기능을 넣지 않는다(2026-10-20). Google Play 는 2026-01-28 부터 한국에서 암호화폐 거래소 ·
+            // 지갑 앱에 금융정보분석원 가상자산사업자 신고 수리를 요구한다 — 지갑 연결 · 출금 · 상급 뽑기(지갑 연결 혜택)를 숨기고
+            // 웹 지갑 페이지 주소도 비운다. 테스트 APK(qa) · debug 는 그대로 켠다(docs/PLAY-STORE.md)
+            buildConfigField("boolean", "WEB3", "false")
+            buildConfigField("String", "WALLET_URL", "\"\"")
         }
         // 폰에 받는 테스트 APK(test-apk 의 StepUp-test.apk). 예전에는 debug 를 그대로 올렸는데, 디버그 가능 앱은
         // ART 가 최적화를 끄고 R8 도 돌지 않아 Compose 화면 전체가 눈에 띄게 끊겼다(2026-10-04 "렉 걸린다").
@@ -186,6 +192,9 @@ android {
             matchingFallbacks += listOf("release")
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("boolean", "TEST_TOOLS", "true")
+            // release 를 이어받으므로 블록체인 기능은 다시 켠다 — 테스트 APK 는 지갑 · 출금을 그대로 시험한다
+            buildConfigField("boolean", "WEB3", "true")
+            buildConfigField("String", "WALLET_URL", "\"$walletUrl\"")
         }
     }
     sourceSets {
