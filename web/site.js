@@ -1,5 +1,7 @@
 // stepupcrew.com 소개 페이지 — 홍보영상과 다섯 가지 러닝 경험.
 // 화면 속 숫자·이름·코스·SUP 는 모두 예시이고, 각 카드에 "화면 예시" 배지가 붙어 있다.
+import { t, lang, setLang, onLangChange } from './i18n.js?v=20261019-qa';
+
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const pad2 = n => String(n).padStart(2, '0');
@@ -79,22 +81,63 @@ function snd(type) {
   if (type === 'whoosh') noise(0.45, 0.25, 900);
 }
 const soundBtn = $('.sound');
-// 홍보영상은 유튜브 임베드다. 소리 버튼·페이지 이동은 유튜브 플레이어 API 로 조절한다.
+// ── 홍보영상 ───────────────────────────────────────────────────
+// 유튜브 개인정보 보호 모드(youtube-nocookie) 임베드를 postMessage 로만 다룬다. 예전의 www.youtube.com/iframe_api
+// 스크립트는 누르기 전에 유튜브 쿠키를 심었다(2026-10-19 사용자 점검). 첫 화면을 다 그린 뒤에 붙이고(느린 연결 ·
+// 데이터 절약 · 모션 줄이기면 표지를 눌렀을 때만), 그 전에는 같은 영상의 표지를 보인다.
 const filmFrame = $('.promo-film');
+const filmPoster = $('.film-poster');
+const filmShield = $('.film-shield');
 const filmStatus = $('.film-status');
+const FILM_ORIGIN = 'https://www.youtube-nocookie.com';
 let resumeFilm = !reduceMotion.matches;
-let film; // 유튜브 플레이어. API 가 준비되기 전에는 없다.
+let filmLoaded = false;
+let filmReady = false;
+let filmFailed = false;
+let filmState = -1; // 유튜브 플레이어 상태: -1 시작 전 · 0 끝 · 1 재생 · 2 일시정지 · 3 버퍼링 · 5 대기
+let filmMuted = true;
+let filmVolume = 100;
+let filmListen;
+function filmCommand(func, args = []) {
+  if (!filmReady || !filmFrame.contentWindow) return;
+  filmFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args, id: 'stepup-film', channel: 'widget' }), FILM_ORIGIN);
+}
+function loadFilm() {
+  if (filmLoaded) return;
+  filmLoaded = true;
+  const src = new URL(filmFrame.dataset.src);
+  src.searchParams.set('origin', location.origin);
+  // 플레이어 문서가 열린 뒤에 묻는다(그 전의 빈 창에 보내면 주소가 달라 버려진다). 준비될 때까지 몇 번 —
+  // 유튜브 iframe API 와 같은 약속
+  filmFrame.addEventListener('load', () => {
+    let tries = 0;
+    clearInterval(filmListen);
+    const ask = () => filmFrame.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'stepup-film', channel: 'widget' }), FILM_ORIGIN);
+    ask();
+    filmListen = setInterval(() => {
+      if (filmReady || ++tries > 60) { clearInterval(filmListen); return; }
+      ask();
+    }, 250);
+  }, { once: true });
+  filmFrame.src = src.href;
+  filmFrame.hidden = false;
+}
+function revealFilm() {
+  filmPoster.hidden = true;
+  // 영상 위에서도 휠 · 쓸기가 페이지를 넘기게 투명한 막을 덮는다(한 번 누르면 걷혀 유튜브 컨트롤을 쓴다)
+  filmShield.hidden = page !== 0;
+}
 function updateSound() {
   soundBtn.setAttribute('aria-pressed', String(soundOn));
-  soundBtn.setAttribute('aria-label', soundOn ? '소리 끄기' : '소리 켜기');
-  $('.sound-label', soundBtn).textContent = soundOn ? '소리 끄기' : '소리 켜기';
+  soundBtn.setAttribute('aria-label', t(soundOn ? 'sound.off' : 'sound.on'));
+  $('.sound-label', soundBtn).textContent = t(soundOn ? 'sound.off' : 'sound.on');
 }
 function applyFilmSound() {
-  if (!film) return;
+  if (!filmReady) return;
   if (soundOn) {
-    film.unMute();
-    if (film.getVolume() === 0) film.setVolume(100);
-  } else film.mute();
+    filmCommand('unMute');
+    if (filmVolume === 0) filmCommand('setVolume', [100]);
+  } else filmCommand('mute');
 }
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
@@ -104,52 +147,88 @@ soundBtn.addEventListener('click', () => {
 });
 let playCheck;
 function syncFilm() {
-  if (!film) return;
+  if (!filmReady) return;
   clearTimeout(playCheck);
-  if (page !== 0 || document.hidden || !resumeFilm) { film.pauseVideo(); return; }
-  film.playVideo();
-  // 자동 재생이 막히면 재생 상태가 되지 않는다.
+  if (page !== 0 || document.hidden || !resumeFilm) { filmCommand('pauseVideo'); return; }
+  filmCommand('playVideo');
+  // 자동 재생이 막히면 재생 상태가 되지 않는다. 불러오지 못한 영상의 안내("유튜브에서 보기")는 덮지 않는다.
   playCheck = setTimeout(() => {
-    if (!film || page !== 0 || document.hidden || film.getPlayerState() === YT.PlayerState.PLAYING) return;
-    filmStatus.textContent = '재생 버튼을 누르면 영상이 시작돼요.';
+    if (!filmReady || filmFailed || page !== 0 || document.hidden || filmState === 1) return;
+    filmStatus.textContent = t('film.blocked');
     filmStatus.hidden = false;
   }, 2500);
 }
-function filmStateChange({ data }) {
-  if (data === YT.PlayerState.PLAYING) {
+function filmStateChange(state) {
+  filmState = state;
+  if (state === 1) {
     resumeFilm = true;
+    filmFailed = false;
     filmStatus.hidden = true;
+    revealFilm();
     // 유튜브 컨트롤에서 바꾼 소리 상태를 소리 버튼에 맞춘다.
-    soundOn = !film.isMuted() && film.getVolume() > 0;
+    soundOn = !filmMuted && filmVolume > 0;
     updateSound();
-  } else if (data === YT.PlayerState.PAUSED && page === 0 && !document.hidden) resumeFilm = false;
+  } else if (state === 2 && page === 0 && !document.hidden) resumeFilm = false;
 }
 function filmError() {
-  filmStatus.replaceChildren('영상을 불러오지 못했어요. ');
+  filmFailed = true;
+  clearTimeout(playCheck);
+  filmStatus.replaceChildren(t('film.error'));
   const link = document.createElement('a');
   link.className = 'film-retry';
   link.href = 'https://youtu.be/5dfGSfGdBPo';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.textContent = '유튜브에서 보기';
+  link.textContent = t('film.errorLink');
   filmStatus.append(link);
   filmStatus.hidden = false;
 }
-window.onYouTubeIframeAPIReady = () => {
-  const player = new YT.Player(filmFrame, {
-    events: {
-      onReady: () => { film = player; applyFilmSound(); syncFilm(); },
-      onStateChange: filmStateChange,
-      onError: filmError,
-    },
-  });
+window.addEventListener('message', event => {
+  if (event.origin !== FILM_ORIGIN || event.source !== filmFrame.contentWindow) return;
+  let data;
+  try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch { return; }
+  if (!data || typeof data !== 'object') return;
+  const info = data.info;
+  if ((data.event === 'onReady' || data.event === 'initialDelivery') && !filmReady) {
+    filmReady = true;
+    clearInterval(filmListen);
+    revealFilm();
+    applyFilmSound();
+    syncFilm();
+  }
+  if ((data.event === 'infoDelivery' || data.event === 'initialDelivery') && info && typeof info === 'object') {
+    if (typeof info.volume === 'number') filmVolume = info.volume;
+    if (typeof info.muted === 'boolean' && info.muted !== filmMuted) {
+      filmMuted = info.muted;
+      if (filmState === 1) { soundOn = !filmMuted && filmVolume > 0; updateSound(); }
+    }
+    if (typeof info.playerState === 'number' && info.playerState !== filmState) filmStateChange(info.playerState);
+    // 재생할 수 없는 영상은 onError 대신 videoData.errorCode 로만 알려 오기도 한다
+    if (info.videoData?.errorCode && !filmFailed) filmError();
+  } else if (data.event === 'onStateChange' && typeof info === 'number') filmStateChange(info);
+  else if (data.event === 'onError') filmError();
+});
+filmPoster.addEventListener('click', () => {
+  resumeFilm = true;
+  loadFilm();
+});
+filmShield.addEventListener('click', () => {
+  // 한 번 누르면 막을 걷어 다음 누름이 유튜브 컨트롤로 간다. 이 누름은 유튜브처럼 재생 · 일시정지로 쓴다.
+  filmShield.hidden = true;
+  if (filmState === 1) filmCommand('pauseVideo');
+  else { resumeFilm = true; filmCommand('playVideo'); }
+});
+const slowNetwork = () => {
+  const c = navigator.connection;
+  return !!c && (c.saveData || /(^|-)(2g|3g)$/.test(c.effectiveType || ''));
 };
-const filmApi = document.createElement('script');
-filmApi.src = 'https://www.youtube.com/iframe_api';
-document.head.append(filmApi);
+if (!slowNetwork() && !reduceMotion.matches) {
+  const start = () => setTimeout(loadFilm, 200);
+  if (document.readyState === 'complete') start(); else window.addEventListener('load', start, { once: true });
+}
 document.addEventListener('visibilitychange', syncFilm);
 reduceMotion.addEventListener('change', () => {
-  if (reduceMotion.matches) { resumeFilm = false; film?.pauseVideo(); }
+  if (reduceMotion.matches) { resumeFilm = false; filmCommand('pauseVideo'); }
 });
 
 // ── 01 러닝: 스톱워치 ─────────────────────────────────────────
@@ -210,7 +289,7 @@ const crew = {
   card: $('.crew-card'), lines: $('.crew-lines'), runners: $('.crew-runners'), roster: $('.roster'),
   num: $('.crew-num'), status: $('.crew-status'), headline: $('.crew-headline'), items: []
 };
-RUNNERS.forEach(r => {
+RUNNERS.forEach((r, i) => {
   const line = document.createElementNS(SVG_NS, 'line');
   line.setAttribute('x1', r.sx); line.setAttribute('y1', r.sy);
   line.setAttribute('x2', 50); line.setAttribute('y2', 55);
@@ -219,22 +298,34 @@ RUNNERS.forEach(r => {
 
   const dot = document.createElement('div');
   dot.className = 'runner';
-  dot.textContent = r.name[0];
+  const initial = document.createTextNode('');
   const tip = document.createElement('span');
   tip.className = 'runner-tip';
-  tip.textContent = `${r.name} · 페이스 ${r.pace}`;
-  dot.append(tip);
+  dot.append(initial, tip);
   crew.runners.append(dot);
 
   const row = document.createElement('div');
   row.className = 'roster-row';
   row.innerHTML = '<span class="roster-name"><i></i></span><span class="roster-st"></span>';
-  row.firstChild.append(r.name);
+  const name = document.createTextNode('');
+  row.firstChild.append(name);
   crew.roster.append(row);
 
-  crew.items.push({ r, line, dot, row, st: row.lastChild });
+  crew.items.push({ r, i, line, dot, row, initial, tip, name, st: row.lastChild });
 });
+let crewJoined = 0;
+// 이름 · 말풍선을 지금 언어로(이름은 예시)
+function labelCrew() {
+  crew.items.forEach(({ r, i, initial, tip, name }) => {
+    const runner = t(`runner.${i}`);
+    initial.data = runner[0];
+    tip.textContent = t('crew.tip', { name: runner, pace: r.pace });
+    name.data = runner;
+  });
+}
+labelCrew();
 function renderCrew(joined) {
+  crewJoined = joined;
   crew.items.forEach(({ r, line, dot, row, st }, i) => {
     const j = joined > i;
     dot.style.left = j ? `calc(50% + ${r.dx}px)` : r.sx + '%';
@@ -242,13 +333,13 @@ function renderCrew(joined) {
     dot.classList.toggle('is-joined', j);
     line.classList.toggle('is-joined', j);
     row.classList.toggle('is-joined', j);
-    st.textContent = j ? '도착했어요' : `오는 중 · ${r.dist}`;
+    st.textContent = j ? t('crew.arrived') : t('crew.coming', { dist: r.dist });
   });
   const done = joined >= RUNNERS.length;
   crew.card.classList.toggle('is-done', done);
   crew.num.textContent = pad2(joined);
-  crew.status.textContent = (done ? '모두 모였어요' : '크루 모집 중') + ' · 한강 나이트 러너스';
-  crew.headline.textContent = done ? '다 모였네요. 이제 함께 달려요!' : '함께 달릴 크루를 만나보세요.';
+  crew.status.textContent = `${t(done ? 'crew.allIn' : 'crew.recruiting')} · ${t('crew.name')}`;
+  crew.headline.textContent = t(done ? 'crew.titleDone' : 'crew.title');
 }
 function startCrew() {
   let joined = 0;
@@ -324,9 +415,8 @@ COURSES.forEach((c, i) => {
     `</svg><div class="ph-map-fade"></div></div>` +
     `<div class="ph-info"><span class="ph-name"></span>` +
     `<span class="ph-km">${c.km}<span class="u">KM</span></span>` +
-    `<div class="ph-grid"><div><span>시간</span><span>${c.time}</span></div><div><span>페이스</span><span>${c.pace}</span></div><div><span>상승</span><span>${c.up}m</span></div></div>` +
-    `<div class="ph-go">이 코스 달리기</div></div>`;
-  $('.ph-name', slide).textContent = c.name;
+    `<div class="ph-grid"><div><span data-i18n="phone.time"></span><span>${c.time}</span></div><div><span data-i18n="phone.pace"></span><span>${c.pace}</span></div><div><span data-i18n="phone.climb"></span><span>${c.up}m</span></div></div>` +
+    `<div class="ph-go" data-i18n="phone.go"></div></div>`;
   slidesEl.append(slide);
 });
 const course = {
@@ -350,12 +440,20 @@ function renderCourse() {
 }
 function fillCourseText(c) {
   course.idx.textContent = '0' + (ci + 1);
-  course.name.textContent = c.name;
-  course.desc.textContent = c.desc;
+  course.name.textContent = t(`course.${ci}.name`);
+  course.desc.textContent = t(`course.${ci}.desc`);
   course.km.textContent = c.km;
   course.up.textContent = c.up;
-  course.level.textContent = c.level;
+  course.level.textContent = t(`course.${ci}.level`);
 }
+// 폰 그림 속 코스 이름 · 칸 이름을 지금 언어로
+function labelCourses() {
+  course.slides.forEach((slide, i) => {
+    $('.ph-name', slide).textContent = t(`course.${i}.name`);
+    for (const el of slide.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  });
+}
+labelCourses();
 function autoCourses() {
   clearInterval(courseTimer);
   courseTimer = every(5000, () => { snd('tick'); ci = (ci + 1) % 3; renderCourse(); });
@@ -417,6 +515,8 @@ function enter(n) {
   clearAll();
   resetPages();
   page = n;
+  // 첫 화면으로 돌아오면 영상 위 막을 다시 덮는다(휠 · 쓸기가 다시 페이지를 넘기게)
+  if (filmReady) filmShield.hidden = n !== 0;
   pages.forEach((p, i) => p.classList.toggle('is-active', i === n));
   dotButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === n)));
   renderCourse();
@@ -472,6 +572,9 @@ window.addEventListener('keydown', e => {
   const onControl = e.target.closest && e.target.closest('a,button,input,textarea,select');
   if (['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !onControl)) { e.preventDefault(); go(1); }
   if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+  // 처음 · 끝 화면(바닥글의 개인정보처리방침 · 이용약관은 마지막 화면에 있다)
+  if (e.key === 'Home') { e.preventDefault(); to(0, { force: true }); }
+  if (e.key === 'End') { e.preventDefault(); to(SLUGS.length - 1, { force: true }); }
   if (SLUGS[page] === 'course' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !onControl) stepCourse(e.key === 'ArrowRight' ? 1 : -1);
 });
 
@@ -480,12 +583,21 @@ window.addEventListener('touchstart', e => {
   if ($('.waitlist-dialog')?.open) { touchY = null; return; }
   touchY = e.touches.length === 1 && !e.target.closest?.('video') ? e.touches[0].clientY : null;
 }, { passive: true });
+// 넘어가는 중(약 1.25초)에 쓴 것은 버리지 않고 하나만 기억했다가 끝나면 넘긴다 — 빠른 쓸기의 절반이 무시됐다.
+let queuedSwipe = 0;
+let queuedTimer = null;
 window.addEventListener('touchend', e => {
   if ($('.waitlist-dialog')?.open) return;
   if (touchY === null) return;
   const dy = touchY - e.changedTouches[0].clientY;
   touchY = null;
-  if (Math.abs(dy) > 50) go(dy > 0 ? 1 : -1);
+  if (Math.abs(dy) <= 50) return;
+  const d = dy > 0 ? 1 : -1;
+  const now = performance.now();
+  if (now >= lockUntil) { go(d); return; }
+  queuedSwipe = d;
+  clearTimeout(queuedTimer);
+  queuedTimer = setTimeout(() => { const q = queuedSwipe; queuedSwipe = 0; if (q) go(q); }, lockUntil - now + 20);
 }, { passive: true });
 
 $$('[data-go]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); to(Number(b.dataset.go), { force: true }); }));
@@ -501,6 +613,21 @@ root.addEventListener('scroll', () => { root.scrollTop = 0; });
 window.addEventListener('hashchange', () => {
   const i = SLUGS.indexOf(location.hash.slice(1));
   if (i >= 0) to(i, { force: true });
+});
+
+// ── 언어 ───────────────────────────────────────────────────────
+const langButton = $('.lang-switch');
+const labelLangButton = () => langButton.setAttribute('lang', lang === 'ko' ? 'en' : 'ko');
+labelLangButton();
+langButton.addEventListener('click', () => setLang(lang === 'ko' ? 'en' : 'ko'));
+onLangChange(() => {
+  labelLangButton();
+  updateSound();
+  labelCrew();
+  renderCrew(crewJoined);
+  labelCourses();
+  fillCourseText(COURSES[ci]);
+  if (!filmStatus.hidden) { if (filmFailed) filmError(); else filmStatus.textContent = t('film.blocked'); }
 });
 
 // ── 시작 ───────────────────────────────────────────────────────

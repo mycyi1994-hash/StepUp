@@ -43,3 +43,40 @@ test('referral links carry only a valid public code', async () => {
   assert.ok(new URL(shareTarget('x', shareUrl('AB2CDEFG'))).searchParams.get('text').endsWith(`${SHARE_URL}?ref=AB2CDEFG`));
   assert.ok(new URL(shareTarget('threads', shareUrl('AB2CDEFG'))).searchParams.get('text').includes('?ref=AB2CDEFG\n'));
 });
+
+test('emails follow the server rule after the same clean-up', async () => {
+  const { validEmail, normalizeEmail } = await core;
+  // The server lower-cases and trims; full-width ＠ ． from Korean/Japanese keyboards become ASCII.
+  assert.equal(normalizeEmail('  Name@Example.COM '), 'name@example.com');
+  assert.equal(normalizeEmail('name＠example．com'), 'name@example.com');
+  for (const ok of ['a@b.co', 'name@example.com', 'name+tag@sub.example.kr', 'name＠example．com']) assert.equal(validEmail(ok), true, ok);
+  // These passed the browser's check but the server refused them, and the page said "try again later" forever.
+  for (const bad of ['', '   ', 'a@b', 'name@naver', 'name@gmailcom', 'name@gmail,com', 'a b@c.de', 'no-at-sign.com', '@example.com', `${'x'.repeat(250)}@e.com`]) {
+    assert.equal(validEmail(bad), false, bad);
+  }
+});
+
+test('post links are cleaned like the server expects (lower-case scheme and host)', async () => {
+  const { normalizePostUrl, validPostUrl, isOwnSiteUrl } = await core;
+  assert.equal(normalizePostUrl('  HTTPS://X.com/someone/status/12345  '), 'https://x.com/someone/status/12345');
+  assert.equal(normalizePostUrl('https://www.Threads.com/@me/post/AbC'), 'https://www.threads.com/@me/post/AbC');
+  assert.ok(validPostUrl(normalizePostUrl('HTTPS://X.com/someone/status/12345'), 'x'));
+  assert.equal(normalizePostUrl('not a url'), 'not a url');
+  assert.equal(isOwnSiteUrl('https://stepupcrew.com/?ref=ABCDEFGH'), true);
+  assert.equal(isOwnSiteUrl('https://x.com/stepup/status/1'), false);
+});
+
+test('share text follows the page language and says it is an event entry', async () => {
+  const { shareText, shareTarget, SHARE_TEXT, SHARE_TEXT_EN, CREATOR_TEXT_EN } = await core;
+  assert.equal(shareText('ko'), SHARE_TEXT);
+  assert.equal(shareText('en'), SHARE_TEXT_EN);
+  assert.equal(shareText('en', true), CREATOR_TEXT_EN);
+  for (const text of [SHARE_TEXT, SHARE_TEXT_EN]) assert.match(text, /※/);
+  assert.equal(/[가-힣]/.test(SHARE_TEXT_EN), false);
+  assert.ok(new URL(shareTarget('x', undefined, 'en')).searchParams.get('text').startsWith(SHARE_TEXT_EN));
+});
+
+test('placeholders hold no Korean (they are example links)', async () => {
+  const { PLATFORMS } = await core;
+  for (const [key, config] of Object.entries(PLATFORMS)) assert.equal(/[가-힣]/.test(config.placeholder), false, key);
+});

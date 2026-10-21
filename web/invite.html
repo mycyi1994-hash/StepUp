@@ -12,11 +12,13 @@
 <meta name="robots" content="noindex">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <style>
-@font-face{font-family:Pretendard;src:url('/assets/fonts/pretendard-regular.otf') format('opentype');font-weight:400 600;font-display:swap}
-@font-face{font-family:Pretendard;src:url('/assets/fonts/pretendard-extrabold.otf') format('opentype');font-weight:700 900;font-display:swap}
+@font-face{font-family:Pretendard;src:url('/assets/fonts/pretendard-regular.subset.woff2') format('woff2');font-weight:400 600;font-display:swap}
+@font-face{font-family:Pretendard;src:url('/assets/fonts/pretendard-extrabold.subset.woff2') format('woff2');font-weight:700 900;font-display:swap}
 @font-face{font-family:Manrope;src:url('/assets/fonts/manrope-extrabold.ttf') format('truetype');font-weight:800;font-display:swap}
 :root{--blue:#1448ef;--ink:#132346}
 *{box-sizing:border-box}
+/* hidden 은 언제나 숨긴다 — .button{display:flex} 가 덮어 숨긴 버튼이 보이던 것 */
+[hidden]{display:none!important}
 body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
   background:radial-gradient(ellipse at 30% 10%,#3a6bff,transparent 60%),var(--blue);color:#fff;
   font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
@@ -37,9 +39,9 @@ p{font-size:15px;line-height:1.7;color:#dfe8ff;margin:0 0 28px;word-break:keep-a
   <div class="wordmark">StepUp<span aria-hidden="true"></span></div>
   <h1>크루에서 당신을<br>기다리고 있어요 👟</h1>
   <p>StepUp 앱에서 크루 화면이 열려요.<br>들어와서 같이 달려요.</p>
-  <a class="button primary" id="open-app" href="/">StepUp 앱에서 열기</a>
-  <button class="button secondary" type="button" disabled>앱 출시 준비 중</button>
-  <p class="note">Android와 iPhone 버전을 준비하고 있어요.</p>
+  <a class="button primary" id="open-app" href="/" hidden>StepUp 앱에서 열기</a>
+  <a class="button secondary" id="join" href="/#join">출시 소식 받기 (사전 등록)</a>
+  <p class="note" id="note">Android와 iPhone 버전을 준비하고 있어요. 앱이 없으면 사전 등록하고 출시 소식을 먼저 받아보세요.</p>
 </main>
 <script>
 (() => {
@@ -48,7 +50,14 @@ p{font-size:15px;line-height:1.7;color:#dfe8ff;margin:0 0 28px;word-break:keep-a
   // 여기까지 왔다는 건 앱이 없거나(또는 브라우저 안에서 열렸거나)다.
   const match = location.pathname.match(/^\/c\/([0-9a-fA-F-]{36})\/?$/);
   const open = document.getElementById('open-app');
-  if (!match) { open.hidden = true; return; }
+  const join = document.getElementById('join');
+  // 앱(안드로이드)으로 넘기는 인텐트 주소는 안드로이드에서만 동작한다. 컴퓨터 · 아이폰에서는 눌러도 아무 일이 없어
+  // 막다른 곳이었다 — 그때는 사전 등록만 크게 보인다. 크루 주소가 틀려도 마찬가지.
+  if (!match || !/Android/i.test(navigator.userAgent)) {
+    join.className = 'button primary';
+    return;
+  }
+  open.hidden = false;
   const crew = match[1].toLowerCase();
   // 카톡 같은 앱 안 브라우저에서도 설치된 앱으로 넘기는 안드로이드 인텐트 주소.
   // 앱이 없으면 fallback 으로 이 페이지에 그대로 남는다.

@@ -7,7 +7,12 @@
 <title>StepUp — 함께 달리는 즐거움</title>
 <meta name="description" content="오늘의 러닝을 기록하고, 나에게 맞는 크루와 함께 달려보세요. 달린 만큼 쌓이는 포인트로 러닝의 재미를 더해요.">
 <link rel="canonical" href="https://stepupcrew.com/">
+<link rel="alternate" hreflang="ko" href="https://stepupcrew.com/?lang=ko">
+<link rel="alternate" hreflang="en" href="https://stepupcrew.com/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://stepupcrew.com/">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:locale:alternate" content="en_US">
 <meta property="og:url" content="https://stepupcrew.com/">
 <meta property="og:title" content="StepUp — 함께 달리는 즐거움">
 <meta property="og:description" content="오늘의 한 걸음, 함께라서 더 멀리. 러닝 기록부터 크루와 보상까지, 지금 사전 등록하고 함께 시작해요.">
@@ -22,14 +27,26 @@
 <meta name="twitter:image:alt" content="오늘의 한 걸음, 함께라서 더 멀리. StepUp 사전 등록">
 <link rel="icon" href="./assets/img/app-icon-192.webp" type="image/webp">
 <link rel="apple-touch-icon" href="./assets/img/apple-touch-icon.png">
-<link rel="preconnect" href="https://www.youtube-nocookie.com">
-<link rel="preload" as="font" type="font/otf" href="./assets/fonts/pretendard-extrabold.otf" crossorigin>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="./styles.css?v=20260930-caption">
-<script type="module" src="./site.js?v=20260930-youtube"></script>
-<script type="module" src="./waitlist.js?v=20260930-caption"></script>
+<link rel="stylesheet" href="./styles.css?v=20261019-qa">
+<script>
+// 영어로 볼 사람에게 한국어가 먼저 번쩍이지 않게 — i18n.js 가 글자를 바꿀 때까지(늦어도 4초) 감춘다. 고르는 규칙은 i18n.js 와 같다.
+(function () {
+  try {
+    var q = new URLSearchParams(location.search).get('lang'), s = null;
+    try { s = localStorage.getItem('stepup.lang'); } catch (e) {}
+    var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+    var l = q === 'ko' || q === 'en' ? q : s === 'ko' || s === 'en' ? s : list.some(function (c) { return /^ko\b/i.test(c || ''); }) ? 'ko' : 'en';
+    if (l !== 'ko') {
+      var d = document.documentElement;
+      d.lang = l;
+      d.classList.add('i18n-pending');
+      setTimeout(function () { d.classList.remove('i18n-pending'); }, 4000);
+    }
+  } catch (e) {}
+})();
+</script>
+<script type="module" src="./site.js?v=20261019-qa"></script>
+<script type="module" src="./waitlist.js?v=20261019-qa"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -37,24 +54,25 @@
 
   <header class="site-header">
     <div class="header-in">
-      <a class="logo" href="#film" data-go="0" aria-label="StepUp 처음 화면으로"><img src="./assets/img/stepup-logo.webp" width="916" height="172" alt="StepUp"></a>
+      <a class="logo" href="#film" data-go="0" aria-label="StepUp 처음 화면으로" data-i18n-attr="aria-label:header.logo"><img src="./assets/img/stepup-logo.webp" width="916" height="172" alt="StepUp"></a>
       <div class="header-actions">
         <!-- 공식 X · 텔레그램 — 로고만(Simple Icons, CC0), 새 창 -->
-        <a class="social" href="https://x.com/GiwaStepUp" target="_blank" rel="noopener noreferrer" aria-label="StepUp X (새 창에서 열림)" title="X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg></a>
-        <a class="social" href="https://t.me/StepUpOfficialTG" target="_blank" rel="noopener noreferrer" aria-label="StepUp 텔레그램 (새 창에서 열림)" title="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
+        <a class="social" href="https://x.com/GiwaStepUp" target="_blank" rel="noopener noreferrer" aria-label="StepUp X (새 창에서 열림)" data-i18n-attr="aria-label:header.x" title="X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg></a>
+        <a class="social" href="https://t.me/StepUpOfficialTG" target="_blank" rel="noopener noreferrer" aria-label="StepUp 텔레그램 (새 창에서 열림)" data-i18n-attr="aria-label:header.telegram" title="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
         <button class="pill sound" type="button" aria-pressed="false" aria-label="소리 켜기"><span class="sound-dot" aria-hidden="true"></span><span class="sound-label">소리 켜기</span></button>
-        <button class="pill soon" type="button" disabled aria-label="앱 다운로드 준비 중">출시 준비 중</button>
+        <button class="pill lang-switch" type="button" lang="en" aria-label="Read this page in English" data-i18n="lang.switch" data-i18n-attr="aria-label:lang.switchLabel">EN</button>
+        <button class="pill pill-join" type="button" data-waitlist-open data-i18n="header.join">사전 등록</button>
       </div>
     </div>
   </header>
 
-  <nav class="dots" aria-label="화면 이동">
-    <button type="button" data-go="0" aria-label="1번째 화면: 영상"><span class="dot-label">영상</span><span class="dot-bar"></span></button>
-    <button type="button" data-go="1" aria-label="2번째 화면: 러닝"><span class="dot-label">러닝</span><span class="dot-bar"></span></button>
-    <button type="button" data-go="2" aria-label="3번째 화면: 크루"><span class="dot-label">크루</span><span class="dot-bar"></span></button>
-    <button type="button" data-go="3" aria-label="4번째 화면: 보상"><span class="dot-label">보상</span><span class="dot-bar"></span></button>
-    <button type="button" data-go="4" aria-label="5번째 화면: 코스"><span class="dot-label">코스</span><span class="dot-bar"></span></button>
-    <button type="button" data-go="5" aria-label="6번째 화면: 시작"><span class="dot-label">시작</span><span class="dot-bar"></span></button>
+  <nav class="dots" aria-label="화면 이동" data-i18n-attr="aria-label:dots.label">
+    <button type="button" data-go="0" aria-label="1번째 화면: 영상" data-i18n-attr="aria-label:dot.film.aria"><span class="dot-label" data-i18n="dot.film">영상</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="1" aria-label="2번째 화면: 러닝" data-i18n-attr="aria-label:dot.run.aria"><span class="dot-label" data-i18n="dot.run">러닝</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="2" aria-label="3번째 화면: 크루" data-i18n-attr="aria-label:dot.crew.aria"><span class="dot-label" data-i18n="dot.crew">크루</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="3" aria-label="4번째 화면: 보상" data-i18n-attr="aria-label:dot.reward.aria"><span class="dot-label" data-i18n="dot.reward">보상</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="4" aria-label="5번째 화면: 코스" data-i18n-attr="aria-label:dot.course.aria"><span class="dot-label" data-i18n="dot.course">코스</span><span class="dot-bar"></span></button>
+    <button type="button" data-go="5" aria-label="6번째 화면: 사전 등록" data-i18n-attr="aria-label:dot.start.aria"><span class="dot-label" data-i18n="dot.start">사전 등록</span><span class="dot-bar"></span></button>
   </nav>
 
   <main class="track" id="main">
@@ -64,31 +82,36 @@
         <div class="waitlist-banner">
           <span class="waitlist-accent" aria-hidden="true"></span>
           <div class="waitlist-banner-copy">
-            <strong>StepUp의 첫 소식을 기다리고 있나요?</strong>
-            <span>이메일을 남기면 출시 소식을 가장 먼저 알려드릴게요.</span>
+            <strong class="waitlist-banner-title" data-i18n="banner.title">StepUp의 첫 소식을 기다리고 있나요?</strong>
+            <span class="waitlist-banner-text" data-i18n="banner.text">이메일을 남기면 출시 소식을 가장 먼저 알려드릴게요.</span>
           </div>
-          <button class="waitlist-open" type="button">대기 명단 등록 <span aria-hidden="true">↗</span></button>
+          <button class="waitlist-open" type="button" data-waitlist-open data-i18n="banner.button">사전 등록하기</button>
         </div>
         <div class="film-media">
-          <iframe class="promo-film" src="https://www.youtube-nocookie.com/embed/5dfGSfGdBPo?autoplay=1&amp;mute=1&amp;loop=1&amp;playlist=5dfGSfGdBPo&amp;playsinline=1&amp;rel=0&amp;enablejsapi=1" title="StepUp 홍보영상. 재생과 소리는 영상 컨트롤에서 조절할 수 있어요." width="1920" height="1080" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          <!-- 유튜브는 첫 화면을 다 그린 뒤에 붙인다(느린 연결에서는 눌렀을 때만). 그 전에는 같은 영상의 표지를 보인다. -->
+          <iframe class="promo-film" data-src="https://www.youtube-nocookie.com/embed/5dfGSfGdBPo?autoplay=1&amp;mute=1&amp;loop=1&amp;playlist=5dfGSfGdBPo&amp;playsinline=1&amp;rel=0&amp;enablejsapi=1" title="StepUp 홍보영상. 재생과 소리는 영상 컨트롤에서 조절할 수 있어요." data-i18n-attr="title:film.title" width="1920" height="1080" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
+          <button class="film-poster" type="button" aria-label="홍보영상 재생 (유튜브)" data-i18n-attr="aria-label:film.playLabel"><img src="./assets/video/stepup-promo-v5.1-poster.jpg" width="1280" height="720" alt="" decoding="async"><span class="film-play"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg><span data-i18n="film.play">영상 보기</span></span></button>
+          <!-- 영상 위에서도 휠 · 쓸기로 화면을 넘기게 덮는 투명한 막. 한 번 누르면 걷혀 유튜브 컨트롤을 쓸 수 있다. -->
+          <div class="film-shield" aria-hidden="true" hidden></div>
+          <noscript><a class="film-noscript" href="https://youtu.be/5dfGSfGdBPo">유튜브에서 영상 보기</a></noscript>
         </div>
         <div class="film-caption">
           <div class="film-copy">
-            <h1 id="film-title">오늘도 한 걸음 더, StepUp.</h1>
-            <p>러닝 기록부터 크루와 보상까지, 함께 달리는 즐거움을 만나보세요.</p>
+            <h1 id="film-title" data-i18n="film.h1">오늘도 한 걸음 더, StepUp.</h1>
+            <p data-i18n="film.text">러닝 기록부터 크루와 보상까지, 함께 달리는 즐거움을 만나보세요.</p>
             <p class="film-status" role="status" hidden></p>
           </div>
-          <a class="film-next" href="#run" data-go="1">StepUp 알아보기 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <a class="film-next" href="#run" data-go="1"><span data-i18n="film.next">StepUp 알아보기</span> <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
       </div>
     </section>
 
     <!-- 01 러닝 -->
-    <section class="page page-run" id="run" aria-label="러닝">
+    <section class="page page-run" id="run" aria-label="러닝" data-i18n-attr="aria-label:dot.run">
       <div class="run-card">
         <div class="run-inner">
           <div class="run-glow" aria-hidden="true"></div>
-          <span class="badge badge-top">화면 예시</span>
+          <span class="badge badge-top" data-i18n="badge.example">화면 예시</span>
           <div class="run-pan" aria-hidden="true">
             <img src="./assets/img/run-bg.webp" width="780" height="1200" alt="" loading="lazy">
             <img src="./assets/img/run-bg.webp" width="780" height="1200" alt="">
@@ -97,50 +120,50 @@
           <div class="streaks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
           <div class="run-content">
-            <div class="eyebrow run-eyebrow"><span class="live-dot" aria-hidden="true"></span>기록 중 · 서울 나이트 런</div>
+            <div class="eyebrow run-eyebrow"><span class="live-dot" aria-hidden="true"></span><span data-i18n="run.eyebrow">기록 중 · 서울 나이트 런</span></div>
 
             <div class="run-mid">
-              <button class="watch" type="button" title="눌러서 랩 기록" aria-label="스톱워치 — 눌러서 랩 기록"><span class="watch-main">24:18</span><span class="watch-cs">.00</span></button>
+              <button class="watch" type="button" title="눌러서 랩 기록" aria-label="스톱워치 — 눌러서 랩 기록" data-i18n-attr="title:run.watch;aria-label:run.watchLabel"><span class="watch-main">24:18</span><span class="watch-cs">.00</span></button>
               <div class="stats">
-                <div class="stat"><span class="stat-k">거리</span><span class="stat-v"><span class="run-km">4.89</span><span class="unit">KM</span></span></div>
-                <div class="stat"><span class="stat-k">페이스</span><span class="stat-v">4'58"<span class="unit">/KM</span></span></div>
-                <div class="stat"><span class="stat-k">심박</span><span class="stat-v bpm-v"><span class="run-bpm">168</span><span class="beat" aria-hidden="true"></span></span></div>
+                <div class="stat"><span class="stat-k" data-i18n="stat.distance">거리</span><span class="stat-v"><span class="run-km">4.89</span><span class="unit">KM</span></span></div>
+                <div class="stat"><span class="stat-k" data-i18n="stat.pace">페이스</span><span class="stat-v">4'58"<span class="unit">/KM</span></span></div>
+                <div class="stat"><span class="stat-k" data-i18n="stat.heart">심박</span><span class="stat-v bpm-v"><span class="run-bpm">168</span><span class="beat" aria-hidden="true"></span></span></div>
               </div>
-              <div class="laps" aria-live="polite"><span class="laps-empty">스톱워치를 누르면 랩이 기록돼요</span></div>
+              <div class="laps" aria-live="polite"><span class="laps-empty" data-i18n="run.lapsEmpty">스톱워치를 누르면 랩이 기록돼요</span></div>
             </div>
 
             <div class="run-bottom">
               <div class="run-copy">
-                <h2>오늘의 한 걸음을<br>나만의 기록으로.</h2>
-                <div class="cta-row"><button class="cta cta-lg" type="button" disabled>앱 출시 준비 중</button><span class="note">Android와 iPhone 버전을 준비하고 있어요.</span></div>
+                <h2 data-i18n-html="run.title">오늘의 한 걸음을<br>나만의 기록으로.</h2>
+                <div class="cta-row"><button class="cta cta-lg" type="button" data-waitlist-open data-i18n="cta.join">사전 등록하기</button><span class="note" data-i18n="note.apps">Android와 iPhone 버전을 준비하고 있어요.</span></div>
               </div>
             </div>
           </div>
 
-          <div class="hint" aria-hidden="true"><span class="hint-track"><span></span></span>스크롤</div>
+          <div class="hint" aria-hidden="true"><span class="hint-track"><span></span></span><span data-i18n="run.hint">스크롤</span></div>
           <div class="run-progress" aria-hidden="true"><div class="run-bar"></div></div>
         </div>
 
         <div class="run-shoe" aria-hidden="true">
           <div class="shoe-shadow"></div>
-          <img src="./assets/img/shoe-main.webp" width="650" height="506" alt="">
+          <img src="./assets/img/shoe-main.webp" width="650" height="506" alt="" decoding="async">
         </div>
       </div>
     </section>
 
     <!-- 02 크루 -->
-    <section class="page page-crew" id="crew" aria-label="크루">
+    <section class="page page-crew" id="crew" aria-label="크루" data-i18n-attr="aria-label:dot.crew">
       <div class="card grid2 crew-card">
-        <span class="badge badge-bottom">화면 예시</span>
+        <span class="badge badge-bottom" data-i18n="badge.example">화면 예시</span>
 
         <div class="crew-map">
-          <img class="crew-map-img" src="./assets/img/crew-map.webp" width="1200" height="946" alt="모임 지도" loading="lazy">
+          <img class="crew-map-img" src="./assets/img/crew-map.webp" width="1200" height="946" alt="모임 지도" data-i18n-attr="alt:crew.mapAlt" loading="lazy">
           <div class="crew-map-shade" aria-hidden="true"></div>
           <svg class="crew-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
           <div class="crew-ring" aria-hidden="true"></div>
           <div class="crew-ring crew-ring-2" aria-hidden="true"></div>
           <div class="crew-runners"></div>
-          <div class="crew-spot">여의도 물빛광장 · 20:30 출발</div>
+          <div class="crew-spot" data-i18n="crew.spot">여의도 물빛광장 · 20:30 출발</div>
         </div>
 
         <div class="crew-info">
@@ -148,31 +171,31 @@
           <div class="crew-count"><span class="crew-num">00</span><span class="crew-of">/ 06</span></div>
           <h2 class="h2 crew-headline">함께 달릴 크루를 만나보세요.</h2>
           <div class="roster"></div>
-          <button class="cta" type="button" disabled>앱 출시 준비 중</button>
+          <button class="cta" type="button" data-waitlist-open data-i18n="cta.join">사전 등록하기</button>
         </div>
       </div>
     </section>
 
     <!-- 03 보상 -->
-    <section class="page page-reward" id="reward" aria-label="보상">
+    <section class="page page-reward" id="reward" aria-label="보상" data-i18n-attr="aria-label:dot.reward">
       <div class="card grid2 reward-card">
-        <span class="badge badge-bottom">화면 예시</span>
+        <span class="badge badge-bottom" data-i18n="badge.example">화면 예시</span>
 
         <div class="reward-info">
-          <div class="eyebrow r0"><span class="sq-dot" aria-hidden="true"></span>러닝 완료</div>
+          <div class="eyebrow r0"><span class="sq-dot" aria-hidden="true"></span><span data-i18n="reward.eyebrow">러닝 완료</span></div>
           <div class="r-stamp">
             <span class="r-km">5.00<span class="u">KM</span></span>
             <span class="r-time">24:50.00 · 4'58"/KM</span>
           </div>
           <div class="r-line"></div>
           <div class="r1">
-            <span class="r-k">검증 완료 · 적립 예정</span>
+            <span class="r-k" data-i18n="reward.status">검증 완료 · 적립 예정</span>
             <span class="r-sup">+<span class="sup-num">0.00</span><span class="u">SUP</span></span>
-            <span class="r-desc">SUP는 GPS로 확인한 러닝 기록에 따라 쌓이는 StepUp 포인트예요. GIWA 네트워크를 기반으로 해요.</span>
+            <span class="r-desc" data-i18n="reward.desc">SUP는 GPS로 확인한 러닝 기록에 따라 쌓이는 StepUp 포인트예요. GIWA 네트워크를 기반으로 해요.</span>
           </div>
           <div class="r3">
-            <h2 class="h2">달린 만큼 보상도 차곡차곡.</h2>
-            <button class="cta" type="button" disabled>앱 출시 준비 중</button>
+            <h2 class="h2" data-i18n="reward.title">달린 만큼 보상도 차곡차곡.</h2>
+            <button class="cta" type="button" data-waitlist-open data-i18n="cta.join">사전 등록하기</button>
           </div>
         </div>
 
@@ -180,16 +203,16 @@
           <div class="r-glow" aria-hidden="true"></div>
           <div class="r-orbit" aria-hidden="true"></div>
           <div class="r-flash" aria-hidden="true"></div>
-          <div class="r-shoe"><img src="./assets/img/shoe-main.webp" width="650" height="506" alt="새 신발" loading="lazy"></div>
-          <div class="r-caption"><span class="r-cap-k">새 신발 획득</span><span class="r-cap-v">블루 스트라이드</span></div>
+          <div class="r-shoe"><img src="./assets/img/shoe-main.webp" width="650" height="506" alt="새 신발" data-i18n-attr="alt:reward.shoeAlt" loading="lazy"></div>
+          <div class="r-caption"><span class="r-cap-k" data-i18n="reward.newShoe">새 신발 획득</span><span class="r-cap-v" data-i18n="reward.shoeName">블루 스트라이드</span></div>
         </div>
       </div>
     </section>
 
     <!-- 04 코스 -->
-    <section class="page page-course" id="course" aria-label="코스">
+    <section class="page page-course" id="course" aria-label="코스" data-i18n-attr="aria-label:dot.course">
       <div class="card grid2 course-card">
-        <span class="badge badge-bottom">화면 예시</span>
+        <span class="badge badge-bottom" data-i18n="badge.example">화면 예시</span>
         <div class="c-bgs" aria-hidden="true">
           <div class="c-bg is-active" style="background-image:url('./assets/img/course-sunset.webp')"></div>
           <div class="c-bg" style="background-image:url('./assets/img/course-night.webp')"></div>
@@ -199,7 +222,7 @@
 
         <div class="course-info">
           <div class="c-head">
-            <div class="eyebrow"><span class="cy-dot" aria-hidden="true"></span>러닝 코스</div>
+            <div class="eyebrow"><span class="cy-dot" aria-hidden="true"></span><span data-i18n="course.eyebrow">러닝 코스</span></div>
             <span class="c-no"><span class="c-idx">01</span> / 03</span>
           </div>
           <div class="c-body" aria-live="polite">
@@ -207,17 +230,17 @@
             <span class="c-name">광안리 해변 코스</span>
             <span class="c-desc">광안대교를 바라보며 해변 산책로를 가볍게 달려보세요.</span>
             <div class="stats c-stats">
-              <div class="stat"><span class="stat-k">거리</span><span class="stat-v"><span class="c-km">5.02</span><span class="unit">KM</span></span></div>
-              <div class="stat"><span class="stat-k">누적 상승</span><span class="stat-v"><span class="c-up">12</span><span class="unit">M</span></span></div>
-              <div class="stat"><span class="stat-k">난이도</span><span class="stat-level c-level">쉬움</span></div>
+              <div class="stat"><span class="stat-k" data-i18n="stat.distance">거리</span><span class="stat-v"><span class="c-km">5.02</span><span class="unit">KM</span></span></div>
+              <div class="stat"><span class="stat-k" data-i18n="stat.climb">누적 상승</span><span class="stat-v"><span class="c-up">12</span><span class="unit">M</span></span></div>
+              <div class="stat"><span class="stat-k" data-i18n="stat.level">난이도</span><span class="stat-level c-level">쉬움</span></div>
             </div>
           </div>
           <div class="c-foot">
-            <h2 class="h2 h2-sm">오늘은 어디를 달려볼까요?</h2>
+            <h2 class="h2 h2-sm" data-i18n="course.title">오늘은 어디를 달려볼까요?</h2>
             <div class="c-ctrl">
               <div class="c-segs" aria-hidden="true"><span class="c-seg"><i></i></span><span class="c-seg"><i></i></span><span class="c-seg"><i></i></span></div>
-              <button class="round" type="button" data-course="-1" aria-label="이전 코스">←</button>
-              <button class="round" type="button" data-course="1" aria-label="다음 코스">→</button>
+              <button class="round" type="button" data-course="-1" aria-label="이전 코스" data-i18n-attr="aria-label:course.prev">←</button>
+              <button class="round" type="button" data-course="1" aria-label="다음 코스" data-i18n-attr="aria-label:course.next">→</button>
             </div>
           </div>
         </div>
@@ -232,15 +255,16 @@
     </section>
 
     <!-- 05 시작 -->
-    <section class="page page-start" id="start" aria-label="시작">
+    <section class="page page-start" id="start" aria-label="사전 등록" data-i18n-attr="aria-label:dot.start">
       <div class="card grid2 start-card">
         <img class="start-bg" src="./assets/img/start-bg.webp" width="780" height="1200" alt="" loading="lazy">
         <div class="start-shade" aria-hidden="true"></div>
         <div class="start-phone-wrap">
+          <span class="badge badge-phone" data-i18n="badge.example">화면 예시</span>
           <div class="phone start-phone" aria-hidden="true">
             <div class="sp-ready">
               <img src="./assets/img/stepup-logo.webp" width="916" height="172" alt="" loading="lazy">
-              <div class="sp-goal"><span class="sp-goal-k">오늘의 목표</span><span class="sp-goal-v">5.00<span class="u">KM</span></span></div>
+              <div class="sp-goal"><span class="sp-goal-k" data-i18n="start.goal">오늘의 목표</span><span class="sp-goal-v">5.00<span class="u">KM</span></span></div>
               <div class="sp-btn-wrap"><div class="sp-pulse"></div><div class="sp-btn">START</div></div>
             </div>
             <div class="sp-run">
@@ -251,100 +275,114 @@
           </div>
         </div>
         <div class="start-info">
-          <div class="eyebrow"><span class="cy-dot" aria-hidden="true"></span>곧 만나요</div>
-          <h2 class="h2-xl">함께 달릴 날을<br>준비하고 있어요.</h2>
-          <button class="cta cta-xl" type="button" disabled>앱 출시 준비 중</button>
-          <span class="note note-lg">Android와 iPhone 버전을 준비하고 있어요.</span>
+          <div class="eyebrow"><span class="cy-dot" aria-hidden="true"></span><span data-i18n="start.eyebrow">곧 만나요</span></div>
+          <h2 class="h2-xl" data-i18n-html="start.title">함께 달릴 날을<br>준비하고 있어요.</h2>
+          <button class="cta cta-xl" type="button" data-waitlist-open data-i18n="cta.join">사전 등록하기</button>
+          <span class="note note-lg" data-i18n="note.apps">Android와 iPhone 버전을 준비하고 있어요.</span>
         </div>
       </div>
       <footer class="site-footer">
         <span>© StepUp · Powered by GIWA</span>
-        <div class="footer-links"><a href="./privacy.html">개인정보처리방침</a><a href="./terms.html">이용약관</a><a href="https://github.com/mycyi1994-hash/StepUp/issues" target="_blank" rel="noopener noreferrer">문의</a><a href="https://github.com/mycyi1994-hash/StepUp" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+        <div class="footer-links"><a href="./privacy.html" data-i18n="footer.privacy" data-i18n-attr="href:footer.privacyHref">개인정보처리방침</a><a href="./terms.html" data-i18n="footer.terms" data-i18n-attr="href:footer.termsHref">이용약관</a><a href="mailto:stepupofficial@stepupcrew.com" data-i18n="footer.contact">문의</a><a href="https://github.com/mycyi1994-hash/StepUp" target="_blank" rel="noopener noreferrer">GitHub</a></div>
       </footer>
     </section>
   </main>
 </div>
 <dialog class="waitlist-dialog" aria-labelledby="waitlist-title">
-  <button class="waitlist-close" type="button" aria-label="닫기">×</button>
   <div class="waitlist-scroll">
-  <form class="waitlist-form">
+  <!-- 닫기는 내용 위에 떠 있지 않고 맨 위 띠에 둔다(작은 폰에서 공유 버튼 · 진행 숫자를 가리던 것) -->
+  <div class="waitlist-bar"><button class="waitlist-close" type="button" aria-label="닫기" data-i18n-attr="aria-label:wl.close">×</button></div>
+  <form class="waitlist-form" novalidate>
     <span class="waitlist-symbol" aria-hidden="true">↗</span>
-    <p class="waitlist-kicker">StepUp 사전 등록</p>
-    <h2 id="waitlist-title">우리의 첫걸음,<br>함께 시작해요</h2>
-    <p class="waitlist-intro">출시 소식과 사전 등록 보너스를 준비하고 있어요.<br>가장 먼저 만날 이메일을 남겨주세요.</p>
-    <label class="waitlist-label" for="waitlist-email">이메일 주소</label>
-    <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@gmail.com" aria-describedby="waitlist-email-help" required>
-    <p id="waitlist-email-help" class="waitlist-field-help">출시 후 구글 로그인에 사용할 이메일로 등록해주세요.</p>
+    <p class="waitlist-kicker" data-i18n="wl.kicker">StepUp 사전 등록</p>
+    <h2 id="waitlist-title" data-i18n-html="wl.title">우리의 첫걸음,<br>함께 시작해요</h2>
+    <p class="waitlist-intro" data-i18n-html="wl.intro">출시 소식과 사전 등록 보너스를 준비하고 있어요.<br>가장 먼저 만날 이메일을 남겨주세요.</p>
+    <label class="waitlist-label" for="waitlist-email" data-i18n="wl.emailLabel">이메일 주소</label>
+    <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-email-error waitlist-email-help" required>
+    <p id="waitlist-email-error" class="waitlist-field-error" hidden></p>
+    <p id="waitlist-email-help" class="waitlist-field-help" data-i18n="wl.emailHelp">어떤 이메일이든 괜찮아요. 출시 후 같은 이메일로 구글 로그인하면 보너스 대상인지 확인해요.</p>
     <label class="waitlist-honeypot" aria-hidden="true">이 칸은 비워두세요 <input name="website" tabindex="-1" autocomplete="off"></label>
-    <label class="waitlist-consent"><input type="checkbox" name="consent" required><span><span class="waitlist-required">[필수]</span> 출시 안내와 혜택 확인을 위한 개인정보 수집·이용 동의 <a class="waitlist-terms-open" href="./privacy.html" target="_blank" rel="noopener" aria-haspopup="dialog">자세히</a></span></label>
+    <label class="waitlist-consent"><input type="checkbox" name="consent" aria-describedby="waitlist-consent-error" required><span><span class="waitlist-required" data-i18n="wl.required">[필수]</span> <span data-i18n="wl.consent">출시 안내와 보너스 확인을 위한 개인정보 수집·이용 동의</span> <a class="waitlist-terms-open" href="./privacy.html" target="_blank" rel="noopener" aria-haspopup="dialog" data-i18n="wl.details">자세히</a></span></label>
+    <p id="waitlist-consent-error" class="waitlist-field-error" hidden></p>
     <p class="waitlist-feedback" role="status" aria-live="polite"></p>
-    <button class="waitlist-submit" type="submit">사전 등록하기</button>
-    <p class="waitlist-fineprint">같은 이메일로 구글 로그인하면 혜택 대상을 확인해요.<br>보너스의 종류와 수량은 출시 후 안내할게요.</p>
+    <button class="waitlist-submit" type="submit" data-i18n="wl.submit">사전 등록하기</button>
+    <p class="waitlist-fineprint" data-i18n-html="wl.fineprint">같은 이메일로 구글 로그인하면 보너스 대상을 확인해요.<br>보너스의 종류와 수량은 출시 후 안내할게요.</p>
   </form>
   <section class="waitlist-share" hidden aria-labelledby="waitlist-share-title">
-    <span class="waitlist-symbol is-success" aria-hidden="true">✓</span>
-    <p class="waitlist-kicker">사전 등록 완료</p>
-    <h2 id="waitlist-share-title" tabindex="-1">좋은 시작은<br>함께 나눌수록 커지니까</h2>
-    <p class="waitlist-intro">공유하시고 링크를 제출하시면<br>더 큰 보너스를 얻을 수 있어요.</p>
+    <!-- 등록은 여기서 끝난다 — 완료를 크게 보이고, 공유는 선택으로 아래에 둔다 -->
+    <div class="waitlist-done">
+      <span class="waitlist-symbol is-success" aria-hidden="true">✓</span>
+      <p class="waitlist-kicker" data-i18n="done.kicker">사전 등록 완료</p>
+      <h2 id="waitlist-share-title" tabindex="-1" data-i18n="done.title">사전 등록을 마쳤어요</h2>
+      <p class="waitlist-done-email"></p>
+      <p class="waitlist-done-next" data-i18n="done.next">더 할 일은 없어요. 아래 공유는 선택이에요.</p>
+    </div>
+    <div class="waitlist-optional">
+    <h3 class="waitlist-optional-title" data-i18n="share.title">선택 · 공유하고 보너스 더 받기</h3>
+    <p class="waitlist-intro" data-i18n="share.intro">공유하고 게시물 링크를 남기면 보너스가 더 커져요.</p>
     <div class="waitlist-benefit">
-      <div><strong>3개를 모두 완료하면, 특전이 기다려요</strong><span> X · 인스타그램 · 스레드에 각각 공유해주세요.</span></div>
-      <span class="waitlist-progress" aria-label="일반 공유 제출 현황">0 / 3</span>
+      <div><strong data-i18n="share.benefit">X · 인스타그램 · 스레드 3곳에 모두 공유하면 추가 보너스가 있어요</strong><span data-i18n="share.benefitNote">보너스의 종류와 수량은 출시 후 안내해요.</span></div>
+      <span class="waitlist-progress" aria-label="일반 공유 제출 현황" data-i18n-attr="aria-label:share.progress">0 / 3</span>
     </div>
     <details class="waitlist-materials" open>
-      <summary>공유 영상·이미지와 소개 문구 <span aria-hidden="true">＋</span></summary>
+      <summary><span data-i18n="share.materials">공유 영상·이미지와 소개 문구</span> <span class="summary-plus" aria-hidden="true">＋</span></summary>
       <div class="waitlist-materials-body">
-        <img src="./assets/img/waitlist-share-v2.png" width="1254" height="1254" alt="오늘의 한 걸음, 함께라서 더 멀리. 한강을 함께 달리는 친구들과 StepUp 사전 등록 안내">
-        <div><p class="waitlist-share-copy"></p><div class="waitlist-material-actions"><a href="./assets/video/stepup-promo-v5.1-mobile.mp4" download="stepup-promo.mp4">영상 저장 ↓</a><button class="waitlist-copy-image" type="button">이미지 복사</button><a href="./assets/img/waitlist-share-v2.png" download="stepup-share.png">이미지 저장 ↓</a><button class="waitlist-copy" type="button">문구 복사</button></div></div>
+        <img src="./assets/img/waitlist-share-v2-thumb.webp" width="360" height="360" loading="lazy" decoding="async" alt="오늘의 한 걸음, 함께라서 더 멀리. 한강을 함께 달리는 친구들과 StepUp 사전 등록 안내" data-i18n-attr="alt:share.imageAlt">
+        <div><p class="waitlist-share-copy"></p><p class="waitlist-ref-note" data-i18n="share.refNote">링크 끝의 ref 코드로 내 링크를 통해 등록한 사람 수가 기록돼요.</p><div class="waitlist-material-actions"><a href="./assets/video/stepup-promo-v5.1-mobile.mp4" download="stepup-promo.mp4" data-i18n="share.saveVideo">영상 저장 ↓</a><button class="waitlist-copy-image" type="button" data-i18n="share.copyImage">이미지 복사</button><a href="./assets/img/waitlist-share-v2.jpg" download="stepup-share.jpg" data-i18n="share.saveImage">이미지 저장 ↓</a><button class="waitlist-copy" type="button" data-i18n="share.copyText">문구 복사</button></div></div>
       </div>
       <p class="waitlist-copy-feedback" role="status"></p>
     </details>
-    <div class="waitlist-share-platforms" aria-label="일반 공유 채널">
-      <button type="button" data-platform="x" aria-pressed="false"><span class="platform-icon icon-x" aria-hidden="true">𝕏</span><strong>X</strong><span class="platform-status">공유하기</span></button>
-      <button type="button" data-platform="instagram" aria-pressed="false"><span class="platform-icon icon-instagram" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></span><strong>인스타그램</strong><span class="platform-status">공유하기</span></button>
-      <button type="button" data-platform="threads" aria-pressed="false"><span class="platform-icon icon-threads" aria-hidden="true">@</span><strong>스레드</strong><span class="platform-status">공유하기</span></button>
+    <div class="waitlist-share-platforms" aria-label="일반 공유 채널" data-i18n-attr="aria-label:share.channels">
+      <button type="button" data-platform="x" aria-pressed="false"><span class="platform-icon icon-x" aria-hidden="true">𝕏</span><strong data-i18n="platform.x">X</strong><span class="platform-status">공유하기</span></button>
+      <button type="button" data-platform="instagram" aria-pressed="false"><span class="platform-icon icon-instagram" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></span><strong data-i18n="platform.instagram">인스타그램</strong><span class="platform-status">공유하기</span></button>
+      <button type="button" data-platform="threads" aria-pressed="false"><span class="platform-icon icon-threads" aria-hidden="true">@</span><strong data-i18n="platform.threads">스레드</strong><span class="platform-status">공유하기</span></button>
     </div>
     <div class="waitlist-social-form-slot"></div>
     <p class="waitlist-status-feedback" role="status"></p>
     <section class="waitlist-creator" aria-labelledby="waitlist-creator-title">
-      <span class="waitlist-creator-badge">크리에이터 전용</span>
-      <h3 id="waitlist-creator-title">당신의 콘텐츠로 함께해요</h3>
-      <p>크리에이터로 참가해주시면 더 많은 보너스가 준비되어 있어요. StepUp을 소개하는 영상을 만들고 링크를 남겨주세요.</p>
-      <div class="waitlist-share-platforms creator-platforms" aria-label="크리에이터 참여 채널">
-        <button type="button" data-platform="youtube" aria-pressed="false"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="5" fill="currentColor"/><path d="m10 8 6 4-6 4z" fill="#d9252a"/></svg></span><strong>유튜브</strong><span class="platform-status">영상 · 쇼츠</span></button>
-        <button type="button" data-platform="tiktok" aria-pressed="false"><span class="platform-icon tiktok-mark" aria-hidden="true">♪</span><strong>틱톡</strong><span class="platform-status">숏폼 영상</span></button>
-        <button type="button" data-platform="reels" aria-pressed="false"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 3l4 6m3-6 4 6" stroke="currentColor" stroke-width="2"/><path d="m10 12 5 3-5 3z" fill="currentColor"/></svg></span><strong>릴스</strong><span class="platform-status">인스타그램</span></button>
+      <span class="waitlist-creator-badge" data-i18n="creator.badge">크리에이터 전용</span>
+      <h3 id="waitlist-creator-title" data-i18n="creator.title">당신의 콘텐츠로 함께해요</h3>
+      <p data-i18n="creator.text">크리에이터로 참가해주시면 더 많은 보너스가 준비되어 있어요. StepUp을 소개하는 영상을 만들고 링크를 남겨주세요.</p>
+      <div class="waitlist-share-platforms creator-platforms" aria-label="크리에이터 참여 채널" data-i18n-attr="aria-label:creator.channels">
+        <button type="button" data-platform="youtube" aria-pressed="false"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="5" fill="currentColor"/><path d="m10 8 6 4-6 4z" fill="#d9252a"/></svg></span><strong data-i18n="platform.youtube">유튜브</strong><span class="platform-status">영상 · 쇼츠</span></button>
+        <button type="button" data-platform="tiktok" aria-pressed="false"><span class="platform-icon tiktok-mark" aria-hidden="true">♪</span><strong data-i18n="platform.tiktok">틱톡</strong><span class="platform-status">숏폼 영상</span></button>
+        <button type="button" data-platform="reels" aria-pressed="false"><span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 3l4 6m3-6 4 6" stroke="currentColor" stroke-width="2"/><path d="m10 12 5 3-5 3z" fill="currentColor"/></svg></span><strong data-i18n="platform.reels">릴스</strong><span class="platform-status">인스타그램</span></button>
       </div>
       <div class="waitlist-creator-form-slot"></div>
     </section>
-    <form class="waitlist-share-form" hidden>
-      <div class="waitlist-share-form-heading"><strong class="waitlist-platform-title"></strong><button class="waitlist-share-form-close" type="button" aria-label="링크 제출 영역 닫기">×</button></div>
+    <form class="waitlist-share-form" hidden novalidate>
+      <div class="waitlist-share-form-heading"><strong class="waitlist-platform-title"></strong><button class="waitlist-share-form-close" type="button" aria-label="링크 제출 영역 닫기" data-i18n-attr="aria-label:form.close">×</button></div>
       <p class="waitlist-share-help" id="waitlist-post-help"></p>
       <p class="waitlist-form-caption" hidden></p>
-      <div class="waitlist-publish-actions"><button class="waitlist-publish" type="button"></button><button class="waitlist-copy" type="button">소개 문구 복사</button></div>
+      <div class="waitlist-publish-actions"><button class="waitlist-publish" type="button"></button><button class="waitlist-copy" type="button" data-i18n="form.copy">소개 문구 복사</button></div>
       <p class="waitlist-share-action-feedback" role="status" aria-live="polite"></p>
-      <p class="waitlist-creator-guide" hidden>나의 러닝 루틴, 함께 달리고 싶은 이유, 기대하는 StepUp 기능을 담아보세요. 영상이나 설명에 stepupcrew.com과 보너스를 받을 수 있는 이벤트 참여 콘텐츠라는 점을 표시해주세요.</p>
-      <label class="waitlist-label" for="waitlist-post-url">게시물 링크</label>
+      <p class="waitlist-creator-guide" hidden data-i18n="creator.guide">나의 러닝 루틴, 함께 달리고 싶은 이유, 기대하는 StepUp 기능을 담아보세요. 영상이나 설명에 stepupcrew.com과 보너스를 받을 수 있는 이벤트 참여 콘텐츠라는 점을 표시해주세요.</p>
+      <label class="waitlist-label" for="waitlist-post-url" data-i18n="form.label">게시물 링크</label>
       <input id="waitlist-post-url" name="postUrl" type="url" inputmode="url" placeholder="https://..." maxlength="2048" aria-describedby="waitlist-post-help" required>
       <p class="waitlist-share-feedback" role="status" aria-live="polite"></p>
-      <button class="waitlist-submit" type="submit">링크 제출하기</button>
+      <button class="waitlist-submit" type="submit" data-i18n="form.submit">링크 제출하기</button>
     </form>
-    <p class="waitlist-share-note">보너스의 종류·수량과 특전은 출시 후 안내해요.<br>제출한 게시물을 확인한 뒤 혜택을 드려요. 같은 게시물은 한 번만 인정돼요.</p>
-    <button class="waitlist-change-email" type="button">다른 이메일 등록하기</button>
+    <p class="waitlist-share-note" data-i18n-html="share.note">보너스의 종류·수량은 출시 후 안내해요.<br>제출한 게시물을 확인한 뒤 보너스를 드려요. 같은 게시물은 한 번만 인정돼요.</p>
+    <div class="waitlist-done-actions"><button class="waitlist-done-close" type="button" data-i18n="done.close">닫기</button><button class="waitlist-change-email" type="button" data-i18n="share.changeEmail">다른 이메일 등록하기</button></div>
+    </div>
   </section>
   </div>
 </dialog>
 <dialog class="waitlist-terms" aria-labelledby="waitlist-terms-title">
   <div class="waitlist-terms-body">
-    <h2 id="waitlist-terms-title">개인정보 수집·이용 동의</h2>
+    <h2 id="waitlist-terms-title" data-i18n="terms.title">개인정보 수집·이용 동의</h2>
     <dl>
-      <div><dt>수집 항목</dt><dd>이메일, 동의·등록 시각, 공유 링크용 추천 코드, 다른 등록자의 추천 링크로 등록한 경우 그 추천 관계<br><span>선택: 제출한 공유 게시물·영상 주소</span></dd></div>
-      <div><dt>이용 목적</dt><dd>출시 안내, 같은 이메일로 구글 로그인한 계정의 사전 등록 혜택 확인</dd></div>
-      <div><dt>보관 기간</dt><dd>철회 시 즉시, 늦어도 앱 출시 후 90일 이내 삭제</dd></div>
-      <div><dt>보관 위치</dt><dd>Supabase 서버(싱가포르)</dd></div>
+      <div><dt data-i18n="terms.what">수집 항목</dt><dd data-i18n-html="terms.whatValue">이메일, 동의·등록 시각, 공유 링크용 추천 코드, 다른 등록자의 추천 링크로 등록한 경우 그 추천 관계<br><span>선택: 제출한 공유 게시물·영상 주소</span></dd></div>
+      <div><dt data-i18n="terms.why">이용 목적</dt><dd data-i18n="terms.whyValue">출시 안내, 같은 이메일로 구글 로그인한 계정의 사전 등록 보너스 확인</dd></div>
+      <div><dt data-i18n="terms.keep">보관 기간</dt><dd data-i18n="terms.keepValue">철회 시 즉시, 늦어도 앱 출시 후 90일 이내 삭제</dd></div>
+      <div><dt data-i18n="terms.where">보관 위치</dt><dd data-i18n="terms.whereValue">Supabase 서버(싱가포르)</dd></div>
     </dl>
-    <p>동의하지 않을 수 있지만, 이 경우 사전 등록을 할 수 없어요. 철회·삭제는 <a href="mailto:stepupofficial@stepupcrew.com">stepupofficial@stepupcrew.com</a>으로 요청해주세요.</p>
-    <button class="waitlist-submit waitlist-terms-close" type="button">확인</button>
-    <a class="waitlist-terms-full" href="./privacy.html" target="_blank" rel="noopener">전체 개인정보처리방침 보기 ↗</a>
+    <p data-i18n-html="terms.text">동의하지 않을 수 있지만, 이 경우 사전 등록을 할 수 없어요. 철회·삭제는 <a href="mailto:stepupofficial@stepupcrew.com">stepupofficial@stepupcrew.com</a>으로 요청해주세요.</p>
+    <p data-i18n="terms.age">만 14세 미만 아동의 개인정보는 받지 않아요.</p>
+    <!-- "확인"은 동의로 읽혔지만 체크되지 않았다 — 동의하기는 체크하고 닫고, 닫기는 그냥 닫는다 -->
+    <button class="waitlist-submit waitlist-terms-agree" type="button" data-i18n="terms.agree">동의하기</button>
+    <button class="waitlist-terms-close" type="button" data-i18n="terms.close">닫기</button>
+    <a class="waitlist-terms-full" href="./privacy.html" target="_blank" rel="noopener" data-i18n="terms.full" data-i18n-attr="href:footer.privacyHref">전체 개인정보처리방침 보기 ↗</a>
   </div>
 </dialog>
 </body>
