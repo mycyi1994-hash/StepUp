@@ -8065,6 +8065,358 @@ delete from auth.users where id = '68000000-0000-0000-0000-000000000007';
 
 update public.economy_settings set value = '7' where key = 'new_account_days';
 
+-- ════════════════════════════════════════════════════════════════════
+--  0069 크루 체력 — 크루 러닝은 크루가 함께 쓰는 체력(기여 크루원의 신발 에너지 최대치 합 + 크루 레벨 보너스)을
+--  한 사람 몫(÷ 기여 인원)씩 쓴다 · 몫을 다 쓰면 적립 없음 · 크루 레벨은 크루 러닝 누적 거리 (2026-10-21)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 체력 · 크루 레벨(0069) ────────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+-- 상한은 기준값으로(신규 계정 절반은 끈다) — 이 절 끝에서 되돌린다
+update public.economy_settings set value = '0' where key = 'new_account_days';
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('69000000-0000-0000-0000-000000000001', 'a69@test', '{"full_name":"체력장"}'),
+  ('69000000-0000-0000-0000-000000000002', 'b69@test', '{"full_name":"체력둘"}'),
+  ('69000000-0000-0000-0000-000000000003', 'c69@test', '{"full_name":"체력셋"}'),
+  ('69000000-0000-0000-0000-000000000004', 'd69@test', '{"full_name":"새내기"}'),
+  ('69000000-0000-0000-0000-000000000005', 'e69@test', '{"full_name":"나간이"}'),
+  ('69000000-0000-0000-0000-000000000006', 'f69@test', '{"full_name":"남"}');
+-- 어제(한국 시각) 10시 — 크루 체력을 정하는 하루(g69). 그날 전에 가입했고 그 전 7일 안에 달린 크루원이 기여한다
+insert into fix (k, v) values
+  ('d69', (economy.game_day_start(economy.game_day(now()) - 1) + interval '10 hours')::text),
+  ('g69', (economy.game_day(now()) - 1)::text);
+-- 크루장(on_crew_created 가 넣는다) · 둘 · 셋 · 나간이는 한 달 전에, 새내기는 그날 1시간 뒤에 들어왔다
+insert into public.crews (id, owner_id, name)
+values ('69000000-0000-0000-0000-0000000000cc', '69000000-0000-0000-0000-000000000001', '체력 크루');
+update public.crew_members set joined_at = economy.game_day_start(pg_temp.fx('g69')::date) - interval '30 days'
+ where crew_id = '69000000-0000-0000-0000-0000000000cc';
+insert into public.crew_members (crew_id, user_id, role, joined_at)
+select '69000000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER', economy.game_day_start(pg_temp.fx('g69')::date) + j
+  from (values ('69000000-0000-0000-0000-000000000002', interval '-30 days'),
+               ('69000000-0000-0000-0000-000000000003', interval '-30 days'),
+               ('69000000-0000-0000-0000-000000000004', interval '1 hour'),
+               ('69000000-0000-0000-0000-000000000005', interval '-30 days')) as t(u, j);
+-- 지난 러닝 — 크루장 · 둘 · 셋 · 새내기는 그 전 이틀째 낮에, 나간이는 열흘 전에 달렸다
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+select u::uuid, economy.game_day_start(pg_temp.fx('g69')::date) + j,
+       economy.game_day_start(pg_temp.fx('g69')::date) + j + interval '20 minutes', 1200, 2000, 1500, 'CLEAN'
+  from (values ('69000000-0000-0000-0000-000000000001', interval '-36 hours'),
+               ('69000000-0000-0000-0000-000000000002', interval '-36 hours'),
+               ('69000000-0000-0000-0000-000000000003', interval '-36 hours'),
+               ('69000000-0000-0000-0000-000000000004', interval '-36 hours'),
+               ('69000000-0000-0000-0000-000000000005', interval '-228 hours')) as t(u, j);
+-- 크루 러닝 거리 99.5km — 레벨 2(30km 이상 100km 미만)
+update public.crews set run_km = 99.5, level = 2 where id = '69000000-0000-0000-0000-0000000000cc';
+-- 크루장의 신발 — 레벨 6(에너지 최대치 10 + 2 × 5 = 20), 착화감 0(쓰는 양을 셈하기 쉽게). 나머지는 신발이 없다(10)
+insert into fix (k, v) select 's69a', economy.draw_create('69000000-0000-0000-0000-000000000001', 'PAID_DRAW')::text;
+update public.market_sneakers
+   set equipped = true, level = 6, comfort_bps = 0, pts_eff = 0, pts_comfort = 0, pts_dur = 0, dur_base = 600, dur_now = 600
+ where id = pg_temp.fx('s69a')::bigint;
+-- 함께 달리기 방 — 출발 2분 뒤에도 곁(200m)이었던 짝(party_near)이 한 무리다(0056)
+do $$
+declare
+  v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+  v_x uuid := '69000000-0000-0000-0000-0000000000cc';
+  a uuid := '69000000-0000-0000-0000-000000000001';
+  b uuid := '69000000-0000-0000-0000-000000000002';
+  c uuid := '69000000-0000-0000-0000-000000000003';
+  d uuid := '69000000-0000-0000-0000-000000000004';
+  e uuid := '69000000-0000-0000-0000-000000000005';
+  t record;
+  v_p bigint;
+  v_u uuid;
+  v_pair uuid[];
+begin
+  for t in select * from (values
+      -- p1 크루 방 — 크루장 · 둘 · 셋 · 새내기가 한 무리(넷)
+      ('p69_1', v_x, interval '0', array[a, b, c, d], array[array[a, b], array[b, c], array[c, d]]),
+      -- p2 크루 방 2시간 뒤 — 둘 · 셋
+      ('p69_2', v_x, interval '2 hours', array[b, c], array[array[b, c]]),
+      -- p3 크루 방 4시간 뒤 — 셋 혼자
+      ('p69_3', v_x, interval '4 hours', array[c], null),
+      -- p4 번개 방 5시간 뒤 — 크루장 · 둘(크루 방이 아니다)
+      ('p69_4', null, interval '5 hours', array[a, b], array[array[a, b]]),
+      -- p5 크루 방 6시간 뒤 — 새내기 · 나간이
+      ('p69_5', v_x, interval '6 hours', array[d, e], array[array[d, e]]),
+      -- p6 크루 방 7시간 뒤 — 둘 · 셋(셋은 그때 보류 중)
+      ('p69_6', v_x, interval '7 hours', array[b, c], array[array[b, c]])) as x(k, crew, off, runners, pairs)
+  loop
+    insert into public.parties (crew_id, flash_post_id, host_id, status, starts_at)
+    values (t.crew, case when t.crew is null then pg_temp.fx('post_flash')::bigint end, t.runners[1], 'FINISHED', v_at + t.off)
+    returning id into v_p;
+    foreach v_u in array t.runners loop
+      insert into public.party_runs (party_id, user_id, starts_at) values (v_p, v_u, v_at + t.off);
+    end loop;
+    if t.pairs is not null then
+      foreach v_pair slice 1 in array t.pairs loop
+        insert into public.party_near (party_id, user_a, user_b, first_at, last_at)
+        values (v_p, least(v_pair[1], v_pair[2]), greatest(v_pair[1], v_pair[2]),
+                v_at + t.off + interval '20 seconds', v_at + t.off + interval '5 minutes');
+      end loop;
+    end if;
+    insert into fix (k, v) values (t.k, v_p::text);
+  end loop;
+end $$;
+
+-- 크루 체력 검사의 러닝 하나 — 그 사람으로 로그인한 채 부른다(시작 · 초 · 걸음 · 경로 빠르기 · 가짜 위치)
+create or replace function pg_temp.run69(p_key text, p_start timestamptz, p_secs int, p_steps int, p_dps numeric,
+                                         p_mock boolean default false)
+returns void language plpgsql as $$
+declare r record;
+begin
+  select * into r from public.record_session(p_start, p_start + make_interval(secs => p_secs), p_steps, p_secs,
+    pg_temp.track(p_start, p_secs, p_dps), 0, 1, '', p_mock);
+  insert into fix (k, v) values (p_key, r.session_id::text);
+end $$;
+
+set role authenticated;
+-- 크루장 — p1 크루 러닝(5분 1,000걸음), 같은 방의 두 번째 러닝(3분 600걸음), 번개 방 러닝
+call pg_temp.login('69000000-0000-0000-0000-000000000001');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_a1', v_at + interval '5 seconds', 300, 1000, 0.00002);
+  perform pg_temp.run69('r69_a2', v_at + interval '6 minutes', 180, 600, 0.00002);
+  perform pg_temp.run69('r69_a3', v_at + interval '5 hours 5 seconds', 300, 1000, 0.00002);
+end $$;
+-- 둘 — p1 에서 1시간 넘게 15,000걸음(몫 16.6666 이면 9,999걸음까지), p2 크루 러닝(몫을 다 썼다), 혼자 달린 러닝
+call pg_temp.login('69000000-0000-0000-0000-000000000002');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_b1', v_at + interval '5 seconds', 4000, 15000, 0.00003);
+  perform pg_temp.run69('r69_b2', v_at + interval '2 hours 5 seconds', 300, 1000, 0.00002);
+  perform pg_temp.run69('r69_b3', v_at + interval '3 hours', 300, 1000, 0.00002);
+end $$;
+-- 셋 — p1 가짜 위치(무효), p2 크루 러닝(하루 금액 상한 5 에 걸린다), p3 크루 방에서 혼자
+call pg_temp.login('69000000-0000-0000-0000-000000000003');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_c1', v_at + interval '5 seconds', 300, 1000, 0.00002, true);
+end $$;
+reset role;
+update public.economy_settings set value = '5' where key = 'daily_earn_cap';
+set role authenticated;
+call pg_temp.login('69000000-0000-0000-0000-000000000003');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_c2', v_at + interval '2 hours 5 seconds', 300, 1000, 0.00002);
+end $$;
+reset role;
+update public.economy_settings set value = '600' where key = 'daily_earn_cap';
+set role authenticated;
+call pg_temp.login('69000000-0000-0000-0000-000000000003');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_c3', v_at + interval '4 hours 5 seconds', 300, 1000, 0.00002);
+end $$;
+-- 새내기 — p1 크루 러닝(그날 가입해 크루 체력을 나눠 받지 않는다)
+call pg_temp.login('69000000-0000-0000-0000-000000000004');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_d1', v_at + interval '5 seconds', 300, 1000, 0.00002);
+  perform pg_temp.run69('r69_d2', v_at + interval '6 hours 5 seconds', 300, 1000, 0.00002);
+end $$;
+reset role;
+-- 나간이 — p5 를 함께 달린 뒤 크루를 나갔다
+delete from public.crew_members
+ where crew_id = '69000000-0000-0000-0000-0000000000cc' and user_id = '69000000-0000-0000-0000-000000000005';
+set role authenticated;
+call pg_temp.login('69000000-0000-0000-0000-000000000005');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_e1', v_at + interval '6 hours 5 seconds', 300, 1000, 0.00002);
+end $$;
+reset role;
+-- 셋 — 최근 7일 무효가 다섯(가짜 위치 하나 + 넷)이 되어 보류 중에 p6 크루 러닝
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verdict, verdict_reason)
+select '69000000-0000-0000-0000-000000000003',
+       economy.game_day_start(pg_temp.fx('g69')::date) - interval '1 day' + make_interval(hours => h),
+       economy.game_day_start(pg_temp.fx('g69')::date) - interval '1 day' + make_interval(hours => h, mins => 10),
+       600, 1000, 'VOID', '케이던스가 사람 범위를 벗어납니다'
+  from generate_series(1, 4) h;
+set role authenticated;
+call pg_temp.login('69000000-0000-0000-0000-000000000003');
+do $$
+declare v_at timestamptz := pg_temp.fx('d69')::timestamptz;
+begin
+  perform pg_temp.run69('r69_c4', v_at + interval '7 hours 5 seconds', 300, 1000, 0.00002);
+end $$;
+reset role;
+
+do $$
+declare
+  v_x uuid := '69000000-0000-0000-0000-0000000000cc';
+  v_g date := pg_temp.fx('g69')::date;
+  v_step numeric := round(1000 / 600.0, 4);
+  d economy.crew_stamina_days;
+  a1 public.walk_sessions; a2 public.walk_sessions; a3 public.walk_sessions;
+  b1 public.walk_sessions; b2 public.walk_sessions; b3 public.walk_sessions;
+  c1 public.walk_sessions; c2 public.walk_sessions; c3 public.walk_sessions; c4 public.walk_sessions;
+  d1 public.walk_sessions; d2 public.walk_sessions; e1 public.walk_sessions;
+begin
+  select * into d from economy.crew_stamina_days where crew_id = v_x and day = v_g;
+  select * into a1 from public.walk_sessions where id = pg_temp.fx('r69_a1')::bigint;
+  select * into a2 from public.walk_sessions where id = pg_temp.fx('r69_a2')::bigint;
+  select * into a3 from public.walk_sessions where id = pg_temp.fx('r69_a3')::bigint;
+  select * into b1 from public.walk_sessions where id = pg_temp.fx('r69_b1')::bigint;
+  select * into b2 from public.walk_sessions where id = pg_temp.fx('r69_b2')::bigint;
+  select * into b3 from public.walk_sessions where id = pg_temp.fx('r69_b3')::bigint;
+  select * into c1 from public.walk_sessions where id = pg_temp.fx('r69_c1')::bigint;
+  select * into c2 from public.walk_sessions where id = pg_temp.fx('r69_c2')::bigint;
+  select * into c3 from public.walk_sessions where id = pg_temp.fx('r69_c3')::bigint;
+  select * into c4 from public.walk_sessions where id = pg_temp.fx('r69_c4')::bigint;
+  select * into d1 from public.walk_sessions where id = pg_temp.fx('r69_d1')::bigint;
+  select * into d2 from public.walk_sessions where id = pg_temp.fx('r69_d2')::bigint;
+  select * into e1 from public.walk_sessions where id = pg_temp.fx('r69_e1')::bigint;
+
+  -- 그날의 크루 체력
+  perform pg_temp.ok(d.max = 50 and d.contributors = 3 and d.share = 16.6666 and d.level = 2,
+    format('그날 크루 체력 = 기여 크루원 셋의 신발 에너지 최대치(20 + 10 + 10) + 레벨 2 보너스 10 = %s, 한 사람 몫 %s', d.max, d.share));
+  perform pg_temp.ok(
+    (select array_agg(m.user_id::text || ' ' || m.contribution::text order by m.user_id)
+       from economy.crew_stamina_members m where m.crew_id = v_x and m.day = v_g)
+    = array['69000000-0000-0000-0000-000000000001 20.0000', '69000000-0000-0000-0000-000000000002 10.0000',
+            '69000000-0000-0000-0000-000000000003 10.0000'],
+    '나눠 받는 크루원은 그날 전에 가입하고 그 전 7일 안에 달린 셋 — 그날 가입한 사람 · 열흘 쉰 사람은 빠진다');
+
+  -- 크루 러닝은 크루 체력을, 나머지는 개인 에너지를
+  perform pg_temp.ok(a1.energy_pool = 'CREW' and a1.crew_id = v_x and a1.party_size = 4 and a1.energy_used = v_step,
+    format('크루 러닝(크루 방 · 함께 달린 넷)은 크루 체력을 쓰고(%s) 크루를 바로 적는다', a1.energy_used));
+  perform pg_temp.ok(a2.energy_pool = 'PERSONAL' and a2.crew_id is null and a2.party_id is null and a2.energy_used = 1,
+    '같은 방의 두 번째 러닝은 크루 러닝이 아니다(인원 보너스처럼 한 방에 한 번) — 개인 에너지');
+  perform pg_temp.ok(a3.energy_pool = 'PERSONAL' and a3.crew_id is null and a3.party_size = 2,
+    '번개 방에서 함께 달린 러닝은 크루 러닝이 아니다 — 개인 에너지');
+  perform pg_temp.ok((select used from public.energy_days where user_id = a1.user_id and day = v_g)
+                     = a2.energy_used + a3.energy_used,
+    '개인 에너지에는 크루 러닝이 쓴 체력이 들지 않는다');
+
+  -- 몫을 다 쓰면 그 뒤는 적립 없음 — 개인 에너지로 넘어가지 않는다
+  perform pg_temp.ok(b1.energy_pool = 'CREW' and b1.rewarded_steps = 9999 and b1.energy_used = 16.665
+                     and b1.points_awarded = round(9999 * 0.01 * 1.3, 4) and b1.verdict_reason like '%크루 체력을 다 썼습니다%',
+    format('15,000걸음 중 몫(16.6666)만큼 9,999걸음만 받는다 — %s SUP(넷이 함께 ×1.3)', b1.points_awarded));
+  perform pg_temp.ok(b2.energy_pool = 'CREW' and b2.points_awarded = 0 and b2.rewarded_steps = 0 and b2.energy_used = 0
+                     and b2.verdict_reason like '%크루 체력을 다 썼습니다%' and b2.crew_id = v_x,
+    '몫을 다 쓴 뒤의 크루 러닝은 적립이 없다 — 개인 에너지가 남아 있어도 (사용자 결정 "그 뒤는 적립 없음")');
+  perform pg_temp.ok(b3.energy_pool = 'PERSONAL' and b3.party_id is null and b3.points_awarded = 10
+                     and (select used from public.energy_days where user_id = b3.user_id and day = v_g) = v_step,
+    '같은 날 혼자 달린 러닝은 개인 에너지로 받는다 — 두 체력은 따로다');
+
+  -- 무효 · 크루 방 혼자 · 상한
+  perform pg_temp.ok(c1.verdict = 'VOID' and c1.crew_id is null and c1.energy_pool = 'PERSONAL' and c1.energy_used = 0,
+    '무효 러닝은 크루 러닝으로 치지 않는다');
+  perform pg_temp.ok(c2.energy_pool = 'CREW' and c2.points_awarded = 5
+                     and c2.energy_used = round(v_step * 5 / round(1000 * 0.01 * 1.1, 4), 4),
+    format('하루 금액 상한(5)에 걸린 크루 러닝은 받은 몫만큼만 크루 체력을 쓴다(%s, 0068 그대로)', c2.energy_used));
+  perform pg_temp.ok(c3.energy_pool = 'PERSONAL' and c3.crew_id is null and c3.party_size = 1 and c3.party_id is not null
+                     and c3.energy_used = v_step,
+    '크루 방에서 혼자 달린 러닝(함께 달린 사람 없음)은 크루 러닝이 아니다 — 개인 에너지');
+  perform pg_temp.ok(c4.verdict_reason like '%보류%' and c4.crew_id = v_x and c4.energy_used = 0 and c4.points_awarded = 0,
+    '보류 중인 크루 러닝은 크루를 적지만 체력을 쓰지 않는다');
+
+  -- 나눠 받지 않는 크루원 · 크루를 나간 사람
+  perform pg_temp.ok(d1.energy_pool = 'PERSONAL' and d1.crew_id = v_x and d2.energy_pool = 'PERSONAL' and d2.crew_id = v_x
+                     and (select used from public.energy_days where user_id = d1.user_id and day = v_g)
+                         = d1.energy_used + d2.energy_used,
+    '그날 가입한 크루원의 크루 러닝은 크루 러닝이지만(크루 · 레벨 거리) 개인 에너지로 받는다');
+  perform pg_temp.ok(e1.energy_pool = 'PERSONAL' and e1.crew_id is null and e1.party_size = 2,
+    '크루를 나간 뒤 올린 러닝은 크루 러닝이 아니다');
+
+  -- 쓴 양
+  perform pg_temp.ok(
+    (select array_agg(m.used order by m.user_id) from economy.crew_stamina_members m where m.crew_id = v_x and m.day = v_g)
+    = array[a1.energy_used, b1.energy_used + b2.energy_used, c2.energy_used + c4.energy_used],
+    '크루 체력은 사람마다 쓴 양을 따로 적는다');
+  perform pg_temp.ok(not exists (select 1 from economy.crew_stamina_members m
+                                  where m.crew_id = v_x and m.day = v_g and m.used > d.share),
+    '누구도 자기 몫을 넘겨 쓰지 않는다 — 먼저 올린 사람이 남의 몫을 쓰지 못한다');
+
+  -- 크루 레벨 — 크루 러닝 누적 거리
+  perform pg_temp.ok(
+    (select run_km from public.crews where id = v_x)
+    = 99.5 + (select sum(round((s.distance_meters / 1000)::numeric, 3)) from public.walk_sessions s
+               where s.id in (a1.id, b1.id, b2.id, c2.id, d1.id, d2.id)),
+    '크루 러닝 거리는 함께 달린 사람마다 자기 거리를 더한다 — 무효 · 보류 · 혼자 · 번개 · 나간 사람은 빼고');
+  perform pg_temp.ok((select level from public.crews where id = v_x) = 3 and d.level = 2,
+    '100km 를 넘겨 레벨 3 — 그날 크루 체력은 정한 때의 레벨(2) 그대로');
+  perform pg_temp.ok(economy.crew_level_for_km(0) = 1 and economy.crew_level_for_km(29.999) = 1
+                     and economy.crew_level_for_km(30) = 2 and economy.crew_level_for_km(250) = 4
+                     and economy.crew_level_for_km(4499.999) = 9 and economy.crew_level_for_km(4500) = 10
+                     and economy.crew_level_for_km(100000) = 10 and economy.crew_level_km(11) is null,
+    '레벨 기준 30 · 100 · 250 · 500 · 900 · 1,500 · 2,300 · 3,300 · 4,500km — 10 이 끝');
+
+  -- 앱은 표를 직접 읽지도 쓰지도 못한다
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'economy.crew_stamina_days', 'select')
+                     and not has_table_privilege('authenticated', 'economy.crew_stamina_members', 'select')
+                     and not has_function_privilege('anon', 'public.crew_stamina(uuid)', 'execute')
+                     and has_function_privilege('authenticated', 'public.crew_stamina(uuid)', 'execute')
+                     and not has_function_privilege('anon', 'public.crew_level(uuid)', 'execute'),
+    '크루 체력 표는 서버 함수만 — 앱은 로그인한 크루원으로 crew_stamina 만 부른다');
+end $$;
+
+-- 정한 크루 체력은 그날 안에서 흔들리지 않는다 — 크루장이 신발을 레벨 11(30)로 바꿔도 그날은 50
+update public.market_sneakers set level = 11 where id = pg_temp.fx('s69a')::bigint;
+do $$
+begin
+  perform pg_temp.ok((economy.crew_stamina_day('69000000-0000-0000-0000-0000000000cc', pg_temp.fx('g69')::date)).max = 50,
+    '그날 신발을 바꿔도 그날 크루 체력은 그대로 — 다음 날부터');
+end $$;
+-- 새 크루 — 크루 러닝이 없다
+insert into public.crews (id, owner_id, name)
+values ('69000000-0000-0000-0000-0000000000dd', '69000000-0000-0000-0000-000000000006', '새 크루');
+
+set role authenticated;
+call pg_temp.login('69000000-0000-0000-0000-000000000001');
+do $$
+declare v jsonb; l jsonb; v_km numeric;
+begin
+  -- 오늘: 크루장(30) · 둘 · 셋 · 새내기(어제 전에 가입 · 어제 달림) = 60 + 레벨 3 보너스 20 = 80, 나간이는 빠진다
+  v := public.crew_stamina('69000000-0000-0000-0000-0000000000cc');
+  perform pg_temp.ok((v->>'max')::numeric = 80 and (v->>'contributors')::int = 4 and (v->>'share')::numeric = 20
+                     and (v->>'used')::numeric = 0 and (v->>'left')::numeric = 80
+                     and (v->>'level')::int = 3 and (v->>'level_bonus')::numeric = 20,
+    format('오늘 크루 체력 — 넷의 에너지 최대치(30 + 10 + 10 + 10) + 레벨 3 보너스 20 = 80, 한 사람 20 (%s)', v));
+  perform pg_temp.ok((v->'me'->>'contributor')::boolean and (v->'me'->>'contribution')::numeric = 30
+                     and (v->'me'->>'left')::numeric = 20,
+    '내 기여(신은 신발의 에너지 최대치 30)와 남은 몫(20)');
+  perform pg_temp.ok(jsonb_array_length(v->'members') = 4 and v->'members'->0->>'name' = '체력장'
+                     and (v->'members'->0->>'contribution')::numeric = 30 and not (v->'members'->0 ? 'used'),
+    '나눠 받는 크루원 명단 — 기여가 큰 순, 사람마다 쓴 양은 주지 않는다');
+  perform pg_temp.ok((v->>'crew_level')::int = 3 and (v->>'next_level_km')::numeric = 250 and (v->>'run_km')::numeric > 100,
+    '크루 레벨 · 누적 거리 · 다음 레벨(250km)');
+  l := public.crew_level('69000000-0000-0000-0000-0000000000cc');
+  select run_km into v_km from public.crews where id = '69000000-0000-0000-0000-0000000000cc';
+  perform pg_temp.ok((l->>'level')::int = 3 and (l->>'run_km')::numeric = v_km and (l->>'next_level_km')::numeric = 250
+                     and (l->>'level_bonus')::numeric = 20 and jsonb_array_length(l->'levels') = 10
+                     and l->'levels'->0 = '{"level": 1, "km": 0, "bonus": 0}'::jsonb
+                     and l->'levels'->9 = '{"level": 10, "km": 4500, "bonus": 90}'::jsonb,
+    '레벨 안내 — 누적 거리 · 다음 레벨 · 레벨 보너스 · 레벨 표(0047 값은 그대로)');
+end $$;
+call pg_temp.login('69000000-0000-0000-0000-000000000006');
+call pg_temp.must_fail($q$ select public.crew_stamina('69000000-0000-0000-0000-0000000000cc') $q$,
+  '다른 크루의 체력은 볼 수 없다');
+do $$
+declare v jsonb; l jsonb;
+begin
+  v := public.crew_stamina('69000000-0000-0000-0000-0000000000dd');
+  perform pg_temp.ok((v->>'max')::numeric = 0 and (v->>'contributors')::int = 0 and not (v->'me'->>'contributor')::boolean
+                     and v->'crew_level' = 'null'::jsonb and (v->>'next_level_km')::numeric = 30,
+    '오늘 만든 크루 — 나눠 받는 크루원이 없어 크루 체력 0(크루 러닝은 개인 에너지로), 레벨 없음("새 크루")');
+  l := public.crew_level('69000000-0000-0000-0000-0000000000dd');
+  perform pg_temp.ok(l->'level' = 'null'::jsonb and (l->>'next_level_km')::numeric = 30 and (l->>'level_bonus')::numeric = 0
+                     and (l->>'run_km')::numeric = 0,
+    '크루 러닝이 없는 크루는 레벨이 비어 있다 — 첫 레벨까지 30km');
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+update public.economy_settings set value = '7' where key = 'new_account_days';
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

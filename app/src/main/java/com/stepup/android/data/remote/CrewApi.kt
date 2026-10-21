@@ -100,14 +100,21 @@ data class CrewPersonApplicationRow(
     @SerialName("created_at") val createdAt: String = "",
 )
 
-/** 레벨 안내(crew_level) */
+/** 레벨 안내(crew_level) — 0069 부터 크루 러닝 누적 거리 · 다음 레벨 · 레벨 보너스 · 레벨 표(그 전 서버는 비어 있다) */
 @Serializable
 data class CrewLevelRow(
     val level: Int? = null,
     @SerialName("week_km") val weekKm: Double = 0.0,
     @SerialName("week_runners") val weekRunners: Int = 0,
     @SerialName("member_count") val memberCount: Int = 0,
+    @SerialName("run_km") val runKm: Double? = null,
+    @SerialName("next_level_km") val nextLevelKm: Double? = null,
+    @SerialName("level_bonus") val levelBonus: Double? = null,
+    val levels: List<CrewLevelStepRow> = emptyList(),
 )
+
+@Serializable
+data class CrewLevelStepRow(val level: Int = 1, val km: Double = 0.0, val bonus: Double = 0.0)
 
 /** 가입 신청의 결과(crew_apply) — PENDING · MEMBER */
 @Serializable

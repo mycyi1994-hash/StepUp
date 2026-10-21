@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -200,6 +201,15 @@ fun PartyLobbyScreen(
     BackHandler { leave() }
 
     val canNotify = flashPostId == null && !party.crewId.isNullOrBlank()
+    // 크루 대기실이면 오늘의 크루 체력(0069) — 이 크루 러닝이 받쳐 줄 체력(내 몫 · 다 씀 · 개인 에너지)을 출발 전에 보인다
+    val staminaCrew = if (flashPostId == null) party.crewId?.takeIf { it.isNotBlank() } ?: crewId.takeIf { it.isNotEmpty() } else null
+    val staminaFlow = remember(staminaCrew) {
+        staminaCrew?.let { com.stepup.android.core.ServiceLocator.crewHome.stamina(it) } ?: kotlinx.coroutines.flow.flowOf(null)
+    }
+    val stamina by staminaFlow.collectAsStateWithLifecycle(
+        initialValue = staminaCrew?.let { com.stepup.android.core.ServiceLocator.crewHome.staminaNow(it) },
+    )
+    LaunchedEffect(staminaCrew) { staminaCrew?.let { com.stepup.android.core.ServiceLocator.crewHome.loadStamina(it) } }
     val here = rememberCurrentLocation(enabled = party.phase == PartyPhase.COUNTDOWN && StepPermissions.hasLocation(context))
     val monogram = party.crewId?.let { com.stepup.android.core.ServiceLocator.crewRepository.crewOf(it)?.monogram }.orEmpty()
     PartyLobbyContent(
@@ -223,6 +233,7 @@ fun PartyLobbyScreen(
         },
         // 서버에 닿지 못한 동안 — 걸려 있던 물음 · 방 열기를 기다리지 않고 지금 다시 묻는다
         onReconnect = { com.stepup.android.core.ServiceLocator.crewRepository.wakeParty() },
+        stamina = stamina?.takeIf { it.isToday() },
     )
     if (readyCheck && party.phase == PartyPhase.LOBBY) {
         CrewReadyCheckSheet(
@@ -288,6 +299,8 @@ fun PartyLobbyContent(
     monogram: String = "",
     /** 서버에 닿지 못한 동안 "다시 연결" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
     onReconnect: () -> Unit = {},
+    /** 크루 대기실의 오늘 크루 체력(0069) — 번개러닝 대기실은 쓰지 않는다 */
+    stamina: com.stepup.android.domain.CrewStamina? = null,
 ) {
     val t = runTone()
     // 크루 대기실 · 동시 출발은 크루 달리기 v2 모습(2026-10-16). 번개러닝 대기실은 아래 예전 모습 그대로
@@ -296,7 +309,7 @@ fun PartyLobbyContent(
             party = party, title = title, resultPoints = resultPoints, canNotify = canNotify,
             onBack = onBack, onReady = onReady, onCancelReady = onCancelReady, onStart = onStart, onShare = onShare,
             onKick = onKick, onNotify = onNotify, onRetry = onRetry, onLeave = onLeave, onDismissResult = onDismissResult,
-            onReconnect = onReconnect,
+            onReconnect = onReconnect, stamina = stamina,
         )
         return
     }

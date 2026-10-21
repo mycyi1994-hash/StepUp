@@ -54,7 +54,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 
 /**
  * 11 레벨 안내 · 68 레벨 조회 실패 — 레벨은 목록과 따로 읽는다. 레벨만 못 읽어도 다른 크루 정보는 그대로 보인다.
- * 저장된 레벨이 없으면 "새 크루"(레벨 계산식은 정해지지 않았다 — 여기서 만들지 않는다). 주간 참여 · 거리는 레벨 산식이 아닌 별개 현황.
+ * 저장된 레벨이 없으면 "새 크루"(아직 크루 러닝이 없다 — 레벨은 크루 러닝 누적 거리로 서버가 올린다, 0069). 주간 참여 · 거리는 별개 현황.
  */
 @Composable
 internal fun CrewLevelSheet(card: CrewCard, onDismiss: () -> Unit) {

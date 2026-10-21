@@ -22,6 +22,7 @@ import com.stepup.android.domain.CrewProblem
 import com.stepup.android.domain.CrewRun
 import com.stepup.android.domain.CrewRunDetail
 import com.stepup.android.domain.CrewRunsScope
+import com.stepup.android.domain.CrewStamina
 import com.stepup.android.domain.CrewWeek
 import com.stepup.android.domain.MeetingAttendee
 import com.stepup.android.domain.MeetingResponse
@@ -66,6 +67,9 @@ class CrewHomeViewModel(
     /** 크루마다 마지막으로 받은 홈 — 참석 응답이 저장되면 서버가 준 모임으로 바뀐다(28 · 29) */
     val summary: StateFlow<CrewHomeSummary?> = repo.home(crewId).stateIn(viewModelScope, SharingStarted.Eagerly, repo.homeNow(crewId))
 
+    /** 오늘의 크루 체력(0069) — 읽지 못했으면 null(홈은 그 칸을 두지 않는다) */
+    val stamina: StateFlow<CrewStamina?> = repo.stamina(crewId).stateIn(viewModelScope, SharingStarted.Eagerly, repo.staminaNow(crewId))
+
     private val _failed = MutableStateFlow(false)
 
     /** 처음 읽기가 실패했다(보일 값이 없다) — 26 */
@@ -97,6 +101,8 @@ class CrewHomeViewModel(
         viewModelScope.launch {
             val crew = async { cards.load(crewId) }
             val home = async { repo.loadHome(crewId) }
+            // 크루 체력은 홈과 따로 — 읽지 못해도(서버가 0069 전 · 끊김) 홈은 그대로 보인다
+            launch { repo.loadStamina(crewId) }
             val crewResult = crew.await()
             val homeResult = home.await()
             loading.value = false

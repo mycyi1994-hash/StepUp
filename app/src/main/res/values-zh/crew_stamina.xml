@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 체력(서버 0069, 2026-10-21) — 크루 러닝은 크루가 함께 쓰는 체력으로 적립 · 크루 레벨은 크루 러닝 누적 거리 -->
+<resources>
+    <string name="crew_stamina_title">今日跑团体力</string>
+    <string name="crew_stamina_amount_of">%1$s / %2$s</string>
+    <string name="crew_stamina_sharers">%1$d人共享</string>
+    <string name="crew_stamina_my_left">我的份额剩 %1$s / %2$s</string>
+    <string name="crew_stamina_my_empty">今天我的份额已用完。跑团一起跑明天再累积。</string>
+    <string name="crew_stamina_personal">今天跑团一起跑也使用个人能量累积。</string>
+    <string name="crew_stamina_sheet_title">跑团体力</string>
+    <string name="crew_stamina_rule">在跑团房间里2人以上一起跑的跑团一起跑，使用跑团体力代替个人能量累积。跑团体力是所有共享成员所穿跑鞋的能量上限之和，再加上跑团等级加成。每人份额等于跑团体力除以共享成员人数。</string>
+    <string name="crew_stamina_rule_empty">份额用完后，当天的跑团一起跑不再累积，也不会改用个人能量。</string>
+    <string name="crew_stamina_rule_who">昨天之前加入并在最近7天内跑过的成员共享。今天的跑团体力保持今天首次确定的数值，跑鞋或跑团等级的变化从明天起生效。</string>
+    <string name="crew_stamina_rule_solo">独自跑步和闪电跑仍使用个人能量累积。</string>
+    <string name="crew_stamina_level_bonus">跑团等级加成 +%1$s</string>
+    <string name="crew_stamina_members">共享成员</string>
+    <string name="crew_stamina_member_value">贡献 %1$s</string>
+    <string name="crew_stamina_me">我</string>
+    <string name="crew_stamina_row_left">我的份额剩 %1$s</string>
+    <string name="crew_stamina_row_empty">份额已用完</string>
+    <string name="crew_stamina_row_personal">使用个人能量</string>
+
+    <string name="run_crew_stamina_on">跑团一起跑使用跑团体力累积。</string>
+    <string name="run_crew_stamina_empty">我的跑团体力份额已用完，本次跑步不累积。</string>
+    <string name="run_crew_stamina_personal">今天未共享跑团体力，本次使用个人能量累积。</string>
+
+    <string name="crewhome_level_rule">在跑团房间里2人以上一起跑的距离按每位跑者累加，等级随之提升。</string>
+    <string name="crewhome_level_goal_km">%1$skm</string>
+    <string name="crewhome_level_progress">跑团一起跑 %1$skm · 距下一级 %2$skm</string>
+    <string name="crewhome_level_max">已是最高等级</string>
+    <string name="crewhome_level_max_body">跑团一起跑了 %1$skm。</string>
+    <string name="crewhome_level_bonus">当前等级加成:跑团体力 +%1$s</string>
+    <string name="crewhome_level_bonus_step">每升一级，跑团体力增加 %1$s。</string>
+    <string name="crewhome_level_first">完成第一次跑团一起跑即可达到 Lv.1。</string>
+</resources>

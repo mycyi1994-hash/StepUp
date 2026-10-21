@@ -2458,8 +2458,8 @@ Start running with StepUp.</string>
     <string name="crew_level_error_body">You can still see the rest of the crew info.\nPlease check again shortly.</string>
     <string name="crew_level_retry">Check again</string>
     <string name="crew_level_title">Crew level</string>
-    <string name="crew_level_about">Shows the activity stage the crew has built together.</string>
-    <string name="crew_level_about_new">A new crew without a level yet.</string>
+    <string name="crew_level_about">The crew level rises with the distance run together in the crew room.</string>
+    <string name="crew_level_about_new">A new crew with no crew runs together yet.</string>
     <string name="crew_level_week">%1$d members ran %2$s km this week.</string>
     <string name="crew_level_week_none">No crew runs logged this week yet.</string>
     <string name="crew_report_title">Why are you reporting?</string>
