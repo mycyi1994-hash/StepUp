@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "I've got years of runs in Strava and my watch already logs everything for my 10K block, so I'm not running a second GPS app on the same run. Virtual shoes I have to repair with points that aren't worth anything just sounds like STEPN with the money taken out.",
+  "objection": "Crew running only works if my whole crew moves over, and half of them are on iPhone, so the main feature is dead for us. Plus the shoe wears down every minute I run, which feels like a game that nags me rather than helping me train.",
+  "would_change_my_mind": "If it pulled my runs straight from Strava or my watch so I didn't need to record twice, and my crew leader picked it for our group runs with an iPhone version available.",
+  "price_too_cheap": 1,
+  "price_cheap": 2,
+  "price_expensive": 6,
+  "price_too_expensive": 10
+}

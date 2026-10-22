@@ -1,0 +1,222 @@
+[
+ {
+  "id": "P001",
+  "name": "Omar",
+  "age": 37,
+  "segment": "20s student or early-career runner",
+  "income": 28000,
+  "behaviour": "Gear and data nerd",
+  "behaviour_how": "Wears a Garmin, cares about GPS, pace and heart-rate accuracy, syncs everything.",
+  "objection": "Points I can't cash out are pointless",
+  "habit": "you do a Saturday morning group run with your crew"
+ },
+ {
+  "id": "P002",
+  "name": "Hamza",
+  "age": 21,
+  "segment": "30s-40s working runner",
+  "income": 35000,
+  "behaviour": "Reward hunter",
+  "behaviour_how": "Uses walking-reward apps and checks what the points are actually worth before bothering.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P003",
+  "name": "Mason",
+  "age": 38,
+  "segment": "20s student or early-career runner",
+  "income": 39000,
+  "behaviour": "Reward hunter",
+  "behaviour_how": "Uses walking-reward apps and checks what the points are actually worth before bothering.",
+  "objection": "My crew already organises on KakaoTalk and Instagram, why move?",
+  "habit": "you are training for a 10 km race in the spring"
+ },
+ {
+  "id": "P004",
+  "name": "Levi",
+  "age": 34,
+  "segment": "30s-40s working runner",
+  "income": 59000,
+  "behaviour": "Tracker loyalist",
+  "behaviour_how": "Already logs every run in Nike Run Club, Strava or the watch app and has years of history there.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you are training for a 10 km race in the spring"
+ },
+ {
+  "id": "P005",
+  "name": "Chloe",
+  "age": 40,
+  "segment": "20s student or early-career runner",
+  "income": 33000,
+  "behaviour": "Social only",
+  "behaviour_how": "Runs only when friends invite them.",
+  "objection": "Points I can't cash out are pointless",
+  "habit": "you do a Saturday morning group run with your crew"
+ },
+ {
+  "id": "P006",
+  "name": "Rohan",
+  "age": 41,
+  "segment": "30s-40s working runner",
+  "income": 57000,
+  "behaviour": "Burned by move-to-earn",
+  "behaviour_how": "Played a move-to-earn token app in 2022, lost money, distrusts anything with tokens or sneakers to buy.",
+  "objection": "Points I can't cash out are pointless",
+  "habit": "you mostly run on a treadmill at the gym after work"
+ },
+ {
+  "id": "P007",
+  "name": "Ivy",
+  "age": 36,
+  "segment": "20s student or early-career runner",
+  "income": 25000,
+  "behaviour": "Crew regular",
+  "behaviour_how": "Runs with a crew found on Instagram or a KakaoTalk open chat, meets once or twice a week.",
+  "objection": "Points I can't cash out are pointless",
+  "habit": "you are training for a 10 km race in the spring"
+ },
+ {
+  "id": "P008",
+  "name": "Ravi",
+  "age": 28,
+  "segment": "Running-crew organiser or serious amateur",
+  "income": 56000,
+  "behaviour": "Crew regular",
+  "behaviour_how": "Runs with a crew found on Instagram or a KakaoTalk open chat, meets once or twice a week.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P009",
+  "name": "Tess",
+  "age": 44,
+  "segment": "30s-40s working runner",
+  "income": 70000,
+  "behaviour": "Restarting runner",
+  "behaviour_how": "Wants to get back into running after quitting before, needs something to keep going.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P010",
+  "name": "Hana",
+  "age": 37,
+  "segment": "20s student or early-career runner",
+  "income": 20000,
+  "behaviour": "Crew regular",
+  "behaviour_how": "Runs with a crew found on Instagram or a KakaoTalk open chat, meets once or twice a week.",
+  "objection": "Another app that wants my location all the time",
+  "habit": "you mostly run on a treadmill at the gym after work"
+ },
+ {
+  "id": "P011",
+  "name": "Bilal",
+  "age": 29,
+  "segment": "20s student or early-career runner",
+  "income": 31000,
+  "behaviour": "Crew regular",
+  "behaviour_how": "Runs with a crew found on Instagram or a KakaoTalk open chat, meets once or twice a week.",
+  "objection": "Android only, half my crew uses iPhone",
+  "habit": "you do a Saturday morning group run with your crew"
+ },
+ {
+  "id": "P012",
+  "name": "Yara",
+  "age": 37,
+  "segment": "30s-40s working runner",
+  "income": 70000,
+  "behaviour": "Burned by move-to-earn",
+  "behaviour_how": "Played a move-to-earn token app in 2022, lost money, distrusts anything with tokens or sneakers to buy.",
+  "objection": "Points I can't cash out are pointless",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P013",
+  "name": "Jonah",
+  "age": 21,
+  "segment": "20s student or early-career runner",
+  "income": 35000,
+  "behaviour": "Reward hunter",
+  "behaviour_how": "Uses walking-reward apps and checks what the points are actually worth before bothering.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you mostly run on a treadmill at the gym after work"
+ },
+ {
+  "id": "P014",
+  "name": "Zoe",
+  "age": 26,
+  "segment": "30s-40s working runner",
+  "income": 37000,
+  "behaviour": "Gear and data nerd",
+  "behaviour_how": "Wears a Garmin, cares about GPS, pace and heart-rate accuracy, syncs everything.",
+  "objection": "Points I can't cash out are pointless",
+  "habit": "you check your phone for step-count rewards every morning"
+ },
+ {
+  "id": "P015",
+  "name": "Liam",
+  "age": 35,
+  "segment": "Running-crew organiser or serious amateur",
+  "income": 70000,
+  "behaviour": "Tracker loyalist",
+  "behaviour_how": "Already logs every run in Nike Run Club, Strava or the watch app and has years of history there.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P016",
+  "name": "Luca",
+  "age": 45,
+  "segment": "30s-40s working runner",
+  "income": 42000,
+  "behaviour": "Tracker loyalist",
+  "behaviour_how": "Already logs every run in Nike Run Club, Strava or the watch app and has years of history there.",
+  "objection": "Will it drain my battery, and is the GPS accurate?",
+  "habit": "you do a Saturday morning group run with your crew"
+ },
+ {
+  "id": "P017",
+  "name": "Sofia",
+  "age": 32,
+  "segment": "20s student or early-career runner",
+  "income": 21000,
+  "behaviour": "Restarting runner",
+  "behaviour_how": "Wants to get back into running after quitting before, needs something to keep going.",
+  "objection": "Will it drain my battery, and is the GPS accurate?",
+  "habit": "you mostly run on a treadmill at the gym after work"
+ },
+ {
+  "id": "P018",
+  "name": "Isla",
+  "age": 21,
+  "segment": "30s-40s working runner",
+  "income": 48000,
+  "behaviour": "Tracker loyalist",
+  "behaviour_how": "Already logs every run in Nike Run Club, Strava or the watch app and has years of history there.",
+  "objection": "This sounds like STEPN again, will it collapse?",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P019",
+  "name": "Emma",
+  "age": 20,
+  "segment": "Running-crew organiser or serious amateur",
+  "income": 53000,
+  "behaviour": "Gear and data nerd",
+  "behaviour_how": "Wears a Garmin, cares about GPS, pace and heart-rate accuracy, syncs everything.",
+  "objection": "Android only, half my crew uses iPhone",
+  "habit": "you run along the Han River two or three evenings a week"
+ },
+ {
+  "id": "P020",
+  "name": "Leila",
+  "age": 38,
+  "segment": "30s-40s working runner",
+  "income": 76000,
+  "behaviour": "Restarting runner",
+  "behaviour_how": "Wants to get back into running after quitting before, needs something to keep going.",
+  "objection": "Another app that wants my location all the time",
+  "habit": "you do a Saturday morning group run with your crew"
+ }
+]

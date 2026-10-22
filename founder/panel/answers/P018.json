@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "All my runs are already in Strava and my watch app, and that's where my friends see them. Logging the same Han River run in a second app just to fix up virtual shoes with points I can't even cash out sounds like a chore, not a reason to run.",
+  "objection": "This is STEPN without the money. If the points are worthless and the shoes are just gacha, why would anyone stay, and if they ever start meaning money, it'll crash like STEPN did. Either way it probably won't be around in a year.",
+  "would_change_my_mind": "If my running crew all moved onto it and it pulled my runs in from Strava or my watch automatically, so I didn't have to record twice.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 3,
+  "price_too_expensive": 5
+}

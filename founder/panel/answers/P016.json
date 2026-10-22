@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "I've got years of runs in Strava and my watch already logs everything, so I'm not running a second GPS app in parallel just to earn points I can't cash out and grow virtual shoes. The crew-run part only works if the whole Saturday group installs it, and half of them are on iPhones.",
+  "objection": "Two GPS apps going at once will kill my battery, and I don't know if its distances will even match my watch. On top of that, the shoe-gacha points thing feels like a game for kids, not a running tool.",
+  "would_change_my_mind": "If it pulled my runs straight from Strava or my watch so I never had to start it separately, and it came to iPhone so my whole crew could actually use the crew features together.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 3,
+  "price_too_expensive": 5
+}

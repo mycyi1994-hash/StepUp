@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Most of my runs are on the gym treadmill after work, so a GPS route app has almost nothing to record, and my crew already runs fine off a KakaoTalk open chat. Virtual shoes and points I can't cash out don't pull me in either.",
+  "objection": "It's another app that wants my location the whole time I run, and it's Android-only, so half my crew with iPhones couldn't even join the crew run.",
+  "would_change_my_mind": "If my whole crew, iPhone people included, agreed to use it for our weekly meetups, and it counted my treadmill runs too.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 3,
+  "price_too_expensive": 5
+}

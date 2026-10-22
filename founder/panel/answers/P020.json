@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "I'm trying to get back into running, not collect virtual shoes, and my Saturday crew already has its own way of doing things. A new unknown app that tracks my location every run and wants me to come back for points doesn't feel worth it when half my crew would need to switch too, and some of them are on iPhone.",
+  "objection": "Another app that wants my location all the time, from a company I've never heard of, and the crew run only works if my whole crew installs it, which won't happen with the iPhone people.",
+  "would_change_my_mind": "If my crew leader got everyone on it for our Saturday runs and it worked for the iPhone people too, I'd install it to keep up with them.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 4,
+  "price_too_expensive": 7
+}

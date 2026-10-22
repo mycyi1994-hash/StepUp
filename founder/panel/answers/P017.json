@@ -1,0 +1,13 @@
+{
+  "id": "P017",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "I mostly run on the gym treadmill after work, so an app built around GPS routes and starting outdoors together with a crew doesn't match how I actually run right now. Collecting points to fix up virtual shoes feels like a game, not the thing that will get me back to running.",
+  "objection": "Running GPS in the background will drain my battery, and indoors on a treadmill the GPS distance won't be accurate anyway. I also don't have a crew to start runs with.",
+  "would_change_my_mind": "A proper treadmill/indoor mode that records my gym runs accurately without GPS, or a friend inviting me into their crew so I have people to run with.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 4,
+  "price_too_expensive": 8
+}

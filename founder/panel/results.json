@@ -1,0 +1,156 @@
+{
+ "business": "StepUp — a free Android running app with crews, crew runs and a points/virtual-sneaker game layer (Korea)",
+ "seed": 958683,
+ "dealt": 20,
+ "answered": 20,
+ "skipped": [],
+ "buys": 0,
+ "passes": 20,
+ "buy_rate": 0.0,
+ "by_segment": [
+  [
+   "20s student or early-career runner",
+   8,
+   0.0
+  ],
+  [
+   "30s-40s working runner",
+   9,
+   0.0
+  ],
+  [
+   "Running-crew organiser or serious amateur",
+   3,
+   0.0
+  ]
+ ],
+ "by_behaviour": [
+  [
+   "Gear and data nerd",
+   3,
+   0.0
+  ],
+  [
+   "Reward hunter",
+   3,
+   0.0
+  ],
+  [
+   "Tracker loyalist",
+   4,
+   0.0
+  ],
+  [
+   "Social only",
+   1,
+   0.0
+  ],
+  [
+   "Burned by move-to-earn",
+   2,
+   0.0
+  ],
+  [
+   "Crew regular",
+   4,
+   0.0
+  ],
+  [
+   "Restarting runner",
+   3,
+   0.0
+  ]
+ ],
+ "by_income": [
+  [
+   "under $35,000",
+   6,
+   0.0
+  ],
+  [
+   "$35,000 to $56,000",
+   7,
+   0.0
+  ],
+  [
+   "$56,000 and up",
+   7,
+   0.0
+  ]
+ ],
+ "why_not": [
+  [
+   "need",
+   8,
+   [
+    "My Garmin already records GPS, pace, laps and heart rate and syncs everywhere, so a phone app that tracks the same run less accurately adds nothing. Virtual shoes and points I can't cash out don't get me out the door on Saturday.",
+    "The first thing I check is what the points are worth, and here they say plainly SUP can't be turned into cash, so for me the reward is zero. Without that, it's just another GPS run tracker, and the one I already use on my Han River runs does the job."
+   ],
+   [
+    "P001",
+    "P002"
+   ]
+  ],
+  [
+   "habit",
+   6,
+   [
+    "I've got years of runs in Strava and my watch already logs everything for my 10K block, so I'm not running a second GPS app on the same run. Virtual shoes I have to repair with points that aren't worth anything just sounds like STEPN with the money taken out.",
+    "I only run when my crew drags me out on Saturday, and we already coordinate in our group chat. I'm not going to install a new app on my own, and points I can't cash out plus virtual shoes to repair just sounds like homework."
+   ],
+   [
+    "P004",
+    "P005"
+   ]
+  ],
+  [
+   "convenience",
+   3,
+   [
+    "Half my crew is on iPhone, so an Android-only crew-run app can't replace the Strava and KakaoTalk setup we already use. On top of that, virtual shoes, gacha pulls and points look like STEPN with the cash-out switched off, and I can't see why I'd care.",
+    "The whole point for me is running with my crew, and half of us are on iPhone, so the crew run room would be half empty on Saturday. I'm not going to split my crew across two apps just for points and virtual shoes I can't cash out."
+   ],
+   [
+    "P008",
+    "P011"
+   ]
+  ],
+  [
+   "trust",
+   3,
+   [
+    "Virtual shoes from a gacha that you repair and level up with points is exactly how STEPN looked before it fell apart, and if the points can't become money anyway, I don't see why I'd grind shoes instead of just logging my Han River runs in the app I already use. What I need to get going again is a reason to show up, not another game to manage.",
+    "Virtual sneakers you repair and upgrade with points, plus gacha pulls, is exactly the StepN loop that cost me money in 2022, and points I can't cash out are pointless to me anyway. My current app already tracks my Han River runs, so I don't need this."
+   ],
+   [
+    "P009",
+    "P012"
+   ]
+  ]
+ ],
+ "why_yes": [],
+ "flip": [
+  "If it pulled my runs straight from Garmin Connect and worked on iPhone, so my whole Saturday crew could be on it without changing how we record.",
+  "If my running crew all moved onto it for the shared crew runs, I'd install it to join them, not for the points.",
+  "If SUP could be exchanged for something real, like gift cards or race entry discounts, and my crew leader moved the crew onto it first.",
+  "If it pulled my runs straight from Strava or my watch so I didn't need to record twice, and my crew leader picked it for our group runs with an iPhone version available.",
+  "If our crew leader set it up and everyone in the Saturday group, including the iPhone people, was actually on it, I'd install it so I'm not left out.",
+  "If it were just a clean run tracker that properly records treadmill runs, with the sneaker and point game removed or fully optional and hidden, plus a real crew I already run with asking me to join.",
+  "An iPhone version so my whole crew could join the same room and start together.",
+  "An iPhone version, plus importing runs from Strava or Garmin so my crew wouldn't have to switch trackers.",
+  "If people from my own running crew were already using it for crew runs, and it had been running for a year or more without the shoe/point economy being reset or turned into crypto.",
+  "If my whole crew, iPhone people included, agreed to use it for our weekly meetups, and it counted my treadmill runs too.",
+  "An iPhone app so my whole crew can join the same run room.",
+  "If my running crew all moved to it for the crew runs and I could switch off the sneaker and points part entirely, so it's just a GPS and crew-run app.",
+  "If the points could be traded for something real I'd actually use, like gift cards, gym or race-entry discounts, or running gear, and it counted my treadmill runs fairly.",
+  "If it pulled my runs straight from Garmin Connect and the points could be exchanged for something real, like gift cards or gear discounts.",
+  "If it synced with Strava or my watch so I didn't have to double-log, and there was an iPhone version so my whole crew could join the same run room.",
+  "If it pulled my runs straight from Strava or my watch so I never had to start it separately, and it came to iPhone so my whole crew could actually use the crew features together.",
+  "A proper treadmill/indoor mode that records my gym runs accurately without GPS, or a friend inviting me into their crew so I have people to run with.",
+  "If my running crew all moved onto it and it pulled my runs in from Strava or my watch automatically, so I didn't have to record twice.",
+  "An iPhone version plus Garmin/Strava import, so my whole crew could join and my watch runs counted.",
+  "If my crew leader got everyone on it for our Saturday runs and it worked for the iPhone people too, I'd install it to keep up with them."
+ ],
+ "purchases_first_month_per_buyer": null,
+ "price_answers": 20
+}

@@ -1,0 +1,93 @@
+{
+ "n": 20,
+ "seed": 958683,
+ "customer": {
+  "business": "StepUp — a free Android running app with crews, crew runs and a points/virtual-sneaker game layer (Korea)",
+  "target": "Korean recreational runners, 20 to 45, who run at least once a week, alone or with a running crew",
+  "where": "Korea (Seoul and other cities), Google Play",
+  "age": [
+   20,
+   45
+  ],
+  "segments": [
+   {
+    "name": "20s student or early-career runner",
+    "share": 0.4,
+    "income": [
+     15000,
+     40000
+    ]
+   },
+   {
+    "name": "30s-40s working runner",
+    "share": 0.45,
+    "income": [
+     35000,
+     80000
+    ]
+   },
+   {
+    "name": "Running-crew organiser or serious amateur",
+    "share": 0.15,
+    "income": [
+     30000,
+     90000
+    ]
+   }
+  ],
+  "behaviours": [
+   {
+    "name": "Crew regular",
+    "share": 0.2,
+    "how": "Runs with a crew found on Instagram or a KakaoTalk open chat, meets once or twice a week."
+   },
+   {
+    "name": "Tracker loyalist",
+    "share": 0.2,
+    "how": "Already logs every run in Nike Run Club, Strava or the watch app and has years of history there."
+   },
+   {
+    "name": "Reward hunter",
+    "share": 0.15,
+    "how": "Uses walking-reward apps and checks what the points are actually worth before bothering."
+   },
+   {
+    "name": "Restarting runner",
+    "share": 0.15,
+    "how": "Wants to get back into running after quitting before, needs something to keep going."
+   },
+   {
+    "name": "Gear and data nerd",
+    "share": 0.15,
+    "how": "Wears a Garmin, cares about GPS, pace and heart-rate accuracy, syncs everything."
+   },
+   {
+    "name": "Burned by move-to-earn",
+    "share": 0.1,
+    "how": "Played a move-to-earn token app in 2022, lost money, distrusts anything with tokens or sneakers to buy."
+   },
+   {
+    "name": "Social only",
+    "share": 0.05,
+    "how": "Runs only when friends invite them."
+   }
+  ],
+  "objections": [
+   "I already have years of runs in Strava, NRC or my watch app",
+   "Points I can't cash out are pointless",
+   "This sounds like STEPN again, will it collapse?",
+   "My crew already organises on KakaoTalk and Instagram, why move?",
+   "Will it drain my battery, and is the GPS accurate?",
+   "Android only, half my crew uses iPhone",
+   "Another app that wants my location all the time"
+  ],
+  "habits": [
+   "you run along the Han River two or three evenings a week",
+   "you do a Saturday morning group run with your crew",
+   "you check your phone for step-count rewards every morning",
+   "you are training for a 10 km race in the spring",
+   "you mostly run on a treadmill at the gym after work"
+  ]
+ },
+ "pitch": "StepUp — 러닝 크루 (Android, Google Play, 무료)\nGPS로 러닝 경로·거리·페이스·랩을 기록하고, 크루를 만들어 같은 방에서 함께 출발하는 \"크루 러닝\"을 해요. 크루원이 함께 달린 거리가 쌓이면 크루 레벨이 올라요.\n달리면 앱 안 포인트(SUP)가 쌓이고, 무료 뽑기로 받은 가상 신발을 포인트로 수리·강화하며 키워요. 포인트는 현금으로 바꿀 수 없어요.\n광고·유료 결제 없음. 안드로이드 전용(아이폰 앱 없음)."
+}

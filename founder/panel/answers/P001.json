@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "My Garmin already records GPS, pace, laps and heart rate and syncs everywhere, so a phone app that tracks the same run less accurately adds nothing. Virtual shoes and points I can't cash out don't get me out the door on Saturday.",
+  "objection": "It doesn't say a word about Garmin or watch sync or heart rate, so I'd have to run with my phone as the tracker and get worse data. And half my crew is on iPhone, so the crew run feature is dead before it starts.",
+  "would_change_my_mind": "If it pulled my runs straight from Garmin Connect and worked on iPhone, so my whole Saturday crew could be on it without changing how we record.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 4,
+  "price_too_expensive": 8
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "convenience",
+  "reason": "Half my crew is on iPhone, so an Android-only crew-run app can't replace the Strava and KakaoTalk setup we already use. On top of that, virtual shoes, gacha pulls and points look like STEPN with the cash-out switched off, and I can't see why I'd care.",
+  "objection": "It's Android-only, so the crew feature doesn't work for my crew. The shoe and point game also feels like a leftover from a token scheme that could come back or just get shut down.",
+  "would_change_my_mind": "An iPhone version, plus importing runs from Strava or Garmin so my crew wouldn't have to switch trackers.",
+  "price_too_cheap": 0,
+  "price_cheap": 2,
+  "price_expensive": 5,
+  "price_too_expensive": 10
+}

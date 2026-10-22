@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "My Garmin already records route, pace, laps and heart rate better than a phone app, and nothing here says it syncs with Garmin. Points I can't cash out and virtual shoes to repair are just a game, not a reward, so there's no reason to run a second tracker.",
+  "objection": "SUP can't be turned into money, so the whole reward loop is pointless to me, and phone GPS accuracy with no Garmin or heart-rate integration is a step down from what I use.",
+  "would_change_my_mind": "If it pulled my runs straight from Garmin Connect and the points could be exchanged for something real, like gift cards or gear discounts.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 4,
+  "price_too_expensive": 8
+}

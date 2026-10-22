@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "I only run when my crew drags me out on Saturday, and we already coordinate in our group chat. I'm not going to install a new app on my own, and points I can't cash out plus virtual shoes to repair just sounds like homework.",
+  "objection": "Half my crew is on iPhone, so the whole 'start together in one room' thing breaks immediately, and the points are pointless if I can't do anything real with them.",
+  "would_change_my_mind": "If our crew leader set it up and everyone in the Saturday group, including the iPhone people, was actually on it, I'd install it so I'm not left out.",
+  "price_too_cheap": 0,
+  "price_cheap": 1,
+  "price_expensive": 3,
+  "price_too_expensive": 5
+}
