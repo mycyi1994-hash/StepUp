@@ -25071,6 +25071,8 @@ create table if not exists economy.crew_runs (
   -- 내가 쓴 공용 체력 · 달린 초(서버가 센 값)
   consumed numeric not null default 0,
   active_sec numeric not null default 0,
+  -- 달린 초 중 공용 체력이 0 이던 초 — 경로가 없는 러닝의 적립 몫을 일시정지와 상관없이 센다
+  empty_sec numeric not null default 0,
   -- 인원 보너스 — PENDING(2분 전) · CONFIRMED · UNAVAILABLE
   bonus_status text not null default 'PENDING' check (bonus_status in ('PENDING', 'CONFIRMED', 'UNAVAILABLE')),
   bonus_count int not null default 0,
@@ -25139,6 +25141,7 @@ declare
   v_each numeric;
   v_use numeric;
   v_from timestamptz;
+  v_empty_dt numeric;
 begin
   insert into economy.crew_day_pools (crew_id, day, settled_at) values (p_crew, p_day, p_at)
   on conflict (crew_id, day) do nothing;
@@ -25160,9 +25163,14 @@ begin
     -- 사람마다 똑같이 — 풀에서 쓴 양은 사람마다 쓴 양의 합과 같다(반올림하지 않는다)
     v_each := least(v_need, v_left) / v_n;
     v_use := v_each * v_n;
+    -- 이 사이 중 0 이던 초 — 처음부터 0 이면 전부, 이 사이에 0 이 됐으면 그 뒤만
+    v_empty_dt := case when v_left <= 0 then v_dt
+                       when v_need >= v_left then v_dt - v_left * economy.durability_sec_per_point() / v_n
+                       else 0 end;
     update economy.crew_runs r
        set consumed = r.consumed + v_each,
-           active_sec = r.active_sec + v_dt
+           active_sec = r.active_sec + v_dt,
+           empty_sec = r.empty_sec + v_empty_dt
      where r.crew_id = p_crew and r.day = p_day and r.state = 'RUNNING'
        and r.last_beat_at >= p_at - interval '30 seconds';
     v.consumed := v.consumed + v_use;
@@ -25171,6 +25179,13 @@ begin
       v.consumed := v.capacity;
       v.exhausted_at := v_from + make_interval(secs => v_left * economy.durability_sec_per_point() / v_n);
       insert into economy.crew_pool_empty (crew_id, day, from_at) values (p_crew, p_day, v.exhausted_at)
+      on conflict do nothing;
+    -- 처음부터 0 인데 달리는 사람이 있다(기여 0 인 출발 · 다 쓴 뒤 열린 구간이 없는 경우) — 0 인 구간을 연다.
+    -- 새 하루 0/0 은 화면에서 "새 하루"로 따로 보이지만(총량 0), 적립은 다 쓴 것과 같이 멈춘다
+    elsif v_left <= 0 and not exists (select 1 from economy.crew_pool_empty x
+                                       where x.crew_id = p_crew and x.day = p_day and x.to_at is null) then
+      v.exhausted_at := coalesce(v.exhausted_at, v_from);
+      insert into economy.crew_pool_empty (crew_id, day, from_at) values (p_crew, p_day, v_from)
       on conflict do nothing;
     end if;
     if v.low_at is null and v.capacity > 0 and v.capacity - v.consumed <= v.capacity * 0.2 then
@@ -25523,9 +25538,11 @@ $$;
 revoke all on function public.crew_run_live(bigint) from public, anon;
 grant execute on function public.crew_run_live(bigint) to authenticated;
 
--- 경로에서 공용 체력이 0 이던 구간에 달린 거리(m)와 전체 거리 — 구간의 가운데 시각으로 가른다(튄 구간은 둘 다 빼고)
-create or replace function economy.track_meters_empty(p_track text, p_crew uuid, p_day date,
-                                                      out total_m double precision, out empty_m double precision)
+-- 경로에서 공용 체력이 0 이던 구간에 달린 거리(m)와 전체 거리 — 구간의 가운데 시각으로 가른다(튄 구간은 둘 다 빼고).
+-- p_cut 이 있으면(서버가 이미 끝낸 참여) 그 뒤 거리를 late_m 으로 따로 세고 적립에서도 뺀다(empty_m 에 더한다)
+create or replace function economy.track_meters_empty(p_track text, p_crew uuid, p_day date, p_cut timestamptz,
+                                                      out total_m double precision, out empty_m double precision,
+                                                      out late_m double precision)
 language plpgsql
 stable
 security definer
@@ -25544,6 +25561,7 @@ declare
 begin
   total_m := 0;
   empty_m := 0;
+  late_m := 0;
   if p_track is null or p_track = '' then
     return;
   end if;
@@ -25564,7 +25582,10 @@ begin
       if v_dt > 0 and v_d / v_dt * 3.6 <= economy.speed_glitch_kmh() then
         total_m := total_m + v_d;
         v_mid := to_timestamp((v_pat + v_at) / 2000.0);
-        if exists (select 1 from unnest(v_ranges) rg where rg @> v_mid) then
+        if p_cut is not null and v_mid >= p_cut then
+          late_m := late_m + v_d;
+          empty_m := empty_m + v_d;
+        elsif exists (select 1 from unnest(v_ranges) rg where rg @> v_mid) then
           empty_m := empty_m + v_d;
         end if;
       end if;
@@ -25573,7 +25594,7 @@ begin
   end loop;
 end;
 $$;
-revoke all on function economy.track_meters_empty(text, uuid, date) from public;
+revoke all on function economy.track_meters_empty(text, uuid, date, timestamptz) from public;
 
 -- 시간으로 — 러닝 시간 중 공용 체력이 0 이던 초(경로가 없을 때)
 create or replace function economy.crew_empty_sec(p_crew uuid, p_day date, p_from timestamptz, p_to timestamptz)
@@ -25683,7 +25704,11 @@ declare
   v_lvl_sup numeric := 0;
   v_tm double precision;
   v_em double precision;
+  v_lm double precision;
   v_frac numeric := 1;
+  -- 서버가 이미 끝낸 참여(마지막 한 사람 자동 종료 · 끝냄)면 그때 + 60초(폰 시계 차이) 뒤의 기록은 크루 보상 · 경험치에서 뺀다
+  v_cut timestamptz;
+  v_xp_frac numeric := 1;
   v_level_now int;
   v_level_was int;
   v_starters int := 1;
@@ -25845,6 +25870,9 @@ begin
     v_party_starts := v_cr.started_at;
     select count(*)::int into v_starters from economy.crew_runs c where c.party_id = v_cr.party_id;
     v_party := v_starters;
+    if v_cr.state = 'ENDED' and v_cr.terminal_reason in ('USER_END', 'LAST_PARTICIPANT_END') and v_cr.ended_at is not null then
+      v_cut := v_cr.ended_at + interval '60 seconds';
+    end if;
     -- 공용 체력을 지금까지 정산하고(풀 → 사람 차례로 잠근다) 이 러닝을 끝낸다 — 다른 사람이 모두 끝났으면 마지막 사람도
     perform economy.crew_pool_settle(v_cr.crew_id, v_cr.day, now());
     perform economy.crew_run_close(v_user, v_cr.day, 'RECORDED');
@@ -25917,18 +25945,31 @@ begin
     v_dur := 100;
     v_eff := v_cr.shoe_eff_bps;
     v_comfort := 0;
-    if v_rewardable > 0 then
-      select t.total_m, t.empty_m into v_tm, v_em from economy.track_meters_empty(v_track, v_cr.crew_id, v_cr.day) t;
-      if v_tm > 0 then
-        v_frac := greatest(1 - v_em / v_tm, 0)::numeric;
+    select t.total_m, t.empty_m, t.late_m into v_tm, v_em, v_lm
+      from economy.track_meters_empty(v_track, v_cr.crew_id, v_cr.day, v_cut) t;
+    if v_tm > 0 then
+      v_frac := greatest(1 - v_em / v_tm, 0)::numeric;
+      v_xp_frac := greatest(1 - v_lm / v_tm, 0)::numeric;
+    else
+      -- 경로가 없으면 시간으로. 서버가 끝낸 뒤의 시간은 빼고, 0 이던 몫은 서버가 센 달린 초 중 0 이던 초로(일시정지와 상관없다)
+      v_xp_frac := case when v_cut is null or v_cut >= p_ended_at then 1
+                        else least(greatest(extract(epoch from (v_cut - p_started_at)), 0)
+                                   / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 1)::numeric end;
+      if v_cr.active_sec > 0 then
+        v_frac := greatest(1 - v_cr.empty_sec / v_cr.active_sec, 0) * v_xp_frac;
       else
-        v_frac := greatest(1 - economy.crew_empty_sec(v_cr.crew_id, v_cr.day, p_started_at, p_ended_at)
-                               / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 0);
+        v_frac := greatest(v_xp_frac - economy.crew_empty_sec(v_cr.crew_id, v_cr.day, p_started_at, least(p_ended_at, coalesce(v_cut, p_ended_at)))
+                                       / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 0);
       end if;
-      if v_frac < 1 then
-        v_rewardable := floor(v_rewardable * v_frac)::int;
+    end if;
+    if v_rewardable > 0 and v_frac < 1 then
+      v_rewardable := floor(v_rewardable * v_frac)::int;
+      if v_frac < v_xp_frac then
         v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 체력을 다 썼습니다');
       end if;
+    end if;
+    if v_xp_frac < 1 then
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 러닝이 끝난 뒤의 기록은 크루 보상에서 뺐습니다');
     end if;
   else
     -- 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 (0066) — 남은 내구도로 달릴 수 있던 시간(1분마다 5)만큼만.
@@ -26084,14 +26125,16 @@ begin
   if v_pool = 'CREW' then
     select coalesce(c.level, 1) into v_level_was from public.crews c where c.id = v_crew for update;
     v_level_now := v_level_was;
-    if v_verdict <> 'VOID' and not v_held and v_distance_m > 0
+    -- 서버가 끝낸 뒤의 거리는 빼고(v_xp_frac)
+    if v_verdict <> 'VOID' and not v_held and v_distance_m * v_xp_frac > 0
        and exists (select 1 from public.crew_members m where m.crew_id = v_crew and m.user_id = v_user) then
       update public.crews c
-         set run_km = c.run_km + round((v_distance_m / 1000)::numeric, 3),
-             level = greatest(coalesce(c.level, 1), economy.crew_level_for_km(c.run_km + round((v_distance_m / 1000)::numeric, 3)))
+         set run_km = c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3),
+             level = greatest(coalesce(c.level, 1),
+                              economy.crew_level_for_km(c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3)))
        where c.id = v_crew
       returning c.level into v_level_now;
-      v_xp_m := round(v_distance_m::numeric, 1);
+      v_xp_m := round((v_distance_m * v_xp_frac)::numeric, 1);
       insert into economy.crew_level_events (crew_id, level, session_id, run_km)
       select v_crew, l, v_session_id, (select run_km from public.crews where id = v_crew)
         from generate_series(v_level_was + 1, v_level_now) l

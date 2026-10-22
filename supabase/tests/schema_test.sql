@@ -8399,6 +8399,115 @@ begin
     format('0 이 된 뒤의 경로 거리만큼 적립 걸음을 뺀다 — 200 중 앞 30초 %s걸음, 기록은 그대로 (T10 · T11)', s.rewarded_steps));
 end $$;
 
+-- 서버가 끝낸 참여(리뷰 고침) — 마지막 한 사람으로 끝난 d 가 폰이 끊긴 채 계속 달린 기록을 올리면, 끝난 때 + 60초 뒤의 기록은
+-- 크루 보상 · 경험치에서 뺀다(서버는 그 뒤로 d 의 공용 체력을 세지 않았다)
+update economy.crew_runs set ended_at = pg_temp.fx('t71')::timestamptz + interval '5 minutes'
+ where user_id = '71000000-0000-0000-0000-000000000004' and party_id = pg_temp.fx('p71')::bigint;
+set role authenticated;
+call pg_temp.login('71000000-0000-0000-0000-000000000004');
+do $$
+declare r record; v_at timestamptz := pg_temp.fx('t71')::timestamptz + interval '5 seconds';
+begin
+  select * into r from public.record_session(v_at, v_at + interval '600 seconds', 1500, 600,
+    pg_temp.track(v_at, 600, 0.00002), 0, 1, '', false);
+  insert into fix (k, v) values ('r71_d', r.session_id::text);
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+do $$
+declare s public.walk_sessions; c economy.crew_runs;
+begin
+  select * into s from public.walk_sessions where id = pg_temp.fx('r71_d')::bigint;
+  select * into c from economy.crew_runs where session_id = s.id;
+  perform pg_temp.ok(s.energy_pool = 'CREW' and s.rewarded_steps between 870 and 900
+                     and s.verdict_reason like '%크루 러닝이 끝난 뒤의 기록은 크루 보상에서 뺐습니다%'
+                     and c.terminal_reason = 'LAST_PARTICIPANT_END'
+                     and c.xp_m between round((s.distance_meters * 0.58)::numeric, 1) and round((s.distance_meters * 0.60)::numeric, 1),
+    format('서버가 끝낸 뒤(+60초)의 기록은 크루 보상 · 경험치에서 뺀다 — 1,500 중 %s걸음 · 거리 %sm 중 %sm',
+           s.rewarded_steps, round(s.distance_meters::numeric, 1), c.xp_m));
+end $$;
+
+-- 기여 0 인 출발(리뷰 고침) — 공용 체력이 처음부터 0 이면 달리는 동안 0 인 구간을 열고, 적립하지 않는다(새 하루 0/0 표시는 그대로)
+-- 경로 없는 러닝의 0 몫은 서버가 센 달린 초 중 0 이던 초로 — 일시정지한 시간과 상관없다(리뷰 고침)
+insert into auth.users (id, email, raw_user_meta_data, phone_confirmed_at) values
+  ('71000000-0000-0000-0000-000000000021', 'z71a@test', '{"full_name":"영하나"}', now()),
+  ('71000000-0000-0000-0000-000000000022', 'z71b@test', '{"full_name":"영둘"}', now()),
+  ('71000000-0000-0000-0000-000000000023', 'z71c@test', '{"full_name":"쉼"}', now());
+insert into public.crews (id, owner_id, name)
+values ('71000000-0000-0000-0000-0000000000ee', '71000000-0000-0000-0000-000000000021', '빈 체력 크루'),
+       ('71000000-0000-0000-0000-0000000000ff', '71000000-0000-0000-0000-000000000023', '쉬는 크루');
+do $$
+declare
+  v_z uuid := '71000000-0000-0000-0000-0000000000ee';
+  v_w uuid := '71000000-0000-0000-0000-0000000000ff';
+  z1 uuid := '71000000-0000-0000-0000-000000000021';
+  z2 uuid := '71000000-0000-0000-0000-000000000022';
+  w1 uuid := '71000000-0000-0000-0000-000000000023';
+  v_at timestamptz := now() - interval '25 minutes';
+  v_d date := economy.game_day(now() - interval '25 minutes');
+  v_p bigint;
+  v_q bigint;
+  p economy.crew_day_pools;
+  c economy.crew_runs;
+begin
+  insert into public.parties (crew_id, host_id, status, starts_at, crew_level) values (v_z, z1, 'RUNNING', v_at, 1) returning id into v_p;
+  insert into public.party_members (party_id, user_id, ready) values (v_p, z1, true), (v_p, z2, true);
+  insert into public.party_runs (party_id, user_id, starts_at) values (v_p, z1, v_at), (v_p, z2, v_at);
+  insert into economy.crew_day_pools (crew_id, day, capacity, contributors, settled_at) values (v_z, v_d, 0, 2, v_at);
+  insert into economy.crew_runs (user_id, day, crew_id, party_id, started_at, last_beat_at, crew_level, contribution)
+  values (z1, v_d, v_z, v_p, v_at, v_at + interval '60 seconds', 1, 0), (z2, v_d, v_z, v_p, v_at, v_at + interval '60 seconds', 1, 0);
+  p := economy.crew_pool_settle(v_z, v_d, v_at + interval '30 seconds');
+  select * into c from economy.crew_runs where user_id = z1 and day = v_d;
+  perform pg_temp.ok(p.capacity = 0 and p.consumed = 0 and p.exhausted_at = v_at
+                     and exists (select 1 from economy.crew_pool_empty where crew_id = v_z and from_at = v_at and to_at is null)
+                     and c.active_sec = 30 and c.empty_sec = 30
+                     and (economy.crew_pool_json(v_z, v_d)->>'total')::numeric = 0,
+    '기여 0 으로 출발하면 달리는 동안 0 인 구간을 연다 — 총량은 0 그대로(새 하루와 같은 0/0)');
+  p := economy.crew_pool_settle(v_z, v_d, v_at + interval '60 seconds');
+  perform pg_temp.ok((select count(*) from economy.crew_pool_empty where crew_id = v_z) = 1,
+    '0 인 구간은 한 번만 연다');
+  insert into fix (k, v) values ('t71_z', v_at::text);
+
+  -- 쉬는 크루 — 20분 러닝 중 서버가 센 달린 초 600 · 그중 0 이던 초 150. 쉬는 동안(10분 뒤부터) 0 이 됐다
+  insert into public.parties (crew_id, host_id, status, starts_at, crew_level) values (v_w, w1, 'RUNNING', v_at, 1) returning id into v_q;
+  insert into public.party_members (party_id, user_id, ready) values (v_q, w1, true);
+  insert into public.party_runs (party_id, user_id, starts_at) values (v_q, w1, v_at);
+  insert into economy.crew_day_pools (crew_id, day, capacity, consumed, contributors, settled_at, exhausted_at)
+  values (v_w, v_d, 37.5, 37.5, 1, v_at + interval '1200 seconds', v_at + interval '600 seconds');
+  insert into economy.crew_pool_empty (crew_id, day, from_at) values (v_w, v_d, v_at + interval '600 seconds');
+  insert into economy.crew_runs (user_id, day, crew_id, party_id, started_at, last_beat_at, crew_level, contribution, consumed,
+                                 active_sec, empty_sec)
+  values (w1, v_d, v_w, v_q, v_at, v_at + interval '1200 seconds', 1, 37.5, 37.5, 600, 150);
+end $$;
+set role authenticated;
+call pg_temp.login('71000000-0000-0000-0000-000000000021');
+do $$
+declare r record; v_at timestamptz := pg_temp.fx('t71_z')::timestamptz;
+begin
+  select * into r from public.record_session(v_at, v_at + interval '60 seconds', 200, 60, '', 0, 1, '', false);
+  insert into fix (k, v) values ('r71_z', r.session_id::text);
+end $$;
+call pg_temp.login('71000000-0000-0000-0000-000000000023');
+do $$
+declare r record; v_at timestamptz := pg_temp.fx('t71_z')::timestamptz;
+begin
+  select * into r from public.record_session(v_at, v_at + interval '1200 seconds', 1000, 1200, '', 0, 1, '', false);
+  insert into fix (k, v) values ('r71_w', r.session_id::text);
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+do $$
+declare z public.walk_sessions; w public.walk_sessions;
+begin
+  select * into z from public.walk_sessions where id = pg_temp.fx('r71_z')::bigint;
+  select * into w from public.walk_sessions where id = pg_temp.fx('r71_w')::bigint;
+  perform pg_temp.ok(z.energy_pool = 'CREW' and z.rewarded_steps = 0 and z.points_awarded = 0
+                     and z.verdict_reason like '%크루 체력을 다 썼습니다%',
+    format('공용 체력이 처음부터 0 이면 적립하지 않는다 — %s걸음 · %s SUP', z.rewarded_steps, z.points_awarded));
+  perform pg_temp.ok(w.energy_pool = 'CREW' and w.rewarded_steps = 750,
+    format('경로가 없으면 달린 초 600 중 0 이던 150 초만 뺀다(벽시계 절반이 아니다) — 1,000 중 %s걸음', w.rewarded_steps));
+end $$;
+
 -- 규칙 함수 — 인원 보너스 표(구간 하나) · 레벨 표(T13 ~ T16 · T18)
 do $$ begin
   perform pg_temp.ok(
