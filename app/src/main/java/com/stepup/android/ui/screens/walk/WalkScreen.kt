@@ -247,8 +247,8 @@ fun RunScreen(
     val estimateSteps = equipped?.server?.takeIf { it.hasDurabilityMax }?.let {
         RewardEconomy.stepsWithinDurability(session.steps, it.durabilityNow, session.elapsedSec)
     } ?: session.steps
-    // 크루 러닝(크루 방에서 2명 이상 출발) — 크루 체력(서버 0070). 출발한 방의 미리보기(출발 때 고른 신발 · 레벨 · 인원)로 내 몫
-    // 시간 · 보너스를 예상한다. 함께 달렸는지(출발 2분 뒤에도 500m 안) · 실제 인원은 끝난 뒤 서버가 정한다
+    // 크루 러닝(크루 방에서 2명 이상 출발) — 오늘 크루 공용 체력(서버 0071). 5초마다 서버에 내 상태를 알리고 받은 값(남은 체력 ·
+    // 인원 판정 · 레벨)으로 보인다. 예상 보상 = 고른 신발 기준 × (1 + 확정된 인원 보너스 + 레벨 보너스) — 확정은 서버가 정산한 뒤다
     val crewRunGroup = session.isActive && session.group == com.stepup.android.service.RunGroup.CREW &&
         session.partySize > 1 && session.groupCrewId.isNotBlank()
     val crewPartyNow by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
@@ -260,31 +260,40 @@ fun RunScreen(
         initialValue = crewRoomId?.let { com.stepup.android.core.ServiceLocator.crewRun.roomNow(it) },
     )
     LaunchedEffect(crewRoomId) { crewRoomId?.let { com.stepup.android.core.ServiceLocator.crewRun.loadRoom(it) } }
-    val crewTodayFlow = remember(crewRunGroup, session.groupCrewId) {
-        if (crewRunGroup) com.stepup.android.core.ServiceLocator.crewRun.today(session.groupCrewId) else kotlinx.coroutines.flow.flowOf(null)
+    val crewLiveAll by com.stepup.android.core.ServiceLocator.crewRun.live.collectAsStateWithLifecycle()
+    // 이 러닝의 서버 상태만 — 같은 크루 · 출발 시각이 이 러닝 무렵(앞 러닝의 값을 이어 보이지 않게)
+    val crewNow = crewLiveAll?.takeIf { live ->
+        crewRunGroup && live.crewId == session.groupCrewId &&
+            (live.startedAtMs == null || kotlin.math.abs(live.startedAtMs - session.startedAt) < CREW_LIVE_MATCH_MS)
     }
-    val crewTodayNow by crewTodayFlow.collectAsStateWithLifecycle(initialValue = null)
-    // 이 러닝 전에 오늘 크루 러닝을 이미 올렸으면 이 러닝은 보통 러닝이다(인원 보너스도 없다) — 서버도 그렇게 센다
-    val crewDoneBefore = crewTodayNow?.let { it.ranToday && it.isOn(com.stepup.android.domain.CrewRunMath.gameDay(session.startedAt)) } == true
-    val crewPoolRoom = crewRunRoomNow?.takeIf { crewRunGroup && !crewDoneBefore && it.status != "LOBBY" }
+    // 서버 상태를 아직 못 받았어도(첫 5초 · 끊김) 출발한 크루 방이면 크루 러닝으로 본다
+    val crewPoolRun = crewRunGroup && (crewNow != null || (crewRunRoomNow != null && crewRunRoomNow?.status != "LOBBY"))
     val myShoes by com.stepup.android.core.ServiceLocator.sneakerRepository.inventory.collectAsStateWithLifecycle(initialValue = emptyList())
     // 크루 러닝은 고른 신발의 효율 그대로(내구도와 상관없다 — 크루 러닝은 신발이 닳지 않는다)
-    val crewShoeMultiplier = crewPoolRoom?.me?.sneakerId?.let { id -> myShoes.firstOrNull { it.id == id } }?.server
+    val crewShoeMultiplier = crewRunRoomNow?.me?.sneakerId?.let { id -> myShoes.firstOrNull { it.id == id } }?.server
         ?.let { 1.0 + it.efficiencyBps / 10_000.0 }
         ?: equipped?.server?.let { 1.0 + it.efficiencyBps / 10_000.0 } ?: earningMultiplier
-    val crewShareSec = crewPoolRoom?.shareSec ?: 0
-    // 잠금화면 알림에도 남은 크루 체력을 — 이 러닝의 내 몫 시간을 서비스에 알린다(크루 러닝은 개인 신발 다 씀 안내도 끈다)
-    LaunchedEffect(crewPoolRoom?.shareSec, session.startedAt) {
-        crewPoolRoom?.let { WalkSessionService.setCrewShare(session.startedAt, it.shareSec) }
+    val crewBonusPct = crewNow?.bonus?.takeIf { it.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && it.count >= 2 }?.pct ?: 0.0
+    val crewLevelPct = crewNow?.levelPct ?: crewRunRoomNow?.rewardBonus ?: 0.0
+    val crewEmpty = crewNow?.earning == com.stepup.android.domain.CrewEarning.POOL_EMPTY
+    // 공용 체력이 0 이던 동안의 걸음은 예상에서 뺀다(다시 채워지면 그 뒤는 센다 — 서버도 빈 구간만 뺀다)
+    var crewEmptyFrom by remember(session.startedAt) { mutableStateOf<Int?>(null) }
+    var crewExcluded by remember(session.startedAt) { mutableStateOf(0) }
+    LaunchedEffect(crewEmpty, session.startedAt) {
+        if (crewEmpty) {
+            if (crewEmptyFrom == null) crewEmptyFrom = session.steps
+        } else crewEmptyFrom?.let {
+            crewExcluded += (session.steps - it).coerceAtLeast(0)
+            crewEmptyFrom = null
+        }
     }
-    val crewStage = crewPoolRoom?.let { com.stepup.android.domain.CrewRunMath.stage(crewShareSec, session.elapsedSec) }
-    val estimate = if (crewPoolRoom != null) {
+    val estimate = if (crewPoolRun) {
         RewardEconomy.sessionReward(
-            walkedSteps = com.stepup.android.domain.CrewRunMath.stepsWithinShare(session.steps, crewShareSec, session.elapsedSec),
-            // 크루 러닝은 개인 에너지를 쓰지 않는다 — 몫(시간)만 막는다
+            walkedSteps = ((crewEmptyFrom ?: session.steps) - crewExcluded).coerceAtLeast(0),
+            // 크루 러닝은 개인 에너지 · 개인 상한을 쓰지 않는다 — 공용 체력만 막는다
             energyRemaining = CREW_RUN_NO_ENERGY_LIMIT,
             earningMultiplier = crewShoeMultiplier,
-            partyMultiplier = crewPoolRoom.multiplier,
+            partyMultiplier = 1.0 + crewBonusPct + crewLevelPct,
             boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0,
         )
     } else {
@@ -294,12 +303,12 @@ fun RunScreen(
             earningMultiplier = earningMultiplier,
             energyEfficiency = energyEfficiency,
             // 크루 방에서 크루 러닝이 아니면(오늘 이미 했다) 인원 보너스도 없다
-            partyMultiplier = if (crewRunGroup && crewDoneBefore) 1.0 else RewardEconomy.partyMultiplier(session.partySize),
+            partyMultiplier = if (crewRunGroup) 1.0 else RewardEconomy.partyMultiplier(session.partySize),
             boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0,
         )
     }
-    val earnableSteps = if (crewPoolRoom != null) {
-        if (crewStage == com.stepup.android.domain.CrewPoolStage.EMPTY) 0 else Int.MAX_VALUE
+    val earnableSteps = if (crewPoolRun) {
+        if (crewEmpty) 0 else Int.MAX_VALUE
     } else RewardEconomy.earnableSteps(energy, energyEfficiency)
     val maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: sneakerLevel)
     // 이 러닝의 거리 — 화면 · 결과 · 기록 · 서버와 같은 기준(RunDistance: 경로 100m 부터 GPS, 그 전엔 걸음). 나이트 러너 도전 띠의 이번
@@ -756,21 +765,29 @@ fun RunScreen(
         pace = crewPace,
         goalKm = goalKm,
         goalFraction = if (timeOnly || goalKm <= 0) null else (liveKm / goalKm).toFloat().coerceIn(0f, 1f),
-        // 크루 체력(0070) — 내 몫 남은 시간 · 함께 인원(미리보기) · 보너스. 혼자 남음은 위치를 보이는 크루원이 모두 곁 밖일 때만
-        pool = crewPoolRoom?.let { room ->
-            val me = party.members.firstOrNull { it.isMe }?.point
-            val others = party.members.filter { !it.isMe && it.sharing }.mapNotNull { it.point }
+        // 공용 체력(0071) — 서버가 준 오늘 크루 체력(남은 양만 지금 쓰는 사람 수로 보간) · 인원 판정 · 레벨
+        pool = crewNow?.let { live ->
+            val snap = live.pool
+            val now = System.currentTimeMillis()
+            // 받은 뒤 흐른 시간(폰 시계)만큼 — 서버 시각 기준으로 옮겨 보간한다
+            val left = snap?.remainingAt(snap.asOfMs + (now - com.stepup.android.core.ServiceLocator.crewRun.liveAtMs).coerceAtLeast(0L)) ?: 0.0
+            val total = snap?.total ?: 0.0
             CrewLivePool(
-                left = formatDuration(com.stepup.android.domain.CrewRunMath.secLeft(room.shareSec, session.elapsedSec)),
-                fraction = com.stepup.android.domain.CrewRunMath.leftFraction(room.shareSec, session.elapsedSec),
-                stage = crewStage ?: com.stepup.android.domain.CrewPoolStage.OK,
-                runners = room.runners,
-                bonusPercent = com.stepup.android.domain.CrewRunMath.percent(room.multiplier - 1),
-                confirming = session.elapsedSec < room.rules.confirmSec,
-                confirmMinutes = room.rules.confirmSec / 60,
-                alone = session.elapsedSec >= room.rules.confirmSec && crewLinkNow == CrewLink.Linked &&
-                    com.stepup.android.domain.CrewRunMath.aloneNow(me, others, room.rules.nearM),
-                nearM = room.rules.nearM,
+                remaining = com.stepup.android.domain.CrewRunMath.amount(left),
+                total = com.stepup.android.domain.CrewRunMath.amount(total),
+                fraction = com.stepup.android.domain.CrewRunMath.fraction(left, total),
+                low = com.stepup.android.domain.CrewRunMath.low(left, total),
+                empty = live.earning == com.stepup.android.domain.CrewEarning.POOL_EMPTY,
+                runners = snap?.activeRunners ?: live.roomActiveRunners,
+                status = live.bonus.status,
+                checkLeft = com.stepup.android.domain.CrewRunMath.checkLeftSec(
+                    live.bonus.checkAtMs, live.serverNowMs, com.stepup.android.core.ServiceLocator.crewRun.liveAtMs, now,
+                )?.takeIf { live.bonus.status == com.stepup.android.domain.CrewBonusStatus.PENDING }?.let { formatDuration(it) },
+                bonusCount = live.bonus.count,
+                bonusPercent = com.stepup.android.domain.CrewRunMath.percent(live.bonus.pct),
+                levelPercent = com.stepup.android.domain.CrewRunMath.percent(live.levelPct),
+                unverified = !live.bonus.verified,
+                paused = session.isPaused,
             )
         },
     )
@@ -915,25 +932,34 @@ fun RunScreen(
                     if (groupRun && confirmed) com.stepup.android.core.ServiceLocator.crewRun.loadOutcome(session.lastStartedAt)
                 }
                 val outcome = outcomeSlot?.value
+                val m = com.stepup.android.domain.CrewRunMath
                 val crewLines = when {
                     !confirmed || outcomeSlot == null -> emptyList()
                     outcome == null -> listOf(stringResource(R.string.crew_result_not_crew))
+                    // 서버가 아직 나누지 않았다 — 금액을 꾸며 적지 않는다
+                    !outcome.settled || outcome.base == null || outcome.total == null -> listOf(stringResource(R.string.crew_result_pending))
                     else -> buildList {
-                        add(stringResource(
-                            R.string.crew_result_pool, com.stepup.android.domain.CrewRunMath.amount(outcome.mine.used),
-                            com.stepup.android.domain.CrewRunMath.amount(outcome.mine.share),
-                        ))
-                        add(stringResource(
-                            R.string.crew_result_bonus, outcome.mine.runners,
-                            com.stepup.android.domain.CrewRunMath.percent(outcome.mine.headcountBonus),
-                            com.stepup.android.domain.CrewRunMath.percent(outcome.mine.levelBonus),
-                        ))
+                        val counted = outcome.bonus.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && outcome.bonus.count >= 2
+                        add(stringResource(R.string.crew_result_base, m.sup(outcome.base)))
+                        add(
+                            if (counted) stringResource(R.string.crew_result_headcount, outcome.bonus.count, m.percent(outcome.headcountPct), m.sup(outcome.headcount ?: 0.0))
+                            else stringResource(R.string.crew_result_headcount_none),
+                        )
+                        add(stringResource(R.string.crew_result_level_bonus, outcome.levelBefore ?: 1, m.percent(outcome.levelPct), m.sup(outcome.level ?: 0.0)))
+                        add(stringResource(R.string.crew_result_total, m.sup(outcome.base), m.percent(outcome.headcountPct), m.percent(outcome.levelPct), m.sup(outcome.total)))
+                        add(stringResource(R.string.crew_result_pool, m.amount(outcome.contribution), m.amount(outcome.consumed)))
+                        outcome.pool?.let { add(stringResource(R.string.crew_result_pool_now, m.amount(it.remaining), m.amount(it.total))) }
+                        add(stringResource(R.string.crew_result_personal))
                         if (outcome.poolEmpty) add(stringResource(R.string.crew_result_pool_empty))
-                        if (outcome.aloneEnded) add(stringResource(R.string.crew_result_alone))
-                        if (outcome.crewKm > 0) add(stringResource(R.string.crew_result_level, "%.2f".format(outcome.crewKm)))
+                        if (outcome.terminal == com.stepup.android.domain.CrewTerminal.LAST_PARTICIPANT_END) add(stringResource(R.string.crew_result_alone))
+                        when {
+                            outcome.invalid || !outcome.xpApplied -> add(stringResource(R.string.crew_result_level_void))
+                            (outcome.xpM ?: 0.0) > 0 -> add(stringResource(R.string.crew_result_level, "%.2f".format((outcome.xpM ?: 0.0) / 1000.0)))
+                        }
+                        add(stringResource(R.string.crew_result_cap))
                     }
                 }
-                val levelUp = outcome?.takeIf { confirmed && it.levelUp }?.crewLevelNow
+                val levelUp = outcome?.takeIf { confirmed && it.levelUp }?.levelAfter
                     ?.let { stringResource(R.string.crew_result_level_up, it) }
                 CrewRunResult(
                     ui = CrewResultUi(
@@ -1456,17 +1482,16 @@ fun RunScreen(
                         }
                         // 크루 러닝은 크루 체력(0070) — 다 썼으면 그 뒤는 적립이 없다(기록은 계속). 개인 에너지는 그대로
                         when {
-                            crewPoolRoom != null -> add(context.getString(
-                                if (crewStage == com.stepup.android.domain.CrewPoolStage.EMPTY) R.string.run_crew_pool_empty else R.string.run_crew_pool_on,
-                            ))
+                            crewPoolRun -> add(context.getString(if (crewEmpty) R.string.run_crew_pool_empty else R.string.run_crew_pool_on))
                             earnableSteps <= 0 -> add(context.getString(R.string.home_energy_empty))
                         }
                         if (xpBoosted) add(context.getString(R.string.run_boost_active))
                         when {
-                            crewPoolRoom != null -> add(context.getString(
-                                R.string.crew_live_headcount, crewPoolRoom.runners, com.stepup.android.domain.CrewRunMath.percent(crewPoolRoom.multiplier - 1),
+                            crewPoolRun -> add(context.getString(
+                                R.string.run_crew_estimate_rule, com.stepup.android.domain.CrewRunMath.percent(crewBonusPct),
+                                com.stepup.android.domain.CrewRunMath.percent(crewLevelPct),
                             ))
-                            crewRunGroup && crewDoneBefore -> add(context.getString(R.string.crew_lobby_done_today))
+                            crewRunGroup -> add(context.getString(R.string.crew_lobby_done_today))
                             session.partySize > 1 -> add(context.getString(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)))
                         }
                     },
@@ -1602,11 +1627,41 @@ fun RunScreen(
             )
         }
     }
+    // 크루 러닝 안내(0071) — 러닝마다 한 번씩: 출발 2분 뒤 인원 보너스 판정 · 공용 체력 20% 아래 · 다른 참가자가 모두 끝내 자동 종료
+    var crewBonusSeen by rememberSaveable(session.startedAt) { mutableStateOf(false) }
+    var crewLowSeen by rememberSaveable(session.startedAt) { mutableStateOf(false) }
+    var crewAloneSeen by rememberSaveable { mutableStateOf(0L) }
+    crewNow?.let { live ->
+        val decided = live.bonus.status != com.stepup.android.domain.CrewBonusStatus.PENDING
+        if (session.isActive && decided && !crewBonusSeen && !confirmStop) {
+            CrewBonusSheet(
+                count = live.bonus.count, started = live.participants, bonusPct = live.bonus.pct,
+                level = live.crewLevel, levelPct = live.levelPct, nearM = crewRunRoomNow?.rules?.nearM ?: com.stepup.android.domain.CrewRunMath.NEAR_M,
+                onClose = { crewBonusSeen = true },
+            )
+        } else if (session.isActive && (crewBonusSeen || !decided) && !crewLowSeen && !confirmStop && live.pool?.low == true &&
+            live.earning != com.stepup.android.domain.CrewEarning.POOL_EMPTY
+        ) {
+            CrewLowSheet(
+                com.stepup.android.domain.CrewRunMath.amount(live.pool.remaining), com.stepup.android.domain.CrewRunMath.amount(live.pool.total),
+                onClose = { crewLowSeen = true },
+            )
+        }
+    }
+    // 서버가 나를 끝냈다(마지막 한 사람) — 러닝은 저장되어 결과로 간다. 결과 위에 한 번 알린다
+    crewLiveAll?.takeIf { it.endedAlone && !session.isActive && session.lastStartedAt > 0 && crewAloneSeen != session.lastStartedAt &&
+        it.startedAtMs != null && kotlin.math.abs(it.startedAtMs - session.lastStartedAt) < CREW_LIVE_MATCH_MS
+    }?.let {
+        CrewAloneSheet(
+            distance = "%.2f".format(finishKm(session)), time = formatDuration(session.lastElapsedSec),
+            onClose = { crewAloneSeen = session.lastStartedAt },
+        )
+    }
     // CR12 — 크루 달리기: 내 러닝을 마칠까요? 진행자가 마치면 방이 닫힌다(서버) — 역할마다 실제로 일어나는 일만 적는다
     if (confirmStop && canAskEnd && crewRun) {
         com.stepup.android.ui.components.RunSheet(onDismiss = { confirmStop = false }, modifier = Modifier.testTag("run-end-dialog")) {
             CrewFinishSheetContent(
-                crewRunOnce = crewPoolRoom != null,
+                crewRunOnce = crewPoolRun,
                 end = crewEnd(party, crewLinkNow),
                 distance = liveKmText, time = formatDuration(session.elapsedSec), pace = crewPace,
                 onSave = {
@@ -1777,6 +1832,9 @@ private const val OFF_COURSE_METERS = 60.0
 
 /** 크루 러닝 예상 — 개인 에너지로 막지 않는다(크루 체력 몫 시간만 막는다) */
 private const val CREW_RUN_NO_ENERGY_LIMIT = 1e9
+
+/** 서버의 크루 러닝 출발 시각과 이 폰의 러닝 시작이 이만큼 안이면 같은 러닝으로 본다(카운트다운 · 시계 차이) */
+private const val CREW_LIVE_MATCH_MS = 10 * 60_000L
 private const val OFF_COURSE_MS = 15_000L
 
 /** "12분 30초" — 마칠까요 · 기록 없이 끝낼까요 · 삭제 확인의 한 줄 */

@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -156,6 +157,24 @@ fun CrewHomeScreen(viewModel: CrewHomeViewModel, actions: CrewHomeActions) {
             today.rules, onDismiss = { crewRunSheet = false },
             onLevel = { crewRunSheet = false; actions.onLevel() },
         )
+    }
+
+    // 크루 레벨 업(서버 0071) — 지난 하루 안의 레벨 업을 크루 · 레벨마다 한 번만(이 폰에 본 레벨을 적는다)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val levelEvent = today?.levelEvent?.takeIf { System.currentTimeMillis() - it.reachedAtMs < 24 * 3_600_000L }
+    var levelSeen by remember(today?.crewId, levelEvent?.level) {
+        mutableStateOf(
+            levelEvent == null || context.getSharedPreferences(CREW_LEVEL_SEEN, android.content.Context.MODE_PRIVATE)
+                .getInt(today?.crewId.orEmpty(), 0) >= levelEvent.level,
+        )
+    }
+    if (!levelSeen && levelEvent != null && today != null) {
+        val seen = {
+            context.getSharedPreferences(CREW_LEVEL_SEEN, android.content.Context.MODE_PRIVATE).edit()
+                .putInt(today.crewId, levelEvent.level).apply()
+            levelSeen = true
+        }
+        CrewLevelUpSheet(levelEvent, onDismiss = seen, onOpen = { seen(); actions.onLevel() })
     }
 
     if (menu && crew != null && home != null) {
@@ -530,3 +549,6 @@ private fun HomeMenuSheet(
         Spacer(Modifier.height(12.dp))
     }
 }
+
+/** 이 폰에서 본 크루 레벨 업(크루 → 레벨) */
+private const val CREW_LEVEL_SEEN = "crew_level_seen"

@@ -97,9 +97,9 @@ internal fun CrewLobbyContent(
     onDismissResult: () -> Unit,
     /** 서버에 닿지 못한 동안 "다시 연결하기" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
     onReconnect: () -> Unit = {},
-    /** 오늘 크루 러닝(0070) — 읽지 못했으면 null. 오늘 이미 했으면 준비를 막는다 */
+    /** 오늘 크루 러닝(0071) — 읽지 못했으면 null. 오늘 이미 했으면(어느 크루에서든) 준비를 막는다 */
     crewToday: CrewRunToday? = null,
-    /** 방의 크루 체력 미리보기 · 사람마다 고른 신발(0070) — 읽지 못했으면 null(줄을 두지 않는다) */
+    /** 오늘 공용 체력 · 보너스 미리보기 · 사람마다 고른 신발(0071) — 읽지 못했으면 null(줄을 두지 않는다) */
     room: CrewRunRoom? = null,
     /** 내 신발(고르기 시트) — 서버 신발만 고를 수 있다 */
     shoes: List<Sneaker> = emptyList(),
@@ -119,8 +119,10 @@ internal fun CrewLobbyContent(
     var rule by rememberSaveable { mutableStateOf(false) }
     var shoePicker by rememberSaveable { mutableStateOf(false) }
     val rules = crewToday?.rules ?: room?.rules ?: CrewRunRules()
-    // 오늘 크루 러닝을 이미 했다 — 이 방에서 준비할 수 없다(서버 0070 이 막는다, 하루 한 번)
-    val doneToday = crewToday?.ranToday == true && lobby
+    // 오늘 크루 러닝을 이미 했다(어느 크루에서든) — 이 방에서 준비할 수 없다(서버 0071 이 막는다, 하루 한 번)
+    val doneToday = crewToday?.mine?.usedToday == true && lobby
+    // 크루 방은 준비한 사람 2명 이상이어야 출발한다(서버 crew_run_need_two)
+    val needTwo = party.readyCount < 2
     Box(Modifier.fillMaxSize().background(c.screen).testTag("party-lobby")) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             // 크루 이름 + 정확히 "크루 달리기" 배지(승인 이미지) — 설명 부제는 두지 않는다
@@ -169,16 +171,25 @@ internal fun CrewLobbyContent(
                         )
                         // 크루 러닝 3판(0070) — 오늘 이미 했으면 먼저 알린다 · 고른 신발 · 크루 체력 · 보너스 미리보기
                         if (doneToday) {
-                            CrewError(stringResource(R.string.crew_lobby_done_today), Modifier.padding(vertical = 6.dp), tag = "party-done-today")
+                            CrewError(
+                                if (crewToday?.usedElsewhere == true) stringResource(R.string.crew_lobby_done_elsewhere, crewToday.mine.crewName.orEmpty())
+                                else stringResource(R.string.crew_lobby_done_today),
+                                Modifier.padding(vertical = 6.dp), tag = "party-done-today",
+                            )
                         }
                         if (room != null && lobby) {
                             CrewShoeRow(room, shoes, onClick = { shoePicker = true })
                             if (shoeFailed) CrewError(stringResource(R.string.crew_lobby_shoe_failed), Modifier.padding(bottom = 6.dp), tag = "party-shoe-failed")
-                            if (!alone) {
-                                CrewPoolRows(room, onClick = { rule = true })
-                                if (room.pool <= 0.0) {
-                                    CrewError(stringResource(R.string.crew_lobby_pool_zero), Modifier.padding(bottom = 6.dp), tag = "party-pool-zero")
-                                }
+                            CrewPoolRows(room, onClick = { rule = true })
+                            // 다 쓴 체력(0/816)도 출발을 막지 않는다 — 출발하면 내 신발 최대 내구도가 더해진다
+                            room.pool?.takeIf { !it.fresh && it.remaining <= 0.0 }?.let {
+                                CrewNote(stringResource(R.string.crew_lobby_pool_zero), tag = "party-pool-zero")
+                                Spacer(Modifier.height(6.dp))
+                            }
+                            // 인증 전 — 인원 보너스 집계에서만 빠진다(출발 · 기여 · 내 보상은 그대로)
+                            if (!room.myVerified && room.rules.requiresPhone) {
+                                CrewNote(stringResource(R.string.crew_run_unverified), tag = "party-unverified")
+                                Spacer(Modifier.height(6.dp))
                             }
                         }
                         // 혼자면 아래 버튼이 알리기를 맡는다 — 같은 행동을 두 번 두지 않는다
@@ -218,9 +229,15 @@ internal fun CrewLobbyContent(
                         }
                     }
                     party.isHost -> {
+                        if (needTwo) {
+                            Text(
+                                stringResource(R.string.crew_lobby_need_two), style = runTextStyle(14.sp, c.muted, FontWeight.Medium),
+                                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().testTag("party-need-two"),
+                            )
+                        }
                         FreeRunButton(
-                            if (alone) stringResource(R.string.run_cr_start_alone) else stringResource(R.string.run_crew_start_n, party.readyCount),
-                            onStart, Modifier.fillMaxWidth().testTag("party-start"),
+                            stringResource(R.string.run_crew_start_n, party.readyCount),
+                            onStart, Modifier.fillMaxWidth().testTag("party-start"), enabled = !needTwo,
                         )
                         if (alone && canNotify) {
                             FreeRunButton(stringResource(R.string.run_cr_notify), onNotify, Modifier.fillMaxWidth().testTag("party-notify"),
@@ -245,7 +262,7 @@ internal fun CrewLobbyContent(
     if (rule) CrewRuleSheet(rules, onClose = { rule = false })
     if (shoePicker && room != null) {
         CrewShoePickSheet(
-            shoes = shoes, picked = room.me?.sneakerId,
+            shoes = shoes, picked = room.me?.sneakerId, crewLevel = room.crewLevel,
             onPick = { id ->
                 shoePicker = false
                 onPickShoe(id)
@@ -269,19 +286,25 @@ private fun CrewShoeRow(room: CrewRunRoom, shoes: List<Sneaker>, onClick: () -> 
     )
 }
 
-/** 크루 체력 · 보너스 미리보기 — 방의 크루원 모두가 함께 달린다고 친 값. 누르면 규칙 · 인원 보너스 표 */
+/**
+ * 오늘 공용 체력 · 예상 보너스 — 체력은 서버가 정산한 오늘 크루 값(남은 / 총량)과 출발하면 내가 더할 양(최대 내구도 × 레벨 효과),
+ * 보너스는 준비한 크루원 중 인증된 사람 수로 센 미리보기. 확정은 출발 2분 뒤 서버가 한다. 누르면 규칙 · 인원 보너스 표
+ */
 @Composable
 private fun CrewPoolRows(room: CrewRunRoom, onClick: () -> Unit) {
     val c = crewColors()
+    val add = CrewRunMath.amount(room.myContribution)
+    val pool = room.pool
     CrewLobbyLine(
         icon = Icons.Filled.Bolt, title = stringResource(R.string.crew_lobby_pool),
-        value = stringResource(R.string.crew_lobby_pool_value, CrewRunMath.amount(room.pool), CrewRunMath.minutes(room.shareSec)),
+        value = if (pool == null || pool.fresh) stringResource(R.string.crew_lobby_pool_fresh_value, add)
+        else stringResource(R.string.crew_lobby_pool_value, CrewRunMath.amount(pool.remaining), CrewRunMath.amount(pool.total), add),
         onClick = onClick, tag = "party-pool",
     )
     CrewLobbyLine(
         icon = Icons.Filled.Bolt, title = stringResource(R.string.crew_lobby_bonus),
         value = stringResource(
-            R.string.crew_lobby_bonus_value, room.runners, CrewRunMath.percent(room.headcountBonus), room.crewLevel,
+            R.string.crew_lobby_bonus_value, room.bonusCount, CrewRunMath.percent(room.bonusPct), room.crewLevel,
             CrewRunMath.percent(room.rewardBonus),
         ),
         onClick = onClick, tag = "party-bonus",
@@ -320,7 +343,7 @@ private fun CrewLobbyLine(
 
 /** 크루 러닝 신발 고르기 — 앱에 있는 내 신발(서버 신발 · 팔지 않는 것). 고른 신발은 닳지 않는다 */
 @Composable
-private fun CrewShoePickSheet(shoes: List<Sneaker>, picked: Long?, onPick: (Long) -> Unit, onClose: () -> Unit) {
+private fun CrewShoePickSheet(shoes: List<Sneaker>, picked: Long?, crewLevel: Int, onPick: (Long) -> Unit, onClose: () -> Unit) {
     val c = crewColors()
     val choices = shoes.filter { it.server != null && it.server.status == "OWNED" && it.server.chainState == "APP" }
         .sortedWith(compareByDescending<Sneaker> { it.server?.durabilityMax ?: 0 }.thenByDescending { it.level })
@@ -343,8 +366,8 @@ private fun CrewShoePickSheet(shoes: List<Sneaker>, picked: Long?, onPick: (Long
                         )
                         Text(
                             stringResource(
-                                R.string.crew_lobby_shoe_item, shoe.level, server.durabilityMax,
-                                CrewRunMath.percent(server.efficiencyBps / 10_000.0),
+                                R.string.crew_lobby_shoe_item, shoe.level, CrewRunMath.percent(server.efficiencyBps / 10_000.0),
+                                CrewRunMath.amount(CrewRunMath.contribution(server.durabilityMax, crewLevel)),
                             ),
                             style = runTextStyle(14.sp, c.label, FontWeight.Medium),
                         )
@@ -433,11 +456,14 @@ private fun CrewRuleSheet(rules: CrewRunRules, onClose: () -> Unit) {
         CrewSheetTitle(stringResource(R.string.crew_run_sheet_title))
         Spacer(Modifier.height(10.dp))
         Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
-            crewRunRuleLines(rules).forEach { line ->
-                Text(line, style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.5f), modifier = Modifier.padding(bottom = 8.dp))
+            crewRunRuleLines(rules).forEach { (title, body) ->
+                Text(title, style = runTextStyle(15.sp, c.text, FontWeight.Bold, 1.35f))
+                if (body.isNotEmpty()) Text(body, style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.5f))
+                Spacer(Modifier.height(10.dp))
             }
             Spacer(Modifier.height(6.dp))
             Text(stringResource(R.string.crew_run_headcount_title), style = runTextStyle(15.sp, c.text, FontWeight.Bold))
+            Text(stringResource(R.string.crew_run_headcount_note), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.45f))
             crewHeadcountRows(rules).forEach { (label, value) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(label, style = runTextStyle(14.sp, c.label, FontWeight.Medium), modifier = Modifier.weight(1f))

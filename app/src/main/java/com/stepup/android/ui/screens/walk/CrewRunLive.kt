@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import com.stepup.android.domain.CrewRunMath
 import com.stepup.android.data.repo.PartyMember
 import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.data.repo.PartyState
@@ -132,22 +133,26 @@ internal data class CrewLiveUi(
     val pool: CrewLivePool? = null,
 )
 
-/** 달리는 중 크루 체력 — 내 몫 남은 시간 · 비율 · 단계 · 함께 인원(미리보기) · 보너스 · 2분 확인 중 · 혼자 남음 */
+/**
+ * 달리는 중 공용 체력(서버 0071) — 오늘 크루 체력 남은 / 총량 · 비율 · 20% 아래 · 다 씀, 지금 쓰는 사람 수(크루 전체),
+ * 인원 보너스 판정(2분 전 확인 중 · 확정 · 없음) · 레벨 보너스 · 내 인증 · 일시정지. 값은 서버가 준 그대로(남은 양만 보간)
+ */
 @Immutable
 internal data class CrewLivePool(
-    /** "12:34" */
-    val left: String,
+    val remaining: String,
+    val total: String,
     val fraction: Float,
-    val stage: com.stepup.android.domain.CrewPoolStage,
+    val low: Boolean,
+    val empty: Boolean,
     val runners: Int,
-    /** 인원 + 레벨 보너스(퍼센트 숫자) */
+    val status: com.stepup.android.domain.CrewBonusStatus,
+    /** 확인까지 남은 시간("1:12") — 확인 중일 때만 */
+    val checkLeft: String?,
+    val bonusCount: Int,
     val bonusPercent: String,
-    /** 출발 2분 전 — 함께 달린 크루원을 아직 세지 않았다 */
-    val confirming: Boolean,
-    val confirmMinutes: Int,
-    /** 곁(500m)에 보이는 크루원이 없다 — 1분 안에 돌아오면 이어진다 */
-    val alone: Boolean,
-    val nearM: Int,
+    val levelPercent: String,
+    val unverified: Boolean,
+    val paused: Boolean,
 )
 
 /**
@@ -201,11 +206,9 @@ internal fun CrewRunLive(
                     CrewBand(stringResource(R.string.run_crew_closed_band), Icons.Outlined.PeopleAlt, "run-crew-closed", band)
                 ui.link == CrewLink.Detached ->
                     CrewBand(stringResource(R.string.run_crew_detached_band), Icons.Outlined.LinkOff, "run-crew-detached", band)
-                // 크루 체력을 다 썼다 · 혼자 남았다(0070) — 기록은 이어진다
-                ui.pool?.stage == com.stepup.android.domain.CrewPoolStage.EMPTY ->
+                // 공용 체력을 다 썼다(0071) — 적립만 멈추고 기록은 이어진다
+                ui.pool?.empty == true ->
                     CrewBand(stringResource(R.string.crew_live_pool_empty), Icons.Filled.Warning, "run-crew-pool-empty", band)
-                ui.pool?.alone == true ->
-                    CrewBand(stringResource(R.string.crew_live_alone, ui.pool.nearM), Icons.Outlined.PeopleAlt, "run-crew-alone", band)
                 ui.paused -> CrewBand(stringResource(R.string.run_crew_paused_band), Icons.Filled.Pause, "run-crew-others", band)
             }
             // 지도 카드 — 남는 높이를 모두 쓴다(버튼 · 기록은 늘 화면 안). 밝은 실제 지도 그대로(어두운 덧칠 없음)
@@ -288,15 +291,15 @@ internal fun CrewRunLive(
     }
 }
 
-/** 크루 체력 한 줄 — "크루 체력" · 막대 · "12:34 남음", 아래에 함께 인원 · 보너스(2분 전에는 확인 중) */
+/** 공용 체력 한 줄 — "공용 체력" · 막대 · "612 / 816", 아래에 인원 보너스 판정(또는 일시정지 · 얼마 남지 않음) · 지금 쓰는 사람 수 */
 @Composable
 private fun CrewPoolBar(pool: CrewLivePool) {
     val c = crewColors()
     val t = runTone()
-    val tint = when (pool.stage) {
-        com.stepup.android.domain.CrewPoolStage.OK -> c.ready
-        com.stepup.android.domain.CrewPoolStage.LOW -> t.warnIcon
-        com.stepup.android.domain.CrewPoolStage.EMPTY -> t.errorIcon
+    val tint = when {
+        pool.empty -> t.errorIcon
+        pool.low -> t.warnIcon
+        else -> c.ready
     }
     Column(Modifier.fillMaxWidth().testTag("run-crew-pool")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -307,21 +310,102 @@ private fun CrewPoolBar(pool: CrewLivePool) {
             }
             Spacer(Modifier.width(10.dp))
             Text(
-                stringResource(R.string.crew_live_pool_left, pool.left), style = runTextStyle(14.sp, tint, FontWeight.Bold),
+                stringResource(R.string.crew_run_pool_value, pool.remaining, pool.total), style = runTextStyle(14.sp, tint, FontWeight.Bold),
                 modifier = Modifier.testTag("run-crew-pool-left"),
             )
         }
         Spacer(Modifier.height(4.dp))
         Text(
             when {
-                pool.stage == com.stepup.android.domain.CrewPoolStage.LOW -> stringResource(R.string.crew_live_pool_low)
-                pool.confirming -> stringResource(R.string.crew_live_headcount, pool.runners, pool.bonusPercent) + " · " +
-                    stringResource(R.string.crew_live_confirming, pool.confirmMinutes)
-                else -> stringResource(R.string.crew_live_headcount, pool.runners, pool.bonusPercent)
+                pool.paused -> stringResource(R.string.crew_live_paused)
+                pool.low -> stringResource(R.string.crew_live_pool_low)
+                pool.status == com.stepup.android.domain.CrewBonusStatus.PENDING ->
+                    pool.checkLeft?.let { stringResource(R.string.crew_live_checking, it) } ?: stringResource(R.string.crew_live_checking_now)
+                pool.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && pool.bonusCount >= 2 ->
+                    stringResource(R.string.crew_live_bonus, pool.bonusCount, pool.bonusPercent, pool.levelPercent)
+                else -> stringResource(R.string.crew_live_bonus_none, pool.levelPercent)
             },
-            style = runTextStyle(13.sp, if (pool.stage == com.stepup.android.domain.CrewPoolStage.LOW) t.warnIcon else c.muted, FontWeight.Medium),
+            style = runTextStyle(13.sp, if (pool.low) t.warnIcon else c.muted, FontWeight.Medium),
             modifier = Modifier.testTag("run-crew-headcount"),
         )
+        Text(
+            stringResource(R.string.crew_live_runners, pool.runners) +
+                if (pool.unverified) " · " + stringResource(R.string.crew_live_unverified) else "",
+            style = runTextStyle(12.sp, c.muted, FontWeight.Medium), modifier = Modifier.testTag("run-crew-runners"),
+        )
+    }
+}
+
+/**
+ * 인원 보너스 확정 — 출발 2분 뒤 한 번. 함께 출발한 인원이 모두 들었으면 "N명, 인원 보너스 확정", 일부만이면 "보너스 인원은 N명",
+ * 2명보다 적거나 확인할 수 없으면 "인원 보너스가 없어요". 인원 · 레벨 · 합(신발 능력치는 섞지 않는다).
+ */
+@Composable
+internal fun CrewBonusSheet(
+    count: Int,
+    started: Int,
+    bonusPct: Double,
+    level: Int,
+    levelPct: Double,
+    nearM: Int,
+    onClose: () -> Unit,
+) {
+    val none = count < 2
+    val title = when {
+        none -> stringResource(R.string.crew_bonus_none_title)
+        count < started -> stringResource(R.string.crew_bonus_partial_title, count)
+        else -> stringResource(R.string.crew_bonus_confirmed_title, count)
+    }
+    NavySheet(title, onClose, Modifier.testTag("run-crew-bonus-sheet")) {
+        Text(
+            when {
+                none -> stringResource(R.string.crew_bonus_none_body)
+                count < started -> stringResource(R.string.crew_bonus_partial_body, started, started - count, nearM)
+                else -> stringResource(R.string.crew_bonus_confirmed_body)
+            },
+            style = navyText(16.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f),
+        )
+        Spacer(Modifier.height(14.dp))
+        NavyCard {
+            NavyRow(stringResource(R.string.crew_bonus_row_headcount), stringResource(R.string.crew_bonus_pct, CrewRunMath.percent(if (none) 0.0 else bonusPct)))
+            NavyRow(stringResource(R.string.crew_bonus_row_level, level), stringResource(R.string.crew_bonus_pct, CrewRunMath.percent(levelPct)))
+            NavyRow(
+                stringResource(R.string.crew_bonus_row_total),
+                stringResource(R.string.crew_bonus_pct, CrewRunMath.percent((if (none) 0.0 else bonusPct) + levelPct)),
+                valueColor = CrewNavy.Cyan, big = true,
+            )
+        }
+        Spacer(Modifier.height(18.dp))
+        NavyPrimaryButton(stringResource(R.string.run_continue), onClose, Modifier.testTag("run-crew-bonus-ok"))
+    }
+}
+
+/** 공용 체력이 20% 아래 — 한 번. 남은 / 총량과 0 이 되면 일어나는 일 */
+@Composable
+internal fun CrewLowSheet(remaining: String, total: String, onClose: () -> Unit) {
+    NavySheet(stringResource(R.string.crew_live_pool_low), onClose, Modifier.testTag("run-crew-low-sheet")) {
+        NavyCard {
+            NavyRow(stringResource(R.string.crew_live_pool), stringResource(R.string.crew_run_pool_value, remaining, total), valueColor = CrewNavy.Warn, big = true)
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(stringResource(R.string.crew_live_pool_low_body), style = navyText(15.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f))
+        Spacer(Modifier.height(18.dp))
+        NavyPrimaryButton(stringResource(R.string.crew_live_pool_low_ok), onClose, Modifier.testTag("run-crew-low-ok"))
+    }
+}
+
+/** 다른 참가자가 모두 끝내 서버가 내 크루 러닝도 끝냈다 — 기록은 그대로 저장된다 */
+@Composable
+internal fun CrewAloneSheet(distance: String, time: String, onClose: () -> Unit) {
+    NavySheet(stringResource(R.string.crew_alone_title), onClose, Modifier.testTag("run-crew-alone-sheet")) {
+        Text(stringResource(R.string.crew_alone_body), style = navyText(16.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f))
+        Spacer(Modifier.height(14.dp))
+        NavyCard {
+            NavyRow(stringResource(R.string.run_label_distance), "$distance km")
+            NavyRow(stringResource(R.string.run_label_time), time)
+        }
+        Spacer(Modifier.height(18.dp))
+        NavyPrimaryButton(stringResource(R.string.crew_alone_ok), onClose, Modifier.testTag("run-crew-alone-ok"))
     }
 }
 
@@ -448,7 +532,7 @@ internal fun ColumnScope.CrewFinishSheetContent(
     onSave: () -> Unit,
     onContinue: () -> Unit,
     onDiscard: (() -> Unit)?,
-    /** 크루 러닝(0070)이면 끝내면 그날 크루 러닝이 끝난다고 한 줄 더 */
+    /** 크루 러닝(0071)이면 끝내면 그날 다시 들어올 수 없다고 한 줄 더 */
     crewRunOnce: Boolean = false,
 ) {
     val c = crewColors()

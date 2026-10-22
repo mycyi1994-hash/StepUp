@@ -72,14 +72,18 @@ internal object RunNotification {
         val km = state.gpsKm
         val distance = context.getString(R.string.run_notif_distance, RunNotificationText.distance(km))
         val pace = RunNotificationText.pace(state.elapsedSec, km)
-        val crewLeft = state.crewPoolLeftSec
+        val crewLeft = state.crewPoolRemaining
+        val crewTotal = state.crewPoolTotal
         val status = when {
             paused -> context.getString(R.string.run_notif_paused)
             state.still -> context.getString(R.string.notification_run_still)
-            // 크루 러닝(0070) — 남은 크루 체력(내 몫 시간). 다 쓰면 적립 없이 기록만 이어진다
-            crewLeft != null ->
-                if (crewLeft <= 0L) context.getString(R.string.run_notify_crew_pool_empty)
-                else context.getString(R.string.run_notify_crew_pool, RunNotificationText.clock(crewLeft))
+            // 크루 러닝(0071) — 오늘 공용 체력 남은 양 / 총량. 0 이면 적립 없이 기록만 이어진다
+            crewLeft != null && crewTotal != null ->
+                if (state.crewPoolEmpty || crewLeft <= 0.0) context.getString(R.string.run_notify_crew_pool_empty)
+                else context.getString(
+                    R.string.run_notify_crew_pool,
+                    com.stepup.android.domain.CrewRunMath.amount(crewLeft), com.stepup.android.domain.CrewRunMath.amount(crewTotal),
+                )
             // 신발 내구도를 다 썼다 — 잠금화면에서도 보이게(2026-10-19 "내구도 다 소모하면 따로 안내")
             state.shoeWornOut -> context.getString(R.string.notification_run_shoe_worn)
             else -> context.getString(R.string.notification_steps, state.steps)

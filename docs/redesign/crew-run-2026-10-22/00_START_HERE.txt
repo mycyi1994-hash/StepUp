@@ -1,0 +1,48 @@
+StepUp 크루 러닝 개편 — Claude 구현 핸드오프
+기준일: 2026-10-22
+
+시작 방법
+1. 01_CLAUDE_PROMPT.txt 내용을 Claude에게 전달한다.
+2. reference.html을 열어 화면을 확인한다. screenshots/에는 시안 39장이 있다.
+3. 02_CONFIRMED_RULES.txt와 03_SCREEN_BEHAVIOR.txt를 구현 기준으로 사용한다.
+4. 04_BACKEND_HANDOFF.txt, 05_ANDROID_DESIGN.txt, 06_ACCEPTANCE_TESTS.txt 순서로 읽는다.
+5. 07_OPEN_DECISIONS_AND_PROTOTYPE_LIMITS.txt에서 아직 정하지 않은 정책과 시안의 한계를 확인한다.
+
+이번 작업
+Kotlin · Jetpack Compose 앱과 Supabase(Postgres + RPC)의 크루 러닝을 공용 내구도 모델로 개편한다. 기존 0069의 '에너지 몫' 모델을 대체하는 작업이다. 신규 migration은 0070을 목표로 하되 실제 저장소에 이미 적용된 번호가 있으면 덮어쓰지 않는다.
+
+디자인 기준
+가장 최근 승인된 남색 크루 홈과 이 패키지의 크루 러닝 시안이 기준이다. 과거 밝은 테마 시안, 이전 리더보드 시안, 예전 에너지 몫 화면을 다시 적용하지 않는다. 본 패키지는 기존 앱을 실제 변경한 결과물이 아니라 구현을 위한 시안·명세다.
+
+범위
+필수: 크루 홈·체력 안내·레벨, 대기실·신발 선택·출발 확인, 러닝·일시정지·종료·잠금 알림, 결과·보상·경험치·체력 내역·기록, 일일 참여 제한·크루 이동·자정 처리, 서버 집계와 보상 정합성.
+선택: 모집 푸시와 레벨 업 푸시. 기존 푸시 체계를 이용하며 새 메시지 발송 인프라를 만드는 작업으로 확대하지 않는다.
+제외: 문자 발송 업체, SMS 발송, OTP 요청/재전송/입력 화면, 번호 입력·인증 안내·인증 완료 화면, 인증용 계정 설정 화면. 미인증자의 참여 허용과 보너스 인원 제외 규칙은 유지한다.
+
+파일 구성
+01_CLAUDE_PROMPT.txt                 그대로 전달할 작업 지시서
+02_CONFIRMED_RULES.txt               확정 규칙과 전체 수치 표
+03_SCREEN_BEHAVIOR.txt               39개 시안 + 8개 연결 상태별 동작
+04_BACKEND_HANDOFF.txt               데이터·RPC·트랜잭션·마이그레이션 설계 지침
+05_ANDROID_DESIGN.txt                Compose 구조, 정확한 색·서체·레이아웃, 상태 처리
+06_ACCEPTANCE_TESTS.txt              규칙·서버·앱·실기기 검증과 완료 기준
+07_OPEN_DECISIONS_AND_PROTOTYPE_LIMITS.txt  미정 정책과 시안에서 복사하면 안 되는 동작
+08_REQUIREMENT_COVERAGE.txt          원래 작업 정의서 항목과 화면/문서 매핑
+09_VALIDATION_AND_PROVENANCE.txt      이번 패키지에서 실제 수행한 검증과 자료 출처
+rules.json                          규칙 상수와 계산 예시
+screen-spec.json                    화면별 동작의 구조화 원본
+design-tokens.json                  시안의 색·치수·서체 값
+reference.html                      휴대폰 시안 갤러리, 오프라인 미리보기
+reference-fragment.html             승인 시안 원본, 자산 포함
+screenshots/                        39장, 각각 780×1688 PNG(390×844의 2배)
+assets/                             실제 크루 이미지·신발 자산, 지도 예시 데이터
+prototype-source/                   검토용 HTML/CSS/JS 원본. 제품 코드로 통째 이식 금지
+qa/                                 시안 레이아웃·상호작용 검증 결과
+licenses/                           미리보기 아이콘 라이선스
+manifest.sha256                     패키지 무결성 확인
+
+명세 우선순위
+사용자가 확정한 규칙 > 확정 규칙 문서 > 화면 동작 문서 > PNG/디자인 토큰 > 미리보기의 임시 버튼 연결·샘플 수치.
+색·서체·간격은 PNG와 디자인 토큰을 따른다. 경제 규칙과 서버 상태는 문서를 따른다. 시안 속 74.88 SUP, 612/816, 3.20 km 등을 운영 데이터나 새로운 보상 공식으로 고정하지 않는다.
+
+실제 저장소의 현재 코드·AGENTS.md·CLAUDE.md·DB 마이그레이션 이력을 먼저 확인한다. 과거 자료에 있는 성공한 테스트나 APK 배포 기록은 이번 구현의 검증 결과가 아니다.
