@@ -16,6 +16,9 @@ create table if not exists auth.users (
   raw_user_meta_data jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+-- 휴대폰 인증 — 실제 Supabase auth.users 에 있는 칸(크루 러닝 인원 보너스가 읽는다, 0071)
+alter table auth.users add column if not exists phone text;
+alter table auth.users add column if not exists phone_confirmed_at timestamptz;
 
 -- 로그인한 사람. 실제 Supabase 에서는 JWT 에서 온다.
 create or replace function auth.uid() returns uuid

@@ -1,0 +1,350 @@
+{
+  "status": "confirmed_user_rules_with_explicitly_marked_ui_interpretations",
+  "timezone": "Asia/Seoul",
+  "durability": {
+    "scope": [
+      "crew_id",
+      "kst_date"
+    ],
+    "contribution_source": "selected_shoe_max_durability_at_start",
+    "contribution_trigger": "successful_server_start",
+    "repair_allowed": false,
+    "daily_reset_local": "00:00",
+    "drain_per_running_person_per_minute": 5,
+    "personal_shoe_drain_in_crew_run": 0,
+    "on_empty": {
+      "earning": "stop",
+      "recording": "continue",
+      "fallback_to_personal": false
+    }
+  },
+  "participation": {
+    "limit_per_user_per_kst_date": 1,
+    "limit_scope_includes_crew_id": false,
+    "pause_allowed": true,
+    "resume_same_run": true,
+    "reentry_after_finish": false,
+    "last_non_ended_participant_auto_ends": true,
+    "any_crew_member_can_create_lobby": true,
+    "room_max_participants": 20
+  },
+  "eligibility": {
+    "same_crew": true,
+    "same_lobby_departure": true,
+    "departure_radius_meters": 500,
+    "recheck_after_seconds": 120,
+    "recheck_radius_meters": 500,
+    "phone_verified_required_for_bonus_count": true,
+    "phone_verified_required_for_participation": false,
+    "distance_reference": "OPEN_D03"
+  },
+  "headcount_bonus_percent": [
+    {
+      "count": 0,
+      "percent": 0,
+      "source": "zero_additional_bonus_ui_interpretation"
+    },
+    {
+      "count": 1,
+      "percent": 0,
+      "source": "zero_additional_bonus_ui_interpretation"
+    },
+    {
+      "count": 2,
+      "percent": 5,
+      "source": "user_table"
+    },
+    {
+      "count": 3,
+      "percent": 10,
+      "source": "user_table"
+    },
+    {
+      "count": 4,
+      "percent": 15,
+      "source": "user_table"
+    },
+    {
+      "count": 5,
+      "percent": 20,
+      "source": "user_table"
+    },
+    {
+      "count": 6,
+      "percent": 50,
+      "source": "user_table"
+    },
+    {
+      "count": 7,
+      "percent": 52,
+      "source": "user_table"
+    },
+    {
+      "count": 8,
+      "percent": 54,
+      "source": "user_table"
+    },
+    {
+      "count": 9,
+      "percent": 56,
+      "source": "user_table"
+    },
+    {
+      "count": 10,
+      "percent": 58,
+      "source": "user_table"
+    },
+    {
+      "count": 11,
+      "percent": 60,
+      "source": "user_table"
+    },
+    {
+      "count": 12,
+      "percent": 62,
+      "source": "user_table"
+    },
+    {
+      "count": 13,
+      "percent": 64,
+      "source": "user_table"
+    },
+    {
+      "count": 14,
+      "percent": 66,
+      "source": "user_table"
+    },
+    {
+      "count": 15,
+      "percent": 68,
+      "source": "user_table"
+    },
+    {
+      "count": 16,
+      "percent": 70,
+      "source": "user_table"
+    },
+    {
+      "count": 17,
+      "percent": 72,
+      "source": "user_table"
+    },
+    {
+      "count": 18,
+      "percent": 74,
+      "source": "user_table"
+    },
+    {
+      "count": 19,
+      "percent": 76,
+      "source": "user_table"
+    },
+    {
+      "count": 20,
+      "percent": 150,
+      "source": "user_table"
+    }
+  ],
+  "levels": [
+    {
+      "level": 1,
+      "cumulative_km": 0,
+      "stamina_bonus_percent": 0,
+      "reward_bonus_percent": 0
+    },
+    {
+      "level": 2,
+      "cumulative_km": 20,
+      "stamina_bonus_percent": 6,
+      "reward_bonus_percent": 1
+    },
+    {
+      "level": 3,
+      "cumulative_km": 50,
+      "stamina_bonus_percent": 12,
+      "reward_bonus_percent": 2
+    },
+    {
+      "level": 4,
+      "cumulative_km": 100,
+      "stamina_bonus_percent": 18,
+      "reward_bonus_percent": 3
+    },
+    {
+      "level": 5,
+      "cumulative_km": 180,
+      "stamina_bonus_percent": 24,
+      "reward_bonus_percent": 4
+    },
+    {
+      "level": 6,
+      "cumulative_km": 300,
+      "stamina_bonus_percent": 30,
+      "reward_bonus_percent": 5
+    },
+    {
+      "level": 7,
+      "cumulative_km": 450,
+      "stamina_bonus_percent": 36,
+      "reward_bonus_percent": 6
+    },
+    {
+      "level": 8,
+      "cumulative_km": 650,
+      "stamina_bonus_percent": 42,
+      "reward_bonus_percent": 7
+    },
+    {
+      "level": 9,
+      "cumulative_km": 900,
+      "stamina_bonus_percent": 48,
+      "reward_bonus_percent": 8
+    },
+    {
+      "level": 10,
+      "cumulative_km": 1200,
+      "stamina_bonus_percent": 54,
+      "reward_bonus_percent": 9
+    },
+    {
+      "level": 11,
+      "cumulative_km": 1600,
+      "stamina_bonus_percent": 60,
+      "reward_bonus_percent": 10
+    },
+    {
+      "level": 12,
+      "cumulative_km": 2100,
+      "stamina_bonus_percent": 66,
+      "reward_bonus_percent": 11
+    },
+    {
+      "level": 13,
+      "cumulative_km": 2700,
+      "stamina_bonus_percent": 72,
+      "reward_bonus_percent": 12
+    },
+    {
+      "level": 14,
+      "cumulative_km": 3400,
+      "stamina_bonus_percent": 78,
+      "reward_bonus_percent": 13
+    },
+    {
+      "level": 15,
+      "cumulative_km": 4200,
+      "stamina_bonus_percent": 84,
+      "reward_bonus_percent": 14
+    },
+    {
+      "level": 16,
+      "cumulative_km": 5100,
+      "stamina_bonus_percent": 90,
+      "reward_bonus_percent": 15
+    },
+    {
+      "level": 17,
+      "cumulative_km": 6100,
+      "stamina_bonus_percent": 96,
+      "reward_bonus_percent": 16
+    },
+    {
+      "level": 18,
+      "cumulative_km": 7200,
+      "stamina_bonus_percent": 102,
+      "reward_bonus_percent": 17
+    },
+    {
+      "level": 19,
+      "cumulative_km": 8500,
+      "stamina_bonus_percent": 108,
+      "reward_bonus_percent": 18
+    },
+    {
+      "level": 20,
+      "cumulative_km": 10000,
+      "stamina_bonus_percent": 114,
+      "reward_bonus_percent": 19
+    }
+  ],
+  "experience": {
+    "source": "sum_of_each_participants_valid_crew_run_distance",
+    "invalid_runs_included": false,
+    "deduplicate_by_run_id": true,
+    "level_decreases": false
+  },
+  "reward": {
+    "base": "existing_server_own_selected_shoe_formula",
+    "average_shoe_stats": false,
+    "formula": "base_sup * (1 + headcount_bonus_percent/100 + level_reward_bonus_percent/100)",
+    "headcount_tiers_stack": false,
+    "headcount_and_level": "add",
+    "personal_daily_cap_sup": 600,
+    "crew_daily_cap_sup": null,
+    "shares_personal_cap": false
+  },
+  "identity": {
+    "verified_phone_unique_account": true,
+    "sms_sender_implementation": false,
+    "otp_flow_implementation": false,
+    "new_phone_input_ui": false,
+    "use_existing_trusted_status": true
+  },
+  "open_decisions": [
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11",
+    "D12",
+    "D13"
+  ],
+  "examples": [
+    {
+      "case": "contribution_lv7_max100_current75",
+      "expected_contribution": 136
+    },
+    {
+      "case": "contribution_lv7_max150_current40",
+      "expected_contribution": 204
+    },
+    {
+      "case": "6_active_runners_60seconds",
+      "expected_pool_drain": 30
+    },
+    {
+      "case": "20_active_runners_60seconds",
+      "expected_pool_drain": 100
+    },
+    {
+      "case": "6_people_lv7_base48",
+      "base": 48,
+      "headcount": 24,
+      "level": 2.88,
+      "total": 74.88
+    },
+    {
+      "case": "20_people_lv20_base100",
+      "base": 100,
+      "headcount": 150,
+      "level": 19,
+      "total": 269
+    },
+    {
+      "case": "5_eligible_6_running_lv7_base48",
+      "headcount_percent": 20,
+      "level_percent": 6,
+      "total": 60.48
+    },
+    {
+      "case": "6_each_3km_valid",
+      "crew_experience_km": 18
+    }
+  ]
+}

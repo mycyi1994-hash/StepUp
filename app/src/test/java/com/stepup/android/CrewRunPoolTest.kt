@@ -4,9 +4,13 @@ import com.stepup.android.data.remote.CrewRunResultRow
 import com.stepup.android.data.remote.CrewRunRoomRow
 import com.stepup.android.data.remote.CrewRunTodayRow
 import com.stepup.android.data.remote.serverJson
-import com.stepup.android.domain.CrewPoolStage
+import com.stepup.android.data.remote.CrewRunLiveRow
+import com.stepup.android.domain.CrewBonusStatus
+import com.stepup.android.domain.CrewEarning
+import com.stepup.android.domain.CrewPoolSnap
+import com.stepup.android.domain.CrewTerminal
 import com.stepup.android.domain.CrewRunMath
-import com.stepup.android.domain.GeoPoint
+import java.time.LocalDate
 import kotlinx.serialization.decodeFromString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,8 +19,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 크루 러닝 3판(서버 0070) — 앱의 셈이 서버 함수(economy.crew_headcount_bonus · crew_level_stamina · crew_level_reward ·
- * crew_level_km)와 같은지, 서버 답(crew_run_today · crew_run_room · crew_run_result) 읽기, 달리는 중 몫 · 단계.
+ * 크루 러닝(서버 0071) — 앱의 셈이 서버 함수(economy.crew_headcount_bonus · crew_level_stamina · crew_level_reward ·
+ * crew_level_km)와 같은지, 서버 답(crew_run_today · crew_run_room · crew_run_beat · crew_run_result) 읽기, 공용 체력 보간 · 보상 나눔.
  */
 class CrewRunPoolTest {
 
@@ -40,79 +44,107 @@ class CrewRunPoolTest {
         assertEquals(0.0, CrewRunMath.levelStamina(null), 0.0)
         assertEquals(1.14, CrewRunMath.levelStamina(20), 1e-9)
         assertEquals(0.19, CrewRunMath.levelReward(20), 1e-9)
-        assertEquals(1.11, CrewRunMath.multiplier(3, 2), 1e-9)
     }
 
     @Test
-    fun `크루 체력 · 몫 · 달리는 중 단계`() {
-        val pool = CrewRunMath.pool(150.0, 2)
-        assertEquals(159.0, pool, 1e-9)
-        assertEquals(636, CrewRunMath.shareSec(pool, 3))
-        assertEquals(0, CrewRunMath.shareSec(pool, 0))
-        assertEquals(CrewPoolStage.OK, CrewRunMath.stage(636, 300))
-        assertEquals(CrewPoolStage.LOW, CrewRunMath.stage(636, 520))
-        assertEquals(CrewPoolStage.EMPTY, CrewRunMath.stage(636, 636))
-        assertEquals(1590, CrewRunMath.stepsWithinShare(3000, 636, 1200))
-        assertEquals(1000, CrewRunMath.stepsWithinShare(1000, 636, 300))
-        assertEquals(25.0, CrewRunMath.usedFor(300), 1e-9)
+    fun `기여 · 보상 나눔 · 표시`() {
+        // 핸드오프 예: 최대 내구도 100 · Lv.7 → +136
+        assertEquals(136.0, CrewRunMath.contribution(100, 7), 1e-9)
+        // 48 × (1 + 50% + 6%) = 74.88 — 인원 · 레벨은 더한다(곱하지 않는다)
+        val split = CrewRunMath.split(48.0, 0.50, 0.06)
+        assertEquals(24.0, split.headcount, 1e-9)
+        assertEquals(2.88, split.level, 1e-9)
+        assertEquals(74.88, split.total, 1e-9)
         assertEquals("16.6", CrewRunMath.amount(16.6666))
+        assertEquals("0", CrewRunMath.amount(-3.0))
         assertEquals("15", CrewRunMath.percent(0.15))
         assertEquals("114", CrewRunMath.percent(1.14))
+        assertEquals(0f, CrewRunMath.fraction(0.0, 0.0))
+        assertTrue(CrewRunMath.low(326.4, 1632.0))
+        assertFalse(CrewRunMath.low(0.0, 1632.0))
+        // Lv7 · 520km → 450 ~ 650 구간의 35%
+        assertEquals(0.35f, CrewRunMath.levelProgress(520.0, 7, 650.0, CrewRunMath.levelTable()), 1e-6f)
+        assertEquals(1f, CrewRunMath.levelProgress(10_500.0, 20, null, CrewRunMath.levelTable()))
     }
 
     @Test
-    fun `잠금화면 알림의 남은 크루 체력 시간`() {
-        assertEquals("10:36", com.stepup.android.domain.RunNotificationText.clock(636))
-        assertEquals("0:00", com.stepup.android.domain.RunNotificationText.clock(-5))
-        assertEquals("1:02:03", com.stepup.android.domain.RunNotificationText.clock(3723))
-        val state = com.stepup.android.service.WalkSessionState(isActive = true, elapsedSec = 600, crewShareSec = 636)
-        assertEquals(36L, state.crewPoolLeftSec)
-        assertNull(com.stepup.android.service.WalkSessionState(isActive = true, elapsedSec = 600).crewPoolLeftSec)
-        assertEquals(0L, state.copy(elapsedSec = 700).crewPoolLeftSec)
-    }
-
-    @Test
-    fun `혼자 남음은 위치를 보이는 크루원이 모두 곁 밖일 때만`() {
-        val me = GeoPoint(37.5, 127.0)
-        assertFalse(CrewRunMath.aloneNow(me, emptyList(), 500))
-        assertFalse(CrewRunMath.aloneNow(me, listOf(GeoPoint(37.5036, 127.0)), 500))
-        assertTrue(CrewRunMath.aloneNow(me, listOf(GeoPoint(37.51, 127.0)), 500))
-        assertFalse(CrewRunMath.aloneNow(null, listOf(GeoPoint(37.51, 127.0)), 500))
+    fun `공용 체력 보간 — 지금 쓰는 사람 수만큼만 줄고 0 아래로 가지 않는다`() {
+        val snap = CrewPoolSnap(LocalDate.of(2026, 10, 22), 816.0, 612.0, 204.0, 6, 3, false, false, 1, asOfMs = 1_000_000L)
+        // 3명 × 60초 ÷ 12 = 15
+        assertEquals(597.0, snap.remainingAt(1_060_000L), 1e-9)
+        assertEquals(0.0, snap.remainingAt(1_000_000L + 10_000_000L), 0.0)
+        assertEquals(612.0, snap.copy(activeRunners = 0).remainingAt(1_060_000L), 0.0)
+        assertTrue(snap.copy(total = 0.0, remaining = 0.0).fresh)
+        assertFalse(snap.copy(remaining = 0.0, exhausted = true).fresh)
+        // 서버 시각으로 2분 확인까지 남은 초 — 받은 뒤 흐른 시간도 뺀다
+        assertEquals(30L, CrewRunMath.checkLeftSec(160_000L, 120_000L, 5_000L, 15_000L))
+        assertEquals(0L, CrewRunMath.checkLeftSec(160_000L, 200_000L, 5_000L, 5_000L))
+        assertNull(CrewRunMath.checkLeftSec(null, 0L, 0L, 0L))
     }
 
     @Test
     fun `서버 답을 읽는다`() {
         val today = serverJson.decodeFromString<CrewRunTodayRow>(
-            """{"day":"2026-10-21","resets_at":"2026-10-21T15:00:00+00:00","ran_today":true,
-               "mine":{"day":"2026-10-21","crew_id":"c1","session_id":7,"runners":3,"crew_level":2,"pool":159.00,"share":53.00,
-                       "limit_sec":636,"used":25.00,"together_sec":300,"headcount_bonus":0.10,"level_bonus":0.01,"sneaker_id":9},
-               "crew_level":3,"run_km":55.5,"next_level_km":100,"stamina_bonus":0.12,"reward_bonus":0.02,
-               "today":{"runners":1,"pool":53,"used":25},
-               "rules":{"room_max":20,"near_m":500,"confirm_sec":120,"alone_grace_sec":60,"drain_per_min":5,
+            """{"server_now":"2026-10-22T03:00:00+00:00","day":"2026-10-22","resets_at":"2026-10-22T15:00:00+00:00",
+               "pool":{"day":"2026-10-22","total":816,"remaining":612,"consumed":204,"contributors":6,"active_runners":3,
+                       "exhausted":false,"low":false,"version":4,"as_of":"2026-10-22T03:00:00+00:00"},
+               "mine":{"used_today":true,"state":"ENDED","crew_id":"c2","crew_name":"퇴근런","contribution":136,"consumed":106.7},
+               "verified":false,"crew_level":7,"run_km":523.2,"next_level_km":650,"stamina_bonus":0.36,"reward_bonus":0.06,
+               "level_event":{"level":7,"reached_at":"2026-10-21T12:00:00+00:00","run_km":451},
+               "rules":{"room_max":20,"near_m":500,"confirm_sec":120,"drain_per_min":5,"requires_phone":true,
                         "headcount":[{"n":1,"bonus":0},{"n":2,"bonus":0.05}],"levels":[{"level":1,"km":0,"stamina":0,"reward":0}]}}""",
         ).toDomain("c1")!!
-        assertTrue(today.ranToday)
-        assertEquals(53.0, today.mine!!.share, 0.0)
-        assertEquals(3, today.crewLevel)
+        assertEquals(612.0, today.pool.remaining, 0.0)
+        assertEquals(6, today.pool.contributors)
+        assertTrue(today.mine.usedToday)
+        assertFalse(today.mine.active)
+        // 다른 크루에서 했어도 하루 한 번
+        assertTrue(today.usedElsewhere)
+        assertFalse(today.verified)
+        assertEquals(7, today.levelEvent!!.level)
         assertEquals(0.05, today.rules.headcountBonus(2), 0.0)
+        // 날짜나 풀을 모르면 꾸미지 않는다
         assertNull(serverJson.decodeFromString<CrewRunTodayRow>("""{"day":""}""").toDomain("c1"))
+        assertNull(serverJson.decodeFromString<CrewRunTodayRow>("""{"day":"2026-10-22"}""").toDomain("c1"))
 
         val room = serverJson.decodeFromString<CrewRunRoomRow>(
-            """{"party_id":5,"crew_id":"c1","status":"LOBBY","crew_level":2,"stamina_bonus":0.06,"reward_bonus":0.01,
-               "runners":4,"pool":477,"share":119.25,"share_sec":1431,"headcount_bonus":0.15,
-               "members":[{"user_id":"u1","name":"레벨장","is_me":true,"is_host":true,"crew_member":true,"ran_today":false,
-                           "sneaker_id":12,"rarity":"EPIC","shoe_level":1,"dur_max":90}]}""",
+            """{"party_id":5,"crew_id":"c1","status":"LOBBY","capacity":20,"crew_level":7,"stamina_bonus":0.36,"reward_bonus":0.06,
+               "members_count":6,"ready_count":6,"bonus_preview":{"count":5,"pct":0.20,"next_pct":0.50},
+               "my_contribution":136,"my_verified":true,
+               "members":[{"user_id":"u1","name":"레벨장","is_me":true,"is_host":true,"ready":true,"crew_member":true,
+                           "ran_today":false,"verified":true,"sneaker_id":12,"rarity":"EPIC","shoe_level":1,"dur_max":100,"dur_now":75}]}""",
         ).toDomain()
         assertEquals(12L, room.me!!.sneakerId)
-        assertEquals(1.16, room.multiplier, 1e-9)
+        assertEquals(5, room.bonusCount)
+        assertEquals(136.0, room.myContribution, 0.0)
+        assertNull(room.pool)
+
+        val live = serverJson.decodeFromString<CrewRunLiveRow>(
+            """{"crew_run":true,"server_now":"2026-10-22T03:02:15+00:00","party_id":5,"crew_id":"c1","day":"2026-10-22",
+               "started_at":"2026-10-22T03:00:00+00:00","state":"ENDED","terminal_reason":"LAST_PARTICIPANT_END",
+               "contribution":136,"consumed":11.25,"active_sec":135,"participants":6,"not_ended":0,"room_active_runners":0,
+               "bonus":{"status":"CONFIRMED","check_at":"2026-10-22T03:02:15+00:00","count":5,"pct":0.2,"verified":true},
+               "level":{"level":7,"pct":0.06},"earning_state":"ENDED"}""",
+        ).toDomain()!!
+        assertTrue(live.endedAlone)
+        assertEquals(CrewBonusStatus.CONFIRMED, live.bonus.status)
+        assertEquals(CrewEarning.ENDED, live.earning)
+        assertEquals(0.06, live.levelPct, 0.0)
+        assertNull(serverJson.decodeFromString<CrewRunLiveRow>("""{"crew_run":false}""").toDomain())
 
         val result = serverJson.decodeFromString<CrewRunResultRow>(
-            """{"day":"2026-10-21","runners":3,"crew_level":2,"pool":159,"share":53,"limit_sec":636,"used":53,"together_sec":1200,
-               "headcount_bonus":0.1,"level_bonus":0.01,"points":17.649,"reason":"크루 체력을 다 썼습니다","crew_km":2.664,
-               "crew_name":"크루","crew_level_now":3,"crew_run_km":55.5,"next_level_km":100}""",
-        ).toDomain()!!
+            """{"settled":true,"crew_id":"c1","crew_name":"퇴근런","verdict":"VALID","reason":"크루 체력을 다 썼습니다",
+               "terminal_reason":"RECORDED","participants":6,
+               "reward":{"base":48,"headcount_pct":0.5,"headcount":24,"level_pct":0.06,"level":2.88,"total":74.88},
+               "bonus":{"status":"CONFIRMED","count":6,"pct":0.5,"verified":true},
+               "pool_usage":{"contribution":136,"consumed":106.7,"active_sec":1280},
+               "xp":{"distance_m":3200,"applied":true,"level_before":7,"level_after":8,"run_km":652.0,"next_level_km":900}}""",
+        ).toDomain()
+        assertTrue(result.settled)
         assertTrue(result.poolEmpty)
-        assertFalse(result.aloneEnded)
         assertTrue(result.levelUp)
+        assertEquals(CrewTerminal.RECORDED, result.terminal)
+        assertEquals(74.88, result.total!!, 0.0)
+        assertFalse(result.invalid)
     }
 }

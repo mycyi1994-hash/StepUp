@@ -954,7 +954,9 @@ class RunJourneyDesignTest {
             // 크루 대기실은 크루 이름 머리와 정확히 "크루 달리기" 배지
             compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
             show("CR15", "party-alone") { room(alone) }
-            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_cr_start_alone))
+            // 크루 러닝은 2명 이상 준비해야 출발한다(서버 0071) — 혼자면 출발 버튼이 꺼지고 까닭 한 줄
+            compose.onNodeWithTag("party-start").assertIsNotEnabled()
+            compose.onNodeWithTag("party-need-two").assertIsDisplayed()
             // CR07 — 준비 전 인원을 두고 출발할지
             show("CR07", "crew-start-confirm") {
                 room(hosting)

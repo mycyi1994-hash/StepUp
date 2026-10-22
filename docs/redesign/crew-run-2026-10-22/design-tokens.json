@@ -1,0 +1,66 @@
+{
+  "status": "approved_mockup_reference",
+  "font": {
+    "family": "Pretendard",
+    "weights": [
+      400,
+      600,
+      700,
+      800
+    ],
+    "native": "Use existing full Android font resources, not web subsets"
+  },
+  "colors": {
+    "background": "#031427",
+    "background_top": "#05193A",
+    "card": "#0A2749",
+    "card_top": "#0D3160",
+    "text": "#F5F8FF",
+    "secondary_text": "#ABC6ED",
+    "cyan": "#48D9FA",
+    "divider": "#173F7A",
+    "strong_border": "#2F72FF",
+    "primary_button_lower_face": "#0754FF",
+    "level_surface": "#0E3570",
+    "level_text": "#9EC2FF",
+    "progress_track": "#12305C",
+    "white_top": "#FFFFFF",
+    "white_bottom": "#E6F0FD",
+    "dark_ink": "#071B3D",
+    "secondary_button": "#061D3B",
+    "warning": "#FF8E86",
+    "warning_surface": "#481F32",
+    "ready_dot": "#6FE8CD"
+  },
+  "review_geometry_css_px": {
+    "width": 390,
+    "height": 844,
+    "status": 26,
+    "header": 56,
+    "main": 674,
+    "footer": 88,
+    "gutter": 20,
+    "gap": 12,
+    "primary_height": 60,
+    "primary_bottom_face": 4,
+    "card_radius": 18,
+    "primary_radius": 16,
+    "phone_radius_review_only": 26
+  },
+  "typography_css_px": {
+    "header": 19,
+    "section_title": 28,
+    "running_distance": 54,
+    "result_distance": 46,
+    "reward_total": 39,
+    "body": [
+      14,
+      16
+    ],
+    "secondary": [
+      12,
+      13
+    ]
+  },
+  "native_layout": "Adapt dp/sp and WindowInsets. Do not hardcode total height844 or draw fake OS status/gesture bars."
+}

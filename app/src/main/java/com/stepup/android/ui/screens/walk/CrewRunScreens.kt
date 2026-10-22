@@ -146,7 +146,7 @@ fun CrewRunEntryScreen(
     val today by todayFlow.collectAsStateWithLifecycle(initialValue = pickedCrew?.let { ServiceLocator.crewRun.todayNow(it) })
     LaunchedEffect(pickedCrew) { pickedCrew?.let { ServiceLocator.crewRun.loadToday(it) } }
     CrewRunEntryContent(
-        doneToday = today?.let { it.isToday() && it.ranToday } == true,
+        doneToday = today?.let { it.isToday() && it.mine.usedToday } == true,
         ui = ui, onBack = onBack,
         onEnter = { id ->
             CrewRunChoice.current.value = id
@@ -248,6 +248,10 @@ fun CrewRunEntryContent(
                 if (doneToday) {
                     Spacer(Modifier.height(12.dp))
                     CrewNote(stringResource(R.string.crew_entry_done_today), tag = "crew-entry-done-today")
+                    Text(
+                        stringResource(R.string.crew_entry_next), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.45f),
+                        modifier = Modifier.padding(top = 6.dp, start = 4.dp).testTag("crew-entry-next"),
+                    )
                 }
                 // 들어가는 순간 참가 · 생성이 일어난다 — 보기 전용 조회가 없어(CR02) 누르기 전에는 아무것도 하지 않는다는 한 줄
                 Text(

@@ -22,28 +22,36 @@ import com.stepup.android.R
 import com.stepup.android.domain.CrewRunMath
 import com.stepup.android.domain.CrewRunRules
 import com.stepup.android.domain.CrewRunToday
-import com.stepup.android.ui.screens.community.chat.BlueBar
 import com.stepup.android.ui.screens.community.chat.BlueSheet
 import com.stepup.android.ui.screens.community.chat.BlueSheetBody
 import com.stepup.android.ui.screens.community.chat.blueInk
 import com.stepup.android.ui.screens.community.chat.blueText
+import com.stepup.android.ui.screens.walk.CrewNavy
+import com.stepup.android.ui.screens.walk.NavyBar
+import com.stepup.android.ui.screens.walk.NavyCard
+import com.stepup.android.ui.screens.walk.NavyChip
+import com.stepup.android.ui.screens.walk.NavyNote
+import com.stepup.android.ui.screens.walk.NavyPrimaryButton
+import com.stepup.android.ui.screens.walk.NavySheet
+import com.stepup.android.ui.screens.walk.navyText
 
 /*
- * 크루 러닝 3판(서버 0070, 2026-10-21) — 크루 홈의 "오늘 크루 러닝" 칸과 규칙 시트. 값은 서버(crew_run_today)가 준 그대로다.
+ * 크루 러닝(서버 0071, 2026-10-22 핸드오프) — 크루 홈의 "오늘 크루 체력" 칸 · 레벨 업 시트 · 규칙 시트. 값은 서버(crew_run_today)가 준 그대로다.
  * 대기실(CrewLobby)도 같은 규칙 줄 · 인원 보너스 표를 쓴다([crewRunRuleLines] · [crewHeadcountRows]).
  */
 
-/** 규칙 줄 — 체력 · 다 쓰면 · 내 에너지 · 보상 · 누가 · 하루 한 번 · 혼자 · 방 인원 */
+/** 규칙 줄(제목 · 설명) — 신발 각자 · 분당 소모 · 0 이면 적립만 멈춤 · 하루 한 번 · 500m 2분 확인 · 자정 초기화 · 보상 · 방 인원 */
 @Composable
-internal fun crewRunRuleLines(rules: CrewRunRules): List<String> = listOf(
-    stringResource(R.string.crew_run_rule_pool, CrewRunMath.amount(rules.drainPerMin)),
-    stringResource(R.string.crew_run_rule_empty),
-    stringResource(R.string.crew_run_rule_own),
-    stringResource(R.string.crew_run_rule_reward),
-    stringResource(R.string.crew_run_rule_who, rules.confirmSec / 60, rules.nearM),
-    stringResource(R.string.crew_run_rule_once),
-    stringResource(R.string.crew_run_rule_alone),
-    stringResource(R.string.crew_run_rule_room, rules.roomMax),
+internal fun crewRunRuleLines(rules: CrewRunRules): List<Pair<String, String>> = listOf(
+    stringResource(R.string.crew_run_rule_shoes_t) to stringResource(R.string.crew_run_rule_shoes_b),
+    stringResource(R.string.crew_run_rule_drain_t, CrewRunMath.amount(rules.drainPerMin)) to stringResource(R.string.crew_run_rule_drain_b),
+    stringResource(R.string.crew_run_rule_empty_t) to stringResource(R.string.crew_run_rule_empty_b),
+    stringResource(R.string.crew_run_rule_once_t) to stringResource(R.string.crew_run_rule_once_b),
+    stringResource(R.string.crew_run_rule_near_t, rules.nearM, rules.confirmSec / 60) to
+        stringResource(R.string.crew_run_rule_near_b, rules.nearM, rules.confirmSec / 60),
+    stringResource(R.string.crew_run_rule_reset_t) to stringResource(R.string.crew_run_rule_reset_b),
+    stringResource(R.string.crew_run_rule_reward_t) to stringResource(R.string.crew_run_rule_reward_b),
+    stringResource(R.string.crew_run_rule_room, rules.roomMax) to "",
 )
 
 /**
@@ -79,47 +87,89 @@ internal fun crewHeadcountRows(rules: CrewRunRules): List<Pair<String, String>> 
     return rows
 }
 
-/** 크루 홈 — 오늘 크루 러닝: 할 수 있음 · 마침(함께한 인원 · 쓴 체력), 다시 열리는 때, 오늘 달린 사람, 레벨 보너스. 누르면 규칙 */
+/**
+ * 크루 홈 — 오늘 크루 체력(서버 0071): 남은 양 / 총량(기여 합) · 막대 · "함께 쓰는 내구도 · 매일 00:00 초기화" · 오늘 참가 인원 ·
+ * 내 오늘 크루 러닝(할 수 있음 · 달리는 중 · 마침 · 다른 크루에서 마침) · 인증 · 레벨 보너스. 누르면 규칙.
+ * 0/0(새 하루)과 0/816(다 씀)은 다르게 적는다 — 어느 쪽도 출발을 막지 않는다. 남색 카드는 핸드오프의 크루 러닝 색이다.
+ */
 @Composable
 internal fun CrewRunTodayBlock(today: CrewRunToday, onClick: () -> Unit) {
-    val ink = blueInk()
-    Column(Modifier.fillMaxWidth().homeClickable(onClick = onClick).padding(vertical = 22.dp).testTag("home-crew-run")) {
-        Text(stringResource(R.string.crew_run_title), style = blueText(18.sp, ink.text, FontWeight.Bold))
-        Spacer(Modifier.height(10.dp))
-        val mine = today.mine
-        if (today.ranToday) {
+    val pool = today.pool
+    val mine = today.mine
+    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp).testTag("home-crew-run")) {
+        NavyCard(onClick = onClick, strong = true) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.crew_run_pool_title), style = navyText(17.sp, CrewNavy.Sub, FontWeight.Bold),
+                    modifier = Modifier.weight(1f))
+                today.crewLevel?.let { NavyChip("Lv.$it", Modifier.testTag("home-crew-run-level-chip")) }
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
-                stringResource(R.string.crew_run_done), style = blueText(24.sp, ink.text, FontWeight.ExtraBold, 1.25f),
-                modifier = Modifier.testTag("home-crew-run-done"),
+                stringResource(R.string.crew_run_pool_value, CrewRunMath.amount(pool.remaining), CrewRunMath.amount(pool.total)),
+                style = navyText(34.sp, CrewNavy.Text, FontWeight.ExtraBold, 1.15f), modifier = Modifier.testTag("home-crew-run-pool"),
             )
-            if (mine != null) {
-                Spacer(Modifier.height(12.dp))
-                BlueBar(if (mine.share > 0) (mine.used / mine.share).toFloat().coerceIn(0f, 1f) else 0f, Modifier.fillMaxWidth().height(10.dp))
-                Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(10.dp))
+            NavyBar(CrewRunMath.fraction(pool.remaining, pool.total), warn = pool.low || (pool.exhausted && !pool.fresh))
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.crew_run_pool_sub), style = navyText(14.sp, CrewNavy.Sub, FontWeight.Medium))
+            when {
+                pool.fresh -> Text(stringResource(R.string.crew_run_pool_fresh), style = navyText(14.sp, CrewNavy.Cyan, FontWeight.Medium, 1.45f),
+                    modifier = Modifier.padding(top = 6.dp).testTag("home-crew-run-fresh"))
+                pool.exhausted || pool.remaining <= 0.0 -> Text(stringResource(R.string.crew_run_pool_used_up),
+                    style = navyText(14.sp, CrewNavy.Warn, FontWeight.Medium, 1.45f), modifier = Modifier.padding(top = 6.dp).testTag("home-crew-run-empty"))
+            }
+            if (pool.contributors > 0) {
+                Text(stringResource(R.string.crew_run_today_contributors, pool.contributors), style = navyText(15.sp, CrewNavy.Text, FontWeight.SemiBold),
+                    modifier = Modifier.padding(top = 6.dp).testTag("home-crew-run-contributors"))
+            }
+            Spacer(Modifier.height(12.dp))
+            when {
+                mine.active -> Text(stringResource(R.string.crew_run_running_now), style = navyText(18.sp, CrewNavy.Cyan, FontWeight.ExtraBold),
+                    modifier = Modifier.testTag("home-crew-run-active"))
+                today.usedElsewhere -> {
+                    Text(stringResource(R.string.crew_run_done_elsewhere, mine.crewName.orEmpty()), style = navyText(18.sp, CrewNavy.Text, FontWeight.ExtraBold, 1.3f),
+                        modifier = Modifier.testTag("home-crew-run-done"))
+                    Text(stringResource(R.string.crew_run_reset), style = navyText(14.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f))
+                }
+                mine.usedToday -> {
+                    Text(stringResource(R.string.crew_run_done), style = navyText(18.sp, CrewNavy.Text, FontWeight.ExtraBold, 1.3f),
+                        modifier = Modifier.testTag("home-crew-run-done"))
+                    Text(stringResource(R.string.crew_run_done_detail, CrewRunMath.amount(mine.contribution), CrewRunMath.amount(mine.consumed)),
+                        style = navyText(14.sp, CrewNavy.Text, FontWeight.Medium, 1.45f))
+                    Text(stringResource(R.string.crew_run_reset), style = navyText(14.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f))
+                }
+                else -> Text(stringResource(R.string.crew_run_can), style = navyText(18.sp, CrewNavy.Cyan, FontWeight.ExtraBold),
+                    modifier = Modifier.testTag("home-crew-run-can"))
+            }
+            today.crewLevel?.let { level ->
                 Text(
-                    stringResource(R.string.crew_run_done_detail, mine.runners, CrewRunMath.amount(mine.used), CrewRunMath.amount(mine.share)),
-                    style = blueText(15.sp, ink.text, FontWeight.SemiBold, 1.45f),
+                    stringResource(R.string.crew_run_level_bonus, level, CrewRunMath.percent(today.staminaBonus), CrewRunMath.percent(today.rewardBonus)),
+                    style = navyText(14.sp, CrewNavy.LevelInk, FontWeight.SemiBold, 1.45f), modifier = Modifier.padding(top = 6.dp).testTag("home-crew-run-level"),
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            Text(stringResource(R.string.crew_run_reset), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
-        } else {
-            Text(
-                stringResource(R.string.crew_run_can), style = blueText(24.sp, ink.info, FontWeight.ExtraBold, 1.25f),
-                modifier = Modifier.testTag("home-crew-run-can"),
-            )
+            if (!today.verified && today.rules.requiresPhone) {
+                Spacer(Modifier.height(10.dp))
+                NavyNote(stringResource(R.string.crew_run_unverified), Modifier.testTag("home-crew-run-unverified"))
+            }
         }
-        if (today.todayRunners > 0) {
-            Spacer(Modifier.height(6.dp))
-            Text(stringResource(R.string.crew_run_today_runners, today.todayRunners), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
-        }
-        today.crewLevel?.let { level ->
-            Spacer(Modifier.height(6.dp))
-            Text(
-                stringResource(R.string.crew_run_level_bonus, level, CrewRunMath.percent(today.staminaBonus), CrewRunMath.percent(today.rewardBonus)),
-                style = blueText(15.sp, ink.info, FontWeight.SemiBold, 1.45f), modifier = Modifier.testTag("home-crew-run-level"),
-            )
-        }
+    }
+}
+
+/** 크루 레벨 업 — 서버가 적은 마지막 레벨 업을 한 번 보인다(앞뒤 체력 · 보상 효과) */
+@Composable
+internal fun CrewLevelUpSheet(event: com.stepup.android.domain.CrewLevelEvent, onDismiss: () -> Unit, onOpen: () -> Unit) {
+    NavySheet(stringResource(R.string.crew_run_level_up_title), onDismiss, Modifier.testTag("home-crew-level-up")) {
+        Text("Lv.${event.level}", style = navyText(44.sp, CrewNavy.Text, FontWeight.ExtraBold, 1.1f))
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.crew_run_level_up_body, event.level, CrewRunMath.percent(CrewRunMath.levelStamina(event.level)),
+                CrewRunMath.percent(CrewRunMath.levelReward(event.level))),
+            style = navyText(16.sp, CrewNavy.Cyan, FontWeight.SemiBold, 1.45f),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.crew_run_level_up_note), style = navyText(15.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f))
+        Spacer(Modifier.height(18.dp))
+        NavyPrimaryButton(stringResource(R.string.crew_run_level_up_ok), onOpen, Modifier.testTag("home-crew-level-up-ok"))
     }
 }
 
@@ -130,13 +180,15 @@ internal fun CrewRunRulesSheet(rules: CrewRunRules, onDismiss: () -> Unit, onLev
     BlueSheet(stringResource(R.string.crew_run_sheet_title), onDismiss, Modifier.testTag("home-crew-run-sheet")) {
         Column(Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState()).padding(horizontal = 4.dp)) {
             Spacer(Modifier.height(12.dp))
-            crewRunRuleLines(rules).forEach { line ->
-                BlueSheetBody(line, centered = false)
+            crewRunRuleLines(rules).forEach { (title, body) ->
+                Text(title, style = blueText(16.sp, ink.text, FontWeight.Bold, 1.35f))
+                if (body.isNotEmpty()) BlueSheetBody(body, centered = false)
                 Spacer(Modifier.height(10.dp))
             }
             Spacer(Modifier.height(12.dp))
             HomeLabel(stringResource(R.string.crew_run_headcount_title))
             Spacer(Modifier.height(4.dp))
+            BlueSheetBody(stringResource(R.string.crew_run_headcount_note), centered = false)
             crewHeadcountRows(rules).forEach { (label, value) ->
                 HomeValueRow(label = label, value = value, modifier = Modifier.testTag("home-crew-run-headcount"))
             }

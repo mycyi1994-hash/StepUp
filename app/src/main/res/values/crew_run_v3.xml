@@ -4,18 +4,9 @@
     <string name="crew_run_title">Crew run today</string>
     <string name="crew_run_can">You can do today\'s crew run</string>
     <string name="crew_run_done">Today\'s crew run is done</string>
-    <string name="crew_run_done_detail">With %1$d runners · used %2$s of %3$s crew stamina</string>
     <string name="crew_run_reset">Available again at 00:00 tomorrow (Korea time)</string>
-    <string name="crew_run_today_runners">%1$d members did a crew run here today</string>
     <string name="crew_run_level_bonus">Lv.%1$d bonus · crew stamina +%2$s%% · rewards +%3$s%%</string>
     <string name="crew_run_sheet_title">Crew run rules</string>
-    <string name="crew_run_rule_pool">Crew stamina is the max durability of every shoe picked before the start, added up and multiplied by the crew level bonus. Each runner uses %1$s per minute, and everyone gets the same share.</string>
-    <string name="crew_run_rule_empty">When the crew stamina runs out, you stop earning. Your run keeps recording.</string>
-    <string name="crew_run_rule_own">Crew runs do not use your energy or your shoe durability. You can still do a free run the same day.</string>
-    <string name="crew_run_rule_reward">Rewards use the efficiency of the shoe you picked, plus the headcount bonus and the crew level bonus.</string>
-    <string name="crew_run_rule_who">It is a crew run when 2 or more crew members start together in the crew room and are still within %2$dm of each other %1$d minutes after the start.</string>
-    <string name="crew_run_rule_once">One crew run a day. Pausing is fine, but once you finish, that day\'s crew run is over. It opens again at 00:00 (Korea time).</string>
-    <string name="crew_run_rule_alone">If you lose your group and run alone, the crew run ends after 1 minute.</string>
     <string name="crew_run_rule_room">A crew room holds up to %1$d runners.</string>
     <string name="crew_run_headcount_title">Headcount bonus</string>
     <string name="crew_run_headcount_n">%1$d runners</string>
@@ -40,39 +31,15 @@
     <string name="crew_lobby_shoe_none">No shoe</string>
     <string name="crew_lobby_shoe_change">Change</string>
     <string name="crew_lobby_shoe_pick_title">Shoe for the crew run</string>
-    <string name="crew_lobby_shoe_pick_body">The max durability of the shoe you pick is added to crew stamina, and rewards use its efficiency. Shoes do not wear down in crew runs.</string>
-    <string name="crew_lobby_shoe_item">Lv.%1$d · max durability %2$d · efficiency +%3$s%%</string>
     <string name="crew_lobby_shoe_picked">Picked</string>
     <string name="crew_lobby_shoe_failed">Could not change the shoe. Please try again.</string>
-    <string name="crew_lobby_pool">Crew stamina</string>
-    <string name="crew_lobby_pool_value">%1$s · about %2$d min each</string>
-    <string name="crew_lobby_bonus">Bonus</string>
-    <string name="crew_lobby_bonus_value">%1$d runners +%2$s%% · Lv.%3$d +%4$s%%</string>
-    <string name="crew_lobby_preview_note">This is a preview. The server counts the crew members within %2$dm of you %1$d minutes after the start.</string>
     <string name="crew_lobby_done_today">You already did today\'s crew run. It opens again at 00:00 tomorrow (Korea time).</string>
-    <string name="crew_lobby_pool_zero">There is no crew stamina, so this crew run will not earn.</string>
-    <string name="crew_start_once">Starting begins today\'s crew run. Once you finish, the next one is tomorrow.</string>
 
-    <string name="crew_live_pool">Crew stamina</string>
-    <string name="crew_live_pool_left">%1$s left</string>
-    <string name="crew_live_pool_low">Crew stamina is running low</string>
-    <string name="crew_live_pool_empty">Crew stamina is used up · from now on the run records but does not earn</string>
-    <string name="crew_live_headcount">%1$d together · +%2$s%%</string>
-    <string name="crew_live_confirming">Crew members running together are counted %1$d minutes after the start</string>
-    <string name="crew_live_alone">No crew member nearby · come back within %1$dm in 1 minute to keep the crew run going</string>
-    <string name="crew_finish_once">Finishing ends today\'s crew run. You can do it again tomorrow.</string>
-    <string name="run_crew_pool_on">Crew runs earn with crew stamina. Your energy and shoe durability stay the same.</string>
-    <string name="run_crew_pool_empty">Crew stamina is used up, so you do not earn from now on.</string>
-    <string name="run_notify_crew_pool">Crew stamina %1$s left</string>
     <string name="run_notify_crew_pool_empty">Crew stamina used up · still recording</string>
 
-    <string name="crew_result_pool">Used %1$s of %2$s crew stamina</string>
-    <string name="crew_result_bonus">%1$d together +%2$s%% · crew level +%3$s%%</string>
     <string name="crew_result_pool_empty">You stopped earning after the crew stamina ran out.</string>
-    <string name="crew_result_alone">You stopped earning after you were left alone.</string>
     <string name="crew_result_level">Added %1$skm to your crew level.</string>
     <string name="crew_result_level_up">Crew level %1$d reached!</string>
-    <string name="crew_result_not_crew">This run did not count as a crew run. No crew member was with you 2 minutes after the start, or you already did today\'s crew run.</string>
 
     <string name="crew_entry_done_today">Today\'s crew run is done · available again at 00:00 tomorrow (Korea time)</string>
 </resources>

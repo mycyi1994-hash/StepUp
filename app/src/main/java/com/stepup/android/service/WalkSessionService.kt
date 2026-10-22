@@ -276,13 +276,14 @@ data class WalkSessionState(
     /** 방금 끝난 러닝에서 신발 내구도를 다 썼다 — 결과 화면이 "그 뒤 걸음은 보상에 들지 않았어요"를 알린다 */
     val lastShoeWornOut: Boolean = false,
     /**
-     * 크루 러닝(서버 0070)의 내 몫 시간(초) — 크루 체력 ÷ 인원 × 12초. 러닝 화면이 방 미리보기에서 읽어 알려 준다([WalkSessionService.setCrewShare]).
-     * 잠금화면 알림이 남은 크루 체력을 보인다. 크루 러닝이 아니거나 아직 모르면 null. 저장본에 남기지 않는다
+     * 크루 러닝(서버 0071)의 오늘 공용 체력 — 남은 양 · 총량 · 적립이 멈췄나(0). 크루 러닝이 5초마다 서버에서 받아 알려 준다
+     * ([WalkSessionService.setCrewPool]). 잠금화면 알림이 보인다. 크루 러닝이 아니거나 아직 모르면 null(0 이 아니다).
+     * 저장본에 남기지 않는다
      */
-    val crewShareSec: Int? = null,
+    val crewPoolRemaining: Double? = null,
+    val crewPoolTotal: Double? = null,
+    val crewPoolEmpty: Boolean = false,
 ) {
-    /** 크루 체력 내 몫 남은 초 — 크루 러닝이 아니면 null */
-    val crewPoolLeftSec: Long? get() = crewShareSec?.let { maxOf(it.toLong() - elapsedSec, 0L) }
 
     /** 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다(2026-10-19 사용자 "내구도 다 소모하면 따로 안내") */
     val shoeWornOut: Boolean get() = shoeLifeSec != null && elapsedSec >= shoeLifeSec
@@ -995,9 +996,9 @@ class WalkSessionService : Service() {
         val runStartedAt = _state.value.startedAt
         scope.launch {
             val life = runCatching { equippedShoeLifeSec() }.getOrNull()
-            // 크루 러닝이면 개인 신발은 닳지 않는다(0070) — 신발 다 씀 안내를 걸지 않는다
+            // 크루 러닝이면 개인 신발은 닳지 않는다 — 신발 다 씀 안내를 걸지 않는다
             _state.update {
-                if (it.isActive && it.startedAt == runStartedAt && it.crewShareSec == null) it.copy(shoeLifeSec = life) else it
+                if (it.isActive && it.startedAt == runStartedAt && it.group != RunGroup.CREW) it.copy(shoeLifeSec = life) else it
             }
         }
 
@@ -1400,14 +1401,16 @@ class WalkSessionService : Service() {
          * 앱 코드에서는 부르지 않는다.
          */
         /**
-         * 크루 러닝(서버 0070)의 내 몫 시간을 알린다 — 러닝 화면이 방 미리보기(출발 때 고른 신발 · 레벨 · 인원)에서 읽는다.
-         * 잠금화면 알림이 "크루 체력 12:34 남음"을 보인다. 크루 러닝은 개인 신발이 닳지 않아 신발 다 씀 안내를 끈다.
+         * 크루 러닝(서버 0071)의 오늘 공용 체력을 알린다 — 크루 러닝 상태 알림([com.stepup.android.data.repo.CrewRunRepository])이 받은 값.
+         * 잠금화면 알림이 "크루 체력 788 / 1,632"를 보인다. 크루 러닝은 개인 신발이 닳지 않아 신발 다 씀 안내를 끈다.
          * 그 러닝(시작 시각)이 아니면 무시한다.
          */
-        fun setCrewShare(startedAt: Long, shareSec: Int) {
+        fun setCrewPool(startedAt: Long, remaining: Double?, total: Double?, empty: Boolean) {
             _state.update {
-                if (it.isActive && it.startedAt == startedAt && it.crewShareSec != shareSec) {
-                    it.copy(crewShareSec = shareSec.coerceAtLeast(0), shoeLifeSec = null)
+                if (it.isActive && it.startedAt == startedAt &&
+                    (it.crewPoolRemaining != remaining || it.crewPoolTotal != total || it.crewPoolEmpty != empty || it.shoeLifeSec != null)
+                ) {
+                    it.copy(crewPoolRemaining = remaining, crewPoolTotal = total, crewPoolEmpty = empty, shoeLifeSec = null)
                 } else it
             }
         }

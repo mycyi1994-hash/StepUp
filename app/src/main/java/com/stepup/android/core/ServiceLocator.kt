@@ -490,6 +490,20 @@ object ServiceLocator {
             // 홈이 접근 종료를 알면 같은 크루의 채팅 캐시도 지운다(대화 · 보내던 메시지 · 사진)
             onEnded = { crewId -> crewChat.forget(crewId) },
         )
+        // 크루 러닝 상태 알림(0071) — 달리는 동안 5초마다 공용 체력을 정산하고, 마지막 한 사람이 되면 러닝을 멈춘다
+        crewRun.startBeats(
+            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO),
+            context = app,
+            party = crewRepository.party,
+            run = com.stepup.android.service.WalkSessionService.state,
+            onCrewPool = { startedAt, live ->
+                com.stepup.android.service.WalkSessionService.setCrewPool(
+                    startedAt, live.pool?.remaining, live.pool?.total,
+                    live.earning == com.stepup.android.domain.CrewEarning.POOL_EMPTY,
+                )
+            },
+            stopRun = { com.stepup.android.service.WalkSessionService.stop(app) },
+        )
         communityRepository = CommunityRepository(
             api = CommunityApi(server),
             postDao = database.postDao(),

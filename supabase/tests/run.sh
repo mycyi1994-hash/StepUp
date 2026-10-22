@@ -224,13 +224,51 @@ SQL
 run -c "delete from public.crews where id = '$STAMINA_RACE_CREW'" \
     -c "delete from auth.users where id in ('$STAMINA_RACE_A', '$STAMINA_RACE_B')"
 
+# ── 크루 러닝(0071) — 같은 사람이 두 크루의 방에서 동시에 출발할 때(T27) ─────────────────
+# 하루 한 번은 출발 때 확정한다. 두 방이 동시에 출발해도 그 사람의 참여는 하나 · 진 쪽 방은 출발 전체가 취소되고 기여가 남지 않는다.
+echo "── 같은 사람이 두 방에서 동시에 출발할 때(0071) ─────────────────"
+POOL_C1=71200000-0000-0000-0000-0000000000c1
+POOL_C2=71200000-0000-0000-0000-0000000000c2
+POOL_H1=71200000-0000-0000-0000-0000000000a1
+POOL_H2=71200000-0000-0000-0000-0000000000a2
+POOL_U=71200000-0000-0000-0000-0000000000bb
+run <<SQL
+insert into auth.users (id, email) values ('$POOL_H1', 'pool-h1@test'), ('$POOL_H2', 'pool-h2@test'), ('$POOL_U', 'pool-u@test')
+on conflict (id) do nothing;
+insert into public.crews (id, owner_id, name) values ('$POOL_C1', '$POOL_H1', '동시 하나'), ('$POOL_C2', '$POOL_H2', '동시 둘');
+insert into public.crew_members (crew_id, user_id, role) values ('$POOL_C1', '$POOL_U', 'MEMBER'), ('$POOL_C2', '$POOL_U', 'MEMBER');
+insert into public.parties (crew_id, host_id) values ('$POOL_C1', '$POOL_H1'), ('$POOL_C2', '$POOL_H2');
+insert into public.party_members (party_id, user_id, ready)
+select p.id, u, true from public.parties p
+  cross join lateral (values (p.host_id), ('$POOL_U'::uuid)) as t(u)
+ where p.crew_id in ('$POOL_C1', '$POOL_C2');
+SQL
+P1=$(run -At -c "select id from public.parties where crew_id = '$POOL_C1'")
+P2=$(run -At -c "select id from public.parties where crew_id = '$POOL_C2'")
+POOL_DONE=$(race "$POOL_H1" "select public.party_start($P1)" "$POOL_H2" "select public.party_start($P2)")
+run <<SQL
+do \$\$
+declare v_runs int; v_contrib int; v_left int;
+begin
+  select count(*) into v_runs from economy.crew_runs where user_id = '$POOL_U';
+  select coalesce(sum(contributors), 0) into v_contrib from economy.crew_day_pools where crew_id in ('$POOL_C1', '$POOL_C2');
+  select count(*) into v_left from economy.crew_runs where user_id in ('$POOL_H1', '$POOL_H2');
+  if $POOL_DONE <> 1 or v_runs <> 1 or v_contrib <> 2 or v_left <> 1 then
+    raise exception 'FAIL  동시 출발 — 된 출발 %개 · 그 사람 참여 %개 · 기여한 사람 %명 · 진행자 참여 %개', $POOL_DONE, v_runs, v_contrib, v_left;
+  end if;
+  raise notice '  OK   %', '두 크루 방이 같은 사람을 데리고 동시에 출발해도 그 사람의 하루 참여는 하나 — 진 방은 기여 없이 출발이 취소된다(T27)';
+end \$\$;
+SQL
+run -c "delete from public.crews where id in ('$POOL_C1', '$POOL_C2')" \
+    -c "delete from auth.users where id in ('$POOL_H1', '$POOL_H2', '$POOL_U')"
+
 # ── 크루 러닝 거리 채우기(0069) — 다시 붙여넣어도 이미 센 크루는 그대로, 아직 안 센 크루만 지금까지의 크루 러닝으로 ──
 # 위 검사가 크루 러닝으로 쌓은 크루(체력 크루)는 그대로여야 하고, 거리가 0 인 크루는 크루에 묶인 2명 이상 러닝
 # (무효 · 보류 · 혼자 빼고)으로 채운다. 아래 재적용이 이 채우기를 다시 돈다.
 BACKFILL_CREW=69300000-0000-0000-0000-0000000000cc
 BACKFILL_U=69300000-0000-0000-0000-00000000000a
 BACKFILL_V=69300000-0000-0000-0000-00000000000b
-STAMINA_CREW=70000000-0000-0000-0000-0000000000cc
+STAMINA_CREW=71000000-0000-0000-0000-0000000000cc
 run <<SQL
 insert into auth.users (id, email) values ('$BACKFILL_U', 'backfill-u@test'), ('$BACKFILL_V', 'backfill-v@test')
 on conflict (id) do nothing;
