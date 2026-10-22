@@ -9,14 +9,12 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -24,9 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -93,64 +89,6 @@ internal object CrewNavy {
 
 internal fun navyText(size: TextUnit, color: Color = CrewNavy.Text, weight: FontWeight = FontWeight.Normal, line: Float = 1.35f) =
     TextStyle(fontFamily = StepUpSans, fontSize = size, fontWeight = weight, color = color, lineHeight = line.em, letterSpacing = (-0.01).em)
-
-/** 남색 화면 — 머리(뒤로 · 제목 · 안내) · 내용(남는 높이, 넘침) · 아래 버튼(시스템 아래 영역 위). 상태 막대를 그리지 않는다 */
-@Composable
-internal fun NavyPage(
-    title: String,
-    onBack: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-    onInfo: (() -> Unit)? = null,
-    scroll: Boolean = true,
-    bottom: (@Composable ColumnScope.() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Box(modifier.fillMaxSize().background(Brush.verticalGradient(0f to CrewNavy.BgTop, 0.36f to CrewNavy.Bg))) {
-        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            NavyHeader(title, onBack, onInfo)
-            Column(
-                Modifier.weight(1f).fillMaxWidth().then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                    .padding(horizontal = CrewNavy.Gutter),
-                content = content,
-            )
-            if (bottom != null) {
-                Column(
-                    Modifier.fillMaxWidth().padding(horizontal = CrewNavy.Gutter).padding(top = 8.dp, bottom = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    content = bottom,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-internal fun NavyHeader(title: String, onBack: (() -> Unit)?, onInfo: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-            if (onBack != null) {
-                val back = stringResource(R.string.cd_back)
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack, contentDescription = back, tint = CrewNavy.Text,
-                    modifier = Modifier.size(48.dp).clip(CircleShape).feedbackClickable(onClick = onBack).padding(12.dp).testTag("navy-back"),
-                )
-            }
-        }
-        Text(
-            title, style = navyText(19.sp, weight = FontWeight.Bold), textAlign = TextAlign.Center, maxLines = 1,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-            if (onInfo != null) {
-                val label = stringResource(R.string.crew_run_sheet_title)
-                Icon(
-                    Icons.Outlined.Info, contentDescription = label, tint = CrewNavy.Text,
-                    modifier = Modifier.size(48.dp).clip(CircleShape).feedbackClickable(onClick = onInfo).padding(12.dp).testTag("navy-info"),
-                )
-            }
-        }
-    }
-}
 
 /** 큰 주 버튼 — 흰 면(위 → 아래 옅은 파랑) + 파란 아랫면 4dp. 요청 중이면 돌고 눌리지 않는다 */
 @Composable
