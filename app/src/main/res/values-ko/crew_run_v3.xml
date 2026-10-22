@@ -67,6 +67,8 @@
     <string name="crew_finish_once">끝내면 오늘 크루 러닝은 끝나요. 내일 다시 할 수 있어요.</string>
     <string name="run_crew_pool_on">크루 러닝은 크루 체력으로 적립해요. 내 에너지와 신발 내구도는 그대로예요.</string>
     <string name="run_crew_pool_empty">크루 체력을 다 써서 지금부터는 적립되지 않아요.</string>
+    <string name="run_notify_crew_pool">크루 체력 %1$s 남음</string>
+    <string name="run_notify_crew_pool_empty">크루 체력을 다 썼어요 · 기록은 계속돼요</string>
 
     <!-- 결과 -->
     <string name="crew_result_pool">크루 체력 %1$s / %2$s 썼어요</string>

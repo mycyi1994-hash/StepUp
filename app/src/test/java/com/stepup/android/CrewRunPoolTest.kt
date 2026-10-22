@@ -61,6 +61,17 @@ class CrewRunPoolTest {
     }
 
     @Test
+    fun `잠금화면 알림의 남은 크루 체력 시간`() {
+        assertEquals("10:36", com.stepup.android.domain.RunNotificationText.clock(636))
+        assertEquals("0:00", com.stepup.android.domain.RunNotificationText.clock(-5))
+        assertEquals("1:02:03", com.stepup.android.domain.RunNotificationText.clock(3723))
+        val state = com.stepup.android.service.WalkSessionState(isActive = true, elapsedSec = 600, crewShareSec = 636)
+        assertEquals(36L, state.crewPoolLeftSec)
+        assertNull(com.stepup.android.service.WalkSessionState(isActive = true, elapsedSec = 600).crewPoolLeftSec)
+        assertEquals(0L, state.copy(elapsedSec = 700).crewPoolLeftSec)
+    }
+
+    @Test
     fun `혼자 남음은 위치를 보이는 크루원이 모두 곁 밖일 때만`() {
         val me = GeoPoint(37.5, 127.0)
         assertFalse(CrewRunMath.aloneNow(me, emptyList(), 500))

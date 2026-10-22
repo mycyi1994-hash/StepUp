@@ -63,6 +63,8 @@
     <string name="crew_finish_once">结束后今天的跑团跑就结束了,明天可以再跑。</string>
     <string name="run_crew_pool_on">跑团跑用跑团体力获得奖励。你的能量和跑鞋耐久度不变。</string>
     <string name="run_crew_pool_empty">跑团体力已用完,之后不再获得奖励。</string>
+    <string name="run_notify_crew_pool">跑团体力剩余 %1$s</string>
+    <string name="run_notify_crew_pool_empty">跑团体力已用完 · 继续记录</string>
 
     <string name="crew_result_pool">用了跑团体力 %1$s / %2$s</string>
     <string name="crew_result_bonus">%1$d 人一起 +%2$s%% · 跑团等级 +%3$s%%</string>

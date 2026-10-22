@@ -63,6 +63,8 @@
     <string name="crew_finish_once">終えると今日のクルーランは終わります。明日またできます。</string>
     <string name="run_crew_pool_on">クルーランはクルー体力で獲得します。自分のエネルギーとシューズ耐久度はそのままです。</string>
     <string name="run_crew_pool_empty">クルー体力を使い切ったため、ここからは獲得されません。</string>
+    <string name="run_notify_crew_pool">クルー体力 残り %1$s</string>
+    <string name="run_notify_crew_pool_empty">クルー体力を使い切りました · 記録は続きます</string>
 
     <string name="crew_result_pool">クルー体力 %1$s / %2$s を使いました</string>
     <string name="crew_result_bonus">%1$d人で +%2$s%% · クルーレベル +%3$s%%</string>

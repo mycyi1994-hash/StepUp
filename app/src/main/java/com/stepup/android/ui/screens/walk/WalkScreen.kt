@@ -273,6 +273,10 @@ fun RunScreen(
         ?.let { 1.0 + it.efficiencyBps / 10_000.0 }
         ?: equipped?.server?.let { 1.0 + it.efficiencyBps / 10_000.0 } ?: earningMultiplier
     val crewShareSec = crewPoolRoom?.shareSec ?: 0
+    // 잠금화면 알림에도 남은 크루 체력을 — 이 러닝의 내 몫 시간을 서비스에 알린다(크루 러닝은 개인 신발 다 씀 안내도 끈다)
+    LaunchedEffect(crewPoolRoom?.shareSec, session.startedAt) {
+        crewPoolRoom?.let { WalkSessionService.setCrewShare(session.startedAt, it.shareSec) }
+    }
     val crewStage = crewPoolRoom?.let { com.stepup.android.domain.CrewRunMath.stage(crewShareSec, session.elapsedSec) }
     val estimate = if (crewPoolRoom != null) {
         RewardEconomy.sessionReward(

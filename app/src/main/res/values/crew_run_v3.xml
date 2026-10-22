@@ -63,6 +63,8 @@
     <string name="crew_finish_once">Finishing ends today\'s crew run. You can do it again tomorrow.</string>
     <string name="run_crew_pool_on">Crew runs earn with crew stamina. Your energy and shoe durability stay the same.</string>
     <string name="run_crew_pool_empty">Crew stamina is used up, so you do not earn from now on.</string>
+    <string name="run_notify_crew_pool">Crew stamina %1$s left</string>
+    <string name="run_notify_crew_pool_empty">Crew stamina used up · still recording</string>
 
     <string name="crew_result_pool">Used %1$s of %2$s crew stamina</string>
     <string name="crew_result_bonus">%1$d together +%2$s%% · crew level +%3$s%%</string>
