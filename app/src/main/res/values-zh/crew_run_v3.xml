@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 러닝 3판(서버 0070, 2026-10-21) — 함께 쓰는 크루 체력 · 하루 한 번 · 500m · 인원 보너스 · 크루 레벨 1 ~ 20 -->
+<resources>
+    <string name="crew_run_title">今日跑团跑</string>
+    <string name="crew_run_can">今天可以进行跑团跑</string>
+    <string name="crew_run_done">今天的跑团跑已完成</string>
+    <string name="crew_run_done_detail">%1$d 人一起 · 用了跑团体力 %2$s / %3$s</string>
+    <string name="crew_run_reset">明天 00:00(韩国时间)可再次进行</string>
+    <string name="crew_run_today_runners">今天这个跑团有 %1$d 人进行了跑团跑</string>
+    <string name="crew_run_level_bonus">Lv.%1$d 加成 · 跑团体力 +%2$s%% · 奖励 +%3$s%%</string>
+    <string name="crew_run_sheet_title">跑团跑规则</string>
+    <string name="crew_run_rule_pool">跑团体力是出发前所选跑鞋的最大耐久度之和,再乘以跑团等级加成。每人每跑 1 分钟消耗 %1$s,大家的份额相同。</string>
+    <string name="crew_run_rule_empty">跑团体力用完后不再获得奖励,记录会继续。</string>
+    <string name="crew_run_rule_own">跑团跑不消耗你的能量和跑鞋耐久度。同一天也可以自由跑。</string>
+    <string name="crew_run_rule_reward">奖励按你所选跑鞋的效率,加上人数加成和跑团等级加成计算。</string>
+    <string name="crew_run_rule_who">在跑团房间一起出发,出发 %1$d 分钟后彼此仍在 %2$dm 内的跑团成员有 2 人以上,即为跑团跑。</string>
+    <string name="crew_run_rule_once">跑团跑每天一次。可以暂停,但结束后当天的跑团跑就结束了。00:00(韩国时间)重新开放。</string>
+    <string name="crew_run_rule_alone">如果与一起跑的成员分开、只剩自己,1 分钟后跑团跑结束。</string>
+    <string name="crew_run_rule_room">跑团房间最多 %1$d 人。</string>
+    <string name="crew_run_headcount_title">人数加成</string>
+    <string name="crew_run_headcount_n">%1$d 人</string>
+    <string name="crew_run_headcount_range">%1$d~%2$d 人</string>
+    <string name="crew_run_bonus_value">+%1$s%%</string>
+    <string name="crew_run_bonus_range_value">+%1$s~%2$s%%(每人 +%3$s%%)</string>
+    <string name="crew_run_level_link">查看跑团等级</string>
+
+    <string name="crewhome_level_rule">跑团跑中每人跑的距离累加,等级随之提升。最高等级为 20。</string>
+    <string name="crewhome_level_goal_km">%1$skm</string>
+    <string name="crewhome_level_progress">跑团跑 %1$skm · 距下一级还有 %2$skm</string>
+    <string name="crewhome_level_max">已是最高等级</string>
+    <string name="crewhome_level_max_body">通过跑团跑一起跑了 %1$skm。</string>
+    <string name="crewhome_level_bonus">当前等级加成 — 跑团体力 +%1$s%% · 奖励 +%2$s%%</string>
+    <string name="crewhome_level_bonus_step">每升一级,跑团体力 +%1$s%%,奖励 +%2$s%%。</string>
+    <string name="crewhome_level_first">完成第一次跑团跑后成为 Lv.1。</string>
+    <string name="crewhome_level_table">等级表</string>
+    <string name="crewhome_level_table_value">%1$skm · 体力 +%2$s%% · 奖励 +%3$s%%</string>
+
+    <string name="crew_lobby_shoe">跑团跑跑鞋</string>
+    <string name="crew_lobby_shoe_value">%1$s · 最大耐久度 %2$d</string>
+    <string name="crew_lobby_shoe_none">没有跑鞋</string>
+    <string name="crew_lobby_shoe_change">更换</string>
+    <string name="crew_lobby_shoe_pick_title">跑团跑要穿的跑鞋</string>
+    <string name="crew_lobby_shoe_pick_body">所选跑鞋的最大耐久度会加到跑团体力中,奖励按这双鞋的效率计算。跑团跑中跑鞋不会磨损。</string>
+    <string name="crew_lobby_shoe_item">Lv.%1$d · 最大耐久度 %2$d · 效率 +%3$s%%</string>
+    <string name="crew_lobby_shoe_picked">已选</string>
+    <string name="crew_lobby_shoe_failed">未能更换跑鞋,请重试。</string>
+    <string name="crew_lobby_pool">跑团体力</string>
+    <string name="crew_lobby_pool_value">%1$s · 每人约 %2$d 分钟</string>
+    <string name="crew_lobby_bonus">加成</string>
+    <string name="crew_lobby_bonus_value">%1$d 人 +%2$s%% · Lv.%3$d +%4$s%%</string>
+    <string name="crew_lobby_preview_note">这是预览。出发 %1$d 分钟后按 %2$dm 内一起的跑团成员重新计算。</string>
+    <string name="crew_lobby_done_today">今天已经进行过跑团跑。明天 00:00(韩国时间)可再次进行。</string>
+    <string name="crew_lobby_pool_zero">没有跑团体力,本次跑团跑不会获得奖励。</string>
+    <string name="crew_start_once">出发即开始今天的跑团跑。结束后明天才能再跑。</string>
+
+    <string name="crew_live_pool">跑团体力</string>
+    <string name="crew_live_pool_left">剩余 %1$s</string>
+    <string name="crew_live_pool_low">跑团体力所剩不多</string>
+    <string name="crew_live_pool_empty">跑团体力已用完 · 之后只记录不获得奖励</string>
+    <string name="crew_live_headcount">%1$d 人一起 · +%2$s%%</string>
+    <string name="crew_live_confirming">出发 %1$d 分钟后统计一起跑的跑团成员</string>
+    <string name="crew_live_alone">附近没有跑团成员 · 1 分钟内回到 %1$dm 内即可继续跑团跑</string>
+    <string name="crew_finish_once">结束后今天的跑团跑就结束了,明天可以再跑。</string>
+    <string name="run_crew_pool_on">跑团跑用跑团体力获得奖励。你的能量和跑鞋耐久度不变。</string>
+    <string name="run_crew_pool_empty">跑团体力已用完,之后不再获得奖励。</string>
+    <string name="run_notify_crew_pool">跑团体力剩余 %1$s</string>
+    <string name="run_notify_crew_pool_empty">跑团体力已用完 · 继续记录</string>
+
+    <string name="crew_result_pool">用了跑团体力 %1$s / %2$s</string>
+    <string name="crew_result_bonus">%1$d 人一起 +%2$s%% · 跑团等级 +%3$s%%</string>
+    <string name="crew_result_pool_empty">跑团体力用完后未再获得奖励。</string>
+    <string name="crew_result_alone">只剩自己后未再获得奖励。</string>
+    <string name="crew_result_level">为跑团等级增加了 %1$skm。</string>
+    <string name="crew_result_level_up">跑团等级达到 %1$d!</string>
+    <string name="crew_result_not_crew">这次跑步未计为跑团跑。出发 2 分钟后没有跑团成员在一起,或今天已经进行过跑团跑。</string>
+
+    <string name="crew_entry_done_today">今天的跑团跑已完成 · 明天 00:00(韩国时间)可再次进行</string>
+</resources>

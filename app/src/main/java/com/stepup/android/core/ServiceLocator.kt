@@ -106,6 +106,16 @@ object ServiceLocator {
     fun useCrewHomeForTest(repository: com.stepup.android.data.repo.CrewHomeRepository) {
         crewHome = repository
     }
+
+    /** 크루 러닝 3판(서버 0070) — 오늘 크루 러닝 · 방의 크루 체력 · 결과 */
+    lateinit var crewRun: com.stepup.android.data.repo.CrewRunRepository
+        private set
+
+    /** 기기 검사용 — 크루 러닝을 흉내 낸 서버로 돌린다. 앱 코드는 부르지 않는다. */
+    @androidx.annotation.VisibleForTesting
+    fun useCrewRunForTest(repository: com.stepup.android.data.repo.CrewRunRepository) {
+        crewRun = repository
+    }
     /** 동네 이야기의 장소 찾기(MapTiler · 기기 지오코더) */
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
         private set
@@ -469,6 +479,10 @@ object ServiceLocator {
             prefs = userPrefs,
             owner = { sessionHolder.recordingOwner() },
             photoDir = java.io.File(app.cacheDir, "chat_photos"),
+        )
+        crewRun = com.stepup.android.data.repo.CrewRunRepository(
+            api = com.stepup.android.data.remote.CrewRunApi(server),
+            owner = { sessionHolder.recordingOwner() },
         )
         crewHome = com.stepup.android.data.repo.CrewHomeRepository(
             api = com.stepup.android.data.remote.CrewHomeApi(server),

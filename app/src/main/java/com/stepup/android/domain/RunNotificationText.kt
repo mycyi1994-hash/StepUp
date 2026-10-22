@@ -20,6 +20,13 @@ object RunNotificationText {
         return String.format(Locale.US, "%d'%02d\"", perKm / 60, perKm % 60)
     }
 
+    /** 남은 시간 "12:34" · "1:02:03" — 크루 체력 내 몫(0070) */
+    fun clock(sec: Long): String {
+        val s = sec.coerceAtLeast(0)
+        return if (s >= 3600) String.format(Locale.US, "%d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+        else String.format(Locale.US, "%d:%02d", s / 60, s % 60)
+    }
+
     /** 알림 시간 칸(Chronometer)의 기준 — 화면이 꺼져도 시계가 스스로 흐르게 SystemClock.elapsedRealtime 기준으로 */
     fun chronometerBase(elapsedRealtimeMs: Long, elapsedSec: Long): Long = elapsedRealtimeMs - elapsedSec * 1000
 }

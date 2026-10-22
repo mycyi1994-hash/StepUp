@@ -65,7 +65,7 @@ import com.stepup.android.ui.screens.community.chat.chatAuthorName
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewHomeSummary
 import com.stepup.android.domain.CrewMeeting
-import com.stepup.android.domain.CrewStamina
+import com.stepup.android.domain.CrewRunToday
 import com.stepup.android.domain.MeetingResponse
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.chat.ChatRetryState
@@ -98,7 +98,7 @@ class CrewHomeActions(
 )
 
 /**
- * 00 내 크루 홈 — 큰 크루 이미지 영역 → 흰 크루 채팅 · 다음 러닝 → 참석 여부 → 이번 주 함께 → 오늘 크루 체력(0069) → 크루장 공지.
+ * 00 내 크루 홈 — 큰 크루 이미지 영역 → 흰 크루 채팅 · 다음 러닝 → 참석 여부 → 이번 주 함께 → 오늘 크루 러닝(0070) → 크루장 공지.
  * 모임이 없으면 23(채팅은 그대로), 처음 읽기 실패는 26, 참석 뒤 28 · 29. 크루장 권한만 사라지면 크루원 화면으로 바뀐다.
  */
 @Composable
@@ -111,9 +111,9 @@ fun CrewHomeScreen(viewModel: CrewHomeViewModel, actions: CrewHomeActions) {
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val leave by viewModel.leave.collectAsStateWithLifecycle()
     val left by viewModel.left.collectAsStateWithLifecycle()
-    val stamina by viewModel.stamina.collectAsStateWithLifecycle()
+    val crewRunToday by viewModel.crewRunToday.collectAsStateWithLifecycle()
     var menu by rememberSaveable { mutableStateOf(false) }
-    var staminaSheet by rememberSaveable { mutableStateOf(false) }
+    var crewRunSheet by rememberSaveable { mutableStateOf(false) }
 
     // 보일 때마다 다시 읽는다 — 채팅을 읽고 돌아오면 미확인 수가 바뀌고, 모임에서 응답하면 인원이 바뀐다
     LifecycleResumeEffect(viewModel) {
@@ -147,11 +147,16 @@ fun CrewHomeScreen(viewModel: CrewHomeViewModel, actions: CrewHomeActions) {
         }
         else -> HomeContent(
             crew, home, stale, actions, onMore = { menu = true }, onRetry = viewModel::refresh,
-            stamina = stamina?.takeIf { it.isToday() }, onStamina = { staminaSheet = true },
+            crewRun = crewRunToday?.takeIf { it.isToday() }, onCrewRun = { crewRunSheet = true },
         )
     }
-    val todayStamina = stamina?.takeIf { it.isToday() }
-    if (staminaSheet && todayStamina != null) CrewStaminaSheet(todayStamina, onDismiss = { staminaSheet = false })
+    val today = crewRunToday?.takeIf { it.isToday() }
+    if (crewRunSheet && today != null) {
+        CrewRunRulesSheet(
+            today.rules, onDismiss = { crewRunSheet = false },
+            onLevel = { crewRunSheet = false; actions.onLevel() },
+        )
+    }
 
     if (menu && crew != null && home != null) {
         HomeMenuSheet(
@@ -186,8 +191,8 @@ private fun HomeContent(
     actions: CrewHomeActions,
     onMore: () -> Unit,
     onRetry: () -> Unit,
-    stamina: CrewStamina?,
-    onStamina: () -> Unit,
+    crewRun: CrewRunToday?,
+    onCrewRun: () -> Unit,
 ) {
     val ink = blueInk()
     BluePage(Modifier.testTag(if (home.owner) "crew-home-owner" else "crew-home")) {
@@ -227,10 +232,10 @@ private fun HomeContent(
             Spacer(Modifier.height(24.dp))
             HomeDivider()
             WeekBlock(home, actions.onWeek)
-            // 오늘 크루 체력(0069) — 크루 러닝이 함께 쓰는 체력. 읽지 못했으면 칸을 두지 않는다
-            if (stamina != null) {
+            // 오늘 크루 러닝(0070) — 하루 한 번 · 했으면 그 기록, 크루 레벨 보너스. 읽지 못했으면 칸을 두지 않는다
+            if (crewRun != null) {
                 HomeDivider()
-                CrewStaminaBlock(stamina, onStamina)
+                CrewRunTodayBlock(crewRun, onCrewRun)
             }
             home.notice?.let { notice ->
                 HomeDivider()

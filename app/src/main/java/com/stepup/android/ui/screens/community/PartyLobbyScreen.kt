@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -201,15 +202,22 @@ fun PartyLobbyScreen(
     BackHandler { leave() }
 
     val canNotify = flashPostId == null && !party.crewId.isNullOrBlank()
-    // 크루 대기실이면 오늘의 크루 체력(0069) — 이 크루 러닝이 받쳐 줄 체력(내 몫 · 다 씀 · 개인 에너지)을 출발 전에 보인다
-    val staminaCrew = if (flashPostId == null) party.crewId?.takeIf { it.isNotBlank() } ?: crewId.takeIf { it.isNotEmpty() } else null
-    val staminaFlow = remember(staminaCrew) {
-        staminaCrew?.let { com.stepup.android.core.ServiceLocator.crewHome.stamina(it) } ?: kotlinx.coroutines.flow.flowOf(null)
-    }
-    val stamina by staminaFlow.collectAsStateWithLifecycle(
-        initialValue = staminaCrew?.let { com.stepup.android.core.ServiceLocator.crewHome.staminaNow(it) },
-    )
-    LaunchedEffect(staminaCrew) { staminaCrew?.let { com.stepup.android.core.ServiceLocator.crewHome.loadStamina(it) } }
+    // 크루 대기실이면 크루 러닝 3판(0070) — 오늘 했는지 · 방의 크루 체력 미리보기 · 고른 신발
+    val runCrew = if (flashPostId == null) party.crewId?.takeIf { it.isNotBlank() } ?: crewId.takeIf { it.isNotEmpty() } else null
+    val crewRunRepo = com.stepup.android.core.ServiceLocator.crewRun
+    val todayFlow = remember(runCrew) { runCrew?.let { crewRunRepo.today(it) } ?: kotlinx.coroutines.flow.flowOf(null) }
+    val crewToday by todayFlow.collectAsStateWithLifecycle(initialValue = runCrew?.let { crewRunRepo.todayNow(it) })
+    LaunchedEffect(runCrew) { runCrew?.let { crewRunRepo.loadToday(it) } }
+    val roomId = party.partyId.takeIf { runCrew != null }
+    val roomFlow = remember(roomId) { roomId?.let { crewRunRepo.room(it) } ?: kotlinx.coroutines.flow.flowOf(null) }
+    val crewRunRoom by roomFlow.collectAsStateWithLifecycle(initialValue = roomId?.let { crewRunRepo.roomNow(it) })
+    // 사람이 오가거나 준비 · 출발이 바뀌면 다시 센다(인원 · 크루 체력 미리보기)
+    val roster = party.members.map { it.id to it.ready }
+    LaunchedEffect(roomId, roster, party.phase) { roomId?.let { crewRunRepo.loadRoom(it) } }
+    val shoes by com.stepup.android.core.ServiceLocator.sneakerRepository.inventory
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    var shoeFailed by remember { mutableStateOf(false) }
+    val shoeScope = androidx.compose.runtime.rememberCoroutineScope()
     val here = rememberCurrentLocation(enabled = party.phase == PartyPhase.COUNTDOWN && StepPermissions.hasLocation(context))
     val monogram = party.crewId?.let { com.stepup.android.core.ServiceLocator.crewRepository.crewOf(it)?.monogram }.orEmpty()
     PartyLobbyContent(
@@ -233,7 +241,14 @@ fun PartyLobbyScreen(
         },
         // 서버에 닿지 못한 동안 — 걸려 있던 물음 · 방 열기를 기다리지 않고 지금 다시 묻는다
         onReconnect = { com.stepup.android.core.ServiceLocator.crewRepository.wakeParty() },
-        stamina = stamina?.takeIf { it.isToday() },
+        crewToday = crewToday?.takeIf { it.isToday() },
+        room = crewRunRoom,
+        shoes = shoes,
+        onPickShoe = { id ->
+            val pid = roomId
+            if (pid != null) shoeScope.launch { shoeFailed = !crewRunRepo.pickShoe(pid, id) }
+        },
+        shoeFailed = shoeFailed,
     )
     if (readyCheck && party.phase == PartyPhase.LOBBY) {
         CrewReadyCheckSheet(
@@ -299,8 +314,12 @@ fun PartyLobbyContent(
     monogram: String = "",
     /** 서버에 닿지 못한 동안 "다시 연결" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
     onReconnect: () -> Unit = {},
-    /** 크루 대기실의 오늘 크루 체력(0069) — 번개러닝 대기실은 쓰지 않는다 */
-    stamina: com.stepup.android.domain.CrewStamina? = null,
+    /** 크루 대기실의 크루 러닝 3판(0070) — 번개러닝 대기실은 쓰지 않는다 */
+    crewToday: com.stepup.android.domain.CrewRunToday? = null,
+    room: com.stepup.android.domain.CrewRunRoom? = null,
+    shoes: List<com.stepup.android.domain.Sneaker> = emptyList(),
+    onPickShoe: (Long?) -> Unit = {},
+    shoeFailed: Boolean = false,
 ) {
     val t = runTone()
     // 크루 대기실 · 동시 출발은 크루 달리기 v2 모습(2026-10-16). 번개러닝 대기실은 아래 예전 모습 그대로
@@ -309,7 +328,8 @@ fun PartyLobbyContent(
             party = party, title = title, resultPoints = resultPoints, canNotify = canNotify,
             onBack = onBack, onReady = onReady, onCancelReady = onCancelReady, onStart = onStart, onShare = onShare,
             onKick = onKick, onNotify = onNotify, onRetry = onRetry, onLeave = onLeave, onDismissResult = onDismissResult,
-            onReconnect = onReconnect, stamina = stamina,
+            onReconnect = onReconnect, crewToday = crewToday, room = room, shoes = shoes, onPickShoe = onPickShoe,
+            shoeFailed = shoeFailed,
         )
         return
     }

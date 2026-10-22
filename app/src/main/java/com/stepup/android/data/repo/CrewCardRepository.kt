@@ -212,8 +212,16 @@ class CrewCardRepository(
         is ServerResult.Ok -> CrewOutcome.Ok(
             CrewLevelInfo(
                 result.value.level, result.value.weekKm, result.value.weekRunners, result.value.memberCount,
-                runKm = result.value.runKm, nextLevelKm = result.value.nextLevelKm, levelBonus = result.value.levelBonus,
-                levels = result.value.levels.map { com.stepup.android.domain.CrewLevelStep(it.level, it.km, it.bonus) },
+                runKm = result.value.runKm, nextLevelKm = result.value.nextLevelKm,
+                staminaBonus = result.value.staminaBonus ?: com.stepup.android.domain.CrewRunMath.levelStamina(result.value.level),
+                rewardBonus = result.value.rewardBonus ?: com.stepup.android.domain.CrewRunMath.levelReward(result.value.level),
+                levels = result.value.levels.map {
+                    com.stepup.android.domain.CrewLevelStep(
+                        it.level, it.km,
+                        stamina = it.stamina ?: com.stepup.android.domain.CrewRunMath.levelStamina(it.level),
+                        reward = it.reward ?: com.stepup.android.domain.CrewRunMath.levelReward(it.level),
+                    )
+                },
             ),
         )
         else -> CrewOutcome.Failed(result.problem())

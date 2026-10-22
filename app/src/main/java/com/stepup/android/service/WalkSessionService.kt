@@ -275,7 +275,15 @@ data class WalkSessionState(
     val shoeLifeSec: Long? = null,
     /** 방금 끝난 러닝에서 신발 내구도를 다 썼다 — 결과 화면이 "그 뒤 걸음은 보상에 들지 않았어요"를 알린다 */
     val lastShoeWornOut: Boolean = false,
+    /**
+     * 크루 러닝(서버 0070)의 내 몫 시간(초) — 크루 체력 ÷ 인원 × 12초. 러닝 화면이 방 미리보기에서 읽어 알려 준다([WalkSessionService.setCrewShare]).
+     * 잠금화면 알림이 남은 크루 체력을 보인다. 크루 러닝이 아니거나 아직 모르면 null. 저장본에 남기지 않는다
+     */
+    val crewShareSec: Int? = null,
 ) {
+    /** 크루 체력 내 몫 남은 초 — 크루 러닝이 아니면 null */
+    val crewPoolLeftSec: Long? get() = crewShareSec?.let { maxOf(it.toLong() - elapsedSec, 0L) }
+
     /** 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다(2026-10-19 사용자 "내구도 다 소모하면 따로 안내") */
     val shoeWornOut: Boolean get() = shoeLifeSec != null && elapsedSec >= shoeLifeSec
 
@@ -987,7 +995,10 @@ class WalkSessionService : Service() {
         val runStartedAt = _state.value.startedAt
         scope.launch {
             val life = runCatching { equippedShoeLifeSec() }.getOrNull()
-            _state.update { if (it.isActive && it.startedAt == runStartedAt) it.copy(shoeLifeSec = life) else it }
+            // 크루 러닝이면 개인 신발은 닳지 않는다(0070) — 신발 다 씀 안내를 걸지 않는다
+            _state.update {
+                if (it.isActive && it.startedAt == runStartedAt && it.crewShareSec == null) it.copy(shoeLifeSec = life) else it
+            }
         }
 
         // 일별 기록/목표 보너스 수집기까지 함께 보장한다 (중복 호출에 안전).
@@ -1388,6 +1399,19 @@ class WalkSessionService : Service() {
          * 적립 · 저장 · 업로드는 하나도 일어나지 않는다. 화면이 읽는 상태만 바꾼다.
          * 앱 코드에서는 부르지 않는다.
          */
+        /**
+         * 크루 러닝(서버 0070)의 내 몫 시간을 알린다 — 러닝 화면이 방 미리보기(출발 때 고른 신발 · 레벨 · 인원)에서 읽는다.
+         * 잠금화면 알림이 "크루 체력 12:34 남음"을 보인다. 크루 러닝은 개인 신발이 닳지 않아 신발 다 씀 안내를 끈다.
+         * 그 러닝(시작 시각)이 아니면 무시한다.
+         */
+        fun setCrewShare(startedAt: Long, shareSec: Int) {
+            _state.update {
+                if (it.isActive && it.startedAt == startedAt && it.crewShareSec != shareSec) {
+                    it.copy(crewShareSec = shareSec.coerceAtLeast(0), shoeLifeSec = null)
+                } else it
+            }
+        }
+
         @androidx.annotation.VisibleForTesting
         fun showStateForTest(state: WalkSessionState) {
             _state.value = state
