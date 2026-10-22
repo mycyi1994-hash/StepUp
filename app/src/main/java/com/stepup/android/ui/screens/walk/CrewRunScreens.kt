@@ -138,7 +138,15 @@ fun CrewRunEntryScreen(
         else -> CrewEntryUi.Loading
     }
     var picking by rememberSaveable { mutableStateOf(false) }
+    // 오늘 크루 러닝을 이미 했는지(0070, 하루 한 번 — 어느 크루에서든) — 고른 크루로 읽는다
+    val pickedCrew = (ui as? CrewEntryUi.Ready)?.crew?.id
+    val todayFlow = remember(pickedCrew) {
+        pickedCrew?.let { ServiceLocator.crewRun.today(it) } ?: kotlinx.coroutines.flow.flowOf(null)
+    }
+    val today by todayFlow.collectAsStateWithLifecycle(initialValue = pickedCrew?.let { ServiceLocator.crewRun.todayNow(it) })
+    LaunchedEffect(pickedCrew) { pickedCrew?.let { ServiceLocator.crewRun.loadToday(it) } }
     CrewRunEntryContent(
+        doneToday = today?.let { it.isToday() && it.ranToday } == true,
         ui = ui, onBack = onBack,
         onEnter = { id ->
             CrewRunChoice.current.value = id
@@ -170,6 +178,8 @@ fun CrewRunEntryContent(
     onFreeRun: () -> Unit,
     onRetry: () -> Unit,
     onSignIn: () -> Unit,
+    /** 오늘 크루 러닝을 이미 했다(0070) — 대기실에는 들어가지만 준비는 내일 */
+    doneToday: Boolean = false,
 ) {
     val tag = when (ui) {
         CrewEntryUi.Loading -> "crew-entry-loading"
@@ -234,6 +244,10 @@ fun CrewRunEntryContent(
                     } else {
                         Spacer(Modifier.height(12.dp))
                     }
+                }
+                if (doneToday) {
+                    Spacer(Modifier.height(12.dp))
+                    CrewNote(stringResource(R.string.crew_entry_done_today), tag = "crew-entry-done-today")
                 }
                 // 들어가는 순간 참가 · 생성이 일어난다 — 보기 전용 조회가 없어(CR02) 누르기 전에는 아무것도 하지 않는다는 한 줄
                 Text(
@@ -517,6 +531,11 @@ internal fun ColumnScope.CrewStartConfirmBody(ready: Int, notReady: Int, onGo: (
             }
         }
     }
+    // 크루 러닝은 하루 한 번(0070) — 출발 전에 한 번 더 알린다
+    Text(
+        stringResource(R.string.crew_start_once), style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.45f),
+        modifier = Modifier.padding(bottom = 12.dp).testTag("crew-start-once"),
+    )
     FreeRunButton(stringResource(R.string.run_crew_go_n, ready), onGo, Modifier.fillMaxWidth().testTag("crew-start-go"))
     Spacer(Modifier.height(10.dp))
     FreeRunButton(stringResource(R.string.run_crew_wait), onWait, Modifier.fillMaxWidth().testTag("crew-start-wait"),

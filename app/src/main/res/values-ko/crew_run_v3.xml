@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 러닝 3판(서버 0070, 2026-10-21) — 함께 쓰는 크루 체력 · 하루 한 번 · 500m · 인원 보너스 · 크루 레벨 1 ~ 20 -->
+<resources>
+    <!-- 크루 홈 · 규칙 시트 -->
+    <string name="crew_run_title">오늘 크루 러닝</string>
+    <string name="crew_run_can">오늘 크루 러닝을 할 수 있어요</string>
+    <string name="crew_run_done">오늘 크루 러닝을 마쳤어요</string>
+    <string name="crew_run_done_detail">%1$d명과 함께 · 크루 체력 %2$s / %3$s 썼어요</string>
+    <string name="crew_run_reset">내일 00:00(한국 시간)에 다시 할 수 있어요</string>
+    <string name="crew_run_today_runners">오늘 이 크루에서 %1$d명이 크루 러닝을 했어요</string>
+    <string name="crew_run_level_bonus">Lv.%1$d 보너스 · 크루 체력 +%2$s%% · 보상 +%3$s%%</string>
+    <string name="crew_run_sheet_title">크루 러닝 규칙</string>
+    <string name="crew_run_rule_pool">크루 체력은 출발 전에 고른 신발의 최대 내구도를 모두 더하고 크루 레벨 보너스를 곱한 값이에요. 한 사람이 1분 달릴 때마다 %1$s씩 쓰고, 몫은 모두 똑같아요.</string>
+    <string name="crew_run_rule_empty">크루 체력을 다 쓰면 그 뒤로는 적립되지 않아요. 기록은 그대로 이어져요.</string>
+    <string name="crew_run_rule_own">크루 러닝은 내 에너지와 내 신발 내구도를 쓰지 않아요. 같은 날 자유 러닝도 할 수 있어요.</string>
+    <string name="crew_run_rule_reward">보상은 내가 고른 신발의 효율에 인원 보너스와 크루 레벨 보너스를 더해 정해요.</string>
+    <string name="crew_run_rule_who">크루 방에서 함께 출발해 출발 %1$d분 뒤에도 서로 %2$dm 안에 있는 크루원이 2명 이상이면 크루 러닝이에요.</string>
+    <string name="crew_run_rule_once">크루 러닝은 하루에 한 번이에요. 일시정지는 괜찮지만 끝내면 그날 크루 러닝은 끝나요. 00:00(한국 시간)에 다시 열려요.</string>
+    <string name="crew_run_rule_alone">함께 달리던 크루원과 떨어져 혼자 남으면 1분 뒤 크루 러닝이 끝나요.</string>
+    <string name="crew_run_rule_room">크루 방은 %1$d명까지예요.</string>
+    <string name="crew_run_headcount_title">인원 보너스</string>
+    <string name="crew_run_headcount_n">%1$d명</string>
+    <string name="crew_run_headcount_range">%1$d ~ %2$d명</string>
+    <string name="crew_run_bonus_value">+%1$s%%</string>
+    <string name="crew_run_bonus_range_value">+%1$s ~ %2$s%% (한 명마다 +%3$s%%)</string>
+    <string name="crew_run_level_link">크루 레벨 보기</string>
+
+    <!-- 03 크루 레벨 — 크루 러닝 누적 거리 · 1 ~ 20 -->
+    <string name="crewhome_level_rule">크루 러닝으로 함께 달린 거리를 사람마다 더해 레벨이 올라요. 최고 레벨은 20이에요.</string>
+    <string name="crewhome_level_goal_km">%1$skm</string>
+    <string name="crewhome_level_progress">크루 러닝 %1$skm · 다음 레벨까지 %2$skm</string>
+    <string name="crewhome_level_max">최고 레벨이에요</string>
+    <string name="crewhome_level_max_body">크루 러닝으로 함께 %1$skm를 달렸어요.</string>
+    <string name="crewhome_level_bonus">지금 레벨 보너스 — 크루 체력 +%1$s%% · 보상 +%2$s%%</string>
+    <string name="crewhome_level_bonus_step">레벨이 하나 오를 때마다 크루 체력 +%1$s%%, 보상 +%2$s%%예요.</string>
+    <string name="crewhome_level_first">첫 크루 러닝을 마치면 Lv.1 이 돼요.</string>
+    <string name="crewhome_level_table">레벨 표</string>
+    <string name="crewhome_level_table_value">%1$skm · 체력 +%2$s%% · 보상 +%3$s%%</string>
+
+    <!-- 대기실 -->
+    <string name="crew_lobby_shoe">크루 러닝 신발</string>
+    <string name="crew_lobby_shoe_value">%1$s · 최대 내구도 %2$d</string>
+    <string name="crew_lobby_shoe_none">신발 없음</string>
+    <string name="crew_lobby_shoe_change">바꾸기</string>
+    <string name="crew_lobby_shoe_pick_title">크루 러닝에 신을 신발</string>
+    <string name="crew_lobby_shoe_pick_body">고른 신발의 최대 내구도가 크루 체력에 더해지고, 보상은 이 신발의 효율로 받아요. 크루 러닝에서는 신발이 닳지 않아요.</string>
+    <string name="crew_lobby_shoe_item">Lv.%1$d · 최대 내구도 %2$d · 효율 +%3$s%%</string>
+    <string name="crew_lobby_shoe_picked">고름</string>
+    <string name="crew_lobby_shoe_failed">신발을 바꾸지 못했어요. 다시 시도해 주세요.</string>
+    <string name="crew_lobby_pool">크루 체력</string>
+    <string name="crew_lobby_pool_value">%1$s · 한 사람 약 %2$d분</string>
+    <string name="crew_lobby_bonus">보너스</string>
+    <string name="crew_lobby_bonus_value">%1$d명 +%2$s%% · Lv.%3$d +%4$s%%</string>
+    <string name="crew_lobby_preview_note">미리보기예요. 출발 %1$d분 뒤 %2$dm 안에 함께 있는 크루원으로 다시 세요.</string>
+    <string name="crew_lobby_done_today">오늘 크루 러닝을 이미 했어요. 내일 00:00(한국 시간)에 다시 할 수 있어요.</string>
+    <string name="crew_lobby_pool_zero">크루 체력이 없어 이번 크루 러닝은 적립되지 않아요.</string>
+    <string name="crew_start_once">출발하면 오늘의 크루 러닝이 시작돼요. 끝내면 내일 다시 할 수 있어요.</string>
+
+    <!-- 달리는 중 -->
+    <string name="crew_live_pool">크루 체력</string>
+    <string name="crew_live_pool_left">%1$s 남음</string>
+    <string name="crew_live_pool_low">크루 체력이 얼마 남지 않았어요</string>
+    <string name="crew_live_pool_empty">크루 체력을 다 썼어요 · 지금부터는 적립되지 않고 기록만 이어져요</string>
+    <string name="crew_live_headcount">함께 %1$d명 · +%2$s%%</string>
+    <string name="crew_live_confirming">출발 %1$d분 뒤 함께 달린 크루원을 세요</string>
+    <string name="crew_live_alone">곁에 크루원이 없어요 · 1분 안에 %1$dm 안으로 돌아오면 크루 러닝이 이어져요</string>
+    <string name="crew_finish_once">끝내면 오늘 크루 러닝은 끝나요. 내일 다시 할 수 있어요.</string>
+    <string name="run_crew_pool_on">크루 러닝은 크루 체력으로 적립해요. 내 에너지와 신발 내구도는 그대로예요.</string>
+    <string name="run_crew_pool_empty">크루 체력을 다 써서 지금부터는 적립되지 않아요.</string>
+
+    <!-- 결과 -->
+    <string name="crew_result_pool">크루 체력 %1$s / %2$s 썼어요</string>
+    <string name="crew_result_bonus">함께 %1$d명 +%2$s%% · 크루 레벨 +%3$s%%</string>
+    <string name="crew_result_pool_empty">크루 체력을 다 쓴 뒤로는 적립되지 않았어요.</string>
+    <string name="crew_result_alone">혼자 남은 뒤로는 적립되지 않았어요.</string>
+    <string name="crew_result_level">크루 레벨에 %1$skm를 보탰어요.</string>
+    <string name="crew_result_level_up">크루 레벨 %1$d 달성!</string>
+    <string name="crew_result_not_crew">이 러닝은 크루 러닝으로 세지 않았어요. 출발 2분 뒤 함께 있던 크루원이 없었거나 오늘 크루 러닝을 이미 했어요.</string>
+
+    <!-- 크루 러닝 시작 화면 -->
+    <string name="crew_entry_done_today">오늘 크루 러닝을 마쳤어요 · 내일 00:00(한국 시간)에 다시 할 수 있어요</string>
+</resources>

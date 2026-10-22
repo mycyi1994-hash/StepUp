@@ -128,6 +128,26 @@ internal data class CrewLiveUi(
     val goalKm: Double,
     /** 내 목표 진행(0..1) — 거리를 모르면 null */
     val goalFraction: Float?,
+    /** 크루 체력(0070) — 크루 러닝이 아니거나 아직 모르면 null */
+    val pool: CrewLivePool? = null,
+)
+
+/** 달리는 중 크루 체력 — 내 몫 남은 시간 · 비율 · 단계 · 함께 인원(미리보기) · 보너스 · 2분 확인 중 · 혼자 남음 */
+@Immutable
+internal data class CrewLivePool(
+    /** "12:34" */
+    val left: String,
+    val fraction: Float,
+    val stage: com.stepup.android.domain.CrewPoolStage,
+    val runners: Int,
+    /** 인원 + 레벨 보너스(퍼센트 숫자) */
+    val bonusPercent: String,
+    /** 출발 2분 전 — 함께 달린 크루원을 아직 세지 않았다 */
+    val confirming: Boolean,
+    val confirmMinutes: Int,
+    /** 곁(500m)에 보이는 크루원이 없다 — 1분 안에 돌아오면 이어진다 */
+    val alone: Boolean,
+    val nearM: Int,
 )
 
 /**
@@ -181,6 +201,11 @@ internal fun CrewRunLive(
                     CrewBand(stringResource(R.string.run_crew_closed_band), Icons.Outlined.PeopleAlt, "run-crew-closed", band)
                 ui.link == CrewLink.Detached ->
                     CrewBand(stringResource(R.string.run_crew_detached_band), Icons.Outlined.LinkOff, "run-crew-detached", band)
+                // 크루 체력을 다 썼다 · 혼자 남았다(0070) — 기록은 이어진다
+                ui.pool?.stage == com.stepup.android.domain.CrewPoolStage.EMPTY ->
+                    CrewBand(stringResource(R.string.crew_live_pool_empty), Icons.Filled.Warning, "run-crew-pool-empty", band)
+                ui.pool?.alone == true ->
+                    CrewBand(stringResource(R.string.crew_live_alone, ui.pool.nearM), Icons.Outlined.PeopleAlt, "run-crew-alone", band)
                 ui.paused -> CrewBand(stringResource(R.string.run_crew_paused_band), Icons.Filled.Pause, "run-crew-others", band)
             }
             // 지도 카드 — 남는 높이를 모두 쓴다(버튼 · 기록은 늘 화면 안). 밝은 실제 지도 그대로(어두운 덧칠 없음)
@@ -214,6 +239,10 @@ internal fun CrewRunLive(
                         tag = "run-crew-detached-note")
                 }
                 Spacer(Modifier.height(gap))
+                ui.pool?.let { pool ->
+                    CrewPoolBar(pool)
+                    Spacer(Modifier.height(gap))
+                }
                 CrewCard(padding = 12.dp) {
                     Spacer(Modifier.height(if (compact) 2.dp else 6.dp))
                     CrewStatsRow(ui.distance, ui.time, ui.pace, if (compact) 24.sp else 28.sp, center = true)
@@ -256,6 +285,43 @@ internal fun CrewRunLive(
                 }
             }
         }
+    }
+}
+
+/** 크루 체력 한 줄 — "크루 체력" · 막대 · "12:34 남음", 아래에 함께 인원 · 보너스(2분 전에는 확인 중) */
+@Composable
+private fun CrewPoolBar(pool: CrewLivePool) {
+    val c = crewColors()
+    val t = runTone()
+    val tint = when (pool.stage) {
+        com.stepup.android.domain.CrewPoolStage.OK -> c.ready
+        com.stepup.android.domain.CrewPoolStage.LOW -> t.warnIcon
+        com.stepup.android.domain.CrewPoolStage.EMPTY -> t.errorIcon
+    }
+    Column(Modifier.fillMaxWidth().testTag("run-crew-pool")) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.crew_live_pool), style = runTextStyle(14.sp, c.label, FontWeight.SemiBold))
+            Spacer(Modifier.width(10.dp))
+            Box(Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.goalTrack)) {
+                Box(Modifier.fillMaxWidth(pool.fraction).height(8.dp).clip(RoundedCornerShape(4.dp)).background(tint))
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                stringResource(R.string.crew_live_pool_left, pool.left), style = runTextStyle(14.sp, tint, FontWeight.Bold),
+                modifier = Modifier.testTag("run-crew-pool-left"),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            when {
+                pool.stage == com.stepup.android.domain.CrewPoolStage.LOW -> stringResource(R.string.crew_live_pool_low)
+                pool.confirming -> stringResource(R.string.crew_live_headcount, pool.runners, pool.bonusPercent) + " · " +
+                    stringResource(R.string.crew_live_confirming, pool.confirmMinutes)
+                else -> stringResource(R.string.crew_live_headcount, pool.runners, pool.bonusPercent)
+            },
+            style = runTextStyle(13.sp, if (pool.stage == com.stepup.android.domain.CrewPoolStage.LOW) t.warnIcon else c.muted, FontWeight.Medium),
+            modifier = Modifier.testTag("run-crew-headcount"),
+        )
     }
 }
 
@@ -382,6 +448,8 @@ internal fun ColumnScope.CrewFinishSheetContent(
     onSave: () -> Unit,
     onContinue: () -> Unit,
     onDiscard: (() -> Unit)?,
+    /** 크루 러닝(0070)이면 끝내면 그날 크루 러닝이 끝난다고 한 줄 더 */
+    crewRunOnce: Boolean = false,
 ) {
     val c = crewColors()
     CrewSheetTitle(
@@ -407,6 +475,10 @@ internal fun ColumnScope.CrewFinishSheetContent(
     Spacer(Modifier.height(10.dp))
     Text(stringResource(R.string.run_crew_end_paused), style = runTextStyle(13.sp, c.muted, FontWeight.Medium),
         modifier = Modifier.fillMaxWidth())
+    if (crewRunOnce) {
+        Text(stringResource(R.string.crew_finish_once), style = runTextStyle(13.sp, c.label, FontWeight.SemiBold),
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp).testTag("run-crew-end-once"))
+    }
     Spacer(Modifier.height(14.dp))
     FreeRunButton(stringResource(R.string.run_free_save_finish), onSave, Modifier.fillMaxWidth().testTag("run-end-save"))
     Spacer(Modifier.height(10.dp))

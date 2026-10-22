@@ -5,9 +5,6 @@ import com.stepup.android.domain.CrewHomeSummary
 import com.stepup.android.domain.CrewMeeting
 import com.stepup.android.domain.CrewRun
 import com.stepup.android.domain.CrewRunDetail
-import com.stepup.android.domain.CrewStamina
-import com.stepup.android.domain.CrewStaminaMe
-import com.stepup.android.domain.CrewStaminaMember
 import com.stepup.android.domain.CrewWeek
 import com.stepup.android.domain.CrewWeekMember
 import com.stepup.android.domain.MeetingAttendee
@@ -96,10 +93,6 @@ class CrewHomeApi(private val server: StepUpServer) {
     /** 19 러닝 한 건 */
     suspend fun run(runId: Long): ServerResult<RunDetailRow> =
         rpc("crew_run", jsonBody { put("p_run", runId) }) { serverJson.decodeFromString<RunDetailRow>(it) }
-
-    /** 오늘(한국 시각)의 크루 체력(0069) — 크루원만. 그날 처음 읽으면 서버가 그때 정한다 */
-    suspend fun stamina(crewId: String): ServerResult<CrewStaminaRow> =
-        rpc("crew_stamina", jsonBody { put("p_crew", crewId) }) { serverJson.decodeFromString<CrewStaminaRow>(it) }
 
     private suspend fun <T> rpc(name: String, body: String, parse: (String) -> T?): ServerResult<T> =
         server.authed { token ->
@@ -266,51 +259,4 @@ data class RunDetailRow(
         crewId = crewId,
         route = CrewHomeRules.route(route.orEmpty()),
     )
-}
-
-/** 크루 체력의 나(0069) */
-@Serializable
-data class CrewStaminaMeRow(
-    @SerialName("user_id") val userId: String = "",
-    val contributor: Boolean = false,
-    val contribution: Double = 0.0,
-    val used: Double = 0.0,
-    val left: Double = 0.0,
-)
-
-@Serializable
-data class CrewStaminaMemberRow(
-    @SerialName("user_id") val userId: String = "",
-    val name: String? = null,
-    val contribution: Double = 0.0,
-)
-
-/** 오늘의 크루 체력(crew_stamina, 0069) */
-@Serializable
-data class CrewStaminaRow(
-    val day: String = "",
-    val max: Double = 0.0,
-    val used: Double = 0.0,
-    val left: Double = 0.0,
-    val contributors: Int = 0,
-    val share: Double = 0.0,
-    val level: Int = 1,
-    @SerialName("level_bonus") val levelBonus: Double = 0.0,
-    val me: CrewStaminaMeRow = CrewStaminaMeRow(),
-    val members: List<CrewStaminaMemberRow> = emptyList(),
-    @SerialName("crew_level") val crewLevel: Int? = null,
-    @SerialName("run_km") val runKm: Double = 0.0,
-    @SerialName("next_level_km") val nextLevelKm: Double? = null,
-) {
-    /** 날짜를 읽지 못하면 null — 어느 날의 체력인지 모르는 값은 보이지 않는다 */
-    fun toDomain(crewId: String): CrewStamina? {
-        val date = runCatching { LocalDate.parse(day) }.getOrNull() ?: return null
-        return CrewStamina(
-            crewId = crewId, day = date, max = max, used = used, left = left, contributors = contributors, share = share,
-            level = level, levelBonus = levelBonus,
-            me = CrewStaminaMe(me.contributor, me.contribution, me.used, me.left, me.userId),
-            members = members.map { CrewStaminaMember(it.userId, it.name.orEmpty(), it.contribution) },
-            crewLevel = crewLevel, runKm = runKm, nextLevelKm = nextLevelKm,
-        )
-    }
 }

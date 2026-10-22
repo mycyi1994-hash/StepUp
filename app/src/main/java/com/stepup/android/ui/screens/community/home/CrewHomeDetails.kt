@@ -56,7 +56,7 @@ import com.stepup.android.domain.CrewLevelInfo
 import com.stepup.android.domain.CrewMember
 import com.stepup.android.domain.CrewPersonRole
 import com.stepup.android.domain.CrewRun
-import com.stepup.android.domain.CrewStaminaRules
+import com.stepup.android.domain.CrewRunMath
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.chat.ChatRetryState
 import com.stepup.android.ui.screens.community.crew.CrewAvatar
@@ -251,10 +251,10 @@ private fun CrewLevelNext(info: CrewLevelInfo, runKm: Double) {
                     )
                 }
                 Spacer(Modifier.height(12.dp))
-                BlueBar(CrewStaminaRules.levelProgress(runKm, info.level, next, info.levels), Modifier.fillMaxWidth().height(10.dp))
+                BlueBar(CrewRunMath.levelProgress(runKm, info.level, next, info.levels), Modifier.fillMaxWidth().height(10.dp))
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    stringResource(R.string.crewhome_level_progress, km(runKm), km(CrewStaminaRules.kmToNext(runKm, next) ?: 0.0)),
+                    stringResource(R.string.crewhome_level_progress, km(runKm), km(CrewRunMath.kmToNext(runKm, next) ?: 0.0)),
                     style = blueText(15.sp, ink.text, FontWeight.SemiBold, 1.45f), modifier = Modifier.testTag("home-level-progress"),
                 )
             } else {
@@ -269,15 +269,37 @@ private fun CrewLevelNext(info: CrewLevelInfo, runKm: Double) {
         }
     }
     Spacer(Modifier.height(14.dp))
-    // 레벨이 더하는 크루 체력(0069) — 서버가 준 레벨 표에서 한 레벨의 몫을 읽는다
-    val bonusNow = info.levelBonus ?: CrewStaminaRules.levelBonus(info.level)
-    val step = info.levels.getOrNull(1)?.let { second -> second.bonus - info.levels[0].bonus } ?: CrewStaminaRules.LEVEL_BONUS
+    // 레벨이 더하는 크루 체력 · 보상(0070) — 서버가 준 값 그대로. 한 레벨의 몫은 레벨 표의 1 → 2 차이
+    val second = info.levels.firstOrNull { it.level == 2 }
+    val first = info.levels.firstOrNull { it.level == 1 }
+    val staminaStep = if (first != null && second != null) second.stamina - first.stamina else CrewRunMath.levelStamina(2)
+    val rewardStep = if (first != null && second != null) second.reward - first.reward else CrewRunMath.levelReward(2)
     Text(
-        stringResource(R.string.crewhome_level_bonus, CrewStaminaRules.amount(bonusNow)), style = blueText(16.sp, ink.info, FontWeight.Bold),
-        modifier = Modifier.testTag("home-level-bonus"),
+        stringResource(R.string.crewhome_level_bonus, CrewRunMath.percent(info.staminaBonus), CrewRunMath.percent(info.rewardBonus)),
+        style = blueText(16.sp, ink.info, FontWeight.Bold), modifier = Modifier.testTag("home-level-bonus"),
     )
     Spacer(Modifier.height(4.dp))
-    Text(stringResource(R.string.crewhome_level_bonus_step, CrewStaminaRules.amount(step)), style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f))
+    Text(
+        stringResource(R.string.crewhome_level_bonus_step, CrewRunMath.percent(staminaStep), CrewRunMath.percent(rewardStep)),
+        style = blueText(15.sp, ink.secondary, FontWeight.Medium, 1.45f),
+    )
+    // 레벨 표(1 ~ 20) — 지금 레벨을 표시한다
+    if (info.levels.isNotEmpty()) {
+        Spacer(Modifier.height(22.dp))
+        HomeLabel(stringResource(R.string.crewhome_level_table))
+        Spacer(Modifier.height(4.dp))
+        info.levels.sortedBy { it.level }.forEach { step ->
+            val now = step.level == (info.level ?: 0)
+            HomeValueRow(
+                label = stringResource(R.string.crew_level_value, step.level),
+                value = stringResource(
+                    R.string.crewhome_level_table_value, km(step.km), CrewRunMath.percent(step.stamina), CrewRunMath.percent(step.reward),
+                ),
+                modifier = Modifier.testTag(if (now) "home-level-row-now" else "home-level-row"),
+                highlight = now,
+            )
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────

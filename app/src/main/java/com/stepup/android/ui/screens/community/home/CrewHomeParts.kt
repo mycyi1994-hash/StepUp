@@ -284,12 +284,18 @@ internal fun HomeSkeleton(modifier: Modifier = Modifier) {
 
 /** 한 줄 값 — 이름 왼쪽, 값 오른쪽, 아래 선(01 · 05 · 06) */
 @Composable
-internal fun HomeValueRow(label: String, value: String, modifier: Modifier = Modifier) {
+internal fun HomeValueRow(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
     val ink = blueInk()
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().heightIn(min = 62.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = blueText(15.sp, ink.secondary, FontWeight.Medium), modifier = Modifier.weight(1f))
-            Text(value, style = blueText(17.sp, ink.text, FontWeight.Bold), textAlign = TextAlign.End, modifier = Modifier.padding(start = 16.dp))
+            Text(
+                label, style = blueText(15.sp, if (highlight) ink.info else ink.secondary, if (highlight) FontWeight.Bold else FontWeight.Medium),
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                value, style = blueText(17.sp, if (highlight) ink.info else ink.text, FontWeight.Bold), textAlign = TextAlign.End,
+                modifier = Modifier.padding(start = 16.dp),
+            )
         }
         HomeDivider()
     }

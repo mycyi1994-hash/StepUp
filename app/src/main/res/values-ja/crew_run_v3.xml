@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 러닝 3판(서버 0070, 2026-10-21) — 함께 쓰는 크루 체력 · 하루 한 번 · 500m · 인원 보너스 · 크루 레벨 1 ~ 20 -->
+<resources>
+    <string name="crew_run_title">今日のクルーラン</string>
+    <string name="crew_run_can">今日のクルーランができます</string>
+    <string name="crew_run_done">今日のクルーランは完了しました</string>
+    <string name="crew_run_done_detail">%1$d人で · クルー体力 %2$s / %3$s を使いました</string>
+    <string name="crew_run_reset">明日 00:00(韓国時間)にまたできます</string>
+    <string name="crew_run_today_runners">今日このクルーで%1$d人がクルーランをしました</string>
+    <string name="crew_run_level_bonus">Lv.%1$d ボーナス · クルー体力 +%2$s%% · 報酬 +%3$s%%</string>
+    <string name="crew_run_sheet_title">クルーランのルール</string>
+    <string name="crew_run_rule_pool">クルー体力は、スタート前に選んだシューズの最大耐久度をすべて足し、クルーレベルボーナスを掛けた値です。1人が1分走るごとに%1$sずつ使い、取り分は全員同じです。</string>
+    <string name="crew_run_rule_empty">クルー体力を使い切ると、その後は獲得されません。記録はそのまま続きます。</string>
+    <string name="crew_run_rule_own">クルーランは自分のエネルギーとシューズ耐久度を使いません。同じ日にフリーランもできます。</string>
+    <string name="crew_run_rule_reward">報酬は選んだシューズの効率に、人数ボーナスとクルーレベルボーナスを足して決まります。</string>
+    <string name="crew_run_rule_who">クルールームで一緒にスタートし、スタート%1$d分後もお互い%2$dm以内にいるクルーメンバーが2人以上ならクルーランです。</string>
+    <string name="crew_run_rule_once">クルーランは1日1回です。一時停止は大丈夫ですが、終えるとその日のクルーランは終わります。00:00(韓国時間)にまた開きます。</string>
+    <string name="crew_run_rule_alone">一緒に走っていたクルーから離れて1人になると、1分後にクルーランが終わります。</string>
+    <string name="crew_run_rule_room">クルールームは%1$d人までです。</string>
+    <string name="crew_run_headcount_title">人数ボーナス</string>
+    <string name="crew_run_headcount_n">%1$d人</string>
+    <string name="crew_run_headcount_range">%1$d〜%2$d人</string>
+    <string name="crew_run_bonus_value">+%1$s%%</string>
+    <string name="crew_run_bonus_range_value">+%1$s〜%2$s%%(1人ごとに +%3$s%%)</string>
+    <string name="crew_run_level_link">クルーレベルを見る</string>
+
+    <string name="crewhome_level_rule">クルーランで一緒に走った距離を1人ずつ足してレベルが上がります。最高レベルは20です。</string>
+    <string name="crewhome_level_goal_km">%1$skm</string>
+    <string name="crewhome_level_progress">クルーラン %1$skm · 次のレベルまで %2$skm</string>
+    <string name="crewhome_level_max">最高レベルです</string>
+    <string name="crewhome_level_max_body">クルーランで一緒に%1$skm走りました。</string>
+    <string name="crewhome_level_bonus">今のレベルボーナス — クルー体力 +%1$s%% · 報酬 +%2$s%%</string>
+    <string name="crewhome_level_bonus_step">レベルが1つ上がるごとにクルー体力 +%1$s%%、報酬 +%2$s%% です。</string>
+    <string name="crewhome_level_first">最初のクルーランを終えると Lv.1 になります。</string>
+    <string name="crewhome_level_table">レベル表</string>
+    <string name="crewhome_level_table_value">%1$skm · 体力 +%2$s%% · 報酬 +%3$s%%</string>
+
+    <string name="crew_lobby_shoe">クルーランのシューズ</string>
+    <string name="crew_lobby_shoe_value">%1$s · 最大耐久度 %2$d</string>
+    <string name="crew_lobby_shoe_none">シューズなし</string>
+    <string name="crew_lobby_shoe_change">変更</string>
+    <string name="crew_lobby_shoe_pick_title">クルーランで履くシューズ</string>
+    <string name="crew_lobby_shoe_pick_body">選んだシューズの最大耐久度がクルー体力に加わり、報酬はこのシューズの効率で受け取ります。クルーランではシューズはすり減りません。</string>
+    <string name="crew_lobby_shoe_item">Lv.%1$d · 最大耐久度 %2$d · 効率 +%3$s%%</string>
+    <string name="crew_lobby_shoe_picked">選択中</string>
+    <string name="crew_lobby_shoe_failed">シューズを変更できませんでした。もう一度お試しください。</string>
+    <string name="crew_lobby_pool">クルー体力</string>
+    <string name="crew_lobby_pool_value">%1$s · 1人 約%2$d分</string>
+    <string name="crew_lobby_bonus">ボーナス</string>
+    <string name="crew_lobby_bonus_value">%1$d人 +%2$s%% · Lv.%3$d +%4$s%%</string>
+    <string name="crew_lobby_preview_note">プレビューです。スタート%1$d分後に%2$dm以内に一緒にいるクルーで数え直します。</string>
+    <string name="crew_lobby_done_today">今日のクルーランはもう済んでいます。明日 00:00(韓国時間)にまたできます。</string>
+    <string name="crew_lobby_pool_zero">クルー体力がないため、今回のクルーランは獲得されません。</string>
+    <string name="crew_start_once">スタートすると今日のクルーランが始まります。終えると次は明日です。</string>
+
+    <string name="crew_live_pool">クルー体力</string>
+    <string name="crew_live_pool_left">残り %1$s</string>
+    <string name="crew_live_pool_low">クルー体力が残りわずかです</string>
+    <string name="crew_live_pool_empty">クルー体力を使い切りました · ここからは獲得されず記録だけ続きます</string>
+    <string name="crew_live_headcount">%1$d人で · +%2$s%%</string>
+    <string name="crew_live_confirming">スタート%1$d分後に一緒に走っているクルーを数えます</string>
+    <string name="crew_live_alone">近くにクルーがいません · 1分以内に%1$dm以内に戻るとクルーランが続きます</string>
+    <string name="crew_finish_once">終えると今日のクルーランは終わります。明日またできます。</string>
+    <string name="run_crew_pool_on">クルーランはクルー体力で獲得します。自分のエネルギーとシューズ耐久度はそのままです。</string>
+    <string name="run_crew_pool_empty">クルー体力を使い切ったため、ここからは獲得されません。</string>
+
+    <string name="crew_result_pool">クルー体力 %1$s / %2$s を使いました</string>
+    <string name="crew_result_bonus">%1$d人で +%2$s%% · クルーレベル +%3$s%%</string>
+    <string name="crew_result_pool_empty">クルー体力を使い切った後は獲得されませんでした。</string>
+    <string name="crew_result_alone">1人になった後は獲得されませんでした。</string>
+    <string name="crew_result_level">クルーレベルに%1$skmを加えました。</string>
+    <string name="crew_result_level_up">クルーレベル %1$d 達成!</string>
+    <string name="crew_result_not_crew">このランはクルーランとして数えられませんでした。スタート2分後に一緒にいたクルーがいなかったか、今日のクルーランをすでに済ませています。</string>
+
+    <string name="crew_entry_done_today">今日のクルーランは完了 · 明日 00:00(韓国時間)にまたできます</string>
+</resources>

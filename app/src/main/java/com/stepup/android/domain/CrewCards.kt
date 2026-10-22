@@ -421,8 +421,9 @@ data class CrewPerson(
 )
 
 /**
- * 레벨 안내 — 레벨과 이번 주 활동. 0069 부터 레벨 기준(크루 러닝 누적 거리 [runKm] · 다음 레벨 거리 [nextLevelKm] · 레벨 표)과
- * 레벨이 더하는 크루 체력([levelBonus]) — 그 전 서버면 [runKm] 이 null 이다(기준을 보이지 않는다).
+ * 레벨 안내 — 레벨과 이번 주 활동. 0069 부터 레벨 기준(크루 러닝 누적 거리 [runKm] · 다음 레벨 거리 [nextLevelKm] · 레벨 표) —
+ * 그 전 서버면 [runKm] 이 null 이다(기준을 보이지 않는다). 0070 부터 레벨 1 ~ 20, 레벨이 더하는 크루 체력([staminaBonus]) ·
+ * 보상([rewardBonus]) 비율.
  */
 data class CrewLevelInfo(
     val level: Int?,
@@ -431,7 +432,8 @@ data class CrewLevelInfo(
     val memberCount: Int,
     val runKm: Double? = null,
     val nextLevelKm: Double? = null,
-    val levelBonus: Double? = null,
+    val staminaBonus: Double = CrewRunMath.levelStamina(level),
+    val rewardBonus: Double = CrewRunMath.levelReward(level),
     val levels: List<CrewLevelStep> = emptyList(),
 )
 
