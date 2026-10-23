@@ -1607,7 +1607,7 @@ StepUp と走り出そう。</string>
     <string name="challenge_history_empty">完了したチャレンジはまだありません</string>
     <string name="challenge_history_event">チャレンジ報酬</string>
     <string name="test_update_title">新しいバージョンがあります</string>
-    <string name="test_update_body">新しいStepUpテスト版が出ました。「アップデート」を押すとダウンロードしてAndroidのインストール画面が開きます — そこでもう一度「アップデート」を押せば完了です。記録とログインはそのまま残ります。</string>
+    <string name="test_update_body">新しいStepUpテスト版が出ました。「アップデート」を押すとダウンロードしてAndroidのインストール画面が開きます — そこでもう一度「アップデート」を押せば完了です。Google Playプロテクトの画面が出たら「アプリをスキャン」(または「送信」)を選んでから「インストール」を押してください。記録とログインはそのまま残ります。</string>
     <string name="test_update_downloading">新しいバージョンをダウンロード中…</string>
     <string name="test_update_failed">ダウンロードが途切れたか、ファイルが壊れていました。接続を確認してもう一度お試しください。</string>
     <string name="test_update_versions">この端末: %1$s → 新しい版: %2$s</string>

@@ -1606,7 +1606,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="challenge_history_empty">아직 완료한 챌린지가 없어요</string>
     <string name="challenge_history_event">챌린지 보상</string>
     <string name="test_update_title">새 버전이 있어요</string>
-    <string name="test_update_body">더 새로운 StepUp 테스트 빌드가 나왔어요. \"업데이트\"를 누르면 받아서 안드로이드 설치 화면을 열어요 — 거기서 \"업데이트\"를 한 번 더 누르면 끝나요. 기록과 로그인은 그대로 남아요.</string>
+    <string name="test_update_body">더 새로운 StepUp 테스트 빌드가 나왔어요. \"업데이트\"를 누르면 받아서 안드로이드 설치 화면을 열어요 — 거기서 \"업데이트\"를 한 번 더 누르면 끝나요. Google Play 프로텍트 창이 뜨면 \"앱 검사\"(또는 \"보내기\")를 고른 뒤 \"설치\"를 눌러 주세요. 기록과 로그인은 그대로 남아요.</string>
     <string name="test_update_downloading">새 버전을 받는 중이에요…</string>
     <string name="test_update_failed">받다가 끊겼거나 파일이 깨졌어요. 연결을 확인하고 다시 해 주세요.</string>
     <string name="test_update_versions">이 폰: %1$s → 새 버전: %2$s</string>

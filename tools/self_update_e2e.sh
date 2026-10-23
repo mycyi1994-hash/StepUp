@@ -72,7 +72,7 @@ foreground_case() {
   local tag=$1 pressed=0 last=""
   adb logcat -c
   adb shell am start -n "$PKG/.MainActivity" >/dev/null
-  for i in $(seq 1 45); do
+  for i in $(seq 1 60); do
     sleep 3
     if updated; then break; fi
     shot "$tag-$i"
@@ -84,7 +84,7 @@ foreground_case() {
     fi
     if ! grep -q "package=\"$PKG\"" "$OUT/$tag-$i.xml"; then
       # 안드로이드 설치 화면 · Play 프로텍트 — 설치를 이어 가는 단추를 누른다(보고 · 취소 단추는 누르지 않는다)
-      tap_text "$OUT/$tag-$i.xml" "Update" "Install" "Install anyway" "Install without scanning" "Scan app" "Send" "OK" "Continue" "Done" >/dev/null 2>&1 && log "$tag: tapped through ($now)"
+      tap_text "$OUT/$tag-$i.xml" "Update" "Install" "Install anyway" "Install without scanning" "Scan app" "Send this time" "Send" "OK" "Continue" "Done" >/dev/null 2>&1 && log "$tag: tapped through ($now)"
     fi
   done
   if updated; then log "$tag: UPDATED · $(info)"; logs 15; return 0; fi
@@ -101,8 +101,10 @@ install_old "$BROWSER"
 log "A before · $(info)"
 foreground_case A || status=1
 
-log "== B: installer = the app — old build again"
-reinstall_old "$PKG"
+# 고친 흐름(안드로이드 설치 화면)으로 한 번 올라간 앱은 설치자가 안드로이드 설치 프로그램이다 — 그 상태에서 다음 업데이트
+B_INSTALLER=$(adb shell pm list packages | grep -oE "com\.(google\.)?android\.packageinstaller" | head -1)
+log "== B: installer = ${B_INSTALLER} — old build again"
+reinstall_old "$B_INSTALLER"
 log "B before · $(info)"
 foreground_case B || status=1
 
