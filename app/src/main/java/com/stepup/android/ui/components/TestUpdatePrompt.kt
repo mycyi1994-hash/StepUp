@@ -139,5 +139,6 @@ private fun failureText(reason: TestUpdates.Failure): Int = when (reason) {
     TestUpdates.Failure.DOWNGRADE -> R.string.test_update_failed_downgrade
     TestUpdates.Failure.STORAGE -> R.string.test_update_failed_storage
     TestUpdates.Failure.BLOCKED -> R.string.test_update_failed_blocked
+    TestUpdates.Failure.UNFINISHED -> R.string.test_update_unfinished
     TestUpdates.Failure.OTHER -> R.string.test_update_failed_other
 }

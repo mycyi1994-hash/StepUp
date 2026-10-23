@@ -5,6 +5,7 @@
 #   B. 앱이 스스로 깐 뒤(설치한 앱 = StepUp): 다시 옛 빌드로 → "Update" → 새 빌드
 #   C. 앱이 꺼져 있을 때 일꾼: 옛 빌드 → 일꾼을 바로 돌려 → 새 빌드(또는 "새 버전이 있어요" 알림)
 # 화면마다 보이는 글을 로그에 그대로 적는다 — 안드로이드 · Play 프로텍트가 무엇을 띄웠는지 아티팩트 없이 읽게.
+# Play 프로텍트 창이 뜨면 '앱 검사(Scan app)' 쪽을 누른다 — 사람이 고를 만한 쪽.
 # 인자: 옛 qa APK 경로, 이름표. 결과는 self-update-e2e/<이름표>/.
 set -uo pipefail
 OLD_APK=${1:?old qa apk}
@@ -83,7 +84,7 @@ foreground_case() {
     fi
     if ! grep -q "package=\"$PKG\"" "$OUT/$tag-$i.xml"; then
       # 안드로이드 설치 화면 · Play 프로텍트 — 설치를 이어 가는 단추를 누른다(보고 · 취소 단추는 누르지 않는다)
-      tap_text "$OUT/$tag-$i.xml" "Update" "Install" "Install anyway" "Install without scanning" "Done" "OK" "Continue" >/dev/null 2>&1 && log "$tag: tapped through ($now)"
+      tap_text "$OUT/$tag-$i.xml" "Update" "Install" "Install anyway" "Install without scanning" "Scan app" "Send" "OK" "Continue" "Done" >/dev/null 2>&1 && log "$tag: tapped through ($now)"
     fi
   done
   if updated; then log "$tag: UPDATED · $(info)"; logs 15; return 0; fi

@@ -2,7 +2,8 @@ name: Self-update E2E
 
 # 테스트 APK 스스로 업데이트를 에뮬레이터에서 끝까지 — 옛 main 빌드를 깔고 진짜 test-apk 릴리스로 올라가는지(tools/self_update_e2e.sh).
 # 손으로만(또는 이 파일 · 스크립트를 고친 작업 브랜치 푸시). 옛 빌드는 그 커밋의 Build APK 아티팩트(StepUp-qa-apk)를 쓴다:
-#   a7b05ed — 10/18 이전 옛 방식(설치 화면을 여는 것) 마지막 빌드, 6f5435c — 설치 세션 방식(#110 뒤)
+#   6f5435c — 설치 세션 방식(2026-10-18 ~ 10-22, 지금 폰들의 앱). 그리고 이 브랜치의 코드를 -PstepupCommitTime=1 로 만든
+#   "아주 옛" qa 빌드 — 고친 업데이트 흐름(안드로이드 설치 화면)이 지금 test-apk 로 올라가는지.
 on:
   workflow_dispatch:
   push:
@@ -10,6 +11,7 @@ on:
     paths:
       - .github/workflows/self-update-e2e.yml
       - tools/self_update_e2e.sh
+      - app/src/main/java/com/stepup/android/core/TestUpdate*.kt
 
 permissions:
   contents: read
@@ -30,12 +32,24 @@ jobs:
             target: google_apis_playstore
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+      - name: Build this branch as a very old qa APK
+        run: |
+          ./gradlew :app:assembleQa -PstepupCommitTime=1 --stacktrace
+          mkdir -p fixed && cp app/build/outputs/apk/qa/app-qa.apk fixed/
+          ./gradlew --stop
       - name: Download the old qa APKs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for sha in a7b05ed 6f5435c; do
+          for sha in 6f5435c; do
             full=$(gh api "repos/${GITHUB_REPOSITORY}/commits/$sha" --jq .sha)
             run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=$full&event=push&branch=main" \
               --jq '[.workflow_runs[] | select(.name=="Build APK" and .conclusion=="success")][0].id')
@@ -59,7 +73,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: |
-            bash tools/self_update_e2e.sh old-a7b05ed/app-qa.apk old-flow-a7b05ed
+            bash tools/self_update_e2e.sh fixed/app-qa.apk fixed-installer-screen
             bash tools/self_update_e2e.sh old-6f5435c/app-qa.apk session-6f5435c
       - name: Summary
         if: always()
