@@ -1,25 +1,37 @@
 #!/usr/bin/env bash
 # 테스트 APK 스스로 업데이트를 에뮬레이터에서 처음부터 끝까지 — 옛 main 빌드(qa)를 깔고, 진짜 test-apk 릴리스로 올라가는지 본다.
-# (2026-10-23 사용자 "자동업데이트가 안 되는 거 같아 확인해봐")
-#   A. 밖에서 깐 앱(브라우저 · adb — 설치한 앱이 StepUp 이 아님): 앱 창의 "Update" → (안드로이드 확인 화면) → 새 빌드
-#   B. 앱이 스스로 깐 뒤(설치한 앱 = StepUp): 다시 옛 빌드로 → "Update" 만으로 확인 없이 새 빌드
+# (2026-10-23 사용자 "자동업데이트가 안 되는 거 같아 확인해봐" · "업데이트 떠도 '앱이 설치되지 않았습니다'")
+#   A. 브라우저로 받아 깐 앱(설치한 앱 = Chrome): 앱 창의 "Update" → (안드로이드 확인 화면) → 새 빌드
+#   B. 앱이 스스로 깐 뒤(설치한 앱 = StepUp): 다시 옛 빌드로 → "Update" → 새 빌드
 #   C. 앱이 꺼져 있을 때 일꾼: 옛 빌드 → 일꾼을 바로 돌려 → 새 빌드(또는 "새 버전이 있어요" 알림)
-# 인자: 옛 qa APK 경로. 결과는 self-update-e2e/ (화면 · 화면 구조 · logcat · 요약).
+# 화면마다 보이는 글을 로그에 그대로 적는다 — 안드로이드 · Play 프로텍트가 무엇을 띄웠는지 아티팩트 없이 읽게.
+# 인자: 옛 qa APK 경로, 이름표. 결과는 self-update-e2e/<이름표>/.
 set -uo pipefail
 OLD_APK=${1:?old qa apk}
+LABEL=${2:-run}
 PKG=com.stepup.android
-OUT=self-update-e2e
+OUT=self-update-e2e/$LABEL
 mkdir -p "$OUT"
 REL=https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk
-curl -sSL -o "$OUT/release.apk" "$REL/StepUp-test.apk"
-curl -sSL -o "$OUT/release.json" "$REL/StepUp-test.json"
-RELEASE_SHA=$(sha256sum "$OUT/release.apk" | cut -d' ' -f1)
-echo "release: $(cat "$OUT/release.json") sha256=$RELEASE_SHA" | tee "$OUT/summary.txt"
+[ -f self-update-e2e/release.apk ] || curl -sSL -o self-update-e2e/release.apk "$REL/StepUp-test.apk"
+RELEASE_SHA=$(sha256sum self-update-e2e/release.apk | cut -d' ' -f1)
+log() { echo "[$LABEL] $*" | tee -a "$OUT/summary.txt"; }
+log "release sha256=$RELEASE_SHA · android $(adb shell getprop ro.build.version.release | tr -d '\r') · $(adb shell pm list packages | grep -cE 'com.android.vending|com.android.chrome') of vending/chrome"
 
-info() { adb shell dumpsys package "$PKG" | grep -E "versionCode=|lastUpdateTime=|installerPackageName=|installInitiatingPackageName=" | sed 's/^ *//' | sort -u; }
-installed_sha() { local p; p=$(adb shell pm path "$PKG" | head -1 | sed 's/^package://' | tr -d '\r'); adb pull "$p" "$OUT/installed.apk" >/dev/null 2>&1; sha256sum "$OUT/installed.apk" | cut -d' ' -f1; }
+info() { adb shell dumpsys package "$PKG" | grep -E "versionCode=|lastUpdateTime=|installerPackageName=|initiatingPackageName=|updateOwnerPackageName=" | sed 's/^ *//' | sort -u | tr '\n' ' '; }
+installed_sha() { local p; p=$(adb shell pm path "$PKG" 2>/dev/null | head -1 | sed 's/^package://' | tr -d '\r'); [ -n "$p" ] || { echo none; return; }; adb pull "$p" "$OUT/installed.apk" >/dev/null 2>&1; sha256sum "$OUT/installed.apk" | cut -d' ' -f1; }
+updated() { [ "$(installed_sha)" = "$RELEASE_SHA" ]; }
 shot() { adb exec-out screencap -p > "$OUT/$1.png" 2>/dev/null; adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml "$OUT/$1.xml" >/dev/null 2>&1; }
-# 화면 구조에서 글자가 맞는 칸의 가운데를 누른다
+# 화면에 보이는 글(앞쪽 몇 개)과 맨 앞 앱
+texts() { python3 - "$1" <<'PY'
+import re, sys
+try: xml = open(sys.argv[1], encoding='utf-8', errors='ignore').read()
+except Exception: print('(no dump)'); sys.exit()
+pk = re.findall(r'package="([^"]+)"', xml)
+t = [x for x in re.findall(r'text="([^"]+)"', xml) if x.strip()]
+print((pk[0] if pk else '?') + ' | ' + ' / '.join(t[:14])[:400])
+PY
+}
 tap_text() {
   local xml=$1; shift
   local xy
@@ -36,68 +48,77 @@ PY
 ) || return 1
   adb shell input tap $xy
 }
-fresh_old() { # $1 = install args
+install_old() { # $1 = installer package (빈 값 = adb)
   adb uninstall "$PKG" >/dev/null 2>&1
-  adb install $1 "$OLD_APK" | tail -1
+  if [ -n "$1" ]; then
+    adb push "$OLD_APK" /data/local/tmp/old.apk >/dev/null
+    adb shell pm install -r -i "$1" /data/local/tmp/old.apk | tail -1
+  else
+    adb install -r "$OLD_APK" | tail -1
+  fi
   adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS 2>/dev/null
+  adb shell pm grant "$PKG" android.permission.ACTIVITY_RECOGNITION 2>/dev/null
   adb shell appops set "$PKG" REQUEST_INSTALL_PACKAGES allow
 }
-reinstall_old() { adb install -r -d $1 "$OLD_APK" | tail -1; adb shell appops set "$PKG" REQUEST_INSTALL_PACKAGES allow; }
-updated() { [ "$(installed_sha)" = "$RELEASE_SHA" ]; }
+reinstall_old() { adb push "$OLD_APK" /data/local/tmp/old.apk >/dev/null; adb shell pm install -r -d -i "$1" /data/local/tmp/old.apk | tail -1; adb shell appops set "$PKG" REQUEST_INSTALL_PACKAGES allow; }
+logs() { # 설치 · 일꾼 · 우리 앱의 줄만
+  adb logcat -d | grep -E "PackageInstaller|PackageManager|InstallStart|InstallInstalling|InstallFailed|PackageVerifier|Finsky|PlayProtect|Verifier|WM-|TestUpdate|stepup|AndroidRuntime" \
+    | grep -viE "chatty|ResourcesManager" | tail -${1:-40} | sed "s/^/[$LABEL]   log: /"
+}
 
-# 앱을 켜고 새 버전 창의 "Update" 를 누른 뒤, 안드로이드 확인 화면이 나오면 그것도 누르고, 새 빌드가 깔릴 때까지 기다린다
+# 앱을 켜고 새 버전 창의 "Update" 를 누르고, 그 뒤 뜨는 안드로이드 · Play 프로텍트 화면의 진행 단추를 누르며 새 빌드가 깔릴 때까지
 foreground_case() {
-  local tag=$1 confirms=0 pressed=0
+  local tag=$1 pressed=0 last=""
   adb logcat -c
   adb shell am start -n "$PKG/.MainActivity" >/dev/null
-  for i in $(seq 1 40); do
+  for i in $(seq 1 45); do
     sleep 3
-    shot "$tag-$i"
     if updated; then break; fi
+    shot "$tag-$i"
+    local now; now=$(texts "$OUT/$tag-$i.xml")
+    [ "$now" != "$last" ] && log "$tag screen $i: $now" && last=$now
     if [ $pressed = 0 ] && grep -q 'text="New test build"' "$OUT/$tag-$i.xml"; then
-      tap_text "$OUT/$tag-$i.xml" "Update" && pressed=1 && echo "$tag: pressed Update at ${i}" | tee -a "$OUT/summary.txt"
+      tap_text "$OUT/$tag-$i.xml" "Update" && pressed=1 && log "$tag: pressed Update in StepUp"
       continue
     fi
-    # 안드로이드 설치 확인 화면(패키지 설치 프로그램)
-    if grep -q 'package="com.google.android.packageinstaller"\|package="com.android.packageinstaller"' "$OUT/$tag-$i.xml"; then
-      tap_text "$OUT/$tag-$i.xml" "Update" "UPDATE" "Install" "INSTALL" && confirms=$((confirms + 1)) && echo "$tag: android confirm at ${i}" | tee -a "$OUT/summary.txt"
+    if ! grep -q "package=\"$PKG\"" "$OUT/$tag-$i.xml"; then
+      # 안드로이드 설치 화면 · Play 프로텍트 — 설치를 이어 가는 단추를 누른다(보고 · 취소 단추는 누르지 않는다)
+      tap_text "$OUT/$tag-$i.xml" "Update" "Install" "Install anyway" "Install without scanning" "Done" "OK" "Continue" >/dev/null 2>&1 && log "$tag: tapped through ($now)"
     fi
   done
-  adb logcat -d > "$OUT/$tag-logcat.txt"
-  grep -iE "PackageInstaller|TestUpdate|stepup|PackageManager" "$OUT/$tag-logcat.txt" | grep -viE "chatty" | tail -80 > "$OUT/$tag-logcat-short.txt"
-  info > "$OUT/$tag-after.txt"
-  if updated; then echo "$tag: UPDATED (android confirms=$confirms, pressed=$pressed)" | tee -a "$OUT/summary.txt"; return 0; fi
-  echo "$tag: NOT UPDATED (android confirms=$confirms, pressed=$pressed)" | tee -a "$OUT/summary.txt"
+  if updated; then log "$tag: UPDATED · $(info)"; logs 15; return 0; fi
+  log "$tag: NOT UPDATED (pressed=$pressed) · $(info)"
+  logs 60
   return 1
 }
 
 status=0
-echo "== A: installed from outside (adb)" | tee -a "$OUT/summary.txt"
-fresh_old ""
-info | tee "$OUT/A-before.txt"
+BROWSER=com.android.chrome
+adb shell pm list packages | grep -q "package:$BROWSER" || BROWSER=""
+log "== A: installed from the browser (${BROWSER:-adb})"
+install_old "$BROWSER"
+log "A before · $(info)"
 foreground_case A || status=1
-cat "$OUT/A-after.txt" | tee -a "$OUT/summary.txt"
 
-echo "== B: after a self-update (installer = the app) — old build again" | tee -a "$OUT/summary.txt"
-reinstall_old "-i $PKG"
-info | tee "$OUT/B-before.txt" | tee -a "$OUT/summary.txt"
+log "== B: installer = the app — old build again"
+reinstall_old "$PKG"
+log "B before · $(info)"
 foreground_case B || status=1
 
-echo "== C: background worker (app closed)" | tee -a "$OUT/summary.txt"
-reinstall_old "-i $PKG"
+log "== C: background worker (app closed)"
+reinstall_old "$PKG"
 adb logcat -c
 adb shell am start -n "$PKG/.MainActivity" >/dev/null
-sleep 8
-shot C-open
+sleep 10
 adb shell input keyevent KEYCODE_HOME
 sleep 3
-adb shell dumpsys jobscheduler | grep -E "JOB #.*$PKG" > "$OUT/C-jobs.txt"
-for id in $(grep -oE "JOB #u[0-9a-z]+/[0-9]+" "$OUT/C-jobs.txt" | sed 's#.*/##'); do adb shell cmd jobscheduler run -f "$PKG" "$id" >/dev/null 2>&1; done
+jobs=$(adb shell dumpsys jobscheduler | grep -E "JOB #u[0-9a-z]+/[0-9]+.*$PKG" | grep -oE "/[0-9]+:" | tr -d '/:' | sort -u | tr '\n' ' ')
+log "C jobs: $jobs"
+for id in $jobs; do adb shell cmd jobscheduler run -f "$PKG" "$id" >/dev/null 2>&1; done
 for i in $(seq 1 40); do sleep 3; if updated; then break; fi; done
-adb logcat -d > "$OUT/C-logcat.txt"
-adb shell dumpsys notification --noredact | grep -A12 "pkg=$PKG" | grep -E "android.title|android.text" > "$OUT/C-notifications.txt"
-info > "$OUT/C-after.txt"
-if updated; then echo "C: UPDATED in background" | tee -a "$OUT/summary.txt"; else echo "C: NOT UPDATED — notifications: $(tr '\n' ' ' < "$OUT/C-notifications.txt")" | tee -a "$OUT/summary.txt"; status=1; fi
-shot C-end
-echo "status=$status" | tee -a "$OUT/summary.txt"
+if updated; then log "C: UPDATED in background · $(info)"; else
+  log "C: NOT UPDATED · notifications: $(adb shell dumpsys notification --noredact | grep -A15 "pkg=$PKG" | grep -oE "android.(title|text)=[^)]*" | tr '\n' ' ')"
+  logs 60; status=1
+fi
+log "status=$status"
 exit 0

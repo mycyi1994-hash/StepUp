@@ -1,13 +1,10 @@
 name: Self-update E2E
 
 # 테스트 APK 스스로 업데이트를 에뮬레이터에서 끝까지 — 옛 main 빌드를 깔고 진짜 test-apk 릴리스로 올라가는지(tools/self_update_e2e.sh).
-# 손으로만(또는 이 파일 · 스크립트를 고친 작업 브랜치 푸시). 옛 빌드는 OLD_SHA 의 Build APK 아티팩트(StepUp-qa-apk)를 쓴다.
+# 손으로만(또는 이 파일 · 스크립트를 고친 작업 브랜치 푸시). 옛 빌드는 그 커밋의 Build APK 아티팩트(StepUp-qa-apk)를 쓴다:
+#   a7b05ed — 10/18 이전 옛 방식(설치 화면을 여는 것) 마지막 빌드, 6f5435c — 설치 세션 방식(#110 뒤)
 on:
   workflow_dispatch:
-    inputs:
-      old_sha:
-        description: 옛 main 커밋(그 Build APK 의 qa 아티팩트를 깐다)
-        required: false
   push:
     branches: ["claude/**"]
     paths:
@@ -21,22 +18,31 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      OLD_SHA: ${{ github.event.inputs.old_sha || '6f5435c' }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Play 스토어 · Play 프로텍트 · Chrome 이 있는 이미지 — 실제 폰과 가깝게
+          - api: 35
+            target: google_apis_playstore
+          - api: 34
+            target: google_apis_playstore
     steps:
       - uses: actions/checkout@v4
-      - name: Download the old qa APK
+      - name: Download the old qa APKs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          full=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${OLD_SHA:0:7}" --jq .sha)
-          run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=$full&event=push&branch=main" \
-            --jq '[.workflow_runs[] | select(.name=="Build APK" and .conclusion=="success")][0].id')
-          echo "old build: $full run $run"
-          gh run download "$run" -R "$GITHUB_REPOSITORY" -n StepUp-qa-apk -D old
-          ls -la old
+          for sha in a7b05ed 6f5435c; do
+            full=$(gh api "repos/${GITHUB_REPOSITORY}/commits/$sha" --jq .sha)
+            run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=$full&event=push&branch=main" \
+              --jq '[.workflow_runs[] | select(.name=="Build APK" and .conclusion=="success")][0].id')
+            echo "old build $sha: run $run"
+            gh run download "$run" -R "$GITHUB_REPOSITORY" -n StepUp-qa-apk -D "old-$sha"
+          done
+          ls -la old-*
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -45,22 +51,23 @@ jobs:
       - name: Self-update on the emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
-          target: google_apis
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
           arch: x86_64
-          profile: pixel_2
+          profile: pixel_6
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
-          script: bash tools/self_update_e2e.sh old/app-qa.apk
+          script: |
+            bash tools/self_update_e2e.sh old-a7b05ed/app-qa.apk old-flow-a7b05ed
+            bash tools/self_update_e2e.sh old-6f5435c/app-qa.apk session-6f5435c
       - name: Summary
         if: always()
         run: |
-          { echo '```'; cat self-update-e2e/summary.txt 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          cat self-update-e2e/summary.txt 2>/dev/null || true
+          { echo '```'; cat self-update-e2e/*/summary.txt 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: self-update-e2e
+          name: self-update-e2e-${{ matrix.api }}
           path: self-update-e2e/
           retention-days: 14
