@@ -97,6 +97,7 @@
     <string name="crew5_lobby_shoe_none">Running in your equipped shoe</string>
     <string name="crew5_lobby_shoe_change">Change shoe</string>
     <string name="crew5_lobby_start">Start with %1$d</string>
+    <string name="crew5_lobby_need_two_button">Needs 2 ready runners to start</string>
     <string name="crew5_lobby_call">Call your crew</string>
     <string name="crew5_lobby_ready">I\'m ready</string>
     <string name="crew5_lobby_waiting_host">Starts when the host starts</string>

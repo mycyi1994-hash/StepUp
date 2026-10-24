@@ -97,6 +97,7 @@
     <string name="crew5_lobby_shoe_none">装備中のシューズで走ります</string>
     <string name="crew5_lobby_shoe_change">シューズ変更</string>
     <string name="crew5_lobby_start">%1$d人で出発</string>
+    <string name="crew5_lobby_need_two_button">2人から出発できます</string>
     <string name="crew5_lobby_call">クルーを呼ぶ</string>
     <string name="crew5_lobby_ready">準備完了</string>
     <string name="crew5_lobby_waiting_host">進行役が出発すると一緒に始まります</string>
