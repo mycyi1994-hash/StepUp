@@ -880,14 +880,16 @@ private fun LobbyFooter(
     }
 }
 
-/** 버튼 아래 작은 글자 행동(크루원 부르기 · 준비 취소) — 누르는 자리 44dp */
+/** 버튼 아래 작은 글자 행동(크루원 부르기 · 준비 취소 · 시트의 취소 · 나가기) — 주 버튼 아래 가운데, 누르는 자리 44dp */
 @Composable
 private fun LobbyTextButton(label: String, onClick: () -> Unit, tag: String) {
-    Box(
-        Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-            .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp).testTag(tag),
-        contentAlignment = Alignment.Center,
-    ) { Text(label, style = navyText(13.sp, Color(0xFFC7E7FA), FontWeight.SemiBold)) }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+                .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp).testTag(tag),
+            contentAlignment = Alignment.Center,
+        ) { Text(label, style = navyText(13.sp, Color(0xFFC7E7FA), FontWeight.SemiBold)) }
+    }
 }
 
 // ── 시트 ───────────────────────────────────────────────────────────
