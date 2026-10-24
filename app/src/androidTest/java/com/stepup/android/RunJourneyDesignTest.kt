@@ -630,7 +630,9 @@ class RunJourneyDesignTest {
             shot("D02")
             compose.onNodeWithTag("diet-height").performTextInput("170")
             tap("diet-input-done")
-            // D03 — 적던 중 나가려 하면 한 번 묻는다
+            // D03 — 적던 중 나가려 하면 한 번 묻는다. 키보드가 떠 있으면 뒤로 가기는 키보드만 닫으므로 먼저 닫는다
+            // (숫자를 다시 적으면 키보드가 다시 뜬다 — 느린 에뮬레이터에서 "완료"보다 늦게 떠 뒤로 가기를 먹었다, Experience QA 40069908782)
+            hideKeyboard()
             back()
             awaitTag("diet-leave-dialog")
             shot("D03")
@@ -1559,6 +1561,11 @@ class RunJourneyDesignTest {
      * 대기실 사진 터널의 생명주기(2026-10-24 T66) — 모션을 켜고 시계를 손으로 넘긴다(배경이 끝없이 돈다).
      * 대기실만 보이면 사진 · 빛이 흐르고(C10-motion-1 ~ 3), 시트가 뜨면 그 자리에 멈추고(C08-paused-1 · 2),
      * 모션 줄이기면 정지 사진이다(C10-reduced-1 · 2). 화면 위쪽 띠(상태 표시줄 아래 ~ 시트 위)의 픽셀을 맞대어 본다.
+     *
+     * 기본 화면 갤러리(tools/run_screen_gallery.sh)에서는 돌리지 않는다 — CI 에뮬레이터는 GPU 를 소프트웨어로 흉내 내(-gpu swiftshader)
+     * 움직이는 배경 한 장에 0.7초가 걸렸고, 오래 돈 에뮬레이터가 이 검사 중에 멈춰 뒤 검사까지 잃었다(Experience QA 40069908782).
+     * 실제 기기나 GPU 가 있는 에뮬레이터에서 이 검사만 따로 돌린다:
+     * ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.stepup.android.RunJourneyDesignTest#crewLobbyMotion
      */
     @Test fun crewLobbyMotion() {
         seed()
@@ -1985,6 +1992,18 @@ class RunJourneyDesignTest {
         awaitTag(tag)
         compose.onNodeWithTag(tag).performClick()
         compose.waitForIdle()
+    }
+
+    /** 키보드를 닫고 다 닫힐 때까지 기다린다 */
+    private fun hideKeyboard() {
+        compose.runOnUiThread {
+            androidx.core.view.WindowInsetsControllerCompat(compose.activity.window, compose.activity.window.decorView)
+                .hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+        compose.waitUntil(5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
     }
 
     private fun back() {
