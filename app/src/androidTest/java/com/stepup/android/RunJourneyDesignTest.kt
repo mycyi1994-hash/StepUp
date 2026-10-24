@@ -1555,6 +1555,139 @@ class RunJourneyDesignTest {
         }
     }
 
+    /**
+     * 대기실 사진 터널의 생명주기(2026-10-24 T66) — 모션을 켜고 시계를 손으로 넘긴다(배경이 끝없이 돈다).
+     * 대기실만 보이면 사진 · 빛이 흐르고(C10-motion-1 ~ 3), 시트가 뜨면 그 자리에 멈추고(C08-paused-1 · 2),
+     * 모션 줄이기면 정지 사진이다(C10-reduced-1 · 2). 화면 위쪽 띠(상태 표시줄 아래 ~ 시트 위)의 픽셀을 맞대어 본다.
+     */
+    @Test fun crewLobbyMotion() {
+        seed()
+        var reducedMotion by mutableStateOf(false)
+        var scene by mutableStateOf<(@Composable () -> Unit)?>(null)
+        try {
+            edgeToEdge()
+            compose.mainClock.autoAdvance = false
+            compose.setContent {
+                DeviceFrame {
+                    CompositionLocalProvider(
+                        com.stepup.android.ui.experience.LocalMotion provides
+                            com.stepup.android.ui.experience.MotionPreferences(reduced = reducedMotion, active = true),
+                    ) {
+                        Box(Modifier.fillMaxSize()) { scene?.invoke() }
+                    }
+                }
+            }
+            // 참가자 자리 — 진행자가 코스를 바꾸면(판이 오르면) 코스 바뀜 시트가 저절로 뜬다(08)
+            val members = listOf(
+                com.stepup.android.data.repo.PartyMember("h", "도윤", ready = true, isMe = false, isHost = true),
+                com.stepup.android.data.repo.PartyMember("me", "나", ready = false, isMe = true, isHost = false),
+                com.stepup.android.data.repo.PartyMember("b", "지연", ready = true, isMe = false, isHost = false),
+            )
+            val course = com.stepup.android.domain.RoomCourse(rev = 2, name = "여의도 한강 5K", km = 5.0)
+            val party = com.stepup.android.data.repo.PartyState(
+                phase = com.stepup.android.data.repo.PartyPhase.LOBBY, partyId = 1L, crewId = "c1", crewName = "퇴근런", members = members,
+                pickedRoom = 1L, roomName = "여의도 퇴근런", roomCreatedAt = System.currentTimeMillis() - 600_000, course = course, courseSeenRev = 2,
+            )
+            fun lobby(state: com.stepup.android.data.repo.PartyState): @Composable () -> Unit = {
+                com.stepup.android.ui.screens.community.PartyLobbyContent(
+                    state, state.crewName, null, canNotify = false, here = null,
+                    onBack = {}, onReady = {}, onCancelReady = {}, onStart = {}, onShare = {}, onKick = {}, onNotify = {},
+                    onRetry = {}, onLeave = {}, onDismissResult = {},
+                )
+            }
+            compose.runOnUiThread { scene = lobby(party) }
+            advanceUntil("party-pool")
+            compose.onNodeWithTag("lobby-tunnel", useUnmergedTree = true).assertExists()
+            // 대기실만 보일 때 — 1.5초마다 사진 · 빛이 달라진다
+            val running = (1..3).map { i ->
+                compose.mainClock.advanceTimeBy(1_500)
+                bandOf("C10-motion-$i")
+            }
+            for (i in 0 until running.lastIndex) {
+                val share = changedShare(running[i], running[i + 1])
+                check(share > MOVING_SHARE) { "대기실 배경이 흐르지 않는다(C10-motion-${i + 1} → ${i + 2}: 바뀐 픽셀 ${share * 100}%)" }
+            }
+            // 시트가 뜨면 멈춘다 — 부모는 어둡게, 그 자리에
+            compose.runOnUiThread { scene = lobby(party.copy(course = course.copy(rev = 3))) }
+            advanceUntil("party-course-updated")
+            compose.mainClock.advanceTimeBy(1_500)
+            // 시트 창이 열리는 시스템 애니메이션(실제 시계) — 앱 화면은 시계를 멈춰 두었으니 그대로다
+            Thread.sleep(1_000)
+            val paused = bandOf("C08-paused-1")
+            compose.mainClock.advanceTimeBy(3_000)
+            val pausedLater = bandOf("C08-paused-2")
+            val pausedShare = changedShare(paused, pausedLater)
+            check(pausedShare < STILL_SHARE) { "시트 아래 대기실 배경이 멈추지 않았다(바뀐 픽셀 ${pausedShare * 100}%)" }
+            // 모션 줄이기 — 시트 없이도 정지 사진(이동 · 확대 · 회전 없음)
+            compose.runOnUiThread { scene = null }
+            compose.mainClock.advanceTimeBy(500)
+            Thread.sleep(1_000)
+            compose.runOnUiThread {
+                reducedMotion = true
+                scene = lobby(party)
+            }
+            advanceUntil("party-pool")
+            compose.mainClock.advanceTimeBy(500)
+            val reduced = bandOf("C10-reduced-1")
+            compose.mainClock.advanceTimeBy(3_000)
+            val reducedLater = bandOf("C10-reduced-2")
+            val reducedShare = changedShare(reduced, reducedLater)
+            check(reducedShare < STILL_SHARE) { "모션 줄이기인데 대기실 배경이 움직였다(바뀐 픽셀 ${reducedShare * 100}%)" }
+        } finally {
+            compose.mainClock.autoAdvance = true
+            restore()
+        }
+    }
+
+    /** 시계를 멈춰 둔 동안의 기다림 — 시계를 손으로 넘기며 [tag] 가 생길 때까지 */
+    private fun advanceUntil(tag: String) {
+        repeat(150) {
+            if (exists(tag)) return
+            compose.mainClock.advanceTimeBy(100)
+        }
+        check(exists(tag)) { "$tag 이(가) 나오지 않았다" }
+    }
+
+    /**
+     * 지금 화면을 [name].png 로 남기고 화면 위쪽 띠(높이 7% ~ 17% — 상태 표시줄 아래, 시트 위)의 픽셀을 돌려준다.
+     * 시계를 멈춰 두었으니 기다려도 화면은 그대로다 — 창이 열리는 시스템 애니메이션만 기다린다.
+     */
+    private fun bandOf(name: String): IntArray {
+        compose.waitForIdle()
+        awaitFrameOnScreen(compose.activity)
+        Thread.sleep(400)
+        val shot = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: error("캡처하지 못했다: $name")
+        val bitmap = shot.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+        shot.recycle()
+        try {
+            File(directory, "$name.png").outputStream().use { stream ->
+                check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)) { "캡처를 쓰지 못했다: $name" }
+            }
+            val top = (bitmap.height * 0.07f).toInt()
+            val rows = (bitmap.height * 0.10f).toInt()
+            return IntArray(bitmap.width * rows).also { bitmap.getPixels(it, 0, bitmap.width, 0, top, bitmap.width, rows) }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    /** 두 띠에서 눈에 띄게(채널 차이 6 넘게) 바뀐 픽셀의 몫 */
+    private fun changedShare(a: IntArray, b: IntArray): Double {
+        check(a.size == b.size) { "띠 크기가 다르다" }
+        var changed = 0
+        for (i in a.indices) {
+            val x = a[i]
+            val y = b[i]
+            val d = maxOf(
+                kotlin.math.abs(((x shr 16) and 0xFF) - ((y shr 16) and 0xFF)),
+                kotlin.math.abs(((x shr 8) and 0xFF) - ((y shr 8) and 0xFF)),
+                kotlin.math.abs((x and 0xFF) - (y and 0xFF)),
+            )
+            if (d > 6) changed++
+        }
+        return changed.toDouble() / a.size
+    }
+
     // ── 표시용 러닝 ──────────────────────────────────────────────
 
     /** 12:30 · 1.56km 를 달리는 중 — 마지막 점은 방금(현재 속도를 잰다) */
@@ -1877,6 +2010,12 @@ class RunJourneyDesignTest {
 
     private companion object {
         const val FRAME = "run-frame"
+
+        /** 대기실 배경이 흐른다 — 1.5초 뒤 위쪽 띠에서 바뀐 픽셀이 이보다 많다(사진 두 겹의 확대 · 투명도 · 옆 빛) */
+        const val MOVING_SHARE = 0.02
+
+        /** 대기실 배경이 멈췄다 — 바뀐 픽셀이 이보다 적다 */
+        const val STILL_SHARE = 0.002
 
         /** 자유 러닝 결과에는 없다(다른 러닝 결과에만) — 보상 칸 · 정산 표시 · 신발 칸 · 안내 줄 · 넘기는 판 */
         val FREE_RESULT_ABSENT = listOf(

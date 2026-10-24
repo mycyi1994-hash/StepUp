@@ -268,7 +268,8 @@ if [[ "$suite" == "community" ]]; then
   timeout 20s adb shell am force-stop com.stepup.android || true
   # 러닝 전체 리메이크(2026-10-02 러닝 109장) — 화면 번호 이름으로 run-journey/ 에 남긴다
   # crewRooms — 크루 러닝 3번 듀얼 레일(2026-10-24): 크루 홈 · 열린 대기실 · 러닝 만들기 · 코스 · 대기실 · 시트 · 출발 · 예외(C01 ~ C70)
-  for part in screens fitsAtDeviceSizes badges diet courseRec courseHub courseRun states crew crewRooms; do
+  # crewLobbyMotion — 대기실 사진 터널이 대기실에서만 흐르고 시트 · 모션 줄이기에서 멈추는지(T66, 모션 켬)
+  for part in screens fitsAtDeviceSizes badges diet courseRec courseHub courseRun states crew crewRooms crewLobbyMotion; do
     run_instrumentation "run-journey-$part" "com.stepup.android.RunJourneyDesignTest#$part"
     mkdir -p "screen-gallery/run-journey-results/$part"
     cp -R app/build/outputs/androidTest-results/. "screen-gallery/run-journey-results/$part/" || true
