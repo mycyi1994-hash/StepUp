@@ -1417,12 +1417,14 @@ class RunJourneyDesignTest {
             }
             // 10 · 11 · 12 · 13 진행자 대기실 — 사진 터널은 대기실에만, 크루원 · 내 신발은 같은 듀얼 레일
             show("C10-host-lobby", "party-start") { lobby(hostLobby, crewRoom(6, 6)) }
+            assertShoeVisible("C10-host-lobby")
             compose.onNodeWithTag("lobby-tunnel", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("party-start").assertTextContains(label(R.string.crew5_lobby_start, 6))
             compose.onNodeWithTag("party-lobby-title", useUnmergedTree = true).assertTextEquals(name)
             val waiting = hostLobby.copy(members = six.mapIndexed { i, m -> if (i == 5) m.copy(ready = false) else m })
             show("C11-host-waiting", "party-start") { lobby(waiting, crewRoom(5, 6)) }
             show("C12-solo", "party-alone") { lobby(hostLobby.copy(members = six.take(1)), crewRoom(1, 1)) }
+            assertShoeVisible("C12-solo")
             compose.onNodeWithTag("party-start").assertIsNotEnabled()
             val twenty = six + (1..14).map { member("m$it", "크루$it", ready = it % 3 != 0) }
             show("C13-full", "party-more") { lobby(hostLobby.copy(members = twenty), crewRoom(twenty.count { it.ready }, 20)) }
@@ -1462,6 +1464,7 @@ class RunJourneyDesignTest {
                 lobby(memberLobby.copy(members = memberLobby.members.map { if (it.isMe) it.copy(ready = true) else it }), crewRoom(6, 6))
             }
             compose.onNodeWithTag("party-waiting").assertIsNotEnabled()
+            assertShoeVisible("C23-member-ready")
             // 24 신발 · 25 코스 보기 · 26 내구도 · 27 목표 · 28 레벨 · 30 규칙 · 29 보너스 · 31 함께 달릴 크루원 · 32 참가자 나가기
             put("party-shoe-change") { lobby(memberLobby, crewRoom(5, 6)) }
             tap("party-shoe-change")
@@ -1833,6 +1836,18 @@ class RunJourneyDesignTest {
     }
 
     /** 크루 화면의 아래 행동 하나가 화면(틀) 안에 다 보이는지 — 작은 화면 · 큰 글씨에서 잘리지 않게 */
+    /**
+     * 대기실의 내 신발 카드가 아래 버튼 칸에 가리지 않는다(390 × 844 — 시안 10 · 12 · 23). 스크롤 안의 카드는 boundsInRoot 가 잘린 만큼만 주므로
+     * 자른 적 없는 자리(positionInRoot + 크기)로 본다
+     */
+    private fun assertShoeVisible(where: String) {
+        compose.waitForIdle()
+        val shoe = compose.onNodeWithTag("party-shoe", useUnmergedTree = true).fetchSemanticsNode()
+        val bottom = shoe.positionInRoot.y + shoe.size.height
+        val footer = bounds("party-footer")
+        assertTrue("my shoe card above the buttons at $where: card bottom $bottom / buttons top ${footer.top}", bottom <= footer.top + 1)
+    }
+
     private fun assertInFrame(tag: String, where: String) {
         compose.waitForIdle()
         val box = bounds(tag)
