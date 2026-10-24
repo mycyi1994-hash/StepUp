@@ -1425,7 +1425,15 @@ class RunJourneyDesignTest {
             }
             // 맨 위 지도에서 직접 그리기(2026-10-24 "코스를 내가 선택할 수가 없네") — 저장한 코스가 없어도 바로 만든다
             compose.onNodeWithTag("crew-courses-draw").assertExists()
-            val drawnPoints = courses.first().points.let { pts -> listOf(0, pts.size / 4, pts.size / 2, pts.size * 3 / 4, pts.lastIndex).map { pts[it] } }
+            // 열린 길(끝 ≠ 출발) — 기본 코스는 한 바퀴라 끝이 출발과 같아 "출발점으로 잇기"가 꺼진다(Experience QA 40082364533)
+            val origin = courses.first().points.first()
+            val drawnPoints = listOf(
+                origin,
+                com.stepup.android.domain.GeoPoint(origin.lat + 0.0020, origin.lng + 0.0005),
+                com.stepup.android.domain.GeoPoint(origin.lat + 0.0032, origin.lng + 0.0030),
+                com.stepup.android.domain.GeoPoint(origin.lat + 0.0015, origin.lng + 0.0048),
+                com.stepup.android.domain.GeoPoint(origin.lat - 0.0004, origin.lng + 0.0036),
+            )
             show("C04-draw", "crew-draw") {
                 com.stepup.android.ui.screens.walk.CrewCourseDrawContent(
                     points = emptyList(), here = drawnPoints.first(), center = drawnPoints.first(),
