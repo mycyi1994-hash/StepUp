@@ -47,7 +47,7 @@ jobs:
           pkill -f KotlinCompileDaemon || true
           # 데몬(힙 7GB)이 실제로 내려갈 때까지 기다린다 — 바로 잰 free 는 내려가는 중인 데몬까지 셌다(used 12.8GB).
           for _ in $(seq 1 30); do pgrep -f KotlinCompileDaemon > /dev/null || break; sleep 1; done
-          # Gradle 데몬도 내린다 — 컴파일 · R8 · lint 로 3GB 힙이 찬 채 기기 검사 내내 남아 에뮬레이터와 메모리를 다퉜고,
+          # Gradle 데몬도 내린다 — 컴파일 · R8 · lint 로 힙(그때 3GB · 지금 4GB)이 찬 채 기기 검사 내내 남아 에뮬레이터와 메모리를 다퉜고,
           # 기준 장면 캡처 중 에뮬레이터가 통째로 사라졌다(PR #86 Experience QA 38545387775). 기기 검사의 gradle 은 새 데몬으로 돈다.
           ./gradlew --stop
           free -m
