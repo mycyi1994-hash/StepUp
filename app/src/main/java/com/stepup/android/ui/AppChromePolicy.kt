@@ -38,6 +38,9 @@ object AppChromePolicy {
         Destination(Routes.RUN_GOAL_HISTORY, Screen.Run, Header.Focus),
         Destination(Routes.RUN_COURSE, Screen.Run, Header.Focus),
         Destination(Routes.RUN_CREW, Screen.Run, Header.Focus),
+        // 크루 러닝 — 열린 대기실 · 러닝 만들기(2026-10-24). 크루 화면처럼 하단 탭 없이 자기 머리
+        Destination(Routes.CREW_ROOMS, Screen.Run, Header.Focus),
+        Destination(Routes.CREW_ROOM_NEW, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET_PLAN, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET_EDIT, Screen.Run, Header.Focus),

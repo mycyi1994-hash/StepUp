@@ -1,6 +1,6 @@
 // stepupcrew.com 소개 페이지 — 홍보영상과 다섯 가지 러닝 경험.
 // 화면 속 숫자·이름·코스·SUP 는 모두 예시이고, 각 카드에 "화면 예시" 배지가 붙어 있다.
-import { t, lang, setLang, onLangChange } from './i18n.js?v=20261019-qa';
+import { t, lang, setLang, onLangChange } from './i18n.js?v=20261023-qa2';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -164,6 +164,7 @@ function filmStateChange(state) {
     resumeFilm = true;
     filmFailed = false;
     filmStatus.hidden = true;
+    filmPoster.classList.remove('is-loading');
     revealFilm();
     // 유튜브 컨트롤에서 바꾼 소리 상태를 소리 버튼에 맞춘다.
     soundOn = !filmMuted && filmVolume > 0;
@@ -172,6 +173,7 @@ function filmStateChange(state) {
 }
 function filmError() {
   filmFailed = true;
+  filmPoster.classList.remove('is-loading');
   clearTimeout(playCheck);
   filmStatus.replaceChildren(t('film.error'));
   const link = document.createElement('a');
@@ -210,7 +212,17 @@ window.addEventListener('message', event => {
 });
 filmPoster.addEventListener('click', () => {
   resumeFilm = true;
+  // 느린 연결에서는 유튜브 플레이어가 오기까지 30초가 걸리기도 한다 — 그동안 눌린 것을 알린다(2차 QA)
+  if (!filmReady && !filmFailed) {
+    filmPoster.classList.add('is-loading');
+    filmStatus.textContent = t('film.loading');
+    filmStatus.hidden = false;
+  }
   loadFilm();
+});
+// 막을 걷은 뒤 포인터가 영상 밖으로 나갔다 오면 다시 덮는다 — 한 번 누른 뒤로 영상 위 휠이 화면을 넘기지 않던 것(2차 QA)
+$('.film-media').addEventListener('pointerleave', event => {
+  if (event.pointerType === 'mouse' && filmPoster.hidden && page === 0) filmShield.hidden = false;
 });
 filmShield.addEventListener('click', () => {
   // 한 번 누르면 막을 걷어 다음 누름이 유튜브 컨트롤로 간다. 이 누름은 유튜브처럼 재생 · 일시정지로 쓴다.
@@ -627,10 +639,21 @@ onLangChange(() => {
   renderCrew(crewJoined);
   labelCourses();
   fillCourseText(COURSES[ci]);
-  if (!filmStatus.hidden) { if (filmFailed) filmError(); else filmStatus.textContent = t('film.blocked'); }
+  if (!filmStatus.hidden) {
+    if (filmFailed) filmError();
+    else filmStatus.textContent = t(filmPoster.classList.contains('is-loading') ? 'film.loading' : 'film.blocked');
+  }
 });
 
 // ── 시작 ───────────────────────────────────────────────────────
 const i0 = SLUGS.indexOf(location.hash.slice(1));
 enter(0);
 if (i0 > 0) to(i0, { force: true, instant: true });
+// 영어로 열면 소리 버튼 글자도 처음부터 영어로(예전엔 누르거나 언어를 바꿔야 바뀌었다)
+updateSound();
+// 스크립트가 오기 전에 누른 화면 이동(index.html 머리 스크립트가 기억해 둔 것)을 이어서 한다
+const early = window.__stepupEarly;
+window.__stepupSiteReady = true;
+if (early && early.go >= 0) { const go = early.go; early.go = -1; to(go, { force: true }); }
+for (const el of $$('[data-go].tap-pending')) el.classList.remove('tap-pending');
+if (!document.querySelector('.tap-pending')) document.documentElement.classList.remove('scripts-pending');

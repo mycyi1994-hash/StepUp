@@ -95,10 +95,14 @@ import com.stepup.android.ui.screens.walk.initialsOf
 fun PartyLobbyScreen(
     crewId: String = "",
     flashPostId: Long? = null,
+    /** 목록에서 고른(또는 방금 연) 크루 대기실 번호(0072). 없으면 예전처럼 크루의 열린 방 하나에(번개러닝 · 옛 길) */
+    partyId: Long? = null,
     onBack: () -> Unit,
     onRunStarted: () -> Unit,
     /** 크루에게 알리기를 보낸 뒤 "크루 채팅 보기"(CR20) — 그 크루의 채팅방 */
     onOpenChat: (String) -> Unit = {},
+    /** 고른 방이 닫혔다 · 내보내졌다 · 찼다 · 출발했다 — 같은 크루의 열린 대기실 목록으로 */
+    onOtherRooms: (String) -> Unit = {},
     viewModel: PartyLobbyViewModel = viewModel(factory = PartyLobbyViewModel.Factory),
     community: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
@@ -164,7 +168,7 @@ fun PartyLobbyScreen(
     var confirmStart by rememberSaveable { mutableStateOf(false) }
     var notify by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(crewId, flashPostId) {
+    LaunchedEffect(crewId, flashPostId, partyId) {
         // 이미 달리는 중이면 새 대기실을 열지 않고 지금 러닝으로 간다 — 다른 방을 열면 달리던 방에서 말없이
         // 나오고, 그 방 진행자가 출발하면 러닝이 하나 더 켜졌다
         if (WalkSessionService.state.value.isActive) {
@@ -173,7 +177,19 @@ fun PartyLobbyScreen(
         }
         when {
             flashPostId != null -> viewModel.openFlashLobby(flashPostId, flashPost?.title.orEmpty())
+            // 고른 방 — 같은 크루의 다른 방에 저절로 들어가지 않는다(0072)
+            crewId.isNotEmpty() && partyId != null -> viewModel.openRoom(crewId, partyId)
             crewId.isNotEmpty() -> viewModel.openLobby(crewId)
+        }
+    }
+    // 크루 대기실의 출발 연출 — 서버 출발 시각에 맞춘 3 · 2 · 1 · 0 · StepUP! · 펼침(앱 맨 위 겹이 그린다 — 러닝 화면으로 옮겨도 끊기지 않게)
+    LaunchedEffect(crewRoom, party.phase, party.partyId, party.startsAtLocal) {
+        val id = party.partyId
+        if (!crewRoom || id == null) return@LaunchedEffect
+        when (party.phase) {
+            PartyPhase.COUNTDOWN -> if (party.startsAtLocal > 0) com.stepup.android.ui.screens.walk.CrewLaunch.begin(id, party.startsAtLocal)
+            PartyPhase.LOBBY, PartyPhase.IDLE -> com.stepup.android.ui.screens.walk.CrewLaunch.end(id)
+            else -> Unit
         }
     }
 
@@ -197,6 +213,14 @@ fun PartyLobbyScreen(
         viewModel.leaveLobby()
         onBack()
     }
+    val otherRooms = {
+        val crew = party.crewId?.takeIf { it.isNotBlank() } ?: crewId
+        viewModel.leaveLobby()
+        onOtherRooms(crew)
+    }
+    // 진행자의 코스 바꾸기(07) — 서버가 받지 않으면 지금 코스 그대로 두고 알린다
+    var courseFailed by remember { mutableStateOf(false) }
+    val courseScope = androidx.compose.runtime.rememberCoroutineScope()
     // 시스템 뒤로 가기도 화살표와 같이 방에서 나간다. 그냥 화면만 닫으면 앱 전체 수명의 폴링이 계속 돌아,
     // 서버에는 떠난 사람이 방에 남는다(진행자면 아무도 출발 못 한다).
     BackHandler { leave() }
@@ -229,7 +253,8 @@ fun PartyLobbyScreen(
             else readyCheck = true
         },
         onCancelReady = { viewModel.setReady(false) },
-        onStart = { if (party.allReady) viewModel.startParty() else confirmStart = true },
+        // 크루 대기실은 대기실 안 시트(33 · 34)가 묻고, 번개러닝 대기실은 예전처럼 준비 전 인원이 있을 때만 묻는다
+        onStart = { if (crewRoom || party.allReady) viewModel.startParty() else confirmStart = true },
         onShare = viewModel::setShare,
         onKick = viewModel::kick,
         onNotify = { notify = true },
@@ -249,6 +274,16 @@ fun PartyLobbyScreen(
             if (pid != null) shoeScope.launch { shoeFailed = !crewRunRepo.pickShoe(pid, id) }
         },
         shoeFailed = shoeFailed,
+        onOtherRooms = otherRooms,
+        onChangeCourse = { course ->
+            courseFailed = false
+            courseScope.launch {
+                courseFailed = viewModel.setCourse(course) !is com.stepup.android.data.remote.ServerResult.Ok
+            }
+        },
+        courseFailed = courseFailed,
+        onAcknowledgeCourse = viewModel::acknowledgeCourse,
+        overlay = readyCheck || notify || (confirmStart && !crewRoom),
     )
     if (readyCheck && party.phase == PartyPhase.LOBBY) {
         CrewReadyCheckSheet(
@@ -320,6 +355,11 @@ fun PartyLobbyContent(
     shoes: List<com.stepup.android.domain.Sneaker> = emptyList(),
     onPickShoe: (Long?) -> Unit = {},
     shoeFailed: Boolean = false,
+    onOtherRooms: () -> Unit = {},
+    onChangeCourse: (com.stepup.android.domain.RoomCourse) -> Unit = {},
+    courseFailed: Boolean = false,
+    onAcknowledgeCourse: () -> Unit = {},
+    overlay: Boolean = false,
 ) {
     val t = runTone()
     // 크루 대기실 · 동시 출발은 크루 달리기 v2 모습(2026-10-16). 번개러닝 대기실은 아래 예전 모습 그대로
@@ -329,7 +369,8 @@ fun PartyLobbyContent(
             onBack = onBack, onReady = onReady, onCancelReady = onCancelReady, onStart = onStart, onShare = onShare,
             onKick = onKick, onNotify = onNotify, onRetry = onRetry, onLeave = onLeave, onDismissResult = onDismissResult,
             onReconnect = onReconnect, crewToday = crewToday, room = room, shoes = shoes, onPickShoe = onPickShoe,
-            shoeFailed = shoeFailed,
+            shoeFailed = shoeFailed, onOtherRooms = onOtherRooms, onChangeCourse = onChangeCourse, courseFailed = courseFailed,
+            onAcknowledgeCourse = onAcknowledgeCourse, overlay = overlay,
         )
         return
     }
@@ -535,7 +576,8 @@ private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnec
     val message = stringResource(
         when (problem) {
             PartyProblem.SIGN_IN -> R.string.party_problem_sign_in
-            PartyProblem.REMOVED -> R.string.party_problem_removed
+            // 고른 방이 찼거나 출발한 것(0072)은 크루 대기실에서만 — 번개러닝 대기실은 빠진 것과 같다
+            PartyProblem.REMOVED, PartyProblem.FULL, PartyProblem.STARTED -> R.string.party_problem_removed
             PartyProblem.NETWORK -> R.string.party_problem_network
             PartyProblem.CLOSED -> R.string.party_problem_closed
             PartyProblem.FAILED -> R.string.party_problem_failed

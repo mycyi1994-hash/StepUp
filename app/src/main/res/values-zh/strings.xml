@@ -1606,7 +1606,7 @@
     <string name="challenge_history_empty">还没有完成的挑战</string>
     <string name="challenge_history_event">挑战奖励</string>
     <string name="test_update_title">有新版本</string>
-    <string name="test_update_body">StepUp 有更新的测试版本。点“更新”会下载并直接安装 — 应用会短暂关闭，点通知即可打开新版本(Android 11 及以下需在下一个画面再点一次“更新”)。记录和登录保持不变。</string>
+    <string name="test_update_body">StepUp 有更新的测试版本。点“更新”会下载并打开 Android 安装画面 — 在那里再点一次“更新”即可。如果出现 Google Play 保护机制的窗口，请选择“扫描应用”(或“发送”)，然后点“安装”。记录和登录保持不变。</string>
     <string name="test_update_downloading">正在下载新版本…</string>
     <string name="test_update_failed">下载中断或文件损坏。请检查网络后重试。</string>
     <string name="test_update_versions">本机: %1$s → 新版本: %2$s</string>
@@ -1620,7 +1620,7 @@
     <string name="test_update_check_failed">无法检查</string>
     <string name="test_update_found">新版本 · 更新</string>
     <string name="test_update_downloading_short">下载中…</string>
-    <string name="test_update_installing">正在安装… 应用会短暂关闭并更新为新版本。</string>
+    <string name="test_update_installing">请在 Android 安装画面点“更新”。应用会短暂关闭并更新为新版本。</string>
     <string name="test_update_installing_short">安装中…</string>
     <string name="test_update_permission">要自动更新，请在设置的“安装未知应用”中允许 StepUp。返回后会继续安装。</string>
     <string name="test_update_permission_short">需要允许安装</string>
@@ -1630,6 +1630,7 @@
     <string name="test_update_failed_storage">存储空间不足，无法安装。请清理空间后重试。</string>
     <string name="test_update_failed_blocked">这台手机的设置或策略阻止了安装。</string>
     <string name="test_update_failed_other">Android 未完成安装。请重试。</string>
+    <string name="test_update_unfinished">更新没有安装。点“更新”会再次打开安装画面 — 如果出现 Google Play 保护机制的窗口，请选择安装(或扫描应用)。</string>
     <string name="test_update_channel">应用更新</string>
     <string name="test_update_notify_available_title">StepUp 有新版本</string>
     <string name="test_update_notify_available_body">点按更新 · %1$s</string>

@@ -121,6 +121,10 @@ fun CrewRunEntryScreen(
     onCreateCrew: () -> Unit,
     onFreeRun: () -> Unit,
     onSignIn: () -> Unit,
+    /** 크루 레벨 보기 — 내 크루 홈의 레벨 화면 */
+    onLevels: (String) -> Unit = {},
+    /** 크루 러닝 기록 · 오늘 기록 — 내 러닝 기록 */
+    onHistory: () -> Unit = {},
 ) {
     val repo = ServiceLocator.crewRepository
     val crews by repo.crews.collectAsStateWithLifecycle()
@@ -145,7 +149,19 @@ fun CrewRunEntryScreen(
     }
     val today by todayFlow.collectAsStateWithLifecycle(initialValue = pickedCrew?.let { ServiceLocator.crewRun.todayNow(it) })
     LaunchedEffect(pickedCrew) { pickedCrew?.let { ServiceLocator.crewRun.loadToday(it) } }
+    // 진행 중인 대기실 수 — 보기만(들어가지 않는다). 읽지 못했으면 수를 두지 않는다(0 으로 보이지 않게)
+    var roomsCount by remember(pickedCrew) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(pickedCrew) {
+        val id = pickedCrew ?: return@LaunchedEffect
+        roomsCount = (repo.rooms(id) as? com.stepup.android.data.remote.ServerResult.Ok)?.value?.let {
+            com.stepup.android.domain.CrewRoomRules.ordered(it.rooms).size
+        }
+    }
     CrewRunEntryContent(
+        today = today?.takeIf { it.isToday() },
+        roomsCount = roomsCount,
+        onLevels = { pickedCrew?.let(onLevels) },
+        onHistory = onHistory,
         doneToday = today?.let { it.isToday() && it.mine.usedToday } == true,
         ui = ui, onBack = onBack,
         onEnter = { id ->
@@ -180,6 +196,12 @@ fun CrewRunEntryContent(
     onSignIn: () -> Unit,
     /** 오늘 크루 러닝을 이미 했다(0070) — 대기실에는 들어가지만 준비는 내일 */
     doneToday: Boolean = false,
+    /** 오늘 크루 러닝(공용 내구도 · 레벨) — 읽지 못했으면 null(0 으로 꾸미지 않는다) */
+    today: com.stepup.android.domain.CrewRunToday? = null,
+    /** 진행 중인 대기실 수 — 모르면 null */
+    roomsCount: Int? = null,
+    onLevels: () -> Unit = {},
+    onHistory: () -> Unit = {},
 ) {
     val tag = when (ui) {
         CrewEntryUi.Loading -> "crew-entry-loading"
@@ -189,8 +211,8 @@ fun CrewRunEntryContent(
         is CrewEntryUi.Ready -> "crew-entry"
     }
     CrewPage(
-        title = stringResource(R.string.run_crew_title), onBack = onBack,
-        badge = false, headerIcon = true, modifier = Modifier.testTag(tag),
+        title = stringResource(if (ui is CrewEntryUi.Ready) R.string.crew5_home_header else R.string.run_crew_title), onBack = onBack,
+        badge = false, headerIcon = ui !is CrewEntryUi.Ready, modifier = Modifier.testTag(tag),
         bottom = {
             when (ui) {
                 CrewEntryUi.Loading -> Unit
@@ -206,10 +228,13 @@ fun CrewRunEntryContent(
                     CrewTextAction(stringResource(R.string.run_cr_free), onFreeRun, Modifier.fillMaxWidth().testTag("crew-entry-free"),
                         center = true)
                 }
-                // 대기실은 눌러야만 열린다 — 큰 버튼은 이것 하나(크루 바꾸기는 크루 카드 안)
-                is CrewEntryUi.Ready ->
-                    FreeRunButton(stringResource(R.string.run_cr_enter), { onEnter(ui.crew.id) },
+                // 큰 버튼 하나 — 크루 러닝 시작(열린 대기실 목록), 오늘 이미 했으면 오늘 기록(01 · 61)
+                is CrewEntryUi.Ready -> if (doneToday) {
+                    FreeRunButton(stringResource(R.string.crew5_home_today), onHistory, Modifier.fillMaxWidth().testTag("crew-entry-today"))
+                } else {
+                    FreeRunButton(stringResource(R.string.crew5_home_start), { onEnter(ui.crew.id) },
                         Modifier.fillMaxWidth().testTag("crew-entry-enter"))
+                }
             }
         },
     ) {
@@ -222,44 +247,136 @@ fun CrewRunEntryContent(
             is CrewEntryUi.Failed -> CrewEmpty(Icons.Outlined.CloudOff, stringResource(R.string.run_cr_load_failed), null)
             // CR14 — 한 줄 안내와 아래 행동(찾기 · 만들기 · 자유 러닝)만
             CrewEntryUi.NoCrew -> CrewEmpty(Icons.Outlined.PeopleAlt, stringResource(R.string.run_crew_none_title), null)
-            // CR03 — 고른 크루(표시 · 이름 · 인원 · 지역)와 바꾸기, 그리고 대기실 들어가기. 큰 설명 문단은 두지 않는다
-            is CrewEntryUi.Ready -> {
-                Spacer(Modifier.height(12.dp))
-                CrewCard(Modifier.testTag("crew-entry-card"), padding = 16.dp) {
-                    Spacer(Modifier.height(12.dp))
-                    CrewTitleRow(ui.crew.name, ui.crew.monogram, ui.crew.tagline.takeIf { it.isNotBlank() })
-                    Spacer(Modifier.height(12.dp))
+            // 01 크루 홈 — 크루 이름 · 레벨, 오늘 크루 내구도 · 다음 목표(듀얼 레일), 진행 중인 대기실 · 크루 러닝 기록
+            is CrewEntryUi.Ready -> CrewHomeBody(
+                ui, today = today, roomsCount = roomsCount, doneToday = doneToday,
+                onChange = onChange, onRooms = { onEnter(ui.crew.id) }, onLevels = onLevels, onHistory = onHistory,
+            )
+        }
+    }
+}
+
+/** 크루 홈(01) — 앱 바탕(APP_EXISTING) 위 듀얼 레일 두 장. 서버 값이 없으면 "—"(0 으로 꾸미지 않는다) */
+@Composable
+private fun CrewHomeBody(
+    ui: CrewEntryUi.Ready,
+    today: com.stepup.android.domain.CrewRunToday?,
+    roomsCount: Int?,
+    doneToday: Boolean,
+    onChange: () -> Unit,
+    onRooms: () -> Unit,
+    onLevels: () -> Unit,
+    onHistory: () -> Unit,
+) {
+    val c = crewColors()
+    Column {
+        Spacer(Modifier.height(8.dp))
+        val level = today?.crewLevel
+        CrewBigTitle(
+            ui.crew.name,
+            when {
+                today == null -> ui.crew.tagline.takeIf { it.isNotBlank() }
+                level == null -> stringResource(R.string.crew5_home_sub_new)
+                ui.crew.tagline.isNotBlank() -> stringResource(R.string.crew5_home_sub_level, level, ui.crew.tagline)
+                else -> stringResource(R.string.crew5_home_sub_level_only, level)
+            },
+            modifier = Modifier.testTag("crew-entry-card"),
+        )
+        if (ui.crews.size > 1) {
+            // 고르기만 한다 — 대기실은 열지 않는다(CR19)
+            CrewTextAction(stringResource(R.string.run_crew_pick_other), onChange, Modifier.testTag("crew-entry-change"), chevron = true)
+        }
+        Spacer(Modifier.height(16.dp))
+        // 오늘 크루 내구도 — 남은 / 총량(분모는 기여 합) · 오늘 참가한 사람 · 한국 자정 초기화
+        val pool = today?.pool
+        DualRailFrame(Modifier.fillMaxWidth().testTag("crew-home-pool")) {
+            Column(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.crew5_pool_title), style = navyText(13.sp, LobbyInk.Sub, FontWeight.SemiBold), modifier = Modifier.weight(1f))
+                    if (pool != null) LobbyChip(stringResource(R.string.crew5_pool_today_n, pool.contributors))
+                }
+                Spacer(Modifier.height(14.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        ui.crew.area.takeIf { it.isNotBlank() }?.let { stringResource(R.string.run_crew_pick_line, it, ui.crew.memberCount) }
-                            ?: stringResource(R.string.run_cr_members, ui.crew.memberCount),
-                        style = runTextStyle(15.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.testTag("crew-entry-meta"),
+                        pool?.let { poolNumber(it.remaining) } ?: "—",
+                        style = navyText(46.sp, LobbyInk.Text, FontWeight.ExtraBold, 1.2f).copy(letterSpacing = (-1.5).sp),
+                        modifier = Modifier.testTag("crew-home-pool-value"),
                     )
-                    if (ui.crews.size > 1) {
-                        Spacer(Modifier.height(8.dp))
-                        CrewLine()
-                        // 고르기만 한다 — 대기실은 열지 않는다(CR19)
-                        CrewTextAction(stringResource(R.string.run_crew_pick_other), onChange, Modifier.testTag("crew-entry-change"),
-                            chevron = true)
-                    } else {
-                        Spacer(Modifier.height(12.dp))
+                    if (pool != null) {
+                        Text(" / " + poolNumber(pool.total), style = navyText(17.sp, androidx.compose.ui.graphics.Color(0xFFC1DAED), FontWeight.Medium),
+                            modifier = Modifier.padding(bottom = 9.dp))
                     }
                 }
-                if (doneToday) {
-                    Spacer(Modifier.height(12.dp))
-                    CrewNote(stringResource(R.string.crew_entry_done_today), tag = "crew-entry-done-today")
-                    Text(
-                        stringResource(R.string.crew_entry_next), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.45f),
-                        modifier = Modifier.padding(top = 6.dp, start = 4.dp).testTag("crew-entry-next"),
-                    )
-                }
-                // 들어가는 순간 참가 · 생성이 일어난다 — 보기 전용 조회가 없어(CR02) 누르기 전에는 아무것도 하지 않는다는 한 줄
+                Spacer(Modifier.height(10.dp))
+                LobbyTrack(pool?.let { com.stepup.android.domain.CrewRunMath.fraction(it.remaining, it.total) } ?: 0f)
+                Spacer(Modifier.height(12.dp))
                 Text(
-                    stringResource(R.string.run_cr_enter_note), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.45f),
-                    modifier = Modifier.padding(top = 12.dp, start = 4.dp).testTag("crew-entry-note"),
+                    stringResource(if (today == null) R.string.crew5_pool_unknown else R.string.crew5_pool_reset),
+                    style = navyText(14.sp, LobbyInk.Text, FontWeight.Medium),
                 )
             }
         }
+        Spacer(Modifier.height(20.dp))
+        // 다음 목표 — 레벨이 오르는 크루 누적 거리까지(Lv.20 이면 최고)
+        DualRailFrame(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).feedbackClickable(role = Role.Button, onClick = onLevels)
+                .testTag("crew-home-goal"),
+        ) {
+            Column(Modifier.fillMaxWidth()) {
+                val next = level?.plus(1)?.takeIf { it <= com.stepup.android.domain.CrewRunMath.LEVEL_MAX && today.nextLevelKm != null }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.crew5_goal_title), style = navyText(13.sp, LobbyInk.Sub, FontWeight.SemiBold), modifier = Modifier.weight(1f))
+                    if (level != null && next != null) LobbyChip(stringResource(R.string.crew5_goal_step, level, next), kind = LobbyChipKind.Soft)
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    when {
+                        today == null -> "—"
+                        next == null && level != null -> stringResource(R.string.crew5_goal_max)
+                        else -> stringResource(
+                            R.string.crew5_goal_left,
+                            courseKm(com.stepup.android.domain.CrewRunMath.kmToNext(today.runKm, today.nextLevelKm) ?: 0.0),
+                        )
+                    },
+                    style = navyText(28.sp, LobbyInk.Text, FontWeight.ExtraBold, 1.3f), modifier = Modifier.testTag("crew-home-goal-value"),
+                )
+                Spacer(Modifier.height(10.dp))
+                LobbyTrack(
+                    today?.let { com.stepup.android.domain.CrewRunMath.levelProgress(it.runKm, it.crewLevel, it.nextLevelKm, it.rules.levels) } ?: 0f,
+                    level = true,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(stringResource(R.string.crew5_goal_levels) + "  ›", style = navyText(14.sp, LobbyInk.Text, FontWeight.Medium))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        HomeLinkRow(stringResource(R.string.crew5_home_rooms), roomsCount?.let { stringResource(R.string.crew5_home_rooms_n, it) }, onRooms, "crew-home-rooms")
+        CrewLine()
+        HomeLinkRow(stringResource(R.string.crew5_home_history), null, onHistory, "crew-home-history")
+        if (doneToday) {
+            Spacer(Modifier.height(12.dp))
+            CrewNote(stringResource(R.string.crew_entry_done_today), tag = "crew-entry-done-today")
+            Text(
+                stringResource(R.string.crew_entry_next), style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.45f),
+                modifier = Modifier.padding(top = 6.dp, start = 4.dp).testTag("crew-entry-next"),
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
+/** 크루 홈의 한 줄 — 이름 · (값) · › */
+@Composable
+private fun HomeLinkRow(label: String, value: String?, onClick: () -> Unit, tag: String) {
+    val c = crewColors()
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 2.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = runTextStyle(15.sp, c.text, FontWeight.SemiBold), modifier = Modifier.weight(1f))
+        if (value != null) Text(value, style = runTextStyle(15.sp, c.text, FontWeight.Bold))
+        Text("  ›", style = runTextStyle(16.sp, c.muted, FontWeight.Bold))
     }
 }
 

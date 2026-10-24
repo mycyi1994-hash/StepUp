@@ -42,7 +42,9 @@ fun gitOutput(vararg args: String): String? = runCatching {
 // 웹 지갑 페이지 주소 — debug · qa(테스트 APK)만 쓴다. 스토어 판은 비운다(WEB3 = false)
 val walletUrl = secret("WALLET_URL", "stepupWalletUrl") ?: "https://stepupcrew.com/wallet.html"
 
-val buildCommitTime = gitOutput("log", "-1", "--format=%ct")?.toLongOrNull() ?: 0L
+// 스스로 업데이트 에뮬레이터 검사(tools/self_update_e2e.sh)는 -PstepupCommitTime=1 로 "아주 옛 빌드"를 만들어 지금 test-apk 로 올라가 본다
+val buildCommitTime = (findProperty("stepupCommitTime") as String?)?.toLongOrNull()
+    ?: gitOutput("log", "-1", "--format=%ct")?.toLongOrNull() ?: 0L
 val buildCommit = gitOutput("rev-parse", "--short=7", "HEAD") ?: ""
 
 // 스토어 빌드(release)의 versionCode — 출시할 때 손으로 올린다

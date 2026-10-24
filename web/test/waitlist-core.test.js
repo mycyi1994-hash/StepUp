@@ -54,6 +54,9 @@ test('emails follow the server rule after the same clean-up', async () => {
   for (const bad of ['', '   ', 'a@b', 'name@naver', 'name@gmailcom', 'name@gmail,com', 'a b@c.de', 'no-at-sign.com', '@example.com', `${'x'.repeat(250)}@e.com`]) {
     assert.equal(validEmail(bad), false, bad);
   }
+  // 문장에서 딸려 온 끝 마침표는 빼고, 메일이 갈 수 없는 모양은 막는다(2차 QA)
+  assert.equal(normalizeEmail('Name@Example.com.'), 'name@example.com');
+  for (const bad of ['a..b@example.com', 'name@.example.com', '.name@example.com', 'name@example..com']) assert.equal(validEmail(bad), false, bad);
 });
 
 test('post links are cleaned like the server expects (lower-case scheme and host)', async () => {
@@ -62,6 +65,19 @@ test('post links are cleaned like the server expects (lower-case scheme and host
   assert.equal(normalizePostUrl('https://www.Threads.com/@me/post/AbC'), 'https://www.threads.com/@me/post/AbC');
   assert.ok(validPostUrl(normalizePostUrl('HTTPS://X.com/someone/status/12345'), 'x'));
   assert.equal(normalizePostUrl('not a url'), 'not a url');
+  // 같은 X 게시물의 다른 모양은 서버가 받는 모양으로(2차 QA)
+  for (const [pasted, want] of [
+    ['https://x.com/stepup/status/123/photo/1', 'https://x.com/stepup/status/123'],
+    ['https://x.com/i/web/status/123', 'https://x.com/i/status/123'],
+    ['https://mobile.twitter.com/stepup/status/123?s=20', 'https://x.com/stepup/status/123'],
+    ['x.com/stepup/status/123', 'https://x.com/stepup/status/123'],
+    ['twitter.com/stepup/status/123/video/1', 'https://x.com/stepup/status/123'],
+  ]) {
+    assert.equal(normalizePostUrl(pasted), want, pasted);
+    assert.ok(validPostUrl(want, 'x'), want);
+  }
+  assert.ok(!validPostUrl(normalizePostUrl('https://x.com/stepup'), 'x'));
+  assert.equal(normalizePostUrl('youtu.be/abcdefghijk'), 'https://youtu.be/abcdefghijk');
   assert.equal(isOwnSiteUrl('https://stepupcrew.com/?ref=ABCDEFGH'), true);
   assert.equal(isOwnSiteUrl('https://x.com/stepup/status/1'), false);
 });

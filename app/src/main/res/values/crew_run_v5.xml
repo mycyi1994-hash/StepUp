@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Crew run, dual rail design (2026-10-24 handoff, server 0072) — crew home, open lobbies, create run, courses, lobby sheets, edge states -->
+<resources>
+    <!-- 01 crew home -->
+    <string name="crew5_home_header">My crew</string>
+    <string name="crew5_home_sub_level">Lv.%1$d · %2$s</string>
+    <string name="crew5_home_sub_level_only">Lv.%1$d</string>
+    <string name="crew5_home_sub_new">New crew · waiting for the first crew run</string>
+    <string name="crew5_pool_title">Today\'s crew stamina</string>
+    <string name="crew5_pool_today_n">%1$d today</string>
+    <string name="crew5_pool_reset">Resets at midnight (Korea time)</string>
+    <string name="crew5_pool_unknown">Couldn\'t load</string>
+    <string name="crew5_goal_title">Next goal</string>
+    <string name="crew5_goal_left">%1$s km to go</string>
+    <string name="crew5_goal_max">Top level reached</string>
+    <string name="crew5_goal_step">Lv.%1$d → Lv.%2$d</string>
+    <string name="crew5_goal_levels">See crew levels</string>
+    <string name="crew5_home_rooms">Open lobbies</string>
+    <string name="crew5_home_rooms_n">%1$d</string>
+    <string name="crew5_home_history">Crew run history</string>
+    <string name="crew5_home_start">Start a crew run</string>
+    <string name="crew5_home_today">See today\'s run</string>
+
+    <!-- 02 open lobbies -->
+    <string name="crew5_rooms_header">Crew run</string>
+    <string name="crew5_rooms_title">Run together today</string>
+    <string name="crew5_rooms_sub">Any crew member can open a lobby.</string>
+    <string name="crew5_rooms_count">%1$d / %2$d</string>
+    <string name="crew5_rooms_full">Full</string>
+    <string name="crew5_rooms_mine">My lobby</string>
+    <string name="crew5_rooms_course">%1$s · %2$s km</string>
+    <string name="crew5_rooms_host">Host %1$s · opened %2$s · %3$d ready</string>
+    <string name="crew5_rooms_enter">Enter lobby</string>
+    <string name="crew5_rooms_back">Back to my lobby</string>
+    <string name="crew5_rooms_empty_title">No open lobbies yet</string>
+    <string name="crew5_rooms_empty_body">Open a new lobby and call your crew.</string>
+    <string name="crew5_rooms_failed">Couldn\'t load the lobbies</string>
+    <string name="crew5_rooms_reload">Reload</string>
+    <string name="crew5_rooms_new">Open a new lobby</string>
+    <string name="crew5_rooms_done_today">You already ran with a crew today. It\'s once a day even if you switch crews, so you can open a new lobby from 00:00 tomorrow (Korea time).</string>
+
+    <!-- 03 · 06 create run -->
+    <string name="crew5_create_header">Create a run</string>
+    <string name="crew5_create_title">Get ready to run together</string>
+    <string name="crew5_create_sub">Run with up to %1$d crew members.</string>
+    <string name="crew5_create_name">Run name</string>
+    <string name="crew5_create_name_hint">e.g. Riverside evening run</string>
+    <string name="crew5_create_name_count">%1$d / %2$d</string>
+    <string name="crew5_create_name_invalid">Use 1 to %1$d characters for the run name.</string>
+    <string name="crew5_create_course">Course to run together</string>
+    <string name="crew5_create_pick_course">Choose a course</string>
+    <string name="crew5_create_other_course">Choose another course</string>
+    <string name="crew5_create_scope">Who can see the lobby</string>
+    <string name="crew5_create_scope_value">%1$s crew</string>
+    <string name="crew5_create_contribution">Your shoe\'s crew stamina</string>
+    <string name="crew5_create_contribution_sub">Max %1$d × Lv.%2$d bonus %3$s</string>
+    <string name="crew5_create_contribution_none">Shown after you pick a shoe in the lobby</string>
+    <string name="crew5_create_open">Open lobby</string>
+    <string name="crew5_create_failed_done">You already ran with a crew today, so you can\'t open a new lobby.</string>
+    <string name="crew5_create_failed_network">The connection is unstable. Your input is kept — tap again.</string>
+    <string name="crew5_create_failed">Couldn\'t open the lobby. %1$s</string>
+    <string name="crew5_create_note">Opening a lobby doesn\'t use today\'s crew run. It starts only when the host starts.</string>
+
+    <!-- 04 · 05 · 09 courses -->
+    <string name="crew5_courses_header">Choose a course</string>
+    <string name="crew5_courses_mine">My courses</string>
+    <string name="crew5_courses_shared">Shared courses</string>
+    <string name="crew5_courses_item">%1$s km · %2$s</string>
+    <string name="crew5_courses_item_km">%1$s km</string>
+    <string name="crew5_courses_current">Current course</string>
+    <string name="crew5_courses_empty_title">No saved courses</string>
+    <string name="crew5_courses_empty_body">Pick a shared course, or make one from Recommended courses on the Run tab.</string>
+    <string name="crew5_courses_shared_failed">Couldn\'t load shared courses</string>
+    <string name="crew5_courses_loading">Loading shared courses</string>
+    <string name="crew5_course_detail_meta">%1$s km · the white dot is the start</string>
+    <string name="crew5_course_pick">Run this course</string>
+    <string name="crew5_course_other">See other courses</string>
+
+    <!-- 10 ~ 23 lobby -->
+    <string name="crew5_lobby_header">Crew lobby</string>
+    <string name="crew5_lobby_sub">%1$s · %2$s</string>
+    <string name="crew5_lobby_members">Running together</string>
+    <string name="crew5_lobby_ready_chip">%1$d/%2$d ready</string>
+    <string name="crew5_lobby_more">+%1$d</string>
+    <string name="crew5_lobby_all">See all</string>
+    <string name="crew5_lobby_invite">Join us</string>
+    <string name="crew5_lobby_me">Me</string>
+    <string name="crew5_lobby_pool">Crew stamina</string>
+    <string name="crew5_lobby_pool_total">/ %1$s</string>
+    <string name="crew5_lobby_goal">Crew goal</string>
+    <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
+    <string name="crew5_lobby_goal_max">Max</string>
+    <string name="crew5_lobby_course">Crew course</string>
+    <string name="crew5_lobby_course_none">No course</string>
+    <string name="crew5_lobby_course_expand">View course larger</string>
+    <string name="crew5_lobby_shoe">My shoe</string>
+    <string name="crew5_lobby_shoe_none">Running in your equipped shoe</string>
+    <string name="crew5_lobby_shoe_change">Change shoe</string>
+    <string name="crew5_lobby_start">Start with %1$d</string>
+    <string name="crew5_lobby_call">Call your crew</string>
+    <string name="crew5_lobby_ready">I\'m ready</string>
+    <string name="crew5_lobby_waiting_host">Starts when the host starts</string>
+    <string name="crew5_lobby_cancel_ready">Cancel ready</string>
+    <string name="crew5_lobby_menu">Lobby menu</string>
+    <string name="crew5_lobby_menu_roster">Manage runners</string>
+    <string name="crew5_lobby_menu_course">Change course</string>
+    <string name="crew5_lobby_menu_rules">Crew run rules</string>
+    <string name="crew5_lobby_menu_leave">Leave lobby</string>
+    <string name="crew5_lobby_rules">See crew run rules</string>
+    <string name="crew5_lobby_done_today">You already ran with a crew today, so you can\'t get ready in this lobby.</string>
+    <string name="crew5_lobby_offline">Can\'t reach the server. Reconnecting automatically.</string>
+    <string name="crew5_lobby_reconnect">Reconnect now</string>
+    <string name="crew5_lobby_failed">That didn\'t go through. Please tap again.</string>
+    <string name="crew5_lobby_loading">Loading the lobby</string>
+
+    <!-- 24 shoes -->
+    <string name="crew5_shoes_title">My shoe for this run</string>
+    <string name="crew5_shoes_max">Max durability %1$d</string>
+    <string name="crew5_shoes_eff">Efficiency</string>
+    <string name="crew5_shoes_comfort">Comfort</string>
+    <string name="crew5_shoes_dur">Durability</string>
+    <string name="crew5_shoes_add">Added to the shared pool when you start</string>
+    <string name="crew5_shoes_confirm">Use this shoe</string>
+    <string name="crew5_shoes_empty">No shoes can be used for a crew run. You\'ll run in your equipped shoe.</string>
+    <string name="crew5_shoes_failed">Couldn\'t change the shoe. Your choice is unchanged.</string>
+
+    <!-- 07 · 08 · 25 course sheets -->
+    <string name="crew5_course_view_title">Course to run together</string>
+    <string name="crew5_course_change_title">Change course</string>
+    <string name="crew5_course_change_note">Changing it clears everyone\'s ready except the host. Runners check the new course and get ready again.</string>
+    <string name="crew5_course_change_pick">Choose another course</string>
+    <string name="crew5_course_change_failed">Couldn\'t change the course. The current course stays.</string>
+    <string name="crew5_course_updated_title">The course changed</string>
+    <string name="crew5_course_updated_body">The host changed the course to %1$s. Check the course and get ready again.</string>
+    <string name="crew5_course_updated_ok">Check course</string>
+    <string name="crew5_course_loading">Loading the route</string>
+
+    <!-- 26 ~ 30 sheets -->
+    <string name="crew5_stamina_title">Today\'s crew stamina</string>
+    <string name="crew5_stamina_contributors">Crew who added today</string>
+    <string name="crew5_stamina_contributors_n">%1$d</string>
+    <string name="crew5_stamina_mine">You add when you start</string>
+    <string name="crew5_stamina_drain">Each runner uses</string>
+    <string name="crew5_stamina_drain_value">%1$s per minute</string>
+    <string name="crew5_stamina_reset">Reset</string>
+    <string name="crew5_stamina_reset_value">Every day 00:00 (Korea time)</string>
+    <string name="crew5_stamina_note">All lobbies in the crew share it. Your shoe adds its max durability plus the level effect, not what\'s left. Your own shoe doesn\'t wear.</string>
+    <string name="crew5_stamina_fresh">No one in the crew has started today yet (0 / 0)</string>
+    <string name="crew5_goal_sheet_title">Crew goal · level</string>
+    <string name="crew5_goal_sheet_level">Now Lv.%1$d</string>
+    <string name="crew5_goal_sheet_new">No crew runs yet</string>
+    <string name="crew5_goal_sheet_total">%1$s km in total</string>
+    <string name="crew5_goal_sheet_next">%2$s km to Lv.%1$d</string>
+    <string name="crew5_goal_sheet_effects">Crew stamina +%1$s%% · crew reward +%2$s%%</string>
+    <string name="crew5_goal_sheet_note">Each member\'s valid crew run distance adds up. It\'s different from the lobby\'s course distance. Levels never go down.</string>
+    <string name="crew5_goal_sheet_all">See all levels</string>
+    <string name="crew5_levels_title">Levels 1 – 20</string>
+    <string name="crew5_levels_level">Level</string>
+    <string name="crew5_levels_km">Total distance</string>
+    <string name="crew5_levels_stamina">Stamina</string>
+    <string name="crew5_levels_reward">Reward</string>
+    <string name="crew5_levels_note">Total distance is the whole crew\'s distance to reach that level (not extra distance per step).</string>
+    <string name="crew5_bonus_title">Headcount bonus table</string>
+    <string name="crew5_bonus_people">Runners</string>
+    <string name="crew5_bonus_value">Bonus</string>
+    <string name="crew5_bonus_n">%1$d</string>
+    <string name="crew5_bonus_note">Counts only phone-verified members of the same crew who are within %2$dm at the start and %1$d min later. 0–1 runners get no bonus. The level bonus is added separately.</string>
+
+    <!-- 14 · 15 · 31 roster -->
+    <string name="crew5_roster_host_title">Manage runners</string>
+    <string name="crew5_roster_member_title">Running together</string>
+    <string name="crew5_roster_ready">Ready</string>
+    <string name="crew5_roster_waiting">Getting ready</string>
+    <string name="crew5_roster_count">%1$d runners · %2$d ready</string>
+    <string name="crew5_kick_title">Remove %1$s?</string>
+    <string name="crew5_kick_body">They leave this lobby only, not the crew. Removed runners can\'t rejoin this lobby.</string>
+    <string name="crew5_kick_go">Remove</string>
+
+    <!-- 21 · 32 leave -->
+    <string name="crew5_leave_title">Leave the lobby?</string>
+    <string name="crew5_leave_host_body">You haven\'t started yet. If you leave, the runner who joined first becomes host; if no one is left, the lobby closes.</string>
+    <string name="crew5_leave_member_body">You haven\'t started, so today\'s crew run isn\'t used. You can join another lobby or open a new one.</string>
+    <string name="crew5_leave_stay">Keep waiting</string>
+    <string name="crew5_leave_go">Leave</string>
+
+    <!-- 33 · 34 · 40 start -->
+    <string name="crew5_start_title">Start together?</string>
+    <string name="crew5_start_shoe">My shoe</string>
+    <string name="crew5_start_people">Starting runners</string>
+    <string name="crew5_start_people_n">%1$d</string>
+    <string name="crew5_start_bonus">Expected total bonus</string>
+    <string name="crew5_start_bonus_value">Headcount +%1$s%% · Lv.%2$d +%3$s%% = +%4$s%%</string>
+    <string name="crew5_start_add">You add</string>
+    <string name="crew5_start_go">Start together</string>
+    <string name="crew5_partial_title">Start with the %1$d ready?</string>
+    <string name="crew5_partial_body">The %1$d still getting ready won\'t start this time and aren\'t counted for bonus or stamina.</string>
+    <string name="crew5_partial_go">Start with %1$d ready</string>
+    <string name="crew5_partial_wait">Wait a bit more</string>
+    <string name="crew5_unverified_title">Left out of the headcount bonus only</string>
+    <string name="crew5_unverified_ok">Got it, get ready</string>
+    <string name="crew5_starting">Syncing the start signal</string>
+
+    <!-- 61 · 68 ~ 70 edge states -->
+    <string name="crew5_failed_title">Couldn\'t load the lobby</string>
+    <string name="crew5_failed_body">Check your connection and reload. The lobby itself is unchanged.</string>
+    <string name="crew5_removed_title">You left this lobby</string>
+    <string name="crew5_removed_body">The host removed you, or this lobby can\'t be joined. You\'re still in the crew.</string>
+    <string name="crew5_closed_title">The lobby closed</string>
+    <string name="crew5_closed_body">Everyone left or it sat empty too long. Join another lobby or open a new one.</string>
+    <string name="crew5_full_title">The lobby is full</string>
+    <string name="crew5_full_body">A lobby holds up to %1$d runners. See other lobbies or open a new one.</string>
+    <string name="crew5_started_title">This lobby already started</string>
+    <string name="crew5_started_body">You can\'t join a run midway. See other lobbies or open a new one.</string>
+    <string name="crew5_missed_title">You missed the start</string>
+    <string name="crew5_missed_body">The crew started while you were away from the lobby. Today\'s crew run wasn\'t used.</string>
+    <string name="crew5_sign_in_title">Please sign in</string>
+    <string name="crew5_other_rooms">See other lobbies</string>
+</resources>

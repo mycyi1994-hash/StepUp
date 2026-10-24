@@ -27,7 +27,7 @@
 <meta name="twitter:image:alt" content="오늘의 한 걸음, 함께라서 더 멀리. StepUp 사전 등록">
 <link rel="icon" href="./assets/img/app-icon-192.webp" type="image/webp">
 <link rel="apple-touch-icon" href="./assets/img/apple-touch-icon.png">
-<link rel="stylesheet" href="./styles.css?v=20261019-qa">
+<link rel="stylesheet" href="./styles.css?v=20261023-qa2">
 <script>
 // 영어로 볼 사람에게 한국어가 먼저 번쩍이지 않게 — i18n.js 가 글자를 바꿀 때까지(늦어도 4초) 감춘다. 고르는 규칙은 i18n.js 와 같다.
 (function () {
@@ -45,8 +45,27 @@
   } catch (e) {}
 })();
 </script>
-<script type="module" src="./site.js?v=20261019-qa"></script>
-<script type="module" src="./waitlist.js?v=20261019-qa"></script>
+<script>
+// 느린 연결에서 스크립트가 오기 전(첫 화면은 보이는데 9초쯤 아무것도 안 되던 것 — 2차 QA) 누른 것을 잃지 않는다.
+// 사전 등록 버튼 · 화면 이동 링크를 누르면 눌린 표시를 하고 기억해 두었다가, 스크립트가 오면 그대로 이어서 한다.
+(function () {
+  var w = window;
+  w.__stepupEarly = { join: false, go: -1 };
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-waitlist-open],[data-go]') : null;
+    if (!el) return;
+    if (el.hasAttribute('data-waitlist-open') ? w.__stepupWaitlistReady : w.__stepupSiteReady) return;
+    e.preventDefault();
+    if (el.hasAttribute('data-waitlist-open')) w.__stepupEarly.join = true; else w.__stepupEarly.go = Number(el.getAttribute('data-go'));
+    el.classList.add('tap-pending');
+    document.documentElement.classList.add('scripts-pending');
+  }, true);
+})();
+</script>
+<link rel="modulepreload" href="./i18n.js?v=20261023-qa2">
+<link rel="modulepreload" href="./waitlist-core.mjs?v=20261023-qa2">
+<script type="module" src="./site.js?v=20261023-qa2"></script>
+<script type="module" src="./waitlist.js?v=20261023-qa2"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -59,7 +78,7 @@
         <!-- 공식 X · 텔레그램 — 로고만(Simple Icons, CC0), 새 창 -->
         <a class="social" href="https://x.com/GiwaStepUp" target="_blank" rel="noopener noreferrer" aria-label="StepUp X (새 창에서 열림)" data-i18n-attr="aria-label:header.x" title="X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg></a>
         <a class="social" href="https://t.me/StepUpOfficialTG" target="_blank" rel="noopener noreferrer" aria-label="StepUp 텔레그램 (새 창에서 열림)" data-i18n-attr="aria-label:header.telegram" title="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
-        <button class="pill sound" type="button" aria-pressed="false" aria-label="소리 켜기"><span class="sound-dot" aria-hidden="true"></span><span class="sound-label">소리 켜기</span></button>
+        <button class="pill sound" type="button" aria-pressed="false" aria-label="소리 켜기"><span class="sound-dot" aria-hidden="true"></span><svg class="sound-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" stroke="none"/><path class="sound-wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="sound-mute" d="m16 9.5 5 5m0-5-5 5"/></svg><span class="sound-label">소리 켜기</span></button>
         <button class="pill lang-switch" type="button" lang="en" aria-label="Read this page in English" data-i18n="lang.switch" data-i18n-attr="aria-label:lang.switchLabel">EN</button>
         <button class="pill pill-join" type="button" data-waitlist-open data-i18n="header.join">사전 등록</button>
       </div>
@@ -283,7 +302,7 @@
       </div>
       <footer class="site-footer">
         <span>© StepUp · Powered by GIWA</span>
-        <div class="footer-links"><a href="./privacy.html" data-i18n="footer.privacy" data-i18n-attr="href:footer.privacyHref">개인정보처리방침</a><a href="./terms.html" data-i18n="footer.terms" data-i18n-attr="href:footer.termsHref">이용약관</a><a href="mailto:stepupofficial@stepupcrew.com" data-i18n="footer.contact">문의</a><a href="https://github.com/mycyi1994-hash/StepUp" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+        <div class="footer-links"><a href="./privacy.html" data-i18n="footer.privacy" data-i18n-attr="href:footer.privacyHref">개인정보처리방침</a><a href="./terms.html" data-i18n="footer.terms" data-i18n-attr="href:footer.termsHref">이용약관</a><a href="mailto:stepupofficial@stepupcrew.com" data-i18n="footer.contact">문의 stepupofficial@stepupcrew.com</a><a href="https://github.com/mycyi1994-hash/StepUp" target="_blank" rel="noopener noreferrer">GitHub</a></div>
       </footer>
     </section>
   </main>
@@ -293,14 +312,13 @@
   <!-- 닫기는 내용 위에 떠 있지 않고 맨 위 띠에 둔다(작은 폰에서 공유 버튼 · 진행 숫자를 가리던 것) -->
   <div class="waitlist-bar"><button class="waitlist-close" type="button" aria-label="닫기" data-i18n-attr="aria-label:wl.close">×</button></div>
   <form class="waitlist-form" novalidate>
-    <span class="waitlist-symbol" aria-hidden="true">↗</span>
     <p class="waitlist-kicker" data-i18n="wl.kicker">StepUp 사전 등록</p>
     <h2 id="waitlist-title" data-i18n-html="wl.title">우리의 첫걸음,<br>함께 시작해요</h2>
     <p class="waitlist-intro" data-i18n-html="wl.intro">출시 소식과 사전 등록 보너스를 준비하고 있어요.<br>가장 먼저 만날 이메일을 남겨주세요.</p>
     <label class="waitlist-label" for="waitlist-email" data-i18n="wl.emailLabel">이메일 주소</label>
     <input id="waitlist-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-email-error waitlist-email-help" required>
     <p id="waitlist-email-error" class="waitlist-field-error" hidden></p>
-    <p id="waitlist-email-help" class="waitlist-field-help" data-i18n="wl.emailHelp">어떤 이메일이든 괜찮아요. 출시 후 같은 이메일로 구글 로그인하면 보너스 대상인지 확인해요.</p>
+    <p id="waitlist-email-help" class="waitlist-field-help" data-i18n="wl.emailHelp">출시 소식은 어떤 이메일로든 받을 수 있어요. 보너스 대상 확인은 출시 후 이 이메일로 구글 로그인할 때 해요 — 구글 로그인에 쓰는 이메일을 권해요.</p>
     <label class="waitlist-honeypot" aria-hidden="true">이 칸은 비워두세요 <input name="website" tabindex="-1" autocomplete="off"></label>
     <label class="waitlist-consent"><input type="checkbox" name="consent" aria-describedby="waitlist-consent-error" required><span><span class="waitlist-required" data-i18n="wl.required">[필수]</span> <span data-i18n="wl.consent">출시 안내와 보너스 확인을 위한 개인정보 수집·이용 동의</span> <a class="waitlist-terms-open" href="./privacy.html" target="_blank" rel="noopener" aria-haspopup="dialog" data-i18n="wl.details">자세히</a></span></label>
     <p id="waitlist-consent-error" class="waitlist-field-error" hidden></p>
@@ -370,7 +388,7 @@
 </dialog>
 <dialog class="waitlist-terms" aria-labelledby="waitlist-terms-title">
   <div class="waitlist-terms-body">
-    <h2 id="waitlist-terms-title" data-i18n="terms.title">개인정보 수집·이용 동의</h2>
+    <h2 id="waitlist-terms-title" tabindex="-1" data-i18n="terms.title">개인정보 수집·이용 동의</h2>
     <dl>
       <div><dt data-i18n="terms.what">수집 항목</dt><dd data-i18n-html="terms.whatValue">이메일, 동의·등록 시각, 공유 링크용 추천 코드, 다른 등록자의 추천 링크로 등록한 경우 그 추천 관계<br><span>선택: 제출한 공유 게시물·영상 주소</span></dd></div>
       <div><dt data-i18n="terms.why">이용 목적</dt><dd data-i18n="terms.whyValue">출시 안내, 같은 이메일로 구글 로그인한 계정의 사전 등록 보너스 확인</dd></div>

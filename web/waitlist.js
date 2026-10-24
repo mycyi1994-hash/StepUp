@@ -1,5 +1,5 @@
-import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261019-qa';
-import { t, lang, onLangChange } from './i18n.js?v=20261019-qa';
+import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261023-qa2';
+import { t, lang, onLangChange } from './i18n.js?v=20261023-qa2';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
@@ -216,35 +216,57 @@ function showStage(next) {
 // ── Opening and closing ───────────────────────────────────────────────
 // Each open dialog adds one history entry, so the Back button (and Android's back gesture) closes the dialog instead of
 // leaving the site. Closing it any other way removes that entry again.
-let ignoreNextPop = false;
+// Closes that happen together (Esc Esc on the summary and the dialog) go back in one step — two history.back() calls in a row
+// used to leave one dialog entry behind, so the next Back did nothing (2nd QA).
+let ignorePops = 0;
+let pendingBacks = 0;
 function openDialog(element, name) {
   if (element.open) return;
   element.showModal();
   element.openedAt = performance.now();
   try {
-    history.pushState({ ...(history.state || {}), stepupDialog: name }, '');
+    // Standing on a dialog entry with nothing open (Forward into it): reuse it instead of stacking another one.
+    if (history.state?.stepupDialog && !dialog.open && !termsDialog.open && element === dialog) {
+      history.replaceState({ ...history.state, stepupDialog: name }, '');
+    } else history.pushState({ ...(history.state || {}), stepupDialog: name }, '');
     element.pushedAs = name;
   } catch { element.pushedAs = ''; }
 }
 function forgetHistory(element) {
-  const name = element.pushedAs;
+  if (!element.pushedAs) return;
   element.pushedAs = '';
-  if (name && history.state?.stepupDialog === name) { ignoreNextPop = true; history.back(); }
+  if (++pendingBacks > 1) return;
+  setTimeout(() => {
+    const steps = pendingBacks;
+    pendingBacks = 0;
+    ignorePops += 1;
+    history.go(-steps);
+  }, 0);
 }
 dialog.addEventListener('close', () => forgetHistory(dialog));
 termsDialog.addEventListener('close', () => forgetHistory(termsDialog));
 window.addEventListener('popstate', () => {
-  if (ignoreNextPop) { ignoreNextPop = false; return; }
+  if (ignorePops > 0) { ignorePops -= 1; return; }
   for (const element of [termsDialog, dialog]) {
     if (element.open && element.pushedAs) { element.pushedAs = ''; element.close(); return; }
   }
 });
+// A reload with the dialog open keeps its history entry while the dialog is closed — step off it so Back works at once.
+if (history.state?.stepupDialog && location.hash !== '#join') {
+  ignorePops += 1;
+  history.back();
+}
 
 // Close on a click outside — but only when the press also started outside, and not within half a second of opening:
 // the second click of a double-click on the open button, or a text selection released outside, used to close it at once.
 function closeOnBackdrop(element) {
   let pressedOutside = false;
   element.addEventListener('pointerdown', event => { pressedOutside = event.target === element; });
+  // The second press of a double-click on an open button lands in the new dialog and took the focus off the email field,
+  // so whatever was typed next went nowhere (2nd QA). Ignore presses in the first half second.
+  element.addEventListener('mousedown', event => {
+    if (performance.now() - (element.openedAt || 0) < 500) event.preventDefault();
+  });
   element.addEventListener('click', event => {
     if (event.target !== element || !pressedOutside) return;
     if (performance.now() - (element.openedAt || 0) < 500) return;
@@ -271,14 +293,26 @@ $('.waitlist-terms-open').addEventListener('click', event => {
   // The link sits inside the consent label; open the summary without toggling the checkbox.
   event.preventDefault();
   openDialog(termsDialog, 'terms');
+  // Start on the title, not on the first link (Enter pressed twice on "자세히" opened the mail app)
+  $('#waitlist-terms-title').focus();
 });
+// A double-click on "자세히" landed its second click on "동의하기" (ticking consent unread), and a double-click on the
+// summary's buttons landed on the consent box or "사전 등록하기" underneath (2nd QA). Clicks right after the summary
+// opens or closes are dropped.
+const tooSoon = since => performance.now() - (since || 0) < 450;
+let termsClosedAt = 0;
+termsDialog.addEventListener('close', () => { termsClosedAt = performance.now(); });
+dialog.addEventListener('click', event => {
+  if (!termsDialog.open && tooSoon(termsClosedAt)) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, true);
 // "동의하기" ticks the box it explains (the old "확인" read as agreeing but left the box empty).
 $('.waitlist-terms-agree').addEventListener('click', () => {
+  if (tooSoon(termsDialog.openedAt)) return;
   consentInput.checked = true;
   fieldError(consentInput, consentError, '');
   termsDialog.close();
 });
-$('.waitlist-terms-close').addEventListener('click', () => termsDialog.close());
+$('.waitlist-terms-close').addEventListener('click', () => { if (!tooSoon(termsDialog.openedAt)) termsDialog.close(); });
 $('.waitlist-change-email').addEventListener('click', () => {
   if (busy) return;
   saveReceipt('');
@@ -551,3 +585,11 @@ if (location.hash === '#join') {
   try { history.replaceState(history.state, '', `${location.pathname}${location.search}#film`); } catch { /* file:// */ }
   openWaitlist();
 }
+// A press on a sign-up button before this script arrived (slow connections) opens the dialog now (index.html head script).
+window.__stepupWaitlistReady = true;
+if (window.__stepupEarly?.join) {
+  window.__stepupEarly.join = false;
+  openWaitlist();
+}
+for (const el of document.querySelectorAll('[data-waitlist-open].tap-pending')) el.classList.remove('tap-pending');
+if (!document.querySelector('.tap-pending')) document.documentElement.classList.remove('scripts-pending');

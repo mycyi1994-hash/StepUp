@@ -37,5 +37,25 @@ a.button{display:inline-flex;align-items:center;justify-content:center;min-heigh
   </div>
   <p class="en" lang="en">This page does not exist. Go to the <a href="/?lang=en" style="color:#4C9DFF">StepUp homepage</a> or <a href="/?lang=en#join" style="color:#4C9DFF">join the waitlist</a>.</p>
 </main>
+<script>
+// 영어 브라우저(또는 홈페이지에서 영어를 고른 사람)에게는 영어로 — 예전엔 한국어가 먼저, 영어는 아래 작은 한 줄이었다(2차 QA).
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('stepup.lang'); } catch (e) {}
+  var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'ko'];
+  var en = saved === 'en' || saved === 'ko' ? saved === 'en' : !langs.some(function (c) { return /^ko\b/i.test(c || ''); });
+  if (!en) return;
+  document.documentElement.lang = 'en';
+  document.title = 'Page not found — StepUp';
+  document.querySelector('h1').textContent = 'Page not found';
+  document.querySelector('main > p').textContent = 'This address has moved or never existed. Look around StepUp on the homepage, or join the waitlist for launch news.';
+  var a = document.querySelectorAll('.actions a');
+  a[0].textContent = 'Join the waitlist'; a[0].href = '/?lang=en#join';
+  a[1].textContent = 'Go to homepage'; a[1].href = '/?lang=en';
+  var other = document.querySelector('.en');
+  other.lang = 'ko';
+  other.innerHTML = '없는 페이지예요. <a href="/?lang=ko" style="color:#4C9DFF">한국어 홈페이지로</a>';
+})();
+</script>
 </body>
 </html>

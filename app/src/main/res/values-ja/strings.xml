@@ -1607,7 +1607,7 @@ StepUp と走り出そう。</string>
     <string name="challenge_history_empty">完了したチャレンジはまだありません</string>
     <string name="challenge_history_event">チャレンジ報酬</string>
     <string name="test_update_title">新しいバージョンがあります</string>
-    <string name="test_update_body">新しいStepUpテスト版が出ました。「アップデート」を押すとダウンロードしてそのままインストールします — アプリが一瞬閉じるので、通知を押すと新しいバージョンが開きます(Android 11以前は次の画面でもう一度「アップデート」)。記録とログインはそのまま残ります。</string>
+    <string name="test_update_body">新しいStepUpテスト版が出ました。「アップデート」を押すとダウンロードしてAndroidのインストール画面が開きます — そこでもう一度「アップデート」を押せば完了です。Google Playプロテクトの画面が出たら「アプリをスキャン」(または「送信」)を選んでから「インストール」を押してください。記録とログインはそのまま残ります。</string>
     <string name="test_update_downloading">新しいバージョンをダウンロード中…</string>
     <string name="test_update_failed">ダウンロードが途切れたか、ファイルが壊れていました。接続を確認してもう一度お試しください。</string>
     <string name="test_update_versions">この端末: %1$s → 新しい版: %2$s</string>
@@ -1621,7 +1621,7 @@ StepUp と走り出そう。</string>
     <string name="test_update_check_failed">確認できません</string>
     <string name="test_update_found">新しい版 · 更新</string>
     <string name="test_update_downloading_short">ダウンロード中…</string>
-    <string name="test_update_installing">インストール中… アプリが一瞬閉じて新しいバージョンに変わります。</string>
+    <string name="test_update_installing">Androidのインストール画面で「アップデート」を押してください。アプリが一瞬閉じて新しいバージョンに変わります。</string>
     <string name="test_update_installing_short">インストール中…</string>
     <string name="test_update_permission">自動でアップデートするには、設定の「不明なアプリのインストール」でStepUpを許可してください。戻るとインストールを続けます。</string>
     <string name="test_update_permission_short">インストール許可が必要</string>
@@ -1631,6 +1631,7 @@ StepUp と走り出そう。</string>
     <string name="test_update_failed_storage">空き容量が足りずインストールできませんでした。容量を空けてもう一度お試しください。</string>
     <string name="test_update_failed_blocked">このスマホの設定・ポリシーがインストールを止めました。</string>
     <string name="test_update_failed_other">Androidがインストールしませんでした。もう一度お試しください。</string>
+    <string name="test_update_unfinished">アップデートはインストールされませんでした。「アップデート」を押すとインストール画面をもう一度開きます — Google Playプロテクトの画面が出たら、インストール(またはアプリをスキャン)を選んでください。</string>
     <string name="test_update_channel">アプリのアップデート</string>
     <string name="test_update_notify_available_title">StepUpの新しいバージョンがあります</string>
     <string name="test_update_notify_available_body">タップしてアップデート · %1$s</string>

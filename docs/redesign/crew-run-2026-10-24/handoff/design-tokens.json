@@ -1,0 +1,151 @@
+{
+  "version": "2026-10-24",
+  "approved_variant": "3 / 듀얼 레일",
+  "override": "tunnel_background_lobby_only",
+  "background_policy": {
+    "home": "APP_EXISTING",
+    "room-list": "APP_EXISTING",
+    "create": "APP_EXISTING",
+    "courses": "APP_EXISTING",
+    "course-detail": "INHERIT_PARENT_DIM_PAUSE",
+    "create-selected": "APP_EXISTING",
+    "course-change": "INHERIT_PARENT_DIM_PAUSE",
+    "course-updated": "INHERIT_PARENT_DIM_PAUSE",
+    "course-empty": "APP_EXISTING",
+    "host-lobby": "LOBBY_TUNNEL",
+    "host-waiting": "LOBBY_TUNNEL",
+    "solo": "LOBBY_TUNNEL",
+    "full": "LOBBY_TUNNEL",
+    "host-roster": "INHERIT_PARENT_DIM_PAUSE",
+    "kick": "INHERIT_PARENT_DIM_PAUSE",
+    "removed-host": "LOBBY_TUNNEL",
+    "notify": "INHERIT_PARENT_DIM_PAUSE",
+    "notify-sending": "INHERIT_PARENT_DIM_PAUSE",
+    "notify-sent": "INHERIT_PARENT_DIM_PAUSE",
+    "notify-failed": "INHERIT_PARENT_DIM_PAUSE",
+    "host-leave": "INHERIT_PARENT_DIM_PAUSE",
+    "member-lobby": "LOBBY_TUNNEL",
+    "member-ready": "LOBBY_TUNNEL",
+    "shoes": "INHERIT_PARENT_DIM_PAUSE",
+    "course-view": "INHERIT_PARENT_DIM_PAUSE",
+    "stamina": "INHERIT_PARENT_DIM_PAUSE",
+    "goal": "INHERIT_PARENT_DIM_PAUSE",
+    "levels": "INHERIT_PARENT_DIM_PAUSE",
+    "bonus": "INHERIT_PARENT_DIM_PAUSE",
+    "rules": "INHERIT_PARENT_DIM_PAUSE",
+    "member-roster": "INHERIT_PARENT_DIM_PAUSE",
+    "member-leave": "INHERIT_PARENT_DIM_PAUSE",
+    "start-confirm": "INHERIT_PARENT_DIM_PAUSE",
+    "partial-start": "INHERIT_PARENT_DIM_PAUSE",
+    "starting": "APP_EXISTING",
+    "countdown": "COUNTDOWN_EXISTING",
+    "far": "INHERIT_PARENT_DIM_PAUSE",
+    "gps": "INHERIT_PARENT_DIM_PAUSE",
+    "permission": "INHERIT_PARENT_DIM_PAUSE",
+    "unverified": "INHERIT_PARENT_DIM_PAUSE",
+    "checking": "MAP_EXISTING",
+    "verified": "INHERIT_PARENT_DIM_PAUSE",
+    "partial": "INHERIT_PARENT_DIM_PAUSE",
+    "verify-unavailable": "INHERIT_PARENT_DIM_PAUSE",
+    "live": "MAP_EXISTING",
+    "paused": "MAP_EXISTING",
+    "low": "MAP_EXISTING",
+    "zero": "MAP_EXISTING",
+    "finish": "INHERIT_PARENT_DIM_PAUSE",
+    "alone": "INHERIT_PARENT_DIM_PAUSE",
+    "lock": "ANDROID_SYSTEM",
+    "live-roster": "INHERIT_PARENT_DIM_PAUSE",
+    "saving": "APP_EXISTING",
+    "result": "APP_EXISTING",
+    "reward": "INHERIT_PARENT_DIM_PAUSE",
+    "contribution": "INHERIT_PARENT_DIM_PAUSE",
+    "usage": "INHERIT_PARENT_DIM_PAUSE",
+    "levelup": "APP_EXISTING",
+    "history": "APP_EXISTING",
+    "share": "APP_EXISTING",
+    "used": "APP_EXISTING",
+    "crew-moved": "APP_EXISTING",
+    "offline": "MAP_EXISTING",
+    "reconnect": "MAP_EXISTING",
+    "save-failed": "APP_EXISTING",
+    "invalid": "APP_EXISTING",
+    "midnight": "APP_EXISTING",
+    "loading": "LOBBY_STATIC",
+    "load-failed": "APP_EXISTING",
+    "removed": "APP_EXISTING"
+  },
+  "lobby": {
+    "base": "#031427",
+    "text": "#F5F8FF",
+    "secondary_text": "#B5CBE6",
+    "accent": "#1166FF",
+    "cyan": "#48D9FA"
+  },
+  "dual_rail": {
+    "outer_width_dp": 5,
+    "outer_radius_dp": 20,
+    "outer_gradient": {
+      "angle_degrees": 110,
+      "colors": [
+        "#96EAFF",
+        "#56CBFA",
+        "#2E9FD5"
+      ],
+      "stops": [
+        0,
+        0.45,
+        1
+      ]
+    },
+    "panel_gradient": {
+      "angle_degrees": 125,
+      "colors": [
+        "#113A58",
+        "#09253C"
+      ],
+      "stops": [
+        0,
+        0.82
+      ]
+    },
+    "inner_inset_dp": 9,
+    "inner_width_dp": 1.5,
+    "inner_radius_dp": 11,
+    "inner_color_rgba_hex": "#82D8F9A6",
+    "applies_identically": [
+      "crew_roster",
+      "my_shoe"
+    ]
+  },
+  "primary_button": {
+    "fill": "#F5F8FF",
+    "text": "#071B3D",
+    "height_dp": 60,
+    "radius_dp": 14
+  },
+  "shoe_change": {
+    "fill": "#95E6FF",
+    "text": "#07384D",
+    "radius_dp": 8
+  },
+  "native_touch_target_min_dp": 48,
+  "review_frame_css_px": [
+    390,
+    844
+  ],
+  "global_app_theme": "reuse_existing_android_tokens",
+  "font": "reuse_existing_full_android_font_resources",
+  "motion": {
+    "scope": "lobby_visible_only",
+    "forward_cycle_ms": 11000,
+    "side_light_alternate_duration_ms": 4200,
+    "pause_on": [
+      "sheet",
+      "offscreen",
+      "background",
+      "countdown"
+    ],
+    "reduced_motion": "no_spatial_transform",
+    "foreground_cards_move": false
+  }
+}

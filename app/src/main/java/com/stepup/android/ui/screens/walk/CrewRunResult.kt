@@ -80,6 +80,8 @@ internal data class CrewResultUi(
     val note: String?,
     /** 걸음으로 셈한 거리면 그 근거 */
     val basis: String?,
+    /** 그 러닝의 대기실 이름 · 코스(서버가 출발 때 적은 값, 0072) — 없으면 null */
+    val room: String? = null,
 )
 
 @Composable
@@ -212,6 +214,12 @@ private fun CrewResultCrewRow(ui: CrewResultUi) {
                 style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.35f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.testTag("run-result-crew"),
             )
+            if (ui.room != null) {
+                Text(
+                    ui.room, style = runTextStyle(13.sp, c.muted, FontWeight.Medium, 1.35f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag("run-result-room"),
+                )
+            }
         }
     }
 }

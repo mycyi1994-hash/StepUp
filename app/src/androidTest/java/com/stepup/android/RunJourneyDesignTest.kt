@@ -950,9 +950,8 @@ class RunJourneyDesignTest {
             show("CR04", "party-ready") { room(lobby) }
             show("CR05", "party-waiting") { room(lobby.copy(members = members.map { if (it.isMe) it.copy(ready = true) else it })) }
             show("CR06", "party-start") { room(hosting) }
-            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.run_crew_start_n, 2))
-            // 크루 대기실은 크루 이름 머리와 정확히 "크루 달리기" 배지
-            compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
+            // 진행자는 "N명과 출발"(준비한 사람 수 — 2026-10-24 듀얼 레일)
+            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.crew5_lobby_start, 2))
             show("CR15", "party-alone") { room(alone) }
             // 크루 러닝은 2명 이상 준비해야 출발한다(서버 0071) — 혼자면 출발 버튼이 꺼지고 까닭 한 줄
             compose.onNodeWithTag("party-start").assertIsNotEnabled()
@@ -976,9 +975,11 @@ class RunJourneyDesignTest {
                         com.stepup.android.ui.screens.walk.CrewSend.Idle, {}, {})
                 }
             }
-            // CR08 — 서버가 정한 시각에 모두 함께
+            // CR08 — 서버가 정한 시각에 모두 함께(자유 러닝과 같은 3 · 2 · 1 · 0 · StepUP! — 앱 맨 위 겹이 서버 시각에 맞춰 그린다)
             show("CR08", "party-countdown") {
-                room(hosting.copy(phase = com.stepup.android.data.repo.PartyPhase.COUNTDOWN, countdown = 3))
+                Box(Modifier.fillMaxSize().testTag("party-countdown")) {
+                    com.stepup.android.ui.screens.walk.FreeRunStartStage(clock = { 400 }, revealSince = { null }, reduced = false)
+                }
             }
             // CR21 — 크루에 기록 공유(경로는 처음에 꺼져 있다)
             show("CR21", "crew-share") {
@@ -1003,8 +1004,8 @@ class RunJourneyDesignTest {
                 member("e", "민지", ready = true), member("f", "지훈", ready = false),
             ))
             put("party-more") { room(crowd) }
-            // 준비 글 · 점은 같은 명단에서 센다(8명 중 5명). 내가 준비를 마쳤으면 "준비하기"가 없다
-            compose.onNodeWithTag("party-ready-count", useUnmergedTree = true).assertTextEquals(label(R.string.run_crew_ready_of, 5, 8))
+            // 준비 칩은 같은 명단에서 센다(8명 중 5명). 내가 준비를 마쳤으면 "준비 완료"가 없다
+            compose.onNodeWithTag("party-ready-count", useUnmergedTree = true).assertTextEquals(label(R.string.crew5_lobby_ready_chip, 5, 8))
             compose.onAllNodesWithTag("party-ready", useUnmergedTree = true).assertCountEquals(0)
             compose.onNodeWithTag("party-waiting").assertExists()
             shot("CR04-many", settle = 1_500)
@@ -1271,6 +1272,420 @@ class RunJourneyDesignTest {
             assertTrue("badge ${tier.key} is 24–28dp high: $heightDp", heightDp in 23.5f..28.5f)
         }
         shot("j04-badges")
+    }
+
+    /**
+     * C — 크루 러닝 3번 듀얼 레일(2026-10-24 핸드오프, 서버 0072). 크루 홈(01) · 열린 대기실(02) · 러닝 만들기(03 · 06) · 코스(04 · 05 · 09) ·
+     * 대기실(10 ~ 13 · 16 · 22 · 23, 사진 터널 — 모션 줄이기라 정지 사진) · 시트(14 · 15 · 21 · 24 ~ 34 · 40) · 출발(35 · 36) ·
+     * 예외(61 · 68 · 69 · 70)를 화면 부품에 예시 값을 넣어 찍는다(서버에 보내지 않는다). 캡처 이름은 장면 번호(C10-host-lobby …).
+     * 터널은 대기실에만 있고(lobby-tunnel) 홈 · 목록 · 만들기 · 코스에는 없는지도 본다.
+     */
+    @Test fun crewRooms() {
+        seed()
+        val name = "여의도 퇴근런"
+        val crew = com.stepup.android.data.repo.Crew(id = "c1", monogram = "YD", name = "퇴근런", tagline = "함께 달릴수록 강해지는 우리",
+            area = "여의도", memberCount = 30, roster = emptyList(), owned = false, joined = true)
+        val repo = ServiceLocator.courseRepository
+        runBlocking { repo.ensureSeeded() }
+        val courses = runBlocking { repo.courses.first().filter { it.hasTrack } }
+        val roomCourse = com.stepup.android.domain.RoomCourse.of(courses.first()).copy(rev = 2)
+        val now = System.currentTimeMillis()
+        val day = java.time.LocalDate.now(com.stepup.android.domain.CrewHomeRules.KST)
+        val pool = com.stepup.android.domain.CrewPoolSnap(day, total = 1200.0, remaining = 720.0, consumed = 480.0, contributors = 12,
+            activeRunners = 0, exhausted = false, low = false, version = 1, asOfMs = now)
+        val mine = com.stepup.android.domain.CrewRunMine(usedToday = false, state = null, crewId = null, crewName = null, partyId = null,
+            sessionId = null, startedAtMs = null, terminalReason = null, contribution = 0.0, consumed = 0.0, distanceM = null, totalSup = null,
+            nextEligibleAtMs = null)
+        val today = com.stepup.android.domain.CrewRunToday(crewId = "c1", day = day, serverNowMs = now, resetsAtMs = now + 3_600_000,
+            pool = pool, mine = mine, verified = true, crewLevel = 8, runKm = 859.0, nextLevelKm = 900.0, staminaBonus = 0.42, rewardBonus = 0.07,
+            levelEvent = null)
+        fun server(e: Int, c: Int, max: Int) = com.stepup.android.domain.ServerStats(origin = "DRAW", efficiencyBps = e, comfortBps = c,
+            durabilityPts = 80.0, maxLevel = 20, status = "OWNED", chainState = "APP", canWithdraw = true, upgradeCost = 0.0,
+            repairCostPerPoint = 0.0, genesisNo = 0, durabilityNow = max * 8 / 10, durabilityMax = max)
+        val shoeA = com.stepup.android.domain.Sneaker(id = 9_501, faction = com.stepup.android.domain.Faction.WIND,
+            rarity = com.stepup.android.domain.Rarity.RARE, variant = 0, level = 3, mintNumber = 1201, luck = 1.0, comfort = 1.0, durability = 80,
+            equipped = true, acquiredAt = now, server = server(1600, 1200, 100), modelId = 1201)
+        val shoeB = shoeA.copy(id = 9_502, mintNumber = 1248, equipped = false, server = server(1200, 1800, 120), modelId = 1107)
+        val shoes = listOf(shoeA, shoeB)
+        fun member(id: String, who: String, ready: Boolean, me: Boolean = false, host: Boolean = false) =
+            com.stepup.android.data.repo.PartyMember(id, who, ready = ready, isMe = me, isHost = host)
+        val six = listOf(
+            member("me", "나", ready = true, me = true, host = true), member("a", "도윤", ready = true), member("b", "지연", ready = true),
+            member("c", "혜진", ready = true), member("d", "민수", ready = true), member("e", "서연", ready = true),
+        )
+        val hostLobby = com.stepup.android.data.repo.PartyState(
+            phase = com.stepup.android.data.repo.PartyPhase.LOBBY, partyId = 1L, crewId = "c1", crewName = crew.name, members = six,
+            pickedRoom = 1L, roomName = name, roomCreatedAt = now - 600_000, course = roomCourse, courseSeenRev = 2,
+        )
+        val memberLobby = hostLobby.copy(members = listOf(
+            member("h", "도윤", ready = true, host = true), member("me", "나", ready = false, me = true), member("b", "지연", ready = true),
+            member("c", "혜진", ready = true), member("d", "민수", ready = true), member("e", "서연", ready = true),
+        ))
+        fun crewRoom(ready: Int, total: Int, verified: Boolean = true) = com.stepup.android.domain.CrewRunRoom(
+            partyId = 1L, crewId = "c1", status = "LOBBY", capacity = 20, crewLevel = 8, staminaBonus = 0.42, rewardBonus = 0.07,
+            membersCount = total, readyCount = ready, bonusCount = ready, bonusPct = com.stepup.android.domain.CrewRunMath.headcountBonus(ready),
+            nextBonusPct = com.stepup.android.domain.CrewRunMath.headcountBonus(ready + 1), myContribution = 142.0, myVerified = verified,
+            pool = pool,
+            members = listOf(com.stepup.android.domain.CrewRoomMember(userId = "me", name = "나", isMe = true, isHost = true, ready = true,
+                crewMember = true, ranToday = false, verified = verified, sneakerId = shoeA.id, rarity = "RARE", shoeLevel = 3, modelId = 1201,
+                durMax = 100, durNow = 80)),
+        )
+        try {
+            var scene by mutableStateOf<(@Composable () -> Unit)?>(null)
+            edgeToEdge()
+            compose.setContent { DeviceFrame { Box(Modifier.fillMaxSize()) { scene?.invoke() } } }
+            fun show(shotName: String, tag: String, content: @Composable () -> Unit) {
+                compose.runOnIdle { scene = content }
+                awaitTag(tag)
+                shot(shotName, settle = 1_500)
+            }
+            fun put(tag: String, content: @Composable () -> Unit) {
+                compose.runOnIdle { scene = content }
+                awaitTag(tag)
+            }
+            val lobby = @Composable { state: com.stepup.android.data.repo.PartyState, room: com.stepup.android.domain.CrewRunRoom? ->
+                com.stepup.android.ui.screens.community.PartyLobbyContent(
+                    state, state.crewName, null, canNotify = true, here = null,
+                    onBack = {}, onReady = {}, onCancelReady = {}, onStart = {}, onShare = {}, onKick = {}, onNotify = {},
+                    onRetry = {}, onLeave = {}, onDismissResult = {}, crewToday = today, room = room, shoes = shoes,
+                )
+            }
+            // 01 크루 홈 — 오늘 크루 내구도 · 다음 목표(듀얼 레일) · 진행 중인 대기실 · 크루 러닝 기록 · 크루 러닝 시작. 사진 터널 없음
+            show("C01-home", "crew-entry") {
+                com.stepup.android.ui.screens.walk.CrewRunEntryContent(
+                    com.stepup.android.ui.screens.walk.CrewEntryUi.Ready(crew, listOf(crew)), {}, {}, {}, {}, {}, {}, {}, {},
+                    today = today, roomsCount = 1,
+                )
+            }
+            compose.onNodeWithTag("crew-home-pool-value", useUnmergedTree = true).assertTextEquals("720")
+            compose.onAllNodesWithTag("lobby-tunnel", useUnmergedTree = true).assertCountEquals(0)
+            // 02 열린 대기실 — 내 방 · 남의 방 · 가득 찬 방. 비었을 때 · 못 불러왔을 때 · 오늘 이미 했을 때
+            val rooms = com.stepup.android.domain.CrewRooms(
+                rooms = listOf(
+                    com.stepup.android.domain.CrewRoom(1, name, "LOBBY", "h", "도윤", now - 600_000, 6, 5, 20, roomCourse, mine = false, kicked = false),
+                    com.stepup.android.domain.CrewRoom(2, "아침 한 바퀴", "LOBBY", "x", "지훈", now - 300_000, 20, 12, 20, null, mine = false, kicked = false),
+                ),
+                capacity = 20, doneToday = false,
+            )
+            show("C02-room-list", "crew-rooms") {
+                com.stepup.android.ui.screens.walk.CrewRoomsContent(com.stepup.android.ui.screens.walk.RoomsUi.Ready(rooms), crew.name, {}, {}, {}, {})
+            }
+            compose.onAllNodesWithTag("lobby-tunnel", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNodeWithTag("crew-rooms-new").assertIsEnabled()
+            show("C02-room-list-empty", "crew-rooms-empty") {
+                com.stepup.android.ui.screens.walk.CrewRoomsContent(
+                    com.stepup.android.ui.screens.walk.RoomsUi.Ready(rooms.copy(rooms = emptyList())), crew.name, {}, {}, {}, {},
+                )
+            }
+            show("C02-room-list-failed", "crew-rooms-failed") {
+                com.stepup.android.ui.screens.walk.CrewRoomsContent(com.stepup.android.ui.screens.walk.RoomsUi.Failed(false), crew.name, {}, {}, {}, {})
+            }
+            show("C61-used", "crew-rooms-done-today") {
+                com.stepup.android.ui.screens.walk.CrewRoomsContent(
+                    com.stepup.android.ui.screens.walk.RoomsUi.Ready(rooms.copy(doneToday = true)), crew.name, {}, {}, {}, {},
+                )
+            }
+            compose.onNodeWithTag("crew-rooms-new").assertIsNotEnabled()
+            // 03 · 06 러닝 만들기 — 코스를 고르기 전에는 열 수 없다. 고른 뒤 이름 · 코스 · 내 기여
+            show("C03-create", "crew-create") {
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, "", {}, null, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+            }
+            compose.onNodeWithTag("crew-create-open").assertIsNotEnabled()
+            show("C06-create-selected", "crew-create-selected") {
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+            }
+            compose.onNodeWithTag("crew-create-open").assertIsEnabled()
+            show("C06-create-failed", "crew-create-done-today") {
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, 100, 8, busy = false,
+                    problem = com.stepup.android.ui.screens.walk.CreateProblem.DoneToday, onBack = {}, onOpen = {})
+            }
+            // 04 · 09 코스 고르기 · 05 상세(지도 — "이 코스로 달리기"를 눌러야 고른다)
+            show("C04-courses", "crew-courses") {
+                com.stepup.android.ui.screens.walk.CrewCoursePickerContent(null, mine = emptyList(), shared = courses,
+                    sync = com.stepup.android.data.repo.BoardSyncState.Ready, onBack = {}, onOpen = {}, onRetry = {})
+            }
+            show("C09-course-empty", "crew-courses-empty") {
+                com.stepup.android.ui.screens.walk.CrewCoursePickerContent(null, mine = emptyList(), shared = emptyList(),
+                    sync = com.stepup.android.data.repo.BoardSyncState.Failed("offline"), onBack = {}, onOpen = {}, onRetry = {})
+            }
+            show("C05-course-detail", "crew-course-detail") {
+                com.stepup.android.ui.screens.walk.CrewCoursePickerContent(null, mine = emptyList(), shared = courses,
+                    sync = com.stepup.android.data.repo.BoardSyncState.Ready, onBack = {}, onOpen = {}, onRetry = {})
+                com.stepup.android.ui.screens.walk.CrewCourseDetailSheet(roomCourse, courses.first().area, onPick = {}, onDismiss = {})
+            }
+            // 10 · 11 · 12 · 13 진행자 대기실 — 사진 터널은 대기실에만, 크루원 · 내 신발은 같은 듀얼 레일
+            show("C10-host-lobby", "party-start") { lobby(hostLobby, crewRoom(6, 6)) }
+            compose.onNodeWithTag("lobby-tunnel", useUnmergedTree = true).assertExists()
+            compose.onNodeWithTag("party-start").assertTextContains(label(R.string.crew5_lobby_start, 6))
+            compose.onNodeWithTag("party-lobby-title", useUnmergedTree = true).assertTextEquals(name)
+            val waiting = hostLobby.copy(members = six.mapIndexed { i, m -> if (i == 5) m.copy(ready = false) else m })
+            show("C11-host-waiting", "party-start") { lobby(waiting, crewRoom(5, 6)) }
+            show("C12-solo", "party-alone") { lobby(hostLobby.copy(members = six.take(1)), crewRoom(1, 1)) }
+            compose.onNodeWithTag("party-start").assertIsNotEnabled()
+            val twenty = six + (1..14).map { member("m$it", "크루$it", ready = it % 3 != 0) }
+            show("C13-full", "party-more") { lobby(hostLobby.copy(members = twenty), crewRoom(twenty.count { it.ready }, 20)) }
+            // 14 참가자 관리 · 15 내보내기 확인 · 21 진행자 나가기
+            put("party-menu") { lobby(hostLobby, crewRoom(6, 6)) }
+            tap("party-menu")
+            tap("party-menu-roster")
+            awaitTag("party-roster-list")
+            shot("C14-host-roster")
+            tap("party-kick-a")
+            awaitTag("party-kick-sheet")
+            shot("C15-kick")
+            show("C16-removed-host", "party-start") { lobby(hostLobby.copy(members = six.filterNot { it.id == "a" }), crewRoom(5, 5)) }
+            put("party-menu") { lobby(hostLobby, crewRoom(6, 6)) }
+            tap("party-menu")
+            tap("party-menu-leave")
+            awaitTag("party-leave-host")
+            shot("C21-host-leave")
+            // 07 진행자 코스 바꾸기 · 33 출발 확인 · 34 준비된 인원만
+            put("party-course") { lobby(hostLobby, crewRoom(6, 6)) }
+            tap("party-course")
+            awaitTag("party-course-change")
+            shot("C07-course-change")
+            put("party-start") { lobby(hostLobby, crewRoom(6, 6)) }
+            tap("party-start")
+            awaitTag("party-start-confirm")
+            shot("C33-start-confirm")
+            put("party-start") { lobby(waiting, crewRoom(5, 6)) }
+            tap("party-start")
+            awaitTag("party-partial-start")
+            shot("C34-partial-start")
+            // 22 · 23 참가자 — 출발 · 내보내기 · 코스 바꾸기 없음, 준비 완료 → 진행자 대기 + 준비 취소
+            show("C22-member-lobby", "party-ready") { lobby(memberLobby, crewRoom(5, 6)) }
+            compose.onAllNodesWithTag("party-start", useUnmergedTree = true).assertCountEquals(0)
+            compose.onAllNodesWithTag("party-menu", useUnmergedTree = true).assertCountEquals(0)
+            show("C23-member-ready", "party-waiting") {
+                lobby(memberLobby.copy(members = memberLobby.members.map { if (it.isMe) it.copy(ready = true) else it }), crewRoom(6, 6))
+            }
+            compose.onNodeWithTag("party-waiting").assertIsNotEnabled()
+            // 24 신발 · 25 코스 보기 · 26 내구도 · 27 목표 · 28 레벨 · 30 규칙 · 29 보너스 · 31 함께 달릴 크루원 · 32 참가자 나가기
+            put("party-shoe-change") { lobby(memberLobby, crewRoom(5, 6)) }
+            tap("party-shoe-change")
+            awaitTag("party-shoe-sheet")
+            shot("C24-shoes")
+            put("party-course") { lobby(memberLobby, crewRoom(5, 6)) }
+            tap("party-course")
+            awaitTag("party-course-view")
+            shot("C25-course-view")
+            put("party-pool") { lobby(memberLobby, crewRoom(5, 6)) }
+            tap("party-pool")
+            awaitTag("party-stamina-sheet")
+            shot("C26-stamina")
+            put("party-goal") { lobby(memberLobby, crewRoom(5, 6)) }
+            tap("party-goal")
+            awaitTag("party-goal-sheet")
+            shot("C27-goal")
+            tap("party-goal-levels")
+            awaitTag("party-levels-sheet")
+            shot("C28-levels")
+            put("party-rule-open") { lobby(memberLobby, crewRoom(5, 6)) }
+            tap("party-rule-open")
+            awaitTag("party-rule-sheet")
+            shot("C30-rules")
+            tap("party-rule-bonus")
+            awaitTag("party-bonus-sheet")
+            shot("C29-bonus")
+            put("party-counts") { lobby(memberLobby, crewRoom(5, 6)) }
+            tap("party-counts")
+            awaitTag("party-roster-list")
+            compose.onAllNodesWithTag("party-kick-h", useUnmergedTree = true).assertCountEquals(0)
+            shot("C31-member-roster")
+            put("party-ready") { lobby(memberLobby, crewRoom(5, 6)) }
+            back()
+            awaitTag("party-leave-member")
+            shot("C32-member-leave")
+            // 08 코스가 바뀌었다(참가자 — 본 판보다 높은 판)
+            show("C08-course-updated", "party-course-updated") {
+                lobby(memberLobby.copy(course = roomCourse.copy(rev = 3), courseSeenRev = 2), crewRoom(5, 6))
+            }
+            // 40 인증 전 안내(준비할 때 한 번) — 출발 · 기여는 그대로, 인원 보너스에서만 빠진다
+            com.stepup.android.ui.screens.walk.UnverifiedNotice.shown = false
+            put("party-ready") { lobby(memberLobby, crewRoom(5, 6, verified = false)) }
+            tap("party-ready")
+            awaitTag("crew-unverified")
+            shot("C40-unverified")
+            // 35 출발 신호 맞추는 중 · 36 3 · 2 · 1 · 0 · StepUP!(자유 러닝과 같은 무대)
+            show("C35-starting", "party-starting-stage") { com.stepup.android.ui.screens.walk.CrewStartingStage() }
+            show("C36-countdown", "run-start-sequence") {
+                com.stepup.android.ui.screens.walk.FreeRunStartStage(clock = { 1_400 }, revealSince = { null }, reduced = false)
+            }
+            // 68 불러오는 중(정지 터널) · 69 불러오기 실패 · 70 나옴 · 출발함 · 찼음
+            show("C68-loading", "party-loading") { lobby(hostLobby.copy(partyId = null, members = emptyList()), null) }
+            compose.onNodeWithTag("lobby-tunnel-still", useUnmergedTree = true).assertExists()
+            show("C69-load-failed", "party-terminal-failed") {
+                lobby(hostLobby.copy(partyId = null, problem = com.stepup.android.data.repo.PartyProblem.NETWORK), null)
+            }
+            show("C70-removed", "party-terminal-removed") {
+                lobby(hostLobby.copy(partyId = null, problem = com.stepup.android.data.repo.PartyProblem.REMOVED), null)
+            }
+            show("C70-started", "party-terminal-started") {
+                lobby(hostLobby.copy(partyId = null, problem = com.stepup.android.data.repo.PartyProblem.STARTED), null)
+            }
+            show("C70-full", "party-terminal-full") {
+                lobby(hostLobby.copy(partyId = null, problem = com.stepup.android.data.repo.PartyProblem.FULL), null)
+            }
+            // 작은 화면 · 큰 글씨 · 밝은 테마 — 대기실 주 버튼 · 목록 · 만들기 버튼이 화면 안
+            for (v in listOf(Viewport(360, 640), Viewport(320, 640), Viewport(390, 844, font = 1.3f), Viewport(390, 844, mode = ThemeMode.LIGHT))) {
+                viewport = v
+                show("C10-${v.label}", "party-start") { lobby(hostLobby, crewRoom(6, 6)) }
+                assertInFrame("party-start", "C10-${v.label}")
+                show("C22-${v.label}", "party-ready") { lobby(memberLobby, crewRoom(5, 6)) }
+                assertInFrame("party-ready", "C22-${v.label}")
+                show("C02-${v.label}", "crew-rooms") {
+                    com.stepup.android.ui.screens.walk.CrewRoomsContent(com.stepup.android.ui.screens.walk.RoomsUi.Ready(rooms), crew.name, {}, {}, {}, {})
+                }
+                assertInFrame("crew-rooms-new", "C02-${v.label}")
+                show("C06-${v.label}", "crew-create-selected") {
+                    com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                }
+                assertInFrame("crew-create-open", "C06-${v.label}")
+                show("C01-${v.label}", "crew-entry") {
+                    com.stepup.android.ui.screens.walk.CrewRunEntryContent(
+                        com.stepup.android.ui.screens.walk.CrewEntryUi.Ready(crew, listOf(crew)), {}, {}, {}, {}, {}, {}, {}, {},
+                        today = today, roomsCount = 1,
+                    )
+                }
+                assertInFrame("crew-entry-enter", "C01-${v.label}")
+            }
+            viewport = Viewport(390, 844)
+        } finally {
+            restore()
+        }
+    }
+
+    /**
+     * 대기실 사진 터널의 생명주기(2026-10-24 T66) — 모션을 켜고 시계를 손으로 넘긴다(배경이 끝없이 돈다).
+     * 대기실만 보이면 사진 · 빛이 흐르고(C10-motion-1 ~ 3), 시트가 뜨면 그 자리에 멈추고(C08-paused-1 · 2),
+     * 모션 줄이기면 정지 사진이다(C10-reduced-1 · 2). 화면 위쪽 띠(상태 표시줄 아래 ~ 시트 위)의 픽셀을 맞대어 본다.
+     */
+    @Test fun crewLobbyMotion() {
+        seed()
+        var reducedMotion by mutableStateOf(false)
+        var scene by mutableStateOf<(@Composable () -> Unit)?>(null)
+        try {
+            edgeToEdge()
+            compose.mainClock.autoAdvance = false
+            compose.setContent {
+                DeviceFrame {
+                    CompositionLocalProvider(
+                        com.stepup.android.ui.experience.LocalMotion provides
+                            com.stepup.android.ui.experience.MotionPreferences(reduced = reducedMotion, active = true),
+                    ) {
+                        Box(Modifier.fillMaxSize()) { scene?.invoke() }
+                    }
+                }
+            }
+            // 참가자 자리 — 진행자가 코스를 바꾸면(판이 오르면) 코스 바뀜 시트가 저절로 뜬다(08)
+            val members = listOf(
+                com.stepup.android.data.repo.PartyMember("h", "도윤", ready = true, isMe = false, isHost = true),
+                com.stepup.android.data.repo.PartyMember("me", "나", ready = false, isMe = true, isHost = false),
+                com.stepup.android.data.repo.PartyMember("b", "지연", ready = true, isMe = false, isHost = false),
+            )
+            val course = com.stepup.android.domain.RoomCourse(rev = 2, name = "여의도 한강 5K", km = 5.0)
+            val party = com.stepup.android.data.repo.PartyState(
+                phase = com.stepup.android.data.repo.PartyPhase.LOBBY, partyId = 1L, crewId = "c1", crewName = "퇴근런", members = members,
+                pickedRoom = 1L, roomName = "여의도 퇴근런", roomCreatedAt = System.currentTimeMillis() - 600_000, course = course, courseSeenRev = 2,
+            )
+            fun lobby(state: com.stepup.android.data.repo.PartyState): @Composable () -> Unit = {
+                com.stepup.android.ui.screens.community.PartyLobbyContent(
+                    state, state.crewName, null, canNotify = false, here = null,
+                    onBack = {}, onReady = {}, onCancelReady = {}, onStart = {}, onShare = {}, onKick = {}, onNotify = {},
+                    onRetry = {}, onLeave = {}, onDismissResult = {},
+                )
+            }
+            compose.runOnUiThread { scene = lobby(party) }
+            advanceUntil("party-pool")
+            compose.onNodeWithTag("lobby-tunnel", useUnmergedTree = true).assertExists()
+            // 대기실만 보일 때 — 1.5초마다 사진 · 빛이 달라진다
+            val running = (1..3).map { i ->
+                compose.mainClock.advanceTimeBy(1_500)
+                bandOf("C10-motion-$i")
+            }
+            for (i in 0 until running.lastIndex) {
+                val share = changedShare(running[i], running[i + 1])
+                check(share > MOVING_SHARE) { "대기실 배경이 흐르지 않는다(C10-motion-${i + 1} → ${i + 2}: 바뀐 픽셀 ${share * 100}%)" }
+            }
+            // 시트가 뜨면 멈춘다 — 부모는 어둡게, 그 자리에
+            compose.runOnUiThread { scene = lobby(party.copy(course = course.copy(rev = 3))) }
+            advanceUntil("party-course-updated")
+            compose.mainClock.advanceTimeBy(1_500)
+            // 시트 창이 열리는 시스템 애니메이션(실제 시계) — 앱 화면은 시계를 멈춰 두었으니 그대로다
+            Thread.sleep(1_000)
+            val paused = bandOf("C08-paused-1")
+            compose.mainClock.advanceTimeBy(3_000)
+            val pausedLater = bandOf("C08-paused-2")
+            val pausedShare = changedShare(paused, pausedLater)
+            check(pausedShare < STILL_SHARE) { "시트 아래 대기실 배경이 멈추지 않았다(바뀐 픽셀 ${pausedShare * 100}%)" }
+            // 모션 줄이기 — 시트 없이도 정지 사진(이동 · 확대 · 회전 없음)
+            compose.runOnUiThread { scene = null }
+            compose.mainClock.advanceTimeBy(500)
+            Thread.sleep(1_000)
+            compose.runOnUiThread {
+                reducedMotion = true
+                scene = lobby(party)
+            }
+            advanceUntil("party-pool")
+            compose.mainClock.advanceTimeBy(500)
+            val reduced = bandOf("C10-reduced-1")
+            compose.mainClock.advanceTimeBy(3_000)
+            val reducedLater = bandOf("C10-reduced-2")
+            val reducedShare = changedShare(reduced, reducedLater)
+            check(reducedShare < STILL_SHARE) { "모션 줄이기인데 대기실 배경이 움직였다(바뀐 픽셀 ${reducedShare * 100}%)" }
+        } finally {
+            compose.mainClock.autoAdvance = true
+            restore()
+        }
+    }
+
+    /** 시계를 멈춰 둔 동안의 기다림 — 시계를 손으로 넘기며 [tag] 가 생길 때까지 */
+    private fun advanceUntil(tag: String) {
+        repeat(150) {
+            if (exists(tag)) return
+            compose.mainClock.advanceTimeBy(100)
+        }
+        check(exists(tag)) { "$tag 이(가) 나오지 않았다" }
+    }
+
+    /**
+     * 지금 화면을 [name].png 로 남기고 화면 위쪽 띠(높이 7% ~ 17% — 상태 표시줄 아래, 시트 위)의 픽셀을 돌려준다.
+     * 시계를 멈춰 두었으니 기다려도 화면은 그대로다 — 창이 열리는 시스템 애니메이션만 기다린다.
+     */
+    private fun bandOf(name: String): IntArray {
+        compose.waitForIdle()
+        awaitFrameOnScreen(compose.activity)
+        Thread.sleep(400)
+        val shot = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot() ?: error("캡처하지 못했다: $name")
+        val bitmap = shot.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+        shot.recycle()
+        try {
+            File(directory, "$name.png").outputStream().use { stream ->
+                check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)) { "캡처를 쓰지 못했다: $name" }
+            }
+            val top = (bitmap.height * 0.07f).toInt()
+            val rows = (bitmap.height * 0.10f).toInt()
+            return IntArray(bitmap.width * rows).also { bitmap.getPixels(it, 0, bitmap.width, 0, top, bitmap.width, rows) }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    /** 두 띠에서 눈에 띄게(채널 차이 6 넘게) 바뀐 픽셀의 몫 */
+    private fun changedShare(a: IntArray, b: IntArray): Double {
+        check(a.size == b.size) { "띠 크기가 다르다" }
+        var changed = 0
+        for (i in a.indices) {
+            val x = a[i]
+            val y = b[i]
+            val d = maxOf(
+                kotlin.math.abs(((x shr 16) and 0xFF) - ((y shr 16) and 0xFF)),
+                kotlin.math.abs(((x shr 8) and 0xFF) - ((y shr 8) and 0xFF)),
+                kotlin.math.abs((x and 0xFF) - (y and 0xFF)),
+            )
+            if (d > 6) changed++
+        }
+        return changed.toDouble() / a.size
     }
 
     // ── 표시용 러닝 ──────────────────────────────────────────────
@@ -1595,6 +2010,12 @@ class RunJourneyDesignTest {
 
     private companion object {
         const val FRAME = "run-frame"
+
+        /** 대기실 배경이 흐른다 — 1.5초 뒤 위쪽 띠에서 바뀐 픽셀이 이보다 많다(사진 두 겹의 확대 · 투명도 · 옆 빛) */
+        const val MOVING_SHARE = 0.02
+
+        /** 대기실 배경이 멈췄다 — 바뀐 픽셀이 이보다 적다 */
+        const val STILL_SHARE = 0.002
 
         /** 자유 러닝 결과에는 없다(다른 러닝 결과에만) — 보상 칸 · 정산 표시 · 신발 칸 · 안내 줄 · 넘기는 판 */
         val FREE_RESULT_ABSENT = listOf(

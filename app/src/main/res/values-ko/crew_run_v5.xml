@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 크루 러닝 3번 듀얼 레일(2026-10-24 핸드오프, 서버 0072) — 크루 홈 · 열린 대기실 · 러닝 만들기 · 코스 · 대기실 시트 · 예외 -->
+<resources>
+    <!-- 01 크루 홈 -->
+    <string name="crew5_home_header">나의 크루</string>
+    <string name="crew5_home_sub_level">Lv.%1$d · %2$s</string>
+    <string name="crew5_home_sub_level_only">Lv.%1$d</string>
+    <string name="crew5_home_sub_new">새 크루 · 첫 크루 러닝을 기다려요</string>
+    <string name="crew5_pool_title">오늘 크루 내구도</string>
+    <string name="crew5_pool_today_n">오늘 %1$d명</string>
+    <string name="crew5_pool_reset">한국 시간 자정에 초기화</string>
+    <string name="crew5_pool_unknown">불러오지 못했어요</string>
+    <string name="crew5_goal_title">다음 목표</string>
+    <string name="crew5_goal_left">%1$s km 남았어요</string>
+    <string name="crew5_goal_max">최고 레벨이에요</string>
+    <string name="crew5_goal_step">Lv.%1$d → Lv.%2$d</string>
+    <string name="crew5_goal_levels">크루 레벨 보기</string>
+    <string name="crew5_home_rooms">진행 중인 대기실</string>
+    <string name="crew5_home_rooms_n">%1$d개</string>
+    <string name="crew5_home_history">크루 러닝 기록</string>
+    <string name="crew5_home_start">크루 러닝 시작</string>
+    <string name="crew5_home_today">오늘 기록 보기</string>
+
+    <!-- 02 열린 대기실 -->
+    <string name="crew5_rooms_header">크루 러닝</string>
+    <string name="crew5_rooms_title">오늘, 같이 달려요</string>
+    <string name="crew5_rooms_sub">크루원 누구나 대기실을 열 수 있어요.</string>
+    <string name="crew5_rooms_count">%1$d / %2$d명</string>
+    <string name="crew5_rooms_full">가득 참</string>
+    <string name="crew5_rooms_mine">내 대기실</string>
+    <string name="crew5_rooms_course">%1$s · %2$s km</string>
+    <string name="crew5_rooms_host">진행자 %1$s · %2$s 열림 · 준비 %3$d명</string>
+    <string name="crew5_rooms_enter">대기실 들어가기</string>
+    <string name="crew5_rooms_back">내 대기실로 돌아가기</string>
+    <string name="crew5_rooms_empty_title">아직 열린 대기실이 없어요</string>
+    <string name="crew5_rooms_empty_body">새 대기실을 열고 크루원을 불러 보세요.</string>
+    <string name="crew5_rooms_failed">대기실을 불러오지 못했어요</string>
+    <string name="crew5_rooms_reload">다시 불러오기</string>
+    <string name="crew5_rooms_new">새 대기실 만들기</string>
+    <string name="crew5_rooms_done_today">오늘 크루 러닝을 이미 했어요. 크루를 옮겨도 하루 한 번이라 새 대기실은 내일 00:00(한국 시간)부터 열 수 있어요.</string>
+
+    <!-- 03 · 06 러닝 만들기 -->
+    <string name="crew5_create_header">러닝 만들기</string>
+    <string name="crew5_create_title">같이 달릴 준비</string>
+    <string name="crew5_create_sub">크루원 최대 %1$d명과 함께해요.</string>
+    <string name="crew5_create_name">러닝 이름</string>
+    <string name="crew5_create_name_hint">예) 여의도 퇴근런</string>
+    <string name="crew5_create_name_count">%1$d / %2$d</string>
+    <string name="crew5_create_name_invalid">러닝 이름은 1~%1$d자로 적어 주세요.</string>
+    <string name="crew5_create_course">함께 달릴 코스</string>
+    <string name="crew5_create_pick_course">코스 선택하기</string>
+    <string name="crew5_create_other_course">다른 코스 고르기</string>
+    <string name="crew5_create_scope">대기실 공개 범위</string>
+    <string name="crew5_create_scope_value">%1$s 크루</string>
+    <string name="crew5_create_contribution">내 신발의 크루 내구도 기여</string>
+    <string name="crew5_create_contribution_sub">최대 %1$d × Lv.%2$d 보너스 %3$s</string>
+    <string name="crew5_create_contribution_none">대기실에서 신발을 고르면 보여요</string>
+    <string name="crew5_create_open">대기실 열기</string>
+    <string name="crew5_create_failed_done">오늘 크루 러닝을 이미 해서 새 대기실을 열 수 없어요.</string>
+    <string name="crew5_create_failed_network">연결이 불안정해요. 입력은 그대로예요 — 다시 눌러 주세요.</string>
+    <string name="crew5_create_failed">대기실을 열지 못했어요. %1$s</string>
+    <string name="crew5_create_note">대기실을 연 것만으로는 오늘의 크루 러닝이 쓰이지 않아요. 진행자가 출발해야 시작돼요.</string>
+
+    <!-- 04 · 05 · 09 코스 -->
+    <string name="crew5_courses_header">코스 선택</string>
+    <string name="crew5_courses_mine">내 코스</string>
+    <string name="crew5_courses_shared">공유 코스</string>
+    <string name="crew5_courses_item">%1$s km · %2$s</string>
+    <string name="crew5_courses_item_km">%1$s km</string>
+    <string name="crew5_courses_current">지금 코스</string>
+    <string name="crew5_courses_empty_title">저장한 코스가 없어요</string>
+    <string name="crew5_courses_empty_body">공유 코스에서 고르거나, 러닝 탭의 추천 코스에서 코스를 만들 수 있어요.</string>
+    <string name="crew5_courses_shared_failed">공유 코스를 불러오지 못했어요</string>
+    <string name="crew5_courses_loading">공유 코스를 불러오는 중이에요</string>
+    <string name="crew5_course_detail_meta">%1$s km · 흰 점이 출발 위치예요</string>
+    <string name="crew5_course_pick">이 코스로 달리기</string>
+    <string name="crew5_course_other">다른 코스 보기</string>
+
+    <!-- 10 ~ 23 대기실 -->
+    <string name="crew5_lobby_header">크루 대기실</string>
+    <string name="crew5_lobby_sub">%1$s · %2$s</string>
+    <string name="crew5_lobby_members">함께 달릴 크루원</string>
+    <string name="crew5_lobby_ready_chip">%1$d/%2$d 준비</string>
+    <string name="crew5_lobby_more">+%1$d</string>
+    <string name="crew5_lobby_all">전체 보기</string>
+    <string name="crew5_lobby_invite">함께 달려요</string>
+    <string name="crew5_lobby_me">나</string>
+    <string name="crew5_lobby_pool">크루 내구도</string>
+    <string name="crew5_lobby_pool_total">/ %1$s</string>
+    <string name="crew5_lobby_goal">크루 목표</string>
+    <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
+    <string name="crew5_lobby_goal_max">최고</string>
+    <string name="crew5_lobby_course">크루 코스</string>
+    <string name="crew5_lobby_course_none">코스 없음</string>
+    <string name="crew5_lobby_course_expand">코스 크게 보기</string>
+    <string name="crew5_lobby_shoe">내 신발</string>
+    <string name="crew5_lobby_shoe_none">신은 신발로 달려요</string>
+    <string name="crew5_lobby_shoe_change">신발 변경</string>
+    <string name="crew5_lobby_start">%1$d명과 출발</string>
+    <string name="crew5_lobby_call">크루원 부르기</string>
+    <string name="crew5_lobby_ready">준비 완료</string>
+    <string name="crew5_lobby_waiting_host">진행자가 출발하면 함께 시작해요</string>
+    <string name="crew5_lobby_cancel_ready">준비 취소</string>
+    <string name="crew5_lobby_menu">대기실 메뉴</string>
+    <string name="crew5_lobby_menu_roster">참가자 관리</string>
+    <string name="crew5_lobby_menu_course">코스 바꾸기</string>
+    <string name="crew5_lobby_menu_rules">크루 러닝 규칙</string>
+    <string name="crew5_lobby_menu_leave">대기실 나가기</string>
+    <string name="crew5_lobby_rules">크루 러닝 규칙 보기</string>
+    <string name="crew5_lobby_done_today">오늘 크루 러닝을 이미 했어요. 이 대기실에서 준비할 수 없어요.</string>
+    <string name="crew5_lobby_offline">서버에 닿지 못하고 있어요. 저절로 다시 연결해요.</string>
+    <string name="crew5_lobby_reconnect">지금 다시 연결</string>
+    <string name="crew5_lobby_failed">방금 누른 것이 처리되지 않았어요. 다시 눌러 주세요.</string>
+    <string name="crew5_lobby_loading">대기실을 불러오는 중이에요</string>
+
+    <!-- 24 신발 -->
+    <string name="crew5_shoes_title">함께 달릴 내 신발</string>
+    <string name="crew5_shoes_max">최대 내구도 %1$d</string>
+    <string name="crew5_shoes_eff">효율</string>
+    <string name="crew5_shoes_comfort">착화감</string>
+    <string name="crew5_shoes_dur">내구도</string>
+    <string name="crew5_shoes_add">출발할 때 공용 풀에 더해져요</string>
+    <string name="crew5_shoes_confirm">이 신발로 준비</string>
+    <string name="crew5_shoes_empty">크루 러닝에 신을 수 있는 신발이 없어요. 신은 신발로 달려요.</string>
+    <string name="crew5_shoes_failed">신발을 바꾸지 못했어요. 고른 신발은 그대로예요.</string>
+
+    <!-- 07 · 08 · 25 코스 시트 -->
+    <string name="crew5_course_view_title">함께 달릴 코스</string>
+    <string name="crew5_course_change_title">코스 바꾸기</string>
+    <string name="crew5_course_change_note">바꾸면 진행자를 뺀 모두의 준비가 풀려요. 새 코스를 보고 다시 준비해요.</string>
+    <string name="crew5_course_change_pick">다른 코스 고르기</string>
+    <string name="crew5_course_change_failed">코스를 바꾸지 못했어요. 지금 코스는 그대로예요.</string>
+    <string name="crew5_course_updated_title">코스가 바뀌었어요</string>
+    <string name="crew5_course_updated_body">진행자가 함께 달릴 코스를 %1$s(으)로 바꿨어요. 코스를 보고 다시 준비해 주세요.</string>
+    <string name="crew5_course_updated_ok">코스 확인</string>
+    <string name="crew5_course_loading">경로를 불러오는 중이에요</string>
+
+    <!-- 26 ~ 30 시트 -->
+    <string name="crew5_stamina_title">오늘 크루 내구도</string>
+    <string name="crew5_stamina_contributors">오늘 기여한 크루원</string>
+    <string name="crew5_stamina_contributors_n">%1$d명</string>
+    <string name="crew5_stamina_mine">출발하면 내가 더할 내구도</string>
+    <string name="crew5_stamina_drain">뛰는 사람마다</string>
+    <string name="crew5_stamina_drain_value">분당 %1$s</string>
+    <string name="crew5_stamina_reset">초기화</string>
+    <string name="crew5_stamina_reset_value">매일 00:00 (한국 시간)</string>
+    <string name="crew5_stamina_note">같은 크루의 모든 대기실이 함께 써요. 신발의 남은 내구도가 아니라 최대 내구도에 레벨 효과를 더해 넣어요. 개인 신발은 닳지 않아요.</string>
+    <string name="crew5_stamina_fresh">아직 오늘 출발한 크루원이 없어요 (0 / 0)</string>
+    <string name="crew5_goal_sheet_title">크루 목표 · 레벨</string>
+    <string name="crew5_goal_sheet_level">지금 Lv.%1$d</string>
+    <string name="crew5_goal_sheet_new">아직 크루 러닝 기록이 없어요</string>
+    <string name="crew5_goal_sheet_total">누적 %1$s km</string>
+    <string name="crew5_goal_sheet_next">Lv.%1$d까지 %2$s km</string>
+    <string name="crew5_goal_sheet_effects">크루 내구도 +%1$s%% · 크루 보상 +%2$s%%</string>
+    <string name="crew5_goal_sheet_note">크루원 각자의 유효한 크루 러닝 거리가 쌓여요. 대기실의 코스 거리와는 다른 목표예요. 레벨은 내려가지 않아요.</string>
+    <string name="crew5_goal_sheet_all">전체 레벨 보기</string>
+    <string name="crew5_levels_title">레벨 1 ~ 20</string>
+    <string name="crew5_levels_level">레벨</string>
+    <string name="crew5_levels_km">누적 거리</string>
+    <string name="crew5_levels_stamina">내구도</string>
+    <string name="crew5_levels_reward">보상</string>
+    <string name="crew5_levels_note">누적 거리는 그 레벨이 되는 크루 전체 거리예요(단계마다 더하는 거리가 아니에요).</string>
+    <string name="crew5_bonus_title">인원 보너스 표</string>
+    <string name="crew5_bonus_people">인원</string>
+    <string name="crew5_bonus_value">보너스</string>
+    <string name="crew5_bonus_n">%1$d명</string>
+    <string name="crew5_bonus_note">같은 크루 · 출발할 때와 %1$d분 뒤 모두 %2$dm 안 · 휴대폰 인증을 마친 인원만 세요. 0~1명은 보너스가 없어요. 레벨 보너스는 따로 더해요.</string>
+
+    <!-- 14 · 15 · 31 명단 -->
+    <string name="crew5_roster_host_title">참가자 관리</string>
+    <string name="crew5_roster_member_title">함께 달릴 크루원</string>
+    <string name="crew5_roster_ready">준비 완료</string>
+    <string name="crew5_roster_waiting">준비 중</string>
+    <string name="crew5_roster_count">%1$d명 · 준비 %2$d명</string>
+    <string name="crew5_kick_title">%1$s님을 내보낼까요?</string>
+    <string name="crew5_kick_body">이번 대기실에서만 빠져요. 크루에서는 나가지 않아요. 내보낸 사람은 이 대기실에 다시 들어오지 못해요.</string>
+    <string name="crew5_kick_go">내보내기</string>
+
+    <!-- 21 · 32 나가기 -->
+    <string name="crew5_leave_title">대기실을 나갈까요?</string>
+    <string name="crew5_leave_host_body">아직 출발 전이에요. 나가면 먼저 들어온 크루원이 진행을 이어받고, 아무도 없으면 대기실이 닫혀요.</string>
+    <string name="crew5_leave_member_body">출발 전이라 오늘의 크루 러닝은 쓰이지 않아요. 다른 대기실에 들어가거나 새로 열 수 있어요.</string>
+    <string name="crew5_leave_stay">계속 준비</string>
+    <string name="crew5_leave_go">나가기</string>
+
+    <!-- 33 · 34 · 40 출발 -->
+    <string name="crew5_start_title">함께 출발할까요?</string>
+    <string name="crew5_start_shoe">내 신발</string>
+    <string name="crew5_start_people">출발 인원</string>
+    <string name="crew5_start_people_n">%1$d명</string>
+    <string name="crew5_start_bonus">예상 합산 보너스</string>
+    <string name="crew5_start_bonus_value">인원 +%1$s%% · Lv.%2$d +%3$s%% = +%4$s%%</string>
+    <string name="crew5_start_add">내가 더할 내구도</string>
+    <string name="crew5_start_go">함께 출발</string>
+    <string name="crew5_partial_title">준비된 %1$d명과 출발할까요?</string>
+    <string name="crew5_partial_body">준비 중인 %1$d명은 이번 출발에서 빠지고, 보너스와 기여에도 들어가지 않아요.</string>
+    <string name="crew5_partial_go">준비된 %1$d명과 출발</string>
+    <string name="crew5_partial_wait">더 기다리기</string>
+    <string name="crew5_unverified_title">인원 보너스에서만 빠져요</string>
+    <string name="crew5_unverified_ok">확인하고 준비</string>
+    <string name="crew5_starting">출발 신호를 맞추는 중이에요</string>
+
+    <!-- 61 · 68 ~ 70 예외 -->
+    <string name="crew5_failed_title">대기실을 불러오지 못했어요</string>
+    <string name="crew5_failed_body">연결을 확인하고 다시 불러와 주세요. 대기실 상태는 그대로예요.</string>
+    <string name="crew5_removed_title">이번 대기실에서 나왔어요</string>
+    <string name="crew5_removed_body">진행자가 대기실에서 내보냈거나 더 들어갈 수 없는 대기실이에요. 크루에서는 그대로예요.</string>
+    <string name="crew5_closed_title">대기실이 닫혔어요</string>
+    <string name="crew5_closed_body">모두 나갔거나 오래 비어 있던 대기실이에요. 다른 대기실에 들어가거나 새로 열어 주세요.</string>
+    <string name="crew5_full_title">대기실이 가득 찼어요</string>
+    <string name="crew5_full_body">한 대기실에는 %1$d명까지 함께해요. 다른 대기실을 보거나 새로 열어 주세요.</string>
+    <string name="crew5_started_title">이미 출발한 대기실이에요</string>
+    <string name="crew5_started_body">출발한 러닝에는 중간에 함께할 수 없어요. 다른 대기실을 보거나 새로 열어 주세요.</string>
+    <string name="crew5_missed_title">출발을 놓쳤어요</string>
+    <string name="crew5_missed_body">대기실을 떠나 있는 동안 함께 출발했어요. 오늘의 크루 러닝은 쓰이지 않았어요.</string>
+    <string name="crew5_sign_in_title">로그인이 필요해요</string>
+    <string name="crew5_other_rooms">다른 대기실 보기</string>
+</resources>

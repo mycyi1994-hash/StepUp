@@ -99,14 +99,17 @@ class TestUpdatesTest {
         assertNull(TestUpdates.compatibility(19025, 19025, emptyList(), setOf(old)))
     }
 
-    @Test fun androidInstallResultsBecomeSomethingThePersonCanActOn() {
-        assertEquals(TestUpdates.Outcome.NeedsUser, TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION))
-        assertEquals(TestUpdates.Outcome.Done, TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_SUCCESS))
-        // 확인 화면에서 취소 — "나중에"가 아니라 다시 누를 수 있는 창으로
-        assertEquals(TestUpdates.Outcome.Cancelled, TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED))
-        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.SIGNATURE), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_CONFLICT))
-        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.STORAGE), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_STORAGE))
-        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.BLOCKED), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE_BLOCKED))
-        assertEquals(TestUpdates.Outcome.Fail(TestUpdates.Failure.OTHER), TestUpdates.outcomeOf(android.content.pm.PackageInstaller.STATUS_FAILURE))
+    @Test fun comingBackFromTheInstallerWithoutTheUpdateOffersItAgain() {
+        val build = TestBuild(2_000, "bbbbbbb", "1.17.0")
+        val installing = TestUpdates.State.Installing(build)
+        // 설치 화면이 막 뜨는 사이의 돌아옴은 세지 않는다
+        assertEquals(installing, TestUpdates.afterInstallerReturn(installing, 200))
+        // 취소 · 거절하고 돌아왔다 — 까닭과 함께 다시 누를 수 있는 창
+        assertEquals(
+            TestUpdates.State.Failed(build, TestUpdates.Failure.UNFINISHED),
+            TestUpdates.afterInstallerReturn(installing, TestUpdates.INSTALLER_SETTLE_MS),
+        )
+        // 설치 중이 아니면 그대로
+        assertEquals(TestUpdates.State.Available(build), TestUpdates.afterInstallerReturn(TestUpdates.State.Available(build), 60_000))
     }
 }

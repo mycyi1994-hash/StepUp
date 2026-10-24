@@ -28,13 +28,15 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** 입력한 이메일을 서버가 받는 모양으로 — 전각 ＠·．(한글 입력기)을 반각으로, 앞뒤 공백을 빼고 소문자로. */
 export function normalizeEmail(value) {
-  return String(value ?? '').normalize('NFKC').trim().toLowerCase();
+  // 문장에서 복사하며 딸려 온 끝 마침표는 뺀다(2차 QA — 'name@example.com.'이 그대로 등록돼 완료 문구에서 문장 부호처럼 보였다).
+  return String(value ?? '').normalize('NFKC').trim().toLowerCase().replace(/\.+$/, '');
 }
 
 /** 서버(waitlist_register)와 같은 규칙. 통과하지 못하면 보내지 않고 이메일을 다시 확인하라고 알린다. */
 export function validEmail(value) {
   const email = normalizeEmail(value);
-  return email.length >= 3 && email.length <= 254 && EMAIL.test(email);
+  // 서버 규칙에 더해, 메일이 갈 수 없는 '..' · '@.' 모양은 보내기 전에 막는다.
+  return email.length >= 3 && email.length <= 254 && EMAIL.test(email) && !/\.\.|@\.|^\./.test(email);
 }
 
 /**
@@ -42,9 +44,20 @@ export function validEmail(value) {
  * `https://X.com/…` · `HTTPS://…` 처럼 대문자가 섞인 실제 게시물 링크를 서버가 거절하던 것. 주소가 아니면 그대로 돌려준다.
  */
 export function normalizePostUrl(value) {
-  const raw = String(value ?? '').trim();
+  let raw = String(value ?? '').trim();
+  // 'x.com/…' 처럼 https:// 없이 붙여넣은 주소(2차 QA)
+  if (/^(www\.|m\.|mobile\.)?[a-z0-9-]+\.(com|net|be)\//i.test(raw)) raw = `https://${raw}`;
   try {
     const url = new URL(raw);
+    const host = url.hostname.replace(/^(www|mobile|m)\./, '');
+    if (url.protocol === 'https:' && (host === 'x.com' || host === 'twitter.com')) {
+      // 같은 게시물의 다른 모양 — 사진 · 영상 보기(/photo/1), /i/web/status/…, mobile.twitter.com, 공유 꼬리표(?s=20) —
+      // 을 서버가 받는 'https://x.com/<계정>/status/<번호>' 로(2차 QA: 게시물 링크를 프로필 주소라며 거절했다).
+      const post = url.pathname.match(/^\/([A-Za-z0-9_]+)\/status\/(\d+)(\/.*)?$/);
+      if (post) return `https://x.com/${post[1]}/status/${post[2]}`;
+      const anon = url.pathname.match(/^\/i\/web\/status\/(\d+)\/?$/);
+      if (anon) return `https://x.com/i/status/${anon[1]}`;
+    }
     return url.href;
   } catch { return raw; }
 }
