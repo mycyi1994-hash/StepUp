@@ -207,7 +207,7 @@ internal fun CrewLobbyContent(
             )
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-                    .padding(horizontal = LobbyInk.Gutter).padding(top = 12.dp),
+                    .padding(horizontal = LobbyInk.Gutter).padding(top = 4.dp),
             ) {
                 // 러닝 이름 · 부제(크루 이름 · 방을 연 시각)
                 Text(
@@ -222,7 +222,7 @@ internal fun CrewLobbyContent(
                     style = navyText(12.sp, LobbyInk.Sub, FontWeight.Medium, 1.65f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 7.dp).testTag("party-lobby-sub"),
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
                 LobbyNotices(party, doneToday, crewToday, room, shoeFailed, courseFailed, onReconnect)
                 if (loading) {
                     LobbyLoading()
@@ -232,14 +232,15 @@ internal fun CrewLobbyContent(
                         onRoster = { sheet = LobbySheet.Roster },
                         onCall = onNotify,
                     )
-                    Spacer(Modifier.height(20.dp))
+                    // 간격은 버튼 아래 글자 한 줄(준비 취소 · 크루원 부르기)이 있어도 390 × 844 에서 내 신발 카드가 다 보이게(시안 10 · 12 · 23)
+                    Spacer(Modifier.height(14.dp))
                     Overview(
                         party, crewToday, room,
                         onStamina = { sheet = LobbySheet.Stamina },
                         onGoal = { sheet = LobbySheet.Goal },
                         onCourse = { sheet = LobbySheet.Course },
                     )
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(12.dp))
                     ShoeFrame(room, shoes, onChange = { sheet = LobbySheet.Shoes }, enabled = lobby && room != null)
                     Spacer(Modifier.height(18.dp))
                 }
@@ -579,7 +580,7 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
     val alone = party.partySize <= 1
     DualRailFrame(
         Modifier.fillMaxWidth().testTag(if (alone) "party-alone" else "party-members"),
-        padding = PaddingValues(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 19.dp),
+        padding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 16.dp),
     ) {
         Column(Modifier.fillMaxWidth()) {
             Row(
@@ -591,7 +592,7 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
                 Text(stringResource(R.string.crew5_lobby_members), style = navyText(13.sp, LobbyInk.Text, FontWeight.SemiBold), modifier = Modifier.weight(1f))
                 LobbyChip(stringResource(R.string.crew5_lobby_ready_chip, party.readyCount, party.partySize), Modifier.testTag("party-ready-count"))
             }
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(12.dp))
             val cells: List<RosterCell> = buildList {
                 shown.forEach { add(RosterCell.Person(it)) }
                 if (many) add(RosterCell.More(ordered.size - shown.size))
@@ -846,7 +847,7 @@ private fun LobbyFooter(
     onNotify: () -> Unit,
 ) {
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = LobbyInk.Gutter).padding(top = 14.dp, bottom = 10.dp),
+        Modifier.fillMaxWidth().testTag("party-footer").padding(horizontal = LobbyInk.Gutter).padding(top = 8.dp, bottom = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when {
@@ -879,14 +880,16 @@ private fun LobbyFooter(
     }
 }
 
-/** 버튼 아래 작은 글자 행동(크루원 부르기 · 준비 취소) — 누르는 자리 44dp */
+/** 버튼 아래 작은 글자 행동(크루원 부르기 · 준비 취소 · 시트의 취소 · 나가기) — 주 버튼 아래 가운데, 누르는 자리 44dp */
 @Composable
 private fun LobbyTextButton(label: String, onClick: () -> Unit, tag: String) {
-    Box(
-        Modifier.padding(top = 4.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-            .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp).testTag(tag),
-        contentAlignment = Alignment.Center,
-    ) { Text(label, style = navyText(13.sp, Color(0xFFC7E7FA), FontWeight.SemiBold)) }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+                .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp).testTag(tag),
+            contentAlignment = Alignment.Center,
+        ) { Text(label, style = navyText(13.sp, Color(0xFFC7E7FA), FontWeight.SemiBold)) }
+    }
 }
 
 // ── 시트 ───────────────────────────────────────────────────────────
