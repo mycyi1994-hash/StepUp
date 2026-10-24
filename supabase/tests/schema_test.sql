@@ -8922,6 +8922,166 @@ end $$;
 reset role;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+--  0073 크루 러닝 대기실 — 코스 없이 열기 · 코스 넣기 · 코스 빼기 · 같은 코스는 그대로 (2026-10-24)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 러닝 대기실: 코스 없이(0073) ─────────────────────────'
+-- o 크루장 · a · b 크루원
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('73000000-0000-0000-0000-000000000001', 'o73@test', '{"full_name":"크루장"}'),
+  ('73000000-0000-0000-0000-000000000002', 'm73a@test', '{"full_name":"하나"}'),
+  ('73000000-0000-0000-0000-000000000003', 'm73b@test', '{"full_name":"둘"}');
+insert into public.crews (id, owner_id, name)
+values ('73000000-0000-0000-0000-0000000000cc', '73000000-0000-0000-0000-000000000001', '자유 코스 크루');
+insert into public.crew_members (crew_id, user_id, role)
+select '73000000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER'
+  from unnest(array['73000000-0000-0000-0000-000000000002', '73000000-0000-0000-0000-000000000003']) u;
+
+set role authenticated;
+-- 코스 없이 연다 — 코스 칸이 모두 비면 코스 없음(코스 판 0). 목록에도 코스 없이
+call pg_temp.login('73000000-0000-0000-0000-000000000002');
+do $$
+declare v json; r jsonb;
+begin
+  insert into fix (k, v) values ('p73', public.party_create('73000000-0000-0000-0000-0000000000cc', '한강 자유런', null, null, null,
+    '73000000-0000-0000-0000-00000000a001')::text);
+  v := public.party_state(pg_temp.fx('p73')::bigint);
+  perform pg_temp.ok(v->>'name' = '한강 자유런' and v->>'course_name' is null and v->>'course_km' is null
+                     and (v->>'course_rev')::int = 0 and v->>'status' = 'LOBBY',
+    format('코스 없이 연 대기실 — 이름만 · 코스 없음 · 코스 판 0 (%s)', v::jsonb - 'members'));
+  perform pg_temp.ok(public.party_create('73000000-0000-0000-0000-0000000000cc', '한강 자유런', null, null, null,
+                       '73000000-0000-0000-0000-00000000a001') = pg_temp.fx('p73')::bigint,
+    '코스 없는 방도 같은 요청 번호로 다시 열면 그 방');
+  r := public.party_rooms('73000000-0000-0000-0000-0000000000cc')->'rooms'->0;
+  perform pg_temp.ok((r->>'id')::bigint = pg_temp.fx('p73')::bigint and r->>'course_name' is null and r->>'course_track' is null,
+    '열린 대기실 목록에 코스 없는 방(경로 없음)');
+end $$;
+-- 코스 칸을 일부만 채우면 받지 않는다(빈 이름 · 거리만 · 경로만)
+call pg_temp.must_fail($q$ select public.party_create('73000000-0000-0000-0000-0000000000cc', '반쪽', '코스', null, null) $q$,
+  '코스 이름만 있고 거리 · 경로가 없으면 course_invalid');
+call pg_temp.must_fail($q$ select public.party_create('73000000-0000-0000-0000-0000000000cc', '반쪽', null, 1, null) $q$,
+  '거리만 있으면 course_invalid');
+call pg_temp.must_fail($q$ select public.party_create('73000000-0000-0000-0000-0000000000cc', '반쪽', ' ', null, pg_temp.fx('t72')) $q$,
+  '경로는 있는데 이름이 비면 course_invalid');
+do $$ begin
+  begin
+    perform public.party_create('73000000-0000-0000-0000-0000000000cc', '반쪽', '코스', null, null);
+    raise exception 'FAIL  일부만 채운 코스로 방을 열었다';
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'course_invalid', format('일부만 채운 코스는 course_invalid — 앱이 같은 까닭으로 알린다 (%s)', sqlerrm));
+  end;
+end $$;
+
+-- 둘이 들어와 준비 · 진행자가 코스를 넣으면 판 1 · 진행자를 뺀 준비가 풀린다
+call pg_temp.login('73000000-0000-0000-0000-000000000003');
+do $$ begin
+  perform public.party_join(pg_temp.fx('p73')::bigint);
+  perform public.party_ready(pg_temp.fx('p73')::bigint, true);
+end $$;
+call pg_temp.must_fail($q$ select public.party_set_course(pg_temp.fx('p73')::bigint, null, null, null) $q$,
+  '진행자가 아니면 코스를 빼지도 못한다');
+call pg_temp.login('73000000-0000-0000-0000-000000000002');
+do $$
+declare v_rev int; c jsonb;
+begin
+  perform public.party_ready(pg_temp.fx('p73')::bigint, true);
+  v_rev := public.party_set_course(pg_temp.fx('p73')::bigint, '내가 그린 코스', 1.2, pg_temp.fx('t72'));
+  c := public.party_course(pg_temp.fx('p73')::bigint);
+  perform pg_temp.ok(v_rev = 1 and c->>'course_name' = '내가 그린 코스' and c->>'course_track' = pg_temp.fx('t72')
+                     and (c->>'course_rev')::int = 1,
+    '코스 없는 방에 진행자가 코스를 넣으면 판 1 · 경로를 받는다');
+  -- 같은 코스를 다시 보냈다(답을 잃고 다시 보냄) — 판도 준비도 그대로
+  perform pg_temp.ok(public.party_set_course(pg_temp.fx('p73')::bigint, ' 내가 그린 코스 ', 1.2000, pg_temp.fx('t72')) = 1,
+    '같은 코스를 다시 보내면 판이 오르지 않는다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select array_agg(m.user_id::text || ':' || m.ready order by m.joined_at) from public.party_members m
+      where m.party_id = pg_temp.fx('p73')::bigint)
+    = array['73000000-0000-0000-0000-000000000002:true', '73000000-0000-0000-0000-000000000003:false'],
+    '코스를 넣어도 진행자를 뺀 준비가 풀린다(D14)');
+end $$;
+set role authenticated;
+call pg_temp.login('73000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_ready(pg_temp.fx('p73')::bigint, true); end $$;
+call pg_temp.login('73000000-0000-0000-0000-000000000002');
+-- 같은 코스를 다시 보내면 다시 준비한 사람은 그대로
+do $$ begin perform public.party_set_course(pg_temp.fx('p73')::bigint, '내가 그린 코스', 1.2, pg_temp.fx('t72')); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select ready from public.party_members where party_id = pg_temp.fx('p73')::bigint
+                        and user_id = '73000000-0000-0000-0000-000000000003'),
+    '같은 코스를 다시 보내면 준비가 풀리지 않는다');
+end $$;
+set role authenticated;
+call pg_temp.login('73000000-0000-0000-0000-000000000002');
+do $$
+declare v_rev int; v json;
+begin
+  -- 코스를 뺀다 — 판 2 · 코스 없음 · 준비 풀림
+  v_rev := public.party_set_course(pg_temp.fx('p73')::bigint, null, null, null);
+  v := public.party_state(pg_temp.fx('p73')::bigint);
+  perform pg_temp.ok(v_rev = 2 and v->>'course_name' is null and v->>'course_km' is null and (v->>'course_rev')::int = 2
+                     and public.party_course(pg_temp.fx('p73')::bigint)->>'course_track' is null,
+    format('진행자가 코스를 빼면 판 2 · 코스 없음 (%s)', v::jsonb - 'members'));
+  -- 없는 코스를 또 뺀다 — 그대로
+  perform pg_temp.ok(public.party_set_course(pg_temp.fx('p73')::bigint, '', null, '') = 2,
+    '없는 코스를 또 빼면 판이 오르지 않는다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(not (select ready from public.party_members where party_id = pg_temp.fx('p73')::bigint
+                            and user_id = '73000000-0000-0000-0000-000000000003'),
+    '코스를 빼면 진행자를 뺀 준비가 풀린다(바뀐 것을 보고 다시 준비 — D14)');
+end $$;
+set role authenticated;
+call pg_temp.login('73000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_ready(pg_temp.fx('p73')::bigint, true); end $$;
+call pg_temp.login('73000000-0000-0000-0000-000000000002');
+-- 코스를 빼기 전 판으로는 출발하지 않는다 — 지금 판(코스 없음)으로 출발한다
+call pg_temp.must_fail($q$ select public.party_start_rev(pg_temp.fx('p73')::bigint, 1) $q$,
+  '코스를 뺀 뒤 옛 판으로는 출발하지 않는다(course_changed)');
+do $$ begin perform public.party_start_rev(pg_temp.fx('p73')::bigint, 2); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status from public.parties where id = pg_temp.fx('p73')::bigint) = 'COUNTDOWN'
+                     and (select array_agg(coalesce(c.course_name, '-') || '|' || coalesce(c.course_km::text, '-') || '|' || c.course_rev
+                                           order by c.user_id)
+                            from economy.crew_runs c where c.party_id = pg_temp.fx('p73')::bigint)
+                         = array['-|-|2', '-|-|2'],
+    '코스 없는 방도 출발한다 — 참여 기록의 코스는 비고 판은 그대로');
+end $$;
+set role authenticated;
+call pg_temp.login('73000000-0000-0000-0000-000000000002');
+call pg_temp.must_fail($q$ select public.party_set_course(pg_temp.fx('p73')::bigint, null, null, null) $q$,
+  '출발한 방의 코스는 빼지도 못한다');
+-- 코스 없이 연 방은 판 0 그대로 출발한다(코스를 한 번도 붙이지 않음)
+call pg_temp.login('73000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('p73_0', public.party_create('73000000-0000-0000-0000-0000000000cc', '판 0 런', null, null, null)::text);
+  perform public.party_ready(pg_temp.fx('p73_0')::bigint, true);
+end $$;
+reset role;
+insert into auth.users (id, email) values ('73000000-0000-0000-0000-000000000004', 'm73c@test');
+insert into public.crew_members (crew_id, user_id, role)
+values ('73000000-0000-0000-0000-0000000000cc', '73000000-0000-0000-0000-000000000004', 'MEMBER');
+set role authenticated;
+call pg_temp.login('73000000-0000-0000-0000-000000000004');
+do $$ begin
+  perform public.party_join(pg_temp.fx('p73_0')::bigint);
+  perform public.party_ready(pg_temp.fx('p73_0')::bigint, true);
+end $$;
+call pg_temp.login('73000000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_start_rev(pg_temp.fx('p73_0')::bigint, 0); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status from public.parties where id = pg_temp.fx('p73_0')::bigint) = 'COUNTDOWN',
+    '코스 없이 연 방(판 0)도 판을 맞대고 출발한다');
+end $$;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

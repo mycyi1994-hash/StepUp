@@ -47,8 +47,7 @@
     <string name="crew5_create_name_hint">例) 川沿いの仕事帰りラン</string>
     <string name="crew5_create_name_count">%1$d / %2$d</string>
     <string name="crew5_create_name_invalid">ラン名は1〜%1$d文字で入力してください。</string>
-    <string name="crew5_create_course">一緒に走るコース</string>
-    <string name="crew5_create_pick_course">コースを選ぶ</string>
+    <string name="crew5_create_pick_course">コースを選ぶ・描く</string>
     <string name="crew5_create_other_course">別のコースを選ぶ</string>
     <string name="crew5_create_scope">待機室の公開範囲</string>
     <string name="crew5_create_scope_value">%1$s クルー</string>
@@ -91,7 +90,6 @@
     <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
     <string name="crew5_lobby_goal_max">最高</string>
     <string name="crew5_lobby_course">クルーコース</string>
-    <string name="crew5_lobby_course_none">コースなし</string>
     <string name="crew5_lobby_course_expand">コースを大きく見る</string>
     <string name="crew5_lobby_shoe">自分のシューズ</string>
     <string name="crew5_lobby_shoe_none">装備中のシューズで走ります</string>
@@ -216,4 +214,26 @@
     <string name="crew5_missed_body">待機室を離れている間にみんなが出発しました。今日のクルーランは使われていません。</string>
     <string name="crew5_sign_in_title">ログインが必要です</string>
     <string name="crew5_other_rooms">別の待機室を見る</string>
+    <!-- 2026-10-24 자유 코스 · 지도에서 그리기 · 크루 관리 바로가기(서버 0073) -->
+    <string name="crew5_create_course_optional">一緒に走るコース(任意)</string>
+    <string name="crew5_create_free_body">コースなしで、それぞれ好きな道を一緒に走ります。コースは待機室でも決められます。</string>
+    <string name="crew5_course_free">フリーコース</string>
+    <string name="crew5_course_free_sub">それぞれ好きな道で</string>
+    <string name="crew5_course_remove">コースを外す</string>
+    <string name="crew5_course_set">コースを決める</string>
+    <string name="crew5_course_removed_title">コースが外されました</string>
+    <string name="crew5_course_removed_body">進行役がコースを外しました。それぞれ好きな道で一緒に走ります。もう一度準備してください。</string>
+    <string name="crew5_courses_draw">地図で自分で描く</string>
+    <string name="crew5_courses_draw_body">通る場所を地図でタップすると、自分のコースになります。</string>
+    <string name="crew5_draw_header">コースを描く</string>
+    <string name="crew5_draw_hint">通る場所を順に地図でタップします。ドラッグで地図を動かせます。</string>
+    <string name="crew5_draw_summary">%1$s km · %2$d地点</string>
+    <string name="crew5_draw_undo">元に戻す</string>
+    <string name="crew5_draw_clear">最初から</string>
+    <string name="crew5_draw_loop">スタートに戻る</string>
+    <string name="crew5_draw_use">このコースにする</string>
+    <string name="crew5_draw_too_long">コースは%1$d kmまでです。</string>
+    <string name="crew5_draw_too_many">地点は%1$d個までです。</string>
+    <string name="crew5_draw_name">自分で描いたコース</string>
+    <string name="crew5_home_manage_sub">加入申請・メンバー・紹介・解散</string>
 </resources>

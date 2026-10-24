@@ -124,22 +124,23 @@ class PartyApi(
 
     /**
      * 이름 · 코스를 붙여 새 대기실을 연다(0072) — 연 사람이 진행자. [requestKey] 가 같으면(답을 잃고 다시 보냄) 서버는 그때 연 방을 돌려준다.
+     * 코스 칸을 모두 null 로 보내면 코스 없이 연다(0073 — 자유 코스, 코스 판 0).
      */
     suspend fun create(
         crewId: String,
         name: String,
-        courseName: String,
-        courseKm: Double,
-        courseTrack: String,
+        courseName: String?,
+        courseKm: Double?,
+        courseTrack: String?,
         requestKey: String,
     ): ServerResult<Long> = rpc(
         "party_create",
         jsonBody {
             put("p_crew", crewId)
             put("p_name", name)
-            put("p_course_name", courseName)
-            put("p_course_km", courseKm)
-            put("p_course_track", courseTrack)
+            put("p_course_name", courseName ?: JsonNull)
+            put("p_course_km", courseKm ?: JsonNull)
+            put("p_course_track", courseTrack ?: JsonNull)
             put("p_request", requestKey)
         },
     ) { it.trim().toLongOrNull() }
@@ -156,14 +157,17 @@ class PartyApi(
         jsonBody { put("p_party", partyId) },
     ) { serverJson.decodeFromString<PartyCourseRow>(it) }
 
-    /** 진행자 — 코스를 바꾼다(0072). 새 코스 판이 돌아온다. 진행자를 뺀 모두의 준비가 풀린다 */
-    suspend fun setCourse(partyId: Long, courseName: String, courseKm: Double, courseTrack: String): ServerResult<Int> = rpc(
+    /**
+     * 진행자 — 코스를 바꾼다(0072). 새 코스 판이 돌아온다. 진행자를 뺀 모두의 준비가 풀린다.
+     * 모두 null 이면 코스를 뺀다(0073). 지금과 같은 코스면 서버가 판 · 준비를 그대로 두고 지금 판을 돌려준다.
+     */
+    suspend fun setCourse(partyId: Long, courseName: String?, courseKm: Double?, courseTrack: String?): ServerResult<Int> = rpc(
         "party_set_course",
         jsonBody {
             put("p_party", partyId)
-            put("p_course_name", courseName)
-            put("p_course_km", courseKm)
-            put("p_course_track", courseTrack)
+            put("p_course_name", courseName ?: JsonNull)
+            put("p_course_km", courseKm ?: JsonNull)
+            put("p_course_track", courseTrack ?: JsonNull)
         },
     ) { it.trim().toIntOrNull() }
 

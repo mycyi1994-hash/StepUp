@@ -220,9 +220,11 @@ data class PartyState(
     val roomName: String = "",
     /** 방을 연 시각(이 폰의 시계) — 0 이면 모른다 */
     val roomCreatedAt: Long = 0L,
-    /** 방의 코스 사본(0072) — 이름 · 거리 · 판. 경로는 판이 바뀔 때 받는다(아직이면 비어 있다). 코스 없는 방이면 null */
+    /** 방의 코스 사본(0072) — 이름 · 거리 · 판. 경로는 판이 바뀔 때 받는다(아직이면 비어 있다). 코스 없는 방(자유 코스)이면 null */
     val course: RoomCourse? = null,
-    /** 이 폰이 본 코스 판 — 진행자가 바꾼 뒤 아직 보지 않았으면 [courseChanged] */
+    /** 방의 코스 판(서버 course_rev) — 코스를 넣고 · 바꾸고 · 뺄 때마다 오른다(0073). 코스가 없어도 판은 있다 */
+    val courseRev: Int = 0,
+    /** 이 폰이 본 코스 판 — 진행자가 바꾼(뺀) 뒤 아직 보지 않았으면 [courseChanged] */
     val courseSeenRev: Int = 0,
 ) {
     /** 로비 · 달리는 중 어디서든 서버에 닿지 못하고 있다 */
@@ -245,9 +247,9 @@ data class PartyState(
     val canStart: Boolean get() = isHost && myReady
     val isActive: Boolean get() = phase == PartyPhase.RUNNING
 
-    /** 진행자가 코스를 바꿨고 아직 보지 않았다 — 참가자에게 한 번 알린다(장면 08). 진행자 본인 · 출발 뒤에는 없다 */
+    /** 진행자가 코스를 바꿨고(넣었고 · 뺐고) 아직 보지 않았다 — 참가자에게 한 번 알린다(장면 08). 진행자 본인 · 출발 뒤에는 없다 */
     val courseChanged: Boolean
-        get() = phase == PartyPhase.LOBBY && !isHost && course != null && course.rev > courseSeenRev
+        get() = phase == PartyPhase.LOBBY && !isHost && courseRev > courseSeenRev
 
     /** 진행자 — 대기실 진행 역할(서버 host_id). 크루장과 같다고 보지 않는다 */
     val host: PartyMember? get() = members.firstOrNull { it.isHost }
@@ -548,27 +550,31 @@ class CrewRepository(
 
     /**
      * 이름 · 코스를 붙여 새 대기실을 연다(0072) — 연 사람이 진행자. 방 번호가 돌아오면 [openRoom] 으로 들어간다.
-     * [requestKey] 는 같은 입력으로 다시 보낼 때 같은 값 — 답을 잃고 다시 눌러도 방은 하나다.
+     * [course] 가 null 이면 코스 없이 연다(0073 — 각자 원하는 길로). [requestKey] 는 같은 입력으로 다시 보낼 때 같은 값 —
+     * 답을 잃고 다시 눌러도 방은 하나다.
      */
-    suspend fun createRoom(crewId: String, name: String, course: RoomCourse, requestKey: String): ServerResult<Long> =
-        partyApi.create(crewId, name, course.name, course.km, course.encodeTrack(), requestKey)
+    suspend fun createRoom(crewId: String, name: String, course: RoomCourse?, requestKey: String): ServerResult<Long> =
+        partyApi.create(crewId, name, course?.name, course?.km, course?.encodeTrack(), requestKey)
 
     /**
-     * 진행자 — 방의 코스를 바꾼다(0072). 서버가 받으면 새 판으로 적고 진행자를 뺀 모두의 준비를 푼다(D14 — 서버도 그렇게 한다).
+     * 진행자 — 방의 코스를 바꾼다(0072). [course] 가 null 이면 코스를 뺀다(0073). 서버가 받으면 새 판으로 적고 진행자를 뺀
+     * 모두의 준비를 푼다(D14 — 서버도 그렇게 한다). 지금과 같은 코스면 서버가 판을 올리지 않는다 — 준비도 그대로 둔다.
      * 서버가 받지 않으면 그대로 두고 결과를 돌려준다(화면이 알린다).
      */
-    suspend fun setRoomCourse(course: RoomCourse): ServerResult<Int> {
+    suspend fun setRoomCourse(course: RoomCourse?): ServerResult<Int> {
         val state = _party.value
         val id = state.partyId ?: return ServerResult.Rejected("no_room")
         if (state.phase != PartyPhase.LOBBY || !state.isHost) return ServerResult.Rejected("not_host")
-        val result = partyApi.setCourse(id, course.name, course.km, course.encodeTrack())
+        val result = partyApi.setCourse(id, course?.name, course?.km, course?.encodeTrack())
         if (result is ServerResult.Ok) {
             _party.update { now ->
                 if (now.partyId != id) now
                 else now.copy(
-                    course = course.copy(rev = result.value),
+                    course = course?.copy(rev = result.value),
+                    courseRev = result.value,
                     courseSeenRev = result.value,
-                    members = now.members.map { if (it.isHost) it else it.copy(ready = false) },
+                    members = if (result.value == now.courseRev) now.members
+                    else now.members.map { if (it.isHost) it else it.copy(ready = false) },
                 )
             }
             wake.trySend(Unit)
@@ -576,9 +582,9 @@ class CrewRepository(
         return result
     }
 
-    /** 참가자 — 바뀐 코스를 봤다(장면 08 알림을 닫는다) */
+    /** 참가자 — 바뀐(빠진) 코스를 봤다(장면 08 알림을 닫는다) */
     fun acknowledgeCourse() {
-        _party.update { now -> now.course?.let { now.copy(courseSeenRev = it.rev) } ?: now }
+        _party.update { now -> now.copy(courseSeenRev = now.courseRev) }
     }
 
     /**
@@ -996,6 +1002,7 @@ class CrewRepository(
             roomName = row.name?.takeIf { it.isNotBlank() } ?: before.roomName,
             roomCreatedAt = row.createdAt?.isoToMillis()?.minus(offset) ?: before.roomCreatedAt,
             course = course,
+            courseRev = row.courseRev,
             courseSeenRev = seen,
             // 크루 목록을 받기 전에 로비를 열었으면 이름이 비어 있다
             crewName = before.crewName.ifBlank { row.crewId?.let { crewOf(it)?.name }.orEmpty() },
@@ -1109,8 +1116,8 @@ class CrewRepository(
         val room = state.partyId ?: return
         if (startingParty == room) return
         startingParty = room
-        // 코스가 있는 방(0072)은 진행자가 본 코스 판으로 출발한다 — 그사이 바뀌었으면 서버가 거절한다(course_changed)
-        val rev = state.course?.rev?.takeIf { it > 0 }
+        // 코스 판이 있는 방(0072 · 코스를 넣었다 뺀 방 0073)은 진행자가 본 코스 판으로 출발한다 — 그사이 바뀌었으면 서버가 거절한다(course_changed)
+        val rev = state.courseRev.takeIf { it > 0 }
         act { id ->
             (if (rev != null) partyApi.startRev(id, rev) else partyApi.start(id)).also {
                 if (it is ServerResult.Ok) Analytics.partyStarted(state.readyCount) else startingParty = null

@@ -1137,6 +1137,10 @@ private fun MainScaffoldContent(
                         navController.navigate(com.stepup.android.ui.screens.community.home.CrewHomeRoutes.level(crewId)) { launchSingleTop = true }
                     },
                     onHistory = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
+                    // 크루장 — 크루 관리(가입 신청 · 멤버 · 크루 소개 · 해산)
+                    onManage = { crewId ->
+                        navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.manage(crewId)) { launchSingleTop = true }
+                    },
                     onFindCrew = { navController.switchTab(Screen.Community) },
                     onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
                     // 자유 러닝으로 시작 — 추천 코스의 "자유 러닝으로 시작"처럼 고른 코스를 풀고 시작한다(코스 러닝으로 바뀌지 않게)
