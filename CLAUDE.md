@@ -8,7 +8,8 @@
   크루 러닝 입구는 모두 `Routes.crewRun(crewId)`(들어가 있던 방이면 그 방). 예전 `party_open`(저절로 아무 방)은 번개러닝 · 옛 앱만.
 - 대기실은 듀얼 레일(`CrewDualRail.kt` `DualRailFrame` — 크루원 · 내 신발 같은 틀) + **사진 터널은 대기실에만**(`LobbyTunnelBackdrop`, 시트 · 카운트다운 · 뒤 · 모션 줄이기면 멈춤).
   나머지 크루 화면은 앱 바탕(`crewColors`). 시트는 `LobbySheetFrame`(#08243A).
-- 진행자만 코스를 바꾼다(`party_set_course` — 판 + 1, 진행자 뺀 준비 풀림 D14), 출발은 판을 맞대고(`party_start_rev`). 출발 시각은 6초 뒤.
+- 진행자만 코스를 바꾼다(`party_set_course` — 판 + 1, 진행자 뺀 준비 풀림 D14), 출발은 판을 맞대고(`party_start_rev`). 크루 방 출발 시각은 6초 뒤(번개 4초 그대로).
+- 진행자를 넘길 때는 오늘 아직 달리지 않은 사람이 먼저(`economy.party_next_host`). 방 열기 · 들어가기는 사람 · 크루 자물쇠로 하나씩(두 방 · 21명 막기).
 - 출발 연출은 앱 맨 위 겹(`CrewLaunchOverlay`)이 서버 출발 시각에 맞춰 자유 러닝 무대(`FreeRunStartStage`)를 그린다 — 출발 시각 = 펼침 시작, 러닝이 켜진 뒤 러닝 화면을 펼친다.
 - 경제(공용 체력 · 하루 한 번 · 2분 인원 · 레벨 · 보상)는 0071 그대로다. 37(출발 위치 500m 시트) · 67(자정 안내 화면)은 없다 — 결정 D03 · D05.
 

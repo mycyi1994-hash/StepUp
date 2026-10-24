@@ -44,16 +44,24 @@ screen-spec.json · rules.json · design-tokens.json · 시안 70장 묶음 [con
 | RPC | 누가 | 하는 일 | 오류(메시지) |
 |---|---|---|---|
 | `party_rooms(p_crew)` → `{server_now, capacity, done_today, rooms[]}` | 크루원 | 열린(LOBBY) 방 + 내 방. 방: id · name · status · host_id · host_name · created_at · members_count · ready_count · capacity · course_name · course_km · course_rev · course_track · mine · kicked. 보기만(들어가지 않는다) | 42501 크루원 아님 |
-| `party_create(p_crew, p_name, p_course_name, p_course_km, p_course_track, p_request)` → 방 번호 | 크루원 누구나(R06) | 이름(공백 정리 · 1 ~ 30자) · 코스 사본 · 코스 판 1. 연 사람이 진행자, 다른 출발 전 방에서 나온다. **같은 요청 번호면 그때 연 방**(답을 잃고 다시 보내도 하나 — T03) | `room_name_invalid` · `course_invalid` · `crew_run_done_today` · 42501 |
-| `party_join(p_party)` → 방 번호 | 크루원 | 이미 들어가 있으면 그대로. 다른 출발 전 방에서 나온다. 늦은 합류 없음(D10) | `room_full`(20명) · `room_started` · `room_closed` · 42501(내보내짐 · 크루원 아님) |
+| `party_create(p_crew, p_name, p_course_name, p_course_km, p_course_track, p_request)` → 방 번호 | 크루원 누구나(R06) | 이름(공백 정리 · 1 ~ 30자) · 코스 사본 · 코스 판 1. 연 사람이 진행자, 다른 출발 전 방에서 나온다. **같은 요청 번호면 그때 연 방**(답을 잃고 다시 보내도 하나 — T03. 연 사람 `creator_id` 로 찾는다 — 진행자가 바뀌어도 하나, 닫힌 방이면 새로 연다) | `room_name_invalid` · `course_invalid` · `crew_run_done_today` · 42501 |
+| `party_join(p_party)` → 방 번호 | 크루원 | 이미 들어가 있으면 그대로. 다른 출발 전 방에서 나온다. 늦은 합류 없음(D10) | `room_full`(20명) · `room_started` · `room_closed`(없거나 닫힘) · 42501(내보내짐 · 크루원 아님) |
 | `party_course(p_party)` → `{course_rev, course_name, course_km, course_track}` | 방 사람 | 경로는 판이 바뀔 때만 받는다(2초마다 묻는 `party_state` 에는 없다) | 42501 |
 | `party_set_course(p_party, name, km, track)` → 새 판 | 진행자 · 출발 전 | 판 + 1, **진행자를 뺀 모두의 준비를 푼다(D14)** | 진행자 아님 · 출발함 · `course_invalid` |
 | `party_start_rev(p_party, p_course_rev)` | 진행자 | 판이 다르면 `course_changed`, 같으면 `party_start`(0071 규칙 그대로) | `course_changed` + 0071 출발 오류 |
 | `party_state` | 방 사람 | 0063 + name · created_at · course_name · course_km · course_rev | |
-| `party_start` | 진행자 | 0071 그대로 + **출발 시각 6초 뒤**(0071 은 4초) + `crew_runs` 에 방 이름 · 코스 · 판 사본 | |
+| `party_start` | 진행자 | 0071 그대로 + **크루 방 출발 시각 6초 뒤**(0071 은 4초 · 번개러닝은 4초 그대로) + `crew_runs` 에 방 이름 · 코스 · 판 사본 | |
+| `party_leave` | 방 사람 | 0012 그대로 + 방 줄을 잠그고(막 들어온 사람이 있는 방을 닫지 않게) · 다음 진행자 규칙(아래) | |
 | `crew_run_result` | 본인 | 0071 + party_id · party_name · course_name · course_km · started_at · crew_level · shoe | |
 
-- 표: `parties.name · course_name · course_km · course_track · course_rev · create_key`(+ `(host_id, create_key)` 유일 색인), `economy.crew_runs.party_name · course_name · course_km · course_rev`.
+- 표: `parties.name · course_name · course_km · course_track · course_rev · create_key · creator_id`(+ `(creator_id, create_key)` 유일 색인 — 닫힌 방 빼고),
+  `economy.crew_runs.party_name · course_name · course_km · course_rev`. 코스 경로는 점 둘 이상 · 위도 ±90 · 경도 ±180 안(6만 자까지).
+- **다음 진행자**(`economy.party_next_host`): 오늘 크루 러닝을 아직 하지 않은(준비할 수 있는) 사람이 먼저, 그다음 먼저 들어온 차례 —
+  나가기 · 다른 방으로 옮김 · 30초 넘게 안 보이는 진행자 넘기기 모두. 오늘 이미 한 사람은 방을 볼 수만 있어(준비 불가) 그 사람이 진행자가 되면 방이 출발하지 못했다.
+- **동시에 누를 때**: 한 사람의 방 열기 · 들어가기는 하나씩(사람 자물쇠 — 두 방에 남지 않게), 들어가기는 크루 자물쇠(옛 `party_open` 과 같은 것)를 방 줄보다 먼저
+  (옛 앱과 동시에 들어와도 20명을 넘지 않게), 다른 방에서 나올 때는 그 방을 잠그고 출발 전인지 다시 본다(출발한 방의 명단 · 참여 기록을 흩뜨리지 않게),
+  출발 판 확인은 방 줄을 잠근 뒤(`party_start_rev`). 두 연결로 확인했다(같은 사람이 두 방에 동시에 → 한 방, 19명 방에 옛 앱 · 새 앱이 동시에 → 20명 · 뒤는 `room_full`).
+- 남은 틈: 진행자가 코스를 바꾸는 순간에 닿은 준비 누름은 준비로 남는다(`party_ready` 에 판이 없다 — 그 사람도 코스 바뀜 알림(08)은 본다).
 - 예전 `party_open`(크루의 열린 방 하나에 저절로)은 옛 앱 · 번개러닝용으로 그대로 둔다. 새 앱은 크루 방에 쓰지 않는다.
 - 이미 적용된 마이그레이션(0001 ~ 0071)은 고치지 않았다. 개인 러닝 경제 경로(`record_session` 개인 · 600 SUP · 신발 내구도)는 그대로다.
 
@@ -150,7 +158,9 @@ screen-spec.json · rules.json · design-tokens.json · 시안 70장 묶음 [con
 ## 확인
 
 - 서버: `supabase/tests/run.sh` 전부 통과(0072 절 — 크루원 개설 · 이름 · 경로 검사 · 남의 크루 막기 · 목록 · 골라 들어가기(두 번) · 코스 바꾸기(진행자만 · D14 준비 풀림) · 옛 판 출발 막기 ·
-  내보내기(다시 못 들어옴 · 크루는 그대로) · 6초 뒤 출발 · 참여 기록에 방 이름 · 코스 · 늦은 합류 막기 · 오늘 한 사람 개설 막기 · 다른 방에서 나오기 · 20명 · 같은 요청 번호), setup.sql 다시 붙이기.
+  내보내기(다시 못 들어옴 · 크루는 그대로) · 6초 뒤 출발 · 참여 기록에 방 이름 · 코스 · 늦은 합류 막기 · 오늘 한 사람 개설 막기 · 다른 방에서 나오기 · 20명 · 같은 요청 번호 ·
+  진행자 넘기기(나가기 · 30초) 준비할 수 있는 사람 먼저 · 진행자가 바뀐 뒤 · 닫힌 뒤 같은 요청 번호 · 닫힌 방 `room_closed` · 남의 경로 막기 · 출발한 방 코스 막기 ·
+  좌표 범위 · 번개 4초 그대로), setup.sql 다시 붙이기(기록이 쌓인 데이터베이스에서도). 두 연결 동시 확인(같은 사람 두 방 · 옛 `party_open` 과 20명).
 - 앱: `CrewRoomsTest`(15 — 서버 답 · 보내는 몸통 · 이름 · 경로 규칙 · 막힘 까닭 · 코스 알림 · 한 화면 · 터널 시간표 · 모션 줄이기 · 출발 시계) +
   기존 단위 검사 · lint · `check-strings.py` · `check_design_contract.py`.
 - 기기: `RunJourneyDesignTest#crewRooms`(C01 ~ C70 캡처 · 터널이 대기실에만 · 역할별 버튼 · 작은 화면 · 큰 글씨 · 밝은 테마에서 주 버튼이 화면 안)는 Experience QA(PR)에서 돈다.

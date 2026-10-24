@@ -8805,6 +8805,120 @@ set role authenticated;
 call pg_temp.login('72000000-0000-0000-0000-000000000004');
 call pg_temp.must_fail($q$ select public.party_join(pg_temp.fx('p72_a')::bigint) $q$,
   '20명이 찬 대기실에는 들어가지 못한다(room_full — T24)');
+
+-- 진행자를 넘길 때는 오늘 아직 크루 러닝을 하지 않은(준비할 수 있는) 사람이 먼저 — 오늘 이미 한 사람이 진행자가 되면
+-- 그 사람은 준비할 수 없어 방이 출발하지 못한다(나가기 · 30초 넘게 안 보이는 진행자 넘기기)
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+do $$ begin
+  insert into fix (k, v) values ('p72_h', public.party_create('72000000-0000-0000-0000-0000000000cc', '인계 런', '선유도 2km', 2, pg_temp.fx('t72b'))::text);
+end $$;
+-- 셋은 오늘 이미 했다(들어가 보는 것은 된다) — 먼저 들어온다
+call pg_temp.login('72000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_join(pg_temp.fx('p72_h')::bigint); end $$;
+call pg_temp.login('72100000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_join(pg_temp.fx('p72_h')::bigint); end $$;
+call pg_temp.login('72100000-0000-0000-0000-000000000002');
+do $$ begin perform public.party_join(pg_temp.fx('p72_h')::bigint); end $$;
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+do $$ begin perform public.party_leave(pg_temp.fx('p72_h')::bigint); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select host_id from public.parties where id = pg_temp.fx('p72_h')::bigint) = '72100000-0000-0000-0000-000000000001',
+    '진행자가 나가면 오늘 아직 달리지 않은 사람 중 먼저 들어온 사람이 진행자(오늘 이미 한 셋은 건너뛴다)');
+end $$;
+update public.party_members set last_seen = now() - interval '1 minute'
+ where party_id = pg_temp.fx('p72_h')::bigint and user_id = '72100000-0000-0000-0000-000000000001';
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_state(pg_temp.fx('p72_h')::bigint); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select host_id from public.parties where id = pg_temp.fx('p72_h')::bigint) = '72100000-0000-0000-0000-000000000002',
+    '30초 넘게 안 보이는 진행자는 보이는 사람 중 오늘 아직 달리지 않은 사람에게 넘긴다(먼저 들어온 셋은 오늘 이미 했다)');
+end $$;
+
+-- 요청 번호는 연 사람으로 찾는다 — 진행자가 바뀐 뒤 다시 보내도 방은 하나, 닫힌 방이면 새로 연다
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('p72_k', public.party_create('72000000-0000-0000-0000-0000000000cc', '열쇠 런', '선유도 2km', 2, pg_temp.fx('t72b'),
+    '72000000-0000-0000-0000-00000000a002')::text);
+end $$;
+call pg_temp.login('72100000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_join(pg_temp.fx('p72_k')::bigint); end $$;
+call pg_temp.login('72000000-0000-0000-0000-000000000001');
+do $$ begin
+  perform public.party_leave(pg_temp.fx('p72_k')::bigint);
+  perform pg_temp.ok(public.party_create('72000000-0000-0000-0000-0000000000cc', '열쇠 런', '선유도 2km', 2, pg_temp.fx('t72b'),
+                       '72000000-0000-0000-0000-00000000a002') = pg_temp.fx('p72_k')::bigint,
+    '진행자가 바뀐 뒤 같은 요청 번호로 다시 보내도 그때 연 방이다(새 방을 만들지 않는다)');
+end $$;
+reset role;
+update public.parties set status = 'FINISHED' where id = pg_temp.fx('p72_k')::bigint;
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000001');
+do $$ begin
+  perform pg_temp.ok(public.party_create('72000000-0000-0000-0000-0000000000cc', '열쇠 런', '선유도 2km', 2, pg_temp.fx('t72b'),
+                       '72000000-0000-0000-0000-00000000a002') <> pg_temp.fx('p72_k')::bigint,
+    '닫힌 방의 요청 번호로 다시 보내면 새 방을 연다(닫힌 방을 돌려주지 않는다)');
+end $$;
+call pg_temp.login('72100000-0000-0000-0000-000000000004');
+do $$ begin
+  begin
+    perform public.party_join(pg_temp.fx('p72_k')::bigint);
+    raise exception 'FAIL  닫힌 대기실에 들어갔다';
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'room_closed', format('닫힌 대기실은 room_closed — 앱이 "닫혔어요"로 알린다 (%s)', sqlerrm));
+  end;
+end $$;
+
+-- 방 사람만 경로를 받고, 출발한 방의 코스는 바꾸지 못하고, 지도에 없는 좌표는 받지 않는다
+call pg_temp.login('72000000-0000-0000-0000-000000000009');
+call pg_temp.must_fail($q$ select public.party_course(pg_temp.fx('p72_h')::bigint) $q$,
+  '방 사람이 아니면 방의 코스 경로를 받지 못한다');
+call pg_temp.login('72000000-0000-0000-0000-000000000002');
+call pg_temp.must_fail($q$ select public.party_set_course(pg_temp.fx('p72')::bigint, '바꿈', 1, pg_temp.fx('t72b')) $q$,
+  '출발한 방의 코스는 바꾸지 못한다');
+call pg_temp.login('72000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', '이름', '코스', 1, '95.0,127.0;37.5,127.0') $q$,
+  '위도 ±90 · 경도 ±180 밖의 좌표는 코스로 받지 않는다');
+do $$
+declare v_track text;
+begin
+  foreach v_track in array array['37.5,127.0;abc', '37.5,127.0', '37.5,127.0;37.6,181', '1e5,127.0;37.5,127.0'] loop
+    begin
+      perform public.party_create('72000000-0000-0000-0000-0000000000cc', '이름', '코스', 1, v_track);
+      raise exception 'FAIL  코스로 받으면 안 되는 경로를 받았다: %', v_track;
+    exception when others then
+      if sqlerrm <> 'course_invalid' then
+        raise exception 'FAIL  경로 %: course_invalid 가 아니라 %', v_track, sqlerrm;
+      end if;
+    end;
+  end loop;
+  perform pg_temp.ok(true, '틀린 경로(형식 · 점 하나 · 지도 밖 · 지수 표기)는 모두 course_invalid — 앱이 같은 까닭으로 알린다');
+end $$;
+
+-- 번개러닝 출발은 예전 그대로 4초 뒤(크루 방만 6초)
+reset role;
+do $$
+declare v_p bigint;
+begin
+  insert into public.parties (flash_post_id, host_id) values (pg_temp.fx('post_flash')::bigint, '72000000-0000-0000-0000-000000000004')
+  returning id into v_p;
+  insert into public.party_members (party_id, user_id, ready) values (v_p, '72000000-0000-0000-0000-000000000004', true);
+  insert into fix (k, v) values ('p72_flash', v_p::text);
+end $$;
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+do $$ begin perform public.party_start(pg_temp.fx('p72_flash')::bigint); end $$;
+reset role;
+do $$
+declare v_at timestamptz;
+begin
+  select starts_at into v_at from public.parties where id = pg_temp.fx('p72_flash')::bigint;
+  perform pg_temp.ok(v_at between now() + interval '3 seconds' and now() + interval '5 seconds',
+    format('번개러닝 출발은 예전 그대로 4초 뒤 (%s)', v_at - now()));
+end $$;
 reset role;
 select set_config('request.jwt.claims', '', false);
 

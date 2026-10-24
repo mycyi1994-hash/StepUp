@@ -13,7 +13,11 @@
 --    방 · 기록의 코스는 그대로다. 진행자만 바꾼다(party_set_course). 바꿀 때마다 코스 판(course_rev)이 오른다.
 --    D14(코스를 바꾸면 준비를 어떻게) — 진행자를 뺀 모두의 준비를 푼다: 새 코스를 보고 다시 준비하게(바뀐 코스로 모르고 출발하지 않게).
 --  - 출발은 방의 코스 판을 맞대어 본다(party_start_rev) — 진행자가 본 코스와 방의 코스가 다르면 출발하지 않는다.
---  - 출발 시각은 6초 뒤(0071 은 4초) — 대기실은 2초마다 묻는다. 늦게 안 사람도 3 · 2 · 1 · 0 · StepUP! 을 처음부터 본다.
+--  - 크루 방의 출발 시각은 6초 뒤(0071 은 4초) — 대기실은 2초마다 묻는다. 늦게 안 사람도 3 · 2 · 1 · 0 · StepUP! 을 처음부터 본다.
+--    번개러닝은 예전 그대로 4초.
+--  - 진행자를 넘길 때는 오늘 크루 러닝을 아직 하지 않은(준비할 수 있는) 사람이 먼저다 — 오늘 이미 한 사람은 방을 볼 수만 있어
+--    그 사람이 진행자가 되면 방이 출발하지 못한다(party_leave · 다른 방으로 옮김 · 30초 넘게 안 보이는 진행자).
+--  - 한 사람의 방 열기 · 들어가기는 하나씩(사람 자물쇠), 들어가기는 크루 자물쇠(party_open 과 같은 것)를 먼저 — 두 방에 남거나 20명을 넘지 않게.
 --  - 출발 때 방 이름 · 코스를 참여 기록(crew_runs)에 함께 적는다 — 지난 크루 러닝 기록은 그때의 이름 · 코스로 보인다(장면 59).
 -- ════════════════════════════════════════════════════════════════════
 
@@ -25,9 +29,12 @@ alter table public.parties add column if not exists course_km numeric(8, 3);
 -- 앱의 RunCourse.encode 형식("위도,경도;위도,경도") — 시각이 없는 경로
 alter table public.parties add column if not exists course_track text;
 alter table public.parties add column if not exists course_rev int not null default 0;
--- 방 열기 요청 번호(앱이 만든 uuid) — 답을 잃고 같은 요청을 다시 보내도 방은 하나(같은 사람 · 같은 번호면 그 방을 돌려준다)
+-- 방 열기 요청 번호(앱이 만든 uuid) — 답을 잃고 같은 요청을 다시 보내도 방은 하나(같은 사람 · 같은 번호면 그 방을 돌려준다).
+-- 연 사람(creator_id)으로 찾는다 — 진행자(host_id)는 넘겨받으면 바뀐다. 닫힌 방은 빼고 찾는다(닫힌 뒤 다시 보내면 새 방)
 alter table public.parties add column if not exists create_key uuid;
-create unique index if not exists parties_create_key on public.parties (host_id, create_key) where create_key is not null;
+alter table public.parties add column if not exists creator_id uuid references auth.users on delete set null;
+create unique index if not exists parties_create_key on public.parties (creator_id, create_key)
+  where create_key is not null and status <> 'FINISHED';
 
 do $$
 begin
@@ -64,7 +71,8 @@ end;
 $$;
 revoke all on function economy.party_room_name(text) from public;
 
--- 코스 — 이름 1 ~ 60자 · 거리 0 ~ 100km · 경로 "위도,경도;…" 점 2개 이상(6만 자까지). 아니면 오류
+-- 코스 — 이름 1 ~ 60자 · 거리 0 ~ 100km · 경로 "위도,경도;…" 점 2개 이상(6만 자까지) · 위도 ±90 · 경도 ±180 안. 아니면 오류
+-- (방 사람 모두의 지도에 그려진다 — 지도에 없는 좌표는 받지 않는다)
 create or replace function economy.party_course_check(p_name text, p_km numeric, p_track text) returns void
 language plpgsql immutable set search_path = '' as $$
 begin
@@ -73,6 +81,13 @@ begin
      or p_track is null or char_length(p_track) > 60000
      or p_track !~ '^-?[0-9]+(\.[0-9]+)?,-?[0-9]+(\.[0-9]+)?(;-?[0-9]+(\.[0-9]+)?,-?[0-9]+(\.[0-9]+)?)+$' then
     raise exception 'course_invalid' using errcode = '22023', detail = '코스 이름 · 거리 · 경로를 확인하세요';
+  end if;
+  -- 형식이 맞은 뒤에만 숫자로 읽는다(한 조건에 묶으면 읽는 차례가 정해져 있지 않다)
+  if exists (
+    select 1 from pg_catalog.regexp_split_to_table(p_track, ';') as pt(v)
+     where pg_catalog.split_part(pt.v, ',', 1)::numeric not between -90 and 90
+        or pg_catalog.split_part(pt.v, ',', 2)::numeric not between -180 and 180) then
+    raise exception 'course_invalid' using errcode = '22023', detail = '코스 경로의 좌표가 지도 밖입니다';
   end if;
 end;
 $$;
@@ -97,8 +112,26 @@ language sql security definer set search_path = public, economy as $$
 $$;
 revoke all on function economy.party_close_stale(uuid) from public;
 
+-- 다음 진행자 — 남은 사람 중 오늘 크루 러닝을 아직 하지 않은(준비할 수 있는) 사람이 먼저, 그다음 먼저 들어온 차례.
+-- 오늘 이미 한 사람은 크루 방에서 준비할 수 없어(party_ready) 그 사람이 진행자가 되면 방이 출발하지 못한다.
+-- p_seen 을 주면 그 안에 보인 사람만(30초 넘게 안 보이는 진행자 넘기기). 남은 사람이 없으면 null
+create or replace function economy.party_next_host(p_party bigint, p_seen interval default null) returns uuid
+language sql stable security definer set search_path = public, economy as $$
+  select m.user_id
+    from public.party_members m
+    join public.parties p on p.id = m.party_id
+   where m.party_id = p_party
+     and (p_seen is null or m.last_seen > now() - p_seen)
+   order by (p.crew_id is not null
+             and exists (select 1 from economy.crew_runs c where c.user_id = m.user_id and c.day = economy.game_day(now()))),
+            m.joined_at, m.user_id
+   limit 1
+$$;
+revoke all on function economy.party_next_host(bigint, interval) from public;
+
 -- 출발 전(LOBBY) 다른 대기실에서 나온다 — 한 사람이 두 대기실에 남아 진행자로 굳지 않게. 나가는 규칙은 party_leave 와 같다
--- (진행자면 다음에 들어온 사람에게 넘기고, 아무도 없으면 방을 닫는다)
+-- (진행자면 다음 사람에게 넘기고, 아무도 없으면 방을 닫는다). 그 방을 잠그고 다시 본다 — 그사이 출발했으면 그대로 두고
+-- (출발 명단 · 참여 기록에 이미 들었다), 누가 막 들어왔으면 닫지 않고 넘긴다
 create or replace function economy.party_leave_other_lobbies(p_user uuid, p_keep bigint) returns void
 language plpgsql security definer set search_path = public, economy as $$
 declare
@@ -106,11 +139,16 @@ declare
   v_next uuid;
 begin
   for v_id in
-    select m.party_id from public.party_members m join public.parties p on p.id = m.party_id
-     where m.user_id = p_user and p.status = 'LOBBY' and m.party_id is distinct from p_keep
+    select m.party_id from public.party_members m
+     where m.user_id = p_user and m.party_id is distinct from p_keep
+     order by m.party_id
   loop
+    perform 1 from public.parties p where p.id = v_id and p.status = 'LOBBY' for update;
+    if not found then
+      continue;
+    end if;
     delete from public.party_members where party_id = v_id and user_id = p_user;
-    select m.user_id into v_next from public.party_members m where m.party_id = v_id order by m.joined_at limit 1;
+    v_next := economy.party_next_host(v_id);
     if v_next is null then
       update public.parties set status = 'FINISHED' where id = v_id;
     else
@@ -200,8 +238,11 @@ begin
   if p_crew is null or not public.party_can_enter(p_crew, null) then
     raise exception '크루원만 대기실을 열 수 있습니다' using errcode = '42501';
   end if;
+  -- 한 사람의 방 열기 · 들어가기는 하나씩(party_join 과 같은 자물쇠) — 동시에 눌러도 두 방에 남지 않게
+  perform pg_advisory_xact_lock(hashtext('party_user:' || v_user::text));
   if p_request is not null then
-    select id into v_party from public.parties where host_id = v_user and create_key = p_request;
+    select id into v_party from public.parties
+     where creator_id = v_user and create_key = p_request and status <> 'FINISHED';
     if found then
       return v_party;
     end if;
@@ -213,13 +254,14 @@ begin
   end if;
   perform economy.party_close_stale(p_crew);
 
-  insert into public.parties (crew_id, host_id, name, course_name, course_km, course_track, course_rev, create_key)
-  values (p_crew, v_user, v_name, btrim(p_course_name), round(p_course_km, 3), p_course_track, 1, p_request)
-  on conflict (host_id, create_key) where create_key is not null do nothing
+  insert into public.parties (crew_id, host_id, creator_id, name, course_name, course_km, course_track, course_rev, create_key)
+  values (p_crew, v_user, v_user, v_name, btrim(p_course_name), round(p_course_km, 3), p_course_track, 1, p_request)
+  on conflict (creator_id, create_key) where create_key is not null and status <> 'FINISHED' do nothing
   returning id into v_party;
   if v_party is null then
     -- 같은 요청이 동시에 두 번 왔다 — 먼저 연 방
-    select id into v_party from public.parties where host_id = v_user and create_key = p_request;
+    select id into v_party from public.parties
+     where creator_id = v_user and create_key = p_request and status <> 'FINISHED';
     return v_party;
   end if;
   perform economy.party_leave_other_lobbies(v_user, v_party);
@@ -241,9 +283,17 @@ as $$
 declare
   v_user uuid := auth.uid();
   v_party public.parties;
+  v_crew uuid;
 begin
   if v_user is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  -- 한 사람의 방 열기 · 들어가기는 하나씩(party_create 와 같은 자물쇠). 그다음 크루 자물쇠(party_open 과 같은 것)를 방 줄보다 먼저 —
+  -- 옛 앱의 party_open 과 동시에 들어와도 20명을 넘지 않고, 차례가 같아 서로 기다리다 멈추지 않는다
+  perform pg_advisory_xact_lock(hashtext('party_user:' || v_user::text));
+  select p.crew_id into v_crew from public.parties p where p.id = p_party;
+  if v_crew is not null then
+    perform pg_advisory_xact_lock(hashtext(v_crew::text));
   end if;
   select * into v_party from public.parties where id = p_party for update;
   if not found or v_party.crew_id is null then
@@ -259,8 +309,11 @@ begin
   if exists (select 1 from public.party_kicks k where k.party_id = p_party and k.user_id = v_user) then
     raise exception '진행자가 내보낸 방입니다' using errcode = '42501';
   end if;
+  if v_party.status = 'FINISHED' then
+    raise exception 'room_closed' using errcode = '23514', detail = '닫힌 대기실입니다';
+  end if;
   if v_party.status <> 'LOBBY' then
-    raise exception 'room_started' using errcode = '23514', detail = '이미 출발했거나 닫힌 대기실입니다';
+    raise exception 'room_started' using errcode = '23514', detail = '이미 출발한 대기실입니다';
   end if;
   if (select count(*) from public.party_members m where m.party_id = p_party) >= economy.crew_room_max() then
     raise exception 'room_full' using errcode = '23514', detail = '대기실이 가득 찼습니다';
@@ -319,6 +372,35 @@ $$;
 revoke all on function public.party_set_course(bigint, text, numeric, text) from public, anon;
 grant execute on function public.party_set_course(bigint, text, numeric, text) to authenticated;
 
+-- ── 나가기 — 0012 그대로 + 방을 잠그고 · 준비할 수 있는 사람에게 먼저 넘긴다 ──────────
+
+-- 방 줄을 잠근다 — 막 들어온 사람이 있는 방을 닫지 않게(party_join 도 같은 줄을 잠근다)
+create or replace function public.party_leave(p_party bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_next uuid;
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform 1 from public.parties where id = p_party for update;
+  delete from public.party_members where party_id = p_party and user_id = auth.uid();
+
+  v_next := economy.party_next_host(p_party);
+
+  if v_next is null then
+    update public.parties set status = 'FINISHED' where id = p_party;
+  else
+    update public.parties set host_id = v_next
+     where id = p_party and host_id = auth.uid();
+  end if;
+end;
+$$;
+
 -- ── 방 상태 — 0063 그대로 + 이름 · 코스 판 ───────────────────────────
 
 create or replace function public.party_state(p_party bigint)
@@ -336,13 +418,10 @@ begin
   update public.party_members set last_seen = now()
    where party_id = p_party and user_id = auth.uid();
 
-  -- 대기실의 진행자가 30초 넘게 보이지 않는다 — 지금 보이는 사람 중 먼저 들어온 사람에게 넘긴다(0063)
+  -- 대기실의 진행자가 30초 넘게 보이지 않는다 — 지금 보이는 사람 중 먼저 들어온 사람에게 넘긴다(0063).
+  -- 오늘 크루 러닝을 아직 하지 않은(준비할 수 있는) 사람이 먼저(0072 — economy.party_next_host). 부른 사람이 방금 보였으니 비지 않는다
   update public.parties p
-     set host_id = (
-       select m.user_id from public.party_members m
-        where m.party_id = p.id and m.last_seen > now() - interval '30 seconds'
-        order by m.joined_at, m.user_id
-        limit 1)
+     set host_id = economy.party_next_host(p.id, interval '30 seconds')
    where p.id = p_party
      and p.status = 'LOBBY'
      and not exists (
@@ -404,8 +483,7 @@ security definer
 set search_path = public, economy
 as $$
 declare
-  -- 6초 뒤 — 대기실은 2초마다 묻는다. 늦게 안 사람도 3 · 2 · 1 · 0 · StepUP! 을 처음부터 본다(0072)
-  v_starts timestamptz := now() + interval '6 seconds';
+  v_starts timestamptz;
   v_party public.parties;
   v_day date;
   v_level int;
@@ -417,6 +495,8 @@ begin
   if not found then
     raise exception '로비에서 방장만 출발할 수 있습니다' using errcode = '42501';
   end if;
+  -- 크루 방은 6초 뒤 — 대기실은 2초마다 묻는다. 늦게 안 사람도 3 · 2 · 1 · 0 · StepUP! 을 처음부터 본다(0072). 번개러닝은 예전 그대로 4초
+  v_starts := now() + case when v_party.crew_id is not null then interval '6 seconds' else interval '4 seconds' end;
   if not exists (
     select 1 from public.party_members
      where party_id = p_party and user_id = auth.uid() and ready
@@ -505,6 +585,8 @@ security definer
 set search_path = public, economy
 as $$
 begin
+  -- 진행자면 방 줄을 먼저 잠그고 판을 본다 — 판을 본 뒤 출발하기 전에 코스가 바뀌지 않게(party_start 도 같은 줄을 잠근다)
+  perform 1 from public.parties p where p.id = p_party and p.host_id = auth.uid() for update;
   if exists (select 1 from public.parties p where p.id = p_party and p.course_rev is distinct from p_course_rev) then
     raise exception 'course_changed' using errcode = '23514', detail = '코스가 바뀌었습니다. 새 코스를 확인하고 다시 출발하세요';
   end if;
