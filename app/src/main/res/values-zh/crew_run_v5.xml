@@ -97,6 +97,7 @@
     <string name="crew5_lobby_shoe_none">穿着当前装备的跑鞋</string>
     <string name="crew5_lobby_shoe_change">更换跑鞋</string>
     <string name="crew5_lobby_start">与 %1$d 人出发</string>
+    <string name="crew5_lobby_need_two_button">需2人准备好才能出发</string>
     <string name="crew5_lobby_call">召集团队成员</string>
     <string name="crew5_lobby_ready">准备完成</string>
     <string name="crew5_lobby_waiting_host">主持人出发后一起开始</string>

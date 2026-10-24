@@ -97,6 +97,7 @@
     <string name="crew5_lobby_shoe_none">신은 신발로 달려요</string>
     <string name="crew5_lobby_shoe_change">신발 변경</string>
     <string name="crew5_lobby_start">%1$d명과 출발</string>
+    <string name="crew5_lobby_need_two_button">2명부터 출발할 수 있어요</string>
     <string name="crew5_lobby_call">크루원 부르기</string>
     <string name="crew5_lobby_ready">준비 완료</string>
     <string name="crew5_lobby_waiting_host">진행자가 출발하면 함께 시작해요</string>

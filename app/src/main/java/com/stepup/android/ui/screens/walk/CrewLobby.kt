@@ -858,8 +858,10 @@ private fun LobbyFooter(
             )
             party.isHost -> {
                 val needTwo = party.readyCount < 2
+                // 크루 러닝은 준비한 크루원 2명부터(서버 0071 crew_run_need_two · 핸드오프 12 단독 출발 막음) — 꺼진 버튼이 까닭을 말한다
                 LobbyPrimaryButton(
-                    stringResource(R.string.crew5_lobby_start, party.readyCount), onStart, Modifier.testTag("party-start"), enabled = !needTwo,
+                    if (needTwo) stringResource(R.string.crew5_lobby_need_two_button) else stringResource(R.string.crew5_lobby_start, party.readyCount),
+                    onStart, Modifier.testTag("party-start"), enabled = !needTwo,
                 )
                 if (needTwo) {
                     if (canNotify) {
