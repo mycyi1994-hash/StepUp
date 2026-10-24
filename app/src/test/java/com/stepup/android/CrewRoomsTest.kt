@@ -209,13 +209,61 @@ class CrewRoomsTest {
         val base = PartyState(
             phase = PartyPhase.LOBBY, partyId = 11, crewId = "c", pickedRoom = 11,
             members = listOf(member("h", host = true), member("me", me = true)),
-            course = RoomCourse(3, "선유도", 2.0), courseSeenRev = 2,
+            course = RoomCourse(3, "선유도", 2.0), courseRev = 3, courseSeenRev = 2,
         )
         assertTrue(base.courseChanged)
         assertFalse(base.copy(courseSeenRev = 3).courseChanged)
         // 진행자 본인 · 출발 뒤에는 알리지 않는다
         assertFalse(base.copy(members = listOf(member("me", me = true, host = true))).courseChanged)
         assertFalse(base.copy(phase = PartyPhase.COUNTDOWN).courseChanged)
+        // 진행자가 코스를 뺐다(0073) — 코스는 없어도 판이 올랐으니 알린다
+        assertTrue(base.copy(course = null, courseRev = 4, courseSeenRev = 3).courseChanged)
+        // 코스 없이 연 방(판 0)에 막 들어왔다 — 알릴 것이 없다
+        assertFalse(base.copy(course = null, courseRev = 0, courseSeenRev = 0).courseChanged)
+    }
+
+    @Test
+    fun `코스 없이 대기실을 연다 · 코스를 뺀다 - 코스 칸을 모두 null 로 보낸다(0073)`() = runBlocking {
+        val create = FakeHttp(HttpResponse(200, "43"))
+        assertEquals(43L, (api(create).create("c", "한강 자유런", null, null, null, "req-2") as ServerResult.Ok).value)
+        for (part in listOf("\"p_name\":\"한강 자유런\"", "\"p_course_name\":null", "\"p_course_km\":null",
+            "\"p_course_track\":null", "\"p_request\":\"req-2\"")) {
+            assertTrue(part, create.lastBody.contains(part))
+        }
+        val remove = FakeHttp(HttpResponse(200, "4"))
+        assertEquals(4, (api(remove).setCourse(11, null, null, null) as ServerResult.Ok).value)
+        assertTrue(remove.lastUrl.endsWith("/rpc/party_set_course"))
+        for (part in listOf("\"p_party\":11", "\"p_course_name\":null", "\"p_course_km\":null", "\"p_course_track\":null")) {
+            assertTrue(part, remove.lastBody.contains(part))
+        }
+    }
+
+    @Test
+    fun `지도에 그린 코스 - 점 사이 거리의 합 · 점 둘 이상 · 0 보다 길고 100km 안`() {
+        // 위도 0.01도 ≈ 1.112km — 꺾은선은 두 구간의 합
+        val a = GeoPoint(37.50, 127.0)
+        val b = GeoPoint(37.51, 127.0)
+        val c = GeoPoint(37.52, 127.0)
+        assertEquals(1.112, CrewRoomRules.pathKm(listOf(a, b)), 0.002)
+        assertEquals(2.224, CrewRoomRules.pathKm(listOf(a, b, c)), 0.004)
+        assertEquals(0.0, CrewRoomRules.pathKm(listOf(a)), 0.0)
+        assertTrue(CrewRoomRules.drawnUsable(listOf(a, b)))
+        assertFalse(CrewRoomRules.drawnUsable(listOf(a)))
+        // 같은 자리를 두 번 — 거리 0 은 코스가 아니다
+        assertFalse(CrewRoomRules.drawnUsable(listOf(a, a)))
+        // 100km 넘게(위도 1도 ≈ 111km)는 서버가 받지 않는다
+        assertFalse(CrewRoomRules.drawnUsable(listOf(GeoPoint(37.0, 127.0), GeoPoint(38.0, 127.0))))
+        // 점이 너무 많으면 받지 않는다
+        val many = (0..CrewRoomRules.DRAW_MAX_POINTS).map { GeoPoint(37.5 + it * 1e-4, 127.0) }
+        assertFalse(CrewRoomRules.drawnUsable(many))
+        val drawn = RoomCourse.drawn("  내가 그린 코스 ", listOf(a, b, c, a))
+        assertEquals("내가 그린 코스", drawn.name)
+        assertEquals(0, drawn.rev)
+        assertEquals(4, drawn.points.size)
+        assertEquals(CrewRoomRules.pathKm(listOf(a, b, c, a)), drawn.km, 1e-9)
+        // 서버 경로 정규식이 받는 꼴
+        val pattern = Regex("^-?[0-9]+(\\.[0-9]+)?,-?[0-9]+(\\.[0-9]+)?(;-?[0-9]+(\\.[0-9]+)?,-?[0-9]+(\\.[0-9]+)?)+$")
+        assertTrue(pattern.matches(drawn.encodeTrack()))
     }
 
     @Test

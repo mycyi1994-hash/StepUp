@@ -356,7 +356,7 @@ fun PartyLobbyContent(
     onPickShoe: (Long?) -> Unit = {},
     shoeFailed: Boolean = false,
     onOtherRooms: () -> Unit = {},
-    onChangeCourse: (com.stepup.android.domain.RoomCourse) -> Unit = {},
+    onChangeCourse: (com.stepup.android.domain.RoomCourse?) -> Unit = {},
     courseFailed: Boolean = false,
     onAcknowledgeCourse: () -> Unit = {},
     overlay: Boolean = false,

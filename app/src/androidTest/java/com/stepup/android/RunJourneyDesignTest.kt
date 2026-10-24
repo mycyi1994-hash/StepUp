@@ -1317,7 +1317,7 @@ class RunJourneyDesignTest {
         )
         val hostLobby = com.stepup.android.data.repo.PartyState(
             phase = com.stepup.android.data.repo.PartyPhase.LOBBY, partyId = 1L, crewId = "c1", crewName = crew.name, members = six,
-            pickedRoom = 1L, roomName = name, roomCreatedAt = now - 600_000, course = roomCourse, courseSeenRev = 2,
+            pickedRoom = 1L, roomName = name, roomCreatedAt = now - 600_000, course = roomCourse, courseRev = 2, courseSeenRev = 2,
         )
         val memberLobby = hostLobby.copy(members = listOf(
             member("h", "도윤", ready = true, host = true), member("me", "나", ready = false, me = true), member("b", "지연", ready = true),
@@ -1361,6 +1361,16 @@ class RunJourneyDesignTest {
             }
             compose.onNodeWithTag("crew-home-pool-value", useUnmergedTree = true).assertTextEquals("720")
             compose.onAllNodesWithTag("lobby-tunnel", useUnmergedTree = true).assertCountEquals(0)
+            // 크루원에게는 크루 관리 줄이 없다 · 크루장에게는 있다(기다리는 가입 신청 수와 함께 — 2026-10-24 "크루장이 할 수 있는 탭")
+            compose.onAllNodesWithTag("crew-home-manage", useUnmergedTree = true).assertCountEquals(0)
+            show("C01-home-owner", "crew-home-manage") {
+                com.stepup.android.ui.screens.walk.CrewRunEntryContent(
+                    com.stepup.android.ui.screens.walk.CrewEntryUi.Ready(crew.copy(owned = true, pendingCount = 2), listOf(crew)),
+                    {}, {}, {}, {}, {}, {}, {}, {},
+                    today = today, roomsCount = 1,
+                )
+            }
+            compose.onNodeWithTag("crew-home-manage").assertTextContains(label(R.string.crew_pending_badge, 2), substring = true)
             // 02 열린 대기실 — 내 방 · 남의 방 · 가득 찬 방. 비었을 때 · 못 불러왔을 때 · 오늘 이미 했을 때
             val rooms = com.stepup.android.domain.CrewRooms(
                 rooms = listOf(
@@ -1374,6 +1384,8 @@ class RunJourneyDesignTest {
             }
             compose.onAllNodesWithTag("lobby-tunnel", useUnmergedTree = true).assertCountEquals(0)
             compose.onNodeWithTag("crew-rooms-new").assertIsEnabled()
+            // 코스 없는 방(0073) — 지도 대신 "자유 코스 · 각자 원하는 길로"
+            compose.onNodeWithTag("crew-room-free", useUnmergedTree = true).assertExists()
             show("C02-room-list-empty", "crew-rooms-empty") {
                 com.stepup.android.ui.screens.walk.CrewRoomsContent(
                     com.stepup.android.ui.screens.walk.RoomsUi.Ready(rooms.copy(rooms = emptyList())), crew.name, {}, {}, {}, {},
@@ -1388,17 +1400,22 @@ class RunJourneyDesignTest {
                 )
             }
             compose.onNodeWithTag("crew-rooms-new").assertIsNotEnabled()
-            // 03 · 06 러닝 만들기 — 코스를 고르기 전에는 열 수 없다. 고른 뒤 이름 · 코스 · 내 기여
+            // 03 · 06 러닝 만들기 — 이름이 없으면 열 수 없다. 코스는 골라도 되고 안 골라도 된다(0073 — 자유 코스). 고른 뒤 이름 · 코스 · 내 기여
             show("C03-create", "crew-create") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, "", {}, null, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, "", {}, null, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
             }
             compose.onNodeWithTag("crew-create-open").assertIsNotEnabled()
-            show("C06-create-selected", "crew-create-selected") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+            show("C03-create-free", "crew-create-free") {
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, null, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
             }
             compose.onNodeWithTag("crew-create-open").assertIsEnabled()
+            show("C06-create-selected", "crew-create-selected") {
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+            }
+            compose.onNodeWithTag("crew-create-open").assertIsEnabled()
+            compose.onNodeWithTag("crew-create-remove-course").assertExists()
             show("C06-create-failed", "crew-create-done-today") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, 100, 8, busy = false,
+                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, {}, 100, 8, busy = false,
                     problem = com.stepup.android.ui.screens.walk.CreateProblem.DoneToday, onBack = {}, onOpen = {})
             }
             // 04 · 09 코스 고르기 · 05 상세(지도 — "이 코스로 달리기"를 눌러야 고른다)
@@ -1406,6 +1423,36 @@ class RunJourneyDesignTest {
                 com.stepup.android.ui.screens.walk.CrewCoursePickerContent(null, mine = emptyList(), shared = courses,
                     sync = com.stepup.android.data.repo.BoardSyncState.Ready, onBack = {}, onOpen = {}, onRetry = {})
             }
+            // 맨 위 지도에서 직접 그리기(2026-10-24 "코스를 내가 선택할 수가 없네") — 저장한 코스가 없어도 바로 만든다
+            compose.onNodeWithTag("crew-courses-draw").assertExists()
+            val drawnPoints = courses.first().points.let { pts -> listOf(0, pts.size / 4, pts.size / 2, pts.size * 3 / 4, pts.lastIndex).map { pts[it] } }
+            show("C04-draw", "crew-draw") {
+                com.stepup.android.ui.screens.walk.CrewCourseDrawContent(
+                    points = emptyList(), here = drawnPoints.first(), center = drawnPoints.first(),
+                    onAdd = {}, onUndo = {}, onLoop = {}, onClear = {}, onBack = {}, onUse = {},
+                )
+            }
+            compose.onNodeWithTag("crew-draw-use").assertIsNotEnabled()
+            show("C04-draw-drawing", "crew-draw-drawing") {
+                com.stepup.android.ui.screens.walk.CrewCourseDrawContent(
+                    points = drawnPoints, here = drawnPoints.first(), center = drawnPoints.first(),
+                    onAdd = {}, onUndo = {}, onLoop = {}, onClear = {}, onBack = {}, onUse = {},
+                )
+            }
+            compose.onNodeWithTag("crew-draw-use").assertIsEnabled()
+            compose.onNodeWithTag("crew-draw-loop").assertIsEnabled()
+            // 지도를 누르면 그 자리에 점이 하나 더 — 실제 지도 위 누름이 좌표로 바뀐다. 되돌리기는 마지막 점만 뺀다
+            var tapped by mutableStateOf(drawnPoints.take(2))
+            put("crew-draw-drawing") {
+                com.stepup.android.ui.screens.walk.CrewCourseDrawContent(
+                    points = tapped, here = null, center = drawnPoints.first(),
+                    onAdd = { tapped = tapped + it }, onUndo = { tapped = tapped.dropLast(1) }, onLoop = {}, onClear = {}, onBack = {}, onUse = {},
+                )
+            }
+            compose.onNodeWithTag("crew-draw-map").performTouchInput { click(center) }
+            compose.waitUntil(5_000) { tapped.size == 3 }
+            tap("crew-draw-undo")
+            compose.waitUntil(5_000) { tapped.size == 2 }
             show("C09-course-empty", "crew-courses-empty") {
                 com.stepup.android.ui.screens.walk.CrewCoursePickerContent(null, mine = emptyList(), shared = emptyList(),
                     sync = com.stepup.android.data.repo.BoardSyncState.Failed("offline"), onBack = {}, onOpen = {}, onRetry = {})
@@ -1448,6 +1495,14 @@ class RunJourneyDesignTest {
             tap("party-course")
             awaitTag("party-course-change")
             shot("C07-course-change")
+            // 진행자는 코스를 뺄 수도 있다(0073 — 자유 코스로)
+            compose.onNodeWithTag("party-course-change-remove", useUnmergedTree = true).assertExists()
+            // 코스 없는 방(자유 코스) — 진행자는 코스 칸을 눌러 코스를 정하고, 참가자는 보기만
+            show("C10-free-host", "party-course-free") { lobby(hostLobby.copy(course = null, courseRev = 0, courseSeenRev = 0), crewRoom(6, 6)) }
+            compose.onNodeWithTag("party-course-set", useUnmergedTree = true).assertExists()
+            assertShoeVisible("C10-free-host")
+            show("C22-free-member", "party-course-free") { lobby(memberLobby.copy(course = null, courseRev = 0, courseSeenRev = 0), crewRoom(5, 6)) }
+            compose.onAllNodesWithTag("party-course-set", useUnmergedTree = true).assertCountEquals(0)
             put("party-start") { lobby(hostLobby, crewRoom(6, 6)) }
             tap("party-start")
             awaitTag("party-start-confirm")
@@ -1503,7 +1558,11 @@ class RunJourneyDesignTest {
             shot("C32-member-leave")
             // 08 코스가 바뀌었다(참가자 — 본 판보다 높은 판)
             show("C08-course-updated", "party-course-updated") {
-                lobby(memberLobby.copy(course = roomCourse.copy(rev = 3), courseSeenRev = 2), crewRoom(5, 6))
+                lobby(memberLobby.copy(course = roomCourse.copy(rev = 3), courseRev = 3, courseSeenRev = 2), crewRoom(5, 6))
+            }
+            // 진행자가 코스를 뺐다(0073) — 자유 코스로 바뀐 것만 알린다
+            show("C08-course-removed", "party-course-removed") {
+                lobby(memberLobby.copy(course = null, courseRev = 3, courseSeenRev = 2), crewRoom(5, 6))
             }
             // 40 인증 전 안내(준비할 때 한 번) — 출발 · 기여는 그대로, 인원 보너스에서만 빠진다
             com.stepup.android.ui.screens.walk.UnverifiedNotice.shown = false
@@ -1543,7 +1602,7 @@ class RunJourneyDesignTest {
                 }
                 assertInFrame("crew-rooms-new", "C02-${v.label}")
                 show("C06-${v.label}", "crew-create-selected") {
-                    com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                    com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
                 }
                 assertInFrame("crew-create-open", "C06-${v.label}")
                 show("C01-${v.label}", "crew-entry") {
@@ -1596,7 +1655,8 @@ class RunJourneyDesignTest {
             val course = com.stepup.android.domain.RoomCourse(rev = 2, name = "여의도 한강 5K", km = 5.0)
             val party = com.stepup.android.data.repo.PartyState(
                 phase = com.stepup.android.data.repo.PartyPhase.LOBBY, partyId = 1L, crewId = "c1", crewName = "퇴근런", members = members,
-                pickedRoom = 1L, roomName = "여의도 퇴근런", roomCreatedAt = System.currentTimeMillis() - 600_000, course = course, courseSeenRev = 2,
+                pickedRoom = 1L, roomName = "여의도 퇴근런", roomCreatedAt = System.currentTimeMillis() - 600_000, course = course, courseRev = 2,
+                courseSeenRev = 2,
             )
             fun lobby(state: com.stepup.android.data.repo.PartyState): @Composable () -> Unit = {
                 com.stepup.android.ui.screens.community.PartyLobbyContent(
@@ -1618,7 +1678,7 @@ class RunJourneyDesignTest {
                 check(share > MOVING_SHARE) { "대기실 배경이 흐르지 않는다(C10-motion-${i + 1} → ${i + 2}: 바뀐 픽셀 ${share * 100}%)" }
             }
             // 시트가 뜨면 멈춘다 — 부모는 어둡게, 그 자리에
-            compose.runOnUiThread { scene = lobby(party.copy(course = course.copy(rev = 3))) }
+            compose.runOnUiThread { scene = lobby(party.copy(course = course.copy(rev = 3), courseRev = 3)) }
             advanceUntil("party-course-updated")
             compose.mainClock.advanceTimeBy(1_500)
             // 시트 창이 열리는 시스템 애니메이션(실제 시계) — 앱 화면은 시계를 멈춰 두었으니 그대로다

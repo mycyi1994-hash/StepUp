@@ -47,8 +47,7 @@
     <string name="crew5_create_name_hint">e.g. Riverside evening run</string>
     <string name="crew5_create_name_count">%1$d / %2$d</string>
     <string name="crew5_create_name_invalid">Use 1 to %1$d characters for the run name.</string>
-    <string name="crew5_create_course">Course to run together</string>
-    <string name="crew5_create_pick_course">Choose a course</string>
+    <string name="crew5_create_pick_course">Choose or draw a course</string>
     <string name="crew5_create_other_course">Choose another course</string>
     <string name="crew5_create_scope">Who can see the lobby</string>
     <string name="crew5_create_scope_value">%1$s crew</string>
@@ -91,7 +90,6 @@
     <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
     <string name="crew5_lobby_goal_max">Max</string>
     <string name="crew5_lobby_course">Crew course</string>
-    <string name="crew5_lobby_course_none">No course</string>
     <string name="crew5_lobby_course_expand">View course larger</string>
     <string name="crew5_lobby_shoe">My shoe</string>
     <string name="crew5_lobby_shoe_none">Running in your equipped shoe</string>
@@ -216,4 +214,26 @@
     <string name="crew5_missed_body">The crew started while you were away from the lobby. Today\'s crew run wasn\'t used.</string>
     <string name="crew5_sign_in_title">Please sign in</string>
     <string name="crew5_other_rooms">See other lobbies</string>
+    <!-- 2026-10-24 자유 코스 · 지도에서 그리기 · 크루 관리 바로가기(서버 0073) -->
+    <string name="crew5_create_course_optional">Course to run together (optional)</string>
+    <string name="crew5_create_free_body">Run together, each on the route you like. You can also set a course later in the lobby.</string>
+    <string name="crew5_course_free">Free course</string>
+    <string name="crew5_course_free_sub">Each on your own route</string>
+    <string name="crew5_course_remove">Remove course</string>
+    <string name="crew5_course_set">Set a course</string>
+    <string name="crew5_course_removed_title">The course was removed</string>
+    <string name="crew5_course_removed_body">The host removed the course. Run together, each on the route you like. Get ready again.</string>
+    <string name="crew5_courses_draw">Draw on the map</string>
+    <string name="crew5_courses_draw_body">Tap the places you\'ll pass and they become your course.</string>
+    <string name="crew5_draw_header">Draw a course</string>
+    <string name="crew5_draw_hint">Tap the map to add the places you\'ll pass, in order. Drag to move the map.</string>
+    <string name="crew5_draw_summary">%1$s km · %2$d points</string>
+    <string name="crew5_draw_undo">Undo</string>
+    <string name="crew5_draw_clear">Start over</string>
+    <string name="crew5_draw_loop">Back to start</string>
+    <string name="crew5_draw_use">Use this course</string>
+    <string name="crew5_draw_too_long">Courses can be up to %1$d km.</string>
+    <string name="crew5_draw_too_many">You can add up to %1$d points.</string>
+    <string name="crew5_draw_name">My drawn course</string>
+    <string name="crew5_home_manage_sub">Requests · members · profile · dissolve</string>
 </resources>

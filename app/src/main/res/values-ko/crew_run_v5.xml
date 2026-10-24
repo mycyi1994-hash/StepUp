@@ -47,8 +47,7 @@
     <string name="crew5_create_name_hint">예) 여의도 퇴근런</string>
     <string name="crew5_create_name_count">%1$d / %2$d</string>
     <string name="crew5_create_name_invalid">러닝 이름은 1~%1$d자로 적어 주세요.</string>
-    <string name="crew5_create_course">함께 달릴 코스</string>
-    <string name="crew5_create_pick_course">코스 선택하기</string>
+    <string name="crew5_create_pick_course">코스 고르기 · 직접 그리기</string>
     <string name="crew5_create_other_course">다른 코스 고르기</string>
     <string name="crew5_create_scope">대기실 공개 범위</string>
     <string name="crew5_create_scope_value">%1$s 크루</string>
@@ -91,7 +90,6 @@
     <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
     <string name="crew5_lobby_goal_max">최고</string>
     <string name="crew5_lobby_course">크루 코스</string>
-    <string name="crew5_lobby_course_none">코스 없음</string>
     <string name="crew5_lobby_course_expand">코스 크게 보기</string>
     <string name="crew5_lobby_shoe">내 신발</string>
     <string name="crew5_lobby_shoe_none">신은 신발로 달려요</string>
@@ -216,4 +214,26 @@
     <string name="crew5_missed_body">대기실을 떠나 있는 동안 함께 출발했어요. 오늘의 크루 러닝은 쓰이지 않았어요.</string>
     <string name="crew5_sign_in_title">로그인이 필요해요</string>
     <string name="crew5_other_rooms">다른 대기실 보기</string>
+    <!-- 2026-10-24 자유 코스 · 지도에서 그리기 · 크루 관리 바로가기(서버 0073) -->
+    <string name="crew5_create_course_optional">함께 달릴 코스 (선택)</string>
+    <string name="crew5_create_free_body">코스 없이 각자 원하는 길로 함께 달려요. 코스는 대기실에서도 정할 수 있어요.</string>
+    <string name="crew5_course_free">자유 코스</string>
+    <string name="crew5_course_free_sub">각자 원하는 길로</string>
+    <string name="crew5_course_remove">코스 빼기</string>
+    <string name="crew5_course_set">코스 정하기</string>
+    <string name="crew5_course_removed_title">코스를 뺐어요</string>
+    <string name="crew5_course_removed_body">진행자가 코스를 뺐어요. 각자 원하는 길로 함께 달려요. 다시 준비해 주세요.</string>
+    <string name="crew5_courses_draw">지도에서 직접 그리기</string>
+    <string name="crew5_courses_draw_body">지도를 눌러 지나갈 곳을 찍으면 내 코스가 돼요.</string>
+    <string name="crew5_draw_header">코스 그리기</string>
+    <string name="crew5_draw_hint">지도를 눌러 지나갈 곳을 차례로 찍어요. 끌면 지도가 움직여요.</string>
+    <string name="crew5_draw_summary">%1$s km · 점 %2$d개</string>
+    <string name="crew5_draw_undo">되돌리기</string>
+    <string name="crew5_draw_clear">처음부터</string>
+    <string name="crew5_draw_loop">출발점으로 잇기</string>
+    <string name="crew5_draw_use">이 코스로 정하기</string>
+    <string name="crew5_draw_too_long">코스는 %1$d km 까지 그릴 수 있어요.</string>
+    <string name="crew5_draw_too_many">점은 %1$d개까지 찍을 수 있어요.</string>
+    <string name="crew5_draw_name">내가 그린 코스</string>
+    <string name="crew5_home_manage_sub">가입 신청 · 멤버 · 크루 소개 · 해산</string>
 </resources>

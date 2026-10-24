@@ -47,8 +47,7 @@
     <string name="crew5_create_name_hint">例) 江边下班跑</string>
     <string name="crew5_create_name_count">%1$d / %2$d</string>
     <string name="crew5_create_name_invalid">跑步名称请输入 1~%1$d 个字。</string>
-    <string name="crew5_create_course">一起跑的路线</string>
-    <string name="crew5_create_pick_course">选择路线</string>
+    <string name="crew5_create_pick_course">选择或画路线</string>
     <string name="crew5_create_other_course">选择其他路线</string>
     <string name="crew5_create_scope">等候室公开范围</string>
     <string name="crew5_create_scope_value">%1$s 团队</string>
@@ -91,7 +90,6 @@
     <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
     <string name="crew5_lobby_goal_max">最高</string>
     <string name="crew5_lobby_course">团队路线</string>
-    <string name="crew5_lobby_course_none">没有路线</string>
     <string name="crew5_lobby_course_expand">放大查看路线</string>
     <string name="crew5_lobby_shoe">我的跑鞋</string>
     <string name="crew5_lobby_shoe_none">穿着当前装备的跑鞋</string>
@@ -216,4 +214,26 @@
     <string name="crew5_missed_body">你离开等候室期间大家已经出发。今日的团队跑未被占用。</string>
     <string name="crew5_sign_in_title">需要登录</string>
     <string name="crew5_other_rooms">查看其他等候室</string>
+    <!-- 2026-10-24 자유 코스 · 지도에서 그리기 · 크루 관리 바로가기(서버 0073) -->
+    <string name="crew5_create_course_optional">一起跑的路线(可选)</string>
+    <string name="crew5_create_free_body">不设路线，各自走想走的路一起跑。也可以稍后在等候室里设定路线。</string>
+    <string name="crew5_course_free">自由路线</string>
+    <string name="crew5_course_free_sub">各走各的路</string>
+    <string name="crew5_course_remove">移除路线</string>
+    <string name="crew5_course_set">设定路线</string>
+    <string name="crew5_course_removed_title">路线已移除</string>
+    <string name="crew5_course_removed_body">主持人移除了路线。大家各走各的路一起跑。请重新准备。</string>
+    <string name="crew5_courses_draw">在地图上自己画</string>
+    <string name="crew5_courses_draw_body">在地图上点出要经过的地方，就成了你的路线。</string>
+    <string name="crew5_draw_header">画路线</string>
+    <string name="crew5_draw_hint">按顺序点地图上要经过的地方。拖动可以移动地图。</string>
+    <string name="crew5_draw_summary">%1$s km · %2$d 个点</string>
+    <string name="crew5_draw_undo">撤销</string>
+    <string name="crew5_draw_clear">重新开始</string>
+    <string name="crew5_draw_loop">回到起点</string>
+    <string name="crew5_draw_use">用这条路线</string>
+    <string name="crew5_draw_too_long">路线最长 %1$d km。</string>
+    <string name="crew5_draw_too_many">最多可以点 %1$d 个点。</string>
+    <string name="crew5_draw_name">我画的路线</string>
+    <string name="crew5_home_manage_sub">加入申请 · 成员 · 简介 · 解散</string>
 </resources>

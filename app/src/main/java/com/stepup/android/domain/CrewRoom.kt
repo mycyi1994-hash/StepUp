@@ -12,6 +12,10 @@ import java.math.RoundingMode
  *   준비가 풀리고(D14) 출발은 진행자가 본 판으로만 된다(party_start_rev).
  *
  * 규칙 값은 서버 함수(economy.party_room_name · economy.party_course_check)와 같다 — CrewRoomTest.
+ *
+ * 2026-10-24 사용자 "코스를 내가 선택할 수가 없네 … 정해준 것만 해야 되던데 그건 아닌 것 같다"(서버 0073):
+ * - 코스는 골라도 되고 안 골라도 된다 — 코스 없는 방은 각자 원하는 길로 함께 달린다(자유 코스, [RoomCourse] 가 null).
+ * - 지도를 눌러 점을 찍어 코스를 직접 그린다([RoomCourse.drawn]). 진행자는 방에서 코스를 빼도 된다.
  */
 
 /** 방의 코스 사본 — 방에 둔 이름 · 거리 · 경로. [rev] 는 방의 코스 판(코스 없는 방 · 아직 방에 넣기 전이면 0) */
@@ -34,6 +38,14 @@ data class RoomCourse(
             name = CrewRoomRules.courseName(course.name),
             km = course.distanceKm.coerceIn(0.0, CrewRoomRules.COURSE_KM_MAX),
             points = CrewRoomRules.fitTrack(course.points),
+        )
+
+        /** 지도에 찍은 점으로 그린 코스 — 거리는 점 사이 거리의 합([CrewRoomRules.pathKm]). 쓸 수 있는지는 [CrewRoomRules.drawnUsable] */
+        fun drawn(name: String, points: List<GeoPoint>): RoomCourse = RoomCourse(
+            rev = 0,
+            name = CrewRoomRules.courseName(name),
+            km = CrewRoomRules.pathKm(points).coerceIn(0.0, CrewRoomRules.COURSE_KM_MAX),
+            points = CrewRoomRules.fitTrack(points),
         )
 
         private fun plain(v: Double): String =
@@ -105,6 +117,16 @@ object CrewRoomRules {
 
     /** 방에 둘 수 있는 코스 — 경로 점 둘 이상 · 거리 100km 안 */
     fun usable(course: RunCourse): Boolean = course.points.size >= 2 && course.distanceKm in 0.0..COURSE_KM_MAX
+
+    /** 지도에 찍을 수 있는 점 — 손으로 찍는 코스라 넉넉하다(서버 경로 한도 안) */
+    const val DRAW_MAX_POINTS = 300
+
+    /** 꺾은선 거리(km) — 점 사이 하버사인 거리의 합 */
+    fun pathKm(points: List<GeoPoint>): Double = points.zipWithNext { a, b -> haversineMeters(a, b) }.sum() / 1000.0
+
+    /** 그린 코스를 방에 둘 수 있는가 — 점 둘 이상 · 0 보다 길고 100km 안(서버 economy.party_course_check 와 같은 한도) */
+    fun drawnUsable(points: List<GeoPoint>): Boolean =
+        points.size in 2..DRAW_MAX_POINTS && pathKm(points).let { it > 0.0 && it <= COURSE_KM_MAX }
 
     /** 경로를 서버 한도 안으로 — 처음 · 끝은 두고 사이를 고르게 고른다 */
     fun fitTrack(points: List<GeoPoint>): List<GeoPoint> {

@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.OpenInFull
 import androidx.compose.material.icons.outlined.PersonOff
+import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -134,8 +135,8 @@ internal fun CrewLobbyContent(
     shoeFailed: Boolean = false,
     /** 고른 방이 닫혔다 · 내보내졌다 · 찼다 · 출발했다 — 같은 크루의 열린 대기실로 */
     onOtherRooms: () -> Unit = {},
-    /** 진행자 — 코스를 바꿨다(서버로 보낸다) */
-    onChangeCourse: (RoomCourse) -> Unit = {},
+    /** 진행자 — 코스를 바꿨다(서버로 보낸다). null 이면 코스를 뺀다(0073 — 자유 코스) */
+    onChangeCourse: (RoomCourse?) -> Unit = {},
     /** 진행자의 코스 바꾸기가 서버에 닿지 못했다 */
     courseFailed: Boolean = false,
     /** 참가자 — 바뀐 코스를 봤다 */
@@ -175,6 +176,13 @@ internal fun CrewLobbyContent(
         )
         return
     }
+    // 코스 칸 · 메뉴 · 명단의 코스 — 코스가 있으면 코스 시트, 없으면(자유 코스) 진행자는 바로 코스 고르기. 참가자는 볼 코스가 없다
+    val openCourse: () -> Unit = {
+        when {
+            party.course != null -> sheet = LobbySheet.Course
+            party.isHost && lobby -> picking = true
+        }
+    }
     val rules = crewToday?.rules ?: room?.rules ?: CrewRunRules()
     val doneToday = crewToday?.mine?.usedToday == true && lobby
     val loading = party.partyId == null
@@ -196,7 +204,7 @@ internal fun CrewLobbyContent(
                 onMenu = { item ->
                     when (item) {
                         LobbyMenu.Roster -> sheet = LobbySheet.Roster
-                        LobbyMenu.Course -> sheet = LobbySheet.Course
+                        LobbyMenu.Course -> openCourse()
                         LobbyMenu.Call -> onNotify()
                         LobbyMenu.Rules -> sheet = LobbySheet.Rules
                         LobbyMenu.Leave -> sheet = LobbySheet.Leave
@@ -238,7 +246,8 @@ internal fun CrewLobbyContent(
                         party, crewToday, room,
                         onStamina = { sheet = LobbySheet.Stamina },
                         onGoal = { sheet = LobbySheet.Goal },
-                        onCourse = { sheet = LobbySheet.Course },
+                        onCourse = openCourse,
+                        canSetCourse = party.isHost && lobby,
                     )
                     Spacer(Modifier.height(12.dp))
                     ShoeFrame(room, shoes, onChange = { sheet = LobbySheet.Shoes }, enabled = lobby && room != null)
@@ -268,7 +277,10 @@ internal fun CrewLobbyContent(
                 sheet = LobbySheet.None
                 onNotify()
             },
-            onCourse = { sheet = LobbySheet.Course },
+            onCourse = {
+                sheet = LobbySheet.None
+                openCourse()
+            },
             onClose = { sheet = LobbySheet.None },
         )
         LobbySheet.Rules -> RulesSheet(rules, onBonus = { sheet = LobbySheet.Bonus }, onClose = { sheet = LobbySheet.None })
@@ -287,7 +299,7 @@ internal fun CrewLobbyContent(
                 onClose = { sheet = LobbySheet.None },
             )
         }
-        // 진행자는 코스 바꾸기(07) — 지금 코스 · 다른 코스 고르기. 참가자는 읽기 전용 보기(25)
+        // 진행자는 코스 바꾸기(07) — 지금 코스 · 다른 코스 고르기 · 코스 빼기(0073 — 자유 코스). 참가자는 읽기 전용 보기(25)
         LobbySheet.Course -> party.course?.let { course ->
             if (party.isHost && lobby) {
                 LobbyCourseSheet(
@@ -298,6 +310,11 @@ internal fun CrewLobbyContent(
                         picking = true
                     },
                     onClose = { sheet = LobbySheet.None }, tag = "party-course-change",
+                    secondary = stringResource(R.string.crew5_course_remove),
+                    onSecondary = {
+                        sheet = LobbySheet.None
+                        onChangeCourse(null)
+                    },
                 )
             } else {
                 LobbyCourseSheet(
@@ -353,7 +370,7 @@ internal fun CrewLobbyContent(
             )
         }
     }
-    // 참가자 — 진행자가 코스를 바꿨다(08). 확인하면 읽기 전용 코스(25)
+    // 참가자 — 진행자가 코스를 바꿨다(08). 확인하면 읽기 전용 코스(25). 코스를 뺐으면(0073) 자유 코스로 바뀐 것만 알린다
     if (party.courseChanged && sheet == LobbySheet.None && !overlay) {
         val course = party.course
         if (course != null) {
@@ -365,6 +382,8 @@ internal fun CrewLobbyContent(
                 },
                 onClose = onAcknowledgeCourse,
             )
+        } else {
+            CourseRemovedSheet(onClose = onAcknowledgeCourse)
         }
     }
 }
@@ -470,7 +489,8 @@ private fun LobbyHeader(
                         modifier = Modifier.heightIn(min = 48.dp).testTag(tag),
                     )
                     item(R.string.crew5_lobby_menu_roster, LobbyMenu.Roster, "party-menu-roster")
-                    if (hasCourse) item(R.string.crew5_lobby_menu_course, LobbyMenu.Course, "party-menu-course")
+                    // 코스가 없으면(자유 코스) "코스 정하기" — 바로 코스 고르기로
+                    item(if (hasCourse) R.string.crew5_lobby_menu_course else R.string.crew5_course_set, LobbyMenu.Course, "party-menu-course")
                     if (canNotify) item(R.string.crew5_lobby_call, LobbyMenu.Call, "party-menu-call")
                     item(R.string.crew5_lobby_menu_rules, LobbyMenu.Rules, "party-rule-open")
                     item(R.string.crew5_lobby_menu_leave, LobbyMenu.Leave, "party-menu-leave")
@@ -694,6 +714,8 @@ private fun Overview(
     onStamina: () -> Unit,
     onGoal: () -> Unit,
     onCourse: () -> Unit,
+    /** 진행자 · 출발 전 — 코스 없는 방(자유 코스)에서 코스 칸을 눌러 코스를 정한다 */
+    canSetCourse: Boolean = false,
 ) {
     // 넘기는 화면 안이라 높이가 열려 있다 — 왼쪽은 글자 크기만큼(최소 154dp), 오른쪽 지도 칸은 154dp 로 정한다
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -725,18 +747,19 @@ private fun Overview(
             )
         }
         Column(Modifier.weight(1.3f).height(154.dp)) {
-            val expand = stringResource(R.string.crew5_lobby_course_expand)
+            val course = party.course
+            val tappable = course != null || canSetCourse
+            val expand = stringResource(if (course != null) R.string.crew5_lobby_course_expand else R.string.crew5_course_set)
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 24.dp).clip(RoundedCornerShape(8.dp))
-                    .then(if (party.course != null) Modifier.feedbackClickable(role = Role.Button, onClick = onCourse) else Modifier)
-                    .semantics(mergeDescendants = true) { if (party.course != null) contentDescription = expand }.testTag("party-course"),
+                    .then(if (tappable) Modifier.feedbackClickable(role = Role.Button, onClick = onCourse) else Modifier)
+                    .semantics(mergeDescendants = true) { if (tappable) contentDescription = expand }.testTag("party-course"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.crew5_lobby_course), style = navyText(12.sp, LobbyInk.Label, FontWeight.Medium, 1.5f), modifier = Modifier.weight(1f))
-                if (party.course != null) Icon(Icons.Outlined.OpenInFull, contentDescription = null, tint = LobbyInk.Sub, modifier = Modifier.size(15.dp))
+                if (course != null) Icon(Icons.Outlined.OpenInFull, contentDescription = null, tint = LobbyInk.Sub, modifier = Modifier.size(15.dp))
             }
             Spacer(Modifier.height(10.dp))
-            val course = party.course
             if (course != null) {
                 Box(
                     Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(15.dp))
@@ -745,10 +768,26 @@ private fun Overview(
                     CrewCourseMap(course.points, Modifier.fillMaxSize())
                 }
             } else {
-                Box(
-                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(15.dp)).background(LobbyInk.Map),
-                    contentAlignment = Alignment.Center,
-                ) { Text(stringResource(R.string.crew5_lobby_course_none), style = navyText(12.sp, LobbyInk.Sub, FontWeight.Medium)) }
+                // 자유 코스(0073) — 각자 원하는 길로. 진행자는 눌러 코스를 정한다(참가자는 보기만)
+                Column(
+                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(15.dp)).background(LobbyInk.Map)
+                        .then(if (canSetCourse) Modifier.feedbackClickable(role = Role.Button, onClick = onCourse) else Modifier)
+                        .padding(horizontal = 12.dp).testTag("party-course-free"),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(Icons.Outlined.Route, contentDescription = null, tint = LobbyInk.Ice, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.crew5_course_free), style = navyText(15.sp, LobbyInk.Text, FontWeight.ExtraBold),
+                        textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.crew5_course_free_sub), style = navyText(12.sp, LobbyInk.Sub, FontWeight.Medium),
+                        textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (canSetCourse) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(stringResource(R.string.crew5_course_set) + "  ›", style = navyText(13.sp, LobbyInk.Ice, FontWeight.Bold),
+                            maxLines = 1, modifier = Modifier.testTag("party-course-set"))
+                    }
+                }
             }
         }
     }
@@ -1022,7 +1061,10 @@ private fun RosterSheet(
         if (canKick) {
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (party.course != null) LobbyPill(stringResource(R.string.crew5_lobby_menu_course), onCourse, Modifier.weight(1f), "party-roster-course")
+                LobbyPill(
+                    stringResource(if (party.course != null) R.string.crew5_lobby_menu_course else R.string.crew5_course_set),
+                    onCourse, Modifier.weight(1f), "party-roster-course",
+                )
                 if (canNotify) LobbyPill(stringResource(R.string.crew5_lobby_call), onCall, Modifier.weight(1f), "party-roster-call")
             }
         }
@@ -1334,6 +1376,9 @@ private fun LobbyCourseSheet(
     onPrimary: () -> Unit,
     onClose: () -> Unit,
     tag: String,
+    /** 아래 글자 버튼(진행자의 코스 빼기) — 없으면 숨긴다 */
+    secondary: String? = null,
+    onSecondary: (() -> Unit)? = null,
 ) {
     LobbySheetFrame(title, onClose, Modifier.testTag(tag)) {
         Text(course.name, style = navyText(18.sp, LobbyInk.Text, FontWeight.ExtraBold), modifier = Modifier.testTag("party-course-name"))
@@ -1347,6 +1392,20 @@ private fun LobbyCourseSheet(
         }
         Spacer(Modifier.height(16.dp))
         LobbyPrimaryButton(primary, onPrimary, Modifier.testTag("$tag-go"))
+        if (secondary != null && onSecondary != null) {
+            Spacer(Modifier.height(6.dp))
+            LobbyTextButton(secondary, onSecondary, "$tag-remove")
+        }
+    }
+}
+
+/** 참가자 — 진행자가 코스를 뺐다(0073 — 자유 코스). 확인 하나 — 닫아도 다시 묻지 않는다(본 것으로 둔다) */
+@Composable
+private fun CourseRemovedSheet(onClose: () -> Unit) {
+    LobbySheetFrame(stringResource(R.string.crew5_course_removed_title), onClose, Modifier.testTag("party-course-removed")) {
+        Text(stringResource(R.string.crew5_course_removed_body), style = navyText(14.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
+        Spacer(Modifier.height(20.dp))
+        LobbyPrimaryButton(stringResource(R.string.common_confirm), onClose, Modifier.testTag("party-course-removed-ok"))
     }
 }
 

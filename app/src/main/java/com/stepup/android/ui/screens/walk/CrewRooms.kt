@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
@@ -91,6 +92,9 @@ import kotlinx.coroutines.launch
  *
  * 배경은 앱의 기존 크루 화면 바탕(crewColors — APP_EXISTING)이다. 터널 사진은 대기실에만 둔다. 승인한 듀얼 레일 틀은 방 카드 ·
  * 코스 묶음에 쓴다. 목록은 보기만 한다 — 들어가는 것은 사용자가 방을 고를 때뿐이다. 방을 연 것만으로 하루 한 번은 쓰이지 않는다.
+ *
+ * 코스는 골라도 되고 안 골라도 된다(서버 0073, 2026-10-24 사용자 "코스를 내가 선택할 수가 없네") — 안 고르면 자유 코스(각자 원하는 길로).
+ * 코스 고르기 맨 위에서 지도에 직접 그린다(CrewCourseDraw).
  */
 
 /** 열린 대기실 목록의 상태 */
@@ -283,14 +287,25 @@ private fun RoomCard(room: CrewRoom, crewName: String, onOpen: () -> Unit) {
                     else -> LobbyChip(stringResource(R.string.crew5_rooms_count, room.members, room.capacity), Modifier.testTag("crew-room-count"))
                 }
             }
-            room.course?.let { course ->
-                Spacer(Modifier.height(10.dp))
+            val course = room.course
+            Spacer(Modifier.height(10.dp))
+            if (course != null) {
                 Text(
                     stringResource(R.string.crew5_rooms_course, course.name, courseKm(course.km)),
                     style = navyText(14.sp, LobbyInk.Sub, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(12.dp))
                 CrewCourseMap(course.points, Modifier.fillMaxWidth().height(150.dp))
+            } else {
+                // 코스 없는 방(0073) — 지도 대신 한 줄
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("crew-room-free")) {
+                    Icon(Icons.Outlined.Route, contentDescription = null, tint = LobbyInk.Ice, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.crew5_course_free) + " · " + stringResource(R.string.crew5_course_free_sub),
+                        style = navyText(14.sp, LobbyInk.Sub, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
             Text(
@@ -341,9 +356,9 @@ internal sealed interface CreateProblem {
 }
 
 /**
- * 러닝 만들기(03 · 06) — 이름 · 코스(목록 → 상세 → 고르기) · 공개 범위(이 크루) · 내 신발 기여 미리보기 → "대기실 열기".
- * 연타는 막고 서버가 방 번호를 준 뒤에만 대기실로 간다([onCreated]). 실패하면 이름 · 코스를 그대로 두고 까닭을 알린다.
- * 같은 이름 · 코스로 다시 누르면 같은 요청 번호 — 답을 잃었어도 방은 하나다.
+ * 러닝 만들기(03 · 06) — 이름 · 코스(골라도 되고 안 골라도 된다 — 목록 → 상세 → 고르기 · 지도에 그리기) · 공개 범위(이 크루) ·
+ * 내 신발 기여 미리보기 → "대기실 열기". 연타는 막고 서버가 방 번호를 준 뒤에만 대기실로 간다([onCreated]).
+ * 실패하면 이름 · 코스를 그대로 두고 까닭을 알린다. 같은 이름 · 코스로 다시 누르면 같은 요청 번호 — 답을 잃었어도 방은 하나다.
  */
 @Composable
 fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -> Unit) {
@@ -382,11 +397,15 @@ fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -
             problem = null
         },
         course = course, onPickCourse = { picking = true },
+        onRemoveCourse = {
+            course = null
+            problem = null
+        },
         shoeMax = equipped?.server?.durabilityMax, level = level,
         busy = busy, problem = problem, onBack = onBack,
         onOpen = {
             val chosen = course
-            if (busy || chosen == null || !CrewRoomRules.nameValid(name)) return@CrewRoomCreateContent
+            if (busy || !CrewRoomRules.nameValid(name)) return@CrewRoomCreateContent
             busy = true
             problem = null
             scope.launch {
@@ -411,6 +430,7 @@ internal fun CrewRoomCreateContent(
     onName: (String) -> Unit,
     course: RoomCourse?,
     onPickCourse: () -> Unit,
+    onRemoveCourse: () -> Unit,
     shoeMax: Int?,
     level: Int,
     busy: Boolean,
@@ -426,9 +446,10 @@ internal fun CrewRoomCreateContent(
         title = stringResource(R.string.crew5_create_header), onBack = onBack, badge = false,
         modifier = Modifier.testTag(if (course == null) "crew-create" else "crew-create-selected"),
         bottom = {
+            // 코스는 골라도 되고 안 골라도 된다(0073) — 이름만 맞으면 연다
             FreeRunButton(
                 stringResource(R.string.crew5_create_open), onOpen, Modifier.fillMaxWidth().testTag("crew-create-open"),
-                enabled = course != null && nameOk, busy = busy,
+                enabled = nameOk, busy = busy,
             )
         },
     ) {
@@ -472,23 +493,30 @@ internal fun CrewRoomCreateContent(
             Text(stringResource(R.string.crew5_create_name_count, length, CrewRoomRules.NAME_MAX), style = runTextStyle(12.sp, c.muted))
         }
         Spacer(Modifier.height(14.dp))
-        // 함께 달릴 코스 — 듀얼 레일 묶음. 고르기 전에는 큰 "코스 선택하기", 고른 뒤에는 이름 · 거리 · 지도 · 다른 코스 고르기
+        // 함께 달릴 코스(선택) — 듀얼 레일 묶음. 고르기 전에는 자유 코스 안내와 큰 "코스 선택하기",
+        // 고른 뒤에는 이름 · 거리 · 지도 · 다른 코스 고르기 · 코스 빼기
         DualRailFrame(Modifier.fillMaxWidth().testTag("crew-create-course"), padding = androidx.compose.foundation.layout.PaddingValues(18.dp)) {
             Column(Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.crew5_create_course), style = navyText(13.sp, LobbyInk.Sub, FontWeight.SemiBold))
+                Text(stringResource(R.string.crew5_create_course_optional), style = navyText(13.sp, LobbyInk.Sub, FontWeight.SemiBold))
                 Spacer(Modifier.height(10.dp))
                 if (course == null) {
+                    Text(stringResource(R.string.crew5_course_free), style = navyText(18.sp, LobbyInk.Text, FontWeight.ExtraBold),
+                        modifier = Modifier.testTag("crew-create-free"))
+                    Text(stringResource(R.string.crew5_create_free_body), style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium, 1.5f),
+                        modifier = Modifier.padding(top = 3.dp))
+                    Spacer(Modifier.height(12.dp))
+                    // 코스는 고르지 않아도 된다 — 큰 주 행동(대기실 열기)과 겹치지 않게 부드러운 보조 버튼
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(RoundedCornerShape(14.dp)).background(LobbyInk.Text)
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(LobbyInk.ChipSoftFace)
                             .feedbackClickable(role = Role.Button, onClick = onPickCourse).padding(horizontal = 18.dp)
                             .testTag("crew-create-pick-course"),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            stringResource(R.string.crew5_create_pick_course), style = navyText(18.sp, LobbyInk.PrimaryInk, FontWeight.ExtraBold),
+                            stringResource(R.string.crew5_create_pick_course), style = navyText(16.sp, LobbyInk.ChipSoftInk, FontWeight.Bold),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f),
                         )
-                        Icon(Icons.Outlined.Tune, contentDescription = null, tint = LobbyInk.Accent, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Outlined.Tune, contentDescription = null, tint = LobbyInk.ChipSoftInk, modifier = Modifier.size(20.dp))
                     }
                 } else {
                     Text(course.name, style = navyText(18.sp, LobbyInk.Text, FontWeight.ExtraBold), modifier = Modifier.testTag("crew-create-course-name"))
@@ -496,12 +524,21 @@ internal fun CrewRoomCreateContent(
                     Spacer(Modifier.height(10.dp))
                     CrewCourseMap(course.points, Modifier.fillMaxWidth().height(150.dp))
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        stringResource(R.string.crew5_create_other_course) + "  ›", style = navyText(14.sp, LobbyInk.Ice, FontWeight.Bold),
-                        modifier = Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-                            .feedbackClickable(role = Role.Button, onClick = onPickCourse).padding(vertical = 13.dp)
-                            .testTag("crew-create-change-course"),
-                    )
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.crew5_create_other_course) + "  ›", style = navyText(14.sp, LobbyInk.Ice, FontWeight.Bold),
+                            modifier = Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
+                                .feedbackClickable(role = Role.Button, onClick = onPickCourse).padding(vertical = 13.dp)
+                                .testTag("crew-create-change-course"),
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            stringResource(R.string.crew5_course_remove), style = navyText(14.sp, LobbyInk.Sub, FontWeight.SemiBold),
+                            modifier = Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
+                                .feedbackClickable(role = Role.Button, onClick = onRemoveCourse).padding(horizontal = 4.dp, vertical = 13.dp)
+                                .testTag("crew-create-remove-course"),
+                        )
+                    }
                 }
             }
         }
@@ -545,8 +582,9 @@ private fun CreateRow(label: String, value: String, sub: String?) {
 // ── 코스 고르기 ────────────────────────────────────────────────────
 
 /**
- * 코스 고르기(04 · 09) — 내 코스(이 폰)와 공유 코스(서버 게시판). 누르면 상세(05)가 뜨고, "이 코스로 달리기"를 눌러야 고른다.
- * 목록에서 스치거나 뒤로 나오면 원래 코스 그대로다. 빈 목록과 불러오기 실패를 따로 보인다.
+ * 코스 고르기(04 · 09) — 맨 위 지도에서 직접 그리기, 그 아래 내 코스(이 폰)와 공유 코스(서버 게시판). 목록의 코스를 누르면
+ * 상세(05)가 뜨고, "이 코스로 달리기"를 눌러야 고른다. 목록에서 스치거나 뒤로 나오면 원래 코스 그대로다.
+ * 빈 목록과 불러오기 실패를 따로 보인다. 그리던 코스는 목록으로 돌아와도 남는다(이 화면을 떠나면 버린다).
  */
 @Composable
 internal fun CrewCoursePicker(current: RoomCourse?, onBack: () -> Unit, onPick: (RoomCourse) -> Unit) {
@@ -557,6 +595,20 @@ internal fun CrewCoursePicker(current: RoomCourse?, onBack: () -> Unit, onPick: 
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { courseRepo.refreshBoard() }
     var detail by remember { mutableStateOf<RunCourse?>(null) }
+    var drawing by rememberSaveable { mutableStateOf(false) }
+    var drawn by rememberSaveable(stateSaver = DrawnPointsSaver) { mutableStateOf(emptyList<GeoPoint>()) }
+    if (drawing) {
+        BackHandler { drawing = false }
+        CrewCourseDraw(
+            points = drawn, onPoints = { drawn = it },
+            onBack = { drawing = false },
+            onPick = {
+                drawing = false
+                onPick(it)
+            },
+        )
+        return
+    }
     CrewCoursePickerContent(
         current = current,
         // 내 코스 = 이 폰에서 내가 만든 코스, 공유 코스 = 게시판(서버 · 기본 코스) 중 남이 만든 것
@@ -566,6 +618,7 @@ internal fun CrewCoursePicker(current: RoomCourse?, onBack: () -> Unit, onPick: 
         onBack = onBack,
         onOpen = { detail = it },
         onRetry = { scope.launch { courseRepo.refreshBoard() } },
+        onDraw = { drawing = true },
     )
     detail?.let { course ->
         CrewCourseDetailSheet(
@@ -588,6 +641,7 @@ internal fun CrewCoursePickerContent(
     onBack: () -> Unit,
     onOpen: (RunCourse) -> Unit,
     onRetry: () -> Unit,
+    onDraw: () -> Unit = {},
 ) {
     CrewPage(
         title = stringResource(R.string.crew5_courses_header), onBack = onBack, badge = false,
@@ -595,6 +649,26 @@ internal fun CrewCoursePickerContent(
     ) {
         val c = crewColors()
         Spacer(Modifier.height(6.dp))
+        // 지도에서 직접 그리기 — 저장한 코스가 없어도 바로 내 코스를 만든다
+        DualRailFrame(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).feedbackClickable(role = Role.Button, onClick = onDraw)
+                .testTag("crew-courses-draw"),
+            padding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(LobbyInk.Text), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.Draw, contentDescription = null, tint = LobbyInk.Accent, modifier = Modifier.size(24.dp))
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.crew5_courses_draw), style = navyText(16.sp, LobbyInk.Text, FontWeight.Bold))
+                    Text(stringResource(R.string.crew5_courses_draw_body), style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium, 1.45f),
+                        modifier = Modifier.padding(top = 2.dp))
+                }
+                Text("›", style = navyText(20.sp, LobbyInk.Ice, FontWeight.Bold))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
         Text(stringResource(R.string.crew5_courses_mine), style = runTextStyle(15.sp, c.text, FontWeight.Bold), modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(8.dp))
         if (mine.isEmpty()) {

@@ -125,6 +125,8 @@ fun CrewRunEntryScreen(
     onLevels: (String) -> Unit = {},
     /** 크루 러닝 기록 · 오늘 기록 — 내 러닝 기록 */
     onHistory: () -> Unit = {},
+    /** 크루장 — 크루 관리(가입 신청 · 멤버 · 크루 소개 · 해산) */
+    onManage: (String) -> Unit = {},
 ) {
     val repo = ServiceLocator.crewRepository
     val crews by repo.crews.collectAsStateWithLifecycle()
@@ -162,6 +164,7 @@ fun CrewRunEntryScreen(
         roomsCount = roomsCount,
         onLevels = { pickedCrew?.let(onLevels) },
         onHistory = onHistory,
+        onManage = { pickedCrew?.let(onManage) },
         doneToday = today?.let { it.isToday() && it.mine.usedToday } == true,
         ui = ui, onBack = onBack,
         onEnter = { id ->
@@ -202,6 +205,8 @@ fun CrewRunEntryContent(
     roomsCount: Int? = null,
     onLevels: () -> Unit = {},
     onHistory: () -> Unit = {},
+    /** 크루장만 보이는 크루 관리 줄 */
+    onManage: () -> Unit = {},
 ) {
     val tag = when (ui) {
         CrewEntryUi.Loading -> "crew-entry-loading"
@@ -251,6 +256,7 @@ fun CrewRunEntryContent(
             is CrewEntryUi.Ready -> CrewHomeBody(
                 ui, today = today, roomsCount = roomsCount, doneToday = doneToday,
                 onChange = onChange, onRooms = { onEnter(ui.crew.id) }, onLevels = onLevels, onHistory = onHistory,
+                onManage = onManage,
             )
         }
     }
@@ -267,6 +273,7 @@ private fun CrewHomeBody(
     onRooms: () -> Unit,
     onLevels: () -> Unit,
     onHistory: () -> Unit,
+    onManage: () -> Unit,
 ) {
     val c = crewColors()
     Column {
@@ -353,6 +360,15 @@ private fun CrewHomeBody(
         HomeLinkRow(stringResource(R.string.crew5_home_rooms), roomsCount?.let { stringResource(R.string.crew5_home_rooms_n, it) }, onRooms, "crew-home-rooms")
         CrewLine()
         HomeLinkRow(stringResource(R.string.crew5_home_history), null, onHistory, "crew-home-history")
+        // 크루장 — 크루 관리 바로가기(2026-10-24 사용자 "크루장이 할 수 있는 탭은 어디 있어?"). 기다리는 가입 신청이 있으면 수
+        if (ui.crew.owned) {
+            CrewLine()
+            HomeLinkRow(
+                stringResource(R.string.crewhome_menu_manage),
+                ui.crew.pendingCount.takeIf { it > 0 }?.let { stringResource(R.string.crew_pending_badge, it) },
+                onManage, "crew-home-manage",
+            )
+        }
         if (doneToday) {
             Spacer(Modifier.height(12.dp))
             CrewNote(stringResource(R.string.crew_entry_done_today), tag = "crew-entry-done-today")

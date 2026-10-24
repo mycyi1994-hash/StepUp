@@ -41,8 +41,8 @@ class PartyLobbyViewModel(
     /** 고른 크루 대기실(0072) — 목록에서 고른 방 · 방금 연 방 */
     fun openRoom(crewId: String, partyId: Long) = crewRepository.openRoom(crewId, partyId)
 
-    /** 진행자 — 방의 코스를 바꾼다(0072). 결과를 돌려준다(실패면 화면이 알린다) */
-    suspend fun setCourse(course: com.stepup.android.domain.RoomCourse) = crewRepository.setRoomCourse(course)
+    /** 진행자 — 방의 코스를 바꾼다(0072) · null 이면 뺀다(0073). 결과를 돌려준다(실패면 화면이 알린다) */
+    suspend fun setCourse(course: com.stepup.android.domain.RoomCourse?) = crewRepository.setRoomCourse(course)
 
     /** 참가자 — 바뀐 코스를 봤다 */
     fun acknowledgeCourse() = crewRepository.acknowledgeCourse()

@@ -226,6 +226,11 @@ private fun HomeContent(
             }
             Spacer(Modifier.height(8.dp))
             Masthead(crew, home, actions)
+            // 크루장 — 크루 관리(가입 신청 · 멤버 · 소개 · 이미지 · 해산)를 ⋯ 안에만 두지 않고 홈에 한 줄로(2026-10-24 사용자 "크루장이 할 수 있는 탭은 어디 있어?")
+            if (home.owner) {
+                Spacer(Modifier.height(12.dp))
+                ManageLine(actions.onManage)
+            }
             Spacer(Modifier.height(20.dp))
             val meeting = home.meeting
             if (meeting != null) {
@@ -267,6 +272,29 @@ private fun HomeContent(
             }
             Spacer(Modifier.navigationBarsPadding().height(28.dp))
         }
+    }
+}
+
+/** 크루장만 — 크루 관리 바로가기 한 줄(⋯ 메뉴의 "크루 관리"와 같은 곳) */
+@Composable
+private fun ManageLine(onClick: () -> Unit) {
+    val ink = blueInk()
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(ink.secondaryButton, shape).border(1.dp, ink.edgeStrong, shape)
+            .homeClickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp).testTag("home-manage"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Settings, contentDescription = null, tint = ink.info, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.crewhome_menu_manage), style = blueText(16.sp, ink.text, FontWeight.Bold))
+            Text(
+                stringResource(R.string.crew5_home_manage_sub), style = blueText(13.sp, ink.secondary, FontWeight.Medium),
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink.secondary, modifier = Modifier.size(22.dp))
     }
 }
 
