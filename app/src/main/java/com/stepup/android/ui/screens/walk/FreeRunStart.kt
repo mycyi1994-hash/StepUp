@@ -125,12 +125,12 @@ import kotlinx.coroutines.flow.first
  * 시간 · 거리 · 위치 · 일시정지 · 종료 · 신발 · 보상은 기존 러닝 서비스 그대로다 — 여기서는 시작 순간만 정한다.
  */
 
-private val StartNavy = Color(0xFF061B30)
+internal val StartNavy = Color(0xFF061B30)
 private val StartAccent = Color(0xFF1450FF)
 private val StartArcTip = Color(0xFF72A6FF)
 private val StartRevealLead = Color(0xFF5287FF)
 private val StartTrack = Color(0x21A9C2E4)
-private val StartGlow = Color(0x1F1450FF)
+internal val StartGlow = Color(0x1F1450FF)
 
 private val CheckBackdrop = Color(0xBA020B16)
 private val CheckFace = Color(0xFF102940)
@@ -617,7 +617,7 @@ internal fun FreeRunStartStage(
  * 펼칠 지도의 타일을 미리 받는다 — 러닝 화면 지도(지금 자리 한가운데, 따라가기 줌)와 같은 계획. 끝나기를 기다리는 곳은 없다.
  * 받은 타일은 지도 캐시(메모리 · 디스크)에 남고, 펼친 지도가 그대로 쓴다. 못 받은 칸은 지도가 늘 하던 대로 다시 받는다.
  */
-private suspend fun prefetchRunMapTiles(context: Context, here: GeoPoint, widthPx: Int, heightPx: Int, density: Float) {
+internal suspend fun prefetchRunMapTiles(context: Context, here: GeoPoint, widthPx: Int, heightPx: Int, density: Float) {
     if (widthPx <= 0 || heightPx <= 0) return
     val plan = TilePlan.of(listOf(here), widthPx, heightPx, density, zooms = MapTiles.FOLLOW_ZOOMS)
     val wanted = buildList {

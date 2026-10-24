@@ -240,6 +240,10 @@ data class CrewRunOutcome(
     val runKm: Double?,
     val nextLevelKm: Double?,
     val nextEligibleAtMs: Long?,
+    /** 그 러닝의 대기실 이름 · 코스(0072 — 출발 때 적은 값, 지난 기록은 그때 이름으로). 예전 방이면 null */
+    val partyName: String? = null,
+    val courseName: String? = null,
+    val courseKm: Double? = null,
 ) {
     val levelUp: Boolean get() = (levelAfter ?: 0) > (levelBefore ?: Int.MAX_VALUE)
     val invalid: Boolean get() = verdict == "VOID"

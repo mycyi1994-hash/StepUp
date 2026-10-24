@@ -1,0 +1,47 @@
+StepUp 크루 러닝 — Claude 구현 핸드오프
+2026-10-24 / 최종 선택: 3번 듀얼 레일
+
+가장 먼저 적용할 최신 지시
+터널 사진과 움직이는 배경은 대기실에만 사용한다.
+크루 홈, 개설, 코스 선택, 러닝 중, 결과, 레벨, 기록까지 터널로 도배하지 않는다.
+그 외 화면은 실제 앱의 기존 배경·지도·화면 부품을 사용한다.
+사용자가 시안을 다시 만들 필요는 없다고 했으므로 reference/와 screenshots/는 기존 승인 시안을 보존했다.
+시안 그림과 이 배경 지시가 다르면 이 문서와 04_DESIGN_BACKGROUND.txt가 우선이다.
+
+클로드에게 전달하는 법
+1. 이 폴더 또는 ZIP 전체를 현재 StepUp 저장소를 작업할 Claude에게 전달한다.
+2. 01_CLAUDE_PROMPT.txt 내용을 첫 지시로 붙여 넣는다.
+3. Claude가 현재 저장소를 확인한 뒤 확정된 범위부터 구현하게 한다.
+
+읽는 순서
+01_CLAUDE_PROMPT.txt — 그대로 붙여 넣는 작업 지시
+02_RULES.txt — 확정된 경제·참여·레벨 규칙
+03_SCREEN_BEHAVIOR.txt — 70개 장면별 역할, 내용, 동작, 예외
+04_DESIGN_BACKGROUND.txt — 승인된 프레임·색·배경 범위·모션
+05_BACKEND.txt — Supabase/RPC/원장/동시성 계약
+06_ANDROID.txt — Compose 구조·실제 화면 통합·상태 복구
+07_ACCEPTANCE_TESTS.txt — 구현 완료 조건과 검증 목록
+08_OPEN_DECISIONS.txt — 기존 코드에서 먼저 확인할 미정 정책
+09_PROVENANCE.txt — 자료 출처·샘플 한계·실제로 수행한 검증
+
+참조 자료
+reference/reference.html — 인터넷 없이 열 수 있는 70개 장면 갤러리
+reference/reference-fragment.html — 승인 시안 원본. 단독 실행은 reference.html 사용
+prototype-source/ — 검토용 HTML/CSS/JavaScript. Android 구현체가 아님
+screenshots/ — 기존 시안의 70개 기본 상태와 좁은 화면 참고 캡처
+assets/ — 대기실 터널, 로고, 신발 참고 자산
+screen-spec.json — 70개 장면의 구조화된 명세
+rules.json / design-tokens.json — 수치 규칙과 디자인 값
+qa/ — 웹 시안/오프라인 패키지 검증 결과
+
+이번 범위
+Kotlin·Jetpack Compose 앱의 크루 러닝 전체 흐름과 Supabase 계약을 새 규칙에 맞춰 연결한다.
+70개 장면은 70개의 독립 Activity가 아니다. 화면, 시트, 다이얼로그, 데이터 상태를 공유 부품으로 구현한다.
+휴대폰 문자 발송, OTP, 번호 입력, 인증 공급자 연결, 인증 설정 화면 신설은 포함하지 않는다.
+기존의 신뢰할 수 있는 인증 상태가 있으면 인원 보너스 판정에만 활용한다.
+아직 정하지 않은 운영 정책은 시안의 임시 버튼이나 숫자를 근거로 확정하지 않는다.
+
+범위와 증거
+이 패키지는 구현 지시와 시각 참조다. 실제 Kotlin 코드/운영 DB를 변경한 결과물이 아니다.
+현재 저장소를 이번 핸드오프에서 새로 조사하지 않았다. Claude는 작업 시점의 코드와 migration 이력을 먼저 확인한다.
+배경 범위 변경은 문서로 확정했으며 원본 시안은 다시 그리지 않았다.

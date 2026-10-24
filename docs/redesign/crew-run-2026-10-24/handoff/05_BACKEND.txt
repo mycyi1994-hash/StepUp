@@ -1,0 +1,152 @@
+서버 핸드오프 — Supabase / Postgres / RPC
+
+0. 현재 저장소 확인
+이 패키지는 실제 운영 DB에 접속하거나 migration을 실행하지 않았다. 아래 테이블/필드/RPC 이름은 '논리 계약 제안'이다. 먼저 실제 스키마와 함수, 0069 및 후속 변경을 읽고 기존 명칭과 호환시킨다.
+우선 찾을 항목: supabase/migrations, record_session, crew_stamina, crew_level, party_* 상태 전환, economy/SUP 원장, 개인 내구도/에너지 차감, 하루 상한, run_id 중복 방지, 기존 위치 검증, RLS.
+과거 참조 코드에는 0069에서 '내 몫', 200m, 개인 에너지 fallback, 합산 상한, 옛 레벨 표가 있었다. 이 내용은 새 규칙으로 대체해야 하는 항목이다. 현재 저장소에 이미 변경되었을 수 있으니 재확인한다.
+
+1. 불변 조건
+• 같은 크루·같은 한국 날짜에는 공용 풀 1개. 방별 독립 풀을 만들지 않는다.
+• 동일 사용자·한국 날짜 출발 기록은 최대 1개. crew_id는 이 unique 조건에 넣지 않는다.
+• 동일 참여/run_id의 신발 기여·차감 이벤트·보상 원장·경험치 적용은 각각 중복되지 않는다.
+• 남은 체력은 0 이상, 총량 이하. 총량과 잔량을 별도로 보관한다.
+• GPS·시간·선택 신발 소유·참여 자격·인원 보너스·레벨·보상은 서버가 결정한다. 클라이언트가 최종 값이나 verified=true를 제출하게 하지 않는다.
+• 시작 실패 시 일일권 사용이나 체력 기여만 남는 부분 성공이 없어야 한다.
+• 최종 결과와 SUP 원장은 동일한 정산 결과를 가리켜야 한다.
+
+2. 필요한 논리 데이터 모델
+A) CrewDayPool
+  키: crew_id, day_kst.
+  값: max_durability_contributed_raw, capacity_total, remaining, consumed_total, contributor_count, version, updated_at, settled_through.
+  레벨 적용 이력/정책 버전을 함께 보관한다. '분모=초기 잔량'이 아니라 '분모=총 기여 체력'이다.
+B) CrewDayParticipation
+  키: user_id, day_kst unique.
+  값: crew_id_at_start, party_id, run_id, started_at, ended_at, terminal_reason, selected_shoe_id, selected_shoe_snapshot, contribution_applied, contribution_amount.
+  selected_shoe_snapshot: 기본 보상에 필요한 속성, 최대 내구도, 출발 당시 소유자, 실제 사용한 정책/레벨 버전. 현재 개인 내구도는 참고값이며 기여 계산에는 사용하지 않는다.
+  기존 run/session 모델이 이 역할을 하면 중복 테이블을 추가하지 않는다.
+C) Participant/RoomRunState
+  사람 상태: LOBBY / READY / RUNNING / PAUSED / FINISH_PENDING / ENDED.
+  방 상태와 개인 상태를 분리. active runner count, non-ended participant count를 구분한다.
+  위치 판정: 출발 위치 증거, 출발 시간, 2분 판정 기준 시각, 위치 품질/샘플시각, 판정 결과와 제외 이유.
+  보너스 상태: PENDING / CONFIRMED / UNAVAILABLE. 집계 기준 버전과 count/percent.
+D) DurabilityLedger / RunningIntervals
+  목적: 재전송·동시 실행에서도 중복 차감하지 않기 위한 내역.
+  구간: run_id, interval_id 또는 sequence, server accepted start/end, running/paused 상태, 유효성, 사용량, 해당 crew/day.
+  동일 구간 처리 위치와 소진 시각(exhausted_at)을 보관한다.
+E) RewardSettlement
+  run_id unique, settlement_id, status(PENDING/CONFIRMED/REJECTED), base_sup, headcount_pct, headcount_sup, level_pct, level_sup, credited_sup, earning_eligible_segments, policy_version, ledger_reference.
+  보상 확인 전에는 credited_sup를 확정으로 표시하지 않는다. 오류를 0 SUP 성공으로 저장하지 않는다.
+F) CrewDistanceLedger / LevelEvent
+  사용자별 유효 거리 기여 unique(run_id, contribution_type).
+  누적 거리(내부 단위는 기존 meters 등 정밀 단위 재사용), 최고 도달 레벨, 레벨 업 발생 기록. 동시 정산 시 같은 레벨 이벤트가 중복되지 않게 한다.
+G) 기존 인증 상태
+  phone_verified_at/신뢰된 verification status 등 현재 서버에서 제공하는 값 활용.
+  검증된 번호 식별자가 있다면 1번호1계정 unique를 신뢰된 경로에서 유지한다. 원문 번호를 크루원에게 노출하지 않는다.
+  verified 상태에 대한 일반 사용자의 직접 UPDATE 금지. SMS/OTP 서비스나 화면 신설은 범위 밖.
+
+3. 시간과 일일권
+UTC timestamptz로 사건을 기록하고, 한국 날짜는 서버에서 Asia/Seoul 기준으로 결정한다. 휴대폰 시간·날짜·타임존을 믿지 않는다.
+조회가 없어도 새 날짜의 풀은 0부터 시작해야 한다. 스케줄러만 의존하지 말고 날짜 키를 이용한 lazy 생성과 명시적 조회 기준을 둔다.
+전날 풀 행을 파괴하거나 과거 정산을 재계산해서 지우지 않는다. 앱에는 현재 날짜의 풀만 보여준다.
+러닝이 자정을 넘는 경우 일일권 귀속/구간별 풀 정산은 08에서 결정해야 한다. 기존 개인 러닝의 시작일 귀속을 크루에도 자동 적용하지 않는다.
+
+4. 출발 RPC의 원자적 처리
+입력은 party_id, 선택 신발 ID, 요청 idempotency key, 필요한 위치 증거 등이다. 인원수·체력·보너스·레벨·신발 최대치를 입력으로 신뢰하지 않는다.
+1) 인증 세션(auth.uid)과 방/크루 관계 확인.
+2) 출발 권한 확인. 크루원 누구나 방을 열 수 있다는 것과 방 진행자가 출발을 확정한다는 UI 역할을 구분. 기존 동시 출발 절차 유지.
+3) 참여자를 확정하고 최대20명, 같은 크루, 서버에서 확인한 출발 범위, 신발 소유와 일일권을 검증.
+4) 중복 start 요청이면 기존 run_id 결과를 돌려준다. 새 기여를 추가하지 않는다.
+5) 참여 기록과 선택 신발 스냅샷, 공용 풀 기여를 같은 트랜잭션으로 반영.
+6) PENDING 보너스 판정과 2분 확인 기준 시각 기록.
+7) run_id/started_at/pool snapshot/participants snapshot 반환.
+방 전체 일부 참가자 실패 시 원자적 실패 또는 참가자 제외의 기존 정책을 먼저 확인한다. 앱이 '6명 출발'이라 표시하고 서버는5명만 출발시키는 불일치가 없어야 한다.
+신발 최대치가100, Lv7이면136 기여. 개인 신발이75/100이라고102를 더하면 오류다.
+
+5. 공용 풀의 실시간 정합성
+record_session이 종료 때 한 번 호출되는 구조만으로는 여러 사람에게 실시간 공용 체력 소진 시점을 정확히 제공하기 어렵다. 기존 진행 업로드/heartbeat/백그라운드 서비스를 확인하고 구간 정산 또는 서버 중간 상태 갱신을 확장한다.
+권장 통합 방식:
+• 신뢰할 수 있는 RUNNING 상태 구간들을 모아 동일 crew/day의 직전 정산 시각부터 시간순으로 계산한다.
+• pause/resume/end/start/새 기여 시각을 경계로 나누고, 각 구간의 소비율을 running_count×5/분으로 계산한다.
+• 남은 체력이 해당 구간에서 끝나면 정확한 소진 경계를 계산해 earning_eligible_end를 고정한다.
+• 각 사용자의 보상 대상 유효 걸음/거리 세그먼트를 이 시간 경계로 제한한다. 세션 전체 보상을 '남은 체력 비율'로 단순 비례시키면 걸음이 고르게 분포하지 않은 경우 틀린다.
+• 지연 업로드·재전송은 구간 식별자와 정산 watermark로 중복 제거한다.
+• 동일 crew/day 행 및 관련 원장을 row lock/동등한 직렬화 방식으로 처리한다. 모든 RPC의 잠금 순서를 일관되게 정해 교착을 피한다.
+• 여러 방의 활성 인원을 함께 계산한다. 한 방의 캐시만으로 풀을 독점하지 않는다.
+• 서버 snapshot에는 version과 as_of를 포함한다. 앱은 부드러운 표시용 보간만 하고 잔량/보상 원장을 확정하지 않는다.
+• Realtime 이벤트는 갱신 알림이지 원장의 대체가 아니다. 누락·순서 역전·재연결 시 최신 snapshot으로 회복한다.
+위 방식은 구현 권장 구조다. 기존 이벤트 검증과 오프라인 정책에 맞추되 규칙의 '0이 된 순간부터 적립 중단'을 만족하는 증거가 필요하다.
+
+6. 2분 인원 확인
+서버 start timestamp+120초를 기준으로 판정한다. 휴대폰 UI 타이머 완료 이벤트만 믿지 않는다.
+동일 크루, 출발 범위 통과, 2분 후 범위 통과, trusted phone verification을 모두 충족한 사람만 집계한다.
+participant_count/active_runner_count/bonus_eligible_count를 별도 필드로 반환한다.
+미인증은 bonus_exclusion_reason이지 start_block_reason이 아니다.
+확인 대상 위치가 없거나 오래된 위치만 있으면 '확인 중/확인 불가'를 반환하고 임의 통과시키지 않는다. 샘플 허용 범위·대기/제외 정책은08 참조.
+인원 구간은 rules.json의 표 한 구간만 선택한다. 레벨 보너스는 더한다.
+
+7. record_session / 최종 정산
+• 크루 세션 식별은 서버가 기록한 run/participation에 근거한다. 클라이언트가 mode=crew만 보낸다고 제한 없는 보상을 주면 안 된다.
+• 기존 유효성 검증과 기본 신발 보상 함수를 유지한다.
+• 자유 러닝은 기존 개인 내구도·개인 상한 경로를 유지한다.
+• 크루 러닝은 공용 풀 정산 결과를 참조한다. 개인 내구도·개인 에너지·개인600 SUP 상한에 섞지 않는다.
+• base_sup와 두 추가분을 별도 계산/반환하고 total=base+headcount_part+level_part가 되도록 한다. 내부 정밀도와 최종 원장 반올림 규칙을 맞춘다.
+• 동일 run_id의 반복 저장은 같은 결과를 반환한다. SUP 지급·경험치·레벨 업 이벤트가 중복되지 않는다.
+• 결과 보상이 확인된 뒤에만 앱에 '받은 보상/적립 완료' 표시 가능.
+• 무효 러닝은 크루 경험치에서 제외한다. 체력 환불/보상 취소는 새 문서에 없는 정책이므로 기존 동작 확인 후 별도 결정한다.
+
+8. 종료/혼자 남음
+참가자의 종료를 기록하는 트랜잭션에서 non-ended 참가자를 재평가한다. 정확히 한 사람이 남으면 그 사람에게 terminal_reason=LAST_PARTICIPANT_END를 적용하고 동일한 저장/정산 경로로 연결한다.
+PAUSED는 ENDED가 아니다. 마지막 한 명이 PAUSED 상태여도 나머지가 모두 종료하면 종료 대상으로 본다. 단순 네트워크 끊김의 종료 인정은 기존 timeout 정책 확인 후 처리한다.
+화면 닫기·알림 끄기·프로세스 종료를 사용자 종료 요청으로 치환하지 않는다. 재실행 시 기존 run_id를 복구한다.
+종료 이벤트와 늦게 도착한 progress/pause 요청의 순서가 뒤집혀도 종료된 러닝을 부활시키지 않는다.
+
+9. 앱 읽기 계약 — 실제 이름은 기존 RPC와 맞출 것
+공통: server_now, day_kst, version/as_of, nullable 값의 의미, 데이터 상태(정상/미확인/오류).
+CrewHomeSnapshot:
+  crew_id, level, cumulative_valid_distance_m, next_level_threshold_m,
+  pool_total, pool_remaining, contributors_today, resets_at,
+  my_participation{used_today,run_id,status,next_eligible_at},
+  level_stamina_bonus_pct,level_reward_bonus_pct.
+LobbySnapshot:
+  party_id,crew_id,host_id,phase,capacity=20,
+  members[{user_id,display_name,ready,status,phone_verified,departure_range_status}],
+  selected_shoe{id,max_durability,reward_attributes},
+  my_contribution_preview,bonus_preview{eligible_count,pct,status},
+  can_start,can_ready,start_block_reasons,server_now.
+LiveSnapshot:
+  run_id,phase,participant_count,room_active_runner_count,crew_pool_active_runner_count,
+  shared_pool{day,total,remaining,version,exhausted_at},
+  verification{status,check_at,eligible_count,pct,exclusions},
+  earning_state(ACCRUING/PENDING/POOL_EMPTY/PAUSED),reward_estimate,
+  level_reward_pct,metrics,terminal_reason.
+ResultSnapshot:
+  run_id,save_status,validity,metrics,route,
+  reward{status,base_sup,headcount_pct,headcount_sup,level_pct,level_sup,total_sup,ledger_reference},
+  crew_contribution{distance_m,applied,new_total_m,next_level_remaining_m,level_before,level_after},
+  pool_usage{contributed,consumed_by_me,pool_remaining,pool_total,personal_durability_delta=0},
+  participation_next_eligible_at.
+수치 0, null, 미확인 상태를 구분한다. 예: pool=null은 잔량 0이 아니다.
+room_active_runner_count는 현재 방에서 뛰는 인원, crew_pool_active_runner_count는 같은 크루의 모든 방에서 이 풀을 쓰는 활성 인원이다. 지도 옆 인원과 공용 소비율의 인원을 혼동하지 않는다.
+
+10. 변경 작업의 논리 계약
+createLobby / chooseShoe / ready / start / uploadProgress / pause / resume / finish / fetchResult。
+이 이름들은 기능을 설명하기 위한 예시이며 기존 RPC를 우선 사용한다. 기존 record_session과 최종 결과 조회가 각각 보상을 지급하는 중복 경로가 되지 않게 한다.
+대표 오류 코드 제안:
+ALREADY_PARTICIPATED_TODAY / NOT_CREW_MEMBER / ROOM_FULL / OUTSIDE_DEPARTURE_RANGE / SHOE_NOT_OWNED / ROOM_STATE_CHANGED / LOCATION_UNAVAILABLE / SESSION_ENDED / RETRYABLE_NETWORK.
+PHONE_UNVERIFIED와 POOL_ZERO_BEFORE_START만으로 출발 오류를 반환하지 않는다.
+timeout은 실패 확정이 아니다. idempotency key/run_id로 상태 조회 후 재시도한다.
+
+11. 권한·데이터 접근
+RLS는 같은 크루의 필요한 요약만 제공한다. 타인의 신발 전체 자산·전화번호·미공개 위치 이력 노출 금지.
+Supabase service role 키를 앱에 넣지 않는다. SECURITY DEFINER 사용 시 auth 검증, 실행 권한, 고정 search_path 등을 실제 프로젝트 표준대로 설정한다.
+클라이언트의 durability/reward/level/verified 직접 쓰기 권한을 열지 않는다.
+실제 위치 검증과 기존 mock-location/속도 검증을 약화하지 않는다.
+
+12. migration과 롤아웃
+1) 현재 이력과 적용 여부 확인. 이미 적용된0069 파일을 내용 변경하여 다시 적용하지 않는다.
+2) 0070이 비어 있으면 새 마이그레이션으로 작성. 사용 중이면 다음 번호로 작성하고 대응 관계를 기록한다.
+3) 원장/제약/새 RPC 또는 호환 계층을 추가하고 오래된 앱 요청이 개인 에너지 fallback으로 잘못 지급되지 않게 버전/기능 게이트를 설계한다.
+4) 기존0069 값은 에너지/걸음 단위일 수 있다. 숫자를 새 내구도 값으로 그대로 복사하지 않는다. 과거 기록 보존, 전환일, 진행 중 세션 처리 계획을 먼저 정한다.
+5) 로컬/테스트 DB에서 빈 DB 마이그레이션, 실제 이전 스키마에서 업그레이드, 권한/동시성/멱등성 회귀를 실행한다.
+6) 앱은 새 계약 지원이 확인된 환경에서만 새 적립 흐름을 활성화한다. 미지원 상태를 체력0 또는 참여 완료로 속이지 않는다.
+7) 운영 배포·기존 보상 데이터 정리·계정 인증 변경은 별도 실행 범위를 확인한다. 이 패키지는 운영 DB 변경이나 배포 승인 자체가 아니다.

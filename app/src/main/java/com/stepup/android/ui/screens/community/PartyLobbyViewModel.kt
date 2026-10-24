@@ -38,6 +38,15 @@ class PartyLobbyViewModel(
 
     fun openLobby(crewId: String) = crewRepository.openLobby(crewId)
 
+    /** 고른 크루 대기실(0072) — 목록에서 고른 방 · 방금 연 방 */
+    fun openRoom(crewId: String, partyId: Long) = crewRepository.openRoom(crewId, partyId)
+
+    /** 진행자 — 방의 코스를 바꾼다(0072). 결과를 돌려준다(실패면 화면이 알린다) */
+    suspend fun setCourse(course: com.stepup.android.domain.RoomCourse) = crewRepository.setRoomCourse(course)
+
+    /** 참가자 — 바뀐 코스를 봤다 */
+    fun acknowledgeCourse() = crewRepository.acknowledgeCourse()
+
     /** 번개러닝 로비. 크루 로비와 같은 판을 쓴다. */
     fun openFlashLobby(postId: Long, title: String) =
         crewRepository.openFlashLobby(postId, title)

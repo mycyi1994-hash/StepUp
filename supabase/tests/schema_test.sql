@@ -8604,6 +8604,210 @@ end $$;
 select set_config('request.jwt.claims', '', false);
 update public.economy_settings set value = '7' where key = 'new_account_days';
 
+-- ════════════════════════════════════════════════════════════════════
+--  0072 크루 러닝 대기실 — 이름 · 코스 · 열린 대기실 목록 · 골라 들어가기 · 진행자 코스 바꾸기(준비 풀림) ·
+--  코스 판 맞대고 출발(6초 뒤) · 출발 때 이름 · 코스를 참여 기록에 (2026-10-24)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 러닝 대기실(0072) ─────────────────────────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+-- o 크루장 · m1 · m2 · m3 크루원 · x 다른 사람
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('72000000-0000-0000-0000-000000000001', 'o72@test', '{"full_name":"크루장"}'),
+  ('72000000-0000-0000-0000-000000000002', 'm72a@test', '{"full_name":"하나"}'),
+  ('72000000-0000-0000-0000-000000000003', 'm72b@test', '{"full_name":"둘"}'),
+  ('72000000-0000-0000-0000-000000000004', 'm72c@test', '{"full_name":"셋"}'),
+  ('72000000-0000-0000-0000-000000000009', 'x72@test', '{"full_name":"남"}');
+insert into public.crews (id, owner_id, name)
+values ('72000000-0000-0000-0000-0000000000cc', '72000000-0000-0000-0000-000000000001', '대기실 크루');
+insert into public.crew_members (crew_id, user_id, role)
+select '72000000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER'
+  from unnest(array['72000000-0000-0000-0000-000000000002', '72000000-0000-0000-0000-000000000003',
+                    '72000000-0000-0000-0000-000000000004']) u;
+insert into fix (k, v) values
+  ('t72', '37.5260,126.9230;37.5281,126.9311;37.5302,126.9402'),
+  ('t72b', '37.5100,127.0500;37.5120,127.0560');
+
+set role authenticated;
+-- 크루장이 아닌 크루원도 이름 · 코스를 붙여 연다(R06 · T23). 연 것만으로 참여는 쓰이지 않는다
+call pg_temp.login('72000000-0000-0000-0000-000000000002');
+do $$
+declare v json; c jsonb;
+begin
+  insert into fix (k, v) values ('p72', public.party_create('72000000-0000-0000-0000-0000000000cc', '  여의도   퇴근런 ',
+    '여의도 강변 5km', 5.0, pg_temp.fx('t72'))::text);
+  v := public.party_state(pg_temp.fx('p72')::bigint);
+  perform pg_temp.ok(v->>'name' = '여의도 퇴근런' and v->>'course_name' = '여의도 강변 5km'
+                     and (v->>'course_km')::numeric = 5 and (v->>'course_rev')::int = 1
+                     and (v->>'host_id')::uuid = '72000000-0000-0000-0000-000000000002' and v->>'status' = 'LOBBY',
+    format('크루원이 연 대기실 — 이름(공백 정리) · 코스 · 코스 판 1 · 연 사람이 진행자 (%s)', v::jsonb - 'members'));
+  perform pg_temp.ok(v::jsonb ? 'course_track' = false, '2초마다 묻는 방 상태에는 경로를 싣지 않는다');
+  c := public.party_course(pg_temp.fx('p72')::bigint);
+  perform pg_temp.ok(c->>'course_track' = pg_temp.fx('t72') and (c->>'course_rev')::int = 1, '방 코스 경로는 party_course 로 받는다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from economy.crew_runs where user_id = '72000000-0000-0000-0000-000000000002'),
+    '대기실을 연 것만으로 하루 한 번 참여는 쓰이지 않는다(T23)');
+end $$;
+set role authenticated;
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', '', '코스', 1, pg_temp.fx('t72')) $q$,
+  '이름 없는 대기실은 열지 않는다');
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', repeat('가', 31), '코스', 1, pg_temp.fx('t72')) $q$,
+  '이름은 30자까지');
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', '이름', '코스', 1, '37.5,127.0') $q$,
+  '경로가 점 둘 이상이 아니면 코스로 받지 않는다');
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', '이름', '코스', 1, '37.5,127.0;abc') $q$,
+  '경로 형식이 아니면 받지 않는다');
+call pg_temp.login('72000000-0000-0000-0000-000000000009');
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', '남의 방', '코스', 1, pg_temp.fx('t72')) $q$,
+  '크루원이 아니면 대기실을 열 수 없다(T25)');
+call pg_temp.must_fail($q$ select public.party_rooms('72000000-0000-0000-0000-0000000000cc') $q$,
+  '크루원이 아니면 열린 대기실 목록을 볼 수 없다');
+call pg_temp.must_fail($q$ select public.party_join(pg_temp.fx('p72')::bigint) $q$,
+  '크루원이 아니면 방 번호를 알아도 들어갈 수 없다(T25)');
+
+-- 목록 — 크루원은 열린 대기실을 본다(경로 포함)
+call pg_temp.login('72000000-0000-0000-0000-000000000003');
+do $$
+declare v jsonb; r jsonb;
+begin
+  v := public.party_rooms('72000000-0000-0000-0000-0000000000cc');
+  r := v->'rooms'->0;
+  perform pg_temp.ok(jsonb_array_length(v->'rooms') = 1 and (r->>'id')::bigint = pg_temp.fx('p72')::bigint
+                     and r->>'name' = '여의도 퇴근런' and (r->>'members_count')::int = 1 and (r->>'capacity')::int = 20
+                     and r->>'host_name' = '하나' and not (r->>'mine')::boolean and r->>'course_track' = pg_temp.fx('t72')
+                     and not (v->>'done_today')::boolean,
+    format('열린 대기실 목록 — 이름 · 진행자 · 1 / 20명 · 코스 경로 (%s)', r - 'course_track'));
+  -- 골라 들어간다 — 두 번 불러도 같다
+  perform pg_temp.ok(public.party_join(pg_temp.fx('p72')::bigint) = pg_temp.fx('p72')::bigint
+                     and public.party_join(pg_temp.fx('p72')::bigint) = pg_temp.fx('p72')::bigint,
+    '고른 대기실에 들어간다(여러 번 불러도 한 번)');
+  perform public.party_ready(pg_temp.fx('p72')::bigint, true);
+  v := public.party_rooms('72000000-0000-0000-0000-0000000000cc');
+  perform pg_temp.ok((v->'rooms'->0->>'mine')::boolean and (v->'rooms'->0->>'members_count')::int = 2
+                     and (v->'rooms'->0->>'ready_count')::int = 1,
+    '들어간 방은 목록에 내 방으로 · 2명 · 준비 1명');
+end $$;
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+do $$ begin perform public.party_join(pg_temp.fx('p72')::bigint); end $$;
+
+-- 진행자만 코스를 바꾼다. 바꾸면 코스 판이 오르고 진행자를 뺀 모두의 준비가 풀린다(D14)
+call pg_temp.must_fail($q$ select public.party_set_course(pg_temp.fx('p72')::bigint, '다른 코스', 2, pg_temp.fx('t72b')) $q$,
+  '진행자가 아니면 코스를 바꿀 수 없다(T68)');
+call pg_temp.login('72000000-0000-0000-0000-000000000002');
+do $$
+declare v_rev int;
+begin
+  perform public.party_ready(pg_temp.fx('p72')::bigint, true);
+  v_rev := public.party_set_course(pg_temp.fx('p72')::bigint, '선유도 2km', 2.0, pg_temp.fx('t72b'));
+  perform pg_temp.ok(v_rev = 2, '코스를 바꾸면 코스 판이 2 로');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select array_agg(m.user_id::text || ':' || m.ready order by m.joined_at) from public.party_members m
+      where m.party_id = pg_temp.fx('p72')::bigint)
+    = array['72000000-0000-0000-0000-000000000002:true', '72000000-0000-0000-0000-000000000003:false',
+            '72000000-0000-0000-0000-000000000004:false'],
+    '코스가 바뀌면 진행자를 뺀 모두의 준비가 풀린다(새 코스를 보고 다시 준비 — D14)');
+end $$;
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_ready(pg_temp.fx('p72')::bigint, true); end $$;
+call pg_temp.login('72000000-0000-0000-0000-000000000002');
+-- 진행자가 본 코스 판이 옛것이면 출발하지 않는다
+call pg_temp.must_fail($q$ select public.party_start_rev(pg_temp.fx('p72')::bigint, 1) $q$,
+  '코스 판이 다르면 출발하지 않는다(course_changed — T68)');
+-- 진행자가 셋을 내보낸다 — 대기실에서만 빠지고 크루는 그대로, 다시 들어올 수 없다
+do $$ begin perform public.party_kick(pg_temp.fx('p72')::bigint, '72000000-0000-0000-0000-000000000004'); end $$;
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+call pg_temp.must_fail($q$ select public.party_join(pg_temp.fx('p72')::bigint) $q$,
+  '내보낸 사람은 같은 대기실에 다시 들어오지 못한다(T71)');
+reset role;
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.crew_members where crew_id = '72000000-0000-0000-0000-0000000000cc'
+                                and user_id = '72000000-0000-0000-0000-000000000004'),
+    '내보내기는 대기실에서만 — 크루 탈퇴가 아니다(T71)');
+end $$;
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000002');
+do $$ begin perform public.party_start_rev(pg_temp.fx('p72')::bigint, 2); end $$;
+reset role;
+do $$
+declare v_at timestamptz;
+begin
+  select starts_at into v_at from public.parties where id = pg_temp.fx('p72')::bigint;
+  perform pg_temp.ok(v_at between now() + interval '5 seconds' and now() + interval '7 seconds',
+    format('출발 시각은 6초 뒤 — 늦게 안 사람도 3 · 2 · 1 · 0 · StepUP! 을 처음부터 (%s)', v_at - now()));
+end $$;
+do $$ begin
+  perform pg_temp.ok(
+    (select array_agg(c.party_name || '|' || c.course_name || '|' || c.course_km || '|' || c.course_rev order by c.user_id)
+       from economy.crew_runs c where c.party_id = pg_temp.fx('p72')::bigint)
+    = array['여의도 퇴근런|선유도 2km|2.000|2', '여의도 퇴근런|선유도 2km|2.000|2'],
+    '출발 때 방 이름 · 코스 · 코스 판을 참여 기록에 함께 적는다(지난 기록 상세 — 장면 59)');
+end $$;
+
+-- 출발한 방에는 늦게 들어오지 않는다 · 오늘 이미 한 사람은 새 방을 열지 않는다
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail($q$ select public.party_join(pg_temp.fx('p72')::bigint) $q$,
+  '이미 출발한 대기실에는 늦게 끼지 않는다(중도 합류 없음 — D10)');
+call pg_temp.login('72000000-0000-0000-0000-000000000003');
+call pg_temp.must_fail($q$ select public.party_create('72000000-0000-0000-0000-0000000000cc', '두 번째', '코스', 1, pg_temp.fx('t72')) $q$,
+  '오늘 크루 러닝을 한 사람은 새 대기실을 열지 않는다(준비할 수 없는 빈 방)');
+do $$ begin
+  perform pg_temp.ok((public.party_rooms('72000000-0000-0000-0000-0000000000cc')->>'done_today')::boolean,
+    '목록은 오늘 이미 했는지 함께 알린다');
+end $$;
+
+-- 새 대기실을 열면 출발 전 다른 대기실에서는 나온다(진행자는 다음 사람에게)
+call pg_temp.login('72000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('p72_a', public.party_create('72000000-0000-0000-0000-0000000000cc', '아침 런', '선유도 2km', 2, pg_temp.fx('t72b'),
+    '72000000-0000-0000-0000-00000000a001')::text);
+  -- 답을 잃고 같은 요청을 다시 보냈다
+  perform pg_temp.ok(public.party_create('72000000-0000-0000-0000-0000000000cc', '아침 런', '선유도 2km', 2, pg_temp.fx('t72b'),
+                       '72000000-0000-0000-0000-00000000a001') = pg_temp.fx('p72_a')::bigint,
+    '같은 요청 번호로 다시 열면 그때 연 방을 돌려준다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.parties where host_id = '72000000-0000-0000-0000-000000000001' and name = '아침 런') = 1,
+    '답을 잃고 다시 보내도 대기실은 하나(T03)');
+end $$;
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+do $$ begin
+  perform public.party_join(pg_temp.fx('p72_a')::bigint);
+  insert into fix (k, v) values ('p72_b', public.party_create('72000000-0000-0000-0000-0000000000cc', '저녁 런', '선유도 2km', 2, pg_temp.fx('t72b'))::text);
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select array_agg(m.user_id::text order by m.user_id) from public.party_members m where m.party_id = pg_temp.fx('p72_a')::bigint)
+      = array['72000000-0000-0000-0000-000000000001']
+    and exists (select 1 from public.party_members m where m.party_id = pg_temp.fx('p72_b')::bigint
+                   and m.user_id = '72000000-0000-0000-0000-000000000004'),
+    '새 대기실을 열면 앞 대기실(출발 전)에서는 나온다 — 두 방에 남지 않는다');
+end $$;
+-- 20명이 찬 방에는 더 들어가지 못한다
+insert into auth.users (id, email)
+select ('72100000-0000-0000-0000-0000000000' || lpad(n::text, 2, '0'))::uuid, 'f72_' || n || '@test' from generate_series(1, 19) n;
+insert into public.crew_members (crew_id, user_id, role)
+select '72000000-0000-0000-0000-0000000000cc', ('72100000-0000-0000-0000-0000000000' || lpad(n::text, 2, '0'))::uuid, 'MEMBER'
+  from generate_series(1, 19) n;
+insert into public.party_members (party_id, user_id)
+select pg_temp.fx('p72_a')::bigint, ('72100000-0000-0000-0000-0000000000' || lpad(n::text, 2, '0'))::uuid from generate_series(1, 19) n;
+set role authenticated;
+call pg_temp.login('72000000-0000-0000-0000-000000000004');
+call pg_temp.must_fail($q$ select public.party_join(pg_temp.fx('p72_a')::bigint) $q$,
+  '20명이 찬 대기실에는 들어가지 못한다(room_full — T24)');
+reset role;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

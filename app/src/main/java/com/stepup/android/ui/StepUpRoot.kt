@@ -252,7 +252,12 @@ object Routes {
 
     /** 신발 강화(파란 톤 v4 강화 · 재료 신발 3개, 0054) — 상세의 강화하기 · 강화 결과 확인이 같은 화면으로. 뒤로는 상세로 */
     const val SNEAKER_UPGRADE = "sneaker/{id}/upgrade"
-    const val LOBBY = "lobby/{crewId}"
+    /** 크루 대기실 — party 는 목록에서 고른(또는 방금 연) 방 번호(0072). 없으면(-1) 예전처럼 크루의 열린 방 하나에 */
+    const val LOBBY = "lobby/{crewId}?party={party}"
+
+    /** 크루 러닝 — 같은 크루의 열린 대기실(2026-10-24 장면 02) · 러닝 만들기(03 · 06, 코스 고르기 04 · 05 · 09 포함) */
+    const val CREW_ROOMS = "crew-rooms/{crewId}"
+    const val CREW_ROOM_NEW = "crew-rooms/{crewId}/new"
     const val RANKING = "ranking"
     const val CREW_CREATE = "crew/create"
     const val CREW_BOARD = "crew/board/{crewId}"
@@ -283,6 +288,23 @@ object Routes {
     fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
         "market/$faction/$rarity/$variant?sell=$sell"
     fun lobby(crewId: String) = "lobby/$crewId"
+
+    /** 고른 크루 대기실 */
+    fun room(crewId: String, partyId: Long) = "lobby/$crewId?party=$partyId"
+    fun crewRooms(crewId: String) = "crew-rooms/$crewId"
+    fun crewRoomNew(crewId: String) = "crew-rooms/$crewId/new"
+
+    /**
+     * 크루 러닝 입구 — 그 크루의 대기실(출발 전 · 카운트다운)에 들어가 있으면 그 방, 아니면 열린 대기실 목록.
+     * 들어가는 것은 목록에서 방을 고를 때뿐이다(예전처럼 저절로 아무 방에 넣지 않는다).
+     */
+    fun crewRun(crewId: String): String {
+        val party = ServiceLocator.crewRepository.party.value
+        val id = party.partyId
+        val inRoom = party.crewId == crewId && party.flashPostId == null && id != null &&
+            (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY || party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN)
+        return if (inRoom && id != null) room(crewId, id) else crewRooms(crewId)
+    }
     fun notice(id: Long) = "notice/$id"
     fun recordStats(month: java.time.YearMonth) = "records/stats?month=$month"
     fun runRecord(id: Long) = "records/run/$id"
@@ -367,6 +389,8 @@ fun StepUpRoot() {
             else -> MainScaffold(startTour = guideSeen == false)
         }
         }
+        // 크루 출발 연출 — 대기실에서 러닝 화면으로 길이 바뀌어도 3 · 2 · 1 · 0 · StepUP! · 펼침이 끊기지 않게 맨 위에 둔다
+        if (stage == 2) com.stepup.android.ui.screens.walk.CrewLaunchOverlay()
         // 테스트 APK 새 버전 알림 — 스플래시가 끝난 뒤에만(debug 빌드 · 테스트 중이 아닐 때)
         if (stage != 0) com.stepup.android.ui.components.TestUpdatePrompt()
     }
@@ -800,7 +824,7 @@ private fun MainScaffoldContent(
             }
             composable(Screen.Community.route) {
                 CommunityScreen(
-                    onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
+                    onOpenLobby = { crewId -> navController.navigate(Routes.crewRun(crewId)) { launchSingleTop = true } },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenRanking = { navController.navigate(Routes.RANKING) },
                     onOpenCrew = { crewId -> navController.navigate(Routes.crewBoard(crewId)) },
@@ -1095,7 +1119,7 @@ private fun MainScaffoldContent(
                             com.stepup.android.service.WalkSessionService.state.value.isActive -> navController.backToRun()
                             (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY ||
                                 party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN) && !partyCrew.isNullOrBlank() ->
-                                navController.navigate(Routes.lobby(partyCrew)) { launchSingleTop = true }
+                                navController.navigate(Routes.crewRun(partyCrew)) { launchSingleTop = true }
                             else -> navController.navigate(Routes.RUN_CREW) { launchSingleTop = true }
                         }
                     },
@@ -1106,8 +1130,13 @@ private fun MainScaffoldContent(
                 val crewScope = rememberCoroutineScope()
                 com.stepup.android.ui.screens.walk.CrewRunEntryScreen(
                     onBack = { navController.popBackStack() },
-                    // 대기실은 여기서 눌러야만 열린다(party_open 은 참가 · 생성을 일으킨다)
-                    onEnterLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) { launchSingleTop = true } },
+                    // 크루 러닝 시작 — 열린 대기실 목록(들어가 있던 방이 있으면 그 방). 목록은 보기만 한다
+                    onEnterLobby = { crewId -> navController.navigate(Routes.crewRun(crewId)) { launchSingleTop = true } },
+                    // 크루 레벨 보기 — 내 크루 홈의 레벨 화면 · 크루 러닝 기록 — 내 러닝 기록
+                    onLevels = { crewId ->
+                        navController.navigate(com.stepup.android.ui.screens.community.home.CrewHomeRoutes.level(crewId)) { launchSingleTop = true }
+                    },
+                    onHistory = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onFindCrew = { navController.switchTab(Screen.Community) },
                     onCreateCrew = { navController.navigate(Routes.CREW_CREATE) },
                     // 자유 러닝으로 시작 — 추천 코스의 "자유 러닝으로 시작"처럼 고른 코스를 풀고 시작한다(코스 러닝으로 바뀌지 않게)
@@ -1265,7 +1294,7 @@ private fun MainScaffoldContent(
                     onOpenChallenges = { navController.navigate(Routes.EVENTS) },
                     onBack = { navController.popBackStack() },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS_NOTIFICATIONS) },
-                    onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
+                    onOpenLobby = { crewId -> navController.navigate(Routes.crewRun(crewId)) { launchSingleTop = true } },
                     onOpenCrew = { crewId -> navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.detail(crewId)) },
                     // 댓글은 게시판 위에 창으로 뜬다. 어느 댓글인지는 저장소에
                     // 남겨 두고 커뮤니티 탭으로 보내면, 게시판이 그 창을 연다.
@@ -1460,13 +1489,54 @@ private fun MainScaffoldContent(
                     },
                 )
             }
+            // 열린 대기실(02) — 고르면 그 방, "새 대기실 만들기"는 러닝 만들기(03)
+            composable(
+                route = Routes.CREW_ROOMS,
+                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+            ) { entry ->
+                val crewId = entry.arguments?.getString("crewId").orEmpty()
+                com.stepup.android.ui.screens.walk.CrewRoomsScreen(
+                    crewId = crewId,
+                    onBack = { navController.popBackStack() },
+                    onOpenRoom = { id -> navController.navigate(Routes.room(crewId, id)) { launchSingleTop = true } },
+                    onCreate = { navController.navigate(Routes.crewRoomNew(crewId)) { launchSingleTop = true } },
+                )
+            }
+            // 러닝 만들기(03 · 06) — 서버가 방 번호를 준 뒤에만 그 대기실로(만들기 화면은 걷는다 — 뒤로 가면 목록)
+            composable(
+                route = Routes.CREW_ROOM_NEW,
+                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+            ) { entry ->
+                val crewId = entry.arguments?.getString("crewId").orEmpty()
+                com.stepup.android.ui.screens.walk.CrewRoomCreateScreen(
+                    crewId = crewId,
+                    onBack = { navController.popBackStack() },
+                    onCreated = { id ->
+                        navController.navigate(Routes.room(crewId, id)) { popUpTo(Routes.CREW_ROOM_NEW) { inclusive = true } }
+                    },
+                )
+            }
             composable(
                 route = Routes.LOBBY,
-                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument("crewId") { type = NavType.StringType },
+                    navArgument("party") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                ),
             ) { entry ->
                 PartyLobbyScreen(
                     crewId = entry.arguments?.getString("crewId").orEmpty(),
+                    partyId = entry.arguments?.getLong("party")?.takeIf { it > 0 },
                     onBack = { navController.popBackStack() },
+                    // 고른 방에 더 있을 수 없다 — 같은 크루의 열린 대기실 목록(대기실은 걷는다)
+                    onOtherRooms = { crewId ->
+                        navController.navigate(Routes.crewRooms(crewId)) {
+                            popUpTo(Routes.LOBBY) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
                     onRunStarted = {
                         // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
                         com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
@@ -1497,14 +1567,14 @@ private fun MainScaffoldContent(
                 navController,
                 communityRoute = Screen.Community.route,
                 boardRoute = { crewId -> Routes.crewBoard(crewId) },
-                lobbyRoute = { crewId -> Routes.lobby(crewId) },
+                lobbyRoute = { crewId -> Routes.crewRun(crewId) },
             )
             // 내 크루 홈(확정 4번, 2026-09-29) — 가입한 크루의 홈 · 소개 · 레벨 · 크루원 · 모임 · 참석 · 주간 기록
             crewHomeGraph(
                 navController,
                 communityRoute = Screen.Community.route,
                 boardRoute = { crewId -> Routes.crewBoard(crewId) },
-                lobbyRoute = { crewId -> Routes.lobby(crewId) },
+                lobbyRoute = { crewId -> Routes.crewRun(crewId) },
             )
             // AI 코칭(2026-10-16 인계 16장) — 오늘 · 분석 · 변화 · 훈련 · 동의 · 목표 · 계획 · 설정. 러닝을 스스로 시작하지 않는다
             coachingGraph(
@@ -1535,7 +1605,7 @@ private fun MainScaffoldContent(
                 CrewBoardScreen(
                     crewId = entry.arguments?.getString("crewId").orEmpty(),
                     onBack = { navController.popBackStack() },
-                    onOpenLobby = { crewId -> navController.navigate(Routes.lobby(crewId)) },
+                    onOpenLobby = { crewId -> navController.navigate(Routes.crewRun(crewId)) { launchSingleTop = true } },
                     onWritePost = { crewId -> navController.navigate(Routes.postCompose(crewId)) },
                     onOpenFlash = { postId -> navController.navigate(Routes.flashDetail(postId)) },
                 )

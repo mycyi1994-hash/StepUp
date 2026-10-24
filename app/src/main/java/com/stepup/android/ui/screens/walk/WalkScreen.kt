@@ -972,6 +972,10 @@ fun RunScreen(
                         pace = finishPace(session)?.let { formatPacePrime(it) } ?: "—",
                         note = note,
                         basis = if (session.lastGpsKm <= 0.0 && km > 0.0) stringResource(R.string.run_result_steps_basis) else null,
+                        // 그 러닝의 대기실 이름 · 코스(서버가 출발 때 적은 값)
+                        room = outcome?.partyName?.let { room ->
+                            listOfNotNull(room, outcome.courseName?.let { c -> outcome.courseKm?.let { "$c ${courseKm(it)}km" } ?: c }).joinToString(" · ")
+                        },
                     ),
                     reward = reward,
                     map = if (geoTrack.size >= 2) ({

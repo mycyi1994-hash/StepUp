@@ -6,6 +6,9 @@
 서버 0071(`supabase/migrations/0071_crew_shared_pool.sql`)이 0070 의 "무리마다 몫을 나누는 크루 체력"을 대신한다.
 앱은 `domain/CrewRunPool.kt` · `data/remote/CrewRunApi.kt` · `data/repo/CrewRunRepository.kt` 다.
 
+> 2026-10-24: 대기실(방)은 서버 0072 가 넓혔다 — 이름 · 코스 사본 · 열린 대기실 목록 · 골라 들어가기 · 진행자 코스 바꾸기 · 판 맞대고 출발 · 출발 6초 뒤.
+> 이 문서의 경제 규칙은 그대로다. 화면 · 방은 [redesign/crew-run-2026-10-24](redesign/crew-run-2026-10-24/README.md).
+
 ## 확정 규칙(R01 ~ R13)과 서버
 
 | 규칙 | 서버(0071) |

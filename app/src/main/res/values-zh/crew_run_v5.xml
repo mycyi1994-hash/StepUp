@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 团队跑 双轨设计(2026-10-24 交接, 服务器 0072) — 团队主页 · 开放的等候室 · 创建跑步 · 路线 · 等候室弹窗 · 异常 -->
+<resources>
+    <!-- 01 团队主页 -->
+    <string name="crew5_home_header">我的团队</string>
+    <string name="crew5_home_sub_level">Lv.%1$d · %2$s</string>
+    <string name="crew5_home_sub_level_only">Lv.%1$d</string>
+    <string name="crew5_home_sub_new">新团队 · 等待第一次团队跑</string>
+    <string name="crew5_pool_title">今日团队耐久度</string>
+    <string name="crew5_pool_today_n">今日 %1$d人</string>
+    <string name="crew5_pool_reset">韩国时间零点重置</string>
+    <string name="crew5_pool_unknown">无法加载</string>
+    <string name="crew5_goal_title">下一个目标</string>
+    <string name="crew5_goal_left">还差 %1$s km</string>
+    <string name="crew5_goal_max">已达最高等级</string>
+    <string name="crew5_goal_step">Lv.%1$d → Lv.%2$d</string>
+    <string name="crew5_goal_levels">查看团队等级</string>
+    <string name="crew5_home_rooms">进行中的等候室</string>
+    <string name="crew5_home_rooms_n">%1$d个</string>
+    <string name="crew5_home_history">团队跑记录</string>
+    <string name="crew5_home_start">开始团队跑</string>
+    <string name="crew5_home_today">查看今日记录</string>
+
+    <!-- 02 开放的等候室 -->
+    <string name="crew5_rooms_header">团队跑</string>
+    <string name="crew5_rooms_title">今天，一起跑吧</string>
+    <string name="crew5_rooms_sub">任何团队成员都可以开设等候室。</string>
+    <string name="crew5_rooms_count">%1$d / %2$d人</string>
+    <string name="crew5_rooms_full">已满</string>
+    <string name="crew5_rooms_mine">我的等候室</string>
+    <string name="crew5_rooms_course">%1$s · %2$s km</string>
+    <string name="crew5_rooms_host">主持人 %1$s · %2$s 开设 · 准备 %3$d人</string>
+    <string name="crew5_rooms_enter">进入等候室</string>
+    <string name="crew5_rooms_back">回到我的等候室</string>
+    <string name="crew5_rooms_empty_title">还没有开放的等候室</string>
+    <string name="crew5_rooms_empty_body">开设新的等候室，召集团队成员吧。</string>
+    <string name="crew5_rooms_failed">无法加载等候室</string>
+    <string name="crew5_rooms_reload">重新加载</string>
+    <string name="crew5_rooms_new">新建等候室</string>
+    <string name="crew5_rooms_done_today">今天已经进行过团队跑。即使更换团队也是每天一次，新的等候室可从明天 00:00(韩国时间)起开设。</string>
+
+    <!-- 03 · 06 创建跑步 -->
+    <string name="crew5_create_header">创建跑步</string>
+    <string name="crew5_create_title">准备一起跑</string>
+    <string name="crew5_create_sub">最多与 %1$d 名团队成员一起。</string>
+    <string name="crew5_create_name">跑步名称</string>
+    <string name="crew5_create_name_hint">例) 江边下班跑</string>
+    <string name="crew5_create_name_count">%1$d / %2$d</string>
+    <string name="crew5_create_name_invalid">跑步名称请输入 1~%1$d 个字。</string>
+    <string name="crew5_create_course">一起跑的路线</string>
+    <string name="crew5_create_pick_course">选择路线</string>
+    <string name="crew5_create_other_course">选择其他路线</string>
+    <string name="crew5_create_scope">等候室公开范围</string>
+    <string name="crew5_create_scope_value">%1$s 团队</string>
+    <string name="crew5_create_contribution">我的跑鞋为团队耐久度的贡献</string>
+    <string name="crew5_create_contribution_sub">最大 %1$d × Lv.%2$d 加成 %3$s</string>
+    <string name="crew5_create_contribution_none">在等候室选择跑鞋后显示</string>
+    <string name="crew5_create_open">开设等候室</string>
+    <string name="crew5_create_failed_done">今天已经进行过团队跑，无法开设新的等候室。</string>
+    <string name="crew5_create_failed_network">网络不稳定。输入内容已保留 — 请再点一次。</string>
+    <string name="crew5_create_failed">无法开设等候室。%1$s</string>
+    <string name="crew5_create_note">仅开设等候室不会占用今日的团队跑。主持人出发后才开始。</string>
+
+    <!-- 04 · 05 · 09 路线 -->
+    <string name="crew5_courses_header">选择路线</string>
+    <string name="crew5_courses_mine">我的路线</string>
+    <string name="crew5_courses_shared">共享路线</string>
+    <string name="crew5_courses_item">%1$s km · %2$s</string>
+    <string name="crew5_courses_item_km">%1$s km</string>
+    <string name="crew5_courses_current">当前路线</string>
+    <string name="crew5_courses_empty_title">没有保存的路线</string>
+    <string name="crew5_courses_empty_body">可从共享路线中选择，或在跑步页的推荐路线中创建路线。</string>
+    <string name="crew5_courses_shared_failed">无法加载共享路线</string>
+    <string name="crew5_courses_loading">正在加载共享路线</string>
+    <string name="crew5_course_detail_meta">%1$s km · 白点是起点</string>
+    <string name="crew5_course_pick">跑这条路线</string>
+    <string name="crew5_course_other">查看其他路线</string>
+
+    <!-- 10 ~ 23 等候室 -->
+    <string name="crew5_lobby_header">团队等候室</string>
+    <string name="crew5_lobby_sub">%1$s · %2$s</string>
+    <string name="crew5_lobby_members">一起跑的成员</string>
+    <string name="crew5_lobby_ready_chip">%1$d/%2$d 准备</string>
+    <string name="crew5_lobby_more">+%1$d</string>
+    <string name="crew5_lobby_all">查看全部</string>
+    <string name="crew5_lobby_invite">一起跑吧</string>
+    <string name="crew5_lobby_me">我</string>
+    <string name="crew5_lobby_pool">团队耐久度</string>
+    <string name="crew5_lobby_pool_total">/ %1$s</string>
+    <string name="crew5_lobby_goal">团队目标</string>
+    <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
+    <string name="crew5_lobby_goal_max">最高</string>
+    <string name="crew5_lobby_course">团队路线</string>
+    <string name="crew5_lobby_course_none">没有路线</string>
+    <string name="crew5_lobby_course_expand">放大查看路线</string>
+    <string name="crew5_lobby_shoe">我的跑鞋</string>
+    <string name="crew5_lobby_shoe_none">穿着当前装备的跑鞋</string>
+    <string name="crew5_lobby_shoe_change">更换跑鞋</string>
+    <string name="crew5_lobby_start">与 %1$d 人出发</string>
+    <string name="crew5_lobby_call">召集团队成员</string>
+    <string name="crew5_lobby_ready">准备完成</string>
+    <string name="crew5_lobby_waiting_host">主持人出发后一起开始</string>
+    <string name="crew5_lobby_cancel_ready">取消准备</string>
+    <string name="crew5_lobby_menu">等候室菜单</string>
+    <string name="crew5_lobby_menu_roster">管理参加者</string>
+    <string name="crew5_lobby_menu_course">更换路线</string>
+    <string name="crew5_lobby_menu_rules">团队跑规则</string>
+    <string name="crew5_lobby_menu_leave">离开等候室</string>
+    <string name="crew5_lobby_rules">查看团队跑规则</string>
+    <string name="crew5_lobby_done_today">今天已经进行过团队跑，无法在此等候室准备。</string>
+    <string name="crew5_lobby_offline">无法连接服务器，正在自动重连。</string>
+    <string name="crew5_lobby_reconnect">立即重连</string>
+    <string name="crew5_lobby_failed">刚才的操作未能处理，请再点一次。</string>
+    <string name="crew5_lobby_loading">正在加载等候室</string>
+
+    <!-- 24 跑鞋 -->
+    <string name="crew5_shoes_title">一起跑的我的跑鞋</string>
+    <string name="crew5_shoes_max">最大耐久度 %1$d</string>
+    <string name="crew5_shoes_eff">效率</string>
+    <string name="crew5_shoes_comfort">舒适度</string>
+    <string name="crew5_shoes_dur">耐久度</string>
+    <string name="crew5_shoes_add">出发时加入共用池</string>
+    <string name="crew5_shoes_confirm">用这双跑鞋准备</string>
+    <string name="crew5_shoes_empty">没有可用于团队跑的跑鞋，将穿当前装备的跑鞋。</string>
+    <string name="crew5_shoes_failed">无法更换跑鞋。选择保持不变。</string>
+
+    <!-- 07 · 08 · 25 路线弹窗 -->
+    <string name="crew5_course_view_title">一起跑的路线</string>
+    <string name="crew5_course_change_title">更换路线</string>
+    <string name="crew5_course_change_note">更换后，除主持人外所有人的准备都会取消。成员查看新路线后再准备。</string>
+    <string name="crew5_course_change_pick">选择其他路线</string>
+    <string name="crew5_course_change_failed">无法更换路线，当前路线保持不变。</string>
+    <string name="crew5_course_updated_title">路线已更换</string>
+    <string name="crew5_course_updated_body">主持人已将一起跑的路线更换为 %1$s。请查看路线后再准备。</string>
+    <string name="crew5_course_updated_ok">查看路线</string>
+    <string name="crew5_course_loading">正在加载路线</string>
+
+    <!-- 26 ~ 30 弹窗 -->
+    <string name="crew5_stamina_title">今日团队耐久度</string>
+    <string name="crew5_stamina_contributors">今日贡献的成员</string>
+    <string name="crew5_stamina_contributors_n">%1$d人</string>
+    <string name="crew5_stamina_mine">出发时我将加入的耐久度</string>
+    <string name="crew5_stamina_drain">每位跑者</string>
+    <string name="crew5_stamina_drain_value">每分钟 %1$s</string>
+    <string name="crew5_stamina_reset">重置</string>
+    <string name="crew5_stamina_reset_value">每天 00:00 (韩国时间)</string>
+    <string name="crew5_stamina_note">同一团队的所有等候室共用。加入的是跑鞋的最大耐久度加上等级效果，而不是剩余耐久度。个人跑鞋不会磨损。</string>
+    <string name="crew5_stamina_fresh">今天还没有成员出发 (0 / 0)</string>
+    <string name="crew5_goal_sheet_title">团队目标 · 等级</string>
+    <string name="crew5_goal_sheet_level">当前 Lv.%1$d</string>
+    <string name="crew5_goal_sheet_new">还没有团队跑记录</string>
+    <string name="crew5_goal_sheet_total">累计 %1$s km</string>
+    <string name="crew5_goal_sheet_next">距 Lv.%1$d 还差 %2$s km</string>
+    <string name="crew5_goal_sheet_effects">团队耐久度 +%1$s%% · 团队奖励 +%2$s%%</string>
+    <string name="crew5_goal_sheet_note">每位成员的有效团队跑距离会累积。这与等候室的路线距离是不同的目标。等级不会下降。</string>
+    <string name="crew5_goal_sheet_all">查看全部等级</string>
+    <string name="crew5_levels_title">等级 1 ~ 20</string>
+    <string name="crew5_levels_level">等级</string>
+    <string name="crew5_levels_km">累计距离</string>
+    <string name="crew5_levels_stamina">耐久度</string>
+    <string name="crew5_levels_reward">奖励</string>
+    <string name="crew5_levels_note">累计距离是达到该等级所需的团队总距离(不是每级额外增加的距离)。</string>
+    <string name="crew5_bonus_title">人数加成表</string>
+    <string name="crew5_bonus_people">人数</string>
+    <string name="crew5_bonus_value">加成</string>
+    <string name="crew5_bonus_n">%1$d人</string>
+    <string name="crew5_bonus_note">只计算同一团队、出发时和 %1$d 分钟后都在 %2$dm 以内、并已完成手机验证的人。0~1 人没有加成。等级加成另外计算。</string>
+
+    <!-- 14 · 15 · 31 名单 -->
+    <string name="crew5_roster_host_title">管理参加者</string>
+    <string name="crew5_roster_member_title">一起跑的成员</string>
+    <string name="crew5_roster_ready">准备完成</string>
+    <string name="crew5_roster_waiting">准备中</string>
+    <string name="crew5_roster_count">%1$d人 · 准备 %2$d人</string>
+    <string name="crew5_kick_title">要移出 %1$s 吗?</string>
+    <string name="crew5_kick_body">只是离开本等候室，不会退出团队。被移出的人无法再次进入本等候室。</string>
+    <string name="crew5_kick_go">移出</string>
+
+    <!-- 21 · 32 离开 -->
+    <string name="crew5_leave_title">要离开等候室吗?</string>
+    <string name="crew5_leave_host_body">还没有出发。离开后由最先进入的成员接任主持人，若没有人则等候室关闭。</string>
+    <string name="crew5_leave_member_body">尚未出发，不会占用今日的团队跑。可以进入其他等候室或新建。</string>
+    <string name="crew5_leave_stay">继续准备</string>
+    <string name="crew5_leave_go">离开</string>
+
+    <!-- 33 · 34 · 40 出发 -->
+    <string name="crew5_start_title">一起出发吗?</string>
+    <string name="crew5_start_shoe">我的跑鞋</string>
+    <string name="crew5_start_people">出发人数</string>
+    <string name="crew5_start_people_n">%1$d人</string>
+    <string name="crew5_start_bonus">预计合计加成</string>
+    <string name="crew5_start_bonus_value">人数 +%1$s%% · Lv.%2$d +%3$s%% = +%4$s%%</string>
+    <string name="crew5_start_add">我将加入的耐久度</string>
+    <string name="crew5_start_go">一起出发</string>
+    <string name="crew5_partial_title">与准备好的 %1$d 人出发吗?</string>
+    <string name="crew5_partial_body">准备中的 %1$d 人不参加本次出发，也不计入加成和贡献。</string>
+    <string name="crew5_partial_go">与准备好的 %1$d 人出发</string>
+    <string name="crew5_partial_wait">再等等</string>
+    <string name="crew5_unverified_title">仅不计入人数加成</string>
+    <string name="crew5_unverified_ok">确认并准备</string>
+    <string name="crew5_starting">正在同步出发信号</string>
+
+    <!-- 61 · 68 ~ 70 异常 -->
+    <string name="crew5_failed_title">无法加载等候室</string>
+    <string name="crew5_failed_body">请检查网络后重新加载。等候室状态保持不变。</string>
+    <string name="crew5_removed_title">已离开本等候室</string>
+    <string name="crew5_removed_body">主持人将你移出，或此等候室无法进入。你仍在团队中。</string>
+    <string name="crew5_closed_title">等候室已关闭</string>
+    <string name="crew5_closed_body">所有人都已离开或长时间无人。请进入其他等候室或新建。</string>
+    <string name="crew5_full_title">等候室已满</string>
+    <string name="crew5_full_body">一个等候室最多 %1$d 人。请查看其他等候室或新建。</string>
+    <string name="crew5_started_title">该等候室已出发</string>
+    <string name="crew5_started_body">无法中途加入已出发的跑步。请查看其他等候室或新建。</string>
+    <string name="crew5_missed_title">错过了出发</string>
+    <string name="crew5_missed_body">你离开等候室期间大家已经出发。今日的团队跑未被占用。</string>
+    <string name="crew5_sign_in_title">需要登录</string>
+    <string name="crew5_other_rooms">查看其他等候室</string>
+</resources>

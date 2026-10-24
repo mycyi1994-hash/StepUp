@@ -397,6 +397,20 @@
       "verification": "ShoeUpgradeDesignTest (Experience QA community suite, screen-gallery/shoe-upgrade/) + ShoeForgeTest (unit) + supabase/tests forge block: device run pending"
     },
     {
+      "id": "Routes.CREW_ROOMS",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.CREW_ROOM_NEW",
+      "parent": "Run",
+      "chrome": "Focus",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "Routes.LOBBY",
       "parent": "Community",
       "chrome": "Focus",
@@ -888,7 +902,7 @@
     {
       "id": "PartyLobbyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
-      "line": 93,
+      "line": 95,
       "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
       "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1150,35 +1164,35 @@
     {
       "id": "CrewIntroScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
-      "line": 72,
+      "line": 75,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "CrewLevelScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
-      "line": 142,
+      "line": 145,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "CrewMembersHomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
-      "line": 224,
+      "line": 311,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "CrewPersonHomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeDetails.kt",
-      "line": 339,
+      "line": 426,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "CrewHomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/home/CrewHomeScreen.kt",
-      "line": 104,
+      "line": 106,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1443,7 +1457,7 @@
     {
       "id": "AchievementsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt",
-      "line": 179,
+      "line": 214,
       "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
       "verification": "Android 14/15 record captures on final source; see stage 8 report for limits",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1614,6 +1628,20 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "CrewRoomsScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRooms.kt",
+      "line": 111,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "CrewRoomCreateScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRooms.kt",
+      "line": 349,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "CrewRunEntryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt",
       "line": 117,
@@ -1623,7 +1651,7 @@
     {
       "id": "CrewShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt",
-      "line": 639,
+      "line": 779,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1681,14 +1709,14 @@
     {
       "id": "RunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 2563,
+      "line": 2808,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "FreeRunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 2617,
+      "line": 2862,
       "implementation": "pending",
       "verification": "pending"
     }
@@ -1772,10 +1800,31 @@
       "verification": "pending"
     },
     {
+      "kind": "DropdownMenu",
+      "owner": "LobbyHeader",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewLobby.kt",
+      "line": 461,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "LobbySheetFrame",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewLobby.kt",
+      "line": 908,
+      "verification": "pending"
+    },
+    {
+      "kind": "ModalBottomSheet",
+      "owner": "NavySheet",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewNavyKit.kt",
+      "line": 235,
+      "verification": "pending"
+    },
+    {
       "kind": "Dialog",
       "owner": "FreeRunShoeCheck",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/FreeRunStart.kt",
-      "line": 158,
+      "line": 163,
       "verification": "pending"
     },
     {

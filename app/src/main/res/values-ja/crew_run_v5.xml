@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- クルーラン デュアルレール(2026-10-24 ハンドオフ、サーバー 0072) — クルーホーム · 開いている待機室 · ラン作成 · コース · 待機室シート · 例外 -->
+<resources>
+    <!-- 01 クルーホーム -->
+    <string name="crew5_home_header">マイクルー</string>
+    <string name="crew5_home_sub_level">Lv.%1$d · %2$s</string>
+    <string name="crew5_home_sub_level_only">Lv.%1$d</string>
+    <string name="crew5_home_sub_new">新しいクルー · 最初のクルーランを待っています</string>
+    <string name="crew5_pool_title">今日のクルー耐久度</string>
+    <string name="crew5_pool_today_n">今日 %1$d人</string>
+    <string name="crew5_pool_reset">韓国時間の0時にリセット</string>
+    <string name="crew5_pool_unknown">読み込めませんでした</string>
+    <string name="crew5_goal_title">次の目標</string>
+    <string name="crew5_goal_left">あと %1$s km</string>
+    <string name="crew5_goal_max">最高レベルです</string>
+    <string name="crew5_goal_step">Lv.%1$d → Lv.%2$d</string>
+    <string name="crew5_goal_levels">クルーレベルを見る</string>
+    <string name="crew5_home_rooms">開いている待機室</string>
+    <string name="crew5_home_rooms_n">%1$d件</string>
+    <string name="crew5_home_history">クルーランの記録</string>
+    <string name="crew5_home_start">クルーランを始める</string>
+    <string name="crew5_home_today">今日の記録を見る</string>
+
+    <!-- 02 開いている待機室 -->
+    <string name="crew5_rooms_header">クルーラン</string>
+    <string name="crew5_rooms_title">今日、一緒に走ろう</string>
+    <string name="crew5_rooms_sub">クルーなら誰でも待機室を開けます。</string>
+    <string name="crew5_rooms_count">%1$d / %2$d人</string>
+    <string name="crew5_rooms_full">満員</string>
+    <string name="crew5_rooms_mine">自分の待機室</string>
+    <string name="crew5_rooms_course">%1$s · %2$s km</string>
+    <string name="crew5_rooms_host">進行役 %1$s · %2$s 開始 · 準備 %3$d人</string>
+    <string name="crew5_rooms_enter">待機室に入る</string>
+    <string name="crew5_rooms_back">自分の待機室に戻る</string>
+    <string name="crew5_rooms_empty_title">開いている待機室はまだありません</string>
+    <string name="crew5_rooms_empty_body">新しい待機室を開いてクルーを呼びましょう。</string>
+    <string name="crew5_rooms_failed">待機室を読み込めませんでした</string>
+    <string name="crew5_rooms_reload">再読み込み</string>
+    <string name="crew5_rooms_new">新しい待機室を作る</string>
+    <string name="crew5_rooms_done_today">今日はすでにクルーランをしました。クルーを移っても1日1回なので、新しい待機室は明日0:00(韓国時間)から開けます。</string>
+
+    <!-- 03 · 06 ラン作成 -->
+    <string name="crew5_create_header">ランを作る</string>
+    <string name="crew5_create_title">一緒に走る準備</string>
+    <string name="crew5_create_sub">クルー最大 %1$d人と一緒に走ります。</string>
+    <string name="crew5_create_name">ラン名</string>
+    <string name="crew5_create_name_hint">例) 川沿いの仕事帰りラン</string>
+    <string name="crew5_create_name_count">%1$d / %2$d</string>
+    <string name="crew5_create_name_invalid">ラン名は1〜%1$d文字で入力してください。</string>
+    <string name="crew5_create_course">一緒に走るコース</string>
+    <string name="crew5_create_pick_course">コースを選ぶ</string>
+    <string name="crew5_create_other_course">別のコースを選ぶ</string>
+    <string name="crew5_create_scope">待機室の公開範囲</string>
+    <string name="crew5_create_scope_value">%1$s クルー</string>
+    <string name="crew5_create_contribution">自分のシューズのクルー耐久度への貢献</string>
+    <string name="crew5_create_contribution_sub">最大 %1$d × Lv.%2$d ボーナス %3$s</string>
+    <string name="crew5_create_contribution_none">待機室でシューズを選ぶと表示されます</string>
+    <string name="crew5_create_open">待機室を開く</string>
+    <string name="crew5_create_failed_done">今日はすでにクルーランをしたため、新しい待機室を開けません。</string>
+    <string name="crew5_create_failed_network">接続が不安定です。入力はそのままです — もう一度押してください。</string>
+    <string name="crew5_create_failed">待機室を開けませんでした。%1$s</string>
+    <string name="crew5_create_note">待機室を開いただけでは今日のクルーランは使われません。進行役が出発すると始まります。</string>
+
+    <!-- 04 · 05 · 09 コース -->
+    <string name="crew5_courses_header">コース選択</string>
+    <string name="crew5_courses_mine">自分のコース</string>
+    <string name="crew5_courses_shared">共有コース</string>
+    <string name="crew5_courses_item">%1$s km · %2$s</string>
+    <string name="crew5_courses_item_km">%1$s km</string>
+    <string name="crew5_courses_current">現在のコース</string>
+    <string name="crew5_courses_empty_title">保存したコースがありません</string>
+    <string name="crew5_courses_empty_body">共有コースから選ぶか、ランタブのおすすめコースでコースを作れます。</string>
+    <string name="crew5_courses_shared_failed">共有コースを読み込めませんでした</string>
+    <string name="crew5_courses_loading">共有コースを読み込み中です</string>
+    <string name="crew5_course_detail_meta">%1$s km · 白い点がスタート地点です</string>
+    <string name="crew5_course_pick">このコースで走る</string>
+    <string name="crew5_course_other">別のコースを見る</string>
+
+    <!-- 10 ~ 23 待機室 -->
+    <string name="crew5_lobby_header">クルー待機室</string>
+    <string name="crew5_lobby_sub">%1$s · %2$s</string>
+    <string name="crew5_lobby_members">一緒に走るクルー</string>
+    <string name="crew5_lobby_ready_chip">%1$d/%2$d 準備</string>
+    <string name="crew5_lobby_more">+%1$d</string>
+    <string name="crew5_lobby_all">すべて見る</string>
+    <string name="crew5_lobby_invite">一緒に走ろう</string>
+    <string name="crew5_lobby_me">自分</string>
+    <string name="crew5_lobby_pool">クルー耐久度</string>
+    <string name="crew5_lobby_pool_total">/ %1$s</string>
+    <string name="crew5_lobby_goal">クルー目標</string>
+    <string name="crew5_lobby_goal_next">→ Lv.%1$d</string>
+    <string name="crew5_lobby_goal_max">最高</string>
+    <string name="crew5_lobby_course">クルーコース</string>
+    <string name="crew5_lobby_course_none">コースなし</string>
+    <string name="crew5_lobby_course_expand">コースを大きく見る</string>
+    <string name="crew5_lobby_shoe">自分のシューズ</string>
+    <string name="crew5_lobby_shoe_none">装備中のシューズで走ります</string>
+    <string name="crew5_lobby_shoe_change">シューズ変更</string>
+    <string name="crew5_lobby_start">%1$d人で出発</string>
+    <string name="crew5_lobby_call">クルーを呼ぶ</string>
+    <string name="crew5_lobby_ready">準備完了</string>
+    <string name="crew5_lobby_waiting_host">進行役が出発すると一緒に始まります</string>
+    <string name="crew5_lobby_cancel_ready">準備を取り消す</string>
+    <string name="crew5_lobby_menu">待機室メニュー</string>
+    <string name="crew5_lobby_menu_roster">参加者の管理</string>
+    <string name="crew5_lobby_menu_course">コースを変える</string>
+    <string name="crew5_lobby_menu_rules">クルーランのルール</string>
+    <string name="crew5_lobby_menu_leave">待機室を出る</string>
+    <string name="crew5_lobby_rules">クルーランのルールを見る</string>
+    <string name="crew5_lobby_done_today">今日はすでにクルーランをしたため、この待機室では準備できません。</string>
+    <string name="crew5_lobby_offline">サーバーにつながっていません。自動で再接続します。</string>
+    <string name="crew5_lobby_reconnect">今すぐ再接続</string>
+    <string name="crew5_lobby_failed">今の操作は処理されませんでした。もう一度押してください。</string>
+    <string name="crew5_lobby_loading">待機室を読み込み中です</string>
+
+    <!-- 24 シューズ -->
+    <string name="crew5_shoes_title">一緒に走る自分のシューズ</string>
+    <string name="crew5_shoes_max">最大耐久度 %1$d</string>
+    <string name="crew5_shoes_eff">効率</string>
+    <string name="crew5_shoes_comfort">履き心地</string>
+    <string name="crew5_shoes_dur">耐久度</string>
+    <string name="crew5_shoes_add">出発時に共用プールに加算されます</string>
+    <string name="crew5_shoes_confirm">このシューズで準備</string>
+    <string name="crew5_shoes_empty">クルーランで履けるシューズがありません。装備中のシューズで走ります。</string>
+    <string name="crew5_shoes_failed">シューズを変更できませんでした。選んだシューズはそのままです。</string>
+
+    <!-- 07 · 08 · 25 コースシート -->
+    <string name="crew5_course_view_title">一緒に走るコース</string>
+    <string name="crew5_course_change_title">コースを変える</string>
+    <string name="crew5_course_change_note">変えると進行役以外の全員の準備が解除されます。新しいコースを見てもう一度準備します。</string>
+    <string name="crew5_course_change_pick">別のコースを選ぶ</string>
+    <string name="crew5_course_change_failed">コースを変更できませんでした。現在のコースはそのままです。</string>
+    <string name="crew5_course_updated_title">コースが変わりました</string>
+    <string name="crew5_course_updated_body">進行役が一緒に走るコースを %1$s に変更しました。コースを確認してもう一度準備してください。</string>
+    <string name="crew5_course_updated_ok">コースを確認</string>
+    <string name="crew5_course_loading">ルートを読み込み中です</string>
+
+    <!-- 26 ~ 30 シート -->
+    <string name="crew5_stamina_title">今日のクルー耐久度</string>
+    <string name="crew5_stamina_contributors">今日貢献したクルー</string>
+    <string name="crew5_stamina_contributors_n">%1$d人</string>
+    <string name="crew5_stamina_mine">出発すると自分が加える耐久度</string>
+    <string name="crew5_stamina_drain">走る人ごとに</string>
+    <string name="crew5_stamina_drain_value">毎分 %1$s</string>
+    <string name="crew5_stamina_reset">リセット</string>
+    <string name="crew5_stamina_reset_value">毎日 0:00 (韓国時間)</string>
+    <string name="crew5_stamina_note">同じクルーのすべての待機室で共有します。シューズの残り耐久度ではなく、最大耐久度にレベル効果を加えて入れます。自分のシューズはすり減りません。</string>
+    <string name="crew5_stamina_fresh">今日はまだ誰も出発していません (0 / 0)</string>
+    <string name="crew5_goal_sheet_title">クルー目標 · レベル</string>
+    <string name="crew5_goal_sheet_level">現在 Lv.%1$d</string>
+    <string name="crew5_goal_sheet_new">まだクルーランの記録がありません</string>
+    <string name="crew5_goal_sheet_total">累計 %1$s km</string>
+    <string name="crew5_goal_sheet_next">Lv.%1$d まで %2$s km</string>
+    <string name="crew5_goal_sheet_effects">クルー耐久度 +%1$s%% · クルー報酬 +%2$s%%</string>
+    <string name="crew5_goal_sheet_note">クルー各自の有効なクルーラン距離が積み上がります。待機室のコース距離とは別の目標です。レベルは下がりません。</string>
+    <string name="crew5_goal_sheet_all">すべてのレベルを見る</string>
+    <string name="crew5_levels_title">レベル 1 ~ 20</string>
+    <string name="crew5_levels_level">レベル</string>
+    <string name="crew5_levels_km">累計距離</string>
+    <string name="crew5_levels_stamina">耐久度</string>
+    <string name="crew5_levels_reward">報酬</string>
+    <string name="crew5_levels_note">累計距離はそのレベルになるためのクルー全体の距離です(段階ごとに足す距離ではありません)。</string>
+    <string name="crew5_bonus_title">人数ボーナス表</string>
+    <string name="crew5_bonus_people">人数</string>
+    <string name="crew5_bonus_value">ボーナス</string>
+    <string name="crew5_bonus_n">%1$d人</string>
+    <string name="crew5_bonus_note">同じクルーで、出発時と%1$d分後の両方に%2$dm以内にいる、電話認証済みの人だけを数えます。0〜1人はボーナスなし。レベルボーナスは別に加算します。</string>
+
+    <!-- 14 · 15 · 31 名簿 -->
+    <string name="crew5_roster_host_title">参加者の管理</string>
+    <string name="crew5_roster_member_title">一緒に走るクルー</string>
+    <string name="crew5_roster_ready">準備完了</string>
+    <string name="crew5_roster_waiting">準備中</string>
+    <string name="crew5_roster_count">%1$d人 · 準備 %2$d人</string>
+    <string name="crew5_kick_title">%1$sさんを外しますか?</string>
+    <string name="crew5_kick_body">この待機室から外れるだけで、クルーは抜けません。外した人はこの待機室に戻れません。</string>
+    <string name="crew5_kick_go">外す</string>
+
+    <!-- 21 · 32 退出 -->
+    <string name="crew5_leave_title">待機室を出ますか?</string>
+    <string name="crew5_leave_host_body">まだ出発前です。出ると先に入ったクルーが進行を引き継ぎ、誰もいなければ待機室は閉じます。</string>
+    <string name="crew5_leave_member_body">出発前なので今日のクルーランは使われません。別の待機室に入るか、新しく開けます。</string>
+    <string name="crew5_leave_stay">準備を続ける</string>
+    <string name="crew5_leave_go">出る</string>
+
+    <!-- 33 · 34 · 40 出発 -->
+    <string name="crew5_start_title">一緒に出発しますか?</string>
+    <string name="crew5_start_shoe">自分のシューズ</string>
+    <string name="crew5_start_people">出発人数</string>
+    <string name="crew5_start_people_n">%1$d人</string>
+    <string name="crew5_start_bonus">予想合計ボーナス</string>
+    <string name="crew5_start_bonus_value">人数 +%1$s%% · Lv.%2$d +%3$s%% = +%4$s%%</string>
+    <string name="crew5_start_add">自分が加える耐久度</string>
+    <string name="crew5_start_go">一緒に出発</string>
+    <string name="crew5_partial_title">準備した%1$d人で出発しますか?</string>
+    <string name="crew5_partial_body">準備中の%1$d人は今回の出発から外れ、ボーナスと貢献にも含まれません。</string>
+    <string name="crew5_partial_go">準備した%1$d人で出発</string>
+    <string name="crew5_partial_wait">もう少し待つ</string>
+    <string name="crew5_unverified_title">人数ボーナスからだけ外れます</string>
+    <string name="crew5_unverified_ok">確認して準備</string>
+    <string name="crew5_starting">出発の合図を合わせています</string>
+
+    <!-- 61 · 68 ~ 70 例外 -->
+    <string name="crew5_failed_title">待機室を読み込めませんでした</string>
+    <string name="crew5_failed_body">接続を確認して再読み込みしてください。待機室の状態はそのままです。</string>
+    <string name="crew5_removed_title">この待機室から出ました</string>
+    <string name="crew5_removed_body">進行役が外したか、入れない待機室です。クルーには残っています。</string>
+    <string name="crew5_closed_title">待機室が閉じました</string>
+    <string name="crew5_closed_body">全員が出たか、長く空いていた待機室です。別の待機室に入るか新しく開いてください。</string>
+    <string name="crew5_full_title">待機室が満員です</string>
+    <string name="crew5_full_body">1つの待機室には%1$d人まで参加できます。別の待機室を見るか新しく開いてください。</string>
+    <string name="crew5_started_title">すでに出発した待機室です</string>
+    <string name="crew5_started_body">出発したランに途中から加わることはできません。別の待機室を見るか新しく開いてください。</string>
+    <string name="crew5_missed_title">出発に間に合いませんでした</string>
+    <string name="crew5_missed_body">待機室を離れている間にみんなが出発しました。今日のクルーランは使われていません。</string>
+    <string name="crew5_sign_in_title">ログインが必要です</string>
+    <string name="crew5_other_rooms">別の待機室を見る</string>
+</resources>

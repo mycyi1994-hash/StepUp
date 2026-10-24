@@ -325,6 +325,10 @@ data class CrewRunResultRow(
     @SerialName("pool_usage") val poolUsage: CrewPoolUsageRow = CrewPoolUsageRow(),
     val xp: CrewXpRow = CrewXpRow(),
     @SerialName("next_eligible_at") val nextEligibleAt: String? = null,
+    /** 그 러닝의 대기실 이름 · 코스(0072 — 출발 때 적은 값). 예전 방이면 null */
+    @SerialName("party_name") val partyName: String? = null,
+    @SerialName("course_name") val courseName: String? = null,
+    @SerialName("course_km") val courseKm: Double? = null,
 ) {
     fun toDomain() = CrewRunOutcome(
         settled = settled, crewId = crewId, crewName = crewName.orEmpty(), verdict = verdict.orEmpty(), reason = reason.orEmpty(),
@@ -334,5 +338,6 @@ data class CrewRunResultRow(
         contribution = poolUsage.contribution, consumed = poolUsage.consumed, activeSec = poolUsage.activeSec,
         pool = poolUsage.pool?.toDomain(), xpM = xp.distanceM, xpApplied = xp.applied, levelBefore = xp.levelBefore,
         levelAfter = xp.levelAfter, runKm = xp.runKm, nextLevelKm = xp.nextLevelKm, nextEligibleAtMs = nextEligibleAt.ms(),
+        partyName = partyName?.takeIf { it.isNotBlank() }, courseName = courseName?.takeIf { it.isNotBlank() }, courseKm = courseKm,
     )
 }

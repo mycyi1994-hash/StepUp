@@ -38,6 +38,57 @@ data class PartyStateRow(
     /** 서버의 지금. 폰 시계가 틀려도 카운트다운이 맞게 이것과 견준다. */
     @SerialName("server_now") val serverNow: String,
     val members: List<PartyMemberRow> = emptyList(),
+    /** 대기실 이름(0072) — 예전 방(party_open) · 번개러닝은 null */
+    val name: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    /** 함께 달릴 코스(0072) — 경로는 판이 바뀔 때만 [PartyApi.course] 로 받는다 */
+    @SerialName("course_name") val courseName: String? = null,
+    @SerialName("course_km") val courseKm: Double? = null,
+    /** 코스 판 — 진행자가 코스를 바꿀 때마다 오른다. 코스 없는 방은 0 */
+    @SerialName("course_rev") val courseRev: Int = 0,
+)
+
+/** 열린 대기실 하나 — `party_rooms` 의 rooms 한 줄(0072) */
+@Serializable
+data class PartyRoomRow(
+    val id: Long,
+    val name: String? = null,
+    /** LOBBY · COUNTDOWN · RUNNING(목록에는 열린 방과 내가 들어간 방만 온다) */
+    val status: String = "LOBBY",
+    @SerialName("host_id") val hostId: String = "",
+    @SerialName("host_name") val hostName: String = "",
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("starts_at") val startsAt: String? = null,
+    @SerialName("members_count") val membersCount: Int = 0,
+    @SerialName("ready_count") val readyCount: Int = 0,
+    val capacity: Int = 20,
+    @SerialName("course_name") val courseName: String? = null,
+    @SerialName("course_km") val courseKm: Double? = null,
+    @SerialName("course_rev") val courseRev: Int = 0,
+    @SerialName("course_track") val courseTrack: String? = null,
+    /** 내가 들어가 있는 방 */
+    val mine: Boolean = false,
+    /** 진행자가 나를 내보낸 방 — 다시 들어갈 수 없다 */
+    val kicked: Boolean = false,
+)
+
+/** 크루의 열린 대기실 목록 — `party_rooms`(0072) */
+@Serializable
+data class PartyRoomsRow(
+    @SerialName("server_now") val serverNow: String,
+    val capacity: Int = 20,
+    /** 오늘(한국 날짜) 크루 러닝을 이미 했다 — 어느 크루에서든 */
+    @SerialName("done_today") val doneToday: Boolean = false,
+    val rooms: List<PartyRoomRow> = emptyList(),
+)
+
+/** 방의 코스 — `party_course`(0072). 경로는 "위도,경도;위도,경도" */
+@Serializable
+data class PartyCourseRow(
+    @SerialName("course_rev") val courseRev: Int = 0,
+    @SerialName("course_name") val courseName: String? = null,
+    @SerialName("course_km") val courseKm: Double? = null,
+    @SerialName("course_track") val courseTrack: String? = null,
 )
 
 /**
@@ -64,6 +115,57 @@ class PartyApi(
             put("p_post", flashPostId ?: JsonNull)
         },
     ) { it.trim().toLongOrNull() }
+
+    /** 크루의 열린 대기실 목록(0072) — 크루원만. 보기만 하고 들어가지 않는다 */
+    suspend fun rooms(crewId: String): ServerResult<PartyRoomsRow> = rpc(
+        "party_rooms",
+        jsonBody { put("p_crew", crewId) },
+    ) { serverJson.decodeFromString<PartyRoomsRow>(it) }
+
+    /**
+     * 이름 · 코스를 붙여 새 대기실을 연다(0072) — 연 사람이 진행자. [requestKey] 가 같으면(답을 잃고 다시 보냄) 서버는 그때 연 방을 돌려준다.
+     */
+    suspend fun create(
+        crewId: String,
+        name: String,
+        courseName: String,
+        courseKm: Double,
+        courseTrack: String,
+        requestKey: String,
+    ): ServerResult<Long> = rpc(
+        "party_create",
+        jsonBody {
+            put("p_crew", crewId)
+            put("p_name", name)
+            put("p_course_name", courseName)
+            put("p_course_km", courseKm)
+            put("p_course_track", courseTrack)
+            put("p_request", requestKey)
+        },
+    ) { it.trim().toLongOrNull() }
+
+    /** 고른 대기실에 들어간다(0072) — 이미 들어가 있으면 그대로 */
+    suspend fun join(partyId: Long): ServerResult<Long> = rpc(
+        "party_join",
+        jsonBody { put("p_party", partyId) },
+    ) { it.trim().toLongOrNull() }
+
+    /** 방의 코스 경로(0072) — 방 사람만 */
+    suspend fun course(partyId: Long): ServerResult<PartyCourseRow> = rpc(
+        "party_course",
+        jsonBody { put("p_party", partyId) },
+    ) { serverJson.decodeFromString<PartyCourseRow>(it) }
+
+    /** 진행자 — 코스를 바꾼다(0072). 새 코스 판이 돌아온다. 진행자를 뺀 모두의 준비가 풀린다 */
+    suspend fun setCourse(partyId: Long, courseName: String, courseKm: Double, courseTrack: String): ServerResult<Int> = rpc(
+        "party_set_course",
+        jsonBody {
+            put("p_party", partyId)
+            put("p_course_name", courseName)
+            put("p_course_km", courseKm)
+            put("p_course_track", courseTrack)
+        },
+    ) { it.trim().toIntOrNull() }
 
     suspend fun state(partyId: Long): ServerResult<PartyStateRow> = rpc(
         "party_state",
@@ -93,6 +195,15 @@ class PartyApi(
     /** 방장 — 준비한 사람들끼리 출발. 몇 초 뒤 모두 같이 출발한다. */
     suspend fun start(partyId: Long): ServerResult<Unit> =
         rpc("party_start", jsonBody { put("p_party", partyId) }) { }
+
+    /** 진행자 — 내가 본 코스 판으로 출발(0072). 그사이 코스가 바뀌었으면 서버가 course_changed 로 거절한다 */
+    suspend fun startRev(partyId: Long, courseRev: Int): ServerResult<Unit> = rpc(
+        "party_start_rev",
+        jsonBody {
+            put("p_party", partyId)
+            put("p_course_rev", courseRev)
+        },
+    ) { }
 
     /** 달리는 동안의 위치 보고 */
     suspend fun ping(partyId: Long, lat: Double?, lng: Double?): ServerResult<Unit> = rpc(
