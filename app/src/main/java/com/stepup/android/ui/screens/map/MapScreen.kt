@@ -50,7 +50,6 @@ import com.stepup.android.R
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.drawText
 import com.stepup.android.data.remote.TerritoryCell
@@ -169,10 +168,7 @@ fun MapScreen(
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                com.stepup.android.ui.components.CircleIconButton(
-                    Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack, size = 44.dp,
-                    modifier = Modifier.testTag("map-back"),
-                )
+                com.stepup.android.ui.components.BackButton(onBack, size = 44.dp, modifier = Modifier.testTag("map-back"))
                 Spacer(Modifier.width(4.dp))
                 Box(
                     Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(50)).background(c.tabBar).padding(horizontal = 18.dp),

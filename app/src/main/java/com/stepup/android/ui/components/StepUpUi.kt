@@ -82,6 +82,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -100,6 +101,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.stepup.android.R
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.LocalMotion
@@ -596,6 +598,24 @@ fun SmallButton(
 }
 
 /**
+ * 뒤로(원 버튼 · 뒤로 소리) — 화면 머리의 뒤로는 모두 이것이다([NavHeader] 도). 화면이 화살표를 따로 그리지 않는다
+ * (tools/check_design_contract.py 가 화면 파일의 ArrowBack 을 막는다). 기본 낭독 이름은 "뒤로".
+ */
+@Composable
+fun BackButton(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onPhoto: Boolean = false,
+    size: Dp = 36.dp,
+    contentDescription: String? = null,
+) {
+    CircleIconButton(
+        Icons.AutoMirrored.Rounded.ArrowBack, contentDescription ?: stringResource(R.string.cd_back), onBack,
+        modifier = modifier, size = size, onPhoto = onPhoto, cue = FeedbackCue.Back,
+    )
+}
+
+/**
  * 원 버튼 — 머리의 뒤로 · 지도 · 글쓰기(36), 옆 공유(54). 회색 채움 원, [onPhoto] 면 유리 원(흰 15% + 위 빛 한 줄).
  * 보이는 크기가 작아도 터치 영역은 48.
  */
@@ -794,10 +814,9 @@ fun NavHeader(
             )
         }
         if (onBack != null) {
-            CircleIconButton(
-                Icons.AutoMirrored.Rounded.ArrowBack, backDescription, onBack,
+            BackButton(
+                onBack, contentDescription = backDescription, onPhoto = onPhoto,
                 modifier = Modifier.align(Alignment.CenterStart).then(if (backTag != null) Modifier.testTag(backTag) else Modifier),
-                onPhoto = onPhoto, cue = FeedbackCue.Back,
             )
         }
         Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically, content = actions)

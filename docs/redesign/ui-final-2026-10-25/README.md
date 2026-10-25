@@ -69,7 +69,10 @@
 
 ## 확인
 
-- 로컬: `:app:compileDebugKotlin` · `:app:compileDebugAndroidTestKotlin` · `:app:testDebugUnitTest` · `:app:lintDebug` · `scripts/check-strings.py` · `tools/check_experience_assets.py`.
+- 로컬: `:app:compileDebugKotlin` · `:app:compileDebugAndroidTestKotlin` · `:app:testDebugUnitTest` · `:app:lintDebug` · `:app:assembleQa` · `:app:assembleRelease` ·
+  `scripts/check-strings.py` · `scripts/check-coaching-twin.py` · `tools/check_design_contract.py` · `tools/check_experience_assets.py`.
+- `tools/check_design_contract.py` 는 새 공용 머리(`NavHeader` · `BackButton`)와 예전 버튼의 공용 주 · 보조 버튼 위임을 인정하게 고쳤다.
+  화면 파일이 뒤로 화살표(`ArrowBack`)를 직접 그리거나 예전 버튼이 크기를 따로 정하면 그대로 막는다(일부러 넣어 보아 걸리는 것을 확인).
 - 화면은 Robolectric 그림으로 시안과 나란히 봤다(홈 · 신발 · 내 정보 · 달리는 중 · 일시정지 · 완료 · 번개 상세 · 참여 완료 · 내 크루). Robolectric 은 글자 줄 높이를 무시해
   숫자 상자가 실제보다 높게 그려진다 — 실제 기기 모습은 PR 의 Experience QA 캡처로 본다.
 - 기기 테스트는 바뀐 태그 · 흐름에 맞췄다(홈 `home-*` · 신발 카드 `shoe-card-*` · 길게 눌러 종료 `run-finish` 길게 누름 · 내 정보 순서 · 글쓰기 숫자 조절 등).

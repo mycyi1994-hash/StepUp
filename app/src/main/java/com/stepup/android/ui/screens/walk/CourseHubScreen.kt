@@ -64,7 +64,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
 import androidx.compose.ui.semantics.heading
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Toll
@@ -72,6 +71,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.fillMaxHeight
+import com.stepup.android.ui.components.BackButton
 import com.stepup.android.ui.components.BottomActionBar
 import com.stepup.android.ui.components.CircleIconButton
 import com.stepup.android.ui.components.GroupHeader
@@ -201,8 +201,7 @@ fun CourseHubScreen(
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             // 머리 — ← · "러닝 코스"(시안 courses) → 세그먼트 선택 · 만들기 · 게시판
             Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
-                CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack,
-                    modifier = Modifier.align(Alignment.CenterStart).testTag("kit-back"))
+                BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart).testTag("kit-back"))
                 Text(stringResource(R.string.courses_hub_title), style = StepUpUi.type.navTitle, color = StepUpUi.colors.label,
                     modifier = Modifier.align(Alignment.Center).semantics { heading() }.testTag("courses-title"))
             }

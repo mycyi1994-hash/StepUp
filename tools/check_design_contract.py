@@ -90,22 +90,27 @@ for name in ('Language', 'Theme', 'NotificationSettings', 'Privacy', 'Support', 
     if not any(marker in path.read_text(encoding='utf-8') for marker in ('DetailPage(', 'BluePage(')):
         errors.append(f'{path.name}: use the fixed shared detail page')
 notifications = (UI/'screens/notifications/NotificationsScreen.kt').read_text(encoding='utf-8')
+# UI 최종 통합안(2026-10-25) — 새 공용 부품(components/StepUpUi.kt)의 머리(NavHeader) · 뒤로(BackButton)도 공용 머리다.
+# 시안대로 머리를 지도 · 사진 위에 띄운 화면이 이것을 쓴다. 화면이 화살표를 따로 그리는 것(ArrowBack)은 그대로 막는다.
+UNIFIED_CHROME = ('NavHeader(', 'BackButton(')
 for relative in ('map/MapScreen.kt', 'profile/HistoryMapScreen.kt'):
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
-    if 'SecondaryHeader(' not in detail or 'ArrowBack' in detail:
+    shared = 'SecondaryHeader(' in detail or any(marker in detail for marker in UNIFIED_CHROME)
+    if not shared or 'ArrowBack' in detail:
         errors.append(f'{relative}: map chrome must use the shared detail header')
 for relative in ('community/RankingScreen.kt', 'profile/AchievementsScreen.kt',
                  'community/FlashRunDetailScreen.kt', 'items/SneakerDexScreen.kt', 'profile/AnalyticsScreen.kt',
                  'items/SneakerDetailScreen.kt', 'market/MarketModelScreen.kt',
                  'community/CrewBoardScreen.kt', 'items/ItemsScreen.kt'):
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
-    if 'DetailPage(' not in detail or 'ArrowBack' in detail:
+    shared = 'DetailPage(' in detail or any(marker in detail for marker in UNIFIED_CHROME)
+    if not shared or 'ArrowBack' in detail:
         errors.append(f'{relative}: use shared detail chrome')
 # 러닝 전체 리메이크(2026-10-02) — 코스 허브 · 크루 러닝 대기실 · 리더보드(2026-10-17)는 러닝 화면 공통 머리(RunTopBar · RunPage, 뒤로 · 공식 로고)를 쓴다.
 # 공용 머리를 쓰는지만 본다 — 화면마다 따로 그린 뒤로 화살표는 여전히 막는다.
 for relative in ('walk/CourseHubScreen.kt', 'community/PartyLobbyScreen.kt', 'leaderboard/LeaderboardScreen.kt'):
     detail = (UI/'screens'/relative).read_text(encoding='utf-8')
-    shared = any(marker in detail for marker in ('DetailPage(', 'RunTopBar(', 'RunPage('))
+    shared = any(marker in detail for marker in ('DetailPage(', 'RunTopBar(', 'RunPage(') + UNIFIED_CHROME)
     if not shared or 'ArrowBack' in detail:
         errors.append(f'{relative}: use shared detail or run chrome')
 # 알림·공지 v1: 공통 상세 머리(SecondaryHeader — DetailPage 와 같은 것) 아래에 고정 메뉴(내 알림 · 공지)와
@@ -125,6 +130,9 @@ if root.count('MainHeader(') != 1:
 controls = (UI/'components/Components.kt').read_text(encoding='utf-8')
 for name in ('VoltButton', 'GhostButton'):
     body = controls.split(f'fun {name}(', 1)[1].split('\n/**', 1)[0]
+    # 통합안부터 예전 버튼은 공용 주 · 보조 버튼(StepUpUi.kt — 높이 54 이상, 같은 글자 단계)에 맡긴다. 맡기면 모양을 따로 정하지 않는다
+    if re.search(r'^\s*(PrimaryButton|SecondaryButton)\(', body, re.M) and not re.search(r'\b(height|padding|fontSize)\s*[(=]', body):
+        continue
     for token in ('StepUpDesign.TouchTarget', 'StepUpDesign.SecondaryLabel',
                   'StepUpDesign.SecondaryHorizontalPadding', 'StepUpDesign.SecondaryVerticalPadding'):
         if token not in body:

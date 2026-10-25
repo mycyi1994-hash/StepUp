@@ -21,7 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.IosShare
@@ -60,6 +59,7 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.background.WeatherLayer
 import com.stepup.android.ui.background.currentWeather
 import com.stepup.android.ui.background.rememberPlacePhoto
+import com.stepup.android.ui.components.BackButton
 import com.stepup.android.ui.components.BottomActionBar
 import com.stepup.android.ui.components.ButtonState
 import com.stepup.android.ui.components.CircleIconButton
@@ -118,7 +118,7 @@ fun FlashRunDetailScreen(
     Box(Modifier.fillMaxSize().background(c.background).testTag("flash-detail")) {
         if (post == null) {
             Column(Modifier.fillMaxSize().padding(24.dp)) {
-                CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack)
+                BackButton(onBack)
                 Spacer(Modifier.height(24.dp))
                 Text(stringResource(R.string.community_board_empty), style = StepUpUi.type.body, color = c.secondaryLabel)
             }
@@ -226,8 +226,7 @@ internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, on
     PhotoCard(photo?.painter, colorFilter = photo?.colorFilter, height = 390.dp, radius = 0.dp, modifier = Modifier.testTag("flash-poster")) {
         WeatherLayer(currentWeather())
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack, onPhoto = true,
-                modifier = Modifier.testTag("flash-back"))
+            BackButton(onBack, onPhoto = true, modifier = Modifier.testTag("flash-back"))
             Spacer(Modifier.weight(1f))
             CircleIconButton(Icons.Outlined.IosShare, stringResource(R.string.flash_invite), onShare, onPhoto = true,
                 modifier = Modifier.testTag("flash-share"))
