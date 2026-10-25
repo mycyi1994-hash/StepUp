@@ -84,6 +84,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -1119,6 +1121,10 @@ fun HoldToEndButton(
     enabled: Boolean = true,
     contentDescription: String? = null,
     onHolding: (Boolean) -> Unit = {},
+    /** 가운데 그림 — 없으면 정지 네모(종료). 잠금 풀기는 자물쇠 */
+    icon: ImageVector? = null,
+    /** 짧게 눌렀을 때 읽기 도구가 읽는 이름("길게 눌러 종료해요") */
+    hintLabel: String? = null,
 ) {
     val c = StepUpUi.colors
     val haptic = LocalHapticFeedback.current
@@ -1137,6 +1143,14 @@ fun HoldToEndButton(
             .semantics {
                 role = Role.Button
                 if (contentDescription != null) this.contentDescription = contentDescription
+                // 읽기 도구 · 기기 검사 — 두 번 눌러 길게(종료), 두 번 눌러(안내)
+                if (enabled) {
+                    onClick(label = hintLabel) { hint(); true }
+                    onLongClick(label = contentDescription) {
+                        if (!done) { done = true; feedback?.play(FeedbackCue.Finish); end() }
+                        true
+                    }
+                }
             }
             .pointerInput(enabled) {
                 if (!enabled) return@pointerInput
@@ -1181,10 +1195,10 @@ fun HoldToEndButton(
                 .background(inner),
             contentAlignment = Alignment.Center,
         ) {
-            if (done) {
-                Icon(Icons.Rounded.Check, null, tint = glyph, modifier = Modifier.size(24.dp))
-            } else {
-                Box(Modifier.size(16.dp).clip(RoundedCornerShape(2.dp)).background(glyph))
+            when {
+                done -> Icon(Icons.Rounded.Check, null, tint = glyph, modifier = Modifier.size(24.dp))
+                icon != null -> Icon(icon, null, tint = glyph, modifier = Modifier.size(22.dp))
+                else -> Box(Modifier.size(16.dp).clip(RoundedCornerShape(2.dp)).background(glyph))
             }
         }
     }

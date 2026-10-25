@@ -48,4 +48,15 @@
     <string name="profile_stat_longest">최장 거리</string>
     <string name="profile_row_edit">프로필 편집</string>
     <string name="profile_row_records">기록 보기</string>
+    <string name="run_lock">화면 잠금</string>
+    <string name="run_lock_title">화면이 잠겼어요</string>
+    <string name="run_unlock_hold">길게 눌러 풀기</string>
+    <string name="run_map_short">지도</string>
+    <string name="run_hold_end">길게 눌러 종료</string>
+    <string name="run_hold_end_hint">길게 눌러 종료해요</string>
+    <string name="run_holding">계속 누르고 있어요</string>
+    <string name="run_hold_tip">손을 떼면 계속 달려요 · 1초면 종료</string>
+    <string name="run_resume_short">재개</string>
+    <string name="run_share_record">기록 공유</string>
+    <string name="run_discard_from_details">저장하지 않고 종료</string>
 </resources>

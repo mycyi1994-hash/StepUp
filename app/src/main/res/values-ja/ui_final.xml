@@ -48,4 +48,15 @@
     <string name="profile_stat_longest">最長距離</string>
     <string name="profile_row_edit">プロフィール編集</string>
     <string name="profile_row_records">記録を見る</string>
+    <string name="run_lock">画面ロック</string>
+    <string name="run_lock_title">画面がロックされています</string>
+    <string name="run_unlock_hold">長押しで解除</string>
+    <string name="run_map_short">地図</string>
+    <string name="run_hold_end">長押しで終了</string>
+    <string name="run_hold_end_hint">長押しで終了します</string>
+    <string name="run_holding">そのまま押し続けて</string>
+    <string name="run_hold_tip">離すとランを続けます · 1秒で終了</string>
+    <string name="run_resume_short">再開</string>
+    <string name="run_share_record">記録を共有</string>
+    <string name="run_discard_from_details">保存せずに終了</string>
 </resources>

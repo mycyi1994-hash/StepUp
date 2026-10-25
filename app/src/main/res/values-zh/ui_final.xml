@@ -48,4 +48,15 @@
     <string name="profile_stat_longest">最长距离</string>
     <string name="profile_row_edit">编辑资料</string>
     <string name="profile_row_records">查看记录</string>
+    <string name="run_lock">锁定屏幕</string>
+    <string name="run_lock_title">屏幕已锁定</string>
+    <string name="run_unlock_hold">长按解锁</string>
+    <string name="run_map_short">地图</string>
+    <string name="run_hold_end">长按结束</string>
+    <string name="run_hold_end_hint">长按即可结束</string>
+    <string name="run_holding">请继续按住</string>
+    <string name="run_hold_tip">松开继续跑步 · 按住 1 秒结束</string>
+    <string name="run_resume_short">继续</string>
+    <string name="run_share_record">分享记录</string>
+    <string name="run_discard_from_details">不保存并结束</string>
 </resources>

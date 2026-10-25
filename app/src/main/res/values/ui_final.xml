@@ -48,4 +48,15 @@
     <string name="profile_stat_longest">Longest run</string>
     <string name="profile_row_edit">Edit profile</string>
     <string name="profile_row_records">View records</string>
+    <string name="run_lock">Lock screen</string>
+    <string name="run_lock_title">Screen locked</string>
+    <string name="run_unlock_hold">Hold to unlock</string>
+    <string name="run_map_short">Map</string>
+    <string name="run_hold_end">Hold to finish</string>
+    <string name="run_hold_end_hint">Hold to finish your run</string>
+    <string name="run_holding">Keep holding</string>
+    <string name="run_hold_tip">Let go to keep running · 1 second to finish</string>
+    <string name="run_resume_short">Resume</string>
+    <string name="run_share_record">Share</string>
+    <string name="run_discard_from_details">End without saving</string>
 </resources>
