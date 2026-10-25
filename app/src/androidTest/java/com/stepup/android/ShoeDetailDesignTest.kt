@@ -249,6 +249,10 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
+        // 신발 관리는 ⋯ 안에만 있지 않다 — 본문 아래 수리하기 · 판매하기 · 신발 기록이 바로 보인다(사용자 "수리하는 곳을 찾을 수가 없었음")
+        compose.onNodeWithTag("shoe-care-repair", useUnmergedTree = true).assertExists().assertHasClickAction()
+        compose.onNodeWithTag("shoe-care-sell", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("shoe-care-record", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
         assertCell("efficiency", "+0.45%")
         assertCell("comfort", "7.5%")

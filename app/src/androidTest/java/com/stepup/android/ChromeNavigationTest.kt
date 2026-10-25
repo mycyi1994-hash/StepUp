@@ -147,6 +147,8 @@ class ChromeNavigationTest {
                 if (tab == R.string.tab_community) {
                     // 첫 화면은 번개러닝 세그먼트 — 이번 주 "모두 보기"는 번개만 모은 목록(뒤로 오면 그대로)
                     compose.openCommunityMeetups()
+                    // "이번 주 · 모두 보기"는 사진 포스터 아래 — 낮은 화면에서는 목록을 내려야 보인다
+                    compose.onNodeWithTag("community-meetups").performScrollToNode(hasTestTag("community-all-meetups"))
                     awaitVisible("community-all-meetups")
                     compose.onNodeWithTag("community-all-meetups").assertIsDisplayed().performClick()
                     compose.waitForIdle()
