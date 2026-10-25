@@ -186,8 +186,8 @@ internal fun MeetupsContent(
                     items(week, key = { "week-${it.id}" }) { meetup -> MeetupWeekCard(meetup, now, onClick = { onOpenFlash(meetup.id) }) }
                 }
             }
-        } else if (featured != null) {
-            // 이번 주 다른 모임이 없어도 지난 · 다른 모임 목록으로 가는 길은 둔다
+        } else {
+            // 이번 주 다른 모임이 없어도(다가오는 번개가 하나도 없어도) 지난 · 다른 모임 목록으로 가는 길은 둔다
             item {
                 GroupHeader(
                     stringResource(R.string.ui_this_week), action = stringResource(R.string.ui_see_all),
