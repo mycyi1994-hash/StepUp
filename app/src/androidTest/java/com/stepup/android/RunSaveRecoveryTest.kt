@@ -2,6 +2,7 @@ package com.stepup.android
 
 import android.content.Intent
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.stepup.android.core.ServiceLocator
@@ -54,8 +55,8 @@ class RunSaveRecoveryTest {
                     ExperienceProvider { MainScaffold(initialRoute = Routes.RUN) }
                 }
             }
-            compose.onNodeWithTag("run-finish").performClick()
-            compose.onNodeWithTag("run-end-save").performClick()
+            // 자유 러닝은 확인창 없이 길게 눌러 종료한다(UI 최종 통합안 paused) — 길게 누름이 곧 저장이다
+            compose.onNodeWithTag("run-finish").performSemanticsAction(SemanticsActions.OnLongClick)
             compose.waitUntil(10_000) { WalkSessionService.state.value.saveStatus == RunSaveStatus.FAILED }
             // 07 — 자유 러닝은 실패를 창 대신 지도 위 띠와 판 아래 "화면에 머물기"로 한 번 알린다.
             // "화면에 머물기"를 누르면 그 버튼만 숨고, 띠와 다시 저장은 화면에 남는다

@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +34,7 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Map
@@ -63,6 +68,27 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.outlined.IosShare
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.em
+import com.stepup.android.ui.components.BottomActionBar
+import com.stepup.android.ui.components.CircleIconButton
+import com.stepup.android.ui.components.HoldBubble
+import com.stepup.android.ui.components.HoldToEndButton
+import com.stepup.android.ui.components.RoundControl
+import com.stepup.android.ui.components.StatItem
+import com.stepup.android.ui.components.StatRow
+import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.domain.TrackPoint
 import com.stepup.android.ui.components.LocalMapTone
 import com.stepup.android.ui.components.MapTone
@@ -217,42 +243,43 @@ internal class FreeRunColors(
     val ring: Color,
 )
 
+// UI 최종 통합안(2026-10-25) — 러닝 판도 다크블루 · 화이트블루 바닥 한 장, 주 = 블루, 보조 = 회색 채움
 private val FreeDark = FreeRunColors(
-    screen = Color(0xFF05213B), panel = Color(0xFF05213B),
-    label = Color(0xFFAAC3EA), text = Color(0xFFF5F8FF), muted = Color(0xFF7F99C2),
-    primary = Color(0xFF0C59FF), primaryInk = Color.White,
-    slate = Color(0xFF1B3D66), slateEdge = Color(0xFF2B5583), slateInk = Color(0xFFF5F8FF),
-    off = Color(0xFF1B3D66), offInk = Color(0xFFA9B8CF),
-    stopMark = Color(0xFFF26D6D),
+    screen = Color(0xFF070B14), panel = Color(0xFF070B14),
+    label = Color(0xFF969CAA), text = Color.White, muted = Color(0xFF6E7586),
+    primary = Color(0xFF2F6BFF), primaryInk = Color.White,
+    slate = Color(0xFF202736), slateEdge = Color.Transparent, slateInk = Color.White,
+    off = Color(0xFF141A27), offInk = Color(0xFF5D6371),
+    stopMark = Color(0xFFFF453A),
     band = Color(0xFFFDB829), bandInk = Color(0xFF14171D),
-    calmBand = Color(0xE6123D65), calmEdge = Color(0xFF2B5583), calmInk = Color(0xFFF5F8FF),
-    danger = Color(0xFFD93A46), dangerInk = Color.White, dangerText = Color(0xFFFF6B6B),
-    chip = Color(0xE605213B), chipIcon = Color(0xFF19F52E), controlEdge = Color(0xFF2B5583),
-    ring = Color(0x5548D9FA),
+    calmBand = Color(0xF20E1424), calmEdge = Color.Transparent, calmInk = Color.White,
+    danger = Color(0xFFFF453A), dangerInk = Color.White, dangerText = Color(0xFFFF453A),
+    chip = Color(0xE60E1424), chipIcon = Color(0xFF32D74B), controlEdge = Color.Transparent,
+    ring = Color(0x552F6BFF),
 )
 
 private val FreeLight = FreeRunColors(
-    screen = Color(0xFFF5F8FF), panel = Color.White,
-    label = Color(0xFF4A5F84), text = Color(0xFF0B1E3F), muted = Color(0xFF6A7C9C),
-    primary = Color(0xFF0754FF), primaryInk = Color.White,
-    slate = Color(0xFFE6EEFC), slateEdge = Color(0xFFC3D3EE), slateInk = Color(0xFF0B1E3F),
-    off = Color(0xFFC9D3E3), offInk = Color(0xFF6E7D96),
-    stopMark = Color(0xFFE05252),
+    screen = Color(0xFFF2F2F7), panel = Color(0xFFF2F2F7),
+    label = Color(0xFF848489), text = Color.Black, muted = Color(0xFF9C9CA2),
+    primary = Color(0xFF1F5EFF), primaryInk = Color.White,
+    slate = Color(0xFFE3E3E8), slateEdge = Color.Transparent, slateInk = Color.Black,
+    off = Color(0xFFE8E8ED), offInk = Color(0xFFA9A9AE),
+    stopMark = Color(0xFFFF3B30),
     band = Color(0xFFFDB829), bandInk = Color(0xFF14171D),
-    calmBand = Color(0xF2FFFFFF), calmEdge = Color(0xFFC9D8F2), calmInk = Color(0xFF0B1E3F),
-    danger = Color(0xFFD9364A), dangerInk = Color.White, dangerText = Color(0xFFC62337),
-    chip = Color(0xF2FFFFFF), chipIcon = Color(0xFF0E9F1F), controlEdge = Color(0xFFC9D8F2),
-    ring = Color(0x330754FF),
+    calmBand = Color(0xF2FFFFFF), calmEdge = Color.Transparent, calmInk = Color.Black,
+    danger = Color(0xFFFF3B30), dangerInk = Color.White, dangerText = Color(0xFFFF3B30),
+    chip = Color(0xF2FFFFFF), chipIcon = Color(0xFF28B44A), controlEdge = Color.Transparent,
+    ring = Color(0x331F5EFF),
 )
 
 @Composable
 internal fun freeRunColors(): FreeRunColors = if (StepUpColors.dark) FreeDark else FreeLight
 
-/** 자유 러닝 경로 — 형광 초록(시안 4번) */
-internal val FreeRunRoute = Color(0xFF19F52E)
+/** 자유 러닝 경로 — 달린 길은 블루 실선(UI 최종 통합안 2026-10-25, 예전 형광 초록) */
+internal val FreeRunRoute = Color(0xFF2F6BFF)
 
-/** 경로 둘레 — 밝은 길 위에서도 초록 선이 또렷하게 남색 테 */
-internal val FreeRunRouteOutline = Color(0xE605213B)
+/** 경로 둘레 — 밝은 지도 · 어두운 지도 모두에서 선이 또렷하게 옅은 흰 테 */
+internal val FreeRunRouteOutline = Color(0x99FFFFFF)
 
 // ── 수 ─────────────────────────────────────────────────────────────
 
@@ -301,9 +328,12 @@ internal enum class FreeLiveMode {
 }
 
 /**
- * 자유 러닝의 러닝 중 화면 — 지도 가득 + 아래 작은 기록 판. 상태 없이 그린다.
- * [onPrimary] 는 판의 파란 버튼(러닝 시작 · 일시정지 · 다시 시작 · 다시 저장 · 다시 시도), [onSecondary] 는 옆 버튼
- * (취소 · 종료 · 화면에 머물기 · 돌아가기). 저장 중에는 버튼 하나(누를 수 없음)만 둔다.
+ * 자유 러닝의 러닝 중 화면 — UI 최종 통합안(2026-10-25 running · paused · end). 상태 없이 그린다.
+ * 위 ← · 제목 · ⋯ → GPS 한 줄(칩 아님 — 문제가 있으면 그 줄이 문제를 말한다) → 큰 거리(0.00 km) → 둥근 지도 카드 →
+ * 시간 · 페이스 · 속도 → 둥근 컨트롤(달리는 중: 화면 잠금 · 일시정지 · 지도, 멈춤: 길게 눌러 종료 · 재개).
+ * 종료는 1초 길게 누른다([onHoldEnd]) — "러닝을 마칠까요?" 확인창을 두지 않는다. 짧게 누르면 "길게 눌러 종료해요".
+ * [onPrimary] 는 가운데 파란 원(러닝 시작 · 일시정지 · 재개 · 다시 저장 · 다시 시도), [onSecondary] 는 옆
+ * (취소 · 화면에 머물기 · 돌아가기). 저장 중에는 버튼 하나(누를 수 없음)만 둔다.
  */
 @Composable
 internal fun FreeRunLive(
@@ -315,157 +345,327 @@ internal fun FreeRunLive(
     modifier: Modifier = Modifier,
     band: FreeBand = FreeBand.None,
     paused: Boolean = false,
-    /** 위치 권한 없이 시간만 기록 — 칩 글이 "위치 없이 기록 중" */
+    /** 위치 권한 없이 시간만 기록 — GPS 줄이 "위치 꺼짐" */
     noLocation: Boolean = false,
     onDetails: (() -> Unit)? = null,
     onExpandMap: (() -> Unit)? = null,
-    /** 측정 무효 · 속도 오류 띠를 누르면(러닝 정보) */
+    /** 측정 무효 · 속도 오류 줄을 누르면(러닝 정보) */
     onBandTap: (() -> Unit)? = null,
-    /** 위치 기능 꺼짐 · 대략적 위치 띠의 "설정" */
+    /** 위치 기능 꺼짐 · 대략적 위치 줄의 "설정" */
     onBandAction: (() -> Unit)? = null,
-    /** 저장 실패의 "화면에 머물기" — 한 번 누르면 숨는다(띠와 다시 저장은 남는다) */
+    /** 저장 실패의 "화면에 머물기" — 한 번 누르면 숨는다(줄과 다시 저장은 남는다) */
     showSecondary: Boolean = true,
-    /** 과속 띠 — 러닝이 멈추기까지 남은 초 */
+    /** 과속 줄 — 러닝이 멈추기까지 남은 초 */
     overspeedLeft: Int = 0,
+    /** 위 왼쪽 ← — null 이면 두지 않는다 */
+    onBack: (() -> Unit)? = null,
+    /** 멈춘 뒤 1초 길게 눌러 종료 — 저장하고 마친다 */
+    onHoldEnd: () -> Unit = {},
+    /** 위치가 잡혀 있다(GPS 연결됨) · 지금 자리 근처 장소 이름 */
+    gpsOk: Boolean = false,
+    place: String? = null,
 ) {
-    val top: (@Composable () -> Unit)? = when (mode) {
-        FreeLiveMode.Idle, FreeLiveMode.Saving -> null
-        FreeLiveMode.Failed -> {
-            { FreeRunBand(stringResource(R.string.run_free_save_failed), "run-save-error") }
-        }
-        FreeLiveMode.DiscardFailed -> {
-            { FreeRunBand(stringResource(R.string.run_free_delete_failed), "run-discard-failed") }
-        }
-        FreeLiveMode.Live -> liveTop(band, paused, noLocation, onBandTap, onBandAction, overspeedLeft)
+    val live = mode == FreeLiveMode.Live
+    var locked by rememberSaveable { mutableStateOf(false) }
+    // 멈추거나 끝나면 잠금을 푼다 — 멈춘 화면은 잠그지 않는다
+    LaunchedEffect(live, paused) { if (!live || paused) locked = false }
+    val title = when (mode) {
+        FreeLiveMode.Idle -> stringResource(R.string.runflow_free)
+        FreeLiveMode.Saving -> stringResource(R.string.run_saving_title)
+        FreeLiveMode.Live -> stringResource(if (paused) R.string.run_paused_title else R.string.run_free_chip_running)
+        FreeLiveMode.Failed, FreeLiveMode.DiscardFailed -> stringResource(R.string.run_paused_title)
     }
-    FreeRunFrame(
-        rootTag = if (mode == FreeLiveMode.Saving) "run-saving" else "run-live",
-        modifier = modifier,
-        map = map,
-        mapTag = "run-live-map",
-        top = top,
-        onMore = onDetails.takeIf { mode == FreeLiveMode.Idle || mode == FreeLiveMode.Live },
-        moreLabel = stringResource(R.string.run_details),
-        moreTag = "run-details-open",
-        onExpand = onExpandMap.takeIf { mode == FreeLiveMode.Live },
-    ) { compact ->
-        when (mode) {
-            FreeLiveMode.Idle -> {
-                FreeTopRow(numbers, LiveTags, compact)
-                Spacer(Modifier.height(if (compact) 10.dp else 14.dp))
-                FreeButtonRow {
-                    FreeRunButton(stringResource(R.string.home_start_run), onPrimary, Modifier.weight(1.15f).testTag("run-primary-action"),
-                        icon = Icons.Filled.PlayArrow)
-                    FreeRunButton(stringResource(R.string.run_cancel), onSecondary, Modifier.weight(1f).testTag("run-finish"),
-                        kind = FreeButtonKind.Secondary)
+    val titleTag = when {
+        live && band == FreeBand.Paused -> "run-paused-band"
+        live && !paused -> "run-status"
+        else -> null
+    }
+    var tip by remember { mutableStateOf<String?>(null) }
+    // 길게 누르는 중인가 — 말풍선 글을 고른다
+    var heldTip by remember { mutableStateOf(false) }
+    LaunchedEffect(tip) { if (tip != null) { kotlinx.coroutines.delay(2_200); tip = null } }
+    Box(modifier.fillMaxSize()) {
+        FreeRunScaffold(
+            rootTag = if (mode == FreeLiveMode.Saving) "run-saving" else "run-live",
+            title = title, titleTag = titleTag,
+            onBack = onBack.takeIf { mode == FreeLiveMode.Idle || live },
+            onMore = onDetails.takeIf { mode == FreeLiveMode.Idle || live },
+            moreLabel = stringResource(R.string.run_details), moreTag = "run-details-open",
+            status = {
+                when (mode) {
+                    FreeLiveMode.Failed -> FreeStatusLine(stringResource(R.string.run_free_save_failed), "run-save-error", FreeLineKind.Problem)
+                    FreeLiveMode.DiscardFailed -> FreeStatusLine(stringResource(R.string.run_free_delete_failed), "run-discard-failed", FreeLineKind.Problem)
+                    FreeLiveMode.Live -> LiveStatus(band, noLocation, gpsOk, place, onBandTap, onBandAction, overspeedLeft)
+                    else -> if (gpsOk) GpsLine(place) else Unit
                 }
-            }
-            FreeLiveMode.Live -> {
-                FreeTopRow(numbers, LiveTags, compact)
-                FreeHairline(compact)
-                FreeDetailRow(numbers, LiveTags)
-                if (paused) FreeCaption(stringResource(R.string.runflow_pause_body), tag = "run-paused-note")
-                Spacer(Modifier.height(if (compact) 8.dp else 12.dp))
-                FreeButtonRow {
-                    FreeRunButton(
-                        stringResource(if (paused) R.string.run_free_resume else R.string.run_pause), onPrimary,
-                        Modifier.weight(1.15f).testTag("run-primary-action"),
-                        icon = if (paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                    )
-                    FreeRunButton(stringResource(R.string.run_free_stop), onSecondary, Modifier.weight(1f).testTag("run-finish"),
-                        kind = FreeButtonKind.Secondary, stopMark = true)
+            },
+            hero = { DistanceHero(numbers.distance, LiveTags.distance, centered = true) },
+            map = map, mapTag = "run-live-map",
+            stats = { FreeStats(numbers, LiveTags) },
+            notes = {
+                when (mode) {
+                    // 멈춤 안내 글은 두지 않는다(시안 paused — 제목 "일시정지"가 말한다)
+                    FreeLiveMode.Saving -> FreeCaption(stringResource(R.string.run_saving_wait))
+                    FreeLiveMode.Failed -> FreeCaption(stringResource(R.string.run_free_save_kept), icon = Icons.Outlined.Info, tag = "run-save-kept")
+                    FreeLiveMode.DiscardFailed -> FreeCaption(stringResource(R.string.run_free_try_again), strong = true)
+                    else -> Unit
                 }
-            }
-            FreeLiveMode.Saving -> {
-                FreeTopRow(numbers, LiveTags, compact)
-                FreeHairline(compact)
-                FreeDetailRow(numbers, LiveTags)
-                FreeCaption(stringResource(R.string.run_saving_wait))
-                Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
-                FreeRunButton(stringResource(R.string.run_saving_title), {}, Modifier.fillMaxWidth().testTag("run-primary-action"),
-                    kind = FreeButtonKind.Secondary, enabled = false, busy = true)
-            }
-            FreeLiveMode.Failed -> {
-                FreeTopRow(numbers, LiveTags, compact)
-                FreeHairline(compact)
-                FreeDetailRow(numbers, LiveTags)
-                FreeCaption(stringResource(R.string.run_free_save_kept), icon = Icons.Outlined.Info, tag = "run-save-kept")
-                Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
-                FreeButtonRow {
-                    FreeRunButton(stringResource(R.string.runflow_save_again), onPrimary, Modifier.weight(1f).testTag("run-primary-action"))
-                    if (showSecondary) {
-                        FreeRunButton(stringResource(R.string.run_free_save_stay), onSecondary, Modifier.weight(1f).testTag("run-save-stay"),
+            },
+            controls = {
+                when (mode) {
+                    FreeLiveMode.Idle -> ControlRow {
+                        RoundControl(Icons.Rounded.Close, stringResource(R.string.run_cancel), onSecondary, primary = false, tag = "run-finish")
+                        RoundControl(Icons.Rounded.PlayArrow, stringResource(R.string.home_start_run), onPrimary, size = 96.dp, tag = "run-primary-action")
+                    }
+                    FreeLiveMode.Live -> if (paused) {
+                        ControlRow {
+                            HoldEndControl(onHoldEnd, onHint = { tip = it }, onHolding = { holding -> tip = null; heldTip = holding })
+                            RoundControl(Icons.Rounded.PlayArrow, stringResource(R.string.run_resume_short), onPrimary, size = 96.dp, tag = "run-primary-action")
+                        }
+                    } else {
+                        ControlRow {
+                            RoundControl(Icons.Outlined.Lock, stringResource(R.string.run_lock), { locked = true }, primary = false, tag = "run-lock")
+                            RoundControl(Icons.Rounded.Pause, stringResource(R.string.run_pause), onPrimary, size = 96.dp, tag = "run-primary-action")
+                            RoundControl(Icons.Outlined.Map, stringResource(R.string.run_map_short), { onExpandMap?.invoke() }, primary = false,
+                                tag = "run-map-expand", enabled = onExpandMap != null)
+                        }
+                    }
+                    FreeLiveMode.Saving -> BottomActionBar {
+                        FreeRunButton(stringResource(R.string.run_saving_title), {}, Modifier.weight(1f).testTag("run-primary-action"),
+                            kind = FreeButtonKind.Secondary, enabled = false, busy = true)
+                    }
+                    FreeLiveMode.Failed -> BottomActionBar {
+                        if (showSecondary) {
+                            FreeRunButton(stringResource(R.string.run_free_save_stay), onSecondary, Modifier.weight(.42f).testTag("run-save-stay"),
+                                kind = FreeButtonKind.Secondary)
+                        }
+                        FreeRunButton(stringResource(R.string.runflow_save_again), onPrimary, Modifier.weight(.58f).testTag("run-primary-action"))
+                    }
+                    FreeLiveMode.DiscardFailed -> BottomActionBar {
+                        FreeRunButton(stringResource(R.string.runflow_discard_back), onSecondary, Modifier.weight(.42f).testTag("run-discard-failed-back"),
                             kind = FreeButtonKind.Secondary)
+                        FreeRunButton(stringResource(R.string.run_free_retry), onPrimary, Modifier.weight(.58f).testTag("run-discard-retry"))
                     }
                 }
-            }
-            FreeLiveMode.DiscardFailed -> {
-                FreeCaption(stringResource(R.string.run_free_try_again), strong = true)
-                FreeHairline(compact)
-                FreeCompactRow(numbers)
-                Spacer(Modifier.height(if (compact) 10.dp else 14.dp))
-                FreeButtonRow {
-                    FreeRunButton(stringResource(R.string.run_free_retry), onPrimary, Modifier.weight(1f).testTag("run-discard-retry"))
-                    FreeRunButton(stringResource(R.string.runflow_discard_back), onSecondary, Modifier.weight(1f).testTag("run-discard-failed-back"),
-                        kind = FreeButtonKind.Secondary)
-                }
-            }
+            },
+        )
+        // 짧게 누름 · 누르는 동안 — 종료 버튼 위 말풍선
+        val bubble = if (heldTip) stringResource(R.string.run_hold_tip) else tip
+        if (bubble != null && live && paused) {
+            HoldBubble(bubble, Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 30.dp, bottom = 150.dp).testTag("run-hold-tip"))
+        }
+        if (locked) LockOverlay(onUnlock = { locked = false })
+    }
+}
+
+/** 둥근 컨트롤 줄 — 가운데 모아 30dp 간격, 아래 16 */
+@Composable
+private fun ControlRow(content: @Composable RowScope.() -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.Top,
+        content = content,
+    )
+}
+
+/** 길게 눌러 종료(시안 paused · end) — 76 링 + 흰 원, 아래 "길게 눌러 종료" / 누르는 동안 "계속 누르고 있어요" */
+@Composable
+private fun HoldEndControl(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: (Boolean) -> Unit) {
+    val c = StepUpUi.colors
+    val hint = stringResource(R.string.run_hold_end_hint)
+    var holding by remember { mutableStateOf(false) }
+    Column(Modifier.padding(top = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        HoldToEndButton(
+            onEnd = onEnd, onHint = { onHint(hint) }, size = 76.dp,
+            contentDescription = stringResource(R.string.run_hold_end), hintLabel = hint,
+            onHolding = { holding = it; onHolding(it) },
+            modifier = Modifier.testTag("run-finish"),
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            stringResource(if (holding) R.string.run_holding else R.string.run_hold_end),
+            style = StepUpUi.type.caption.copy(fontSize = 12.5.sp), color = c.secondaryLabel, maxLines = 1,
+        )
+    }
+}
+
+/** 화면 잠금 — 달리는 동안 주머니 속 잘못 누름을 막는다. 숫자는 비쳐 보이고, 1초 길게 눌러 푼다. 뒤로 가기도 막는다 */
+@Composable
+private fun LockOverlay(onUnlock: () -> Unit) {
+    androidx.activity.compose.BackHandler { }
+    Box(
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f))
+            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } } }
+            .testTag("run-locked"),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(stringResource(R.string.run_lock_title), style = StepUpUi.type.navTitle, color = Color.White)
+            Spacer(Modifier.height(16.dp))
+            HoldToEndButton(
+                onEnd = onUnlock, onHint = {}, size = 76.dp, icon = Icons.Outlined.LockOpen,
+                contentDescription = stringResource(R.string.run_unlock_hold), modifier = Modifier.testTag("run-unlock"),
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.run_unlock_hold), style = StepUpUi.type.caption, color = Color.White.copy(alpha = .8f))
         }
     }
 }
 
-/** 달리는 중 지도 위 — 문제 띠 하나, 일시정지 띠, 없으면 "러닝 중" 칩. 마칠지 묻는 동안(멈춤 + 띠 없음)은 비운다 */
+/** 달리는 중 GPS 줄 — 문제가 있으면 그 문제 한 줄(누르면 까닭 · 오른쪽 "설정"), 없으면 "GPS 연결됨 · 장소" */
+@Composable
+private fun LiveStatus(
+    band: FreeBand,
+    noLocation: Boolean,
+    gpsOk: Boolean,
+    place: String?,
+    onBandTap: (() -> Unit)?,
+    onBandAction: (() -> Unit)?,
+    overspeedLeft: Int,
+) {
+    when (band) {
+        FreeBand.None, FreeBand.Paused -> when {
+            noLocation -> FreeStatusLine(stringResource(R.string.run_status_no_gps), "run-gps-line", FreeLineKind.Off)
+            gpsOk -> GpsLine(place)
+            // 위치를 찾는 동안은 아무것도 적지 않는다(2026-10-17 "지도 앱처럼")
+            else -> Unit
+        }
+        FreeBand.Overspeed -> FreeStatusLine(stringResource(R.string.run_overspeed_band, overspeedLeft), "run-overspeed", FreeLineKind.Problem, onClick = onBandTap)
+        FreeBand.LocationOff -> FreeStatusLine(stringResource(R.string.run_free_location_off), "run-location-off", FreeLineKind.Problem,
+            action = stringResource(R.string.run_free_settings), onAction = onBandAction)
+        FreeBand.MeasureInvalid -> FreeStatusLine(stringResource(R.string.run_free_measure_invalid), "run-void-banner", FreeLineKind.Problem, onClick = onBandTap)
+        FreeBand.SpeedError -> FreeStatusLine(stringResource(R.string.run_speed_error), "run-speed-banner", FreeLineKind.Problem, onClick = onBandTap)
+        FreeBand.Still -> FreeStatusLine(stringResource(R.string.run_still_title), "run-still", FreeLineKind.Warn,
+            action = stringResource(R.string.run_pause), onAction = onBandAction)
+        FreeBand.Weak -> FreeStatusLine(stringResource(R.string.run_free_gps_weak), "run-gps-weak", FreeLineKind.Warn)
+        FreeBand.Approx -> FreeStatusLine(stringResource(R.string.run_gps_approx), "run-location-approx", FreeLineKind.Warn,
+            action = stringResource(R.string.run_free_settings), onAction = onBandAction)
+        FreeBand.Worn -> FreeStatusLine(stringResource(R.string.run_shoe_worn_band), "run-shoe-worn", FreeLineKind.Warn, onClick = onBandTap)
+    }
+}
+
+/** 지도 위에 얹는 문제 한 줄(크루 달리기) — 같은 글 · 점을 카드 면 위에. 문제가 없으면 null */
 internal fun liveTop(
     band: FreeBand,
     paused: Boolean,
     noLocation: Boolean,
     onBandTap: (() -> Unit)?,
     onBandAction: (() -> Unit)?,
-    /** 과속 띠 — 러닝이 멈추기까지 남은 초 */
     overspeedLeft: Int = 0,
-): (@Composable () -> Unit)? = when (band) {
-    FreeBand.None -> if (paused) null else {
-        { FreeRunChip(stringResource(if (noLocation) R.string.run_status_no_gps else R.string.run_free_chip_running)) }
+): (@Composable () -> Unit)? = if (band == FreeBand.None || band == FreeBand.Paused) null else {
+    {
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(StepUpUi.colors.card.copy(alpha = .94f)).padding(vertical = 4.dp)) {
+            LiveStatus(band, noLocation, gpsOk = false, place = null, onBandTap = onBandTap, onBandAction = onBandAction, overspeedLeft = overspeedLeft)
+        }
     }
-    FreeBand.Paused -> {
-        { FreeRunBand(stringResource(R.string.run_paused_title), "run-paused-band", calm = true, icon = Icons.Filled.Pause) }
+}
+
+@Composable
+private fun GpsLine(place: String?) {
+    val text = stringResource(R.string.run_gps_connected) + (place?.let { " · $it" } ?: "")
+    FreeStatusLine(text, "run-gps-line", FreeLineKind.Ok)
+}
+
+internal enum class FreeLineKind { Ok, Off, Warn, Problem }
+
+/**
+ * GPS 한 줄(시안 running — 칩이 아니라 점 + 글자). 문제는 빨강 · 주의는 노랑 점, 글은 늘 같은 색 + 점(색만으로 알리지 않게 글이 말한다).
+ * [onClick] 이 있으면 줄을 눌러 까닭(러닝 정보)을 연다. [action] 은 줄 끝 파란 글자 버튼(설정 · 일시정지). 바뀌면 화면 낭독이 읽는다.
+ */
+@Composable
+internal fun FreeStatusLine(
+    text: String,
+    tag: String,
+    kind: FreeLineKind,
+    onClick: (() -> Unit)? = null,
+    action: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    val c = StepUpUi.colors
+    val dot = when (kind) {
+        FreeLineKind.Ok -> c.success
+        FreeLineKind.Off -> c.tertiaryLabel
+        FreeLineKind.Warn -> Color(0xFFFFB020)
+        FreeLineKind.Problem -> c.live
     }
-    FreeBand.Overspeed -> {
-        { FreeRunBand(stringResource(R.string.run_overspeed_band, overspeedLeft), "run-overspeed", onClick = onBandTap) }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 30.dp).padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            Modifier.weight(1f, fill = false).clip(RoundedCornerShape(10.dp))
+                .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
+                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+                .padding(horizontal = 4.dp, vertical = 4.dp)
+                .testTag(tag),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(dot))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text, style = StepUpUi.type.caption.copy(fontWeight = FontWeight.SemiBold),
+                color = if (kind == FreeLineKind.Problem) c.label else c.secondaryLabel, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (action != null && onAction != null) {
+            Box(
+                Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).feedbackClickable(onClick = onAction)
+                    .padding(horizontal = 10.dp).testTag("$tag-action"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(action, style = StepUpUi.type.smallButton, color = c.accentText, maxLines = 1)
+            }
+        }
     }
-    FreeBand.LocationOff -> {
-        { FreeRunBand(stringResource(R.string.run_free_location_off), "run-location-off",
-            action = stringResource(R.string.run_free_settings), onAction = onBandAction) }
+}
+
+/** 큰 거리(시안 132 · km 26). 모르면 "—" */
+@Composable
+private fun DistanceHero(distance: FreeDistance, tag: String, centered: Boolean, compact: Boolean = false) {
+    val c = StepUpUi.colors
+    val value = (distance as? FreeDistance.Km)?.let { "%.2f".format(it.km) } ?: "—"
+    val label = stringResource(R.string.run_label_distance)
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp).semantics(mergeDescendants = true) { contentDescription = "$label $value km" },
+        horizontalArrangement = if (centered) Arrangement.Center else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(
+            value, style = StepUpUi.type.numberHero.copy(fontSize = if (compact) 104.sp else 132.sp, letterSpacing = .005.em),
+            color = c.label, maxLines = 1, softWrap = false,
+            modifier = Modifier.alignByBaseline().testTag(tag),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text("km", style = StepUpUi.type.navTitle.copy(fontSize = 26.sp, fontWeight = FontWeight.SemiBold), color = c.secondaryLabel,
+            modifier = Modifier.alignByBaseline())
     }
-    FreeBand.MeasureInvalid -> {
-        { FreeRunBand(stringResource(R.string.run_free_measure_invalid), "run-void-banner", onClick = onBandTap) }
-    }
-    FreeBand.SpeedError -> {
-        { FreeRunBand(stringResource(R.string.run_speed_error), "run-speed-banner", onClick = onBandTap) }
-    }
-    FreeBand.Still -> {
-        { FreeRunBand(stringResource(R.string.run_still_title), "run-still", icon = Icons.Filled.Pause,
-            action = stringResource(R.string.run_pause), onAction = onBandAction) }
-    }
-    FreeBand.Weak -> {
-        { FreeRunBand(stringResource(R.string.run_free_gps_weak), "run-gps-weak") }
-    }
-    FreeBand.Approx -> {
-        { FreeRunBand(stringResource(R.string.run_gps_approx), "run-location-approx",
-            action = stringResource(R.string.run_free_settings), onAction = onBandAction) }
-    }
-    FreeBand.Worn -> {
-        { FreeRunBand(stringResource(R.string.run_shoe_worn_band), "run-shoe-worn", onClick = onBandTap) }
-    }
+}
+
+/** 시간 · 페이스 · 속도(시안 숫자 줄, 상자 없음). 멈춘 뒤에는 평균 */
+@Composable
+private fun FreeStats(numbers: FreeRunNumbers, tags: FreeTags) {
+    val pace = numbers.paceSec?.let { formatPacePrime(it) } ?: "—"
+    val speed = numbers.speedKmh?.let { "%.1f".format(it) } ?: "—"
+    StatRow(
+        listOf(
+            StatItem(stringResource(R.string.stat_time), numbers.time, tag = tags.time),
+            StatItem(stringResource(if (numbers.average) R.string.run_label_pace else R.string.run_pace), pace, tag = tags.pace),
+            StatItem(stringResource(if (numbers.average) R.string.run_label_speed else R.string.run_current_speed), speed,
+                stringResource(R.string.run_speed_unit), tag = tags.speed),
+        ),
+        numberStyle = StepUpUi.type.numberStat,
+        modifier = Modifier.padding(horizontal = 20.dp),
+    )
 }
 
 // ── 결과 ───────────────────────────────────────────────────────────
 
 /**
- * 러닝 완료(08) — 지도 가득 + 러닝 완료 · 기록 저장 완료 + 기록 판 + 완료 | 공유. 보상 상태와 상관없이 같은 모습이다.
- * 덜 쓰는 "내 러닝 기록 보기" · "삭제"는 ⋯ 안으로 옮겼다(지우지 않는다).
- * [map] 이 null 이면 저장된 경로가 없다(14 왼쪽) — 지도를 꾸미지 않는다.
- * [deleteFailed] — 기록 삭제가 실패(14 오른쪽). 기록은 그대로 있고 다시 시도하거나 돌아간다.
+ * 러닝 완료(시안 result) — 위 ← · 러닝 완료 · ⋯ → "기록 저장 완료 · 시각 · 장소" → 큰 거리 → 시간 · 평균 페이스 · 평균 속도 →
+ * 둥근 지도(달린 길 블루 실선) → 알림 줄(패널티 · 내구도) → 기록 공유 | 완료. 보상 상태와 상관없이 같은 모습이다.
+ * 덜 쓰는 "내 러닝 기록 보기" · "삭제"는 ⋯ 안에(지우지 않는다). [map] 이 null 이면 저장된 경로가 없다 — 지도를 꾸미지 않는다.
+ * [deleteFailed] — 기록 삭제가 실패. 기록은 그대로 있고 다시 시도하거나 돌아간다.
  */
 @Composable
 internal fun FreeRunResult(
@@ -484,17 +684,41 @@ internal fun FreeRunResult(
     penalty: String? = null,
     /** 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 보상에 들지 않았다는 안내 */
     shoeNote: String? = null,
+    /** 시작 시각(ms) · 시작 자리 근처 장소 — 위 한 줄 */
+    startedAt: Long = 0L,
+    place: String? = null,
 ) {
-    val c = freeRunColors()
+    val c = StepUpUi.colors
     var more by rememberSaveable { mutableStateOf(false) }
-    FreeRunFrame(
+    FreeRunScaffold(
         rootTag = "run-result",
-        modifier = modifier,
+        title = stringResource(R.string.finish_title), titleTag = "run-result-title",
+        onBack = onDone.takeIf { !deleteFailed }, onMore = if (deleteFailed) null else ({ more = true }),
+        moreLabel = stringResource(R.string.run_free_more), moreTag = "run-result-more",
+        status = {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp).heightIn(min = 26.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.run_free_record_saved), style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp),
+                    color = c.secondaryLabel, maxLines = 1, modifier = Modifier.testTag("run-result-saved"))
+                val rest = listOfNotNull(
+                    startedAt.takeIf { it > 0 }?.let {
+                        java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalTime()
+                            .format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+                    },
+                    place,
+                )
+                if (rest.isNotEmpty()) {
+                    Text(rest.joinToString(" · ", prefix = " · "), style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp),
+                        color = c.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        },
+        hero = { DistanceHero(numbers.distance, ResultTags.distance, centered = false) },
+        statsFirst = true,
         map = {
             if (map != null) {
                 map()
             } else {
-                Box(Modifier.fillMaxSize().background(c.screen)) {
+                Box(Modifier.fillMaxSize().background(c.mapBackground)) {
                     RunMapPlaceholder(
                         Icons.Outlined.Map, stringResource(R.string.rec_no_route_title), stringResource(R.string.run_free_no_route_body),
                         Modifier.testTag("run-result-no-route"),
@@ -503,57 +727,27 @@ internal fun FreeRunResult(
             }
         },
         mapTag = null,
-        top = if (deleteFailed) {
-            { FreeRunBand(stringResource(R.string.run_free_delete_failed), "run-delete-failed") }
-        } else {
-            {
-                Column(Modifier.padding(start = 4.dp, top = 2.dp)) {
-                    Text(
-                        stringResource(R.string.finish_title), style = runTextStyle(28.sp, c.text, FontWeight.ExtraBold, 1.2f),
-                        modifier = Modifier.semantics { heading() }.testTag("run-result-title"),
-                    )
-                    Text(stringResource(R.string.run_free_record_saved), style = runTextStyle(15.sp, c.label, FontWeight.SemiBold),
-                        modifier = Modifier.testTag("run-result-saved"))
+        stats = { FreeStats(numbers, ResultTags) },
+        notes = {
+            if (deleteFailed) ResultNote(stringResource(R.string.run_free_delete_failed), stringResource(R.string.run_free_try_again), "run-delete-failed")
+            if (penalty != null) ResultNote(penalty, null, "run-result-overspeed")
+            if (shoeNote != null) ResultNote(shoeNote, null, "run-result-shoe-worn")
+        },
+        controls = {
+            BottomActionBar {
+                if (deleteFailed) {
+                    FreeRunButton(stringResource(R.string.runflow_discard_back), onDeleteBack, Modifier.weight(.42f).testTag("run-delete-back"),
+                        kind = FreeButtonKind.Secondary, enabled = !deleting)
+                    FreeRunButton(stringResource(R.string.run_free_retry), onRetryDelete, Modifier.weight(.58f).testTag("run-delete-retry"),
+                        busy = deleting)
+                } else {
+                    FreeRunButton(stringResource(R.string.run_share_record), onShare, Modifier.weight(.38f).testTag("run-result-share"),
+                        kind = FreeButtonKind.Secondary, icon = Icons.Outlined.IosShare)
+                    FreeRunButton(stringResource(R.string.finish_done), onDone, Modifier.weight(.62f).testTag("run-result-done"))
                 }
             }
         },
-        scrimTop = !deleteFailed,
-        onMore = if (deleteFailed) null else ({ more = true }),
-        moreLabel = stringResource(R.string.run_free_more),
-        moreTag = "run-result-more",
-        onExpand = null,
-    ) { compact ->
-        if (deleteFailed) {
-            FreeCaption(stringResource(R.string.run_free_try_again), strong = true)
-            FreeHairline(compact)
-            FreeCompactRow(numbers)
-            Spacer(Modifier.height(if (compact) 10.dp else 14.dp))
-            FreeButtonRow {
-                FreeRunButton(stringResource(R.string.run_free_retry), onRetryDelete, Modifier.weight(1f).testTag("run-delete-retry"),
-                    busy = deleting)
-                FreeRunButton(stringResource(R.string.runflow_discard_back), onDeleteBack, Modifier.weight(1f).testTag("run-delete-back"),
-                    kind = FreeButtonKind.Secondary, enabled = !deleting)
-            }
-        } else {
-            if (penalty != null) {
-                FreeCaption(penalty, icon = Icons.Filled.Warning, tag = "run-result-overspeed")
-                Spacer(Modifier.height(8.dp))
-            }
-            if (shoeNote != null) {
-                FreeCaption(shoeNote, icon = Icons.Filled.Warning, tag = "run-result-shoe-worn")
-                Spacer(Modifier.height(8.dp))
-            }
-            FreeTopRow(numbers, ResultTags, compact)
-            FreeHairline(compact)
-            FreeDetailRow(numbers, ResultTags)
-            Spacer(Modifier.height(if (compact) 10.dp else 14.dp))
-            FreeButtonRow {
-                FreeRunButton(stringResource(R.string.finish_done), onDone, Modifier.weight(1.15f).testTag("run-result-done"))
-                FreeRunButton(stringResource(R.string.run_free_share), onShare, Modifier.weight(1f).testTag("run-result-share"),
-                    kind = FreeButtonKind.Secondary)
-            }
-        }
-    }
+    )
     if (more && !deleteFailed) {
         RunSheet(onDismiss = { more = false }, modifier = Modifier.testTag("run-result-more-sheet")) {
             FreeRunButton(stringResource(R.string.run_open_records), {
@@ -565,6 +759,24 @@ internal fun FreeRunResult(
                 more = false
                 onDelete()
             }, Modifier.fillMaxWidth().testTag("run-result-delete"), kind = FreeButtonKind.Danger)
+        }
+    }
+}
+
+/** 결과 알림 줄(시안 result 빨간 줄) — 옅은 빨강 면 · 경고 아이콘 · 굵은 글 + 작은 글 */
+@Composable
+private fun ResultNote(title: String, body: String?, tag: String) {
+    val c = StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.errorFill)
+            .padding(horizontal = 16.dp, vertical = 13.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Error, contentDescription = null, tint = c.live, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = StepUpUi.type.rowTitle.copy(fontSize = 14.5.sp), color = c.live)
+            if (body != null) Text(body, style = StepUpUi.type.caption.copy(fontSize = 12.5.sp), color = c.live.copy(alpha = .85f))
         }
     }
 }
@@ -621,150 +833,74 @@ internal fun ColumnScope.FreeDiscardSheetContent(line: String, onDiscard: () -> 
 // ── 틀 · 부품 ──────────────────────────────────────────────────────
 
 /**
- * 지도 가득(위) + 기록 판(아래). 판은 내용만큼, 지도는 남는 높이를 모두 쓴다 — 버튼은 늘 화면 안에 있다.
- * 낮은 화면(큰 글씨 포함)은 판의 수와 사이를 줄인다([compact]).
+ * 러닝 화면 틀(시안 running · result) — 위 ← · 제목 · ⋯(44) → 상태 한 줄 → 큰 거리 → 둥근 지도 카드(남는 높이) → 숫자 줄 → 알림 →
+ * 컨트롤. 결과는 숫자 줄이 지도 위([statsFirst]). 낮은 화면(큰 글씨 포함)은 지도가 먼저 줄고, 그래도 모자라면 넘긴다.
  */
 @Composable
-private fun FreeRunFrame(
+private fun FreeRunScaffold(
     rootTag: String,
-    modifier: Modifier,
-    map: @Composable BoxScope.() -> Unit,
-    mapTag: String?,
-    top: (@Composable () -> Unit)?,
+    title: String,
+    titleTag: String?,
+    onBack: (() -> Unit)?,
     onMore: (() -> Unit)?,
     moreLabel: String,
     moreTag: String,
-    onExpand: (() -> Unit)?,
-    scrimTop: Boolean = false,
-    panel: @Composable ColumnScope.(compact: Boolean) -> Unit,
+    status: @Composable () -> Unit,
+    hero: @Composable () -> Unit,
+    map: @Composable BoxScope.() -> Unit,
+    mapTag: String?,
+    stats: @Composable () -> Unit,
+    notes: @Composable ColumnScope.() -> Unit,
+    controls: @Composable () -> Unit,
+    statsFirst: Boolean = false,
 ) {
-    val c = freeRunColors()
+    val c = StepUpUi.colors
     val t = runTone()
-    BoxWithConstraints(modifier.fillMaxSize().background(c.screen).testTag(rootTag)) {
-        val compact = maxHeight < 640.dp
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds().background(t.inset)) {
-                // 실제 지도 타일을 러닝 화면의 남색 지도 색으로(지도 틀 RunMapFrame 과 같은 색)
-                CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
-                    Box(Modifier.fillMaxSize().then(if (mapTag != null) Modifier.testTag(mapTag) else Modifier), content = map)
+    BoxWithConstraints(Modifier.fillMaxSize().background(c.background).testTag(rootTag)) {
+        val tall = maxHeight >= 640.dp
+        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
+                if (onBack != null) {
+                    com.stepup.android.ui.components.BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart).testTag("run-back"))
                 }
-                if (scrimTop) {
-                    // 밝아진 지도 위에서도 "러닝 완료 · 기록 저장 완료"가 읽히게 — 글 자리까지 짙게, 아래로 녹인다
-                    Box(
-                        Modifier.fillMaxWidth().statusBarsPadding().height(130.dp)
-                            .background(Brush.verticalGradient(
-                                0f to c.screen.copy(alpha = 0.94f), 0.6f to c.screen.copy(alpha = 0.78f), 1f to c.screen.copy(alpha = 0f),
-                            )),
-                    )
-                    Box(Modifier.fillMaxWidth().background(c.screen.copy(alpha = 0.94f)).statusBarsPadding())
+                Text(
+                    title, style = StepUpUi.type.navTitle, color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 56.dp).semantics { heading() }
+                        .then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
+                )
+                if (onMore != null) {
+                    CircleIconButton(Icons.Rounded.MoreHoriz, moreLabel, onMore, modifier = Modifier.align(Alignment.CenterEnd).testTag(moreTag))
                 }
-                Row(
-                    Modifier.fillMaxWidth().statusBarsPadding().displayCutoutPadding().padding(horizontal = 12.dp).padding(top = 8.dp),
-                    verticalAlignment = Alignment.Top,
+            }
+            Column(
+                Modifier.fillMaxWidth().weight(1f).then(if (tall) Modifier else Modifier.verticalScroll(rememberScrollState())),
+            ) {
+                status()
+                if (statsFirst) Spacer(Modifier.height(2.dp)) else Spacer(Modifier.height(4.dp))
+                hero()
+                if (statsFirst) {
+                    Spacer(Modifier.height(14.dp))
+                    stats()
+                }
+                // 지도 카드 361 × 180(결과 190) · 모서리 22 — 시안 높이 그대로, 남는 높이는 컨트롤 위 빈칸이 된다
+                Box(
+                    Modifier.padding(horizontal = StepUpUi.Gutter).padding(top = 20.dp).fillMaxWidth()
+                        .height(if (statsFirst) 190.dp else 180.dp)
+                        .clip(RoundedCornerShape(22.dp)).background(c.mapBackground),
                 ) {
-                    Box(Modifier.weight(1f)) { top?.invoke() }
-                    if (onMore != null) {
-                        Spacer(Modifier.width(8.dp))
-                        FreeMapButton(Icons.Filled.MoreHoriz, moreLabel, moreTag, onMore)
+                    // 실제 지도 타일을 러닝 화면의 지도 색으로(지도 틀 RunMapFrame 과 같은 색)
+                    CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
+                        Box(Modifier.fillMaxSize().then(if (mapTag != null) Modifier.testTag(mapTag) else Modifier), content = map)
                     }
                 }
-                if (onExpand != null) {
-                    FreeMapButton(
-                        Icons.Filled.OpenInFull, stringResource(R.string.run_map_expand), "run-map-expand", onExpand,
-                        Modifier.align(Alignment.BottomEnd).padding(12.dp),
-                    )
+                if (!statsFirst) {
+                    Spacer(Modifier.height(20.dp))
+                    stats()
                 }
+                notes()
+                if (tall) Spacer(Modifier.weight(1f)) else Spacer(Modifier.height(8.dp))
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(runPalette().divider))
-            Column(
-                Modifier.fillMaxWidth().background(c.panel).navigationBarsPadding()
-                    .padding(horizontal = 16.dp).padding(top = if (compact) 10.dp else 14.dp, bottom = if (compact) 10.dp else 14.dp),
-            ) { panel(compact) }
-        }
-    }
-}
-
-/** 1줄 — 시간 | 페이스(큰 수 두 칸) */
-@Composable
-private fun FreeTopRow(numbers: FreeRunNumbers, tags: FreeTags, compact: Boolean) {
-    val timeLabel = stringResource(R.string.stat_time)
-    val paceLabel = stringResource(if (numbers.average) R.string.run_label_pace else R.string.run_pace)
-    val pace = numbers.paceSec?.let { formatPacePrime(it) }
-    val paceSpoken = pace?.let { "$paceLabel $it /km" } ?: "$paceLabel · ${stringResource(R.string.run_free_pace_unknown)}"
-    val size = if (compact) 28.sp else 34.sp
-    DividedRow(columns = 2, gap = 28.dp) {
-        FreeBigCell(timeLabel, numbers.time, null, size, tags.time, "$timeLabel ${numbers.time}")
-        FreeBigCell(paceLabel, pace ?: "—", "/km", size, tags.pace, paceSpoken)
-    }
-}
-
-@Composable
-private fun RowScope.FreeBigCell(label: String, value: String, unit: String?, size: androidx.compose.ui.unit.TextUnit, tag: String, spoken: String) {
-    val c = freeRunColors()
-    Column(Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = spoken }) {
-        Text(label, style = runTextStyle(14.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        FitNumber(
-            value, unit, valueSize = size, unitSize = size * 0.5f, valueColor = c.text, unitColor = c.label,
-            modifier = Modifier.fillMaxWidth(), valueTag = tag,
-        )
-    }
-}
-
-/** 2줄 — 거리 · 속도 · 내구도(작은 글 세 칸). 신발 그림은 두지 않는다 */
-@Composable
-private fun FreeDetailRow(numbers: FreeRunNumbers, tags: FreeTags) {
-    val distanceLabel = stringResource(R.string.run_label_distance)
-    val speedLabel = stringResource(if (numbers.average) R.string.run_label_speed else R.string.run_current_speed)
-    val durabilityLabel = stringResource(R.string.sdv_stat_durability)
-    val unit = stringResource(R.string.run_speed_unit)
-    DividedRow(columns = 3, gap = 12.dp) {
-        when (val d = numbers.distance) {
-            is FreeDistance.Km -> {
-                val km = "%.2f".format(d.km)
-                FreeSmallCell(km, "km", tags.distance, "$distanceLabel $km km", Arrangement.Start)
-            }
-            FreeDistance.Unknown -> FreeSmallCell("—", "km", tags.distance, "$distanceLabel —", Arrangement.Start)
-        }
-        val speed = numbers.speedKmh?.let { "%.1f".format(it) }
-        FreeSmallCell(
-            speed ?: "—", unit, tags.speed,
-            if (speed != null) "$speedLabel $speed $unit"
-            else if (numbers.average) "$speedLabel —" else stringResource(R.string.run_speed_unknown),
-            Arrangement.Center,
-        )
-        val points = numbers.durability?.toString() ?: "—"
-        FreeSmallCell(points, "%", tags.durability, "$durabilityLabel $points%", Arrangement.End, lead = durabilityLabel)
-    }
-}
-
-@Composable
-private fun RowScope.FreeSmallCell(
-    value: String,
-    unit: String?,
-    tag: String,
-    spoken: String,
-    arrangement: Arrangement.Horizontal,
-    lead: String? = null,
-) {
-    val c = freeRunColors()
-    Row(
-        Modifier.weight(1f).heightIn(min = 28.dp).semantics(mergeDescendants = true) { contentDescription = spoken },
-        horizontalArrangement = arrangement,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (lead != null) {
-            // 좁으면 이름(내구도)이 먼저 줄어든다 — 수는 제 크기로 남는다
-            Text(lead, style = runTextStyle(13.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false))
-            Spacer(Modifier.width(5.dp))
-            FitNumber(
-                value, unit, valueSize = 17.sp, unitSize = 13.sp, valueColor = c.text, unitColor = c.label, valueTag = tag,
-            )
-        } else {
-            FitNumber(
-                value, unit, valueSize = 17.sp, unitSize = 13.sp, valueColor = c.text, unitColor = c.label,
-                modifier = Modifier.weight(1f, fill = false), valueTag = tag,
-            )
+            controls()
         }
     }
 }
@@ -825,7 +961,7 @@ private fun FreeButtonRow(content: @Composable RowScope.() -> Unit) {
 
 internal enum class FreeButtonKind { Primary, Secondary, Danger }
 
-/** 판의 버튼 — 평평한 코발트(주) · 짙은 남색(보조, 빨간 네모를 앞에 둘 수 있다) · 빨강(위험). 56dp 높이 */
+/** 판의 버튼 — 통합안 버튼: 주 = 블루 알약 + 원 화살표, 보조 = 회색 알약(앞에 빨간 네모를 둘 수 있다), 위험 = 회색 알약 + 빨간 글자 */
 @Composable
 internal fun FreeRunButton(
     label: String,
@@ -837,110 +973,35 @@ internal fun FreeRunButton(
     enabled: Boolean = true,
     busy: Boolean = false,
 ) {
-    val c = freeRunColors()
-    val shape = RoundedCornerShape(14.dp)
-    val live = enabled && !busy
-    val (face, ink) = when {
-        !enabled && !busy -> c.off to c.offInk
-        kind == FreeButtonKind.Primary -> c.primary to c.primaryInk
-        kind == FreeButtonKind.Danger -> c.danger to c.dangerInk
-        else -> c.slate to c.slateInk
-    }
-    Row(
-        modifier.heightIn(min = 56.dp).clip(shape).background(face, shape)
-            .then(if (kind == FreeButtonKind.Secondary) Modifier.border(1.dp, c.slateEdge, shape) else Modifier)
-            .feedbackClickable(enabled = live, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        when {
-            busy -> {
-                RunSpinner(Modifier.size(22.dp), color = ink)
-                Spacer(Modifier.width(10.dp))
-            }
-            stopMark -> {
-                Box(Modifier.size(16.dp).clip(RoundedCornerShape(3.dp)).background(c.stopMark))
-                Spacer(Modifier.width(10.dp))
-            }
-            icon != null -> {
-                Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(8.dp))
-            }
-        }
-        Text(label, style = runTextStyle(17.sp, ink, FontWeight.Bold, 1.2f), maxLines = 2, overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center)
-    }
-}
-
-/**
- * 지도 위 띠 — 노랑(문제) · 남색(일시정지). 경고 아이콘과 글을 함께 둔다(색만으로 알리지 않는다). 바뀌면 화면 낭독이 읽는다.
- * [onClick] 이 있으면 띠를 눌러 까닭(러닝 정보)을 연다. [action] 은 오른쪽 작은 버튼(설정).
- */
-@Composable
-internal fun FreeRunBand(
-    text: String,
-    tag: String,
-    calm: Boolean = false,
-    icon: ImageVector = Icons.Filled.Warning,
-    onClick: (() -> Unit)? = null,
-    action: String? = null,
-    onAction: (() -> Unit)? = null,
-) {
-    val c = freeRunColors()
-    val shape = RoundedCornerShape(24.dp)
-    val face = if (calm) c.calmBand else c.band
-    val ink = if (calm) c.calmInk else c.bandInk
-    val hasAction = action != null && onAction != null
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape).background(face, shape)
-            .then(if (calm) Modifier.border(1.dp, c.calmEdge, shape) else Modifier)
-            .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
-            .padding(start = 16.dp, end = if (hasAction) 2.dp else 16.dp, top = if (hasAction) 0.dp else 4.dp, bottom = if (hasAction) 0.dp else 4.dp)
-            .testTag(tag),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text, style = runTextStyle(15.sp, ink, FontWeight.Bold, 1.25f), maxLines = 2, overflow = TextOverflow.Ellipsis,
-            textAlign = if (hasAction) TextAlign.Start else TextAlign.Center,
-            modifier = Modifier.weight(1f, fill = hasAction),
+    when (kind) {
+        FreeButtonKind.Primary -> PrimaryButton(
+            label, onClick, modifier,
+            state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            },
+            icon = icon,
         )
-        if (hasAction) {
-            Spacer(Modifier.width(8.dp))
-            // 누르는 자리는 48dp, 보이는 알약은 36dp
-            Box(
-                Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp)).feedbackClickable(onClick = onAction!!)
-                    .testTag("$tag-action"),
-                contentAlignment = Alignment.Center,
+        FreeButtonKind.Secondary -> if (stopMark && !busy) {
+            Row(
+                modifier.heightIn(min = 54.dp).clip(RoundedCornerShape(50))
+                    .background(com.stepup.android.ui.components.StepUpUi.colors.fill)
+                    .feedbackClickable(enabled = enabled, onClick = onClick)
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
             ) {
-                Box(
-                    Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(18.dp)).background(c.bandInk).padding(horizontal = 16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(action!!, style = runTextStyle(14.sp, c.band, FontWeight.Bold), maxLines = 1)
-                }
+                Box(Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(com.stepup.android.ui.components.StepUpUi.colors.live))
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    label, style = com.stepup.android.ui.components.StepUpUi.type.button,
+                    color = if (enabled) com.stepup.android.ui.components.StepUpUi.colors.label else com.stepup.android.ui.components.StepUpUi.colors.onDisabled,
+                    maxLines = 1,
+                )
             }
-        }
-    }
-}
-
-/** "러닝 중" — 지도 왼쪽 위 작은 칩(달리는 사람 + 글) */
-@Composable
-private fun FreeRunChip(text: String) {
-    val c = freeRunColors()
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        Modifier.heightIn(min = 36.dp).clip(shape).background(c.chip, shape).border(1.dp, c.controlEdge, shape)
-            .padding(horizontal = 12.dp).testTag("run-status"),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.AutoMirrored.Filled.DirectionsRun, contentDescription = null, tint = c.chipIcon, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(text, style = runTextStyle(14.sp, c.text, FontWeight.SemiBold), maxLines = 1)
+        } else SecondaryBusyButton(label, onClick, modifier, enabled = enabled, busy = busy, icon = icon)
+        FreeButtonKind.Danger -> DangerButton(label, onClick, modifier, enabled = enabled, busy = busy, icon = icon)
     }
 }
 

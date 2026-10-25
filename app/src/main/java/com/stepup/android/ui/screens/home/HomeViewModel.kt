@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -74,6 +75,13 @@ class HomeViewModel(
         today.flatMapLatest { stepRepository.observeRunTotalsSince(startOfWeek(it)) }
             .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** 최근 러닝 30개의 시작 자리(최근 것부터) — 홈 사진 카드의 "자주 달리는 곳". 경로가 없는 러닝은 뺀다 */
+    val runStarts: StateFlow<List<Pair<Double, Double>>> = stepRepository.recentSessions(30)
+        .map { sessions -> sessions.mapNotNull { s -> com.stepup.android.domain.RunTrack.first(s.track)?.let { it.lat to it.lng } } }
+        .distinctUntilChanged()
+        .flowOn(kotlinx.coroutines.Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** 이번 주 번 SUP(원장 기준). 읽기 전에는 null */
     val weekEarned: StateFlow<Double?> = today.flatMapLatest { rewardRepository.earnedSince(startOfWeek(it)) }

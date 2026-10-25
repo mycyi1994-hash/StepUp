@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.community.chat
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -125,27 +129,27 @@ internal class BlueInk(
 )
 
 private val DarkBlueInk = BlueInk(
-    canvas = Color(0xFF031427), canvasTop = Color(0xFF05193A), card = Color(0xFF0A2749), cardTop = Color(0xFF0D3160),
-    sheet = Color(0xFF0A2547), text = Color(0xFFF5F8FF), secondary = Color(0xFFABC6ED), info = Color(0xFF48D9FA),
-    divider = Color(0xFF173F7A), edge = Color(0xFF1F5BC8), edgeStrong = Color(0xFF2F72FF), tabMark = Color(0xFF0754FF),
-    warn = Color(0xFFFF8E86), choice = Color(0xFF0A2547), choiceText = Color(0xFFABC6ED), choiceOn = Color(0xFF0754FF),
-    choiceOnText = Color.White, level = Color(0xFF0E3570), levelText = Color(0xFF9EC2FF), track = Color(0xFF12305C),
-    bar = Color(0xFF48D9FA), avatar = Color(0xFF0D3A75), avatarText = Color(0xFFBFD6FF), secondaryButton = Color(0xFF061D3B),
-    disabled = Color(0xFF2A3F5E), disabledText = Color(0xFF8EA3C2), danger = Color(0xFF481F32), dangerText = Color(0xFFFF8E86),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE6F0FD))), primaryText = Color(0xFF071B3D),
-    primaryBase = Color(0xFF0754FF), skeleton = Color(0xFF0E2A4E), handle = Color(0xFF8FB0E8), scrim = Color(0x8C000000),
+    canvas = Color(0xFF070B14), canvasTop = Color(0xFF070B14), card = Color(0xFF0E1424), cardTop = Color(0xFF0E1424),
+    sheet = Color(0xFF0E1424), text = Color.White, secondary = Color(0xFF969CAA), info = Color(0xFF6E9BFF),
+    divider = Color(0x17FFFFFF), edge = Color(0x17FFFFFF), edgeStrong = Color(0xFF2F6BFF), tabMark = Color(0xFF6E9BFF),
+    warn = Color(0xFFFF453A), choice = Color(0xFF0E1424), choiceText = Color(0xFF969CAA), choiceOn = Color(0xFF2F6BFF),
+    choiceOnText = Color.White, level = Color(0xFF202736), levelText = Color(0xFF6E9BFF), track = Color(0xFF222A3D),
+    bar = Color(0xFF2F6BFF), avatar = Color(0xFF202736), avatarText = Color(0xFF969CAA), secondaryButton = Color(0xFF202736),
+    disabled = Color(0xFF141A27), disabledText = Color(0xFF5D6371), danger = Color(0xFF2A1219), dangerText = Color(0xFFFF453A),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    primaryBase = Color.Transparent, skeleton = Color(0xFF151C2D), handle = Color(0x4DE2E8F5), scrim = Color(0x8C000000),
 )
 
 private val LightBlueInk = BlueInk(
-    canvas = Color(0xFFF5F8FF), canvasTop = Color(0xFFEAF1FF), card = Color(0xFFFFFFFF), cardTop = Color(0xFFFFFFFF),
-    sheet = Color(0xFFFFFFFF), text = Color(0xFF0B1E3F), secondary = Color(0xFF4A5F84), info = Color(0xFF0748D6),
-    divider = Color(0xFFDCE4F2), edge = Color(0xFFC9D8F2), edgeStrong = Color(0xFF0754FF), tabMark = Color(0xFF0754FF),
-    warn = Color(0xFFC62337), choice = Color(0xFFEDF2FC), choiceText = Color(0xFF4A5F84), choiceOn = Color(0xFF0754FF),
-    choiceOnText = Color.White, level = Color(0xFFE1EBFF), levelText = Color(0xFF0748D6), track = Color(0xFFDCE5F5),
-    bar = Color(0xFF0754FF), avatar = Color(0xFFE1EBFF), avatarText = Color(0xFF0748D6), secondaryButton = Color(0xFFFFFFFF),
-    disabled = Color(0xFFC9D3E3), disabledText = Color(0xFF6E7D96), danger = Color(0xFFFFECEE), dangerText = Color(0xFFC62337),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1C63FF), Color(0xFF0754FF))), primaryText = Color.White,
-    primaryBase = Color(0xFF0335B0), skeleton = Color(0xFFE3EAF6), handle = Color(0xFFB5C3DB), scrim = Color(0x8C091A33),
+    canvas = Color(0xFFF2F2F7), canvasTop = Color(0xFFF2F2F7), card = Color.White, cardTop = Color.White,
+    sheet = Color.White, text = Color.Black, secondary = Color(0xFF848489), info = Color(0xFF1F5EFF),
+    divider = Color(0x293C3C43), edge = Color(0x293C3C43), edgeStrong = Color(0xFF1F5EFF), tabMark = Color(0xFF1F5EFF),
+    warn = Color(0xFFFF3B30), choice = Color.White, choiceText = Color(0xFF848489), choiceOn = Color(0xFF1F5EFF),
+    choiceOnText = Color.White, level = Color(0xFFE3E3E8), levelText = Color(0xFF1F5EFF), track = Color(0xFFE3E3E8),
+    bar = Color(0xFF1F5EFF), avatar = Color(0xFFE3E3E8), avatarText = Color(0xFF848489), secondaryButton = Color(0xFFE3E3E8),
+    disabled = Color(0xFFE8E8ED), disabledText = Color(0xFFA9A9AE), danger = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    primaryBase = Color.Transparent, skeleton = Color(0xFFE9E9EE), handle = Color(0x4D3C3C43), scrim = Color(0x40000000),
 )
 
 @Composable
@@ -236,7 +240,7 @@ internal fun BlueMoreButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
 internal enum class BlueKind { PRIMARY, SECONDARY, DANGER, DISABLED }
 
 /**
- * 버튼(56dp · 모서리 16) — 주는 흰 면과 얇은 파란 아랫면, 보조는 남색 면 · 파란 테두리, 위험은 코랄 테두리.
+ * 버튼 — 통합안 버튼(주 = 블루 알약 54 + 원 화살표, 보조 = 회색 알약, 위험 = 회색 알약 + 빨간 글자, 막힘 = 흐린 회색).
  * 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
  */
 @Composable
@@ -248,45 +252,15 @@ internal fun BlueButton(
     busy: Boolean = false,
     enabled: Boolean = true,
 ) {
-    val ink = blueInk()
-    val active = enabled && !busy && kind != BlueKind.DISABLED
-    val off = kind == BlueKind.DISABLED || !enabled
-    val base = if (kind == BlueKind.PRIMARY && !off) 4.dp else 0.dp
-    val shape = SurfaceShape
-    val color = when {
-        off -> ink.disabledText
-        kind == BlueKind.PRIMARY -> ink.primaryText
-        kind == BlueKind.DANGER -> ink.dangerText
-        kind == BlueKind.SECONDARY && !StepUpColors.dark -> ink.text
-        else -> ink.text
-    }
-    Box(
-        modifier.fillMaxWidth().heightIn(min = 56.dp + base)
-            .drawBehind {
-                val r = CornerRadius(16.dp.toPx())
-                if (base > 0.dp) drawRoundRect(ink.primaryBase, cornerRadius = r)
-            }
-            .padding(bottom = base)
-            .clip(shape)
-            .then(
-                when {
-                    off -> Modifier.background(ink.disabled, shape)
-                    kind == BlueKind.PRIMARY -> Modifier.background(ink.primaryFace, shape)
-                    kind == BlueKind.DANGER -> Modifier.background(ink.danger, shape).border(1.5.dp, ink.warn, shape)
-                    else -> Modifier.background(ink.secondaryButton, shape).border(1.5.dp, ink.edgeStrong, shape)
-                },
-            )
-            .feedbackClickable(enabled = active, onClick = onClick)
-            .semantics { if (busy) contentDescription = text },
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (busy) {
-                RunSpinner(Modifier.size(18.dp), color = color, track = color.copy(alpha = 0.25f))
-                Spacer(Modifier.width(10.dp))
-            }
-            Text(text, style = blueText(17.sp, color, FontWeight.Bold, 1.25f), textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
+    when (kind) {
+        BlueKind.PRIMARY -> PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
+        BlueKind.SECONDARY -> SecondaryBusyButton(text, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy)
+        BlueKind.DANGER -> DangerButton(text, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy)
+        BlueKind.DISABLED -> PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = ButtonState.Disabled)
     }
 }
 
@@ -658,7 +632,7 @@ internal fun BlueChoiceRow(
                 .then(if (selected) Modifier.background(ink.info) else Modifier.border(2.dp, ink.secondary.copy(alpha = 0.85f), CircleShape)),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(Icons.Filled.Check, null, tint = if (StepUpColors.dark) Color(0xFF06274D) else Color.White, modifier = Modifier.size(18.dp))
+            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
         }
         if (selected && selectedLabel != null) {
             Spacer(Modifier.width(10.dp))

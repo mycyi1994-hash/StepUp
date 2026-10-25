@@ -93,8 +93,8 @@ object RunShareCard {
             val h = w * logo.height / logo.width
             canvas.drawBitmap(logo, null, Rect(MARGIN, MARGIN, MARGIN + w, MARGIN + h), paint)
         }
-        val regular = ResourcesCompat.getFont(context, R.font.pretendard_medium)
-        val heavy = ResourcesCompat.getFont(context, R.font.pretendard_extrabold)
+        val regular = ResourcesCompat.getFont(context, R.font.paperlogy_5medium)
+        val heavy = ResourcesCompat.getFont(context, R.font.paperlogy_7bold)
         if (!date.isNullOrBlank()) {
             paint.color = LABEL
             paint.typeface = regular
@@ -142,7 +142,7 @@ object RunShareCard {
         return bitmap
     }
 
-    /** Pretendard 가장 굵은 굵기보다 더 굵게 — 같은 색 테두리를 한 겹 더 그린다(앱의 큰 운동 숫자와 같은 모양) */
+    /** 글꼴 가장 굵은 굵기보다 더 굵게 — 같은 색 테두리를 한 겹 더 그린다(앱의 큰 운동 숫자와 같은 모양) */
     private fun heavyText(canvas: Canvas, paint: Paint, text: String, x: Float, y: Float, weight: Float = 0.035f) {
         val style = paint.style
         val stroke = paint.strokeWidth
@@ -256,8 +256,8 @@ object RunShareCard {
             val h = w * logo.height / logo.width
             canvas.drawBitmap(logo, null, Rect(64, 64, 64 + w, 64 + h), paint)
         }
-        val regular = ResourcesCompat.getFont(context, R.font.pretendard_medium)
-        val heavy = ResourcesCompat.getFont(context, R.font.pretendard_extrabold)
+        val regular = ResourcesCompat.getFont(context, R.font.paperlogy_5medium)
+        val heavy = ResourcesCompat.getFont(context, R.font.paperlogy_7bold)
         if (!date.isNullOrBlank()) {
             paint.color = WHITE
             paint.typeface = regular

@@ -4,7 +4,7 @@
         <item name="android:windowBackground">@color/night</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <!-- 바닥이 흰색이라 상태바 아이콘은 어두워야 시계와 배터리가 보인다 -->
-        <item name="android:windowLightStatusBar">true</item>
+        <!-- 바닥이 밝으면 상태바 아이콘은 어두워야 시계와 배터리가 보인다(다크 바닥이면 values-night 가 밝게) -->
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
     </style>
 </resources>

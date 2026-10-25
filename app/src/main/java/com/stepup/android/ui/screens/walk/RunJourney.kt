@@ -164,32 +164,33 @@ internal class RunPalette(
     val emblemInk: Color,
 )
 
+// UI 최종 통합안(2026-10-25) — 다크블루 · 화이트블루, 평평한 블루(그라데이션 없음) · 회색 채움
 private val DarkRun = RunPalette(
-    screen = Color(0xFF041C33), panel = Color(0xEB0A1A33), panelEdge = Color(0xFF26395A), divider = Color(0xFF26395A),
-    label = Color(0xFFB6C4DD), text = Color.White, muted = Color(0xFF8D9DBB), unit = Color(0xFF7EAEFF),
-    track = Color(0xFF213453), bar = listOf(Color(0xFF1A61F0), Color(0xFF3A8BFF)),
-    primary = listOf(Color(0xFF1159F0), Color(0xFF2C7DFF)), primaryOff = Color(0xFF1D355F),
-    stopFace = Color(0xFF13274A), stopEdge = Color(0xFF2B4168), stopMark = Color(0xFFF26D6D),
+    screen = Color(0xFF070B14), panel = Color(0xF20E1424), panelEdge = Color(0x17FFFFFF), divider = Color(0x17FFFFFF),
+    label = Color(0xFF969CAA), text = Color.White, muted = Color(0xFF6E7586), unit = Color(0xFF969CAA),
+    track = Color(0xFF222A3D), bar = listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF)),
+    primary = listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF)), primaryOff = Color(0xFF141A27),
+    stopFace = Color(0xFF202736), stopEdge = Color.Transparent, stopMark = Color(0xFFFF453A),
     warnFace = Color(0xFFFDB829), warnInk = Color(0xFF14171D), warnIcon = Color(0xFFF7B32B),
-    voidFace = Color(0xFFD64545), voidInk = Color.White,
-    card = Color(0xFF0A1A32), cardEdge = Color(0xFF223759),
-    chipEdge = Color(0xFF34496D), chipText = Color(0xFFC9D5EA), doneText = Color(0xFF7EAEFF),
-    ghostFace = Color(0xFF0E2242), ghostEdge = Color(0xFF2A3F63),
-    emblemFace = Color(0xFF12284B), emblemInk = Color(0xFFDCE6FF),
+    voidFace = Color(0xFFFF453A), voidInk = Color.White,
+    card = Color(0xFF0E1424), cardEdge = Color.Transparent,
+    chipEdge = Color.Transparent, chipText = Color(0xFFE2E8F5), doneText = Color(0xFF6E9BFF),
+    ghostFace = Color(0xFF202736), ghostEdge = Color.Transparent,
+    emblemFace = Color(0xFF202736), emblemInk = Color(0xFFE2E8F5),
 )
 
 private val LightRun = RunPalette(
-    screen = Color(0xFFF2F5FA), panel = Color(0xF2FFFFFF), panelEdge = Color(0xFFD5DEEE), divider = Color(0xFFE0E6F1),
-    label = Color(0xFF4A5775), text = Color(0xFF0E1A33), muted = Color(0xFF5B6886), unit = Color(0xFF1F63D9),
-    track = Color(0xFFDCE4F2), bar = listOf(Color(0xFF1A61F0), Color(0xFF3A8BFF)),
-    primary = listOf(Color(0xFF1159F0), Color(0xFF2C7DFF)), primaryOff = Color(0xFFB9C8E6),
-    stopFace = Color.White, stopEdge = Color(0xFFD5DEEE), stopMark = Color(0xFFE05252),
+    screen = Color(0xFFF2F2F7), panel = Color(0xF2FFFFFF), panelEdge = Color(0x293C3C43), divider = Color(0x293C3C43),
+    label = Color(0xFF848489), text = Color.Black, muted = Color(0xFF9C9CA2), unit = Color(0xFF848489),
+    track = Color(0xFFE3E3E8), bar = listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF)),
+    primary = listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF)), primaryOff = Color(0xFFE8E8ED),
+    stopFace = Color(0xFFE3E3E8), stopEdge = Color.Transparent, stopMark = Color(0xFFFF3B30),
     warnFace = Color(0xFFFDB829), warnInk = Color(0xFF14171D), warnIcon = Color(0xFFD08A00),
-    voidFace = Color(0xFFD64545), voidInk = Color.White,
-    card = Color.White, cardEdge = Color(0xFFD5DEEE),
-    chipEdge = Color(0xFFC5D1E6), chipText = Color(0xFF34405E), doneText = Color(0xFF1F63D9),
-    ghostFace = Color.White, ghostEdge = Color(0xFFD5DEEE),
-    emblemFace = Color(0xFFE8EEF9), emblemInk = Color(0xFF1F3F86),
+    voidFace = Color(0xFFFF3B30), voidInk = Color.White,
+    card = Color.White, cardEdge = Color.Transparent,
+    chipEdge = Color.Transparent, chipText = Color(0xFF3C3C43), doneText = Color(0xFF1F5EFF),
+    ghostFace = Color(0xFFE3E3E8), ghostEdge = Color.Transparent,
+    emblemFace = Color(0xFFE3E3E8), emblemInk = Color(0xFF3C3C43),
 )
 
 @Composable

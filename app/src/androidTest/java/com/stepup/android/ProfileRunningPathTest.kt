@@ -103,8 +103,8 @@ class ProfileRunningPathTest {
                 compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("34.2")
                 compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8")
             }
-            // 순서: 프로필 → 카드 → 기록 보기 → 지갑 · 설정(챌린지 줄은 2026-10-17 뺐다)
-            val order = listOf("profile-edit", "profile-record-card", "profile-records", "profile-wallet", "profile-settings")
+            // 순서(UI 최종 통합안 me): 프로필 → 기록 카드 → 지갑 · 프로필 수정 · 내 러닝 기록 · 설정(챌린지 줄은 2026-10-17 뺐다)
+            val order = listOf("profile-name", "profile-record-card", "profile-wallet", "profile-edit", "profile-records", "profile-settings")
                 .map { compose.onNodeWithTag(it).fetchSemanticsNode().positionInRoot.y }
             assertTrue("running-path order $order", order == order.sorted())
             shot("01-profile")

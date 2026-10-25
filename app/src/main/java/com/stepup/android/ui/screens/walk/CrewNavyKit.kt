@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -61,36 +65,36 @@ import com.stepup.android.ui.theme.StepUpSans
  * 이 크루 흐름을 승인 시안에 맞춘다". 큰 주 버튼은 흰 면 + 파란 아랫면 하나, 보조 버튼은 남색 면 + 파란 테두리.
  */
 internal object CrewNavy {
-    val Bg = Color(0xFF031427)
-    val BgTop = Color(0xFF05193A)
-    val Card = Color(0xFF0A2749)
-    val CardTop = Color(0xFF0D3160)
-    val Text = Color(0xFFF5F8FF)
-    val Sub = Color(0xFFABC6ED)
-    val Cyan = Color(0xFF48D9FA)
-    val Line = Color(0xFF173F7A)
-    val Edge = Color(0xFF2F72FF)
-    val Blue = Color(0xFF0754FF)
-    val LevelFace = Color(0xFF0E3570)
-    val LevelInk = Color(0xFF9EC2FF)
-    val Track = Color(0xFF12305C)
-    val WhiteTop = Color(0xFFFFFFFF)
-    val WhiteBottom = Color(0xFFE6F0FD)
-    val Ink = Color(0xFF071B3D)
-    val Secondary = Color(0xFF061D3B)
-    val Warn = Color(0xFFFF8E86)
-    val WarnFace = Color(0xFF481F32)
-    val Mint = Color(0xFF6FE8CD)
-    val Note = Color(0xFF0E3366)
-    val Sheet = Color(0xFF0B2850)
-    val Scrim = Color(0x99000814)
+    val Bg = Color(0xFF070B14)
+    val BgTop = Color(0xFF070B14)
+    val Card = Color(0xFF0E1424)
+    val CardTop = Color(0xFF0E1424)
+    val Text = Color(0xFFFFFFFF)
+    val Sub = Color(0xFF969CAA)
+    val Cyan = Color(0xFF6E9BFF)
+    val Line = Color(0x17FFFFFF)
+    val Edge = Color(0x00000000)
+    val Blue = Color(0xFF2F6BFF)
+    val LevelFace = Color(0xFF202736)
+    val LevelInk = Color(0xFF6E9BFF)
+    val Track = Color(0xFF222A3D)
+    val WhiteTop = Color(0xFF2F6BFF)
+    val WhiteBottom = Color(0xFF2F6BFF)
+    val Ink = Color(0xFFFFFFFF)
+    val Secondary = Color(0xFF202736)
+    val Warn = Color(0xFFFF453A)
+    val WarnFace = Color(0xFF2A1219)
+    val Mint = Color(0xFF32D74B)
+    val Note = Color(0xFF0E1424)
+    val Sheet = Color(0xFF0E1424)
+    val Scrim = Color(0x8C000000)
     val Gutter = 20.dp
 }
 
 internal fun navyText(size: TextUnit, color: Color = CrewNavy.Text, weight: FontWeight = FontWeight.Normal, line: Float = 1.35f) =
     TextStyle(fontFamily = StepUpSans, fontSize = size, fontWeight = weight, color = color, lineHeight = line.em, letterSpacing = (-0.01).em)
 
-/** 큰 주 버튼 — 흰 면(위 → 아래 옅은 파랑) + 파란 아랫면 4dp. 요청 중이면 돌고 눌리지 않는다 */
+/** 큰 주 버튼 — 통합안 블루 알약 + 원 화살표. 요청 중이면 돌고 눌리지 않는다 */
 @Composable
 internal fun NavyPrimaryButton(
     text: String,
@@ -99,33 +103,11 @@ internal fun NavyPrimaryButton(
     enabled: Boolean = true,
     busy: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(16.dp)
-    val live = enabled && !busy
-    Box(
-        modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape)
-            .background(if (live) CrewNavy.Blue else CrewNavy.Line, shape)
-            .then(if (live) Modifier.feedbackClickable(role = Role.Button, onClick = onClick) else Modifier),
-    ) {
-        Box(
-            Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
-                .background(
-                    if (live) Brush.verticalGradient(listOf(CrewNavy.WhiteTop, CrewNavy.WhiteBottom))
-                    else Brush.verticalGradient(listOf(CrewNavy.Card, CrewNavy.Card)),
-                    shape,
-                )
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (busy) {
-                CircularProgressIndicator(Modifier.size(22.dp), color = CrewNavy.Ink, strokeWidth = 2.5.dp)
-            } else {
-                Text(
-                    text, style = navyText(18.sp, if (live) CrewNavy.Ink else CrewNavy.Sub, FontWeight.Bold),
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
+    PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
 }
 
 /** 보조 버튼 — 남색 면 + 파란 테두리 */

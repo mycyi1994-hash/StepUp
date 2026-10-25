@@ -55,6 +55,7 @@ import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Routes
+import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.ShoeGradeBadge
 import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.experience.ExperienceProvider
@@ -123,40 +124,42 @@ class RunJourneyDesignTest {
             edgeToEdge()
             compose.setContent { DeviceFrame { MainScaffold() } }
 
-            // HOME · E01 — 러닝 홈(전시장 · 신발 줄 · 러닝 시작 · 오늘 걸음)과 오늘의 활동 시트
+            // HOME · E01 — 러닝 홈(UI 최종 통합안: 오늘 걸음 · 자주 달리는 곳 사진 카드 · 숫자 줄 · 둥근 러닝 시작)과 오늘의 활동 시트
             awaitTag("home-start-run")
-            awaitTag("home-shoe-name")
-            // 시안 HOME — 이름 아래 줄에 등급 배지 · Lv(이름 글 안이 아니다)
-            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("home-shoe-info")), useUnmergedTree = true)
-                .assertExists()
-            compose.onNodeWithTag("home-stat-durability-value", useUnmergedTree = true).assertTextContains("92", substring = true)
-            compose.onNodeWithTag("home-durability-bar", useUnmergedTree = true).assertExists()
+            awaitTag("home-spot")
+            compose.onNodeWithTag("home-stats").assertExists()
+            // 신발 전시장 · 신발 줄은 홈에 없다(신발 탭으로)
+            compose.onAllNodesWithTag("home-shoe-name", useUnmergedTree = true).assertCountEquals(0)
             shot("HOME")
-            // 신발 이름 바꾸기(2026-10-17) — 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
+            // 신발 이름 바꾸기(2026-10-17) — 신발 탭 연필로 옮겼다. 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
             val shoeId = requireNotNull(added)
-            tap("home-shoe-rename")
-            awaitTag("home-shoe-rename-sheet")
-            compose.onNodeWithTag("home-shoe-rename-field").performTextClearance()
-            compose.onNodeWithTag("home-shoe-rename-field").performTextInput("나의 아주 긴 첫 레이싱화 이름이에요 정말로")
-            shot("HOME-rename")
-            tap("home-shoe-rename-save")
-            awaitGone("home-shoe-rename-sheet")
+            compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
+            awaitTag("shoe-hero-name")
+            tap("shoe-rename")
+            awaitTag("shoe-rename-sheet")
+            compose.onNodeWithTag("shoe-rename-field").performTextClearance()
+            compose.onNodeWithTag("shoe-rename-field").performTextInput("나의 아주 긴 첫 레이싱화 이름이에요 정말로")
+            shot("SHOES-rename")
+            tap("shoe-rename-save")
+            awaitGone("shoe-rename-sheet")
             // 20자에서 자른다 — 그리고 두 줄 안에서 글자를 줄여 다 보인다(… 없이)
             val saved = runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] }
             assertEquals("나의 아주 긴 첫 레이싱화 이름이에요", saved)
             compose.waitUntil(5_000) {
-                runCatching { compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true).assertTextEquals(saved!!) }.isSuccess
+                runCatching { compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextEquals(saved!!) }.isSuccess
             }
             val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-            compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true)
+            compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true)
                 .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertTrue("long shoe names stay whole: ${layouts.map { it.lineCount }}", layouts.none { it.hasVisualOverflow })
-            shot("HOME-renamed")
-            tap("home-shoe-rename")
-            awaitTag("home-shoe-rename-reset")
-            tap("home-shoe-rename-reset")
-            awaitGone("home-shoe-rename-sheet")
+            shot("SHOES-renamed")
+            tap("shoe-rename")
+            awaitTag("shoe-rename-reset")
+            tap("shoe-rename-reset")
+            awaitGone("shoe-rename-sheet")
             compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] } == null }
+            compose.onNodeWithTag("nav-label-${Screen.Run.route}", useUnmergedTree = true).performClick()
+            awaitTag("home-start-run")
             tap("home-steps")
             awaitTag("home-details")
             shot("E01")
@@ -201,16 +204,16 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("run-hero-value", useUnmergedTree = true).assertTextEquals("12:30")
             compose.onNodeWithTag("run-distance-value", useUnmergedTree = true).assertTextEquals("1.56")
             compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertExists()
-            // 내구도는 신고 있는 신발(seed — 내구도 92)
-            compose.onNodeWithTag("run-durability-value", useUnmergedTree = true).assertTextEquals("92")
-            compose.onNode(hasText(label(R.string.run_free_chip_running)) and hasAnyAncestor(hasTestTag("run-status")), useUnmergedTree = true)
-                .assertExists()
+            // 신발 내구도(seed — 92)는 러닝 정보(E03)에서 본다 — 러닝 화면 숫자 줄은 시간 · 페이스 · 속도(UI 최종 통합안)
+            compose.onNodeWithTag("run-status", useUnmergedTree = true).assertTextEquals(label(R.string.run_free_chip_running))
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertTextContains(label(R.string.run_pause))
-            compose.onNodeWithTag("run-finish").assertIsDisplayed().assertTextContains(label(R.string.run_free_stop))
+            // 달리는 중에는 종료가 없다 — 화면 잠금 · 일시정지 · 지도. 종료는 멈춘 뒤 길게 눌러서
+            compose.onAllNodesWithTag("run-finish").assertCountEquals(0)
+            compose.onNodeWithTag("run-lock").assertIsDisplayed()
             compose.onAllNodesWithTag("run-details-reward", useUnmergedTree = true).assertCountEquals(0)
             assertNoRewardText("run-live")
             assertRunFits("390x844")
-            // 이 검사는 390×844 · 글자 100%(viewport 기본값)에서 돈다 — 지도가 러닝 화면 높이의 68% 이상
+            // 둥근 지도 카드는 큰 거리 아래 · 숫자 줄 위(시안 running)
             assertMapShare("390x844")
             shot("R02", settle = 2_500)
 
@@ -268,7 +271,7 @@ class RunJourneyDesignTest {
 
             // R03 — 일시정지(일시정지 띠 · 다시 시작). 멈춰 있으니 속도 0.0, 페이스는 "—"
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true))
-            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.run_free_resume)) }
+            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.run_resume_short)) }
             awaitTag("run-paused-band")
             compose.onNodeWithTag("run-pace-value", useUnmergedTree = true).assertTextEquals("—")
             compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("0.0")
@@ -282,27 +285,22 @@ class RunJourneyDesignTest {
             tap("run-goal-cancel")
             awaitGone("run-goal-value")
 
-            // R04 · R07 — 러닝을 마칠까요?(저장하고 종료 · 계속 달리기 · 저장하지 않고 종료) · 저장하지 않고 종료할까요?(뒤 화면은 멈춘 채)
+            // R04 — 종료는 1초 길게(확인창 없음). 짧게 누르면 "길게 눌러 종료해요" 말풍선만
             tap("run-finish")
-            awaitTag("run-end-dialog")
-            compose.onNodeWithTag("run-end-line", useUnmergedTree = true).assertTextContains("12:30", substring = true)
-            compose.onNodeWithTag("run-end-save").assertTextContains(label(R.string.run_free_save_finish))
-            compose.onNodeWithTag("run-end-continue").assertTextContains(label(R.string.run_continue))
-            compose.onNodeWithTag("run-end-discard").assertTextContains(label(R.string.run_free_discard))
-            // 자유 러닝의 마칠까요 시트에는 닫기(X)가 없다 — 바깥 · 뒤로 가기로 닫는다
-            compose.onAllNodesWithTag("run-sheet-close", useUnmergedTree = true).assertCountEquals(0)
+            awaitTag("run-hold-tip")
+            compose.onAllNodesWithTag("run-end-dialog").assertCountEquals(0)
             shot("R04")
-            tap("run-end-discard")
+            // R07 — 저장하지 않고 종료는 멈춘 뒤 러닝 정보 안에 — 확인 시트(돌아가기 · 저장 없이 종료), 돌아가면 멈춘 러닝
+            tap("run-details-open")
+            awaitTag("run-details-discard")
+            tap("run-details-discard")
             awaitTag("run-discard-dialog")
             compose.onNodeWithTag("run-discard-confirm").assertTextContains(label(R.string.run_free_discard_confirm))
             compose.onNodeWithTag("run-discard-back").assertTextContains(label(R.string.runflow_discard_back))
             shot("R07")
             tap("run-discard-back")
             awaitGone("run-discard-dialog")
-            // 돌아가기를 누르면 마칠까요(R04)로 돌아간다 — 뒤로 가기로 닫으면 멈춘 러닝
-            awaitTag("run-end-dialog")
-            back()
-            awaitGone("run-end-dialog")
+            awaitTag("run-finish")
 
             // E04 · S01 — 저장 중 · 저장 실패(기록은 화면에 남고 같은 러닝으로 다시 저장)
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true, saveStatus = RunSaveStatus.SAVING))
@@ -419,8 +417,7 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("run-result-distance", useUnmergedTree = true).assertTextEquals("—")
             compose.onNodeWithTag("run-result-pace", useUnmergedTree = true).assertTextEquals("—")
             compose.onNodeWithTag("run-result-speed", useUnmergedTree = true).assertTextEquals("—")
-            compose.onNodeWithTag("run-result-durability", useUnmergedTree = true).assertTextEquals("92")
-            assertNoRewardResult()
+                assertNoRewardResult()
             shot("R05-no-route")
 
             // U03 · L04 · E03 · S01-goal · C04 · C05 · C01 · C02 — 러닝 챌린지(자유 러닝이 아니라 예전 러닝 화면 그대로)
@@ -541,7 +538,7 @@ class RunJourneyDesignTest {
      * 360×800 · 390×844 · 412×915 · 큰 글씨 · 밝은 테마 — 자유 러닝 중은 큰 시간이 버튼 위 · 두 버튼이 화면 안(390×844 · 글자 100% 는
      * 지도가 러닝 화면 높이의 68% 이상), 결과는 완료 · 공유가 화면 안이고 보상 칸 · SUP 가 없다
      */
-    /** 가장 긴 이름(20자, 꽉 찬 한글) — 360dp · 큰 글씨에서도 러닝 탭 신발 이름이 넘치지 않고 다 보인다(2026-10-17) */
+    /** 가장 긴 이름(20자, 꽉 찬 한글) — 360dp · 큰 글씨에서도 신발 탭 신발 이름이(UI 최종 통합안에서 신발 탭으로 옮겼다) 넘치지 않고 다 보인다(2026-10-17) */
     @Test fun longShoeNameFits() {
         seed()
         val shoeId = requireNotNull(added)
@@ -549,20 +546,20 @@ class RunJourneyDesignTest {
         try {
             runBlocking { ServiceLocator.userPrefs.setShoeNickname(shoeId, longest) }
             edgeToEdge()
-            compose.setContent { DeviceFrame { MainScaffold() } }
+            compose.setContent { DeviceFrame { MainScaffold(initialTab = Screen.Customize) } }
             for (next in listOf(Viewport(360, 800), Viewport(360, 800, font = 1.3f), Viewport(412, 915))) {
                 compose.runOnIdle { viewport = next }
                 compose.waitForIdle()
-                awaitTag("home-shoe-name")
+                awaitTag("shoe-hero-name")
                 compose.waitUntil(5_000) {
-                    runCatching { compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true).assertTextEquals(longest) }.isSuccess
+                    runCatching { compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true).assertTextEquals(longest) }.isSuccess
                 }
                 val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-                compose.onNodeWithTag("home-shoe-name", useUnmergedTree = true)
+                compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true)
                     .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
                 assertTrue("${next.label}: the whole name shows (${layouts.map { it.lineCount }})", layouts.none { it.hasVisualOverflow })
-                compose.onNodeWithTag("home-shoe-rename").assertIsDisplayed()
-                shot("HOME-long-name-${next.label}")
+                compose.onNodeWithTag("shoe-rename").assertIsDisplayed()
+                shot("SHOES-long-name-${next.label}")
             }
         } finally {
             runBlocking { ServiceLocator.userPrefs.setShoeNickname(shoeId, null) }
@@ -1882,11 +1879,11 @@ class RunJourneyDesignTest {
         compose.waitForIdle()
         val hero = bounds("run-hero-value")
         val action = bounds("run-primary-action")
-        val finish = bounds("run-finish")
+        val map = bounds("run-map-expand")
         val limit = frameBottom()
         assertTrue("run time above the buttons at $where: $hero / $action", hero.bottom <= action.top)
         assertTrue("pause inside the screen at $where: $action / $limit", action.bottom <= limit + 1)
-        assertTrue("finish inside the screen at $where: $finish / $limit", finish.bottom <= limit + 1)
+        assertTrue("map button inside the screen at $where: $map / $limit", map.bottom <= limit + 1)
     }
 
     /**
@@ -1931,13 +1928,11 @@ class RunJourneyDesignTest {
     private fun assertMapShare(where: String) {
         compose.waitForIdle()
         val map = bounds("run-live-map")
-        val screen = bounds("run-live")
-        val frame = bounds(FRAME)
-        val share = map.height / screen.height
-        assertTrue(
-            "map is at least 68% of the run screen at $where: $share (map $map / screen $screen; of the frame ${map.height / frame.height})",
-            share >= 0.68f,
-        )
+        val distance = bounds("run-distance-value")
+        val time = bounds("run-hero-value")
+        assertTrue("map card has room at $where: $map", map.height >= 120f)
+        assertTrue("map card sits under the distance and above the numbers at $where: $distance / $map / $time",
+            distance.bottom <= map.top + 1 && map.bottom <= time.top + 1)
     }
 
     /** 믿을 수 없는 지금 속도 · 페이스는 "—"(속도 측정 오류 · 측정 무효) */
@@ -1983,7 +1978,7 @@ class RunJourneyDesignTest {
         compose.onNodeWithTag("run-result-speed", useUnmergedTree = true).assertTextEquals("7.5")
         compose.onNodeWithTag("run-result-durability", useUnmergedTree = true).assertTextEquals("92")
         compose.onNodeWithTag("run-result-done").assertTextContains(label(R.string.finish_done))
-        compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_free_share))
+        compose.onNodeWithTag("run-result-share").assertTextContains(label(R.string.run_share_record))
         compose.onNodeWithTag("run-result-more").assertExists()
         compose.onAllNodesWithTag("run-result-records", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithTag("run-result-delete", useUnmergedTree = true).assertCountEquals(0)

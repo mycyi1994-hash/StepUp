@@ -135,24 +135,25 @@ internal class ChatInk(
     val pendingText: Color,
 )
 
+// UI 최종 통합안(2026-10-25) — 받은 말 = 묶음 면, 보낸 말 = 블루, 그 밖은 회색 채움 · 블루 글자
 private val DarkChatInk = ChatInk(
-    incoming = Color(0xFF0B2E5C), incomingText = Color(0xFFF5F8FF), outgoing = Color(0xFFE8F4FF), outgoingText = Color(0xFF06274D),
-    gone = Color(0xFF0A2343), pinned = Color(0xFF0A2A55), badge = Color(0xFF0B3566), badgeText = Color(0xFF48D9FA),
-    unread = Color(0xFF0754FF), unreadText = Color(0xFFF5F8FF), composer = Color(0xFF0B2B55), sendOff = Color(0xFF1A3E70),
-    sendOffIcon = Color(0xFF7FA2D8), sendOn = Color(0xFFF5F8FF), sendOnIcon = Color(0xFF0754FF), reply = Color(0xFF0A2547),
-    banner = Color(0xFF0A2547), jump = Color(0xFF061D3B), jumpText = Color(0xFF48D9FA), failed = Color(0xFF061D3B),
-    ownerFace = Color(0xFF4A3330), ownerFaceText = Color(0xFFF3DCCB), memberFace = Color(0xFF0D3A75), memberFaceText = Color(0xFFBFD6FF),
-    highlight = Color(0x2E48D9FA), pending = Color(0xFF9CC7F5), pendingText = Color(0xFF06274D),
+    incoming = Color(0xFF151C2D), incomingText = Color.White, outgoing = Color(0xFF2F6BFF), outgoingText = Color.White,
+    gone = Color(0xFF0E1424), pinned = Color(0xFF0E1424), badge = Color(0xFF202736), badgeText = Color(0xFF6E9BFF),
+    unread = Color(0xFF2F6BFF), unreadText = Color.White, composer = Color(0xFF0E1424), sendOff = Color(0xFF202736),
+    sendOffIcon = Color(0xFF6E7586), sendOn = Color(0xFF2F6BFF), sendOnIcon = Color.White, reply = Color(0xFF151C2D),
+    banner = Color(0xFF0E1424), jump = Color(0xFF202736), jumpText = Color(0xFF6E9BFF), failed = Color(0xFF0E1424),
+    ownerFace = Color(0xFF202736), ownerFaceText = Color(0xFFE2E8F5), memberFace = Color(0xFF202736), memberFaceText = Color(0xFF969CAA),
+    highlight = Color(0x2E2F6BFF), pending = Color(0xFF6E9BFF), pendingText = Color.White,
 )
 
 private val LightChatInk = ChatInk(
-    incoming = Color(0xFFFFFFFF), incomingText = Color(0xFF0B1E3F), outgoing = Color(0xFF0754FF), outgoingText = Color(0xFFFFFFFF),
-    gone = Color(0xFFE8EEF8), pinned = Color(0xFFFFFFFF), badge = Color(0xFFE1EBFF), badgeText = Color(0xFF0748D6),
-    unread = Color(0xFF0754FF), unreadText = Color(0xFFFFFFFF), composer = Color(0xFFFFFFFF), sendOff = Color(0xFFD5DCE8),
-    sendOffIcon = Color(0xFF7B8AA0), sendOn = Color(0xFF0754FF), sendOnIcon = Color(0xFFFFFFFF), reply = Color(0xFFEDF2FC),
-    banner = Color(0xFFEDF2FC), jump = Color(0xFFFFFFFF), jumpText = Color(0xFF0748D6), failed = Color(0xFFFFFFFF),
-    ownerFace = Color(0xFFF1E1D8), ownerFaceText = Color(0xFF6B4533), memberFace = Color(0xFFE1EBFF), memberFaceText = Color(0xFF0748D6),
-    highlight = Color(0x220754FF), pending = Color(0xFF8DB2F5), pendingText = Color(0xFF0B1E3F),
+    incoming = Color.White, incomingText = Color.Black, outgoing = Color(0xFF1F5EFF), outgoingText = Color.White,
+    gone = Color(0xFFE9E9EE), pinned = Color.White, badge = Color(0xFFE3E3E8), badgeText = Color(0xFF1F5EFF),
+    unread = Color(0xFF1F5EFF), unreadText = Color.White, composer = Color.White, sendOff = Color(0xFFE3E3E8),
+    sendOffIcon = Color(0xFF9C9CA2), sendOn = Color(0xFF1F5EFF), sendOnIcon = Color.White, reply = Color(0xFFEFEFF4),
+    banner = Color.White, jump = Color.White, jumpText = Color(0xFF1F5EFF), failed = Color.White,
+    ownerFace = Color(0xFFE3E3E8), ownerFaceText = Color(0xFF3C3C43), memberFace = Color(0xFFE3E3E8), memberFaceText = Color(0xFF848489),
+    highlight = Color(0x221F5EFF), pending = Color(0xFF5B8CFF), pendingText = Color.White,
 )
 
 @Composable

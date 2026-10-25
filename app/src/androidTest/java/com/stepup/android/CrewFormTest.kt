@@ -41,7 +41,7 @@ class CrewFormTest {
         }
     }
 
-    @Test fun meetupFormKeepsInvalidNumbersAndRequiresCorrectionBeforeSubmission() {
+    @Test fun meetupFormNeedsTitleAndPlaceAndKeepsNumbersInRange() {
         runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setGuideSeen()
@@ -75,23 +75,21 @@ class CrewFormTest {
             compose.onNodeWithContentDescription(description).assertIsFocused()
             compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.post_cat_flash)).performClick()
+        // 번개러닝(UI 최종 통합안 compose_flash) — 제목 · 만나는 곳을 채워야 올릴 수 있고, 숫자는 [−][값][+] 로만 바뀌어 범위를 벗어나지 않는다
+        compose.onNodeWithTag("post-cat-flash").performClick()
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_title, "Riverside run")
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_place, "Bridge entrance")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
-        fill(R.string.post_field_capacity, "201")
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_capacity, "2")
-        fill(R.string.post_field_starts_in, "")
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_starts_in, "30")
-        fill(R.string.post_field_distance, "1..2")
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_distance))
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("1..2")))
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_distance, "NaN")
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_distance, "1,5")
+        // 숫자 칸은 키보드를 닫은 뒤에 누른다 — 키보드가 닫히며 창이 늘어나는 동안 누르면 빗나간다(2026-10-25 PR #123 Experience QA)
+        hideKeyboard()
+        // 정원 2명 아래로는 줄지 않는다
+        repeat(4) { step("post-capacity-minus", "post-capacity-value", "${5 - it}") }
+        compose.onNodeWithTag("post-capacity-minus").assertIsNotEnabled()
+        // 달릴 거리는 0.5km 씩 · 출발까지는 1시간 안에서 5분씩
+        step("post-distance-plus", "post-distance-value", "1.5")
+        step("post-starts-minus", "post-starts-value", "55")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
         // Deliberately do not publish a real meetup from instrumentation.
     }
@@ -181,5 +179,28 @@ class CrewFormTest {
     private fun capture(name: String) {
         val directory = java.io.File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }
         captureDisplay(java.io.File(directory, "$name.png"))
+    }
+
+    /** 조절 단추를 보이게 한 뒤 한 번 누르고, 값 칸이 [expected] 가 될 때까지 기다린다 */
+    private fun step(key: String, valueTag: String, expected: String) {
+        compose.onNodeWithTag("form-content").performScrollToNode(hasTestTag(key))
+        compose.waitForIdle()
+        compose.onNodeWithTag(key).performClick()
+        compose.waitUntil(5_000) {
+            runCatching { compose.onNodeWithTag(valueTag, useUnmergedTree = true).assertTextEquals(expected) }.isSuccess
+        }
+    }
+
+    /** 키보드를 닫고 다 닫힐 때까지 기다린다 */
+    private fun hideKeyboard() {
+        compose.runOnUiThread {
+            androidx.core.view.WindowInsetsControllerCompat(compose.activity.window, compose.activity.window.decorView)
+                .hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+        compose.waitUntil(5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
+        compose.waitForIdle()
     }
 }

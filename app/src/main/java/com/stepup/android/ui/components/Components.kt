@@ -707,7 +707,7 @@ fun StartRunButton(
     }
 }
 
-/** 볼트 pill 버튼 (I'M IN, Claim 등) */
+/** 주 버튼(창 · 카드 안의 확인 · 받기) — 통합안 블루 알약, 가운데 글자(다음 화면으로 넘어가지 않는 확인이라 화살표 없음) */
 @Composable
 fun VoltButton(
     text: String,
@@ -715,31 +715,10 @@ fun VoltButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val shape = RoundedCornerShape(50)
-    Box(
-        modifier = modifier
-            .heightIn(min = StepUpDesign.TouchTarget)
-            .clip(shape)
-            .background(
-                if (enabled) VoltPlate else Brush.horizontalGradient(listOf(CarbonHigh, CarbonHigh)),
-                shape,
-            )
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding, vertical = StepUpDesign.SecondaryVerticalPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = if (enabled) OnVolt else Slate,
-            fontSize = StepUpDesign.SecondaryLabel,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.2.sp,
-        )
-    }
+    PrimaryButton(text, onClick, modifier, state = if (enabled) ButtonState.Idle else ButtonState.Disabled, arrow = false)
 }
 
-/** 외곽선 고스트 버튼 */
+/** 보조 버튼 — 통합안 회색 채움 알약. [accent] 가 강조색이 아니면(빨강 등) 그 색 글자 */
 @Composable
 fun GhostButton(
     text: String,
@@ -748,29 +727,7 @@ fun GhostButton(
     enabled: Boolean = true,
     accent: Color = Volt,
 ) {
-    val shape = RoundedCornerShape(50)
-    Box(
-        modifier = modifier
-            .heightIn(min = StepUpDesign.TouchTarget)
-            .clip(shape)
-            .background(CarbonHigh, shape)
-            .background(accent.copy(alpha = if (enabled) 0.08f else 0.03f), shape)
-            .border(1.dp, accent.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = StepUpDesign.SecondaryHorizontalPadding, vertical = StepUpDesign.SecondaryVerticalPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = if (!enabled) Slate else if (accent == Volt) {
-                if (StepUpColors.dark) VoltText else StepUpColors.voltDeep
-            } else accent,
-            fontSize = StepUpDesign.SecondaryLabel,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.5.sp,
-        )
-    }
+    SecondaryButton(text, onClick, modifier, enabled = enabled, color = if (accent == Volt) null else accent)
 }
 
 /** 필터 칩 (Discover / Crews / …) */

@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.stories
 
+import androidx.compose.foundation.lazy.itemsIndexed
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -99,6 +100,8 @@ fun StoriesTab(
     onWrite: (resume: Boolean) -> Unit,
     onOpenLocation: () -> Unit,
     onOpenRegion: () -> Unit,
+    /** 함께 뛰기 머리의 연필을 누를 때마다 1씩 오른다 — 쓰다 만 글이 있으면 이어 쓰기부터 묻는다(아래 큰 글쓰기 버튼 대신) */
+    writeRequest: Int = 0,
 ) {
     val context = LocalContext.current
     var allowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
@@ -130,6 +133,10 @@ fun StoriesTab(
         onWrite(false)
     }
     val startWriting = { if (draft != null) showResume = true else writeNew() }
+    var handledWrite by rememberSaveable { mutableStateOf(writeRequest) }
+    LaunchedEffect(writeRequest) {
+        if (writeRequest != handledWrite) { handledWrite = writeRequest; startWriting() }
+    }
 
     // 권한 요청 — 거절 · 다시 묻지 않음이어도 "지역 직접 선택"으로 이어 갈 수 있다. 거절된 뒤에는 다시 묻지 않고 설정으로
     var denied by rememberSaveable { mutableStateOf(false) }
@@ -155,6 +162,7 @@ fun StoriesTab(
                 onOpenMap = onOpenMap,
                 onClearFilter = { viewModel.filterPlace(null) },
                 onOpenRange = { showRange = true },
+                onSetRange = viewModel::setRange,
                 onOpenLocation = onOpenLocation,
                 onRetry = viewModel::refresh,
                 onWrite = startWriting,
@@ -330,6 +338,7 @@ private fun StoryListBody(
     onOpenMap: (StoryPlace?) -> Unit,
     onClearFilter: () -> Unit,
     onOpenRange: () -> Unit,
+    onSetRange: (StoryRange) -> Unit,
     onOpenLocation: () -> Unit,
     onRetry: () -> Unit,
     onWrite: () -> Unit,
@@ -363,64 +372,12 @@ private fun StoryListBody(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize().testTag("stories-list"),
-                contentPadding = PaddingValues(start = StoryListGutter, end = StoryListGutter, bottom = 24.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             ) {
                 item(key = "head") {
-                    StoryHead(
-                        title = if (origin.label.isBlank()) stringResource(R.string.story_blue_area_unknown_title)
-                        else stringResource(R.string.story_blue_area_title, origin.label),
-                        onTitle = onOpenLocation,
-                        details = {
-                            Text(
-                                stringResource(
-                                    if (origin.manual) R.string.story_range_from_region else R.string.story_range_from_me,
-                                    rangeLabel(range),
-                                ),
-                                style = runTextStyle(16.sp, if (origin.manual) t.label else t.text, FontWeight.Medium),
-                            )
-                            if (origin.manual) {
-                                Spacer(Modifier.height(2.dp))
-                                Text(stringResource(R.string.story_blue_region_basis), style = runTextStyle(13.sp, t.label, FontWeight.Medium))
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            StoryLink(
-                                stringResource(R.string.story_blue_change_range), onOpenRange, Modifier.testTag("stories-range"),
-                                trailing = Icons.Filled.KeyboardArrowDown,
-                            )
-                        },
-                        side = {
-                            Column(horizontalAlignment = Alignment.End) {
-                                val mapLabel = stringResource(R.string.story_open_map)
-                                StoryHeadCard(
-                                    Modifier.clip(RoundedCornerShape(18.dp))
-                                        .feedbackClickable(role = Role.Button, onClick = { onOpenMap(null) })
-                                        .semantics { contentDescription = mapLabel }
-                                        .testTag("stories-mini-map"),
-                                ) {
-                                    StoryMapTone {
-                                        StoryPinsMap(
-                                            pins = list.pins,
-                                            origin = origin.point,
-                                            originLabel = stringResource(
-                                                if (origin.manual) R.string.story_origin_region else R.string.story_origin_me,
-                                            ),
-                                            modifier = Modifier.fillMaxSize().testTag("stories-map"),
-                                            selectedKey = filter?.key,
-                                            rangeMeters = range.meters,
-                                            fitPins = false,
-                                            dotSeparator = true,
-                                        )
-                                    }
-                                }
-                                StoryLink(
-                                    stringResource(R.string.story_show_map), { onOpenMap(filter) },
-                                    Modifier.testTag("stories-open-map"),
-                                )
-                            }
-                        },
-                    )
+                    StoryListHead(origin, range, filter, onOpenLocation = onOpenLocation, onOpenMap = { onOpenMap(filter) }, onSetRange = onSetRange)
                 }
-                item(key = "section") { StorySectionTitle(filter, list.nearby.size, onClearFilter) }
+                if (filter != null) item(key = "section") { StorySectionTitle(filter, list.nearby.size, onClearFilter) }
                 // 이미 보이는 글이 있는데 새로 받기만 실패했다 — 글은 두고 따로 알린다(CM35)
                 if (!empty && sync is BoardSyncState.Failed) {
                     item(key = "refresh-failed") {
@@ -433,8 +390,8 @@ private fun StoryListBody(
                 when {
                     loading -> item(key = "loading") {
                         val label = stringResource(R.string.story_loading)
-                        Column(Modifier.semantics { contentDescription = label }.testTag("stories-loading")) {
-                            repeat(3) { StorySkeletonRow(); StoryDivider() }
+                        Column(Modifier.groupedRow(0, 1).semantics { contentDescription = label }.testTag("stories-loading")) {
+                            repeat(3) { if (it > 0) StoryDivider(); Box(Modifier.padding(horizontal = 16.dp)) { StorySkeletonRow() } }
                         }
                     }
                     signIn -> item(key = "sign-in") {
@@ -460,14 +417,16 @@ private fun StoryListBody(
                             }
                         }
                     }
-                    else -> items(list.nearby, key = { it.post.id }) { item ->
-                        StoryRow(
-                            post = item.post, place = item.place, meters = item.meters,
-                            onOpen = { onOpenPost(item.post.id) },
-                            onOpenPlace = item.place?.let { place -> { onOpenMap(place) } },
-                            onLike = { onLike(item.post.id) },
-                        )
-                        StoryDivider()
+                    else -> itemsIndexed(list.nearby, key = { _, it -> it.post.id }) { index, item ->
+                        Column(Modifier.groupedRow(index, list.nearby.size)) {
+                            if (index > 0) StoryDivider()
+                            StoryRow(
+                                post = item.post, place = item.place, meters = item.meters,
+                                onOpen = { onOpenPost(item.post.id) },
+                                onOpenPlace = item.place?.let { place -> { onOpenMap(place) } },
+                                onLike = { onLike(item.post.id) },
+                            )
+                        }
                     }
                 }
                 // 장소가 없는 예전 글 — 지도 · 거리에 들어가지 않는다. 지우지 않고 목록 끝에 둔다
@@ -476,11 +435,13 @@ private fun StoryListBody(
                         Text(stringResource(R.string.story_legacy_header), style = runTextStyle(14.sp, t.label, FontWeight.SemiBold),
                             modifier = Modifier.padding(top = 22.dp, bottom = 2.dp))
                     }
-                    items(list.legacy, key = { "legacy-${it.post.id}" }) { item ->
-                        StoryRow(post = item.post, place = null, meters = null,
-                            onOpen = { onOpenPost(item.post.id) }, onOpenPlace = null,
-                            onLike = { onLike(item.post.id) })
-                        StoryDivider()
+                    itemsIndexed(list.legacy, key = { _, it -> "legacy-${it.post.id}" }) { index, item ->
+                        Column(Modifier.groupedRow(index, list.legacy.size)) {
+                            if (index > 0) StoryDivider()
+                            StoryRow(post = item.post, place = null, meters = null,
+                                onOpen = { onOpenPost(item.post.id) }, onOpenPlace = null,
+                                onLike = { onLike(item.post.id) })
+                        }
                     }
                 }
             }
@@ -497,13 +458,7 @@ private fun StoryListBody(
                     icon = Icons.Filled.Add, italic = true,
                 )
             }
-            else -> StoryBottomAction {
-                StoryButton(
-                    stringResource(R.string.story_write), onWrite,
-                    Modifier.testTag("stories-write").guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
-                    icon = Icons.Filled.Add, italic = true,
-                )
-            }
+            else -> Unit
         }
     }
 }
@@ -803,4 +758,58 @@ private fun StoryNoticeToast(
         action = stringResource(if (notice is StoryNotice.Hidden) R.string.story_undo else R.string.common_close),
         onAction = if (notice is StoryNotice.Hidden) onUndo else onDismiss,
     )
+}
+
+
+/** 묶음 목록의 한 줄 바닥 — 첫 줄은 위 모서리, 끝 줄은 아래 모서리 16 */
+@Composable
+private fun Modifier.groupedRow(index: Int, count: Int): Modifier {
+    val top = if (index == 0) 16.dp else 0.dp
+    val bottom = if (index == count - 1) 16.dp else 0.dp
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+    return this.fillMaxWidth().clip(shape).background(runTone().panel, shape)
+}
+
+/**
+ * 이야기 목록 위(UI 최종 통합안 06_이야기) — 왼쪽 "도화동 주변"(누르면 지역 바꾸기) · 오른쪽 "지도 보기", 아래 범위 글자 탭(500m · 1km · 3km).
+ * 알약 칩 줄 · 큰 제목 · 작은 지도 칸 없이. 지역 · 범위를 고르는 일은 예전과 같다.
+ */
+@Composable
+private fun StoryListHead(
+    origin: StoryOrigin,
+    range: StoryRange,
+    filter: StoryPlace?,
+    onOpenLocation: () -> Unit,
+    onOpenMap: () -> Unit,
+    onSetRange: (StoryRange) -> Unit,
+) {
+    val t = runTone()
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.weight(1f, fill = false).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+                    .feedbackClickable(role = Role.Button, onClick = onOpenLocation).padding(horizontal = 4.dp)
+                    .testTag("stories-area"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.LocationOn, null, tint = t.cobaltText, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    stringResource(if (origin.manual) R.string.story_range_from_region else R.string.story_range_from_me, rangeLabel(range))
+                        .let { if (origin.label.isNotBlank()) "${origin.label} · $it" else it },
+                    style = runTextStyle(14.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                Icon(Icons.Filled.KeyboardArrowDown, null, tint = t.label, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.weight(1f))
+            StoryLink(stringResource(R.string.story_show_map), onOpenMap, Modifier.testTag("stories-open-map"), trailing = null)
+        }
+        com.stepup.android.ui.components.TextTabs(
+            items = StoryRange.entries.map { rangeLabel(it) },
+            selected = StoryRange.entries.indexOf(range),
+            onSelect = { onSetRange(StoryRange.entries[it]) },
+            tags = StoryRange.entries.map { "stories-range-${it.name.lowercase()}" },
+            modifier = Modifier.padding(start = 4.dp).testTag("stories-range"),
+        )
+    }
 }

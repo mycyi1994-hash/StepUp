@@ -429,10 +429,6 @@ fun RunScreen(
             discardFailedBand = false
         }
     }
-    // 달리는 중 뒤로 가기는 화면을 닫지 않는다 — 달리고 있으면 일시정지(R03), 멈춰 있으면 마칠지 묻는다(R04)
-    androidx.activity.compose.BackHandler(enabled = canAskEnd && !confirmStop && !discardDialog) {
-        if (!session.isPaused) WalkSessionService.pause(context) else askEnd()
-    }
 
     // 저장한 챌린지 러닝은 지난 도전에 남긴다(시안 C03) — 같은 러닝은 한 줄
     LaunchedEffect(finishing, session.lastStartedAt, goal) {
@@ -520,6 +516,16 @@ fun RunScreen(
         com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
     // 모임 러닝은 출발할 때 적은 모임으로 가른다 — 대기실을 떠나 따로 켠 러닝은 뒤에서 방이 출발했어도(party.isActive) 자유 러닝이다
     val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !recordingCourse && !focusRun
+    // 달리는 중 뒤로 가기는 화면을 닫지 않는다 — 달리고 있으면 일시정지(R03), 멈춰 있으면 마칠지 묻는다(R04)
+    // 자유 러닝(UI 최종 통합안)은 마칠지 묻지 않는다 — 멈춘 뒤 뒤로 가기는 화면만 닫는다(러닝은 멈춘 채 남고 홈의 "러닝 이어가기"로 돌아온다).
+    // 마치기는 멈춘 화면의 "길게 눌러 종료"(1초)
+    androidx.activity.compose.BackHandler(enabled = canAskEnd && !confirmStop && !discardDialog) {
+        when {
+            !session.isPaused -> WalkSessionService.pause(context)
+            freeRunNow -> onBack()
+            else -> askEnd()
+        }
+    }
     // 시작 — 자유러닝은 신발 점검부터(출발을 확인해야 3-2-1), 다른 러닝은 권한 안내부터
     // 과속으로 멈춘 뒤 10분은 러닝 금지(2026-10-17 사용자 결정) — 점검창 · 3-2-1 을 열기 전에 알린다. 서비스도 시작을 거절한다
     val runBanUntil by com.stepup.android.core.ServiceLocator.userPrefs.runBanUntil.collectAsStateWithLifecycle(0L)
@@ -640,6 +646,11 @@ fun RunScreen(
         void = freeVoid, track = session.track, now = freeNow, flaggedAt = session.lastFlaggedAt, movingAt = session.movingAt,
     )
     val freeDist = freeDistance(timeOnly, session.gpsKm)
+    // GPS 줄 · 결과 한 줄의 장소 — 지금 자리(러닝 중) · 출발 자리(결과)가 들어 있는 장소(spots.json 반경 안). 없으면 쓰지 않는다
+    val placeAt = session.here ?: session.track.firstOrNull()?.toGeoPoint()
+    val freePlace = remember(placeAt?.let { (it.lat * 500).toInt() to (it.lng * 500).toInt() }) {
+        placeAt?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
+    }
     // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸 · 결과. 달리는 동안은 이번 러닝으로 닳을 만큼(달린 1분마다 5 — 움직였든 서 있었든,
     // 서버 0064 · 0068)을 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하기 전까지는 미리 뺀 값을 보인다 — 예전엔 결과에서 러닝 전
     // 값(100%)으로 되돌아가 "안 닳는다"로 보였다(2026-10-17 점검). 확인된 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게).
@@ -903,6 +914,10 @@ fun RunScreen(
                     onDeleteBack = { deleteFailed = null },
                     penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null,
                     shoeNote = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null,
+                    startedAt = session.lastStartedAt,
+                    place = remember(session.track.firstOrNull()) {
+                        session.track.firstOrNull()?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
+                    },
                     modifier = Modifier.reveal(session.lastStartedAt),
                 )
             }
@@ -1237,6 +1252,11 @@ fun RunScreen(
                     onDetails = { showDetails = true },
                     // 크게 보기는 달리는 중에만(K07)
                     onExpandMap = if (!session.isActive || (timeOnly && geoTrack.isEmpty())) null else ({ showFullMap = true }),
+                    onBack = { if (session.isActive && running) WalkSessionService.pause(context) else onBack() },
+                    // 1초 길게 — 저장하고 마친다("러닝을 마칠까요?" 확인창 없음)
+                    onHoldEnd = { if (canAskEnd) WalkSessionService.stop(context) },
+                    gpsOk = locationAllowed && session.locationOn && !session.gpsLost && session.here != null,
+                    place = freePlace,
                     onBandTap = { showDetails = true },
                     onBandAction = {
                         when (freeBandNow) {
@@ -1512,6 +1532,15 @@ fun RunScreen(
                 },
                 onClose = { showDetails = false },
                 extra = {
+                    // 자유 러닝 — 저장하지 않고 종료는 멈춘 뒤 러닝 정보 안에(종료 확인창을 뺐다, UI 최종 통합안)
+                    if (freeRunNow && canAskEnd && session.isPaused && WalkSessionService.canDiscard(session) && !party.isActive) {
+                        TextButton(
+                            onClick = { showDetails = false; discardDialog = true },
+                            modifier = Modifier.fillMaxWidth().testTag("run-details-discard"),
+                        ) {
+                            Text(stringResource(R.string.run_discard_from_details), color = com.stepup.android.ui.components.StepUpUi.colors.live)
+                        }
+                    }
                     if (BuildConfig.TEST_TOOLS) {
                         TextButton(onClick = { viewModel.simulateSteps(100) }) {
                             Text(stringResource(R.string.run_simulate), color = tone.muted)
@@ -1717,7 +1746,7 @@ fun RunScreen(
     // 05 — 자유 러닝: 저장하지 않고 종료할까요? 돌아가기 · 바깥 · 뒤로는 04 로(러닝은 멈춘 채)
     if (discardDialog && canAskEnd && !discarding && freeRunNow) {
         com.stepup.android.ui.components.RunSheet(
-            onDismiss = { discardDialog = false; confirmStop = true }, modifier = Modifier.testTag("run-discard-dialog"), showClose = false,
+            onDismiss = { discardDialog = false }, modifier = Modifier.testTag("run-discard-dialog"), showClose = false,
         ) {
             FreeDiscardSheetContent(
                 line = freeTimeDistance(formatDuration(session.elapsedSec), freeDist),
@@ -1727,7 +1756,8 @@ fun RunScreen(
                     discarding = true
                     WalkSessionService.discard(context)
                 },
-                onCancel = { discardDialog = false; confirmStop = true },
+                // 돌아가면 멈춘 러닝 화면으로(마칠지 묻는 창은 없다)
+                onCancel = { discardDialog = false },
             )
         }
     }

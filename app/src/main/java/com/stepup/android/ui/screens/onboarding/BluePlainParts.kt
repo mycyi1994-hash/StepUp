@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.onboarding
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,7 +64,7 @@ import com.stepup.android.ui.theme.StepUpSans
 private val PlainRadius = 14.dp
 private val PlainBase = 4.dp
 
-/** 둥근 흰 주 버튼 — 흰 면 · 남색 굵은 글자 · 얇은 파란 아랫면. [busy] 면 글자 앞에 도는 표시(누를 수 없다) */
+/** 주 버튼 — 통합안 블루 알약 54 + 원 화살표. [busy] 면 가운데 스피너(누를 수 없다) */
 @Composable
 internal fun BluePlainButton(
     text: String,
@@ -69,34 +73,11 @@ internal fun BluePlainButton(
     enabled: Boolean = true,
     busy: Boolean = false,
 ) {
-    val t = runTone()
-    val active = enabled && !busy
-    val face = if (active) t.primaryFace else listOf(t.disabledFace, t.disabledFace)
-    val ink = if (active) t.primaryInk else t.disabledInk
-    val base = if (active) t.primaryBase else t.disabledBase
-    Box(
-        modifier.heightIn(min = 56.dp + PlainBase)
-            .drawBehind {
-                val r = CornerRadius(PlainRadius.toPx())
-                val b = PlainBase.toPx()
-                drawRoundRect(base, topLeft = Offset(0f, b), size = Size(size.width, size.height - b), cornerRadius = r)
-                drawRoundRect(Brush.verticalGradient(face, endY = size.height - b), size = Size(size.width, size.height - b), cornerRadius = r)
-            }
-            .clip(RoundedCornerShape(PlainRadius))
-            .feedbackClickable(enabled = active, onClick = onClick)
-            .semantics { if (busy) contentDescription = text }
-            .padding(bottom = PlainBase)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            if (busy) {
-                RunSpinner(Modifier.size(20.dp), color = ink, track = ink.copy(alpha = 0.25f))
-                Spacer(Modifier.width(10.dp))
-            }
-            Text(text, style = runTextStyle(18.sp, ink, FontWeight.Bold, 1.25f), textAlign = TextAlign.Center)
-        }
-    }
+    PrimaryButton(text, onClick, modifier, state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
 }
 
 /** 둥근 보조 버튼 — 남색 면 · 파란 테두리(거절 · 취소 · 나중에) */

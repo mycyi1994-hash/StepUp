@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -119,17 +120,18 @@ class MysteryDesignTest {
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
-        val before = HomePhotos.all.first { photo ->
-            compose.onAllNodesWithTag("home-scene-${photo.key}").fetchSemanticsNodes().isNotEmpty()
-        }
-        // 러닝 홈(2026-09-29 전달본 02) — 풍경 바꾸기는 걸음 칸을 누르면 여는 상세 기록 시트 안에 있다
-        compose.onNodeWithTag("home-steps").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-background-next").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("home-details").performScrollToNode(hasTestTag("home-background-next"))
-        compose.onNodeWithTag("home-background-next").assertIsDisplayed().performClick()
-        compose.waitUntil(5_000) {
-            compose.onAllNodesWithTag("home-scene-${before.key}").fetchSemanticsNodes().isEmpty()
-        }
+        // 러닝 홈(UI 최종 통합안) — 사진 카드의 오른쪽 유리 버튼이 다음 장소로 넘긴다(장소마다 카드 꼬리표가 바뀐다)
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-spot-next", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        val before = compose.onAllNodes(hasTestTagPrefix("home-spot-"), useUnmergedTree = true).fetchSemanticsNodes()
+            .mapNotNull { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) }
+            .first { it.startsWith("home-spot-") && it !in setOf("home-spot-next", "home-spot-previous", "home-spot-name") }
+        compose.onNodeWithTag("home-spot-next", useUnmergedTree = true).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag(before, useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
         captureDisplay(File(out, "home-01-background-next.png"))
     }
+}
+
+/** 꼬리표가 [prefix] 로 시작하는 마디 */
+private fun hasTestTagPrefix(prefix: String) = androidx.compose.ui.test.SemanticsMatcher("TestTag starts with $prefix") { node ->
+    node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag)?.startsWith(prefix) == true
 }

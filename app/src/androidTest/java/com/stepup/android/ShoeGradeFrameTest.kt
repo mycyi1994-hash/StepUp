@@ -25,6 +25,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
+import com.stepup.android.domain.ShoeTier
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.GradeArtRatio
@@ -231,32 +232,42 @@ class ShoeGradeFrameTest {
     }
 
     /**
-     * 큰 무대(등급 프레임) — 내 신발의 무대가 창 안에 온전히(잘리지 않게), 440:418 비율 그대로, 보이는 갈래 [tier] 의 프레임이다.
-     * [firstView] 면 넘기지 않은 첫 화면에서 본다 — 세로 스크롤 거리가 0 이고 보유 목록 줄이 하단 탭 위에 있다(보통 글씨).
-     * 아니면 무대까지 넘긴 뒤에 본다(큰 글씨).
+     * 신발 카드(UI 최종 통합안 2026-10-25 — 신발 탭 큰 그림은 등급 무대가 아니라 장소 사진 카드다) — 카드가 창 안에 온전히(잘리지 않게),
+     * 361:236 비율 그대로, 왼쪽 위 줄이 보이는 갈래 [tier] 의 등급이다.
+     * [firstView] 면 넘기지 않은 첫 화면에서 본다 — 세로 스크롤 거리가 0 이고 보유 목록 줄이 창 안에 있다(보통 글씨).
+     * 아니면 카드까지 넘긴 뒤에 본다(큰 글씨).
      */
     private fun stageFullyVisible(tier: String, firstView: Boolean = true) {
         awaitSingle("shoe-hero")
+        val label = compose.activity.getString(tierLabel(ShoeTier.valueOf(tier.uppercase(Locale.ROOT))))
         compose.waitUntil(10_000) {
-            compose.onAllNodes(hasTestTag("grade-stage-$tier") and hasAnyAncestor(hasTestTag("shoe-hero")), useUnmergedTree = true)
-                .fetchSemanticsNodes().size == 1
+            runCatching { compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(label, substring = true) }.isSuccess
         }
         if (!firstView) compose.onNodeWithTag("shoe-hero").performScrollTo()
         compose.waitForIdle()
         val viewport = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().boundsInRoot
-        val stage = stageBounds("shoe-hero")
-        keepsRatio(stage, "hero stage")
-        assertTrue("hero stage fully inside the window: $stage in $viewport",
-            stage.top >= viewport.top - 1 && stage.bottom <= viewport.bottom + 1 &&
-                stage.left >= viewport.left - 1 && stage.right <= viewport.right + 1)
+        val card = stageBounds("shoe-hero")
+        keepsRatio(card, "shoe card", expected = 361f / 236f)
+        assertTrue("shoe card fully inside the window: $card in $viewport",
+            card.top >= viewport.top - 1 && card.bottom <= viewport.bottom + 1 &&
+                card.left >= viewport.left - 1 && card.right <= viewport.right + 1)
         val minHeight = with(compose.density) { 112.dp.toPx() }
-        assertTrue("hero stage keeps the shoe visible: ${stage.height}", stage.height >= minHeight)
+        assertTrue("shoe card keeps the shoe visible: ${card.height}", card.height >= minHeight)
         if (firstView) {
             val range = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
             assertEquals("my shoes fits without vertical scrolling", 0f, range.maxValue(), 1f)
             val row = compose.onNodeWithTag("shoe-owned-row").fetchSemanticsNode().boundsInRoot
             assertTrue("owned row above the bottom of the window: $row in $viewport", row.bottom <= viewport.bottom + 1)
         }
+    }
+
+    private fun tierLabel(tier: ShoeTier): Int = when (tier) {
+        ShoeTier.COMMON -> R.string.shoe_tier_common
+        ShoeTier.RARE -> R.string.shoe_tier_rare
+        ShoeTier.EPIC -> R.string.shoe_tier_epic
+        ShoeTier.LEGENDARY -> R.string.shoe_tier_legendary
+        ShoeTier.REDLINE -> R.string.shoe_tier_redline
+        ShoeTier.FINISH -> R.string.shoe_tier_finish
     }
 
     /** 목록 칸 — 눌리는 카드가 안쪽을 합치므로 합치기 전 나무에서 찾는다. 하나도 없으면 실패다 */

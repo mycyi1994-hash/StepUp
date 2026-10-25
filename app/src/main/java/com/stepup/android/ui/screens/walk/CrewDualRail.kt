@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -202,7 +206,7 @@ internal fun DualRailFrame(
     )
 }
 
-/** 대기실의 큰 주 버튼 — 흰 면 #F5F8FF · 글자 #071B3D · 모서리 14dp · 높이 60dp. 못 누르면 #24455D / #A2BDD0(실제로 막힌다) */
+/** 대기실의 큰 주 버튼 — 통합안 블루 알약 54 + 원 화살표. 못 누르면 흐린 회색(실제로 막힌다) */
 @Composable
 internal fun LobbyPrimaryButton(
     text: String,
@@ -211,29 +215,11 @@ internal fun LobbyPrimaryButton(
     enabled: Boolean = true,
     busy: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(14.dp)
-    val live = enabled && !busy
-    Box(
-        modifier.fillMaxWidth().heightIn(min = 60.dp)
-            .shadow(if (live) 6.dp else 0.dp, shape, ambientColor = Color.Black.copy(alpha = 0.13f), spotColor = Color.Black.copy(alpha = 0.13f))
-            .clip(shape)
-            .background(if (enabled) LobbyInk.Text else LobbyInk.DisabledFace, shape)
-            .then(
-                if (live) Modifier.feedbackClickable(role = Role.Button, onClick = onClick)
-                else Modifier.semantics { if (!enabled) disabled() },
-            )
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (busy) {
-            CircularProgressIndicator(Modifier.size(22.dp), color = LobbyInk.PrimaryInk, strokeWidth = 2.5.dp)
-        } else {
-            Text(
-                text, style = navyText(18.sp, if (enabled) LobbyInk.PrimaryInk else LobbyInk.DisabledInk, FontWeight.ExtraBold, 1.3f),
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
+    PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
 }
 
 /** 작은 칩 — 준비(하늘 면) · 부드러운(남색 면) · 주의(모래 면). 누르는 것이 아니다 */

@@ -63,6 +63,27 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import androidx.compose.ui.semantics.heading
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Toll
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.stepup.android.ui.components.BackButton
+import com.stepup.android.ui.components.BottomActionBar
+import com.stepup.android.ui.components.CircleIconButton
+import com.stepup.android.ui.components.GroupHeader
+import com.stepup.android.ui.components.GroupRow
+import com.stepup.android.ui.components.GroupedList
+import com.stepup.android.ui.components.NumberWithUnit
+import com.stepup.android.ui.components.PlaceThumb
+import com.stepup.android.ui.components.PrimaryButton
+import com.stepup.android.ui.components.SecondaryButton
+import com.stepup.android.ui.components.StepUpUi
+import com.stepup.android.ui.components.TextTabs
+import com.stepup.android.ui.components.TitleSubtitle
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.domain.CourseRewards
 import com.stepup.android.domain.GeoPoint
@@ -136,15 +157,21 @@ fun CourseHubScreen(
     }
     fun isSelected(course: RunCourse): Boolean = course.id == selectedId || course.id in sameTrackIds
 
-    // 게시판 — 검색어 · 목록이 바뀔 때만 거르고 줄 세운다(하트 순)
-    val sortedBoard = remember(boardCourses, query) {
-        boardCourses
-            .filter { it.matches(query) }
-            .sortedWith(
-                compareByDescending<RunCourse> { it.likes }
-                    .thenByDescending { it.runCount }
-                    .thenByDescending { it.createdAt },
+    // 게시판 정렬 — 좋아요 순(기본) · 가까운 순(내 위치에서 코스 출발점까지, 모르면 좋아요 순) · 짧은 코스
+    var sort by rememberSaveable { mutableStateOf(0) }
+    val here = com.stepup.android.ui.components.rememberCurrentLocation()
+    // 게시판 — 검색어 · 정렬 · 목록이 바뀔 때만 거르고 줄 세운다
+    val sortedBoard = remember(boardCourses, query, sort, here) {
+        val liked = compareByDescending<RunCourse> { it.likes }.thenByDescending { it.runCount }.thenByDescending { it.createdAt }
+        val list = boardCourses.filter { it.matches(query) }
+        when {
+            sort == 2 -> list.sortedWith(compareBy<RunCourse> { it.distanceKm }.then(liked))
+            sort == 1 && here != null -> list.sortedWith(
+                compareBy<RunCourse> { c -> c.points.firstOrNull()?.let { com.stepup.android.domain.haversineMeters(here, it) } ?: Double.MAX_VALUE }
+                    .then(liked),
             )
+            else -> list.sortedWith(liked)
+        }
     }
 
     // 게시판 탭을 열 때마다 서버에서 새로 받는다.
@@ -172,58 +199,68 @@ fun CourseHubScreen(
     Box(Modifier.fillMaxSize().testTag("courses")) {
         RunBackdrop(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            RunTopBar(onBack = onBack)
+            // 머리 — ← · "러닝 코스"(시안 courses) → 세그먼트 선택 · 만들기 · 게시판
+            Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
+                BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart).testTag("kit-back"))
+                Text(stringResource(R.string.courses_hub_title), style = StepUpUi.type.navTitle, color = StepUpUi.colors.label,
+                    modifier = Modifier.align(Alignment.Center).semantics { heading() }.testTag("courses-title"))
+            }
+            RunTabs(
+                labels = listOf(
+                    stringResource(R.string.run_courses_tab_select),
+                    stringResource(R.string.courses_make),
+                    stringResource(R.string.courses_board),
+                ),
+                selected = tab, onSelect = { tab = it }, tagPrefix = "courses-tab",
+                modifier = Modifier.padding(horizontal = StepUpUi.Gutter).padding(top = 6.dp),
+            )
             LazyColumn(
                 Modifier.weight(1f).fillMaxWidth().testTag("courses-list"),
-                contentPadding = PaddingValues(start = RunSpec.Gutter, end = RunSpec.Gutter, top = 4.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                item {
-                    RunHeadline(
-                        stringResource(when (tab) {
-                            0 -> R.string.run_courses_mine
-                            1 -> R.string.courses_make
-                            else -> R.string.courses_board
-                        }),
-                        titleTag = "courses-title",
-                    )
-                }
-                item {
-                    RunTabs(
-                        labels = listOf(
-                            stringResource(R.string.run_courses_tab_select),
-                            stringResource(R.string.courses_make),
-                            stringResource(R.string.courses_board),
-                        ),
-                        selected = tab, onSelect = { tab = it }, tagPrefix = "courses-tab",
-                    )
-                }
-
                 when (tab) {
-                    // ── 코스 선택(K09) — 달릴 수 있는 모든 코스 ─────────────
+                    // ── 코스 선택(K09) — 고른 코스(없으면 첫 코스)를 크게, 나머지는 "다른 코스" 목록 ─────────────
                     0 -> {
-                        val list = courses
-                        if (list.isEmpty()) {
+                        val hero = courses.firstOrNull { it.id == selectedId } ?: courses.firstOrNull()
+                        if (hero == null) {
                             item {
                                 RunEmptyState(Icons.Outlined.Map, stringResource(R.string.courses_empty),
-                                    modifier = Modifier.padding(top = 24.dp).testTag("courses-empty"))
+                                    modifier = Modifier.padding(top = 24.dp).padding(horizontal = StepUpUi.Gutter).testTag("courses-empty"))
                             }
                         } else {
-                            items(list.size, key = { list[it].id }) { index ->
-                                val course = list[index]
-                                CourseSelectCard(
-                                    course = course,
-                                    selected = course.id == selectedId,
-                                    onSelect = { pendingId = course.id },
-                                    onLike = { viewModel.toggleLike(course.id) },
-                                    onOpenRanking = { openRanking(course) },
-                                    onShareToggle = if (course.mine) {
-                                        { viewModel.setShared(course.id, !course.shared) }
-                                    } else null,
-                                    onDelete = if (course.mine) {
-                                        { viewModel.delete(course.id) }
-                                    } else null,
-                                )
+                            val heroSelected = hero.id == selectedId
+                            item(key = "hero-${hero.id}") {
+                                Column {
+                                    CourseHero(hero, heroSelected, onOpen = { pendingId = hero.id }, onMore = { pendingId = hero.id })
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        SecondaryButton(stringResource(R.string.courses_rank_button), onClick = { openRanking(hero) },
+                                            icon = Icons.Outlined.EmojiEvents, modifier = Modifier.weight(.36f).testTag("course-rank-${hero.id}"))
+                                        if (heroSelected && onRunCourse != null) {
+                                            PrimaryButton(stringResource(R.string.run_course_run_this), onClick = onRunCourse,
+                                                modifier = Modifier.weight(.64f).testTag("courses-run"))
+                                        } else {
+                                            PrimaryButton(
+                                                stringResource(if (heroSelected) R.string.run_course_clear_do else R.string.courses_pick_this),
+                                                onClick = { pendingId = hero.id }, modifier = Modifier.weight(.64f).testTag("course-pick-hero"),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            val others = courses.filter { it.id != hero.id }
+                            if (others.isNotEmpty()) {
+                                item(key = "others") {
+                                    Column {
+                                        GroupHeader(stringResource(R.string.courses_others))
+                                        GroupedList(rows = others.map { course ->
+                                            @Composable { CourseRow(course, onClick = { pendingId = course.id }) }
+                                        })
+                                    }
+                                }
                             }
                         }
                     }
@@ -237,44 +274,42 @@ fun CourseHubScreen(
                                 onCancel = viewModel::cancelRecording,
                             )
                         }
-                        // 녹화를 걸지 않고 뛴 경우에도 방금 달린 길은 남아 있다.
-                        // 그걸 버리게 할 이유는 없으므로 예전 등록 칸을 밑에 둔다.
+                        // 녹화를 걸지 않고 뛴 경우에도 방금 달린 길은 남아 있다 — 예전 등록 칸을 밑에 둔다
                         item {
-                            CourseMaker(lastTrack = lastTrack, onCreate = { name, area, shared ->
-                                viewModel.create(name, area, lastTrack, shared)
-                                tab = 0
-                            })
+                            Box(Modifier.padding(horizontal = StepUpUi.Gutter).padding(top = 28.dp)) {
+                                CourseMaker(lastTrack = lastTrack, onCreate = { name, area, shared ->
+                                    viewModel.create(name, area, lastTrack, shared)
+                                    tab = 0
+                                })
+                            }
                         }
                     }
 
-                    // ── 코스 게시판(K11 · K17 · K18) — 러너들이 공유한 코스 ─────────────
-                    //
-                    // 하트 많은 순이다. 최신순으로 두면 방금 올라온 코스가 늘 맨
-                    // 위를 차지하고, 여러 사람이 뛰어 보고 좋다고 한 코스는 아래로
-                    // 밀린다 — 게시판을 보는 이유가 없어진다.
+                    // ── 코스 게시판(K11 · K17 · K18) — 러너들이 공유한 코스(좋아요 순 · 가까운 순 · 짧은 코스) ─────────────
                     else -> {
                         item {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                RunTextField(
-                                    value = query, onValueChange = { query = it },
-                                    placeholder = stringResource(R.string.run_course_search), leading = Icons.Outlined.Search,
-                                    clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "courses-search",
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                UploadChip(onClick = { uploadPicker = true })
-                            }
+                            RunTextField(
+                                value = query, onValueChange = { query = it },
+                                placeholder = stringResource(R.string.run_course_search), leading = Icons.Outlined.Search,
+                                clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "courses-search",
+                                modifier = Modifier.padding(horizontal = StepUpUi.Gutter),
+                            )
+                        }
+                        item {
+                            TextTabs(
+                                listOf(stringResource(R.string.courses_sort_likes), stringResource(R.string.courses_sort_near), stringResource(R.string.courses_sort_short)),
+                                sort, { sort = it }, Modifier.padding(horizontal = StepUpUi.TitleGutter).padding(top = 10.dp, bottom = 10.dp),
+                                tags = listOf("courses-sort-likes", "courses-sort-near", "courses-sort-short"),
+                            )
                         }
                         val board = sortedBoard
                         val failed = boardSync is BoardSyncState.Failed || boardSync is BoardSyncState.SignInRequired
                         // 서버를 못 읽었으면 왜 못 읽었는지부터(K18). 폰의 코스는 그 아래에 그대로 둔다.
                         if (failed) {
                             item {
-                                BoardFailed(
-                                    signIn = boardSync is BoardSyncState.SignInRequired,
-                                    onRetry = viewModel::refreshBoard,
-                                    onMine = { tab = 0 },
-                                )
+                                Box(Modifier.padding(horizontal = StepUpUi.Gutter)) {
+                                    BoardFailed(signIn = boardSync is BoardSyncState.SignInRequired, onRetry = viewModel::refreshBoard, onMine = { tab = 0 })
+                                }
                             }
                         } else if (boardSync is BoardSyncState.Loading && board.isEmpty()) {
                             item {
@@ -285,42 +320,30 @@ fun CourseHubScreen(
                         }
                         if (board.isEmpty() && !failed && boardSync !is BoardSyncState.Loading) {
                             item {
-                                if (query.isBlank()) {
-                                    BoardEmpty(onUpload = { uploadPicker = true })
-                                } else {
-                                    Text(stringResource(R.string.courses_search_empty), style = runTextStyle(15.sp, runTone().label),
-                                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
-                                            .testTag("courses-search-empty"))
+                                Box(Modifier.padding(horizontal = StepUpUi.Gutter)) {
+                                    if (query.isBlank()) {
+                                        BoardEmpty(onUpload = { uploadPicker = true })
+                                    } else {
+                                        Text(stringResource(R.string.courses_search_empty), style = StepUpUi.type.body, color = StepUpUi.colors.secondaryLabel,
+                                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("courses-search-empty"))
+                                    }
                                 }
                             }
                         } else if (board.isNotEmpty()) {
-                            item {
-                                Text(stringResource(R.string.run_course_sort_likes), style = runTextStyle(13.sp, runTone().label, FontWeight.SemiBold),
-                                    textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
-                            }
-                            items(board.size, key = { board[it].id }) { index ->
-                                val course = board[index]
-                                BoardCourseCard(
-                                    course = course,
-                                    rank = index + 1,
-                                    selected = isSelected(course),
-                                    onOpen = { pendingId = course.id },
-                                    onLike = { viewModel.toggleLike(course.id) },
-                                    onOpenRanking = { openRanking(course) },
-                                )
+                            item(key = "board") {
+                                GroupedList(rows = board.mapIndexed { index, course ->
+                                    @Composable { BoardRow(course, rank = index + 1, selected = isSelected(course), onOpen = { pendingId = course.id }) }
+                                })
                             }
                         }
                     }
                 }
             }
-            // K09 — 고른 코스로 달리기(코스 선택 탭에서만)
-            if (tab == 0 && onRunCourse != null && courses.isNotEmpty()) {
-                Box(Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 8.dp, bottom = 14.dp)) {
-                    RunButton(
-                        stringResource(R.string.run_course_run_this), onRunCourse, hero = true,
-                        enabled = courses.any { it.id == selectedId },
-                        modifier = Modifier.testTag("courses-run"),
-                    )
+            // 게시판 — 내 코스 올리기(보조, 아래 한 줄)
+            if (tab == 2) {
+                BottomActionBar {
+                    SecondaryButton(stringResource(R.string.run_course_upload), onClick = { uploadPicker = true }, icon = Icons.Rounded.Add,
+                        modifier = Modifier.weight(1f).testTag("courses-upload"))
                 }
             }
         }
@@ -329,10 +352,13 @@ fun CourseHubScreen(
         val ranking by viewModel.ranking.collectAsStateWithLifecycle()
         ranking?.let { state ->
             val course = courses.firstOrNull { it.id == rankingCourseId } ?: boardCourses.firstOrNull { it.id == rankingCourseId }
-            CourseRankingSheet(state = state, course = course, onDismiss = viewModel::closeRanking)
+            CourseRankingSheet(
+                state = state, course = course, onDismiss = viewModel::closeRanking,
+                onRun = if (onRunCourse != null && course != null && isSelected(course)) ({ viewModel.closeRanking(); onRunCourse() }) else null,
+            )
         }
 
-        // K13 · K14 — 이 코스를 선택할까요? · 선택한 코스를 해제할까요?
+        // K13 · K14 — 이 코스를 선택할까요? · 선택한 코스를 해제할까요? 좋아요 · 순위 · 공유 · 지우기도 여기서
         if (pending != null) {
             val clearing = isSelected(pending)
             RunSheet(onDismiss = { pendingId = -1L }, modifier = Modifier.testTag(if (clearing) "course-clear-sheet" else "course-apply-sheet")) {
@@ -343,6 +369,10 @@ fun CourseHubScreen(
                         pendingId = -1L
                     },
                     onCancel = { pendingId = -1L },
+                    onLike = { viewModel.toggleLike(pending.id) },
+                    onRanking = { val c = pending; pendingId = -1L; openRanking(c) },
+                    onShareToggle = if (pending.mine) ({ viewModel.setShared(pending.id, !pending.shared) }) else null,
+                    onDelete = if (pending.mine) ({ val id = pending.id; pendingId = -1L; viewModel.delete(id) }) else null,
                 )
             }
         }
@@ -386,74 +416,81 @@ private fun RewardLine(course: RunCourse) {
     )
 }
 
-/** 코스 한 장(K09) — 지도 · 고름 표시 · 이름 · 동네 · 거리, 아래 순위 보기 · 하트 · 내 코스로 공유 */
+/**
+ * 고른 코스(시안 courses 위) — 둥근 지도 카드 361 × 230 · 모서리 24, 실제 길(블루 실선) · 아래로 어둡게 · 이름 · 동네 · 큰 거리.
+ * 누르면 고르기 · 풀기 확인(좋아요 · 순위 · 공유 · 지우기도 그 안에).
+ */
 @Composable
-private fun CourseSelectCard(
-    course: RunCourse,
-    selected: Boolean,
-    onSelect: () -> Unit,
-    onLike: () -> Unit,
-    onOpenRanking: () -> Unit,
-    onShareToggle: (() -> Unit)?,
-    onDelete: (() -> Unit)?,
-) {
+private fun CourseHero(course: RunCourse, selected: Boolean, onOpen: () -> Unit, onMore: () -> Unit) {
     val t = runTone()
-    val shape = RoundedCornerShape(RunSpec.CardRadius)
-    Column(
-        Modifier.fillMaxWidth().clip(shape).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
-            .border(if (selected) 2.dp else 1.dp, if (selected) Color(0xFF4D8BFF) else t.panelEdge, shape)
+    Box(
+        Modifier.padding(horizontal = StepUpUi.Gutter).fillMaxWidth().height(230.dp).clip(RoundedCornerShape(24.dp))
+            .background(StepUpUi.colors.mapBackground)
             .testTag("course-card-${course.id}"),
     ) {
-        CourseMap(course.points, Modifier.fillMaxWidth().height(150.dp).padding(6.dp))
-        Row(
-            Modifier.fillMaxWidth().feedbackClickable(role = Role.RadioButton, onClick = onSelect)
-                .semantics { this.selected = selected }
-                .testTag("course-pick-${course.id}")
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier.size(28.dp).clip(CircleShape)
-                    .then(if (selected) Modifier.background(Color(0xFF0754FF)) else Modifier.border(2.dp, t.label.copy(alpha = 0.7f), CircleShape)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
-            }
-            Spacer(Modifier.width(12.dp))
+        CompositionLocalProvider(com.stepup.android.ui.components.LocalMapTone provides com.stepup.android.ui.components.MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
+            LiveRouteMap(points = course.points, modifier = Modifier.fillMaxSize(), routeColor = FreeRunRoute)
+        }
+        Box(Modifier.fillMaxWidth().fillMaxHeight(.52f).align(Alignment.BottomCenter)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .62f)))))
+        Box(
+            Modifier.fillMaxSize().feedbackClickable(role = Role.RadioButton, onClick = onOpen)
+                .semantics { this.selected = selected }.testTag("course-pick-${course.id}"),
+        )
+        CircleIconButton(Icons.Rounded.MoreHoriz, stringResource(R.string.courses_more), onMore, onPhoto = true,
+            modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).testTag("course-more-${course.id}"))
+        Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 14.dp), verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
-                Text(course.name, style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    listOfNotNull(course.area.takeIf { it.isNotBlank() },
-                        if (course.mine && course.shared) stringResource(R.string.course_shared_badge) else null).joinToString(" · ")
-                        .ifBlank { stringResource(R.string.course_runs, course.runCount) },
-                    style = runTextStyle(13.sp, t.label), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-                RewardLine(course)
+                Text(course.name, style = StepUpUi.type.section.copy(fontSize = 22.sp), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(courseMeta(course), style = StepUpUi.type.rowSubtitle, color = Color.White.copy(alpha = .75f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            RunNumber("%.1f".format(course.distanceKm), unit = "km", size = 30.sp, unitSize = 16.sp)
+            NumberWithUnit("%.2f".format(course.distanceKm), unit = "km", style = StepUpUi.type.numberStat.copy(fontSize = 52.sp),
+                color = Color.White, unitColor = Color.White.copy(alpha = .75f), unitSize = 15.6.sp)
         }
-        RunDivider(Modifier.padding(horizontal = 14.dp))
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            RankLink(onOpenRanking, Modifier.testTag("course-rank-${course.id}"))
-            Box(Modifier.width(1.dp).height(20.dp).background(t.divider))
-            LikeButton(course, onLike)
-            if (onShareToggle != null) {
-                Box(Modifier.width(1.dp).height(20.dp).background(t.divider))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.run_course_share_mine), style = runTextStyle(12.sp, t.label, FontWeight.SemiBold),
-                    modifier = Modifier.weight(1f), maxLines = 1)
-                Switch(
-                    checked = course.shared, onCheckedChange = { onShareToggle() },
-                    colors = runSwitchColors(),
-                    modifier = Modifier.testTag("course-share-${course.id}"),
-                )
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
-        }
-        if (onDelete != null) {
-            RunTextAction(stringResource(R.string.run_course_delete), onDelete, danger = true,
-                modifier = Modifier.align(Alignment.End).padding(end = 6.dp).testTag("course-delete-${course.id}"))
+    }
+}
+
+/** "동네 · 공유 중 · 최대 보상" — 코스 한 줄 설명(있는 값만) */
+@Composable
+private fun courseMeta(course: RunCourse): String = listOfNotNull(
+    course.area.takeIf { it.isNotBlank() },
+    if (course.mine && course.shared) stringResource(R.string.course_shared_badge) else null,
+    if (course.serverReward > 0) stringResource(R.string.course_reward_upto, "%.0f".format(course.serverReward)) else null,
+).joinToString(" · ").ifBlank { stringResource(R.string.course_runs, course.runCount) }
+
+/** 다른 코스 한 줄(시안 courses 아래) — 장소 사진 · 이름 · 동네 · 거리. 누르면 고르기 확인 */
+@Composable
+private fun CourseRow(course: RunCourse, onClick: () -> Unit) {
+    val photo = com.stepup.android.ui.background.rememberPlacePhoto(course.area, course.points.firstOrNull()?.lat, course.points.firstOrNull()?.lng,
+        seed = "course-${course.id}", widthDp = 52)
+    GroupRow(Modifier.testTag("course-pick-${course.id}"), onClick = onClick, minHeight = 76.dp) {
+        PlaceThumb(photo?.painter)
+        TitleSubtitle(course.name, courseMeta(course), Modifier.weight(1f))
+        NumberWithUnit("%.2f".format(course.distanceKm), unit = "km", style = StepUpUi.type.numberRow.copy(fontSize = 28.sp))
+    }
+}
+
+/** 게시판 한 줄(시안 course_board) — 순위(1위는 블루) · 장소 사진 · 이름 · "동네 · 거리" · 하트 수 */
+@Composable
+private fun BoardRow(course: RunCourse, rank: Int, selected: Boolean, onOpen: () -> Unit) {
+    val c = StepUpUi.colors
+    val photo = com.stepup.android.ui.background.rememberPlacePhoto(course.area, course.points.firstOrNull()?.lat, course.points.firstOrNull()?.lng,
+        seed = "course-${course.id}", widthDp = 52)
+    GroupRow(Modifier.semantics { this.selected = selected }.testTag("board-card-${course.id}"), onClick = onOpen, minHeight = 76.dp) {
+        Text("$rank", style = StepUpUi.type.numberRow, color = if (rank == 1) c.accentText else c.tertiaryLabel,
+            modifier = Modifier.width(16.dp))
+        PlaceThumb(photo?.painter)
+        TitleSubtitle(
+            course.name,
+            listOfNotNull(course.area.takeIf { it.isNotBlank() }, "%.2fkm".format(course.distanceKm), if (selected) stringResource(R.string.course_selected_badge) else null)
+                .joinToString(" · "),
+            Modifier.weight(1f),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (course.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, null,
+                tint = if (course.liked) c.live else c.secondaryLabel, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(4.dp))
+            Text("${course.likes}", style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel)
         }
     }
 }
@@ -496,79 +533,6 @@ private fun runSwitchColors() = runTone().let { t ->
     )
 }
 
-/** 게시판 한 장(K11) — 순위 · 지도(왼쪽) · 이름 · 거리 · 동네 · 만든 사람 · 하트 */
-@Composable
-private fun BoardCourseCard(
-    course: RunCourse,
-    rank: Int,
-    selected: Boolean,
-    onOpen: () -> Unit,
-    onLike: () -> Unit,
-    onOpenRanking: () -> Unit,
-) {
-    val t = runTone()
-    RunCard(padding = PaddingValues(8.dp), onClick = onOpen, selected = selected, tag = "board-card-${course.id}") {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            Box(Modifier.weight(1f).height(BoardMapHeight)) {
-                CourseMap(course.points, Modifier.fillMaxSize())
-                Box(
-                    Modifier.padding(6.dp).size(30.dp).clip(RoundedCornerShape(8.dp))
-                        .background(if (rank <= 3) Color(0xFF0754FF) else t.inset).border(1.dp, Color(0xFF4D8BFF), RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("$rank", style = runNumberStyle(18.sp, Color.White))
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
-                Text(course.name, style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold), maxLines = 2, overflow = TextOverflow.Ellipsis)
-                RunNumber("%.1f".format(course.distanceKm), unit = "km", size = 28.sp, unitSize = 15.sp)
-                if (course.area.isNotBlank()) {
-                    Text(course.area, style = runTextStyle(13.sp, t.label), maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
-                RewardLine(course)
-                if (course.author.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RunInitials(course.author.take(1), size = 26.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.course_by, course.author), style = runTextStyle(13.sp, t.text, FontWeight.SemiBold),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                RunDivider()
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    LikeButton(course, onLike)
-                    Spacer(Modifier.weight(1f))
-                    Box(
-                        Modifier.size(44.dp).clip(CircleShape).feedbackClickable(onClick = onOpenRanking),
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Filled.EmojiEvents, stringResource(R.string.run_course_rank_short), tint = t.cobaltText, modifier = Modifier.size(20.dp)) }
-                    Icon(Icons.Filled.ChevronRight, null, tint = t.label, modifier = Modifier.size(22.dp))
-                }
-            }
-        }
-    }
-}
-
-/** 게시판 칸의 지도 높이 */
-private val BoardMapHeight = 176.dp
-
-/** 게시판 위 "내 코스 올리기" */
-@Composable
-private fun UploadChip(onClick: () -> Unit) {
-    val t = runTone()
-    val shape = RoundedCornerShape(12.dp)
-    Box(
-        Modifier.heightIn(min = 52.dp).clip(shape).background(t.secondaryFace, shape).border(1.5.dp, t.secondaryEdge, shape)
-            .feedbackClickable(onClick = onClick).padding(horizontal = 14.dp).testTag("courses-upload"),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(stringResource(R.string.run_course_upload), style = runTextStyle(14.sp, t.text, FontWeight.Bold), maxLines = 1)
-    }
-}
-
 /** K17 — 아직 공유된 코스가 없어요. 내 코스를 올리는 것이 이 자리의 큰 행동 */
 @Composable
 internal fun BoardEmpty(onUpload: () -> Unit) {
@@ -608,35 +572,60 @@ internal fun BoardFailed(signIn: Boolean, onRetry: () -> Unit, onMine: () -> Uni
     }
 }
 
-/** K13 · K14 — 코스 고르기 · 풀기 확인 */
+/** K13 · K14 — 코스 고르기 · 풀기 확인. 아래 줄에 좋아요 · 순위, 내 코스면 공유 · 지우기(예전 카드 아래 줄을 옮겼다) */
 @Composable
-private fun CourseConfirmContent(course: RunCourse, clearing: Boolean, onConfirm: () -> Unit, onCancel: () -> Unit) {
+private fun CourseConfirmContent(
+    course: RunCourse,
+    clearing: Boolean,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    onLike: () -> Unit = {},
+    onRanking: () -> Unit = {},
+    onShareToggle: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+) {
     val t = runTone()
-    if (clearing) {
-        RunSheetText(
-            stringResource(R.string.run_course_clear_title), body = course.name,
-            note = stringResource(R.string.run_course_clear_note),
-        )
-    } else {
-        Text(stringResource(R.string.run_course_apply_title), style = runTextStyle(24.sp, t.text, FontWeight.ExtraBold),
-            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(12.dp))
-        CourseMap(course.points, Modifier.fillMaxWidth().height(170.dp))
-        Spacer(Modifier.height(10.dp))
-        Column(Modifier.fillMaxWidth()) {
-            Text(course.name, style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold))
-            RunNumber("%.1f".format(course.distanceKm), unit = "km", size = 32.sp, unitSize = 17.sp)
-            Text(stringResource(R.string.run_course_apply_note), style = runTextStyle(14.sp, t.label))
-            RewardLine(course)
+    val c = StepUpUi.colors
+    Text(
+        stringResource(if (clearing) R.string.run_course_clear_title else R.string.run_course_apply_title),
+        style = StepUpUi.type.section.copy(fontSize = 24.sp), color = c.label, modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(12.dp))
+    CourseMap(course.points, Modifier.fillMaxWidth().height(160.dp))
+    Spacer(Modifier.height(10.dp))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Column(Modifier.weight(1f)) {
+            Text(course.name, style = StepUpUi.type.rowTitle.copy(fontSize = 18.sp), color = c.label)
+            Text(courseMeta(course), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel)
+        }
+        NumberWithUnit("%.2f".format(course.distanceKm), unit = "km", style = StepUpUi.type.numberStat)
+    }
+    Text(
+        stringResource(if (clearing) R.string.run_course_clear_note else R.string.run_course_apply_note),
+        style = StepUpUi.type.caption, color = c.secondaryLabel, modifier = Modifier.padding(top = 6.dp),
+    )
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        LikeButton(course, onLike)
+        RankLink(onRanking, Modifier.testTag("course-confirm-rank"))
+        if (onShareToggle != null) {
+            Spacer(Modifier.weight(1f))
+            Text(stringResource(R.string.run_course_share_mine), style = StepUpUi.type.caption, color = c.secondaryLabel, maxLines = 1)
+            Spacer(Modifier.width(8.dp))
+            Switch(checked = course.shared, onCheckedChange = { onShareToggle() }, colors = runSwitchColors(),
+                modifier = Modifier.testTag("course-share-${course.id}"))
         }
     }
-    Spacer(Modifier.height(18.dp))
-    RunButton(
-        stringResource(if (clearing) R.string.run_course_clear_do else R.string.run_course_apply_do), onConfirm,
-        modifier = Modifier.testTag("course-confirm"),
-    )
-    Spacer(Modifier.height(10.dp))
-    RunButton(stringResource(R.string.run_cancel), onCancel, kind = RunButtonKind.Secondary, modifier = Modifier.testTag("course-confirm-cancel"))
+    Spacer(Modifier.height(14.dp))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        SecondaryButton(stringResource(R.string.run_cancel), onClick = onCancel, modifier = Modifier.weight(.36f).testTag("course-confirm-cancel"))
+        PrimaryButton(stringResource(if (clearing) R.string.run_course_clear_do else R.string.run_course_apply_do), onClick = onConfirm,
+            modifier = Modifier.weight(.64f).testTag("course-confirm"))
+    }
+    if (onDelete != null) {
+        Box(Modifier.fillMaxWidth().padding(top = 6.dp), contentAlignment = Alignment.Center) {
+            RunTextAction(stringResource(R.string.run_course_delete), onDelete, danger = true, modifier = Modifier.testTag("course-delete-${course.id}"))
+        }
+    }
 }
 
 /** K16 — 공유할 코스 선택. 올릴 것이 없으면 만드는 쪽으로 보낸다(빈 목록만 두면 고장 난 버튼으로 읽힌다) */
@@ -759,101 +748,100 @@ private fun CourseRecorderCard(
     onStart: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    val t = runTone()
-    RunCard(padding = PaddingValues(18.dp), selected = recording, tag = "course-recorder") {
-        Row(verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.run_course_make_card_title), style = runTextStyle(20.sp, t.text, FontWeight.ExtraBold))
-                Text(stringResource(R.string.run_course_make_card_body), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
-                    modifier = Modifier.padding(top = 4.dp))
-            }
-            Spacer(Modifier.width(10.dp))
-            Icon(Icons.Filled.Route, null, tint = t.cyan, modifier = Modifier.size(44.dp))
-        }
-        // 네 걸음을 번호로 적는다. 흐름이 화면 여럿에 걸쳐 있어서, 지금
-        // 어디쯤인지 모르면 러닝 화면에서 "그래서 코스는?"이 된다.
-        Spacer(Modifier.height(10.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            listOf(
-                R.string.course_rec_step1,
-                R.string.course_rec_step2,
-                R.string.course_rec_step3,
-                R.string.course_rec_step4,
-            ).forEachIndexed { index, res ->
-                Row {
-                    Text("${index + 1}", style = runTextStyle(13.sp, t.cyan, FontWeight.ExtraBold), modifier = Modifier.width(18.dp))
-                    Text(stringResource(res), style = runTextStyle(13.sp, t.label))
+    val c = StepUpUi.colors
+    // 시안 course_make — 큰 제목 → 번호 줄 묶음 → 보상 줄 → 기록 시작
+    Column(Modifier.fillMaxWidth().testTag("course-recorder")) {
+        Text(stringResource(R.string.courses_make_headline), style = StepUpUi.type.largeTitle.copy(fontSize = 32.sp), color = c.label,
+            modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter).padding(top = 12.dp, bottom = 22.dp).semantics { heading() })
+        // 네 걸음을 번호로 적는다 — 흐름이 화면 여럿에 걸쳐 있어서, 지금 어디쯤인지 모르면 러닝 화면에서 "그래서 코스는?"이 된다
+        GroupedList(rows = listOf(R.string.course_rec_step1, R.string.course_rec_step2, R.string.course_rec_step3, R.string.course_rec_step4)
+            .mapIndexed { index, res ->
+                @Composable {
+                    GroupRow(minHeight = 66.dp) {
+                        Text("${index + 1}", style = StepUpUi.type.numberRow.copy(fontSize = 30.sp), color = c.accentText, modifier = Modifier.width(22.dp))
+                        Text(stringResource(res), style = StepUpUi.type.rowTitle, color = c.label, modifier = Modifier.weight(1f))
+                    }
                 }
+            })
+        Spacer(Modifier.height(12.dp))
+        GroupedList(rows = listOf(@Composable {
+            GroupRow(minHeight = 68.dp) {
+                Icon(Icons.Outlined.Toll, null, tint = c.accentText, modifier = Modifier.size(24.dp))
+                Text(
+                    stringResource(R.string.course_per_km, "%.0f".format(CourseRewards.SUP_PER_KM), "%.0f".format(CourseRewards.MAX_REWARD)),
+                    style = StepUpUi.type.rowSubtitle, color = c.label, modifier = Modifier.weight(1f),
+                )
             }
-        }
-        Spacer(Modifier.height(14.dp))
-        if (recording) {
-            Text(stringResource(R.string.course_rec_waiting), style = runTextStyle(14.sp, t.cyan, FontWeight.Bold))
-            Spacer(Modifier.height(10.dp))
-            RunButton(stringResource(R.string.course_rec_stop), onCancel, kind = RunButtonKind.Secondary,
-                modifier = Modifier.testTag("course-recorder-stop"))
-        } else {
-            RunButton(stringResource(R.string.run_course_record_start), onStart, hero = true, modifier = Modifier.testTag("course-recorder-start"))
+        }))
+        Box(Modifier.padding(horizontal = StepUpUi.Gutter).padding(top = 20.dp)) {
+            if (recording) {
+                Column {
+                    Text(stringResource(R.string.course_rec_waiting), style = StepUpUi.type.rowTitle, color = c.accentText)
+                    Spacer(Modifier.height(10.dp))
+                    SecondaryButton(stringResource(R.string.course_rec_stop), onClick = onCancel, modifier = Modifier.fillMaxWidth().testTag("course-recorder-stop"))
+                }
+            } else {
+                PrimaryButton(stringResource(R.string.run_course_record_start), onClick = onStart, modifier = Modifier.fillMaxWidth().testTag("course-recorder-start"))
+            }
         }
     }
 }
 
-/** K12 — 코스 기록 순위. 사람마다 가장 빠른 기록 하나 — 서버가 경로로 확인한 기록만 올라온다 */
+/** K12 — 코스 기록 순위(시안 rank 시트). 사람마다 가장 빠른 기록 하나 — 서버가 경로로 확인한 기록만 올라온다 */
 @Composable
-private fun CourseRankingSheet(state: CourseRankingState, course: RunCourse?, onDismiss: () -> Unit) {
-    val t = runTone()
+private fun CourseRankingSheet(state: CourseRankingState, course: RunCourse?, onDismiss: () -> Unit, onRun: (() -> Unit)? = null) {
+    val c = StepUpUi.colors
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("course-ranking")) {
-        Text(stringResource(R.string.course_rank_title), style = runTextStyle(24.sp, t.text, FontWeight.ExtraBold),
+        Text(stringResource(R.string.course_rank_title), style = StepUpUi.type.section.copy(fontSize = 24.sp), color = c.label,
             modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(12.dp))
-        if (course != null) {
-            CourseMap(course.points, Modifier.fillMaxWidth().height(160.dp))
-            Spacer(Modifier.height(10.dp))
-        }
-        Column(Modifier.fillMaxWidth()) {
-            Text(state.courseName, style = runTextStyle(20.sp, t.text, FontWeight.ExtraBold))
-            if (course != null) Text("%.1f km".format(course.distanceKm), style = runTextStyle(15.sp, t.cyan, FontWeight.Bold))
-        }
-        Spacer(Modifier.height(12.dp))
-        Column(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            listOfNotNull(state.courseName, course?.let { "%.2fkm".format(it.distanceKm) }).joinToString(" · "),
+            style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel, modifier = Modifier.padding(top = 3.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        Column(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
             when (state) {
-                is CourseRankingState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                is CourseRankingState.Loading -> Row(Modifier.padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                     RunSpinner(Modifier.size(24.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text(stringResource(R.string.course_rank_loading), style = runTextStyle(15.sp, t.label))
+                    Text(stringResource(R.string.course_rank_loading), style = StepUpUi.type.body, color = c.secondaryLabel)
                 }
                 is CourseRankingState.Failed -> Text(
                     stringResource(if (state.signIn) R.string.board_sign_in_needed else R.string.course_rank_failed),
-                    style = runTextStyle(15.sp, t.label),
+                    style = StepUpUi.type.body, color = c.secondaryLabel, modifier = Modifier.padding(vertical = 18.dp),
                 )
                 is CourseRankingState.Ready -> if (state.rows.isEmpty()) {
-                    Text(stringResource(R.string.course_rank_empty), style = runTextStyle(15.sp, t.label))
+                    Column(Modifier.fillMaxWidth().padding(vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(R.string.course_rank_empty_title), style = StepUpUi.type.rowTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold), color = c.label)
+                        Text(stringResource(R.string.course_rank_empty_body), style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel,
+                            textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                    }
                 } else {
-                    state.rows.forEach { row ->
-                        RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 10.dp), selected = row.isMe) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (row.isMe) {
-                                    Text(stringResource(R.string.run_course_rank_my), style = runTextStyle(15.sp, t.cobaltText, FontWeight.Bold))
-                                    Spacer(Modifier.width(10.dp))
-                                } else {
-                                    Text("${row.rank}", style = runNumberStyle(24.sp, t.text), modifier = Modifier.width(30.dp))
-                                }
-                                RunInitials(row.displayName.take(1), size = 36.dp, filled = row.rank <= 3)
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    if (row.isMe) stringResource(R.string.course_rank_me, row.displayName) else row.displayName,
-                                    style = runTextStyle(16.sp, t.text, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text(formatDuration(row.durationSec), style = runNumberStyle(24.sp, t.text))
-                            }
+                    state.rows.forEachIndexed { i, row ->
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(.5.dp).background(c.separator))
+                        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(if (row.isMe) "·" else "${row.rank}", style = StepUpUi.type.numberRow,
+                                color = if (row.rank == 1) c.accentText else c.tertiaryLabel, modifier = Modifier.width(30.dp))
+                            Text(
+                                if (row.isMe) stringResource(R.string.course_rank_me, row.displayName) else row.displayName,
+                                style = StepUpUi.type.rowTitle, color = if (row.isMe) c.accentText else c.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(formatDuration(row.durationSec), style = StepUpUi.type.numberRow, color = c.label)
                         }
                     }
                 }
             }
         }
         Spacer(Modifier.height(16.dp))
-        RunButton(stringResource(R.string.run_close), onDismiss, modifier = Modifier.testTag("course-ranking-close"))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (onRun != null) {
+                SecondaryButton(stringResource(R.string.run_close), onClick = onDismiss, modifier = Modifier.weight(.36f).testTag("course-ranking-close"))
+                PrimaryButton(stringResource(R.string.run_course_run_this), onClick = onRun, modifier = Modifier.weight(.64f).testTag("course-ranking-run"))
+            } else {
+                SecondaryButton(stringResource(R.string.run_close), onClick = onDismiss, modifier = Modifier.weight(1f).testTag("course-ranking-close"))
+            }
+        }
     }
 }
 

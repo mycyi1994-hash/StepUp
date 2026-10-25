@@ -125,15 +125,15 @@ fun blueListColors(): BlueListColors {
     val t = runTone()
     return if (t.dark) {
         BlueListColors(
-            face = Color(0xFF0A2A50), selectedFace = Color(0xFF0B3C7E), selectedEdge = Color(0xFF2F7BFF),
-            edge = Color(0xFF1D5BD6), divider = Color(0xFF173F79),
-            switchOn = t.cyan, switchOff = Color(0xFF1E3D6E), skeleton = Color(0xFF214D8A), checkInk = Color(0xFF051A36),
+            face = Color(0xFF0E1424), selectedFace = Color(0xFF0E1424), selectedEdge = Color(0xFF2F6BFF),
+            edge = Color.Transparent, divider = Color(0x17FFFFFF),
+            switchOn = t.cobalt, switchOff = Color(0xFF222A3D), skeleton = Color(0xFF151C2D), checkInk = Color.White,
         )
     } else {
         BlueListColors(
-            face = Color.White, selectedFace = Color(0xFFEAF2FF), selectedEdge = Color(0xFF3D7CF2),
-            edge = Color(0xFF8DB0EE), divider = Color(0xFFD6E2F6),
-            switchOn = t.cobalt, switchOff = Color(0xFFC6D3EA), skeleton = Color(0xFFDCE6F6), checkInk = Color.White,
+            face = Color.White, selectedFace = Color.White, selectedEdge = Color(0xFF1F5EFF),
+            edge = Color.Transparent, divider = Color(0x293C3C43),
+            switchOn = t.cobalt, switchOff = Color(0xFFE3E3E8), skeleton = Color(0xFFE9E9EE), checkInk = Color.White,
         )
     }
 }
@@ -559,7 +559,7 @@ fun BlueSheet(
                 Box(Modifier.fillMaxWidth()) {
                     Box(
                         Modifier.align(Alignment.TopCenter).padding(top = 12.dp).size(width = 44.dp, height = 5.dp)
-                            .clip(RoundedCornerShape(3.dp)).background(if (t.dark) Color(0xFF3B7BE8) else t.handle),
+                            .clip(RoundedCornerShape(3.dp)).background(t.handle),
                     )
                     if (showClose) {
                         val close = stringResource(R.string.common_close)
@@ -623,7 +623,7 @@ fun BlueToast(message: String?, modifier: Modifier = Modifier, success: Boolean 
     ) {
         val shape = RoundedCornerShape(14.dp)
         Row(
-            Modifier.widthIn(max = 520.dp).clip(shape).background(if (t.dark) Color(0xFF0B2A57) else Color.White, shape)
+            Modifier.widthIn(max = 520.dp).clip(shape).background(t.sheet, shape)
                 .border(1.dp, c.edge, shape)
                 .padding(horizontal = 18.dp, vertical = 14.dp).semantics { liveRegion = LiveRegionMode.Polite }
                 .testTag(tag),

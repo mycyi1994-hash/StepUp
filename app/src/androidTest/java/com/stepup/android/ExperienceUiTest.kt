@@ -353,7 +353,7 @@ class ExperienceUiTest {
                 compose.onAllNodes(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-$candidateId")),
                     useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true)
+            compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true)
                 .assertTextContains(compose.activity.getString(R.string.my_shoes_wearing), substring = true)
         } finally {
             // Remove only this test's new copy and restore the previous pair.

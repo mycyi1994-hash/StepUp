@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import com.stepup.android.ui.screens.customize.RunnerMarketScreen
 import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.components.StepUpIcons
@@ -599,56 +600,22 @@ private fun MainScaffoldContent(
     DisposableEffect(feedback) { onDispose { feedback?.setAmbientScene(null) } }
 
     Box(Modifier.fillMaxSize()) {
-    if (currentRoute == Screen.Run.route) {
-        Crossfade(com.stepup.android.ui.components.HomePhotos.all[homePhoto], animationSpec = tween(motion.duration(420)), label = "homeBackground") { photo ->
-            // 러닝 홈(2026-10-02 시안 HOME) — 전시장 창 너머로 고른 풍경을 남색 밤빛으로 깐다(넘기기 · 날씨 풍경 그대로)
-            com.stepup.android.ui.components.HomeShowroomBackdrop(
-                photo, Modifier.fillMaxSize().testTag("home-scene-${photo.key}"),
-            )
-        }
-    } else if (currentRoute == Screen.Customize.route) {
-        // 신발 탭(러닝 리메이크 2026-10-02 신발 색감) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛. 바닥만 바꾸고 화면 배치는 그대로
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("shoes-backdrop"))
-    } else if (currentRoute == Screen.Community.route) {
-        // 커뮤니티(2026-10-03 파란 톤 커뮤니티 기본) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("community-backdrop"))
-    } else if (currentRoute == Screen.Profile.route || currentRoute in com.stepup.android.ui.components.BlueProfileArea.backdropRoutes) {
-        // 내 정보 · 프로필 수정 · 설정(파란 톤 v4) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("profile-backdrop"))
-    } else if (currentRoute in listOf(
-            Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
-            Routes.SNEAKER, Routes.SNEAKER_UPGRADE, Routes.MARKET_MODEL,
-        )) {
-        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    } else if (currentRoute == Routes.POST_COMPOSE) {
-        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    } else if (currentRoute == Routes.MYSTERY_BOX) {
-        // 신발 뽑기 디자인(2026-09-28) — 짙은 남색 바탕과 위 가운데의 은은한 빛(뽑기 탭에서만)
+    // UI 최종 통합안(2026-10-25) — 화면 바닥은 다크 #070B14 · 라이트 #F2F2F7 한 장(번지는 빛 · 사진 무대 없이). 사진은 화면 안 카드에만.
+    // 뽑기 탭만 자기 무대(상자 위 빛)를 둔다
+    if (currentRoute == Routes.MYSTERY_BOX) {
         com.stepup.android.ui.screens.gacha.DrawBackdrop(Modifier.fillMaxSize())
-    } else if (currentRoute == Routes.RUN_ROUTE) {
-        // 러닝 중 · 러닝 완료(2026-09-29 전달본) — 상태 막대 밑까지 짙은 남색(지도 · 기록 카드가 그 위에)
-        Box(Modifier.fillMaxSize().background(com.stepup.android.ui.screens.walk.runPalette().screen))
-    } else if (currentRoute == Routes.COURSES) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
-        )
-    } else if (currentRoute in com.stepup.android.ui.screens.coaching.CoachingRoutes.ALL) {
-        // AI 코칭(2026-10-16) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("coaching-backdrop"))
-    } else if (currentRoute in listOf(
-            Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
-            Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
-            // 러닝 이야기 상세 · 글쓰기 · 지도 · 지역(커뮤니티 기본 · 코스 글쓰기 파란 톤)
-            Routes.STORY_DETAIL, Routes.STORY_COMPOSE, Routes.STORY_MAP, Routes.STORY_LOCATION, Routes.STORY_REGION,
-        )) {
-        // 내 러닝 기록(H01–H16) · 크루 달리기(CR) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
-    } else if (chrome?.header == AppChromePolicy.Header.Focus) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), runSetting,
-        )
     } else {
-        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+        com.stepup.android.ui.components.StepUpBackground(
+            Modifier.testTag(
+                when (currentRoute) {
+                    Screen.Customize.route -> "shoes-backdrop"
+                    Screen.Community.route -> "community-backdrop"
+                    Screen.Profile.route -> "profile-backdrop"
+                    in com.stepup.android.ui.screens.coaching.CoachingRoutes.ALL -> "coaching-backdrop"
+                    else -> "app-backdrop"
+                },
+            ),
+        )
     }
     val unreadNotifications by ServiceLocator.notificationRepository.unreadCount
         .collectAsStateWithLifecycle(initialValue = 0)
@@ -656,16 +623,34 @@ private fun MainScaffoldContent(
         containerColor = Color.Transparent,
         topBar = {
             // 뽑기의 결과 확인 · 상자 열기 · 결과 동안(immersive)도 로고 · 잔액 머리는 둔다 — 하단 탭만 걷는다(신발 뽑기 디자인 04–08 · 19)
-            if (chrome?.header == AppChromePolicy.Header.Main) {
+            // UI 최종 통합안(2026-10-25) — 머리는 탭마다: 러닝 = 로고 · SUP · 알림, 신발 = 로고 · SUP, 내 정보 = 로고 · 설정 톱니,
+            // 커뮤니티(함께 뛰기)는 화면이 자기 머리(원 버튼 · 큰 제목)를 그린다. 뽑기는 예전 그대로(로고 · SUP · 알림)
+            if (chrome?.header == AppChromePolicy.Header.Main && currentRoute != Screen.Community.route) {
+                val profile = currentRoute == Screen.Profile.route
                 MainHeader(
                     balance = balance,
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    modifier = Modifier.statusBarsPadding().padding(horizontal = StepUpDesign.Gutter),
+                    modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 8.dp),
                     balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
-                    // 알림 종(2026-09-29 메인 시안) — 다섯 탭 모두 같은 자리. 알림함은 내 정보 아래 화면이다
+                    // 알림함은 내 정보 아래 화면이다
                     unread = unreadNotifications,
-                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onOpenNotifications = if (currentRoute == Screen.Customize.route) null else {
+                        { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } }
+                    },
+                    showBalance = !profile,
+                    trailing = if (profile) {
+                        {
+                            com.stepup.android.ui.components.CircleIconButton(
+                                androidx.compose.material.icons.Icons.Outlined.Settings,
+                                androidx.compose.ui.res.stringResource(R.string.profile_tab_settings),
+                                onClick = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                                modifier = Modifier.testTag("header-settings"),
+                            )
+                        }
+                    } else null,
                 )
+            } else if (currentRoute == Screen.Community.route) {
+                androidx.compose.foundation.layout.Spacer(Modifier.statusBarsPadding())
             }
         },
         bottomBar = {
@@ -703,13 +688,6 @@ private fun MainScaffoldContent(
                     // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
                     onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
-                    weatherScene = weatherPick.takeIf { com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(it) },
-                    onPreviousBackground = {
-                        homePhoto = com.stepup.android.ui.components.HomePhotos.previous(homePhoto)
-                    },
-                    onNextBackground = {
-                        homePhoto = com.stepup.android.ui.components.HomePhotos.next(homePhoto)
-                    },
                 )
             }
             composable(Routes.MYSTERY_BOX) {
@@ -1712,9 +1690,6 @@ private fun NavHostController.switchTab(screen: Screen) {
     }
 }
 
-/** 고른 탭 글자를 키우는 배율 */
-private const val NavSelectedLabelScale = 1.1f
-
 /** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
 const val BOTTOM_NAV_TAG = "bottom-nav"
 
@@ -1726,18 +1701,13 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-    val labelStyle = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
-        fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.sp, textAlign = TextAlign.Center,
-    )
+    val labelStyle = com.stepup.android.ui.components.StepUpUi.type.tabLabel.copy(textAlign = TextAlign.Center)
     val labels = bottomTabs.map { stringResource(it.labelRes) }
-    // 고른 탭은 글자가 굵어지고 조금 커진다(2026-10-17) — 자리 폭 · 높이는 굵은 글자로 재어 어느 탭을 골라도 줄이 흔들리지 않게
-    val measureStyle = labelStyle.copy(fontWeight = FontWeight.ExtraBold)
+    val measureStyle = labelStyle
     // Allocate spare space to long localized labels without defeating system font scaling.
     val preferredWidths = labels.map { label ->
         val measured = measurer.measure(text = label, style = measureStyle, softWrap = false)
-        // 고른 글자를 키우는 몫(NavSelectedLabelScale)도 자리에 넣는다
-        (with(density) { measured.size.width.toDp().value } * NavSelectedLabelScale + 10f)
+        (with(density) { measured.size.width.toDp().value } + 10f)
             .coerceAtLeast(StepUpDesign.TouchTarget.value)
     }
     val equalWidth = maxWidth.value / labels.size
@@ -1759,28 +1729,23 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         ).size.height
     }.maxOrNull() ?: 0
     val labelHeight = with(density) { labelHeightPx.toDp() }
-    // 러닝 전체 리메이크(2026-10-02) — 러닝 · 신발 탭은 시안의 남색 탭 줄과 윗선. 다른 탭은 S2 바닥 그대로
-    val navyBar = com.stepup.android.ui.theme.StepUpColors.dark && parentTabOf(currentRoute).let { it == Screen.Run || it == Screen.Customize }
+    // UI 최종 통합안(2026-10-25) — 반투명 탭바(다크 #070B14 82% · 라이트 #FAFAFC 92%) + 위 0.5dp 선, 선택만 블루. 파란 타일 없음
+    val ui = com.stepup.android.ui.components.StepUpUi.colors
     Column(
         Modifier
             .fillMaxWidth()
-            // S2 — 탭 줄은 바닥에 녹아든다. 카드 면을 두르지 않는다.
-            .background(
-                if (navyBar) Brush.verticalGradient(listOf(Color(0xFF061A38), Color(0xFF031227)))
-                else Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night)),
-            ),
+            .background(ui.tabBar),
     ) {
-        if (!com.stepup.android.ui.theme.StepUpColors.dark) HairlineDivider()
-        if (navyBar) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF15386B)))
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(ui.separator))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 // 프로필 화면 안에도 "프로필" 탭이 있다. 검사가 하단 탭만 집도록 이름을 단다.
                 .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
-                // 탭 줄은 64dp — 그 아래로 시스템 안전 영역만큼 더 내려간다
-                .heightIn(min = StepUpDesign.NavigationHeight)
-                .padding(vertical = 4.dp),
+                // 탭 줄(아이콘 26 · 글자 10.5) — 그 아래로 시스템 안전 영역만큼 더 내려간다
+                .heightIn(min = 58.dp)
+                .padding(top = 6.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1819,81 +1784,46 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
-    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 고른 탭은 파란 선택 타일 위에 흰 아이콘 · 글자.
-    // 뽑기 탭도 같다(2026-10-03 파란 톤 통합 전달본 v4 뽑기 — 예전 보라 타일 대신 파란 면)
-    val blueTile = selected
-    val dark = com.stepup.android.ui.theme.StepUpColors.dark
+    // UI 최종 통합안 — 고른 탭만 블루(표면 위 파란 글자), 나머지는 보조 글자색. 아이콘은 가는 선, 커뮤니티는 고르면 채운 모양
+    val ui = com.stepup.android.ui.components.StepUpUi.colors
     val tint by animateColorAsState(
-        targetValue = when {
-            blueTile -> Color.White
-            dark -> Color(0xFF9DB7E2)
-            else -> Slate
-        },
+        targetValue = if (selected) ui.accentText else ui.secondaryLabel,
         label = "navTabTint",
-    )
-    // 고른 탭 글자 — 조금 커지고(위 가장자리 기준이라 글자 줄은 그대로) 굵어진다
-    val labelScale by animateFloatAsState(
-        targetValue = if (selected) NavSelectedLabelScale else 1f,
-        label = "navTabLabelScale",
     )
     Column(
         modifier = Modifier.weight(slotWeight)
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
-            .drawBehind {
-                if (blueTile) {
-                    // 파란 선택 타일 — 자리 폭에서 양옆 4dp, 탭 줄 높이 그대로(자리보다 크게 키우지 않는다)
-                    val w = minOf(size.width - 8.dp.toPx(), 84.dp.toPx())
-                    val h = minOf(size.height, 70.dp.toPx())
-                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
-                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
-                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
-                    drawRoundRect(
-                        Brush.verticalGradient(listOf(Color(0xFF1F6BFF), Color(0xFF0754FF)), startY = topLeft.y, endY = topLeft.y + h),
-                        topLeft, tileSize, radius,
-                    )
-                    drawRoundRect(
-                        Color(0xFF5C9BFF).copy(alpha = 0.7f), topLeft, tileSize, radius,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                    )
-                }
-            }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
-            .heightIn(min = StepUpDesign.NavigationItemHeight)
+            .heightIn(min = 52.dp)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        // 아이콘 + 글자 묶음을 파란 타일 가운데에(2026-10-17 — 예전엔 위에 붙어 아이콘은 너무 위, 글자는 바닥에서 떠 보였다)
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
     ) {
         Icon(
-            imageVector = screen.icon,
+            imageVector = tabIcon(screen, selected),
             contentDescription = null,
             tint = tint,
-            // 뽑기 아이콘만 그림을 1.04배 — 자리(24dp)는 그대로라 탭 줄 높이 · 글자 기준선이 바뀌지 않는다.
-            // 태그는 키우기 층 바깥에 둔다(검사가 재는 아이콘 자리가 다섯 탭 모두 같은 줄)
-            modifier = Modifier.size(StepUpDesign.NavigationIcon)
-                .testTag("nav-icon-${screen.route}")
-                .graphicsLayer {
-                    if (screen == Screen.Draw) {
-                        scaleX = StepUpDesign.DrawNavigationIconScale
-                        scaleY = StepUpDesign.DrawNavigationIconScale
-                    }
-                },
+            modifier = Modifier.size(26.dp).testTag("nav-icon-${screen.route}"),
         )
         Text(
             text = stringResource(screen.labelRes),
-            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}")
-                .graphicsLayer {
-                    scaleX = labelScale
-                    scaleY = labelScale
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
-                },
+            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
             color = tint,
-            style = if (selected) labelStyle.copy(fontWeight = FontWeight.ExtraBold) else labelStyle,
+            style = labelStyle,
             softWrap = true,
         )
     }
+}
+
+/** 하단 탭 아이콘 — 가는 선 아이콘(통합안). 커뮤니티만 고르면 채운 모양(시안) */
+private fun tabIcon(screen: Screen, selected: Boolean): ImageVector = when (screen) {
+    Screen.Run -> com.stepup.android.ui.components.StepUpIcons.TabRun
+    Screen.Customize -> com.stepup.android.ui.components.StepUpIcons.TabShoe
+    Screen.Draw -> com.stepup.android.ui.components.StepUpIcons.TabDraw
+    Screen.Community -> if (selected) Icons.Filled.Groups else com.stepup.android.ui.components.StepUpIcons.TabCommunity
+    Screen.Profile -> com.stepup.android.ui.components.StepUpIcons.TabProfile
 }
 
 /** 앱이 죽어 멈춘 러닝 — 이어 달리거나 여기서 끝내고 저장한다. 버리는 선택은 두지 않는다(뛴 기록을 잃지 않게). */

@@ -78,7 +78,7 @@ internal object Lb {
 internal fun lbText(size: TextUnit, color: Color = Lb.White, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f, spacing: TextUnit = (-0.01).em) =
     TextStyle(fontFamily = StepUpSans, fontWeight = weight, fontSize = size, color = color, lineHeight = height.em, letterSpacing = spacing)
 
-/** 숫자 — 앱 숫자 서체(Pretendard)를 굵고 조밀하게. [italic] 이면 기울인다(시안의 큰 순위 숫자) */
+/** 숫자 — 앱 숫자 서체(StepUpNumbers — 콘덴스드)로. [italic] 이면 기울인다(시안의 큰 순위 숫자) */
 internal fun lbNumber(size: TextUnit, color: Color = Lb.White, weight: FontWeight = FontWeight.Bold, italic: Boolean = false, spacing: TextUnit = (-0.02).em) =
     TextStyle(
         fontFamily = StepUpNumbers, fontWeight = weight, fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,

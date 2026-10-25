@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.SolidColor
 
 /**
  * StepUp 팔레트 — 밝은 바탕과 어두운 바탕 두 벌.
@@ -110,8 +111,8 @@ class StepUpPalette(
         1.00f to voltDeep,
     )
 
-    /** 버튼 면은 장식용 하이라이트와 분리한다. 흰 글자가 그라데이션 전체에서 읽혀야 한다. */
-    val voltPlate: Brush = Brush.linearGradient(listOf(Color(0xFF0B3FCC), Color(0xFF145BFF)))
+    /** 버튼 면 — 통합안은 평평한 블루 한 색이다(번지는 빛 · 그라데이션 없음) */
+    val voltPlate: Brush = SolidColor(volt)
 
     /** 강조 텍스트 채움 */
     val voltInk: Brush = Brush.verticalGradient(listOf(voltSoft, volt))
@@ -134,36 +135,41 @@ class StepUpPalette(
 }
 
 /**
- * Soft Balance — 화이트 캔버스 + 연한 블루 카드 + 로열 블루 강조.
- * 제목은 짙은 네이비로 눌러 준다.
+ * 화이트블루 — UI 최종 통합안(2026-10-25 개발 전달본 tokens.json colors.whiteBlue).
+ *
+ * 바닥은 G(나이키 × 애플)의 회색(#F2F2F7), 카드 · 묶음 목록은 흰색, 강조는 블루 하나(#1F5EFF). 제목은 검정.
+ * 반투명 역할색(보조 글자 · 구분선)은 흰 카드 위에서 시안과 같은 값이 나오게 불투명으로 옮겼다(구분선만 반투명).
  */
 val LightPalette = StepUpPalette(
-    night = Color(0xFFFFFFFF),
-    carbon = Color(0xFFF4F8FF),
-    carbonHigh = Color(0xFFE9F0FF),
-    edge = Color(0xFFDCE6F7),
-    // 밝은 테마가 기본이 되며 한 단계 쨍하게(2026-10-21, 예전 #145BFF). 흰 글자 4.8:1 — 표면 위 글자는 voltText(그대로)
-    volt = Color(0xFF1166FF),
-    voltDeep = Color(0xFF0B3FCC),
+    night = Color(0xFFF2F2F7),
+    carbon = Color(0xFFFFFFFF),
+    // 카드 안 한 단계 위 — 보조 버튼 · 입력칸 · 세그먼트 트랙(fill rgba(120,120,128,.14) 를 흰 바탕에 얹은 값)
+    carbonHigh = Color(0xFFE9E9EE),
+    // separator rgba(60,60,67,.16)
+    edge = Color(0x293C3C43),
+    volt = Color(0xFF1F5EFF),
+    voltDeep = Color(0xFF1A4FE0),
     voltSoft = Color(0xFF5B8CFF),
     onVolt = Color(0xFFFFFFFF),
-    alert = Color(0xFFE5484D),
-    snow = Color(0xFF101D40),
-    silver = Color(0xFF5A6A8C),
-    // 힌트·비활성 자리. 처음 #93A1BE 는 흰 바탕에서 2.6:1 이라 안 읽혔다.
-    // 더 누르면 보조 텍스트(silver)보다 진해져 위계가 뒤집히므로, 흰 바탕
-    // 4.5:1 에서 멈춘다 — 하단 탭의 안 고른 이름도 이 색이다.
-    slate = Color(0xFF687796),
-    scrim = Color(0xFF0B1326),
-    scrimAlpha = 0.80f,
+    alert = Color(0xFFFF3B30),
+    snow = Color(0xFF000000),
+    // secondaryLabel 자리 — 시안 값(#848489)은 흰 카드에서 3.7:1 이라 작은 글자 기준(4.5:1, PaletteContrastTest)에 못 미친다.
+    // 같은 회색을 가장 옅은 면(#E9E9EE)에서도 4.5:1 이 되게 누른 값
+    silver = Color(0xFF68686D),
+    // tertiaryLabel 자리 — 힌트 · 안 고른 탭 이름. 가장 옅은 면에서도 3:1(면 기준), 보조 글자보다는 옅게
+    slate = Color(0xFF838389),
+    // 막 — 가이드 투어처럼 막 위에 흰 글자가 뜨는 자리. 시트 막은 StepUpUi.sheetScrim(더 옅다)
+    scrim = Color(0xFF000000),
+    scrimAlpha = 0.72f,
     overlay = Color(0xFFFFFFFF),
-    voltText = Color(0xFF145BFF),
+    voltText = Color(0xFF1F5EFF),
     // 흰 바탕에서는 밝은 시안이 날아가므로 한 단계 깊게
     cyan = Color(0xFF0891B2),
-    cardTop = Color(0xFFFAFCFF),
-    cardBottom = Color(0xFFF1F6FF),
-    backdropTop = Color(0xFFFBFCFF),
-    backdropBottom = Color(0xFFFFFFFF),
+    // 통합안은 카드 · 바닥에 그라데이션을 두지 않는다(번지는 빛 금지)
+    cardTop = Color(0xFFFFFFFF),
+    cardBottom = Color(0xFFFFFFFF),
+    backdropTop = Color(0xFFF2F2F7),
+    backdropBottom = Color(0xFFF2F2F7),
     // 타일은 원래 밝은 지도다. 채도만 40%로 눌러 초록 공원과 노란 도로가
     // 경로의 파랑과 다투지 않게 하고, 전체를 조금 띄워 카드 바닥과 잇는다.
     mapMatrix = floatArrayOf(
@@ -176,42 +182,38 @@ val LightPalette = StepUpPalette(
 )
 
 /**
- * 딥 네이비 — 검은 바탕에 같은 블루.
+ * 다크블루 — UI 최종 통합안(tokens.json colors.darkBlue). 바닥은 A(나이키 런클럽)의 남색 검정 #070B14.
  *
- * 순검정이 아니라 푸른 기가 도는 검정이다. 순검정 위의 파랑은 떠 보이고,
- * 카드와 바닥을 밝기만으로 나누면 층이 잘 안 읽힌다.
+ * 순검정이 아니라 푸른 기가 도는 검정이다. 카드 · 묶음 목록은 #0E1424, 강조는 블루 #2F6BFF, 표면 위 파란 글자는 #6E9BFF.
  */
 val DarkPalette = StepUpPalette(
-    // 디자인 패키지(design/blue-black-2026-09)의 토큰 — 배경 #040C1B · 카드
-    // #0B1D35 · 경계 #1A3B61 · 파랑 #147BFF · 시안 #24D8FF · 본문 #F4F8FF ·
-    // 보조글 #A8BDD9.
-    // S2 무대(docs/redesign/s2) — 푸른 기가 도는 검정 #05080E
-    night = Color(0xFF05080E),
-    // S2 — 카드 · 칩 · 경계를 푸른 남색에서 무채색에 가까운 검정으로. 파랑은 강조에만 남긴다.
-    carbon = Color(0xFF0C111C),
-    carbonHigh = Color(0xFF131A27),
-    edge = Color(0xFF1F2837),
-    // 브랜드 강조색. 흰 글자를 얹는 공통 버튼 면은 voltPlate에서 별도로 정한다.
-    volt = Color(0xFF1478FF),
-    voltDeep = Color(0xFF0B5BD6),
-    voltSoft = Color(0xFF5AA7FF),
+    night = Color(0xFF070B14),
+    carbon = Color(0xFF0E1424),
+    // fill rgba(130,150,190,.20) 을 카드 위에 얹은 값 — 보조 버튼 · 입력칸 · 세그먼트 트랙
+    carbonHigh = Color(0xFF222A3D),
+    // separator rgba(255,255,255,.09)
+    edge = Color(0x17FFFFFF),
+    volt = Color(0xFF2F6BFF),
+    voltDeep = Color(0xFF2A5FE6),
+    // 막 위 패널 테두리 · 스포트라이트 — 시안 #6E9BFF 를 55% 로 얹으면 막과 2.9:1 이라 한 단계 밝게(3:1, PaletteContrastTest)
+    voltSoft = Color(0xFF7DA6FF),
     onVolt = Color(0xFFFFFFFF),
-    alert = Color(0xFFFF6B5E),
-    snow = Color(0xFFF4F8FF),
-    silver = Color(0xFFA8BDD9),
-    // 힌트 · 비활성 — 카드 위 5:1
-    slate = Color(0xFF7F95B5),
-    scrim = Color(0xFF01030A),
-    scrimAlpha = 0.84f,
-    // 막이 거의 검정이라 패널은 카드보다 한 단계 더 들어 올린다.
-    overlay = Color(0xFF132B4E),
-    // 어두운 표면 위의 파란 글자. volt 그대로면 4.3:1 로 작은 글자에 모자란다.
-    voltText = Color(0xFF5AA7FF),
+    alert = Color(0xFFFF453A),
+    snow = Color(0xFFFFFFFF),
+    // secondaryLabel rgba(226,232,245,.64)
+    silver = Color(0xFF969CAA),
+    // tertiaryLabel 자리(.38 보다 한 단계 밝게 — 카드 위 힌트가 읽히게)
+    slate = Color(0xFF6E7586),
+    scrim = Color(0xFF000000),
+    scrimAlpha = 0.78f,
+    // 시트 · 막 위 패널 — groupedBackground
+    overlay = Color(0xFF0E1424),
+    voltText = Color(0xFF6E9BFF),
     cyan = Color(0xFF24D8FF),
-    cardTop = Color(0xFF0F1522),
-    cardBottom = Color(0xFF0B1019),
-    backdropTop = Color(0xFF060C18),
-    backdropBottom = Color(0xFF05080E),
+    cardTop = Color(0xFF0E1424),
+    cardBottom = Color(0xFF0E1424),
+    backdropTop = Color(0xFF070B14),
+    backdropBottom = Color(0xFF070B14),
     // 밝은 타일을 어두운 지도로 옮긴다(2026-10-14 "지도가 너무 어둡다") — 땅 #22324A 쯤 · 물 파랑(예전에는 뒤집혀 갈색이었다) ·
     // 길은 땅보다 어두운 선 · 지명은 밝은 글자. 실제 MapTiler 타일 색(땅 #F5F0E4 · 물 #85CAF9 · 길 흰색 · 공원 #D7E9C8 · 글자 회색)에 맞춘 값이다.
     mapMatrix = floatArrayOf(

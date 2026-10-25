@@ -19,15 +19,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.stepup.android.ui.components.RunBackdrop
-import com.stepup.android.ui.components.RunSpinner
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import com.stepup.android.ui.background.Spots
+import com.stepup.android.ui.background.TimeOfDay
+import com.stepup.android.ui.background.rememberSpotPhoto
+import com.stepup.android.ui.components.StepUpMotion
+import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.Wordmark
-import com.stepup.android.ui.components.runTextStyle
-import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.screens.onboarding.BluePlainButton
 import com.stepup.android.ui.theme.BrandLogoRole
 import kotlinx.coroutines.CancellationException
@@ -75,65 +87,87 @@ fun SplashScreen(onReady: () -> Unit) {
 }
 
 /**
- * 시작 화면(파란 톤 v4 ONB03 · ONB04) — 남색 바탕 가운데 원본 로고와 그 뒤 파란 빛, 아래로 준비 상태 한 줄(03) 또는
- * 준비하지 못함 · 다시 시도(04). 가짜 진행률 · 시간 · 보상은 없다 — 도는 표시는 실제로 기다리는 동안만 보인다.
+ * 시작 화면(UI 최종 통합안 2026-10-25 · 01_시작화면) — 망원 한강공원 사진 위 워드마크가 왼쪽에서 들어오고, 아래 2dp 로딩 선.
+ * 다크블루는 사진이 화면 전체(아래로 짙어짐), 화이트블루는 위쪽 사진이 흰 바닥으로 사라진다.
+ * 로딩 선은 실제로 기다리는 동안만 돈다(가짜 진행률 · 시간 · 보상은 없다). 준비하지 못하면(04) 사진 위에 까닭 · 다시 시도.
  * 갤러리 · 시안 검사도 이 화면을 상태만 넣어 그린다. 실제 상태는 위의 초기화에서만 온다.
  */
 @Composable
 internal fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
-    val t = runTone()
-    Box(Modifier.fillMaxSize().testTag("launch-scene")) {
-        RunBackdrop(Modifier.fillMaxSize())
-        // 로고 뒤 파란 빛 — 화면 가운데에서 번진다
+    val dark = StepUpColors.dark
+    val ui = StepUpUi.colors
+    val context = LocalContext.current
+    val motion = LocalMotion.current
+    val photo = rememberSpotPhoto(
+        remember { Spots.byId(context, "mangwon") },
+        time = if (dark) TimeOfDay.DUSK else TimeOfDay.DAY,
+    )
+    val photoAlpha by animateFloatAsState(if (photo != null) 1f else 0f, tween(motion.duration(300)), label = "launchPhoto")
+    // 워드마크 — 왼쪽에서 미끄러져 들어온다(500ms, 감속)
+    val enter = remember { Animatable(if (motion.reduced) 1f else 0f) }
+    LaunchedEffect(Unit) {
+        if (!motion.reduced) enter.animateTo(1f, tween(500, delayMillis = 150, easing = StepUpMotion.emphasizedDecelerate))
+    }
+    val ground = if (dark) Color(0xFF070B14) else Color.White
+    Box(Modifier.fillMaxSize().background(ground).testTag("launch-scene")) {
+        if (photo != null) {
+            Image(
+                photo.painter, null, contentScale = ContentScale.Crop, colorFilter = photo.colorFilter,
+                modifier = (if (dark) Modifier.fillMaxSize() else Modifier.fillMaxWidth().fillMaxHeight(0.5f))
+                    .graphicsLayer { alpha = photoAlpha },
+            )
+        }
         Box(
-            Modifier.fillMaxSize().drawBehind {
-                drawCircle(
-                    Brush.radialGradient(
-                        0f to t.cobalt.copy(alpha = if (t.dark) 0.55f else 0.22f), 1f to Color.Transparent,
-                        center = Offset(size.width / 2f, size.height * 0.42f), radius = size.width * 0.62f,
-                    ),
-                    radius = size.width * 0.62f, center = Offset(size.width / 2f, size.height * 0.42f),
-                )
-            },
+            Modifier.fillMaxSize().background(
+                if (dark) Brush.verticalGradient(0f to Color.Black.copy(alpha = .08f), .55f to Color.Black.copy(alpha = .18f), 1f to ground.copy(alpha = .78f))
+                else Brush.verticalGradient(0f to Color.White.copy(alpha = .08f), .24f to Color.White.copy(alpha = .22f), .40f to Color.White.copy(alpha = .9f), .46f to Color.White, 1f to Color.White),
+            ),
         )
         Column(
             Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                val room = maxHeight
                 Column(
-                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(vertical = 24.dp),
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = room),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
                 ) {
-                    Wordmark(role = BrandLogoRole.Launch)
-                    Spacer(Modifier.height(64.dp))
+                    // 시안 — 워드마크 윗변이 화면 높이의 46% 쯤(390 / 851)
+                    Spacer(Modifier.height(room * 0.44f))
+                    Wordmark(
+                        role = BrandLogoRole.Launch,
+                        modifier = Modifier.graphicsLayer {
+                            alpha = enter.value
+                            translationX = (1f - enter.value) * -48.dp.toPx()
+                        },
+                    )
                     when (stage) {
-                        LaunchStage.Loading -> {
-                            RunSpinner(Modifier.size(40.dp).testTag("launch-loading"))
-                            Spacer(Modifier.height(22.dp))
-                            // 실제로 기다리는 동안만 보인다 — 스크린리더에도 준비 중임을 알린다
-                            Text(
-                                stringResource(R.string.splash_preparing),
-                                style = runTextStyle(18.sp, t.text, FontWeight.Medium, 1.45f),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            )
-                        }
+                        LaunchStage.Loading -> Unit
                         LaunchStage.Error -> {
+                            Spacer(Modifier.height(40.dp))
                             Text(
                                 stringResource(R.string.onb_launch_failed_title),
-                                style = runTextStyle(26.sp, t.text, FontWeight.ExtraBold, 1.3f),
+                                style = StepUpUi.type.section.copy(fontSize = 24.sp), color = if (dark) Color.White else ui.label,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.testTag("launch-error").semantics { heading(); liveRegion = LiveRegionMode.Polite },
                             )
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(8.dp))
                             Text(
                                 stringResource(R.string.onb_launch_failed_body),
-                                style = runTextStyle(17.sp, t.label, FontWeight.Medium, 1.45f),
+                                style = StepUpUi.type.body, color = if (dark) Color.White.copy(alpha = .8f) else ui.secondaryLabel,
                                 textAlign = TextAlign.Center,
                             )
                         }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (stage == LaunchStage.Loading) {
+                        // 실제로 기다리는 동안만 보인다 — 스크린리더에도 준비 중임을 알린다(글자는 화면에 쓰지 않는다)
+                        val preparing = stringResource(R.string.splash_preparing)
+                        LaunchLoadingLine(
+                            Modifier.padding(bottom = 104.dp).testTag("launch-loading")
+                                .semantics { contentDescription = preparing; liveRegion = LiveRegionMode.Polite },
+                        )
                     }
                 }
             }
@@ -141,10 +175,35 @@ internal fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
                 // 다시 시도 — 같은 준비 작업을 처음부터 다시 한다(성공으로 치고 넘어가지 않는다)
                 BluePlainButton(
                     stringResource(R.string.feed_retry), onRetry,
-                    Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 20.dp)
+                    Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(bottom = 16.dp)
                         .testTag("launch-retry"),
                 )
             }
         }
+    }
+}
+
+/** 아래 로딩 선 — 120×2, 길(다크 흰 22% · 라이트 검정 12%) 위로 채움(다크 흰색 · 라이트 블루)이 왼쪽부터 차오르기를 되풀이한다 */
+@Composable
+private fun LaunchLoadingLine(modifier: Modifier = Modifier) {
+    val dark = StepUpColors.dark
+    val motion = LocalMotion.current
+    val fill = remember { Animatable(if (motion.reduced) .64f else 0f) }
+    LaunchedEffect(motion.reduced) {
+        if (motion.reduced) return@LaunchedEffect
+        while (true) {
+            fill.snapTo(0f)
+            fill.animateTo(1f, tween(1200, easing = StepUpMotion.countUp))
+            kotlinx.coroutines.delay(260)
+        }
+    }
+    Box(
+        modifier.size(120.dp, 2.dp).clip(RoundedCornerShape(1.dp))
+            .background(if (dark) Color.White.copy(alpha = .22f) else Color.Black.copy(alpha = .12f)),
+    ) {
+        Box(
+            Modifier.fillMaxHeight().fillMaxWidth(fill.value.coerceIn(0f, 1f))
+                .background(if (dark) Color.White else StepUpUi.colors.primary),
+        )
     }
 }

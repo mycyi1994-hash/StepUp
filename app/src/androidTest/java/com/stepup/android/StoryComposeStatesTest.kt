@@ -164,8 +164,11 @@ class StoryComposeStatesTest {
 
     private fun scenes(setLargeType: (Boolean) -> Unit) {
         val context = compose.activity
+        // 함께 뛰기(UI 최종 통합안)는 번개러닝이 첫 세그먼트다 — 이야기 세그먼트를 고른다
+        awaitTag("community-tab-stories")
+        tapTag("community-tab-stories")
         awaitTag("stories-tab")
-        awaitTag("stories-write")
+        awaitTag("community-write")
 
         // ── 01 한 번도 뛰지 않은 사람 — 코스 없이 장소와 질문만으로 게시 ────────────
         server.runs = ok(runsJson("2026-09-28", total = 0))
@@ -241,7 +244,7 @@ class StoryComposeStatesTest {
 
         // ── 04 임시글의 코스가 만료된 사람 — 9/29 재진입, 글과 장소는 보존 ─────────────
         server.runs = ok(runsJson("2026-09-29", total = 7, last = RUN_MAPO.ended))
-        tapTag("stories-write")
+        tapTag("community-write")
         tapTag("story-resume-continue")
         awaitTag("story-compose")
         awaitTag("story-record-expired")
@@ -402,8 +405,8 @@ class StoryComposeStatesTest {
     // ── 도우미 ─────────────────────────────────────────────────────
 
     private fun openCompose() {
-        awaitTag("stories-write")
-        tapTag("stories-write")
+        awaitTag("community-write")
+        tapTag("community-write")
         // 앞 장면의 임시저장이 남았으면 새로 쓴다
         if (compose.onAllNodesWithTag("story-resume-new").fetchSemanticsNodes().isNotEmpty()) tapTag("story-resume-new")
         awaitTag("story-compose")

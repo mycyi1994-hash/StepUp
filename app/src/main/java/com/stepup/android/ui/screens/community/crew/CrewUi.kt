@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -51,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
@@ -152,34 +157,35 @@ internal class CrewInk(
     val scrim: Color,
 )
 
+// UI 최종 통합안(2026-10-25) — 크루 화면도 앱과 같은 다크블루 · 화이트블루. 묶음 면 · 회색 채움 · 블루 하나, 번지는 빛 · 파란 둘레 없음
 private val DarkCrewInk = CrewInk(
-    canvas = Color(0xFF031427), card = Color(0xFF0A2547), cardTop = Color(0xFF0D2E57), edge = Color(0xFF1C4E95),
-    field = Color(0xFF08244A), fieldEdge = Color(0xFF1F5BD0),
-    sheet = Color(0xFF0A2750), sheetTop = Color(0xFF0E3264), sheetEdge = Color(0xFF1F5BD0),
-    text = Color(0xFFF5F8FF), secondary = Color(0xFFAAC3EA), info = Color(0xFF48D9FA), link = Color(0xFF5B95FF),
-    divider = Color(0xFF1E3F72), tabMark = Color(0xFF48D9FA), warn = Color(0xFFFF6B78),
-    choice = Color(0xFF0A2547), choiceText = Color(0xFFF5F8FF), choiceOn = Color(0xFF0754FF), choiceOnText = Color.White,
-    level = Color(0xFF16386E), levelText = Color(0xFF8CB8FF), track = Color(0xFF15305A), bar = Color(0xFF48D9FA),
-    avatar = Color(0xFF12335F), avatarText = Color(0xFF8CB8FF), secondaryButton = Color(0xFF061D3B),
-    disabled = Color(0xFF2A4166), disabledText = Color(0xFF8FA5C7),
-    danger = Color(0xFF4A1626), dangerText = Color(0xFFFF7A85), dangerBase = Color(0xFFE2505F),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFDCEBFD))), primaryText = Color(0xFF071B3D),
-    skeleton = Color(0xFF17345F), handle = Color(0xFF3F74C8), scrim = Color(0xA8010A16),
+    canvas = Color(0xFF070B14), card = Color(0xFF0E1424), cardTop = Color(0xFF0E1424), edge = Color(0x17FFFFFF),
+    field = Color(0xFF0E1424), fieldEdge = Color(0x17FFFFFF),
+    sheet = Color(0xFF0E1424), sheetTop = Color(0xFF0E1424), sheetEdge = Color.Transparent,
+    text = Color.White, secondary = Color(0xFF969CAA), info = Color(0xFF6E9BFF), link = Color(0xFF6E9BFF),
+    divider = Color(0x17FFFFFF), tabMark = Color(0xFF6E9BFF), warn = Color(0xFFFF453A),
+    choice = Color(0xFF0E1424), choiceText = Color.White, choiceOn = Color(0xFF2F6BFF), choiceOnText = Color.White,
+    level = Color(0xFF202736), levelText = Color(0xFF6E9BFF), track = Color(0xFF222A3D), bar = Color(0xFF2F6BFF),
+    avatar = Color(0xFF202736), avatarText = Color(0xFF969CAA), secondaryButton = Color(0xFF202736),
+    disabled = Color(0xFF141A27), disabledText = Color(0xFF5D6371),
+    danger = Color(0xFF2A1219), dangerText = Color(0xFFFF453A), dangerBase = Color(0xFFFF453A),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    skeleton = Color(0xFF151C2D), handle = Color(0x4DE2E8F5), scrim = Color(0x8C000000),
 )
 
 private val LightCrewInk = CrewInk(
-    canvas = Color(0xFFF5F8FF), card = Color(0xFFF7FAFF), cardTop = Color(0xFFFFFFFF), edge = Color(0xFFC9D8F2),
-    field = Color(0xFFEDF2FC), fieldEdge = Color(0xFF9DB8EE),
-    sheet = Color(0xFFF5F8FF), sheetTop = Color(0xFFFFFFFF), sheetEdge = Color(0xFFC9D8F2),
-    text = Color(0xFF0B1E3F), secondary = Color(0xFF4A5F84), info = Color(0xFF0A7FA6), link = Color(0xFF0748D6),
-    divider = Color(0xFFDCE4F2), tabMark = Color(0xFF0754FF), warn = Color(0xFFC62337),
-    choice = Color(0xFFFFFFFF), choiceText = Color(0xFF0B1E3F), choiceOn = Color(0xFF0754FF), choiceOnText = Color.White,
-    level = Color(0xFFE1EBFF), levelText = Color(0xFF0748D6), track = Color(0xFFDCE5F5), bar = Color(0xFF0754FF),
-    avatar = Color(0xFFE1EBFF), avatarText = Color(0xFF0748D6), secondaryButton = Color(0xFFFFFFFF),
-    disabled = Color(0xFFC9D3E3), disabledText = Color(0xFF6E7D96),
-    danger = Color(0xFFFFE5E8), dangerText = Color(0xFFC62337), dangerBase = Color(0xFFE59AA4),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1C63FF), Color(0xFF0754FF))), primaryText = Color.White,
-    skeleton = Color(0xFFDCE5F5), handle = Color(0xFFB5C3DB), scrim = Color(0xB3091A33),
+    canvas = Color(0xFFF2F2F7), card = Color.White, cardTop = Color.White, edge = Color(0x293C3C43),
+    field = Color.White, fieldEdge = Color(0x293C3C43),
+    sheet = Color.White, sheetTop = Color.White, sheetEdge = Color.Transparent,
+    text = Color.Black, secondary = Color(0xFF848489), info = Color(0xFF1F5EFF), link = Color(0xFF1F5EFF),
+    divider = Color(0x293C3C43), tabMark = Color(0xFF1F5EFF), warn = Color(0xFFFF3B30),
+    choice = Color.White, choiceText = Color.Black, choiceOn = Color(0xFF1F5EFF), choiceOnText = Color.White,
+    level = Color(0xFFE3E3E8), levelText = Color(0xFF1F5EFF), track = Color(0xFFE3E3E8), bar = Color(0xFF1F5EFF),
+    avatar = Color(0xFFE3E3E8), avatarText = Color(0xFF848489), secondaryButton = Color(0xFFE3E3E8),
+    disabled = Color(0xFFE8E8ED), disabledText = Color(0xFFA9A9AE),
+    danger = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30), dangerBase = Color(0xFFFF3B30),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    skeleton = Color(0xFFE9E9EE), handle = Color(0x4D3C3C43), scrim = Color(0x40000000),
 )
 
 @Composable
@@ -392,8 +398,8 @@ internal fun CrewBar(fraction: Float, modifier: Modifier) {
 internal enum class CrewButtonKind { PRIMARY, SECONDARY, DANGER, DISABLED }
 
 /**
- * 큰 버튼 — 러닝 리메이크의 주 버튼(흰 면 · 남색 글자 · 파란 아랫면)과 보조 버튼(남색 면 · 파란 테두리)을 그대로 쓴다.
- * 삭제성 행동(내보내기 · 나가기 · 해산 · 초안 지우기)은 어두운 코랄 면 · 코랄 글자. 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
+ * 큰 버튼 — 통합안 버튼(주 = 블루 알약 + 원 화살표, 보조 = 회색 알약). 삭제성 행동(내보내기 · 나가기 · 해산 · 초안 지우기)은
+ * 회색 알약 + 빨간 글자. 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
  */
 @Composable
 internal fun CrewButton(
@@ -405,10 +411,14 @@ internal fun CrewButton(
     enabled: Boolean = true,
 ) {
     when (kind) {
-        CrewButtonKind.PRIMARY -> RunButton(text, onClick, modifier, RunButtonKind.Primary, enabled = enabled, busy = busy)
-        CrewButtonKind.SECONDARY -> RunButton(text, onClick, modifier, RunButtonKind.Secondary, enabled = enabled, busy = busy)
-        CrewButtonKind.DISABLED -> RunButton(text, onClick, modifier, RunButtonKind.Primary, enabled = false)
-        CrewButtonKind.DANGER -> CrewDangerButton(text, onClick, modifier, busy = busy, enabled = enabled)
+        CrewButtonKind.PRIMARY -> PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
+        CrewButtonKind.SECONDARY -> SecondaryBusyButton(text, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy)
+        CrewButtonKind.DANGER -> DangerButton(text, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy)
+        CrewButtonKind.DISABLED -> PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = ButtonState.Disabled)
     }
 }
 
@@ -484,50 +494,38 @@ internal fun CrewSmallButton(text: String, onClick: () -> Unit, modifier: Modifi
 }
 
 /**
- * 고르는 버튼 — 고르지 않으면 남색 면 · 파란 테두리, 고르면 전기 파랑 면 · 흰 글자 · 체크.
- * [enabled] 가 거짓이고 고른 상태면 누르지 않는 표시 칩(러닝 스타일 · 신청 문구)이다.
+ * 고르는 칸 — UI 최종 통합안 세그먼트(체크 표시 없음): 회색 트랙([CrewChoiceRow]) 위에서 고른 칸만 떠 있는 판(segmentThumb).
+ * [enabled] 가 거짓이고 고른 상태면 누르지 않는 표시 칸(러닝 스타일 · 신청 문구)이다.
  */
 @Composable
 internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val ink = crewInk()
-    val display = !enabled && selected
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val shape = RoundedCornerShape(9.dp)
     Box(
-        modifier.heightIn(min = 52.dp).feedbackClickable(enabled = enabled, role = Role.Checkbox, cue = FeedbackCue.Select, onClick = onClick)
+        modifier.heightIn(min = 48.dp).padding(2.dp)
+            .clip(shape)
+            .then(if (selected) Modifier.shadow(if (c.dark) 0.dp else 2.dp, shape).background(c.segmentThumb, shape) else Modifier)
+            .feedbackClickable(enabled = enabled, role = Role.Checkbox, cue = FeedbackCue.Select, onClick = onClick)
             .semantics { this.selected = selected }
-            .padding(vertical = 3.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
-        val shape = RoundedCornerShape(12.dp)
-        val on = selected && !display
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape)
-                .background(
-                    if (on) Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF1F66FF)))
-                    else Brush.verticalGradient(listOf(ink.cardTop, ink.choice)),
-                    shape,
-                )
-                .border(1.dp, if (on) Color(0xFF4D8BFF) else ink.fieldEdge.copy(alpha = if (display) 1f else 0.85f), shape)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text, color = if (on) ink.choiceOnText else if (!enabled && !selected) ink.disabledText else ink.choiceText,
-                fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 19.sp,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            if (on) {
-                Spacer(Modifier.width(6.dp))
-                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-            }
-        }
+        Text(
+            text, style = com.stepup.android.ui.components.StepUpUi.type.segment,
+            color = if (!enabled && !selected) c.onDisabled else c.label,
+            textAlign = TextAlign.Center, maxLines = 2,
+        )
     }
 }
 
-/** 한 줄에 버튼 여러 개 — 폭을 나눈다 */
+/** 한 줄에 고르는 칸 여러 개 — 회색 트랙 하나에 폭을 나눈다(세그먼트) */
 @Composable
 internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), content = content)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(11.dp)).background(c.fill).padding(0.dp),
+        verticalAlignment = Alignment.CenterVertically, content = content,
+    )
 }
 
 // ── 머리 · 줄 · 시트 ───────────────────────────────────────────
@@ -996,15 +994,15 @@ internal fun CrewSkeletonBox(modifier: Modifier, radius: Dp = 10.dp) {
 /** 입력칸 이름 · 칸 · 도움말(또는 오류) */
 @Composable
 internal fun CrewFieldLabel(text: String, modifier: Modifier = Modifier) {
-    val ink = crewInk()
-    Text(text, color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = modifier)
+    Text(text, style = com.stepup.android.ui.components.StepUpUi.type.rowTitle.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
+        color = com.stepup.android.ui.components.StepUpUi.colors.label, modifier = modifier)
 }
 
 @Composable
 internal fun CrewHelp(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
-    val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     Text(
-        text, color = if (error) ink.warn else ink.secondary, fontSize = 14.sp, lineHeight = 20.sp,
+        text, style = com.stepup.android.ui.components.StepUpUi.type.caption, color = if (error) c.live else c.secondaryLabel,
         fontWeight = if (error) FontWeight.SemiBold else FontWeight.Normal, modifier = modifier,
     )
 }
@@ -1023,7 +1021,7 @@ internal fun CrewTextField(
     suffix: String? = null,
     error: Boolean = false,
 ) {
-    val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(14.dp)
     androidx.compose.foundation.text.BasicTextField(
@@ -1031,31 +1029,24 @@ internal fun CrewTextField(
         onValueChange = { next -> onValueChange(if (next.length > maxChars) next.take(maxChars) else next) },
         singleLine = singleLine,
         keyboardOptions = keyboard,
-        textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 17.sp, lineHeight = 26.sp),
-        cursorBrush = androidx.compose.ui.graphics.SolidColor(ink.info),
+        textStyle = com.stepup.android.ui.components.StepUpUi.type.body.copy(color = c.label, fontSize = 16.5.sp),
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(c.primary),
         modifier = modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused },
         decorationBox = { inner ->
             Row(
-                Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(ink.field, shape)
-                    .border(
-                        if (focused || error) 1.5.dp else 1.dp,
-                        when {
-                            error -> ink.warn
-                            focused -> Color(0xFF4D8BFF)
-                            else -> ink.fieldEdge
-                        },
-                        shape,
-                    )
-                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(c.card, shape)
+                    .then(if (focused || error) Modifier.border(2.dp, if (error) c.live else c.primary, shape) else Modifier)
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
             ) {
                 Box(Modifier.weight(1f)) {
-                    if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, color = ink.secondary.copy(alpha = 0.8f), fontSize = 17.sp, lineHeight = 26.sp)
+                    if (value.isEmpty() && placeholder.isNotEmpty()) {
+                        Text(placeholder, style = com.stepup.android.ui.components.StepUpUi.type.body.copy(fontSize = 16.5.sp), color = c.tertiaryLabel)
+                    }
                     inner()
                 }
                 if (suffix != null) {
-                    Box(Modifier.padding(start = 12.dp).width(1.dp).height(24.dp).background(ink.divider))
-                    Text(suffix, color = ink.secondary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 14.dp))
+                    Text(suffix, style = com.stepup.android.ui.components.StepUpUi.type.body, color = c.secondaryLabel, modifier = Modifier.padding(start = 14.dp))
                 }
             }
         },
@@ -1065,20 +1056,19 @@ internal fun CrewTextField(
 /** 입력처럼 보이는 고르기 줄(활동 지역 · 정기 모임) */
 @Composable
 internal fun CrewPickerField(text: String, placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 58.dp).clip(shape).background(ink.field, shape)
-            .border(1.dp, if (enabled) ink.fieldEdge else ink.divider, shape)
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 18.dp, vertical = 12.dp),
+        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(c.card, shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text.ifEmpty { placeholder }, color = if (text.isEmpty() || !enabled) ink.secondary else ink.text, fontSize = 17.sp,
-            fontWeight = if (text.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
+            text.ifEmpty { placeholder }, style = com.stepup.android.ui.components.StepUpUi.type.body.copy(fontSize = 16.5.sp),
+            color = if (text.isEmpty() || !enabled) c.tertiaryLabel else c.label,
             modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = if (enabled) ink.text else ink.secondary, modifier = Modifier.size(22.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = c.tertiaryLabel, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -1104,7 +1094,8 @@ internal fun CrewBottomBar(caption: String? = null, captionError: Boolean = fals
                 CrewErrorLine(caption, Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"))
             } else {
                 Text(
-                    caption, color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, lineHeight = 21.sp, textAlign = TextAlign.Center,
+                    caption, style = com.stepup.android.ui.components.StepUpUi.type.rowSubtitle,
+                    color = com.stepup.android.ui.components.StepUpUi.colors.secondaryLabel, textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"),
                 )
             }

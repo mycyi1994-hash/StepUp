@@ -75,50 +75,41 @@ import com.stepup.android.ui.theme.VoltText
  */
 
 /**
- * 보유 SUP — 머리글 오른쪽의 작은 알약.
- *
- * 누르면 지갑이 열린다. 숫자를 크게 반복하지 않는다 — 보유 포인트는
- * 여기 한 군데에서 작게 보이면 충분하다.
+ * 보유 SUP 알약 — 통합안: 회색 채움 알약(높이 36) · 왼쪽 작은 동전 · "0 SUP"(14 · 600). 누르면 지갑.
+ * 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리).
  */
 @Composable
 fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(50)
-    // 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리)
+    val ui = StepUpUi.colors
     val amount = balance?.let { formatSupDown(it, 2) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
-    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · U01) — 파란 알약 · 왼쪽 동전 · 흰 수와 단위
-    Row(
+    Box(
         modifier = modifier
-            .heightIn(min = StepUpDesign.BalanceHeight)
+            .heightIn(min = StepUpDesign.TouchTarget)
             .widthIn(max = 190.dp)
-            .clip(shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = label }
             .testTag("sup-balance"),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
         Row(
             Modifier
-                .heightIn(min = 38.dp)
-                .clip(shape)
-                .background(Brush.verticalGradient(listOf(Color(0xFF1C6BFF), Color(0xFF0646E0))), shape)
-                .border(1.5.dp, Brush.verticalGradient(listOf(Color(0xFF5AA2FF), Color(0xFF0A4BDF))), shape)
-                .padding(start = 5.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+                .heightIn(min = 36.dp)
+                .clip(RoundedCornerShape(50))
+                .background(ui.fill)
+                .padding(start = 9.dp, end = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            SupCoin(Modifier.size(28.dp))
+            SupCoin(Modifier.size(20.dp))
             Text(
-                text = amount,
+                text = "$amount SUP",
                 modifier = Modifier.weight(1f, fill = false),
                 overflow = TextOverflow.Ellipsis,
-                fontFamily = com.stepup.android.ui.theme.StepUpSans,
-                fontSize = StepUpDesign.BalanceAmount,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
+                style = StepUpUi.type.smallButton.copy(fontWeight = FontWeight.SemiBold),
+                color = ui.label,
                 maxLines = 1,
             )
-            Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.SemiBold, color = Color(0xFFDCE8FF))
         }
     }
 }
@@ -200,10 +191,6 @@ fun SubHeader(
     }
 }
 
-/**
- * 탭 첫 화면의 머리글 — 왼쪽 로고, 오른쪽 보유 SUP · 알림 종(2026-09-29 메인 시안). 다섯 탭이 모두 이 모양이다 —
- * 종을 한 탭에만 두면 보유 SUP 자리가 탭마다 달라진다.
- */
 @Composable
 fun MainHeader(
     balance: Double?,
@@ -214,22 +201,29 @@ fun MainHeader(
     unread: Int = 0,
     /** 알림함 — null 이면 종을 두지 않는다 */
     onOpenNotifications: (() -> Unit)? = null,
+    /** 잔액 알약을 둔다(내 정보는 머리에 두지 않고 목록의 "지갑" 줄로) */
+    showBalance: Boolean = true,
+    /** 오른쪽 끝 원 버튼 하나(내 정보의 설정 톱니) — 종 대신 */
+    trailing: (@Composable () -> Unit)? = null,
 ) {
+    // UI 최종 통합안(2026-10-25) — 머리 줄 44: 왼쪽 워드마크(115×20), 오른쪽 회색 알약(SUP) · 회색 원 36(알림 · 설정)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = StepUpDesign.HeaderHeight)
+            .heightIn(min = 52.dp)
             .testTag("main-header"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Wordmark(modifier = Modifier.weight(1f, fill = false))
+        // 로고는 탭마다 같은 크기 · 자리(115×20) — 오른쪽 버튼 수에 따라 줄지 않는다(ChromeNavigationTest)
+        Wordmark(modifier = Modifier.height(20.dp).width(115.dp))
         Spacer(Modifier.weight(1f))
-        SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
-        if (onOpenNotifications != null) NotificationBell(unread, onOpenNotifications)
+        if (showBalance) SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
+        if (trailing != null) trailing()
+        else if (onOpenNotifications != null) NotificationBell(unread, onOpenNotifications)
     }
 }
 
-/** 머리글의 알림 종 — 48dp 터치, 읽지 않은 알림이 있으면 오른쪽 위 작은 파란 점(수는 알림함에서) */
+/** 머리글의 알림 종 — 회색 원 36(터치 48), 읽지 않은 알림이 있으면 오른쪽 위 작은 파란 점(수는 알림함에서) */
 @Composable
 private fun NotificationBell(unread: Int, onClick: () -> Unit) {
     val label = stringResource(R.string.cd_notifications) +
@@ -241,11 +235,13 @@ private fun NotificationBell(unread: Int, onClick: () -> Unit) {
             .testTag("header-notifications"),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Outlined.Notifications, contentDescription = null, tint = Snow, modifier = Modifier.size(24.dp))
+        Box(Modifier.size(36.dp).clip(CircleShape).background(StepUpUi.colors.fill), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Notifications, contentDescription = null, tint = StepUpUi.colors.label, modifier = Modifier.size(20.dp))
+        }
         if (unread > 0) {
             Box(
-                Modifier.align(Alignment.Center).offset(x = 7.dp, y = (-8).dp).size(8.dp).clip(CircleShape)
-                    .background(Color(0xFF3988FF)).testTag("header-notifications-dot"),
+                Modifier.align(Alignment.Center).offset(x = 9.dp, y = (-10).dp).size(8.dp).clip(CircleShape)
+                    .background(StepUpUi.colors.primary).testTag("header-notifications-dot"),
             )
         }
     }
@@ -334,7 +330,7 @@ fun PageHero(
 }
 
 /**
- * 한 화면에서 가장 먼저 눌러야 하는 버튼 — 큰 파란 알약.
+ * 한 화면에서 가장 먼저 눌러야 하는 버튼 — 통합안 블루 알약 54. [showArrow] 면 끝에 흰 원 화살표.
  *
  * "러닝 시작"처럼 그 화면의 이유가 되는 행동 하나에만 쓴다. 한 화면에
  * 두 개가 있으면 어느 쪽도 먼저 보이지 않는다.
@@ -348,47 +344,11 @@ fun PrimaryCta(
     enabled: Boolean = true,
     showArrow: Boolean = true,
 ) {
-    // S2 — 주 행동은 흰 알약(밝은 테마는 남색)에 짙은 글자. 푸른 번짐은 두지 않는다.
-    val shape = RoundedCornerShape(50)
-    val dark = com.stepup.android.ui.theme.StepUpColors.dark
-    val face = if (dark) androidx.compose.ui.graphics.Color(0xFFF3F5FF) else Snow
-    val ink = if (dark) androidx.compose.ui.graphics.Color(0xFF070B12) else androidx.compose.ui.graphics.Color.White
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = StepUpDesign.PrimaryHeight)
-            .clip(shape)
-            .then(
-                if (enabled) Modifier.background(face, shape)
-                else Modifier.background(CarbonHigh, shape).border(1.dp, Edge, shape),
-            )
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) ink else Slate, modifier = Modifier.size(StepUpDesign.ControlIcon))
-            Spacer(Modifier.width(12.dp))
-        }
-        Text(
-            text = text,
-            modifier = Modifier.weight(1f, fill = false),
-            fontSize = StepUpDesign.PrimaryLabel,
-            fontWeight = FontWeight.SemiBold,
-            color = if (enabled) ink else Slate,
-            textAlign = TextAlign.Center,
-        )
-        if (showArrow && enabled) {
-            Spacer(Modifier.width(12.dp))
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = ink,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
+    PrimaryButton(
+        text, onClick, modifier.fillMaxWidth(),
+        state = if (enabled) ButtonState.Idle else ButtonState.Disabled,
+        icon = icon, arrow = showArrow,
+    )
 }
 
 /** 숫자 하나 — 아이콘 · 큰 값 · 단위 · 이름 */

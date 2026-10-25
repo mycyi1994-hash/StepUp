@@ -103,23 +103,23 @@ class SettingsPalette(
 )
 
 private val DarkSettings = SettingsPalette(
-    text = Color(0xFFF2F4FC), secondary = Color(0xFF98A8C0), accent = Color(0xFFA3BFFE),
-    divider = Color(0xFF1D2B3F), surface = Color(0xFF0E192A), sheet = Color(0xFF111D2E),
-    toast = Color(0xFF273B55), toastText = Color(0xFFF2F4FC),
-    switchOn = Color(0xFFA3BFFE), switchOff = Color(0xFF34445C), cancel = Color(0xFF0B1524),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFFF7F8FF), Color(0xFFE8EDFA))), primaryText = Color(0xFF10203B),
-    dangerFace = Color(0xFFF2B3B8), dangerText = Color(0xFF36151D), danger = Color(0xFFF2A3AA),
-    skeleton = Color(0xFF1A2940),
+    text = Color.White, secondary = Color(0xFF969CAA), accent = Color(0xFF6E9BFF),
+    divider = Color(0x17FFFFFF), surface = Color(0xFF0E1424), sheet = Color(0xFF0E1424),
+    toast = Color(0xFF26304A), toastText = Color.White,
+    switchOn = Color(0xFF2F6BFF), switchOff = Color(0xFF222A3D), cancel = Color(0xFF202736),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    dangerFace = Color(0xFF2A1219), dangerText = Color(0xFFFF453A), danger = Color(0xFFFF453A),
+    skeleton = Color(0xFF151C2D),
 )
 
 private val LightSettings = SettingsPalette(
-    text = Color(0xFF10203B), secondary = Color(0xFF536580), accent = Color(0xFF335EAB),
-    divider = Color(0xFFD8E0ED), surface = Color(0xFFE7EDF6), sheet = Color(0xFFFFFFFF),
-    toast = Color(0xFF273B55), toastText = Color(0xFFF2F4FC),
-    switchOn = Color(0xFF335EAB), switchOff = Color(0xFFC3CDDD), cancel = Color(0xFFE7EDF6),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1B2D4E), Color(0xFF10203B))), primaryText = Color(0xFFFFFFFF),
-    dangerFace = Color(0xFFF2B3B8), dangerText = Color(0xFF36151D), danger = Color(0xFFC0364A),
-    skeleton = Color(0xFFDCE4F0),
+    text = Color.Black, secondary = Color(0xFF848489), accent = Color(0xFF1F5EFF),
+    divider = Color(0x293C3C43), surface = Color.White, sheet = Color.White,
+    toast = Color(0xFF1C1C1E), toastText = Color.White,
+    switchOn = Color(0xFF1F5EFF), switchOff = Color(0xFFE3E3E8), cancel = Color(0xFFE3E3E8),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    dangerFace = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30), danger = Color(0xFFFF3B30),
+    skeleton = Color(0xFFE9E9EE),
 )
 
 @Composable
@@ -328,7 +328,7 @@ fun SettingsNotice(
     }
 }
 
-/** 설정의 주 버튼 — 어두운 테마는 흰 면에 남색 글자, 밝은 테마는 남색 면에 흰 글자. 일하는 중이면 돌고 누를 수 없다 */
+/** 설정의 주 버튼 — 통합안 블루 알약 + 원 화살표. 일하는 중이면 돌고 누를 수 없다 */
 @Composable
 fun SettingsPrimaryButton(
     text: String,
@@ -337,8 +337,11 @@ fun SettingsPrimaryButton(
     enabled: Boolean = true,
     loading: Boolean = false,
 ) {
-    val p = settingsPalette()
-    SettingsButtonFace(text, onClick, modifier, enabled && !loading, loading, p.primaryFace, p.primaryText)
+    PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = when {
+                loading -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
 }
 
 /** 보조 버튼 — "취소" · "주소 복사" */
