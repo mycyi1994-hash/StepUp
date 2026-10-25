@@ -153,10 +153,11 @@ val LightPalette = StepUpPalette(
     onVolt = Color(0xFFFFFFFF),
     alert = Color(0xFFFF3B30),
     snow = Color(0xFF000000),
-    // secondaryLabel rgba(60,60,67,.62)
-    silver = Color(0xFF848489),
-    // tertiaryLabel 자리 — 시안(.32)보다 한 단계 진하게 둔다. 힌트 · 안 고른 탭 이름이 흰 바탕에서 읽혀야 한다
-    slate = Color(0xFF9C9CA2),
+    // secondaryLabel 자리 — 시안 값(#848489)은 흰 카드에서 3.7:1 이라 작은 글자 기준(4.5:1, PaletteContrastTest)에 못 미친다.
+    // 같은 회색을 가장 옅은 면(#E9E9EE)에서도 4.5:1 이 되게 누른 값
+    silver = Color(0xFF68686D),
+    // tertiaryLabel 자리 — 힌트 · 안 고른 탭 이름. 가장 옅은 면에서도 3:1(면 기준), 보조 글자보다는 옅게
+    slate = Color(0xFF838389),
     // 막 — 가이드 투어처럼 막 위에 흰 글자가 뜨는 자리. 시트 막은 StepUpUi.sheetScrim(더 옅다)
     scrim = Color(0xFF000000),
     scrimAlpha = 0.72f,
@@ -194,7 +195,8 @@ val DarkPalette = StepUpPalette(
     edge = Color(0x17FFFFFF),
     volt = Color(0xFF2F6BFF),
     voltDeep = Color(0xFF2A5FE6),
-    voltSoft = Color(0xFF6E9BFF),
+    // 막 위 패널 테두리 · 스포트라이트 — 시안 #6E9BFF 를 55% 로 얹으면 막과 2.9:1 이라 한 단계 밝게(3:1, PaletteContrastTest)
+    voltSoft = Color(0xFF7DA6FF),
     onVolt = Color(0xFFFFFFFF),
     alert = Color(0xFFFF453A),
     snow = Color(0xFFFFFFFF),

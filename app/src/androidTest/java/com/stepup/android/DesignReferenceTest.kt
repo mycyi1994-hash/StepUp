@@ -211,16 +211,17 @@ class DesignReferenceTest {
                 audit(name)
                 capture(name)
                 if (s == Scene.POST_COMPOSE) {
-                    compose.onNodeWithText(korean(R.string.post_cat_flash)).performClick()
-                    compose.onNodeWithTag("form-content").performScrollToNode(hasContentDescription(korean(R.string.post_field_capacity)))
-                    compose.onNodeWithContentDescription(korean(R.string.post_field_capacity)).assertIsDisplayed()
+                    // 번개러닝 — 만나는 곳 칸과 [−][값][+] 줄(달릴 거리 · 출발까지 · 정원). 제목 · 장소가 비면 올리기는 눌리지 않는다
+                    compose.onNodeWithTag("post-cat-flash").performClick()
+                    compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("post-capacity-value"))
+                    compose.onNodeWithTag("post-capacity-value", useUnmergedTree = true).assertIsDisplayed()
                     compose.onNodeWithTag("post-submit").assertIsDisplayed().assertIsNotEnabled()
                     capture("$name-meetup-fields")
                 }
                 if (s == Scene.FLASH_DETAIL) {
-                    compose.onNode(hasScrollAction()).performScrollToNode(hasText(korean(R.string.flash_enter_chat)))
-                    compose.onNodeWithText(korean(R.string.flash_enter_chat)).assertIsDisplayed()
-                    compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                    compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("flash-chat"))
+                    compose.onNodeWithTag("flash-chat").assertIsDisplayed()
+                    compose.onNodeWithTag("flash-primary").assertIsDisplayed()
                     capture("$name-chat")
                 }
                 if (s == Scene.ANALYTICS) {
@@ -379,7 +380,7 @@ class DesignReferenceTest {
 
     private fun awaitScene(s: Scene) {
         if (s == Scene.COMMUNITY) {
-            // 커뮤니티 첫 화면은 러닝 이야기다 — 이 기준 장면은 번개 모임(예전 "함께 뛰기", 크루 모집 목록 끝 안쪽)을 찍는다
+            // 함께 뛰기(UI 최종 통합안)의 첫 세그먼트는 번개러닝 — 이 기준 장면은 그 화면을 찍는다
             compose.openCommunityMeetups()
         }
         val readyTag = when (s) {
@@ -400,7 +401,7 @@ class DesignReferenceTest {
             Scene.POST_COMPOSE -> "post-submit"
             // 크루 명함형 만들기 1 / 3 · 크루 소개(예전 "모임 만들기" 길)
             Scene.CREW_CREATE -> "crew-draft-primary"
-            Scene.FLASH_DETAIL -> "detail-primary-action"
+            Scene.FLASH_DETAIL -> "flash-primary"
             Scene.ANALYTICS -> "bottom-nav"
             Scene.HISTORY_MAP -> "bottom-nav"
             Scene.WALLET -> "bottom-nav"
@@ -439,7 +440,7 @@ class DesignReferenceTest {
         }
         // 처음 보는 신발은 신고 있는 켤레다 — 이름 아래 줄에 "착용 중". 상세 보기 글 링크는 없다
         if (s == Scene.SHOES) {
-            compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true)
+            compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true)
                 .assertTextContains(korean(R.string.my_shoes_wearing), substring = true)
             compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
             compose.onNodeWithTag("shoes-section-vault").assertExists()

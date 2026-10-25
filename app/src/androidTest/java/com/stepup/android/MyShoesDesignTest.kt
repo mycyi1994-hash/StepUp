@@ -318,48 +318,62 @@ class MyShoesDesignTest {
         awaitTag("shoe-hero")
     }
 
-    /** 세로 스크롤 거리 0 — 무대 · 능력치 · 보유 목록이 창 안, 하단 탭 위에 */
+    /** 세로 스크롤 거리 0 — 신발 카드 · 이름 · 숫자 줄 · 보유 목록이 창 안, 아래 두 버튼 위에(UI 최종 통합안 shoes) */
     private fun assertFitsWithoutScrolling() {
         compose.waitForIdle()
         val scroll = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
         assertEquals("my shoes must not scroll at ${viewport.label}", 0f, scroll.maxValue(), 1f)
         val nav = bounds(BOTTOM_NAV_TAG)
         val frame = bounds(VIEWPORT)
+        val manage = bounds("shoe-manage")
         for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-stats", "shoe-owned-row")) {
             val b = bounds(tag)
             assertTrue("$tag inside the screen at ${viewport.label}: $b in $frame", b.top >= frame.top - 1 && b.bottom <= frame.bottom + 1)
-            assertTrue("$tag above the bottom tabs at ${viewport.label}: $b / nav ${nav.top}", b.bottom <= nav.top + 1)
+            assertTrue("$tag above the bottom buttons at ${viewport.label}: $b / ${manage.top}", b.bottom <= manage.top + 1)
         }
-        val stage = bounds("shoe-hero")
-        assertTrue("the framed shoe keeps 440:418 at ${viewport.label}: $stage",
-            abs(stage.width / stage.height - 440f / 418f) < 0.03f)
+        assertTrue("detail button above the bottom tabs at ${viewport.label}: $manage / nav ${nav.top}", manage.bottom <= nav.top + 1)
+        val card = bounds("shoe-hero")
+        assertTrue("the shoe card keeps 361:236 at ${viewport.label}: $card",
+            abs(card.width / card.height - 361f / 236f) < 0.03f)
     }
 
-    /** 무대 위 이름 — 이름 칸(제목 한 덩어리)은 글 · 배지를 감싼다. 그 안의 글에 [name] 이 있다(끝에 배지 대체 글) */
+    /** 카드 아래 큰 이름 — 이름 글에 [name] 이 있다 */
     private fun assertName(name: String) {
         compose.waitUntil(10_000) {
-            compose.onAllNodes(hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")), useUnmergedTree = true)
+            compose.onAllNodes(hasText(name, substring = true) and hasTestTag("shoe-hero-name"), useUnmergedTree = true)
                 .fetchSemanticsNodes().isNotEmpty()
         }
     }
 
-    /** 배지는 이름 글 안(같은 덩어리) — 따로 한 줄을 차지하지 않는다 */
+    /** 등급은 카드 왼쪽 위 줄("착용 중 · 레어")에 — 이름 옆 배지는 두지 않는다(UI 최종 통합안: 카드에 있는 것은 아래에서 다시 쓰지 않는다) */
     private fun assertBadge(tier: ShoeTier) {
+        val label = compose.activity.getString(tierLabel(tier))
         compose.waitUntil(10_000) {
-            compose.onAllNodes(hasTestTag("tier-badge-${tier.key}") and hasAnyAncestor(hasTestTag("shoe-hero-name")), useUnmergedTree = true)
-                .fetchSemanticsNodes().size == 1
+            runCatching { compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(label, substring = true) }.isSuccess
         }
-        val badge = compose.onNode(hasTestTag("tier-badge-${tier.key}") and hasAnyAncestor(hasTestTag("shoe-hero-name")),
-            useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val name = bounds("shoe-hero-name")
-        assertTrue("badge ${tier.key} sits inside the name block: $badge in $name",
-            badge.top >= name.top - 1 && badge.bottom <= name.bottom + 1 && badge.right <= name.right + 1)
+        compose.onAllNodes(hasTestTag("tier-badge-${tier.key}") and hasAnyAncestor(hasTestTag("my-shoes")), useUnmergedTree = true)
+            .fetchSemanticsNodes().let { nodes ->
+                // 보유 목록 칸 안의 작은 프레임은 등급 그림이라 배지가 아니다 — 이름 줄에 배지가 없으면 된다
+                assertTrue("no tier badge next to the name", nodes.none { node ->
+                    node.boundsInRoot.overlaps(bounds("shoe-hero-name"))
+                })
+            }
     }
 
+    private fun tierLabel(tier: ShoeTier): Int = when (tier) {
+        ShoeTier.COMMON -> R.string.shoe_tier_common
+        ShoeTier.RARE -> R.string.shoe_tier_rare
+        ShoeTier.EPIC -> R.string.shoe_tier_epic
+        ShoeTier.LEGENDARY -> R.string.shoe_tier_legendary
+        ShoeTier.REDLINE -> R.string.shoe_tier_redline
+        ShoeTier.FINISH -> R.string.shoe_tier_finish
+    }
+
+    /** 신발 카드가 그 켤레로 바뀌었다 — 카드 왼쪽 위 등급 글로 본다 */
     private fun awaitHero(tier: ShoeTier) {
+        val label = compose.activity.getString(tierLabel(tier))
         compose.waitUntil(10_000) {
-            compose.onAllNodes(hasTestTag("grade-stage-${tier.key}") and hasAnyAncestor(hasTestTag("shoe-hero")), useUnmergedTree = true)
-                .fetchSemanticsNodes().size == 1
+            runCatching { compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(label, substring = true) }.isSuccess
         }
     }
 

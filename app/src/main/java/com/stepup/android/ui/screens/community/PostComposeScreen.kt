@@ -93,7 +93,7 @@ fun PostComposeScreen(
             tags = categories.map { "post-cat-${it.id.lowercase(Locale.ROOT)}" },
         )
         Column(
-            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(top = 14.dp),
+            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(top = 14.dp).testTag("form-content"),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (crewName.isNotBlank()) {

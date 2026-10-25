@@ -367,8 +367,10 @@ private fun SpotCard(places: List<Spot>, frequent: Spot?, modifier: Modifier = M
     })
     PhotoCard(
         photo?.painter, colorFilter = photo?.colorFilter, height = 224.dp,
-        modifier = modifier.height(224.dp).testTag("home-spot").then(if (spot != null) Modifier.testTag("home-spot-${spot.id}") else Modifier),
+        modifier = modifier.height(224.dp).testTag("home-spot"),
     ) {
+        // 지금 보이는 장소 — 검사가 넘기기 전후를 가린다(한 마디에 꼬리표는 하나라 안쪽 칸에 단다)
+        if (spot != null) Box(Modifier.matchParentSize().testTag("home-spot-${spot.id}"))
         WeatherLayer(currentWeather())
         if (places.size > 1) {
             CircleIconButton(

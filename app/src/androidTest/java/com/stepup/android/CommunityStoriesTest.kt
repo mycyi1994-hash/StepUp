@@ -151,6 +151,9 @@ class CommunityStoriesTest {
         val context = compose.activity
 
         // ── 26 · 27 권한 안내 → 지역 직접 선택 ──────────────────────────
+        // 함께 뛰기(UI 최종 통합안)는 번개러닝이 첫 세그먼트다 — 이야기 세그먼트를 고른다
+        awaitTag("community-tab-stories")
+        tapTag("community-tab-stories")
         awaitTag("stories-tab")
         if (compose.onAllNodesWithTag("stories-location-prompt").fetchSemanticsNodes().isNotEmpty()) {
             shot("26-permission")
@@ -316,7 +319,7 @@ class CommunityStoriesTest {
         awaitTag("stories-tab")
 
         // ── 25 임시저장 이어쓰기 → 수정 완료(같은 글 번호) ─────────────────────
-        tapTag("stories-write")
+        tapTag("community-write")
         awaitTag("story-resume-continue")
         shot("25-resume-draft")
         tapTag("story-resume-continue")
@@ -329,7 +332,7 @@ class CommunityStoriesTest {
         assertTrue("an edit never creates a new post", server.calls.none { it.first == "story_create" })
 
         // ── 06 · 07 · 08 · 10 · 09 · 11 새 글 · 장소 고르기 ─────────────────────
-        tapTag("stories-write")
+        tapTag("community-write")
         awaitTag("story-compose")
         compose.onNodeWithTag("story-compose-submit").assertIsNotEnabled()
         shot("06-compose-empty")
@@ -396,8 +399,7 @@ class CommunityStoriesTest {
         // ── 28 빈 목록 · 29 불러오는 중 · 30 연결 오류 ──────────────────────
         ServiceLocator.communityRepository.showForTest(emptyList())
         awaitTag("stories-empty")
-        // 글이 없을 때는 떠 있는 글쓰기 대신 "첫 글 남기기" 하나(시안 28)
-        compose.onAllNodesWithTag("stories-write").assertCountEquals(0)
+        // 글이 없을 때도 글쓰기는 함께 뛰기 머리의 원 버튼 하나다(UI 최종 통합안) — 목록 안에 따로 떠 있는 버튼은 없다
         shot("28-empty", settle = 1_200)
         ServiceLocator.communityRepository.showBoardStateForTest(BoardSyncState.Loading)
         awaitTag("stories-loading")
@@ -411,9 +413,9 @@ class CommunityStoriesTest {
         // ── 큰 글씨(1.3배) — 핵심 행동이 잘리지 않는다 ─────────────────────
         compose.runOnIdle { largeType = true }
         awaitTag("story-row-501")
-        compose.onNodeWithTag("stories-write").assertIsDisplayed()
+        compose.onNodeWithTag("community-write").assertIsDisplayed()
         shot("01-list-large-font", settle = 1_200)
-        tapTag("stories-write")
+        tapTag("community-write")
         awaitTag("story-compose")
         compose.onNodeWithTag("story-compose-submit").assertIsDisplayed()
         shot("06-compose-large-font")

@@ -103,10 +103,17 @@ class ChromeNavigationTest {
                 compose.onNode(hasText(compose.activity.getString(tab)) and hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG)))
                     .performClick()
                 compose.waitForIdle()
-                assertEquals("header $next/$tab", header, bounds("main-header"))
-                assertEquals("logo $next/$tab", logo, bounds("brand-wordmark"))
+                // UI 최종 통합안: 함께 뛰기는 앱 머리 없이 큰 제목 · 세그먼트, 내 정보는 머리 오른쪽이 SUP 대신 설정 원 버튼
+                if (tab == R.string.tab_community) {
+                    compose.onNodeWithTag("main-header").assertDoesNotExist()
+                    compose.onNodeWithTag("community-tab-meetups").assertIsDisplayed()
+                } else {
+                    assertEquals("header $next/$tab", header, bounds("main-header"))
+                    assertEquals("logo $next/$tab", logo, bounds("brand-wordmark"))
+                }
                 assertEquals("navigation $next/$tab", bar, bounds(BOTTOM_NAV_TAG))
-                assertEquals("balance $next/$tab", token, bounds("sup-balance"))
+                if (tab == R.string.tab_me) compose.onNodeWithTag("header-settings").assertIsDisplayed()
+                else if (tab != R.string.tab_community) assertEquals("balance $next/$tab", token, bounds("sup-balance"))
                 capture("${next.width}-${next.font}-${next.mode}-$tab")
                 if (tab == R.string.tab_me) {
                     // 파란 톤 v4 내 정보(PF01): 러닝 패스가 커서 짧은 화면에서는 본문이 넘어간다(지시서: 짧은 화면 · 큰 글자는 스크롤).
@@ -130,19 +137,16 @@ class ChromeNavigationTest {
                     compose.onAllNodesWithTag("profile-challenges").assertCountEquals(0)
                 }
                 if (tab == R.string.tab_community) {
-                    // 첫 화면은 러닝 이야기 — 번개 모임 · 내 크루(예전 "함께 뛰기")는 크루 모집 목록 끝 안쪽에 있다
+                    // 첫 화면은 번개러닝 세그먼트 — 이번 주 "모두 보기"는 번개만 모은 목록(뒤로 오면 그대로)
                     compose.openCommunityMeetups()
-                    compose.onNodeWithContentDescription(compose.activity.getString(R.string.community_tab_my_crew)).performClick()
-                    compose.waitForIdle()
-                    assertEquals("crews keep navigation", bar, bounds(BOTTOM_NAV_TAG))
-                    pressBack()
                     awaitVisible("community-all-meetups")
                     compose.onNodeWithTag("community-all-meetups").assertIsDisplayed().performClick()
                     compose.waitForIdle()
+                    assertEquals("meetups keep navigation", bar, bounds(BOTTOM_NAV_TAG))
                     pressBack()
                     compose.waitForIdle()
+                    awaitVisible("community-all-meetups")
                     compose.onNodeWithTag("community-all-meetups").assertIsDisplayed()
-                    assertEquals("meetups Back restores chrome", header, bounds("main-header"))
                 }
             }
             compose.onNodeWithTag("sup-balance").performClick()
@@ -162,29 +166,21 @@ class ChromeNavigationTest {
             compose.waitForIdle()
             compose.onNodeWithTag("main-header").assertDoesNotExist()
             compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
-            // 자유 러닝(2026-10-14 v2) — 지도 가득 + 아래 기록 판. 멈춰 있으면 지도 위 일시정지 띠, 주 버튼은 "다시 시작"
+            // 자유 러닝(UI 최종 통합안 paused) — 위 제목 "일시정지" · 큰 거리 · 지도 카드 · 숫자 줄 · 길게 눌러 종료 | 재개
             compose.onNodeWithTag("run-live").assertExists()
             compose.onNodeWithTag("run-paused-band", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
-                .assertTextContains(compose.activity.getString(R.string.run_free_resume))
+                .assertTextContains(compose.activity.getString(R.string.run_resume_short))
             compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
             capture("${next.width}-${next.font}-${next.mode}-run-paused")
+            // 짧게 누르면 마치지 않고 "길게 눌러 종료해요" — 확인창은 없다
             compose.onNodeWithTag("run-finish").performClick()
-            // 04 — 러닝을 마칠까요?(아래 시트, 닫기 X 없이 저장하고 종료 · 계속 달리기)
-            compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
-            compose.onNodeWithTag("run-end-save").assertIsDisplayed()
-            compose.onAllNodesWithTag("run-sheet-close").assertCountEquals(0)
-            capture("${next.width}-${next.font}-${next.mode}-run-finish-confirm")
-            compose.onNodeWithTag("run-end-continue").performClick()
             compose.waitForIdle()
+            compose.onNodeWithTag("run-hold-tip", useUnmergedTree = true).assertIsDisplayed()
+            compose.onAllNodesWithTag("run-end-dialog").assertCountEquals(0)
+            capture("${next.width}-${next.font}-${next.mode}-run-finish-hint")
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed()
             compose.onNodeWithTag(BOTTOM_NAV_TAG).assertDoesNotExist()
-            compose.onNodeWithTag("run-finish").performClick()
-            compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
-            pressBack()
-            compose.waitForIdle()
-            compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
-            compose.onNodeWithTag("run-finish").assertIsDisplayed()
             // Presentation fixtures only: these do not simulate server settlement or GPS.
             // 자유 러닝은 저장 중(06) · 저장 실패(07)도 같은 지도 · 기록 판이다. 실패는 시트 없이 위 띠 · 다시 저장 · 화면에 머물기
             for (saveStatus in listOf(com.stepup.android.service.RunSaveStatus.SAVING,
@@ -255,19 +251,10 @@ class ChromeNavigationTest {
             )
             compose.onNodeWithTag("home-start-run").performClick()
             compose.waitForIdle()
-            // 멈춘 러닝에서 뒤로 가기는 화면을 닫지 않고 마칠지 묻는다(04 — 달리는 중이면 먼저 일시정지)
+            // 멈춘 자유 러닝에서 뒤로 가기는 마칠지 묻지 않고 화면만 닫는다(러닝은 멈춘 채 남는다 — 홈의 "러닝 이어가기")
             pressBack()
             compose.waitForIdle()
-            compose.onNodeWithTag("run-end-dialog").assertIsDisplayed()
-            capture("${next.width}-${next.font}-${next.mode}-run-back-asks-end")
-            pressBack()
-            compose.waitForIdle()
-            compose.onNodeWithTag("run-end-dialog").assertDoesNotExist()
-            // 러닝이 끝난 뒤의 뒤로 가기는 원래대로 화면을 닫는다
-            com.stepup.android.service.WalkSessionService.showStateForTest(com.stepup.android.service.WalkSessionState())
-            compose.waitForIdle()
-            pressBack()
-            compose.waitForIdle()
+            compose.onAllNodesWithTag("run-end-dialog").assertCountEquals(0)
             assertEquals("run returns to the same navigation", bar, bounds(BOTTOM_NAV_TAG))
             com.stepup.android.service.WalkSessionService.showStateForTest(com.stepup.android.service.WalkSessionState())
             // 러닝 홈(시안 HOME · E01) — 오늘의 활동은 걸음 칸을 누르면 여는 시트 안에

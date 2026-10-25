@@ -295,7 +295,7 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-info-faction").assertCountEquals(0)
         // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
         show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
-        compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true).assertTextContains("#0004", substring = true)
+        compose.onNodeWithTag("shoe-card-no", useUnmergedTree = true).assertTextContains("#0004", substring = true)
         compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsSelected()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
@@ -495,13 +495,14 @@ class ShoeDetailDesignTest {
      * (글 끝에는 배지 자리의 대체 글 " 레어"가 붙는다)
      */
     private fun heroNameShows(name: String): Boolean = compose.onAllNodes(
-        hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")), useUnmergedTree = true,
+        hasText(name, substring = true) and hasTestTag("shoe-hero-name"), useUnmergedTree = true,
     ).fetchSemanticsNodes().isNotEmpty()
 
-    /** 이름 아래 줄 — "Lv. 1 · #0002 · 착용 중" */
-    private fun metaText(): String =
-        compose.onNodeWithTag("shoe-hero-meta", useUnmergedTree = true).fetchSemanticsNode()
+    /** 신발 카드 위 줄 — "착용 중 · 레어" + 번호 "#0002"(UI 최종 통합안 신발 카드) */
+    private fun metaText(): String = listOf("shoe-card-tag", "shoe-card-no").joinToString(" ") { tag ->
+        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
             .config[androidx.compose.ui.semantics.SemanticsProperties.Text].joinToString { it.text }
+    }
 
     private fun assertMetaWearing(wearing: Boolean) {
         val text = metaText()

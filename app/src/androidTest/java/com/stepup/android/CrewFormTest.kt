@@ -41,7 +41,7 @@ class CrewFormTest {
         }
     }
 
-    @Test fun meetupFormKeepsInvalidNumbersAndRequiresCorrectionBeforeSubmission() {
+    @Test fun meetupFormNeedsTitleAndPlaceAndKeepsNumbersInRange() {
         runBlocking {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setGuideSeen()
@@ -75,23 +75,23 @@ class CrewFormTest {
             compose.onNodeWithContentDescription(description).assertIsFocused()
             compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
-        compose.onNodeWithText(compose.activity.getString(R.string.post_cat_flash)).performClick()
+        // 번개러닝(UI 최종 통합안 compose_flash) — 제목 · 만나는 곳을 채워야 올릴 수 있고, 숫자는 [−][값][+] 로만 바뀌어 범위를 벗어나지 않는다
+        compose.onNodeWithTag("post-cat-flash").performClick()
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_title, "Riverside run")
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_place, "Bridge entrance")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
-        fill(R.string.post_field_capacity, "201")
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_capacity, "2")
-        fill(R.string.post_field_starts_in, "")
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_starts_in, "30")
-        fill(R.string.post_field_distance, "1..2")
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_distance))
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("1..2")))
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_distance, "NaN")
-        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
-        fill(R.string.post_field_distance, "1,5")
+        // 정원 2명 아래로는 줄지 않는다
+        compose.onNodeWithTag("form-content").performScrollToNode(hasTestTag("post-capacity-minus"))
+        repeat(6) { runCatching { compose.onNodeWithTag("post-capacity-minus").performClick() } }
+        compose.onNodeWithTag("post-capacity-value", useUnmergedTree = true).assertTextEquals("2")
+        compose.onNodeWithTag("post-capacity-minus").assertIsNotEnabled()
+        // 달릴 거리는 0.5km 씩 · 출발까지는 1시간 안에서 5분씩
+        compose.onNodeWithTag("post-distance-plus").performClick()
+        compose.onNodeWithTag("post-distance-value", useUnmergedTree = true).assertTextEquals("1.5")
+        compose.onNodeWithTag("post-starts-minus").performClick()
+        compose.onNodeWithTag("post-starts-value", useUnmergedTree = true).assertTextEquals("55")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
         // Deliberately do not publish a real meetup from instrumentation.
     }

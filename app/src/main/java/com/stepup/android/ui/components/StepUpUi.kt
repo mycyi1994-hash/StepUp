@@ -1087,7 +1087,7 @@ private fun StepperKey(symbol: String, enabled: Boolean, onClick: () -> Unit, de
     val c = StepUpUi.colors
     Box(
         Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .pressable(enabled = enabled, cue = FeedbackCue.Select, onClick = onClick)
             .semantics { if (description != null) contentDescription = description }
             .then(if (tag != null) Modifier.testTag(tag) else Modifier),
         contentAlignment = Alignment.Center,
@@ -1230,22 +1230,24 @@ fun RoundControl(
     enabled: Boolean = true,
 ) {
     val c = StepUpUi.colors
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    // 원과 아래 이름이 한 덩어리 — 이름까지 누를 수 있고, 읽기 도구는 이름을 한 번 읽는다
+    Column(
+        modifier.pressable(enabled = enabled, cue = cue, onClick = onClick)
+            .semantics(mergeDescendants = true) {}
+            .then(if (tag != null) Modifier.testTag(tag) else Modifier),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Box(
-            Modifier.size(size)
-                .pressable(enabled = enabled, cue = cue, onClick = onClick)
-                .clip(CircleShape)
-                .background(if (primary) c.primary else c.fill)
-                .semantics { contentDescription = label }
-                .then(if (tag != null) Modifier.testTag(tag) else Modifier),
+            Modifier.size(size).clip(CircleShape).background(if (primary) c.primary else c.fill),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = if (primary) Color.White else c.label, modifier = Modifier.size(if (primary) 44.dp else 24.dp))
+            Icon(icon, null, tint = if (!enabled) c.onDisabled else if (primary) Color.White else c.label,
+                modifier = Modifier.size(if (primary) 44.dp else 24.dp))
         }
         Spacer(Modifier.height(10.dp))
         Text(
             label, style = StepUpUi.type.caption.copy(fontWeight = if (primary) FontWeight.Bold else FontWeight.Normal),
-            color = if (primary) c.label else c.secondaryLabel, maxLines = 1,
+            color = if (!enabled) c.onDisabled else if (primary) c.label else c.secondaryLabel, maxLines = 1,
         )
     }
 }
