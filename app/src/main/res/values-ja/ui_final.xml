@@ -97,4 +97,10 @@
     <string name="course_rank_empty_title">まだ記録がありません</string>
     <string name="course_rank_empty_body">完走すると確認後に順位に載ります</string>
     <string name="course_selected_badge">選択中</string>
+    <string name="post_field_distance_short">走る距離</string>
+    <string name="post_field_starts_short">出発まで</string>
+    <string name="post_unit_min">分</string>
+    <string name="post_unit_people">人</string>
+    <string name="post_stepper_less">減らす</string>
+    <string name="post_stepper_more">増やす</string>
 </resources>

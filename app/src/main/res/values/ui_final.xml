@@ -97,4 +97,10 @@
     <string name="course_rank_empty_title">No records yet</string>
     <string name="course_rank_empty_body">Finish it and your time joins the ranking once checked.</string>
     <string name="course_selected_badge">Selected</string>
+    <string name="post_field_distance_short">Distance</string>
+    <string name="post_field_starts_short">Starts in</string>
+    <string name="post_unit_min">min</string>
+    <string name="post_unit_people">people</string>
+    <string name="post_stepper_less">Less</string>
+    <string name="post_stepper_more">More</string>
 </resources>

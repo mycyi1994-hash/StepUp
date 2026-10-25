@@ -97,4 +97,10 @@
     <string name="course_rank_empty_title">还没有记录</string>
     <string name="course_rank_empty_body">完成后经确认即可上榜</string>
     <string name="course_selected_badge">已选择</string>
+    <string name="post_field_distance_short">跑步距离</string>
+    <string name="post_field_starts_short">距离出发</string>
+    <string name="post_unit_min">分钟</string>
+    <string name="post_unit_people">人</string>
+    <string name="post_stepper_less">减少</string>
+    <string name="post_stepper_more">增加</string>
 </resources>

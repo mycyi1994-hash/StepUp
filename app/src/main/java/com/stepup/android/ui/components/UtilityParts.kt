@@ -1,5 +1,14 @@
 package com.stepup.android.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -143,34 +152,36 @@ fun FormField(
     maxLines: Int = Int.MAX_VALUE,
     minHeight: Dp = 56.dp,
     keyboardType: KeyboardType = KeyboardType.Text,
-    labelAbove: Boolean = false,
+    /** 예전 모양(이름을 칸 위에)의 자리 — UI 최종 통합안은 이름을 늘 칸 안 위에 둔다 */
+    @Suppress("UNUSED_PARAMETER") labelAbove: Boolean = false,
 ) {
-    val field: @Composable (Modifier) -> Unit = { fieldModifier ->
-    OutlinedTextField(
-        value = value, onValueChange = onValueChange,
-        modifier = fieldModifier.fillMaxWidth().heightIn(min = minHeight)
-            .semantics { contentDescription = label },
-        label = if (labelAbove) null else ({ Text(label) }), placeholder = { Text(placeholder) },
-        singleLine = singleLine, minLines = minLines, maxLines = maxLines,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        textStyle = MaterialTheme.typography.bodyLarge,
-        shape = RoundedCornerShape(StepUpDesign.FieldRadius),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Snow, unfocusedTextColor = Snow,
-            focusedContainerColor = CarbonHigh, unfocusedContainerColor = CarbonHigh,
-            focusedBorderColor = Volt, unfocusedBorderColor = Edge,
-            focusedLabelColor = VoltText, unfocusedLabelColor = Silver,
-            focusedPlaceholderColor = Silver, unfocusedPlaceholderColor = Silver,
-            cursorColor = Volt,
-        ),
-    )
-    }
-    if (labelAbove) {
-        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = Silver)
-            field(Modifier)
-        }
-    } else {
-        field(modifier)
+    // UI 최종 통합안 입력칸 — 카드 면 · 모서리 14 · 칸 안 위에 작은 이름, 쓰는 중이면 블루 2dp 테두리(FieldFrame)
+    val c = StepUpUi.colors
+    var focused by remember { mutableStateOf(false) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    FieldFrame(
+        label, focused,
+        modifier.clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {
+            runCatching { focus.requestFocus() }
+        },
+    ) {
+        androidx.compose.foundation.text.BasicTextField(
+            value = value, onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth().heightIn(min = (minHeight - 34.dp).coerceAtLeast(23.dp))
+                .focusRequester(focus).onFocusChanged { focused = it.isFocused }
+                .semantics { contentDescription = label },
+            singleLine = singleLine, minLines = minLines, maxLines = maxLines,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            textStyle = StepUpUi.type.body.copy(color = c.label, fontSize = 16.5.sp),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(c.primary),
+            decorationBox = { inner ->
+                Box {
+                    if (value.isEmpty() && placeholder.isNotEmpty()) {
+                        Text(placeholder, style = StepUpUi.type.body.copy(fontSize = 16.5.sp), color = c.tertiaryLabel)
+                    }
+                    inner()
+                }
+            },
+        )
     }
 }

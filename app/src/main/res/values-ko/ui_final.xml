@@ -97,4 +97,10 @@
     <string name="course_rank_empty_title">아직 기록이 없어요</string>
     <string name="course_rank_empty_body">완주하면 기록 확인 뒤 순위에 올라가요</string>
     <string name="course_selected_badge">선택됨</string>
+    <string name="post_field_distance_short">달릴 거리</string>
+    <string name="post_field_starts_short">출발까지</string>
+    <string name="post_unit_min">분</string>
+    <string name="post_unit_people">명</string>
+    <string name="post_stepper_less">줄이기</string>
+    <string name="post_stepper_more">늘리기</string>
 </resources>
