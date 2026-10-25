@@ -19,6 +19,9 @@ logcat_pid=$!
     date -u
     free -m
     ps -eo pid,ppid,rss,comm --sort=-rss | head -16
+    # 기기 쪽도 함께 — 에뮬레이터가 시작 6~7분 뒤 기기 전체가 멈췄다가 사라졌는데(호스트 메모리는 여유) 그때 기기 안이 어땠는지가 없었다
+    echo "-- guest"
+    timeout 5s adb shell 'cat /proc/loadavg; df -h /data | tail -1; top -b -n 1 | head -12' 2>&1 || echo "guest: no answer"
     sleep 10
   done
 ) > "screen-gallery/host-memory-$suite.txt" 2>&1 &
