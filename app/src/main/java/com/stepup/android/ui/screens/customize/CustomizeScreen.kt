@@ -288,8 +288,11 @@ private fun MyShoesReady(
     }
     val manage = stringResource(R.string.my_shoes_manage)
     Column(modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).testTag("my-shoes")) {
-            Spacer(Modifier.height(18.dp))
+        // 카드 · 이름 · 숫자 줄 · 보유 줄이 넘기지 않고 한 화면에 — 높이가 빠듯하면(시스템 막대가 있는 390 × 844 등) 간격 · 보유 칸을 줄인다
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+        val tight = maxHeight < 600.dp
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("my-shoes")) {
+            Spacer(Modifier.height(if (tight) 10.dp else 18.dp))
             // 신발 카드 — 만지면 기울고, 가볍게 누르면 이 켤레의 관리(신기 · 강화 · 수리 · 판매)
             ShoeCard(
                 shown, tag = shoeCardTag(shown),
@@ -297,13 +300,14 @@ private fun MyShoesReady(
                 modifier = Modifier.padding(horizontal = StepUpUi.Gutter)
                     .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW).testTag("shoe-hero"),
             )
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(if (tight) 12.dp else 22.dp))
             NameBlock(shown, onRename = { renaming = true })
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(if (tight) 6.dp else 14.dp))
             StatsBlock(shown, onExplain = { basisOpen = true })
-            Spacer(Modifier.height(24.dp))
-            OwnedBlock(row, compact = false, selectedId = selected.id, state = rowState, onPick = onSelect)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(if (tight) 12.dp else 24.dp))
+            OwnedBlock(row, compact = tight, selectedId = selected.id, state = rowState, onPick = onSelect)
+            Spacer(Modifier.height(if (tight) 4.dp else 12.dp))
+        }
         }
         // 보조(신발 보관함) + 주(상세 보기) — 시안 shoes 아래 두 버튼
         BottomActionBar {

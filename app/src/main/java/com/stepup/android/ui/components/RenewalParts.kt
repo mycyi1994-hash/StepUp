@@ -214,7 +214,8 @@ fun MainHeader(
             .testTag("main-header"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Wordmark(modifier = Modifier.weight(1f, fill = false).height(20.dp).width(115.dp))
+        // 로고는 탭마다 같은 크기 · 자리(115×20) — 오른쪽 버튼 수에 따라 줄지 않는다(ChromeNavigationTest)
+        Wordmark(modifier = Modifier.height(20.dp).width(115.dp))
         Spacer(Modifier.weight(1f))
         if (showBalance) SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
         if (trailing != null) trailing()

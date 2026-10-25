@@ -49,7 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.IosShare
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
@@ -317,7 +316,7 @@ private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, 
         modifier = Modifier.feedbackClickable(role = Role.Image, onClick = onImage).testTag("crew-detail-image"),
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            com.stepup.android.ui.components.CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack, onPhoto = true)
+            com.stepup.android.ui.components.BackButton(onBack, onPhoto = true)
             Spacer(Modifier.weight(1f))
             com.stepup.android.ui.components.CircleIconButton(Icons.Outlined.IosShare, stringResource(R.string.crew_share), onShare, onPhoto = true,
                 modifier = Modifier.testTag("crew-share"))

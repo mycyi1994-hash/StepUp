@@ -82,16 +82,14 @@ class CrewFormTest {
         compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_place, "Bridge entrance")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
+        // 숫자 칸은 키보드를 닫은 뒤에 누른다 — 키보드가 닫히며 창이 늘어나는 동안 누르면 빗나간다(2026-10-25 PR #123 Experience QA)
+        hideKeyboard()
         // 정원 2명 아래로는 줄지 않는다
-        compose.onNodeWithTag("form-content").performScrollToNode(hasTestTag("post-capacity-minus"))
-        repeat(6) { runCatching { compose.onNodeWithTag("post-capacity-minus").performClick() } }
-        compose.onNodeWithTag("post-capacity-value", useUnmergedTree = true).assertTextEquals("2")
+        repeat(4) { step("post-capacity-minus", "post-capacity-value", "${5 - it}") }
         compose.onNodeWithTag("post-capacity-minus").assertIsNotEnabled()
         // 달릴 거리는 0.5km 씩 · 출발까지는 1시간 안에서 5분씩
-        compose.onNodeWithTag("post-distance-plus").performClick()
-        compose.onNodeWithTag("post-distance-value", useUnmergedTree = true).assertTextEquals("1.5")
-        compose.onNodeWithTag("post-starts-minus").performClick()
-        compose.onNodeWithTag("post-starts-value", useUnmergedTree = true).assertTextEquals("55")
+        step("post-distance-plus", "post-distance-value", "1.5")
+        step("post-starts-minus", "post-starts-value", "55")
         compose.onNodeWithTag("post-submit").assertIsEnabled()
         // Deliberately do not publish a real meetup from instrumentation.
     }
@@ -181,5 +179,28 @@ class CrewFormTest {
     private fun capture(name: String) {
         val directory = java.io.File(compose.activity.getExternalFilesDir(null), "form-checks").apply { mkdirs() }
         captureDisplay(java.io.File(directory, "$name.png"))
+    }
+
+    /** 조절 단추를 보이게 한 뒤 한 번 누르고, 값 칸이 [expected] 가 될 때까지 기다린다 */
+    private fun step(key: String, valueTag: String, expected: String) {
+        compose.onNodeWithTag("form-content").performScrollToNode(hasTestTag(key))
+        compose.waitForIdle()
+        compose.onNodeWithTag(key).performClick()
+        compose.waitUntil(5_000) {
+            runCatching { compose.onNodeWithTag(valueTag, useUnmergedTree = true).assertTextEquals(expected) }.isSuccess
+        }
+    }
+
+    /** 키보드를 닫고 다 닫힐 때까지 기다린다 */
+    private fun hideKeyboard() {
+        compose.runOnUiThread {
+            androidx.core.view.WindowInsetsControllerCompat(compose.activity.window, compose.activity.window.decorView)
+                .hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+        }
+        compose.waitUntil(5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
+        compose.waitForIdle()
     }
 }

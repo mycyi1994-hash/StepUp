@@ -70,7 +70,6 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
@@ -862,8 +861,7 @@ private fun FreeRunScaffold(
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
                 if (onBack != null) {
-                    CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack,
-                        modifier = Modifier.align(Alignment.CenterStart).testTag("run-back"))
+                    com.stepup.android.ui.components.BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart).testTag("run-back"))
                 }
                 Text(
                     title, style = StepUpUi.type.navTitle, color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis,

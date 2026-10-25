@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +34,6 @@ import com.stepup.android.R
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.ui.components.BottomActionBar
 import com.stepup.android.ui.components.ButtonState
-import com.stepup.android.ui.components.CircleIconButton
 import com.stepup.android.ui.components.FormField
 import com.stepup.android.ui.components.GroupRow
 import com.stepup.android.ui.components.GroupedList
@@ -82,7 +80,7 @@ fun PostComposeScreen(
 
     Column(Modifier.fillMaxSize().imePadding().testTag("post-compose")) {
         Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
-            CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack, modifier = Modifier.align(Alignment.CenterStart))
+            com.stepup.android.ui.components.BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart))
             Text(stringResource(R.string.post_write), style = StepUpUi.type.navTitle, color = c.label,
                 modifier = Modifier.align(Alignment.Center).semantics { heading() })
         }

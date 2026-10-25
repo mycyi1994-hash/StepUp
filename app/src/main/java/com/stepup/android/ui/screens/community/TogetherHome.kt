@@ -222,7 +222,8 @@ private fun MeetupPoster(post: Post, now: Long, weather: com.stepup.android.ui.b
     val at = Instant.ofEpochMilli(post.meetAt).atZone(zone)
     PhotoCard(photo?.painter, height = 344.dp, colorFilter = photo?.colorFilter, modifier = Modifier.testTag("community-poster")) {
         WeatherLayer(weather, Modifier.matchParentSize())
-        Column(Modifier.matchParentSize().padding(20.dp)) {
+        // 내용이 포스터 높이를 정한다 — 제목이 두 줄이 되어도 버튼이 눌리지 않게(최소 344, 넘치면 포스터가 자란다)
+        Column(Modifier.fillMaxWidth().heightIn(min = 344.dp).padding(20.dp)) {
             LiveCaption(startsInLabel(post.meetAt, now), live = post.meetAt - now <= 3 * 3600_000L)
             Spacer(Modifier.weight(1f))
             Text(at.format(DateTimeFormatter.ofPattern("HH:mm")), style = StepUpUi.type.numberPoster, color = Color.White, maxLines = 1)
@@ -256,7 +257,7 @@ private fun EmptyMeetupPoster(weather: com.stepup.android.ui.background.Weather,
     val photo = rememberPlacePhoto("망원 한강공원", seed = "empty")
     PhotoCard(photo?.painter, height = 300.dp, colorFilter = photo?.colorFilter, modifier = Modifier.testTag("community-poster")) {
         WeatherLayer(weather, Modifier.matchParentSize())
-        Column(Modifier.matchParentSize().padding(20.dp)) {
+        Column(Modifier.fillMaxWidth().heightIn(min = 300.dp).padding(20.dp)) {
             Spacer(Modifier.weight(1f))
             Text(
                 stringResource(R.string.ui_meetups_empty_title), style = StepUpUi.type.largeTitle.copy(fontSize = 30.sp),
