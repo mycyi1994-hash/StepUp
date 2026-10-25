@@ -75,50 +75,41 @@ import com.stepup.android.ui.theme.VoltText
  */
 
 /**
- * 보유 SUP — 머리글 오른쪽의 작은 알약.
- *
- * 누르면 지갑이 열린다. 숫자를 크게 반복하지 않는다 — 보유 포인트는
- * 여기 한 군데에서 작게 보이면 충분하다.
+ * 보유 SUP 알약 — 통합안: 회색 채움 알약(높이 36) · 왼쪽 작은 동전 · "0 SUP"(14 · 600). 누르면 지갑.
+ * 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리).
  */
 @Composable
 fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(50)
-    // 내림 — 499.6 을 500 으로 보이면 500 SUP 짜리를 살 수 있는 것처럼 보인다(서버는 소수 4자리)
+    val ui = StepUpUi.colors
     val amount = balance?.let { formatSupDown(it, 2) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
-    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · U01) — 파란 알약 · 왼쪽 동전 · 흰 수와 단위
-    Row(
+    Box(
         modifier = modifier
-            .heightIn(min = StepUpDesign.BalanceHeight)
+            .heightIn(min = StepUpDesign.TouchTarget)
             .widthIn(max = 190.dp)
-            .clip(shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = label }
             .testTag("sup-balance"),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
         Row(
             Modifier
-                .heightIn(min = 38.dp)
-                .clip(shape)
-                .background(Brush.verticalGradient(listOf(Color(0xFF1C6BFF), Color(0xFF0646E0))), shape)
-                .border(1.5.dp, Brush.verticalGradient(listOf(Color(0xFF5AA2FF), Color(0xFF0A4BDF))), shape)
-                .padding(start = 5.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+                .heightIn(min = 36.dp)
+                .clip(RoundedCornerShape(50))
+                .background(ui.fill)
+                .padding(start = 9.dp, end = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            SupCoin(Modifier.size(28.dp))
+            SupCoin(Modifier.size(20.dp))
             Text(
-                text = amount,
+                text = "$amount SUP",
                 modifier = Modifier.weight(1f, fill = false),
                 overflow = TextOverflow.Ellipsis,
-                fontFamily = com.stepup.android.ui.theme.StepUpSans,
-                fontSize = StepUpDesign.BalanceAmount,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
+                style = StepUpUi.type.smallButton.copy(fontWeight = FontWeight.SemiBold),
+                color = ui.label,
                 maxLines = 1,
             )
-            Text(text = "SUP", fontSize = StepUpDesign.BalanceUnit, fontWeight = FontWeight.SemiBold, color = Color(0xFFDCE8FF))
         }
     }
 }
@@ -200,10 +191,6 @@ fun SubHeader(
     }
 }
 
-/**
- * 탭 첫 화면의 머리글 — 왼쪽 로고, 오른쪽 보유 SUP · 알림 종(2026-09-29 메인 시안). 다섯 탭이 모두 이 모양이다 —
- * 종을 한 탭에만 두면 보유 SUP 자리가 탭마다 달라진다.
- */
 @Composable
 fun MainHeader(
     balance: Double?,
@@ -214,22 +201,28 @@ fun MainHeader(
     unread: Int = 0,
     /** 알림함 — null 이면 종을 두지 않는다 */
     onOpenNotifications: (() -> Unit)? = null,
+    /** 잔액 알약을 둔다(내 정보는 머리에 두지 않고 목록의 "지갑" 줄로) */
+    showBalance: Boolean = true,
+    /** 오른쪽 끝 원 버튼 하나(내 정보의 설정 톱니) — 종 대신 */
+    trailing: (@Composable () -> Unit)? = null,
 ) {
+    // UI 최종 통합안(2026-10-25) — 머리 줄 44: 왼쪽 워드마크(115×20), 오른쪽 회색 알약(SUP) · 회색 원 36(알림 · 설정)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = StepUpDesign.HeaderHeight)
+            .heightIn(min = 52.dp)
             .testTag("main-header"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Wordmark(modifier = Modifier.weight(1f, fill = false))
+        Wordmark(modifier = Modifier.weight(1f, fill = false).height(20.dp).width(115.dp))
         Spacer(Modifier.weight(1f))
-        SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
-        if (onOpenNotifications != null) NotificationBell(unread, onOpenNotifications)
+        if (showBalance) SupPill(balance = balance, onClick = onOpenWallet, modifier = balanceModifier)
+        if (trailing != null) trailing()
+        else if (onOpenNotifications != null) NotificationBell(unread, onOpenNotifications)
     }
 }
 
-/** 머리글의 알림 종 — 48dp 터치, 읽지 않은 알림이 있으면 오른쪽 위 작은 파란 점(수는 알림함에서) */
+/** 머리글의 알림 종 — 회색 원 36(터치 48), 읽지 않은 알림이 있으면 오른쪽 위 작은 파란 점(수는 알림함에서) */
 @Composable
 private fun NotificationBell(unread: Int, onClick: () -> Unit) {
     val label = stringResource(R.string.cd_notifications) +
@@ -241,11 +234,13 @@ private fun NotificationBell(unread: Int, onClick: () -> Unit) {
             .testTag("header-notifications"),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Outlined.Notifications, contentDescription = null, tint = Snow, modifier = Modifier.size(24.dp))
+        Box(Modifier.size(36.dp).clip(CircleShape).background(StepUpUi.colors.fill), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Notifications, contentDescription = null, tint = StepUpUi.colors.label, modifier = Modifier.size(20.dp))
+        }
         if (unread > 0) {
             Box(
-                Modifier.align(Alignment.Center).offset(x = 7.dp, y = (-8).dp).size(8.dp).clip(CircleShape)
-                    .background(Color(0xFF3988FF)).testTag("header-notifications-dot"),
+                Modifier.align(Alignment.Center).offset(x = 9.dp, y = (-10).dp).size(8.dp).clip(CircleShape)
+                    .background(StepUpUi.colors.primary).testTag("header-notifications-dot"),
             )
         }
     }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI 최종 통합안(2026-10-25) 화면에 새로 생긴 문구 -->
+<resources>
+    <string name="ui_seg_meetups">闪约跑</string>
+    <string name="ui_seg_crews">跑团</string>
+    <string name="ui_seg_stories">故事</string>
+    <string name="ui_meetups_empty_title">还没有计划中的闪约跑</string>
+    <string name="ui_meetups_empty_body">发布后附近的跑者会先看到</string>
+    <string name="ui_meetups_post">发布闪约跑</string>
+    <string name="ui_run_together">一起跑</string>
+    <string name="ui_this_week">本周</string>
+    <string name="ui_see_all">查看全部</string>
+    <string name="ui_recommended_crews">推荐跑团</string>
+    <string name="ui_starts_in_min">%d分钟后出发</string>
+    <string name="ui_starts_in_hour">%d小时后出发</string>
+    <string name="ui_place_people">%1$s · %2$d/%3$d 参加</string>
+    <string name="ui_people_joined">%1$d/%2$d 参加</string>
+    <string name="ui_share">分享</string>
+    <string name="ui_crew_apply">申请</string>
+    <string name="ui_crew_join">加入</string>
+    <string name="ui_crew_requested">已申请</string>
+    <string name="ui_crew_full">已满</string>
+    <string name="ui_crew_open">查看跑团</string>
+    <string name="ui_crew_count_joined">已加入 %d 个跑团</string>
+    <string name="ui_crew_meta_people">%1$s · %2$d人</string>
+    <string name="ui_crew_meta_approval">%1$s · %2$d人 · 审核制</string>
+    <string name="ui_today">今天</string>
+    <string name="ui_tomorrow">明天</string>
+    <string name="ui_open_chat">打开跑团聊天</string>
+</resources>

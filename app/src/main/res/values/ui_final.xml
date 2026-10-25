@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI 최종 통합안(2026-10-25) 화면에 새로 생긴 문구 -->
+<resources>
+    <string name="ui_seg_meetups">Flash runs</string>
+    <string name="ui_seg_crews">Crews</string>
+    <string name="ui_seg_stories">Stories</string>
+    <string name="ui_meetups_empty_title">No flash runs planned yet</string>
+    <string name="ui_meetups_empty_body">Nearby runners see yours first</string>
+    <string name="ui_meetups_post">Post a flash run</string>
+    <string name="ui_run_together">Run together</string>
+    <string name="ui_this_week">This week</string>
+    <string name="ui_see_all">See all</string>
+    <string name="ui_recommended_crews">Recommended crews</string>
+    <string name="ui_starts_in_min">Starts in %d min</string>
+    <string name="ui_starts_in_hour">Starts in %d hr</string>
+    <string name="ui_place_people">%1$s · %2$d/%3$d joined</string>
+    <string name="ui_people_joined">%1$d/%2$d joined</string>
+    <string name="ui_share">Share</string>
+    <string name="ui_crew_apply">Apply</string>
+    <string name="ui_crew_join">Join</string>
+    <string name="ui_crew_requested">Requested</string>
+    <string name="ui_crew_full">Full</string>
+    <string name="ui_crew_open">View crew</string>
+    <string name="ui_crew_count_joined">Joined %d crews</string>
+    <string name="ui_crew_meta_people">%1$s · %2$d members</string>
+    <string name="ui_crew_meta_approval">%1$s · %2$d members · approval</string>
+    <string name="ui_today">Today</string>
+    <string name="ui_tomorrow">Tomorrow</string>
+    <string name="ui_open_chat">Crew chat</string>
+</resources>

@@ -54,6 +54,12 @@ val NumberFont: FontFamily get() = StepUpNumbers
 private fun type(size: Int, height: Int, weight: FontWeight, tracking: Double) = TextStyle(
     fontFamily = StepUpSans, fontWeight = weight, fontSize = size.sp, lineHeight = (height.toFloat() / size).em,
     fontFeatureSettings = "tnum", letterSpacing = tracking.em, platformStyle = PlatformTextStyle(includeFontPadding = false),
+    // 한글은 낱말(띄어쓰기) 단위로 줄을 바꾼다(Android 13+ 구 단위) — 낱말 가운데서 끊지 않게
+    lineBreak = androidx.compose.ui.text.style.LineBreak(
+        strategy = androidx.compose.ui.text.style.LineBreak.Strategy.Balanced,
+        strictness = androidx.compose.ui.text.style.LineBreak.Strictness.Strict,
+        wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
+    ),
 )
 
 val StepUpTypography = Typography(

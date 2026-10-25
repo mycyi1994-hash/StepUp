@@ -398,7 +398,7 @@ fun StoryReactions(
             Icon(
                 if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 contentDescription = stringResource(if (liked) R.string.story_unlike else R.string.story_like),
-                tint = if (liked) t.cyan else t.label, modifier = Modifier.size((size + 7).dp),
+                tint = if (liked) StepUpUiColorsLive() else t.label, modifier = Modifier.size((size + 5).dp),
             )
             Spacer(Modifier.width(6.dp))
             Text("$likes", style = runTextStyle(size.sp, t.label, FontWeight.Medium))
@@ -412,8 +412,9 @@ fun StoryReactions(
 }
 
 /**
- * 목록 한 줄(CM01 · CM05 · WRITE12) — 왼쪽 제목 · 본문 한 줄 · 글쓴이 · 시간 · 반응, 오른쪽 공개 장소 썸네일
- * (코스가 붙은 글은 코스 썸네일). 제목 쪽을 누르면 상세, 장소 썸네일을 누르면 그 장소의 지도. 코스 썸네일은 상세로 간다.
+ * 목록 한 줄(UI 최종 통합안 06_이야기) — 위 "글쓴이 · 시간 · 장소"(13), 제목(18 · 800), 본문 한 줄(14.5 회색), 반응(♡ · 💬).
+ * 오른쪽에 공개 장소 · 코스 썸네일(72 · 모서리 12). 제목 쪽을 누르면 상세, 장소 썸네일을 누르면 그 장소의 지도. 코스 썸네일은 상세로 간다.
+ * 묶음 목록(모서리 16) 안의 한 줄로 그린다 — 줄 사이 왼쪽 16 들인 구분선은 부르는 쪽([StoryDivider])이 둔다.
  */
 @Composable
 fun StoryRow(
@@ -429,11 +430,23 @@ fun StoryRow(
     val title = post.title
     val body = StoryText.bodyForDisplay(post.body)
     val run = post.run
-    Row(modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.Top) {
+    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.Top) {
         Column(
-            Modifier.weight(1f).heightIn(min = 104.dp).clip(RoundedCornerShape(8.dp))
+            Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
                 .feedbackClickable(role = Role.Button, onClick = onOpen).testTag("story-row-${post.id}"),
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(storyAuthor(post), style = runTextStyle(13.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false))
+                Text(
+                    listOfNotNull(
+                        "", relativeTime(post.createdAt), place?.name,
+                        if (post.mine) stringResource(R.string.story_mine_tag) else null,
+                    ).joinToString(" · "),
+                    style = runTextStyle(13.sp, t.label, FontWeight.Normal), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
             Text(title, style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
             val second = when {
                 body.isNotEmpty() -> body.lineSequence().first()
@@ -441,23 +454,12 @@ fun StoryRow(
                 else -> ""
             }
             if (second.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(second, style = runTextStyle(15.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(3.dp))
+                Text(second, style = runTextStyle(14.5.sp, t.label, FontWeight.Normal), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Spacer(Modifier.weight(1f))
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    listOfNotNull(
-                        storyAuthor(post), relativeTime(post.createdAt),
-                        if (post.mine) stringResource(R.string.story_mine_tag) else null,
-                    ).joinToString(" · "),
-                    style = runTextStyle(14.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                StoryReactions(post.likes, post.liked, post.commentCount, onLike = onLike)
-            }
+            StoryReactions(post.likes, post.liked, post.commentCount, size = 14, onLike = onLike)
         }
-        val thumb = Modifier.padding(start = 14.dp).size(width = 96.dp, height = 96.dp)
+        val thumb = Modifier.padding(start = 12.dp).size(width = 72.dp, height = 72.dp)
         when {
             run != null && run.hasRoute -> StoryCourseThumb(
                 run.route, com.stepup.android.domain.StoryComposeRules.km(run.distanceMeters), seed = run.endedAt.hashCode(),
@@ -470,10 +472,14 @@ fun StoryRow(
     }
 }
 
-/** 얇은 구분선 — 글마다 상자를 두르지 않는다 */
+/** 좋아요 누른 하트 — 통합안 빨강 */
+@Composable
+private fun StepUpUiColorsLive(): Color = com.stepup.android.ui.components.StepUpUi.colors.live
+
+/** 묶음 목록 안 줄 사이 — 왼쪽 16 들인 0.5dp 구분선 */
 @Composable
 fun StoryDivider(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(1.dp).background(runTone().divider))
+    Box(modifier.padding(start = 16.dp).fillMaxWidth().height(0.5.dp).background(runTone().divider))
 }
 
 /** 정보가 없거나 실패했을 때의 가운데 안내 — 그림 · 제목 · 설명 · 행동 */

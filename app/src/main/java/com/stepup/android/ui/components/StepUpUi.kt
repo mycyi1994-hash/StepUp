@@ -212,6 +212,15 @@ class StepUpUiType(
 
 private fun kr(size: Float, weight: FontWeight, tracking: Float, height: Float = 1.4f) = TextStyle(
     fontFamily = StepUpSans, fontWeight = weight, fontSize = size.sp, letterSpacing = tracking.em, lineHeight = (size * height).sp,
+    // 한글은 낱말(띄어쓰기) 단위로 줄을 바꾼다 — "없어 / 요"처럼 낱말 가운데서 끊지 않게(시안 word-break: keep-all)
+    lineBreak = KoreanLineBreak,
+)
+
+/** 낱말 단위 줄바꿈(Android 13+ 구 단위, 그 아래는 기본 줄바꿈) */
+val KoreanLineBreak = androidx.compose.ui.text.style.LineBreak(
+    strategy = androidx.compose.ui.text.style.LineBreak.Strategy.Balanced,
+    strictness = androidx.compose.ui.text.style.LineBreak.Strictness.Strict,
+    wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
 )
 
 private fun num(size: Float) = TextStyle(

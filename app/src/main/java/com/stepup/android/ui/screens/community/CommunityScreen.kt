@@ -121,21 +121,23 @@ fun CommunityScreen(
         viewModel(factory = com.stepup.android.ui.screens.community.stories.StoriesViewModel.Factory),
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
-    // 글자 탭 셋 — 러닝 이야기(첫 화면) · 크루 모집(2026-09-28 크루 명함형) · 크루 채팅(2026-09-29). 예전 "함께 뛰기"
-    // (번개 모임 · 내 크루)는 지우지 않고 크루 모집 목록 끝의 "번개 모임" 줄 안쪽으로 옮겼다.
-    var segment by rememberSaveable { mutableStateOf(SEGMENT_STORIES) }
-    val crews = segment == SEGMENT_CREWS
-    var meetups by rememberSaveable { mutableStateOf(false) }
+    // UI 최종 통합안(2026-10-25) — 큰 제목 "함께 뛰기" + 세그먼트 셋(번개러닝 · 크루 · 이야기). 크루 채팅은 머리의 말풍선 원 버튼으로
+    // 옮겼다(예전 세 번째 글자 탭). 번개 모임(예전 "함께 뛰기" · 크루 모집 목록 끝 안쪽)은 첫 세그먼트로 나왔다.
+    var segment by rememberSaveable { mutableStateOf(SEGMENT_MEETUPS) }
+    // 채팅을 닫으면 돌아갈 세그먼트
+    var lastSegment by rememberSaveable { mutableStateOf(SEGMENT_MEETUPS) }
     var allMeetups by rememberSaveable { mutableStateOf(false) }
+    // 이야기에서 머리 연필을 누른 횟수 — 이야기 목록이 쓰다 만 글(이어 쓰기)을 먼저 묻고 글쓰기를 연다
+    var storyWrite by rememberSaveable { mutableStateOf(0) }
     LaunchedEffect(GuideTour.active) {
-        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); segment = SEGMENT_STORIES; meetups = false; allMeetups = false }
+        if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); segment = SEGMENT_MEETUPS; allMeetups = false }
     }
     // 크루 화면에서 "크루 목록 보기" · "다른 크루 보기"로 돌아왔다
     val listRequested = com.stepup.android.ui.screens.community.crew.CrewListFocus.requested
     LaunchedEffect(listRequested) {
         if (listRequested) {
             viewModel.selectTab(CommunityTab.BOARD)
-            segment = SEGMENT_CREWS; meetups = false; allMeetups = false
+            segment = SEGMENT_CREWS; allMeetups = false
             com.stepup.android.ui.screens.community.crew.CrewListFocus.requested = false
         }
     }
@@ -144,60 +146,67 @@ fun CommunityScreen(
     LaunchedEffect(chatRequested) {
         if (chatRequested) {
             viewModel.selectTab(CommunityTab.BOARD)
-            segment = SEGMENT_CHAT; meetups = false; allMeetups = false
+            if (segment != SEGMENT_CHAT) lastSegment = segment
+            segment = SEGMENT_CHAT; allMeetups = false
             com.stepup.android.ui.screens.community.chat.ChatListFocus.requested = false
         }
     }
-    BackHandler(enabled = tab == CommunityTab.CREW || meetups) {
+    BackHandler(enabled = tab == CommunityTab.CREW || allMeetups || segment == SEGMENT_CHAT) {
         when {
             tab == CommunityTab.CREW -> viewModel.selectTab(CommunityTab.BOARD)
             allMeetups -> allMeetups = false
-            else -> meetups = false
+            else -> segment = lastSegment
         }
     }
     val segments = listOf(
-        stringResource(R.string.community_stories),
-        stringResource(R.string.crew_recruit_tab),
-        stringResource(R.string.chat_tab),
+        stringResource(R.string.ui_seg_meetups),
+        stringResource(R.string.ui_seg_crews),
+        stringResource(R.string.ui_seg_stories),
     )
+    val openChat = { if (segment != SEGMENT_CHAT) lastSegment = segment; segment = SEGMENT_CHAT }
 
     // 댓글 창은 어느 세그먼트에 있든 같은 뷰모델이 열고 닫는다
     CommentSheetHost(viewModel)
 
     Column(Modifier.fillMaxSize()) {
         when {
-            tab == CommunityTab.CREW || meetups -> Column(
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+            tab == CommunityTab.CREW -> com.stepup.android.ui.components.NavHeader(
+                title = null,
+                onBack = { viewModel.selectTab(CommunityTab.BOARD) },
+                backDescription = stringResource(R.string.cd_back),
             ) {
-                if (tab == CommunityTab.CREW) {
-                    com.stepup.android.ui.components.FocusHeader(
-                        stringResource(R.string.community_tab_my_crew),
-                        onBack = { viewModel.selectTab(CommunityTab.BOARD) },
-                    )
-                } else {
-                    // 번개 모임(예전 함께 뛰기) — 지도 · 내 크루 아이콘은 여기 그대로
-                    com.stepup.android.ui.components.FocusHeader(
-                        stringResource(R.string.community_together),
-                        onBack = { if (allMeetups) allMeetups = false else meetups = false },
-                    ) {
-                        Row {
-                            DarkIconButton(Icons.Filled.Map, stringResource(R.string.community_map_title), onClick = onOpenMap)
-                            DarkIconButton(Icons.Filled.Groups, stringResource(R.string.community_tab_my_crew),
-                                onClick = { viewModel.selectTab(CommunityTab.CREW) })
-                        }
-                    }
-                }
+                com.stepup.android.ui.components.CircleIconButton(
+                    Icons.Filled.Add, stringResource(R.string.crew_create_title),
+                    onClick = { (crewActions?.onCreate ?: onCreateCrew)(false) },
+                    modifier = Modifier.testTag("community-crew-create"),
+                )
             }
-            // 위는 글자 탭 세 개(러닝 이야기 / 크루 모집 / 크루 채팅) — 2026-10-03 커뮤니티 기본 파란 톤(CM01): 고른 탭은
-            // 기울인 시안 글자와 시안 밑줄, 탭 사이 가는 세로선, 아래 가로선. 큰 제목은 두지 않는다.
-            else -> CommunityTabs(
-                labels = segments,
-                selected = segment,
-                onSelect = { segment = it },
-                tags = listOf("community-tab-stories", "community-tab-crews", "community-tab-chat"),
-                modifier = Modifier.guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
+            allMeetups -> com.stepup.android.ui.components.NavHeader(
+                title = stringResource(R.string.ui_seg_meetups),
+                onBack = { allMeetups = false },
+                backDescription = stringResource(R.string.cd_back),
             )
+            segment == SEGMENT_CHAT -> com.stepup.android.ui.components.NavHeader(
+                title = stringResource(R.string.chat_tab),
+                onBack = { segment = lastSegment },
+                backDescription = stringResource(R.string.cd_back),
+            )
+            else -> {
+                TogetherTopBar(
+                    onMap = { if (segment == SEGMENT_STORIES) onOpenStoryMap(null) else onOpenMap() },
+                    onChat = openChat,
+                    onWrite = { if (segment == SEGMENT_STORIES) storyWrite++ else onWritePost("") },
+                )
+                TogetherTitle()
+                com.stepup.android.ui.components.StepUpTabs(
+                    items = segments,
+                    selected = segment.coerceIn(0, 2),
+                    onSelect = { segment = it },
+                    tags = listOf("community-tab-meetups", "community-tab-crews", "community-tab-stories"),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 4.dp)
+                        .guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
+                )
+            }
         }
 
         when {
@@ -207,7 +216,7 @@ fun CommunityScreen(
                 onOpenCrew = onOpenCrew,
                 onCreateCrew = onCreateCrew,
             )
-            meetups && allMeetups -> BoardTab(
+            allMeetups -> BoardTab(
                 viewModel = viewModel,
                 // 러닝 이야기가 따로 있으므로 여기는 "다른 모임 보기"(번개만)다
                 onlyFlash = true,
@@ -216,17 +225,19 @@ fun CommunityScreen(
                 onOpenFlash = onOpenFlash,
                 onOpenMap = onOpenMap,
             )
-            meetups -> TogetherTab(
-                viewModel = viewModel, onOpenFlash = onOpenFlash,
-                onWritePost = { onWritePost("") }, onAllMeetups = { allMeetups = true },
-                onOpenCrews = { viewModel.selectTab(CommunityTab.CREW) },
+            segment == SEGMENT_MEETUPS -> MeetupsSegment(
+                viewModel = viewModel,
+                onOpenFlash = onOpenFlash,
+                onWritePost = { onWritePost("") },
+                onAllMeetups = { allMeetups = true },
+                onOpenMyCrews = { viewModel.selectTab(CommunityTab.CREW) },
             )
-            crews -> com.stepup.android.ui.screens.community.crew.CrewListTab(
+            segment == SEGMENT_CREWS -> com.stepup.android.ui.screens.community.crew.CrewListTab(
                 actions = crewActions ?: com.stepup.android.ui.screens.community.crew.CrewListActions(
                     onOpenCrew = {}, onOpenImage = {}, onOpenMembers = {}, onOpenLeader = { _, _ -> }, onOpenGoal = {},
                     onOpenResult = { _, _ -> }, onRecruitEntry = {}, onCreate = {}, onOpenRegion = {},
                 ),
-                onOpenMeetups = { meetups = true; allMeetups = false },
+                onOpenMeetups = { segment = SEGMENT_MEETUPS; allMeetups = false },
             )
             segment == SEGMENT_CHAT -> com.stepup.android.ui.screens.community.chat.ChatListTab(
                 com.stepup.android.ui.screens.community.chat.ChatListActions(
@@ -242,6 +253,7 @@ fun CommunityScreen(
                 onWrite = onWriteStory,
                 onOpenLocation = onOpenStoryLocation,
                 onOpenRegion = onOpenStoryRegion,
+                writeRequest = storyWrite,
             )
         }
     }
@@ -844,10 +856,11 @@ private fun MapEntryCard(onClick: () -> Unit) {
     }
 }
 
-/** 커뮤니티 위 글자 탭 — 러닝 이야기 / 크루 모집 / 크루 채팅 */
-private const val SEGMENT_STORIES = 0
+/** 함께 뛰기 세그먼트 — 번개러닝 / 크루 / 이야기, 크루 채팅(머리 말풍선 버튼으로 여는 안쪽 화면) */
+private const val SEGMENT_MEETUPS = 0
 private const val SEGMENT_CREWS = 1
-private const val SEGMENT_CHAT = 2
+private const val SEGMENT_STORIES = 2
+private const val SEGMENT_CHAT = 3
 
 /**
  * 커뮤니티 위 글자 탭 셋(CM01) — 같은 폭, 고른 탭은 기울인 굵은 시안 글자와 그 아래 시안 밑줄, 탭 사이 가는 세로선,

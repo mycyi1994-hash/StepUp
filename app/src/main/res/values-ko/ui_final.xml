@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI 최종 통합안(2026-10-25) 화면에 새로 생긴 문구 -->
+<resources>
+    <string name="ui_seg_meetups">번개러닝</string>
+    <string name="ui_seg_crews">크루</string>
+    <string name="ui_seg_stories">이야기</string>
+    <string name="ui_meetups_empty_title">아직 예정된 번개러닝이 없어요</string>
+    <string name="ui_meetups_empty_body">올리면 근처 러너에게 먼저 보여요</string>
+    <string name="ui_meetups_post">번개러닝 올리기</string>
+    <string name="ui_run_together">같이 달리기</string>
+    <string name="ui_this_week">이번 주</string>
+    <string name="ui_see_all">모두 보기</string>
+    <string name="ui_recommended_crews">추천 크루</string>
+    <string name="ui_starts_in_min">%d분 뒤 출발</string>
+    <string name="ui_starts_in_hour">%d시간 뒤 출발</string>
+    <string name="ui_place_people">%1$s · %2$d/%3$d 참여</string>
+    <string name="ui_people_joined">%1$d/%2$d 참여</string>
+    <string name="ui_share">공유</string>
+    <string name="ui_crew_apply">신청</string>
+    <string name="ui_crew_join">가입</string>
+    <string name="ui_crew_requested">신청됨</string>
+    <string name="ui_crew_full">마감</string>
+    <string name="ui_crew_open">크루 보기</string>
+    <string name="ui_crew_count_joined">가입한 크루 %d곳</string>
+    <string name="ui_crew_meta_people">%1$s · %2$d명</string>
+    <string name="ui_crew_meta_approval">%1$s · %2$d명 · 승인제</string>
+    <string name="ui_today">오늘</string>
+    <string name="ui_tomorrow">내일</string>
+    <string name="ui_open_chat">크루 채팅 열기</string>
+</resources>

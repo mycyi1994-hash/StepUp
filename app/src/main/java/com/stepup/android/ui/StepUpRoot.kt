@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import com.stepup.android.ui.screens.customize.RunnerMarketScreen
 import com.stepup.android.ui.screens.customize.CustomizeScreen
 import com.stepup.android.ui.components.StepUpIcons
@@ -599,56 +600,22 @@ private fun MainScaffoldContent(
     DisposableEffect(feedback) { onDispose { feedback?.setAmbientScene(null) } }
 
     Box(Modifier.fillMaxSize()) {
-    if (currentRoute == Screen.Run.route) {
-        Crossfade(com.stepup.android.ui.components.HomePhotos.all[homePhoto], animationSpec = tween(motion.duration(420)), label = "homeBackground") { photo ->
-            // 러닝 홈(2026-10-02 시안 HOME) — 전시장 창 너머로 고른 풍경을 남색 밤빛으로 깐다(넘기기 · 날씨 풍경 그대로)
-            com.stepup.android.ui.components.HomeShowroomBackdrop(
-                photo, Modifier.fillMaxSize().testTag("home-scene-${photo.key}"),
-            )
-        }
-    } else if (currentRoute == Screen.Customize.route) {
-        // 신발 탭(러닝 리메이크 2026-10-02 신발 색감) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛. 바닥만 바꾸고 화면 배치는 그대로
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("shoes-backdrop"))
-    } else if (currentRoute == Screen.Community.route) {
-        // 커뮤니티(2026-10-03 파란 톤 커뮤니티 기본) — 러닝 화면과 같은 남색 바닥 · 위의 파란 빛
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("community-backdrop"))
-    } else if (currentRoute == Screen.Profile.route || currentRoute in com.stepup.android.ui.components.BlueProfileArea.backdropRoutes) {
-        // 내 정보 · 프로필 수정 · 설정(파란 톤 v4) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("profile-backdrop"))
-    } else if (currentRoute in listOf(
-            Routes.ITEMS, Routes.RUNNER_MARKET, Routes.SNEAKER_DEX,
-            Routes.SNEAKER, Routes.SNEAKER_UPGRADE, Routes.MARKET_MODEL,
-        )) {
-        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    } else if (currentRoute == Routes.POST_COMPOSE) {
-        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
-    } else if (currentRoute == Routes.MYSTERY_BOX) {
-        // 신발 뽑기 디자인(2026-09-28) — 짙은 남색 바탕과 위 가운데의 은은한 빛(뽑기 탭에서만)
+    // UI 최종 통합안(2026-10-25) — 화면 바닥은 다크 #070B14 · 라이트 #F2F2F7 한 장(번지는 빛 · 사진 무대 없이). 사진은 화면 안 카드에만.
+    // 뽑기 탭만 자기 무대(상자 위 빛)를 둔다
+    if (currentRoute == Routes.MYSTERY_BOX) {
         com.stepup.android.ui.screens.gacha.DrawBackdrop(Modifier.fillMaxSize())
-    } else if (currentRoute == Routes.RUN_ROUTE) {
-        // 러닝 중 · 러닝 완료(2026-09-29 전달본) — 상태 막대 밑까지 짙은 남색(지도 · 기록 카드가 그 위에)
-        Box(Modifier.fillMaxSize().background(com.stepup.android.ui.screens.walk.runPalette().screen))
-    } else if (currentRoute == Routes.COURSES) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), com.stepup.android.ui.components.RunnerSetting.RunNight,
-        )
-    } else if (currentRoute in com.stepup.android.ui.screens.coaching.CoachingRoutes.ALL) {
-        // AI 코칭(2026-10-16) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize().testTag("coaching-backdrop"))
-    } else if (currentRoute in listOf(
-            Routes.RECORDS, Routes.RECORD_STATS, Routes.RUN_RECORD, Routes.RUN_RECORD_MAP,
-            Routes.RUN_CREW, Routes.LOBBY, Routes.FLASH_LOBBY,
-            // 러닝 이야기 상세 · 글쓰기 · 지도 · 지역(커뮤니티 기본 · 코스 글쓰기 파란 톤)
-            Routes.STORY_DETAIL, Routes.STORY_COMPOSE, Routes.STORY_MAP, Routes.STORY_LOCATION, Routes.STORY_REGION,
-        )) {
-        // 내 러닝 기록(H01–H16) · 크루 달리기(CR) — 러닝 화면과 같은 남색 바닥을 상태 막대 밑까지
-        com.stepup.android.ui.components.RunBackdrop(Modifier.fillMaxSize())
-    } else if (chrome?.header == AppChromePolicy.Header.Focus) {
-        com.stepup.android.ui.components.RunnerScene(
-            Modifier.fillMaxSize(), runSetting,
-        )
     } else {
-        com.stepup.android.ui.components.CommerceBackdrop(Modifier.fillMaxSize())
+        com.stepup.android.ui.components.StepUpBackground(
+            Modifier.testTag(
+                when (currentRoute) {
+                    Screen.Customize.route -> "shoes-backdrop"
+                    Screen.Community.route -> "community-backdrop"
+                    Screen.Profile.route -> "profile-backdrop"
+                    in com.stepup.android.ui.screens.coaching.CoachingRoutes.ALL -> "coaching-backdrop"
+                    else -> "app-backdrop"
+                },
+            ),
+        )
     }
     val unreadNotifications by ServiceLocator.notificationRepository.unreadCount
         .collectAsStateWithLifecycle(initialValue = 0)
@@ -656,16 +623,34 @@ private fun MainScaffoldContent(
         containerColor = Color.Transparent,
         topBar = {
             // 뽑기의 결과 확인 · 상자 열기 · 결과 동안(immersive)도 로고 · 잔액 머리는 둔다 — 하단 탭만 걷는다(신발 뽑기 디자인 04–08 · 19)
-            if (chrome?.header == AppChromePolicy.Header.Main) {
+            // UI 최종 통합안(2026-10-25) — 머리는 탭마다: 러닝 = 로고 · SUP · 알림, 신발 = 로고 · SUP, 내 정보 = 로고 · 설정 톱니,
+            // 커뮤니티(함께 뛰기)는 화면이 자기 머리(원 버튼 · 큰 제목)를 그린다. 뽑기는 예전 그대로(로고 · SUP · 알림)
+            if (chrome?.header == AppChromePolicy.Header.Main && currentRoute != Screen.Community.route) {
+                val profile = currentRoute == Screen.Profile.route
                 MainHeader(
                     balance = balance,
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    modifier = Modifier.statusBarsPadding().padding(horizontal = StepUpDesign.Gutter),
+                    modifier = Modifier.statusBarsPadding().padding(start = 20.dp, end = 8.dp),
                     balanceModifier = Modifier.guideTarget(GuideTour.Targets.HOME_TOKEN),
-                    // 알림 종(2026-09-29 메인 시안) — 다섯 탭 모두 같은 자리. 알림함은 내 정보 아래 화면이다
+                    // 알림함은 내 정보 아래 화면이다
                     unread = unreadNotifications,
-                    onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onOpenNotifications = if (currentRoute == Screen.Customize.route) null else {
+                        { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } }
+                    },
+                    showBalance = !profile,
+                    trailing = if (profile) {
+                        {
+                            com.stepup.android.ui.components.CircleIconButton(
+                                androidx.compose.material.icons.Icons.Outlined.Settings,
+                                androidx.compose.ui.res.stringResource(R.string.profile_tab_settings),
+                                onClick = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                                modifier = Modifier.testTag("header-settings"),
+                            )
+                        }
+                    } else null,
                 )
+            } else if (currentRoute == Screen.Community.route) {
+                androidx.compose.foundation.layout.Spacer(Modifier.statusBarsPadding())
             }
         },
         bottomBar = {

@@ -22,6 +22,10 @@ object WeatherBackground {
     private val client = WeatherClient(UrlConnectionPoster(timeoutMillis = 8_000))
     private val _scene = MutableStateFlow<WeatherScene?>(null)
     val scene: StateFlow<WeatherScene?> = _scene.asStateFlow()
+    private val _code = MutableStateFlow<Int?>(null)
+
+    /** 같은 응답의 WMO 날씨 코드 — 사진 위 날씨 효과(비 · 눈, ui/background/WeatherEffect.kt)를 고른다. 모르면 null(효과 없음) */
+    val weatherCode: StateFlow<Int?> = _code.asStateFlow()
     private var fetchedAt = 0L
 
     suspend fun refresh(context: Context, now: Long = System.currentTimeMillis()) {
@@ -33,14 +37,16 @@ object WeatherBackground {
                 try { manager.getLastKnownLocation(provider) } catch (_: SecurityException) { null } catch (_: IllegalArgumentException) { null }
             }
             .maxByOrNull { it.time } ?: return
-        val scene = client.current(location.latitude, location.longitude) ?: return
+        val report = client.report(location.latitude, location.longitude) ?: return
         fetchedAt = now
-        _scene.value = scene
+        _scene.value = report.scene
+        _code.value = report.weatherCode
     }
 
     /** 설정을 끄면 받아 둔 날씨를 버린다 */
     fun clear() {
         _scene.value = null
+        _code.value = null
         fetchedAt = 0L
     }
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI 최종 통합안(2026-10-25) 화면에 새로 생긴 문구 -->
+<resources>
+    <string name="ui_seg_meetups">フラッシュラン</string>
+    <string name="ui_seg_crews">クルー</string>
+    <string name="ui_seg_stories">ストーリー</string>
+    <string name="ui_meetups_empty_title">予定されたフラッシュランはまだありません</string>
+    <string name="ui_meetups_empty_body">投稿すると近くのランナーに先に表示されます</string>
+    <string name="ui_meetups_post">フラッシュランを投稿</string>
+    <string name="ui_run_together">一緒に走る</string>
+    <string name="ui_this_week">今週</string>
+    <string name="ui_see_all">すべて見る</string>
+    <string name="ui_recommended_crews">おすすめクルー</string>
+    <string name="ui_starts_in_min">%d分後に出発</string>
+    <string name="ui_starts_in_hour">%d時間後に出発</string>
+    <string name="ui_place_people">%1$s · %2$d/%3$d 参加</string>
+    <string name="ui_people_joined">%1$d/%2$d 参加</string>
+    <string name="ui_share">共有</string>
+    <string name="ui_crew_apply">申請</string>
+    <string name="ui_crew_join">加入</string>
+    <string name="ui_crew_requested">申請済み</string>
+    <string name="ui_crew_full">締切</string>
+    <string name="ui_crew_open">クルーを見る</string>
+    <string name="ui_crew_count_joined">加入したクルー %d件</string>
+    <string name="ui_crew_meta_people">%1$s · %2$d人</string>
+    <string name="ui_crew_meta_approval">%1$s · %2$d人 · 承認制</string>
+    <string name="ui_today">今日</string>
+    <string name="ui_tomorrow">明日</string>
+    <string name="ui_open_chat">クルーチャットを開く</string>
+</resources>
