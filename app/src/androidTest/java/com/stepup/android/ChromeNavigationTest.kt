@@ -23,6 +23,7 @@ import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -113,7 +114,14 @@ class ChromeNavigationTest {
                 }
                 assertEquals("navigation $next/$tab", bar, bounds(BOTTOM_NAV_TAG))
                 if (tab == R.string.tab_me) compose.onNodeWithTag("header-settings").assertIsDisplayed()
-                else if (tab != R.string.tab_community) assertEquals("balance $next/$tab", token, bounds("sup-balance"))
+                else if (tab == R.string.tab_customize) {
+                    // 신발 탭 머리는 로고 · SUP 만(시안 shoes — 알림 종 없음) — 같은 줄 · 같은 크기로 오른쪽 끝에 붙는다
+                    compose.onNodeWithTag("header-notifications").assertDoesNotExist()
+                    val pill = bounds("sup-balance")
+                    assertEquals("balance row $next/$tab", token.top, pill.top, 1f)
+                    assertEquals("balance size $next/$tab", token.width, pill.width, 1f)
+                    assertTrue("balance moves to the end without the bell $next/$tab: $pill / $token", pill.right > token.right)
+                } else if (tab != R.string.tab_community) assertEquals("balance $next/$tab", token, bounds("sup-balance"))
                 capture("${next.width}-${next.font}-${next.mode}-$tab")
                 if (tab == R.string.tab_me) {
                     // 파란 톤 v4 내 정보(PF01): 러닝 패스가 커서 짧은 화면에서는 본문이 넘어간다(지시서: 짧은 화면 · 큰 글자는 스크롤).
@@ -139,6 +147,8 @@ class ChromeNavigationTest {
                 if (tab == R.string.tab_community) {
                     // 첫 화면은 번개러닝 세그먼트 — 이번 주 "모두 보기"는 번개만 모은 목록(뒤로 오면 그대로)
                     compose.openCommunityMeetups()
+                    // "이번 주 · 모두 보기"는 사진 포스터 아래 — 낮은 화면에서는 목록을 내려야 보인다
+                    compose.onNodeWithTag("community-meetups").performScrollToNode(hasTestTag("community-all-meetups"))
                     awaitVisible("community-all-meetups")
                     compose.onNodeWithTag("community-all-meetups").assertIsDisplayed().performClick()
                     compose.waitForIdle()

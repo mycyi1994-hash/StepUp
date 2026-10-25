@@ -122,18 +122,9 @@ class MysteryDesignTest {
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
-        // 러닝 홈(UI 최종 통합안) — 사진 카드의 오른쪽 유리 버튼이 다음 장소로 넘긴다(장소마다 카드 꼬리표가 바뀐다)
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-spot-next", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
-        val before = compose.onAllNodes(hasTestTagPrefix("home-spot-"), useUnmergedTree = true).fetchSemanticsNodes()
-            .mapNotNull { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag) }
-            .first { it.startsWith("home-spot-") && it !in setOf("home-spot-next", "home-spot-previous", "home-spot-name") }
-        compose.onNodeWithTag("home-spot-next", useUnmergedTree = true).performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag(before, useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+        // 러닝 탭(2026-10-26) — 사람 없는 배경 사진 카드(15장 중 하나)와 아래 고정된 러닝 시작
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-spot", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("home-start-run").assertIsDisplayed()
         captureDisplay(File(out, "home-01-background-next.png"))
     }
-}
-
-/** 꼬리표가 [prefix] 로 시작하는 마디 */
-private fun hasTestTagPrefix(prefix: String) = androidx.compose.ui.test.SemanticsMatcher("TestTag starts with $prefix") { node ->
-    node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag)?.startsWith(prefix) == true
 }

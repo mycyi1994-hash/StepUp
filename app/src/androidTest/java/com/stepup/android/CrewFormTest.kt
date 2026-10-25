@@ -181,11 +181,15 @@ class CrewFormTest {
         captureDisplay(java.io.File(directory, "$name.png"))
     }
 
-    /** 조절 단추를 보이게 한 뒤 한 번 누르고, 값 칸이 [expected] 가 될 때까지 기다린다 */
+    /**
+     * 조절 단추를 보이게 한 뒤 한 번 누르고, 값 칸이 [expected] 가 될 때까지 기다린다.
+     * 좌표 터치 대신 단추의 누르기 동작을 부른다 — 키보드가 닫히는 애니메이션 동안 창이 움직여 터치가 빗나갔다(PR #123 · #124 Experience QA)
+     */
     private fun step(key: String, valueTag: String, expected: String) {
         compose.onNodeWithTag("form-content").performScrollToNode(hasTestTag(key))
         compose.waitForIdle()
-        compose.onNodeWithTag(key).performClick()
+        compose.onNodeWithTag(key).assertIsEnabled()
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
         compose.waitUntil(5_000) {
             runCatching { compose.onNodeWithTag(valueTag, useUnmergedTree = true).assertTextEquals(expected) }.isSuccess
         }
