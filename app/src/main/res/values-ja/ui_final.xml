@@ -85,4 +85,16 @@
     <string name="crew_image_row_title">代表写真</string>
     <string name="crew_image_row_sub">写真または名前の画像</string>
     <string name="crew_image_change">変更</string>
+    <string name="courses_hub_title">ランニングコース</string>
+    <string name="courses_others">ほかのコース</string>
+    <string name="courses_make_headline">走った道がそのままコースに</string>
+    <string name="courses_sort_likes">いいね順</string>
+    <string name="courses_sort_near">近い順</string>
+    <string name="courses_sort_short">短いコース</string>
+    <string name="courses_rank_button">記録順位</string>
+    <string name="courses_pick_this">このコースを選ぶ</string>
+    <string name="courses_more">コースのその他</string>
+    <string name="course_rank_empty_title">まだ記録がありません</string>
+    <string name="course_rank_empty_body">完走すると確認後に順位に載ります</string>
+    <string name="course_selected_badge">選択中</string>
 </resources>

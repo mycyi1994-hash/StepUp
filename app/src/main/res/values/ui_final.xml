@@ -85,4 +85,16 @@
     <string name="crew_image_row_title">Cover photo</string>
     <string name="crew_image_row_sub">A photo or a name image</string>
     <string name="crew_image_change">Change</string>
+    <string name="courses_hub_title">Running courses</string>
+    <string name="courses_others">Other courses</string>
+    <string name="courses_make_headline">The road you run becomes the course</string>
+    <string name="courses_sort_likes">Most liked</string>
+    <string name="courses_sort_near">Nearest</string>
+    <string name="courses_sort_short">Shortest</string>
+    <string name="courses_rank_button">Records</string>
+    <string name="courses_pick_this">Choose this course</string>
+    <string name="courses_more">Course options</string>
+    <string name="course_rank_empty_title">No records yet</string>
+    <string name="course_rank_empty_body">Finish it and your time joins the ranking once checked.</string>
+    <string name="course_selected_badge">Selected</string>
 </resources>

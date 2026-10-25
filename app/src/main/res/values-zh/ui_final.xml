@@ -85,4 +85,16 @@
     <string name="crew_image_row_title">封面照片</string>
     <string name="crew_image_row_sub">照片或名称图片</string>
     <string name="crew_image_change">更换</string>
+    <string name="courses_hub_title">跑步路线</string>
+    <string name="courses_others">其他路线</string>
+    <string name="courses_make_headline">跑过的路就是路线</string>
+    <string name="courses_sort_likes">最受欢迎</string>
+    <string name="courses_sort_near">最近</string>
+    <string name="courses_sort_short">最短</string>
+    <string name="courses_rank_button">记录排名</string>
+    <string name="courses_pick_this">选择此路线</string>
+    <string name="courses_more">路线更多</string>
+    <string name="course_rank_empty_title">还没有记录</string>
+    <string name="course_rank_empty_body">完成后经确认即可上榜</string>
+    <string name="course_selected_badge">已选择</string>
 </resources>

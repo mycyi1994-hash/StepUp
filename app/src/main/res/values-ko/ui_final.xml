@@ -85,4 +85,16 @@
     <string name="crew_image_row_title">대표 사진</string>
     <string name="crew_image_row_sub">사진 또는 이름 이미지</string>
     <string name="crew_image_change">바꾸기</string>
+    <string name="courses_hub_title">러닝 코스</string>
+    <string name="courses_others">다른 코스</string>
+    <string name="courses_make_headline">달린 길이 그대로 코스가 돼요</string>
+    <string name="courses_sort_likes">좋아요 순</string>
+    <string name="courses_sort_near">가까운 순</string>
+    <string name="courses_sort_short">짧은 코스</string>
+    <string name="courses_rank_button">기록 순위</string>
+    <string name="courses_pick_this">이 코스 선택</string>
+    <string name="courses_more">코스 더 보기</string>
+    <string name="course_rank_empty_title">아직 기록이 없어요</string>
+    <string name="course_rank_empty_body">완주하면 기록 확인 뒤 순위에 올라가요</string>
+    <string name="course_selected_badge">선택됨</string>
 </resources>
