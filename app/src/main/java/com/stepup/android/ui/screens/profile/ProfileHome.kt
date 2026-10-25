@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,14 +79,20 @@ internal fun ProfileHome(
     onOpenWallet: () -> Unit,
     onOpenSettings: () -> Unit,
     longestMeters: Double? = null,
+    /** 가장 최근 러닝 — 없으면 줄을 두지 않는다 */
+    latest: com.stepup.android.data.local.WalkSessionEntity? = null,
 ) {
     val c = StepUpUi.colors
     Column(Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(8.dp))
         ProfileRow(state, onEditProfile)
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
         RecordBlock(records, state, longestMeters, onRetryRecords)
-        Spacer(Modifier.height(21.dp))
+        if (latest != null) {
+            Spacer(Modifier.height(18.dp))
+            RecentRun(latest, onOpenRecords)
+        }
+        Spacer(Modifier.height(14.dp))
         val edit = stringResource(R.string.profile_row_edit)
         GroupedList(
             rows = listOf(
@@ -176,13 +183,22 @@ internal fun ProfileAvatar(state: ProfileViewModel.UiState, size: androidx.compo
     }
 }
 
-/** 지금까지 달린 거리(104) + km → 기록한 러닝 · 운동 시간 · 최장 거리 */
+/** 다음 기록 — 누적 거리보다 큰 다음 이정표(km). 실제 누적 거리에서만 정한다 */
+internal fun nextMilestoneKm(km: Double): Int {
+    val steps = listOf(10, 25, 50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000)
+    return steps.firstOrNull { it > km } ?: ((km / 1000).toInt() + 1) * 1000
+}
+
+/**
+ * 지금까지 달린 거리 카드(2026-10-26 시안 profile) — 사람 없는 배경 사진 위 안쪽 틀 · 큰 숫자 · 다음 기록까지 막대,
+ * 그 아래 기록한 러닝 · 운동 시간 · 최장 거리. 읽는 중엔 "—", 못 읽으면 실패 안내와 다시 시도.
+ */
 @Composable
 private fun RecordBlock(records: RunRecordState, state: ProfileViewModel.UiState, longestMeters: Double?, onRetry: () -> Unit) {
     val c = StepUpUi.colors
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).testTag("profile-record-card")) {
-        Text(stringResource(R.string.profile_distance_hero), style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel)
         if (records is RunRecordState.Failed) {
+            Text(stringResource(R.string.profile_distance_hero), style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel)
             Column(Modifier.fillMaxWidth().padding(vertical = 18.dp), horizontalAlignment = Alignment.Start) {
                 Text(
                     stringResource(R.string.me_path_failed), style = StepUpUi.type.section, color = c.label,
@@ -194,21 +210,8 @@ private fun RecordBlock(records: RunRecordState, state: ProfileViewModel.UiState
             return@Column
         }
         val ready = records as? RunRecordState.Ready
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                // 천 단위 쉼표(랭킹과 같은 모양) — 1,284.5
-                ready?.let { String.format(Locale.ROOT, "%,.1f", it.meters / 1000) } ?: "—",
-                style = StepUpUi.type.numberPoster.copy(lineHeight = 96.sp, letterSpacing = .005.em), color = c.label,
-                maxLines = 1, softWrap = false,
-                modifier = Modifier.alignByBaseline().testTag("profile-distance"),
-            )
-            if (ready != null) {
-                Spacer(Modifier.width(8.dp))
-                Text("km", style = StepUpUi.type.navTitle.copy(fontSize = 24.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
-                    color = c.secondaryLabel, modifier = Modifier.alignByBaseline())
-            }
-        }
-        Spacer(Modifier.height(15.dp))
+        DistanceFrame(ready?.meters?.div(1000))
+        Spacer(Modifier.height(18.dp))
         StatRow(
             listOf(
                 StatItem(stringResource(R.string.profile_stat_runs), ready?.let { String.format(Locale.ROOT, "%,d", it.runs) } ?: "—",
@@ -218,7 +221,7 @@ private fun RecordBlock(records: RunRecordState, state: ProfileViewModel.UiState
                 StatItem(stringResource(R.string.profile_stat_longest), longestMeters?.let { String.format(Locale.ROOT, "%.1f", it / 1000) } ?: "—",
                     if (longestMeters != null) "km" else null, tag = "profile-longest"),
             ),
-            numberStyle = StepUpUi.type.numberStat.copy(fontSize = 32.sp),
+            numberStyle = StepUpUi.type.numberStat.copy(fontSize = 30.sp),
         )
         when {
             records is RunRecordState.Loading -> Row(
@@ -233,6 +236,106 @@ private fun RecordBlock(records: RunRecordState, state: ProfileViewModel.UiState
                 stringResource(R.string.pf_first_run), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("profile-first-run"),
             )
+        }
+    }
+}
+
+/** 사진 틀 카드 — 배경(사람 없는 사진 하나) · 안쪽 얇은 틀 · "지금까지 달린 거리" · 큰 숫자 · 다음 기록 막대 */
+@Composable
+private fun DistanceFrame(km: Double?) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val photo by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            com.stepup.android.ui.screens.home.RunPhotos.decode(context, "03-riverside-dawn")
+        }
+    }
+    val shape = RoundedCornerShape(24.dp)
+    Box(Modifier.fillMaxWidth().height(236.dp).clip(shape).background(Color(0xFF0B1A33))) {
+        photo?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+        Box(Modifier.fillMaxSize().background(Color(0xFF06122A).copy(alpha = .45f)))
+        Box(Modifier.fillMaxSize().padding(12.dp).border(1.dp, Color.White.copy(alpha = .28f), RoundedCornerShape(16.dp)))
+        Column(Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 26.dp)) {
+            Text(stringResource(R.string.profile_distance_hero), style = StepUpUi.type.rowTitle.copy(fontSize = 15.sp), color = Color.White)
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    // 천 단위 쉼표(랭킹과 같은 모양) — 1,284.5
+                    km?.let { String.format(Locale.ROOT, "%,.1f", it) } ?: "—",
+                    style = StepUpUi.type.numberPoster.copy(fontSize = 76.sp, lineHeight = 80.sp, letterSpacing = .005.em), color = Color.White,
+                    maxLines = 1, softWrap = false,
+                    modifier = Modifier.alignByBaseline().testTag("profile-distance"),
+                )
+                if (km != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Text("km", style = StepUpUi.type.navTitle.copy(fontSize = 22.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
+                        color = Color.White, modifier = Modifier.alignByBaseline())
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            if (km != null) {
+                val next = nextMilestoneKm(km)
+                val prev = listOf(0, 10, 25, 50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000).lastOrNull { it < next && it <= km } ?: 0
+                Row(Modifier.fillMaxWidth().testTag("profile-next")) {
+                    Text(stringResource(R.string.d26_pf_next, next.toString()), style = StepUpUi.type.rowTitle.copy(fontSize = 14.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), color = Color.White, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.d26_pf_left, String.format(Locale.ROOT, "%.1f", next - km)),
+                        style = StepUpUi.type.rowSubtitle, color = Color.White)
+                }
+                Spacer(Modifier.height(10.dp))
+                val fraction = ((km - prev) / (next - prev)).toFloat().coerceIn(0f, 1f)
+                Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = .22f))) {
+                    Box(Modifier.fillMaxWidth(fraction).height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF7DA2FF)))
+                }
+            }
+        }
+    }
+}
+
+/** 최근 러닝 한 줄 — 거리 · 날짜, 오른쪽 시간 · 페이스. "전체 보기"는 내 러닝 기록 */
+@Composable
+private fun RecentRun(run: com.stepup.android.data.local.WalkSessionEntity, onOpenRecords: () -> Unit) {
+    val c = StepUpUi.colors
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).testTag("profile-recent")) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.d26_pf_recent), style = StepUpUi.type.section.copy(fontSize = 19.sp), color = c.label,
+                modifier = Modifier.weight(1f).semantics { heading() })
+            Text(
+                stringResource(R.string.d26_pf_all), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
+                modifier = Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(onClick = onOpenRecords)
+                    .padding(horizontal = 6.dp, vertical = 12.dp).testTag("profile-recent-all"),
+            )
+        }
+        val km = run.distanceMeters / 1000
+        val date = java.time.Instant.ofEpochMilli(run.startedAt).atZone(java.time.ZoneId.systemDefault())
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).feedbackClickable(onClick = onOpenRecords).padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.Icon(Icons.Outlined.BarChart, contentDescription = null, tint = c.primary, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(String.format(Locale.ROOT, "%.2f", km), style = StepUpUi.type.numberStat.copy(fontSize = 28.sp), color = c.label,
+                        modifier = Modifier.alignByBaseline())
+                    Spacer(Modifier.width(4.dp))
+                    Text("km", style = StepUpUi.type.unit, color = c.secondaryLabel, modifier = Modifier.alignByBaseline())
+                }
+                Text(
+                    java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).format(date),
+                    style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                val sec = run.durationSec
+                Text(
+                    if (sec >= 3600) String.format(Locale.ROOT, "%d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60)
+                    else String.format(Locale.ROOT, "%d:%02d", sec / 60, sec % 60),
+                    style = StepUpUi.type.rowTitle.copy(fontSize = 18.sp), color = c.label,
+                )
+                if (km >= 0.05) {
+                    val pace = (sec / km).toLong()
+                    Text(String.format(Locale.ROOT, "%d'%02d\" /km", pace / 60, pace % 60), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel)
+                }
+            }
         }
     }
 }

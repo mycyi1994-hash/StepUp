@@ -12,8 +12,8 @@ object AppChromePolicy {
         val showBottomBar: Boolean get() = header == Header.Main || header == Header.Detail
     }
 
-    /** 하단 탭 다섯 — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28). 뽑기는 가운데 독립 탭 */
-    val tabs: List<Screen> = listOf(Screen.Run, Screen.Customize, Screen.Draw, Screen.Community, Screen.Profile)
+    /** 하단 탭 넷 — 러닝 / 신발 / 커뮤니티 / 내 정보(2026-10-26 시안). 뽑기는 신발 탭 안의 글자 탭이다 */
+    val tabs: List<Screen> = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile)
 
     /**
      * 화면이 잠깐 하단 탭을 걷는 중 — 뽑기 탭의 결과 확인 중 · 상자 열기 · 결과 · 지연 확인(신발 뽑기 디자인 04–08 · 19,
@@ -23,15 +23,15 @@ object AppChromePolicy {
     var immersive by mutableStateOf(false)
 
     /** 지금 길에서 하단 탭을 걷는가 */
-    fun immersiveAt(route: String?): Boolean = immersive && destination(route)?.parent == Screen.Draw
+    fun immersiveAt(route: String?): Boolean = immersive && destination(route)?.route == Routes.MYSTERY_BOX
 
     val destinations: List<Destination> = listOf(
         Destination(Screen.Run.route, Screen.Run, Header.Main),
         Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
-        // 신발 뽑기 — 하단 가운데 뽑기 탭의 첫 화면(무료 · 상급 글자 탭). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
-        Destination(Routes.MYSTERY_BOX, Screen.Draw, Header.Main),
+        // 신발 뽑기 — 신발 탭의 뽑기 글자 탭(2026-10-26). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
+        Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
         Destination(Routes.RUN_MENU, Screen.Run, Header.Focus),
         Destination(Routes.RUN_GOALS, Screen.Run, Header.Focus),

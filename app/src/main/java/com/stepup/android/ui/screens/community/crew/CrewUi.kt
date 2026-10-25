@@ -512,7 +512,7 @@ internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, mo
     ) {
         Text(
             text, style = com.stepup.android.ui.components.StepUpUi.type.segment,
-            color = if (!enabled && !selected) c.onDisabled else c.label,
+            color = when { selected -> c.segmentOn; !enabled -> c.onDisabled; else -> c.secondaryLabel },
             textAlign = TextAlign.Center, maxLines = 2,
         )
     }
@@ -523,7 +523,8 @@ internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, mo
 internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
     val c = com.stepup.android.ui.components.StepUpUi.colors
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(11.dp)).background(c.fill).padding(0.dp),
+        Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(11.dp)).background(c.card)
+            .border(1.dp, c.separator, RoundedCornerShape(11.dp)).padding(1.dp),
         verticalAlignment = Alignment.CenterVertically, content = content,
     )
 }

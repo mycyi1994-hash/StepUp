@@ -70,6 +70,14 @@ data class PartyRoomRow(
     val mine: Boolean = false,
     /** 진행자가 나를 내보낸 방 — 다시 들어갈 수 없다 */
     val kicked: Boolean = false,
+    /** 달리는 방식(0074) — TOGETHER(만나서) · REMOTE(각자 자리에서). 예전 방은 TOGETHER */
+    @SerialName("run_mode") val runMode: String = "TOGETHER",
+    /** 만나는 곳(0074, 같이 뛰기만) */
+    @SerialName("meet_place") val meetPlace: String? = null,
+    /** 출발 예정 시각(0074) — 안내일 뿐, 출발은 진행자가 누른다 */
+    @SerialName("plan_at") val planAt: String? = null,
+    /** 들어온 사람 이름 앞 넷(0074) — 목록의 머리글자 */
+    @SerialName("member_names") val memberNames: List<String> = emptyList(),
 )
 
 /** 크루의 열린 대기실 목록 — `party_rooms`(0072) */
@@ -142,6 +150,39 @@ class PartyApi(
             put("p_course_km", courseKm ?: JsonNull)
             put("p_course_track", courseTrack ?: JsonNull)
             put("p_request", requestKey)
+        },
+    ) { it.trim().toLongOrNull() }
+
+    /**
+     * 달리는 방식 · 만나는 곳 · 출발 시각 · 정원을 붙여 연다(0074 `party_create_v2`). 나머지는 [create] 와 같다.
+     * 원격 방은 만나는 곳을 보내지 않는다(서버도 받지 않는다).
+     */
+    suspend fun createV2(
+        crewId: String,
+        name: String,
+        courseName: String?,
+        courseKm: Double?,
+        courseTrack: String?,
+        requestKey: String,
+        mode: String,
+        meetPlace: String?,
+        planAt: String?,
+        capacity: Int?,
+    ): ServerResult<Long> = rpc(
+        "party_create_v2",
+        jsonBody {
+            put("p_crew", crewId)
+            put("p_name", name)
+            put("p_course_name", courseName ?: JsonNull)
+            put("p_course_km", courseKm ?: JsonNull)
+            put("p_course_track", courseTrack ?: JsonNull)
+            put("p_request", requestKey)
+            put("p_mode", mode)
+            put("p_meet_place", meetPlace ?: JsonNull)
+            put("p_meet_lat", JsonNull)
+            put("p_meet_lng", JsonNull)
+            put("p_plan_at", planAt ?: JsonNull)
+            put("p_capacity", capacity ?: JsonNull)
         },
     ) { it.trim().toLongOrNull() }
 

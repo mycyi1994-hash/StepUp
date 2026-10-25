@@ -688,6 +688,11 @@ private fun MainScaffoldContent(
                     // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
                     onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
+                    // 러닝 탭의 크루 러닝 칸(2026-10-26 시안) — 크루 홈 · 크루 찾기 · 고른 대기실 · 새 대기실
+                    onOpenCrew = { crewId -> navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.detail(crewId)) { launchSingleTop = true } },
+                    onFindCrew = { navController.switchTab(Screen.Community) },
+                    onOpenRoom = { crewId, id -> navController.navigate(Routes.room(crewId, id)) { launchSingleTop = true } },
+                    onCreateRoom = { crewId -> navController.navigate(Routes.crewRoomNew(crewId)) { launchSingleTop = true } },
                 )
             }
             composable(Routes.MYSTERY_BOX) {
@@ -720,7 +725,22 @@ private fun MainScaffoldContent(
                     }
                 }
                 val drawScope = rememberCoroutineScope()
+                // 2026-10-26 — 뽑기는 신발 탭 안의 글자 탭(내 신발 · 보관함 · 뽑기). 뽑기 흐름(상자 열기 · 결과) 동안은 걷는다
+                Column(Modifier.fillMaxSize()) {
+                if (!drawImmersive) {
+                    com.stepup.android.ui.components.S2ShoesSections(
+                        com.stepup.android.ui.components.ShoeSection.DRAW,
+                        onSelect = { picked ->
+                            if (picked != com.stepup.android.ui.components.ShoeSection.DRAW) {
+                                navController.switchTab(Screen.Customize)
+                                runCatching { navController.getBackStackEntry(Screen.Customize.route) }.getOrNull()
+                                    ?.savedStateHandle?.set(SHOE_SECTION_KEY, picked.name)
+                            }
+                        },
+                    )
+                }
                 com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
+                    modifier = Modifier.weight(1f),
                     state = drawState,
                     flow = drawFlow,
                     pending = drawPending,
@@ -769,14 +789,21 @@ private fun MainScaffoldContent(
                         )
                     },
                 )
+                }
             }
             composable(Screen.Customize.route) { entry ->
                 // 뽑기 결과의 "내 신발 보기"(21) — 받은 신발을 고른 채로 연다. 한 번 고르면 비운다
                 val receivedShoe by entry.savedStateHandle.getStateFlow<Long?>(RECEIVED_SHOE_KEY, null)
                     .collectAsStateWithLifecycle()
+                val openSection by entry.savedStateHandle.getStateFlow<String?>(SHOE_SECTION_KEY, null)
+                    .collectAsStateWithLifecycle()
                 CustomizeScreen(
                     focusShoeId = receivedShoe,
                     onFocusShoeShown = { entry.savedStateHandle[RECEIVED_SHOE_KEY] = null },
+                    openSection = openSection?.let { name ->
+                        com.stepup.android.ui.components.ShoeSection.entries.firstOrNull { it.name == name }
+                    },
+                    onOpenSectionShown = { entry.savedStateHandle[SHOE_SECTION_KEY] = null },
                     onBack = { navController.switchTab(Screen.Run) },
                     onChangeBackground = {
                         wardrobeSetting = com.stepup.android.ui.components.WardrobeBackgrounds.next(wardrobeScene)
@@ -1695,6 +1722,9 @@ const val BOTTOM_NAV_TAG = "bottom-nav"
 
 /** 뽑기 결과에서 신발 탭으로 넘기는 받은 신발 번호(신발 탭 항목의 SavedStateHandle) */
 private const val RECEIVED_SHOE_KEY = "draw_received_shoe"
+
+/** 뽑기 화면의 글자 탭에서 신발 탭으로 넘기는 칸 이름(내 신발 · 보관함) */
+private const val SHOE_SECTION_KEY = "shoes_open_section"
 
 @Composable
 private fun VoltNavBar(navController: NavHostController, currentRoute: String?) {

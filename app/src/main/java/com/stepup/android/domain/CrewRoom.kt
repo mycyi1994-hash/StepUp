@@ -70,9 +70,29 @@ data class CrewRoom(
     val mine: Boolean,
     /** 진행자가 나를 내보낸 방 — 다시 들어가지 못한다 */
     val kicked: Boolean,
+    /** 달리는 방식(0074) */
+    val mode: RoomMode = RoomMode.TOGETHER,
+    /** 만나는 곳(같이 뛰기) */
+    val meetPlace: String? = null,
+    /** 출발 예정 시각(이 폰 시각, 0 이면 없음) — 안내일 뿐이다 */
+    val planAtMs: Long = 0L,
+    /** 들어온 사람 이름 앞 넷 */
+    val memberNames: List<String> = emptyList(),
 ) {
     val open: Boolean get() = status == "LOBBY"
     val full: Boolean get() = members >= capacity
+}
+
+/**
+ * 달리는 방식(0074, 2026-10-26 시안) — 같이 뛰기는 만나는 곳에 모여, 원격 뛰기는 같은 시간에 각자 자리에서.
+ * 원격 방은 함께 달리기 인원 보너스(500m)를 받지 않는다(서버가 정한다).
+ */
+enum class RoomMode(val wire: String) {
+    TOGETHER("TOGETHER"), REMOTE("REMOTE");
+
+    companion object {
+        fun of(wire: String?): RoomMode = entries.firstOrNull { it.wire == wire } ?: TOGETHER
+    }
 }
 
 /** 크루의 열린 대기실 목록 — 오늘(한국 날짜) 크루 러닝을 이미 했는지 함께 */
@@ -93,6 +113,10 @@ sealed interface RoomTarget {
 
 object CrewRoomRules {
     const val NAME_MAX = 30
+
+    /** 만나는 곳 글자 한도 · 정원 최소(0074 — 서버와 같다) */
+    const val MEET_MAX = 60
+    const val CAPACITY_MIN = 2
     const val COURSE_NAME_MAX = 60
     const val COURSE_KM_MAX = 100.0
 

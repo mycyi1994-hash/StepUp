@@ -152,6 +152,9 @@ fun CustomizeScreen(
     /** 뽑기 결과의 "내 신발 보기" — 받은 신발을 고른 채로 내 신발을 연다(미리 보기일 뿐, 착용은 바꾸지 않는다) */
     focusShoeId: Long? = null,
     onFocusShoeShown: () -> Unit = {},
+    /** 뽑기 화면의 글자 탭에서 온 칸(내 신발 · 보관함) — 한 번 고르면 비운다 */
+    openSection: ShoeSection? = null,
+    onOpenSectionShown: () -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
 ) {
     val owned by viewModel.owned.collectAsStateWithLifecycle()
@@ -168,8 +171,15 @@ fun CustomizeScreen(
             onFocusShoeShown()
         }
     }
+    LaunchedEffect(openSection) {
+        if (openSection != null && openSection != ShoeSection.DRAW) {
+            section = openSection
+            onOpenSectionShown()
+        }
+    }
     Column(Modifier.fillMaxSize()) {
-        S2ShoesSections(section, onSelect = { section = it })
+        // 뽑기는 제 길이라 고르면 그 화면으로 간다(이 화면의 칸은 그대로)
+        S2ShoesSections(section, onSelect = { if (it == ShoeSection.DRAW) onOpenDraw() else section = it })
         when (section) {
             ShoeSection.MINE -> MyShoesContent(
                 load = owned, selectedId = selectedId, onSelect = { selectedId = it },
@@ -186,6 +196,7 @@ fun CustomizeScreen(
                 onOpenDraw = onOpenDraw, onOpenDex = onOpenDex, onOpenMarket = onOpenMarket, onOpenItems = onOpenVault,
                 onReload = viewModel::reloadOwned, gridState = grid, modifier = Modifier.weight(1f),
             )
+            ShoeSection.DRAW -> Unit
         }
     }
 }

@@ -87,9 +87,9 @@ class CrewFormTest {
         // 정원 2명 아래로는 줄지 않는다
         repeat(4) { step("post-capacity-minus", "post-capacity-value", "${5 - it}") }
         compose.onNodeWithTag("post-capacity-minus").assertIsNotEnabled()
-        // 달릴 거리는 0.5km 씩 · 출발까지는 1시간 안에서 5분씩
+        // 달릴 거리는 0.5km 씩 · 출발 시각은 시각 칸(2026-10-26 — "오늘 … · N분 뒤 출발")
         step("post-distance-plus", "post-distance-value", "1.5")
-        step("post-starts-minus", "post-starts-value", "55")
+        compose.onNodeWithTag("post-starts-line").assertExists()
         compose.onNodeWithTag("post-submit").assertIsEnabled()
         // Deliberately do not publish a real meetup from instrumentation.
     }

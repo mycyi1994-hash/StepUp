@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
@@ -68,6 +69,7 @@ import com.stepup.android.ui.background.rememberSpotPhoto
 import com.stepup.android.ui.components.AdaptiveNumber
 import com.stepup.android.ui.components.CircleIconButton
 import com.stepup.android.ui.components.PhotoCard
+import com.stepup.android.ui.components.PrimaryButton
 import com.stepup.android.ui.components.RoundControl
 import com.stepup.android.ui.components.ShortcutButton
 import com.stepup.android.ui.components.StatItem
@@ -106,6 +108,14 @@ fun HomeScreen(
     onOpenRecords: () -> Unit = {},
     /** 코스 찾기 — 코스 목록 */
     onOpenCourses: () -> Unit = {},
+    /** 크루 홈(내 소속 크루 카드) */
+    onOpenCrew: (String) -> Unit = {},
+    /** 크루가 없을 때 — 커뮤니티의 크루 찾기 */
+    onFindCrew: () -> Unit = {},
+    /** 크루 러닝 — 고른 대기실(crewId, 방 번호) */
+    onOpenRoom: (String, Long) -> Unit = { _, _ -> },
+    /** 크루 러닝 — 새 대기실 만들기 */
+    onCreateRoom: (String) -> Unit = {},
     /** 시안 검사(OnboardingDesignTest)만 쓴다 — 첫 러닝 홈(시안 11)을 그려 본다. null 이면 실제 권한 · 기록으로 판단한다 */
     firstRunPreview: Boolean? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
@@ -147,10 +157,41 @@ fun HomeScreen(
         ?: com.stepup.android.domain.FirstHomeRules.applies(noActivityYet, hasPermission, runCount, state.lifetimeSteps)
     val largeText = LocalDensity.current.fontScale > 1.2f
 
-    // 사진 카드의 장소 — 자주 달리는 곳이 맨 앞, 넘기면 나머지 장소(spots.json 순서)
-    val spots = remember(context) { Spots.all(context) }
-    val frequent = remember(spots, starts) { RunBackground.frequent(spots, starts) }
-    val places = remember(spots, frequent) { listOfNotNull(frequent) + spots.filter { it != frequent } }
+    // 크루 — 들어가 있는 대기실의 크루가 먼저, 아니면 가입한 첫 크루(2026-10-26 시안 "내 소속 크루")
+    val crewRepo = com.stepup.android.core.ServiceLocator.crewRepository
+    val crews by crewRepo.crews.collectAsStateWithLifecycle()
+    val party by crewRepo.party.collectAsStateWithLifecycle()
+    val crew = remember(crews, party.crewId) {
+        val joined = crews.filter { it.joined }
+        joined.firstOrNull { it.id == party.crewId && party.flashPostId == null } ?: joined.firstOrNull()
+    }
+    LaunchedEffect(Unit) {
+        if (crewRepo.crews.value.isEmpty()) runCatching { crewRepo.refresh() }
+    }
+    var segment by rememberSaveable { mutableStateOf(RunSegment.FREE) }
+    // 사람 없는 배경 15장 중 하나 — 러닝 탭에 들어올 때마다 고른다
+    val photoIndex = remember { kotlin.random.Random.nextInt(RunPhotos.names.size) }
+    val gps = rememberGpsReadiness()
+    // 크루 러닝 칸이 보이는 동안만 대기실 목록을 10초마다 다시 묻는다(보기만 — 들어가지 않는다)
+    var rooms by remember(crew?.id) { mutableStateOf<com.stepup.android.ui.screens.walk.RoomsUi?>(null) }
+    var roomsReload by remember { mutableIntStateOf(0) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(crew?.id, segment, roomsReload) {
+        val id = crew?.id ?: return@LaunchedEffect
+        if (segment != RunSegment.CREW) return@LaunchedEffect
+        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                rooms = when (val result = crewRepo.rooms(id)) {
+                    is com.stepup.android.data.remote.ServerResult.Ok -> com.stepup.android.ui.screens.walk.RoomsUi.Ready(result.value)
+                    is com.stepup.android.data.remote.ServerResult.Retry ->
+                        (rooms as? com.stepup.android.ui.screens.walk.RoomsUi.Ready) ?: com.stepup.android.ui.screens.walk.RoomsUi.Failed(signIn = false)
+                    is com.stepup.android.data.remote.ServerResult.SignInRequired -> com.stepup.android.ui.screens.walk.RoomsUi.Failed(signIn = true)
+                    is com.stepup.android.data.remote.ServerResult.Rejected -> com.stepup.android.ui.screens.walk.RoomsUi.Failed(signIn = false)
+                }
+                delay(10_000)
+            }
+        }
+    }
 
     val pending by viewModel.pendingUploads.collectAsStateWithLifecycle()
     val runSec by viewModel.todayRunSec.collectAsStateWithLifecycle()
@@ -158,9 +199,18 @@ fun HomeScreen(
         loaded = state.loaded, todaySteps = state.todaySteps, goal = state.goal,
         hasPermission = hasPermission, firstHome = firstHome, running = session.isActive, largeText = largeText,
         earned = earned, km = if (state.loaded) RewardEconomyKm(state.todaySteps) else null, weekRuns = week?.runs,
-        places = places, frequent = frequent,
         onStartRun = onStartRun,
         onRequestPermission = { requestActivity() }, onOpenDetails = { showDetails = true },
+        segment = segment, onSegment = { segment = it },
+        crew = crew, onOpenCrew = { crew?.let { onOpenCrew(it.id) } }, onFindCrew = onFindCrew,
+        photoIndex = photoIndex, gps = gps,
+        rooms = rooms,
+        onOpenRoom = { id -> crew?.let { onOpenRoom(it.id, id) } },
+        onCreateRoom = { crew?.let { onCreateRoom(it.id) } },
+        onRetryRooms = {
+            rooms = com.stepup.android.ui.screens.walk.RoomsUi.Loading
+            roomsReload++
+        },
     )
 
     if (showDetails) {
@@ -206,8 +256,8 @@ fun HomeScreen(
 }
 
 /**
- * 러닝 홈의 몸통(시안 `home`) — 상태 없이 그린다. 머리(로고 · SUP · 알림)와 하단 탭은 공통 틀이 그린다.
- * 시안 393 × 821 기준 간격(8 · 43 · 30 · 40)을 화면 높이에 맞춰 나눈다. 낮은 화면 · 큰 글씨면 간격을 줄이고 넘긴다.
+ * 러닝 탭의 몸통(2026-10-26 시안 `run` · `lobby`) — 상태 없이 그린다. 머리(로고 · 알림)와 하단 탭은 공통 틀이 그린다.
+ * 위의 세그먼트가 자유 러닝 · 크루 러닝을 가른다. 화면이 낮거나 글자가 크면 본문이 넘어간다.
  */
 @Composable
 internal fun HomeContent(
@@ -221,54 +271,69 @@ internal fun HomeContent(
     earned: Double?,
     km: Double?,
     weekRuns: Int?,
-    places: List<Spot>,
-    frequent: Spot?,
     onStartRun: () -> Unit,
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
+    segment: RunSegment = RunSegment.FREE,
+    onSegment: (RunSegment) -> Unit = {},
+    crew: com.stepup.android.data.repo.Crew? = null,
+    onOpenCrew: () -> Unit = {},
+    onFindCrew: () -> Unit = {},
+    photoIndex: Int = 0,
+    gps: GpsReadiness = GpsReadiness.WAITING,
+    rooms: com.stepup.android.ui.screens.walk.RoomsUi? = null,
+    onOpenRoom: (Long) -> Unit = {},
+    onCreateRoom: () -> Unit = {},
+    onRetryRooms: () -> Unit = {},
 ) {
-    val c = StepUpUi.colors
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        // 시안 본문 높이 650(걸음 123 · 사진 224 · 숫자 56 · 시작 134 + 간격) — 그보다 낮거나 큰 글씨면 넘긴다
-        val scroll = largeText || maxHeight < 650.dp
-        val gap: (Dp) -> Dp = { d -> if (scroll) d * .6f else d }
-        Column(
-            Modifier.fillMaxSize()
-                .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                .testTag("home-content"),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(8.dp))
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StepUpUi.Gutter)
+            .testTag(if (segment == RunSegment.FREE) "home-content" else "run-crew-content"),
+    ) {
+        Spacer(Modifier.height(8.dp))
+        RunSegments(segment, onSegment)
+        Spacer(Modifier.height(20.dp))
+        RunTabTitle(stringResource(if (segment == RunSegment.FREE) R.string.d26_title_run else R.string.d26_seg_crew))
+        Spacer(Modifier.height(14.dp))
+        MyCrewCard(crew, onOpen = onOpenCrew, onFind = onFindCrew)
+        if (segment == RunSegment.FREE) {
+            Spacer(Modifier.height(if (largeText) 14.dp else 22.dp))
             StepsHero(
                 todaySteps = todaySteps, goal = goal, loaded = loaded,
                 hasPermission = hasPermission, firstHome = firstHome,
                 onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
             )
-            if (scroll) Spacer(Modifier.height(gap(43.dp))) else Spacer(Modifier.weight(43f))
-            SpotCard(places, frequent, Modifier.padding(horizontal = StepUpUi.Gutter))
-            if (scroll) Spacer(Modifier.height(gap(30.dp))) else Spacer(Modifier.weight(30f))
+            Spacer(Modifier.height(16.dp))
+            RunPhotoCard(photoIndex)
+            Spacer(Modifier.height(14.dp))
+            GpsLine(gps)
+            Spacer(Modifier.height(16.dp))
             StatRow(
                 listOf(
-                    StatItem(stringResource(R.string.home_stat_sup),
-                        earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", tag = "home-stat-sup"),
-                    StatItem(stringResource(R.string.stat_distance), km?.let { "%.1f".format(it) } ?: "—", "km", tag = "home-stat-km"),
-                    StatItem(stringResource(R.string.home_this_week), weekRuns?.toString() ?: "—",
+                    StatItem(stringResource(R.string.d26_stat_km), km?.let { "%.2f".format(it) } ?: "—", "km", tag = "home-stat-km"),
+                    StatItem(stringResource(R.string.d26_stat_sup),
+                        earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", "SUP", tag = "home-stat-sup"),
+                    StatItem(stringResource(R.string.d26_stat_week), weekRuns?.toString() ?: "—",
                         stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
                 ),
-                modifier = Modifier.padding(horizontal = 20.dp).testTag("home-stats"),
+                modifier = Modifier.testTag("home-stats"),
             )
-            if (scroll) Spacer(Modifier.height(gap(40.dp))) else Spacer(Modifier.weight(40f))
-            // 이 화면의 주 행동 — 둥근 블루 104dp, 빛번짐 없음
-            RoundControl(
-                icon = Icons.Rounded.PlayArrow,
-                label = stringResource(if (running) R.string.home_continue_run else R.string.home_start_run),
-                onClick = onStartRun,
-                size = 104.dp,
-                tag = "home-start-run",
-                modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN),
+            Spacer(Modifier.height(20.dp))
+            // 이 화면의 주 행동 — 블루 알약(시안 "러닝 시작 ▷"). 누르면 러닝 시작 메뉴(U01), 달리는 중이면 그 러닝
+            PrimaryButton(
+                stringResource(if (running) R.string.home_continue_run else R.string.home_start_run), onStartRun,
+                modifier = Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
             )
-            if (scroll) Spacer(Modifier.height(24.dp)) else Spacer(Modifier.weight(45f))
+        } else {
+            Spacer(Modifier.height(22.dp))
+            if (crew != null) {
+                CrewRoomsSection(rooms, crew.name, onOpenRoom = onOpenRoom, onRetry = onRetryRooms)
+                Spacer(Modifier.height(16.dp))
+                val done = (rooms as? com.stepup.android.ui.screens.walk.RoomsUi.Ready)?.rooms?.doneToday == true
+                NewRoomButton(enabled = rooms is com.stepup.android.ui.screens.walk.RoomsUi.Ready && !done, onClick = onCreateRoom)
+            }
         }
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -295,106 +360,58 @@ private fun StepsHero(
     if (firstHome) {
         // 첫 러닝 홈의 두 줄은 설명이라 누를 곳이 없다 — 걸음이 생기면 걸음 칸이 오늘의 활동을 연다
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = StepUpUi.TitleGutter).padding(vertical = 8.dp).testTag("home-steps"),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("home-steps"),
         ) {
             Text(
                 stringResource(R.string.onb_home_first_title), style = StepUpUi.type.largeTitle.copy(fontSize = 28.sp),
-                color = c.label, textAlign = TextAlign.Center, modifier = Modifier.testTag("home-headline"),
+                color = c.label, modifier = Modifier.testTag("home-headline"),
             )
             Text(
                 stringResource(R.string.onb_home_first_body), style = StepUpUi.type.body, color = c.secondaryLabel,
-                textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp).testTag("home-first-run"),
+                modifier = Modifier.padding(top = 8.dp).testTag("home-first-run"),
             )
         }
         return
     }
     val detailsLabel = stringResource(R.string.home_open_details)
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).clip(RoundedCornerShape(20.dp))
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
             .feedbackClickable(role = Role.Button, onClick = onOpenDetails)
             .semantics { onClick(label = detailsLabel) { onOpenDetails(); true } }
             .testTag("home-steps"),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            stringResource(R.string.home_steps_today), style = StepUpUi.type.segment, color = c.secondaryLabel,
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.height(4.dp))
-        if (!hasPermission) {
-            PermissionStrip(onClick = onRequestPermission)
-            return@Column
-        }
-        // 숫자 올라가기 + 바뀔 때 살짝 튀기(1-5 움직임)
-        val shown = countUpFloat(if (loaded) todaySteps.toFloat() else 0f).roundToInt()
-        Row(verticalAlignment = Alignment.Bottom) {
+        Column(Modifier.weight(1f)) {
             Text(
-                if (loaded) "%,d".format(shown) else "—",
-                style = StepUpUi.type.numberHero.copy(fontSize = 96.sp, lineHeight = 91.sp, letterSpacing = .005.em),
-                color = c.label, maxLines = 1, softWrap = false,
-                modifier = Modifier.alignByBaseline().popOnChange(todaySteps / 1000).testTag("home-steps-value"),
+                stringResource(R.string.home_steps_today), style = StepUpUi.type.segment, color = c.secondaryLabel,
+                modifier = Modifier.semantics { heading() },
             )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                stringResource(R.string.home_goal_slash, "%,d".format(goal)),
-                style = StepUpUi.type.navTitle.copy(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.02).em),
-                color = c.secondaryLabel, maxLines = 1,
-                modifier = Modifier.alignByBaseline().testTag("home-goal"),
-            )
-        }
-    }
-}
-
-// ── 자주 달리는 곳 ────────────────────────────────────────────────
-
-/**
- * 둥근 사진 카드 361 × 224 · 모서리 24(시안 `home` 가운데). 장소 · 지금 시간대 사진(RunBackground.resolve) 위에 날씨 효과,
- * 왼쪽 아래 "자주 달리는 곳" · "장소 · 시간대", 좌우 유리 버튼으로 장소를 넘긴다.
- * 자주 달리는 곳은 내 러닝이 시작한 자리에서 센다 — 러닝이 없거나 어느 장소에도 들지 않으면 "달리기 좋은 곳"이라고 쓴다.
- */
-@Composable
-private fun SpotCard(places: List<Spot>, frequent: Spot?, modifier: Modifier = Modifier) {
-    var index by rememberSaveable(frequent?.id) { mutableIntStateOf(0) }
-    val spot = places.getOrNull(index.mod(places.size.coerceAtLeast(1)))
-    val time = RunBackground.now()
-    val photo = rememberSpotPhoto(spot, time = time, widthDp = 361)
-    val timeLabel = stringResource(when (time) {
-        TimeOfDay.DAWN -> R.string.time_of_day_dawn
-        TimeOfDay.DAY -> R.string.time_of_day_day
-        TimeOfDay.DUSK -> R.string.time_of_day_dusk
-        TimeOfDay.NIGHT -> R.string.time_of_day_night
-    })
-    PhotoCard(
-        photo?.painter, colorFilter = photo?.colorFilter, height = 224.dp,
-        modifier = modifier.height(224.dp).testTag("home-spot"),
-    ) {
-        // 지금 보이는 장소 — 검사가 넘기기 전후를 가린다(한 마디에 꼬리표는 하나라 안쪽 칸에 단다)
-        if (spot != null) Box(Modifier.matchParentSize().testTag("home-spot-${spot.id}"))
-        WeatherLayer(currentWeather())
-        if (places.size > 1) {
-            CircleIconButton(
-                Icons.Filled.ChevronLeft, stringResource(R.string.home_spot_previous), onClick = { index = (index - 1).mod(places.size) },
-                onPhoto = true, modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp).testTag("home-spot-previous"),
-            )
-            CircleIconButton(
-                Icons.Filled.ChevronRight, stringResource(R.string.home_spot_next), onClick = { index = (index + 1).mod(places.size) },
-                onPhoto = true, modifier = Modifier.align(Alignment.CenterEnd).padding(end = 6.dp).testTag("home-spot-next"),
-            )
-        }
-        if (spot != null) {
-            Column(Modifier.align(Alignment.BottomStart).padding(start = 18.dp, end = 18.dp, bottom = 16.dp)) {
+            Spacer(Modifier.height(4.dp))
+            if (!hasPermission) {
+                PermissionStrip(onClick = onRequestPermission)
+                return@Column
+            }
+            // 숫자 올라가기 + 바뀔 때 살짝 튀기(1-5 움직임)
+            val shown = countUpFloat(if (loaded) todaySteps.toFloat() else 0f).roundToInt()
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    stringResource(if (spot == frequent) R.string.home_spot_frequent else R.string.home_spot_suggest),
-                    style = StepUpUi.type.caption.copy(fontSize = 12.5.sp), color = androidx.compose.ui.graphics.Color.White.copy(alpha = .8f),
+                    if (loaded) "%,d".format(shown) else "—",
+                    style = StepUpUi.type.numberHero.copy(fontSize = 58.sp, lineHeight = 58.sp, letterSpacing = .005.em),
+                    color = c.label, maxLines = 1, softWrap = false,
+                    modifier = Modifier.alignByBaseline().popOnChange(todaySteps / 1000).testTag("home-steps-value"),
                 )
+                Spacer(Modifier.width(6.dp))
                 Text(
-                    "${spot.name} · $timeLabel",
-                    style = StepUpUi.type.section.copy(fontSize = 18.sp, letterSpacing = (-0.04).em),
-                    color = androidx.compose.ui.graphics.Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp).testTag("home-spot-name"),
+                    stringResource(R.string.d26_steps_goal, "%,d".format(goal)),
+                    style = StepUpUi.type.navTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.02).em),
+                    color = c.secondaryLabel, maxLines = 1,
+                    modifier = Modifier.alignByBaseline().testTag("home-goal"),
                 )
             }
+        }
+        if (hasPermission) {
+            Spacer(Modifier.width(12.dp))
+            StepsRing(if (loaded && goal > 0) todaySteps.toFloat() / goal else 0f)
         }
     }
 }
