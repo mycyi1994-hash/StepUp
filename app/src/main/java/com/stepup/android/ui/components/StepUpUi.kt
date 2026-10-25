@@ -101,6 +101,7 @@ import androidx.compose.ui.unit.sp
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.StepUpSans
@@ -223,9 +224,14 @@ val KoreanLineBreak = androidx.compose.ui.text.style.LineBreak(
     wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
 )
 
+// 숫자 글꼴(Saira Condensed)은 아랫부분(0.44em)이 깊은데 숫자는 그 자리를 쓰지 않는다 — 줄 상자를 가운데 맞춤으로 두어
+// 숫자가 상자 가운데 오게 한다(비례 맞춤이면 숫자 아래 빈칸이 생겨 시안보다 아래 줄이 멀어진다)
 private fun num(size: Float) = TextStyle(
     fontFamily = StepUpNumbers, fontWeight = FontWeight.Bold, fontSize = size.sp, letterSpacing = 0.em,
     lineHeight = (size * .95f).sp, fontFeatureSettings = "tnum",
+    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+        androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
+    ),
 )
 
 val StepUpUiTypeScale = StepUpUiType(
@@ -939,7 +945,7 @@ fun GroupRow(
 ) {
     Row(
         modifier.fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .heightIn(min = minHeight).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),

@@ -80,8 +80,12 @@ val StepUpTypography = Typography(
     labelSmall = type(12, 17, FontWeight.SemiBold, -0.02),
 )
 
+/** 큰 숫자 — 줄 상자 가운데 맞춤(숫자 글꼴의 깊은 아랫부분 때문에 숫자가 상자 위로 쏠리지 않게, StepUpUi num() 과 같다) */
 val MetricTypography = TextStyle(
     fontFamily = StepUpNumbers, fontWeight = FontWeight.Bold, lineHeight = 1.0.em,
     fontFeatureSettings = "tnum", letterSpacing = 0.sp,
     platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+        androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
+    ),
 )

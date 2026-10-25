@@ -41,4 +41,11 @@
     <string name="shoes_open_detail">상세 보기</string>
     <string name="shoes_durability_left">남은 내구도 %1$s</string>
     <string name="shoes_vault_short">보관함</string>
+    <string name="profile_level_line">Lv.%1$d · 오늘도 좋은 하루예요</string>
+    <string name="profile_distance_hero">지금까지 달린 거리</string>
+    <string name="profile_stat_runs">기록한 러닝</string>
+    <string name="profile_stat_time">운동 시간</string>
+    <string name="profile_stat_longest">최장 거리</string>
+    <string name="profile_row_edit">프로필 편집</string>
+    <string name="profile_row_records">기록 보기</string>
 </resources>

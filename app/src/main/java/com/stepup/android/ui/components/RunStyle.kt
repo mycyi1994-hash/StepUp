@@ -275,6 +275,10 @@ object RunSpec {
 fun runNumberStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.ExtraBold): TextStyle = TextStyle(
     fontFamily = StepUpNumbers, fontWeight = weight, fontSize = size, color = color,
     letterSpacing = 0.em, fontFeatureSettings = "tnum", lineHeight = 1.0.em,
+    // 숫자 글꼴의 깊은 아랫부분 — 줄 상자 가운데 맞춤(StepUpUi num() 과 같다)
+    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+        androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
+    ),
 )
 
 fun runTextStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f): TextStyle =

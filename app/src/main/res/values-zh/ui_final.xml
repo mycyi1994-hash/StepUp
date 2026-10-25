@@ -41,4 +41,11 @@
     <string name="shoes_open_detail">查看详情</string>
     <string name="shoes_durability_left">剩余耐久度 %1$s</string>
     <string name="shoes_vault_short">鞋柜</string>
+    <string name="profile_level_line">Lv.%1$d · 今天也是美好的一天</string>
+    <string name="profile_distance_hero">累计跑步距离</string>
+    <string name="profile_stat_runs">已记录跑步</string>
+    <string name="profile_stat_time">运动时间</string>
+    <string name="profile_stat_longest">最长距离</string>
+    <string name="profile_row_edit">编辑资料</string>
+    <string name="profile_row_records">查看记录</string>
 </resources>

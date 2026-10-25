@@ -60,6 +60,12 @@ class ProfileViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RunRecordState.Loading)
 
     /** 기록을 다시 읽는다 — 카드의 "다시 시도" */
+    /** 가장 긴 러닝 거리(m) — 읽기 전 · 못 읽으면 null("—") */
+    val longestMeters: StateFlow<Double?> = stepRepository.observeLongestMeters()
+        .map<Double, Double?> { it }
+        .catch { emit(null) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     fun retryRecords() {
         recordAttempt.value++
     }

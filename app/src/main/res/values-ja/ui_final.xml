@@ -41,4 +41,11 @@
     <string name="shoes_open_detail">詳細を見る</string>
     <string name="shoes_durability_left">残り耐久度 %1$s</string>
     <string name="shoes_vault_short">保管庫</string>
+    <string name="profile_level_line">Lv.%1$d · 今日もいい一日を</string>
+    <string name="profile_distance_hero">これまで走った距離</string>
+    <string name="profile_stat_runs">記録したラン</string>
+    <string name="profile_stat_time">運動時間</string>
+    <string name="profile_stat_longest">最長距離</string>
+    <string name="profile_row_edit">プロフィール編集</string>
+    <string name="profile_row_records">記録を見る</string>
 </resources>

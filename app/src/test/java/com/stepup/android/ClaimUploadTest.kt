@@ -68,6 +68,7 @@ class ClaimUploadTest {
         override fun observeRecentFor(owner: String, limit: Int): Flow<List<WalkSessionEntity>> = observeRecent(limit)
         override fun observeSessionCountFor(owner: String): Flow<Int> = observeSessionCount()
         override fun observeRunTotalsFor(owner: String) = observeRunTotals()
+        override fun observeLongestMetersFor(owner: String): Flow<Double> = flowOf(rows.values.maxOfOrNull { it.distanceMeters } ?: 0.0)
         override fun observeDurationSinceFor(owner: String, fromMillis: Long): Flow<Long> = observeDurationSince(fromMillis)
         override fun observeRunTotalsSinceFor(owner: String, fromMillis: Long) = observeRunTotals()
         override fun observePendingUploadCount(): Flow<Int> = flowOf(pendingCount())

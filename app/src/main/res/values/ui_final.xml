@@ -41,4 +41,11 @@
     <string name="shoes_open_detail">View details</string>
     <string name="shoes_durability_left">Durability left %1$s</string>
     <string name="shoes_vault_short">Vault</string>
+    <string name="profile_level_line">Lv.%1$d · Have a good day</string>
+    <string name="profile_distance_hero">Distance run so far</string>
+    <string name="profile_stat_runs">Runs recorded</string>
+    <string name="profile_stat_time">Workout time</string>
+    <string name="profile_stat_longest">Longest run</string>
+    <string name="profile_row_edit">Edit profile</string>
+    <string name="profile_row_records">View records</string>
 </resources>

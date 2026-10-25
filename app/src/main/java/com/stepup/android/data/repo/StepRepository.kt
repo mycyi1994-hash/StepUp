@@ -68,6 +68,10 @@ class StepRepository(
     fun observeRunTotals(): Flow<com.stepup.android.data.local.RunTotals> =
         owner.flatMapLatest { walkSessionDao.observeRunTotalsFor(it) }
 
+    /** 지금 계정의 가장 긴 러닝 거리(m) */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeLongestMeters(): Flow<Double> = owner.flatMapLatest { walkSessionDao.observeLongestMetersFor(it) }
+
     fun observeVerifiedSessions(): Flow<List<WalkSessionEntity>> = walkSessionDao.observeVerifiedSessions()
 
     /** 세션 누적 운동 시간(초) — 프로필 '총 운동 시간' 표기용 */
