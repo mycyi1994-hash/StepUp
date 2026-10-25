@@ -389,20 +389,24 @@ fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Mo
 }
 
 
-/** 신발 탭 위의 글자 탭 둘 — 내 신발 · 신발 보관함(신발 화면 확정안 2026-09-28). 뽑기는 하단 가운데 탭으로 옮겼다 */
-enum class ShoeSection { MINE, VAULT }
+/**
+ * 신발 탭 위의 글자 탭 셋 — 내 신발 · 신발 보관함 · 뽑기(2026-10-26 시안: 하단 탭 넷, 뽑기는 신발 탭 안으로).
+ * 뽑기는 제 길([com.stepup.android.ui.Routes.MYSTERY_BOX])이라 고르면 그 화면으로 간다.
+ */
+enum class ShoeSection { MINE, VAULT, DRAW }
 
-/** 내 신발 · 신발 보관함 — UI 최종 통합안 세그먼트(시안 shoes 위, 361 × 34 · 바 6dp 아래) */
+/** 내 신발 · 신발 보관함 · 뽑기 — UI 최종 통합안 세그먼트(시안 shoes 위, 361 × 34 · 바 6dp 아래) */
 @Composable
 fun S2ShoesSections(section: ShoeSection, onSelect: (ShoeSection) -> Unit, modifier: Modifier = Modifier) {
     StepUpTabs(
         items = listOf(
             androidx.compose.ui.res.stringResource(R.string.shoes_section_mine),
             androidx.compose.ui.res.stringResource(R.string.shoes_section_vault),
+            androidx.compose.ui.res.stringResource(R.string.tab_draw),
         ),
-        selected = if (section == ShoeSection.MINE) 0 else 1,
-        onSelect = { onSelect(if (it == 0) ShoeSection.MINE else ShoeSection.VAULT) },
-        tags = listOf("shoes-section-mine", "shoes-section-vault"),
+        selected = section.ordinal,
+        onSelect = { onSelect(ShoeSection.entries[it]) },
+        tags = listOf("shoes-section-mine", "shoes-section-vault", "shoes-section-draw"),
         modifier = modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter).padding(top = 6.dp),
     )
 }

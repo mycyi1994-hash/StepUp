@@ -486,9 +486,9 @@ class DesignReferenceTest {
     /** Guard the visible regressions from the independent visual review. */
     private fun assertReviewedLayout(scene: Scene, enlarged: Boolean) {
         if (scene == Scene.HOME) {
-            // 다섯 목적지 — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28)
+            // 네 목적지 — 러닝 / 신발 / 커뮤니티 / 내 정보(2026-10-26 시안, 뽑기는 신발 탭 안)
             compose.onNodeWithTag("nav-draw-action").assertDoesNotExist()
-            val nodes = listOf(Screen.Run, Screen.Customize, Screen.Draw, Screen.Community, Screen.Profile).map {
+            val nodes = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile).map {
                 compose.onNodeWithTag("nav-label-${it.route}", useUnmergedTree = true).fetchSemanticsNode()
             }
             compose.runOnIdle {

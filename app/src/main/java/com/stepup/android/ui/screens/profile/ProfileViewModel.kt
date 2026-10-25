@@ -66,6 +66,11 @@ class ProfileViewModel(
         .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** 가장 최근 러닝(내 정보 "최근 러닝") — 없거나 못 읽으면 null(줄을 두지 않는다) */
+    val latest: StateFlow<com.stepup.android.data.local.WalkSessionEntity?> = stepRepository.observeLatestSession()
+        .catch { emit(null) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     fun retryRecords() {
         recordAttempt.value++
     }

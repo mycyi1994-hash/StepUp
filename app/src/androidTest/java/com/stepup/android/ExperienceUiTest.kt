@@ -273,30 +273,31 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        // Five tab roles — 러닝 / 신발 / 뽑기 / 커뮤니티 / 내 정보(신발 화면 확정안 2026-09-28). 뽑기는 가운데 독립 탭.
-        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_draw, R.string.tab_community, R.string.tab_me)
+        // Four tab roles — 러닝 / 신발 / 커뮤니티 / 내 정보(2026-10-26 시안). 뽑기는 신발 탭 안의 글자 탭.
+        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
             hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG))
-        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 5 }
+        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 4 }
         tabs.forEachIndexed { index, title ->
             val node = compose.onNode(hasText(compose.activity.getString(title)) and tabRole)
             node.performClick().assertIsSelected()
             capture("navigation-$index")
         }
-        // 뽑기 탭 — 공통 머리 · 하단 탭 아래의 무료 · 상급 글자 탭(뒤로 버튼 없음). 신발 탭 위에는 뽑기가 없다(내 신발 · 신발 보관함)
-        compose.onNode(hasText(compose.activity.getString(R.string.tab_draw)) and tabRole).performClick().assertIsSelected()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("draw-home").assertIsDisplayed()
-        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertIsDisplayed()
-        compose.onNodeWithTag("main-header").assertIsDisplayed()
-        capture("navigation-draw")
+        // 신발 탭 — 내 신발 · 신발 보관함 · 뽑기 글자 탭. 뽑기를 고르면 신발 탭이 고른 채로 뽑기 화면
         compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).performClick().assertIsSelected()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-mine").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("draw-home").assertDoesNotExist()
         compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
         compose.onNodeWithTag("shoes-section-vault").assertIsNotSelected()
-        compose.onNodeWithTag("shoes-section-draw").assertDoesNotExist()
+        compose.onNodeWithTag("shoes-section-draw").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("draw-home").assertIsDisplayed()
+        compose.onNodeWithTag("shoes-section-draw").assertIsSelected()
+        compose.onNode(hasText(compose.activity.getString(R.string.tab_customize)) and tabRole).assertIsSelected()
+        compose.onNodeWithTag(BOTTOM_NAV_TAG).assertIsDisplayed()
+        compose.onNodeWithTag("main-header").assertIsDisplayed()
+        capture("navigation-draw")
         compose.onNode(hasText(compose.activity.getString(R.string.tab_me)) and tabRole).performClick().assertIsSelected()
         compose.onNodeWithTag("draw-home").assertDoesNotExist()
         // 파란 톤 v4 내 정보는 짧은 화면에서 본문이 넘어간다 — 설정 줄까지 넘겨서 누른다

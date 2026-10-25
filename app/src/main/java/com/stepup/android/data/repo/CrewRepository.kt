@@ -557,6 +557,33 @@ class CrewRepository(
         partyApi.create(crewId, name, course?.name, course?.km, course?.encodeTrack(), requestKey)
 
     /**
+     * 달리는 방식 · 만나는 곳 · 출발 시각 · 정원을 붙여 연다(0074). [planAtMs] 는 이 폰 시각(서버 시각으로 맞추지 않는다 — 안내일 뿐).
+     * 서버가 아직 0074 전이면(함수 없음) 예전 [createRoom] 으로 연다 — 같이 뛰기 · 정원 20 그대로.
+     */
+    suspend fun createRoomV2(
+        crewId: String,
+        name: String,
+        course: RoomCourse?,
+        requestKey: String,
+        mode: com.stepup.android.domain.RoomMode,
+        meetPlace: String?,
+        planAtMs: Long?,
+        capacity: Int?,
+    ): ServerResult<Long> {
+        val result = partyApi.createV2(
+            crewId, name, course?.name, course?.km, course?.encodeTrack(), requestKey,
+            mode = mode.wire,
+            meetPlace = meetPlace?.trim()?.takeIf { it.isNotEmpty() && mode == com.stepup.android.domain.RoomMode.TOGETHER },
+            planAt = planAtMs?.let { java.time.Instant.ofEpochMilli(it).toString() },
+            capacity = capacity,
+        )
+        if (result is ServerResult.Rejected && result.reason.contains("party_create_v2") && result.reason.contains("function")) {
+            return createRoom(crewId, name, course, requestKey)
+        }
+        return result
+    }
+
+    /**
      * 진행자 — 방의 코스를 바꾼다(0072). [course] 가 null 이면 코스를 뺀다(0073). 서버가 받으면 새 판으로 적고 진행자를 뺀
      * 모두의 준비를 푼다(D14 — 서버도 그렇게 한다). 지금과 같은 코스면 서버가 판을 올리지 않는다 — 준비도 그대로 둔다.
      * 서버가 받지 않으면 그대로 두고 결과를 돌려준다(화면이 알린다).
@@ -1457,6 +1484,10 @@ internal fun PartyRoomRow.toDomain(offsetMs: Long): CrewRoom = CrewRoom(
     },
     mine = mine,
     kicked = kicked,
+    mode = com.stepup.android.domain.RoomMode.of(runMode),
+    meetPlace = meetPlace?.takeIf { it.isNotBlank() },
+    planAtMs = planAt?.isoToMillis()?.minus(offsetMs) ?: 0L,
+    memberNames = memberNames,
 )
 
 /** 방에 들어가거나 무언가를 하다 막힌 까닭 */

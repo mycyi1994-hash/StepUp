@@ -154,6 +154,7 @@ fun ProfileScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val records by viewModel.records.collectAsStateWithLifecycle()
     val longest by viewModel.longestMeters.collectAsStateWithLifecycle()
+    val latest by viewModel.latest.collectAsStateWithLifecycle()
     var notice by remember { mutableStateOf<String?>(null) }
     val savedText = stringResource(R.string.pe_saved_toast)
     // 받은 표시는 바로 지운다(다시 들어와도 한 번만) — 그러면 이 효과가 다시 시작되므로, 안내를 닫는 기다림은 따로 둔다
@@ -187,6 +188,7 @@ fun ProfileScreen(
                 onOpenWallet = onOpenWallet,
                 onOpenSettings = onOpenSettings,
                 longestMeters = longest,
+                latest = latest,
             )
         }
     }

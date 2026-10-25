@@ -186,34 +186,35 @@ val LightPalette = StepUpPalette(
  *
  * 순검정이 아니라 푸른 기가 도는 검정이다. 카드 · 묶음 목록은 #0E1424, 강조는 블루 #2F6BFF, 표면 위 파란 글자는 #6E9BFF.
  */
+// 블랙(2026-10-26 디자인 자료 — 사용자 결정 "시안처럼 검게"): 바닥 #000 · 면 #101216 · 선 #292E37 · 글자 #F6F7FA · 보조 #A7AFBC · 블루 #477DFF(버튼 바닥은 흰 글자 4:1 이 되게 #3D74FA)
 val DarkPalette = StepUpPalette(
-    night = Color(0xFF070B14),
-    carbon = Color(0xFF0E1424),
+    night = Color(0xFF000000),
+    carbon = Color(0xFF101216),
     // fill rgba(130,150,190,.20) 을 카드 위에 얹은 값 — 보조 버튼 · 입력칸 · 세그먼트 트랙
-    carbonHigh = Color(0xFF222A3D),
+    carbonHigh = Color(0xFF1E2128),
     // separator rgba(255,255,255,.09)
-    edge = Color(0x17FFFFFF),
-    volt = Color(0xFF2F6BFF),
-    voltDeep = Color(0xFF2A5FE6),
+    edge = Color(0xFF292E37),
+    volt = Color(0xFF3D74FA),
+    voltDeep = Color(0xFF3A6AE6),
     // 막 위 패널 테두리 · 스포트라이트 — 시안 #6E9BFF 를 55% 로 얹으면 막과 2.9:1 이라 한 단계 밝게(3:1, PaletteContrastTest)
     voltSoft = Color(0xFF7DA6FF),
     onVolt = Color(0xFFFFFFFF),
     alert = Color(0xFFFF453A),
     snow = Color(0xFFFFFFFF),
     // secondaryLabel rgba(226,232,245,.64)
-    silver = Color(0xFF969CAA),
+    silver = Color(0xFFA7AFBC),
     // tertiaryLabel 자리(.38 보다 한 단계 밝게 — 카드 위 힌트가 읽히게)
-    slate = Color(0xFF6E7586),
+    slate = Color(0xFF79808C),
     scrim = Color(0xFF000000),
     scrimAlpha = 0.78f,
     // 시트 · 막 위 패널 — groupedBackground
-    overlay = Color(0xFF0E1424),
-    voltText = Color(0xFF6E9BFF),
+    overlay = Color(0xFF101216),
+    voltText = Color(0xFF7DA2FF),
     cyan = Color(0xFF24D8FF),
-    cardTop = Color(0xFF0E1424),
-    cardBottom = Color(0xFF0E1424),
-    backdropTop = Color(0xFF070B14),
-    backdropBottom = Color(0xFF070B14),
+    cardTop = Color(0xFF101216),
+    cardBottom = Color(0xFF101216),
+    backdropTop = Color(0xFF000000),
+    backdropBottom = Color(0xFF000000),
     // 밝은 타일을 어두운 지도로 옮긴다(2026-10-14 "지도가 너무 어둡다") — 땅 #22324A 쯤 · 물 파랑(예전에는 뒤집혀 갈색이었다) ·
     // 길은 땅보다 어두운 선 · 지명은 밝은 글자. 실제 MapTiler 타일 색(땅 #F5F0E4 · 물 #85CAF9 · 길 흰색 · 공원 #D7E9C8 · 글자 회색)에 맞춘 값이다.
     mapMatrix = floatArrayOf(
