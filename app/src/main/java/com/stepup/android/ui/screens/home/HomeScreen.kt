@@ -286,54 +286,58 @@ internal fun HomeContent(
     onCreateRoom: () -> Unit = {},
     onRetryRooms: () -> Unit = {},
 ) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = StepUpUi.Gutter)
-            .testTag(if (segment == RunSegment.FREE) "home-content" else "run-crew-content"),
-    ) {
-        Spacer(Modifier.height(8.dp))
-        RunSegments(segment, onSegment)
-        Spacer(Modifier.height(20.dp))
-        RunTabTitle(stringResource(if (segment == RunSegment.FREE) R.string.d26_title_run else R.string.d26_seg_crew))
-        Spacer(Modifier.height(14.dp))
-        MyCrewCard(crew, onOpen = onOpenCrew, onFind = onFindCrew)
-        if (segment == RunSegment.FREE) {
-            Spacer(Modifier.height(if (largeText) 14.dp else 22.dp))
-            StepsHero(
-                todaySteps = todaySteps, goal = goal, loaded = loaded,
-                hasPermission = hasPermission, firstHome = firstHome,
-                onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
-            )
+    // 본문은 넘기고, 이 화면의 주 행동(러닝 시작 · 새 대기실 만들기)은 늘 아래에 보인다(작은 화면 · 큰 글씨에서도)
+    Column(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = StepUpUi.Gutter)
+                .testTag(if (segment == RunSegment.FREE) "home-content" else "run-crew-content"),
+        ) {
+            Spacer(Modifier.height(8.dp))
+            RunSegments(segment, onSegment)
+            Spacer(Modifier.height(if (largeText) 12.dp else 18.dp))
+            RunTabTitle(stringResource(if (segment == RunSegment.FREE) R.string.d26_title_run else R.string.d26_seg_crew))
+            Spacer(Modifier.height(12.dp))
+            MyCrewCard(crew, onOpen = onOpenCrew, onFind = onFindCrew)
+            if (segment == RunSegment.FREE) {
+                Spacer(Modifier.height(if (largeText) 14.dp else 18.dp))
+                StepsHero(
+                    todaySteps = todaySteps, goal = goal, loaded = loaded,
+                    hasPermission = hasPermission, firstHome = firstHome,
+                    onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
+                )
+                Spacer(Modifier.height(14.dp))
+                RunPhotoCard(photoIndex)
+                Spacer(Modifier.height(12.dp))
+                GpsLine(gps)
+                Spacer(Modifier.height(14.dp))
+                StatRow(
+                    listOf(
+                        StatItem(stringResource(R.string.d26_stat_km), km?.let { "%.2f".format(it) } ?: "—", "km", tag = "home-stat-km"),
+                        StatItem(stringResource(R.string.d26_stat_sup),
+                            earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", "SUP", tag = "home-stat-sup"),
+                        StatItem(stringResource(R.string.d26_stat_week), weekRuns?.toString() ?: "—",
+                            stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
+                    ),
+                    modifier = Modifier.testTag("home-stats"),
+                )
+            } else {
+                Spacer(Modifier.height(20.dp))
+                if (crew != null) CrewRoomsSection(rooms, crew.name, onOpenRoom = onOpenRoom, onRetry = onRetryRooms)
+            }
             Spacer(Modifier.height(16.dp))
-            RunPhotoCard(photoIndex)
-            Spacer(Modifier.height(14.dp))
-            GpsLine(gps)
-            Spacer(Modifier.height(16.dp))
-            StatRow(
-                listOf(
-                    StatItem(stringResource(R.string.d26_stat_km), km?.let { "%.2f".format(it) } ?: "—", "km", tag = "home-stat-km"),
-                    StatItem(stringResource(R.string.d26_stat_sup),
-                        earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", "SUP", tag = "home-stat-sup"),
-                    StatItem(stringResource(R.string.d26_stat_week), weekRuns?.toString() ?: "—",
-                        stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
-                ),
-                modifier = Modifier.testTag("home-stats"),
-            )
-            Spacer(Modifier.height(20.dp))
-            // 이 화면의 주 행동 — 블루 알약(시안 "러닝 시작 ▷"). 누르면 러닝 시작 메뉴(U01), 달리는 중이면 그 러닝
-            PrimaryButton(
-                stringResource(if (running) R.string.home_continue_run else R.string.home_start_run), onStartRun,
-                modifier = Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
-            )
-        } else {
-            Spacer(Modifier.height(22.dp))
-            if (crew != null) {
-                CrewRoomsSection(rooms, crew.name, onOpenRoom = onOpenRoom, onRetry = onRetryRooms)
-                Spacer(Modifier.height(16.dp))
+        }
+        Box(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 8.dp, bottom = 12.dp)) {
+            if (segment == RunSegment.FREE) {
+                // 이 화면의 주 행동 — 블루 알약(시안 "러닝 시작 ▷"). 누르면 러닝 시작 메뉴(U01), 달리는 중이면 그 러닝
+                PrimaryButton(
+                    stringResource(if (running) R.string.home_continue_run else R.string.home_start_run), onStartRun,
+                    modifier = Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
+                )
+            } else if (crew != null) {
                 val done = (rooms as? com.stepup.android.ui.screens.walk.RoomsUi.Ready)?.rooms?.doneToday == true
                 NewRoomButton(enabled = rooms is com.stepup.android.ui.screens.walk.RoomsUi.Ready && !done, onClick = onCreateRoom)
             }
         }
-        Spacer(Modifier.height(24.dp))
     }
 }
 
