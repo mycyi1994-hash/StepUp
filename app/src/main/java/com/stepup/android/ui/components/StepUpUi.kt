@@ -91,6 +91,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -407,7 +408,8 @@ fun PrimaryButton(
             .pressable(enabled = clickable, cue = cue, onClick = onClick)
             .clip(CircleShape)
             .background(bg)
-            .semantics { if (shown == ButtonState.Loading) contentDescription = text }
+            // 로딩은 스피너만 보이지만 글("저장 중…")은 읽기 도구 · 검사에 그대로 남긴다
+            .semantics { if (shown == ButtonState.Loading) { contentDescription = text; this.text = androidx.compose.ui.text.AnnotatedString(text) } }
             .padding(start = if (withArrow) 24.dp else 20.dp, end = if (withArrow) 7.dp else 20.dp),
         contentAlignment = if (withArrow) Alignment.CenterStart else Alignment.Center,
     ) {
@@ -632,19 +634,24 @@ fun CircleIconButton(
     cue: FeedbackCue = FeedbackCue.Tap,
 ) {
     val c = StepUpUi.colors
-    Box(modifier.minimumInteractiveComponentSize(), contentAlignment = Alignment.Center) {
+    // 눌리는 곳 · 이름 · 꼬리표는 바깥 48 칸 하나에 — 보이는 원이 작아도 48 전체가 눌리고, 눌리는 카드(사진 포스터) 안에 있어도
+    // 꼬리표가 카드에 합쳐져 사라지지 않는다
+    Box(
+        modifier.minimumInteractiveComponentSize()
+            .pressable(enabled = enabled, cue = cue, onClick = onClick)
+            .semantics { if (contentDescription != null) this.contentDescription = contentDescription },
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             Modifier
                 .size(size)
-                .pressable(enabled = enabled, cue = cue, onClick = onClick)
                 .clip(CircleShape)
                 .background(if (onPhoto) c.glass else c.fill)
                 .then(
                     if (onPhoto) Modifier.drawBehind {
                         drawArc(Color.White.copy(alpha = .5f), 200f, 140f, false, style = Stroke(.5.dp.toPx()))
                     } else Modifier,
-                )
-                .semantics { if (contentDescription != null) this.contentDescription = contentDescription },
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

@@ -231,7 +231,9 @@ internal fun HomeContent(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // 시안 본문 높이 650(걸음 123 · 사진 224 · 숫자 56 · 시작 134 + 간격) — 그보다 낮거나 큰 글씨면 넘긴다
         val scroll = largeText || maxHeight < 650.dp
-        val gap: (Dp) -> Dp = { d -> if (scroll) d * .6f else d }
+        val gap: (Dp) -> Dp = { d -> if (scroll) d * .4f else d }
+        // 낮은 화면(360 × 640 등)은 사진 카드를 줄여 둥근 시작이 넘기지 않고 보이게 — 걸음 · 숫자 줄 · 시작 · 간격 ≈ 376
+        val cardHeight = if (scroll && !largeText) (maxHeight - 376.dp).coerceIn(120.dp, 224.dp) else 224.dp
         Column(
             Modifier.fillMaxSize()
                 .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
@@ -245,7 +247,7 @@ internal fun HomeContent(
                 onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
             )
             if (scroll) Spacer(Modifier.height(gap(43.dp))) else Spacer(Modifier.weight(43f))
-            SpotCard(places, frequent, Modifier.padding(horizontal = StepUpUi.Gutter))
+            SpotCard(places, frequent, Modifier.padding(horizontal = StepUpUi.Gutter), height = cardHeight)
             if (scroll) Spacer(Modifier.height(gap(30.dp))) else Spacer(Modifier.weight(30f))
             StatRow(
                 listOf(
@@ -267,7 +269,7 @@ internal fun HomeContent(
                 tag = "home-start-run",
                 modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN),
             )
-            if (scroll) Spacer(Modifier.height(24.dp)) else Spacer(Modifier.weight(45f))
+            if (scroll) Spacer(Modifier.height(12.dp)) else Spacer(Modifier.weight(45f))
         }
     }
 }
@@ -354,7 +356,7 @@ private fun StepsHero(
  * 자주 달리는 곳은 내 러닝이 시작한 자리에서 센다 — 러닝이 없거나 어느 장소에도 들지 않으면 "달리기 좋은 곳"이라고 쓴다.
  */
 @Composable
-private fun SpotCard(places: List<Spot>, frequent: Spot?, modifier: Modifier = Modifier) {
+private fun SpotCard(places: List<Spot>, frequent: Spot?, modifier: Modifier = Modifier, height: Dp = 224.dp) {
     var index by rememberSaveable(frequent?.id) { mutableIntStateOf(0) }
     val spot = places.getOrNull(index.mod(places.size.coerceAtLeast(1)))
     val time = RunBackground.now()
@@ -366,8 +368,8 @@ private fun SpotCard(places: List<Spot>, frequent: Spot?, modifier: Modifier = M
         TimeOfDay.NIGHT -> R.string.time_of_day_night
     })
     PhotoCard(
-        photo?.painter, colorFilter = photo?.colorFilter, height = 224.dp,
-        modifier = modifier.height(224.dp).testTag("home-spot"),
+        photo?.painter, colorFilter = photo?.colorFilter, height = height,
+        modifier = modifier.height(height).testTag("home-spot"),
     ) {
         // 지금 보이는 장소 — 검사가 넘기기 전후를 가린다(한 마디에 꼬리표는 하나라 안쪽 칸에 단다)
         if (spot != null) Box(Modifier.matchParentSize().testTag("home-spot-${spot.id}"))

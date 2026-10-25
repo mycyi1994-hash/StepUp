@@ -291,22 +291,30 @@ private fun MyShoesReady(
         // 카드 · 이름 · 숫자 줄 · 보유 줄이 넘기지 않고 한 화면에 — 높이가 빠듯하면(시스템 막대가 있는 390 × 844 등) 간격 · 보유 칸을 줄인다
         androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
         val tight = maxHeight < 600.dp
+        val top = if (tight) 10.dp else 18.dp
+        val room = maxHeight - top
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("my-shoes")) {
-            Spacer(Modifier.height(if (tight) 10.dp else 18.dp))
-            // 신발 카드 — 만지면 기울고, 가볍게 누르면 이 켤레의 관리(신기 · 강화 · 수리 · 판매)
-            ShoeCard(
-                shown, tag = shoeCardTag(shown),
-                onClick = { onOpenSneaker(selected.id) }, clickLabel = manage,
-                modifier = Modifier.padding(horizontal = StepUpUi.Gutter)
-                    .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW).testTag("shoe-hero"),
-            )
-            Spacer(Modifier.height(if (tight) 12.dp else 22.dp))
-            NameBlock(shown, onRename = { renaming = true })
-            Spacer(Modifier.height(if (tight) 6.dp else 14.dp))
-            StatsBlock(shown, onExplain = { basisOpen = true })
-            Spacer(Modifier.height(if (tight) 12.dp else 24.dp))
-            OwnedBlock(row, compact = tight, selectedId = selected.id, state = rowState, onPick = onSelect)
-            Spacer(Modifier.height(if (tight) 4.dp else 12.dp))
+            Spacer(Modifier.height(top))
+            CardThenRest(
+                available = room,
+                card = {
+                    // 신발 카드 — 만지면 기울고, 가볍게 누르면 이 켤레의 관리(신기 · 강화 · 수리 · 판매)
+                    ShoeCard(
+                        shown, tag = shoeCardTag(shown),
+                        onClick = { onOpenSneaker(selected.id) }, clickLabel = manage,
+                        modifier = Modifier.padding(horizontal = StepUpUi.Gutter)
+                            .guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW).testTag("shoe-hero"),
+                    )
+                },
+            ) {
+                Spacer(Modifier.height(if (tight) 12.dp else 22.dp))
+                NameBlock(shown, onRename = { renaming = true })
+                Spacer(Modifier.height(if (tight) 6.dp else 14.dp))
+                StatsBlock(shown, onExplain = { basisOpen = true })
+                Spacer(Modifier.height(if (tight) 12.dp else 24.dp))
+                OwnedBlock(row, compact = tight, selectedId = selected.id, state = rowState, onPick = onSelect)
+                Spacer(Modifier.height(if (tight) 4.dp else 12.dp))
+            }
         }
         }
         // 보조(신발 보관함) + 주(상세 보기) — 시안 shoes 아래 두 버튼
@@ -323,6 +331,27 @@ private fun MyShoesReady(
     }
     if (basisOpen) StatBasisSheet(onClose = { basisOpen = false })
     if (renaming) com.stepup.android.ui.screens.items.ShoeRenameSheet(shown, onDone = { renaming = false })
+}
+
+/**
+ * 신발 카드 · 그 아래 — 아래(이름 · 숫자 줄 · 보유 줄)를 먼저 재고, 카드는 [available] 에서 남는 높이만큼만 비율(361 : 236) 그대로 줄여
+ * 가운데 둔다(최소 112, 원래 크기까지). 짧은 화면(411 × 731 등)에서도 넘기지 않고 한 화면에 — 그래도 모자라면(큰 글씨) 그때만 넘긴다.
+ */
+@Composable
+private fun CardThenRest(available: Dp, card: @Composable () -> Unit, rest: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Layout(contents = listOf(card, { Column(Modifier.fillMaxWidth(), content = rest) })) { (cardM, restM), constraints ->
+        val restP = restM.first().measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+        val pad = StepUpUi.Gutter.roundToPx()
+        val ratio = 361f / 236f
+        val natural = ((constraints.maxWidth - 2 * pad) / ratio).roundToInt()
+        val h = (available.roundToPx() - restP.height).coerceIn(minOf(112.dp.roundToPx(), natural), natural)
+        val w = ((h * ratio).roundToInt() + 2 * pad).coerceAtMost(constraints.maxWidth)
+        val cardP = cardM.first().measure(Constraints.fixed(w, h))
+        layout(constraints.maxWidth, cardP.height + restP.height) {
+            cardP.place((constraints.maxWidth - cardP.width) / 2, 0)
+            restP.place(0, cardP.height)
+        }
+    }
 }
 
 /** 카드 왼쪽 위 — "착용 중 · 레어"(신고 있는 켤레) · "레어"(아닌 켤레) */

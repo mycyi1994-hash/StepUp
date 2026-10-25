@@ -174,8 +174,9 @@ class CommunityStoriesTest {
 
         // ── 01 목록 · 02 펼침 ─────────────────────────────────────────
         awaitTag("story-row-301")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.story_blue_area_title, "여의도동")).assertIsDisplayed()
+        // 목록 위 한 줄(UI 최종 통합안 06_이야기) — "여의도동 · 선택한 지역에서 1km 이내"(큰 제목 없이)
+        assertArea("1km")
+        compose.onNodeWithTag("stories-area").assert(hasText("여의도동", substring = true))
         // 1km 밖(샛강, 약 1.05km)과 번개 글은 목록에 없다 — 끝(장소 없는 이전 글)까지 내려가 확인한다
         compose.onNodeWithTag("stories-list").performScrollToNode(hasTestTag("story-row-306"))
         compose.onAllNodesWithTag("story-row-305").assertCountEquals(0)
@@ -186,17 +187,12 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-thumb-301").assertHasClickAction()
         shot("01-list", settle = 1_800)
 
-        // ── 17 범위 — 고르다 닫으면 그대로, "이 범위로 보기"를 눌러야 바뀐다 ───────────
-        tapTag("stories-range")
-        awaitTag("story-range-apply")
-        tapTag("story-range-M500")
+        // ── 17 범위 — 목록 위 글자 탭(500m · 1km · 3km), 누르면 바로 바뀐다(UI 최종 통합안 — 범위 시트 대신) ─────
+        tapTag("stories-range-m500")
+        assertArea("500m")
         shot("17-radius")
-        tapTag("story-sheet-close")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
-        tapTag("stories-range")
-        tapTag("story-range-KM3")
-        tapTag("story-range-apply")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        tapTag("stories-range-km3")
+        assertArea("3km")
         // 목록 → 상세 → 뒤로: 스크롤 위치와 범위가 그대로다
         openRow(305)
         awaitTag("story-detail")
@@ -205,7 +201,7 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-row-305").assertIsDisplayed()
         // 범위 줄은 목록 맨 위(지역 · 작은 지도)와 함께 올라간다 — 맨 위로 돌아가 그대로인지 본다
         compose.onNodeWithTag("stories-list").performScrollToIndex(0)
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        assertArea("3km")
         shot("17-radius-applied-3km", settle = 1_500)
 
         // ── 14 · 15 · 16 지도 → 장소 → 같은 화면 아래 목록이 그 장소로 걸러진다(CM05 · CM06) ─────────
@@ -391,10 +387,9 @@ class CommunityStoriesTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-toast").fetchSemanticsNodes().isEmpty() }
 
         // 범위를 기본(1km)으로 돌린다 — 빈 목록에 "더 넓은 범위에서 보기"가 보이게
-        tapTag("stories-range")
-        tapTag("story-range-KM1")
-        tapTag("story-range-apply")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        compose.onNodeWithTag("stories-list").performScrollToIndex(0)
+        tapTag("stories-range-km1")
+        assertArea("1km")
 
         // ── 28 빈 목록 · 29 불러오는 중 · 30 연결 오류 ──────────────────────
         ServiceLocator.communityRepository.showForTest(emptyList())
@@ -478,6 +473,15 @@ class CommunityStoriesTest {
         scrollToRow(id)
         compose.onNodeWithTag("story-row-$id").performClick()
         compose.waitForIdle()
+    }
+
+    /** 목록 위 지역 줄이 [range] 범위를 말할 때까지 — "여의도동 · 선택한 지역에서 1km 이내" */
+    private fun assertArea(range: String) {
+        val text = compose.activity.getString(R.string.story_range_from_region, range)
+        compose.waitUntil(5_000) {
+            runCatching { compose.onNodeWithTag("stories-area").assert(hasText(text, substring = true)) }.isSuccess
+        }
+        compose.onNodeWithTag("stories-area").assertIsDisplayed()
     }
 
     private fun tapTag(tag: String) {
