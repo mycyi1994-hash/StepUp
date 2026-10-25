@@ -59,4 +59,15 @@
     <string name="run_resume_short">再開</string>
     <string name="run_share_record">記録を共有</string>
     <string name="run_discard_from_details">保存せずに終了</string>
+    <string name="flash_seats_left">残り%1$d枠 · ホスト %2$s</string>
+    <string name="flash_seats_none">満員 · ホスト %1$s</string>
+    <string name="flash_join_go">一緒に走る</string>
+    <string name="flash_joined_done">参加完了</string>
+    <string name="flash_route">経路</string>
+    <string name="flash_calendar">カレンダーに追加</string>
+    <string name="flash_invite">友達を呼ぶ</string>
+    <string name="flash_chat_people">参加者 %1$d人</string>
+    <string name="flash_cancel_join">参加をキャンセル</string>
+    <string name="flash_share_text">%1$s · %2$s · %3$s — StepUpで一緒に走ろう</string>
+    <string name="flash_count_label">参加</string>
 </resources>

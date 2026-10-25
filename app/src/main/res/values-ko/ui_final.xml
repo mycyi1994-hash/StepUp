@@ -59,4 +59,15 @@
     <string name="run_resume_short">재개</string>
     <string name="run_share_record">기록 공유</string>
     <string name="run_discard_from_details">저장하지 않고 종료</string>
+    <string name="flash_seats_left">%1$d자리 남았어요 · 호스트 %2$s</string>
+    <string name="flash_seats_none">자리가 다 찼어요 · 호스트 %1$s</string>
+    <string name="flash_join_go">같이 달리기</string>
+    <string name="flash_joined_done">참여 완료</string>
+    <string name="flash_route">길찾기</string>
+    <string name="flash_calendar">캘린더에 넣기</string>
+    <string name="flash_invite">친구 부르기</string>
+    <string name="flash_chat_people">참여자 %1$d명</string>
+    <string name="flash_cancel_join">참여 취소</string>
+    <string name="flash_share_text">%1$s · %2$s · %3$s — StepUp 에서 같이 달려요</string>
+    <string name="flash_count_label">참여</string>
 </resources>
