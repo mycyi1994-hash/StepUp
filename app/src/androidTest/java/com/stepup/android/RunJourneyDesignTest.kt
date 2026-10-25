@@ -118,6 +118,21 @@ class RunJourneyDesignTest {
     private var originalEquipped: Long? = null
     private var added: Long? = null
 
+    /** 새 대기실 만들기(2026-10-26) — 코스를 주면 직접 설정, 없으면 자유 러닝 */
+    @androidx.compose.runtime.Composable
+    private fun createForm(
+        name: String,
+        course: com.stepup.android.domain.RoomCourse?,
+        problem: com.stepup.android.ui.screens.walk.CreateProblem?,
+        mode: com.stepup.android.domain.RoomMode = com.stepup.android.domain.RoomMode.TOGETHER,
+    ) = com.stepup.android.ui.screens.walk.CrewRoomCreateContent(
+        crewName = "StepUp Crew", name = name, onName = {},
+        courseChoice = if (course != null) com.stepup.android.ui.screens.walk.CourseChoice.SET else com.stepup.android.ui.screens.walk.CourseChoice.FREE,
+        onCourseChoice = {}, course = course, onPickCourse = {}, mode = mode, onMode = {},
+        meet = "", onMeet = {}, planAt = com.stepup.android.ui.screens.walk.defaultPlanAt(), onPlanAt = {},
+        capacity = 6, onCapacity = {}, busy = false, problem = problem, onBack = {}, onOpen = {},
+    )
+
     @Test fun screens() {
         seed()
         try {
@@ -213,7 +228,7 @@ class RunJourneyDesignTest {
             compose.onAllNodesWithTag("run-details-reward", useUnmergedTree = true).assertCountEquals(0)
             assertNoRewardText("run-live")
             assertRunFits("390x844")
-            // 둥근 지도 카드는 큰 거리 아래 · 숫자 줄 위(시안 running)
+            // 지도는 위, 숫자 판은 그 아래(2026-10-26 시안 active)
             assertMapShare("390x844")
             shot("R02", settle = 2_500)
 
@@ -1399,21 +1414,26 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("crew-rooms-new").assertIsNotEnabled()
             // 03 · 06 러닝 만들기 — 이름이 없으면 열 수 없다. 코스는 골라도 되고 안 골라도 된다(0073 — 자유 코스). 고른 뒤 이름 · 코스 · 내 기여
             show("C03-create", "crew-create") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, "", {}, null, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                createForm("", null, null)
             }
             compose.onNodeWithTag("crew-create-open").assertIsNotEnabled()
             show("C03-create-free", "crew-create-free") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, null, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                createForm(name, null, null)
             }
             compose.onNodeWithTag("crew-create-open").assertIsEnabled()
             show("C06-create-selected", "crew-create-selected") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                createForm(name, roomCourse, null)
             }
             compose.onNodeWithTag("crew-create-open").assertIsEnabled()
-            compose.onNodeWithTag("crew-create-remove-course").assertExists()
+            compose.onNodeWithTag("crew-create-change-course").assertExists()
+            // 2026-10-26 원격 뛰기 — 만나는 곳 대신 "각자의 현재 위치에서 시작"
+            show("C06-create-remote", "crew-create-selected") {
+                createForm(name, roomCourse, null, com.stepup.android.domain.RoomMode.REMOTE)
+            }
+            compose.onNodeWithTag("crew-create-start-place").assertExists()
+            compose.onNodeWithTag("crew-create-meet").assertDoesNotExist()
             show("C06-create-failed", "crew-create-done-today") {
-                com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, {}, 100, 8, busy = false,
-                    problem = com.stepup.android.ui.screens.walk.CreateProblem.DoneToday, onBack = {}, onOpen = {})
+                createForm(name, roomCourse, com.stepup.android.ui.screens.walk.CreateProblem.DoneToday)
             }
             // 04 · 09 코스 고르기 · 05 상세(지도 — "이 코스로 달리기"를 눌러야 고른다)
             show("C04-courses", "crew-courses") {
@@ -1607,7 +1627,7 @@ class RunJourneyDesignTest {
                 }
                 assertInFrame("crew-rooms-new", "C02-${v.label}")
                 show("C06-${v.label}", "crew-create-selected") {
-                    com.stepup.android.ui.screens.walk.CrewRoomCreateContent(crew.name, name, {}, roomCourse, {}, {}, 100, 8, busy = false, problem = null, onBack = {}, onOpen = {})
+                    createForm(name, roomCourse, null)
                 }
                 assertInFrame("crew-create-open", "C06-${v.label}")
                 show("C01-${v.label}", "crew-entry") {
@@ -1930,9 +1950,10 @@ class RunJourneyDesignTest {
         val map = bounds("run-live-map")
         val distance = bounds("run-distance-value")
         val time = bounds("run-hero-value")
-        assertTrue("map card has room at $where: $map", map.height >= 120f)
-        assertTrue("map card sits under the distance and above the numbers at $where: $distance / $map / $time",
-            distance.bottom <= map.top + 1 && map.bottom <= time.top + 1)
+        // 2026-10-26 시안 active — 지도가 위를 채우고 숫자(거리 · 시간)는 그 아래 판에
+        assertTrue("map has room at $where: $map", map.height >= 240f)
+        assertTrue("map sits above the numbers at $where: $distance / $map / $time",
+            map.bottom <= distance.top + 1 && map.bottom <= time.top + 1)
     }
 
     /** 믿을 수 없는 지금 속도 · 페이스는 "—"(속도 측정 오류 · 측정 무효) */

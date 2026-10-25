@@ -73,6 +73,10 @@ interface WalkSessionDao {
     @Query("SELECT COALESCE(MAX(CASE WHEN verdict != 'VOID' THEN distanceMeters ELSE 0 END), 0) FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy')")
     fun observeLongestMetersFor(owner: String): Flow<Double>
 
+    /** 지금 계정의 가장 최근 러닝 — 내 정보의 "최근 러닝"(2026-10-26 시안). 없으면 null */
+    @Query("SELECT * FROM walk_sessions WHERE recordingOwner IN (:owner, 'legacy') ORDER BY startedAt DESC LIMIT 1")
+    fun observeLatestFor(owner: String): Flow<WalkSessionEntity?>
+
     @Query("SELECT COALESCE(SUM(durationSec), 0) FROM walk_sessions WHERE startedAt >= :fromMillis AND recordingOwner IN (:owner, 'legacy')")
     fun observeDurationSinceFor(owner: String, fromMillis: Long): Flow<Long>
 

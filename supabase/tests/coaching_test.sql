@@ -384,7 +384,11 @@ begin
   perform pg_temp.ok(v ->> 'state' = 'queued', '선호가 있으면 다음 훈련 추천을 요청할 수 있다');
   insert into fix values ('rec_job', v ->> 'job_id');
   v := public.coaching_week(v_mon, 'UTC', 'ko', false);
-  perform pg_temp.ok(v ->> 'state' = 'none', '시간대가 바뀌면 입력이 바뀌어 다른 작업이다');
+  -- UTC 가 일요일이고 서울이 월요일인 동안(UTC 15 ~ 24시)에는 이 주가 UTC 로는 아직 진행 중이다 — 그때는 진행 중이라 답한다.
+  -- 어느 쪽이든 서울 시간대로 만든 작업(week_job)을 돌려주지 않는다
+  perform pg_temp.ok((v ->> 'state' = 'none' or v ->> 'reason' = 'week_in_progress')
+      and coalesce(v ->> 'job_id', '') <> pg_temp.fx('week_job'),
+    '시간대가 바뀌면 입력이 바뀌어 다른 작업이다');
   v := public.coaching_run(pg_temp.fx('r1_at')::timestamptz, 'en', true);
   perform pg_temp.ok(v ->> 'state' = 'queued' and v ->> 'job_id' <> pg_temp.fx('job1'), '언어가 다르면 다른 작업(언어별로 따로 둔다)');
   insert into fix values ('job_en', v ->> 'job_id');

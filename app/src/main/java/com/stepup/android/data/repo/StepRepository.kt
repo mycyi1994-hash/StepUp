@@ -72,6 +72,10 @@ class StepRepository(
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun observeLongestMeters(): Flow<Double> = owner.flatMapLatest { walkSessionDao.observeLongestMetersFor(it) }
 
+    /** 지금 계정의 가장 최근 러닝 */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeLatestSession(): Flow<WalkSessionEntity?> = owner.flatMapLatest { walkSessionDao.observeLatestFor(it) }
+
     fun observeVerifiedSessions(): Flow<List<WalkSessionEntity>> = walkSessionDao.observeVerifiedSessions()
 
     /** 세션 누적 운동 시간(초) — 프로필 '총 운동 시간' 표기용 */

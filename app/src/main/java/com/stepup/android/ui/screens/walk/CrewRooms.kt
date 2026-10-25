@@ -26,6 +26,9 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -352,32 +355,57 @@ private val RoomCourseSaver = Saver<RoomCourse?, List<String>>(
 internal sealed interface CreateProblem {
     data object DoneToday : CreateProblem
     data object Network : CreateProblem
+    /** 출발 시각 · 정원 · 만나는 곳을 서버가 받지 않았다(0074 room_options_invalid) */
+    data object Options : CreateProblem
     data class Rejected(val reason: String) : CreateProblem
 }
 
+/** 함께 달릴 코스 칸(2026-10-26 시안) — 직접 설정(코스를 고른다) · 자유 러닝(코스 없이 각자) */
+internal enum class CourseChoice { SET, FREE }
+
+/** 출발 시각 기본값 — 지금부터 15분 넘게 남은 가장 가까운 30분(19:00 · 19:30) */
+internal fun defaultPlanAt(nowMs: Long = System.currentTimeMillis()): Long {
+    val zone = ZoneId.systemDefault()
+    var at = Instant.ofEpochMilli(nowMs + 15 * 60_000L).atZone(zone).withSecond(0).withNano(0)
+    at = if (at.minute == 0 || at.minute == 30) at else if (at.minute < 30) at.withMinute(30) else at.plusHours(1).withMinute(0)
+    return at.toInstant().toEpochMilli()
+}
+
+/** 고른 시 · 분을 다음 그 시각으로 — 10분 넘게 지났으면 내일(서버는 지금 − 10분 ~ 14일만 받는다) */
+internal fun planAtFor(hour: Int, minute: Int, nowMs: Long = System.currentTimeMillis()): Long {
+    val zone = ZoneId.systemDefault()
+    val now = Instant.ofEpochMilli(nowMs).atZone(zone)
+    var at = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
+    if (at.toInstant().toEpochMilli() < nowMs - 10 * 60_000L) at = at.plusDays(1)
+    return at.toInstant().toEpochMilli()
+}
+
 /**
- * 러닝 만들기(03 · 06) — 이름 · 코스(골라도 되고 안 골라도 된다 — 목록 → 상세 → 고르기 · 지도에 그리기) · 공개 범위(이 크루) ·
- * 내 신발 기여 미리보기 → "대기실 열기". 연타는 막고 서버가 방 번호를 준 뒤에만 대기실로 간다([onCreated]).
- * 실패하면 이름 · 코스를 그대로 두고 까닭을 알린다. 같은 이름 · 코스로 다시 누르면 같은 요청 번호 — 답을 잃었어도 방은 하나다.
+ * 새 대기실 만들기(2026-10-26 시안 create-*) — 이름 · 함께 달릴 코스(직접 설정 | 자유 러닝) · 달리는 방식(같이 | 원격) · 만나는 곳(같이) /
+ * 출발 위치(원격) · 출발 시각 · 정원(나 포함) · 내 소속 크루 → "대기실 만들기"(서버 0074 party_create_v2).
+ * 연타는 막고 서버가 방 번호를 준 뒤에만 대기실로 간다([onCreated]). 실패하면 입력을 그대로 두고 까닭을 알린다.
+ * 같은 입력으로 다시 누르면 같은 요청 번호 — 답을 잃었어도 방은 하나다. 출발 시각은 안내일 뿐, 출발은 진행자가 누른다.
  */
 @Composable
 fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -> Unit) {
     val repo = ServiceLocator.crewRepository
     var name by rememberSaveable { mutableStateOf("") }
     var course by rememberSaveable(stateSaver = RoomCourseSaver) { mutableStateOf<RoomCourse?>(null) }
+    var courseChoice by rememberSaveable { mutableStateOf(CourseChoice.FREE) }
+    var mode by rememberSaveable { mutableStateOf(com.stepup.android.domain.RoomMode.TOGETHER) }
+    var meet by rememberSaveable { mutableStateOf("") }
+    var planAt by rememberSaveable { mutableStateOf(defaultPlanAt()) }
+    var capacity by rememberSaveable { mutableIntStateOf(CrewRunMath.ROOM_MAX) }
     var picking by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<CreateProblem?>(null) }
+    val chosenCourse = course.takeIf { courseChoice == CourseChoice.SET }
     // 같은 입력으로 다시 보내면 같은 번호(서버가 그때 연 방을 돌려준다), 입력이 바뀌면 새 번호
-    val requestKey = rememberSaveable(name.trim(), course?.encodeTrack()?.hashCode(), course?.name) { UUID.randomUUID().toString() }
+    val requestKey = rememberSaveable(
+        name.trim(), chosenCourse?.encodeTrack()?.hashCode(), chosenCourse?.name, mode, meet.trim(), planAt, capacity,
+    ) { UUID.randomUUID().toString() }
     val scope = rememberCoroutineScope()
     val crew = repo.crewOf(crewId)
-    val today by remember(crewId) { ServiceLocator.crewRun.today(crewId) }
-        .collectAsStateWithLifecycle(initialValue = ServiceLocator.crewRun.todayNow(crewId))
-    LaunchedEffect(crewId) { ServiceLocator.crewRun.loadToday(crewId) }
-    val shoes by ServiceLocator.sneakerRepository.inventory.collectAsStateWithLifecycle(initialValue = emptyList())
-    val equipped = shoes.firstOrNull { it.equipped && it.server?.hasDurabilityMax == true }
-    val level = today?.takeIf { it.isToday() }?.crewLevel ?: 1
 
     if (picking) {
         BackHandler { picking = false }
@@ -386,36 +414,41 @@ fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -
             onBack = { picking = false },
             onPick = {
                 course = it
+                courseChoice = CourseChoice.SET
                 picking = false
             },
         )
         return
     }
+    val edit: () -> Unit = { problem = null }
     CrewRoomCreateContent(
-        crewName = crew?.name.orEmpty(), name = name, onName = {
-            name = it
-            problem = null
-        },
+        crewName = crew?.name.orEmpty(),
+        name = name, onName = { name = it; edit() },
+        courseChoice = courseChoice, onCourseChoice = { courseChoice = it; edit(); if (it == CourseChoice.SET && course == null) picking = true },
         course = course, onPickCourse = { picking = true },
-        onRemoveCourse = {
-            course = null
-            problem = null
-        },
-        shoeMax = equipped?.server?.durabilityMax, level = level,
+        mode = mode, onMode = { mode = it; edit() },
+        meet = meet, onMeet = { meet = it.take(CrewRoomRules.MEET_MAX * 2); edit() },
+        planAt = planAt, onPlanAt = { planAt = it; edit() },
+        capacity = capacity, onCapacity = { capacity = it; edit() },
         busy = busy, problem = problem, onBack = onBack,
         onOpen = {
-            val chosen = course
-            if (busy || !CrewRoomRules.nameValid(name)) return@CrewRoomCreateContent
+            if (busy || !CrewRoomRules.nameValid(name) || (courseChoice == CourseChoice.SET && course == null)) return@CrewRoomCreateContent
             busy = true
             problem = null
             scope.launch {
-                val result = repo.createRoom(crewId, CrewRoomRules.normalizeName(name), chosen, requestKey)
+                val result = repo.createRoomV2(
+                    crewId, CrewRoomRules.normalizeName(name), chosenCourse, requestKey,
+                    mode = mode, meetPlace = meet.trim().take(CrewRoomRules.MEET_MAX), planAtMs = planAt, capacity = capacity,
+                )
                 busy = false
                 when (result) {
                     is ServerResult.Ok -> onCreated(result.value)
                     is ServerResult.Retry -> problem = CreateProblem.Network
-                    is ServerResult.Rejected -> problem =
-                        if (result.reason.contains("crew_run_done_today")) CreateProblem.DoneToday else CreateProblem.Rejected(result.reason)
+                    is ServerResult.Rejected -> problem = when {
+                        result.reason.contains("crew_run_done_today") -> CreateProblem.DoneToday
+                        result.reason.contains("room_options_invalid") -> CreateProblem.Options
+                        else -> CreateProblem.Rejected(result.reason)
+                    }
                     is ServerResult.SignInRequired -> problem = CreateProblem.Rejected(result.reason)
                 }
             }
@@ -428,143 +461,253 @@ internal fun CrewRoomCreateContent(
     crewName: String,
     name: String,
     onName: (String) -> Unit,
+    courseChoice: CourseChoice,
+    onCourseChoice: (CourseChoice) -> Unit,
     course: RoomCourse?,
     onPickCourse: () -> Unit,
-    onRemoveCourse: () -> Unit,
-    shoeMax: Int?,
-    level: Int,
+    mode: com.stepup.android.domain.RoomMode,
+    onMode: (com.stepup.android.domain.RoomMode) -> Unit,
+    meet: String,
+    onMeet: (String) -> Unit,
+    planAt: Long,
+    onPlanAt: (Long) -> Unit,
+    capacity: Int,
+    onCapacity: (Int) -> Unit,
     busy: Boolean,
     problem: CreateProblem?,
     onBack: () -> Unit,
     onOpen: () -> Unit,
 ) {
-    val c = crewColors()
-    val length = CrewRoomRules.nameLength(name)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val type = com.stepup.android.ui.components.StepUpUi.type
     val nameOk = CrewRoomRules.nameValid(name)
+    val ready = nameOk && !(courseChoice == CourseChoice.SET && course == null)
     val focus = LocalFocusManager.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val remote = mode == com.stepup.android.domain.RoomMode.REMOTE
     CrewPage(
-        title = stringResource(R.string.crew5_create_header), onBack = onBack, badge = false,
+        title = stringResource(R.string.d26_create_header), onBack = onBack, badge = false,
         modifier = Modifier.testTag(if (course == null) "crew-create" else "crew-create-selected"),
         bottom = {
-            // 코스는 골라도 되고 안 골라도 된다(0073) — 이름만 맞으면 연다
-            FreeRunButton(
-                stringResource(R.string.crew5_create_open), onOpen, Modifier.fillMaxWidth().testTag("crew-create-open"),
-                enabled = nameOk, busy = busy,
+            com.stepup.android.ui.components.PrimaryButton(
+                stringResource(R.string.d26_create_submit), onOpen,
+                state = when {
+                    busy -> com.stepup.android.ui.components.ButtonState.Loading
+                    !ready -> com.stepup.android.ui.components.ButtonState.Disabled
+                    else -> com.stepup.android.ui.components.ButtonState.Idle
+                },
+                modifier = Modifier.fillMaxWidth().testTag("crew-create-open"),
             )
         },
     ) {
         Spacer(Modifier.height(8.dp))
-        CrewBigTitle(stringResource(R.string.crew5_create_title), stringResource(R.string.crew5_create_sub, CrewRunMath.ROOM_MAX))
-        Spacer(Modifier.height(20.dp))
-        // 러닝 이름 — 1 ~ 30자(서버와 같은 셈)
-        Text(stringResource(R.string.crew5_create_name), style = runTextStyle(13.sp, c.label, FontWeight.Medium))
-        Spacer(Modifier.height(8.dp))
-        val shape = RoundedCornerShape(10.dp)
-        val nameLabel = stringResource(R.string.crew5_create_name)
+        // 대기실 이름 — 밑줄만 있는 큰 글자(시안). 1 ~ 30자(서버와 같은 셈)
+        Text(stringResource(R.string.d26_create_name), style = type.rowSubtitle, color = c.secondaryLabel)
+        val nameLabel = stringResource(R.string.d26_create_name)
         BasicTextField(
             value = name,
             onValueChange = { v -> onName(v.take(CrewRoomRules.NAME_MAX * 2)) },
             singleLine = true,
-            textStyle = runTextStyle(16.sp, c.text, FontWeight.Medium),
-            cursorBrush = SolidColor(c.link),
+            textStyle = type.section.copy(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = c.label),
+            cursorBrush = SolidColor(c.primary),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(c.card, shape)
-                .border(1.5.dp, if (name.isNotEmpty() && !nameOk) com.stepup.android.ui.components.runTone().errorEdge else c.line, shape)
-                .semantics { contentDescription = nameLabel }
-                .testTag("crew-create-name"),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = nameLabel }.testTag("crew-create-name"),
             decorationBox = { inner ->
-                Box(Modifier.padding(horizontal = 14.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
-                    if (name.isEmpty()) Text(stringResource(R.string.crew5_create_name_hint), style = runTextStyle(16.sp, c.muted, FontWeight.Medium))
+                Box(Modifier.padding(vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
+                    if (name.isEmpty()) {
+                        Text(stringResource(R.string.d26_create_name_hint),
+                            style = type.section.copy(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold), color = c.tertiaryLabel)
+                    }
                     inner()
                 }
             },
         )
-        Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
-            if (name.isNotEmpty() && !nameOk) {
-                Text(
-                    stringResource(R.string.crew5_create_name_invalid, CrewRoomRules.NAME_MAX),
-                    style = runTextStyle(12.sp, com.stepup.android.ui.components.runTone().errorIcon, FontWeight.Medium),
-                    modifier = Modifier.weight(1f).testTag("crew-create-name-invalid"),
-                )
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
-            Text(stringResource(R.string.crew5_create_name_count, length, CrewRoomRules.NAME_MAX), style = runTextStyle(12.sp, c.muted))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(
+            if (name.isNotEmpty() && !nameOk) com.stepup.android.ui.components.runTone().errorEdge else c.separator))
+        if (name.isNotEmpty() && !nameOk) {
+            Text(
+                stringResource(R.string.crew5_create_name_invalid, CrewRoomRules.NAME_MAX), style = type.caption, color = c.live,
+                modifier = Modifier.padding(top = 6.dp).testTag("crew-create-name-invalid"),
+            )
         }
+        Spacer(Modifier.height(22.dp))
+        CreateSection(stringResource(R.string.d26_create_course))
+        com.stepup.android.ui.components.StepUpTabs(
+            items = listOf(stringResource(R.string.d26_create_course_set), stringResource(R.string.d26_seg_free)),
+            selected = courseChoice.ordinal, onSelect = { onCourseChoice(CourseChoice.entries[it]) },
+            tags = listOf("crew-create-course-set", "crew-create-course-free"), height = 46.dp, modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(20.dp))
+        CreateSection(stringResource(R.string.d26_create_mode))
+        com.stepup.android.ui.components.StepUpTabs(
+            items = listOf(stringResource(R.string.d26_mode_together), stringResource(R.string.d26_mode_remote)),
+            selected = mode.ordinal, onSelect = { onMode(com.stepup.android.domain.RoomMode.entries[it]) },
+            tags = listOf("crew-create-mode-together", "crew-create-mode-remote"), height = 46.dp, modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            stringResource(if (remote) R.string.d26_create_mode_remote_desc else R.string.d26_create_mode_together_desc),
+            style = type.rowSubtitle, color = c.secondaryLabel, modifier = Modifier.padding(top = 10.dp).testTag("crew-create-mode-desc"),
+        )
         Spacer(Modifier.height(14.dp))
-        // 함께 달릴 코스(선택) — 듀얼 레일 묶음. 고르기 전에는 자유 코스 안내와 큰 "코스 선택하기",
-        // 고른 뒤에는 이름 · 거리 · 지도 · 다른 코스 고르기 · 코스 빼기
-        DualRailFrame(Modifier.fillMaxWidth().testTag("crew-create-course"), padding = androidx.compose.foundation.layout.PaddingValues(18.dp)) {
-            Column(Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.crew5_create_course_optional), style = navyText(13.sp, LobbyInk.Sub, FontWeight.SemiBold))
-                Spacer(Modifier.height(10.dp))
-                if (course == null) {
-                    Text(stringResource(R.string.crew5_course_free), style = navyText(18.sp, LobbyInk.Text, FontWeight.ExtraBold),
-                        modifier = Modifier.testTag("crew-create-free"))
-                    Text(stringResource(R.string.crew5_create_free_body), style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium, 1.5f),
-                        modifier = Modifier.padding(top = 3.dp))
-                    Spacer(Modifier.height(12.dp))
-                    // 코스는 고르지 않아도 된다 — 큰 주 행동(대기실 열기)과 겹치지 않게 부드러운 보조 버튼
+        val cardShape = RoundedCornerShape(18.dp)
+        if (courseChoice == CourseChoice.SET) {
+            // 고른 코스 — 지도 띠 · 이름 · 거리 · "설정 변경". 아직 없으면 고르기
+            Column(
+                Modifier.fillMaxWidth().clip(cardShape).background(c.card, cardShape).border(1.dp, c.separator, cardShape)
+                    .testTag("crew-create-course"),
+            ) {
+                if (course != null && course.points.size >= 2) {
+                    CrewCourseMap(course.points, Modifier.fillMaxWidth().height(72.dp))
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (course != null) stringResource(R.string.d26_create_course_km, course.name, courseKm(course.km))
+                            else stringResource(R.string.d26_create_course_none),
+                            style = type.rowTitle.copy(fontWeight = FontWeight.Bold), color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.testTag(if (course != null) "crew-create-course-name" else "crew-create-course-empty"),
+                        )
+                        Text(stringResource(R.string.d26_create_pick_course), style = type.rowSubtitle, color = c.secondaryLabel,
+                            modifier = Modifier.padding(top = 2.dp))
+                    }
+                    Text(
+                        stringResource(if (course != null) R.string.d26_create_course_change else R.string.d26_create_course_none),
+                        style = type.rowTitle.copy(fontWeight = FontWeight.SemiBold), color = c.accentText,
+                        modifier = Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(8.dp))
+                            .feedbackClickable(role = Role.Button, onClick = onPickCourse).padding(horizontal = 6.dp, vertical = 12.dp)
+                            .testTag(if (course != null) "crew-create-change-course" else "crew-create-pick-course"),
+                    )
+                }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().clip(cardShape).background(c.fill, cardShape).padding(18.dp).testTag("crew-create-free"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.Route, contentDescription = null, tint = c.secondaryLabel, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(14.dp))
+                Text(stringResource(R.string.d26_create_free_info), style = type.rowSubtitle, color = c.secondaryLabel)
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        if (remote) {
+            Text(stringResource(R.string.d26_create_start_place), style = type.rowSubtitle, color = c.secondaryLabel)
+            Text(
+                stringResource(R.string.d26_create_start_place_value), style = type.rowTitle.copy(fontSize = 17.sp), color = c.label,
+                modifier = Modifier.padding(vertical = 14.dp).testTag("crew-create-start-place"),
+            )
+            Box(Modifier.fillMaxWidth().height(1.dp).background(c.separator))
+        } else {
+            Text(stringResource(R.string.d26_create_meet), style = type.rowSubtitle, color = c.secondaryLabel)
+            Spacer(Modifier.height(8.dp))
+            val meetLabel = stringResource(R.string.d26_create_meet)
+            BasicTextField(
+                value = meet, onValueChange = onMeet, singleLine = true,
+                textStyle = type.rowTitle.copy(fontWeight = FontWeight.Bold, color = c.label),
+                cursorBrush = SolidColor(c.primary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(cardShape).background(c.card, cardShape)
+                    .border(1.dp, c.separator, cardShape).semantics { contentDescription = meetLabel }.testTag("crew-create-meet"),
+                decorationBox = { inner ->
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Place, contentDescription = null, tint = c.primary, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Box(Modifier.weight(1f)) {
+                            if (meet.isEmpty()) Text(stringResource(R.string.d26_create_meet_hint), style = type.rowTitle, color = c.tertiaryLabel)
+                            inner()
+                        }
+                    }
+                },
+            )
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.d26_create_time), style = type.rowSubtitle, color = c.secondaryLabel)
+                Spacer(Modifier.height(8.dp))
+                val at = Instant.ofEpochMilli(planAt).atZone(ZoneId.systemDefault())
+                val is24 = android.text.format.DateFormat.is24HourFormat(context)
+                val timeText = DateTimeFormatter.ofPattern(if (is24) "HH:mm" else "a hh:mm", java.util.Locale.getDefault()).format(at)
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(cardShape).background(c.card, cardShape).border(1.dp, c.separator, cardShape)
+                        .feedbackClickable(role = Role.Button) {
+                            android.app.TimePickerDialog(context, { _, h, m -> onPlanAt(planAtFor(h, m)) }, at.hour, at.minute, is24).show()
+                        }
+                        .padding(horizontal = 16.dp).testTag("crew-create-time"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(roomWhen(planAt, timeText), style = type.rowTitle.copy(fontSize = 17.sp), color = c.label, modifier = Modifier.weight(1f),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Icon(Icons.Outlined.Schedule, contentDescription = null, tint = c.label, modifier = Modifier.size(20.dp))
+                }
+            }
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.d26_create_capacity), style = type.rowSubtitle, color = c.secondaryLabel)
+                Spacer(Modifier.height(8.dp))
+                var open by remember { mutableStateOf(false) }
+                Box {
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(LobbyInk.ChipSoftFace)
-                            .feedbackClickable(role = Role.Button, onClick = onPickCourse).padding(horizontal = 18.dp)
-                            .testTag("crew-create-pick-course"),
+                        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(cardShape).background(c.card, cardShape).border(1.dp, c.separator, cardShape)
+                            .feedbackClickable(role = Role.Button) { open = true }.padding(horizontal = 16.dp).testTag("crew-create-capacity"),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            stringResource(R.string.crew5_create_pick_course), style = navyText(16.sp, LobbyInk.ChipSoftInk, FontWeight.Bold),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f),
-                        )
-                        Icon(Icons.Outlined.Tune, contentDescription = null, tint = LobbyInk.ChipSoftInk, modifier = Modifier.size(20.dp))
+                        Text(stringResource(R.string.d26_create_capacity_value, capacity), style = type.rowTitle.copy(fontSize = 17.sp),
+                            color = c.label, modifier = Modifier.weight(1f))
+                        Icon(Icons.Outlined.ExpandMore, contentDescription = null, tint = c.label, modifier = Modifier.size(20.dp))
                     }
-                } else {
-                    Text(course.name, style = navyText(18.sp, LobbyInk.Text, FontWeight.ExtraBold), modifier = Modifier.testTag("crew-create-course-name"))
-                    Text(stringResource(R.string.crew5_courses_item_km, courseKm(course.km)), style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium))
-                    Spacer(Modifier.height(10.dp))
-                    CrewCourseMap(course.points, Modifier.fillMaxWidth().height(150.dp))
-                    Spacer(Modifier.height(6.dp))
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(R.string.crew5_create_other_course) + "  ›", style = navyText(14.sp, LobbyInk.Ice, FontWeight.Bold),
-                            modifier = Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-                                .feedbackClickable(role = Role.Button, onClick = onPickCourse).padding(vertical = 13.dp)
-                                .testTag("crew-create-change-course"),
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            stringResource(R.string.crew5_course_remove), style = navyText(14.sp, LobbyInk.Sub, FontWeight.SemiBold),
-                            modifier = Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-                                .feedbackClickable(role = Role.Button, onClick = onRemoveCourse).padding(horizontal = 4.dp, vertical = 13.dp)
-                                .testTag("crew-create-remove-course"),
-                        )
+                    androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.heightIn(max = 320.dp)) {
+                        (CrewRoomRules.CAPACITY_MIN..CrewRunMath.ROOM_MAX).forEach { n ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.d26_create_capacity_value, n)) },
+                                onClick = { onCapacity(n); open = false },
+                                modifier = Modifier.testTag("crew-create-capacity-$n"),
+                            )
+                        }
                     }
                 }
             }
         }
-        Spacer(Modifier.height(18.dp))
-        CreateRow(stringResource(R.string.crew5_create_scope), stringResource(R.string.crew5_create_scope_value, crewName), null)
-        CrewLine()
-        // 내 신발의 기여 미리보기 — 최대 내구도 × (1 + 레벨 효과). 남은 개인 내구도가 아니다. 출발할 때 서버가 실제 값을 더한다
-        if (shoeMax != null) {
-            val factor = 1 + CrewRunMath.levelStamina(level)
-            CreateRow(
-                stringResource(R.string.crew5_create_contribution),
-                "+" + CrewRunMath.amount(CrewRunMath.contribution(shoeMax, level)),
-                stringResource(R.string.crew5_create_contribution_sub, shoeMax, level, "%.2f".format(java.util.Locale.US, factor)),
-            )
-        } else {
-            CreateRow(stringResource(R.string.crew5_create_contribution), "", stringResource(R.string.crew5_create_contribution_none))
+        Text(stringResource(R.string.d26_create_time_note), style = type.caption, color = c.secondaryLabel, modifier = Modifier.padding(top = 8.dp))
+        Spacer(Modifier.height(14.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(c.separator))
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.d26_create_crew), style = type.rowSubtitle, color = c.secondaryLabel, modifier = Modifier.weight(1f))
+            Text(crewName, style = type.rowTitle.copy(fontWeight = FontWeight.ExtraBold), color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Spacer(Modifier.height(12.dp))
         when (problem) {
-            null -> CrewNote(stringResource(R.string.crew5_create_note), tag = "crew-create-note")
+            null -> Unit
             CreateProblem.DoneToday -> CrewError(stringResource(R.string.crew5_create_failed_done), tag = "crew-create-done-today")
             CreateProblem.Network -> CrewError(stringResource(R.string.crew5_create_failed_network), tag = "crew-create-network")
+            CreateProblem.Options -> CrewError(stringResource(R.string.d26_create_invalid), tag = "crew-create-options")
             is CreateProblem.Rejected -> CrewError(stringResource(R.string.crew5_create_failed, problem.reason), tag = "crew-create-failed")
         }
         Spacer(Modifier.height(12.dp))
     }
+}
+
+/** 출발 시각 칸 — 오늘이면 시각만, 내일 · 그 뒤면 날을 붙인다 */
+@Composable
+private fun roomWhen(ms: Long, time: String): String {
+    val zone = ZoneId.systemDefault()
+    val day = Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
+    val today = java.time.LocalDate.now(zone)
+    return when (day) {
+        today -> time
+        today.plusDays(1) -> stringResource(R.string.d26_when_tomorrow, time)
+        else -> DateTimeFormatter.ofPattern("M/d").format(day) + " " + time
+    }
+}
+
+/** 칸 제목(시안 "함께 달릴 코스" · "달리는 방식") */
+@Composable
+private fun CreateSection(text: String) {
+    Text(
+        text, style = com.stepup.android.ui.components.StepUpUi.type.rowTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold),
+        color = com.stepup.android.ui.components.StepUpUi.colors.label,
+        modifier = Modifier.padding(bottom = 10.dp).semantics { heading() },
+    )
 }
 
 @Composable

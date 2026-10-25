@@ -563,8 +563,11 @@ class ShoeDrawTabsDesignTest {
 
     /** 하단 가운데 뽑기 탭 */
     private fun openDrawTab() {
-        awaitTag("nav-label-${Screen.Draw.route}")
-        compose.onNodeWithTag("nav-label-${Screen.Draw.route}", useUnmergedTree = true).performClick()
+        // 신발 탭의 뽑기 글자 탭(2026-10-26 — 하단 탭 넷)
+        awaitTag("nav-label-${Screen.Customize.route}")
+        compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
+        awaitTag("shoes-section-draw")
+        compose.onNodeWithTag("shoes-section-draw").performClick()
         compose.waitForIdle()
         awaitTag("draw-home")
     }

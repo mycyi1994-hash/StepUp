@@ -22,6 +22,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.outlined.Schedule
+import com.stepup.android.ui.experience.feedbackClickable
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -81,7 +86,7 @@ fun PostComposeScreen(
     Column(Modifier.fillMaxSize().imePadding().testTag("post-compose")) {
         Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
             com.stepup.android.ui.components.BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart))
-            Text(stringResource(R.string.post_write), style = StepUpUi.type.navTitle, color = c.label,
+            Text(stringResource(if (flash) R.string.d26_flash_header else R.string.post_write), style = StepUpUi.type.navTitle, color = c.label,
                 modifier = Modifier.align(Alignment.Center).semantics { heading() })
         }
         val categories = PostCategory.entries
@@ -101,16 +106,19 @@ fun PostComposeScreen(
                 stringResource(R.string.post_field_title), title, { title = it },
                 Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_title_hint),
             )
-            FormField(
-                stringResource(R.string.post_field_body), body, { body = it },
-                Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_body_hint),
-                singleLine = flash, minLines = if (flash) 1 else 8, minHeight = if (flash) 56.dp else 240.dp,
-            )
-            if (flash) {
+            if (!flash) {
+                FormField(
+                    stringResource(R.string.post_field_body), body, { body = it },
+                    Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_body_hint),
+                    minLines = 8, minHeight = 240.dp,
+                )
+            } else {
+                // 2026-10-26 시안 compose — 만나는 곳 → 출발 시각(지금부터 5분 ~ 24시간, 서버 규칙 그대로) → 거리 · 정원 → 함께 뛰는 분께(선택)
                 FormField(
                     stringResource(R.string.post_field_place), place, { place = it },
                     Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_place_hint),
                 )
+                FlashTimeField(startsIn, onMinutes = { startsIn = it }, modifier = Modifier.padding(horizontal = StepUpUi.Gutter))
                 Spacer(Modifier.height(4.dp))
                 GroupedList(
                     rows = listOf(
@@ -120,16 +128,16 @@ fun PostComposeScreen(
                                 minus = distance > 0.5, plus = distance < 50.0, tag = "post-distance")
                         },
                         {
-                            StepperRow(stringResource(R.string.post_field_starts_short), startsIn.toString(), stringResource(R.string.post_unit_min),
-                                onMinus = { startsIn = stepMinutes(startsIn, -1) }, onPlus = { startsIn = stepMinutes(startsIn, +1) },
-                                minus = startsIn > 5, plus = startsIn < 24 * 60, tag = "post-starts")
-                        },
-                        {
                             StepperRow(stringResource(R.string.post_field_capacity), capacity.toString(), stringResource(R.string.post_unit_people),
                                 onMinus = { capacity = (capacity - 1).coerceAtLeast(2) }, onPlus = { capacity = (capacity + 1).coerceAtMost(200) },
                                 minus = capacity > 2, plus = capacity < 200, tag = "post-capacity")
                         },
                     ),
+                )
+                FormField(
+                    stringResource(R.string.d26_flash_note) + " · " + stringResource(R.string.d26_flash_optional), body, { body = it },
+                    Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.d26_flash_note_hint),
+                    minLines = 3, minHeight = 96.dp,
                 )
                 Text(
                     stringResource(if (here != null) R.string.post_flash_hint else R.string.post_flash_no_location),
@@ -171,6 +179,49 @@ fun PostComposeScreen(
             )
         }
     }
+}
+
+/** 출발 시각 칸 — 시각을 고르면 지금부터의 분으로(5분 ~ 24시간). 아래에 "오늘 오후 7:00 · 23분 뒤 출발" */
+@Composable
+private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val c = StepUpUi.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val zone = java.time.ZoneId.systemDefault()
+    val at = java.time.ZonedDateTime.now(zone).plusMinutes(minutes.toLong())
+    val is24 = android.text.format.DateFormat.is24HourFormat(context)
+    val time = java.time.format.DateTimeFormatter.ofPattern(if (is24) "HH:mm" else "a h:mm", Locale.getDefault()).format(at)
+    val day = if (at.toLocalDate() == java.time.LocalDate.now(zone)) stringResource(R.string.d26_when_today, time)
+        else stringResource(R.string.d26_when_tomorrow, time)
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    Column(modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.d26_flash_time), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel)
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.foundation.layout.Row(
+            Modifier.fillMaxWidth().height(56.dp).clip(shape).background(c.card, shape)
+                .border(1.dp, c.separator, shape)
+                .feedbackClickable {
+                    android.app.TimePickerDialog(context, { _, h, m -> onMinutes(minutesUntil(h, m)) }, at.hour, at.minute, is24).show()
+                }
+                .padding(horizontal = 16.dp).testTag("post-starts"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(day, style = StepUpUi.type.rowTitle.copy(fontSize = 17.sp), color = c.label, modifier = Modifier.weight(1f))
+            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Schedule, contentDescription = null, tint = c.label)
+        }
+        Text(
+            if (minutes < 60) stringResource(R.string.d26_flash_when, day, minutes)
+            else stringResource(R.string.d26_flash_when_hours, day, minutes / 60, minutes % 60),
+            style = StepUpUi.type.caption, color = c.accentText, modifier = Modifier.padding(top = 8.dp).testTag("post-starts-line"),
+        )
+    }
+}
+
+/** 고른 시 · 분까지 남은 분 — 이미 지났으면 다음 날, 5분 ~ 24시간으로 자른다(서버 규칙) */
+internal fun minutesUntil(hour: Int, minute: Int, now: java.time.ZonedDateTime = java.time.ZonedDateTime.now()): Int {
+    var at = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
+    if (at.isBefore(now.plusMinutes(5))) at = at.plusDays(1)
+    val diff = java.time.Duration.between(now, at).toMinutes().toInt()
+    return diff.coerceIn(5, 24 * 60)
 }
 
 /** 출발까지 — 1시간 안은 5분씩, 그 뒤는 30분씩(5분 ~ 24시간) */

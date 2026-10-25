@@ -9082,6 +9082,104 @@ do $$ begin
 end $$;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+--  0074 크루 러닝 대기실 — 같이 뛰기 · 원격 뛰기 · 만나는 곳 · 출발 시각 · 정원 (2026-10-26)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 크루 러닝 대기실: 달리는 방식 · 정원(0074) ─────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email) values
+  ('74000000-0000-0000-0000-000000000001', 'o74@test'),
+  ('74000000-0000-0000-0000-000000000002', 'a74@test'),
+  ('74000000-0000-0000-0000-000000000003', 'b74@test');
+insert into public.crews (id, owner_id, name)
+values ('74000000-0000-0000-0000-0000000000cc', '74000000-0000-0000-0000-000000000001', '방식 크루');
+insert into public.crew_members (crew_id, user_id, role)
+select '74000000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER'
+  from unnest(array['74000000-0000-0000-0000-000000000002', '74000000-0000-0000-0000-000000000003']) u;
+
+set role authenticated;
+call pg_temp.login('74000000-0000-0000-0000-000000000001');
+do $$
+declare v json; r jsonb;
+begin
+  insert into fix (k, v) values ('p74', public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '망원에서 가볍게 5km', null, null, null,
+    '74000000-0000-0000-0000-00000000a001', 'TOGETHER', '  망원한강공원   시계탑 ', 37.5551, 126.8946, now() + interval '2 hours', 2)::text);
+  v := public.party_state(pg_temp.fx('p74')::bigint);
+  perform pg_temp.ok(v->>'run_mode' = 'TOGETHER' and v->>'meet_place' = '망원한강공원 시계탑' and (v->>'capacity')::int = 2
+                     and (v->>'meet_lat')::float > 37.5 and v->>'plan_at' is not null,
+    format('같이 뛰기 방 — 만나는 곳(공백 정리) · 좌표 · 출발 시각 · 정원 2 (%s)', v::jsonb - 'members'));
+  r := public.party_rooms('74000000-0000-0000-0000-0000000000cc')->'rooms'->0;
+  perform pg_temp.ok(r->>'run_mode' = 'TOGETHER' and (r->>'capacity')::int = 2 and r->>'meet_place' = '망원한강공원 시계탑'
+                     and jsonb_array_length(r->'member_names') = 1,
+    '열린 대기실 목록에 달리는 방식 · 만나는 곳 · 정원 · 앞사람 이름');
+  perform pg_temp.ok(public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '망원에서 가볍게 5km', null, null, null,
+    '74000000-0000-0000-0000-00000000a001', 'TOGETHER', '망원한강공원 시계탑', 37.5551, 126.8946, now() + interval '2 hours', 2) = pg_temp.fx('p74')::bigint,
+    '같은 요청 번호로 다시 열면 그 방(0074)');
+end $$;
+call pg_temp.must_fail($q$ select public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '원격', null, null, null, null, 'REMOTE', '시계탑', null, null, null, null) $q$,
+  '원격 뛰기 방에는 만나는 곳이 없다');
+call pg_temp.must_fail($q$ select public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '정원', null, null, null, null, 'TOGETHER', null, null, null, null, 1) $q$,
+  '정원은 2명부터');
+call pg_temp.must_fail($q$ select public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '정원', null, null, null, null, 'TOGETHER', null, null, null, null, 21) $q$,
+  '정원은 20명까지');
+call pg_temp.must_fail($q$ select public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '시각', null, null, null, null, 'TOGETHER', null, null, null, now() - interval '1 day', null) $q$,
+  '지난 출발 시각은 받지 않는다');
+call pg_temp.must_fail($q$ select public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '방식', null, null, null, null, 'BIKE', null, null, null, null, null) $q$,
+  '모르는 달리는 방식은 받지 않는다');
+call pg_temp.must_fail($q$ select public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '좌표', null, null, null, null, 'TOGETHER', '어딘가', 37.5, null, null, null) $q$,
+  '좌표는 위도 · 경도를 함께');
+-- 정원 2 — 셋째는 들어가지 못한다
+call pg_temp.login('74000000-0000-0000-0000-000000000002');
+do $$ begin perform public.party_join(pg_temp.fx('p74')::bigint); end $$;
+call pg_temp.login('74000000-0000-0000-0000-000000000003');
+do $$ begin
+  begin
+    perform public.party_join(pg_temp.fx('p74')::bigint);
+    raise exception 'FAIL  정원이 찬 방에 들어갔다';
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'room_full', format('정원(2)이 찬 방은 room_full (%s)', sqlerrm));
+  end;
+end $$;
+-- 원격 뛰기 방 — 출발하면 2분 인원 보너스를 세지 않는다
+do $$ begin
+  insert into fix (k, v) values ('p74_r', public.party_create_v2('74000000-0000-0000-0000-0000000000cc', '각자의 동네에서 30분', null, null, null,
+    null, 'REMOTE', null, null, null, null, 8)::text);
+  perform public.party_ready(pg_temp.fx('p74_r')::bigint, true);
+end $$;
+call pg_temp.login('74000000-0000-0000-0000-000000000002');
+do $$ begin
+  perform public.party_join(pg_temp.fx('p74_r')::bigint);
+  perform public.party_ready(pg_temp.fx('p74_r')::bigint, true);
+end $$;
+call pg_temp.login('74000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_start(pg_temp.fx('p74_r')::bigint); end $$;
+reset role;
+do $$
+declare v_day date;
+begin
+  select day into v_day from economy.crew_runs where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint;
+  perform economy.crew_run_bonus_eval('74000000-0000-0000-0000-000000000003', v_day, true);
+  perform pg_temp.ok((select bonus_status || ':' || bonus_reason from economy.crew_runs
+                       where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint) = 'UNAVAILABLE:REMOTE'
+                     and (select run_mode from public.parties where id = pg_temp.fx('p74_r')::bigint) = 'REMOTE',
+    '원격 뛰기 방은 출발해도 인원 보너스를 세지 않는다(REMOTE) — 공용 체력 · 보상은 그대로');
+end $$;
+-- 옛 party_create 는 같이 뛰기 · 정원 20 그대로
+set role authenticated;
+call pg_temp.login('74000000-0000-0000-0000-000000000001');
+do $$
+declare v json;
+begin
+  insert into fix (k, v) values ('p74_old', public.party_create('74000000-0000-0000-0000-0000000000cc', '옛 앱 방', null, null, null)::text);
+  v := public.party_state(pg_temp.fx('p74_old')::bigint);
+  perform pg_temp.ok(v->>'run_mode' = 'TOGETHER' and (v->>'capacity')::int = 20 and v->>'meet_place' is null,
+    '옛 앱의 party_create 는 같이 뛰기 · 정원 20(0074 전과 같다)');
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

@@ -148,6 +148,8 @@ class StepUpUiColors(
     val onPrimary: Color,
     val accentText: Color,
     val segmentThumb: Color,
+    /** 고른 세그먼트 칸 위 글자(2026-10-26 — 고른 칸은 진한 판, 글자는 반대색) */
+    val segmentOn: Color,
     val live: Color,
     val success: Color,
     val tabBar: Color,
@@ -164,28 +166,30 @@ class StepUpUiColors(
     val dark: Boolean,
 )
 
+/** 블랙(2026-10-26 디자인 자료) — 예전 다크블루(#070B14)를 대신한다. 이름은 그대로 둔다 */
 val DarkBlueUi = StepUpUiColors(
-    background = Color(0xFF070B14), card = Color(0xFF0E1424), elevated = Color(0xFF151C2D),
-    fill = Color(0x338296BE), fillSecondary = Color(0x1F8296BE),
-    label = Color.White, secondaryLabel = Color(0xA3E2E8F5), tertiaryLabel = Color(0x61E2E8F5),
-    onDisabled = Color(0x61E2E8F5), separator = Color(0x17FFFFFF),
-    primary = Color(0xFF2F6BFF), primaryPressed = Color(0xFF2A5FE6), onPrimary = Color.White,
-    accentText = Color(0xFF6E9BFF), segmentThumb = Color(0xFF26304A),
-    live = Color(0xFFFF453A), success = Color(0xFF32D74B),
-    tabBar = Color(0xD1070B14), mapBackground = Color(0xFF0A1020), errorFill = Color(0x29FF453A),
-    photoArrowCircle = Color(0xFF070B14), sheetScrim = Color(0x8C000000), handle = Color(0x4DE2E8F5),
+    background = Color(0xFF000000), card = Color(0xFF101216), elevated = Color(0xFF171A20),
+    fill = Color(0xFF1E2128), fillSecondary = Color(0xFF15181D),
+    label = Color(0xFFF6F7FA), secondaryLabel = Color(0xFFA7AFBC), tertiaryLabel = Color(0x80A7AFBC),
+    onDisabled = Color(0x80A7AFBC), separator = Color(0xFF292E37),
+    primary = Color(0xFF3D74FA), primaryPressed = Color(0xFF3A6AE6), onPrimary = Color.White,
+    accentText = Color(0xFF7DA2FF), segmentThumb = Color(0xFFF6F7FA), segmentOn = Color(0xFF000000),
+    live = Color(0xFFFF8B9A), success = Color(0xFF32D74B),
+    tabBar = Color(0xF208090B), mapBackground = Color(0xFF0A0B0D), errorFill = Color(0x29FF8B9A),
+    photoArrowCircle = Color(0xFF000000), sheetScrim = Color(0x8C000000), handle = Color(0x4DF6F7FA),
     glass = Color(0x2EFFFFFF), dark = true,
 )
 
+/** 화이트(2026-10-26 디자인 자료) — 바닥 #F4F5FA · 글자 #10192C · 보조 #606A7B · 블루 #2458E9 · 선택 칸 #10192C */
 val WhiteBlueUi = StepUpUiColors(
-    background = Color(0xFFF2F2F7), card = Color.White, elevated = Color.White,
-    fill = Color(0x24787880), fillSecondary = Color(0x14787880),
-    label = Color.Black, secondaryLabel = Color(0x9E3C3C43), tertiaryLabel = Color(0x523C3C43),
-    onDisabled = Color(0x523C3C43), separator = Color(0x293C3C43),
-    primary = Color(0xFF1F5EFF), primaryPressed = Color(0xFF1A4FE0), onPrimary = Color.White,
-    accentText = Color(0xFF1F5EFF), segmentThumb = Color.White,
-    live = Color(0xFFFF3B30), success = Color(0xFF28B44A),
-    tabBar = Color(0xEBFAFAFC), mapBackground = Color(0xFFECEEF1), errorFill = Color(0x1AFF3B30),
+    background = Color(0xFFF4F5FA), card = Color.White, elevated = Color.White,
+    fill = Color(0xFFE9ECF2), fillSecondary = Color(0xFFF0F2F6),
+    label = Color(0xFF10192C), secondaryLabel = Color(0xFF606A7B), tertiaryLabel = Color(0x99606A7B),
+    onDisabled = Color(0x99606A7B), separator = Color(0xFFDFE3EB),
+    primary = Color(0xFF2458E9), primaryPressed = Color(0xFF1D49C4), onPrimary = Color.White,
+    accentText = Color(0xFF2458E9), segmentThumb = Color(0xFF10192C), segmentOn = Color.White,
+    live = Color(0xFFB12A3E), success = Color(0xFF1E8E3E),
+    tabBar = Color(0xF2FAFBFF), mapBackground = Color(0xFFECEEF1), errorFill = Color(0x1AB12A3E),
     photoArrowCircle = Color.Black, sheetScrim = Color(0x40000000), handle = Color(0x4D3C3C43),
     glass = Color(0x2EFFFFFF), dark = false,
 )
@@ -699,7 +703,9 @@ fun StepUpTabs(
     val type = StepUpUi.type
     val feedback = LocalFeedback.current
     BoxWithConstraints(
-        modifier.heightIn(min = height).clip(RoundedCornerShape(11.dp)).background(c.fill).padding(2.dp),
+        // 2026-10-26: 트랙은 카드 면 + 가는 선, 고른 칸은 진한 판(화이트 남색 · 블랙 흰색)
+        modifier.heightIn(min = height).clip(RoundedCornerShape(11.dp)).background(c.card)
+            .border(1.dp, c.separator, RoundedCornerShape(11.dp)).padding(3.dp),
     ) {
         val count = items.size.coerceAtLeast(1)
         val w = maxWidth / count
@@ -708,15 +714,14 @@ fun StepUpTabs(
             spring(dampingRatio = .8f, stiffness = Spring.StiffnessMediumLow), label = "segThumb",
         )
         Box(
-            Modifier.offset(x = x).width(w).height(height - 4.dp)
-                .shadow(if (c.dark) 6.dp else 3.dp, RoundedCornerShape(9.dp), ambientColor = Color.Black.copy(alpha = .35f), spotColor = Color.Black.copy(alpha = .35f))
+            Modifier.offset(x = x).width(w).height(height - 6.dp)
                 .clip(RoundedCornerShape(9.dp)).background(c.segmentThumb),
         )
         Row(Modifier.fillMaxWidth()) {
             items.forEachIndexed { i, t ->
                 val on = i == selected
                 Box(
-                    Modifier.weight(1f).heightIn(min = height - 4.dp)
+                    Modifier.weight(1f).heightIn(min = height - 6.dp)
                         .clip(RoundedCornerShape(9.dp))
                         .clickable(role = Role.Tab) { if (!on) { feedback?.play(FeedbackCue.Select); onSelect(i) } }
                         .semantics { this.selected = on }
@@ -726,7 +731,7 @@ fun StepUpTabs(
                 ) {
                     Text(
                         t, style = type.segment.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold),
-                        color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                        color = if (on) c.segmentOn else c.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                     )
                 }
             }
