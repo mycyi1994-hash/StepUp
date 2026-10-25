@@ -91,4 +91,24 @@ class RunBackgroundTest {
         for (id in ids) for (t in times) assertTrue("$id $t", File(root, "$id/bg_${id}_$t.webp").isFile)
         for (k in SpotKind.entries.map { it.name.lowercase() }) for (t in times) assertTrue("kind $k $t", File(root, "_kind/bg_kind_${k}_$t.webp").isFile)
     }
+
+    @Test fun frequentSpotCountsRunStarts() {
+        val spots = listOf(mangwon, yeouido, forest)
+        // 최근 것부터 — 여의도 둘 · 망원 하나 → 여의도
+        val starts = listOf(37.5285 to 126.9330, 37.5553 to 126.8950, 37.5283 to 126.9325)
+        assertEquals("yeouido", RunBackground.frequent(spots, starts)?.id)
+        // 같은 수면 최근 장소
+        assertEquals("mangwon", RunBackground.frequent(spots, listOf(37.5553 to 126.8950, 37.5285 to 126.9330))?.id)
+        // 어느 장소 반경에도 들지 않으면 세지 않는다
+        assertNull(RunBackground.frequent(spots, listOf(35.1 to 129.0)))
+        assertNull(RunBackground.frequent(spots, emptyList()))
+    }
+
+    @Test fun firstTrackPointOnly() {
+        val p = com.stepup.android.domain.RunTrack.first("37.5285,126.933,1000;37.6,127.0,2000")
+        assertEquals(37.5285, p!!.lat, 1e-9)
+        assertEquals(1000L, p.at)
+        assertNull(com.stepup.android.domain.RunTrack.first(""))
+        assertNull(com.stepup.android.domain.RunTrack.first("broken"))
+    }
 }

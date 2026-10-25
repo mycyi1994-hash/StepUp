@@ -1,12 +1,10 @@
 package com.stepup.android.ui.screens.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,50 +15,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,41 +57,43 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
-import kotlinx.coroutines.launch
-import com.stepup.android.domain.Sneaker
-import com.stepup.android.domain.tier
 import com.stepup.android.ui.StepPermissions
+import com.stepup.android.ui.background.RunBackground
+import com.stepup.android.ui.background.Spot
+import com.stepup.android.ui.background.Spots
+import com.stepup.android.ui.background.TimeOfDay
+import com.stepup.android.ui.background.WeatherLayer
+import com.stepup.android.ui.background.currentWeather
+import com.stepup.android.ui.background.rememberSpotPhoto
 import com.stepup.android.ui.components.AdaptiveNumber
-import com.stepup.android.ui.components.BarMeter
-import com.stepup.android.ui.components.GlowCard
-import com.stepup.android.ui.components.ShoeArtThumbnail
-import com.stepup.android.ui.components.ShoeNameWithBadge
+import com.stepup.android.ui.components.CircleIconButton
+import com.stepup.android.ui.components.PhotoCard
+import com.stepup.android.ui.components.RoundControl
 import com.stepup.android.ui.components.ShortcutButton
+import com.stepup.android.ui.components.StatItem
+import com.stepup.android.ui.components.StatRow
+import com.stepup.android.ui.components.StepUpUi
+import com.stepup.android.ui.components.countUpFloat
+import com.stepup.android.ui.components.popOnChange
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.guide.GuideTour
 import com.stepup.android.ui.guide.guideTarget
-import com.stepup.android.ui.screens.customize.BarStat
-import com.stepup.android.ui.screens.customize.StatBar
-import com.stepup.android.ui.screens.customize.statBars
-import com.stepup.android.ui.screens.items.shoeName
-import com.stepup.android.ui.screens.items.modelShoeName
 import com.stepup.android.ui.theme.Alert
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
-import com.stepup.android.ui.theme.StepUpColors
-import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /*
- * 러닝 탭 첫 화면(2026-09-29 전달본 "메인" 시안, design/run-journey-2026-09-29/02-home-v2).
- * 위부터 오늘의 걸음 · 목표 · 달성 막대 → 신고 있는 신발 카드(착용 중 · 신발 · 이름 끝 등급 배지 · Lv · 효율 / 착화감 / 내구도 막대) →
- * 러닝 시작(이 화면의 주 행동) → 기록 보기 · 코스 찾기. 거리 · 운동 시간은 홈에 두지 않는다(시안 지시).
- * 풍경 사진은 화면 전체 바탕(StepUpRoot)이 그린다. 예전 홈의 상세 기록(오늘 획득 · 7일 걸음 · 목표 · 소식 · 에너지)과
- * 풍경 넘기기는 지우지 않고 "오늘의 걸음"을 누르면 여는 상세 기록 안으로 옮겼다.
- * 모든 값은 이 기기의 실제 기록 · 신고 있는 신발에서 온다 — 시안의 6,840 · +4.8% 같은 예시 수를 쓰지 않는다.
+ * 러닝 탭 첫 화면 — UI 최종 통합안(2026-10-25) `home`. 아치 · 신발 전시장 없음(클라이언트 요청).
+ * 위부터 오늘 걸음(큰 숫자 / 목표) → 둥근 사진 카드(자주 달리는 곳 · 시간대, 좌우 유리 버튼으로 장소 넘기기) →
+ * 오늘 SUP · 거리 · 이번 주 러닝 수 → 둥근 러닝 시작(이 화면의 주 행동, 빛번짐 없음).
+ * 걸음 칸을 누르면 오늘의 활동(E01) 시트 — 예전 상세 기록(7일 걸음 · 소식 · 에너지)은 그 안에 그대로 있다.
+ * 신고 있는 신발 · 이름 바꾸기는 신발 탭으로 옮겼다(시안 `shoes`).
+ * 모든 값은 이 기기의 실제 기록에서 온다 — 시안의 "2회" · "여의도 한강공원" 같은 예시를 쓰지 않는다.
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -119,22 +106,20 @@ fun HomeScreen(
     onOpenRecords: () -> Unit = {},
     /** 코스 찾기 — 코스 목록 */
     onOpenCourses: () -> Unit = {},
-    onPreviousBackground: () -> Unit = {},
-    onNextBackground: () -> Unit = {},
-    /** 지금 보이는 풍경이 실제 날씨로 고른 것이면 그 날씨 — 상세 기록 안에서 한 줄로 밝힌다 */
-    weatherScene: com.stepup.android.domain.WeatherScene? = null,
     /** 시안 검사(OnboardingDesignTest)만 쓴다 — 첫 러닝 홈(시안 11)을 그려 본다. null 이면 실제 권한 · 기록으로 판단한다 */
     firstRunPreview: Boolean? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val earned by viewModel.todayEarned.collectAsStateWithLifecycle()
+    val week by viewModel.weekRuns.collectAsStateWithLifecycle()
+    val starts by viewModel.runStarts.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var hasPermission by remember {
         mutableStateOf(StepPermissions.hasActivityRecognition(context))
     }
-    var permissionDenied by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var permissionDenied by rememberSaveable { mutableStateOf(false) }
     // 누를 때만 묻는다(홈을 보는 것만으로는 묻지 않는다). 러닝 권한 안내와 같은 이력을 남겨 다음 안내가 맞게 고른다
     val requestActivity = com.stepup.android.ui.screens.walk.rememberActivityPermissionRequest {
         hasPermission = StepPermissions.hasActivityRecognition(context)
@@ -151,7 +136,7 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    var showDetails by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var showDetails by rememberSaveable { mutableStateOf(false) }
     val session by com.stepup.android.service.WalkSessionService.state.collectAsStateWithLifecycle()
     // 오늘 아직 아무것도 안 했는가 — 첫 러닝 홈 판단에 쓴다
     val noActivityYet = state.loaded && state.todaySteps == 0 && (earned ?: 0.0) <= 0.0
@@ -162,18 +147,25 @@ fun HomeScreen(
         ?: com.stepup.android.domain.FirstHomeRules.applies(noActivityYet, hasPermission, runCount, state.lifetimeSteps)
     val largeText = LocalDensity.current.fontScale > 1.2f
 
+    // 사진 카드의 장소 — 자주 달리는 곳이 맨 앞, 넘기면 나머지 장소(spots.json 순서)
+    val spots = remember(context) { Spots.all(context) }
+    val frequent = remember(spots, starts) { RunBackground.frequent(spots, starts) }
+    val places = remember(spots, frequent) { listOfNotNull(frequent) + spots.filter { it != frequent } }
+
     val pending by viewModel.pendingUploads.collectAsStateWithLifecycle()
     val runSec by viewModel.todayRunSec.collectAsStateWithLifecycle()
     HomeContent(
-        shoe = state.equipped, loaded = state.loaded, todaySteps = state.todaySteps, goal = state.goal,
+        loaded = state.loaded, todaySteps = state.todaySteps, goal = state.goal,
         hasPermission = hasPermission, firstHome = firstHome, running = session.isActive, largeText = largeText,
-        onStartRun = onStartRun, onOpenCustomize = onOpenCustomize,
+        earned = earned, km = if (state.loaded) RewardEconomyKm(state.todaySteps) else null, weekRuns = week?.runs,
+        places = places, frequent = frequent,
+        onStartRun = onStartRun,
         onRequestPermission = { requestActivity() }, onOpenDetails = { showDetails = true },
     )
 
     if (showDetails) {
         // E01 — 오늘의 활동: 걸음 · 목표 · 남은 걸음 · 거리 · 러닝 시간 · 오늘의 SUP(서버 확인 값). 예전 상세 기록
-        // (7일 걸음 · 소식 · 에너지 · 바탕 풍경)은 지우지 않고 아래 "더 보기"에 둔다
+        // (7일 걸음 · 소식 · 에너지)은 지우지 않고 아래 "더 보기"에 둔다
         com.stepup.android.ui.components.RunSheet(onDismiss = { showDetails = false }, modifier = Modifier.testTag("home-details-sheet")) {
             TodayActivity(
                 steps = state.todaySteps, goal = state.goal, loaded = state.loaded, hasPermission = hasPermission,
@@ -203,7 +195,6 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
-                BackgroundRow(weatherScene, onPreviousBackground, onNextBackground)
             }
             Spacer(Modifier.height(14.dp))
             com.stepup.android.ui.components.RunButton(
@@ -215,12 +206,11 @@ fun HomeScreen(
 }
 
 /**
- * 러닝 홈의 몸통(시안 HOME) — 상태 없이 그린다. 전시장 · 신발 줄 · 러닝 시작 · 오늘 걸음.
- * 바탕 창 풍경은 StepUpRoot 가, 머리(로고 · SUP)와 하단 탭은 공통 틀이 그린다.
+ * 러닝 홈의 몸통(시안 `home`) — 상태 없이 그린다. 머리(로고 · SUP · 알림)와 하단 탭은 공통 틀이 그린다.
+ * 시안 393 × 821 기준 간격(8 · 43 · 30 · 40)을 화면 높이에 맞춰 나눈다. 낮은 화면 · 큰 글씨면 간격을 줄이고 넘긴다.
  */
 @Composable
 internal fun HomeContent(
-    shoe: Sneaker?,
     loaded: Boolean,
     todaySteps: Int,
     goal: Int,
@@ -228,76 +218,71 @@ internal fun HomeContent(
     firstHome: Boolean,
     running: Boolean,
     largeText: Boolean,
+    earned: Double?,
+    km: Double?,
+    weekRuns: Int?,
+    places: List<Spot>,
+    frequent: Spot?,
     onStartRun: () -> Unit,
-    onOpenCustomize: () -> Unit,
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
 ) {
+    val c = StepUpUi.colors
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // 시안 HOME — 위 전시장(신고 있는 신발) · 이름 · 등급 · Lv · 내구도 → 러닝 시작(주 행동) → 오늘 걸음 · 목표 막대.
-        // 큰 글씨 · 낮은 화면이면 전시장 높이를 두고 위쪽만 넘긴다. 러닝 시작 · 오늘 걸음은 넘기지 않고 늘 아래에 보인다
-        val scroll = largeText || maxHeight < 520.dp
-        val short = maxHeight < 600.dp
-        Column(Modifier.fillMaxSize().padding(bottom = 10.dp).testTag("home-content")) {
-            Column(
-                Modifier.fillMaxWidth().weight(1f)
-                    .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier),
-            ) {
-                val stageOpen = stringResource(R.string.home_stage_open)
-                Box(
-                    Modifier.fillMaxWidth()
-                        .then(if (scroll) Modifier.height(if (short) 210.dp else 250.dp) else Modifier.weight(1f).heightIn(min = 180.dp))
-                        .feedbackClickable(role = Role.Button, onClick = onOpenCustomize)
-                        .semantics { onClick(label = stageOpen) { onOpenCustomize(); true } }
-                        .testTag("home-shoe-card"),
-                ) {
-                    com.stepup.android.ui.components.ShowroomStage(shoe, Modifier.fillMaxSize())
-                    if (shoe == null && loaded) {
-                        Column(Modifier.align(Alignment.Center).padding(horizontal = 32.dp).padding(bottom = 40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(R.string.home_no_shoe_title), color = Snow, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center, modifier = Modifier.testTag("home-no-shoe"))
-                            Text(stringResource(R.string.home_no_shoe_body), color = Silver, fontSize = 14.sp, textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 6.dp))
-                        }
-                    }
-                }
-                HomeShoeInfo(shoe, Modifier.padding(horizontal = StepUpDesign.Gutter).padding(top = if (short) 6.dp else 10.dp))
-            }
-            Spacer(Modifier.height(if (short) 10.dp else 16.dp))
-            // 이 화면의 주 행동 — 흰 면 · 남색 굵은 글자 · 파란 아랫면 · 왼쪽 ▶(시안)
-            com.stepup.android.ui.components.RunButton(
-                label = stringResource(if (running) R.string.home_continue_run else R.string.home_start_run),
-                onClick = onStartRun,
-                hero = true,
-                icon = Icons.Filled.PlayArrow,
-                modifier = Modifier.padding(horizontal = StepUpDesign.Gutter)
-                    .guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
-            )
-            Spacer(Modifier.height(if (short) 10.dp else 16.dp))
-            StepsBlock(
+        // 시안 본문 높이 650(걸음 123 · 사진 224 · 숫자 56 · 시작 134 + 간격) — 그보다 낮거나 큰 글씨면 넘긴다
+        val scroll = largeText || maxHeight < 650.dp
+        val gap: (Dp) -> Dp = { d -> if (scroll) d * .6f else d }
+        Column(
+            Modifier.fillMaxSize()
+                .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                .testTag("home-content"),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(8.dp))
+            StepsHero(
                 todaySteps = todaySteps, goal = goal, loaded = loaded,
                 hasPermission = hasPermission, firstHome = firstHome,
-                onRequestPermission = onRequestPermission,
-                onOpenDetails = onOpenDetails,
-                modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
+                onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
             )
+            if (scroll) Spacer(Modifier.height(gap(43.dp))) else Spacer(Modifier.weight(43f))
+            SpotCard(places, frequent, Modifier.padding(horizontal = StepUpUi.Gutter))
+            if (scroll) Spacer(Modifier.height(gap(30.dp))) else Spacer(Modifier.weight(30f))
+            StatRow(
+                listOf(
+                    StatItem(stringResource(R.string.home_stat_sup),
+                        earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", tag = "home-stat-sup"),
+                    StatItem(stringResource(R.string.stat_distance), km?.let { "%.1f".format(it) } ?: "—", "km", tag = "home-stat-km"),
+                    StatItem(stringResource(R.string.home_this_week), weekRuns?.toString() ?: "—",
+                        stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
+                ),
+                modifier = Modifier.padding(horizontal = 20.dp).testTag("home-stats"),
+            )
+            if (scroll) Spacer(Modifier.height(gap(40.dp))) else Spacer(Modifier.weight(40f))
+            // 이 화면의 주 행동 — 둥근 블루 104dp, 빛번짐 없음
+            RoundControl(
+                icon = Icons.Rounded.PlayArrow,
+                label = stringResource(if (running) R.string.home_continue_run else R.string.home_start_run),
+                onClick = onStartRun,
+                size = 104.dp,
+                tag = "home-start-run",
+                modifier = Modifier.guideTarget(GuideTour.Targets.HOME_START_RUN),
+            )
+            if (scroll) Spacer(Modifier.height(24.dp)) else Spacer(Modifier.weight(45f))
         }
     }
-
 }
 
 /** 오늘 걸음으로 잰 거리(km) — 예전 홈과 같은 걸음 기준 */
 private fun RewardEconomyKm(steps: Int): Double = com.stepup.android.domain.RewardEconomy.distanceMeters(steps) / 1000.0
 
-// ── 오늘의 걸음 ──────────────────────────────────────────────────
+// ── 오늘 걸음 ──────────────────────────────────────────────────
 
 /**
- * 오늘 걸음(시안 HOME 아래) — "오늘" · 큰 걸음 수 · 오른쪽 목표, 아래 파랑 → 시안 막대. 누르면 오늘의 활동(E01).
- * 걸음 권한이 없으면 수 대신 권한 줄, 첫 러닝 홈이면 첫 안내 두 줄(시작·로그인·첫 사용 v1 시안 11).
+ * 오늘 걸음(시안 `home` 위) — 작은 "오늘 걸음" · 큰 숫자(96) · "/ 목표". 누르면 오늘의 활동(E01).
+ * 걸음 권한이 없으면 숫자 대신 권한 줄, 첫 러닝 홈이면 첫 안내 두 줄(시작·로그인·첫 사용 v1 시안 11).
  */
 @Composable
-private fun StepsBlock(
+private fun StepsHero(
     todaySteps: Int,
     goal: Int,
     loaded: Boolean,
@@ -305,191 +290,109 @@ private fun StepsBlock(
     firstHome: Boolean,
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    val t = com.stepup.android.ui.components.runTone()
-    val detailsLabel = stringResource(R.string.home_open_details)
+    val c = StepUpUi.colors
     if (firstHome) {
         // 첫 러닝 홈의 두 줄은 설명이라 누를 곳이 없다 — 걸음이 생기면 걸음 칸이 오늘의 활동을 연다
-        Column(modifier.fillMaxWidth().padding(vertical = 2.dp).testTag("home-steps")) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = StepUpUi.TitleGutter).padding(vertical = 8.dp).testTag("home-steps"),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
-                stringResource(R.string.onb_home_first_title), color = t.text, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
-                lineHeight = 31.sp, modifier = Modifier.testTag("home-headline"),
+                stringResource(R.string.onb_home_first_title), style = StepUpUi.type.largeTitle.copy(fontSize = 28.sp),
+                color = c.label, textAlign = TextAlign.Center, modifier = Modifier.testTag("home-headline"),
             )
             Text(
-                stringResource(R.string.onb_home_first_body), color = t.label, fontSize = 15.sp,
-                modifier = Modifier.padding(top = 6.dp).testTag("home-first-run"),
+                stringResource(R.string.onb_home_first_body), style = StepUpUi.type.body, color = c.secondaryLabel,
+                textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp).testTag("home-first-run"),
             )
         }
         return
     }
-    val fraction = if (goal > 0) (todaySteps.toFloat() / goal).coerceIn(0f, 1f) else 0f
+    val detailsLabel = stringResource(R.string.home_open_details)
     Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+        Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).clip(RoundedCornerShape(20.dp))
             .feedbackClickable(role = Role.Button, onClick = onOpenDetails)
             .semantics { onClick(label = detailsLabel) { onOpenDetails(); true } }
-            .padding(vertical = 2.dp)
             .testTag("home-steps"),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(stringResource(R.string.home_today_label), color = t.text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-        if (!hasPermission) {
-            Spacer(Modifier.height(8.dp))
-            PermissionStrip(onClick = onRequestPermission)
-            Spacer(Modifier.height(4.dp))
-        } else {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                com.stepup.android.ui.components.RunNumber(
-                    if (loaded) "%,d".format(todaySteps) else "—", unit = stringResource(R.string.home_steps_unit),
-                    size = 46.sp, unitSize = 24.sp, unitColor = t.text, valueTag = "home-steps-value",
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    stringResource(R.string.home_goal_steps, "%,d".format(goal)), color = t.label, fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold, maxLines = 1,
-                    modifier = Modifier.padding(start = 8.dp, bottom = 8.dp).testTag("home-goal"),
-                )
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        com.stepup.android.ui.components.RunMeter(
-            if (loaded && hasPermission) fraction else 0f, height = 12.dp,
-            modifier = Modifier.testTag("home-goal-bar"),
-        )
-    }
-}
-
-// ── 신고 있는 신발 ────────────────────────────────────────────────
-
-/**
- * 전시장 아래 한 줄(시안 HOME) — 왼쪽 신발 이름(굵게 기울임) · 등급 배지 · Lv, 가는 세로선, 오른쪽 내구도 수 · 막대.
- * 배지는 앱 공통 등급 배지(채운 색)다. 신고 있는 신발이 없으면 아무것도 두지 않는다(전시장이 안내한다).
- *
- * 2026-10-17 사용자 "이름이 길면 신발 이름이 잘 안 보인다 — 무조건 보이게, 이름 바꿀 수 있게 · 내구도 바를 등급에 따라 멋지게":
- * 이름은 세 줄까지 쓰고 그래도 길면 글자를 줄여 다 보인다(잘라 "…"를 붙이지 않는다). 배지 줄 끝 연필을 누르면 이름을 바꾼다(이 폰에만).
- * 내구도 바는 등급 바([TierDurabilityBar]).
- */
-@Composable
-private fun HomeShoeInfo(shoe: Sneaker?, modifier: Modifier = Modifier) {
-    if (shoe == null) return
-    val t = com.stepup.android.ui.components.runTone()
-    // 남은 비율(%) — 신발마다 최대 내구도가 달라(0059) 좁은 칸에는 비율로 보인다. 남은 · 최대 내구도는 신발 상세에
-    val points = com.stepup.android.ui.screens.items.durabilityPercent(shoe)
-    var renaming by androidx.compose.runtime.saveable.rememberSaveable(shoe.id) { mutableStateOf(false) }
-    Row(modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("home-shoe-info"), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1.1f)) {
-            val renameLabel = stringResource(R.string.home_shoe_rename)
-            // 이름은 칸 폭을 다 쓴다(연필은 아래 배지 줄 끝) — 360dp · 큰 글씨에서도 20자 이름이 세 줄 안에 들어가게 글자를 줄인다
-            androidx.compose.foundation.text.BasicText(
-                shoe.shoeName(),
-                style = TextStyle(
-                    color = t.text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, letterSpacing = (-0.5).sp, lineHeight = 1.15.em,
-                ),
-                maxLines = 3,
-                autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(
-                    minFontSize = 10.sp, maxFontSize = 26.sp, stepSize = 1.sp,
-                ),
-                modifier = Modifier.fillMaxWidth().testTag("home-shoe-name"),
-            )
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.stepup.android.ui.components.ShoeGradeBadge(shoe.tier)
-                Text(
-                    stringResource(R.string.level_chip, shoe.level), color = t.text, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(50)).border(1.5.dp, t.cyan.copy(alpha = 0.85f), RoundedCornerShape(50))
-                        .background(if (t.dark) Color(0xFF0A2A52) else Color(0xFFE6F6FD), RoundedCornerShape(50))
-                        .padding(horizontal = 12.dp, vertical = 3.dp).testTag("home-shoe-level"),
-                )
-                Box(
-                    Modifier.size(40.dp).clip(CircleShape)
-                        .feedbackClickable(role = Role.Button) { renaming = true }
-                        .semantics { contentDescription = renameLabel }
-                        .testTag("home-shoe-rename"),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.Edit, contentDescription = null, tint = t.label, modifier = Modifier.size(18.dp))
-                }
-            }
-        }
-        Box(Modifier.padding(horizontal = 14.dp).width(1.dp).height(56.dp).background(t.divider))
-        Column(
-            Modifier.weight(1f).semantics(mergeDescendants = true) {}.testTag("home-stat-durability"),
-        ) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(stringResource(R.string.sdv_stat_durability), color = t.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.alignByBaseline())
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    "$points", color = if (t.dark) com.stepup.android.ui.components.tierAccent(shoe.tier) else t.cyan,
-                    fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.alignByBaseline().testTag("home-stat-durability-value"),
-                )
-                Text("%", color = t.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.alignByBaseline())
-            }
-            Spacer(Modifier.height(4.dp))
-            com.stepup.android.ui.components.TierDurabilityBar(
-                points / 100f, shoe.tier, height = 12.dp, modifier = Modifier.testTag("home-durability-bar"),
-            )
-        }
-    }
-    if (renaming) ShoeRenameSheet(shoe, onDone = { renaming = false })
-}
-
-/**
- * 신발 이름 바꾸기(2026-10-17) — 이 폰에서만 바뀐다(설정 저장소, domain/ShoeNickname). 비우고 저장하거나 "원래 이름으로"를
- * 누르면 모델 이름으로 돌아간다. 거래소 · 다른 사람에게는 늘 원래 이름이다.
- */
-@Composable
-private fun ShoeRenameSheet(shoe: Sneaker, onDone: () -> Unit) {
-    val t = com.stepup.android.ui.components.runTone()
-    val nicknames = com.stepup.android.ui.components.LocalShoeNicknames.current
-    val current = nicknames[shoe.id]
-    // 원래 이름 — 내가 붙인 이름을 빼고 읽는다
-    val original = shoe.modelShoeName()
-    var draft by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(current ?: original) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    fun save(name: String?) {
-        scope.launch {
-            com.stepup.android.core.ServiceLocator.userPrefs.setShoeNickname(shoe.id, name?.takeIf { it.trim() != original })
-            onDone()
-        }
-    }
-    com.stepup.android.ui.components.RunSheet(onDismiss = onDone, modifier = Modifier.testTag("home-shoe-rename-sheet")) {
-        com.stepup.android.ui.components.RunSheetText(
-            stringResource(R.string.shoe_rename_title),
-            body = stringResource(R.string.shoe_rename_body, original),
-        )
-        Spacer(Modifier.height(16.dp))
-        com.stepup.android.ui.components.RunTextField(
-            value = draft,
-            onValueChange = { next ->
-                // 글자 수 상한까지만 받는다(이모지 등은 한 글자로 센다)
-                draft = if (next.codePointCount(0, next.length) <= com.stepup.android.domain.ShoeNickname.MAX_LENGTH) next
-                    else String(next.codePoints().limit(com.stepup.android.domain.ShoeNickname.MAX_LENGTH.toLong()).toArray(), 0,
-                        com.stepup.android.domain.ShoeNickname.MAX_LENGTH)
-            },
-            placeholder = original,
-            clearLabel = stringResource(R.string.run_course_clear_text),
-            onImeAction = { save(draft) },
-            fieldTag = "home-shoe-rename-field",
-        )
         Text(
-            stringResource(R.string.shoe_rename_count, draft.codePointCount(0, draft.length), com.stepup.android.domain.ShoeNickname.MAX_LENGTH),
-            color = t.label, fontSize = 13.sp, textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            stringResource(R.string.home_steps_today), style = StepUpUi.type.segment, color = c.secondaryLabel,
+            modifier = Modifier.semantics { heading() },
         )
-        Spacer(Modifier.height(16.dp))
-        com.stepup.android.ui.components.RunButton(
-            stringResource(R.string.shoe_rename_save), { save(draft) },
-            modifier = Modifier.fillMaxWidth().testTag("home-shoe-rename-save"),
-        )
-        if (current != null) {
-            Spacer(Modifier.height(10.dp))
-            com.stepup.android.ui.components.RunButton(
-                stringResource(R.string.shoe_rename_reset), { save(null) },
-                kind = com.stepup.android.ui.components.RunButtonKind.Secondary,
-                modifier = Modifier.fillMaxWidth().testTag("home-shoe-rename-reset"),
+        Spacer(Modifier.height(4.dp))
+        if (!hasPermission) {
+            PermissionStrip(onClick = onRequestPermission)
+            return@Column
+        }
+        // 숫자 올라가기 + 바뀔 때 살짝 튀기(1-5 움직임)
+        val shown = countUpFloat(if (loaded) todaySteps.toFloat() else 0f).roundToInt()
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                if (loaded) "%,d".format(shown) else "—",
+                style = StepUpUi.type.numberHero.copy(fontSize = 96.sp, lineHeight = 91.sp, letterSpacing = .005.em),
+                color = c.label, maxLines = 1, softWrap = false,
+                modifier = Modifier.alignByBaseline().popOnChange(todaySteps / 1000).testTag("home-steps-value"),
             )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                stringResource(R.string.home_goal_slash, "%,d".format(goal)),
+                style = StepUpUi.type.navTitle.copy(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.02).em),
+                color = c.secondaryLabel, maxLines = 1,
+                modifier = Modifier.alignByBaseline().testTag("home-goal"),
+            )
+        }
+    }
+}
+
+// ── 자주 달리는 곳 ────────────────────────────────────────────────
+
+/**
+ * 둥근 사진 카드 361 × 224 · 모서리 24(시안 `home` 가운데). 장소 · 지금 시간대 사진(RunBackground.resolve) 위에 날씨 효과,
+ * 왼쪽 아래 "자주 달리는 곳" · "장소 · 시간대", 좌우 유리 버튼으로 장소를 넘긴다.
+ * 자주 달리는 곳은 내 러닝이 시작한 자리에서 센다 — 러닝이 없거나 어느 장소에도 들지 않으면 "달리기 좋은 곳"이라고 쓴다.
+ */
+@Composable
+private fun SpotCard(places: List<Spot>, frequent: Spot?, modifier: Modifier = Modifier) {
+    var index by rememberSaveable(frequent?.id) { mutableIntStateOf(0) }
+    val spot = places.getOrNull(index.mod(places.size.coerceAtLeast(1)))
+    val time = RunBackground.now()
+    val photo = rememberSpotPhoto(spot, time = time, widthDp = 361)
+    val timeLabel = stringResource(when (time) {
+        TimeOfDay.DAWN -> R.string.time_of_day_dawn
+        TimeOfDay.DAY -> R.string.time_of_day_day
+        TimeOfDay.DUSK -> R.string.time_of_day_dusk
+        TimeOfDay.NIGHT -> R.string.time_of_day_night
+    })
+    PhotoCard(
+        photo?.painter, colorFilter = photo?.colorFilter, height = 224.dp,
+        modifier = modifier.height(224.dp).testTag("home-spot").then(if (spot != null) Modifier.testTag("home-spot-${spot.id}") else Modifier),
+    ) {
+        WeatherLayer(currentWeather())
+        if (places.size > 1) {
+            CircleIconButton(
+                Icons.Filled.ChevronLeft, stringResource(R.string.home_spot_previous), onClick = { index = (index - 1).mod(places.size) },
+                onPhoto = true, modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp).testTag("home-spot-previous"),
+            )
+            CircleIconButton(
+                Icons.Filled.ChevronRight, stringResource(R.string.home_spot_next), onClick = { index = (index + 1).mod(places.size) },
+                onPhoto = true, modifier = Modifier.align(Alignment.CenterEnd).padding(end = 6.dp).testTag("home-spot-next"),
+            )
+        }
+        if (spot != null) {
+            Column(Modifier.align(Alignment.BottomStart).padding(start = 18.dp, end = 18.dp, bottom = 16.dp)) {
+                Text(
+                    stringResource(if (spot == frequent) R.string.home_spot_frequent else R.string.home_spot_suggest),
+                    style = StepUpUi.type.caption.copy(fontSize = 12.5.sp), color = androidx.compose.ui.graphics.Color.White.copy(alpha = .8f),
+                )
+                Text(
+                    "${spot.name} · $timeLabel",
+                    style = StepUpUi.type.section.copy(fontSize = 18.sp, letterSpacing = (-0.04).em),
+                    color = androidx.compose.ui.graphics.Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp).testTag("home-spot-name"),
+                )
+            }
         }
     }
 }
@@ -622,76 +525,27 @@ private fun EnergyLine(earnableSteps: Int, ready: Boolean) {
 
 @Composable
 private fun PermissionStrip(onClick: () -> Unit) {
+    val c = StepUpUi.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Volt.copy(alpha = 0.14f))
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(StepUpUi.FieldRadius))
+            .background(c.fill)
             .feedbackClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
             .testTag("home-permission"),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = VoltText, modifier = Modifier.size(18.dp))
+        Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = c.accentText, modifier = Modifier.size(20.dp))
         Text(
             text = stringResource(R.string.perm_allow),
             modifier = Modifier.weight(1f),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Snow,
+            style = StepUpUi.type.rowTitle,
+            color = c.label,
         )
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = VoltText, modifier = Modifier.size(18.dp))
-    }
-}
-
-/** 바탕 풍경 — 이전 · 다음(예전 홈 양옆 화살표). 실제 날씨로 고른 풍경이면 그 날씨를 한 줄로 */
-@Composable
-private fun BackgroundRow(
-    weatherScene: com.stepup.android.domain.WeatherScene?,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.home_background), color = Snow, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f))
-            SceneArrow(Icons.Filled.ChevronLeft, stringResource(R.string.home_previous_background), onPrevious,
-                Modifier.testTag("home-background-previous"))
-            SceneArrow(Icons.Filled.ChevronRight, stringResource(R.string.home_next_background), onNext,
-                Modifier.testTag("home-background-next"))
-        }
-        if (weatherScene != null) {
-            Text(
-                stringResource(R.string.home_weather_caption, stringResource(when (weatherScene) {
-                    com.stepup.android.domain.WeatherScene.DAY -> R.string.weather_day
-                    com.stepup.android.domain.WeatherScene.DUSK -> R.string.weather_dusk
-                    com.stepup.android.domain.WeatherScene.NIGHT -> R.string.weather_night
-                    com.stepup.android.domain.WeatherScene.RAIN -> R.string.weather_rain
-                })),
-                color = com.stepup.android.ui.theme.Slate, fontSize = 12.sp,
-                modifier = Modifier.testTag("home-weather-caption"),
-            )
-        }
-    }
-}
-
-/** 풍경 넘기기 — 48dp 터치 */
-@Composable
-private fun SceneArrow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    description: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier.size(StepUpDesign.TouchTarget)
-            .clip(CircleShape)
-            .feedbackClickable(onClick = onClick)
-            .semantics { contentDescription = description; role = Role.Button },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = Snow.copy(alpha = 0.85f), modifier = Modifier.size(22.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = c.tertiaryLabel, modifier = Modifier.size(18.dp))
     }
 }
 

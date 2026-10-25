@@ -27,4 +27,18 @@
     <string name="ui_today">Today</string>
     <string name="ui_tomorrow">Tomorrow</string>
     <string name="ui_open_chat">Crew chat</string>
+    <string name="home_steps_today">Today\'s steps</string>
+    <string name="home_goal_slash">/ %1$s</string>
+    <string name="home_spot_frequent">Where you run most</string>
+    <string name="home_spot_suggest">A good place to run</string>
+    <string name="home_spot_previous">Previous place</string>
+    <string name="home_spot_next">Next place</string>
+    <string name="home_stat_sup">Today\'s SUP</string>
+    <string name="time_of_day_dawn">Dawn</string>
+    <string name="time_of_day_day">Day</string>
+    <string name="time_of_day_dusk">Evening</string>
+    <string name="time_of_day_night">Night</string>
+    <string name="shoes_open_detail">View details</string>
+    <string name="shoes_durability_left">Durability left %1$s</string>
+    <string name="shoes_vault_short">Vault</string>
 </resources>

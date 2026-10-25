@@ -688,13 +688,6 @@ private fun MainScaffoldContent(
                     // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
                     onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
-                    weatherScene = weatherPick.takeIf { com.stepup.android.ui.components.HomePhotos.all[homePhoto].suits(it) },
-                    onPreviousBackground = {
-                        homePhoto = com.stepup.android.ui.components.HomePhotos.previous(homePhoto)
-                    },
-                    onNextBackground = {
-                        homePhoto = com.stepup.android.ui.components.HomePhotos.next(homePhoto)
-                    },
                 )
             }
             composable(Routes.MYSTERY_BOX) {

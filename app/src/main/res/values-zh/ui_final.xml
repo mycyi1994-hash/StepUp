@@ -27,4 +27,18 @@
     <string name="ui_today">今天</string>
     <string name="ui_tomorrow">明天</string>
     <string name="ui_open_chat">打开跑团聊天</string>
+    <string name="home_steps_today">今日步数</string>
+    <string name="home_goal_slash">/ %1$s</string>
+    <string name="home_spot_frequent">常跑的地方</string>
+    <string name="home_spot_suggest">适合跑步的地方</string>
+    <string name="home_spot_previous">上一个地点</string>
+    <string name="home_spot_next">下一个地点</string>
+    <string name="home_stat_sup">今日 SUP</string>
+    <string name="time_of_day_dawn">清晨</string>
+    <string name="time_of_day_day">白天</string>
+    <string name="time_of_day_dusk">傍晚</string>
+    <string name="time_of_day_night">夜晚</string>
+    <string name="shoes_open_detail">查看详情</string>
+    <string name="shoes_durability_left">剩余耐久度 %1$s</string>
+    <string name="shoes_vault_short">鞋柜</string>
 </resources>

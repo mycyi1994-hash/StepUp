@@ -139,6 +139,11 @@ object StepUpIcons {
         )
     }
 
+    /** 겹친 판 — 신발 보관함(시안 shoes 아래 보조 버튼) */
+    val Layers: ImageVector by lazy {
+        strokeIcon("Layers", "M12 4l-8 4l8 4l8 -4l-8 -4", "M4 12l8 4l8 -4", "M4 16l8 4l8 -4")
+    }
+
     /** 내 정보 — 원 안의 사람 */
     val TabProfile: ImageVector by lazy {
         strokeIcon(

@@ -114,6 +114,17 @@ object RunBackground {
     fun nearest(spots: List<Spot>, lat: Double, lng: Double): Spot? =
         spots.map { it to distM(lat, lng, it.lat, it.lng) }.filter { (s, d) -> d <= s.radiusM }.minByOrNull { it.second }?.first
 
+    /**
+     * 홈의 "자주 달리는 곳" — 러닝을 시작한 자리마다 반경 안 가장 가까운 장소를 세어 가장 많이 달린 곳. 같으면 최근 것.
+     * [starts] 는 최근 러닝부터(위도, 경도). 어느 장소 반경에도 들지 않은 러닝은 세지 않는다 — 그런 러닝뿐이면 null.
+     */
+    fun frequent(spots: List<Spot>, starts: List<Pair<Double, Double>>): Spot? {
+        val counts = LinkedHashMap<Spot, Int>()
+        starts.forEach { (lat, lng) -> nearest(spots, lat, lng)?.let { counts[it] = (counts[it] ?: 0) + 1 } }
+        // 처음 나온 순서(= 최근 순서)로 들어 있어 maxBy 가 같은 수에서 최근 장소를 고른다
+        return counts.maxByOrNull { it.value }?.key
+    }
+
     /** 있는 에셋 이름 목록에서 가장 잘 맞는 것 + 색보정이 필요한지. 날씨는 [WeatherLayer] 로 따로 얹는다 */
     fun resolve(have: Set<String>, spot: Spot?, time: TimeOfDay, kind: SpotKind? = spot?.kind): Pick {
         val t = time.name.lowercase()

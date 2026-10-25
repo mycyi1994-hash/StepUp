@@ -61,6 +61,9 @@ object RunTrack {
             TrackPoint(lat, lng, at)
         }
     }
+
+    /** 첫 점만 — 긴 경로를 다 풀지 않는다(홈의 "자주 달리는 곳"이 러닝마다 시작 자리만 본다) */
+    fun first(raw: String): TrackPoint? = decode(raw.substringBefore(POINT_SEPARATOR)).firstOrNull()
 }
 
 /** 시각을 떼고 모양만 넘긴다 — 지도 그리기와 코스 만들기가 쓰는 형태다. */

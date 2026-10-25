@@ -392,51 +392,17 @@ fun S2ShoeStage(shoe: com.stepup.android.domain.Sneaker, modifier: Modifier = Mo
 /** 신발 탭 위의 글자 탭 둘 — 내 신발 · 신발 보관함(신발 화면 확정안 2026-09-28). 뽑기는 하단 가운데 탭으로 옮겼다 */
 enum class ShoeSection { MINE, VAULT }
 
-/**
- * 내 신발 · 신발 보관함 — 고른 탭은 밝은 글자와 글자 폭만큼의 파란 밑줄, 아래에 옅은 선 하나(시안 01 · 02).
- * 두 탭 모두 같은 굵기로 그려 고를 때 글자 폭이 흔들리지 않는다.
- */
+/** 내 신발 · 신발 보관함 — UI 최종 통합안 세그먼트(시안 shoes 위, 361 × 34 · 바 6dp 아래) */
 @Composable
 fun S2ShoesSections(section: ShoeSection, onSelect: (ShoeSection) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter),
-            horizontalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterHorizontally),
-        ) {
-            ShoeSectionTab(
-                androidx.compose.ui.res.stringResource(R.string.shoes_section_mine), section == ShoeSection.MINE,
-                onClick = { onSelect(ShoeSection.MINE) }, modifier = Modifier.testTag("shoes-section-mine"),
-            )
-            ShoeSectionTab(
-                androidx.compose.ui.res.stringResource(R.string.shoes_section_vault), section == ShoeSection.VAULT,
-                onClick = { onSelect(ShoeSection.VAULT) }, modifier = Modifier.testTag("shoes-section-vault"),
-            )
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(StepUpColors.edge.copy(alpha = 0.55f)))
-    }
-}
-
-@Composable
-private fun ShoeSectionTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .width(IntrinsicSize.Max)
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .feedbackClickable(role = Role.Tab, onClick = onClick)
-            .semantics { this.selected = selected }
-            .padding(horizontal = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom,
-    ) {
-        Text(
-            label, color = if (selected) Snow else Silver, maxLines = 1,
-            style = TextStyle(fontFamily = StepUpSans, fontSize = 16.sp, lineHeight = 1.3.em, fontWeight = FontWeight.SemiBold),
-            modifier = Modifier.padding(top = 10.dp, bottom = 9.dp),
-        )
-        Box(
-            Modifier.fillMaxWidth().height(3.dp)
-                .background(if (selected) Volt else Color.Transparent, RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp)),
-        )
-    }
+    StepUpTabs(
+        items = listOf(
+            androidx.compose.ui.res.stringResource(R.string.shoes_section_mine),
+            androidx.compose.ui.res.stringResource(R.string.shoes_section_vault),
+        ),
+        selected = if (section == ShoeSection.MINE) 0 else 1,
+        onSelect = { onSelect(if (it == 0) ShoeSection.MINE else ShoeSection.VAULT) },
+        tags = listOf("shoes-section-mine", "shoes-section-vault"),
+        modifier = modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter).padding(top = 6.dp),
+    )
 }
