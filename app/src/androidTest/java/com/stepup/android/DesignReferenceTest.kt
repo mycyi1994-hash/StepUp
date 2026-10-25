@@ -393,7 +393,8 @@ class DesignReferenceTest {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> "run-live-map"
             Scene.RUN_FINISH -> "run-result-map"
             Scene.COMMUNITY -> "community-featured-title"
-            Scene.PROFILE -> "profile-settings"
+            // 내 정보(2026-10-26) — 사진 틀 거리 카드가 위, 설정 줄은 넘겨서 닿는다
+            Scene.PROFILE -> "profile-record-card"
             Scene.CHALLENGE -> "challenge-primary-action"
             Scene.LOGIN -> "login-google"
             // 시작·로그인·첫 사용 v1 — 첫 안내는 한 장짜리 시트(시안 02)
