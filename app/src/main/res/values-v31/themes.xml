@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ 시스템 시작 화면도 창 바닥과 같은 색(다크 #070B14 · 라이트 #FFFFFF) — 앱 첫 화면으로 넘어갈 때 번쩍이지 않게 -->
+    <style name="Theme.StepUp" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/night</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowSplashScreenBackground">@color/night</item>
+    </style>
+</resources>

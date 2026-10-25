@@ -43,7 +43,7 @@ for locale in ['values-ko', 'values-ja', 'values-zh']:
     assert {node.attrib['name'] for node in ET.parse(RES / locale / 'experience.xml').getroot()} == base
 for font in (RES / 'font').glob('*.ttf'):
     assert font.read_bytes()[:4] == b'\x00\x01\x00\x00', font.name
-for family in ['Pretendard', 'Barlow']:
+for family in ['Paperlogy', 'SairaCondensed', 'Barlow']:
     assert 'SIL OPEN FONT LICENSE' in (ROOT / f'app/src/main/assets/licenses/{family}-OFL.txt').read_text()
 
 from PIL import Image

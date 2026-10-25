@@ -1,4 +1,5 @@
-Pretendard: https://github.com/orioncactus/pretendard/tree/7aeb0698819be2b4097dae8ec8fe6a795e5cf3ae
+Paperlogy: StepUp_UI_최종_2026-10-25 개발 전달본(04_개발_넘김/fonts) — Copyright © 2024 PT&, SIL Open Font License 1.1.
+Saira Condensed: https://github.com/google/fonts/tree/main/ofl/sairacondensed (SemiBold)
 Barlow: https://github.com/google/fonts/tree/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/barlow
 Original unmodified font binaries; SIL Open Font License 1.1.
 UI earcons: original StepUp synthesis; tools/build_experience_assets.py.

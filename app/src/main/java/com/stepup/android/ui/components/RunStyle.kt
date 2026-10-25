@@ -757,7 +757,7 @@ fun RunNumber(
         modifier.then(FitScale(align)),
         verticalAlignment = Alignment.Bottom,
     ) {
-        // 시안의 큰 운동 숫자는 Pretendard 가장 굵은 굵기보다 더 굵다 — 같은 색 테두리를 한 겹 더 그려 굵힌다(큰 수만).
+        // 시안의 큰 운동 숫자는 숫자 글꼴 한 굵기보다 더 굵다 — 같은 색 테두리를 한 겹 더 그려 굵힌다(큰 수만).
         // 위가 밝고 아래가 살짝 푸른 빛(남색 테마)
         val heavy = size >= 28.sp
         val shine = heavy && runTone().dark && color == runTone().text

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 다크블루 창 바닥 — 시스템이 다크면 첫 프레임 전에도 흰 번쩍임 없이 남색이다 -->
+    <color name="night">#070B14</color>
+</resources>

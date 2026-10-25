@@ -16,7 +16,7 @@ import com.stepup.android.ui.theme.ThemeMode
  */
 object AppTheme {
 
-    private val state = mutableStateOf(ThemeMode.LIGHT)
+    private val state = mutableStateOf(ThemeMode.SYSTEM)
 
     /** 지금 고른 테마 */
     val mode: ThemeMode get() = state.value

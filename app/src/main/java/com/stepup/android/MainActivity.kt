@@ -48,9 +48,9 @@ class MainActivity : ComponentActivity() {
         /** 아이콘을 어둡게 못 쓰는 기기에서 시스템 바 뒤에 까는 옅은 판 */
         const val SCRIM = 0x33000000
 
-        // 첫 프레임 전의 창 바닥. ui/theme/Color.kt 의 night 와 값을 맞춘다.
+        // 첫 프레임 전의 창 바닥 — res/values(-night)/colors.xml 의 night 와 같은 값(통합안: 라이트 흰색 · 다크 #070B14)
         const val WINDOW_LIGHT = 0xFFFFFFFF.toInt()
-        const val WINDOW_DARK = 0xFF060A12.toInt()
+        const val WINDOW_DARK = 0xFF070B14.toInt()
     }
 
     /** 앱이 이미 떠 있을 때 초대 링크를 누르면 여기로 온다(singleTop). */
