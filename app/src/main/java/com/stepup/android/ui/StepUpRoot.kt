@@ -1712,9 +1712,6 @@ private fun NavHostController.switchTab(screen: Screen) {
     }
 }
 
-/** 고른 탭 글자를 키우는 배율 */
-private const val NavSelectedLabelScale = 1.1f
-
 /** 하단 탭 줄의 testTag — 화면 검사가 화면 안의 같은 이름 탭과 구분하는 데 쓴다. */
 const val BOTTOM_NAV_TAG = "bottom-nav"
 
@@ -1726,18 +1723,13 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-    val labelStyle = com.stepup.android.ui.theme.StepUpTypography.bodySmall.copy(
-        fontSize = StepUpDesign.NavigationLabel, fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.sp, textAlign = TextAlign.Center,
-    )
+    val labelStyle = com.stepup.android.ui.components.StepUpUi.type.tabLabel.copy(textAlign = TextAlign.Center)
     val labels = bottomTabs.map { stringResource(it.labelRes) }
-    // 고른 탭은 글자가 굵어지고 조금 커진다(2026-10-17) — 자리 폭 · 높이는 굵은 글자로 재어 어느 탭을 골라도 줄이 흔들리지 않게
-    val measureStyle = labelStyle.copy(fontWeight = FontWeight.ExtraBold)
+    val measureStyle = labelStyle
     // Allocate spare space to long localized labels without defeating system font scaling.
     val preferredWidths = labels.map { label ->
         val measured = measurer.measure(text = label, style = measureStyle, softWrap = false)
-        // 고른 글자를 키우는 몫(NavSelectedLabelScale)도 자리에 넣는다
-        (with(density) { measured.size.width.toDp().value } * NavSelectedLabelScale + 10f)
+        (with(density) { measured.size.width.toDp().value } + 10f)
             .coerceAtLeast(StepUpDesign.TouchTarget.value)
     }
     val equalWidth = maxWidth.value / labels.size
@@ -1759,28 +1751,23 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
         ).size.height
     }.maxOrNull() ?: 0
     val labelHeight = with(density) { labelHeightPx.toDp() }
-    // 러닝 전체 리메이크(2026-10-02) — 러닝 · 신발 탭은 시안의 남색 탭 줄과 윗선. 다른 탭은 S2 바닥 그대로
-    val navyBar = com.stepup.android.ui.theme.StepUpColors.dark && parentTabOf(currentRoute).let { it == Screen.Run || it == Screen.Customize }
+    // UI 최종 통합안(2026-10-25) — 반투명 탭바(다크 #070B14 82% · 라이트 #FAFAFC 92%) + 위 0.5dp 선, 선택만 블루. 파란 타일 없음
+    val ui = com.stepup.android.ui.components.StepUpUi.colors
     Column(
         Modifier
             .fillMaxWidth()
-            // S2 — 탭 줄은 바닥에 녹아든다. 카드 면을 두르지 않는다.
-            .background(
-                if (navyBar) Brush.verticalGradient(listOf(Color(0xFF061A38), Color(0xFF031227)))
-                else Brush.verticalGradient(listOf(Night.copy(alpha = 0.92f), Night)),
-            ),
+            .background(ui.tabBar),
     ) {
-        if (!com.stepup.android.ui.theme.StepUpColors.dark) HairlineDivider()
-        if (navyBar) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF15386B)))
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(ui.separator))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 // 프로필 화면 안에도 "프로필" 탭이 있다. 검사가 하단 탭만 집도록 이름을 단다.
                 .testTag(BOTTOM_NAV_TAG)
                 .navigationBarsPadding()
-                // 탭 줄은 64dp — 그 아래로 시스템 안전 영역만큼 더 내려간다
-                .heightIn(min = StepUpDesign.NavigationHeight)
-                .padding(vertical = 4.dp),
+                // 탭 줄(아이콘 26 · 글자 10.5) — 그 아래로 시스템 안전 영역만큼 더 내려간다
+                .heightIn(min = 58.dp)
+                .padding(top = 6.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1819,81 +1806,46 @@ private fun RowScope.NavTab(
     labelStyle: androidx.compose.ui.text.TextStyle,
     selected: Boolean, onClick: () -> Unit,
 ) {
-    // 러닝 전체 리메이크(2026-10-02, 시안 HOME · 신발 색감) — 고른 탭은 파란 선택 타일 위에 흰 아이콘 · 글자.
-    // 뽑기 탭도 같다(2026-10-03 파란 톤 통합 전달본 v4 뽑기 — 예전 보라 타일 대신 파란 면)
-    val blueTile = selected
-    val dark = com.stepup.android.ui.theme.StepUpColors.dark
+    // UI 최종 통합안 — 고른 탭만 블루(표면 위 파란 글자), 나머지는 보조 글자색. 아이콘은 가는 선, 커뮤니티는 고르면 채운 모양
+    val ui = com.stepup.android.ui.components.StepUpUi.colors
     val tint by animateColorAsState(
-        targetValue = when {
-            blueTile -> Color.White
-            dark -> Color(0xFF9DB7E2)
-            else -> Slate
-        },
+        targetValue = if (selected) ui.accentText else ui.secondaryLabel,
         label = "navTabTint",
-    )
-    // 고른 탭 글자 — 조금 커지고(위 가장자리 기준이라 글자 줄은 그대로) 굵어진다
-    val labelScale by animateFloatAsState(
-        targetValue = if (selected) NavSelectedLabelScale else 1f,
-        label = "navTabLabelScale",
     )
     Column(
         modifier = Modifier.weight(slotWeight)
             // 기능을 설명하기 전에 "그게 이 버튼 안에 있다"부터 보여준다.
             .guideTarget(GuideTour.Targets.tab(screen.route))
             .semantics { this.selected = selected }
-            .drawBehind {
-                if (blueTile) {
-                    // 파란 선택 타일 — 자리 폭에서 양옆 4dp, 탭 줄 높이 그대로(자리보다 크게 키우지 않는다)
-                    val w = minOf(size.width - 8.dp.toPx(), 84.dp.toPx())
-                    val h = minOf(size.height, 70.dp.toPx())
-                    val topLeft = androidx.compose.ui.geometry.Offset((size.width - w) / 2f, (size.height - h) / 2f)
-                    val tileSize = androidx.compose.ui.geometry.Size(w, h)
-                    val radius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
-                    drawRoundRect(
-                        Brush.verticalGradient(listOf(Color(0xFF1F6BFF), Color(0xFF0754FF)), startY = topLeft.y, endY = topLeft.y + h),
-                        topLeft, tileSize, radius,
-                    )
-                    drawRoundRect(
-                        Color(0xFF5C9BFF).copy(alpha = 0.7f), topLeft, tileSize, radius,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                    )
-                }
-            }
             .feedbackClickable(cue = FeedbackCue.Select, role = Role.Tab) { onClick() }
-            .heightIn(min = StepUpDesign.NavigationItemHeight)
+            .heightIn(min = 52.dp)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        // 아이콘 + 글자 묶음을 파란 타일 가운데에(2026-10-17 — 예전엔 위에 붙어 아이콘은 너무 위, 글자는 바닥에서 떠 보였다)
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
     ) {
         Icon(
-            imageVector = screen.icon,
+            imageVector = tabIcon(screen, selected),
             contentDescription = null,
             tint = tint,
-            // 뽑기 아이콘만 그림을 1.04배 — 자리(24dp)는 그대로라 탭 줄 높이 · 글자 기준선이 바뀌지 않는다.
-            // 태그는 키우기 층 바깥에 둔다(검사가 재는 아이콘 자리가 다섯 탭 모두 같은 줄)
-            modifier = Modifier.size(StepUpDesign.NavigationIcon)
-                .testTag("nav-icon-${screen.route}")
-                .graphicsLayer {
-                    if (screen == Screen.Draw) {
-                        scaleX = StepUpDesign.DrawNavigationIconScale
-                        scaleY = StepUpDesign.DrawNavigationIconScale
-                    }
-                },
+            modifier = Modifier.size(26.dp).testTag("nav-icon-${screen.route}"),
         )
         Text(
             text = stringResource(screen.labelRes),
-            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}")
-                .graphicsLayer {
-                    scaleX = labelScale
-                    scaleY = labelScale
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
-                },
+            modifier = Modifier.fillMaxWidth().heightIn(min = labelHeight).testTag("nav-label-${screen.route}"),
             color = tint,
-            style = if (selected) labelStyle.copy(fontWeight = FontWeight.ExtraBold) else labelStyle,
+            style = labelStyle,
             softWrap = true,
         )
     }
+}
+
+/** 하단 탭 아이콘 — 가는 선 아이콘(통합안). 커뮤니티만 고르면 채운 모양(시안) */
+private fun tabIcon(screen: Screen, selected: Boolean): ImageVector = when (screen) {
+    Screen.Run -> com.stepup.android.ui.components.StepUpIcons.TabRun
+    Screen.Customize -> com.stepup.android.ui.components.StepUpIcons.TabShoe
+    Screen.Draw -> com.stepup.android.ui.components.StepUpIcons.TabDraw
+    Screen.Community -> if (selected) Icons.Filled.Groups else com.stepup.android.ui.components.StepUpIcons.TabCommunity
+    Screen.Profile -> com.stepup.android.ui.components.StepUpIcons.TabProfile
 }
 
 /** 앱이 죽어 멈춘 러닝 — 이어 달리거나 여기서 끝내고 저장한다. 버리는 선택은 두지 않는다(뛴 기록을 잃지 않게). */

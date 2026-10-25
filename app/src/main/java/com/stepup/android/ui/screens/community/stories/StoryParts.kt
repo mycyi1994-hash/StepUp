@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.community.stories
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -93,8 +97,8 @@ fun StoryMapTone(content: @Composable () -> Unit) {
 enum class StoryButtonStyle { PRIMARY, SECONDARY, DANGER }
 
 /**
- * 버튼 — 주(흰 면 · 파란 아랫면), 보조(남색 면 · 파란 테두리), 위험(빨강). [compact] 는 입력 줄 옆 "등록"처럼 좁은 자리,
- * [hero] 는 목록 아래 큰 "+ 글쓰기"(기울인 굵은 글자).
+ * 버튼 — 통합안 버튼(주 = 블루 알약 + 원 화살표, 보조 = 회색 알약, 위험 = 회색 알약 + 빨간 글자).
+ * [compact] 는 입력 줄 옆 "등록"처럼 좁은 자리(화살표 없이 가운데 글자), [italic] 은 예전 모양 값이라 무시한다.
  */
 @Composable
 fun StoryButton(
@@ -108,24 +112,18 @@ fun StoryButton(
     compact: Boolean = false,
     italic: Boolean = false,
 ) {
-    if (compact) {
-        StoryCompactButton(text, onClick, modifier, enabled, busy)
-        return
+    when (style) {
+        StoryButtonStyle.PRIMARY -> PrimaryButton(
+            text, onClick, if (compact) modifier else modifier.fillMaxWidth(),
+            state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            }, icon = icon, arrow = !compact,
+        )
+        StoryButtonStyle.SECONDARY -> SecondaryBusyButton(text, onClick, if (compact) modifier else modifier.fillMaxWidth(), enabled = enabled, busy = busy, icon = icon)
+        StoryButtonStyle.DANGER -> DangerButton(text, onClick, if (compact) modifier else modifier.fillMaxWidth(), enabled = enabled, busy = busy, icon = icon)
     }
-    RunButton(
-        label = text,
-        onClick = onClick,
-        modifier = modifier,
-        kind = when (style) {
-            StoryButtonStyle.PRIMARY -> RunButtonKind.Primary
-            StoryButtonStyle.SECONDARY -> RunButtonKind.Secondary
-            StoryButtonStyle.DANGER -> RunButtonKind.Danger
-        },
-        icon = icon,
-        enabled = enabled,
-        busy = busy,
-        italic = italic,
-    )
 }
 
 /** 입력 줄 옆 좁은 버튼 — 켜지면 파란 면 · 흰 글자, 꺼지면 흐린 면. 보내는 동안은 도는 표시만 */

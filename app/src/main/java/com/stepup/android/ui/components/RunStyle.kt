@@ -41,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
@@ -112,6 +113,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.BrandLogoRole
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpSans
+import com.stepup.android.ui.theme.StepUpNumbers
 
 /*
  * 러닝 전체 리메이크(2026-10-02 전달본 "러닝 109장 · 신발 색감") 공통 부품.
@@ -201,52 +203,54 @@ class RunTone(
     val mapRoads: ColorFilter? = null,
 )
 
+// UI 최종 통합안(2026-10-25) — 러닝 화면도 앱과 같은 다크블루 · 화이트블루 한 벌이다. 예전 남색 무대(바닥 그라데이션 · 파란 빛 ·
+// 모서리 깎은 흰 버튼)는 없앴다. 주 버튼은 블루 알약 + 원 화살표([PrimaryButton]), 보조는 회색 채움 알약([SecondaryButton]).
 val NavyRunTone = RunTone(
     dark = true,
-    screenTop = Color(0xFF06204A), screen = Color(0xFF031427), screenBottom = Color(0xFF021023),
-    glow = Color(0xFF0B3A86),
-    panelTop = Color(0xFF0D2E57), panel = Color(0xFF0A2547), panelEdge = Color(0xFF1C4E95),
-    inset = Color(0xFF06203F),
-    text = Color(0xFFF5F8FF), label = Color(0xFFAAC3EA), muted = Color(0xFF7F99C2),
-    cobalt = Color(0xFF0754FF), cobaltText = Color(0xFF5B95FF), cyan = Color(0xFF48D9FA),
-    primaryFace = listOf(Color(0xFFFFFFFF), Color(0xFFDCEBFD)), primaryInk = Color(0xFF071B3D),
-    primaryBase = Color(0xFF0754FF),
-    secondaryFace = Color(0xFF061D3B), secondaryEdge = Color(0xFF1F63E6), secondaryInk = Color(0xFFF5F8FF),
-    dangerFace = Color(0xFFE23B4B), dangerBase = Color(0xFF9E1C2B), dangerInk = Color.White,
-    dangerText = Color(0xFFFF5C6B),
-    disabledFace = Color(0xFF3A5070), disabledInk = Color(0xFFA9B8CF), disabledBase = Color(0xFF233752),
-    divider = Color(0xFF1E3A63), track = Color(0xFF15305A),
-    barFill = listOf(Color(0xFF0754FF), Color(0xFF48D9FA)),
-    sheetTop = Color(0xFF0C2A50), sheet = Color(0xFF071C38), sheetEdge = Color(0xFF1C4E95),
-    handle = Color(0xFF3A5A8A), scrim = Color(0xA8010A16),
-    chipFace = Color(0xFF16305A), chipEdge = Color(0xFF2C4C7E), chipInk = Color(0xFFD6E2F8),
-    warnFace = Color(0xFF0C2B55), warnEdge = Color(0xFF2B6BE0), warnIcon = Color(0xFF48D9FA),
-    errorFace = Color(0xFF3A1323), errorEdge = Color(0xFFB83246), errorIcon = Color(0xFFFF5C6B),
-    // 지도는 밝은 거리 지도(2026-10-17 사용자 "지도가 더 밝아야 한다. 네이버지도처럼") — 예전 남색 지도 필터는 뺐다
-    mapFilter = BrightMapFilter, mapShade = 0f, mapRoads = null,
+    screenTop = Color(0xFF070B14), screen = Color(0xFF070B14), screenBottom = Color(0xFF070B14),
+    glow = Color.Transparent,
+    panelTop = Color(0xFF0E1424), panel = Color(0xFF0E1424), panelEdge = Color(0x17FFFFFF),
+    inset = Color(0xFF151C2D),
+    text = Color.White, label = Color(0xFF969CAA), muted = Color(0xFF6E7586),
+    cobalt = Color(0xFF2F6BFF), cobaltText = Color(0xFF6E9BFF), cyan = Color(0xFF6E9BFF),
+    primaryFace = listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF)), primaryInk = Color.White,
+    primaryBase = Color.Transparent,
+    secondaryFace = Color(0xFF202736), secondaryEdge = Color.Transparent, secondaryInk = Color.White,
+    dangerFace = Color(0xFFFF453A), dangerBase = Color.Transparent, dangerInk = Color.White,
+    dangerText = Color(0xFFFF453A),
+    disabledFace = Color(0xFF141A27), disabledInk = Color(0xFF5D6371), disabledBase = Color.Transparent,
+    divider = Color(0x17FFFFFF), track = Color(0xFF222A3D),
+    barFill = listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF)),
+    sheetTop = Color(0xFF0E1424), sheet = Color(0xFF0E1424), sheetEdge = Color.Transparent,
+    handle = Color(0x4DE2E8F5), scrim = Color(0x8C000000),
+    chipFace = Color(0xFF202736), chipEdge = Color.Transparent, chipInk = Color(0xFFE2E8F5),
+    warnFace = Color(0xFF0E1424), warnEdge = Color.Transparent, warnIcon = Color(0xFF6E9BFF),
+    errorFace = Color(0xFF2A1219), errorEdge = Color.Transparent, errorIcon = Color(0xFFFF453A),
+    // 지도 — 다크블루는 앱 테마의 어두운 지도(시안 러닝 화면 다크 판), 화이트블루는 밝은 거리 지도
+    mapFilter = null, mapShade = 0.30f, mapRoads = null,
 )
 
 val LightRunTone = RunTone(
     dark = false,
-    screenTop = Color(0xFFEAF1FF), screen = Color(0xFFF5F8FF), screenBottom = Color(0xFFFFFFFF),
-    glow = Color(0xFFD3E2FF),
-    panelTop = Color(0xFFFFFFFF), panel = Color(0xFFF7FAFF), panelEdge = Color(0xFFC9D8F2),
-    inset = Color(0xFFEDF2FC),
-    text = Color(0xFF0B1E3F), label = Color(0xFF4A5F84), muted = Color(0xFF6A7C9C),
-    cobalt = Color(0xFF0754FF), cobaltText = Color(0xFF0748D6), cyan = Color(0xFF0A8FB8),
-    primaryFace = listOf(Color(0xFF1C63FF), Color(0xFF0754FF)), primaryInk = Color.White,
-    primaryBase = Color(0xFF0335B0),
-    secondaryFace = Color.White, secondaryEdge = Color(0xFF6E9BF5), secondaryInk = Color(0xFF0B1E3F),
-    dangerFace = Color(0xFFD9364A), dangerBase = Color(0xFF8E1424), dangerInk = Color.White,
-    dangerText = Color(0xFFC62337),
-    disabledFace = Color(0xFFC9D3E3), disabledInk = Color(0xFF6E7D96), disabledBase = Color(0xFFAAB7CB),
-    divider = Color(0xFFDCE4F2), track = Color(0xFFDCE5F5),
-    barFill = listOf(Color(0xFF0754FF), Color(0xFF2BB8E0)),
-    sheetTop = Color(0xFFFFFFFF), sheet = Color(0xFFF5F8FF), sheetEdge = Color(0xFFC9D8F2),
-    handle = Color(0xFFB5C3DB), scrim = Color(0xB3091A33),
-    chipFace = Color(0xFFE6EEFC), chipEdge = Color(0xFFC3D3EE), chipInk = Color(0xFF2A3E62),
-    warnFace = Color(0xFFE8F1FF), warnEdge = Color(0xFF8DB2F5), warnIcon = Color(0xFF0748D6),
-    errorFace = Color(0xFFFFECEE), errorEdge = Color(0xFFE59AA4), errorIcon = Color(0xFFC62337),
+    screenTop = Color(0xFFF2F2F7), screen = Color(0xFFF2F2F7), screenBottom = Color(0xFFF2F2F7),
+    glow = Color.Transparent,
+    panelTop = Color.White, panel = Color.White, panelEdge = Color(0x293C3C43),
+    inset = Color(0xFFEFEFF4),
+    text = Color.Black, label = Color(0xFF848489), muted = Color(0xFF9C9CA2),
+    cobalt = Color(0xFF1F5EFF), cobaltText = Color(0xFF1F5EFF), cyan = Color(0xFF1F5EFF),
+    primaryFace = listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF)), primaryInk = Color.White,
+    primaryBase = Color.Transparent,
+    secondaryFace = Color(0xFFE3E3E8), secondaryEdge = Color.Transparent, secondaryInk = Color.Black,
+    dangerFace = Color(0xFFFF3B30), dangerBase = Color.Transparent, dangerInk = Color.White,
+    dangerText = Color(0xFFFF3B30),
+    disabledFace = Color(0xFFE8E8ED), disabledInk = Color(0xFFA9A9AE), disabledBase = Color.Transparent,
+    divider = Color(0x293C3C43), track = Color(0xFFE3E3E8),
+    barFill = listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF)),
+    sheetTop = Color.White, sheet = Color.White, sheetEdge = Color.Transparent,
+    handle = Color(0x4D3C3C43), scrim = Color(0x40000000),
+    chipFace = Color(0xFFE3E3E8), chipEdge = Color.Transparent, chipInk = Color(0xFF3C3C43),
+    warnFace = Color.White, warnEdge = Color.Transparent, warnIcon = Color(0xFF1F5EFF),
+    errorFace = Color(0xFFFFECEB), errorEdge = Color.Transparent, errorIcon = Color(0xFFFF3B30),
     mapFilter = BrightMapFilter, mapShade = 0f,
 )
 
@@ -254,48 +258,38 @@ val LightRunTone = RunTone(
 fun runTone(): RunTone = if (StepUpColors.dark) NavyRunTone else LightRunTone
 
 object RunSpec {
-    val Gutter = 20.dp
-    val PrimaryHeight = 56.dp
-    val PrimaryBase = 6.dp
-    val SecondaryHeight = 50.dp
-    val HeroHeight = 72.dp
-    val HeroBase = 8.dp
+    val Gutter = 16.dp
+    val PrimaryHeight = 54.dp
+    val PrimaryBase = 0.dp
+    val SecondaryHeight = 54.dp
+    val HeroHeight = 54.dp
+    val HeroBase = 0.dp
     val CardRadius = 16.dp
-    val SheetRadius = 26.dp
+    val SheetRadius = 28.dp
     val Gap = 12.dp
 }
 
 // ── 글자 ───────────────────────────────────────────────────────────
 
-/** 큰 운동 숫자 — 굵게 기울인다(본문에는 쓰지 않는다) */
+/** 큰 운동 숫자 — 숫자 글꼴(콘덴스드, 기울이지 않음 · 자간 0). 본문에는 쓰지 않는다 */
 fun runNumberStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.ExtraBold): TextStyle = TextStyle(
-    fontFamily = StepUpSans, fontWeight = weight, fontStyle = FontStyle.Italic, fontSize = size, color = color,
-    letterSpacing = (-0.02).em, fontFeatureSettings = "tnum", lineHeight = 1.08.em,
+    fontFamily = StepUpNumbers, fontWeight = weight, fontSize = size, color = color,
+    letterSpacing = 0.em, fontFeatureSettings = "tnum", lineHeight = 1.0.em,
 )
 
 fun runTextStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f): TextStyle =
     TextStyle(
         fontFamily = StepUpSans, fontWeight = weight, fontSize = size, color = color,
-        letterSpacing = (-0.01).em, lineHeight = height.em,
+        letterSpacing = (if (size.value <= 13f) -0.02 else -0.03).em, lineHeight = height.em,
     )
 
 // ── 바닥 ───────────────────────────────────────────────────────────
 
-/** 러닝 화면 바닥 — 남색, 위가 조금 밝고 오른쪽 위에서 파란 빛이 번진다 */
+/** 러닝 화면 바닥 — 통합안 바닥색 한 장(번지는 빛 없음) */
 @Composable
 fun RunBackdrop(modifier: Modifier = Modifier) {
     val t = runTone()
-    Canvas(modifier) {
-        drawRect(Brush.verticalGradient(0f to t.screenTop, 0.32f to t.screen, 1f to t.screenBottom))
-        drawRect(
-            Brush.radialGradient(
-                0f to t.glow.copy(alpha = if (t.dark) 0.55f else 0.6f),
-                1f to Color.Transparent,
-                center = Offset(size.width * 0.9f, size.height * 0.02f),
-                radius = size.width * 0.95f,
-            ),
-        )
-    }
+    Canvas(modifier) { drawRect(t.screen) }
 }
 
 // ── 모양 ───────────────────────────────────────────────────────────
@@ -330,8 +324,8 @@ private fun chamferPath(size: Size, cut: Float, top: Float = 0f, height: Float =
 enum class RunButtonKind { Primary, Secondary, Danger }
 
 /**
- * 러닝 버튼 — 주(흰 면 · 남색 글자 · 파란 아랫면), 보조(남색 면 · 파란 테두리), 위험(빨간 면).
- * 모서리를 깎은 모양이고 눌리면 아랫면 쪽으로 짧게 내려앉는다. [busy] 면 글자 앞에 도는 표시를 둔다.
+ * 러닝 버튼 — 통합안 버튼으로 그린다. 주 = 블루 알약 54 + 끝 원 화살표([PrimaryButton]), 보조 = 회색 채움 알약,
+ * 위험 = 회색 알약 + 빨간 글자(화살표 없음). [busy] 면 가운데 스피너만, 누를 수 없으면 회색. [hero] · [italic] 은 예전 모양 값이라 무시한다.
  */
 @Composable
 fun RunButton(
@@ -344,113 +338,23 @@ fun RunButton(
     busy: Boolean = false,
     hero: Boolean = false,
     cue: FeedbackCue = FeedbackCue.Tap,
-    /** 오른쪽 끝 ">"(다음 화면으로 넘어가는 버튼 — "내 러닝 방법 보기 >") */
+    /** 오른쪽 끝 화살표 — 통합안은 주 버튼에 늘 원 화살표를 단다(보조 · 위험 버튼에는 없다) */
     chevron: Boolean = false,
-    /** 기울인 굵은 글자(화면의 큰 행동 — 일시정지 · 처음 화면으로 · 공유하기). [hero] 는 늘 기울인다 */
     italic: Boolean = hero,
 ) {
-    val t = runTone()
-    val feedback = LocalFeedback.current
-    val interactions = remember { MutableInteractionSource() }
-    val pressed by interactions.collectIsPressedAsState()
-    val faceHeight = when {
-        hero -> RunSpec.HeroHeight
-        kind == RunButtonKind.Secondary -> RunSpec.SecondaryHeight
-        else -> RunSpec.PrimaryHeight
-    }
-    val base = when {
-        kind == RunButtonKind.Secondary -> 0.dp
-        hero -> RunSpec.HeroBase
-        else -> RunSpec.PrimaryBase
-    }
-    val cut = faceHeight * 0.3f
-    val active = enabled && !busy
-    val faceColors: List<Color>
-    val ink: Color
-    val baseColor: Color
-    when {
-        !enabled || busy -> {
-            faceColors = listOf(t.disabledFace, t.disabledFace); ink = t.disabledInk; baseColor = t.disabledBase
-        }
-        kind == RunButtonKind.Primary -> {
-            faceColors = t.primaryFace; ink = t.primaryInk; baseColor = t.primaryBase
-        }
-        kind == RunButtonKind.Danger -> {
-            faceColors = listOf(t.dangerFace, t.dangerFace); ink = t.dangerInk; baseColor = t.dangerBase
-        }
-        else -> {
-            faceColors = listOf(t.secondaryFace, t.secondaryFace); ink = t.secondaryInk; baseColor = Color.Transparent
-        }
-    }
-    val sink = if (pressed && active && base > 0.dp) base * 0.6f else 0.dp
-    Box(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = faceHeight + base)
-            .clickable(interactionSource = interactions, indication = null, enabled = active, role = Role.Button) {
-                feedback?.play(cue)
-                onClick()
-            }
-            .semantics { if (busy) contentDescription = label },
-    ) {
-        Canvas(Modifier.matchParentSize()) {
-            val faceH = size.height - base.toPx()
-            val c = cut.toPx()
-            if (base > 0.dp) {
-                drawPath(chamferPath(size, c, top = base.toPx(), height = faceH), baseColor)
-            }
-            val top = sink.toPx()
-            val face = chamferPath(size, c, top = top, height = faceH)
-            drawPath(face, Brush.verticalGradient(faceColors, startY = top, endY = top + faceH))
-            if (kind == RunButtonKind.Secondary && enabled) {
-                drawPath(face, t.secondaryEdge, style = Stroke(width = 1.5.dp.toPx()))
-            }
-        }
-        Row(
-            Modifier.fillMaxWidth().height(faceHeight).offset(y = sink)
-                .padding(horizontal = 22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            if (busy) {
-                RunSpinner(Modifier.size(22.dp), color = ink, track = ink.copy(alpha = 0.25f))
-                Spacer(Modifier.width(12.dp))
-            } else if (icon != null) {
-                Icon(
-                    icon, contentDescription = null,
-                    tint = if (kind == RunButtonKind.Primary && enabled && t.dark) t.cobalt else ink,
-                    modifier = Modifier.size(if (hero) 34.dp else 24.dp),
-                )
-                Spacer(Modifier.width(if (hero) 16.dp else 10.dp))
-            }
-            val strong = kind != RunButtonKind.Secondary
-            Text(
-                label,
-                style = if (strong) {
-                    TextStyle(
-                        fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold,
-                        fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
-                        fontSize = when {
-                            hero -> 30.sp
-                            italic -> 25.sp
-                            else -> 19.sp
-                        },
-                        letterSpacing = (-0.02).em, color = ink,
-                    )
-                } else {
-                    runTextStyle(18.sp, ink, FontWeight.SemiBold)
-                },
-                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-            )
-        }
-        if (chevron) {
-            Box(
-                Modifier.align(Alignment.TopEnd).height(faceHeight).offset(y = sink).padding(end = 18.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = ink, modifier = Modifier.size(26.dp))
-            }
-        }
+    when (kind) {
+        RunButtonKind.Primary -> PrimaryButton(
+            label, onClick, modifier.fillMaxWidth(),
+            state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            },
+            icon = icon, cue = cue,
+        )
+        RunButtonKind.Secondary -> SecondaryBusyButton(label, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy, icon = icon, cue = cue)
+        RunButtonKind.Danger -> DangerButton(label, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy, icon = icon, cue = cue)
+
     }
 }
 
@@ -475,14 +379,14 @@ fun RunTextAction(
         val color = when {
             !enabled -> t.muted
             danger -> t.dangerText
-            else -> t.label
+            else -> t.cobaltText
         }
-        Text(label, style = runTextStyle(16.sp, color, FontWeight.SemiBold), textAlign = TextAlign.Center)
+        Text(label, style = runTextStyle(15.sp, color, FontWeight.SemiBold), textAlign = TextAlign.Center)
         if (chevron) Icon(Icons.Filled.ChevronRight, null, tint = color, modifier = Modifier.size(20.dp))
     }
 }
 
-/** 작은 테두리 버튼 — 아이콘 + 글자(공유하기 · 내 러닝 기록 보기). 둘씩 나란히 둔다 */
+/** 작은 보조 버튼 — 아이콘 + 글자(공유하기 · 내 러닝 기록 보기). 회색 채움 알약, 둘씩 나란히 둔다 */
 @Composable
 fun RunTileButton(
     label: String,
@@ -491,30 +395,14 @@ fun RunTileButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val t = runTone()
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        modifier.heightIn(min = 52.dp).clip(shape).background(t.secondaryFace, shape)
-            .border(1.5.dp, if (enabled) t.secondaryEdge else t.divider, shape)
-            .feedbackClickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        val ink = if (enabled) t.text else t.muted
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) t.label else t.muted, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(10.dp))
-        }
-        Text(label, style = runTextStyle(15.sp, ink, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
+    SecondaryButton(label, onClick, modifier, icon = icon, enabled = enabled)
 }
 
 // ── 머리 · 제목 ─────────────────────────────────────────────────────
 
 /**
- * 러닝 화면 머리 — 왼쪽 뒤로(가는 화살표) · 공식 로고, 오른쪽은 그 화면의 행동 하나(삭제 · SUP 잔액 등)만.
- * [crumb] 가 있으면(크루 화면) 왼쪽에 작은 이름, 로고는 오른쪽에 작게.
+ * 러닝 화면 머리 — 왼쪽 뒤로(회색 원 36), 오른쪽은 그 화면의 행동 하나(삭제 · SUP 잔액 등)만. 통합안 머리에는 로고를 두지 않는다
+ * (첫 화면 머리만 로고). [crumb] 가 있으면(크루 화면) 가운데 작은 이름.
  */
 @Composable
 fun RunTopBar(
@@ -524,39 +412,33 @@ fun RunTopBar(
     trailing: (@Composable () -> Unit)? = null,
     /** 뒤로 버튼 꼬리표 — 권한 안내처럼 닫기와 같은 뜻이면 그 이름으로 */
     backTag: String = "kit-back",
-    /** 테마와 상관없이 늘 짙은 남색인 화면(리더보드) — 흰 화살표 · 흰 워드마크(시안 92 너비) */
+    /** 테마와 상관없이 늘 짙은 화면(리더보드) — 흰 글자 · 유리 원 */
     onNavy: Boolean = false,
+    /** 가운데 제목(17 · 700) — 시안 머리 줄 */
+    title: String? = null,
 ) {
     val t = runTone()
-    val ink = if (onNavy) Color.White else t.text
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 4.dp, end = RunSpec.Gutter - 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        if (onBack != null) {
-            Box(
-                Modifier.size(48.dp).clip(CircleShape)
-                    .feedbackClickable(cue = FeedbackCue.Back, onClick = onBack).testTag(backTag),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = ink,
-                    modifier = Modifier.size(20.dp).offset(x = 3.dp),
-                )
-            }
-        } else {
-            Spacer(Modifier.width(RunSpec.Gutter - 4.dp))
-        }
-        if (crumb != null) {
+        val center = title ?: crumb
+        if (center != null) {
             Text(
-                crumb, style = runTextStyle(16.sp, t.label, FontWeight.Medium), maxLines = 1,
-                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).testTag("run-crumb"),
+                center, style = StepUpUi.type.navTitle, color = if (onNavy) Color.White else t.text, maxLines = 1,
+                overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 64.dp).semantics { heading() }
+                    .then(if (crumb != null && title == null) Modifier.testTag("run-crumb") else Modifier),
             )
-            Wordmark(BrandLogoRole.Card)
-        } else {
-            if (onNavy) RunStartWordmark(92.dp) else Wordmark(BrandLogoRole.Header, Modifier.weight(1f, fill = false))
-            Spacer(Modifier.weight(1f))
-            trailing?.invoke()
+        }
+        if (onBack != null) {
+            CircleIconButton(
+                Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
+                modifier = Modifier.align(Alignment.CenterStart).testTag(backTag), onPhoto = onNavy, cue = FeedbackCue.Back,
+            )
+        }
+        if (trailing != null) {
+            Box(Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)) { trailing() }
         }
     }
 }
@@ -591,7 +473,7 @@ fun RunHeaderAction(
     }
 }
 
-/** 화면 제목 — 굵은 제목(메뉴 화면은 [display] 로 기울인 큰 제목) · 한 줄 설명 */
+/** 화면 제목 — 굵은 큰 제목(30 · 800, 메뉴 화면 [display] 는 34) · 한 줄 설명. 기울이지 않는다 */
 @Composable
 fun RunHeadline(
     title: String,
@@ -603,34 +485,17 @@ fun RunHeadline(
 ) {
     val t = runTone()
     Column(modifier.fillMaxWidth(), horizontalAlignment = if (align == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
-        val style = if (display) {
-            TextStyle(
-                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
-                fontSize = 42.sp, lineHeight = 1.15.em, letterSpacing = (-0.03).em, color = t.text,
-            )
-        } else {
-            TextStyle(
-                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp,
-                lineHeight = 1.24.em, letterSpacing = (-0.03).em, color = t.text,
-            )
-        }
-        Box {
-            Text(
-                title, style = style, textAlign = align,
-                modifier = Modifier.semantics { heading() }.then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
-            )
-            if (display) {
-                // 시안의 큰 제목은 가장 굵은 글꼴보다 굵다 — 같은 색 테두리를 얇게 한 겹 더 그린다(읽히는 글자는 위의 것 하나)
-                Text(
-                    title, textAlign = align,
-                    style = style.copy(drawStyle = Stroke(width = with(LocalDensity.current) { 1.4.dp.toPx() }, join = StrokeJoin.Round)),
-                    modifier = Modifier.clearAndSetSemantics { },
-                )
-            }
-        }
+        val style = TextStyle(
+            fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = if (display) 34.sp else 30.sp,
+            lineHeight = 1.25.em, letterSpacing = (-0.045).em, color = t.text,
+        )
+        Text(
+            title, style = style, textAlign = align,
+            modifier = Modifier.semantics { heading() }.then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
+        )
         if (subtitle != null) {
             Spacer(Modifier.height(6.dp))
-            Text(subtitle, style = runTextStyle(16.sp, t.label, FontWeight.Medium), textAlign = align)
+            Text(subtitle, style = runTextStyle(15.sp, t.label, FontWeight.Normal), textAlign = align)
         }
     }
 }
@@ -673,7 +538,7 @@ fun RunPage(
             }
             if (bottom != null) {
                 Column(
-                    Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 8.dp, bottom = 14.dp).imePadding(),
+                    Modifier.fillMaxWidth().padding(horizontal = RunSpec.Gutter).padding(top = 8.dp, bottom = 16.dp).imePadding(),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     content = bottom,
                 )
@@ -687,45 +552,34 @@ fun RunPage(
 
 enum class RunPillKind { Live, Paused, Saved, Pending, Neutral, Alert }
 
-/** 상태 알약 — 기록 중(파란 면 · 시안 점) · 일시정지 · 저장 완료(시안 테두리 · 체크) · 저장 전 · 확인 중 */
+/**
+ * 상태 한 줄 — 통합안은 상태를 알약(칩)으로 쓰지 않는다. 앞에 점(기록 중 · 확인 중) 또는 아이콘, 뒤에 글자 한 줄.
+ * 기록 중 = 초록 점, 일시정지 = 일시정지 아이콘, 저장 완료 = 체크, 경고 = 빨간 점.
+ */
 @Composable
 fun RunStatusPill(text: String, kind: RunPillKind, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     val t = runTone()
-    val shape = RoundedCornerShape(50)
-    val (face, edge, ink) = when (kind) {
-        RunPillKind.Live -> Triple(t.cobalt, t.cobalt.copy(alpha = 0.0f), Color.White)
-        RunPillKind.Paused -> Triple(t.secondaryFace, t.secondaryEdge, t.text)
-        RunPillKind.Saved -> Triple(if (t.dark) Color(0xFF07254A) else Color(0xFFE6F6FD), t.cyan, if (t.dark) t.text else t.text)
-        RunPillKind.Pending -> Triple(t.secondaryFace, t.chipEdge, t.text)
-        RunPillKind.Neutral -> Triple(t.chipFace, t.chipEdge, t.chipInk)
-        RunPillKind.Alert -> Triple(t.errorFace, t.errorEdge, t.text)
+    val ui = StepUpUi.colors
+    val ink = when (kind) {
+        RunPillKind.Alert -> t.dangerText
+        RunPillKind.Live, RunPillKind.Saved -> t.text
+        else -> t.label
     }
     Row(
-        modifier.heightIn(min = 32.dp).clip(shape)
-            .background(
-                if (kind == RunPillKind.Live) Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF)))
-                else Brush.horizontalGradient(listOf(face, face)),
-                shape,
-            )
-            .border(1.dp, edge, shape)
-            .padding(horizontal = 14.dp, vertical = 5.dp),
+        modifier.heightIn(min = 28.dp).padding(horizontal = 2.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         when {
-            icon != null -> Icon(icon, null, tint = if (kind == RunPillKind.Saved) t.cyan else ink, modifier = Modifier.size(18.dp))
-            kind == RunPillKind.Live -> Box(
-                Modifier.size(12.dp).drawBehind {
-                    drawCircle(t.cyan.copy(alpha = 0.35f), radius = size.minDimension / 2f)
-                    drawCircle(t.cyan, radius = size.minDimension / 3.2f)
-                },
-            )
-            kind == RunPillKind.Paused -> Icon(Icons.Filled.Pause, null, tint = ink, modifier = Modifier.size(18.dp))
-            kind == RunPillKind.Saved -> Icon(Icons.Filled.CheckCircle, null, tint = t.cyan, modifier = Modifier.size(18.dp))
-            kind == RunPillKind.Pending -> Box(Modifier.size(10.dp).clip(CircleShape).background(t.cobaltText))
+            icon != null -> Icon(icon, null, tint = if (kind == RunPillKind.Saved) ui.success else ink, modifier = Modifier.size(16.dp))
+            kind == RunPillKind.Live -> Box(Modifier.size(7.dp).clip(CircleShape).background(ui.success))
+            kind == RunPillKind.Paused -> Icon(Icons.Filled.Pause, null, tint = ink, modifier = Modifier.size(16.dp))
+            kind == RunPillKind.Saved -> Icon(Icons.Filled.CheckCircle, null, tint = ui.success, modifier = Modifier.size(16.dp))
+            kind == RunPillKind.Pending -> Box(Modifier.size(7.dp).clip(CircleShape).background(t.cobaltText))
+            kind == RunPillKind.Alert -> Box(Modifier.size(7.dp).clip(CircleShape).background(ui.live))
             else -> Unit
         }
-        if (kind != RunPillKind.Neutral || icon != null) Spacer(Modifier.width(8.dp))
-        Text(text, style = runTextStyle(15.sp, ink, FontWeight.SemiBold), maxLines = 1)
+        if (kind != RunPillKind.Neutral || icon != null) Spacer(Modifier.width(7.dp))
+        Text(text, style = runTextStyle(14.sp, ink, FontWeight.Medium), maxLines = 1)
     }
 }
 
@@ -733,6 +587,7 @@ fun RunStatusPill(text: String, kind: RunPillKind, modifier: Modifier = Modifier
 
 /**
  * 큰 수 + 작은 단위 한 줄 — 폭이 모자라면(큰 글씨 · 좁은 화면) 둘을 같은 비율로 줄인다. 두 줄로 넘기지 않는다.
+ * 수는 숫자 글꼴(콘덴스드), 단위는 한글 글꼴 — 단위는 12sp 보다 작아지지 않는다.
  */
 @Composable
 fun RunNumber(
@@ -748,46 +603,23 @@ fun RunNumber(
     italicUnit: Boolean = true,
 ) {
     val valueStyle = runNumberStyle(size, color)
-    val unitStyle = if (italicUnit) runNumberStyle(unitSize, unitColor, FontWeight.Bold)
-    else runTextStyle(unitSize, unitColor, FontWeight.SemiBold, 1.1f)
+    val unitStyle = runTextStyle(if (unitSize.value < 12f) 12.sp else unitSize, unitColor, FontWeight.Medium, 1.1f)
     // 폭이 모자라면 한 번 잰 줄을 그대로 줄여 그린다 — 예전처럼 BoxWithConstraints(그리는 중에 한 번 더 짜기)와 글자 따로 재기를
     // 하지 않는다. 이 수는 한 화면에 여러 개(목록 줄마다)라 그 비용이 쌓이면 넘김이 버벅인다.
-    val horizontal = align
     Row(
         modifier.then(FitScale(align)),
         verticalAlignment = Alignment.Bottom,
     ) {
-        // 시안의 큰 운동 숫자는 숫자 글꼴 한 굵기보다 더 굵다 — 같은 색 테두리를 한 겹 더 그려 굵힌다(큰 수만).
-        // 위가 밝고 아래가 살짝 푸른 빛(남색 테마)
-        val heavy = size >= 28.sp
-        val shine = heavy && runTone().dark && color == runTone().text
-        Box(Modifier.alignByBaseline()) {
-            // 읽히는 글자(꼬리표 · 화면 낭독)가 먼저, 굵히는 테두리는 같은 색이라 위에 겹쳐도 같다
-            Text(
-                value,
-                style = if (shine) valueStyle.copy(brush = NumberShine) else valueStyle,
-                maxLines = 1, softWrap = false,
-                modifier = if (valueTag != null) Modifier.testTag(valueTag) else Modifier,
-            )
-            if (heavy) {
-                Text(
-                    value,
-                    style = valueStyle.copy(
-                        drawStyle = Stroke(width = with(LocalDensity.current) { (size.value * 0.035f).dp.toPx() }, join = StrokeJoin.Round),
-                        brush = if (shine) NumberShine else null,
-                    ),
-                    maxLines = 1, softWrap = false, modifier = Modifier.clearAndSetSemantics { },
-                )
-            }
-        }
+        Text(
+            value, style = valueStyle, maxLines = 1, softWrap = false,
+            modifier = Modifier.alignByBaseline().then(if (valueTag != null) Modifier.testTag(valueTag) else Modifier),
+        )
         if (unit != null) {
             Text(" $unit", style = unitStyle, maxLines = 1, softWrap = false, modifier = Modifier.alignByBaseline())
         }
     }
 }
 
-/** 큰 수의 빛 — 위가 밝고 아래가 살짝 푸르다 */
-private val NumberShine = Brush.verticalGradient(listOf(Color.White, Color(0xFFC7D7F2)))
 
 /** 가운데 큰 시간 — 작은 이름("달린 시간") · 아주 큰 기울인 수 · 아래 한 줄 */
 @Composable
@@ -830,55 +662,42 @@ data class RunStat(
 )
 
 /**
- * 수치 묶음 — 같은 폭 칸들을 한 줄로, 칸 사이에 가는 세로선. [framed] 면 패널 안에 둔다.
+ * 수치 묶음 — 상자 없이 같은 폭 칸들을 한 줄로. 칸마다 큰 수(+단위) · 아래 이름(시안 숫자 줄). [framed] 면 카드 안에 둔다.
  */
 @Composable
 fun RunStatRow(
     stats: List<RunStat>,
     modifier: Modifier = Modifier,
     framed: Boolean = false,
-    valueSize: TextUnit = 40.sp,
+    valueSize: TextUnit = 34.sp,
     dim: Boolean = false,
 ) {
     val t = runTone()
-    val gap = 20.dp
     val inner = @Composable {
-        Row(
-            Modifier.fillMaxWidth().drawBehind {
-                val g = gap.toPx()
-                val columns = stats.size
-                val column = (size.width - g * (columns - 1)) / columns
-                for (i in 1 until columns) {
-                    val x = column * i + g * (i - 1) + g / 2f
-                    drawLine(t.divider, Offset(x, 6.dp.toPx()), Offset(x, size.height - 6.dp.toPx()), strokeWidth = 1.dp.toPx())
-                }
-            },
-            horizontalArrangement = Arrangement.spacedBy(gap),
-            verticalAlignment = Alignment.Top,
-        ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
             stats.forEach { stat ->
                 // 칸은 한 덩어리로 읽힌다(이름 · 값 · 단위). 꼬리표는 값 글자에 — 검사는 펼친 트리에서 값만 읽는다
                 Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                    Text(stat.label, style = runTextStyle(14.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(Modifier.height(2.dp))
                     RunNumber(
-                        stat.value, unit = stat.unit, size = valueSize,
+                        stat.value, unit = stat.unit, size = valueSize, unitSize = 12.sp,
                         color = when {
                             dim -> t.muted
-                            stat.accent -> t.cyan
+                            stat.accent -> t.cobaltText
                             else -> t.text
                         },
                         modifier = Modifier.fillMaxWidth(), valueTag = stat.tag,
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Text(stat.label, style = runTextStyle(13.sp, t.label, FontWeight.Normal), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (stat.caption != null) {
-                        Text(stat.caption, style = runTextStyle(13.sp, t.muted, FontWeight.Medium), maxLines = 1)
+                        Text(stat.caption, style = runTextStyle(12.sp, t.muted, FontWeight.Normal), maxLines = 1)
                     }
                 }
             }
         }
     }
     if (framed) {
-        RunCard(modifier, padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)) { inner() }
+        RunCard(modifier, padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)) { inner() }
     } else {
         Box(modifier) { inner() }
     }
@@ -886,12 +705,12 @@ fun RunStatRow(
 
 // ── 막대 ───────────────────────────────────────────────────────────
 
-/** 진행 막대 — 어두운 바닥에 파랑 → 시안 채움. [inside] 가 있으면 채운 끝에 작은 글자 */
+/** 진행 막대 — 회색 길 위 블루 채움(그라데이션 없음). [inside] 가 있으면 채운 끝에 작은 글자 */
 @Composable
 fun RunMeter(
     fraction: Float,
     modifier: Modifier = Modifier,
-    height: Dp = 10.dp,
+    height: Dp = 8.dp,
     inside: String? = null,
     fill: List<Color>? = null,
 ) {
@@ -906,7 +725,8 @@ fun RunMeter(
                 if (f > 0f) {
                     val w = (size.width * f).coerceAtLeast(size.height)
                     drawRoundRect(
-                        Brush.horizontalGradient(colors, endX = w.coerceAtLeast(1f)), size = Size(w, size.height), cornerRadius = r,
+                        if (colors.size > 1) Brush.horizontalGradient(colors, endX = w.coerceAtLeast(1f)) else Brush.horizontalGradient(listOf(colors[0], colors[0])),
+                        size = Size(w, size.height), cornerRadius = r,
                     )
                 }
             },
@@ -922,11 +742,11 @@ fun RunMeter(
 
 // ── 패널 ───────────────────────────────────────────────────────────
 
-/** 패널 — 남색 면, 파란 둘레, 모서리 16dp. [selected] 면 파란 둘레가 굵어진다 */
+/** 카드 — 묶음 면(다크 #0E1424 · 라이트 흰색), 모서리 16, 테두리 없음. [selected] 면 2dp 블루 테두리 */
 @Composable
 fun RunCard(
     modifier: Modifier = Modifier,
-    padding: PaddingValues = PaddingValues(18.dp),
+    padding: PaddingValues = PaddingValues(16.dp),
     onClick: (() -> Unit)? = null,
     selected: Boolean = false,
     tag: String? = null,
@@ -936,8 +756,8 @@ fun RunCard(
     val shape = RoundedCornerShape(RunSpec.CardRadius)
     Column(
         modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
-            .border(if (selected) 2.dp else 1.dp, if (selected) t.cobalt.copy(alpha = 0.95f) else t.panelEdge, shape)
+            .background(t.panel, shape)
+            .then(if (selected) Modifier.border(2.dp, t.cobalt, shape) else Modifier)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .then(if (tag != null) Modifier.testTag(tag) else Modifier)
             .padding(padding),
@@ -945,12 +765,10 @@ fun RunCard(
     )
 }
 
-/** 메뉴 카드 둘레 빛 */
-private val CardGlow = Color(0xFF1E64FF)
 
 /**
- * 러닝 방법 카드(시안 U01 · U02) — 같은 크기의 가로 버튼. 왼쪽 큰 이름 · 작은 설명, 오른쪽 그림 · 화살표.
- * 카드 전체가 하나의 버튼이다(카드 안에 버튼을 또 두지 않는다).
+ * 러닝 방법 카드(시안 U01 · U02) — 같은 크기의 가로 줄. 왼쪽 이름 · 작은 설명, 오른쪽 그림 · ">".
+ * 카드 전체가 하나의 버튼이다(카드 안에 버튼을 또 두지 않는다). 번지는 빛 · 테두리 없이 묶음 면만.
  */
 @Composable
 fun RunModeCard(
@@ -962,80 +780,63 @@ fun RunModeCard(
     enabled: Boolean = true,
     badge: String? = null,
     titleStyle: TextStyle? = null,
-    minHeight: Dp = 88.dp,
+    minHeight: Dp = 76.dp,
 ) {
     val t = runTone()
     val shape = RoundedCornerShape(RunSpec.CardRadius)
-    val edge = if (t.dark) Color(0xFF2B6DFF) else t.secondaryEdge
     Row(
         modifier.fillMaxWidth().heightIn(min = minHeight)
-            .drawBehind {
-                // 바깥 빛 — 파란 둘레가 은은하게 번진다. 흐림 필터(BlurMaskFilter)는 다시 그릴 때마다 CPU 로 흐림을 계산해
-                // 메뉴 카드가 여럿이면 화면 넘김이 버벅인다 — 넓고 옅은 테 두 겹으로 같은 느낌만 낸다
-                if (t.dark && enabled) {
-                    val r = CornerRadius(RunSpec.CardRadius.toPx())
-                    drawRoundRect(CardGlow.copy(alpha = 0.14f), cornerRadius = r, style = Stroke(10.dp.toPx()))
-                    drawRoundRect(CardGlow.copy(alpha = 0.24f), cornerRadius = r, style = Stroke(5.dp.toPx()))
-                }
-            }
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
-            .border(1.5.dp, if (enabled) edge else t.divider, shape)
+            .background(t.panel, shape)
             .feedbackClickable(enabled = enabled, onClick = onClick)
-            .padding(start = 20.dp, end = 10.dp, top = 14.dp, bottom = 14.dp),
+            .padding(start = 18.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = if (enabled) t.cobaltText else t.muted, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(14.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     title,
-                    style = titleStyle ?: runTextStyle(27.sp, if (enabled) t.text else t.muted, FontWeight.ExtraBold, 1.2f),
+                    style = titleStyle ?: runTextStyle(18.sp, if (enabled) t.text else t.muted, FontWeight.ExtraBold, 1.25f),
                     maxLines = 2,
                 )
                 if (badge != null) {
-                    Text(
-                        badge, style = runTextStyle(12.sp, t.chipInk, FontWeight.SemiBold),
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(t.chipFace)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                    )
+                    Text(badge, style = runTextStyle(12.sp, t.label, FontWeight.SemiBold))
                 }
             }
-            Text(subtitle, style = runTextStyle(15.sp, if (enabled) t.label else t.muted, FontWeight.Medium))
+            Text(subtitle, style = runTextStyle(13.5.sp, if (enabled) t.label else t.muted, FontWeight.Normal))
         }
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) Color(0xFFCFE0FF).takeIf { t.dark } ?: t.cobalt else t.muted,
-                modifier = Modifier.size(48.dp))
-            Spacer(Modifier.width(12.dp))
-        }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = if (enabled) t.label else t.muted, modifier = Modifier.size(30.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted, modifier = Modifier.size(24.dp))
     }
 }
 
-/** 한 줄 이동 칸 — "내 러닝 기록 >" · "지난 도전 보기 >" */
+/** 한 줄 이동 칸 — "내 러닝 기록 >" · "지난 도전 보기 >"(묶음 면 한 줄) */
 @Composable
 fun RunLinkRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, trailing: String? = null) {
     val t = runTone()
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(RunSpec.CardRadius)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(t.secondaryFace, shape)
-            .border(1.dp, t.secondaryEdge.copy(alpha = 0.75f), shape)
+        modifier.fillMaxWidth().heightIn(min = 54.dp).clip(shape).background(t.panel, shape)
             .feedbackClickable(onClick = onClick)
-            .padding(start = 20.dp, end = 12.dp),
+            .padding(start = 16.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = runTextStyle(17.sp, t.text, FontWeight.SemiBold), modifier = Modifier.weight(1f))
+        Text(label, style = runTextStyle(16.sp, t.text, FontWeight.Bold), modifier = Modifier.weight(1f))
         if (trailing != null) {
-            Text(trailing, style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            Text(trailing, style = runTextStyle(13.5.sp, t.label, FontWeight.Normal))
             Spacer(Modifier.width(4.dp))
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(24.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted, modifier = Modifier.size(22.dp))
     }
 }
 
 // ── 지도 틀 ─────────────────────────────────────────────────────────
 
 /**
- * 지도 틀 — 모서리 16dp · 파란 둘레, 오른쪽 위 확대 버튼. 안은 실제 지도([LiveRouteMap])나 안내를 넣는다.
+ * 지도 틀 — 모서리 22, 테두리 없음, 오른쪽 위 확대 원 버튼. 안은 실제 지도([LiveRouteMap])나 안내를 넣는다.
  * 지도 출처 표기는 지도 부품이 왼쪽 아래에 두므로 가리지 않는다.
  */
 @Composable
@@ -1046,9 +847,9 @@ fun RunMapFrame(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val t = runTone()
-    val shape = RoundedCornerShape(RunSpec.CardRadius)
+    val shape = RoundedCornerShape(22.dp)
     Box(
-        modifier.fillMaxWidth().clip(shape).background(t.inset, shape).border(1.dp, t.panelEdge, shape),
+        modifier.fillMaxWidth().clip(shape).background(StepUpUi.colors.mapBackground, shape),
     ) {
         androidx.compose.runtime.CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
             content()
@@ -1056,14 +857,14 @@ fun RunMapFrame(
         if (onExpand != null) {
             val label = expandLabel ?: stringResource(R.string.run_map_expand)
             Box(
-                Modifier.align(Alignment.TopEnd).padding(8.dp).size(44.dp).clip(RoundedCornerShape(12.dp))
-                    .background(t.screen.copy(alpha = 0.78f)).border(1.dp, t.panelEdge, RoundedCornerShape(12.dp))
+                Modifier.align(Alignment.TopEnd).padding(8.dp).size(40.dp).clip(CircleShape)
+                    .background(t.panel.copy(alpha = 0.9f))
                     .feedbackClickable(onClick = onExpand)
                     .semantics { contentDescription = label }
                     .testTag("run-map-expand"),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.OpenInFull, contentDescription = null, tint = t.text, modifier = Modifier.size(20.dp))
+                Icon(Icons.Filled.OpenInFull, contentDescription = null, tint = t.text, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -1095,41 +896,24 @@ fun RunMapPlaceholder(
 
 // ── 상태 그림 · 빈 화면 ─────────────────────────────────────────────
 
-/** 빛나는 원 안의 아이콘 — 빈 화면 · 실패 · 권한 안내 */
+/** 빈 화면 · 실패 · 권한 안내의 그림 — 아이콘 하나(빛 · 타일 없이). [alert] 면 빨강 */
 @Composable
 fun RunStateArt(icon: ImageVector, modifier: Modifier = Modifier, size: Dp = 112.dp, alert: Boolean = false, badge: ImageVector? = null) {
     val t = runTone()
-    Box(
-        modifier.size(size).drawBehind {
-            drawCircle(
-                Brush.radialGradient(
-                    0f to t.cobalt.copy(alpha = if (t.dark) 0.35f else 0.18f), 1f to Color.Transparent,
-                    center = center, radius = this.size.minDimension * 0.62f,
-                ),
-                radius = this.size.minDimension * 0.62f,
-            )
-            drawCircle(if (t.dark) Color(0xFF0B2C57) else Color(0xFFE5EEFF), radius = this.size.minDimension / 2.25f)
-            drawCircle(
-                (if (alert) t.dangerText else t.cobalt).copy(alpha = 0.85f), radius = this.size.minDimension / 2.25f,
-                style = Stroke(width = 2.dp.toPx()),
-            )
-        },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = if (t.dark) Color(0xFFBFD6FF) else t.cobalt, modifier = Modifier.size(size * 0.46f))
+    Box(modifier.size(size * 0.6f), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = if (alert) t.dangerText else t.cobaltText, modifier = Modifier.size(size * 0.46f))
         if (badge != null) {
             Box(
-                Modifier.align(Alignment.BottomEnd).offset(x = (-size * 0.06f), y = (-size * 0.06f)).size(size * 0.32f)
-                    .clip(CircleShape).background(t.dangerFace),
+                Modifier.align(Alignment.BottomEnd).size(size * 0.24f).clip(CircleShape).background(t.dangerFace),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(badge, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.2f))
+                Icon(badge, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.15f))
             }
         }
     }
 }
 
-/** 빈 · 실패 화면의 가운데 — 그림 · 큰 한 줄 · 설명 */
+/** 빈 · 실패 화면의 가운데 — (작은 그림) · 큰 한 줄 · 설명 */
 @Composable
 fun RunEmptyState(
     icon: ImageVector,
@@ -1142,39 +926,39 @@ fun RunEmptyState(
 ) {
     val t = runTone()
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        RunStateArt(icon, size = artSize, alert = alert, badge = badge)
-        Spacer(Modifier.height(24.dp))
+        RunStateArt(icon, size = artSize * 0.7f, alert = alert, badge = badge)
+        Spacer(Modifier.height(16.dp))
         Text(
             title, style = TextStyle(
-                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp, lineHeight = 1.3.em,
-                letterSpacing = (-0.02).em, color = t.text,
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, lineHeight = 1.3.em,
+                letterSpacing = (-0.04).em, color = t.text,
             ),
             textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
         )
         if (body != null) {
-            Spacer(Modifier.height(10.dp))
-            Text(body, style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.5f), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(body, style = runTextStyle(15.sp, t.label, FontWeight.Normal, 1.5f), textAlign = TextAlign.Center)
         }
     }
 }
 
-/** 도는 표시 — 파랑에서 시안으로 이어지는 호. 동작 줄이기에서는 멈춘 호 */
+/** 도는 표시 — 블루 호 하나(0.7초 한 바퀴). 동작 줄이기에서는 멈춘 호 */
 @Composable
 fun RunSpinner(modifier: Modifier = Modifier, color: Color? = null, track: Color? = null) {
     val t = runTone()
     val motion = LocalMotion.current
     val spin = rememberInfiniteTransition(label = "runSpinner")
     val angle by spin.animateFloat(
-        0f, 360f, infiniteRepeatable(tween(1100, easing = LinearEasing), RepeatMode.Restart), label = "runSpinnerAngle",
+        0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Restart), label = "runSpinnerAngle",
     )
     Canvas(modifier.semantics { contentDescription = "…" }) {
-        val stroke = size.minDimension * 0.09f
+        val stroke = size.minDimension * 0.11f
         val inset = stroke / 2f
         val arcSize = Size(size.width - stroke, size.height - stroke)
-        drawArc(track ?: t.track, 0f, 360f, false, topLeft = Offset(inset, inset), size = arcSize, style = Stroke(stroke))
+        val ink = color ?: t.cobalt
+        drawArc(track ?: ink.copy(alpha = 0.22f), 0f, 360f, false, topLeft = Offset(inset, inset), size = arcSize, style = Stroke(stroke))
         drawArc(
-            if (color != null) Brush.linearGradient(listOf(color, color)) else Brush.sweepGradient(listOf(t.cobalt, t.cyan, t.cobalt)),
-            if (motion.reduced) -90f else angle - 90f, 110f, false,
+            ink, if (motion.reduced) -90f else angle - 90f, 100f, false,
             topLeft = Offset(inset, inset), size = arcSize, style = Stroke(stroke, cap = StrokeCap.Round),
         )
     }
@@ -1184,7 +968,7 @@ fun RunSpinner(modifier: Modifier = Modifier, color: Color? = null, track: Color
 
 enum class RunNoticeKind { Info, Warn, Error }
 
-/** 안내 띠 — 아이콘 · 제목 · 설명 · (오른쪽 작은 행동). 확인 필요(시안 느낌표) · 오류(빨강) */
+/** 안내 띠 — 아이콘 · 제목 · 설명 · (오른쪽 작은 행동). 정보 · 확인 필요는 묶음 면, 오류는 옅은 빨강 면. 테두리 없음 */
 @Composable
 fun RunNotice(
     title: String,
@@ -1198,48 +982,37 @@ fun RunNotice(
     icon: ImageVector? = null,
 ) {
     val t = runTone()
-    val shape = RoundedCornerShape(14.dp)
-    val (face, edge, iconTint) = when (kind) {
-        RunNoticeKind.Error -> Triple(t.errorFace, t.errorEdge, t.errorIcon)
-        RunNoticeKind.Warn -> Triple(t.warnFace, t.warnEdge, t.warnIcon)
-        RunNoticeKind.Info -> Triple(t.panel, t.panelEdge, t.cyan)
+    val shape = RoundedCornerShape(RunSpec.CardRadius)
+    val (face, iconTint) = when (kind) {
+        RunNoticeKind.Error -> t.errorFace to t.errorIcon
+        RunNoticeKind.Warn -> t.warnFace to t.warnIcon
+        RunNoticeKind.Info -> t.panel to t.cobaltText
     }
     Row(
-        modifier.fillMaxWidth().clip(shape).background(face, shape).border(1.dp, edge, shape)
+        modifier.fillMaxWidth().clip(shape).background(face, shape)
             .then(if (tag != null) Modifier.testTag(tag) else Modifier)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(30.dp).clip(CircleShape)
-                .background(if (kind == RunNoticeKind.Info) iconTint.copy(alpha = 0.16f) else iconTint),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                icon ?: if (kind == RunNoticeKind.Info) Icons.Outlined.Info else Icons.Outlined.ErrorOutline, null,
-                tint = if (kind == RunNoticeKind.Info) iconTint else if (t.dark) t.screen else Color.White,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        Icon(
+            icon ?: if (kind == RunNoticeKind.Info) Icons.Outlined.Info else Icons.Outlined.ErrorOutline, null,
+            tint = iconTint, modifier = Modifier.size(22.dp),
+        )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, style = runTextStyle(15.sp, t.text, FontWeight.Bold))
-            if (body != null) Text(body, style = runTextStyle(13.sp, t.label, FontWeight.Medium))
+            Text(title, style = runTextStyle(15.sp, if (kind == RunNoticeKind.Error) t.errorIcon else t.text, FontWeight.Bold))
+            if (body != null) {
+                Text(body, style = runTextStyle(13.sp, if (kind == RunNoticeKind.Error) t.errorIcon.copy(alpha = 0.85f) else t.label, FontWeight.Normal))
+            }
         }
         if (action != null && onAction != null) {
             Spacer(Modifier.width(8.dp))
-            val chip = RoundedCornerShape(10.dp)
-            Text(
-                action, style = runTextStyle(13.sp, t.text, FontWeight.SemiBold),
-                modifier = Modifier.clip(chip).background(t.secondaryFace).border(1.dp, t.secondaryEdge, chip)
-                    .feedbackClickable(onClick = onAction).padding(horizontal = 12.dp, vertical = 8.dp)
-                    .then(if (tag != null) Modifier.testTag("$tag-action") else Modifier),
-            )
+            SmallButton(action, onAction, Modifier.then(if (tag != null) Modifier.testTag("$tag-action") else Modifier))
         }
     }
 }
 
-/** 작은 알약 — "확인 중"(시계) · "예상" · "반영 완료" */
+/** 작은 표시 — "확인 중"(시계) · "예상" · "반영 완료". 통합안은 알약 칩을 쓰지 않는다 — 아이콘 + 회색 글자 한 줄 */
 @Composable
 fun RunChip(
     text: String,
@@ -1249,18 +1022,14 @@ fun RunChip(
     accent: Color? = null,
 ) {
     val t = runTone()
-    val shape = RoundedCornerShape(50)
-    val ink = accent ?: t.chipInk
+    val ink = accent ?: t.label
     Row(
-        modifier.heightIn(min = 28.dp).clip(shape)
-            .background(if (outlined) Color.Transparent else t.chipFace, shape)
-            .border(1.dp, if (outlined) (accent ?: t.chipEdge) else t.chipEdge, shape)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
+        modifier.heightIn(min = 24.dp).padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = ink, modifier = Modifier.size(15.dp))
-            Spacer(Modifier.width(5.dp))
+            Icon(icon, null, tint = ink, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(4.dp))
         }
         Text(text, style = runTextStyle(13.sp, ink, FontWeight.SemiBold), maxLines = 1)
     }
@@ -1292,7 +1061,7 @@ fun RunSheet(
         onDismissRequest = { if (dismissible) onDismiss() },
         sheetState = state,
         containerColor = Color.Transparent,
-        scrimColor = t.scrim,
+        scrimColor = StepUpUi.colors.sheetScrim,
         dragHandle = null,
         shape = RoundedCornerShape(topStart = RunSpec.SheetRadius, topEnd = RunSpec.SheetRadius),
         properties = androidx.compose.material3.ModalBottomSheetProperties(shouldDismissOnBackPress = dismissible),
@@ -1306,7 +1075,7 @@ fun RunSheet(
     }
 }
 
-/** 시트의 면 — [RunSheet] 안과 시안 검사(창 없이 그리기)가 함께 쓴다 */
+/** 시트의 면 — 위 모서리 28 + 손잡이 36×5. [RunSheet] 안과 시안 검사(창 없이 그리기)가 함께 쓴다 */
 @Composable
 fun RunSheetPanel(
     onClose: (() -> Unit)?,
@@ -1316,17 +1085,13 @@ fun RunSheetPanel(
 ) {
     val t = runTone()
     val shape = RoundedCornerShape(topStart = RunSpec.SheetRadius, topEnd = RunSpec.SheetRadius)
-    Box(
-        modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
-            .border(1.dp, t.sheetEdge, shape),
-    ) {
+    Box(modifier.fillMaxWidth().clip(shape).background(t.sheet, shape)) {
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
-                .padding(horizontal = RunSpec.Gutter).padding(top = 10.dp, bottom = 16.dp),
+                .padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(Modifier.size(width = 44.dp, height = 5.dp).clip(RoundedCornerShape(3.dp)).background(t.handle))
+            Box(Modifier.size(width = 36.dp, height = 5.dp).clip(RoundedCornerShape(3.dp)).background(t.handle))
             Spacer(Modifier.height(18.dp))
             content()
         }
@@ -1339,31 +1104,33 @@ fun RunSheetPanel(
                     .testTag(closeTag),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Close, contentDescription = null, tint = t.text, modifier = Modifier.size(26.dp))
+                Box(Modifier.size(30.dp).clip(CircleShape).background(StepUpUi.colors.fill), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Close, contentDescription = null, tint = t.label, modifier = Modifier.size(18.dp))
+                }
             }
         }
     }
 }
 
-/** 시트 · 창의 글 — 가운데 큰 제목 · 본문 · 보조 한 줄 */
+/** 시트 · 창의 글 — 가운데 큰 제목(22 · 800) · 본문 · 보조 한 줄 */
 @Composable
 fun RunSheetText(title: String, modifier: Modifier = Modifier, body: String? = null, note: String? = null) {
     val t = runTone()
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             title, style = TextStyle(
-                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp, lineHeight = 1.3.em,
-                letterSpacing = (-0.02).em, color = t.text,
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, lineHeight = 1.3.em,
+                letterSpacing = (-0.04).em, color = t.text,
             ),
             textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() }.padding(horizontal = 28.dp),
         )
         if (body != null) {
-            Spacer(Modifier.height(10.dp))
-            Text(body, style = runTextStyle(16.sp, t.text, FontWeight.Medium, 1.45f), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(body, style = runTextStyle(15.sp, t.text, FontWeight.Normal, 1.45f), textAlign = TextAlign.Center)
         }
         if (note != null) {
             Spacer(Modifier.height(4.dp))
-            Text(note, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.45f), textAlign = TextAlign.Center)
+            Text(note, style = runTextStyle(13.5.sp, t.label, FontWeight.Normal, 1.45f), textAlign = TextAlign.Center)
         }
     }
 }
@@ -1388,7 +1155,7 @@ fun RunDialog(
     }
 }
 
-/** 가운데 창의 면 — [RunDialog] 안과 시안 검사가 함께 쓴다 */
+/** 가운데 창의 면 — 묶음 면 · 모서리 24 · 테두리 없음. [RunDialog] 안과 시안 검사가 함께 쓴다 */
 @Composable
 fun RunDialogPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val t = runTone()
@@ -1396,8 +1163,7 @@ fun RunDialogPanel(modifier: Modifier = Modifier, content: @Composable ColumnSco
     Box(Modifier.fillMaxWidth().padding(horizontal = 28.dp), contentAlignment = Alignment.Center) {
         Column(
             modifier.widthIn(max = 460.dp).fillMaxWidth().clip(shape)
-                .background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
-                .border(1.5.dp, t.secondaryEdge.copy(alpha = 0.8f), shape)
+                .background(t.sheet, shape)
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             content = content,
@@ -1407,7 +1173,7 @@ fun RunDialogPanel(modifier: Modifier = Modifier, content: @Composable ColumnSco
 
 // ── 목록 줄 ─────────────────────────────────────────────────────────
 
-/** 고르는 줄 — 하나만 고른다. 고르면 파란 면 · 흰 체크(시안 U05 · CR19 · H03) */
+/** 고르는 줄 — 하나만 고른다. 고르면 2dp 블루 테두리 + 블루 원 체크(시안 U05 · CR19 · H03) */
 @Composable
 fun RunChoiceRow(
     title: String,
@@ -1419,15 +1185,11 @@ fun RunChoiceRow(
     compact: Boolean = false,
 ) {
     val t = runTone()
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(RunSpec.CardRadius)
     Row(
-        modifier.fillMaxWidth().heightIn(min = if (compact) 52.dp else 72.dp).clip(shape)
-            .background(
-                if (selected) Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF1F66FF)))
-                else Brush.verticalGradient(listOf(t.panelTop, t.panel)),
-                shape,
-            )
-            .border(1.dp, if (selected) Color(0xFF4D8BFF) else t.panelEdge, shape)
+        modifier.fillMaxWidth().heightIn(min = if (compact) 52.dp else 68.dp).clip(shape)
+            .background(t.panel, shape)
+            .border(2.dp, if (selected) t.cobalt else Color.Transparent, shape)
             .feedbackClickable(role = Role.RadioButton, cue = FeedbackCue.Select, onClick = onSelect)
             .semantics { this.selected = selected }
             .padding(horizontal = 16.dp, vertical = if (compact) 8.dp else 12.dp),
@@ -1438,36 +1200,34 @@ fun RunChoiceRow(
             Spacer(Modifier.width(14.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = runTextStyle(if (compact) 16.sp else 18.sp, if (selected) Color.White else t.text, FontWeight.Bold))
+            Text(title, style = runTextStyle(if (compact) 16.sp else 16.5.sp, t.text, FontWeight.Bold))
             if (description != null) {
-                Text(description, style = runTextStyle(13.sp, if (selected) Color(0xFFD9E6FF) else t.label, FontWeight.Medium))
+                Text(description, style = runTextStyle(13.sp, t.label, FontWeight.Normal))
             }
         }
         Spacer(Modifier.width(10.dp))
         Box(
-            Modifier.size(26.dp).clip(CircleShape)
+            Modifier.size(24.dp).clip(CircleShape)
                 .then(
-                    if (selected) Modifier.background(Color.White)
-                    else Modifier.border(2.dp, t.label.copy(alpha = 0.8f), CircleShape),
+                    if (selected) Modifier.background(t.cobalt)
+                    else Modifier.border(2.dp, t.muted.copy(alpha = 0.7f), CircleShape),
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) Icon(Icons.Filled.Check, null, tint = Color(0xFF0754FF), modifier = Modifier.size(18.dp))
+            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
         }
     }
 }
 
-/** 이름 머리글자 원 — 크루원(이니셜) */
+/** 이름 머리글자 원 — 크루원. 통합안은 이니셜 아바타를 줄인다 — 회색 원 · 회색 글자로 눈에 덜 띄게 */
 @Composable
 fun RunInitials(text: String, modifier: Modifier = Modifier, size: Dp = 40.dp, filled: Boolean = false) {
     val t = runTone()
     Box(
-        modifier.size(size).clip(CircleShape)
-            .background(if (filled) t.cobalt else t.inset)
-            .border(1.5.dp, if (filled) t.cobalt else t.cyan.copy(alpha = 0.8f), CircleShape),
+        modifier.size(size).clip(CircleShape).background(if (filled) t.cobalt else StepUpUi.colors.fill),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = runTextStyle(if (text.length > 1) 13.sp else 15.sp, if (filled) Color.White else t.cyan, FontWeight.Bold, 1.1f))
+        Text(text, style = runTextStyle(if (text.length > 1) 13.sp else 15.sp, if (filled) Color.White else t.label, FontWeight.Bold, 1.1f))
     }
 }
 
@@ -1498,21 +1258,21 @@ fun RunVerticalDivider(modifier: Modifier = Modifier) {
 
 // ── 글자 탭 · 입력칸 ────────────────────────────────────────────────
 
-/** 켜고 끄기 — 켜면 파란 길, 끄면 남색 길(위치 공유 · 경로 포함) */
+/** 켜고 끄기 — 켜면 블루 길, 끄면 회색 길(위치 공유 · 경로 포함) */
 @Composable
 fun RunSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val t = runTone()
     androidx.compose.material3.Switch(
         checked = checked, onCheckedChange = onCheckedChange, enabled = enabled, modifier = modifier,
         colors = androidx.compose.material3.SwitchDefaults.colors(
-            checkedThumbColor = Color.White, checkedTrackColor = t.cobalt,
-            uncheckedThumbColor = Color.White, uncheckedTrackColor = t.track, uncheckedBorderColor = t.panelEdge,
-            disabledUncheckedTrackColor = t.track.copy(alpha = 0.5f), disabledUncheckedBorderColor = t.divider,
+            checkedThumbColor = Color.White, checkedTrackColor = t.cobalt, checkedBorderColor = Color.Transparent,
+            uncheckedThumbColor = Color.White, uncheckedTrackColor = t.track, uncheckedBorderColor = Color.Transparent,
+            disabledUncheckedTrackColor = t.track.copy(alpha = 0.5f), disabledUncheckedBorderColor = Color.Transparent,
         ),
     )
 }
 
-/** 같은 폭 글자 탭(코스 선택 · 코스 만들기 · 코스 게시판) — 고른 칸은 파란 면 · 흰 글자 */
+/** 같은 폭 전환(코스 선택 · 코스 만들기 · 코스 게시판) — 통합안 세그먼트([StepUpTabs]) */
 @Composable
 fun RunTabs(
     labels: List<String>,
@@ -1523,39 +1283,15 @@ fun RunTabs(
     /** 칸마다 꼬리표를 따로 줄 때(통계의 주간 · 월간) — 없으면 "[tagPrefix]-번호" */
     tags: List<String>? = null,
 ) {
-    val t = runTone()
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape).background(t.inset, shape).border(1.dp, t.panelEdge, shape)
-            .padding(3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        labels.forEachIndexed { i, label ->
-            val on = i == selected
-            val cell = RoundedCornerShape(11.dp)
-            Box(
-                Modifier.weight(1f).heightIn(min = 42.dp).clip(cell)
-                    .then(
-                        if (on) Modifier.background(Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), cell)
-                            .border(1.dp, Color(0xFF4D8BFF), cell)
-                        else Modifier,
-                    )
-                    .feedbackClickable(role = Role.Tab, cue = FeedbackCue.Select) { onSelect(i) }
-                    .semantics { this.selected = on }
-                    .testTag(tags?.getOrNull(i) ?: "$tagPrefix-$i"),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label, style = runTextStyle(15.sp, if (on) Color.White else t.label, if (on) FontWeight.Bold else FontWeight.SemiBold),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 6.dp),
-                )
-            }
-        }
-    }
+    StepUpTabs(
+        labels, selected, onSelect, modifier.fillMaxWidth(),
+        tags = labels.indices.map { tags?.getOrNull(it) ?: "$tagPrefix-$it" },
+    )
 }
 
 /**
- * 한 줄 입력칸 — 위에 작은 이름, 남색 칸, 오른쪽 지우기(글이 있을 때). [leading] 이 있으면 앞에 아이콘(검색).
+ * 한 줄 입력칸 — 통합안 입력칸(모서리 14 · 묶음 면, 고르면 2dp 블루 테두리). [label] 은 칸 안 위에 작게.
+ * [leading] 이 있으면 앞에 아이콘(검색), 글이 있으면 오른쪽 지우기.
  */
 @Composable
 fun RunTextField(
@@ -1572,48 +1308,49 @@ fun RunTextField(
 ) {
     val t = runTone()
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(12.dp)
-    Column(modifier.fillMaxWidth()) {
-        if (label != null) {
-            Text(label, style = runTextStyle(14.sp, t.label, FontWeight.SemiBold), modifier = Modifier.padding(bottom = 6.dp))
+    val shape = RoundedCornerShape(StepUpUi.FieldRadius)
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(t.panel, shape)
+            .border(2.dp, if (focused) t.cobalt else Color.Transparent, shape)
+            .padding(start = 16.dp, end = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (leading != null) {
+            Icon(leading, contentDescription = null, tint = t.label, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
         }
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(t.inset, shape)
-                .border(if (focused) 1.5.dp else 1.dp, if (focused) Color(0xFF4D8BFF) else t.panelEdge, shape)
-                .padding(start = 14.dp, end = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (leading != null) {
-                Icon(leading, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f).padding(vertical = if (label != null) 10.dp else 0.dp)) {
+            if (label != null) {
+                Text(label, style = runTextStyle(12.5.sp, if (focused) t.cobaltText else t.label, FontWeight.Normal, 1.2f))
+                Spacer(Modifier.height(2.dp))
             }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            Box(contentAlignment = Alignment.CenterStart) {
                 if (value.isEmpty() && placeholder != null) {
-                    Text(placeholder, style = runTextStyle(16.sp, t.muted, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(placeholder, style = runTextStyle(16.sp, t.muted, FontWeight.Normal), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 androidx.compose.foundation.text.BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
                     singleLine = true,
-                    textStyle = runTextStyle(16.sp, t.text, FontWeight.SemiBold),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(t.cyan),
+                    textStyle = runTextStyle(16.sp, t.text, FontWeight.Normal),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(t.cobalt),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = imeAction),
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions(onAny = { onImeAction() }),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = if (label != null) 2.dp else 14.dp)
                         .onFocusChanged { focused = it.isFocused }
                         .semantics { if (label != null) contentDescription = label else if (placeholder != null) contentDescription = placeholder }
                         .then(if (fieldTag != null) Modifier.testTag(fieldTag) else Modifier),
                 )
             }
-            if (value.isNotEmpty() && clearLabel != null) {
-                Box(
-                    Modifier.size(40.dp).clip(CircleShape).feedbackClickable { onValueChange("") }
-                        .semantics { contentDescription = clearLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(Modifier.size(20.dp).clip(CircleShape).background(t.label), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Close, contentDescription = null, tint = t.inset, modifier = Modifier.size(14.dp))
-                    }
+        }
+        if (value.isNotEmpty() && clearLabel != null) {
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).feedbackClickable { onValueChange("") }
+                    .semantics { contentDescription = clearLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.size(20.dp).clip(CircleShape).background(t.muted), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Close, contentDescription = null, tint = t.panel, modifier = Modifier.size(14.dp))
                 }
             }
         }

@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -152,34 +156,35 @@ internal class CrewInk(
     val scrim: Color,
 )
 
+// UI 최종 통합안(2026-10-25) — 크루 화면도 앱과 같은 다크블루 · 화이트블루. 묶음 면 · 회색 채움 · 블루 하나, 번지는 빛 · 파란 둘레 없음
 private val DarkCrewInk = CrewInk(
-    canvas = Color(0xFF031427), card = Color(0xFF0A2547), cardTop = Color(0xFF0D2E57), edge = Color(0xFF1C4E95),
-    field = Color(0xFF08244A), fieldEdge = Color(0xFF1F5BD0),
-    sheet = Color(0xFF0A2750), sheetTop = Color(0xFF0E3264), sheetEdge = Color(0xFF1F5BD0),
-    text = Color(0xFFF5F8FF), secondary = Color(0xFFAAC3EA), info = Color(0xFF48D9FA), link = Color(0xFF5B95FF),
-    divider = Color(0xFF1E3F72), tabMark = Color(0xFF48D9FA), warn = Color(0xFFFF6B78),
-    choice = Color(0xFF0A2547), choiceText = Color(0xFFF5F8FF), choiceOn = Color(0xFF0754FF), choiceOnText = Color.White,
-    level = Color(0xFF16386E), levelText = Color(0xFF8CB8FF), track = Color(0xFF15305A), bar = Color(0xFF48D9FA),
-    avatar = Color(0xFF12335F), avatarText = Color(0xFF8CB8FF), secondaryButton = Color(0xFF061D3B),
-    disabled = Color(0xFF2A4166), disabledText = Color(0xFF8FA5C7),
-    danger = Color(0xFF4A1626), dangerText = Color(0xFFFF7A85), dangerBase = Color(0xFFE2505F),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFDCEBFD))), primaryText = Color(0xFF071B3D),
-    skeleton = Color(0xFF17345F), handle = Color(0xFF3F74C8), scrim = Color(0xA8010A16),
+    canvas = Color(0xFF070B14), card = Color(0xFF0E1424), cardTop = Color(0xFF0E1424), edge = Color(0x17FFFFFF),
+    field = Color(0xFF0E1424), fieldEdge = Color(0x17FFFFFF),
+    sheet = Color(0xFF0E1424), sheetTop = Color(0xFF0E1424), sheetEdge = Color.Transparent,
+    text = Color.White, secondary = Color(0xFF969CAA), info = Color(0xFF6E9BFF), link = Color(0xFF6E9BFF),
+    divider = Color(0x17FFFFFF), tabMark = Color(0xFF6E9BFF), warn = Color(0xFFFF453A),
+    choice = Color(0xFF0E1424), choiceText = Color.White, choiceOn = Color(0xFF2F6BFF), choiceOnText = Color.White,
+    level = Color(0xFF202736), levelText = Color(0xFF6E9BFF), track = Color(0xFF222A3D), bar = Color(0xFF2F6BFF),
+    avatar = Color(0xFF202736), avatarText = Color(0xFF969CAA), secondaryButton = Color(0xFF202736),
+    disabled = Color(0xFF141A27), disabledText = Color(0xFF5D6371),
+    danger = Color(0xFF2A1219), dangerText = Color(0xFFFF453A), dangerBase = Color(0xFFFF453A),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    skeleton = Color(0xFF151C2D), handle = Color(0x4DE2E8F5), scrim = Color(0x8C000000),
 )
 
 private val LightCrewInk = CrewInk(
-    canvas = Color(0xFFF5F8FF), card = Color(0xFFF7FAFF), cardTop = Color(0xFFFFFFFF), edge = Color(0xFFC9D8F2),
-    field = Color(0xFFEDF2FC), fieldEdge = Color(0xFF9DB8EE),
-    sheet = Color(0xFFF5F8FF), sheetTop = Color(0xFFFFFFFF), sheetEdge = Color(0xFFC9D8F2),
-    text = Color(0xFF0B1E3F), secondary = Color(0xFF4A5F84), info = Color(0xFF0A7FA6), link = Color(0xFF0748D6),
-    divider = Color(0xFFDCE4F2), tabMark = Color(0xFF0754FF), warn = Color(0xFFC62337),
-    choice = Color(0xFFFFFFFF), choiceText = Color(0xFF0B1E3F), choiceOn = Color(0xFF0754FF), choiceOnText = Color.White,
-    level = Color(0xFFE1EBFF), levelText = Color(0xFF0748D6), track = Color(0xFFDCE5F5), bar = Color(0xFF0754FF),
-    avatar = Color(0xFFE1EBFF), avatarText = Color(0xFF0748D6), secondaryButton = Color(0xFFFFFFFF),
-    disabled = Color(0xFFC9D3E3), disabledText = Color(0xFF6E7D96),
-    danger = Color(0xFFFFE5E8), dangerText = Color(0xFFC62337), dangerBase = Color(0xFFE59AA4),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1C63FF), Color(0xFF0754FF))), primaryText = Color.White,
-    skeleton = Color(0xFFDCE5F5), handle = Color(0xFFB5C3DB), scrim = Color(0xB3091A33),
+    canvas = Color(0xFFF2F2F7), card = Color.White, cardTop = Color.White, edge = Color(0x293C3C43),
+    field = Color.White, fieldEdge = Color(0x293C3C43),
+    sheet = Color.White, sheetTop = Color.White, sheetEdge = Color.Transparent,
+    text = Color.Black, secondary = Color(0xFF848489), info = Color(0xFF1F5EFF), link = Color(0xFF1F5EFF),
+    divider = Color(0x293C3C43), tabMark = Color(0xFF1F5EFF), warn = Color(0xFFFF3B30),
+    choice = Color.White, choiceText = Color.Black, choiceOn = Color(0xFF1F5EFF), choiceOnText = Color.White,
+    level = Color(0xFFE3E3E8), levelText = Color(0xFF1F5EFF), track = Color(0xFFE3E3E8), bar = Color(0xFF1F5EFF),
+    avatar = Color(0xFFE3E3E8), avatarText = Color(0xFF848489), secondaryButton = Color(0xFFE3E3E8),
+    disabled = Color(0xFFE8E8ED), disabledText = Color(0xFFA9A9AE),
+    danger = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30), dangerBase = Color(0xFFFF3B30),
+    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    skeleton = Color(0xFFE9E9EE), handle = Color(0x4D3C3C43), scrim = Color(0x40000000),
 )
 
 @Composable
@@ -392,8 +397,8 @@ internal fun CrewBar(fraction: Float, modifier: Modifier) {
 internal enum class CrewButtonKind { PRIMARY, SECONDARY, DANGER, DISABLED }
 
 /**
- * 큰 버튼 — 러닝 리메이크의 주 버튼(흰 면 · 남색 글자 · 파란 아랫면)과 보조 버튼(남색 면 · 파란 테두리)을 그대로 쓴다.
- * 삭제성 행동(내보내기 · 나가기 · 해산 · 초안 지우기)은 어두운 코랄 면 · 코랄 글자. 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
+ * 큰 버튼 — 통합안 버튼(주 = 블루 알약 + 원 화살표, 보조 = 회색 알약). 삭제성 행동(내보내기 · 나가기 · 해산 · 초안 지우기)은
+ * 회색 알약 + 빨간 글자. 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
  */
 @Composable
 internal fun CrewButton(
@@ -405,10 +410,14 @@ internal fun CrewButton(
     enabled: Boolean = true,
 ) {
     when (kind) {
-        CrewButtonKind.PRIMARY -> RunButton(text, onClick, modifier, RunButtonKind.Primary, enabled = enabled, busy = busy)
-        CrewButtonKind.SECONDARY -> RunButton(text, onClick, modifier, RunButtonKind.Secondary, enabled = enabled, busy = busy)
-        CrewButtonKind.DISABLED -> RunButton(text, onClick, modifier, RunButtonKind.Primary, enabled = false)
-        CrewButtonKind.DANGER -> CrewDangerButton(text, onClick, modifier, busy = busy, enabled = enabled)
+        CrewButtonKind.PRIMARY -> PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            })
+        CrewButtonKind.SECONDARY -> SecondaryBusyButton(text, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy)
+        CrewButtonKind.DANGER -> DangerButton(text, onClick, modifier.fillMaxWidth(), enabled = enabled, busy = busy)
+        CrewButtonKind.DISABLED -> PrimaryButton(text, onClick, modifier.fillMaxWidth(), state = ButtonState.Disabled)
     }
 }
 

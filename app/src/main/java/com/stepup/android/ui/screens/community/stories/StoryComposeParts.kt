@@ -123,10 +123,10 @@ internal fun composeInk(): ComposeInk {
     val t = runTone()
     return remember(t) {
         ComposeInk(
-            text = t.text, secondary = t.label, accent = if (t.dark) t.cyan else t.cobaltText,
+            text = t.text, secondary = t.label, accent = t.cobaltText,
             surface = t.panel, edge = t.panelEdge,
-            selected = t.cobalt, selectedEdge = if (t.dark) t.cyan.copy(alpha = 0.85f) else t.cobalt, selectedText = Color.White,
-            warn = t.dangerText, skeleton = if (t.dark) Color(0xFF1C3A66) else t.track,
+            selected = t.cobalt, selectedEdge = t.cobalt, selectedText = Color.White,
+            warn = t.dangerText, skeleton = t.track,
         )
     }
 }

@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.components.ButtonState
+import com.stepup.android.ui.components.DangerButton
+import com.stepup.android.ui.components.SecondaryBusyButton
+import com.stepup.android.ui.components.PrimaryButton
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -217,42 +221,43 @@ internal class FreeRunColors(
     val ring: Color,
 )
 
+// UI 최종 통합안(2026-10-25) — 러닝 판도 다크블루 · 화이트블루 바닥 한 장, 주 = 블루, 보조 = 회색 채움
 private val FreeDark = FreeRunColors(
-    screen = Color(0xFF05213B), panel = Color(0xFF05213B),
-    label = Color(0xFFAAC3EA), text = Color(0xFFF5F8FF), muted = Color(0xFF7F99C2),
-    primary = Color(0xFF0C59FF), primaryInk = Color.White,
-    slate = Color(0xFF1B3D66), slateEdge = Color(0xFF2B5583), slateInk = Color(0xFFF5F8FF),
-    off = Color(0xFF1B3D66), offInk = Color(0xFFA9B8CF),
-    stopMark = Color(0xFFF26D6D),
+    screen = Color(0xFF070B14), panel = Color(0xFF070B14),
+    label = Color(0xFF969CAA), text = Color.White, muted = Color(0xFF6E7586),
+    primary = Color(0xFF2F6BFF), primaryInk = Color.White,
+    slate = Color(0xFF202736), slateEdge = Color.Transparent, slateInk = Color.White,
+    off = Color(0xFF141A27), offInk = Color(0xFF5D6371),
+    stopMark = Color(0xFFFF453A),
     band = Color(0xFFFDB829), bandInk = Color(0xFF14171D),
-    calmBand = Color(0xE6123D65), calmEdge = Color(0xFF2B5583), calmInk = Color(0xFFF5F8FF),
-    danger = Color(0xFFD93A46), dangerInk = Color.White, dangerText = Color(0xFFFF6B6B),
-    chip = Color(0xE605213B), chipIcon = Color(0xFF19F52E), controlEdge = Color(0xFF2B5583),
-    ring = Color(0x5548D9FA),
+    calmBand = Color(0xF20E1424), calmEdge = Color.Transparent, calmInk = Color.White,
+    danger = Color(0xFFFF453A), dangerInk = Color.White, dangerText = Color(0xFFFF453A),
+    chip = Color(0xE60E1424), chipIcon = Color(0xFF32D74B), controlEdge = Color.Transparent,
+    ring = Color(0x552F6BFF),
 )
 
 private val FreeLight = FreeRunColors(
-    screen = Color(0xFFF5F8FF), panel = Color.White,
-    label = Color(0xFF4A5F84), text = Color(0xFF0B1E3F), muted = Color(0xFF6A7C9C),
-    primary = Color(0xFF0754FF), primaryInk = Color.White,
-    slate = Color(0xFFE6EEFC), slateEdge = Color(0xFFC3D3EE), slateInk = Color(0xFF0B1E3F),
-    off = Color(0xFFC9D3E3), offInk = Color(0xFF6E7D96),
-    stopMark = Color(0xFFE05252),
+    screen = Color(0xFFF2F2F7), panel = Color(0xFFF2F2F7),
+    label = Color(0xFF848489), text = Color.Black, muted = Color(0xFF9C9CA2),
+    primary = Color(0xFF1F5EFF), primaryInk = Color.White,
+    slate = Color(0xFFE3E3E8), slateEdge = Color.Transparent, slateInk = Color.Black,
+    off = Color(0xFFE8E8ED), offInk = Color(0xFFA9A9AE),
+    stopMark = Color(0xFFFF3B30),
     band = Color(0xFFFDB829), bandInk = Color(0xFF14171D),
-    calmBand = Color(0xF2FFFFFF), calmEdge = Color(0xFFC9D8F2), calmInk = Color(0xFF0B1E3F),
-    danger = Color(0xFFD9364A), dangerInk = Color.White, dangerText = Color(0xFFC62337),
-    chip = Color(0xF2FFFFFF), chipIcon = Color(0xFF0E9F1F), controlEdge = Color(0xFFC9D8F2),
-    ring = Color(0x330754FF),
+    calmBand = Color(0xF2FFFFFF), calmEdge = Color.Transparent, calmInk = Color.Black,
+    danger = Color(0xFFFF3B30), dangerInk = Color.White, dangerText = Color(0xFFFF3B30),
+    chip = Color(0xF2FFFFFF), chipIcon = Color(0xFF28B44A), controlEdge = Color.Transparent,
+    ring = Color(0x331F5EFF),
 )
 
 @Composable
 internal fun freeRunColors(): FreeRunColors = if (StepUpColors.dark) FreeDark else FreeLight
 
-/** 자유 러닝 경로 — 형광 초록(시안 4번) */
-internal val FreeRunRoute = Color(0xFF19F52E)
+/** 자유 러닝 경로 — 달린 길은 블루 실선(UI 최종 통합안 2026-10-25, 예전 형광 초록) */
+internal val FreeRunRoute = Color(0xFF2F6BFF)
 
-/** 경로 둘레 — 밝은 길 위에서도 초록 선이 또렷하게 남색 테 */
-internal val FreeRunRouteOutline = Color(0xE605213B)
+/** 경로 둘레 — 밝은 지도 · 어두운 지도 모두에서 선이 또렷하게 옅은 흰 테 */
+internal val FreeRunRouteOutline = Color(0x99FFFFFF)
 
 // ── 수 ─────────────────────────────────────────────────────────────
 
@@ -825,7 +830,7 @@ private fun FreeButtonRow(content: @Composable RowScope.() -> Unit) {
 
 internal enum class FreeButtonKind { Primary, Secondary, Danger }
 
-/** 판의 버튼 — 평평한 코발트(주) · 짙은 남색(보조, 빨간 네모를 앞에 둘 수 있다) · 빨강(위험). 56dp 높이 */
+/** 판의 버튼 — 통합안 버튼: 주 = 블루 알약 + 원 화살표, 보조 = 회색 알약(앞에 빨간 네모를 둘 수 있다), 위험 = 회색 알약 + 빨간 글자 */
 @Composable
 internal fun FreeRunButton(
     label: String,
@@ -837,39 +842,35 @@ internal fun FreeRunButton(
     enabled: Boolean = true,
     busy: Boolean = false,
 ) {
-    val c = freeRunColors()
-    val shape = RoundedCornerShape(14.dp)
-    val live = enabled && !busy
-    val (face, ink) = when {
-        !enabled && !busy -> c.off to c.offInk
-        kind == FreeButtonKind.Primary -> c.primary to c.primaryInk
-        kind == FreeButtonKind.Danger -> c.danger to c.dangerInk
-        else -> c.slate to c.slateInk
-    }
-    Row(
-        modifier.heightIn(min = 56.dp).clip(shape).background(face, shape)
-            .then(if (kind == FreeButtonKind.Secondary) Modifier.border(1.dp, c.slateEdge, shape) else Modifier)
-            .feedbackClickable(enabled = live, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        when {
-            busy -> {
-                RunSpinner(Modifier.size(22.dp), color = ink)
+    when (kind) {
+        FreeButtonKind.Primary -> PrimaryButton(
+            label, onClick, modifier,
+            state = when {
+                busy -> ButtonState.Loading
+                !enabled -> ButtonState.Disabled
+                else -> ButtonState.Idle
+            },
+            icon = icon,
+        )
+        FreeButtonKind.Secondary -> if (stopMark && !busy) {
+            Row(
+                modifier.heightIn(min = 54.dp).clip(RoundedCornerShape(50))
+                    .background(com.stepup.android.ui.components.StepUpUi.colors.fill)
+                    .feedbackClickable(enabled = enabled, onClick = onClick)
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Box(Modifier.size(14.dp).clip(RoundedCornerShape(3.dp)).background(com.stepup.android.ui.components.StepUpUi.colors.live))
                 Spacer(Modifier.width(10.dp))
+                Text(
+                    label, style = com.stepup.android.ui.components.StepUpUi.type.button,
+                    color = if (enabled) com.stepup.android.ui.components.StepUpUi.colors.label else com.stepup.android.ui.components.StepUpUi.colors.onDisabled,
+                    maxLines = 1,
+                )
             }
-            stopMark -> {
-                Box(Modifier.size(16.dp).clip(RoundedCornerShape(3.dp)).background(c.stopMark))
-                Spacer(Modifier.width(10.dp))
-            }
-            icon != null -> {
-                Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(8.dp))
-            }
-        }
-        Text(label, style = runTextStyle(17.sp, ink, FontWeight.Bold, 1.2f), maxLines = 2, overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center)
+        } else SecondaryBusyButton(label, onClick, modifier, enabled = enabled, busy = busy, icon = icon)
+        FreeButtonKind.Danger -> DangerButton(label, onClick, modifier, enabled = enabled, busy = busy, icon = icon)
     }
 }
 

@@ -334,7 +334,7 @@ fun PageHero(
 }
 
 /**
- * 한 화면에서 가장 먼저 눌러야 하는 버튼 — 큰 파란 알약.
+ * 한 화면에서 가장 먼저 눌러야 하는 버튼 — 통합안 블루 알약 54. [showArrow] 면 끝에 흰 원 화살표.
  *
  * "러닝 시작"처럼 그 화면의 이유가 되는 행동 하나에만 쓴다. 한 화면에
  * 두 개가 있으면 어느 쪽도 먼저 보이지 않는다.
@@ -348,47 +348,11 @@ fun PrimaryCta(
     enabled: Boolean = true,
     showArrow: Boolean = true,
 ) {
-    // S2 — 주 행동은 흰 알약(밝은 테마는 남색)에 짙은 글자. 푸른 번짐은 두지 않는다.
-    val shape = RoundedCornerShape(50)
-    val dark = com.stepup.android.ui.theme.StepUpColors.dark
-    val face = if (dark) androidx.compose.ui.graphics.Color(0xFFF3F5FF) else Snow
-    val ink = if (dark) androidx.compose.ui.graphics.Color(0xFF070B12) else androidx.compose.ui.graphics.Color.White
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = StepUpDesign.PrimaryHeight)
-            .clip(shape)
-            .then(
-                if (enabled) Modifier.background(face, shape)
-                else Modifier.background(CarbonHigh, shape).border(1.dp, Edge, shape),
-            )
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (enabled) ink else Slate, modifier = Modifier.size(StepUpDesign.ControlIcon))
-            Spacer(Modifier.width(12.dp))
-        }
-        Text(
-            text = text,
-            modifier = Modifier.weight(1f, fill = false),
-            fontSize = StepUpDesign.PrimaryLabel,
-            fontWeight = FontWeight.SemiBold,
-            color = if (enabled) ink else Slate,
-            textAlign = TextAlign.Center,
-        )
-        if (showArrow && enabled) {
-            Spacer(Modifier.width(12.dp))
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = ink,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
+    PrimaryButton(
+        text, onClick, modifier.fillMaxWidth(),
+        state = if (enabled) ButtonState.Idle else ButtonState.Disabled,
+        icon = icon, arrow = showArrow,
+    )
 }
 
 /** 숫자 하나 — 아이콘 · 큰 값 · 단위 · 이름 */

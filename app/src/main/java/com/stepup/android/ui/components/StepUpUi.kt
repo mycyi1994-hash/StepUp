@@ -474,6 +474,65 @@ fun SecondaryButton(
     }
 }
 
+/** 위험 버튼(나가기 · 삭제 · 해산 · 기록 없이 끝내기) — 회색 채움 알약 + 빨간 글자, 화살표 없음. [busy] 면 가운데 스피너 */
+@Composable
+fun DangerButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    busy: Boolean = false,
+    icon: ImageVector? = null,
+    cue: FeedbackCue = FeedbackCue.Tap,
+) {
+    val c = StepUpUi.colors
+    val fg = if (enabled) c.live else c.onDisabled
+    Box(
+        modifier
+            .heightIn(min = StepUpUi.ButtonHeight)
+            .pressable(enabled = enabled && !busy, cue = cue, onClick = onClick)
+            .clip(CircleShape)
+            .background(if (enabled) c.fill else c.fillSecondary)
+            .semantics { if (busy) contentDescription = text }
+            .padding(horizontal = 20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (busy) {
+            StepUpSpinner(Modifier.size(22.dp), color = fg)
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(icon, null, tint = fg, modifier = Modifier.size(19.dp))
+                    Spacer(Modifier.width(7.dp))
+                }
+                Text(text, style = StepUpUi.type.button, color = fg, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+/** 보조 버튼 + 처리 중 — [busy] 면 같은 회색 알약 가운데 스피너(다시 누를 수 없다) */
+@Composable
+fun SecondaryBusyButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    busy: Boolean = false,
+    icon: ImageVector? = null,
+    cue: FeedbackCue = FeedbackCue.Tap,
+) {
+    if (busy) {
+        Box(
+            modifier.heightIn(min = StepUpUi.ButtonHeight).clip(CircleShape).background(StepUpUi.colors.fill)
+                .semantics { contentDescription = text },
+            contentAlignment = Alignment.Center,
+        ) { StepUpSpinner(Modifier.size(22.dp), color = StepUpUi.colors.label) }
+    } else {
+        SecondaryButton(text, onClick, modifier, icon = icon, enabled = enabled, cue = cue)
+    }
+}
+
 /**
  * 목록 작은 버튼(가입 · 신청 · 신청됨 · 마감 · 참여). 보이는 높이 32, 터치 영역은 48.
  * 모두 회색 바탕 + 파란 글자 — 사진 위 주 버튼보다 약하게. 신청됨은 시계 + 회색 글자, 마감은 흐리게.
