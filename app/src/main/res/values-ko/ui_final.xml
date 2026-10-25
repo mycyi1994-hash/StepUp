@@ -70,4 +70,19 @@
     <string name="flash_cancel_join">참여 취소</string>
     <string name="flash_share_text">%1$s · %2$s · %3$s — StepUp 에서 같이 달려요</string>
     <string name="flash_count_label">참여</string>
+    <string name="crew_joined_count">가입한 크루 %1$d곳</string>
+    <string name="crew_poster_open">크루 보기</string>
+    <string name="crew_apply_body">크루장이 수락하면 가입돼요.</string>
+    <string name="crew_apply_note">기다리는 동안 언제든 취소할 수 있어요</string>
+    <string name="crew_apply_send">가입 신청</string>
+    <string name="crew_none_joined">아직 가입한 크루가 없어요.</string>
+    <string name="ui_unit_people">명</string>
+    <string name="crew_level_label">크루 레벨</string>
+    <string name="crew_detail_info">크루 정보</string>
+    <string name="crew_detail_leader_row">크루장</string>
+    <string name="crew_share">공유</string>
+    <string name="crew_stat_members">멤버</string>
+    <string name="crew_image_row_title">대표 사진</string>
+    <string name="crew_image_row_sub">사진 또는 이름 이미지</string>
+    <string name="crew_image_change">바꾸기</string>
 </resources>

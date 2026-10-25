@@ -46,6 +46,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.IosShare
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
 import com.stepup.android.R
 import com.stepup.android.data.repo.CrewApplied
 import com.stepup.android.domain.CrewApplicationStatus
@@ -180,6 +187,11 @@ private const val SHEET_MENU = "menu"
 private const val SHEET_REPORT = "report"
 private const val SHEET_LEAVE = "leave"
 
+/**
+ * 크루 상세 본문 — UI 최종 통합안 `crewdetail`. 위 사진 포스터(크루 사진, 없으면 활동 지역 사진 · 유리 원 버튼 ← · 공유 · ⋯) 아래쪽에
+ * 이름 · 한 줄 소개 → 멤버 · 크루 레벨 · 이번 주 거리 → 크루장 메모 → 정보 묶음(정기 모임 · 한 번에 · 크루장 · 멤버) →
+ * 함께 달린 목표 → (멤버 · 크루장) 크루 활동 묶음(크루 채팅 · 크루 러닝 · 게시판) → 아래 설명 한 줄과 큰 버튼 하나.
+ */
 @Composable
 private fun CrewDetailContent(
     card: CrewCard,
@@ -191,121 +203,148 @@ private fun CrewDetailContent(
     onJoinNow: () -> Unit,
 ) {
     val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     val words = rememberCrewWords()
+    val context = androidx.compose.ui.platform.LocalContext.current
     CrewPage(Modifier.testTag("crew-detail")) {
-        CrewTopBar(card.name, actions.onBack, onMore = onMore)
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = CrewGutter)) {
-            Spacer(Modifier.height(12.dp))
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+            CrewPoster(card, onBack = actions.onBack, onImage = actions.onOpenImage, onMore = onMore,
+                onShare = { shareCrew(context, card) })
             card.unseenResult?.let { result ->
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 52.dp).crewPanel(ink, 14.dp, selected = result == CrewApplicationStatus.APPROVED)
+                    Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().heightIn(min = 52.dp)
+                        .clip(RoundedCornerShape(16.dp)).background(c.card)
                         .feedbackClickable(role = Role.Button) { card.myApplicationId?.let(actions.onOpenResult) }
                         .padding(horizontal = 16.dp, vertical = 10.dp).testTag("crew-detail-result"),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         stringResource(if (result == CrewApplicationStatus.APPROVED) R.string.crew_result_banner_approved else R.string.crew_result_banner_declined, card.name),
-                        color = ink.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
+                        style = com.stepup.android.ui.components.StepUpUi.type.rowTitle, color = c.label, modifier = Modifier.weight(1f),
                     )
-                    Icon(Icons.Filled.ChevronRight, null, tint = ink.info, modifier = Modifier.size(22.dp))
-                }
-                Spacer(Modifier.height(16.dp))
-            }
-            // 대표 이미지 · 이름 · 레벨 · 인원 · 지역과 분위기
-            Row(verticalAlignment = Alignment.Top) {
-                Box(
-                    Modifier.size(96.dp).clip(RoundedCornerShape(18.dp))
-                        .feedbackClickable(role = Role.Image, onClick = actions.onOpenImage).testTag("crew-detail-image"),
-                ) { CrewImage(card, 96.dp, 18.dp) }
-                Column(Modifier.weight(1f).padding(start = 18.dp)) {
-                    Text(
-                        card.name, style = crewTitleStyle(ink.text, 29.sp),
-                        maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("crew-detail-name"),
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = onLevel)
-                                .testTag("crew-detail-level"),
-                            contentAlignment = Alignment.CenterStart,
-                        ) { CrewLevelChip(card.level) }
-                        Spacer(Modifier.width(28.dp))
-                        Box(
-                            Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-                                .feedbackClickable(role = Role.Button, onClick = actions.onOpenMembers).testTag("crew-detail-members"),
-                            contentAlignment = Alignment.CenterStart,
-                        ) { CrewMembersLabel(card.memberCount, card.capacity, ink.text) }
-                    }
-                    val sub = words.subLine(card)
-                    if (sub.isNotEmpty()) Text(sub, color = ink.secondary, fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Icon(Icons.Filled.ChevronRight, null, tint = c.tertiaryLabel, modifier = Modifier.size(20.dp))
                 }
             }
-            if (card.tagline.isNotBlank()) {
-                Spacer(Modifier.height(24.dp))
-                Text(card.tagline, style = crewTitleStyle(ink.text, 25.sp), modifier = Modifier.testTag("crew-detail-tagline"))
+            // 멤버 · 크루 레벨 · 이번 주 거리 — 숫자를 누르면 멤버 목록 · 레벨 설명
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(top = 20.dp)) {
+                CrewStatCell(card.memberCount.toString(), stringResource(R.string.ui_unit_people), stringResource(R.string.crew_stat_members),
+                    Modifier.weight(1f).testTag("crew-detail-members"), actions.onOpenMembers)
+                CrewStatCell(card.level?.toString() ?: "—", null, stringResource(R.string.crew_level_label),
+                    Modifier.weight(1f).testTag("crew-detail-level"), onLevel)
+                CrewStatCell("%.1f".format(card.weekKm), "km", stringResource(R.string.crewhome_week_this),
+                    Modifier.weight(1f), null)
+            }
+            val sub = words.subLine(card)
+            if (sub.isNotEmpty()) {
+                Text(sub, style = com.stepup.android.ui.components.StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
+                    modifier = Modifier.padding(horizontal = 20.dp).padding(top = 12.dp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             if (card.leaderNote.isNotBlank()) {
-                Spacer(Modifier.height(10.dp))
-                Text(card.leaderNote, color = ink.secondary, fontSize = 16.sp, lineHeight = 25.sp)
+                Text(card.leaderNote, style = com.stepup.android.ui.components.StepUpUi.type.body, color = c.label,
+                    modifier = Modifier.padding(horizontal = 20.dp).padding(top = 12.dp))
             }
-            // 정기 모임 · 한 번에
-            Spacer(Modifier.height(22.dp))
-            Column(Modifier.fillMaxWidth().crewPanel(ink, 16.dp).padding(horizontal = 18.dp, vertical = 6.dp)) {
-                CrewInfoLine(stringResource(R.string.crew_detail_meet), words.scheduleShort(card.schedule))
-                words.onceLine(card)?.let {
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
-                    CrewInfoLine(stringResource(R.string.crew_detail_once), it)
-                }
-            }
-            // 크루장
-            Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(RoundedCornerShape(12.dp))
-                    .feedbackClickable(role = Role.Button) { actions.onOpenLeader(card.leaderId) }.testTag("crew-detail-leader"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CrewAvatar(card.leaderName, 40.dp, leaderFace(card), ink.text)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    stringResource(R.string.crew_leader_named, card.leaderName), color = ink.text, fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-                Text(stringResource(R.string.crew_detail_leader_more), color = ink.link, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Icon(Icons.Filled.ChevronRight, null, tint = ink.link, modifier = Modifier.size(22.dp))
-            }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(ink.divider))
-            CrewRow(
-                stringResource(R.string.crew_detail_members), actions.onOpenMembers, Modifier.testTag("crew-detail-members-row"),
-                value = stringResource(R.string.crew_members_only, card.memberCount),
+            com.stepup.android.ui.components.GroupHeader(stringResource(R.string.crew_detail_info))
+            com.stepup.android.ui.components.GroupedList(
+                rows = listOfNotNull(
+                    { com.stepup.android.ui.components.NavListRow(Icons.Outlined.Schedule, stringResource(R.string.crew_detail_meet), {},
+                        value = words.scheduleShort(card.schedule)) },
+                    words.onceLine(card)?.let { once ->
+                        { com.stepup.android.ui.components.NavListRow(Icons.AutoMirrored.Filled.DirectionsRun, stringResource(R.string.crew_detail_once), {}, value = once) }
+                    },
+                    { com.stepup.android.ui.components.NavListRow(Icons.Outlined.Person, stringResource(R.string.crew_detail_leader_row),
+                        { actions.onOpenLeader(card.leaderId) }, value = card.leaderName, modifier = Modifier.testTag("crew-detail-leader")) },
+                    { com.stepup.android.ui.components.NavListRow(Icons.Outlined.Groups, stringResource(R.string.crew_detail_members), actions.onOpenMembers,
+                        value = stringResource(R.string.crew_members_only, card.memberCount), modifier = Modifier.testTag("crew-detail-members-row")) },
+                ),
             )
             CrewRules.progress(card)?.let { progress ->
-                Spacer(Modifier.height(18.dp))
                 Column(
-                    Modifier.fillMaxWidth().crewPanel(ink, 16.dp)
+                    Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card)
                         .feedbackClickable(role = Role.Button, onClick = actions.onOpenGoal)
                         .padding(horizontal = 18.dp, vertical = 18.dp).testTag("crew-detail-goal"),
                 ) {
-                    Text(stringResource(R.string.crew_goal_together, progress.goalKm), color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.crew_goal_together, progress.goalKm), style = com.stepup.android.ui.components.StepUpUi.type.rowTitle, color = c.label)
                     Spacer(Modifier.height(12.dp))
                     CrewWeeklyLine(progress)
                 }
             }
-            // 94 멤버 · 크루장에게만 크루 활동 — 기존 크루 채팅 · 같이 달리기 대기실 · 크루 게시판(새 탭이 아니라 아래 영역)
+            // 94 멤버 · 크루장에게만 크루 활동 — 기존 크루 채팅 · 같이 달리기 대기실 · 크루 게시판
             if (card.role == CrewRole.MEMBER || card.role == CrewRole.OWNER) {
-                Spacer(Modifier.height(26.dp))
-                Text(stringResource(R.string.crew_blue_activity), style = crewTitleStyle(ink.text, 22.sp), modifier = Modifier.semantics { heading() })
-                Spacer(Modifier.height(12.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CrewMenuRow(stringResource(R.string.chat_row_crew_chat), actions.onOpenChat, Modifier.testTag("crew-detail-chat"), icon = Icons.Outlined.ChatBubbleOutline)
-                    CrewMenuRow(
-                        stringResource(R.string.crew_detail_lobby), actions.onOpenLobby, Modifier.testTag("crew-detail-lobby"),
-                        icon = Icons.AutoMirrored.Filled.DirectionsRun, value = stringResource(R.string.crew_detail_lobby_hint),
-                    )
-                    CrewMenuRow(stringResource(R.string.crew_detail_board), actions.onOpenBoard, Modifier.testTag("crew-detail-board"), icon = Icons.AutoMirrored.Outlined.Article)
-                }
+                com.stepup.android.ui.components.GroupHeader(stringResource(R.string.crew_blue_activity))
+                com.stepup.android.ui.components.GroupedList(
+                    rows = listOf(
+                        { com.stepup.android.ui.components.NavListRow(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.chat_row_crew_chat), actions.onOpenChat,
+                            modifier = Modifier.testTag("crew-detail-chat")) },
+                        { com.stepup.android.ui.components.NavListRow(Icons.AutoMirrored.Filled.DirectionsRun, stringResource(R.string.crew_detail_lobby), actions.onOpenLobby,
+                            value = stringResource(R.string.crew_detail_lobby_hint), modifier = Modifier.testTag("crew-detail-lobby")) },
+                        { com.stepup.android.ui.components.NavListRow(Icons.AutoMirrored.Outlined.Article, stringResource(R.string.crew_detail_board), actions.onOpenBoard,
+                            modifier = Modifier.testTag("crew-detail-board")) },
+                    ),
+                )
             }
             Spacer(Modifier.height(24.dp))
         }
         CrewDetailFooter(card, actions, busy, joinFailed, onJoinNow)
+    }
+}
+
+/** 숫자 한 칸(시안 crewdetail 숫자 줄) — 누를 수 있으면 둥근 눌림 자리 */
+@Composable
+private fun CrewStatCell(value: String, unit: String?, label: String, modifier: Modifier, onClick: (() -> Unit)?) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp)).then(if (onClick != null) Modifier.feedbackClickable(role = Role.Button, onClick = onClick) else Modifier)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+    ) {
+        com.stepup.android.ui.components.NumberWithUnit(value, unit = unit, style = com.stepup.android.ui.components.StepUpUi.type.numberStat.copy(fontSize = 40.sp))
+        Text(label, style = com.stepup.android.ui.components.StepUpUi.type.caption, color = c.secondaryLabel, modifier = Modifier.padding(top = 4.dp), maxLines = 1)
+    }
+}
+
+/** 크루 포스터(시안 393 × 360) — 크루 사진(올린 사진, 없으면 활동 지역 사진) · 아래로 어둡게 · 유리 원 버튼 · 이름 · 한 줄 소개 */
+@Composable
+private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, onMore: () -> Unit, onShare: () -> Unit) {
+    var bitmap by remember(card.id) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    LaunchedEffect(card.id, card.imageVer, card.hasImage) {
+        bitmap = if (!card.hasImage) null else runCatching {
+            com.stepup.android.core.ServiceLocator.crewCards.images.bitmap(card.id, card.imageVer)?.asImageBitmap()
+        }.getOrNull()
+    }
+    val place = com.stepup.android.ui.background.rememberPlacePhoto(card.area, card.lat, card.lng, seed = "crew-${card.id}")
+    val custom = com.stepup.android.ui.components.rememberBitmapPainter(bitmap)
+    com.stepup.android.ui.components.PhotoCard(
+        custom ?: place?.painter, colorFilter = if (custom != null) null else place?.colorFilter, height = 330.dp, radius = 0.dp,
+        modifier = Modifier.feedbackClickable(role = Role.Image, onClick = onImage).testTag("crew-detail-image"),
+    ) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            com.stepup.android.ui.components.CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack, onPhoto = true)
+            Spacer(Modifier.weight(1f))
+            com.stepup.android.ui.components.CircleIconButton(Icons.Outlined.IosShare, stringResource(R.string.crew_share), onShare, onPhoto = true,
+                modifier = Modifier.testTag("crew-share"))
+            com.stepup.android.ui.components.CircleIconButton(Icons.Rounded.MoreHoriz, stringResource(R.string.common_more), onMore, onPhoto = true,
+                modifier = Modifier.testTag("crew-more"))
+        }
+        Column(Modifier.align(Alignment.BottomStart).padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
+            Text(card.name, style = com.stepup.android.ui.components.StepUpUi.type.largeTitle.copy(fontSize = 32.sp), color = androidx.compose.ui.graphics.Color.White,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("crew-detail-name"))
+            if (card.tagline.isNotBlank()) {
+                Text(card.tagline, style = com.stepup.android.ui.components.StepUpUi.type.rowSubtitle.copy(fontSize = 14.5.sp),
+                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = .8f), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp).testTag("crew-detail-tagline"))
+            }
+        }
+    }
+}
+
+/** 크루 공유 — 이름 · 동네 · 한 줄 소개를 글로(앱 밖 공유 창) */
+private fun shareCrew(context: android.content.Context, card: CrewCard) {
+    val text = listOf(card.name, card.area, card.tagline).filter { it.isNotBlank() }.joinToString(" · ")
+    runCatching {
+        context.startActivity(
+            android.content.Intent.createChooser(
+                android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, text), null,
+            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
     }
 }
 

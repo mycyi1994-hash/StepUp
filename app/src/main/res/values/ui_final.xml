@@ -70,4 +70,19 @@
     <string name="flash_cancel_join">Cancel joining</string>
     <string name="flash_share_text">%1$s · %2$s · %3$s — run with me on StepUp</string>
     <string name="flash_count_label">Joined</string>
+    <string name="crew_joined_count">Crews joined: %1$d</string>
+    <string name="crew_poster_open">View crew</string>
+    <string name="crew_apply_body">You\'ll join once the leader accepts.</string>
+    <string name="crew_apply_note">You can cancel anytime while it\'s pending.</string>
+    <string name="crew_apply_send">Request to join</string>
+    <string name="crew_none_joined">You haven\'t joined a crew yet.</string>
+    <string name="ui_unit_people">people</string>
+    <string name="crew_level_label">Crew level</string>
+    <string name="crew_detail_info">About</string>
+    <string name="crew_detail_leader_row">Leader</string>
+    <string name="crew_share">Share</string>
+    <string name="crew_stat_members">Members</string>
+    <string name="crew_image_row_title">Cover photo</string>
+    <string name="crew_image_row_sub">A photo or a name image</string>
+    <string name="crew_image_change">Change</string>
 </resources>

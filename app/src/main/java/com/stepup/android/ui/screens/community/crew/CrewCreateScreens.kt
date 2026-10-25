@@ -511,19 +511,20 @@ private fun CrewIdentityForm(draft: CrewDraft, card: CrewCard?, problem: CrewPro
     // 이름을 한 번이라도 고쳤으면 빈 이름을 칸 아래에 바로 알린다(36) — 새 초안을 열자마자 오류로 보이지 않게
     var touched by rememberSaveable { mutableStateOf(false) }
     val nameError = problem == CrewProblem.NAME || (touched && !draft.nameOk)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(96.dp).clip(RoundedCornerShape(20.dp)).feedbackClickable(role = Role.Button, onClick = onImage).testTag("crew-draft-image")) {
-            CrewDraftImage(draft, 96.dp, 20.dp, card = card)
+    // 대표 사진 줄(UI 최종 통합안 create) — 카드 면 · 사진 60 · 이름 · 설명 · 작은 "바꾸기"
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).feedbackClickable(role = Role.Button, onClick = onImage).testTag("crew-draft-image")) {
+            CrewDraftImage(draft, 60.dp, 14.dp, card = card)
         }
-        Row(
-            Modifier.padding(start = 12.dp).heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-                .feedbackClickable(role = Role.Button, onClick = onImage).padding(horizontal = 12.dp).testTag("crew-draft-image-choose"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = ink.link, modifier = Modifier.size(28.dp))
-            Spacer(Modifier.width(12.dp))
-            Text(stringResource(R.string.crew_image_choose), color = ink.link, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+            Text(stringResource(R.string.crew_image_row_title), style = com.stepup.android.ui.components.StepUpUi.type.rowTitle, color = c.label)
+            Text(stringResource(R.string.crew_image_row_sub), style = com.stepup.android.ui.components.StepUpUi.type.rowSubtitle, color = c.secondaryLabel)
         }
+        com.stepup.android.ui.components.SmallButton(stringResource(R.string.crew_image_change), onImage, Modifier.testTag("crew-draft-image-choose"))
     }
     if (problem == CrewProblem.IMAGE) {
         Spacer(Modifier.height(10.dp))

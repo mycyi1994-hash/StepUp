@@ -70,4 +70,19 @@
     <string name="flash_cancel_join">参加をキャンセル</string>
     <string name="flash_share_text">%1$s · %2$s · %3$s — StepUpで一緒に走ろう</string>
     <string name="flash_count_label">参加</string>
+    <string name="crew_joined_count">参加中のクルー %1$d</string>
+    <string name="crew_poster_open">クルーを見る</string>
+    <string name="crew_apply_body">クルー長が承認すると参加できます。</string>
+    <string name="crew_apply_note">承認待ちの間はいつでも取り消せます</string>
+    <string name="crew_apply_send">参加を申請</string>
+    <string name="crew_none_joined">まだ参加しているクルーはありません。</string>
+    <string name="ui_unit_people">人</string>
+    <string name="crew_level_label">クルーレベル</string>
+    <string name="crew_detail_info">クルー情報</string>
+    <string name="crew_detail_leader_row">クルー長</string>
+    <string name="crew_share">共有</string>
+    <string name="crew_stat_members">メンバー</string>
+    <string name="crew_image_row_title">代表写真</string>
+    <string name="crew_image_row_sub">写真または名前の画像</string>
+    <string name="crew_image_change">変更</string>
 </resources>

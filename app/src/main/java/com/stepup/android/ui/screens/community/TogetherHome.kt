@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -117,11 +118,23 @@ internal fun MeetupsSegment(
     val now by produceState(System.currentTimeMillis()) {
         while (true) { value = System.currentTimeMillis(); delay(30_000) }
     }
+    // 승인제 크루의 "신청" — 가입 신청 시트를 먼저(시안 apply_sheet)
+    var applyFor by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf<String?>(null) }
     MeetupsContent(
         posts, crews, sync, now,
         onOpenFlash = onOpenFlash, onWritePost = onWritePost, onAllMeetups = onAllMeetups, onOpenMyCrews = onOpenMyCrews,
-        onRetry = viewModel::refreshBoard, onToggleCrew = viewModel::toggleJoin,
+        onRetry = viewModel::refreshBoard,
+        onToggleCrew = { id ->
+            val crew = crews.firstOrNull { it.id == id }
+            if (crew != null && !crew.joined && !crew.requested && crew.joinPolicy == CrewJoinPolicy.APPROVAL) applyFor = id
+            else viewModel.toggleJoin(id)
+        },
     )
+    applyFor?.let { id ->
+        val crew = crews.firstOrNull { it.id == id }
+        if (crew == null) applyFor = null
+        else CrewApplySheet(crew, onApply = { applyFor = null; viewModel.toggleJoin(id) }, onDismiss = { applyFor = null })
+    }
 }
 
 /** 번개러닝 본문 — 상태를 받아 그리기만 한다(기기 검사 · 시안 비교가 장면을 바로 넣어 그린다) */
@@ -305,6 +318,61 @@ internal fun CrewSuggestionRow(crew: Crew, onToggle: () -> Unit, onOpen: () -> U
             crew.requested -> SmallButton(stringResource(R.string.ui_crew_requested), onToggle, kind = ButtonState.Waiting)
             approval -> SmallButton(stringResource(R.string.ui_crew_apply), onToggle)
             else -> SmallButton(stringResource(R.string.ui_crew_join), onToggle)
+        }
+    }
+}
+
+/**
+ * 승인제 크루 가입 신청(시안 apply_sheet) — 사진 · 동네 · 인원 · 승인제 · 이름 → 안내 → 취소 | 가입 신청.
+ * 신청은 기존 crew_join(서버가 승인제면 신청으로 받는다) 그대로다 — 이 길은 한 줄 소개를 서버에 보내지 않아 입력 칸을 두지 않는다.
+ */
+@Composable
+internal fun CrewApplySheet(crew: Crew, onApply: () -> Unit, onDismiss: () -> Unit) {
+    val c = StepUpUi.colors
+    val photo = rememberPlacePhoto(crew.area, seed = "crew-${crew.id}", widthDp = 60)
+    val area = crew.area.ifBlank { stringResource(R.string.crew_area_here) }
+    com.stepup.android.ui.components.RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("crew-apply-sheet")) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            PlaceThumb(photo?.painter, size = 60.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.ui_crew_meta_approval, area, crew.memberCount), style = StepUpUi.type.caption, color = c.secondaryLabel)
+                Text(crew.name, style = StepUpUi.type.section.copy(fontSize = 24.sp), color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        Text(stringResource(R.string.crew_apply_body), style = StepUpUi.type.body, color = c.label)
+        Text(stringResource(R.string.crew_apply_note), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel, modifier = Modifier.padding(top = 2.dp))
+        Spacer(Modifier.height(22.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            com.stepup.android.ui.components.SecondaryButton(stringResource(R.string.run_cancel), onClick = onDismiss, modifier = Modifier.weight(.36f))
+            PrimaryButton(stringResource(R.string.crew_apply_send), onClick = onApply, modifier = Modifier.weight(.64f).testTag("crew-apply-send"))
+        }
+    }
+}
+
+/** 가입한 크루 포스터(시안 mycrew) — 활동 지역 사진 · 이름 · "동네 · 인원 · 승인제" · 흰 "크루 보기" */
+@Composable
+internal fun CrewPoster(crew: Crew, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    val photo = rememberPlacePhoto(crew.area, seed = "crew-${crew.id}", widthDp = 361)
+    val approval = crew.joinPolicy == CrewJoinPolicy.APPROVAL
+    val area = crew.area.ifBlank { stringResource(R.string.crew_area_here) }
+    PhotoCard(photo?.painter, colorFilter = photo?.colorFilter, height = 220.dp, modifier = modifier.padding(horizontal = 16.dp).testTag("crew-poster-${crew.id}")) {
+        Column(Modifier.align(Alignment.BottomStart).padding(20.dp)) {
+            Text(crew.name, style = StepUpUi.type.section.copy(fontSize = 24.sp), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOfNotNull(
+                    if (approval) stringResource(R.string.ui_crew_meta_approval, area, crew.memberCount)
+                    else stringResource(R.string.ui_crew_meta_people, area, crew.memberCount),
+                    // 크루장에게는 기다리는 신청을 카드에서 바로 알린다
+                    if (crew.owned && crew.pendingCount > 0) stringResource(R.string.crew_pending_badge, crew.pendingCount) else null,
+                ).joinToString(" · "),
+                style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = Color.White.copy(alpha = .8f), maxLines = 1,
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp),
+            )
+            Spacer(Modifier.height(14.dp))
+            PrimaryButton(stringResource(R.string.crew_poster_open), onClick = onOpen, onPhoto = true,
+                modifier = Modifier.fillMaxWidth().testTag("crew-poster-open"))
         }
     }
 }

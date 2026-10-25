@@ -55,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
@@ -493,50 +494,38 @@ internal fun CrewSmallButton(text: String, onClick: () -> Unit, modifier: Modifi
 }
 
 /**
- * 고르는 버튼 — 고르지 않으면 남색 면 · 파란 테두리, 고르면 전기 파랑 면 · 흰 글자 · 체크.
- * [enabled] 가 거짓이고 고른 상태면 누르지 않는 표시 칩(러닝 스타일 · 신청 문구)이다.
+ * 고르는 칸 — UI 최종 통합안 세그먼트(체크 표시 없음): 회색 트랙([CrewChoiceRow]) 위에서 고른 칸만 떠 있는 판(segmentThumb).
+ * [enabled] 가 거짓이고 고른 상태면 누르지 않는 표시 칸(러닝 스타일 · 신청 문구)이다.
  */
 @Composable
 internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val ink = crewInk()
-    val display = !enabled && selected
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val shape = RoundedCornerShape(9.dp)
     Box(
-        modifier.heightIn(min = 52.dp).feedbackClickable(enabled = enabled, role = Role.Checkbox, cue = FeedbackCue.Select, onClick = onClick)
+        modifier.heightIn(min = 48.dp).padding(2.dp)
+            .clip(shape)
+            .then(if (selected) Modifier.shadow(if (c.dark) 0.dp else 2.dp, shape).background(c.segmentThumb, shape) else Modifier)
+            .feedbackClickable(enabled = enabled, role = Role.Checkbox, cue = FeedbackCue.Select, onClick = onClick)
             .semantics { this.selected = selected }
-            .padding(vertical = 3.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
-        val shape = RoundedCornerShape(12.dp)
-        val on = selected && !display
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape)
-                .background(
-                    if (on) Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF1F66FF)))
-                    else Brush.verticalGradient(listOf(ink.cardTop, ink.choice)),
-                    shape,
-                )
-                .border(1.dp, if (on) Color(0xFF4D8BFF) else ink.fieldEdge.copy(alpha = if (display) 1f else 0.85f), shape)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text, color = if (on) ink.choiceOnText else if (!enabled && !selected) ink.disabledText else ink.choiceText,
-                fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 19.sp,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            if (on) {
-                Spacer(Modifier.width(6.dp))
-                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-            }
-        }
+        Text(
+            text, style = com.stepup.android.ui.components.StepUpUi.type.segment,
+            color = if (!enabled && !selected) c.onDisabled else c.label,
+            textAlign = TextAlign.Center, maxLines = 2,
+        )
     }
 }
 
-/** 한 줄에 버튼 여러 개 — 폭을 나눈다 */
+/** 한 줄에 고르는 칸 여러 개 — 회색 트랙 하나에 폭을 나눈다(세그먼트) */
 @Composable
 internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), content = content)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(11.dp)).background(c.fill).padding(0.dp),
+        verticalAlignment = Alignment.CenterVertically, content = content,
+    )
 }
 
 // ── 머리 · 줄 · 시트 ───────────────────────────────────────────
@@ -1005,15 +994,15 @@ internal fun CrewSkeletonBox(modifier: Modifier, radius: Dp = 10.dp) {
 /** 입력칸 이름 · 칸 · 도움말(또는 오류) */
 @Composable
 internal fun CrewFieldLabel(text: String, modifier: Modifier = Modifier) {
-    val ink = crewInk()
-    Text(text, color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = modifier)
+    Text(text, style = com.stepup.android.ui.components.StepUpUi.type.rowTitle.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
+        color = com.stepup.android.ui.components.StepUpUi.colors.label, modifier = modifier)
 }
 
 @Composable
 internal fun CrewHelp(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
-    val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     Text(
-        text, color = if (error) ink.warn else ink.secondary, fontSize = 14.sp, lineHeight = 20.sp,
+        text, style = com.stepup.android.ui.components.StepUpUi.type.caption, color = if (error) c.live else c.secondaryLabel,
         fontWeight = if (error) FontWeight.SemiBold else FontWeight.Normal, modifier = modifier,
     )
 }
@@ -1032,7 +1021,7 @@ internal fun CrewTextField(
     suffix: String? = null,
     error: Boolean = false,
 ) {
-    val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(14.dp)
     androidx.compose.foundation.text.BasicTextField(
@@ -1040,31 +1029,24 @@ internal fun CrewTextField(
         onValueChange = { next -> onValueChange(if (next.length > maxChars) next.take(maxChars) else next) },
         singleLine = singleLine,
         keyboardOptions = keyboard,
-        textStyle = TextStyle(fontFamily = StepUpSans, color = ink.text, fontSize = 17.sp, lineHeight = 26.sp),
-        cursorBrush = androidx.compose.ui.graphics.SolidColor(ink.info),
+        textStyle = com.stepup.android.ui.components.StepUpUi.type.body.copy(color = c.label, fontSize = 16.5.sp),
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(c.primary),
         modifier = modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused },
         decorationBox = { inner ->
             Row(
-                Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(ink.field, shape)
-                    .border(
-                        if (focused || error) 1.5.dp else 1.dp,
-                        when {
-                            error -> ink.warn
-                            focused -> Color(0xFF4D8BFF)
-                            else -> ink.fieldEdge
-                        },
-                        shape,
-                    )
-                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(c.card, shape)
+                    .then(if (focused || error) Modifier.border(2.dp, if (error) c.live else c.primary, shape) else Modifier)
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
             ) {
                 Box(Modifier.weight(1f)) {
-                    if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, color = ink.secondary.copy(alpha = 0.8f), fontSize = 17.sp, lineHeight = 26.sp)
+                    if (value.isEmpty() && placeholder.isNotEmpty()) {
+                        Text(placeholder, style = com.stepup.android.ui.components.StepUpUi.type.body.copy(fontSize = 16.5.sp), color = c.tertiaryLabel)
+                    }
                     inner()
                 }
                 if (suffix != null) {
-                    Box(Modifier.padding(start = 12.dp).width(1.dp).height(24.dp).background(ink.divider))
-                    Text(suffix, color = ink.secondary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 14.dp))
+                    Text(suffix, style = com.stepup.android.ui.components.StepUpUi.type.body, color = c.secondaryLabel, modifier = Modifier.padding(start = 14.dp))
                 }
             }
         },
@@ -1074,20 +1056,19 @@ internal fun CrewTextField(
 /** 입력처럼 보이는 고르기 줄(활동 지역 · 정기 모임) */
 @Composable
 internal fun CrewPickerField(text: String, placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val ink = crewInk()
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 58.dp).clip(shape).background(ink.field, shape)
-            .border(1.dp, if (enabled) ink.fieldEdge else ink.divider, shape)
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 18.dp, vertical = 12.dp),
+        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(c.card, shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text.ifEmpty { placeholder }, color = if (text.isEmpty() || !enabled) ink.secondary else ink.text, fontSize = 17.sp,
-            fontWeight = if (text.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
+            text.ifEmpty { placeholder }, style = com.stepup.android.ui.components.StepUpUi.type.body.copy(fontSize = 16.5.sp),
+            color = if (text.isEmpty() || !enabled) c.tertiaryLabel else c.label,
             modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = if (enabled) ink.text else ink.secondary, modifier = Modifier.size(22.dp))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = c.tertiaryLabel, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -1113,7 +1094,8 @@ internal fun CrewBottomBar(caption: String? = null, captionError: Boolean = fals
                 CrewErrorLine(caption, Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"))
             } else {
                 Text(
-                    caption, color = ink.text.copy(alpha = 0.86f), fontSize = 15.sp, lineHeight = 21.sp, textAlign = TextAlign.Center,
+                    caption, style = com.stepup.android.ui.components.StepUpUi.type.rowSubtitle,
+                    color = com.stepup.android.ui.components.StepUpUi.colors.secondaryLabel, textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = 12.dp).testTag("crew-footer-caption"),
                 )
             }

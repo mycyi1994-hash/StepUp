@@ -215,6 +215,8 @@ fun CommunityScreen(
                 onOpenLobby = onOpenLobby,
                 onOpenCrew = onOpenCrew,
                 onCreateCrew = onCreateCrew,
+                // 모두 보기 — 크루 모집 목록(크루 세그먼트)
+                onSeeAll = { viewModel.selectTab(CommunityTab.BOARD); segment = SEGMENT_CREWS; allMeetups = false },
             )
             allMeetups -> BoardTab(
                 viewModel = viewModel,
@@ -541,85 +543,69 @@ private fun CrewTab(
     onOpenLobby: (String) -> Unit,
     onOpenCrew: (String) -> Unit,
     onCreateCrew: (resume: Boolean) -> Unit,
+    onSeeAll: () -> Unit = {},
 ) {
     val crews by viewModel.crews.collectAsStateWithLifecycle()
     val sync by viewModel.crewSync.collectAsStateWithLifecycle()
-    var query by rememberSaveable { mutableStateOf("") }
     // 남겨 둔 만들기 초안이 있으면 크루 모집 목록과 같이 이어 쓸지 먼저 묻는다(39 · 78)
     val draft by remember { ServiceLocator.crewCards.draft(CrewDraft.KEY_CREATE) }.collectAsStateWithLifecycle(null)
     var draftSheet by rememberSaveable { mutableStateOf("") }
+    // 승인제 크루의 "신청" — 가입 신청 시트를 먼저 보인다(시안 apply_sheet)
+    var applyFor by rememberSaveable { mutableStateOf<String?>(null) }
 
     CrewNoticeToast(viewModel)
 
-    val filtered = crews.filter { it.name.contains(query, ignoreCase = true) }
-    val myCrews = filtered.filter { it.joined }
+    val myCrews = crews.filter { it.joined }
     // 신청해 둔 크루를 위로. 기다리는 중인 것을 찾으러 목록을 뒤지지 않게 한다.
-    val others = filtered.filterNot { it.joined }
+    val others = crews.filterNot { it.joined }
         .sortedWith(compareByDescending<Crew> { it.requested }.thenBy { it.kmAway })
+    val toggle: (Crew) -> Unit = { crew ->
+        if (!crew.joined && !crew.requested && crew.joinPolicy == CrewJoinPolicy.APPROVAL) applyFor = crew.id
+        else viewModel.toggleJoin(crew.id)
+    }
 
+    // UI 최종 통합안 mycrew — 큰 제목 "내 크루" · 가입한 크루 수 → 가입한 크루 포스터(크루 보기) → 추천 크루 묶음 목록.
+    // 크루 만들기는 머리 + 버튼, 크루 러닝 · 게시판 · 나가기는 크루 안(크루 보기)에 있다
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
+        modifier = Modifier.fillMaxSize().testTag("community-crew-mine"),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { CreateCrewCard(onClick = { if (draft != null) draftSheet = SHEET_DRAFT_RESUME else onCreateCrew(false) }) }
-
-        if (crews.isEmpty()) {
-            item { CrewSyncCard(sync, onRetry = viewModel::refreshCrews) }
-        }
-
-        item { SearchField(query, { query = it }) }
-
         item {
-            SectionHeader(
-                title = stringResource(R.string.community_my_crews),
-                actionText = "${myCrews.size}",
+            com.stepup.android.ui.components.LargeTitle(
+                stringResource(R.string.community_my_crews), subtitle = stringResource(R.string.crew_joined_count, myCrews.size),
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
-
-        if (myCrews.isEmpty()) {
-            item {
-                com.stepup.android.ui.components.StatePanel(
-                    stringResource(R.string.community_no_crew_yet), Icons.Filled.Groups,
-                )
-            }
+        if (crews.isEmpty()) {
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CrewSyncCard(sync, onRetry = viewModel::refreshCrews) } }
         }
-
+        if (myCrews.isEmpty() && crews.isNotEmpty()) {
+            item { com.stepup.android.ui.components.EmptyLine(stringResource(R.string.crew_none_joined)) }
+        }
         items(myCrews, key = { "my_${it.id}" }) { crew ->
-            CrewCard(
-                crew = crew,
-                onToggleJoin = { viewModel.toggleJoin(crew.id) },
-                onOpenLobby = { onOpenLobby(crew.id) },
-                onOpenBoard = { onOpenCrew(crew.id) },
-            )
+            CrewPoster(crew, onOpen = { onOpenCrew(crew.id) })
         }
-
-        item { SectionHeader(title = stringResource(R.string.community_nearby)) }
-
-        if (others.isEmpty()) {
+        if (others.isNotEmpty()) {
             item {
-                GlowCard(contentPadding = PaddingValues(24.dp)) {
-                    Text(
-                        text = if (query.isBlank()) {
-                            stringResource(R.string.common_none)
-                        } else {
-                            stringResource(R.string.community_no_results, query)
+                Column {
+                    com.stepup.android.ui.components.GroupHeader(
+                        stringResource(R.string.ui_recommended_crews), action = stringResource(R.string.ui_see_all),
+                        actionTag = "crew-mine-see-all", onAction = onSeeAll,
+                    )
+                    com.stepup.android.ui.components.GroupedList(
+                        rows = others.map { crew ->
+                            @Composable { CrewSuggestionRow(crew, onToggle = { toggle(crew) }, onOpen = { onOpenCrew(crew.id) }) }
                         },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Silver,
                     )
                 }
             }
         }
-
-        items(others, key = { "near_${it.id}" }) { crew ->
-            CrewCard(
-                crew = crew,
-                onToggleJoin = { viewModel.toggleJoin(crew.id) },
-                onOpenLobby = { onOpenLobby(crew.id) },
-                onOpenBoard = { onOpenCrew(crew.id) },
-            )
-        }
+    }
+    applyFor?.let { id ->
+        crews.firstOrNull { it.id == id }?.let { crew ->
+            CrewApplySheet(crew, onApply = { applyFor = null; viewModel.toggleJoin(crew.id) }, onDismiss = { applyFor = null })
+        } ?: run { applyFor = null }
     }
     if (draftSheet.isNotEmpty()) {
         CrewStartSheets(draft, discard = draftSheet == SHEET_DRAFT_DISCARD, onStep = { draftSheet = it }, onCreate = onCreateCrew)

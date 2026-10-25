@@ -70,4 +70,19 @@
     <string name="flash_cancel_join">取消参加</string>
     <string name="flash_share_text">%1$s · %2$s · %3$s — 在 StepUp 一起跑</string>
     <string name="flash_count_label">参加</string>
+    <string name="crew_joined_count">已加入 %1$d 个跑团</string>
+    <string name="crew_poster_open">查看跑团</string>
+    <string name="crew_apply_body">团长同意后即可加入。</string>
+    <string name="crew_apply_note">等待期间可随时取消</string>
+    <string name="crew_apply_send">申请加入</string>
+    <string name="crew_none_joined">你还没有加入跑团。</string>
+    <string name="ui_unit_people">人</string>
+    <string name="crew_level_label">跑团等级</string>
+    <string name="crew_detail_info">跑团信息</string>
+    <string name="crew_detail_leader_row">团长</string>
+    <string name="crew_share">分享</string>
+    <string name="crew_stat_members">成员</string>
+    <string name="crew_image_row_title">封面照片</string>
+    <string name="crew_image_row_sub">照片或名称图片</string>
+    <string name="crew_image_change">更换</string>
 </resources>
