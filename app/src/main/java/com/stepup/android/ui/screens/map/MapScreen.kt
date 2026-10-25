@@ -47,6 +47,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.drawText
 import com.stepup.android.data.remote.TerritoryCell
 import com.stepup.android.data.remote.TerritoryStanding
 import com.stepup.android.domain.GeoPoint
@@ -120,81 +126,98 @@ fun MapScreen(
         )
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val detailsMaxHeight = maxHeight * 0.42f
-        Column(Modifier.fillMaxSize()) {
-            SecondaryHeader(
-                title = stringResource(R.string.map_title),
-                onBack = onBack, balance = null, onOpenWallet = null,
-                modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
-            )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val pinStyle = com.stepup.android.ui.components.StepUpUi.type.caption.copy(fontWeight = FontWeight.Bold, color = Color.White)
+    // 위 알약 글 — 내 자리가 든 장소 이름(spots.json 반경 안) · 없으면 "지도"
+    val near = remember(here?.let { round(it.lat * 200) }, here?.let { round(it.lng * 200) }) {
+        here?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
+    }
+    // 아래 카드 — 고른 핀, 고르지 않았으면 내 자리에서 가장 가까운 번개(시안 map "내 위치 근처 번개")
+    val nearestFlash = remember(flashes, here) {
+        flashes.filter { it.lat != null && it.lng != null }.minByOrNull { it.awayKmFrom(here) ?: Double.MAX_VALUE }
+    }
+    val shown: Pin? = selected ?: nearestFlash?.let { Pin.Flash(it) }
 
-            // S2 — 글자 탭 두 개. 고른 쪽은 밝은 글자와 짧은 파란 선.
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-            ) {
-                listOf(MapMode.NEARBY to R.string.map_seg_nearby, MapMode.TERRITORY to R.string.map_seg_territory)
-                    .forEach { (value, label) ->
-                        com.stepup.android.ui.components.S2TextTab(
-                            label = stringResource(label),
-                            selected = mode == value,
-                            onClick = {
-                                selected = null
-                                selectedCell = null
-                                viewModel.select(value)
-                            },
-                        )
-                    }
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    // S2 — 지도는 테두리 없이 화면 폭 끝까지
-                    .fillMaxWidth(),
-            ) {
-                val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
-                val tapRadius = with(LocalDensity.current) { 28.dp.toPx() }
-                StepUpMap(
-                    focus = focus,
-                    modifier = Modifier.fillMaxSize(),
-                    interactive = true,
-                    onViewport = viewModel::onViewport,
-                    onTap = { at, plan ->
-                        if (mode == MapMode.NEARBY) {
-                            selected = nearestPin(pins, at, plan, radiusPx = tapRadius)
-                        } else {
-                            val point = plan.fromScreen(at)
-                            val cell = Territory.cellOf(point.lat, point.lng)
-                            selectedCell = cells.firstOrNull { it.cell == cell }?.cell
-                        }
-                    },
-                ) { plan ->
-                    if (mode == MapMode.NEARBY) {
-                        drawPins(plan, pins, selected)
-                    } else {
-                        drawCells(plan, cells, selectedCell)
-                    }
-                    here?.let { drawHere(plan, it) }
+    // UI 최종 통합안 map · terr_* — 지도가 화면 가득, 위에 떠 있는 ← · 장소 알약 · 세그먼트(내 주변 · 땅따먹기), 아래 떠 있는 카드
+    Box(Modifier.fillMaxSize().background(c.mapBackground).testTag("map-screen")) {
+        val cells = (territory as? TerritoryState.Ready)?.cells.orEmpty()
+        val tapRadius = with(LocalDensity.current) { 28.dp.toPx() }
+        StepUpMap(
+            focus = focus,
+            modifier = Modifier.fillMaxSize(),
+            interactive = true,
+            onViewport = viewModel::onViewport,
+            onTap = { at, plan ->
+                if (mode == MapMode.NEARBY) {
+                    selected = nearestPin(pins, at, plan, radiusPx = tapRadius)
+                } else {
+                    val point = plan.fromScreen(at)
+                    val cell = Territory.cellOf(point.lat, point.lng)
+                    selectedCell = cells.firstOrNull { it.cell == cell }?.cell
                 }
-
+            },
+        ) { plan ->
+            if (mode == MapMode.NEARBY) {
+                drawPins(plan, pins, shown, textMeasurer, pinStyle)
+            } else {
+                drawCells(plan, cells, selectedCell)
             }
+            here?.let { drawHere(plan, it) }
+        }
 
-            Box(Modifier.heightIn(max = detailsMaxHeight).verticalScroll(rememberScrollState()).padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                com.stepup.android.ui.components.CircleIconButton(
+                    Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.cd_back), onBack, size = 44.dp,
+                    modifier = Modifier.testTag("map-back"),
+                )
+                Spacer(Modifier.width(4.dp))
+                Box(
+                    Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(50)).background(c.tabBar).padding(horizontal = 18.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Text(near?.let { stringResource(R.string.map_near_place, it) } ?: stringResource(R.string.map_title),
+                        style = com.stepup.android.ui.components.StepUpUi.type.body, color = c.secondaryLabel, maxLines = 1)
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.width(200.dp).clip(RoundedCornerShape(11.dp)).background(c.tabBar)) {
+                com.stepup.android.ui.components.StepUpTabs(
+                    listOf(stringResource(R.string.map_seg_nearby), stringResource(R.string.map_seg_territory)),
+                    if (mode == MapMode.NEARBY) 0 else 1,
+                    { i ->
+                        selected = null
+                        selectedCell = null
+                        viewModel.select(if (i == 0) MapMode.NEARBY else MapMode.TERRITORY)
+                    },
+                    Modifier.fillMaxWidth(),
+                    tags = listOf("map-seg-nearby", "map-seg-territory"),
+                )
+            }
+        }
+
+        Box(
+            Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp).padding(bottom = 10.dp)
+                .heightIn(max = 380.dp).clip(RoundedCornerShape(24.dp)).background(c.card)
+                .verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+        ) {
+            Column {
+                com.stepup.android.ui.components.SheetHandle(Modifier.align(Alignment.CenterHorizontally))
+                Spacer(Modifier.height(10.dp))
                 when (mode) {
                     MapMode.NEARBY -> NearbyCard(
-                        selected = selected,
+                        selected = shown,
                         flashCount = flashes.size,
                         courseCount = courses.size,
                         here = here,
                         onOpenFlash = onOpenFlash,
                         onOpenCourses = onOpenCourses,
                     )
-
-                    MapMode.TERRITORY -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TerritoryStatus(state = territory, onRetry = viewModel::retryTerritory)
+                    MapMode.TERRITORY -> {
                         val ready = territory as? TerritoryState.Ready
+                        TerritoryStatus(state = territory, onRetry = viewModel::retryTerritory)
                         if (ready != null && (ready.cells.isNotEmpty() || standings.isNotEmpty())) {
                             TerritoryCard(cell = ready.cells.firstOrNull { it.cell == selectedCell }, standings = standings)
                         }
@@ -215,24 +238,45 @@ private fun nearestPin(pins: List<Pin>, at: Offset, plan: TilePlan, radiusPx: Fl
     pins.minByOrNull { (plan.toScreen(it.at) - at).getDistance() }
         ?.takeIf { (plan.toScreen(it.at) - at).getDistance() <= radiusPx }
 
-private fun DrawScope.drawPins(plan: TilePlan, pins: List<Pin>, selected: Pin?) {
+/** 지도 핀(시안 map) — 번개는 블루 알약(번개 · 집결 시각), 코스는 짙은 알약(거리). 고른 핀은 조금 크게 */
+private fun DrawScope.drawPins(
+    plan: TilePlan,
+    pins: List<Pin>,
+    selected: Pin?,
+    measurer: androidx.compose.ui.text.TextMeasurer,
+    style: androidx.compose.ui.text.TextStyle,
+) {
     for (pin in pins) {
         val at = plan.toScreen(pin.at)
-        if (at.x < -40 || at.y < -40 || at.x > size.width + 40 || at.y > size.height + 40) continue
-        val color = if (pin is Pin.Flash) Volt else Cyan
+        if (at.x < -80 || at.y < -40 || at.x > size.width + 80 || at.y > size.height + 40) continue
+        val flash = pin is Pin.Flash
+        val label = when (pin) {
+            is Pin.Flash -> java.time.Instant.ofEpochMilli(pin.post.meetAt).atZone(java.time.ZoneId.systemDefault())
+                .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+            is Pin.Course -> "%.2fkm".format(pin.course.distanceKm)
+        }
+        val text = measurer.measure(label, style)
         val big = pin == selected
-        drawCircle(color.copy(alpha = 0.28f), radius = (if (big) 16 else 11).dp.toPx(), center = at)
-        drawCircle(color, radius = (if (big) 7f else 5.5f).dp.toPx(), center = at)
-        drawCircle(Night, radius = 2.dp.toPx(), center = at)
+        val h = (if (big) 36 else 32).dp.toPx()
+        val padX = 12.dp.toPx()
+        val w = text.size.width + padX * 2
+        val topLeft = Offset(at.x - w / 2, at.y - h - 6.dp.toPx())
+        drawRoundRect(Color.Black.copy(alpha = .35f), topLeft + Offset(0f, 4.dp.toPx()), androidx.compose.ui.geometry.Size(w, h),
+            androidx.compose.ui.geometry.CornerRadius(h / 2))
+        drawRoundRect(if (flash) Color(0xFF2F6BFF) else Color(0xFF151C2D), topLeft, androidx.compose.ui.geometry.Size(w, h),
+            androidx.compose.ui.geometry.CornerRadius(h / 2))
+        drawText(text, topLeft = Offset(topLeft.x + padX, topLeft.y + (h - text.size.height) / 2))
+        // 꼭짓점 — 핀이 가리키는 자리
+        drawCircle(if (flash) Color(0xFF2F6BFF) else Color(0xFF151C2D), radius = 3.dp.toPx(), center = at)
     }
 }
 
+/** 내 자리 — 블루 점 + 옅은 블루 고리(시안 map) */
 private fun DrawScope.drawHere(plan: TilePlan, here: GeoPoint) {
     val at = plan.toScreen(here)
-    drawCircle(Color.White.copy(alpha = 0.20f), radius = 15.dp.toPx(), center = at)
-    drawCircle(Night, radius = 10.dp.toPx(), center = at)
-    drawCircle(Color.White, radius = 8.dp.toPx(), center = at, style = Stroke(width = 2.dp.toPx()))
-    drawCircle(Color(0xFF3B82F6), radius = 4.dp.toPx(), center = at)
+    drawCircle(Color(0xFF2F6BFF).copy(alpha = 0.25f), radius = 21.dp.toPx(), center = at)
+    drawCircle(Color.White, radius = 12.dp.toPx(), center = at)
+    drawCircle(Color(0xFF2F6BFF), radius = 9.dp.toPx(), center = at)
 }
 
 /** 크루 색 — 크루마다 늘 같은 색 */
@@ -262,6 +306,7 @@ private fun DrawScope.drawCells(plan: TilePlan, cells: List<TerritoryCell>, sele
 
 @Composable
 private fun TerritoryStatus(state: TerritoryState, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     val text = when (state) {
         TerritoryState.Loading -> stringResource(R.string.feed_loading)
         is TerritoryState.Ready -> if (state.cells.isEmpty()) stringResource(R.string.map_territory_empty) else return
@@ -269,21 +314,21 @@ private fun TerritoryStatus(state: TerritoryState, onRetry: () -> Unit, modifier
         TerritoryState.ZoomIn -> stringResource(R.string.map_territory_zoom)
         TerritoryState.Failed -> stringResource(R.string.map_territory_failed)
     }
-    GlowCard(modifier, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier.fillMaxWidth().padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             if (state == TerritoryState.Loading) {
-                CircularProgressIndicator(Modifier.size(22.dp), color = Volt, strokeWidth = 2.dp)
-            } else {
-                Icon(if (state == TerritoryState.Failed) Icons.Filled.Warning else Icons.Filled.Info, null, tint = Silver, modifier = Modifier.size(22.dp))
+                com.stepup.android.ui.components.RunSpinner(Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
             }
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = Snow, modifier = Modifier.weight(1f))
+            Text(text, style = com.stepup.android.ui.components.StepUpUi.type.body, color = c.label, modifier = Modifier.weight(1f))
         }
         if (state == TerritoryState.Failed) {
-            GhostButton(stringResource(R.string.map_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth())
+            com.stepup.android.ui.components.SecondaryButton(stringResource(R.string.map_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
+/** 내 주변 카드(시안 map) — 번개: 장소 사진 · 제목 · "시각 · 장소 · 인원" · 같이 달리기, 코스: 거리 · 코스 보기, 없으면 요약 한 줄 */
 @Composable
 private fun NearbyCard(
     selected: Pin?,
@@ -293,123 +338,100 @@ private fun NearbyCard(
     onOpenFlash: (Long) -> Unit,
     onOpenCourses: () -> Unit,
 ) {
-    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 10.dp) {
-        when (selected) {
-            null -> {
-                Text(
-                    text = if (flashCount + courseCount == 0) {
-                        stringResource(R.string.map_empty_nearby)
-                    } else {
-                        stringResource(R.string.map_nearby_summary, flashCount, courseCount)
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Silver,
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Legend(Volt, stringResource(R.string.post_cat_flash))
-                    Legend(Cyan, stringResource(R.string.map_legend_course))
-                }
-                if (courseCount > 0) {
-                    GhostButton(
-                        text = stringResource(R.string.map_open_courses),
-                        onClick = onOpenCourses,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-
-            is Pin.Flash -> {
-                val post = selected.post
-                Text(post.title, color = Snow, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                val away = post.awayKmFrom(here)
-                Text(
-                    text = listOfNotNull(
-                        post.place.ifBlank { null },
-                        away?.let { stringResource(R.string.map_away_km, formatKm(it)) },
-                        stringResource(R.string.map_flash_people, post.joinedCount, post.capacity),
-                    ).joinToString(" · "),
-                    fontSize = 14.sp,
-                    color = Silver,
-                )
-                VoltButton(
-                    text = stringResource(R.string.map_open_flash),
-                    onClick = { onOpenFlash(post.id) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            is Pin.Course -> {
-                val course = selected.course
-                Text(course.name, color = Snow, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(
-                    text = stringResource(R.string.map_course_meta, formatKm(course.distanceKm), course.runCount),
-                    fontSize = 14.sp,
-                    color = Silver,
-                )
-                VoltButton(
-                    text = stringResource(R.string.map_open_courses),
-                    onClick = onOpenCourses,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val type = com.stepup.android.ui.components.StepUpUi.type
+    when (selected) {
+        null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(
+                if (flashCount + courseCount == 0) stringResource(R.string.map_empty_nearby)
+                else stringResource(R.string.map_nearby_summary, flashCount, courseCount),
+                style = type.body, color = c.secondaryLabel,
+            )
+            if (courseCount > 0) {
+                com.stepup.android.ui.components.SecondaryButton(stringResource(R.string.map_open_courses), onClick = onOpenCourses, modifier = Modifier.fillMaxWidth())
             }
         }
-    }
-}
-
-@Composable
-private fun Legend(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(
-            Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(color),
-        )
-        Text(label, fontSize = 14.sp, color = Silver)
-    }
-}
-
-@Composable
-private fun TerritoryCard(cell: TerritoryCell?, standings: List<TerritoryStanding>) {
-    GlowCard(contentPadding = PaddingValues(20.dp), spacing = 8.dp) {
-        if (cell != null) {
-            Text(
-                text = stringResource(R.string.map_territory_cell, cell.crewName, cell.score),
-                color = Snow,
-                fontWeight = FontWeight.Bold,
-            )
-        } else {
-            Text(
-                text = stringResource(R.string.map_territory_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Silver,
-            )
-        }
-        if (standings.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.map_territory_board),
-                style = MaterialTheme.typography.titleSmall,
-                color = Snow,
-            )
-            standings.take(5).forEachIndexed { i, row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("${i + 1}", color = Slate, fontSize = 14.sp)
-                    Box(
-                        Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(crewColor(row.crewId)),
-                    )
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(row.crewName, color = if (row.mine) Volt else Snow, fontSize = 16.sp)
-                        Text(stringResource(R.string.map_territory_cells, row.cells), color = Silver, fontSize = 14.sp)
+        is Pin.Flash -> {
+            val post = selected.post
+            val photo = com.stepup.android.ui.background.rememberPlacePhoto(post.place, post.lat, post.lng, seed = "flash-${post.id}", widthDp = 56)
+            val away = post.awayKmFrom(here)
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    com.stepup.android.ui.components.PlaceThumb(photo?.painter, size = 56.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(post.title, style = type.rowTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold), color = c.label, maxLines = 1)
+                        Text(
+                            listOfNotNull(
+                                java.time.Instant.ofEpochMilli(post.meetAt).atZone(java.time.ZoneId.systemDefault())
+                                    .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")),
+                                post.place.ifBlank { null },
+                                away?.let { stringResource(R.string.map_away_km, formatKm(it)) },
+                                stringResource(R.string.map_flash_people, post.joinedCount, post.capacity),
+                            ).joinToString(" · "),
+                            style = type.rowSubtitle, color = c.secondaryLabel, maxLines = 1,
+                        )
                     }
                 }
+                com.stepup.android.ui.components.PrimaryButton(stringResource(R.string.flash_join_go), onClick = { onOpenFlash(post.id) },
+                    modifier = Modifier.fillMaxWidth().testTag("map-open-flash"))
             }
         }
+        is Pin.Course -> {
+            val course = selected.course
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Column(Modifier.weight(1f)) {
+                        Text(course.name, style = type.rowTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold), color = c.label, maxLines = 1)
+                        Text(stringResource(R.string.map_course_meta, formatKm(course.distanceKm), course.runCount), style = type.rowSubtitle, color = c.secondaryLabel)
+                    }
+                }
+                com.stepup.android.ui.components.PrimaryButton(stringResource(R.string.map_open_courses), onClick = onOpenCourses,
+                    modifier = Modifier.fillMaxWidth().testTag("map-open-courses"))
+            }
+        }
+    }
+}
+
+/**
+ * 땅따먹기 카드(시안 terr_cells · terr_cell) — 고른 칸이 있으면 그 칸의 크루 · 표시 수, 없으면 "최근 14일 · 우리 크루 땅" 큰 숫자 →
+ * 크루 순위(색 · 이름 · 칸 수) → 규칙 한 줄. 시안의 "동네" 묶음 · 칸 안 거리 막대는 서버가 주지 않는 값이라 두지 않는다.
+ */
+@Composable
+private fun TerritoryCard(cell: TerritoryCell?, standings: List<TerritoryStanding>) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val type = com.stepup.android.ui.components.StepUpUi.type
+    Column(Modifier.fillMaxWidth()) {
+        if (cell != null) {
+            Text(stringResource(R.string.map_cell_score, cell.score), style = type.rowSubtitle, color = c.secondaryLabel)
+            Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(16.dp).clip(RoundedCornerShape(5.dp)).background(crewColor(cell.crewId)))
+                Spacer(Modifier.width(10.dp))
+                Text(stringResource(R.string.map_cell_title, cell.crewName), style = type.section.copy(fontSize = 26.sp), color = c.label, maxLines = 1)
+            }
+        } else {
+            val mine = standings.firstOrNull { it.mine }
+            if (mine != null) {
+                Text(stringResource(R.string.map_territory_mine), style = type.rowSubtitle, color = c.secondaryLabel)
+                com.stepup.android.ui.components.NumberWithUnit(mine.cells.toString(), unit = stringResource(R.string.map_unit_cells),
+                    style = type.numberLarge.copy(fontSize = 72.sp), unitSize = 21.6.sp)
+            } else {
+                Text(stringResource(R.string.map_territory_board), style = type.section, color = c.label)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        standings.take(5).forEachIndexed { i, row ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(.5.dp).background(c.separator))
+            Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(12.dp).clip(RoundedCornerShape(4.dp)).background(crewColor(row.crewId)))
+                Spacer(Modifier.width(10.dp))
+                Text(row.crewName, style = type.rowTitle.copy(fontSize = 15.sp, fontWeight = if (row.mine) FontWeight.Bold else FontWeight.Normal),
+                    color = if (row.mine) c.label else c.secondaryLabel, modifier = Modifier.weight(1f), maxLines = 1)
+                com.stepup.android.ui.components.NumberWithUnit(row.cells.toString(), unit = stringResource(R.string.map_unit_cells),
+                    style = type.numberRow.copy(fontSize = 24.sp))
+            }
+        }
+        Text(stringResource(R.string.map_territory_hint), style = type.caption.copy(fontSize = 12.5.sp), color = c.secondaryLabel,
+            modifier = Modifier.padding(top = 6.dp))
     }
 }

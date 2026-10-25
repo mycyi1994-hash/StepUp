@@ -103,4 +103,10 @@
     <string name="post_unit_people">人</string>
     <string name="post_stepper_less">减少</string>
     <string name="post_stepper_more">增加</string>
+    <string name="map_near_place">%1$s 附近</string>
+    <string name="map_territory_mine">近14天 · 我们跑团</string>
+    <string name="map_unit_cells">格</string>
+    <string name="map_cell_title">%1$s 的地盘</string>
+    <string name="map_cell_score">此格 · 近14天标记 %1$d</string>
+    <string name="map_recenter">回到我的位置</string>
 </resources>

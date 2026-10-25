@@ -103,4 +103,10 @@
     <string name="post_unit_people">people</string>
     <string name="post_stepper_less">Less</string>
     <string name="post_stepper_more">More</string>
+    <string name="map_near_place">Near %1$s</string>
+    <string name="map_territory_mine">Last 14 days · our crew</string>
+    <string name="map_unit_cells">cells</string>
+    <string name="map_cell_title">%1$s territory</string>
+    <string name="map_cell_score">This cell · %1$d marks in 14 days</string>
+    <string name="map_recenter">My location</string>
 </resources>

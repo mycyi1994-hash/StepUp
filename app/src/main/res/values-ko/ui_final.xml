@@ -103,4 +103,10 @@
     <string name="post_unit_people">명</string>
     <string name="post_stepper_less">줄이기</string>
     <string name="post_stepper_more">늘리기</string>
+    <string name="map_near_place">%1$s 근처</string>
+    <string name="map_territory_mine">최근 14일 · 우리 크루 땅</string>
+    <string name="map_unit_cells">칸</string>
+    <string name="map_cell_title">%1$s 땅</string>
+    <string name="map_cell_score">이 칸 · 최근 14일 표시 %1$d</string>
+    <string name="map_recenter">내 위치로</string>
 </resources>

@@ -103,4 +103,10 @@
     <string name="post_unit_people">人</string>
     <string name="post_stepper_less">減らす</string>
     <string name="post_stepper_more">増やす</string>
+    <string name="map_near_place">%1$s周辺</string>
+    <string name="map_territory_mine">直近14日 · うちのクルー</string>
+    <string name="map_unit_cells">マス</string>
+    <string name="map_cell_title">%1$sの陣地</string>
+    <string name="map_cell_score">このマス · 直近14日 %1$d</string>
+    <string name="map_recenter">現在地へ</string>
 </resources>
