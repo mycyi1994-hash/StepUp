@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
+<resources>
+    <string name="tg_create">Start a group run</string>
+    <string name="tg_pick_title">Who will you run with?</string>
+    <string name="tg_pick_crew">With %s</string>
+    <string name="tg_pick_crew_body">Crew run · shared stamina · crew rewards</string>
+    <string name="tg_pick_crew_done">You already did today\'s crew run</string>
+    <string name="tg_pick_anyone">Anyone · flash run</string>
+    <string name="tg_pick_anyone_body">Any nearby runner · together or remote</string>
+    <string name="tg_section_crew">Crew runs</string>
+    <string name="tg_section_flash">Flash runs</string>
+    <string name="tg_flash_status">Flash · %s</string>
+    <string name="tg_flash_joined">Joined · %s</string>
+    <string name="tg_flash_view">Details</string>
+    <string name="tg_flash_line">%1$s · %2$s km</string>
+    <string name="tg_crew_empty">No crew lobbies are open yet</string>
+    <string name="tg_no_crew">Join a crew to open crew runs too</string>
+    <string name="tg_flash_remote_hint">Remote runs have no meeting place. Everyone starts from where they are at the set time.</string>
+    <string name="tg_lobby_capacity">Up to %d runners</string>
+    <string name="tg_party_rule">Everyone who starts together counts toward the party bonus — together or remote.</string>
+</resources>

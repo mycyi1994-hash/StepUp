@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- UI 최종 통합안(2026-10-25) 화면에 새로 생긴 문구 -->
 <resources>
-    <string name="ui_seg_meetups">フラッシュラン</string>
+    <string name="ui_seg_meetups">募集中</string>
     <string name="ui_seg_crews">クルー</string>
     <string name="ui_seg_stories">ストーリー</string>
     <string name="ui_meetups_empty_title">予定されたフラッシュランはまだありません</string>

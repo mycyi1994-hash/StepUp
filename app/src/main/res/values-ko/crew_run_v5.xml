@@ -205,7 +205,7 @@
     <string name="crew5_closed_title">대기실이 닫혔어요</string>
     <string name="crew5_closed_body">모두 나갔거나 오래 비어 있던 대기실이에요. 다른 대기실에 들어가거나 새로 열어 주세요.</string>
     <string name="crew5_full_title">대기실이 가득 찼어요</string>
-    <string name="crew5_full_body">한 대기실에는 %1$d명까지 함께해요. 다른 대기실을 보거나 새로 열어 주세요.</string>
+    <string name="crew5_full_body">이 대기실은 정원이 다 찼어요. 다른 대기실을 보거나 새로 열어 주세요.</string>
     <string name="crew5_started_title">이미 출발한 대기실이에요</string>
     <string name="crew5_started_body">출발한 러닝에는 중간에 함께할 수 없어요. 다른 대기실을 보거나 새로 열어 주세요.</string>
     <string name="crew5_missed_title">출발을 놓쳤어요</string>

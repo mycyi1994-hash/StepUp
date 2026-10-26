@@ -13,7 +13,7 @@
 
     <!-- Tabs -->
     <string name="tab_home">ホーム</string>
-    <string name="tab_community">コミュニティ</string>
+    <string name="tab_community">一緒に走る</string>
     <string name="tab_items">アイテム</string>
     <string name="tab_events">イベント</string>
     <string name="tab_profile">プロフィール</string>
@@ -582,7 +582,6 @@
     <string name="party_problem_closed">ルームは閉じられました。</string>
     <string name="party_problem_failed">処理できませんでした。もう一度お試しください。</string>
     <string name="party_problem_missed_start">一緒の出発から時間が経ったため、新しい待機室を開きました。</string>
-    <string name="party_gps_rule">出発から2分後も互いに%1$dm以内で走ったメンバーだけがパーティ人数に数えられます。</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">辞退</string>
@@ -769,8 +768,8 @@ StepUp と走り出そう。</string>
     <string name="tour_tab_home_body">今日の記録と目標を確認し、ランニングを始めましょう。</string>
     <string name="tour_tab_news_title">② ニュースタブ</string>
     <string name="tour_tab_news_body">下の左から2番目です。ランイベントの知らせ・セール告知・健康ニュースはここに。</string>
-    <string name="tour_tab_community_title">③ コミュニティタブ</string>
-    <string name="tour_tab_community_body">3番目のボタンです。フィードとマイクルーがここにあります。</string>
+    <string name="tour_tab_community_title">② 一緒に走るタブ</string>
+    <string name="tour_tab_community_body">2番目のボタンです。クルーラン・フラッシュラン、クルーとストーリーがここにあります。</string>
     <string name="tour_tab_items_title">④ マーケットタブ</string>
     <string name="tour_tab_items_body">下の左から4番目です。中にストア・NFTマーケット・アイテムがあり、スニーカーの着用・強化・ミントはここで。</string>
     <string name="tour_tab_events_title">⑤ イベントタブ</string>
@@ -1227,7 +1226,7 @@ StepUp と走り出そう。</string>
     <string name="tab_me">マイ</string>
     <string name="tour_shortcuts_title">チャレンジ · ニュース</string>
     <string name="tour_shortcuts_body">追加報酬のある目標や、大会日程・健康ニュースはここから開けます。</string>
-    <string name="tour_tab_customize_title">② シューズ</string>
+    <string name="tour_tab_customize_title">③ シューズ</string>
     <string name="tour_tab_customize_body">ランニングシューズを選び、コレクションとマーケットを見てみましょう。</string>
     <string name="tour_customize_title">自分のシューズ</string>
     <string name="tour_customize_body">シューズを選び、コレクションとマーケットを見てみましょう。</string>

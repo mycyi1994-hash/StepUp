@@ -274,6 +274,8 @@ class CommunityRepository(
         lat: Double? = null,
         lng: Double? = null,
         clientKey: String? = null,
+        /** 원격 뛰기 번개(0076) — 장소 · 좌표 없이 같은 시각에 각자의 자리에서 */
+        remote: Boolean = false,
     ): BoardResult {
         val flash = category == PostCategory.FLASH
         val meetAt = if (flash) {
@@ -291,9 +293,10 @@ class CommunityRepository(
             distanceKm = distanceKm,
             meetAtIso = meetAt,
             capacity = if (flash) capacity.coerceAtLeast(2) else 0,
-            lat = if (flash) lat else null,
-            lng = if (flash) lng else null,
+            lat = if (flash && !remote) lat else null,
+            lng = if (flash && !remote) lng else null,
             clientKey = clientKey,
+            remote = flash && remote,
         )
         return when (result) {
             is ServerResult.Ok -> {
@@ -761,6 +764,7 @@ fun PostRow.toDomain(): Post = Post(
     lng = lng,
     placeAddress = placeAddress,
     run = storyRun(),
+    remote = runMode.equals("REMOTE", ignoreCase = true),
 )
 
 /** 글에 붙인 러닝(0046). 거리 · 시간 · 끝난 시각이 모두 있어야 붙은 것으로 본다 */

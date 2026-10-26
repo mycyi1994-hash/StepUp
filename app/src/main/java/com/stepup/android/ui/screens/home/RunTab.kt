@@ -75,16 +75,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /*
- * 러닝 탭 — 2026-10-26 전체 시안 `run` · `lobby`. 위의 세그먼트로 자유 러닝 · 크루 러닝을 가른다.
- *
- * 자유 러닝: 내 소속 크루 · 오늘 걸음(고리) · 사람 없는 배경 사진(15장 중 하나) · GPS 준비 · 오늘 거리 / 적립 / 이번 주 러닝 · "러닝 시작".
- * 크루 러닝: 내 소속 크루 · 진행 중인 대기실(같은 크루, 서버 party_rooms) · "새 대기실 만들기".
+ * 러닝 탭 — 2026-10-26 전체 시안 `run`. 혼자 달리기만 둔다: 오늘 걸음(고리) · 사람 없는 배경 사진(15장 중 하나) · GPS 준비 ·
+ * 오늘 거리 / 적립 / 이번 주 러닝 · "러닝 시작". 크루 러닝 · 번개러닝(대기실 목록 · 만들기)은 함께 뛰기 탭 한 곳에 있다
+ * (2026-10-26 사용자 "한 탭에서 다 해결" — `community/TogetherRooms.kt`). 방 한 줄([RoomRow])은 그 목록이 쓴다.
  * 신고 있는 신발은 여기 없다 — 러닝을 시작할 때 신발 점검(자유러닝 시작)과 신발 탭에서 본다(사용자 결정).
  * 모든 숫자 · 이름은 실제 기록 · 서버 값이다. 시안의 "망원 러닝클럽" · "3,420" 같은 예시를 쓰지 않는다.
  */
-
-/** 러닝 탭 위의 두 칸 */
-enum class RunSegment { FREE, CREW }
 
 /** 출발 전 위치 — 러닝 탭이 미리 잡아 둔 위치(LocationWarmup)로 본다 */
 enum class GpsReadiness { READY, WAITING, NO_PERMISSION }
@@ -106,19 +102,6 @@ object RunPhotos {
     }
 }
 
-/** 자유 러닝 · 크루 러닝 세그먼트(시안 361 × 46) */
-@Composable
-internal fun RunSegments(selected: RunSegment, onSelect: (RunSegment) -> Unit, modifier: Modifier = Modifier) {
-    StepUpTabs(
-        items = listOf(stringResource(R.string.d26_seg_free), stringResource(R.string.d26_seg_crew)),
-        selected = selected.ordinal,
-        onSelect = { onSelect(RunSegment.entries[it]) },
-        tags = listOf("run-seg-free", "run-seg-crew"),
-        height = 46.dp,
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
 /** 큰 제목(시안 "러닝" · "크루 러닝") */
 @Composable
 internal fun RunTabTitle(text: String, modifier: Modifier = Modifier) {
@@ -126,54 +109,6 @@ internal fun RunTabTitle(text: String, modifier: Modifier = Modifier) {
         text, style = StepUpUi.type.largeTitle.copy(fontSize = 30.sp, letterSpacing = (-0.03).em), color = StepUpUi.colors.label,
         modifier = modifier.semantics { heading() }.testTag("run-tab-title"),
     )
-}
-
-/**
- * 내 소속 크루 카드 — 왼쪽 파란 띠 · 머리글자 원 · "내 소속 크루" · 이름 · 인원. 누르면 크루 홈.
- * 크루가 없으면 같은 자리에 "크루 찾기"(커뮤니티의 크루 목록).
- */
-@Composable
-internal fun MyCrewCard(crew: Crew?, onOpen: () -> Unit, onFind: () -> Unit, modifier: Modifier = Modifier) {
-    val c = StepUpUi.colors
-    val shape = RoundedCornerShape(18.dp)
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 88.dp)
-            .pressable(onClick = if (crew != null) onOpen else onFind)
-            .clip(shape).background(c.card, shape).border(1.dp, c.separator, shape)
-            .testTag(if (crew != null) "run-my-crew" else "run-no-crew"),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.width(4.dp).height(88.dp).background(c.primary))
-        Spacer(Modifier.width(14.dp))
-        Box(Modifier.size(46.dp).clip(CircleShape).background(c.primary.copy(alpha = .12f)), contentAlignment = Alignment.Center) {
-            if (crew != null) {
-                Text(
-                    crew.monogram.ifBlank { crew.name.take(1) }.take(2).uppercase(),
-                    style = StepUpUi.type.numberCard.copy(fontSize = 22.sp, fontStyle = FontStyle.Italic), color = c.primary,
-                )
-            } else {
-                Icon(Icons.Outlined.Groups, contentDescription = null, tint = c.primary, modifier = Modifier.size(24.dp))
-            }
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f).padding(vertical = 14.dp)) {
-            Text(
-                stringResource(if (crew != null) R.string.d26_my_crew else R.string.d26_no_crew_title),
-                style = StepUpUi.type.caption, color = c.secondaryLabel,
-            )
-            Text(
-                crew?.name ?: stringResource(R.string.d26_find_crew),
-                style = StepUpUi.type.rowTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.ExtraBold), color = c.label,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp).testTag("run-my-crew-name"),
-            )
-            Text(
-                if (crew != null) stringResource(R.string.d26_crew_members, crew.memberCount) else stringResource(R.string.d26_no_crew_body),
-                style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = c.label, modifier = Modifier.padding(end = 14.dp).size(22.dp))
-    }
 }
 
 /** 오늘 걸음 — 왼쪽 "오늘 걸음" · 큰 숫자 · "/ 목표 걸음", 오른쪽 목표까지 고리(발자국). 누르면 오늘의 활동(E01) */
@@ -244,53 +179,9 @@ internal fun GpsLine(state: GpsReadiness, modifier: Modifier = Modifier) {
     }
 }
 
-/** 시안 크루 러닝(`lobby`) — 진행 중인 대기실 제목 · 개수와 방 목록. 목록은 보기만 한다(들어가는 것은 "대기실 보기") */
+/** 목록 상태 칸 — 아이콘 · 제목 · 설명 · 다시 시도(함께 뛰기 목록이 쓴다) */
 @Composable
-internal fun CrewRoomsSection(ui: RoomsUi?, crewName: String, onOpenRoom: (Long) -> Unit, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    val c = StepUpUi.colors
-    Column(modifier.fillMaxWidth()) {
-        val ready = ui as? RoomsUi.Ready
-        val rooms = ready?.let { CrewRoomRules.ordered(it.rooms.rooms) }.orEmpty()
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.d26_rooms_title), style = StepUpUi.type.section.copy(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold),
-                color = c.label, modifier = Modifier.weight(1f).semantics { heading() },
-            )
-            if (ready != null) Text(stringResource(R.string.d26_rooms_count, rooms.size), style = StepUpUi.type.body, color = c.secondaryLabel)
-        }
-        Spacer(Modifier.height(8.dp))
-        when (ui) {
-            null, RoomsUi.Loading -> Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
-                StepUpSpinner(Modifier.size(28.dp))
-            }
-            is RoomsUi.Failed -> RoomsState(
-                Icons.Outlined.CloudOff,
-                stringResource(if (ui.signIn) R.string.crew5_sign_in_title else R.string.crew5_rooms_failed),
-                null, tag = "crew-rooms-failed",
-                action = stringResource(R.string.crew5_rooms_reload) to onRetry,
-            )
-            is RoomsUi.Ready -> {
-                if (ui.rooms.doneToday) {
-                    Text(
-                        stringResource(R.string.crew5_rooms_done_today), style = StepUpUi.type.rowSubtitle, color = c.accentText,
-                        modifier = Modifier.padding(vertical = 6.dp).testTag("crew-rooms-done-today"),
-                    )
-                }
-                if (rooms.isEmpty()) {
-                    RoomsState(
-                        Icons.Outlined.Route, stringResource(R.string.crew5_rooms_empty_title), stringResource(R.string.crew5_rooms_empty_body),
-                        tag = "crew-rooms-empty",
-                    )
-                } else {
-                    rooms.forEach { room -> RoomRow(room, crewName, onOpen = { onOpenRoom(room.id) }) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RoomsState(
+internal fun RoomsState(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     body: String?,
@@ -318,7 +209,7 @@ private fun RoomsState(
 
 /** 시각 — 오늘 · 내일이면 "오늘 19:00", 그 뒤면 "10/27 19:00" */
 @Composable
-private fun whenText(ms: Long): String {
+internal fun whenText(ms: Long): String {
     val zone = ZoneId.systemDefault()
     val at = Instant.ofEpochMilli(ms).atZone(zone)
     val hm = DateTimeFormatter.ofPattern("HH:mm").format(at)
@@ -330,9 +221,12 @@ private fun whenText(ms: Long): String {
     }
 }
 
-/** 방 한 줄(시안 `lobby`) — 모집 상태 · 방식, 이름, 시각 · 코스, 만나는 곳, 머리글자 · 인원, "대기실 보기" */
+/**
+ * 방 한 줄(시안 `lobby`) — 모집 상태 · 방식(· 크루 이름), 이름, 시각 · 코스, 만나는 곳, 머리글자 · 인원, "대기실 보기".
+ * 함께 뛰기 목록은 여러 크루의 방을 한 줄로 늘어놓으니 [showCrew] 면 상태 줄 끝에 크루 이름을 붙인다.
+ */
 @Composable
-private fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit) {
+internal fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showCrew: Boolean = false) {
     val c = StepUpUi.colors
     val canOpen = room.mine || !room.full
     Column(Modifier.fillMaxWidth().padding(vertical = 18.dp).testTag("crew-room-${room.id}")) {
@@ -345,7 +239,7 @@ private fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit) {
                     room.mine -> stringResource(R.string.crew5_rooms_mine) + " · " + modeText
                     room.full -> stringResource(R.string.crew5_rooms_full) + " · " + modeText
                     else -> stringResource(R.string.d26_room_status, modeText)
-                },
+                } + if (showCrew && crewName.isNotBlank()) " · $crewName" else "",
                 style = StepUpUi.type.caption.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
                 color = if (room.full && !room.mine) c.secondaryLabel else c.accentText,
                 modifier = Modifier.testTag("crew-room-mode-${room.mode.name.lowercase()}"),
@@ -396,16 +290,6 @@ private fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit) {
         }
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(c.separator))
-}
-
-/** 크루 러닝 칸의 주 행동 — "새 대기실 만들기" */
-@Composable
-internal fun NewRoomButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    PrimaryButton(
-        stringResource(R.string.d26_create_header), onClick,
-        state = if (enabled) com.stepup.android.ui.components.ButtonState.Idle else com.stepup.android.ui.components.ButtonState.Disabled,
-        modifier = modifier.fillMaxWidth().testTag("crew-rooms-new"),
-    )
 }
 
 /** 러닝 탭이 화면에 있는 동안 미리 잡은 위치로 GPS 준비를 본다(2초마다) */

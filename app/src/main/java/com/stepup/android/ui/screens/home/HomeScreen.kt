@@ -108,14 +108,6 @@ fun HomeScreen(
     onOpenRecords: () -> Unit = {},
     /** 코스 찾기 — 코스 목록 */
     onOpenCourses: () -> Unit = {},
-    /** 크루 홈(내 소속 크루 카드) */
-    onOpenCrew: (String) -> Unit = {},
-    /** 크루가 없을 때 — 커뮤니티의 크루 찾기 */
-    onFindCrew: () -> Unit = {},
-    /** 크루 러닝 — 고른 대기실(crewId, 방 번호) */
-    onOpenRoom: (String, Long) -> Unit = { _, _ -> },
-    /** 크루 러닝 — 새 대기실 만들기 */
-    onCreateRoom: (String) -> Unit = {},
     /** 시안 검사(OnboardingDesignTest)만 쓴다 — 첫 러닝 홈(시안 11)을 그려 본다. null 이면 실제 권한 · 기록으로 판단한다 */
     firstRunPreview: Boolean? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
@@ -157,42 +149,9 @@ fun HomeScreen(
         ?: com.stepup.android.domain.FirstHomeRules.applies(noActivityYet, hasPermission, runCount, state.lifetimeSteps)
     val largeText = LocalDensity.current.fontScale > 1.2f
 
-    // 크루 — 들어가 있는 대기실의 크루가 먼저, 아니면 가입한 첫 크루(2026-10-26 시안 "내 소속 크루")
-    val crewRepo = com.stepup.android.core.ServiceLocator.crewRepository
-    val crews by crewRepo.crews.collectAsStateWithLifecycle()
-    val party by crewRepo.party.collectAsStateWithLifecycle()
-    val crew = remember(crews, party.crewId) {
-        val joined = crews.filter { it.joined }
-        joined.firstOrNull { it.id == party.crewId && party.flashPostId == null } ?: joined.firstOrNull()
-    }
-    LaunchedEffect(Unit) {
-        if (crewRepo.crews.value.isEmpty()) runCatching { crewRepo.refresh() }
-    }
-    var segment by rememberSaveable { mutableStateOf(RunSegment.FREE) }
     // 사람 없는 배경 15장 중 하나 — 러닝 탭에 들어올 때마다 고른다
     val photoIndex = remember { kotlin.random.Random.nextInt(RunPhotos.names.size) }
     val gps = rememberGpsReadiness()
-    // 크루 러닝 칸이 보이는 동안만 대기실 목록을 10초마다 다시 묻는다(보기만 — 들어가지 않는다)
-    var rooms by remember(crew?.id) { mutableStateOf<com.stepup.android.ui.screens.walk.RoomsUi?>(null) }
-    var roomsReload by remember { mutableIntStateOf(0) }
-    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(crew?.id, segment, roomsReload) {
-        val id = crew?.id ?: return@LaunchedEffect
-        if (segment != RunSegment.CREW) return@LaunchedEffect
-        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
-            while (true) {
-                rooms = when (val result = crewRepo.rooms(id)) {
-                    is com.stepup.android.data.remote.ServerResult.Ok -> com.stepup.android.ui.screens.walk.RoomsUi.Ready(result.value)
-                    is com.stepup.android.data.remote.ServerResult.Retry ->
-                        (rooms as? com.stepup.android.ui.screens.walk.RoomsUi.Ready) ?: com.stepup.android.ui.screens.walk.RoomsUi.Failed(signIn = false)
-                    is com.stepup.android.data.remote.ServerResult.SignInRequired -> com.stepup.android.ui.screens.walk.RoomsUi.Failed(signIn = true)
-                    is com.stepup.android.data.remote.ServerResult.Rejected -> com.stepup.android.ui.screens.walk.RoomsUi.Failed(signIn = false)
-                }
-                delay(10_000)
-            }
-        }
-    }
-
     val pending by viewModel.pendingUploads.collectAsStateWithLifecycle()
     val runSec by viewModel.todayRunSec.collectAsStateWithLifecycle()
     HomeContent(
@@ -201,16 +160,7 @@ fun HomeScreen(
         earned = earned, km = if (state.loaded) RewardEconomyKm(state.todaySteps) else null, weekRuns = week?.runs,
         onStartRun = onStartRun,
         onRequestPermission = { requestActivity() }, onOpenDetails = { showDetails = true },
-        segment = segment, onSegment = { segment = it },
-        crew = crew, onOpenCrew = { crew?.let { onOpenCrew(it.id) } }, onFindCrew = onFindCrew,
         photoIndex = photoIndex, gps = gps,
-        rooms = rooms,
-        onOpenRoom = { id -> crew?.let { onOpenRoom(it.id, id) } },
-        onCreateRoom = { crew?.let { onCreateRoom(it.id) } },
-        onRetryRooms = {
-            rooms = com.stepup.android.ui.screens.walk.RoomsUi.Loading
-            roomsReload++
-        },
     )
 
     if (showDetails) {
@@ -256,8 +206,8 @@ fun HomeScreen(
 }
 
 /**
- * 러닝 탭의 몸통(2026-10-26 시안 `run` · `lobby`) — 상태 없이 그린다. 머리(로고 · 알림)와 하단 탭은 공통 틀이 그린다.
- * 위의 세그먼트가 자유 러닝 · 크루 러닝을 가른다. 화면이 낮거나 글자가 크면 본문이 넘어간다.
+ * 러닝 탭의 몸통(2026-10-26 시안 `run`) — 상태 없이 그린다. 머리(로고 · 알림)와 하단 탭은 공통 틀이 그린다.
+ * 혼자 달리기만 둔다(크루 · 번개러닝은 함께 뛰기 탭). 화면이 낮거나 글자가 크면 본문이 넘어간다.
  */
 @Composable
 internal fun HomeContent(
@@ -274,69 +224,46 @@ internal fun HomeContent(
     onStartRun: () -> Unit,
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
-    segment: RunSegment = RunSegment.FREE,
-    onSegment: (RunSegment) -> Unit = {},
-    crew: com.stepup.android.data.repo.Crew? = null,
-    onOpenCrew: () -> Unit = {},
-    onFindCrew: () -> Unit = {},
     photoIndex: Int = 0,
     gps: GpsReadiness = GpsReadiness.WAITING,
-    rooms: com.stepup.android.ui.screens.walk.RoomsUi? = null,
-    onOpenRoom: (Long) -> Unit = {},
-    onCreateRoom: () -> Unit = {},
-    onRetryRooms: () -> Unit = {},
 ) {
-    // 본문은 넘기고, 이 화면의 주 행동(러닝 시작 · 새 대기실 만들기)은 늘 아래에 보인다(작은 화면 · 큰 글씨에서도)
+    // 본문은 넘기고, 이 화면의 주 행동(러닝 시작)은 늘 아래에 보인다(작은 화면 · 큰 글씨에서도)
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = StepUpUi.Gutter)
-                .testTag(if (segment == RunSegment.FREE) "home-content" else "run-crew-content"),
+                .testTag("home-content"),
         ) {
-            Spacer(Modifier.height(8.dp))
-            RunSegments(segment, onSegment)
-            Spacer(Modifier.height(if (largeText) 12.dp else 18.dp))
-            RunTabTitle(stringResource(if (segment == RunSegment.FREE) R.string.d26_title_run else R.string.d26_seg_crew))
+            Spacer(Modifier.height(if (largeText) 8.dp else 14.dp))
+            RunTabTitle(stringResource(R.string.d26_title_run))
+            Spacer(Modifier.height(if (largeText) 14.dp else 18.dp))
+            StepsHero(
+                todaySteps = todaySteps, goal = goal, loaded = loaded,
+                hasPermission = hasPermission, firstHome = firstHome,
+                onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
+            )
+            Spacer(Modifier.height(14.dp))
+            RunPhotoCard(photoIndex)
             Spacer(Modifier.height(12.dp))
-            MyCrewCard(crew, onOpen = onOpenCrew, onFind = onFindCrew)
-            if (segment == RunSegment.FREE) {
-                Spacer(Modifier.height(if (largeText) 14.dp else 18.dp))
-                StepsHero(
-                    todaySteps = todaySteps, goal = goal, loaded = loaded,
-                    hasPermission = hasPermission, firstHome = firstHome,
-                    onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
-                )
-                Spacer(Modifier.height(14.dp))
-                RunPhotoCard(photoIndex)
-                Spacer(Modifier.height(12.dp))
-                GpsLine(gps)
-                Spacer(Modifier.height(14.dp))
-                StatRow(
-                    listOf(
-                        StatItem(stringResource(R.string.d26_stat_km), km?.let { "%.2f".format(it) } ?: "—", "km", tag = "home-stat-km"),
-                        StatItem(stringResource(R.string.d26_stat_sup),
-                            earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", "SUP", tag = "home-stat-sup"),
-                        StatItem(stringResource(R.string.d26_stat_week), weekRuns?.toString() ?: "—",
-                            stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
-                    ),
-                    modifier = Modifier.testTag("home-stats"),
-                )
-            } else {
-                Spacer(Modifier.height(20.dp))
-                if (crew != null) CrewRoomsSection(rooms, crew.name, onOpenRoom = onOpenRoom, onRetry = onRetryRooms)
-            }
+            GpsLine(gps)
+            Spacer(Modifier.height(14.dp))
+            StatRow(
+                listOf(
+                    StatItem(stringResource(R.string.d26_stat_km), km?.let { "%.2f".format(it) } ?: "—", "km", tag = "home-stat-km"),
+                    StatItem(stringResource(R.string.d26_stat_sup),
+                        earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", "SUP", tag = "home-stat-sup"),
+                    StatItem(stringResource(R.string.d26_stat_week), weekRuns?.toString() ?: "—",
+                        stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
+                ),
+                modifier = Modifier.testTag("home-stats"),
+            )
             Spacer(Modifier.height(16.dp))
         }
         Box(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 8.dp, bottom = 12.dp)) {
-            if (segment == RunSegment.FREE) {
-                // 이 화면의 주 행동 — 블루 알약(시안 "러닝 시작 ▷"). 누르면 러닝 시작 메뉴(U01), 달리는 중이면 그 러닝
-                PrimaryButton(
-                    stringResource(if (running) R.string.home_continue_run else R.string.home_start_run), onStartRun,
-                    modifier = Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
-                )
-            } else if (crew != null) {
-                val done = (rooms as? com.stepup.android.ui.screens.walk.RoomsUi.Ready)?.rooms?.doneToday == true
-                NewRoomButton(enabled = rooms is com.stepup.android.ui.screens.walk.RoomsUi.Ready && !done, onClick = onCreateRoom)
-            }
+            // 이 화면의 주 행동 — 블루 알약(시안 "러닝 시작 ▷"). 누르면 러닝 시작 메뉴(U01), 달리는 중이면 그 러닝
+            PrimaryButton(
+                stringResource(if (running) R.string.home_continue_run else R.string.home_start_run), onStartRun,
+                modifier = Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.HOME_START_RUN).testTag("home-start-run"),
+            )
         }
     }
 }

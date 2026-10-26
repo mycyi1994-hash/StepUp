@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- UI 최종 통합안(2026-10-25) 화면에 새로 생긴 문구 -->
 <resources>
-    <string name="ui_seg_meetups">번개러닝</string>
+    <string name="ui_seg_meetups">모집 중</string>
     <string name="ui_seg_crews">크루</string>
     <string name="ui_seg_stories">이야기</string>
     <string name="ui_meetups_empty_title">아직 예정된 번개러닝이 없어요</string>

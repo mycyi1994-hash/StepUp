@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
+<resources>
+    <string name="tg_create">グループランを作る</string>
+    <string name="tg_pick_title">誰と走りますか？</string>
+    <string name="tg_pick_crew">%sのメンバーと</string>
+    <string name="tg_pick_crew_body">クルーラン · 共有スタミナ · クルー報酬</string>
+    <string name="tg_pick_crew_done">今日のクルーランはもう走りました</string>
+    <string name="tg_pick_anyone">誰でも · フラッシュラン</string>
+    <string name="tg_pick_anyone_body">近くのランナー誰でも · 一緒にまたはリモート</string>
+    <string name="tg_section_crew">クルーラン</string>
+    <string name="tg_section_flash">フラッシュラン</string>
+    <string name="tg_flash_status">フラッシュ · %s</string>
+    <string name="tg_flash_joined">参加中 · %s</string>
+    <string name="tg_flash_view">詳細</string>
+    <string name="tg_flash_line">%1$s · %2$s km</string>
+    <string name="tg_crew_empty">開いているクルーの待機室はまだありません</string>
+    <string name="tg_no_crew">クルーに入るとクルーランも開けます</string>
+    <string name="tg_flash_remote_hint">リモートランには集合場所がありません。決めた時間にそれぞれの場所から一緒に出発します。</string>
+    <string name="tg_lobby_capacity">定員%d人</string>
+    <string name="tg_party_rule">一緒に出発した人は全員パーティ人数に数えられます（一緒に・リモートどちらも）。</string>
+</resources>

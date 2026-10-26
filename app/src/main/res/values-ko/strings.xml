@@ -12,7 +12,7 @@
 
     <!-- Tabs -->
     <string name="tab_home">홈</string>
-    <string name="tab_community">커뮤니티</string>
+    <string name="tab_community">함께 뛰기</string>
     <string name="tab_items">아이템</string>
     <string name="tab_events">이벤트</string>
     <string name="tab_profile">프로필</string>
@@ -581,7 +581,6 @@
     <string name="party_problem_closed">방이 닫혔어요.</string>
     <string name="party_problem_failed">처리되지 않았어요. 다시 눌러 주세요.</string>
     <string name="party_problem_missed_start">함께 출발한 지 오래돼 새 대기실을 열었어요.</string>
-    <string name="party_gps_rule">출발 2분 뒤에도 서로 %1$dm 안에서 달린 사람만 파티 인원으로 세요.</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">거절</string>
@@ -768,8 +767,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour_tab_home_body">오늘의 기록과 목표를 확인하고 러닝을 시작하는 곳이에요.</string>
     <string name="tour_tab_news_title">② 뉴스 탭</string>
     <string name="tour_tab_news_body">아래에서 두 번째 버튼이에요. 러닝 이벤트 소식·특가 공지·건강 뉴스가 여기 있어요.</string>
-    <string name="tour_tab_community_title">③ 커뮤니티 탭</string>
-    <string name="tour_tab_community_body">세 번째 버튼이에요. 피드와 내 크루가 여기 있어요.</string>
+    <string name="tour_tab_community_title">② 함께 뛰기 탭</string>
+    <string name="tour_tab_community_body">두 번째 버튼이에요. 크루 러닝 · 번개러닝 모임과 크루 · 이야기가 여기 있어요.</string>
     <string name="tour_tab_items_title">④ 마켓 탭</string>
     <string name="tour_tab_items_body">아래에서 네 번째 버튼이에요. 안에 스토어·NFT 마켓·아이템이 있고, 스니커즈를 신고 강화하고 새로 뽑는 곳입니다.</string>
     <string name="tour_tab_events_title">⑤ 이벤트 탭</string>
@@ -1226,7 +1225,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tab_me">내 정보</string>
     <string name="tour_shortcuts_title">챌린지 · 소식</string>
     <string name="tour_shortcuts_body">추가 보상이 걸린 목표와 대회 일정·건강 소식이 여기서 한 번에 열려요.</string>
-    <string name="tour_tab_customize_title">② 신발 탭</string>
+    <string name="tour_tab_customize_title">③ 신발 탭</string>
     <string name="tour_tab_customize_body">러닝에 사용할 신발을 선택하고 보관함·도감·마켓을 살펴보세요.</string>
     <string name="tour_customize_title">내 신발</string>
     <string name="tour_customize_body">러닝에 사용할 신발을 고르고 보관함·도감·마켓을 살펴보세요.</string>

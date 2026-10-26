@@ -14,7 +14,7 @@
 
     <!-- Tabs -->
     <string name="tab_home">Home</string>
-    <string name="tab_community">Social</string>
+    <string name="tab_community">Together</string>
     <string name="tab_items">Items</string>
     <string name="tab_events">Events</string>
     <string name="tab_profile">Profile</string>
@@ -583,7 +583,6 @@
     <string name="party_problem_closed">This room has closed.</string>
     <string name="party_problem_failed">That didn\'t go through. Try again.</string>
     <string name="party_problem_missed_start">The group start already passed, so a new lobby was opened.</string>
-    <string name="party_gps_rule">Only members still within %1$dm of each other 2 minutes after the start count toward the party.</string>
 
     <!-- Notification actions -->
     <string name="notif_decline">Decline</string>
@@ -770,8 +769,8 @@ Start running with StepUp.</string>
     <string name="tour_tab_home_body">Find today’s activity, your goal and Start run here.</string>
     <string name="tour_tab_news_title">2. News tab</string>
     <string name="tour_tab_news_body">Second button along the bottom. Running events, deal notices and health reads sit inside.</string>
-    <string name="tour_tab_community_title">③ Community tab</string>
-    <string name="tour_tab_community_body">The third button. The feed and your crew are here.</string>
+    <string name="tour_tab_community_title">② Together tab</string>
+    <string name="tour_tab_community_body">The second button. Crew runs, flash runs, crews and stories are here.</string>
     <string name="tour_tab_items_title">4. Market tab</string>
     <string name="tour_tab_items_body">Fourth button along the bottom. Store, NFT Market and Items sit inside — wear, upgrade and mint sneakers here.</string>
     <string name="tour_tab_events_title">5. Events tab</string>
@@ -1228,7 +1227,7 @@ Start running with StepUp.</string>
     <string name="tab_me">Me</string>
     <string name="tour_shortcuts_title">Challenges · News</string>
     <string name="tour_shortcuts_body">Goals with bonus rewards, and race dates and health news, are one tap away here.</string>
-    <string name="tour_tab_customize_title">② Shoes tab</string>
+    <string name="tour_tab_customize_title">③ Shoes tab</string>
     <string name="tour_tab_customize_body">Choose your running shoes and explore your collection and the market.</string>
     <string name="tour_customize_title">Your shoes</string>
     <string name="tour_customize_body">Choose running shoes and explore your collection and the market.</string>

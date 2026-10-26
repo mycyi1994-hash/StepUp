@@ -205,7 +205,7 @@
     <string name="crew5_closed_title">等候室已关闭</string>
     <string name="crew5_closed_body">所有人都已离开或长时间无人。请进入其他等候室或新建。</string>
     <string name="crew5_full_title">等候室已满</string>
-    <string name="crew5_full_body">一个等候室最多 %1$d 人。请查看其他等候室或新建。</string>
+    <string name="crew5_full_body">这个等候室已满员。请查看其他等候室或新建。</string>
     <string name="crew5_started_title">该等候室已出发</string>
     <string name="crew5_started_body">无法中途加入已出发的跑步。请查看其他等候室或新建。</string>
     <string name="crew5_missed_title">错过了出发</string>

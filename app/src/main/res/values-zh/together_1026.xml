@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
+<resources>
+    <string name="tg_create">发起一起跑</string>
+    <string name="tg_pick_title">和谁一起跑？</string>
+    <string name="tg_pick_crew">与%s的成员</string>
+    <string name="tg_pick_crew_body">跑团跑 · 共享体力 · 跑团奖励</string>
+    <string name="tg_pick_crew_done">今天已经跑过跑团跑了</string>
+    <string name="tg_pick_anyone">任何人 · 闪约跑</string>
+    <string name="tg_pick_anyone_body">附近任何跑者 · 一起跑或远程跑</string>
+    <string name="tg_section_crew">跑团跑</string>
+    <string name="tg_section_flash">闪约跑</string>
+    <string name="tg_flash_status">闪约 · %s</string>
+    <string name="tg_flash_joined">已参加 · %s</string>
+    <string name="tg_flash_view">详情</string>
+    <string name="tg_flash_line">%1$s · %2$s km</string>
+    <string name="tg_crew_empty">还没有开放的跑团等候室</string>
+    <string name="tg_no_crew">加入跑团后也可以发起跑团跑</string>
+    <string name="tg_flash_remote_hint">远程跑没有集合地点。到了约定时间，大家在各自所在位置一起出发。</string>
+    <string name="tg_lobby_capacity">最多%d人</string>
+    <string name="tg_party_rule">一起出发的人都会计入队伍人数（一起跑和远程跑都算）。</string>
+</resources>
