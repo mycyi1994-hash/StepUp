@@ -10,7 +10,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import com.stepup.android.MainActivity
+import com.stepup.android.LockRunActivity
 import com.stepup.android.R
 import com.stepup.android.domain.RunNotificationText
 
@@ -21,6 +21,7 @@ import com.stepup.android.domain.RunNotificationText
  *   실시간 알림은 직접 그린 모양(RemoteViews)과 색 입힌 알림을 받지 않아 표준 모양에 시간(흐르는 시계) · 거리 · 페이스를 쓴다.
  * - 그 아래: 남색 바탕에 우리 모양(로고 · 큰 시간 · 거리 | 페이스) — 접힌 · 펼친 두 모양.
  * - 둘 다 잠금화면에서 내용을 보이고(PUBLIC), 일시정지 / 다시 달리기 버튼이 있다. 마치기는 앱에서만(잠금화면에서 실수로 끝내지 않게).
+ * - 누르면 잠금 화면 가운데 러닝 현황([LockRunActivity] — 2026-10-26), 잠겨 있지 않으면 앱이 열린다.
  * - 시간은 시계 칸(Chronometer)이 스스로 흐르므로 1초마다 다시 쓰지 않는다. 거리 · 페이스는 서비스가 몇 초마다 고쳐 쓴다.
  */
 internal object RunNotification {
@@ -53,12 +54,31 @@ internal object RunNotification {
         manager.deleteNotificationChannel("walk_session")
     }
 
+    /** 상태 한 줄 — 알림과 잠금화면 러닝 현황([com.stepup.android.ui.screens.walk.LockRunHost])이 같은 글을 쓴다 */
+    fun status(context: Context, state: WalkSessionState): String {
+        val crewLeft = state.crewPoolRemaining
+        val crewTotal = state.crewPoolTotal
+        return when {
+            state.isPaused -> context.getString(R.string.run_notif_paused)
+            state.still -> context.getString(R.string.notification_run_still)
+            // 크루 러닝(0071) — 오늘 공용 체력 남은 양 / 총량. 0 이면 적립 없이 기록만 이어진다
+            crewLeft != null && crewTotal != null ->
+                if (state.crewPoolEmpty || crewLeft <= 0.0) context.getString(R.string.run_notify_crew_pool_empty)
+                else context.getString(
+                    R.string.run_notify_crew_pool,
+                    com.stepup.android.domain.CrewRunMath.amount(crewLeft), com.stepup.android.domain.CrewRunMath.amount(crewTotal),
+                )
+            // 신발 내구도를 다 썼다 — 잠금화면에서도 보이게(2026-10-19 "내구도 다 소모하면 따로 안내")
+            state.shoeWornOut -> context.getString(R.string.notification_run_shoe_worn)
+            else -> context.getString(R.string.notification_steps, state.steps)
+        }
+    }
+
     fun build(context: Context, state: WalkSessionState): Notification {
+        // 잠금 화면에서 누르면 잠금을 풀지 않고 가운데 러닝 현황, 풀려 있으면 바로 앱(LockRunActivity 가 가른다)
         val open = PendingIntent.getActivity(
             context, 0,
-            Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            },
+            Intent(context, LockRunActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val paused = state.isPaused
@@ -72,22 +92,7 @@ internal object RunNotification {
         val km = state.gpsKm
         val distance = context.getString(R.string.run_notif_distance, RunNotificationText.distance(km))
         val pace = RunNotificationText.pace(state.elapsedSec, km)
-        val crewLeft = state.crewPoolRemaining
-        val crewTotal = state.crewPoolTotal
-        val status = when {
-            paused -> context.getString(R.string.run_notif_paused)
-            state.still -> context.getString(R.string.notification_run_still)
-            // 크루 러닝(0071) — 오늘 공용 체력 남은 양 / 총량. 0 이면 적립 없이 기록만 이어진다
-            crewLeft != null && crewTotal != null ->
-                if (state.crewPoolEmpty || crewLeft <= 0.0) context.getString(R.string.run_notify_crew_pool_empty)
-                else context.getString(
-                    R.string.run_notify_crew_pool,
-                    com.stepup.android.domain.CrewRunMath.amount(crewLeft), com.stepup.android.domain.CrewRunMath.amount(crewTotal),
-                )
-            // 신발 내구도를 다 썼다 — 잠금화면에서도 보이게(2026-10-19 "내구도 다 소모하면 따로 안내")
-            state.shoeWornOut -> context.getString(R.string.notification_run_shoe_worn)
-            else -> context.getString(R.string.notification_steps, state.steps)
-        }
+        val status = status(context, state)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_walk)
             .setContentIntent(open)

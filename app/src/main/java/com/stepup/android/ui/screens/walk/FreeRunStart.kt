@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -73,6 +74,9 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
@@ -108,6 +112,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.items.LOW_DURABILITY_WARN_MIN
 import com.stepup.android.ui.screens.items.durabilityEarnMinutes
 import com.stepup.android.ui.screens.items.durabilityPercent
+import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.StepUpSans
 import kotlinx.coroutines.async
@@ -115,6 +120,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /*
  * 자유러닝 시작 플로(2026-10-17 전달본 — docs/redesign/free-run-start-2026-10-17).
@@ -157,9 +163,18 @@ private val CheckButtonShape = RoundedCornerShape(15.dp)
  * 출발 전 신발 점검 — 신고 있는 신발의 그림 · 등급 · 레벨 · 남은 내구도(실제 값). "이 신발로 출발"만 카운트다운으로 간다.
  * 돌아가기 · 닫기 · 뒤로는 아무것도 시작하지 않는다. 신발을 신지 않았으면 그 사실을 알리고(지금처럼 신발 없이도 달릴 수 있다)
  * "러닝 시작"으로 같은 흐름을 잇는다.
+ * 버튼은 셋 — 이 신발로 출발 · 돌아가기 · 신발 교체(2026-10-26). 신발 교체나 신발 그림을 누르면 내 신발 목록이 열리고,
+ * 신발은 1초 꾹 눌러야 골라진다(누르는 동안 줄이 차오르고 살짝 작아진다 — 스치듯 눌러 바뀌지 않게).
  */
 @Composable
-internal fun FreeRunShoeCheck(shoe: Sneaker?, onStart: () -> Unit, onCancel: () -> Unit) {
+internal fun FreeRunShoeCheck(
+    shoe: Sneaker?,
+    shoes: List<Sneaker>,
+    wearing: Boolean,
+    onWear: (Long, (Boolean) -> Unit) -> Unit,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+) {
     Dialog(
         onDismissRequest = onCancel,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),
@@ -167,7 +182,7 @@ internal fun FreeRunShoeCheck(shoe: Sneaker?, onStart: () -> Unit, onCancel: () 
         // 창이 깔아 주는 회색 대신 시안의 뒷면(#020B16 · 73%)을 직접 그린다
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
         SideEffect { window?.setDimAmount(0f) }
-        FreeRunShoeCheckContent(shoe, onStart, onCancel)
+        FreeRunShoeCheckContent(shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear)
     }
 }
 
@@ -178,8 +193,16 @@ internal fun FreeRunShoeCheckContent(
     onStart: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    shoes: List<Sneaker> = emptyList(),
+    wearing: Boolean = false,
+    onWear: (Long, (Boolean) -> Unit) -> Unit = { _, _ -> },
 ) {
     val reduced = LocalMotion.current.reduced
+    // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
+    var picking by rememberSaveable { mutableStateOf(false) }
+    var pickFailed by remember { mutableStateOf(false) }
+    val canChange = shoes.isNotEmpty()
+    BackHandler(enabled = picking) { picking = false }
     val shown = remember { Animatable(if (reduced) 1f else 0f) }
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -218,35 +241,52 @@ internal fun FreeRunShoeCheckContent(
                 Modifier.verticalScroll(rememberScrollState())
                     .padding(start = side, end = side, top = 27.dp, bottom = 21.dp),
             ) {
-                Text(
-                    stringResource(R.string.run_free_check_title),
-                    style = checkText(if (compact) 24.sp else 25.sp, Color.White, FontWeight.Bold, 1.33f, (-0.036).em),
-                    modifier = Modifier.padding(end = 36.dp).semantics { heading() }.testTag("run-shoe-check-title"),
-                )
-                if (shoe != null) {
-                    CheckShoe(shoe)
-                    CheckShoeFacts(shoe)
+                if (picking) {
+                    ShoePickList(
+                        shoes = shoes, current = shoe?.id, wearing = wearing, failed = pickFailed,
+                        onPick = { id ->
+                            if (id == shoe?.id) {
+                                picking = false
+                            } else {
+                                pickFailed = false
+                                onWear(id) { worn -> if (worn) picking = false else pickFailed = true }
+                            }
+                        },
+                        onBack = { picking = false },
+                    )
                 } else {
-                    CheckNoShoe()
-                }
-                Row(Modifier.fillMaxWidth().padding(top = 29.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(
-                        Modifier.width(80.dp).heightIn(min = 54.dp).clip(CheckButtonShape)
-                            .feedbackClickable(onClick = onCancel).testTag("run-shoe-check-back"),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(stringResource(R.string.run_free_check_back), style = checkText(14.sp, CheckBack, FontWeight.Medium),
-                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        stringResource(R.string.run_free_check_title),
+                        style = checkText(if (compact) 24.sp else 25.sp, Color.White, FontWeight.Bold, 1.33f, (-0.036).em),
+                        modifier = Modifier.padding(end = 36.dp).semantics { heading() }.testTag("run-shoe-check-title"),
+                    )
+                    if (shoe != null) {
+                        CheckShoe(shoe, onClick = if (canChange) ({ picking = true }) else null)
+                        CheckShoeFacts(shoe)
+                    } else {
+                        CheckNoShoe()
                     }
+                    // 이 신발로 출발(주 버튼) — 아래 돌아가기 · 신발 교체
                     Box(
-                        Modifier.weight(1f).heightIn(min = 54.dp).clip(CheckButtonShape).background(StartAccent, CheckButtonShape)
-                            .feedbackClickable(onClick = start).padding(horizontal = 12.dp, vertical = 8.dp).testTag("run-shoe-check-go"),
+                        Modifier.padding(top = 29.dp).fillMaxWidth().heightIn(min = 54.dp).clip(CheckButtonShape)
+                            .background(if (wearing) CheckMeterTrack else StartAccent, CheckButtonShape)
+                            .feedbackClickable(enabled = !wearing, onClick = start).padding(horizontal = 12.dp, vertical = 8.dp)
+                            .testTag("run-shoe-check-go"),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             stringResource(if (shoe != null) R.string.run_free_check_go else R.string.home_start_run),
                             style = checkText(16.sp, Color.White, FontWeight.SemiBold), maxLines = 2, overflow = TextOverflow.Ellipsis,
                         )
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CheckSecondaryButton(stringResource(R.string.run_free_check_back), onCancel, "run-shoe-check-back", Modifier.weight(1f))
+                        if (canChange) {
+                            CheckSecondaryButton(
+                                stringResource(R.string.run_free_check_change), { picking = true }, "run-shoe-check-change", Modifier.weight(1f),
+                                outlined = true,
+                            )
+                        }
                     }
                 }
             }
@@ -265,9 +305,10 @@ internal fun FreeRunShoeCheckContent(
 
 /** 신발 그림 — 카드 안쪽 여백까지 조금 넓혀(좌우 12dp) 그림자 위에 놓는다. 그림의 보이는 부분만 맞춘다 */
 @Composable
-private fun CheckShoe(shoe: Sneaker) {
+private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
     Box(
         Modifier.padding(top = 10.dp, bottom = 3.dp).bleed(12.dp).height(174.dp)
+            .then(if (onClick != null) Modifier.clip(RoundedCornerShape(18.dp)).feedbackClickable(onClick = onClick) else Modifier)
             .drawBehind {
                 val rx = size.width * 0.45f
                 val ry = size.height * 0.10f
@@ -351,6 +392,145 @@ private fun CheckNoShoe() {
         Text(stringResource(R.string.home_no_shoe_body), style = checkText(13.sp, CheckLabel))
     }
 }
+
+/** 점검 카드의 보조 버튼(돌아가기 · 신발 교체) — 같은 크기 */
+@Composable
+private fun CheckSecondaryButton(text: String, onClick: () -> Unit, tag: String, modifier: Modifier, outlined: Boolean = false) {
+    Box(
+        modifier.heightIn(min = 50.dp).clip(CheckButtonShape)
+            .then(if (outlined) Modifier.border(1.dp, CheckEdge, CheckButtonShape) else Modifier)
+            .feedbackClickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp).testTag(tag),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = checkText(14.sp, if (outlined) Color.White else CheckBack, FontWeight.Medium), maxLines = 2,
+            overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
+ * 신발 고르기 — 내 신발 목록. 신발은 1초 꾹 눌러야 골라진다: 누르는 동안 줄이 왼쪽부터 파랗게 차고 살짝 작아지며,
+ * 다 차면 진동과 함께 그 신발을 신는다(신발 탭과 같은 착용 — 서버가 바뀐 것을 확인한 뒤 점검으로 돌아온다).
+ * 짧게 누르면 아무것도 바뀌지 않고 "1초 꾹 눌러 골라요"가 한 번 흔들린다.
+ */
+@Composable
+private fun ShoePickList(
+    shoes: List<Sneaker>,
+    current: Long?,
+    wearing: Boolean,
+    failed: Boolean,
+    onPick: (Long) -> Unit,
+    onBack: () -> Unit,
+) {
+    var nudge by remember { mutableIntStateOf(0) }
+    val shake = remember { Animatable(0f) }
+    LaunchedEffect(nudge) {
+        if (nudge > 0) {
+            for (x in listOf(6f, -5f, 3f, 0f)) shake.animateTo(x, tween(55))
+        }
+    }
+    Text(
+        stringResource(R.string.run_shoe_pick_title),
+        style = checkText(22.sp, Color.White, FontWeight.Bold, 1.33f, (-0.036).em),
+        modifier = Modifier.padding(end = 36.dp).semantics { heading() }.testTag("run-shoe-pick-title"),
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        stringResource(if (failed) R.string.run_shoe_pick_failed else R.string.run_shoe_pick_hint),
+        style = checkText(13.sp, if (failed) CheckWarnText else CheckSubtle),
+        modifier = Modifier.graphicsLayer { translationX = shake.value * density }
+            .semantics { liveRegion = LiveRegionMode.Polite }.testTag("run-shoe-pick-hint"),
+    )
+    Spacer(Modifier.height(14.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (item in shoes) {
+            ShoePickRow(
+                shoe = item, worn = item.id == current, enabled = !wearing,
+                onPick = { onPick(item.id) }, onTap = { nudge++ },
+            )
+        }
+    }
+    CheckSecondaryButton(
+        stringResource(R.string.run_free_check_back), onBack, "run-shoe-pick-back",
+        Modifier.padding(top = 16.dp).fillMaxWidth(),
+    )
+}
+
+/** 신발 한 줄 — 그림 · 이름 · 등급 · 레벨 · 남은 내구도. 1초 꾹 눌러 고른다 */
+@Composable
+private fun ShoePickRow(shoe: Sneaker, worn: Boolean, enabled: Boolean, onPick: () -> Unit, onTap: () -> Unit) {
+    val view = LocalView.current
+    val reduced = LocalMotion.current.reduced
+    val progress = remember { Animatable(0f) }
+    val pick by rememberUpdatedState(onPick)
+    val tap by rememberUpdatedState(onTap)
+    val shape = RoundedCornerShape(16.dp)
+    val name = shoe.shoeName()
+    val grade = stringResource(R.string.run_free_check_grade_level, shoe.tier.label(), shoe.level)
+    val points = durabilityPercent(shoe)
+    val holdLabel = stringResource(R.string.run_shoe_pick_hint)
+    androidx.compose.runtime.LaunchedEffect(enabled) { if (!enabled) progress.snapTo(0f) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 72.dp)
+            .graphicsLayer {
+                val k = if (reduced) 1f else 1f - 0.035f * progress.value
+                scaleX = k
+                scaleY = k
+            }
+            .clip(shape)
+            .background(if (worn) CheckEdge.copy(alpha = .55f) else Color(0x14FFFFFF), shape)
+            .border(1.dp, if (worn) StartArcTip else CheckEdge, shape)
+            .drawBehind { drawRect(StartAccent.copy(alpha = .45f), size = size.copy(width = size.width * progress.value)) }
+            .semantics(mergeDescendants = true) {
+                role = androidx.compose.ui.semantics.Role.Button
+                contentDescription = "$name · $grade"
+                onClick(label = holdLabel) { tap(); true }
+                if (enabled) onLongClick(label = name) { pick(); true }
+            }
+            .pointerInput(enabled) {
+                if (!enabled) return@pointerInput
+                detectTapGestures(onPress = {
+                    view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+                    var done = false
+                    val job = scope.launch {
+                        progress.animateTo(1f, tween(PICK_HOLD_MS, easing = androidx.compose.animation.core.LinearEasing))
+                        done = true
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                        pick()
+                    }
+                    tryAwaitRelease()
+                    if (!done) {
+                        job.cancel()
+                        scope.launch { progress.animateTo(0f, tween(180)) }
+                        tap()
+                    } else {
+                        scope.launch { progress.animateTo(0f, tween(250)) }
+                    }
+                })
+            }
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .testTag("run-shoe-pick-${shoe.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ShoeArtThumbnail(shoe, Modifier.size(width = 64.dp, height = 48.dp), failedTint = CheckSubtle)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(name, style = checkText(15.sp, Color.White, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(grade, style = checkText(12.sp, CheckSubtle), maxLines = 1)
+        }
+        Spacer(Modifier.width(8.dp))
+        Column(horizontalAlignment = Alignment.End) {
+            if (worn) {
+                Text(stringResource(R.string.run_shoe_pick_wearing), style = checkText(11.sp, StartArcTip, FontWeight.SemiBold), maxLines = 1)
+            }
+            Text("$points%", style = TextStyle(fontFamily = StepUpNumbers, fontWeight = FontWeight.SemiBold, fontSize = 17.sp,
+                color = CheckValue, fontFeatureSettings = "tnum"))
+        }
+    }
+}
+
+/** 신발을 고르는 데 누르고 있어야 하는 시간(ms) — 2026-10-26 사용자 "1초 꾹" */
+private const val PICK_HOLD_MS = 1_000
 
 private fun checkText(
     size: androidx.compose.ui.unit.TextUnit,

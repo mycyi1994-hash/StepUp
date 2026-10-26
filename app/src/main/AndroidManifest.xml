@@ -83,6 +83,17 @@
             </intent-filter>
         </activity>
 
+        <!-- 잠금 화면의 러닝 현황(러닝 알림을 누르면) — 잠금 화면 위에 뜨는 것은 이 화면뿐이다. 달리는 중이 아니면 바로 앱을 연다 -->
+        <activity
+            android:name=".LockRunActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity="com.stepup.android.lockrun"
+            tools:targetApi="o_mr1" />
+
         <service
             android:name=".service.WalkSessionService"
             android:exported="false"

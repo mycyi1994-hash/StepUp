@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 번개러닝 모집 글의 기본 제목(2026-10-26 사용자 "제목은 기본 템플릿 10개 정도 랜덤으로 — 안 쳐도 되게") -->
+<resources>
+    <string-array name="flash_title_templates">
+        <item>오늘 같이 달려요</item>
+        <item>번개 러닝 함께해요</item>
+        <item>가볍게 한 바퀴 어때요</item>
+        <item>천천히 이야기하며 달려요</item>
+        <item>누구나 환영, 같이 뛰어요</item>
+        <item>초보도 편하게 함께 달려요</item>
+        <item>기분 좋게 땀 흘려요</item>
+        <item>함께 달리면 더 멀리 가요</item>
+        <item>오늘의 러닝 메이트 구해요</item>
+        <item>페이스 맞춰 같이 뛰어요</item>
+    </string-array>
+</resources>

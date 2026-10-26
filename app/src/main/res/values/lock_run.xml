@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 잠금 화면 가운데 러닝 현황(2026-10-26) -->
+<resources>
+    <string name="lock_run_open">Unlock to open StepUp</string>
+    <!-- 혼자 러닝 버튼 셋(일시정지 · 정지 · 화면 잠금) 중 정지 — 1초 길게 눌러 마친다 -->
+    <string name="run_stop">Stop</string>
+    <!-- 자유러닝 시작 전 신발 교체(1초 꾹 눌러 고르기) -->
+    <string name="run_free_check_change">Change shoes</string>
+    <string name="run_shoe_pick_title">Choose shoes</string>
+    <string name="run_shoe_pick_hint">Press and hold 1 second to choose</string>
+    <string name="run_shoe_pick_wearing">Wearing</string>
+    <string name="run_shoe_pick_failed">Couldn\'t change shoes. Please try again.</string>
+</resources>

@@ -75,8 +75,13 @@ class CrewFormTest {
             compose.onNodeWithContentDescription(description).assertIsFocused()
             compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
-        // 번개러닝(UI 최종 통합안 compose_flash) — 제목 · 만나는 곳을 채워야 올릴 수 있고, 숫자는 [−][값][+] 로만 바뀌어 범위를 벗어나지 않는다
+        // 번개러닝(UI 최종 통합안 compose_flash) — 같이 뛰기는 만나는 곳을 채워야 올릴 수 있고, 숫자는 [−][값][+] 로만 바뀌어 범위를 벗어나지 않는다
         compose.onNodeWithTag("post-cat-flash").performClick()
+        compose.onNodeWithTag("post-submit").assertIsNotEnabled()
+        // 제목은 기본 제목으로 채워져 있다(2026-10-26) — 원격 뛰기는 만나는 곳도 없으니 아무것도 치지 않고 올릴 수 있다
+        compose.onNodeWithTag("post-mode-remote").performClick()
+        compose.onNodeWithTag("post-submit").assertIsEnabled()
+        compose.onNodeWithTag("post-mode-together").performClick()
         compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         fill(R.string.post_field_title, "Riverside run")
         compose.onNodeWithTag("post-submit").assertIsNotEnabled()

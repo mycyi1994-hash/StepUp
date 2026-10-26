@@ -222,8 +222,8 @@ class RunJourneyDesignTest {
             // 신발 내구도(seed — 92)는 러닝 정보(E03)에서 본다 — 러닝 화면 숫자 줄은 시간 · 페이스 · 속도(UI 최종 통합안)
             compose.onNodeWithTag("run-status", useUnmergedTree = true).assertTextEquals(label(R.string.run_free_chip_running))
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertTextContains(label(R.string.run_pause))
-            // 달리는 중에는 종료가 없다 — 화면 잠금 · 일시정지 · 지도. 종료는 멈춘 뒤 길게 눌러서
-            compose.onAllNodesWithTag("run-finish").assertCountEquals(0)
+            // 달리는 중 버튼 셋 — 일시정지 · 정지(1초 길게) · 화면 잠금(2026-10-26 — 정지가 멈춘 뒤에만 있어 끝내는 법을 몰랐다)
+            compose.onNodeWithTag("run-finish").assertIsDisplayed()
             compose.onNodeWithTag("run-lock").assertIsDisplayed()
             compose.onAllNodesWithTag("run-details-reward", useUnmergedTree = true).assertCountEquals(0)
             assertNoRewardText("run-live")

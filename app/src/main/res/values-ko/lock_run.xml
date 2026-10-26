@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 잠금 화면 가운데 러닝 현황(2026-10-26) -->
+<resources>
+    <string name="lock_run_open">잠금 해제하고 앱 열기</string>
+    <!-- 혼자 러닝 버튼 셋(일시정지 · 정지 · 화면 잠금) 중 정지 — 1초 길게 눌러 마친다 -->
+    <string name="run_stop">정지</string>
+    <!-- 자유러닝 시작 전 신발 교체(1초 꾹 눌러 고르기) -->
+    <string name="run_free_check_change">신발 교체</string>
+    <string name="run_shoe_pick_title">신발 고르기</string>
+    <string name="run_shoe_pick_hint">1초 꾹 눌러 골라요</string>
+    <string name="run_shoe_pick_wearing">신는 중</string>
+    <string name="run_shoe_pick_failed">신발을 바꾸지 못했어요. 다시 해 주세요</string>
+</resources>

@@ -96,7 +96,10 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(dark) { applySystemBars(dark) }
             StepUpTheme(mode) {
                 com.stepup.android.ui.experience.ExperienceProvider {
-                    StepUpRoot()
+                    // 달리는 동안 잠그면 잠금 화면 가운데에 러닝 현황(2026-10-26)
+                    com.stepup.android.ui.screens.walk.LockRunHost {
+                        StepUpRoot()
+                    }
                 }
             }
         }
