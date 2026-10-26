@@ -448,8 +448,11 @@ internal fun FreeRunLive(
                         ControlRow {
                             RoundControl(Icons.Outlined.Lock, stringResource(R.string.run_lock), { locked = true }, primary = false, tag = "run-lock")
                             RoundControl(Icons.Rounded.Pause, stringResource(R.string.run_pause), onPrimary, size = 96.dp, tag = "run-primary-action")
-                            RoundControl(Icons.Outlined.Map, stringResource(R.string.run_map_short), { onExpandMap?.invoke() }, primary = false,
-                                tag = "run-map-expand", enabled = onExpandMap != null)
+                            // 크게 볼 경로가 없으면(위치 없이 시간만 · 아직 점이 없음) 지도 버튼을 두지 않는다
+                            if (onExpandMap != null) {
+                                RoundControl(Icons.Outlined.Map, stringResource(R.string.run_map_short), onExpandMap, primary = false,
+                                    tag = "run-map-expand")
+                            }
                         }
                     }
                     FreeLiveMode.Saving -> BottomActionBar {

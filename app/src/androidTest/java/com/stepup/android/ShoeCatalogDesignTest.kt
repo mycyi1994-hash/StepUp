@@ -68,12 +68,18 @@ class ShoeCatalogDesignTest {
                 showTile(id)
                 compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
                 val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
-                // 이름 칸(제목 한 덩어리)은 글 · 배지를 감싼다 — 그 안의 글을 본다
+                // 이름 칸 — UI 최종 통합안(2026-10-25)부터 이름 글 자체가 꼬리표를 단다(예전엔 글 · 배지를 감싼 칸이었다). 어느 쪽이든 본다
                 compose.waitUntil(10_000) {
-                    compose.onAllNodes(hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")),
-                        useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+                    compose.onAllNodes(
+                        hasText(name, substring = true) and (hasTestTag("shoe-hero-name") or hasAnyAncestor(hasTestTag("shoe-hero-name"))),
+                        useUnmergedTree = true,
+                    ).fetchSemanticsNodes().isNotEmpty()
                 }
-                awaitSingle("grade-stage-${TIERS[index]}")
+                // 신발 탭 큰 그림은 UI 최종 통합안(2026-10-25)부터 등급 무대가 아닌 신발 카드 — 왼쪽 위 줄이 보이는 갈래의 등급이다
+                val tier = compose.activity.getString(TIER_LABELS[index])
+                compose.waitUntil(10_000) {
+                    runCatching { compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(tier, substring = true) }.isSuccess
+                }
                 shot("0${index + 1}-stage-$model")
             }
             showTile(shoes.getValue(PICKS.last()))
@@ -193,7 +199,7 @@ class ShoeCatalogDesignTest {
         /** 레어 스플릿 힐 로드 러너 · 에픽 니트 랩 러너 · 레전더리 레드라인 100m 스프린트 스파이크 */
         val PICKS = listOf(1107, 1201, 1311)
 
-        /** 그 셋의 보이는 갈래 — 시리즈 REDLINE 이 먼저(domain/ShoeTier.kt) */
-        val TIERS = listOf("rare", "epic", "redline")
+        /** 그 셋의 보이는 갈래(레어 · 에픽 · 레드라인 — 시리즈 REDLINE 이 먼저, domain/ShoeTier.kt) — 신발 카드 왼쪽 위에 적히는 이름 */
+        val TIER_LABELS = listOf(R.string.shoe_tier_rare, R.string.shoe_tier_epic, R.string.shoe_tier_redline)
     }
 }

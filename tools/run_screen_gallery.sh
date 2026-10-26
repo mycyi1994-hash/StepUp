@@ -9,17 +9,22 @@ esac
 original_font_scale=""
 # Persist evidence on the host while the emulator is alive: post-failure adb
 # cannot recover the last scene or Android logs after the device disappears.
+# One file per suite: run_device_qa.sh runs several suites in a row, and a shared name let the
+# next suite overwrite the record of an emulator that died in the previous one.
 mkdir -p screen-gallery
-adb logcat -v threadtime > screen-gallery/device-live-logcat.txt 2>&1 &
+adb logcat -v threadtime > "screen-gallery/device-live-logcat-$suite.txt" 2>&1 &
 logcat_pid=$!
 (
   while true; do
     date -u
     free -m
     ps -eo pid,ppid,rss,comm --sort=-rss | head -16
+    # 기기 쪽도 함께 — 에뮬레이터가 시작 6~7분 뒤 기기 전체가 멈췄다가 사라졌는데(호스트 메모리는 여유) 그때 기기 안이 어땠는지가 없었다
+    echo "-- guest"
+    timeout 5s adb shell 'cat /proc/loadavg; df -h /data | tail -1; top -b -n 1 | head -12' 2>&1 || echo "guest: no answer"
     sleep 10
   done
-) > screen-gallery/host-memory.txt 2>&1 &
+) > "screen-gallery/host-memory-$suite.txt" 2>&1 &
 monitor_pid=$!
 # Best-effort transport only; these files never substitute for final test reports.
 # A failed emulator otherwise takes all earlier screenshots with it.
@@ -51,8 +56,8 @@ collect_diagnostics() {
 trap collect_diagnostics EXIT
 # Record guest capacity as well as host capacity: available host RAM does not
 # establish that the Android guest has enough room for its launcher and the app.
-timeout 20s adb shell cat /proc/meminfo > screen-gallery/guest-memory-start.txt || true
-timeout 20s adb shell dumpsys activity lastanr > screen-gallery/guest-anr-start.txt || true
+timeout 20s adb shell cat /proc/meminfo > "screen-gallery/guest-memory-start-$suite.txt" || true
+timeout 20s adb shell dumpsys activity lastanr > "screen-gallery/guest-anr-start-$suite.txt" || true
 # Exercise actual IME in form tests even when the emulator exposes a hardware keyboard.
 adb shell settings put secure show_ime_with_hard_keyboard 1 || status=1
 # adb can fail while enumerating screenshots even after instrumentation passed.

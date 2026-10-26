@@ -99,6 +99,13 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Sell
+import androidx.compose.material.icons.outlined.Build
 
 /** 상세 위에 뜨는 시트 — 신발 관리(SD13 · SD14) · 신발 기록(SD15 ~ SD17). 수리 시트는 따로(한 번에 하나) */
 private enum class DetailSheet { None, Manage, Record }
@@ -373,6 +380,8 @@ fun ShoeDetailContent(
                     onShowUpgrade = onEnhance,
                     onShowRepair = onOpenRepair,
                     onOpenPoints = pointsActions.onOpen,
+                    onSell = { onSell(state.shoe) },
+                    onOpenRecord = { sheet = DetailSheet.Record },
                 )
             }
         }
@@ -446,14 +455,16 @@ private fun DetailBody(
     onShowUpgrade: () -> Unit,
     onShowRepair: () -> Unit,
     onOpenPoints: () -> Unit,
+    onSell: () -> Unit = {},
+    onOpenRecord: () -> Unit = {},
 ) {
     val t = runTone()
     val shoe = state.shoe
     val art by rememberShoeArt(shoe, ShoeArtFull, artAttempt)
     val failed = art == ShoeArtLoad.Failed
-    // 작은 화면은 무대부터 줄인다 — 이름 · 네 줄 · 버튼이 한 화면에 들도록. 그래도 모자라면 목록이 넘어간다
+    // 무대는 남는 높이만큼 — 이름 · 네 줄 · 아래 신발 관리의 첫 줄(수리하기)까지 첫 화면에 들도록. 그래도 모자라면 목록이 넘어간다
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val stageMaxHeight = (screenHeight - 500.dp).coerceAtLeast(190.dp)
+    val stageMaxHeight = (screenHeight - 610.dp).coerceAtLeast(170.dp)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         // 무대 — 기존 등급 무대(무대 면 → 뒤 효과 → 신발 → 앞 효과 → 프레임)
         Box(
@@ -508,6 +519,84 @@ private fun DetailBody(
             Spacer(Modifier.height(8.dp))
         }
         ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
+        // 신발 관리 — 수리 · 포인트 · 판매 · 기록을 ⋯ 안에만 두지 않고 화면에 바로(사용자 "수리하는 곳을 찾을 수가 없었음")
+        Spacer(Modifier.height(18.dp))
+        CareActions(shoe, busy = care.busy, onRepair = onShowRepair, onPoints = onOpenPoints, onSell = onSell, onRecord = onOpenRecord)
+    }
+}
+
+/** 신발 관리 묶음 — 수리하기(남은 내구도) · 스탯 포인트(있을 때) · 판매하기 · 신발 기록. 관리 시트(⋯)와 같은 조건 · 설명 */
+@Composable
+private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPoints: () -> Unit, onSell: () -> Unit, onRecord: () -> Unit) {
+    val t = runTone()
+    val entry = pointsEntryOf(shoe)
+    val available = pointsAvailable(shoe)
+    Column(Modifier.fillMaxWidth().testTag("shoe-care-actions")) {
+        Text(
+            stringResource(R.string.care_manage_title), style = runTextStyle(18.sp, t.text, FontWeight.Bold),
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp).semantics { heading() },
+        )
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(t.panel)) {
+            CareActionRow(
+                Icons.Outlined.Build, stringResource(R.string.care_repair),
+                if (busy) stringResource(R.string.care_busy_note) else stringResource(R.string.care_durability_now, formatDurability(shoe)),
+                enabled = !busy, onClick = onRepair, tag = "shoe-care-repair",
+            )
+            if (entry != PointsEntry.None) {
+                CareDivider()
+                CareActionRow(
+                    Icons.Outlined.Tune, stringResource(R.string.points_title),
+                    when {
+                        busy -> stringResource(R.string.care_busy_note)
+                        !available -> careBlockText(if (shoe.server?.status != "OWNED") CareBlock.LISTED else CareBlock.ON_CHAIN)
+                        entry is PointsEntry.Free -> stringResource(R.string.points_manage_free, entry.free)
+                        entry == PointsEntry.Respec -> stringResource(R.string.points_manage_respec)
+                        else -> stringResource(R.string.points_manage_done)
+                    },
+                    enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
+                    onClick = onPoints, tag = "shoe-care-points",
+                )
+            }
+            CareDivider()
+            CareActionRow(
+                Icons.Outlined.Sell, stringResource(R.string.care_sell),
+                when {
+                    shoe.equipped -> stringResource(R.string.care_sell_equipped)
+                    busy -> stringResource(R.string.care_busy_note)
+                    else -> null
+                },
+                enabled = !shoe.equipped && !busy, onClick = onSell, tag = "shoe-care-sell",
+            )
+            CareDivider()
+            CareActionRow(Icons.Outlined.History, stringResource(R.string.care_record), null, enabled = true, onClick = onRecord, tag = "shoe-care-record")
+        }
+    }
+}
+
+@Composable
+private fun CareDivider() {
+    Box(Modifier.padding(start = 52.dp).fillMaxWidth().height(.5.dp).background(runTone().divider))
+}
+
+/** 관리 한 줄 — 왼쪽 아이콘 · 이름(아래 작은 설명) · 오른쪽 화살표. 못 쓰면 흐리게(까닭은 설명이 말한다) */
+@Composable
+private fun CareActionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, description: String?, enabled: Boolean, onClick: () -> Unit, tag: String) {
+    val t = runTone()
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .testTag(tag)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .alpha(if (enabled) 1f else .5f),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = t.cobaltText, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = runTextStyle(16.sp, t.text, FontWeight.SemiBold))
+            if (description != null) Text(description, style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.3f))
+        }
+        if (enabled) Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
     }
 }
 
