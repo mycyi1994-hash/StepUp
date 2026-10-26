@@ -52,7 +52,7 @@
     <string name="care_check_later">Check later</string>
     <string name="care_repair_unknown_title">Check the repair result</string>
     <string name="care_repair_unknown_body">The connection dropped, so we couldn\'t confirm the result yet.</string>
-    <string name="care_repair_unknown_accepted">The server took the repair. We\'re still checking the latest durability and balance.</string>
+    <string name="care_repair_unknown_accepted">The repair went through. We\'re still checking the latest durability and balance.</string>
     <string name="care_repair_unknown_note">Please continue after checking the result.</string>
     <string name="care_repair_state">Repair status</string>
     <string name="care_needs_check">Needs check</string>
@@ -64,7 +64,7 @@
     <string name="care_done">Done</string>
     <string name="care_block_listed">Shoes listed for sale can\'t be changed.</string>
     <string name="care_block_chain">This pair is on chain. Bring it back into the app first.</string>
-    <string name="care_block_legacy">Shoes made on the phone before the server economy can\'t be upgraded.</string>
+    <string name="care_block_legacy">Older shoes made on the phone can\'t be upgraded.</string>
     <string name="care_block_missing">This pair isn\'t in your shoes anymore. Choose again from your shoes.</string>
-    <string name="care_block_other">The server didn\'t accept the request. Please check again in a moment.</string>
+    <string name="care_block_other">We couldn\'t process the request. Please try again in a moment.</string>
 </resources>

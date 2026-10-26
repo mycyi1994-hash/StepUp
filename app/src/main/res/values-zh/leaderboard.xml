@@ -26,7 +26,7 @@
     <string name="lb_rules_week_title">一周</string>
     <string name="lb_rules_week_body">统计周一0点至周日（韩国时间）的记录，不计入被判定无效的跑步。</string>
     <string name="lb_rules_tie_title">记录相同时</string>
-    <string name="lb_rules_tie_body">距离相同时按服务器的顺序排列（跑者按名字），与前一名的差距显示为并列。</string>
+    <string name="lb_rules_tie_body">距离相同时按名字排列，与前一名的差距显示为并列。</string>
     <string name="lb_close">关闭</string>
     <string name="lb_me">我的排名</string>
     <string name="lb_rank_suffix">名</string>
@@ -43,7 +43,7 @@
     <string name="lb_crew_runners">%1$d人参与</string>
     <string name="lb_crew_mine_move">我的跑团 · %1$s</string>
     <string name="lb_crew_mine">我的跑团</string>
-    <string name="lb_crew_mine_unranked">我的跑团 · 本周无记录</string>
+    <string name="lb_crew_mine_unranked">我的跑团 · 本周还没有记录</string>
     <string name="lb_crew_none_title">还没有跑团</string>
     <string name="lb_crew_none_body">加入跑团后，这里会显示你的跑团排名。</string>
     <string name="lb_crew_nearby_open">查看我的跑团附近排名</string>
@@ -52,8 +52,8 @@
     <string name="lb_crew_empty_title">本周还没有跑团记录</string>
     <string name="lb_crew_empty_body">跑团成员进行跑团跑步后就会产生排名。</string>
     <string name="lb_more">查看更多</string>
-    <string name="lb_unavailable_title">该排名还在准备中</string>
-    <string name="lb_unavailable_body">暂时无法从服务器获取该排名。</string>
+    <string name="lb_unavailable_title">无法加载该排名</string>
+    <string name="lb_unavailable_body">请稍后再查看。</string>
     <string name="lb_personal_label">%1$s，你本周的排名</string>
     <string name="lb_personal_label_anon">你本周的排名</string>
     <string name="lb_rise_up">比上周\n上升%1$d名</string>

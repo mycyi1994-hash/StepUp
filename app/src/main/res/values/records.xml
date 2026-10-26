@@ -29,7 +29,7 @@
     <string name="rec_period_empty_title">No runs in this period</string>
     <string name="rec_period_empty_body">Try another period.</string>
     <string name="rec_show_all">See all runs</string>
-    <string name="rec_distance_unknown">No distance recorded</string>
+    <string name="rec_distance_unknown">Distance not measured</string>
     <string name="rec_apply">Apply</string>
     <string name="rec_year_pattern">yyyy</string>
     <string name="rec_short_month_pattern">MMM</string>
@@ -86,7 +86,7 @@
     <string name="rec_delete">Delete</string>
     <string name="rec_deleting">Deleting…</string>
     <string name="rec_delete_failed_toast">Couldn\'t delete it. Please try again.</string>
-    <string name="rec_delete_uploading">The server is still checking this run, so it can\'t be deleted yet.</string>
+    <string name="rec_delete_uploading">This run is still being checked, so it can\'t be deleted yet.</string>
     <string name="rec_missing_title">Run not found</string>
     <string name="rec_missing_body">It was deleted or belongs to another account.</string>
     <string name="rec_map_title">Run route</string>

@@ -46,7 +46,7 @@
     <string name="crewhome_level_sub">What the crew builds together</string>
     <string name="crewhome_level_now">Current level</string>
     <string name="crewhome_level_next">Next level</string>
-    <string name="crewhome_level_pending">Criteria coming soon</string>
+    <string name="crewhome_level_pending">Couldn\'t load the level-up criteria</string>
     <string name="crewhome_level_pending_body">You\'ll see the criteria here once they\'re published.</string>
     <string name="crewhome_level_week">This week\'s crew activity</string>
     <string name="crewhome_level_week_km">Distance together</string>

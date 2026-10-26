@@ -46,7 +46,7 @@
     <string name="crewhome_level_sub">大家一起积累的跑团活动</string>
     <string name="crewhome_level_now">当前等级</string>
     <string name="crewhome_level_next">下一等级</string>
-    <string name="crewhome_level_pending">升级标准准备中</string>
+    <string name="crewhome_level_pending">无法加载升级标准</string>
     <string name="crewhome_level_pending_body">标准公布后可以在这里查看。</string>
     <string name="crewhome_level_week">本周跑团活动</string>
     <string name="crewhome_level_week_km">一起跑的距离</string>

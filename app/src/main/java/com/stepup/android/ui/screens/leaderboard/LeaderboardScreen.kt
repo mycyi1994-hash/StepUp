@@ -118,7 +118,9 @@ fun LeaderboardScreen(
     initial: LeaderBoardKind = LeaderBoardKind.CREW,
     viewModel: LeaderboardViewModel = viewModel(),
 ) {
-    var board by rememberSaveable { mutableStateOf(initial) }
+    // 주간 포인트 순위가 없으면 판은 크루 · 개인 둘(빈 "준비 중" 판을 두지 않는다)
+    val boards = if (viewModel.offersPoints) LeaderBoardKind.entries else LeaderBoardKind.entries - LeaderBoardKind.POINTS
+    var board by rememberSaveable { mutableStateOf(if (initial in boards) initial else LeaderBoardKind.CREW) }
     var sheet by rememberSaveable { mutableStateOf<LbSheet?>(null) }
     var runnerList by rememberSaveable { mutableStateOf(RunnerList.NEARBY) }
     LaunchedEffect(viewModel, board) { viewModel.open(board) }
@@ -146,13 +148,17 @@ fun LeaderboardScreen(
                 trailing = { LbIconButton(LbIcons.Info, stringResource(R.string.lb_rules_open), "lb-info") { sheet = LbSheet.RULES } },
             )
             LbUnderlineTabs(
-                labels = listOf(
-                    stringResource(R.string.lb_board_crew),
-                    stringResource(R.string.lb_board_personal),
-                    stringResource(R.string.lb_board_points),
-                ),
-                selected = board.ordinal,
-                onSelect = { board = LeaderBoardKind.entries[it] },
+                labels = boards.map {
+                    stringResource(
+                        when (it) {
+                            LeaderBoardKind.CREW -> R.string.lb_board_crew
+                            LeaderBoardKind.PERSONAL -> R.string.lb_board_personal
+                            LeaderBoardKind.POINTS -> R.string.lb_board_points
+                        },
+                    )
+                },
+                selected = boards.indexOf(board).coerceAtLeast(0),
+                onSelect = { board = boards[it] },
                 modifier = Modifier.padding(horizontal = gutter),
                 tagPrefix = "lb-board",
             )

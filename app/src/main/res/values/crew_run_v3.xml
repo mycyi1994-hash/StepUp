@@ -28,7 +28,7 @@
 
     <string name="crew_lobby_shoe">Crew run shoe</string>
     <string name="crew_lobby_shoe_value">%1$s · max durability %2$d</string>
-    <string name="crew_lobby_shoe_none">No shoe</string>
+    <string name="crew_lobby_shoe_none">No shoe picked</string>
     <string name="crew_lobby_shoe_change">Change</string>
     <string name="crew_lobby_shoe_pick_title">Shoe for the crew run</string>
     <string name="crew_lobby_shoe_picked">Picked</string>

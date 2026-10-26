@@ -37,7 +37,7 @@
     <string name="set_notif_blocked_body">下で選んだ通知を受け取るには、スマホの設定で許可してください。</string>
     <string name="set_open_phone_settings">スマホの設定を開く</string>
     <string name="set_sync_pending">スマホには保存しました</string>
-    <string name="set_sync_pending_body">サーバーへの反映はまだ確認できていません。以前の通知設定が適用される場合があります。</string>
+    <string name="set_sync_pending_body">まだ保存されていません。以前の通知設定が適用される場合があります。</string>
     <string name="set_sync_retry">もう一度反映</string>
     <string name="set_sync_sending">反映しています…</string>
     <string name="set_stored_info">保存する情報</string>
@@ -83,8 +83,6 @@
     <string name="set_wallet_linked">連携済み</string>
     <string name="set_wallet_connect">連携する</string>
     <string name="set_wallet_unknown">確認できません</string>
-    <string name="set_health_connect">Health Connect</string>
-    <string name="set_coming_soon">準備中</string>
     <string name="set_external_note">利用できる連携機能が準備できたらお知らせします。</string>
     <string name="set_delete_account">アカウントを削除</string>
     <string name="set_delete_title">アカウントを削除しますか？</string>
@@ -98,7 +96,7 @@
     <string name="set_delete_phone_note">このスマホに残った記録はアプリを削除すると消えます。</string>
     <string name="set_delete_action">アカウントを削除</string>
     <string name="set_deleting">削除しています…</string>
-    <string name="set_delete_failed">サーバーで削除されませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="set_delete_failed">アカウントを削除できませんでした。しばらくしてからもう一度お試しください。</string>
     <string name="set_delete_unknown_title">削除結果の確認が必要です</string>
     <string name="set_delete_unknown_heading">リクエストは処理された可能性があります。</string>
     <string name="set_delete_unknown_body">応答を受け取れなかったため、削除されたかまだ確認できていません。同じリクエストを繰り返さず、お問い合わせください。</string>

@@ -107,7 +107,7 @@
     <string name="crew5_lobby_menu_leave">대기실 나가기</string>
     <string name="crew5_lobby_rules">크루 러닝 규칙 보기</string>
     <string name="crew5_lobby_done_today">오늘 크루 러닝을 이미 했어요. 이 대기실에서 준비할 수 없어요.</string>
-    <string name="crew5_lobby_offline">서버에 닿지 못하고 있어요. 저절로 다시 연결해요.</string>
+    <string name="crew5_lobby_offline">연결이 끊겼어요. 저절로 다시 연결해요.</string>
     <string name="crew5_lobby_reconnect">지금 다시 연결</string>
     <string name="crew5_lobby_failed">방금 누른 것이 처리되지 않았어요. 다시 눌러 주세요.</string>
     <string name="crew5_lobby_loading">대기실을 불러오는 중이에요</string>
@@ -169,7 +169,7 @@
     <string name="crew5_roster_host_title">참가자 관리</string>
     <string name="crew5_roster_member_title">함께 달릴 크루원</string>
     <string name="crew5_roster_ready">준비 완료</string>
-    <string name="crew5_roster_waiting">준비 중</string>
+    <string name="crew5_roster_waiting">대기 중</string>
     <string name="crew5_roster_count">%1$d명 · 준비 %2$d명</string>
     <string name="crew5_kick_title">%1$s님을 내보낼까요?</string>
     <string name="crew5_kick_body">이번 대기실에서만 빠져요. 크루에서는 나가지 않아요. 내보낸 사람은 이 대기실에 다시 들어오지 못해요.</string>
@@ -192,7 +192,7 @@
     <string name="crew5_start_add">내가 더할 내구도</string>
     <string name="crew5_start_go">함께 출발</string>
     <string name="crew5_partial_title">준비된 %1$d명과 출발할까요?</string>
-    <string name="crew5_partial_body">준비 중인 %1$d명은 이번 출발에서 빠지고, 보너스와 기여에도 들어가지 않아요.</string>
+    <string name="crew5_partial_body">아직 준비하지 않은 %1$d명은 이번 출발에서 빠지고, 보너스와 기여에도 들어가지 않아요.</string>
     <string name="crew5_partial_go">준비된 %1$d명과 출발</string>
     <string name="crew5_partial_wait">더 기다리기</string>
     <string name="crew5_starting">출발 신호를 맞추는 중이에요</string>

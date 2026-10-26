@@ -107,7 +107,7 @@
     <string name="crew5_lobby_menu_leave">Leave lobby</string>
     <string name="crew5_lobby_rules">See crew run rules</string>
     <string name="crew5_lobby_done_today">You already ran with a crew today, so you can\'t get ready in this lobby.</string>
-    <string name="crew5_lobby_offline">Can\'t reach the server. Reconnecting automatically.</string>
+    <string name="crew5_lobby_offline">Connection lost. Reconnecting automatically.</string>
     <string name="crew5_lobby_reconnect">Reconnect now</string>
     <string name="crew5_lobby_failed">That didn\'t go through. Please tap again.</string>
     <string name="crew5_lobby_loading">Loading the lobby</string>
@@ -169,7 +169,7 @@
     <string name="crew5_roster_host_title">Manage runners</string>
     <string name="crew5_roster_member_title">Running together</string>
     <string name="crew5_roster_ready">Ready</string>
-    <string name="crew5_roster_waiting">Getting ready</string>
+    <string name="crew5_roster_waiting">Waiting</string>
     <string name="crew5_roster_count">%1$d runners · %2$d ready</string>
     <string name="crew5_kick_title">Remove %1$s?</string>
     <string name="crew5_kick_body">They leave this lobby only, not the crew. Removed runners can\'t rejoin this lobby.</string>
@@ -192,7 +192,7 @@
     <string name="crew5_start_add">You add</string>
     <string name="crew5_start_go">Start together</string>
     <string name="crew5_partial_title">Start with the %1$d ready?</string>
-    <string name="crew5_partial_body">The %1$d still getting ready won\'t start this time and aren\'t counted for bonus or stamina.</string>
+    <string name="crew5_partial_body">The %1$d who aren\'t ready yet won\'t start this time and aren\'t counted for bonus or stamina.</string>
     <string name="crew5_partial_go">Start with %1$d ready</string>
     <string name="crew5_partial_wait">Wait a bit more</string>
     <string name="crew5_starting">Syncing the start signal</string>

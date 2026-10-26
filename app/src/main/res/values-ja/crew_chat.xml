@@ -35,7 +35,7 @@
     <string name="chat_discard">削除</string>
     <string name="chat_line_notice">%1$sさんが新しいお知らせを登録しました。</string>
     <string name="chat_line_left">%1$sさんがクルーを抜けました。</string>
-    <string name="chat_unknown_name">不明</string>
+    <string name="chat_unknown_name">不明なランナー</string>
     <string name="chat_author_deleted">退会したユーザー</string>
     <string name="chat_input_hint">メッセージを入力</string>
     <string name="chat_input_offline_hint">接続されると送信できます</string>

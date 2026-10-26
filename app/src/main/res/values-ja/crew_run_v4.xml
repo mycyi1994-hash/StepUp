@@ -47,7 +47,7 @@
     <string name="crew_live_checking">人数ボーナス確認中 · %1$s 後に確定</string>
     <string name="crew_live_checking_now">人数ボーナス確認中</string>
     <string name="crew_live_bonus">人数 %1$d人 +%2$s%% · Lv +%3$s%%</string>
-    <string name="crew_live_bonus_none">人数ボーナスなし · Lv +%1$s%%</string>
+    <string name="crew_live_bonus_none">1人で出発 · Lv +%1$s%%</string>
     <string name="crew_live_paused">一時停止中 · 共用体力を使いません</string>
     <string name="crew_live_pool_low">まもなく獲得が止まるかもしれません</string>
     <string name="crew_live_pool_low_body">残りの共用体力は一緒に走る人たちが使っています。0 になると獲得だけ止まり、記録は続きます。個人のシューズ耐久度は使いません。</string>
@@ -73,7 +73,7 @@
     <string name="run_notify_crew_pool">クルー体力 %1$s / %2$s</string>
     <string name="crew_result_base">自分のシューズ基準の報酬 %1$s SUP</string>
     <string name="crew_result_headcount">人数 %1$d人 · +%2$s%% → +%3$s SUP</string>
-    <string name="crew_result_headcount_none">人数ボーナスなし</string>
+    <string name="crew_result_headcount_none">1人で出発したため人数ボーナスはありません</string>
     <string name="crew_result_level_bonus">Lv.%1$d · +%2$s%% → +%3$s SUP</string>
     <string name="crew_result_total">%1$s × (1 + %2$s%% + %3$s%%) = %4$s SUP</string>
     <string name="crew_result_cap">クルー報酬は個人の1日上限とは別です。</string>
@@ -83,6 +83,6 @@
     <string name="crew_result_alone">一緒に走っていた全員が終えたので自動で終わりました。</string>
     <string name="crew_result_level_void">無効なランなのでクルーの累計距離に加えませんでした。クルーレベルは下がりません。</string>
     <string name="crew_result_not_crew">このランはクルーランとして数えませんでした。今日すでにクルーランをしたか、この部屋で一緒に出発していません。</string>
-    <string name="crew_result_pending">クルー報酬はサーバーが精算した後に表示されます。</string>
+    <string name="crew_result_pending">クルー報酬は精算が終わると表示されます。</string>
     <string name="crew_entry_next">次の参加は明日 00:00(韓国時間)からです。フリーランは自分のシューズ耐久度で走れます。</string>
 </resources>

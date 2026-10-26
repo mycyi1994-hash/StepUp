@@ -99,9 +99,9 @@
     <string name="coach_gap_range">通常の範囲を外れた区間があるため表示しません。</string>
     <string name="coach_no_analysis_records">分析できる記録がありません。</string>
     <string name="coach_ai_loading">コーチングの状態を確認しています。</string>
-    <string name="coach_ai_waiting_server">サーバーの確認を待っています。</string>
+    <string name="coach_ai_waiting_server">記録の確認を待っています。</string>
     <string name="coach_ai_waiting_server_sub">記録はこの端末に安全に保存されています。</string>
-    <string name="coach_ai_not_verified">サーバーが確認していない記録のため、AIで分析しません。</string>
+    <string name="coach_ai_not_verified">確認されていない記録のため、AIで分析しません。</string>
     <string name="coach_ai_consent">AIコーチングをオンにすると、この記録を分析できます。</string>
     <string name="coach_ai_consent_action">AIコーチングを始める</string>
     <string name="coach_ai_skipped_label">今回の記録は</string>
@@ -204,7 +204,7 @@
     <string name="coach_consent_check">AI分析のための記録のまとめの送信に同意します</string>
     <string name="coach_consent_start">同意して始める</string>
     <string name="coach_consent_later">あとで</string>
-    <string name="coach_consent_unavailable">AIコーチングはまだ準備中です。記録の分析と基本トレーニングはそのまま使えます。</string>
+    <string name="coach_consent_unavailable">AIコーチングはまだ始まっていません。記録の分析と基本トレーニングはそのまま使えます。</string>
     <string name="coach_data_title">データの利用について</string>
     <string name="coach_data_send">送る情報 — ラン1回の距離 · 活動時間 · 1km区間の時間、一週間の回数 · 距離 · 時間、選んだ目標。</string>
     <string name="coach_data_not_send">送らない情報 — 名前 · 連絡先 · 正確な位置 · GPSルート · 日付 · クルー · 報酬。</string>
@@ -227,7 +227,7 @@
     <string name="coach_settings_analysis">分析</string>
     <string name="coach_settings_use">AIコーチングを使う</string>
     <string name="coach_settings_auto">ラン後に自動で分析</string>
-    <string name="coach_settings_auto_sub">記録の保存とサーバーの確認のあとに分析します</string>
+    <string name="coach_settings_auto_sub">記録を保存して確認したあとに分析します</string>
     <string name="coach_settings_weekly">週間レポート</string>
     <string name="coach_settings_weekly_sub">通知の設定とは別です</string>
     <string name="coach_settings_goal">わたしの目標</string>

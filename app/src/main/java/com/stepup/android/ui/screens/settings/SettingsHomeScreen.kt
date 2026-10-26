@@ -143,12 +143,15 @@ fun SettingsHomeScreen(
         item {
             BlueGroupLabel(stringResource(R.string.set_group_about))
             BlueGroup {
-                // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 운영 데이터와 섞이지 않는다
-                BlueSwitchRow(
-                    stringResource(R.string.settings_demo), stringResource(R.string.settings_demo_note), demo,
-                    onCheckedChange = { on -> scope.launch { ServiceLocator.avatarRepository.setDemoMode(on) } },
-                    modifier = Modifier.testTag("settings-demo"),
-                )
+                // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 새로 켜는 줄은 두지 않는다(2026-10-26 사용자 "데모 같은 말 다 빼") —
+                // 예전에 켜 둔 사람만 끌 수 있게 켜져 있을 때만 보인다
+                if (demo) {
+                    BlueSwitchRow(
+                        stringResource(R.string.settings_demo), stringResource(R.string.settings_demo_note), demo,
+                        onCheckedChange = { on -> scope.launch { ServiceLocator.avatarRepository.setDemoMode(on) } },
+                        modifier = Modifier.testTag("settings-demo"),
+                    )
+                }
                 // 실제 빌드 이름(시안의 1.0.0 은 예시)
                 AboutLine(stringResource(R.string.about_version), "StepUp " + com.stepup.android.core.TestUpdates.buildLabel)
                 // 테스트 APK 에서만 — 운영 빌드에는 나타나지 않는다

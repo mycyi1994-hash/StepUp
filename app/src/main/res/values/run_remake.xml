@@ -13,7 +13,7 @@
     <string name="home_activity_minutes">min</string>
     <string name="home_activity_sup">Today\'s SUP</string>
     <string name="home_activity_checking">Checking</string>
-    <string name="home_activity_sup_note">Rewards appear after the server confirms them.</string>
+    <string name="home_activity_sup_note">Rewards appear once your run is confirmed.</string>
     <string name="home_activity_more">More</string>
     <string name="home_activity_ok">OK</string>
     <string name="home_stage_open">Open my shoes</string>
@@ -196,7 +196,7 @@
     <string name="run_delete_confirm">Delete record</string>
     <string name="run_delete_failed">Couldn\'t delete it.</string>
     <string name="run_delete_kept">The record is unchanged.</string>
-    <string name="run_delete_uploading">The server is still checking this run. You can delete it after the check.</string>
+    <string name="run_delete_uploading">This run is still being checked. You can delete it after the check.</string>
     <string name="run_share_title">Share your run</string>
     <string name="run_share_sub">Share today\'s run.</string>
     <string name="run_share_route">Include route</string>

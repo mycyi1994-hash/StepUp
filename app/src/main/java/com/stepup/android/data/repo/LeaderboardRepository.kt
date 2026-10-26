@@ -29,6 +29,9 @@ interface LeaderboardSource {
     suspend fun crews(top: Int): LeaderLoad<CrewBoard>
     suspend fun runners(top: Int): LeaderLoad<RunnerBoard>
     suspend fun points(scope: PointScope, top: Int): LeaderLoad<PointsBoard>
+
+    /** 주간 포인트 판을 보여 줄까 — 순위가 없는 판은 탭째 숨긴다("준비 중" 판을 두지 않는다, 2026-10-26) */
+    val offersPoints: Boolean get() = true
 }
 
 class ServerLeaderboardSource(private val api: LeaderboardApi) : LeaderboardSource {
@@ -39,6 +42,8 @@ class ServerLeaderboardSource(private val api: LeaderboardApi) : LeaderboardSour
 
     /** 주간 포인트(P) 순위는 서버에 없다 — P 가 무엇인지(적립 SUP 인지 따로 쌓는 점수인지) 정해지지 않았다 */
     override suspend fun points(scope: PointScope, top: Int): LeaderLoad<PointsBoard> = LeaderLoad.Unavailable
+
+    override val offersPoints: Boolean get() = false
 }
 
 private inline fun <R, T> ServerResult<R>.toLoad(map: (R) -> T): LeaderLoad<T> = when (this) {

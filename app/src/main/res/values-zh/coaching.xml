@@ -99,9 +99,9 @@
     <string name="coach_gap_range">有分段超出正常范围,因此不显示。</string>
     <string name="coach_no_analysis_records">还没有可以分析的记录。</string>
     <string name="coach_ai_loading">正在确认教练状态。</string>
-    <string name="coach_ai_waiting_server">正在等待服务器确认。</string>
+    <string name="coach_ai_waiting_server">正在等待记录确认。</string>
     <string name="coach_ai_waiting_server_sub">记录已安全保存在这台手机上。</string>
-    <string name="coach_ai_not_verified">服务器未确认这条记录,因此不进行 AI 分析。</string>
+    <string name="coach_ai_not_verified">这条记录尚未确认，因此不进行 AI 分析。</string>
     <string name="coach_ai_consent">开启 AI 教练后即可分析这条记录。</string>
     <string name="coach_ai_consent_action">开始 AI 教练</string>
     <string name="coach_ai_skipped_label">这次的记录</string>
@@ -204,7 +204,7 @@
     <string name="coach_consent_check">我同意为 AI 分析发送记录摘要</string>
     <string name="coach_consent_start">同意并开始</string>
     <string name="coach_consent_later">以后再说</string>
-    <string name="coach_consent_unavailable">AI 教练还在准备中。记录分析和基础训练仍可使用。</string>
+    <string name="coach_consent_unavailable">AI 教练尚未开放。记录分析和基础训练仍可使用。</string>
     <string name="coach_data_title">数据使用说明</string>
     <string name="coach_data_send">会发送的信息 — 单次跑步的距离 · 运动时间 · 1km 分段时间,一周的次数 · 距离 · 时间,你选择的目标。</string>
     <string name="coach_data_not_send">不会发送的信息 — 姓名 · 联系方式 · 精确位置 · GPS 路线 · 日期 · 跑团 · 奖励。</string>
@@ -227,7 +227,7 @@
     <string name="coach_settings_analysis">分析</string>
     <string name="coach_settings_use">使用 AI 教练</string>
     <string name="coach_settings_auto">跑步后自动分析</string>
-    <string name="coach_settings_auto_sub">在记录保存并经服务器确认后进行分析</string>
+    <string name="coach_settings_auto_sub">记录保存并确认后进行分析</string>
     <string name="coach_settings_weekly">每周报告</string>
     <string name="coach_settings_weekly_sub">与通知设置分开</string>
     <string name="coach_settings_goal">我的目标</string>

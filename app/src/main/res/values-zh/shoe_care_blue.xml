@@ -66,5 +66,5 @@
     <string name="care_block_chain">这双鞋在链上，请先转回应用。</string>
     <string name="care_block_legacy">在手机上生成的旧鞋子无法强化。</string>
     <string name="care_block_missing">这双鞋不在你的鞋子列表中，请重新选择。</string>
-    <string name="care_block_other">服务器未接受请求，请稍后再确认。</string>
+    <string name="care_block_other">未能处理请求，请稍后再试。</string>
 </resources>

@@ -26,7 +26,7 @@
     <string name="lb_rules_week_title">한 주</string>
     <string name="lb_rules_week_body">월요일 0시부터 일요일까지(한국 시간) 기록을 세요. 무효로 판정된 러닝은 빼요.</string>
     <string name="lb_rules_tie_title">같은 기록일 때</string>
-    <string name="lb_rules_tie_body">거리가 같으면 서버가 정한 차례(사람은 이름 순)로 놓이고, 바로 앞과의 차이는 동점으로 보여요.</string>
+    <string name="lb_rules_tie_body">거리가 같으면 이름 순으로 놓이고, 바로 앞과의 차이는 동점으로 보여요.</string>
     <string name="lb_close">닫기</string>
     <string name="lb_me">나의 순위</string>
     <string name="lb_rank_suffix">위</string>
@@ -43,7 +43,7 @@
     <string name="lb_crew_runners">%1$d명 참여</string>
     <string name="lb_crew_mine_move">우리 크루 · %1$s</string>
     <string name="lb_crew_mine">우리 크루</string>
-    <string name="lb_crew_mine_unranked">우리 크루 · 이번 주 기록 없음</string>
+    <string name="lb_crew_mine_unranked">우리 크루 · 이번 주 아직 기록이 없어요</string>
     <string name="lb_crew_none_title">아직 크루가 없어요</string>
     <string name="lb_crew_none_body">크루에 가입하면 우리 크루 순위가 여기에 보여요.</string>
     <string name="lb_crew_nearby_open">우리 크루 주변 순위 보기</string>
@@ -52,8 +52,8 @@
     <string name="lb_crew_empty_title">이번 주 크루 기록이 아직 없어요</string>
     <string name="lb_crew_empty_body">크루원이 크루 러닝을 하면 순위가 생겨요.</string>
     <string name="lb_more">더 보기</string>
-    <string name="lb_unavailable_title">이 순위는 아직 준비 중이에요</string>
-    <string name="lb_unavailable_body">서버에서 이 순위를 아직 받을 수 없어요.</string>
+    <string name="lb_unavailable_title">이 순위를 불러오지 못했어요</string>
+    <string name="lb_unavailable_body">잠시 뒤 다시 확인해 주세요.</string>
     <string name="lb_personal_label">%1$s, 이번 주 나의 순위</string>
     <string name="lb_personal_label_anon">이번 주 나의 순위</string>
     <string name="lb_rise_up">지난주보다\n%1$d계단 상승</string>

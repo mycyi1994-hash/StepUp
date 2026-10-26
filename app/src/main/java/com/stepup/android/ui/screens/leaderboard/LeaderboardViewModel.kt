@@ -34,6 +34,9 @@ class LeaderboardViewModel(
     private val _runners = MutableStateFlow<LeaderLoad<RunnerBoard>>(LeaderLoad.Loading)
     val runners: StateFlow<LeaderLoad<RunnerBoard>> = _runners.asStateFlow()
 
+    /** 주간 포인트 판이 있는가 — 없으면 판 고르기에서 뺀다 */
+    val offersPoints: Boolean get() = source.offersPoints
+
     private val _points = MutableStateFlow<LeaderLoad<PointsBoard>>(LeaderLoad.Loading)
     val points: StateFlow<LeaderLoad<PointsBoard>> = _points.asStateFlow()
 

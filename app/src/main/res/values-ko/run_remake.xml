@@ -196,7 +196,7 @@
     <string name="run_delete_confirm">기록 삭제</string>
     <string name="run_delete_failed">삭제하지 못했어요.</string>
     <string name="run_delete_kept">기록은 그대로예요.</string>
-    <string name="run_delete_uploading">서버가 이 러닝을 확인하는 중이에요. 확인이 끝나면 지울 수 있어요.</string>
+    <string name="run_delete_uploading">이 러닝을 확인하는 중이에요. 확인이 끝나면 지울 수 있어요.</string>
     <string name="run_share_title">러닝 기록 공유</string>
     <string name="run_share_sub">오늘의 러닝을 공유해보세요.</string>
     <string name="run_share_route">경로 포함</string>
