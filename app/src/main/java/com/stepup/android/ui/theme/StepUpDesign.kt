@@ -18,6 +18,8 @@ object StepUpDesign {
     val LaunchLogoHeight = 52.dp
     /** 러닝 완료 기록 카드 왼쪽 위(2026-09-29 전달본 03) — 공유 이미지처럼 카드 안에 둔다 */
     val CardLogoHeight = 20.dp
+    /** 잠금 화면 러닝 현황(2026-10-26)의 흰 워드마크 너비 — 검정 바탕 맨 위 가운데 */
+    val LockLogoWidth = 116.dp
     const val LogoAspectRatio = 5.76f
     val BalanceHeight = 48.dp
     val BalanceAmount = 17.sp
