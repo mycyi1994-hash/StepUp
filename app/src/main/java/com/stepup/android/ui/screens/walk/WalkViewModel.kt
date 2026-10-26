@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 class WalkViewModel(
     private val stepRepository: StepRepository,
     rewardRepository: RewardRepository,
-    sneakerRepository: SneakerRepository,
+    private val sneakerRepository: SneakerRepository,
     boostRepository: BoostRepository,
     private val courseRepository: CourseRepository,
 ) : ViewModel() {
@@ -48,6 +48,46 @@ class WalkViewModel(
 
     val equipped: StateFlow<Sneaker?> = sneakerRepository.equipped
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** 내 신발 — 자유러닝 시작 전 신발 교체(2026-10-26). 신는 중인 신발 먼저, 그다음 높은 등급 · 레벨 */
+    val shoes: StateFlow<List<Sneaker>> = sneakerRepository.inventory
+        .map { list ->
+            list.sortedWith(
+                compareByDescending<Sneaker> { it.equipped }.thenByDescending { it.rarity.ordinal }.thenByDescending { it.level },
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 신발을 바꾸는 중 — 두 번 보내지 않는다 */
+    val wearing = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    /**
+     * 이 신발을 신는다 — 신발 탭과 같은 길([SneakerRepository.equipOnServer]). 실제 착용이 이 신발로 바뀐 것을 본 뒤에야 [onResult] true.
+     * 응답을 못 받았으면(연결) 서버 값을 다시 맞추고, 착용이 바뀌지 않았으면 false.
+     */
+    fun wear(id: Long, onResult: (Boolean) -> Unit) {
+        if (wearing.value) return
+        wearing.value = true
+        viewModelScope.launch {
+            val worn = try {
+                val outcome = sneakerRepository.equipOnServer(id)
+                if (outcome == com.stepup.android.data.repo.EconomyOutcome.Ok || outcome == com.stepup.android.data.repo.EconomyOutcome.Offline) {
+                    kotlinx.coroutines.withTimeoutOrNull(WEAR_WAIT_MS) { sneakerRepository.equipped.first { it?.id == id } } != null
+                } else false
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                wearing.value = false
+                throw cancelled
+            } catch (_: Exception) {
+                false
+            }
+            if (!worn) ServiceLocator.refreshEconomyInBackground()
+            com.stepup.android.ui.experience.ExperienceEvents.emit(
+                if (worn) com.stepup.android.ui.experience.FeedbackCue.Equip else com.stepup.android.ui.experience.FeedbackCue.Error,
+            )
+            wearing.value = false
+            onResult(worn)
+        }
+    }
 
     /** XP 부스터가 활성인지 */
     val xpBoosted: StateFlow<Boolean> = boostRepository.active
@@ -182,6 +222,9 @@ class WalkViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     companion object {
+        /** 착용을 보낸 뒤 목록이 따라오기를 기다리는 가장 긴 시간(ms) */
+        private const val WEAR_WAIT_MS = 5_000L
+
         val Factory = viewModelFactory {
             initializer {
                 WalkViewModel(

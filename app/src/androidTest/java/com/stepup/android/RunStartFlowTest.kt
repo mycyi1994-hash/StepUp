@@ -18,6 +18,8 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stepup.android.ui.experience.ExperienceProvider
 import com.stepup.android.domain.RunPermissionSheet
@@ -339,6 +341,36 @@ class RunStartFlowTest {
         compose.onNodeWithTag("run-shoe-check-go").performClick()
         compose.onNodeWithTag("run-shoe-check-go").performClick()
         assertEquals("출발 연타는 한 번", 1, starts)
+    }
+
+    /**
+     * 신발 교체(2026-10-26) — 신발 교체 · 신발 그림을 누르면 내 신발 목록. 짧게 누르면 바뀌지 않고, 1초 꾹 누르면(길게 누름) 그 신발을 신는다.
+     * 착용이 확인되면 점검으로 돌아온다. 돌아가기는 아무것도 바꾸지 않는다.
+     */
+    @Test fun shoeCheckChangesShoeOnlyOnHold() {
+        val other = checkShoe.copy(id = 9_302, equipped = false, rarity = Rarity.EPIC, level = 5)
+        val worn = mutableListOf<Long>()
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                FreeRunShoeCheckContent(
+                    shoe = checkShoe, onStart = {}, onCancel = {}, shoes = listOf(checkShoe, other),
+                    onWear = { id, done -> worn += id; done(true) },
+                )
+            } }
+        }
+        compose.onNodeWithTag("run-shoe-check-change").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("run-shoe-pick-title").assertIsDisplayed()
+        compose.onNodeWithTag("run-shoe-pick-${other.id}").performClick()
+        compose.waitForIdle()
+        assertEquals("짧게 누르면 바뀌지 않는다", 0, worn.size)
+        compose.onNodeWithTag("run-shoe-pick-hint").assertTextEquals(compose.activity.getString(R.string.run_shoe_pick_hint))
+        capture("run-shoe-pick.png")
+        compose.onNodeWithTag("run-shoe-pick-${other.id}").performTouchInput { longClick(durationMillis = 1_300) }
+        compose.waitUntil(3_000) { worn.isNotEmpty() }
+        assertEquals(listOf(other.id), worn)
+        // 착용이 확인되면 점검으로 돌아온다
+        compose.waitUntil(3_000) { compose.onAllNodesWithTag("run-shoe-check-title").fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodesWithTag("run-shoe-pick-title").assertCountEquals(0)
     }
 
     /** 신발을 신지 않았다 — 지금처럼 신발 없이도 달릴 수 있다. 그 사실을 알리고 "러닝 시작"으로 잇는다 */

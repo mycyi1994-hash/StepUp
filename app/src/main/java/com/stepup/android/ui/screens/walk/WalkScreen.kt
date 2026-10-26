@@ -1404,8 +1404,13 @@ fun RunScreen(
             )
         }
         if (shoeCheck && !session.isActive) {
+            val shoes by viewModel.shoes.collectAsStateWithLifecycle()
+            val wearing by viewModel.wearing.collectAsStateWithLifecycle()
             FreeRunShoeCheck(
                 shoe = equipped,
+                shoes = shoes,
+                wearing = wearing,
+                onWear = viewModel::wear,
                 onStart = {
                     // PREPARING — 권한 · 위치 기능이 다 있으면 점검창에서 바로 3-2-1. 아니면 기존 안내(권한 · E07)를 지난다
                     startScope.launch {

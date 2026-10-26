@@ -60,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -81,7 +82,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -376,7 +376,8 @@ internal fun FreeRunLive(
     val live = mode == FreeLiveMode.Live
     var locked by rememberSaveable { mutableStateOf(false) }
     // 멈추거나 끝나면 잠금을 푼다 — 멈춘 화면은 잠그지 않는다
-    LaunchedEffect(live, paused) { if (!live || paused) locked = false }
+    // 멈춘 동안에도 잠가 둘 수 있다(주머니 속) — 러닝이 끝나면 푼다
+    LaunchedEffect(live) { if (!live) locked = false }
     val title = when (mode) {
         FreeLiveMode.Idle -> stringResource(R.string.runflow_free)
         FreeLiveMode.Saving -> stringResource(R.string.run_saving_title)
@@ -432,9 +433,11 @@ internal fun FreeRunLive(
             },
             controls = {
                 when (mode) {
-                    FreeLiveMode.Idle -> ControlRow {
-                        RoundControl(Icons.Rounded.Close, stringResource(R.string.run_cancel), onSecondary, primary = false, tag = "run-finish")
-                        RoundControl(Icons.Rounded.PlayArrow, stringResource(R.string.home_start_run), onPrimary, size = 96.dp, tag = "run-primary-action")
+                    // 취소 | 러닝 시작 — 같은 크기 두 버튼(2026-10-26 사용자 "러닝 시작 버튼이 너무 커")
+                    FreeLiveMode.Idle -> BottomActionBar {
+                        FreeRunButton(stringResource(R.string.run_cancel), onSecondary, Modifier.weight(1f).testTag("run-finish"),
+                            kind = FreeButtonKind.Secondary)
+                        FreeRunButton(stringResource(R.string.home_start_run), onPrimary, Modifier.weight(1f).testTag("run-primary-action"))
                     }
                     FreeLiveMode.Live -> if (paused) {
                         ControlRow {
@@ -470,8 +473,8 @@ internal fun FreeRunLive(
         )
         // 짧게 누름 · 누르는 동안 — 종료 버튼 위 말풍선
         val bubble = if (heldTip) stringResource(R.string.run_hold_tip) else tip
-        if (bubble != null && live && paused) {
-            HoldBubble(bubble, Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 30.dp, bottom = 92.dp).testTag("run-hold-tip"))
+        if (bubble != null && live) {
+            HoldBubble(bubble, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 100.dp).testTag("run-hold-tip"))
         }
         if (locked) LockOverlay(onUnlock = { locked = false })
     }
@@ -479,8 +482,8 @@ internal fun FreeRunLive(
 
 /**
  * 달리는 중 · 일시정지(2026-10-26 시안 active) — 지도가 위를 채우고 왼쪽 위 ← · 제목 알약, 오른쪽 위 GPS 알약(문제가 있으면 그 줄),
- * 아래 판에 이동 거리 · 시간 · 평균 페이스 · 현재 속도(2 × 2), 그 아래 알약 둘.
- * 달리는 중: 일시정지 | 화면 잠금. 멈춤: 다시 달리기 | 길게 눌러 종료(1초) — 종료는 예전처럼 멈춘 뒤에만 있다.
+ * 아래 판에 이동 거리 · 시간 · 평균 페이스 · 현재 속도(2 × 2), 그 아래 버튼 셋 — 일시정지(멈춤이면 다시 달리기) | 정지 | 화면 잠금.
+ * 정지는 늘 보이고 1초 길게 눌러 마친다(짧게 누르면 안내) — 예전엔 멈춘 뒤에만 종료가 나와 끝내는 법을 몰랐다(2026-10-26 사용자).
  * 러닝 정보(⋯) · 크게 보기는 지도 위 작은 원 버튼이다.
  */
 @Composable
@@ -566,18 +569,15 @@ private fun FreeRunMapLive(
                 LiveCell(stringResource(if (numbers.average) R.string.run_label_speed else R.string.run_current_speed), speed, stringResource(R.string.run_speed_unit), LiveTags.speed, Modifier.weight(1f))
             }
             Spacer(Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LivePill(
                     if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
                     stringResource(if (paused) R.string.run_resume_short else R.string.run_pause),
                     primary = true, onClick = onPrimary, modifier = Modifier.weight(1f).testTag("run-primary-action"),
                 )
-                if (paused) {
-                    HoldEndPill(onHoldEnd, onHint, onHolding, Modifier.weight(1f))
-                } else {
-                    LivePill(Icons.Outlined.Lock, stringResource(R.string.run_lock), primary = false, onClick = onLock,
-                        modifier = Modifier.weight(1f).testTag("run-lock"))
-                }
+                HoldEndPill(onHoldEnd, onHint, onHolding, Modifier.weight(1f))
+                LivePill(Icons.Outlined.Lock, stringResource(R.string.run_lock), primary = false, onClick = onLock,
+                    modifier = Modifier.weight(1f).testTag("run-lock"))
             }
         }
     }
@@ -617,35 +617,41 @@ private fun LiveCell(label: String, value: String, unit: String?, tag: String, m
     }
 }
 
-/** 작은 알약 버튼(시안 일시정지 · 길게 눌러 종료) — 주 행동은 블루, 다른 하나는 카드 면 */
+private val LiveActionShape = RoundedCornerShape(20.dp)
+private val LiveActionLabel get() = StepUpUi.type.smallButton.copy(fontSize = 14.sp)
+
+/** 러닝 버튼(일시정지 · 정지 · 화면 잠금) — 아이콘 위 · 이름 아래. 주 행동은 블루, 나머지는 카드 면 */
 @Composable
 private fun LivePill(icon: ImageVector, label: String, primary: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val c = StepUpUi.colors
-    Row(
-        modifier.heightIn(min = 52.dp).pressable(onClick = onClick).clip(RoundedCornerShape(50))
-            .background(if (primary) c.primary else c.card).then(if (primary) Modifier else Modifier.border(1.dp, c.separator, RoundedCornerShape(50)))
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier.heightIn(min = 64.dp).pressable(onClick = onClick).clip(LiveActionShape)
+            .background(if (primary) c.primary else c.card).then(if (primary) Modifier else Modifier.border(1.dp, c.separator, LiveActionShape))
+            .padding(horizontal = 6.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, contentDescription = null, tint = if (primary) c.onPrimary else c.label, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(label, style = StepUpUi.type.button.copy(fontSize = 16.sp), color = if (primary) c.onPrimary else c.label, maxLines = 1)
+        Icon(icon, contentDescription = null, tint = if (primary) c.onPrimary else c.label, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.height(4.dp))
+        Text(label, style = LiveActionLabel, color = if (primary) c.onPrimary else c.label, maxLines = 1,
+            overflow = TextOverflow.Ellipsis)
     }
 }
 
-/** 길게 눌러 종료 알약 — 1초 누르면 마친다. 누르는 동안 알약이 왼쪽부터 찬다. 짧게 누르면 말풍선 안내 */
+/** 정지 — 1초 길게 누르면 마친다. 누르는 동안 버튼이 왼쪽부터 빨갛게 차고 살짝 작아진다. 짧게 누르면 말풍선 안내 */
 @Composable
 private fun HoldEndPill(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: (Boolean) -> Unit, modifier: Modifier) {
     val c = StepUpUi.colors
     val hint = stringResource(R.string.run_hold_end_hint)
-    val label = stringResource(R.string.run_hold_end)
+    val label = stringResource(R.string.run_stop)
     val scope = rememberCoroutineScope()
     val progress = remember { androidx.compose.animation.core.Animatable(0f) }
     var done by remember { mutableStateOf(false) }
     val end by androidx.compose.runtime.rememberUpdatedState(onEnd)
-    val shape = RoundedCornerShape(50)
+    val shape = LiveActionShape
     Box(
-        modifier.heightIn(min = 52.dp).clip(shape).background(c.card).border(1.dp, c.separator, shape)
+        modifier.heightIn(min = 64.dp)
+            .graphicsLayer { val k = 1f - 0.04f * progress.value; scaleX = k; scaleY = k }
+            .clip(shape).background(c.card).border(1.dp, c.separator, shape)
             .semantics {
                 role = androidx.compose.ui.semantics.Role.Button
                 contentDescription = label
@@ -672,12 +678,12 @@ private fun HoldEndPill(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: 
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.matchParentSize().drawBehind {
-            drawRect(c.live.copy(alpha = .22f), size = size.copy(width = size.width * progress.value))
+            drawRect(c.live.copy(alpha = .28f), size = size.copy(width = size.width * progress.value))
         })
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(16.dp).border(2.dp, c.label, RoundedCornerShape(3.dp)))
-            Spacer(Modifier.width(8.dp))
-            Text(label, style = StepUpUi.type.button.copy(fontSize = 16.sp), color = c.label, maxLines = 1)
+        Column(Modifier.padding(horizontal = 6.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.padding(3.dp).size(16.dp).border(2.dp, c.label, RoundedCornerShape(3.dp)))
+            Spacer(Modifier.height(4.dp))
+            Text(label, style = LiveActionLabel, color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
