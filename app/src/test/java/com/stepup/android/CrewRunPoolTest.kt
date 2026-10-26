@@ -100,7 +100,6 @@ class CrewRunPoolTest {
         assertFalse(today.mine.active)
         // 다른 크루에서 했어도 하루 한 번
         assertTrue(today.usedElsewhere)
-        assertFalse(today.verified)
         assertEquals(7, today.levelEvent!!.level)
         assertEquals(0.05, today.rules.headcountBonus(2), 0.0)
         // 날짜나 풀을 모르면 꾸미지 않는다

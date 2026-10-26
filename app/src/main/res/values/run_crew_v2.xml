@@ -33,7 +33,6 @@
     <string name="run_crew_start_n">Start with %1$d ready</string>
     <string name="run_crew_lobby_label">Crew members starting together</string>
     <string name="run_crew_member">Crew member</string>
-    <string name="run_crew_gps_rule">Only people still running within %1$dm of each other 2 minutes after the start count toward the group.</string>
     <string name="run_crew_go_ready_sub">Ready to start</string>
     <string name="run_crew_go_pill">Starting together</string>
     <string name="run_crew_go_together">%1$d people running together</string>

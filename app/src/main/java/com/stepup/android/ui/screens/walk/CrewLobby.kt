@@ -256,11 +256,7 @@ internal fun CrewLobbyContent(
             }
             LobbyFooter(
                 party = party, loading = loading, lobby = lobby, doneToday = doneToday, canNotify = canNotify,
-                onReady = {
-                    // 인증 전이면 한 번 알린다(40 — 출발 · 기여 · 내 보상은 그대로, 인원 보너스에서만 빠진다)
-                    if (room != null && !room.myVerified && room.rules.requiresPhone && !UnverifiedNotice.shown) sheet = LobbySheet.Unverified
-                    else onReady()
-                },
+                onReady = onReady,
                 onCancelReady = onCancelReady,
                 // 출발 전 마지막 확인(33) · 준비된 사람만(34) — 서버가 명단 · 코스 판을 다시 본다
                 onStart = { sheet = LobbySheet.Start },
@@ -334,14 +330,6 @@ internal fun CrewLobbyContent(
                 onWait = { sheet = LobbySheet.None },
             )
         }
-        LobbySheet.Unverified -> UnverifiedSheet(
-            onOk = {
-                UnverifiedNotice.shown = true
-                sheet = LobbySheet.None
-                onReady()
-            },
-            onClose = { sheet = LobbySheet.None },
-        )
         LobbySheet.Leave -> LeaveSheet(
             host = party.isHost,
             onStay = { sheet = LobbySheet.None },
@@ -389,12 +377,7 @@ internal fun CrewLobbyContent(
 }
 
 /** 대기실 위 시트 — 하나만 */
-internal enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Levels, Shoes, Course, Leave, Start, Unverified }
-
-/** 인증 전 안내(40)는 앱을 켠 동안 한 번만 — 출발을 막는 것이 아니다(보너스 인원에서만 빠진다) */
-internal object UnverifiedNotice {
-    var shown = false
-}
+internal enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Levels, Shoes, Course, Leave, Start }
 
 /** 진행자 메뉴(⋯) */
 internal enum class LobbyMenu { Roster, Course, Call, Rules, Leave }
@@ -539,10 +522,6 @@ private fun LobbyNotices(
         }
         if (shoeFailed) add { LobbyNotice(stringResource(R.string.crew5_shoes_failed), Modifier.testTag("party-shoe-failed"), warn = true) }
         if (courseFailed) add { LobbyNotice(stringResource(R.string.crew5_course_change_failed), Modifier.testTag("party-course-failed"), warn = true) }
-        // 인증 전 — 인원 보너스 집계에서만 빠진다(출발 · 기여 · 내 보상은 그대로 — 40). 막지 않는다
-        if (room != null && !room.myVerified && room.rules.requiresPhone && party.phase == PartyPhase.LOBBY) add {
-            LobbyNotice(stringResource(R.string.crew_run_unverified), Modifier.testTag("party-unverified"))
-        }
     }
     notes.forEach {
         it()
@@ -1127,7 +1106,7 @@ private fun RulesSheet(rules: CrewRunRules, onBonus: () -> Unit, onClose: () -> 
 @Composable
 private fun BonusSheet(rules: CrewRunRules, onClose: () -> Unit) {
     LobbySheetFrame(stringResource(R.string.crew5_bonus_title), onClose, Modifier.testTag("party-bonus-sheet")) {
-        Text(stringResource(R.string.crew5_bonus_note, rules.confirmSec / 60, rules.nearM), style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
+        Text(stringResource(R.string.crew5_bonus_note), style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.crew5_bonus_people), style = navyText(12.sp, Color(0xFFB2D1E8), FontWeight.Medium), modifier = Modifier.weight(1f))
@@ -1340,7 +1319,7 @@ private fun StartSheet(party: PartyState, room: CrewRunRoom?, shoes: List<Sneake
                     R.string.crew5_start_bonus_value, CrewRunMath.percent(room.bonusPct), room.crewLevel,
                     CrewRunMath.percent(room.rewardBonus), CrewRunMath.percent(room.bonusPct + room.rewardBonus),
                 ),
-                sub = stringResource(R.string.crew_lobby_preview_note, room.rules.confirmSec / 60, room.rules.nearM),
+                sub = stringResource(R.string.crew_lobby_preview_note),
                 highlight = true, tag = "crew-start-bonus",
             )
             SheetRow(stringResource(R.string.crew5_start_add), "+" + poolNumber(room.myContribution))
@@ -1353,16 +1332,6 @@ private fun StartSheet(party: PartyState, room: CrewRunRoom?, shoes: List<Sneake
             Modifier.testTag("crew-start-go"),
         )
         LobbyTextButton(stringResource(if (partial) R.string.crew5_partial_wait else R.string.common_cancel), onWait, "crew-start-wait")
-    }
-}
-
-/** 보너스 인원 제외 안내(40) — 휴대폰 인증 전이어도 참여 · 기여 · 내 신발 보상은 그대로. 번호 입력 · 문자로 보내지 않는다 */
-@Composable
-private fun UnverifiedSheet(onOk: () -> Unit, onClose: () -> Unit) {
-    LobbySheetFrame(stringResource(R.string.crew5_unverified_title), onClose, Modifier.testTag("crew-unverified")) {
-        Text(stringResource(R.string.crew_run_unverified), style = navyText(14.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
-        Spacer(Modifier.height(20.dp))
-        LobbyPrimaryButton(stringResource(R.string.crew5_unverified_ok), onOk, Modifier.testTag("crew-unverified-ok"))
     }
 }
 

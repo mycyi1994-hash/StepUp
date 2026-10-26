@@ -47,8 +47,8 @@ internal fun crewRunRuleLines(rules: CrewRunRules): List<Pair<String, String>> =
     stringResource(R.string.crew_run_rule_drain_t, CrewRunMath.amount(rules.drainPerMin)) to stringResource(R.string.crew_run_rule_drain_b),
     stringResource(R.string.crew_run_rule_empty_t) to stringResource(R.string.crew_run_rule_empty_b),
     stringResource(R.string.crew_run_rule_once_t) to stringResource(R.string.crew_run_rule_once_b),
-    stringResource(R.string.crew_run_rule_near_t, rules.nearM, rules.confirmSec / 60) to
-        stringResource(R.string.crew_run_rule_near_b, rules.nearM, rules.confirmSec / 60),
+    stringResource(R.string.crew_run_rule_near_t) to
+        stringResource(R.string.crew_run_rule_near_b),
     stringResource(R.string.crew_run_rule_reset_t) to stringResource(R.string.crew_run_rule_reset_b),
     stringResource(R.string.crew_run_rule_reward_t) to stringResource(R.string.crew_run_rule_reward_b),
     stringResource(R.string.crew_run_rule_room, rules.roomMax) to "",
@@ -146,10 +146,6 @@ internal fun CrewRunTodayBlock(today: CrewRunToday, onClick: () -> Unit) {
                     stringResource(R.string.crew_run_level_bonus, level, CrewRunMath.percent(today.staminaBonus), CrewRunMath.percent(today.rewardBonus)),
                     style = navyText(14.sp, CrewNavy.LevelInk, FontWeight.SemiBold, 1.45f), modifier = Modifier.padding(top = 6.dp).testTag("home-crew-run-level"),
                 )
-            }
-            if (!today.verified && today.rules.requiresPhone) {
-                Spacer(Modifier.height(10.dp))
-                NavyNote(stringResource(R.string.crew_run_unverified), Modifier.testTag("home-crew-run-unverified"))
             }
         }
     }

@@ -33,7 +33,6 @@
     <string name="run_crew_start_n">準備した%1$d人とスタート</string>
     <string name="run_crew_lobby_label">一緒にスタートするクルー</string>
     <string name="run_crew_member">クルー</string>
-    <string name="run_crew_gps_rule">出発から2分後も互いに%1$dm以内で一緒に走った人だけが、一緒に走った人数に数えられます。</string>
     <string name="run_crew_go_ready_sub">スタート準備完了</string>
     <string name="run_crew_go_pill">一緒にスタート</string>
     <string name="run_crew_go_together">%1$d人で一緒に走ります</string>
