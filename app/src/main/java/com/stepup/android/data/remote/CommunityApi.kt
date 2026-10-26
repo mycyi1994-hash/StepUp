@@ -44,6 +44,8 @@ data class PostRow(
     @SerialName("run_duration_s") val runDurationS: Int? = null,
     /** 코스 그림 "위도,경도;…" — 경로 없는 러닝이면 빈 문자열 */
     @SerialName("run_route") val runRoute: String? = null,
+    /** 번개러닝의 달리는 방식(0076) — TOGETHER 같이 뛰기 · REMOTE 원격 뛰기. 예전 서버면 없다(같이 뛰기) */
+    @SerialName("run_mode") val runMode: String? = null,
 )
 
 /** 글쓰기에 붙일 수 있는 러닝 한 줄 — `story_runs` 의 runs */
@@ -162,6 +164,7 @@ class CommunityApi(private val server: StepUpServer) {
         lat: Double? = null,
         lng: Double? = null,
         clientKey: String? = null,
+        remote: Boolean = false,
     ): ServerResult<Long> {
         fun request(key: String?) = jsonBody {
             put("p_category", category)
@@ -175,6 +178,8 @@ class CommunityApi(private val server: StepUpServer) {
             put("p_lat", lat ?: JsonNull)
             put("p_lng", lng ?: JsonNull)
             if (!key.isNullOrBlank()) put("p_client_key", key)
+            // 원격 뛰기 번개만 방식을 보낸다(0076) — 같이 뛰기는 예전 요청 그대로
+            if (remote) put("p_run_mode", "REMOTE")
         }
         val result = rpc("post_create", request(clientKey)) { it.trim().toLongOrNull() }
         // 서버에 0062 가 아직 없다 — 예전 모양으로 한 번 더(요청 키 없이) 보낸다

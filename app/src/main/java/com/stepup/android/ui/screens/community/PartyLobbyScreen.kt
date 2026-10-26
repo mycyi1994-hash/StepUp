@@ -447,6 +447,21 @@ fun PartyLobbyContent(
         },
     ) {
         FlashTitleRow(title, monogram.ifBlank { initialsOf(title) })
+        // 달리는 방식 · 모임 시각 · 만나는 곳(원격이면 각자의 위치) — 번개 글에서 받은 값(0076)
+        if (party.partyId != null) {
+            val plan = buildList {
+                add(stringResource(if (party.roomMode == com.stepup.android.domain.RoomMode.REMOTE) R.string.d26_mode_remote else R.string.d26_mode_together))
+                if (party.planAtLocal > 0) add(com.stepup.android.ui.screens.home.whenText(party.planAtLocal))
+                when {
+                    party.roomMode == com.stepup.android.domain.RoomMode.REMOTE -> add(stringResource(R.string.d26_room_remote_line))
+                    party.meetPlace != null -> add(stringResource(R.string.d26_room_meet, party.meetPlace))
+                }
+            }
+            Text(
+                plan.joinToString(" · "), style = runTextStyle(13.sp, t.label, FontWeight.SemiBold),
+                modifier = Modifier.padding(top = 8.dp).testTag("party-lobby-plan"),
+            )
+        }
         Spacer(Modifier.height(14.dp))
         // 방에 못 들어갔거나 멈췄으면 왜인지부터
         party.problem?.let { problem ->
@@ -483,8 +498,9 @@ fun PartyLobbyContent(
                     RunTextAction(stringResource(R.string.run_cr_notify), onNotify, Modifier.fillMaxWidth().testTag("party-notify-link"),
                         chevron = true)
                 }
+                // 인원 보너스는 함께 출발한 사람 모두(0076 — 거리 · 원격 상관없이)
                 Text(
-                    stringResource(R.string.party_gps_rule, com.stepup.android.data.repo.CrewRepository.NEAR_DISTANCE_M),
+                    stringResource(R.string.tg_party_rule),
                     style = runTextStyle(12.sp, t.muted), modifier = Modifier.padding(top = 6.dp),
                 )
             }

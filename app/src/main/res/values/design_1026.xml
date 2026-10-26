@@ -40,7 +40,7 @@
     <string name="d26_create_course_set">Set a course</string>
     <string name="d26_create_mode">How you run</string>
     <string name="d26_create_mode_together_desc">Meet at one place and start together.</string>
-    <string name="d26_create_mode_remote_desc">Everyone starts from where they are at the same time. No group bonus.</string>
+    <string name="d26_create_mode_remote_desc">Everyone starts from where they are at the same time.</string>
     <string name="d26_create_pick_course">Set the route on the map</string>
     <string name="d26_create_course_km">%1$s · %2$s km</string>
     <string name="d26_create_course_change">Change</string>

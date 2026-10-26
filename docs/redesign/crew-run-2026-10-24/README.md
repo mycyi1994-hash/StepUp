@@ -150,7 +150,7 @@ screen-spec.json · rules.json · design-tokens.json · 시안 70장 묶음 [con
 | 36 | 3 · 2 · 1 · 0 · StepUP! | 카운트다운 | `CrewLaunchOverlay` → `FreeRunStartStage`, 출발 시각 = 펼침, 러닝이 켜진 뒤 러닝 화면을 펼친다 · 뒤로 막음 · 모션 줄이기 | 구현 | C36-countdown · CR08 |
 | 37 | 출발 위치 500m 밖 | 시트 | — | 없음(D03) | |
 | 38 · 39 | GPS · 위치 권한 | 시트 | 기존 준비 전 확인(`CrewReadyCheckSheet`) · OS 권한 · 위치 기능 — 위치를 기다리는 화면은 두지 않는다(2026-10-16 결정) | 기존 | CR17 |
-| 40 | 보너스 인원 제외 안내 | 시트 | `UnverifiedSheet` — 준비를 누를 때 앱을 켠 동안 한 번, 막지 않는다(번호 입력 · SMS 없음) | 구현 | C40-unverified |
+| 40 | 보너스 인원 제외 안내 | — | 없앴다(2026-10-26 — 휴대폰 인증을 쓰지 않는다, 서버 0075) | 제거 | — |
 | 41 ~ 44 | 2분 확인 · 확정 · 일부 제외 · 확인 불가 | 지도 | 기존 `CrewRunLive`(인원 확인 중 칩 · 확정/일부/없음 시트) | 기존 | CR09 ~ |
 | 45 ~ 48 | 러닝 · 휴식 · 20% · 0 | 지도 | 기존 `CrewRunLive`(공용 체력 · 적립 멈춤 띠) | 기존 | CR09 ~ CR12 |
 | 49 · 50 | 끝내기 · 마지막 자동 종료 | 시트 | 기존(`crew_finish_once` · `crew_alone_*`) | 기존 | |

@@ -116,6 +116,10 @@ fun CommunityScreen(
     crewActions: com.stepup.android.ui.screens.community.crew.CrewListActions? = null,
     /** 크루 채팅(세 번째 글자 탭) — 방 열기 */
     onOpenChat: (String) -> Unit = {},
+    /** 모집 중 — 고른 크루 대기실(crewId, 방 번호) · 새 크루 대기실 · 번개러닝 모집 글(2026-10-26 함께 뛰기 한 탭) */
+    onOpenRoom: (String, Long) -> Unit = { _, _ -> },
+    onCreateCrewRoom: (String) -> Unit = {},
+    onCreateFlash: () -> Unit = {},
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
     storiesViewModel: com.stepup.android.ui.screens.community.stories.StoriesViewModel =
         viewModel(factory = com.stepup.android.ui.screens.community.stories.StoriesViewModel.Factory),
@@ -139,6 +143,15 @@ fun CommunityScreen(
             viewModel.selectTab(CommunityTab.BOARD)
             segment = SEGMENT_CREWS; allMeetups = false
             com.stepup.android.ui.screens.community.crew.CrewListFocus.requested = false
+        }
+    }
+    // 러닝 시작 메뉴의 "크루"로 왔다 — 모집 중 칸(크루 러닝 · 번개러닝 목록)
+    val togetherRequested = TogetherFocus.requested
+    LaunchedEffect(togetherRequested) {
+        if (togetherRequested) {
+            viewModel.selectTab(CommunityTab.BOARD)
+            segment = SEGMENT_MEETUPS; allMeetups = false
+            TogetherFocus.requested = false
         }
     }
     // 채팅 화면에서 "채팅 목록으로" · 참여 종료(32)로 돌아왔다
@@ -227,12 +240,15 @@ fun CommunityScreen(
                 onOpenFlash = onOpenFlash,
                 onOpenMap = onOpenMap,
             )
-            segment == SEGMENT_MEETUPS -> MeetupsSegment(
+            // 모집 중(2026-10-26) — 내 크루들의 대기실과 번개러닝을 한 목록에, 아래 "함께 뛰기 만들기" 하나
+            segment == SEGMENT_MEETUPS -> TogetherRoomsSegment(
                 viewModel = viewModel,
                 onOpenFlash = onOpenFlash,
-                onWritePost = { onWritePost("") },
+                onOpenRoom = onOpenRoom,
+                onCreateCrewRoom = onCreateCrewRoom,
+                onCreateFlash = onCreateFlash,
                 onAllMeetups = { allMeetups = true },
-                onOpenMyCrews = { viewModel.selectTab(CommunityTab.CREW) },
+                onFindCrews = { segment = SEGMENT_CREWS; allMeetups = false },
             )
             segment == SEGMENT_CREWS -> com.stepup.android.ui.screens.community.crew.CrewListTab(
                 actions = crewActions ?: com.stepup.android.ui.screens.community.crew.CrewListActions(

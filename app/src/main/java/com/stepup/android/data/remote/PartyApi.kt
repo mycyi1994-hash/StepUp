@@ -46,6 +46,11 @@ data class PartyStateRow(
     @SerialName("course_km") val courseKm: Double? = null,
     /** 코스 판 — 진행자가 코스를 바꿀 때마다 오른다. 코스 없는 방은 0 */
     @SerialName("course_rev") val courseRev: Int = 0,
+    /** 달리는 방식 · 만나는 곳 · 출발 예정 시각 · 방의 정원(0074 — 번개 방은 글에서 받는다, 0076). 예전 서버면 없다 */
+    @SerialName("run_mode") val runMode: String? = null,
+    @SerialName("meet_place") val meetPlace: String? = null,
+    @SerialName("plan_at") val planAt: String? = null,
+    val capacity: Int? = null,
 )
 
 /** 열린 대기실 하나 — `party_rooms` 의 rooms 한 줄(0072) */

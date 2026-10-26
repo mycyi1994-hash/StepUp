@@ -33,7 +33,6 @@
     <string name="run_crew_start_n">준비한 %1$d명과 출발</string>
     <string name="run_crew_lobby_label">함께 출발할 크루원</string>
     <string name="run_crew_member">크루원</string>
-    <string name="run_crew_gps_rule">출발 2분 뒤에도 서로 %1$dm 안에서 같이 달린 사람만 함께 달린 인원으로 세요.</string>
     <string name="run_crew_go_ready_sub">출발 준비 완료</string>
     <string name="run_crew_go_pill">함께 출발</string>
     <string name="run_crew_go_together">%1$d명이 함께 달려요</string>

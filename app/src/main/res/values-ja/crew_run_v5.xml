@@ -163,7 +163,7 @@
     <string name="crew5_bonus_people">人数</string>
     <string name="crew5_bonus_value">ボーナス</string>
     <string name="crew5_bonus_n">%1$d人</string>
-    <string name="crew5_bonus_note">同じクルーで、出発時と%1$d分後の両方に%2$dm以内にいる、電話認証済みの人だけを数えます。0〜1人はボーナスなし。レベルボーナスは別に加算します。</string>
+    <string name="crew5_bonus_note">同じクルーで一緒に出発した人は全員数えます。0〜1人はボーナスなし。レベルボーナスは別に加算されます。</string>
 
     <!-- 14 · 15 · 31 名簿 -->
     <string name="crew5_roster_host_title">参加者の管理</string>
@@ -195,8 +195,6 @@
     <string name="crew5_partial_body">準備中の%1$d人は今回の出発から外れ、ボーナスと貢献にも含まれません。</string>
     <string name="crew5_partial_go">準備した%1$d人で出発</string>
     <string name="crew5_partial_wait">もう少し待つ</string>
-    <string name="crew5_unverified_title">人数ボーナスからだけ外れます</string>
-    <string name="crew5_unverified_ok">確認して準備</string>
     <string name="crew5_starting">出発の合図を合わせています</string>
 
     <!-- 61 · 68 ~ 70 例外 -->
@@ -207,7 +205,7 @@
     <string name="crew5_closed_title">待機室が閉じました</string>
     <string name="crew5_closed_body">全員が出たか、長く空いていた待機室です。別の待機室に入るか新しく開いてください。</string>
     <string name="crew5_full_title">待機室が満員です</string>
-    <string name="crew5_full_body">1つの待機室には%1$d人まで参加できます。別の待機室を見るか新しく開いてください。</string>
+    <string name="crew5_full_body">この待機室は定員に達しました。別の待機室を見るか新しく開いてください。</string>
     <string name="crew5_started_title">すでに出発した待機室です</string>
     <string name="crew5_started_body">出発したランに途中から加わることはできません。別の待機室を見るか新しく開いてください。</string>
     <string name="crew5_missed_title">出発に間に合いませんでした</string>

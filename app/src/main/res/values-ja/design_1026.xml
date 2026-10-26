@@ -40,7 +40,7 @@
     <string name="d26_create_course_set">コースを設定</string>
     <string name="d26_create_mode">走り方</string>
     <string name="d26_create_mode_together_desc">同じ場所に集まって一緒に出発します。</string>
-    <string name="d26_create_mode_remote_desc">それぞれの場所から同じ時間に出発します。人数ボーナスはありません。</string>
+    <string name="d26_create_mode_remote_desc">それぞれの場所から同じ時間に出発します。</string>
     <string name="d26_create_pick_course">地図で一緒に走るルートを設定します</string>
     <string name="d26_create_course_km">%1$s · %2$s km</string>
     <string name="d26_create_course_change">変更</string>

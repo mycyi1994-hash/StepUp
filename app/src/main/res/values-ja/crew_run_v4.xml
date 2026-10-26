@@ -10,7 +10,6 @@
     <string name="crew_run_done_detail">自分が加えた体力 +%1$s · 使った体力 %2$s</string>
     <string name="crew_run_done_elsewhere">今日は %1$s でクルーランを終えました</string>
     <string name="crew_run_running_now">いまクルーラン中です</string>
-    <string name="crew_run_unverified">電話番号認証がまだなので人数ボーナスの集計からだけ外れます。一緒に走り、自分のシューズの報酬はそのまま受け取れます。</string>
     <string name="crew_run_level_up_title">みんなで作った次のレベル</string>
     <string name="crew_run_level_up_body">Lv.%1$d 達成 · クルー体力 +%2$s%% · クルー報酬 +%3$s%%</string>
     <string name="crew_run_level_up_note">クルー各自の有効距離が積み上がります。クルーレベルは下がりません。</string>
@@ -24,8 +23,8 @@
     <string name="crew_run_rule_empty_b">記録は続きます。個人の耐久度には切り替わらず、共用体力の修理はありません。</string>
     <string name="crew_run_rule_once_t">クルーランは1日1回</string>
     <string name="crew_run_rule_once_b">クルーを移っても同じです。一時停止はできます。終えると再入場できず、ひとりだけ残ると自動で終わります。</string>
-    <string name="crew_run_rule_near_t">%1$dm · 出発 %2$d 分後に確認</string>
-    <string name="crew_run_rule_near_b">同じクルーで、出発時と %2$d 分後の両方で %1$dm 以内、電話番号認証済みの人だけがボーナスに含まれます。認証前でも走れます。</string>
+    <string name="crew_run_rule_near_t">一緒に出発したクルー全員</string>
+    <string name="crew_run_rule_near_b">同じ待機室から一緒に出発した同じクルーのメンバーは全員、人数ボーナスに含まれます。0〜1人なら人数ボーナスはありません。</string>
     <string name="crew_run_rule_reset_t">毎日 00:00(韓国時間)</string>
     <string name="crew_run_rule_reset_b">共用体力と1日の参加回数がリセットされます。累計距離とクルーレベルはそのままです。</string>
     <string name="crew_run_rule_reward_t">報酬 = 自分のシューズ × (1 + 人数 + レベル)</string>
@@ -38,7 +37,7 @@
     <string name="crew_lobby_pool_fresh_value">まだ 0 · 自分が加える体力 +%1$s</string>
     <string name="crew_lobby_bonus">予想ボーナス</string>
     <string name="crew_lobby_bonus_value">人数 %1$d人 +%2$s%% · Lv.%3$d +%4$s%%</string>
-    <string name="crew_lobby_preview_note">プレビューです。出発 %1$d 分後も %2$dm 以内にいる、電話番号認証済みの同じクルーで確定します。</string>
+    <string name="crew_lobby_preview_note">準備したクルーが一緒に出発すると、全員が人数ボーナスに含まれます。</string>
     <string name="crew_lobby_pool_zero">いま 0 でも一緒に出発できます。出発時に選んだシューズの最大耐久度が加わります。共用体力は修理できません。</string>
     <string name="crew_lobby_done_elsewhere">今日は %1$s でクルーランをしました。クルーを移っても1日1回です。</string>
     <string name="crew_lobby_need_two">クルーランは2人以上準備すると出発できます。</string>
@@ -54,13 +53,12 @@
     <string name="crew_live_pool_low_body">残りの共用体力は一緒に走る人たちが使っています。0 になると獲得だけ止まり、記録は続きます。個人のシューズ耐久度は使いません。</string>
     <string name="crew_live_pool_low_ok">確認して走り続ける</string>
     <string name="crew_live_pool_empty">共用体力を使い切りました · 獲得は止まり記録は続きます</string>
-    <string name="crew_live_unverified">電話番号認証前 · 人数集計からだけ外れます</string>
     <string name="crew_bonus_confirmed_title">%1$d人、人数ボーナス確定</string>
-    <string name="crew_bonus_confirmed_body">出発2分後も一緒に走っています。シューズ能力は混ぜません — 各自が選んだシューズを基準に報酬を受け取ります。</string>
+    <string name="crew_bonus_confirmed_body">一緒に出発したクルー全員が人数ボーナスを受け取ります。シューズの能力は混ぜません — それぞれ選んだシューズ基準で報酬を受け取ります。</string>
     <string name="crew_bonus_partial_title">ボーナス人数は %1$d 人です</string>
-    <string name="crew_bonus_partial_body">一緒に出発した %1$d 人のうち %2$d 人は確認時に %3$dm 外にいたか電話番号認証前のため集計から外れました。記録は続きます。</string>
+    <string name="crew_bonus_partial_body">一緒に出発した%1$d人のうち%2$d人は人数に含まれませんでした。ランの記録は続きます。</string>
     <string name="crew_bonus_none_title">今回は人数ボーナスがありません</string>
-    <string name="crew_bonus_none_body">出発2分後に一緒だと確認された認証済みクルーが2人未満でした。自分のシューズ基準の報酬とレベル報酬はそのままです。</string>
+    <string name="crew_bonus_none_body">一緒に出発したクルーが2人未満です。シューズ基準の報酬とレベル報酬はそのままです。</string>
     <string name="crew_bonus_row_headcount">人数ボーナス</string>
     <string name="crew_bonus_row_level">Lv.%1$d 報酬</string>
     <string name="crew_bonus_row_total">自分のシューズ基準の報酬に合計</string>

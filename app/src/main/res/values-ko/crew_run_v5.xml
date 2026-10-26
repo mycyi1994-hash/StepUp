@@ -163,7 +163,7 @@
     <string name="crew5_bonus_people">인원</string>
     <string name="crew5_bonus_value">보너스</string>
     <string name="crew5_bonus_n">%1$d명</string>
-    <string name="crew5_bonus_note">같은 크루 · 출발할 때와 %1$d분 뒤 모두 %2$dm 안 · 휴대폰 인증을 마친 인원만 세요. 0~1명은 보너스가 없어요. 레벨 보너스는 따로 더해요.</string>
+    <string name="crew5_bonus_note">같은 크루로 함께 출발한 사람은 모두 세요. 0~1명은 보너스가 없어요. 레벨 보너스는 따로 더해요.</string>
 
     <!-- 14 · 15 · 31 명단 -->
     <string name="crew5_roster_host_title">참가자 관리</string>
@@ -195,8 +195,6 @@
     <string name="crew5_partial_body">준비 중인 %1$d명은 이번 출발에서 빠지고, 보너스와 기여에도 들어가지 않아요.</string>
     <string name="crew5_partial_go">준비된 %1$d명과 출발</string>
     <string name="crew5_partial_wait">더 기다리기</string>
-    <string name="crew5_unverified_title">인원 보너스에서만 빠져요</string>
-    <string name="crew5_unverified_ok">확인하고 준비</string>
     <string name="crew5_starting">출발 신호를 맞추는 중이에요</string>
 
     <!-- 61 · 68 ~ 70 예외 -->
@@ -207,7 +205,7 @@
     <string name="crew5_closed_title">대기실이 닫혔어요</string>
     <string name="crew5_closed_body">모두 나갔거나 오래 비어 있던 대기실이에요. 다른 대기실에 들어가거나 새로 열어 주세요.</string>
     <string name="crew5_full_title">대기실이 가득 찼어요</string>
-    <string name="crew5_full_body">한 대기실에는 %1$d명까지 함께해요. 다른 대기실을 보거나 새로 열어 주세요.</string>
+    <string name="crew5_full_body">이 대기실은 정원이 다 찼어요. 다른 대기실을 보거나 새로 열어 주세요.</string>
     <string name="crew5_started_title">이미 출발한 대기실이에요</string>
     <string name="crew5_started_body">출발한 러닝에는 중간에 함께할 수 없어요. 다른 대기실을 보거나 새로 열어 주세요.</string>
     <string name="crew5_missed_title">출발을 놓쳤어요</string>

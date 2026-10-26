@@ -3123,8 +3123,9 @@ begin
 end $$;
 call pg_temp.must_fail($q$ select public.goal_claim() $q$, '목표 보너스는 하루 한 번');
 
--- 파티 인원은 출발 명단으로 센다
+-- 파티 인원은 출발 명단으로 센다 — 아래는 예전 규칙(0056 곁에서 같이 뛴 무리, 설정 NEAR) 검사. 0076 기본(ALL)은 맨 끝에서 본다
 reset role;
+update public.economy_settings set value = '"NEAR"' where key = 'party_bonus_rule';
 do $$
 declare v_party bigint; v_at timestamptz := now() - interval '7 hours';
 begin
@@ -3174,6 +3175,7 @@ begin
    where party_id = v_party and user_a = '33333333-3333-3333-3333-333333333333'
      and user_b = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2';
 end $$;
+update public.economy_settings set value = '"ALL"' where key = 'party_bonus_rule';
 
 -- 하루 금액 상한 — 가입 7일 안은 절반
 -- 신발이 닳은 정도와 상관없이 상한에 걸리게: 신발을 채우고, 상한은 오늘 앞서 받은 것 + 2 SUP 의 두 배로 둔다(신규는 절반).
@@ -8150,14 +8152,13 @@ do $$
 declare v jsonb;
 begin
   v := public.crew_run_room(pg_temp.fx('p71')::bigint);
-  perform pg_temp.ok((v->>'ready_count')::int = 4 and (v->'bonus_preview'->>'count')::int = 3
-                     and (v->'bonus_preview'->>'pct')::numeric = 0.10 and (v->'bonus_preview'->>'next_pct')::numeric = 0.15
+  perform pg_temp.ok((v->>'ready_count')::int = 4 and (v->'bonus_preview'->>'count')::int = 4
+                     and (v->'bonus_preview'->>'pct')::numeric = 0.15 and (v->'bonus_preview'->>'next_pct')::numeric = 0.20
                      and (v->>'my_contribution')::numeric = 136 and (v->>'crew_level')::int = 7
                      and (v->'pool'->>'total')::numeric = 0 and (v->'pool'->>'remaining')::numeric = 0,
-    format('대기실 미리보기 — 준비 4명 중 인증 3명 +10%%(한 명 더면 +15%%) · 내 기여 100 × 1.36 = 136 · 오늘 0/0 (%s)', v - 'members' - 'rules'));
-  perform pg_temp.ok(not (v->'members' @> '[{"name":"미인증","verified":true}]'::jsonb)
-                     and not exists (select 1 from jsonb_array_elements(v->'members') m where m ? 'phone'),
-    '명단에는 인증 여부(참 · 거짓)만 — 번호는 보이지 않는다');
+    format('대기실 미리보기 — 준비 4명 모두 +15%%(한 명 더면 +20%%, 휴대폰 인증 없음 0075) · 내 기여 100 × 1.36 = 136 · 오늘 0/0 (%s)', v - 'members' - 'rules'));
+  perform pg_temp.ok(not exists (select 1 from jsonb_array_elements(v->'members') m where m ? 'phone'),
+    '명단에 휴대폰 번호는 없다');
   perform public.party_start(pg_temp.fx('p71')::bigint);
 end $$;
 reset role;
@@ -8243,20 +8244,20 @@ do $$
 declare v jsonb;
 begin
   v := public.crew_run_beat(pg_temp.fx('p71')::bigint, 'RUNNING');
-  perform pg_temp.ok((v->>'crew_run')::boolean and v->'bonus'->>'status' = 'CONFIRMED' and (v->'bonus'->>'count')::int = 3
-                     and (v->'bonus'->>'pct')::numeric = 0.10 and (v->'level'->>'pct')::numeric = 0.06
+  perform pg_temp.ok((v->>'crew_run')::boolean and v->'bonus'->>'status' = 'CONFIRMED' and (v->'bonus'->>'count')::int = 4
+                     and (v->'bonus'->>'pct')::numeric = 0.15 and (v->'level'->>'pct')::numeric = 0.06
                      and (v->>'participants')::int = 4 and (v->'pool'->>'total')::numeric = 476
                      and v->>'earning_state' = 'ACCRUING',
-    format('2분 뒤 — 출발 · 2분 모두 곁이었던 무리 넷 중 인증된 셋 +10%%, 레벨 +6%% (%s)', v - 'pool'));
+    format('2분 뒤 — 함께 출발한 크루원 넷 모두 +15%%(거리 · 인증 상관없이, 0075), 레벨 +6%% (%s)', v - 'pool'));
 end $$;
 call pg_temp.login('71000000-0000-0000-0000-000000000004');
 do $$
 declare v jsonb;
 begin
   v := public.crew_run_beat(pg_temp.fx('p71')::bigint, 'PAUSED');
-  perform pg_temp.ok(v->>'state' = 'PAUSED' and (v->'bonus'->>'count')::int = 3 and not (v->'bonus'->>'verified')::boolean
+  perform pg_temp.ok(v->>'state' = 'PAUSED' and (v->'bonus'->>'count')::int = 4 and (v->'bonus'->>'verified')::boolean
                      and v->>'earning_state' = 'PAUSED',
-    '미인증자도 같은 무리의 인원 보너스를 받는다 — 자기는 인원에 들지 않을 뿐(T32)');
+    '휴대폰 인증은 보지 않는다 — 넷 모두 인원에 든다(0075)');
 end $$;
 -- 끝내기 — a · b · c 가 끝내면 쉬고 있는 d 가 마지막 한 사람으로 자동 종료(T37)
 call pg_temp.login('71000000-0000-0000-0000-000000000002');
@@ -8307,9 +8308,9 @@ begin
   select * into c from economy.crew_runs where user_id = s.user_id and day = economy.game_day(now());
   v_base := round(1500 * 0.01 * 1.1, 4);
   perform pg_temp.ok(s.energy_pool = 'CREW' and s.crew_id = v_x and s.energy_used = 0 and s.party_size = 4
-                     and c.base_sup = v_base and c.headcount_sup = round(v_base * 0.10, 4) and c.level_sup = round(v_base * 0.06, 4)
-                     and c.total_sup = s.points_awarded and s.points_awarded = v_base + round(v_base * 0.10, 4) + round(v_base * 0.06, 4),
-    format('보상 = 기본 %s(고른 신발 효율 10%%) + 인원 10%% + 레벨 6%% = %s — 하루 상한 5 와 상관없다 (T17 · T20)', c.base_sup, s.points_awarded));
+                     and c.base_sup = v_base and c.headcount_sup = round(v_base * 0.15, 4) and c.level_sup = round(v_base * 0.06, 4)
+                     and c.total_sup = s.points_awarded and s.points_awarded = v_base + round(v_base * 0.15, 4) + round(v_base * 0.06, 4),
+    format('보상 = 기본 %s(고른 신발 효율 10%%) + 인원 15%% + 레벨 6%% = %s — 하루 상한 5 와 상관없다 (T17 · T20)', c.base_sup, s.points_awarded));
   perform pg_temp.ok((select dur_now from public.market_sneakers where id = pg_temp.fx('s71_a')::bigint) = 75
                      and not exists (select 1 from public.energy_days where user_id = s.user_id),
     '크루 러닝은 개인 신발 내구도 · 개인 에너지를 쓰지 않는다(T09)');
@@ -8337,7 +8338,7 @@ do $$
 declare v jsonb; t jsonb;
 begin
   v := public.crew_run_result(pg_temp.fx('t71')::timestamptz + interval '5 seconds');
-  perform pg_temp.ok((v->>'settled')::boolean and (v->'reward'->>'headcount_pct')::numeric = 0.10
+  perform pg_temp.ok((v->>'settled')::boolean and (v->'reward'->>'headcount_pct')::numeric = 0.15
                      and (v->'reward'->>'total')::numeric = (v->'reward'->>'base')::numeric + (v->'reward'->>'headcount')::numeric
                                                              + (v->'reward'->>'level')::numeric
                      and (v->'xp'->>'level_before')::int = 7 and (v->'xp'->>'level_after')::int = 8
@@ -8347,7 +8348,7 @@ begin
   t := public.crew_run_today('71000000-0000-0000-0000-0000000000cc');
   perform pg_temp.ok((t->'mine'->>'used_today')::boolean and t->'mine'->>'state' = 'ENDED'
                      and (t->'pool'->>'total')::numeric = 476 and (t->'pool'->>'contributors')::int = 4
-                     and (t->'rules'->>'requires_phone')::boolean and (t->>'verified')::boolean
+                     and not (t->'rules'->>'requires_phone')::boolean and (t->>'verified')::boolean
                      and (t->>'crew_level')::int = 8 and (t->'level_event'->>'level')::int = 8,
     '크루 홈 — 오늘 참여함(끝남) · 오늘 공용 체력 476 · 기여 4명 · 레벨 8');
 end $$;
@@ -8395,7 +8396,8 @@ declare s public.walk_sessions;
 begin
   select * into s from public.walk_sessions where id = pg_temp.fx('r71_y')::bigint;
   perform pg_temp.ok(s.energy_pool = 'CREW' and s.rewarded_steps = 100 and s.verdict_reason like '%크루 체력을 다 썼습니다%'
-                     and s.points_awarded = round(100 * 0.01, 4),
+                     -- 0075 부터 둘이 함께 출발하면 2분 전에 끝내도 인원 보너스(2명)가 붙는다 — 기본은 100걸음 몫 그대로
+                     and s.points_awarded = round(100 * 0.01, 4) + round(round(100 * 0.01, 4) * economy.crew_headcount_bonus(2), 4),
     format('0 이 된 뒤의 경로 거리만큼 적립 걸음을 뺀다 — 200 중 앞 30초 %s걸음, 기록은 그대로 (T10 · T11)', s.rewarded_steps));
 end $$;
 
@@ -9161,10 +9163,22 @@ declare v_day date;
 begin
   select day into v_day from economy.crew_runs where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint;
   perform economy.crew_run_bonus_eval('74000000-0000-0000-0000-000000000003', v_day, true);
-  perform pg_temp.ok((select bonus_status || ':' || bonus_reason from economy.crew_runs
-                       where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint) = 'UNAVAILABLE:REMOTE'
+  perform pg_temp.ok((select bonus_status from economy.crew_runs
+                       where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint) = 'CONFIRMED'
+                     and (select bonus_count from economy.crew_runs
+                       where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint)
+                         = (select count(*) from economy.crew_runs where party_id = pg_temp.fx('p74_r')::bigint)
                      and (select run_mode from public.parties where id = pg_temp.fx('p74_r')::bigint) = 'REMOTE',
-    '원격 뛰기 방은 출발해도 인원 보너스를 세지 않는다(REMOTE) — 공용 체력 · 보상은 그대로');
+    '원격 뛰기 방도 함께 출발한 크루원 모두 인원 보너스(0075 — 거리 · 원격 상관없이)');
+  -- 예전 규칙(NEAR)으로 돌리면 원격 방은 다시 세지 않는다
+  update public.economy_settings set value = '"NEAR"' where key = 'crew_bonus_rule';
+  update economy.crew_runs set bonus_status = 'PENDING', bonus_count = 0, bonus_pct = 0, bonus_reason = null
+   where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint;
+  perform economy.crew_run_bonus_eval('74000000-0000-0000-0000-000000000003', v_day, true);
+  perform pg_temp.ok((select bonus_status || ':' || bonus_reason from economy.crew_runs
+                       where user_id = '74000000-0000-0000-0000-000000000003' and party_id = pg_temp.fx('p74_r')::bigint) = 'UNAVAILABLE:REMOTE',
+    '설정 crew_bonus_rule = NEAR 면 예전 규칙(원격 방은 세지 않음)으로 돌아간다');
+  update public.economy_settings set value = '"ALL"' where key = 'crew_bonus_rule';
 end $$;
 -- 옛 party_create 는 같이 뛰기 · 정원 20 그대로
 set role authenticated;
@@ -9178,6 +9192,67 @@ begin
     '옛 앱의 party_create 는 같이 뛰기 · 정원 20(0074 전과 같다)');
 end $$;
 reset role;
+select set_config('request.jwt.claims', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+--  0076 같이 뛰기 한 탭 — 번개러닝 원격 뛰기 · 함께 출발한 사람 모두 보너스 (2026-10-26)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 번개러닝 원격 · 함께 출발한 모두(0076) ─────────────────'
+set role authenticated;
+call pg_temp.login('74000000-0000-0000-0000-000000000001');
+do $$
+declare v_id bigint; r public.posts;
+begin
+  v_id := public.post_create('FLASH', null, '원격 번개', '', '여의도', 5, now() + interval '1 day', 6, 37.5, 127.0, null, 'remote');
+  insert into fix (k, v) values ('p76_remote', v_id::text);
+  select * into r from public.posts where id = v_id;
+  perform pg_temp.ok(r.run_mode = 'REMOTE' and r.place = '' and r.lat is null and r.lng is null and r.capacity = 6,
+    '원격 번개는 장소 · 좌표 없이 올라간다(0076)');
+  perform pg_temp.ok((select run_mode from public.post_feed where id = v_id) = 'REMOTE', '글 목록에 달리는 방식이 보인다');
+  v_id := public.post_create('FLASH', null, '같이 번개', '', '반포 한강공원', 5, now() + interval '2 hours', 4, 37.51, 126.99);
+  insert into fix (k, v) values ('p76_together', v_id::text);
+  perform pg_temp.ok((select run_mode from public.posts where id = v_id) = 'TOGETHER', '방식을 보내지 않으면(옛 앱) 같이 뛰기');
+  v_id := public.post_create('FREE', null, '그냥 글', '', '', 0, null, 0, null, null, null, 'REMOTE');
+  perform pg_temp.ok((select run_mode from public.posts where id = v_id) = 'TOGETHER', '번개가 아닌 글은 방식이 없다(같이 뛰기로 둔다)');
+end $$;
+call pg_temp.must_fail(
+  $q$ select public.post_create('FLASH', null, '이상한 방식', '', '', 5, now() + interval '1 day', 4, null, null, null, 'FLY') $q$,
+  '달리는 방식은 같이 뛰기 · 원격 뛰기 둘뿐');
+reset role;
+do $$
+declare v_party bigint; p public.parties;
+begin
+  insert into public.parties (flash_post_id, host_id) values (pg_temp.fx('p76_remote')::bigint, '74000000-0000-0000-0000-000000000001')
+  returning id into v_party;
+  select * into p from public.parties where id = v_party;
+  perform pg_temp.ok(p.run_mode = 'REMOTE' and p.meet_place is null and p.plan_at = (select meet_at from public.posts where id = p.flash_post_id),
+    '원격 번개의 대기실은 원격 뛰기 · 글의 모임 시각');
+  update public.parties set status = 'FINISHED' where id = v_party;
+  insert into public.parties (flash_post_id, host_id) values (pg_temp.fx('p76_together')::bigint, '74000000-0000-0000-0000-000000000001')
+  returning id into v_party;
+  select * into p from public.parties where id = v_party;
+  perform pg_temp.ok(p.run_mode = 'TOGETHER' and p.meet_place = '반포 한강공원' and p.meet_lat = 37.51,
+    '같이 번개의 대기실은 만나는 곳 · 좌표를 글에서 받는다');
+  update public.parties set status = 'FINISHED' where id = v_party;
+end $$;
+-- 보너스 인원 — 출발 명단의 모두(셋이 출발했고 곁(party_near) 기록은 없다)
+do $$
+declare v_at timestamptz := now() - interval '3 hours'; v_party bigint; v_size int;
+begin
+  insert into public.parties (flash_post_id, host_id, status, starts_at)
+  values (pg_temp.fx('p76_remote')::bigint, '74000000-0000-0000-0000-000000000001', 'FINISHED', v_at)
+  returning id into v_party;
+  insert into public.party_runs (party_id, user_id, starts_at) values
+    (v_party, '74000000-0000-0000-0000-000000000001', v_at),
+    (v_party, '74000000-0000-0000-0000-000000000002', v_at),
+    (v_party, '74000000-0000-0000-0000-000000000003', v_at);
+  select size into v_size from economy.party_for('74000000-0000-0000-0000-000000000002', v_at + interval '3 seconds');
+  perform pg_temp.ok(v_size = 3, '함께 출발한 사람 모두를 센다 — 곁(200m) · 2분 · 원격 상관없이(0076, 설정 party_bonus_rule = ALL)');
+  update public.economy_settings set value = '"NEAR"' where key = 'party_bonus_rule';
+  select size into v_size from economy.party_for('74000000-0000-0000-0000-000000000002', v_at + interval '3 seconds');
+  perform pg_temp.ok(v_size = 1, 'NEAR 로 돌리면 예전처럼 곁에서 같이 뛴 무리만 센다');
+  update public.economy_settings set value = '"ALL"' where key = 'party_bonus_rule';
+end $$;
 select set_config('request.jwt.claims', '', false);
 
 \echo ''

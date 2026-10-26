@@ -58,6 +58,8 @@ data class Post(
     val placeAddress: String = "",
     /** 글에 붙인 러닝(동네 이야기, 0046) — 거리 · 시간 · 코스 그림. 없으면 null */
     val run: StoryRun? = null,
+    /** 원격 뛰기 번개(0076) — 같은 시각에 각자의 자리에서. 모임 장소 · 좌표가 없다 */
+    val remote: Boolean = false,
 ) {
     val isFlash: Boolean get() = category == PostCategory.FLASH
 

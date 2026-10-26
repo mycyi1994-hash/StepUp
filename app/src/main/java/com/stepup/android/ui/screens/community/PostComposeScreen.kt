@@ -54,15 +54,19 @@ import java.util.UUID
  * 글쓰기 — UI 최종 통합안(2026-10-25) `compose` · `compose_flash`. 위 ← · "글쓰기" → 분류 세그먼트(번개러닝 · 자유 · 꿀팁) →
  * 칸 안에 이름이 있는 입력칸(제목 · 내용, 번개러닝은 만나는 곳) → 번개러닝이면 [−][값][+] 줄(달릴 거리 · 출발까지 · 정원) → 아래 올리기 하나.
  * 숫자는 조절 버튼으로만 바꿔 범위를 벗어나지 않는다(거리 0.5 ~ 50km · 출발 5분 ~ 24시간 · 정원 2 ~ 200명, 서버 규칙 그대로).
+ * 번개러닝은 달리는 방식(같이 뛰기 · 원격 뛰기, 0076)을 고른다 — 원격 뛰기는 만나는 곳 없이 같은 시각에 각자의 자리에서.
+ * 함께 뛰기 탭의 "함께 뛰기 만들기 → 누구나"로 오면 번개러닝으로 열린다([startFlash]).
  */
 @Composable
 fun PostComposeScreen(
     crewId: String = "",
     crewName: String = "",
+    startFlash: Boolean = false,
     onBack: () -> Unit = {},
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
-    var category by rememberSaveable { mutableStateOf(PostCategory.FREE.id) }
+    var category by rememberSaveable { mutableStateOf(if (startFlash) PostCategory.FLASH.id else PostCategory.FREE.id) }
+    var remote by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
     var body by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
@@ -75,9 +79,9 @@ fun PostComposeScreen(
     val selected = PostCategory.of(category)
     val flash = selected == PostCategory.FLASH
     // 번개러닝은 쓰는 자리가 모임 장소다. 읽는 사람의 폰이 이 좌표에서 거리를 잰다.
-    val here = rememberCurrentLocation(enabled = flash)
+    val here = rememberCurrentLocation(enabled = flash && !remote)
     val posting by viewModel.posting.collectAsStateWithLifecycle()
-    val canSubmit = !posting && title.isNotBlank() && (!flash || place.isNotBlank())
+    val canSubmit = !posting && title.isNotBlank() && (!flash || remote || place.isNotBlank())
     val c = StepUpUi.colors
 
     // 올리지 못했으면(로그인·연결) 이유를 띄운다. 화면은 닫지 않아 쓴 글이 남는다.
@@ -113,11 +117,29 @@ fun PostComposeScreen(
                     minLines = 8, minHeight = 240.dp,
                 )
             } else {
-                // 2026-10-26 시안 compose — 만나는 곳 → 출발 시각(지금부터 5분 ~ 24시간, 서버 규칙 그대로) → 거리 · 정원 → 함께 뛰는 분께(선택)
-                FormField(
-                    stringResource(R.string.post_field_place), place, { place = it },
-                    Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_place_hint),
+                // 2026-10-26 시안 compose — 달리는 방식 → 만나는 곳(같이 뛰기만) → 출발 시각(지금부터 5분 ~ 24시간, 서버 규칙 그대로) →
+                // 거리 · 정원 → 함께 뛰는 분께(선택)
+                Text(
+                    stringResource(R.string.d26_create_mode), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
+                    modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter),
                 )
+                StepUpTabs(
+                    listOf(stringResource(R.string.d26_mode_together), stringResource(R.string.d26_mode_remote)),
+                    if (remote) 1 else 0, { remote = it == 1 },
+                    Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter),
+                    tags = listOf("post-mode-together", "post-mode-remote"),
+                )
+                if (remote) {
+                    Text(
+                        stringResource(R.string.tg_flash_remote_hint), style = StepUpUi.type.caption, color = c.secondaryLabel,
+                        modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter).testTag("post-remote-hint"),
+                    )
+                } else {
+                    FormField(
+                        stringResource(R.string.post_field_place), place, { place = it },
+                        Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_place_hint),
+                    )
+                }
                 FlashTimeField(startsIn, onMinutes = { startsIn = it }, modifier = Modifier.padding(horizontal = StepUpUi.Gutter))
                 Spacer(Modifier.height(4.dp))
                 GroupedList(
@@ -139,11 +161,13 @@ fun PostComposeScreen(
                     Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.d26_flash_note_hint),
                     minLines = 3, minHeight = 96.dp,
                 )
-                Text(
-                    stringResource(if (here != null) R.string.post_flash_hint else R.string.post_flash_no_location),
-                    style = StepUpUi.type.caption, color = c.secondaryLabel,
-                    modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter),
-                )
+                if (!remote) {
+                    Text(
+                        stringResource(if (here != null) R.string.post_flash_hint else R.string.post_flash_no_location),
+                        style = StepUpUi.type.caption, color = c.secondaryLabel,
+                        modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter),
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
         }
@@ -156,13 +180,14 @@ fun PostComposeScreen(
                         title = title,
                         body = body,
                         crewId = crewId,
-                        place = place,
+                        place = if (flash && remote) "" else place,
                         distanceKm = if (flash) distance else 0.0,
                         meetInMinutes = if (flash) startsIn else 0,
                         capacity = if (flash) capacity else 0,
-                        lat = here?.lat,
-                        lng = here?.lng,
+                        lat = if (remote) null else here?.lat,
+                        lng = if (remote) null else here?.lng,
                         clientKey = clientKey,
+                        remote = flash && remote,
                         onDone = {
                             // 올라갔다 — 이 화면에서 또 쓰면 새 글이다
                             clientKey = UUID.randomUUID().toString()

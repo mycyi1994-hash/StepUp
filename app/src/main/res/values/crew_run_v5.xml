@@ -163,7 +163,7 @@
     <string name="crew5_bonus_people">Runners</string>
     <string name="crew5_bonus_value">Bonus</string>
     <string name="crew5_bonus_n">%1$d</string>
-    <string name="crew5_bonus_note">Counts only phone-verified members of the same crew who are within %2$dm at the start and %1$d min later. 0–1 runners get no bonus. The level bonus is added separately.</string>
+    <string name="crew5_bonus_note">Everyone from the crew who starts together counts. No bonus for 0–1 runners. The level bonus is added separately.</string>
 
     <!-- 14 · 15 · 31 roster -->
     <string name="crew5_roster_host_title">Manage runners</string>
@@ -195,8 +195,6 @@
     <string name="crew5_partial_body">The %1$d still getting ready won\'t start this time and aren\'t counted for bonus or stamina.</string>
     <string name="crew5_partial_go">Start with %1$d ready</string>
     <string name="crew5_partial_wait">Wait a bit more</string>
-    <string name="crew5_unverified_title">Left out of the headcount bonus only</string>
-    <string name="crew5_unverified_ok">Got it, get ready</string>
     <string name="crew5_starting">Syncing the start signal</string>
 
     <!-- 61 · 68 ~ 70 edge states -->
@@ -207,7 +205,7 @@
     <string name="crew5_closed_title">The lobby closed</string>
     <string name="crew5_closed_body">Everyone left or it sat empty too long. Join another lobby or open a new one.</string>
     <string name="crew5_full_title">The lobby is full</string>
-    <string name="crew5_full_body">A lobby holds up to %1$d runners. See other lobbies or open a new one.</string>
+    <string name="crew5_full_body">This lobby is full. See other lobbies or open a new one.</string>
     <string name="crew5_started_title">This lobby already started</string>
     <string name="crew5_started_body">You can\'t join a run midway. See other lobbies or open a new one.</string>
     <string name="crew5_missed_title">You missed the start</string>

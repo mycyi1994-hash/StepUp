@@ -797,7 +797,6 @@ fun RunScreen(
                 bonusCount = live.bonus.count,
                 bonusPercent = com.stepup.android.domain.CrewRunMath.percent(live.bonus.pct),
                 levelPercent = com.stepup.android.domain.CrewRunMath.percent(live.levelPct),
-                unverified = !live.bonus.verified,
                 paused = session.isPaused,
             )
         },
