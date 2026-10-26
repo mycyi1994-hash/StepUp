@@ -10,7 +10,6 @@
     <string name="crew_run_done_detail">我加入的体力 +%1$s · 我使用的体力 %2$s</string>
     <string name="crew_run_done_elsewhere">今天已在 %1$s 完成团队跑</string>
     <string name="crew_run_running_now">正在进行团队跑</string>
-    <string name="crew_run_unverified">未完成手机验证，仅不计入人数奖励。仍可一起跑，并按自己的鞋子获得奖励。</string>
     <string name="crew_run_level_up_title">我们一起达成的新等级</string>
     <string name="crew_run_level_up_body">达成 Lv.%1$d · 团队体力 +%2$s%% · 团队奖励 +%3$s%%</string>
     <string name="crew_run_level_up_note">每位成员的有效距离都会累计。团队等级不会下降。</string>
@@ -24,8 +23,8 @@
     <string name="crew_run_rule_empty_b">记录会继续。不会改用个人耐久度，共用体力也不能修理。</string>
     <string name="crew_run_rule_once_t">团队跑每天一次</string>
     <string name="crew_run_rule_once_b">换团队也一样。可以暂停。结束后不能再加入，只剩自己时会自动结束。</string>
-    <string name="crew_run_rule_near_t">%1$dm · 出发 %2$d 分钟后确认</string>
-    <string name="crew_run_rule_near_b">只有同一团队、出发时和 %2$d 分钟后都在 %1$dm 内且完成手机验证的人才计入奖励。未验证也可以跑。</string>
+    <string name="crew_run_rule_near_t">一起出发的跑团成员全部</string>
+    <string name="crew_run_rule_near_b">从同一等候室一起出发的同一跑团成员都会计入人数加成。0~1人时没有人数加成。</string>
     <string name="crew_run_rule_reset_t">每天 00:00(韩国时间)</string>
     <string name="crew_run_rule_reset_b">共用体力和每日参与次数会重置。累计距离和团队等级保持不变。</string>
     <string name="crew_run_rule_reward_t">奖励 = 我的鞋子 × (1 + 人数 + 等级)</string>
@@ -38,7 +37,7 @@
     <string name="crew_lobby_pool_fresh_value">目前为 0 · 我将加入 +%1$s</string>
     <string name="crew_lobby_bonus">预计奖励</string>
     <string name="crew_lobby_bonus_value">人数 %1$d人 +%2$s%% · Lv.%3$d +%4$s%%</string>
-    <string name="crew_lobby_preview_note">这是预览。出发 %1$d 分钟后，以仍在 %2$dm 内且完成手机验证的同团队成员确认。</string>
+    <string name="crew_lobby_preview_note">已准备的跑团成员一起出发时，全部计入人数加成。</string>
     <string name="crew_lobby_pool_zero">即使现在是 0 也可以一起出发。出发时会加入所选鞋子的最大耐久度。共用体力不能修理。</string>
     <string name="crew_lobby_done_elsewhere">今天已在 %1$s 完成团队跑。换团队也每天一次。</string>
     <string name="crew_lobby_need_two">团队跑需要至少 2 人准备好才能出发。</string>
@@ -54,13 +53,12 @@
     <string name="crew_live_pool_low_body">剩余共用体力由一起跑的人共同使用。归零后只停止获得奖励，记录会继续。不会使用个人鞋子耐久度。</string>
     <string name="crew_live_pool_low_ok">知道了，继续跑</string>
     <string name="crew_live_pool_empty">共用体力已用完 · 停止获得奖励，记录继续</string>
-    <string name="crew_live_unverified">未手机验证 · 仅不计入人数</string>
     <string name="crew_bonus_confirmed_title">%1$d人，人数奖励已确定</string>
-    <string name="crew_bonus_confirmed_body">出发 2 分钟后仍在一起。鞋子属性不会混合 — 每个人按自己所选鞋子获得奖励。</string>
+    <string name="crew_bonus_confirmed_body">一起出发的跑团成员都能获得人数加成。跑鞋属性互不混用 — 各自按所选跑鞋获得奖励。</string>
     <string name="crew_bonus_partial_title">计入奖励的人数为 %1$d 人</string>
-    <string name="crew_bonus_partial_body">一起出发的 %1$d 人中有 %2$d 人在确认时不在 %3$dm 内或未完成手机验证，未计入人数。记录会继续。</string>
+    <string name="crew_bonus_partial_body">一起出发的%1$d人中有%2$d人未计入人数。跑步记录会继续。</string>
     <string name="crew_bonus_none_title">本次没有人数奖励</string>
-    <string name="crew_bonus_none_body">出发 2 分钟后确认在一起的已验证成员少于 2 人。按鞋子的奖励和等级奖励不变。</string>
+    <string name="crew_bonus_none_body">一起出发的跑团成员少于2人。基于跑鞋的奖励和等级奖励不变。</string>
     <string name="crew_bonus_row_headcount">人数奖励</string>
     <string name="crew_bonus_row_level">Lv.%1$d 奖励</string>
     <string name="crew_bonus_row_total">在我的鞋子奖励上合计</string>

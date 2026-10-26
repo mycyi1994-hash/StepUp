@@ -36,8 +36,6 @@ data class CrewRunRules(
     val nearM: Int = CrewRunMath.NEAR_M,
     val confirmSec: Int = CrewRunMath.CONFIRM_SEC,
     val drainPerMin: Double = CrewRunMath.DRAIN_PER_MIN,
-    /** 인원 보너스에 휴대폰 인증이 필요한가 */
-    val requiresPhone: Boolean = true,
     val headcount: List<CrewHeadcountStep> = CrewRunMath.headcountTable(),
     val levels: List<CrewLevelStep> = CrewRunMath.levelTable(),
 ) {
@@ -97,8 +95,6 @@ data class CrewRunToday(
     val resetsAtMs: Long,
     val pool: CrewPoolSnap,
     val mine: CrewRunMine,
-    /** 내 휴대폰 인증 */
-    val verified: Boolean,
     /** 지금 크루 레벨 — 크루 러닝이 아직 없으면 null("새 크루") */
     val crewLevel: Int?,
     val runKm: Double,
@@ -126,7 +122,6 @@ data class CrewRoomMember(
     val ready: Boolean,
     val crewMember: Boolean,
     val ranToday: Boolean,
-    val verified: Boolean,
     val sneakerId: Long?,
     val rarity: String?,
     val shoeLevel: Int?,
@@ -150,7 +145,6 @@ data class CrewRunRoom(
     val bonusPct: Double,
     val nextBonusPct: Double,
     val myContribution: Double,
-    val myVerified: Boolean,
     val pool: CrewPoolSnap?,
     val members: List<CrewRoomMember>,
     val rules: CrewRunRules = CrewRunRules(),
@@ -184,8 +178,6 @@ data class CrewBonus(
     val pct: Double,
     /** TOO_FEW · NO_LOCATION · ENDED_BEFORE_CHECK */
     val reason: String?,
-    /** 나는 인원에 들 수 있나(인증) */
-    val verified: Boolean,
 )
 
 /** 달리는 중 — `crew_run_beat` · `crew_run_live` */

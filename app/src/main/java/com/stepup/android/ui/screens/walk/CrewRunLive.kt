@@ -151,7 +151,6 @@ internal data class CrewLivePool(
     val bonusCount: Int,
     val bonusPercent: String,
     val levelPercent: String,
-    val unverified: Boolean,
     val paused: Boolean,
 )
 
@@ -329,8 +328,7 @@ private fun CrewPoolBar(pool: CrewLivePool) {
             modifier = Modifier.testTag("run-crew-headcount"),
         )
         Text(
-            stringResource(R.string.crew_live_runners, pool.runners) +
-                if (pool.unverified) " · " + stringResource(R.string.crew_live_unverified) else "",
+            stringResource(R.string.crew_live_runners, pool.runners),
             style = runTextStyle(12.sp, c.muted, FontWeight.Medium), modifier = Modifier.testTag("run-crew-runners"),
         )
     }
@@ -360,7 +358,7 @@ internal fun CrewBonusSheet(
         Text(
             when {
                 none -> stringResource(R.string.crew_bonus_none_body)
-                count < started -> stringResource(R.string.crew_bonus_partial_body, started, started - count, nearM)
+                count < started -> stringResource(R.string.crew_bonus_partial_body, started, started - count)
                 else -> stringResource(R.string.crew_bonus_confirmed_body)
             },
             style = navyText(16.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f),

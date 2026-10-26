@@ -10,7 +10,6 @@
     <string name="crew_run_done_detail">You added +%1$s · you used %2$s</string>
     <string name="crew_run_done_elsewhere">You finished today\'s crew run in %1$s</string>
     <string name="crew_run_running_now">You\'re on a crew run now</string>
-    <string name="crew_run_unverified">Without phone verification you\'re left out of the headcount bonus only. You can still run together and earn with your shoe.</string>
     <string name="crew_run_level_up_title">The next level we reached together</string>
     <string name="crew_run_level_up_body">Lv.%1$d reached · crew stamina +%2$s%% · crew reward +%3$s%%</string>
     <string name="crew_run_level_up_note">Each member\'s valid distance adds up. Crew levels never go down.</string>
@@ -24,8 +23,8 @@
     <string name="crew_run_rule_empty_b">Recording continues. It never switches to your own durability, and shared stamina can\'t be repaired.</string>
     <string name="crew_run_rule_once_t">One crew run a day</string>
     <string name="crew_run_rule_once_b">Even if you switch crews. Pausing is fine. Once you end, you can\'t rejoin, and if you\'re the last one left it ends automatically.</string>
-    <string name="crew_run_rule_near_t">%1$dm · checked %2$d min after start</string>
-    <string name="crew_run_rule_near_b">Only same-crew members within %1$dm at start and %2$d min later, with phone verification, count for the bonus. You can still run without it.</string>
+    <string name="crew_run_rule_near_t">Everyone who starts together</string>
+    <string name="crew_run_rule_near_b">Every crew member who starts together from the same lobby counts toward the group bonus. With 0–1 runners there is no group bonus.</string>
     <string name="crew_run_rule_reset_t">Daily at 00:00 KST</string>
     <string name="crew_run_rule_reset_b">Shared stamina and the daily run reset. Total distance and crew level stay.</string>
     <string name="crew_run_rule_reward_t">Reward = my shoe × (1 + headcount + level)</string>
@@ -38,7 +37,7 @@
     <string name="crew_lobby_pool_fresh_value">Still 0 · you add +%1$s</string>
     <string name="crew_lobby_bonus">Expected bonus</string>
     <string name="crew_lobby_bonus_value">%1$d counted +%2$s%% · Lv.%3$d +%4$s%%</string>
-    <string name="crew_lobby_preview_note">This is a preview. It\'s confirmed %1$d min after start by verified crew members still within %2$dm.</string>
+    <string name="crew_lobby_preview_note">When the ready crew members start together, everyone counts toward the group bonus.</string>
     <string name="crew_lobby_pool_zero">You can start together even at 0. The max durability of your picked shoe is added when you start. Shared stamina can\'t be repaired.</string>
     <string name="crew_lobby_done_elsewhere">You already did today\'s crew run in %1$s. It\'s once a day even if you switch crews.</string>
     <string name="crew_lobby_need_two">A crew run needs at least 2 ready runners to start.</string>
@@ -54,13 +53,12 @@
     <string name="crew_live_pool_low_body">Everyone running is using the remaining shared stamina. At 0 only earning stops and the run keeps recording. Your own shoe durability isn\'t used.</string>
     <string name="crew_live_pool_low_ok">Got it, keep running</string>
     <string name="crew_live_pool_empty">Shared stamina is used up · earning stopped, recording continues</string>
-    <string name="crew_live_unverified">Phone not verified · left out of the headcount only</string>
     <string name="crew_bonus_confirmed_title">%1$d counted, headcount bonus confirmed</string>
-    <string name="crew_bonus_confirmed_body">You\'re still together 2 minutes after start. Shoe stats aren\'t mixed — everyone earns with the shoe they picked.</string>
+    <string name="crew_bonus_confirmed_body">Everyone who started together gets the group bonus. Shoe stats aren\'t shared — each runner is rewarded by their own shoes.</string>
     <string name="crew_bonus_partial_title">%1$d count for the bonus</string>
-    <string name="crew_bonus_partial_body">Of the %1$d who started, %2$d were outside %3$dm at the check or not phone-verified, so they weren\'t counted. Your run keeps recording.</string>
+    <string name="crew_bonus_partial_body">%2$d of the %1$d runners who started together weren\'t counted. Your run keeps recording.</string>
     <string name="crew_bonus_none_title">No headcount bonus this run</string>
-    <string name="crew_bonus_none_body">Fewer than 2 verified crew members were confirmed together 2 minutes after start. Your shoe reward and level reward stay.</string>
+    <string name="crew_bonus_none_body">Fewer than 2 crew members started together. Your shoe-based reward and level reward stay the same.</string>
     <string name="crew_bonus_row_headcount">Headcount bonus</string>
     <string name="crew_bonus_row_level">Lv.%1$d reward</string>
     <string name="crew_bonus_row_total">Total on your shoe reward</string>

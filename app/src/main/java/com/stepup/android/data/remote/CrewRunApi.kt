@@ -81,14 +81,13 @@ data class CrewRunRulesRow(
     @SerialName("near_m") val nearM: Int = 500,
     @SerialName("confirm_sec") val confirmSec: Int = 120,
     @SerialName("drain_per_min") val drainPerMin: Double = 5.0,
-    @SerialName("requires_phone") val requiresPhone: Boolean = true,
     val headcount: List<CrewHeadcountRow> = emptyList(),
     val levels: List<CrewLevelRuleRow> = emptyList(),
 ) {
     fun toDomain(): CrewRunRules {
         val base = CrewRunRules()
         return CrewRunRules(
-            roomMax = roomMax, nearM = nearM, confirmSec = confirmSec, drainPerMin = drainPerMin, requiresPhone = requiresPhone,
+            roomMax = roomMax, nearM = nearM, confirmSec = confirmSec, drainPerMin = drainPerMin,
             headcount = headcount.takeIf { it.isNotEmpty() }?.map { CrewHeadcountStep(it.n, it.bonus) } ?: base.headcount,
             levels = levels.takeIf { it.isNotEmpty() }?.map { CrewLevelStep(it.level, it.km, it.stamina, it.reward) } ?: base.levels,
         )
@@ -154,7 +153,6 @@ data class CrewRunTodayRow(
     @SerialName("resets_at") val resetsAt: String? = null,
     val pool: CrewPoolRow? = null,
     val mine: CrewRunMineRow = CrewRunMineRow(),
-    val verified: Boolean = false,
     @SerialName("crew_level") val crewLevel: Int? = null,
     @SerialName("run_km") val runKm: Double = 0.0,
     @SerialName("next_level_km") val nextLevelKm: Double? = null,
@@ -169,7 +167,7 @@ data class CrewRunTodayRow(
         val now = System.currentTimeMillis()
         return CrewRunToday(
             crewId = crewId, day = date, serverNowMs = serverNow.ms() ?: now, resetsAtMs = resetsAt.ms() ?: 0L,
-            pool = pool?.toDomain(now) ?: return null, mine = mine.toDomain(), verified = verified,
+            pool = pool?.toDomain(now) ?: return null, mine = mine.toDomain(),
             crewLevel = crewLevel, runKm = runKm, nextLevelKm = nextLevelKm, staminaBonus = staminaBonus, rewardBonus = rewardBonus,
             levelEvent = levelEvent?.let { CrewLevelEvent(it.level, it.reachedAt.ms() ?: 0L, it.runKm) },
             rules = rules.toDomain(),
@@ -186,7 +184,6 @@ data class CrewRoomMemberRow(
     val ready: Boolean = false,
     @SerialName("crew_member") val crewMember: Boolean = false,
     @SerialName("ran_today") val ranToday: Boolean = false,
-    val verified: Boolean = false,
     @SerialName("sneaker_id") val sneakerId: Long? = null,
     val rarity: String? = null,
     @SerialName("shoe_level") val shoeLevel: Int? = null,
@@ -211,7 +208,6 @@ data class CrewRunRoomRow(
     @SerialName("ready_count") val readyCount: Int = 0,
     @SerialName("bonus_preview") val bonusPreview: CrewBonusPreviewRow = CrewBonusPreviewRow(),
     @SerialName("my_contribution") val myContribution: Double = 0.0,
-    @SerialName("my_verified") val myVerified: Boolean = false,
     val pool: CrewPoolRow? = null,
     val members: List<CrewRoomMemberRow> = emptyList(),
     val rules: CrewRunRulesRow = CrewRunRulesRow(),
@@ -220,11 +216,11 @@ data class CrewRunRoomRow(
         partyId = partyId, crewId = crewId, status = status, capacity = capacity, crewLevel = crewLevel,
         staminaBonus = staminaBonus, rewardBonus = rewardBonus, membersCount = membersCount, readyCount = readyCount,
         bonusCount = bonusPreview.count, bonusPct = bonusPreview.pct, nextBonusPct = bonusPreview.nextPct,
-        myContribution = myContribution, myVerified = myVerified, pool = pool?.toDomain(),
+        myContribution = myContribution, pool = pool?.toDomain(),
         members = members.map {
             CrewRoomMember(
                 userId = it.userId, name = it.name.orEmpty(), isMe = it.isMe, isHost = it.isHost, ready = it.ready,
-                crewMember = it.crewMember, ranToday = it.ranToday, verified = it.verified, sneakerId = it.sneakerId,
+                crewMember = it.crewMember, ranToday = it.ranToday, sneakerId = it.sneakerId,
                 rarity = it.rarity, shoeLevel = it.shoeLevel, modelId = it.modelId, durMax = it.durMax, durNow = it.durNow,
             )
         },
@@ -239,9 +235,8 @@ data class CrewBonusRow(
     val count: Int = 0,
     val pct: Double = 0.0,
     val reason: String? = null,
-    val verified: Boolean = false,
 ) {
-    fun toDomain() = CrewBonus(CrewBonusStatus.of(status), checkAt.ms(), count, pct, reason, verified)
+    fun toDomain() = CrewBonus(CrewBonusStatus.of(status), checkAt.ms(), count, pct, reason)
 }
 
 @Serializable

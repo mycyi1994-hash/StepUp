@@ -1311,7 +1311,7 @@ class RunJourneyDesignTest {
             sessionId = null, startedAtMs = null, terminalReason = null, contribution = 0.0, consumed = 0.0, distanceM = null, totalSup = null,
             nextEligibleAtMs = null)
         val today = com.stepup.android.domain.CrewRunToday(crewId = "c1", day = day, serverNowMs = now, resetsAtMs = now + 3_600_000,
-            pool = pool, mine = mine, verified = true, crewLevel = 8, runKm = 859.0, nextLevelKm = 900.0, staminaBonus = 0.42, rewardBonus = 0.07,
+            pool = pool, mine = mine, crewLevel = 8, runKm = 859.0, nextLevelKm = 900.0, staminaBonus = 0.42, rewardBonus = 0.07,
             levelEvent = null)
         fun server(e: Int, c: Int, max: Int) = com.stepup.android.domain.ServerStats(origin = "DRAW", efficiencyBps = e, comfortBps = c,
             durabilityPts = 80.0, maxLevel = 20, status = "OWNED", chainState = "APP", canWithdraw = true, upgradeCost = 0.0,
@@ -1335,13 +1335,13 @@ class RunJourneyDesignTest {
             member("h", "도윤", ready = true, host = true), member("me", "나", ready = false, me = true), member("b", "지연", ready = true),
             member("c", "혜진", ready = true), member("d", "민수", ready = true), member("e", "서연", ready = true),
         ))
-        fun crewRoom(ready: Int, total: Int, verified: Boolean = true) = com.stepup.android.domain.CrewRunRoom(
+        fun crewRoom(ready: Int, total: Int) = com.stepup.android.domain.CrewRunRoom(
             partyId = 1L, crewId = "c1", status = "LOBBY", capacity = 20, crewLevel = 8, staminaBonus = 0.42, rewardBonus = 0.07,
             membersCount = total, readyCount = ready, bonusCount = ready, bonusPct = com.stepup.android.domain.CrewRunMath.headcountBonus(ready),
-            nextBonusPct = com.stepup.android.domain.CrewRunMath.headcountBonus(ready + 1), myContribution = 142.0, myVerified = verified,
+            nextBonusPct = com.stepup.android.domain.CrewRunMath.headcountBonus(ready + 1), myContribution = 142.0,
             pool = pool,
             members = listOf(com.stepup.android.domain.CrewRoomMember(userId = "me", name = "나", isMe = true, isHost = true, ready = true,
-                crewMember = true, ranToday = false, verified = verified, sneakerId = shoeA.id, rarity = "RARE", shoeLevel = 3, modelId = 1201,
+                crewMember = true, ranToday = false, sneakerId = shoeA.id, rarity = "RARE", shoeLevel = 3, modelId = 1201,
                 durMax = 100, durNow = 80)),
         )
         try {
@@ -1589,12 +1589,7 @@ class RunJourneyDesignTest {
             show("C08-course-removed", "party-course-removed") {
                 lobby(memberLobby.copy(course = null, courseRev = 3, courseSeenRev = 2), crewRoom(5, 6))
             }
-            // 40 인증 전 안내(준비할 때 한 번) — 출발 · 기여는 그대로, 인원 보너스에서만 빠진다
-            com.stepup.android.ui.screens.walk.UnverifiedNotice.shown = false
-            put("party-ready") { lobby(memberLobby, crewRoom(5, 6, verified = false)) }
-            tap("party-ready")
-            awaitTag("crew-unverified")
-            shot("C40-unverified")
+            // 40 인증 전 안내는 없다(2026-10-26 — 휴대폰 인증을 쓰지 않는다)
             // 35 출발 신호 맞추는 중 · 36 3 · 2 · 1 · 0 · StepUP!(자유 러닝과 같은 무대)
             show("C35-starting", "party-starting-stage") { com.stepup.android.ui.screens.walk.CrewStartingStage() }
             show("C36-countdown", "run-start-sequence") {
