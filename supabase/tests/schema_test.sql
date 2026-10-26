@@ -9255,6 +9255,24 @@ begin
 end $$;
 select set_config('request.jwt.claims', '', false);
 
+-- ════════════════════════════════════════════════════════════════════
+--  0077 뽑기 확률 읽기 (2026-10-26)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 뽑기 확률(0077) ─────────────────'
+set role anon;
+do $$
+declare v jsonb := public.draw_odds(); f jsonb; p jsonb;
+begin
+  select x into f from jsonb_array_elements(v->'pools') x where x->>'pool' = 'FREE';
+  select x into p from jsonb_array_elements(v->'pools') x where x->>'pool' = 'PREMIUM';
+  perform pg_temp.ok(f->'odds' = '[{"rarity":"COMMON","permille":790},{"rarity":"RARE","permille":200},{"rarity":"EPIC","permille":10}]'::jsonb,
+    format('무료 뽑기 확률은 뽑기가 쓰는 표 그대로 — 일반 79 · 레어 20 · 에픽 1%% (%s)', f));
+  perform pg_temp.ok((select sum((o->>'permille')::int) from jsonb_array_elements(p->'odds') o) = 1000
+                     and not (p->'odds' @> '[{"rarity":"COMMON"}]'),
+    '상급 뽑기 확률은 합이 100% · 일반 없음');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

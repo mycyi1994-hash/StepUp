@@ -69,6 +69,10 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> =
         rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
 
+    /** 뽑기 확률(0077) — 뽑기가 실제로 쓰는 등급 표(천분율). 로그인 전에도 읽는다 */
+    suspend fun drawOdds(): ServerResult<com.stepup.android.domain.DrawOdds> =
+        rpc("draw_odds", "{}") { com.stepup.android.domain.DrawOdds.parse(it) }
+
     /** 예전 강화(SUP 를 내고 레벨 +1). 새 앱의 강화 화면은 부르지 않는다 — 신발 강화는 아래 forge_* 다. 새 레벨을 돌려준다. */
     suspend fun upgrade(id: Long, request: String? = null): ServerResult<Int> =
         rpc("sneaker_upgrade", jsonBody { put("p_id", id); request?.let { put("p_request", it) } }) { it.trim().toIntOrNull() }

@@ -24,6 +24,8 @@ import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import com.stepup.android.ui.components.label
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -228,6 +230,12 @@ private fun RunProgress(status: DrawStatus) {
 @Composable
 internal fun RulesSheet(status: DrawStatus, onClose: () -> Unit) {
     val step = DrawDistance.stepKm(status.runStepMeters)
+    // 등급별 확률 — 뽑기가 쓰는 서버 표 그대로(0077). 읽지 못하면 줄을 두지 않는다(앱이 확률을 지어내지 않는다)
+    val odds by androidx.compose.runtime.produceState<com.stepup.android.domain.DrawOdds?>(null) {
+        value = runCatching {
+            (com.stepup.android.core.ServiceLocator.economyApi.drawOdds() as? com.stepup.android.data.remote.ServerResult.Ok)?.value
+        }.getOrNull()
+    }
     DrawSheetFrame(
         title = stringResource(R.string.dv2_rules_title), onDismiss = onClose, modifier = Modifier.testTag("draw-sheet-rules"),
         actions = { SheetActions(stringResource(R.string.dv2_ok), onClose, "draw-sheet-ok") },
@@ -235,6 +243,7 @@ internal fun RulesSheet(status: DrawStatus, onClose: () -> Unit) {
         SheetGroupLabel(stringResource(R.string.dv2_free))
         if (status.signupGranted > 0) SheetLine(stringResource(R.string.dv2_rules_signup), count(status.signupGranted))
         if (status.dailyTotal > 0) SheetLine(stringResource(R.string.dv2_rules_daily), count(status.dailyTotal))
+        odds?.free?.let { OddsLines(it, "draw-odds-free") }
         // 상급(지갑 연결 혜택)은 블록체인 기능이 있는 판에만
         if (com.stepup.android.BuildConfig.WEB3) {
             RunDivider()
@@ -242,6 +251,19 @@ internal fun RulesSheet(status: DrawStatus, onClose: () -> Unit) {
             if (status.giftOnLink > 0) SheetLine(stringResource(R.string.dv2_rules_first_link), count(status.giftOnLink))
             if (status.runStepMeters > 0) SheetLine(stringResource(R.string.dv2_rules_run, step), stringResource(R.string.dv2_plus_one))
             SheetBody(stringResource(R.string.dv2_rules_note), modifier = Modifier.padding(top = 4.dp))
+            odds?.premium?.takeIf { it.isNotEmpty() }?.let { OddsLines(it, "draw-odds-premium") }
+        }
+    }
+}
+
+/** 등급별 확률 — "등급별 확률" 아래 "일반 79%" 같은 줄들 */
+@Composable
+private fun OddsLines(odds: List<Pair<com.stepup.android.domain.Rarity, Int>>, tag: String) {
+    val t = runTone()
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp).testTag(tag)) {
+        Text(stringResource(R.string.dv2_rules_odds), style = runTextStyle(14.sp, t.label, FontWeight.SemiBold))
+        odds.forEach { (rarity, permille) ->
+            SheetLine(rarity.label(), com.stepup.android.domain.DrawOdds.percent(permille) + "%")
         }
     }
 }
