@@ -39,7 +39,7 @@
     <string name="set_notif_blocked_body">To get the notifications below, allow them in your phone settings.</string>
     <string name="set_open_phone_settings">Open phone settings</string>
     <string name="set_sync_pending">Saved on this phone</string>
-    <string name="set_sync_pending_body">We haven\'t confirmed it on the server yet. Your previous notification settings may still apply.</string>
+    <string name="set_sync_pending_body">Not saved yet. Your previous notification settings may still apply.</string>
     <string name="set_sync_retry">Sync again</string>
     <string name="set_sync_sending">Syncing…</string>
     <string name="set_stored_info">What we store</string>
@@ -85,8 +85,6 @@
     <string name="set_wallet_linked">Connected</string>
     <string name="set_wallet_connect">Connect</string>
     <string name="set_wallet_unknown">Couldn\'t check</string>
-    <string name="set_health_connect">Health Connect</string>
-    <string name="set_coming_soon">Coming soon</string>
     <string name="set_external_note">We\'ll let you know when more connections are ready.</string>
     <string name="set_delete_account">Delete account</string>
     <string name="set_delete_title">Delete your account?</string>
@@ -100,7 +98,7 @@
     <string name="set_delete_phone_note">Records left on this phone are removed when you delete the app.</string>
     <string name="set_delete_action">Delete account</string>
     <string name="set_deleting">Deleting…</string>
-    <string name="set_delete_failed">The server didn\'t delete your account. Please try again later.</string>
+    <string name="set_delete_failed">We couldn\'t delete your account. Please try again later.</string>
     <string name="set_delete_unknown_title">We need to check the result</string>
     <string name="set_delete_unknown_heading">Your request may have gone through.</string>
     <string name="set_delete_unknown_body">We didn\'t get a response, so we can\'t confirm whether it was deleted yet. Please contact us instead of sending the request again.</string>

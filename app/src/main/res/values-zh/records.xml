@@ -29,7 +29,7 @@
     <string name="rec_period_empty_title">此期间没有记录</string>
     <string name="rec_period_empty_body">看看其他期间的记录吧。</string>
     <string name="rec_show_all">查看全部记录</string>
-    <string name="rec_distance_unknown">没有距离记录</string>
+    <string name="rec_distance_unknown">未能测得距离</string>
     <string name="rec_apply">应用</string>
     <string name="rec_year_pattern">yyyy年</string>
     <string name="rec_short_month_pattern">M月</string>
@@ -86,7 +86,7 @@
     <string name="rec_delete">删除</string>
     <string name="rec_deleting">删除中…</string>
     <string name="rec_delete_failed_toast">无法删除，请再试一次。</string>
-    <string name="rec_delete_uploading">服务器正在确认这次跑步，暂时无法删除。</string>
+    <string name="rec_delete_uploading">这次跑步仍在确认中，暂时无法删除。</string>
     <string name="rec_missing_title">找不到记录</string>
     <string name="rec_missing_body">记录已删除或不属于当前账号。</string>
     <string name="rec_map_title">跑步路线</string>

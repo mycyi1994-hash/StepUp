@@ -35,7 +35,7 @@
     <string name="chat_discard">删除</string>
     <string name="chat_line_notice">%1$s 发布了新公告。</string>
     <string name="chat_line_left">%1$s 离开了跑团。</string>
-    <string name="chat_unknown_name">未知</string>
+    <string name="chat_unknown_name">未知跑者</string>
     <string name="chat_author_deleted">已注销用户</string>
     <string name="chat_input_hint">输入消息</string>
     <string name="chat_input_offline_hint">连接后即可发送</string>

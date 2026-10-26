@@ -206,7 +206,7 @@
     <string name="items_mint_desc">뽑기는 모두 무료예요. 처음 10회, 매일 3회 무료로 뽑고, 지갑을 연결하면 상급 뽑기도 받아요.</string>
     <string name="items_mint_desc_store">뽑기는 모두 무료예요. 처음 10회, 매일 3회 무료로 뽑아요.</string>
     <string name="toast_sign_in_required">로그인하면 SUP와 신발을 쓸 수 있어요.</string>
-    <string name="toast_offline">서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.</string>
+    <string name="toast_offline">연결하지 못했어요. 잠시 뒤 다시 해 주세요.</string>
     <string name="toast_no_free_draws">남은 무료 뽑기가 없어요. 내일 다시 무료 뽑기가 생겨요.</string>
     <string name="toast_nothing_to_repair">내구도가 이미 가득해요.</string>
     <string name="toast_repaired">수리했어요</string>
@@ -273,7 +273,7 @@
     <string name="toast_claimed">+%1$s SUP 받았어요!</string>
     <string name="toast_not_finished">아직 달성 전이에요 — 조금만 더!</string>
     <string name="toast_claim_already">이번 기간에는 이미 받았어요.</string>
-    <string name="toast_claim_failed">서버에 닿지 못했어요. 다시 눌러 주세요.</string>
+    <string name="toast_claim_failed">연결하지 못했어요. 다시 눌러 주세요.</string>
     <string name="toast_claim_sign_in">보상을 받으려면 로그인해야 해요.</string>
     <string name="invite_subject">StepUp에서 같이 달려요</string>
     <string name="invite_text">걷기만 해도 SUP가 쌓이는 StepUp, 같이 해요!</string>
@@ -513,7 +513,7 @@
     <string name="crew_notice_saved">저장했어요</string>
     <string name="crew_notice_approved">승인했어요</string>
     <string name="crew_notice_rejected">거절했어요</string>
-    <string name="crew_notice_failed">서버에 연결하지 못했어요. 다시 시도해 주세요.</string>
+    <string name="crew_notice_failed">연결하지 못했어요. 다시 시도해 주세요.</string>
     <string name="crew_sign_in_needed">로그인하면 크루를 보고 가입할 수 있어요</string>
     <string name="crew_loading">크루를 불러오는 중…</string>
     <string name="crew_load_failed">크루를 불러오지 못했어요</string>
@@ -577,7 +577,7 @@
     <string name="party_leave">로비 나가기</string>
     <string name="party_problem_sign_in">파티런은 로그인해야 들어갈 수 있어요.</string>
     <string name="party_problem_removed">크루원이나 이 번개에 참가한 러너만 들어올 수 있어요. 또는 방장이 내보냈어요.</string>
-    <string name="party_problem_network">서버에 닿지 못했어요. 다시 시도하는 중…</string>
+    <string name="party_problem_network">연결이 끊겼어요. 다시 연결하는 중…</string>
     <string name="party_problem_closed">방이 닫혔어요.</string>
     <string name="party_problem_failed">처리되지 않았어요. 다시 눌러 주세요.</string>
     <string name="party_problem_missed_start">함께 출발한 지 오래돼 새 대기실을 열었어요.</string>
@@ -745,7 +745,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="login_terms">계속하면 이용약관과 개인정보처리방침에 동의하는 것으로 봅니다.</string>
     <string name="login_failed">로그인에 실패했습니다. 다시 시도해 주세요.</string>
     <string name="login_no_account">기기에 구글 계정이 없습니다. 설정에서 추가한 뒤 다시 시도해 주세요.</string>
-    <string name="login_offline">서버에 연결할 수 없습니다. 네트워크를 확인해 주세요.</string>
+    <string name="login_offline">연결할 수 없어요. 네트워크를 확인해 주세요.</string>
 
     <!-- Guide -->
     <string name="guide_heading">StepUp 사용법</string>
@@ -757,7 +757,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="journey_run_label">러닝 시작</string>
     <string name="journey_run_desc">홈의 START RUN 을 누르면 시작해요</string>
     <string name="journey_finish_label">완료 · 판정</string>
-    <string name="journey_finish_desc">끝내면 서버가 진짜 달렸는지 확인해요</string>
+    <string name="journey_finish_desc">끝내면 달린 기록을 확인해요</string>
     <string name="journey_earn_label">SUP 획득</string>
     <string name="journey_earn_desc">인정된 걸음만큼 SUP가 쌓여요</string>
     <string name="journey_wallet_label">지갑</string>
@@ -819,7 +819,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="tour7_title">착용 중인 스니커즈</string>
     <string name="tour7_body">이 신발의 부스트가 모든 러닝에 적용돼요. 눌러서 스탯 확인·강화·교체를 할 수 있어요.</string>
     <string name="tour8_title">민팅</string>
-    <string name="tour8_body">랜덤 신발을 뽑아요. 새로 가입하면 무료 10회, 그 뒤로는 한 번에 500 SUP. 뽑기는 서버가 굴려요.</string>
+    <string name="tour8_body">랜덤 신발을 뽑아요. 새로 가입하면 무료 10회, 그 뒤로는 한 번에 500 SUP예요.</string>
     <string name="tour9_title">컬렉션</string>
     <string name="tour9_body">옆으로 밀어 보관함을 넘겨보세요. 중복은 ×N으로 묶이고, 눌러서 원하는 사본을 고를 수 있어요. 도감은 총 44칸!</string>
     <string name="tour10_title">이벤트</string>
@@ -942,7 +942,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="course_reward_upto">최대 +%1$s SUP</string>
     <string name="course_reward_none">이 코스는 완주 보상이 없어요 (체험 · 내 코스)</string>
     <string name="course_apply_body_no_reward">%1$s · %2$s km\n이 코스는 완주 보상이 없어요 (체험 · 내 코스). 기록은 남아요.</string>
-    <string name="course_per_km">1km당 %1$s SUP · 최대 %2$s · 하루 한 번, 서버 확인 후</string>
+    <string name="course_per_km">1km당 %1$s SUP · 최대 %2$s · 하루 한 번, 기록 확인 후</string>
     <string name="course_to_finish">완주까지</string>
     <string name="course_none_title">선택한 코스가 없어요</string>
     <string name="course_none_body">코스를 고르면 실시간 지도와 거리 기반 완주 보상이 열려요.</string>
@@ -982,7 +982,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="map_open_google">구글 지도에서 열기</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">이 코스를 적용할까요?</string>
-    <string name="course_apply_body">%1$s · %2$s km\n완주하면 서버 확인 후 최대 %3$s SUP를 받아요 (하루 한 번).</string>
+    <string name="course_apply_body">%1$s · %2$s km\n완주하면 기록 확인 후 최대 %3$s SUP를 받아요 (하루 한 번).</string>
     <string name="course_clear_title">코스 적용을 해제할까요?</string>
     <string name="course_clear_body">%1$s이(가) 더 이상 적용 코스가 아니게 돼요.</string>
     <string name="notif_course_complete">%1$s 완주! +%2$s SUP 받았어요</string>
@@ -993,7 +993,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_nft_head">러너끼리의 거래소</string>
     <string name="market_nft_body">스니커즈가 러너 사이를 오갑니다. 파는 쪽이 값을 걸고 사는 쪽도 값을 걸어, 둘이 만나면 체결됩니다.</string>
     <string name="market_tradable">거래 가능 SUP</string>
-    <string name="market_tradable_note">서버에 기록된 러닝만 셉니다</string>
+    <string name="market_tradable_note">기록된 러닝만 셉니다</string>
     <string name="market_section_quotes">시세</string>
     <string name="market_section_mine">내 거래</string>
     <string name="market_quotes_title">모델</string>
@@ -1038,8 +1038,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_trade_bought">구매</string>
     <string name="market_fee_paid">수수료 %1$s</string>
     <string name="market_problem_sign_in">거래하려면 로그인이 필요합니다. 누구의 것인지 거래소가 알아야 합니다.</string>
-    <string name="market_problem_rejected">서버가 거절했습니다. 다시 해도 같은 답이 옵니다.</string>
-    <string name="market_problem_offline">서버에 닿지 못했습니다. 연결되면 다시 불러옵니다.</string>
+    <string name="market_problem_rejected">요청을 처리하지 못했어요.</string>
+    <string name="market_problem_offline">연결이 끊겼어요. 연결되면 다시 불러와요.</string>
     <string name="market_msg_traded">체결됐습니다.</string>
     <string name="market_msg_sign_in">다시 로그인해 주세요.</string>
     <string name="market_msg_equipped">신고 있는 스니커즈는 팔 수 없습니다. 먼저 벗어 주세요.</string>
@@ -1153,7 +1153,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="feed_place_unknown">장소 미정</string>
     <string name="feed_fee_from">참가비 %1$s원~</string>
     <string name="feed_last_checked">마지막 확인 %1$s</string>
-    <string name="feed_last_checked_unknown">확인 시각 없음</string>
+    <string name="feed_last_checked_unknown">아직 확인하지 않았어요</string>
     <string name="feed_save">저장</string>
     <string name="feed_unsave">저장 해제</string>
     <string name="feed_ai_summary">AI 요약 · 원문에서 전체를 읽어 주세요</string>
@@ -1166,8 +1166,8 @@ StepUp과 함께 달려보세요.</string>
     <string name="feed_events_notice">신청과 결제는 외부 사이트에서 진행됩니다. 최종 일정과 접수 상태는 주최 측 안내를 확인하세요. 외부 사이트 방문은 신청 완료가 아닙니다.</string>
     <string name="feed_sources_note">출처: %1$s. 기사 제목과 링크만 싣고 본문은 원문에서 읽습니다.</string>
     <string name="feed_sources_none">연결된 뉴스 출처가 아직 없습니다. 출처를 확인하고 연결하는 중입니다.</string>
-    <string name="feed_problem_offline">서버에 닿지 못했습니다. 연결되면 다시 불러옵니다.</string>
-    <string name="feed_problem_rejected">서버가 거절했습니다. 다시 해도 같은 답이 옵니다.</string>
+    <string name="feed_problem_offline">연결이 끊겼어요. 연결되면 다시 불러와요.</string>
+    <string name="feed_problem_rejected">요청을 처리하지 못했어요.</string>
     <string name="feed_showing_cached">%1$s 에 받아 둔 목록을 보여 주고 있습니다</string>
     <string name="feed_sign_in_to_save">저장하려면 로그인이 필요합니다.</string>
     <string name="feed_save_failed">저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.</string>
@@ -1245,7 +1245,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="challenge_daily_desc">목표를 넘기면 보너스가 저절로 들어와요.</string>
     <string name="challenge_daily_streak_note">연속 달성 시 더</string>
     <string name="challenge_refer_desc">친구를 StepUp에 초대하세요. 초대한 사람을 세는 기능이 아직 없어 진행률을 보여 주지 않아요.</string>
-    <string name="challenge_soon">준비 중</string>
+    <string name="challenge_soon">곧 시작해요</string>
     <string name="challenge_state_progress">진행 중</string>
     <string name="challenge_state_ready">받을 수 있어요</string>
     <string name="challenge_state_settling">보너스 적립 중</string>
@@ -1293,9 +1293,9 @@ StepUp과 함께 달려보세요.</string>
     <string name="demo_no_save">예시는 저장할 수 없어요.</string>
     <string name="feed_demo_note">데모 모드예요. 아래는 테스트용 예시이며 실제 대회·기사가 아니에요.</string>
     <string name="finish_confirmed">포인트 적립 완료</string>
-    <string name="finish_pending">러닝 완료 · 서버 확인 중</string>
-    <string name="finish_pending_note">러닝 기록을 저장했어요. 보상은 서버 확인 후 확정돼요.</string>
-    <string name="finish_rejected">서버가 이 기록을 인정하지 않았어요</string>
+    <string name="finish_pending">러닝 완료 · 기록 확인 중</string>
+    <string name="finish_pending_note">러닝 기록을 저장했어요. 보상은 확인이 끝나면 확정돼요.</string>
+    <string name="finish_rejected">이 기록은 인정되지 않았어요</string>
     <string name="finish_simulated">테스트용 걸음 흉내가 섞인 러닝은 서버에 올리지 않고 적립하지 않아요.</string>
     <string name="finish_balance">보유</string>
     <string name="finish_done">완료</string>
@@ -1364,10 +1364,10 @@ StepUp과 함께 달려보세요.</string>
     <string name="news_hero_sub">함께 달리는 더 큰 즐거움.</string>
 
     <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
-    <string name="finish_pending_short">서버 확인 중</string>
-    <string name="finish_no_reward">서버 확인 · 이번 러닝은 적립 없음</string>
-    <string name="finish_no_steps">걸음이 잡히지 않아 이번 러닝은 적립 없음</string>
-    <string name="finish_sign_in_needed">로그인이 풀려 이 러닝을 아직 서버에 올리지 못했어요. 7일 안에 다시 로그인하면 올라갑니다.</string>
+    <string name="finish_pending_short">기록 확인 중</string>
+    <string name="finish_no_reward">이번 러닝은 적립되지 않았어요</string>
+    <string name="finish_no_steps">걸음이 잡히지 않아 이번 러닝은 적립되지 않았어요</string>
+    <string name="finish_sign_in_needed">로그인이 풀려 이 러닝을 아직 올리지 못했어요. 7일 안에 다시 로그인하면 올라가요.</string>
     <string name="run_storage_blocked">이 폰에 남은 러닝 저장본을 읽을 수 없어 새 러닝을 시작하지 못했습니다. 앱을 다시 열고 시도해 주세요.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
@@ -1419,7 +1419,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="course_rank_title">코스 기록 순위</string>
     <string name="course_rank_loading">불러오는 중…</string>
     <string name="course_rank_failed">순위를 불러오지 못했어요. 게시판에 올라간 코스만 순위가 있어요.</string>
-    <string name="course_rank_empty">아직 기록이 없어요. 이 코스를 골라 완주하면 서버가 경로를 확인하고 순위에 올려요.</string>
+    <string name="course_rank_empty">아직 기록이 없어요. 이 코스를 골라 완주하면 경로를 확인하고 순위에 올려요.</string>
     <string name="course_rank_me">%1$s (나)</string>
     <string name="notification_channel_reminder">목표 알림</string>
     <string name="reminder_goal_title">오늘 목표까지 %1$d보 남았어요</string>
@@ -1453,7 +1453,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="home_banner_message">오늘도 한 걸음 더,\n좋은 방향으로.</string>
     <string name="mystery_guide_title">뽑기 이용 안내</string>
     <string name="toast_drawn_refreshing">뽑았어요! 새 신발을 불러오는 중이에요. 잠시 뒤 보관함에서 확인해 주세요.</string>
-    <string name="sneaker_enhance_legacy">서버 경제 전에 폰에서 만든 신발은 강화할 수 없어요.</string>
+    <string name="sneaker_enhance_legacy">예전 방식으로 만든 신발은 강화할 수 없어요.</string>
     <string name="sneaker_enhance_listed">판매 중인 신발은 강화할 수 없어요.</string>
     <string name="community_upcoming">다가오는 러닝 모임</string>
     <string name="run_route_unavailable">이 러닝에는 기록된 GPS 경로가 없어요.</string>
@@ -2063,7 +2063,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="story_card_active_body">러닝을 마치면 코스를 붙일 수 있어요.</string>
     <string name="story_card_back_to_run">러닝 화면으로</string>
     <string name="story_card_pending_title">방금 달린 기록을 확인하고 있어요</string>
-    <string name="story_card_pending_body">서버 확인이 끝나면 붙일 수 있어요.</string>
+    <string name="story_card_pending_body">기록 확인이 끝나면 붙일 수 있어요.</string>
     <string name="story_card_available_title">최근 기록을 붙일 수 있어요</string>
     <string name="story_card_available_body">3일 전 기록까지 코스를 붙일 수 있어요.</string>
     <string name="story_card_pick">기록 고르기</string>
@@ -2096,7 +2096,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="story_runs_empty">최근 3일 안에 붙일 수 있는 기록이 없어요</string>
     <string name="story_runs_empty_day">이 날에는 붙일 수 있는 기록이 없어요</string>
     <string name="story_runs_show_all">전체 보기</string>
-    <string name="story_runs_no_route">코스 없음</string>
+    <string name="story_runs_no_route">경로 없는 러닝</string>
     <string name="story_noloc_title">위치 없이 장소 고르기</string>
     <string name="story_noloc_head">현재 위치 사용이 꺼져 있어요.</string>
     <string name="story_noloc_body">장소를 직접 고르면 계속 쓸 수 있어요.</string>
@@ -2276,7 +2276,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="crew_missing_title">이 크루를 볼 수 없어요</string>
     <string name="crew_missing_body">해산되었거나 현재 접근할 수 없는 크루예요.</string>
     <string name="crew_to_list">크루 목록으로</string>
-    <string name="crew_problem_network">서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.</string>
+    <string name="crew_problem_network">연결하지 못했어요. 잠시 후 다시 시도해 주세요.</string>
     <string name="crew_problem_signin">로그인이 필요해요.</string>
     <string name="crew_problem_limit">더 만들 수 있는 크루 수를 넘었어요.</string>
     <string name="crew_problem_not_owner">크루장만 바꿀 수 있어요.</string>

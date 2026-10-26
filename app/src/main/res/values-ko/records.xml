@@ -29,7 +29,7 @@
     <string name="rec_period_empty_title">이 기간에는 기록이 없어요</string>
     <string name="rec_period_empty_body">다른 기간의 기록을 확인해 보세요.</string>
     <string name="rec_show_all">전체 기록 보기</string>
-    <string name="rec_distance_unknown">거리 기록 없음</string>
+    <string name="rec_distance_unknown">거리를 재지 못했어요</string>
     <string name="rec_apply">적용</string>
     <string name="rec_year_pattern">yyyy년</string>
     <string name="rec_short_month_pattern">M월</string>
@@ -86,7 +86,7 @@
     <string name="rec_delete">삭제</string>
     <string name="rec_deleting">삭제 중…</string>
     <string name="rec_delete_failed_toast">삭제하지 못했어요. 다시 시도해 주세요.</string>
-    <string name="rec_delete_uploading">서버가 이 러닝을 확인하는 중이라 아직 지울 수 없어요.</string>
+    <string name="rec_delete_uploading">이 러닝을 아직 확인하는 중이라 지울 수 없어요.</string>
     <string name="rec_missing_title">기록을 찾을 수 없어요</string>
     <string name="rec_missing_body">지워졌거나 지금 계정의 기록이 아니에요.</string>
     <string name="rec_map_title">러닝 경로</string>

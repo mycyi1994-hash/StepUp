@@ -31,7 +31,7 @@
     <!-- 대기실 -->
     <string name="crew_lobby_shoe">크루 러닝 신발</string>
     <string name="crew_lobby_shoe_value">%1$s · 최대 내구도 %2$d</string>
-    <string name="crew_lobby_shoe_none">신발 없음</string>
+    <string name="crew_lobby_shoe_none">고른 신발이 없어요</string>
     <string name="crew_lobby_shoe_change">바꾸기</string>
     <string name="crew_lobby_shoe_pick_title">크루 러닝에 신을 신발</string>
     <string name="crew_lobby_shoe_picked">고름</string>

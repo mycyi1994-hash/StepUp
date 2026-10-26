@@ -207,7 +207,7 @@
     <string name="items_mint_desc">ガチャはすべて無料です。最初に10回、毎日3回無料で引け、ウォレットを連携すると上級ガチャももらえます。</string>
     <string name="items_mint_desc_store">ガチャはすべて無料です。最初に10回、毎日3回無料で引けます。</string>
     <string name="toast_sign_in_required">ログインするとSUPとスニーカーを使えます。</string>
-    <string name="toast_offline">サーバーに接続できませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="toast_offline">接続できませんでした。しばらくしてからもう一度お試しください。</string>
     <string name="toast_no_free_draws">無料ガチャが残っていません。明日また無料ガチャがもらえます。</string>
     <string name="toast_nothing_to_repair">耐久度はすでに満タンです。</string>
     <string name="toast_repaired">修理しました</string>
@@ -274,7 +274,7 @@
     <string name="toast_claimed">+%1$s SUP を受け取りました！</string>
     <string name="toast_not_finished">まだ達成していません — あともう少し！</string>
     <string name="toast_claim_already">この期間はすでに受け取りました。</string>
-    <string name="toast_claim_failed">サーバーに接続できませんでした。もう一度お試しください。</string>
+    <string name="toast_claim_failed">接続できませんでした。もう一度タップしてください。</string>
     <string name="toast_claim_sign_in">報酬を受け取るにはログインが必要です。</string>
     <string name="invite_subject">StepUpで一緒に走ろう</string>
     <string name="invite_text">StepUpなら歩くだけでSUPが貯まるよ。一緒に走ろう！</string>
@@ -514,7 +514,7 @@
     <string name="crew_notice_saved">保存しました</string>
     <string name="crew_notice_approved">承認しました</string>
     <string name="crew_notice_rejected">拒否しました</string>
-    <string name="crew_notice_failed">サーバーに接続できませんでした。もう一度お試しください。</string>
+    <string name="crew_notice_failed">接続できませんでした。もう一度お試しください。</string>
     <string name="crew_sign_in_needed">ログインするとクルーを見て参加できます</string>
     <string name="crew_loading">クルーを読み込み中…</string>
     <string name="crew_load_failed">クルーを読み込めませんでした</string>
@@ -578,7 +578,7 @@
     <string name="party_leave">ロビーを出る</string>
     <string name="party_problem_sign_in">パーティーランにはログインが必要です。</string>
     <string name="party_problem_removed">クルーメンバーかこのフラッシュランの参加者だけが入れます。またはホストに退出させられました。</string>
-    <string name="party_problem_network">サーバーに接続できません。再試行中…</string>
+    <string name="party_problem_network">接続が切れました。再接続中…</string>
     <string name="party_problem_closed">ルームは閉じられました。</string>
     <string name="party_problem_failed">処理できませんでした。もう一度お試しください。</string>
     <string name="party_problem_missed_start">一緒の出発から時間が経ったため、新しい待機室を開きました。</string>
@@ -746,7 +746,7 @@ StepUp と走り出そう。</string>
     <string name="login_terms">続行すると利用規約とプライバシーポリシーに同意したものとみなされます。</string>
     <string name="login_failed">ログインに失敗しました。もう一度お試しください。</string>
     <string name="login_no_account">この端末にGoogleアカウントがありません。設定で追加してからお試しください。</string>
-    <string name="login_offline">サーバーに接続できません。通信環境をご確認ください。</string>
+    <string name="login_offline">接続できません。通信環境をご確認ください。</string>
 
     <!-- Guide -->
     <string name="guide_heading">StepUp の使い方</string>
@@ -758,7 +758,7 @@ StepUp と走り出そう。</string>
     <string name="journey_run_label">ラン開始</string>
     <string name="journey_run_desc">ホームの START RUN を押すと始まります</string>
     <string name="journey_finish_label">完了・判定</string>
-    <string name="journey_finish_desc">終わるとサーバーが本当に走ったか確認します</string>
+    <string name="journey_finish_desc">終わると走った記録を確認します</string>
     <string name="journey_earn_label">SUP 獲得</string>
     <string name="journey_earn_desc">認められた歩数の分だけ SUP が貯まります</string>
     <string name="journey_wallet_label">ウォレット</string>
@@ -820,7 +820,7 @@ StepUp と走り出そう。</string>
     <string name="tour7_title">装備中のスニーカー</string>
     <string name="tour7_body">この一足のブーストが毎回のランに反映。タップでステータス確認・強化・履き替え。</string>
     <string name="tour8_title">ミント</string>
-    <string name="tour8_body">ランダムなスニーカーを抽選。新規登録で無料10回、その後は1回500 SUP。抽選はサーバーが行います。</string>
+    <string name="tour8_body">ランダムなスニーカーを抽選。新規登録で無料10回、その後は1回500 SUPです。</string>
     <string name="tour9_title">コレクション</string>
     <string name="tour9_body">横にスワイプして倉庫を閲覧。重複は ×N でまとまり、タップで個体を選べます。図鑑は全44枠！</string>
     <string name="tour10_title">イベント</string>
@@ -943,7 +943,7 @@ StepUp と走り出そう。</string>
     <string name="course_reward_upto">最大 +%1$s SUP</string>
     <string name="course_reward_none">このコースは完走報酬がありません（体験・自分のコース）</string>
     <string name="course_apply_body_no_reward">%1$s · %2$s km\nこのコースは完走報酬がありません（体験・自分のコース）。記録は残ります。</string>
-    <string name="course_per_km">1kmあたり %1$s SUP · 最大 %2$s · 1日1回、サーバー確認後</string>
+    <string name="course_per_km">1kmあたり %1$s SUP · 最大 %2$s · 1日1回、記録の確認後</string>
     <string name="course_to_finish">完走まで</string>
     <string name="course_none_title">コース未選択</string>
     <string name="course_none_body">コースを選ぶとライブマップと距離に応じた完走報酬が使えます。</string>
@@ -983,7 +983,7 @@ StepUp と走り出そう。</string>
     <string name="map_open_google">Google マップで開く</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">このコースを適用しますか？</string>
-    <string name="course_apply_body">%1$s · %2$s km\n完走するとサーバー確認後に最大 %3$s SUP（1日1回）。</string>
+    <string name="course_apply_body">%1$s · %2$s km\n完走すると記録の確認後に最大 %3$s SUP（1日1回）。</string>
     <string name="course_clear_title">コースの適用を解除しますか？</string>
     <string name="course_clear_body">%1$s は現在のコースではなくなります。</string>
     <string name="notif_course_complete">%1$s 完走！+%2$s SUP 獲得</string>
@@ -994,7 +994,7 @@ StepUp と走り出そう。</string>
     <string name="market_nft_head">ランナー同士の取引所</string>
     <string name="market_nft_body">スニーカーがランナーの間で動きます。売り手が値を出し、買い手も値を出し、両者が合えば約定します。</string>
     <string name="market_tradable">取引できる SUP</string>
-    <string name="market_tradable_note">サーバーに記録されたランのみ</string>
+    <string name="market_tradable_note">記録されたランのみ</string>
     <string name="market_section_quotes">相場</string>
     <string name="market_section_mine">自分の注文</string>
     <string name="market_quotes_title">モデル</string>
@@ -1039,8 +1039,8 @@ StepUp と走り出そう。</string>
     <string name="market_trade_bought">購入</string>
     <string name="market_fee_paid">手数料 %1$s</string>
     <string name="market_problem_sign_in">取引にはログインが必要です。誰のものかを取引所が知る必要があります。</string>
-    <string name="market_problem_rejected">サーバーが断りました。やり直しても同じ答えです。</string>
-    <string name="market_problem_offline">サーバーに届きませんでした。接続が戻れば読み込みます。</string>
+    <string name="market_problem_rejected">リクエストを処理できませんでした。</string>
+    <string name="market_problem_offline">接続が切れました。接続が戻れば読み込みます。</string>
     <string name="market_msg_traded">約定しました。</string>
     <string name="market_msg_sign_in">もう一度ログインしてください。</string>
     <string name="market_msg_equipped">履いているスニーカーは売れません。先に脱いでください。</string>
@@ -1154,7 +1154,7 @@ StepUp と走り出そう。</string>
     <string name="feed_place_unknown">Venue to be announced</string>
     <string name="feed_fee_from">From %1$s KRW</string>
     <string name="feed_last_checked">Last checked %1$s</string>
-    <string name="feed_last_checked_unknown">Never checked</string>
+    <string name="feed_last_checked_unknown">まだ確認していません</string>
     <string name="feed_save">Save</string>
     <string name="feed_unsave">Remove from saved</string>
     <string name="feed_ai_summary">AI summary — read the full article at the source</string>
@@ -1167,8 +1167,8 @@ StepUp と走り出そう。</string>
     <string name="feed_events_notice">申込と決済は外部サイトで行います。最終日程と受付状況は主催者の案内をご確認ください。外部サイトの訪問は申込完了ではありません。</string>
     <string name="feed_sources_note">Sources: %1$s. Headlines and links only — the article is read at its source.</string>
     <string name="feed_sources_none">No news source is connected yet. We are verifying sources before turning them on.</string>
-    <string name="feed_problem_offline">Could not reach the server. It will load when the connection comes back.</string>
-    <string name="feed_problem_rejected">The server turned the request down. Trying again will give the same answer.</string>
+    <string name="feed_problem_offline">接続が切れました。接続が戻れば読み込みます。</string>
+    <string name="feed_problem_rejected">リクエストを処理できませんでした。</string>
     <string name="feed_showing_cached">Showing the list fetched at %1$s</string>
     <string name="feed_sign_in_to_save">Sign in to save.</string>
     <string name="feed_save_failed">Could not save. Please try again in a moment.</string>
@@ -1246,7 +1246,7 @@ StepUp と走り出そう。</string>
     <string name="challenge_daily_desc">目標を超えるとボーナスが自動で入ります。</string>
     <string name="challenge_daily_streak_note">連続達成で増加</string>
     <string name="challenge_refer_desc">友達をStepUpに招待しましょう。招待人数を数える機能がまだないため、進捗は表示しません。</string>
-    <string name="challenge_soon">準備中</string>
+    <string name="challenge_soon">まもなく開始</string>
     <string name="challenge_state_progress">進行中</string>
     <string name="challenge_state_ready">受け取れます</string>
     <string name="challenge_state_settling">ボーナス付与中</string>
@@ -1294,9 +1294,9 @@ StepUp と走り出そう。</string>
     <string name="demo_no_save">サンプルは保存できません。</string>
     <string name="feed_demo_note">デモモードです。以下はテスト用のサンプルで、実際の大会・記事ではありません。</string>
     <string name="finish_confirmed">ポイント付与完了</string>
-    <string name="finish_pending">ラン完了 · サーバー確認中</string>
-    <string name="finish_pending_note">ランの記録を保存しました。報酬はサーバーの確認後に確定します。</string>
-    <string name="finish_rejected">サーバーがこの記録を認めませんでした</string>
+    <string name="finish_pending">ラン完了 · 記録を確認中</string>
+    <string name="finish_pending_note">ランの記録を保存しました。報酬は確認が終わると確定します。</string>
+    <string name="finish_rejected">この記録は認められませんでした</string>
     <string name="finish_simulated">テスト用の歩数シミュレーションを含むランはサーバーに送らず、付与もしません。</string>
     <string name="finish_balance">保有</string>
     <string name="finish_done">完了</string>
@@ -1365,10 +1365,10 @@ StepUp と走り出そう。</string>
     <string name="news_hero_sub">一緒に走る、もっと大きな楽しさ。</string>
 
     <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
-    <string name="finish_pending_short">サーバー確認中</string>
-    <string name="finish_no_reward">サーバー確認済み · 今回のランは付与なし</string>
-    <string name="finish_no_steps">歩数が記録されず、今回のランは付与なし</string>
-    <string name="finish_sign_in_needed">ログインが切れているため、このランをまだサーバーに送れていません。7日以内に再ログインすると送信されます。</string>
+    <string name="finish_pending_short">記録を確認中</string>
+    <string name="finish_no_reward">今回のランは付与されませんでした</string>
+    <string name="finish_no_steps">歩数が記録されず、今回のランは付与されませんでした</string>
+    <string name="finish_sign_in_needed">ログインが切れているため、このランをまだ送信できていません。7日以内に再ログインすると送信されます。</string>
     <string name="run_storage_blocked">端末に残ったラン記録を読み込めないため、新しいランを開始できませんでした。アプリを開き直してお試しください。</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
@@ -1420,7 +1420,7 @@ StepUp と走り出そう。</string>
     <string name="course_rank_title">コース記録ランキング</string>
     <string name="course_rank_loading">読み込み中…</string>
     <string name="course_rank_failed">ランキングを読み込めませんでした。掲示板に共有されたコースのみランキングがあります。</string>
-    <string name="course_rank_empty">まだ記録がありません。このコースを選んで完走すると、サーバーがルートを確認してランキングに載せます。</string>
+    <string name="course_rank_empty">まだ記録がありません。このコースを選んで完走すると、ルートを確認してランキングに載せます。</string>
     <string name="course_rank_me">%1$s (自分)</string>
     <string name="notification_channel_reminder">目標リマインダー</string>
     <string name="reminder_goal_title">今日の目標まであと%1$d歩</string>
@@ -1454,7 +1454,7 @@ StepUp と走り出そう。</string>
     <string name="home_banner_message">今日も一歩、\nいい方向へ。</string>
     <string name="mystery_guide_title">抽選の前に</string>
     <string name="toast_drawn_refreshing">抽選しました！新しいスニーカーを読み込んでいます。少し後にコレクションで確認してください。</string>
-    <string name="sneaker_enhance_legacy">サーバー経済以前にスマホで作ったスニーカーは強化できません。</string>
+    <string name="sneaker_enhance_legacy">以前の方式で作ったスニーカーは強化できません。</string>
     <string name="sneaker_enhance_listed">出品中のスニーカーは強化できません。</string>
     <string name="community_upcoming">これからのランニング</string>
     <string name="run_route_unavailable">このランニングのGPSルートは記録されていません。</string>
@@ -2064,7 +2064,7 @@ StepUp と走り出そう。</string>
     <string name="story_card_active_body">ランを終えるとコースを添付できます。</string>
     <string name="story_card_back_to_run">ラン画面へ</string>
     <string name="story_card_pending_title">さっき走った記録を確認しています</string>
-    <string name="story_card_pending_body">サーバーの確認が終われば添付できます。</string>
+    <string name="story_card_pending_body">記録の確認が終われば添付できます。</string>
     <string name="story_card_available_title">最近の記録を添付できます</string>
     <string name="story_card_available_body">3日前までの記録のコースを添付できます。</string>
     <string name="story_card_pick">記録を選ぶ</string>
@@ -2097,7 +2097,7 @@ StepUp と走り出そう。</string>
     <string name="story_runs_empty">最近3日以内に添付できる記録がありません</string>
     <string name="story_runs_empty_day">この日は添付できる記録がありません</string>
     <string name="story_runs_show_all">すべて見る</string>
-    <string name="story_runs_no_route">コースなし</string>
+    <string name="story_runs_no_route">ルートのないラン</string>
     <string name="story_noloc_title">位置情報なしで場所を選ぶ</string>
     <string name="story_noloc_head">現在地の利用がオフになっています。</string>
     <string name="story_noloc_body">場所を自分で選べば書き続けられます。</string>
@@ -2277,7 +2277,7 @@ StepUp と走り出そう。</string>
     <string name="crew_missing_title">このクルーは表示できません</string>
     <string name="crew_missing_body">解散したか、現在アクセスできないクルーです。</string>
     <string name="crew_to_list">クルー一覧へ</string>
-    <string name="crew_problem_network">サーバーに接続できませんでした。しばらくしてから再度お試しください。</string>
+    <string name="crew_problem_network">接続できませんでした。しばらくしてから再度お試しください。</string>
     <string name="crew_problem_signin">ログインが必要です。</string>
     <string name="crew_problem_limit">作成できるクルー数の上限に達しました。</string>
     <string name="crew_problem_not_owner">クルー長だけが変更できます。</string>

@@ -47,7 +47,7 @@
     <string name="crew_live_checking">正在确认人数奖励 · %1$s 后确定</string>
     <string name="crew_live_checking_now">正在确认人数奖励</string>
     <string name="crew_live_bonus">人数 %1$d人 +%2$s%% · Lv +%3$s%%</string>
-    <string name="crew_live_bonus_none">无人数奖励 · Lv +%1$s%%</string>
+    <string name="crew_live_bonus_none">独自出发 · Lv +%1$s%%</string>
     <string name="crew_live_paused">暂停中 · 不消耗共用体力</string>
     <string name="crew_live_pool_low">奖励可能即将停止</string>
     <string name="crew_live_pool_low_body">剩余共用体力由一起跑的人共同使用。归零后只停止获得奖励，记录会继续。不会使用个人鞋子耐久度。</string>
@@ -73,7 +73,7 @@
     <string name="run_notify_crew_pool">团队体力 %1$s / %2$s</string>
     <string name="crew_result_base">按我的鞋子奖励 %1$s SUP</string>
     <string name="crew_result_headcount">人数 %1$d人 · +%2$s%% → +%3$s SUP</string>
-    <string name="crew_result_headcount_none">无人数奖励</string>
+    <string name="crew_result_headcount_none">独自出发，没有人数奖励</string>
     <string name="crew_result_level_bonus">Lv.%1$d · +%2$s%% → +%3$s SUP</string>
     <string name="crew_result_total">%1$s × (1 + %2$s%% + %3$s%%) = %4$s SUP</string>
     <string name="crew_result_cap">团队奖励与个人每日上限分开计算。</string>
@@ -83,6 +83,6 @@
     <string name="crew_result_alone">其他人都已结束，自动结束。</string>
     <string name="crew_result_level_void">本次跑步无效，未计入团队累计距离。团队等级不会下降。</string>
     <string name="crew_result_not_crew">本次未计为团队跑。你今天已经完成团队跑，或没有在此房间一起出发。</string>
-    <string name="crew_result_pending">团队奖励会在服务器结算后显示。</string>
+    <string name="crew_result_pending">团队奖励结算完成后显示。</string>
     <string name="crew_entry_next">下次参与从明天 00:00(韩国时间)开始。自由跑可使用个人鞋子耐久度。</string>
 </resources>

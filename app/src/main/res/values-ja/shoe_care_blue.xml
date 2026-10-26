@@ -66,5 +66,5 @@
     <string name="care_block_chain">チェーン上のシューズです。先にアプリに戻してください。</string>
     <string name="care_block_legacy">スマホで作った以前のシューズは強化できません。</string>
     <string name="care_block_missing">保有シューズにありません。保有シューズから選び直してください。</string>
-    <string name="care_block_other">サーバーがリクエストを受け付けませんでした。しばらくしてから確認してください。</string>
+    <string name="care_block_other">リクエストを処理できませんでした。しばらくしてからもう一度お試しください。</string>
 </resources>

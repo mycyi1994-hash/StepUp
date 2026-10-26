@@ -26,7 +26,7 @@
     <string name="lb_rules_week_title">1週間</string>
     <string name="lb_rules_week_body">月曜0時から日曜まで（韓国時間）の記録を数えます。無効と判定されたランは除きます。</string>
     <string name="lb_rules_tie_title">記録が同じとき</string>
-    <string name="lb_rules_tie_body">距離が同じ場合はサーバーが決めた順（ランナーは名前順）に並び、すぐ前との差は同点と表示します。</string>
+    <string name="lb_rules_tie_body">距離が同じ場合は名前順に並び、すぐ前との差は同点と表示します。</string>
     <string name="lb_close">閉じる</string>
     <string name="lb_me">自分の順位</string>
     <string name="lb_rank_suffix">位</string>
@@ -43,7 +43,7 @@
     <string name="lb_crew_runners">%1$d人参加</string>
     <string name="lb_crew_mine_move">うちのクルー · %1$s</string>
     <string name="lb_crew_mine">うちのクルー</string>
-    <string name="lb_crew_mine_unranked">うちのクルー · 今週の記録なし</string>
+    <string name="lb_crew_mine_unranked">うちのクルー · 今週はまだ記録がありません</string>
     <string name="lb_crew_none_title">まだクルーがありません</string>
     <string name="lb_crew_none_body">クルーに参加すると、うちのクルーの順位がここに表示されます。</string>
     <string name="lb_crew_nearby_open">うちのクルー周辺の順位を見る</string>
@@ -52,8 +52,8 @@
     <string name="lb_crew_empty_title">今週のクルー記録はまだありません</string>
     <string name="lb_crew_empty_body">クルーメンバーがクルーランをすると順位ができます。</string>
     <string name="lb_more">もっと見る</string>
-    <string name="lb_unavailable_title">この順位はまだ準備中です</string>
-    <string name="lb_unavailable_body">サーバーからこの順位をまだ受け取れません。</string>
+    <string name="lb_unavailable_title">この順位を読み込めませんでした</string>
+    <string name="lb_unavailable_body">しばらくしてからもう一度ご確認ください。</string>
     <string name="lb_personal_label">%1$sさん、今週の順位</string>
     <string name="lb_personal_label_anon">今週の自分の順位</string>
     <string name="lb_rise_up">先週より\n%1$dランクアップ</string>

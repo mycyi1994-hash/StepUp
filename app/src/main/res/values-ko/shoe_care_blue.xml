@@ -17,7 +17,7 @@
     <string name="care_record">신발 기록</string>
     <string name="care_record_received">획득일</string>
     <string name="care_record_chain">체인 등록</string>
-    <string name="care_chain_none">등록 없음</string>
+    <string name="care_chain_none">아직 등록 전</string>
     <string name="care_chain_token">Token #%1$d</string>
     <string name="care_chain_vault">Vault #%1$d</string>
     <string name="care_later">나중에</string>
@@ -66,5 +66,5 @@
     <string name="care_block_chain">체인에 있는 신발이에요. 먼저 앱으로 넣어 주세요.</string>
     <string name="care_block_legacy">폰에서 만든 예전 신발은 강화할 수 없어요.</string>
     <string name="care_block_missing">보유 신발 목록에 없는 신발이에요. 보유 신발에서 다시 선택해주세요.</string>
-    <string name="care_block_other">서버가 요청을 받지 않았어요. 잠시 후 다시 확인해주세요.</string>
+    <string name="care_block_other">요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.</string>
 </resources>

@@ -47,7 +47,7 @@
     <string name="crew_live_checking">Checking headcount bonus · confirmed in %1$s</string>
     <string name="crew_live_checking_now">Checking headcount bonus</string>
     <string name="crew_live_bonus">%1$d counted +%2$s%% · Lv +%3$s%%</string>
-    <string name="crew_live_bonus_none">No headcount bonus · Lv +%1$s%%</string>
+    <string name="crew_live_bonus_none">Started solo · Lv +%1$s%%</string>
     <string name="crew_live_paused">Paused · not using shared stamina</string>
     <string name="crew_live_pool_low">Earning may stop soon</string>
     <string name="crew_live_pool_low_body">Everyone running is using the remaining shared stamina. At 0 only earning stops and the run keeps recording. Your own shoe durability isn\'t used.</string>
@@ -73,7 +73,7 @@
     <string name="run_notify_crew_pool">Crew stamina %1$s / %2$s</string>
     <string name="crew_result_base">Your shoe reward %1$s SUP</string>
     <string name="crew_result_headcount">Headcount %1$d · +%2$s%% → +%3$s SUP</string>
-    <string name="crew_result_headcount_none">No headcount bonus</string>
+    <string name="crew_result_headcount_none">You started solo, so there\'s no headcount bonus</string>
     <string name="crew_result_level_bonus">Lv.%1$d · +%2$s%% → +%3$s SUP</string>
     <string name="crew_result_total">%1$s × (1 + %2$s%% + %3$s%%) = %4$s SUP</string>
     <string name="crew_result_cap">Crew rewards are separate from the personal daily cap.</string>
@@ -83,6 +83,6 @@
     <string name="crew_result_alone">Ended automatically after everyone else finished.</string>
     <string name="crew_result_level_void">This run was invalid, so it wasn\'t added to the crew distance. Crew levels never go down.</string>
     <string name="crew_result_not_crew">This wasn\'t counted as a crew run. You already did today\'s crew run, or you didn\'t start together in this room.</string>
-    <string name="crew_result_pending">Crew rewards show after the server settles them.</string>
+    <string name="crew_result_pending">Crew rewards appear once they\'re settled.</string>
     <string name="crew_entry_next">Next crew run from 00:00 KST tomorrow. Free runs use your own shoe durability.</string>
 </resources>

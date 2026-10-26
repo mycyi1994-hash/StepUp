@@ -13,7 +13,7 @@
     <string name="home_activity_minutes">分钟</string>
     <string name="home_activity_sup">今日 SUP</string>
     <string name="home_activity_checking">确认中</string>
-    <string name="home_activity_sup_note">奖励经服务器确认后到账。</string>
+    <string name="home_activity_sup_note">奖励在记录确认后到账。</string>
     <string name="home_activity_more">更多</string>
     <string name="home_activity_ok">确定</string>
     <string name="home_stage_open">打开我的鞋子</string>
@@ -196,7 +196,7 @@
     <string name="run_delete_confirm">删除记录</string>
     <string name="run_delete_failed">删除失败。</string>
     <string name="run_delete_kept">记录保持不变。</string>
-    <string name="run_delete_uploading">服务器正在确认本次跑步，确认后即可删除。</string>
+    <string name="run_delete_uploading">本次跑步正在确认中，确认后即可删除。</string>
     <string name="run_share_title">分享跑步记录</string>
     <string name="run_share_sub">分享今天的跑步。</string>
     <string name="run_share_route">包含路线</string>

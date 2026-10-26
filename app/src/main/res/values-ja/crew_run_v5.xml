@@ -107,7 +107,7 @@
     <string name="crew5_lobby_menu_leave">待機室を出る</string>
     <string name="crew5_lobby_rules">クルーランのルールを見る</string>
     <string name="crew5_lobby_done_today">今日はすでにクルーランをしたため、この待機室では準備できません。</string>
-    <string name="crew5_lobby_offline">サーバーにつながっていません。自動で再接続します。</string>
+    <string name="crew5_lobby_offline">接続が切れました。自動で再接続します。</string>
     <string name="crew5_lobby_reconnect">今すぐ再接続</string>
     <string name="crew5_lobby_failed">今の操作は処理されませんでした。もう一度押してください。</string>
     <string name="crew5_lobby_loading">待機室を読み込み中です</string>
@@ -169,7 +169,7 @@
     <string name="crew5_roster_host_title">参加者の管理</string>
     <string name="crew5_roster_member_title">一緒に走るクルー</string>
     <string name="crew5_roster_ready">準備完了</string>
-    <string name="crew5_roster_waiting">準備中</string>
+    <string name="crew5_roster_waiting">待機中</string>
     <string name="crew5_roster_count">%1$d人 · 準備 %2$d人</string>
     <string name="crew5_kick_title">%1$sさんを外しますか?</string>
     <string name="crew5_kick_body">この待機室から外れるだけで、クルーは抜けません。外した人はこの待機室に戻れません。</string>
@@ -192,7 +192,7 @@
     <string name="crew5_start_add">自分が加える耐久度</string>
     <string name="crew5_start_go">一緒に出発</string>
     <string name="crew5_partial_title">準備した%1$d人で出発しますか?</string>
-    <string name="crew5_partial_body">準備中の%1$d人は今回の出発から外れ、ボーナスと貢献にも含まれません。</string>
+    <string name="crew5_partial_body">まだ準備していない%1$d人は今回の出発から外れ、ボーナスと貢献にも含まれません。</string>
     <string name="crew5_partial_go">準備した%1$d人で出発</string>
     <string name="crew5_partial_wait">もう少し待つ</string>
     <string name="crew5_starting">出発の合図を合わせています</string>
