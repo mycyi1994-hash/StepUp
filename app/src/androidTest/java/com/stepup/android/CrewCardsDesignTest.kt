@@ -757,7 +757,11 @@ class CrewCardsDesignTest {
 
     private fun tapTag(tag: String) {
         awaitTag(tag)
-        val node = compose.onAllNodesWithTag(tag).onFirst()
+        // 기다린 것과 같은 나무에서 누른다 — 누를 수 있는 사진(크루 포스터 등) 안의 원 버튼은 병합된 나무에서 사진에 묻혀
+        // 태그가 사라진다(awaitTag 는 펼친 나무를 본다). 누르기는 좌표로 들어가 안쪽 버튼에 닿는다
+        val merged = compose.onAllNodesWithTag(tag)
+        val node = if (merged.fetchSemanticsNodes().isNotEmpty()) merged.onFirst()
+            else compose.onAllNodesWithTag(tag, useUnmergedTree = true).onFirst()
         runCatching { node.performScrollTo() }
         node.performClick()
         compose.waitForIdle()

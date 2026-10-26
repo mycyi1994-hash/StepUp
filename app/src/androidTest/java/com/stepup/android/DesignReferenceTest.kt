@@ -293,9 +293,12 @@ class DesignReferenceTest {
                     compose.onNodeWithTag("lb-board-1").performClick()
                     compose.waitForIdle()
                     capture("$name-personal")
-                    compose.onNodeWithTag("lb-board-2").performClick()
-                    compose.waitForIdle()
-                    capture("$name-points")
+                    // 주간 포인트 판은 서버가 순위를 줄 때만 있다(2026-10-26 — 없으면 판째 숨는다)
+                    if (compose.onAllNodesWithTag("lb-board-2").fetchSemanticsNodes().isNotEmpty()) {
+                        compose.onNodeWithTag("lb-board-2").performClick()
+                        compose.waitForIdle()
+                        capture("$name-points")
+                    }
                 }
             }
         }
@@ -392,7 +395,8 @@ class DesignReferenceTest {
             // 자유 러닝(2026-10-14 v2) — 지도 가득 화면. 결과도 저장된 경로(점 2개 이상)를 지도 가득 그린다
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS -> "run-live-map"
             Scene.RUN_FINISH -> "run-result-map"
-            Scene.COMMUNITY -> "community-featured-title"
+            // 함께 뛰기 › 모집 중(2026-10-26) — 크루 러닝 · 번개러닝 한 목록과 아래 "함께 뛰기 만들기"
+            Scene.COMMUNITY -> "together-create"
             // 내 정보(2026-10-26) — 사진 틀 거리 카드가 위, 설정 줄은 넘겨서 닿는다
             Scene.PROFILE -> "profile-record-card"
             Scene.CHALLENGE -> "challenge-primary-action"
@@ -509,13 +513,12 @@ class DesignReferenceTest {
             assertTrue("Run time must be above the pinned action: time=${hero.bottom}, action=${action.top}", hero.bottom <= action.top)
         }
         if (scene == Scene.PROFILE) {
-            compose.onNodeWithTag("profile-records").assertIsDisplayed()
+            // 내 정보(2026-10-26) — 거리 카드 · 최근 러닝 아래라 낮은 화면에서는 넘겨서 닿는다
+            compose.onNodeWithTag("profile-records").performScrollTo().assertIsDisplayed()
         }
         if (scene == Scene.COMMUNITY) {
-            val title = compose.onNodeWithTag("community-featured-title", useUnmergedTree = true)
-                .getUnclippedBoundsInRoot()
-            val action = compose.onNodeWithTag("community-primary").getUnclippedBoundsInRoot()
-            assertTrue("Meetup title must remain above its action", title.bottom <= action.top)
+            // 모집 중의 주 버튼은 목록이 길어도 늘 아래에 보인다
+            compose.onNodeWithTag("together-create").assertIsDisplayed()
         }
     }
 
