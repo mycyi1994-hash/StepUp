@@ -85,6 +85,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.heading
@@ -548,7 +549,8 @@ fun SecondaryBusyButton(
     if (busy) {
         Box(
             modifier.heightIn(min = StepUpUi.ButtonHeight).clip(CircleShape).background(StepUpUi.colors.fill)
-                .semantics { contentDescription = text },
+                // 도는 동안은 누를 수 없다 — 화면 낭독도 "사용 안 함"으로 읽는다
+                .semantics { contentDescription = text; role = Role.Button; disabled() },
             contentAlignment = Alignment.Center,
         ) { StepUpSpinner(Modifier.size(22.dp), color = StepUpUi.colors.label) }
     } else {
