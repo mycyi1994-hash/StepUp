@@ -55,7 +55,7 @@ import com.stepup.android.service.RunNotification
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.components.PrimaryButton
-import com.stepup.android.ui.components.RunStartWordmark
+import com.stepup.android.ui.components.LockScreenWordmark
 import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.pressable
 import kotlinx.coroutines.delay
@@ -154,7 +154,7 @@ internal fun LockRunPanel(state: WalkSessionState, onToggle: () -> Unit, onOpen:
             .safeDrawingPadding()
             .padding(horizontal = 24.dp),
     ) {
-        RunStartWordmark(width = 116.dp, modifier = Modifier.align(Alignment.TopCenter).padding(top = 20.dp))
+        LockScreenWordmark(Modifier.align(Alignment.TopCenter).padding(top = 20.dp))
         Column(
             Modifier.align(Alignment.Center).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,

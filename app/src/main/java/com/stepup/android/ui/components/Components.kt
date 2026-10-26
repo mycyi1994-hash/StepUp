@@ -288,6 +288,12 @@ fun RunStartWordmark(width: Dp, modifier: Modifier = Modifier) {
 
 private const val RunStartWordmarkRatio = 900f / 156f
 
+/** 잠금 화면 러닝 현황의 로고 — 흰 워드마크를 공통 크기([StepUpDesign.LockLogoWidth])로. 화면은 크기를 정하지 않는다 */
+@Composable
+fun LockScreenWordmark(modifier: Modifier = Modifier) {
+    RunStartWordmark(StepUpDesign.LockLogoWidth, modifier)
+}
+
 /** [RunStartWordmark] 를 뒤에서 미리 푼다 — 카운트다운이 시작되기 전에(신발 점검 동안) 부른다. 화면 스레드를 막지 않는다 */
 fun prewarmRunStartWordmark(context: android.content.Context) {
     RasterCache.prewarm(context.resources, R.drawable.logo_wordmark_white)
