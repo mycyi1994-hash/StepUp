@@ -611,3 +611,36 @@ fun parseSlotKey(key: String): Triple<Faction, Rarity, Int>? {
     val variant = parts[2].toIntOrNull() ?: return null
     return Triple(faction, rarity, variant)
 }
+
+/**
+ * 뽑기 확률(서버 0077 `draw_odds` — 뽑기가 실제로 쓰는 등급 표). 무료 · 상급마다 등급과 천분율(790 = 79%).
+ * 앱이 확률을 지어내지 않는다 — 읽지 못하면 표를 보이지 않는다.
+ */
+data class DrawOdds(val free: List<Pair<Rarity, Int>>, val premium: List<Pair<Rarity, Int>>) {
+    companion object {
+        /** 천분율 → "79" · "2.5" · "0.5" */
+        fun percent(permille: Int): String =
+            if (permille % 10 == 0) (permille / 10).toString() else "${permille / 10}.${permille % 10}"
+
+        fun parse(body: String): DrawOdds? = runCatching {
+            val root = kotlinx.serialization.json.Json.parseToJsonElement(body)
+            val obj = (if (root is kotlinx.serialization.json.JsonArray) root.firstOrNull() else root) as? kotlinx.serialization.json.JsonObject
+                ?: return null
+            // RPC 는 함수 이름으로 한 겹 싸서 줄 수 있다
+            val data = (obj["pools"] ?: (obj["draw_odds"] as? kotlinx.serialization.json.JsonObject)?.get("pools")) as? kotlinx.serialization.json.JsonArray
+                ?: return null
+            fun pool(name: String): List<Pair<Rarity, Int>> = data
+                .mapNotNull { it as? kotlinx.serialization.json.JsonObject }
+                .firstOrNull { (it["pool"] as? kotlinx.serialization.json.JsonPrimitive)?.content == name }
+                ?.let { it["odds"] as? kotlinx.serialization.json.JsonArray }
+                ?.mapNotNull { row ->
+                    val o = row as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
+                    val rarity = Rarity.entries.firstOrNull { r -> r.name == (o["rarity"] as? kotlinx.serialization.json.JsonPrimitive)?.content }
+                    val permille = (o["permille"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull()
+                    if (rarity != null && permille != null && permille > 0) rarity to permille else null
+                }
+                .orEmpty()
+            DrawOdds(pool("FREE"), pool("PREMIUM")).takeIf { it.free.isNotEmpty() }
+        }.getOrNull()
+    }
+}

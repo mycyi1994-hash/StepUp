@@ -551,8 +551,8 @@ fun SecondaryBusyButton(
     if (busy) {
         Box(
             modifier.heightIn(min = StepUpUi.ButtonHeight).clip(CircleShape).background(StepUpUi.colors.fill)
-                // 스피너만 보이지만 읽기 도구 · 검사에는 글과 '누를 수 없음'을 남긴다(주 버튼 로딩과 같게)
-                .semantics { contentDescription = text; this.text = androidx.compose.ui.text.AnnotatedString(text); disabled() },
+                // 도는 동안은 누를 수 없다 — 화면 낭독도 "사용 안 함"으로 읽고, 글("저장 중…")은 읽기 도구 · 검사에 남긴다(주 버튼 로딩과 같게)
+                .semantics { contentDescription = text; this.text = androidx.compose.ui.text.AnnotatedString(text); role = Role.Button; disabled() },
             contentAlignment = Alignment.Center,
         ) { StepUpSpinner(Modifier.size(22.dp), color = StepUpUi.colors.label) }
     } else {
