@@ -10,7 +10,6 @@ import android.content.IntentFilter
 import android.os.Build
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
@@ -57,6 +55,7 @@ import com.stepup.android.service.RunNotification
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.components.PrimaryButton
+import com.stepup.android.ui.components.RunStartWordmark
 import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.pressable
 import kotlinx.coroutines.delay
@@ -71,7 +70,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun LockRunHost(content: @Composable () -> Unit) {
     val context = LocalContext.current
-    val activity = remember(context) { context.findActivity() }
+    val activity = remember(context) { context.hostActivity() }
     val session by WalkSessionService.state.collectAsStateWithLifecycle()
     val running = session.isActive
     DisposableEffect(activity, running) {
@@ -155,10 +154,7 @@ internal fun LockRunPanel(state: WalkSessionState, onToggle: () -> Unit, onOpen:
             .safeDrawingPadding()
             .padding(horizontal = 24.dp),
     ) {
-        Image(
-            painterResource(R.drawable.logo_wordmark_white), null,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 20.dp).height(20.dp),
-        )
+        RunStartWordmark(width = 116.dp, modifier = Modifier.align(Alignment.TopCenter).padding(top = 20.dp))
         Column(
             Modifier.align(Alignment.Center).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -221,7 +217,7 @@ private fun LockStat(label: String, value: String, unit: String?) {
 private val LockAccent = Color(0xFF7DA2FF)
 private val LockMuted = Color(0xFFA7AFBC)
 
-internal fun Context.findActivity(): Activity? {
+private fun Context.hostActivity(): Activity? {
     var current: Context? = this
     while (current is ContextWrapper) {
         if (current is Activity) return current
