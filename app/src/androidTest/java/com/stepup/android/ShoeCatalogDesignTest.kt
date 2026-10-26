@@ -68,10 +68,12 @@ class ShoeCatalogDesignTest {
                 showTile(id)
                 compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
                 val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
-                // 이름 칸(제목 한 덩어리)은 글 · 배지를 감싼다 — 그 안의 글을 본다
+                // 이름 칸 — UI 최종 통합안(2026-10-25)부터 이름 글 자체가 꼬리표를 단다(예전엔 글 · 배지를 감싼 칸이었다). 어느 쪽이든 본다
                 compose.waitUntil(10_000) {
-                    compose.onAllNodes(hasText(name, substring = true) and hasAnyAncestor(hasTestTag("shoe-hero-name")),
-                        useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+                    compose.onAllNodes(
+                        hasText(name, substring = true) and (hasTestTag("shoe-hero-name") or hasAnyAncestor(hasTestTag("shoe-hero-name"))),
+                        useUnmergedTree = true,
+                    ).fetchSemanticsNodes().isNotEmpty()
                 }
                 awaitSingle("grade-stage-${TIERS[index]}")
                 shot("0${index + 1}-stage-$model")
