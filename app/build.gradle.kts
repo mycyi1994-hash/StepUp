@@ -215,6 +215,12 @@ android {
         buildConfig = true
     }
 
+    // 앱이 지원하는 네 언어만 담는다 — 라이브러리(머티리얼 · 플레이 서비스 등)의 다른 수십 개 언어 글자는 쓰지 않아 빼서
+    // 스토어 판 · 테스트 APK 크기를 줄인다(2026-10-26 플레이 출시 최적화). 언어를 더하면 여기와 xml/locales_config 를 함께 고친다
+    androidResources {
+        localeFilters += listOf("ko", "en", "ja", "zh")
+    }
+
     // AAB에는 언어 리소스를 전부 담되, 기기가 받을 때만 골라 받게 한다.
     // (4개 언어를 지원하므로 language 스플릿을 끄면 APK가 불필요하게 커진다.)
     bundle {

@@ -125,4 +125,5 @@
     <string name="dv3_opening_met">You met a new shoe.</string>
     <string name="dv3_result_head">You got a new shoe.</string>
     <string name="dv3_check_unknown_head">We couldn\'t confirm the result yet.</string>
+    <string name="dv2_rules_odds">Odds by grade</string>
 </resources>

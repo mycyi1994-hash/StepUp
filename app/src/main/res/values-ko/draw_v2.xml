@@ -125,4 +125,5 @@
     <string name="dv3_opening_met">새로운 신발을 만났어요.</string>
     <string name="dv3_result_head">새 신발을 받았어요.</string>
     <string name="dv3_check_unknown_head">아직 결과를 확인하지 못했어요.</string>
+    <string name="dv2_rules_odds">등급별 확률</string>
 </resources>

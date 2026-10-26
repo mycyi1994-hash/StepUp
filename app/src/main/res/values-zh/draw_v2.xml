@@ -113,4 +113,5 @@
     <string name="dv3_opening_met">遇见了一双新鞋。</string>
     <string name="dv3_result_head">获得了一双新鞋。</string>
     <string name="dv3_check_unknown_head">尚未确认结果。</string>
+    <string name="dv2_rules_odds">各等级概率</string>
 </resources>
