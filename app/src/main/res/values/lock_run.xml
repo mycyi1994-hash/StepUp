@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 잠금 화면 가운데 러닝 현황(2026-10-26) -->
+<resources>
+    <string name="lock_run_open">Unlock to open StepUp</string>
+</resources>

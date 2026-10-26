@@ -203,14 +203,7 @@ fun RunScreen(
     val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    // 잠금 화면(홀드 화면)에서도 러닝 화면 — 지도 · 경로 · 거리 · 시간 · 일시정지(2026-10-19 사용자 "홀드 화면일 때 우리 트랙 나오고
-    // 그런 거 안 되는데?"). 달리는 동안 이 화면에 있을 때만 — 다른 화면으로 가면 잠금 화면이 다시 덮어 지갑 · 설정이 잠금 해제 없이
-    // 열리지 않는다
-    androidx.compose.runtime.DisposableEffect(context, session.isActive) {
-        val activity = context.runActivity()
-        activity?.showOverLockScreen(session.isActive)
-        onDispose { activity?.showOverLockScreen(false) }
-    }
+    // 잠금 화면(홀드 화면)의 러닝 현황은 앱 맨 위 겹(LockRunHost)이 그린다 — 러닝 중이면 어느 화면에서 잠가도 가운데에 지금 기록
     // 종료는 한 번 더 묻는다 — 뛰다가 손이 스쳐 러닝이 끝나면 되돌릴 수 없다
     var confirmStop by rememberSaveable { mutableStateOf(false) }
     val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f
@@ -2620,29 +2613,6 @@ private fun RunTimeRing(
 /** 서버가 확인했고 그 금액까지 읽었을 때만 확정 — 금액이 0 이면(무효 · 상한) 확인은 됐어도 적립이 아니다 */
 private fun finishConfirmed(session: WalkSessionState, points: Double?, upload: String?): Boolean =
     session.lastVerdict != RunVerdict.VOID && upload == UploadState.SIGNED.name && points != null && points > 0.0
-
-private fun android.content.Context.runActivity(): android.app.Activity? {
-    var current: android.content.Context? = this
-    while (current is android.content.ContextWrapper) {
-        if (current is android.app.Activity) return current
-        current = current.baseContext
-    }
-    return null
-}
-
-/** 잠금 화면 위에 이 화면을 보일지 — 켜면 전원 버튼으로 화면을 켰을 때 잠금을 풀지 않아도 러닝 화면이 보인다 */
-private fun android.app.Activity.showOverLockScreen(show: Boolean) {
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
-        setShowWhenLocked(show)
-    } else {
-        @Suppress("DEPRECATION")
-        if (show) {
-            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
-        } else {
-            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
-        }
-    }
-}
 
 /** 결과의 거리 — 달리는 중 · 기록과 같은 기준(경로가 100m 넘으면 GPS 거리, 그 전엔 걸음 거리, RunDistance) */
 private fun finishKm(session: WalkSessionState): Double =
