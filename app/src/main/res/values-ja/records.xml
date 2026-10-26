@@ -29,7 +29,7 @@
     <string name="rec_period_empty_title">この期間の記録はありません</string>
     <string name="rec_period_empty_body">ほかの期間の記録を見てみましょう。</string>
     <string name="rec_show_all">すべての記録を見る</string>
-    <string name="rec_distance_unknown">距離の記録なし</string>
+    <string name="rec_distance_unknown">距離を測れませんでした</string>
     <string name="rec_apply">適用</string>
     <string name="rec_year_pattern">yyyy年</string>
     <string name="rec_short_month_pattern">M月</string>
@@ -86,7 +86,7 @@
     <string name="rec_delete">削除</string>
     <string name="rec_deleting">削除中…</string>
     <string name="rec_delete_failed_toast">削除できませんでした。もう一度お試しください。</string>
-    <string name="rec_delete_uploading">サーバーがこのランを確認中のため、まだ削除できません。</string>
+    <string name="rec_delete_uploading">このランはまだ確認中のため、削除できません。</string>
     <string name="rec_missing_title">記録が見つかりません</string>
     <string name="rec_missing_body">削除されたか、今のアカウントの記録ではありません。</string>
     <string name="rec_map_title">ランのルート</string>

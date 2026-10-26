@@ -45,6 +45,10 @@ jobs:
       - name: Check string resources
         run: python3 scripts/check-strings.py
 
+      # 화면 글자에 개발자 말투(서버 · 데모 · 준비 중 …)가 다시 들어오지 않게(2026-10-26)
+      - name: Check user-facing copy
+        run: python3 scripts/check-copy.py
+
       - name: Check shared design contract
         run: python3 tools/check_design_contract.py
 

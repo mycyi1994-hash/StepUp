@@ -37,7 +37,7 @@
     <string name="set_notif_blocked_body">要接收下面选择的通知，请在手机设置中允许。</string>
     <string name="set_open_phone_settings">打开手机设置</string>
     <string name="set_sync_pending">已保存在手机上</string>
-    <string name="set_sync_pending_body">尚未确认已同步到服务器。可能仍会按之前的通知设置发送。</string>
+    <string name="set_sync_pending_body">尚未保存。可能仍会按之前的通知设置发送。</string>
     <string name="set_sync_retry">重新同步</string>
     <string name="set_sync_sending">正在同步…</string>
     <string name="set_stored_info">保存的信息</string>
@@ -83,8 +83,6 @@
     <string name="set_wallet_linked">已连接</string>
     <string name="set_wallet_connect">去连接</string>
     <string name="set_wallet_unknown">无法确认</string>
-    <string name="set_health_connect">Health Connect</string>
-    <string name="set_coming_soon">即将推出</string>
     <string name="set_external_note">可用的连接功能准备好后会通知你。</string>
     <string name="set_delete_account">删除账号</string>
     <string name="set_delete_title">要删除账号吗？</string>
@@ -98,7 +96,7 @@
     <string name="set_delete_phone_note">留在这部手机上的记录会在删除应用时清除。</string>
     <string name="set_delete_action">删除账号</string>
     <string name="set_deleting">正在删除…</string>
-    <string name="set_delete_failed">服务器未删除账号。请稍后再试。</string>
+    <string name="set_delete_failed">未能删除账号。请稍后再试。</string>
     <string name="set_delete_unknown_title">需要确认删除结果</string>
     <string name="set_delete_unknown_heading">请求可能已经处理。</string>
     <string name="set_delete_unknown_body">由于没有收到回应，尚无法确认是否已删除。请不要重复请求，联系我们即可。</string>

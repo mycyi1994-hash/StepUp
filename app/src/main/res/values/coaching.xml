@@ -103,9 +103,9 @@
     <string name="coach_gap_range">Some splits are out of the normal range, so they aren\'t shown.</string>
     <string name="coach_no_analysis_records">No runs to analyze yet.</string>
     <string name="coach_ai_loading">Checking coaching status.</string>
-    <string name="coach_ai_waiting_server">Waiting for server confirmation.</string>
+    <string name="coach_ai_waiting_server">Waiting for your run to be confirmed.</string>
     <string name="coach_ai_waiting_server_sub">Your run is safely saved on this phone.</string>
-    <string name="coach_ai_not_verified">The server hasn\'t confirmed this run, so AI won\'t analyze it.</string>
+    <string name="coach_ai_not_verified">This run isn\'t confirmed, so AI won\'t analyze it.</string>
     <string name="coach_ai_consent">Turn on AI coaching to analyze this run.</string>
     <string name="coach_ai_consent_action">Start AI coaching</string>
     <string name="coach_ai_skipped_label">For this run</string>
@@ -213,7 +213,7 @@
     <string name="coach_consent_check">I agree to send run summaries for AI analysis</string>
     <string name="coach_consent_start">Agree and start</string>
     <string name="coach_consent_later">Later</string>
-    <string name="coach_consent_unavailable">AI coaching isn\'t available yet. Run analysis and basic workouts still work.</string>
+    <string name="coach_consent_unavailable">AI coaching isn\'t open yet. Run analysis and basic workouts still work.</string>
     <string name="coach_data_title">How data is used</string>
     <string name="coach_data_send">What we send — a run\'s distance, active time and 1 km split times; a week\'s runs, distance and time; the goal you chose.</string>
     <string name="coach_data_not_send">What we don\'t send — name, contacts, exact location, GPS route, dates, crew, rewards.</string>
@@ -238,7 +238,7 @@
     <string name="coach_settings_analysis">Analysis</string>
     <string name="coach_settings_use">Use AI coaching</string>
     <string name="coach_settings_auto">Analyze after runs</string>
-    <string name="coach_settings_auto_sub">After the run is saved and confirmed by the server</string>
+    <string name="coach_settings_auto_sub">After your run is saved and confirmed</string>
     <string name="coach_settings_weekly">Weekly report</string>
     <string name="coach_settings_weekly_sub">Separate from notification settings</string>
     <string name="coach_settings_goal">My goal</string>

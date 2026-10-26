@@ -24,9 +24,9 @@
     <string name="my_shoes_basis_open">How the bars are scaled</string>
     <string name="my_shoes_basis_intro">Efficiency and comfort use the same scale for all shoes, so you can compare pairs.</string>
     <string name="my_shoes_basis_efficiency">Efficiency (SUP earning bonus): full bar %1$s, the best new Finish shoe. Points put into efficiency can take it past the bar.</string>
-    <string name="my_shoes_basis_comfort">Comfort (energy saving): full bar %1$s, the server cap.</string>
+    <string name="my_shoes_basis_comfort">Comfort (energy saving): full bar %1$s, the maximum.</string>
     <string name="my_shoes_basis_durability">Durability: the full bar is that shoe\'s max durability (different for every shoe). Every minute you run uses 5.</string>
-    <string name="my_shoes_basis_note">Efficiency is a bonus rate, not an amount. The SUP you actually receive is confirmed by the server after each run.</string>
+    <string name="my_shoes_basis_note">Efficiency is a bonus rate, not an amount. The SUP you actually receive is confirmed after each run.</string>
 
     <!-- 신발 보관함 — 보유 수 · 정렬 · 거르기 · 2열 격자 -->
     <string name="vault_sort_title">Sort</string>

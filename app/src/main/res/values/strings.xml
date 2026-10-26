@@ -208,7 +208,7 @@
     <string name="items_mint_desc">All draws are free: 10 to start and 3 every day, plus premium draws once you connect a wallet.</string>
     <string name="items_mint_desc_store">All draws are free: 10 to start and 3 more every day.</string>
     <string name="toast_sign_in_required">Sign in to use SUP and sneakers.</string>
-    <string name="toast_offline">Couldn\'t reach the server. Try again in a moment.</string>
+    <string name="toast_offline">Couldn\'t connect. Try again in a moment.</string>
     <string name="toast_no_free_draws">No free draws left. You get more tomorrow.</string>
     <string name="toast_nothing_to_repair">Durability is already full.</string>
     <string name="toast_repaired">Repaired</string>
@@ -275,7 +275,7 @@
     <string name="toast_claimed">+%1$s SUP claimed!</string>
     <string name="toast_not_finished">Not finished yet — keep going!</string>
     <string name="toast_claim_already">Already claimed for this period.</string>
-    <string name="toast_claim_failed">Couldn\'t reach the server. Try again.</string>
+    <string name="toast_claim_failed">Couldn\'t connect. Tap again.</string>
     <string name="toast_claim_sign_in">Sign in to claim rewards.</string>
     <string name="invite_subject">Join me on StepUp</string>
     <string name="invite_text">I\'m earning SUP just by walking on StepUp. Come run with me!</string>
@@ -515,7 +515,7 @@
     <string name="crew_notice_saved">Saved</string>
     <string name="crew_notice_approved">Approved</string>
     <string name="crew_notice_rejected">Declined</string>
-    <string name="crew_notice_failed">Could not reach the server. Please try again.</string>
+    <string name="crew_notice_failed">Couldn\'t connect. Please try again.</string>
     <string name="crew_sign_in_needed">Sign in to see and join crews</string>
     <string name="crew_loading">Loading crews…</string>
     <string name="crew_load_failed">Could not load crews</string>
@@ -579,7 +579,7 @@
     <string name="party_leave">Leave lobby</string>
     <string name="party_problem_sign_in">Sign in to join a party run.</string>
     <string name="party_problem_removed">Only crew members or runners who joined this flash run can enter — or the host removed you.</string>
-    <string name="party_problem_network">Can\'t reach the server. Trying again…</string>
+    <string name="party_problem_network">Connection lost. Reconnecting…</string>
     <string name="party_problem_closed">This room has closed.</string>
     <string name="party_problem_failed">That didn\'t go through. Try again.</string>
     <string name="party_problem_missed_start">The group start already passed, so a new lobby was opened.</string>
@@ -747,7 +747,7 @@ Start running with StepUp.</string>
     <string name="login_terms">By continuing you agree to the Terms and Privacy Policy.</string>
     <string name="login_failed">Sign-in failed. Please try again.</string>
     <string name="login_no_account">No Google account on this device. Add one in Settings and try again.</string>
-    <string name="login_offline">Can\'t reach the server. Check your connection.</string>
+    <string name="login_offline">Can\'t connect. Check your connection.</string>
 
     <!-- Guide -->
     <string name="guide_heading">How StepUp works</string>
@@ -759,7 +759,7 @@ Start running with StepUp.</string>
     <string name="journey_run_label">Start a run</string>
     <string name="journey_run_desc">Tap START RUN on the home screen</string>
     <string name="journey_finish_label">Finish · verify</string>
-    <string name="journey_finish_desc">The server checks that you really ran</string>
+    <string name="journey_finish_desc">When you finish, we check your run</string>
     <string name="journey_earn_label">Earn SUP</string>
     <string name="journey_earn_desc">SUP builds up from the steps that count</string>
     <string name="journey_wallet_label">Wallet</string>
@@ -821,7 +821,7 @@ Start running with StepUp.</string>
     <string name="tour7_title">Equipped sneaker</string>
     <string name="tour7_body">This pair\'s boost applies to every run. Tap it to see stats, upgrade, or swap pairs.</string>
     <string name="tour8_title">Minting</string>
-    <string name="tour8_body">Draw a random sneaker — 10 free draws for new accounts, then 500 SUP each. The server rolls every draw.</string>
+    <string name="tour8_body">Draw a random sneaker — 10 free draws for new accounts, then 500 SUP each.</string>
     <string name="tour9_title">Collection</string>
     <string name="tour9_body">Swipe sideways to browse your vault. Duplicates stack with ×N — tap to pick a specific copy. 44 slots to complete!</string>
     <string name="tour10_title">Events</string>
@@ -944,7 +944,7 @@ Start running with StepUp.</string>
     <string name="course_reward_upto">Up to +%1$s SUP</string>
     <string name="course_reward_none">No finish reward on this course (sample or your own)</string>
     <string name="course_apply_body_no_reward">%1$s · %2$s km\nNo finish reward on this course (sample or your own). Your time is still recorded.</string>
-    <string name="course_per_km">%1$s SUP per km · up to %2$s · once a day, after server check</string>
+    <string name="course_per_km">%1$s SUP per km · up to %2$s · once a day, after your run is checked</string>
     <string name="course_to_finish">To finish</string>
     <string name="course_none_title">No course selected</string>
     <string name="course_none_body">Pick a course to unlock the live map and a distance-based finish reward.</string>
@@ -984,7 +984,7 @@ Start running with StepUp.</string>
     <string name="map_open_google">Open in Google Maps</string>
     <string name="map_attribution">© OpenStreetMap</string>
     <string name="course_apply_title">Apply this course?</string>
-    <string name="course_apply_body">%1$s · %2$s km\nFinish it for up to %3$s SUP after the server checks it (once a day).</string>
+    <string name="course_apply_body">%1$s · %2$s km\nFinish it for up to %3$s SUP once your run is checked (once a day).</string>
     <string name="course_clear_title">Clear this course?</string>
     <string name="course_clear_body">%1$s will no longer be your active course.</string>
     <string name="notif_course_complete">Course complete: %1$s! +%2$s SUP</string>
@@ -995,7 +995,7 @@ Start running with StepUp.</string>
     <string name="market_nft_head">Runner-to-runner exchange</string>
     <string name="market_nft_body">Sneakers move between runners here. Sellers post an ask, buyers post a bid, and a trade fills when the two meet.</string>
     <string name="market_tradable">Tradable SUP</string>
-    <string name="market_tradable_note">Counts only runs already recorded on the server</string>
+    <string name="market_tradable_note">Counts only recorded runs</string>
     <string name="market_section_quotes">Quotes</string>
     <string name="market_section_mine">My orders</string>
     <string name="market_quotes_title">Models</string>
@@ -1040,8 +1040,8 @@ Start running with StepUp.</string>
     <string name="market_trade_bought">Bought</string>
     <string name="market_fee_paid">fee %1$s</string>
     <string name="market_problem_sign_in">Sign in to trade. The exchange has to know who owns what.</string>
-    <string name="market_problem_rejected">The server turned the request down. Trying again will give the same answer.</string>
-    <string name="market_problem_offline">Could not reach the server. It will load when the connection comes back.</string>
+    <string name="market_problem_rejected">We couldn\'t process the request.</string>
+    <string name="market_problem_offline">Connection lost. It will load when you\'re back online.</string>
     <string name="market_msg_traded">Trade filled.</string>
     <string name="market_msg_sign_in">Please sign in again.</string>
     <string name="market_msg_equipped">You cannot sell the pair you are wearing. Take it off first.</string>
@@ -1155,7 +1155,7 @@ Start running with StepUp.</string>
     <string name="feed_place_unknown">Venue to be announced</string>
     <string name="feed_fee_from">From %1$s KRW</string>
     <string name="feed_last_checked">Last checked %1$s</string>
-    <string name="feed_last_checked_unknown">Never checked</string>
+    <string name="feed_last_checked_unknown">Not checked yet</string>
     <string name="feed_save">Save</string>
     <string name="feed_unsave">Remove from saved</string>
     <string name="feed_ai_summary">AI summary — read the full article at the source</string>
@@ -1168,8 +1168,8 @@ Start running with StepUp.</string>
     <string name="feed_events_notice">Entry and payment happen on the organiser\'s own site. Check the organiser for the final schedule and registration status. Visiting the site is not an entry.</string>
     <string name="feed_sources_note">Sources: %1$s. Headlines and links only — the article is read at its source.</string>
     <string name="feed_sources_none">No news source is connected yet. We are verifying sources before turning them on.</string>
-    <string name="feed_problem_offline">Could not reach the server. It will load when the connection comes back.</string>
-    <string name="feed_problem_rejected">The server turned the request down. Trying again will give the same answer.</string>
+    <string name="feed_problem_offline">Connection lost. It will load when you\'re back online.</string>
+    <string name="feed_problem_rejected">We couldn\'t process the request.</string>
     <string name="feed_showing_cached">Showing the list fetched at %1$s</string>
     <string name="feed_sign_in_to_save">Sign in to save.</string>
     <string name="feed_save_failed">Could not save. Please try again in a moment.</string>
@@ -1247,7 +1247,7 @@ Start running with StepUp.</string>
     <string name="challenge_daily_desc">The bonus is added automatically when you reach it.</string>
     <string name="challenge_daily_streak_note">More with a streak</string>
     <string name="challenge_refer_desc">Invite friends to StepUp. Invite counting is not ready yet, so no progress is shown.</string>
-    <string name="challenge_soon">Coming soon</string>
+    <string name="challenge_soon">Starting soon</string>
     <string name="challenge_state_progress">In progress</string>
     <string name="challenge_state_ready">Ready to claim</string>
     <string name="challenge_state_settling">Adding bonus</string>
@@ -1295,9 +1295,9 @@ Start running with StepUp.</string>
     <string name="demo_no_save">Samples can\'t be saved.</string>
     <string name="feed_demo_note">Demo mode. These are samples for testing, not real races or articles.</string>
     <string name="finish_confirmed">Points confirmed</string>
-    <string name="finish_pending">Run complete · server check pending</string>
-    <string name="finish_pending_note">Your run is saved. Your reward is final only after the server confirms it.</string>
-    <string name="finish_rejected">The server did not accept this record</string>
+    <string name="finish_pending">Run complete · checking your run</string>
+    <string name="finish_pending_note">Your run is saved. Your reward is final once the check is done.</string>
+    <string name="finish_rejected">This run wasn\'t accepted</string>
     <string name="finish_simulated">Runs with simulated test steps aren\'t uploaded or rewarded.</string>
     <string name="finish_balance">Balance</string>
     <string name="finish_done">Done</string>
@@ -1366,10 +1366,10 @@ Start running with StepUp.</string>
     <string name="news_hero_sub">More fun when we run together.</string>
 
     <!-- 디자인 패키지 적용 — 지도 대기 · 완료 확인 중 -->
-    <string name="finish_pending_short">Awaiting server check</string>
-    <string name="finish_no_reward">Checked by server · no reward for this run</string>
-    <string name="finish_no_steps">No steps counted · no reward for this run</string>
-    <string name="finish_sign_in_needed">You are signed out, so this run can’t be sent to the server yet. Sign in again within 7 days to keep it.</string>
+    <string name="finish_pending_short">Checking your run</string>
+    <string name="finish_no_reward">This run earned no reward</string>
+    <string name="finish_no_steps">No steps were counted, so this run earned no reward</string>
+    <string name="finish_sign_in_needed">You\'re signed out, so this run hasn\'t been sent yet. Sign in again within 7 days to keep it.</string>
     <string name="run_storage_blocked">Can’t start a run: saved run data on this phone could not be read. Restart the app and try again.</string>
 
     <!-- 시안 정리 — 머리글 · 바로가기 · 챌린지 -->
@@ -1421,7 +1421,7 @@ Start running with StepUp.</string>
     <string name="course_rank_title">Course leaderboard</string>
     <string name="course_rank_loading">Loading…</string>
     <string name="course_rank_failed">Couldn\'t load the leaderboard. Only courses shared on the board have one.</string>
-    <string name="course_rank_empty">No records yet. Pick this course and finish it — the server checks your route and ranks you.</string>
+    <string name="course_rank_empty">No records yet. Pick this course and finish it — we check your route and rank you.</string>
     <string name="course_rank_me">%1$s (me)</string>
     <string name="notification_channel_reminder">Goal reminders</string>
     <string name="reminder_goal_title">%1$d steps left to today\'s goal</string>
@@ -1455,7 +1455,7 @@ Start running with StepUp.</string>
     <string name="home_banner_message">One more step.\nIn a good direction.</string>
     <string name="mystery_guide_title">Before you draw</string>
     <string name="toast_drawn_refreshing">Drawn! Loading your new sneaker — check your collection in a moment.</string>
-    <string name="sneaker_enhance_legacy">Sneakers made on the phone before the server economy can\'t be enhanced.</string>
+    <string name="sneaker_enhance_legacy">Sneakers made the old way can\'t be enhanced.</string>
     <string name="sneaker_enhance_listed">Sneakers listed for sale can\'t be enhanced.</string>
     <string name="community_upcoming">Upcoming meetups</string>
     <string name="run_route_unavailable">No GPS route was recorded for this run.</string>
@@ -2065,7 +2065,7 @@ Start running with StepUp.</string>
     <string name="story_card_active_body">Finish the run to attach its course.</string>
     <string name="story_card_back_to_run">Back to the run</string>
     <string name="story_card_pending_title">Checking the run you just finished</string>
-    <string name="story_card_pending_body">You can attach it once the server confirms it.</string>
+    <string name="story_card_pending_body">You can attach it once the run is confirmed.</string>
     <string name="story_card_available_title">You can attach a recent run</string>
     <string name="story_card_available_body">Runs from up to 3 days ago can be attached.</string>
     <string name="story_card_pick">Pick a run</string>
@@ -2098,7 +2098,7 @@ Start running with StepUp.</string>
     <string name="story_runs_empty">No runs to attach in the last 3 days</string>
     <string name="story_runs_empty_day">No runs to attach on this day</string>
     <string name="story_runs_show_all">Show all</string>
-    <string name="story_runs_no_route">No course</string>
+    <string name="story_runs_no_route">Run without a route</string>
     <string name="story_noloc_title">Choose a place without location</string>
     <string name="story_noloc_head">Location is turned off.</string>
     <string name="story_noloc_body">Choose a place yourself to keep writing.</string>
@@ -2278,7 +2278,7 @@ Start running with StepUp.</string>
     <string name="crew_missing_title">This crew isn\'t available</string>
     <string name="crew_missing_body">It was disbanded or is not available right now.</string>
     <string name="crew_to_list">Back to crews</string>
-    <string name="crew_problem_network">Couldn\'t reach the server. Please try again shortly.</string>
+    <string name="crew_problem_network">Couldn\'t connect. Please try again shortly.</string>
     <string name="crew_problem_signin">Please sign in.</string>
     <string name="crew_problem_limit">You\'ve reached the number of crews you can create.</string>
     <string name="crew_problem_not_owner">Only the crew leader can change this.</string>

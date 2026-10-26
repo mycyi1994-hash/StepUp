@@ -103,9 +103,9 @@
     <string name="coach_gap_range">정상 범위를 벗어난 구간이 있어 보여드리지 않아요.</string>
     <string name="coach_no_analysis_records">분석할 수 있는 기록이 없어요.</string>
     <string name="coach_ai_loading">코칭 상태를 확인하고 있어요.</string>
-    <string name="coach_ai_waiting_server">서버 확인을 기다리고 있어요.</string>
+    <string name="coach_ai_waiting_server">기록 확인을 기다리고 있어요.</string>
     <string name="coach_ai_waiting_server_sub">기록은 이 휴대폰에 안전하게 저장됐어요.</string>
-    <string name="coach_ai_not_verified">서버가 확인하지 않은 기록이라 AI로 분석하지 않아요.</string>
+    <string name="coach_ai_not_verified">확인되지 않은 기록이라 AI로 분석하지 않아요.</string>
     <string name="coach_ai_consent">AI 코칭을 켜면 이 기록을 분석할 수 있어요.</string>
     <string name="coach_ai_consent_action">AI 코칭 시작</string>
     <string name="coach_ai_skipped_label">이번 기록은</string>
@@ -213,7 +213,7 @@
     <string name="coach_consent_check">AI 분석을 위한 기록 요약 전송에 동의해요</string>
     <string name="coach_consent_start">동의하고 시작하기</string>
     <string name="coach_consent_later">나중에</string>
-    <string name="coach_consent_unavailable">AI 코칭은 아직 준비 중이에요. 기록 분석과 기본 훈련은 그대로 쓸 수 있어요.</string>
+    <string name="coach_consent_unavailable">AI 코칭은 아직 열리지 않았어요. 기록 분석과 기본 훈련은 그대로 쓸 수 있어요.</string>
     <string name="coach_data_title">데이터 이용 안내</string>
     <string name="coach_data_send">보내는 정보 — 러닝 한 번의 거리 · 활성 시간 · 1km 구간 시간, 한 주의 횟수 · 거리 · 시간, 고른 목표.</string>
     <string name="coach_data_not_send">보내지 않는 정보 — 이름 · 연락처 · 정확한 위치 · GPS 경로 · 날짜 · 크루 · 보상.</string>
@@ -238,7 +238,7 @@
     <string name="coach_settings_analysis">분석</string>
     <string name="coach_settings_use">AI 코칭 사용</string>
     <string name="coach_settings_auto">러닝 후 자동 분석</string>
-    <string name="coach_settings_auto_sub">기록 저장과 서버 확인 후 분석해요</string>
+    <string name="coach_settings_auto_sub">기록을 저장하고 확인한 뒤 분석해요</string>
     <string name="coach_settings_weekly">주간 리포트</string>
     <string name="coach_settings_weekly_sub">알림 설정과는 따로예요</string>
     <string name="coach_settings_goal">내 목표</string>

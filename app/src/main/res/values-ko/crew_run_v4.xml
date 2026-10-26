@@ -47,7 +47,7 @@
     <string name="crew_live_checking">인원 보너스 확인 중 · %1$s 뒤 확정</string>
     <string name="crew_live_checking_now">인원 보너스 확인 중</string>
     <string name="crew_live_bonus">인원 %1$d명 +%2$s%% · Lv +%3$s%%</string>
-    <string name="crew_live_bonus_none">인원 보너스 없음 · Lv +%1$s%%</string>
+    <string name="crew_live_bonus_none">혼자 출발 · Lv +%1$s%%</string>
     <string name="crew_live_paused">일시정지 중 · 공용 체력을 쓰지 않아요</string>
     <string name="crew_live_pool_low">곧 적립이 멈출 수 있어요</string>
     <string name="crew_live_pool_low_body">남은 공용 체력은 함께 달리는 사람들이 같이 사용하고 있어요. 0이 되면 적립만 멈추고 러닝 기록은 계속돼요. 개인 신발 내구도는 쓰지 않아요.</string>
@@ -73,7 +73,7 @@
     <string name="run_notify_crew_pool">크루 체력 %1$s / %2$s</string>
     <string name="crew_result_base">내 신발 기준 보상 %1$s SUP</string>
     <string name="crew_result_headcount">인원 %1$d명 · +%2$s%% → +%3$s SUP</string>
-    <string name="crew_result_headcount_none">인원 보너스 없음</string>
+    <string name="crew_result_headcount_none">혼자 출발해 인원 보너스는 받지 않았어요</string>
     <string name="crew_result_level_bonus">Lv.%1$d · +%2$s%% → +%3$s SUP</string>
     <string name="crew_result_total">%1$s × (1 + %2$s%% + %3$s%%) = %4$s SUP</string>
     <string name="crew_result_cap">크루 보상은 개인 하루 적립 상한과 따로예요.</string>
@@ -83,6 +83,6 @@
     <string name="crew_result_alone">함께 달리던 모두가 마쳐 자동으로 끝났어요.</string>
     <string name="crew_result_level_void">무효 러닝이라 크루 누적 거리에 더하지 않았어요. 크루 레벨은 내려가지 않아요.</string>
     <string name="crew_result_not_crew">이 러닝은 크루 러닝으로 세지 않았어요. 오늘 크루 러닝을 이미 했거나 이 방에서 함께 출발하지 않았어요.</string>
-    <string name="crew_result_pending">크루 보상은 서버가 정산한 뒤에 보여요.</string>
+    <string name="crew_result_pending">크루 보상은 정산이 끝나면 보여요.</string>
     <string name="crew_entry_next">다음 참여는 내일 00:00(한국 시간)부터예요. 자유 러닝은 내 신발 내구도로 할 수 있어요.</string>
 </resources>

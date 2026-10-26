@@ -37,7 +37,7 @@
     <string name="set_notif_blocked_body">아래에서 고른 알림을 받으려면 휴대폰 설정에서 허용해 주세요.</string>
     <string name="set_open_phone_settings">휴대폰 설정 열기</string>
     <string name="set_sync_pending">휴대폰에는 저장했어요</string>
-    <string name="set_sync_pending_body">서버 반영은 아직 확인하지 못했어요. 이전 알림 설정이 적용될 수 있어요.</string>
+    <string name="set_sync_pending_body">아직 저장되지 않았어요. 이전 알림 설정이 적용될 수 있어요.</string>
     <string name="set_sync_retry">다시 반영하기</string>
     <string name="set_sync_sending">반영하는 중…</string>
     <string name="set_stored_info">저장하는 정보</string>
@@ -83,8 +83,6 @@
     <string name="set_wallet_linked">연결됨</string>
     <string name="set_wallet_connect">연결하기</string>
     <string name="set_wallet_unknown">확인하지 못함</string>
-    <string name="set_health_connect">Health Connect</string>
-    <string name="set_coming_soon">준비 중</string>
     <string name="set_external_note">사용 가능한 연결 기능이 준비되면 안내해요.</string>
     <string name="set_delete_account">계정 삭제</string>
     <string name="set_delete_title">계정을 삭제할까요?</string>
@@ -98,7 +96,7 @@
     <string name="set_delete_phone_note">이 휴대폰에 남은 기록은 앱을 지우면 삭제돼요.</string>
     <string name="set_delete_action">계정 삭제</string>
     <string name="set_deleting">삭제 처리 중…</string>
-    <string name="set_delete_failed">서버가 삭제하지 않았어요. 잠시 뒤 다시 시도해 주세요.</string>
+    <string name="set_delete_failed">계정을 삭제하지 못했어요. 잠시 뒤 다시 시도해 주세요.</string>
     <string name="set_delete_unknown_title">삭제 결과 확인이 필요해요</string>
     <string name="set_delete_unknown_heading">요청이 처리됐을 수 있어요.</string>
     <string name="set_delete_unknown_body">응답을 받지 못해 삭제 여부를 아직 확인하지 못했어요. 같은 요청을 반복하지 말고 문의해 주세요.</string>

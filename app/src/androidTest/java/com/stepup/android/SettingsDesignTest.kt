@@ -138,7 +138,7 @@ class SettingsDesignTest {
 
             // 11/12 — 연결된 계정: 이 기기의 실제 로그인 상태 그대로
             tap("settings-connected")
-            awaitTag("connected-health")
+            awaitTag("connected-social")
             waitFor("connected accounts finish checking") {
                 compose.onAllNodesWithText(korean(R.string.set_checking)).fetchSemanticsNodes().isEmpty()
             }

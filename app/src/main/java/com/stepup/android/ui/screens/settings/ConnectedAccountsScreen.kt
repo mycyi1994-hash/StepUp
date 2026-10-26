@@ -223,11 +223,7 @@ fun ConnectedAccountsContent(
                         Modifier.testTag("connected-wallet"), strong = wallet == WalletLink.Linked,
                     )
                 }
-                // 준비 중 — 가짜 연결 기능을 만들지 않는다
-                BlueStatusRow(
-                    stringResource(R.string.set_health_connect), null, stringResource(R.string.set_coming_soon),
-                    Modifier.testTag("connected-health"), strong = false,
-                )
+                // 건강 앱 연결은 아직 없다 — 쓸 수 없는 줄("준비 중")을 두지 않는다(2026-10-26)
             }
         }
         item { BlueNote(stringResource(R.string.set_external_note), Modifier.padding(top = 2.dp)) }

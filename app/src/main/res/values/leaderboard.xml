@@ -26,7 +26,7 @@
     <string name="lb_rules_week_title">The week</string>
     <string name="lb_rules_week_body">Runs from Monday 00:00 to Sunday (Korea time) count. Runs judged invalid are left out.</string>
     <string name="lb_rules_tie_title">When records are equal</string>
-    <string name="lb_rules_tie_body">Equal distances are listed in the server\'s order (runners by name), and the gap to the one ahead shows as a tie.</string>
+    <string name="lb_rules_tie_body">Equal distances are listed by name, and the gap to the one ahead shows as a tie.</string>
     <string name="lb_close">Close</string>
     <string name="lb_unit_km" translatable="false">km</string>
     <string name="lb_unit_points" translatable="false">P</string>
@@ -45,7 +45,7 @@
     <string name="lb_crew_runners">Runners: %1$d</string>
     <string name="lb_crew_mine_move">My crew · %1$s</string>
     <string name="lb_crew_mine">My crew</string>
-    <string name="lb_crew_mine_unranked">My crew · no runs this week</string>
+    <string name="lb_crew_mine_unranked">My crew · no runs yet this week</string>
     <string name="lb_crew_none_title">You\'re not in a crew yet</string>
     <string name="lb_crew_none_body">Join a crew to see your crew\'s rank here.</string>
     <string name="lb_crew_nearby_open">See crews around mine</string>
@@ -54,8 +54,8 @@
     <string name="lb_crew_empty_title">No crew runs yet this week</string>
     <string name="lb_crew_empty_body">The ranking starts when crew members run together.</string>
     <string name="lb_more">See more</string>
-    <string name="lb_unavailable_title">This ranking isn\'t ready yet</string>
-    <string name="lb_unavailable_body">The server doesn\'t provide this ranking yet.</string>
+    <string name="lb_unavailable_title">Couldn\'t load this ranking</string>
+    <string name="lb_unavailable_body">Please check again in a moment.</string>
     <string name="lb_personal_label">%1$s, your rank this week</string>
     <string name="lb_personal_label_anon">Your rank this week</string>
     <string name="lb_rise_up">Up %1$d\nfrom last week</string>
