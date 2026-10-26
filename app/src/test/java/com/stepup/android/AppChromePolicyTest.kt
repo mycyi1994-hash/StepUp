@@ -9,7 +9,7 @@ import org.junit.Test
 class AppChromePolicyTest {
     @Test fun `four tabs - running shoes community profile`() {
         // 2026-10-26 시안 — 뽑기는 신발 탭 안의 글자 탭. 길은 "mystery-box" 그대로
-        assertEquals(listOf("home", "customize", "community", "profile"), AppChromePolicy.tabs.map { it.route })
+        assertEquals(listOf("home", "community", "customize", "profile"), AppChromePolicy.tabs.map { it.route })
         assertEquals(Screen.Draw.route, Routes.MYSTERY_BOX)
     }
 
@@ -58,6 +58,11 @@ class AppChromePolicyTest {
             assertEquals(route, AppChromePolicy.destination(route)?.route)
             assertEquals(Screen.Run, AppChromePolicy.destination(route)?.parent)
             assertFalse(AppChromePolicy.destination(route)!!.showBottomBar)
+        }
+        // 크루 러닝 대기실 목록 · 만들기는 함께 뛰기 탭 밑(2026-10-26 — 크루 러닝 · 번개러닝 한 탭)
+        for (route in listOf(Routes.crewRooms("crew"), Routes.crewRoomNew("crew"), Routes.room("crew", 3), Routes.postCompose("", flash = true))) {
+            assertEquals(route, Screen.Community, AppChromePolicy.destination(route)?.parent)
+            assertFalse(route, AppChromePolicy.destination(route)!!.showBottomBar)
         }
         assertFalse(AppChromePolicy.destination(Routes.CREW_CREATE)!!.showBottomBar)
         assertFalse(AppChromePolicy.destination(Routes.postCompose("crew"))!!.showBottomBar)

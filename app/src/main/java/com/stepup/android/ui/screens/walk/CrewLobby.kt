@@ -230,6 +230,8 @@ internal fun CrewLobbyContent(
                     style = navyText(12.sp, LobbyInk.Sub, FontWeight.Medium, 1.65f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 7.dp).testTag("party-lobby-sub"),
                 )
+                // 달리는 방식 · 출발 예정 시각 · 만나는 곳(원격이면 각자의 위치) · 정원 — 방을 만들 때 정한 값(0074, 안내일 뿐)
+                LobbyPlanLine(party)
                 Spacer(Modifier.height(12.dp))
                 LobbyNotices(party, doneToday, crewToday, room, shoeFailed, courseFailed, onReconnect)
                 if (loading) {
@@ -430,10 +432,28 @@ private fun CrewLobbyTerminal(
         CrewCenterState(
             if (terminal == LobbyTerminal.FAILED) Icons.Outlined.CloudOff else Icons.Outlined.PersonOff,
             stringResource(titleRes),
-            if (terminal == LobbyTerminal.FULL) stringResource(bodyRes, CrewRunMath.ROOM_MAX) else stringResource(bodyRes),
+            stringResource(bodyRes),
             modifier = Modifier.padding(top = 40.dp).testTag("party-problem"),
         )
     }
+}
+
+/** 대기실의 약속 한 줄 — "같이 뛰기 · 오늘 19:00 · 망원한강공원에서 만나요 · 정원 8명"(모르는 칸은 뺀다) */
+@Composable
+private fun LobbyPlanLine(party: com.stepup.android.data.repo.PartyState) {
+    val parts = buildList {
+        add(stringResource(if (party.roomMode == com.stepup.android.domain.RoomMode.REMOTE) R.string.d26_mode_remote else R.string.d26_mode_together))
+        if (party.planAtLocal > 0) add(com.stepup.android.ui.screens.home.whenText(party.planAtLocal))
+        when {
+            party.roomMode == com.stepup.android.domain.RoomMode.REMOTE -> add(stringResource(R.string.d26_room_remote_line))
+            party.meetPlace != null -> add(stringResource(R.string.d26_room_meet, party.meetPlace))
+        }
+        if (party.capacity > 0) add(stringResource(R.string.tg_lobby_capacity, party.capacity))
+    }
+    Text(
+        parts.joinToString(" · "), style = navyText(13.sp, LobbyInk.Text, FontWeight.SemiBold, 1.5f), maxLines = 3,
+        overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp).testTag("party-lobby-plan"),
+    )
 }
 
 /** 대기실 머리 — 뒤로 · "크루 대기실" · 진행자는 ⋯ 메뉴, 참가자는 ⓘ 규칙 */

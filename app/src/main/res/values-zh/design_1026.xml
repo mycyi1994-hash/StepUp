@@ -40,7 +40,7 @@
     <string name="d26_create_course_set">设定路线</string>
     <string name="d26_create_mode">跑步方式</string>
     <string name="d26_create_mode_together_desc">在同一地点集合后一起出发。</string>
-    <string name="d26_create_mode_remote_desc">各自在所在位置同时出发，无人数加成。</string>
+    <string name="d26_create_mode_remote_desc">各自在所在位置同时出发。</string>
     <string name="d26_create_pick_course">在地图上设定路线</string>
     <string name="d26_create_course_km">%1$s · %2$s km</string>
     <string name="d26_create_course_change">更改</string>

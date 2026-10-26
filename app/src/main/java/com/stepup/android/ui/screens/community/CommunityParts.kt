@@ -225,7 +225,7 @@ fun FlashRunCard(
                 modifier = Modifier.size(12.dp),
             )
             Text(
-                text = post.place.ifBlank { stringResource(R.string.post_place_tbd) },
+                text = if (post.remote) stringResource(R.string.d26_room_remote_line) else post.place.ifBlank { stringResource(R.string.post_place_tbd) },
                 fontSize = 14.sp,
                 color = Silver,
                 maxLines = 1,

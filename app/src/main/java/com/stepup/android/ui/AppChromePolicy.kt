@@ -12,8 +12,12 @@ object AppChromePolicy {
         val showBottomBar: Boolean get() = header == Header.Main || header == Header.Detail
     }
 
-    /** 하단 탭 넷 — 러닝 / 신발 / 커뮤니티 / 내 정보(2026-10-26 시안). 뽑기는 신발 탭 안의 글자 탭이다 */
-    val tabs: List<Screen> = listOf(Screen.Run, Screen.Customize, Screen.Community, Screen.Profile)
+    /**
+     * 하단 탭 넷 — 러닝 / 함께 뛰기 / 신발 / 내 정보. 러닝은 혼자 달리기, 함께 뛰기는 크루 러닝 · 번개러닝 · 크루 · 이야기
+     * (2026-10-26 사용자 "한 탭에서 다 해결" — 예전 커뮤니티 탭 자리를 둘째로 옮겼다. 길 이름 "community" 는 그대로).
+     * 뽑기는 신발 탭 안의 글자 탭이다
+     */
+    val tabs: List<Screen> = listOf(Screen.Run, Screen.Community, Screen.Customize, Screen.Profile)
 
     /**
      * 화면이 잠깐 하단 탭을 걷는 중 — 뽑기 탭의 결과 확인 중 · 상자 열기 · 결과 · 지연 확인(신발 뽑기 디자인 04–08 · 19,
@@ -27,8 +31,8 @@ object AppChromePolicy {
 
     val destinations: List<Destination> = listOf(
         Destination(Screen.Run.route, Screen.Run, Header.Main),
-        Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
+        Destination(Screen.Customize.route, Screen.Customize, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
         // 신발 뽑기 — 신발 탭의 뽑기 글자 탭(2026-10-26). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
         Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
@@ -38,9 +42,9 @@ object AppChromePolicy {
         Destination(Routes.RUN_GOAL_HISTORY, Screen.Run, Header.Focus),
         Destination(Routes.RUN_COURSE, Screen.Run, Header.Focus),
         Destination(Routes.RUN_CREW, Screen.Run, Header.Focus),
-        // 크루 러닝 — 열린 대기실 · 러닝 만들기(2026-10-24). 크루 화면처럼 하단 탭 없이 자기 머리
-        Destination(Routes.CREW_ROOMS, Screen.Run, Header.Focus),
-        Destination(Routes.CREW_ROOM_NEW, Screen.Run, Header.Focus),
+        // 크루 러닝 — 열린 대기실 · 러닝 만들기(2026-10-24). 크루 화면처럼 하단 탭 없이 자기 머리. 함께 뛰기 탭 밑(2026-10-26)
+        Destination(Routes.CREW_ROOMS, Screen.Community, Header.Focus),
+        Destination(Routes.CREW_ROOM_NEW, Screen.Community, Header.Focus),
         Destination(Routes.RUN_DIET, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET_PLAN, Screen.Run, Header.Focus),
         Destination(Routes.RUN_DIET_EDIT, Screen.Run, Header.Focus),

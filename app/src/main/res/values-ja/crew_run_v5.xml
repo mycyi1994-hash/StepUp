@@ -205,7 +205,7 @@
     <string name="crew5_closed_title">待機室が閉じました</string>
     <string name="crew5_closed_body">全員が出たか、長く空いていた待機室です。別の待機室に入るか新しく開いてください。</string>
     <string name="crew5_full_title">待機室が満員です</string>
-    <string name="crew5_full_body">1つの待機室には%1$d人まで参加できます。別の待機室を見るか新しく開いてください。</string>
+    <string name="crew5_full_body">この待機室は定員に達しました。別の待機室を見るか新しく開いてください。</string>
     <string name="crew5_started_title">すでに出発した待機室です</string>
     <string name="crew5_started_body">出発したランに途中から加わることはできません。別の待機室を見るか新しく開いてください。</string>
     <string name="crew5_missed_title">出発に間に合いませんでした</string>

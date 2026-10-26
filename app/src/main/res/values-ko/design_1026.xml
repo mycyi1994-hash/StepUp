@@ -40,7 +40,7 @@
     <string name="d26_create_course_set">직접 설정</string>
     <string name="d26_create_mode">달리는 방식</string>
     <string name="d26_create_mode_together_desc">같은 장소에 모여 함께 출발해요.</string>
-    <string name="d26_create_mode_remote_desc">각자의 위치에서 같은 시간에 출발해요. 함께 달리기 인원 보너스는 없어요.</string>
+    <string name="d26_create_mode_remote_desc">각자의 위치에서 같은 시간에 출발해요.</string>
     <string name="d26_create_pick_course">지도로 함께 달릴 경로를 설정해요</string>
     <string name="d26_create_course_km">%1$s · %2$s km</string>
     <string name="d26_create_course_change">설정 변경</string>

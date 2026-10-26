@@ -226,6 +226,11 @@ data class PartyState(
     val courseRev: Int = 0,
     /** 이 폰이 본 코스 판 — 진행자가 바꾼(뺀) 뒤 아직 보지 않았으면 [courseChanged] */
     val courseSeenRev: Int = 0,
+    /** 달리는 방식 · 만나는 곳(같이 뛰기) · 출발 예정 시각(이 폰 시각, 0 이면 없음 — 안내일 뿐) · 방의 정원(0 이면 모른다) — 0074 · 0076 */
+    val roomMode: com.stepup.android.domain.RoomMode = com.stepup.android.domain.RoomMode.TOGETHER,
+    val meetPlace: String? = null,
+    val planAtLocal: Long = 0L,
+    val capacity: Int = 0,
 ) {
     /** 로비 · 달리는 중 어디서든 서버에 닿지 못하고 있다 */
     val networkProblem: Boolean get() = problem == PartyProblem.NETWORK || liveOffline
@@ -481,7 +486,7 @@ class CrewRepository(
     // 적는다 — 내 러닝은 그대로 이어지고, 다음에 방 상태를 받으면 풀린다.
     //
     // 달리는 동안 소식이 STALE_SEC 넘게 끊긴 사람은 이 폰의 명단에서 잠시 빠진다(다시 소식이 오면 돌아온다 — 알리지 않는다).
-    // 적립 보너스 인원은 서버가 센다 — 출발 2분 뒤에도 서로 NEAR_DISTANCE_M 안에서 같이 뛴 사람들(0056).
+    // 적립 보너스 인원은 서버가 센다 — 이 방에서 함께 출발한 사람 모두(0076, 예전 규칙은 출발 2분 뒤 200m 무리 — 0056).
     // 이 폰의 인원은 화면 예상일 뿐이다.
 
     private val _party = MutableStateFlow(PartyState())
@@ -1031,6 +1036,10 @@ class CrewRepository(
             course = course,
             courseRev = row.courseRev,
             courseSeenRev = seen,
+            roomMode = com.stepup.android.domain.RoomMode.of(row.runMode),
+            meetPlace = row.meetPlace?.takeIf { it.isNotBlank() },
+            planAtLocal = row.planAt?.isoToMillis()?.takeIf { it > 0 }?.minus(offset) ?: 0L,
+            capacity = row.capacity ?: before.capacity,
             // 크루 목록을 받기 전에 로비를 열었으면 이름이 비어 있다
             crewName = before.crewName.ifBlank { row.crewId?.let { crewOf(it)?.name }.orEmpty() },
             crewId = row.crewId ?: before.crewId,
@@ -1312,9 +1321,6 @@ class CrewRepository(
     }
 
     companion object {
-        /** 서버가 함께 달린 사람으로 세는 거리(m) — 출발 2분 뒤에도 서로 이만큼 안에서 위치를 보냈다(0056 party_ping) */
-        const val NEAR_DISTANCE_M = 200
-
         /** 달리는 동안 이만큼(초) 소식이 없으면 이 폰의 명단에서 잠시 빠진다(알리지 않는다 — 다시 소식이 오면 돌아온다) */
         const val STALE_SEC = 60
 

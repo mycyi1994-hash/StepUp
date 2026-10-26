@@ -3123,8 +3123,9 @@ begin
 end $$;
 call pg_temp.must_fail($q$ select public.goal_claim() $q$, '목표 보너스는 하루 한 번');
 
--- 파티 인원은 출발 명단으로 센다
+-- 파티 인원은 출발 명단으로 센다 — 아래는 예전 규칙(0056 곁에서 같이 뛴 무리, 설정 NEAR) 검사. 0076 기본(ALL)은 맨 끝에서 본다
 reset role;
+update public.economy_settings set value = '"NEAR"' where key = 'party_bonus_rule';
 do $$
 declare v_party bigint; v_at timestamptz := now() - interval '7 hours';
 begin
@@ -3174,6 +3175,7 @@ begin
    where party_id = v_party and user_a = '33333333-3333-3333-3333-333333333333'
      and user_b = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2';
 end $$;
+update public.economy_settings set value = '"ALL"' where key = 'party_bonus_rule';
 
 -- 하루 금액 상한 — 가입 7일 안은 절반
 -- 신발이 닳은 정도와 상관없이 상한에 걸리게: 신발을 채우고, 상한은 오늘 앞서 받은 것 + 2 SUP 의 두 배로 둔다(신규는 절반).
@@ -9190,6 +9192,67 @@ begin
     '옛 앱의 party_create 는 같이 뛰기 · 정원 20(0074 전과 같다)');
 end $$;
 reset role;
+select set_config('request.jwt.claims', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+--  0076 같이 뛰기 한 탭 — 번개러닝 원격 뛰기 · 함께 출발한 사람 모두 보너스 (2026-10-26)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 번개러닝 원격 · 함께 출발한 모두(0076) ─────────────────'
+set role authenticated;
+call pg_temp.login('74000000-0000-0000-0000-000000000001');
+do $$
+declare v_id bigint; r public.posts;
+begin
+  v_id := public.post_create('FLASH', null, '원격 번개', '', '여의도', 5, now() + interval '1 day', 6, 37.5, 127.0, null, 'remote');
+  insert into fix (k, v) values ('p76_remote', v_id::text);
+  select * into r from public.posts where id = v_id;
+  perform pg_temp.ok(r.run_mode = 'REMOTE' and r.place = '' and r.lat is null and r.lng is null and r.capacity = 6,
+    '원격 번개는 장소 · 좌표 없이 올라간다(0076)');
+  perform pg_temp.ok((select run_mode from public.post_feed where id = v_id) = 'REMOTE', '글 목록에 달리는 방식이 보인다');
+  v_id := public.post_create('FLASH', null, '같이 번개', '', '반포 한강공원', 5, now() + interval '2 hours', 4, 37.51, 126.99);
+  insert into fix (k, v) values ('p76_together', v_id::text);
+  perform pg_temp.ok((select run_mode from public.posts where id = v_id) = 'TOGETHER', '방식을 보내지 않으면(옛 앱) 같이 뛰기');
+  v_id := public.post_create('FREE', null, '그냥 글', '', '', 0, null, 0, null, null, null, 'REMOTE');
+  perform pg_temp.ok((select run_mode from public.posts where id = v_id) = 'TOGETHER', '번개가 아닌 글은 방식이 없다(같이 뛰기로 둔다)');
+end $$;
+call pg_temp.must_fail(
+  $q$ select public.post_create('FLASH', null, '이상한 방식', '', '', 5, now() + interval '1 day', 4, null, null, null, 'FLY') $q$,
+  '달리는 방식은 같이 뛰기 · 원격 뛰기 둘뿐');
+reset role;
+do $$
+declare v_party bigint; p public.parties;
+begin
+  insert into public.parties (flash_post_id, host_id) values (pg_temp.fx('p76_remote')::bigint, '74000000-0000-0000-0000-000000000001')
+  returning id into v_party;
+  select * into p from public.parties where id = v_party;
+  perform pg_temp.ok(p.run_mode = 'REMOTE' and p.meet_place is null and p.plan_at = (select meet_at from public.posts where id = p.flash_post_id),
+    '원격 번개의 대기실은 원격 뛰기 · 글의 모임 시각');
+  update public.parties set status = 'FINISHED' where id = v_party;
+  insert into public.parties (flash_post_id, host_id) values (pg_temp.fx('p76_together')::bigint, '74000000-0000-0000-0000-000000000001')
+  returning id into v_party;
+  select * into p from public.parties where id = v_party;
+  perform pg_temp.ok(p.run_mode = 'TOGETHER' and p.meet_place = '반포 한강공원' and p.meet_lat = 37.51,
+    '같이 번개의 대기실은 만나는 곳 · 좌표를 글에서 받는다');
+  update public.parties set status = 'FINISHED' where id = v_party;
+end $$;
+-- 보너스 인원 — 출발 명단의 모두(셋이 출발했고 곁(party_near) 기록은 없다)
+do $$
+declare v_at timestamptz := now() - interval '3 hours'; v_party bigint; v_size int;
+begin
+  insert into public.parties (flash_post_id, host_id, status, starts_at)
+  values (pg_temp.fx('p76_remote')::bigint, '74000000-0000-0000-0000-000000000001', 'FINISHED', v_at)
+  returning id into v_party;
+  insert into public.party_runs (party_id, user_id, starts_at) values
+    (v_party, '74000000-0000-0000-0000-000000000001', v_at),
+    (v_party, '74000000-0000-0000-0000-000000000002', v_at),
+    (v_party, '74000000-0000-0000-0000-000000000003', v_at);
+  select size into v_size from economy.party_for('74000000-0000-0000-0000-000000000002', v_at + interval '3 seconds');
+  perform pg_temp.ok(v_size = 3, '함께 출발한 사람 모두를 센다 — 곁(200m) · 2분 · 원격 상관없이(0076, 설정 party_bonus_rule = ALL)');
+  update public.economy_settings set value = '"NEAR"' where key = 'party_bonus_rule';
+  select size into v_size from economy.party_for('74000000-0000-0000-0000-000000000002', v_at + interval '3 seconds');
+  perform pg_temp.ok(v_size = 1, 'NEAR 로 돌리면 예전처럼 곁에서 같이 뛴 무리만 센다');
+  update public.economy_settings set value = '"ALL"' where key = 'party_bonus_rule';
+end $$;
 select set_config('request.jwt.claims', '', false);
 
 \echo ''

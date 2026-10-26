@@ -205,7 +205,7 @@
     <string name="crew5_closed_title">The lobby closed</string>
     <string name="crew5_closed_body">Everyone left or it sat empty too long. Join another lobby or open a new one.</string>
     <string name="crew5_full_title">The lobby is full</string>
-    <string name="crew5_full_body">A lobby holds up to %1$d runners. See other lobbies or open a new one.</string>
+    <string name="crew5_full_body">This lobby is full. See other lobbies or open a new one.</string>
     <string name="crew5_started_title">This lobby already started</string>
     <string name="crew5_started_body">You can\'t join a run midway. See other lobbies or open a new one.</string>
     <string name="crew5_missed_title">You missed the start</string>

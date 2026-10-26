@@ -235,7 +235,9 @@ internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, on
         }
         Column(Modifier.align(Alignment.BottomStart).padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
             LiveCaption(
-                listOf(status, post.place.ifBlank { null }).filterNotNull().joinToString(" · "),
+                // 원격 뛰기(0076)는 모이는 곳 대신 방식을 적는다
+                listOf(status, if (post.remote) stringResource(R.string.d26_mode_remote) else post.place.ifBlank { null })
+                    .filterNotNull().joinToString(" · "),
                 live = !post.isClosed,
             )
             Spacer(Modifier.height(8.dp))
@@ -338,7 +340,8 @@ internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, 
 
 /** 친구 부르기 · 공유 — 제목 · 시각 · 장소를 글로(앱 밖 공유 창) */
 private fun shareFlash(context: android.content.Context, post: Post) {
-    val text = context.getString(R.string.flash_share_text, post.title, meetClock(post.meetAt), post.place.ifBlank { "—" })
+    val where = if (post.remote) context.getString(R.string.d26_room_remote_line) else post.place.ifBlank { "—" }
+    val text = context.getString(R.string.flash_share_text, post.title, meetClock(post.meetAt), where)
     runCatching {
         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

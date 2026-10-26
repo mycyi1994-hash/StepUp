@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
+<resources>
+    <string name="tg_create">함께 뛰기 만들기</string>
+    <string name="tg_pick_title">누구와 달릴까요?</string>
+    <string name="tg_pick_crew">%s 크루원과</string>
+    <string name="tg_pick_crew_body">크루 러닝 · 공용 체력 · 크루 보상</string>
+    <string name="tg_pick_crew_done">오늘 크루 러닝은 이미 했어요</string>
+    <string name="tg_pick_anyone">누구나 · 번개러닝</string>
+    <string name="tg_pick_anyone_body">근처 러너 누구나 · 같이 뛰기나 원격 뛰기</string>
+    <string name="tg_section_crew">크루 러닝</string>
+    <string name="tg_section_flash">번개러닝</string>
+    <string name="tg_flash_status">번개 · %s</string>
+    <string name="tg_flash_joined">참가 중 · %s</string>
+    <string name="tg_flash_view">자세히</string>
+    <string name="tg_flash_line">%1$s · %2$s km</string>
+    <string name="tg_crew_empty">아직 열린 크루 대기실이 없어요</string>
+    <string name="tg_no_crew">크루에 들어가면 크루 러닝도 열 수 있어요</string>
+    <string name="tg_flash_remote_hint">원격 뛰기는 만나는 곳이 없어요. 정한 시각에 각자의 자리에서 함께 출발해요.</string>
+    <string name="tg_lobby_capacity">정원 %d명</string>
+    <string name="tg_party_rule">함께 출발한 사람은 모두 파티 인원으로 세요(같이 뛰기 · 원격 뛰기 모두).</string>
+</resources>

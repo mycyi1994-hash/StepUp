@@ -513,6 +513,7 @@ class CommunityViewModel(
         lat: Double?,
         lng: Double?,
         clientKey: String? = null,
+        remote: Boolean = false,
         onDone: () -> Unit,
     ) {
         if (_posting.value) return
@@ -531,6 +532,7 @@ class CommunityViewModel(
                 lat = lat,
                 lng = lng,
                 clientKey = clientKey,
+                remote = remote,
             )
             if (result is BoardResult.Ok) {
                 ExperienceEvents.emit(FeedbackCue.Success)

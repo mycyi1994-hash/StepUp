@@ -262,7 +262,8 @@ object Routes {
     const val RANKING = "ranking"
     const val CREW_CREATE = "crew/create"
     const val CREW_BOARD = "crew/board/{crewId}"
-    const val POST_COMPOSE = "post/compose/{crewId}"
+    /** 글쓰기 — flash 면 번개러닝 모집으로 열린다(함께 뛰기 만들기 → 누구나) */
+    const val POST_COMPOSE = "post/compose/{crewId}?flash={flash}"
     const val FLASH_DETAIL = "flash/{postId}"
     const val FLASH_LOBBY = "flash/lobby/{postId}"
     const val COURSES = "courses"
@@ -313,7 +314,7 @@ object Routes {
     fun crewBoard(crewId: String) = "crew/board/$crewId"
 
     /** crewId가 비어 있으면 전체 게시판에 쓰는 글 */
-    fun postCompose(crewId: String) = "post/compose/${crewId.ifBlank { NO_CREW }}"
+    fun postCompose(crewId: String, flash: Boolean = false) = "post/compose/${crewId.ifBlank { NO_CREW }}?flash=$flash"
 
     fun flashDetail(postId: Long) = "flash/$postId"
 
@@ -688,11 +689,6 @@ private fun MainScaffoldContent(
                     // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
                     onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
-                    // 러닝 탭의 크루 러닝 칸(2026-10-26 시안) — 크루 홈 · 크루 찾기 · 고른 대기실 · 새 대기실
-                    onOpenCrew = { crewId -> navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.detail(crewId)) { launchSingleTop = true } },
-                    onFindCrew = { navController.switchTab(Screen.Community) },
-                    onOpenRoom = { crewId, id -> navController.navigate(Routes.room(crewId, id)) { launchSingleTop = true } },
-                    onCreateRoom = { crewId -> navController.navigate(Routes.crewRoomNew(crewId)) { launchSingleTop = true } },
                 )
             }
             composable(Routes.MYSTERY_BOX) {
@@ -851,6 +847,10 @@ private fun MainScaffoldContent(
                     onOpenStoryRegion = { navController.navigate(Routes.STORY_REGION) },
                     crewActions = com.stepup.android.ui.screens.community.crew.crewListActions(navController),
                     onOpenChat = { crewId -> navController.openChatRoom(crewId) },
+                    // 모집 중(2026-10-26 함께 뛰기 한 탭) — 고른 크루 대기실 · 새 크루 대기실 · 번개러닝 모집 글
+                    onOpenRoom = { crewId, id -> navController.navigate(Routes.room(crewId, id)) { launchSingleTop = true } },
+                    onCreateCrewRoom = { crewId -> navController.navigate(Routes.crewRoomNew(crewId)) { launchSingleTop = true } },
+                    onCreateFlash = { navController.navigate(Routes.postCompose("", flash = true)) { launchSingleTop = true } },
                 )
             }
             composable(
@@ -1125,7 +1125,11 @@ private fun MainScaffoldContent(
                             (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY ||
                                 party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN) && !partyCrew.isNullOrBlank() ->
                                 navController.navigate(Routes.crewRun(partyCrew)) { launchSingleTop = true }
-                            else -> navController.navigate(Routes.RUN_CREW) { launchSingleTop = true }
+                            // 크루 러닝 · 번개러닝은 함께 뛰기 탭 한 곳에서(2026-10-26) — 그 탭의 "모집 중" 칸으로
+                            else -> {
+                                com.stepup.android.ui.screens.community.TogetherFocus.requested = true
+                                navController.switchTab(Screen.Community)
+                            }
                         }
                     },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
@@ -1648,12 +1652,16 @@ private fun MainScaffoldContent(
             }
             composable(
                 route = Routes.POST_COMPOSE,
-                arguments = listOf(navArgument("crewId") { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument("crewId") { type = NavType.StringType },
+                    navArgument("flash") { type = NavType.BoolType; defaultValue = false },
+                ),
             ) { entry ->
                 val raw = entry.arguments?.getString("crewId").orEmpty()
                 val crewId = if (raw == Routes.NO_CREW) "" else raw
                 PostComposeScreen(
                     crewId = crewId,
+                    startFlash = entry.arguments?.getBoolean("flash") == true,
                     crewName = ServiceLocator.crewRepository.crewOf(crewId)?.name.orEmpty(),
                     onBack = { navController.popBackStack() },
                 )
