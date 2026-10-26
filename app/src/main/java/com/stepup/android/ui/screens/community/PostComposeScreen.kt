@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -40,7 +42,6 @@ import com.stepup.android.domain.PostCategory
 import com.stepup.android.ui.components.BottomActionBar
 import com.stepup.android.ui.components.ButtonState
 import com.stepup.android.ui.components.FormField
-import com.stepup.android.ui.components.GroupRow
 import com.stepup.android.ui.components.GroupedList
 import com.stepup.android.ui.components.NumberStepper
 import com.stepup.android.ui.components.PrimaryButton
@@ -75,13 +76,22 @@ fun PostComposeScreen(
     var capacity by rememberSaveable { mutableIntStateOf(6) }
     // 글쓰기 화면마다 한 요청 키 — 응답을 못 받고 다시 올려도 서버(0062)가 같은 글 번호를 돌려준다(번개 모임이 둘이 되지 않게)
     var clientKey by rememberSaveable { mutableStateOf(UUID.randomUUID().toString()) }
+    // 번개러닝 제목은 기본 제목 10개 중 하나로 채워 둔다 — 치지 않고 바로 올릴 수 있게(2026-10-26). 고친 제목은 그대로 쓴다
+    val templates = androidx.compose.ui.res.stringArrayResource(R.array.flash_title_templates)
+    val pick by rememberSaveable { mutableIntStateOf(kotlin.random.Random.nextInt(FLASH_TITLE_TEMPLATES)) }
+    val template = templates[pick % templates.size]
 
     val selected = PostCategory.of(category)
     val flash = selected == PostCategory.FLASH
+    androidx.compose.runtime.LaunchedEffect(flash) {
+        if (flash && title.isBlank()) title = template
+        // 자유 · 꿀팁으로 바꾸면 번개 제목은 걷는다(직접 쓴 제목은 둔다)
+        if (!flash && title == template) title = ""
+    }
     // 번개러닝은 쓰는 자리가 모임 장소다. 읽는 사람의 폰이 이 좌표에서 거리를 잰다.
     val here = rememberCurrentLocation(enabled = flash && !remote)
     val posting by viewModel.posting.collectAsStateWithLifecycle()
-    val canSubmit = !posting && title.isNotBlank() && (!flash || remote || place.isNotBlank())
+    val canSubmit = !posting && (flash || title.isNotBlank()) && (!flash || remote || place.isNotBlank())
     val c = StepUpUi.colors
 
     // 올리지 못했으면(로그인·연결) 이유를 띄운다. 화면은 닫지 않아 쓴 글이 남는다.
@@ -108,7 +118,8 @@ fun PostComposeScreen(
             }
             FormField(
                 stringResource(R.string.post_field_title), title, { title = it },
-                Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_title_hint),
+                Modifier.padding(horizontal = StepUpUi.Gutter).testTag("post-title"),
+                placeholder = if (flash) template else stringResource(R.string.post_field_title_hint),
             )
             if (!flash) {
                 FormField(
@@ -177,7 +188,7 @@ fun PostComposeScreen(
                 onClick = {
                     viewModel.writePost(
                         category = selected,
-                        title = title,
+                        title = if (flash) title.ifBlank { template } else title,
                         body = body,
                         crewId = crewId,
                         place = if (flash && remote) "" else place,
@@ -255,7 +266,10 @@ internal fun stepMinutes(now: Int, dir: Int): Int {
     return (now + dir * step).coerceIn(5, 24 * 60)
 }
 
-/** [−][값][+] 줄(시안 compose_flash) — 왼쪽 이름, 오른쪽 조절 칸 */
+/**
+ * [−][값][+] 줄(시안 compose_flash) — 왼쪽 이름, 오른쪽 조절 칸. 이름은 한 줄로만 — 좁은 폰 · 큰 글자에서 조절 칸에 밀려
+ * 이름이 한 글자씩 세로로 쪼개지던 것(2026-10-26 사용자 "세로로 나와서 이상함"). 한 줄에 둘이 들어가지 않으면 이름 아래에 조절 칸.
+ */
 @Composable
 private fun StepperRow(
     label: String,
@@ -267,13 +281,40 @@ private fun StepperRow(
     plus: Boolean,
     tag: String,
 ) {
-    GroupRow(minHeight = 68.dp) {
-        Text(label, style = StepUpUi.type.rowTitle.copy(fontSize = 16.sp), color = StepUpUi.colors.label, modifier = Modifier.weight(1f))
-        NumberStepper(
-            value, unit, onMinus, onPlus, minusEnabled = minus, plusEnabled = plus,
-            minusDescription = "$label ${stringResource(R.string.post_stepper_less)}",
-            plusDescription = "$label ${stringResource(R.string.post_stepper_more)}",
-            tag = tag,
-        )
+    val labelStyle = StepUpUi.type.rowTitle.copy(fontSize = 16.sp)
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.foundation.layout.BoxWithConstraints(
+        Modifier.fillMaxWidth().heightIn(min = 68.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        val labelWidth = with(density) { measurer.measure(label, labelStyle, maxLines = 1).size.width.toDp() }
+        val stepper = @Composable { modifier: Modifier ->
+            NumberStepper(
+                value, unit, onMinus, onPlus, modifier, minusEnabled = minus, plusEnabled = plus,
+                minusDescription = "$label ${stringResource(R.string.post_stepper_less)}",
+                plusDescription = "$label ${stringResource(R.string.post_stepper_more)}",
+                tag = tag,
+            )
+        }
+        if (labelWidth + STEPPER_GAP + STEPPER_WIDTH <= maxWidth) {
+            androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(label, style = labelStyle, color = StepUpUi.colors.label, maxLines = 1, softWrap = false, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(STEPPER_GAP))
+                stepper(Modifier.width(STEPPER_WIDTH))
+            }
+        } else {
+            Column(Modifier.fillMaxWidth()) {
+                Text(label, style = labelStyle, color = StepUpUi.colors.label)
+                Spacer(Modifier.height(8.dp))
+                stepper(Modifier.fillMaxWidth())
+            }
+        }
     }
 }
+
+/** 기본 제목 수 — res 의 flash_titles.xml 항목 수와 같다 */
+private const val FLASH_TITLE_TEMPLATES = 10
+
+private val STEPPER_WIDTH = 176.dp
+private val STEPPER_GAP = 12.dp
