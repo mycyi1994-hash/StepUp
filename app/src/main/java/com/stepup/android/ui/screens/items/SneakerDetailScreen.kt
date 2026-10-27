@@ -720,22 +720,29 @@ private fun RecordSheet(shoe: Sneaker, zone: ZoneId, onClose: () -> Unit) {
             CareInfoRow(stringResource(R.string.sdv_info_level), "${shoe.level} / ${shoe.maxLevel}", "shoe-info-level")
             // 속성은 예전 52종에만 있다 — 새 도감 신발에 자리 값을 보이지 않는다
             CareInfoRow(stringResource(R.string.care_record_received), received, "shoe-info-received")
-            val chain = chainMarkOf(shoe.tokenId)
-            CareInfoRow(
-                stringResource(R.string.care_record_chain),
-                when (chain) {
-                    ChainMark.None -> stringResource(R.string.care_chain_none)
-                    is ChainMark.Token -> stringResource(R.string.care_chain_token, chain.tokenId)
-                    is ChainMark.Vault -> stringResource(R.string.care_chain_vault, chain.tokenId)
-                },
-                "shoe-info-chain",
-            )
-            if (chain == ChainMark.None) {
-                Text(stringResource(R.string.sdv_chain_none_note), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.45f))
-            }
+            // 체인 등록 줄은 블록체인 기능이 있는 판에만(스토어 판은 지갑 · 체인 기록 화면이 없다 — 2026-10-27 출시 점검)
+            if (com.stepup.android.BuildConfig.WEB3) ChainRegistrationRow(shoe)
             Spacer(Modifier.height(6.dp))
             RunButton(stringResource(R.string.common_close), onClose, Modifier.testTag("shoe-info-ok"))
         }
+    }
+}
+
+@Composable
+private fun ChainRegistrationRow(shoe: Sneaker) {
+    val t = runTone()
+    val chain = chainMarkOf(shoe.tokenId)
+    CareInfoRow(
+        stringResource(R.string.care_record_chain),
+        when (chain) {
+            ChainMark.None -> stringResource(R.string.care_chain_none)
+            is ChainMark.Token -> stringResource(R.string.care_chain_token, chain.tokenId)
+            is ChainMark.Vault -> stringResource(R.string.care_chain_vault, chain.tokenId)
+        },
+        "shoe-info-chain",
+    )
+    if (chain == ChainMark.None) {
+        Text(stringResource(R.string.sdv_chain_none_note), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.45f))
     }
 }
 

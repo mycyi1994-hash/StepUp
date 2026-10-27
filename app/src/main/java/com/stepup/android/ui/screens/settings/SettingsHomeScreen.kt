@@ -155,7 +155,7 @@ fun SettingsHomeScreen(
                 // 실제 빌드 이름(시안의 1.0.0 은 예시)
                 AboutLine(stringResource(R.string.about_version), "StepUp " + com.stepup.android.core.TestUpdates.buildLabel)
                 // 테스트 APK 에서만 — 운영 빌드에는 나타나지 않는다
-                if (com.stepup.android.core.TestUpdates.enabled) TestUpdateLine()
+                if (com.stepup.android.core.TestUpdates.enabled) com.stepup.android.ui.components.TestUpdateSettingsLine()
                 // 블록체인 안내는 블록체인 기능이 있는 판에만(스토어 판은 WEB3 = false)
                 if (com.stepup.android.BuildConfig.WEB3) AboutLine(stringResource(R.string.about_network), stringResource(R.string.about_network_value))
             }
@@ -197,36 +197,6 @@ private fun AboutLine(label: String, value: String) {
         Text(label, style = runTextStyle(18.sp, t.text, FontWeight.SemiBold), modifier = Modifier.weight(1f, fill = false))
         Spacer(Modifier.width(12.dp))
         Text(value, style = runTextStyle(15.sp, t.label, FontWeight.Medium), textAlign = TextAlign.End)
-    }
-}
-
-/** 테스트 APK 에서만 — 새 빌드를 지금 확인한다. 있으면 앱 위에 업데이트 창이 뜬다 */
-@Composable
-private fun TestUpdateLine() {
-    val t = runTone()
-    val state by com.stepup.android.core.TestUpdates.state.collectAsState()
-    val status = when (state) {
-        com.stepup.android.core.TestUpdates.State.Checking -> stringResource(R.string.test_update_checking)
-        com.stepup.android.core.TestUpdates.State.UpToDate -> stringResource(R.string.test_update_latest)
-        com.stepup.android.core.TestUpdates.State.CheckFailed -> stringResource(R.string.test_update_check_failed)
-        is com.stepup.android.core.TestUpdates.State.Available,
-        is com.stepup.android.core.TestUpdates.State.Dismissed,
-        is com.stepup.android.core.TestUpdates.State.Failed -> stringResource(R.string.test_update_found)
-        is com.stepup.android.core.TestUpdates.State.Downloading -> stringResource(R.string.test_update_downloading_short)
-        is com.stepup.android.core.TestUpdates.State.Installing -> stringResource(R.string.test_update_installing_short)
-        is com.stepup.android.core.TestUpdates.State.NeedsPermission -> stringResource(R.string.test_update_permission_short)
-        com.stepup.android.core.TestUpdates.State.Idle -> stringResource(R.string.test_update_check)
-    }
-    Row(
-        Modifier.fillMaxWidth().background(blueListColors().face).heightIn(min = 56.dp).testTag("test-update-check")
-            .feedbackClickable(onClick = { com.stepup.android.core.TestUpdates.startCheck(force = true) })
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(stringResource(R.string.test_update_row), style = runTextStyle(16.sp, t.label, FontWeight.Medium), modifier = Modifier.weight(1f, fill = false))
-        Spacer(Modifier.width(12.dp))
-        Text(status, style = runTextStyle(15.sp, t.cyan, FontWeight.SemiBold))
     }
 }
 

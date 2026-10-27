@@ -827,7 +827,7 @@ class WalkSessionService : Service() {
 
     private fun startSession(partySize: Int, group: StartGroup) {
         if (_state.value.isActive || startJob?.isActive == true) return
-        enterForeground()
+        if (!enterForeground()) return
         startJob = scope.launch(Dispatchers.Main.immediate) {
             // 끝나지 않은 러닝(앱이 죽어 남은 저장본)이 있으면 새 러닝을 시작하지 않고 먼저 묻는다.
             // 그대로 시작하면 새 러닝은 저장본을 남기지 못해(다른 러닝의 저장본이 자리를 차지) 보호받지 못한다.
@@ -890,7 +890,7 @@ class WalkSessionService : Service() {
      */
     private fun recoverSession(finish: Boolean) {
         if (_state.value.isActive || startJob?.isActive == true) return
-        enterForeground()
+        if (!enterForeground()) return
         startJob = scope.launch(Dispatchers.Main.immediate) {
             val checkpoint = runCatching { ServiceLocator.runCheckpoints.read() }.getOrNull()
             recovery.value = null
@@ -916,7 +916,24 @@ class WalkSessionService : Service() {
         }
     }
 
-    private fun enterForeground() {
+    /**
+     * 전경 서비스로 올린다. 올리지 못하면(걸음 권한을 거뒀거나 앱이 뒤에 있어 Android 12+ 가 막음 — 2026-10-27 출시 점검)
+     * 앱이 죽지 않게 알리고 멈춘다. 돌려주는 값: 올렸는가.
+     */
+    private fun enterForeground(): Boolean = try {
+        enterForegroundOrThrow()
+        true
+    } catch (e: Exception) {
+        android.util.Log.w("WalkSessionService", "startForeground refused", e)
+        runCatching {
+            android.widget.Toast.makeText(this, R.string.run_start_failed, android.widget.Toast.LENGTH_LONG).show()
+        }
+        startRefusals.value += 1
+        stopSelf()
+        false
+    }
+
+    private fun enterForegroundOrThrow() {
         resetAnchor()
         goodHereAt = 0L
         createChannel()
@@ -1512,7 +1529,13 @@ class WalkSessionService : Service() {
                 .putExtra(EXTRA_GROUP, group.group.name)
                 .putExtra(EXTRA_GROUP_CREW, group.crewId)
                 .putExtra(EXTRA_GROUP_NAME, group.name)
-            ContextCompat.startForegroundService(context, intent)
+            // 앱이 뒤에 있으면 Android 12+ 가 전경 서비스 시작을 막는다 — 앱이 죽지 않게 받아 시작 거절로 알린다
+            try {
+                ContextCompat.startForegroundService(context, intent)
+            } catch (e: IllegalStateException) {
+                android.util.Log.w("WalkSessionService", "start refused", e)
+                startRefusals.value += 1
+            }
         }
 
         fun pause(context: Context) {

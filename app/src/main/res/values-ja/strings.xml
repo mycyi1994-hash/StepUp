@@ -204,6 +204,7 @@
     <string name="items_collection">コレクション</string>
     <string name="items_collection_progress">%1$d / %2$d 組み合わせ</string>
     <string name="items_mint_title">新しいスニーカーをミント</string>
+    <string name="items_mint_title_store">新しい靴を引く</string>
     <string name="items_mint_desc">ガチャはすべて無料です。最初に10回、毎日3回無料で引け、ウォレットを連携すると上級ガチャももらえます。</string>
     <string name="items_mint_desc_store">ガチャはすべて無料です。最初に10回、毎日3回無料で引けます。</string>
     <string name="toast_sign_in_required">ログインするとSUPとスニーカーを使えます。</string>

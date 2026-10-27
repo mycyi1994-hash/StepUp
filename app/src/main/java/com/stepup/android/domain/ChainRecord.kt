@@ -4,7 +4,7 @@ package com.stepup.android.domain
  * 내 체인 기록 한 줄 — 서버 my_chain_activity(0044).
  *
  * 우리가 가스비를 내고 GIWA Sepolia 에 올리는 기록이다: 러닝 증명 · 코스 완주 · 배지(EAS 증명),
- * 뽑은 신발 발행 · 강화/수리 반영(v3 신발). 확정되기 전에는 "대기"이고 거래 번호가 없다 —
+ * 뽑은 신발 발행 · 강화/수리 반영(v3 신발), 뽑기 · 강화 · 수리 · 포인트 · 거래 · 크루 러닝 · 번개 · 크루 가입 · 걸음 · 출석(0078, EAS). 확정되기 전에는 "대기"이고 거래 번호가 없다 —
  * 서버가 확정 블록에서 확인하기 전에는 "기록됨"이라고 쓰지 않는다.
  */
 data class ChainRecord(
@@ -20,7 +20,13 @@ data class ChainRecord(
     val createdAt: Long,
     val confirmedAt: Long? = null,
 ) {
-    enum class Kind { RUN_PROOF, COURSE_RUN, BADGE, VAULT_MINT, STATS_SYNC, UNKNOWN }
+    enum class Kind {
+        RUN_PROOF, COURSE_RUN, BADGE, VAULT_MINT, STATS_SYNC,
+        // 0078 — 게임 · 크루 · 매일 활동(EAS 증명)
+        SHOE_DRAW, SHOE_FORGE, SHOE_REPAIR, SHOE_POINTS, SHOE_TRADE, DRAW_SEED, DRAW_REVEAL,
+        RUN_SETTLE, SHOE_WEAR, CREW_RUN, FLASH_RUN, CREW_JOIN, PARTY_START, DAILY_STEPS, CHECK_IN,
+        UNKNOWN,
+    }
 
     enum class Status { PENDING, CONFIRMED, CANCELLED, FAILED }
 

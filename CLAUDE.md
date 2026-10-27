@@ -1,5 +1,20 @@
 # StepUp — 작업 메모
 
+## 최신 — 체인 기록 넓히기 · 나중에 대조 · 개인정보 최소 · 출시 점검 (2026-10-27)
+
+사용자 "거래수가중요해" → "검증은 나중에 필요하면 대조할 정도" → "해시에 개인정보 유출 없게" → "안드로이드 출시에 심혈". 서버 0078, 표는 [docs/온체인-거래-발생-지도.md](docs/온체인-거래-발생-지도.md).
+
+- EAS 기록 15종: 뽑기 · 씨앗 약속 · 씨앗 공개(`draw_verify` 로 누구나 다시 굴림) · 강화 · 수리 · 포인트 · 거래 · 러닝 정산 · 신발 주행 · 크루 러닝 · 함께 출발 명단 · 번개 출석 · 크루 가입 ·
+  하루 걸음(목표 달성 여부만) · 앱 출석(`chain_check_in`, `EconomySync` 가 하루 한 번). 러닝 증명은 200m · 하루 30(전 1km · 10). 관문이 아니다 — 실패해도 그 일은 된다.
+- 대조: 기록마다 `dataHash`(소금 친 원본 해시). 소금 · 스냅숏은 `economy.chain_audit`(서버만) → `admin_chain_audit(job)` + `attester/scripts/audit.mjs <uid> <hash>`.
+  재료 봉인은 `economy.activity_seal`(다시 가져가도 같은 재료), 재료 키 = 워커 `ACTIVITY_SCHEMAS` 칸 이름(`attester/test/activity.test.js` 가 맞대어 본다).
+- 개인정보: 사람 가명 = 사람마다 비밀값(`economy.person_pseudonym` · `chain_person_keys` — 계정 삭제 때 cascade 로 지워 다시 못 잇는다), 받는 사람 기본 비움
+  (체인 기록 화면 "내 지갑으로 기록 받기" — `chain_recipient_set`), 보내는 시각 10 ~ 60분 무작위 늦춤. 개인정보처리방침 · Play Data safety("공유: 예")에 밝혔다.
+- 새 종류를 더하면 셋(서버 `activity_kinds` · `activity_payload`, 워커 스키마, 앱 `ChainRecord.Kind` · `ca_kind_*`)을 함께 고친다. 보내는 속도 상한은 워커 2분마다 3건(하루 약 2,000).
+- 출시 점검(별도 검토): 테스트 APK 스스로 업데이트 코드는 `src/selfUpdate`(debug · qa)로 옮기고 스토어 판은 `src/noSelfUpdate` 빈 자리, `TestUpdatesTest` 는 `src/testDebug`.
+  지갑 앱 찾기(`<queries>`)는 `src/debug` 매니페스트로, Firebase 광고 서비스 권한(`ACCESS_ADSERVICES_*`)은 뺐다. 신발 기록의 체인 등록 줄 · "민팅" 제목은 `WEB3` 판에만.
+  러닝 서비스가 전경으로 못 오르면 죽지 않고 알린다(`run_start_failed`). 남은 일은 [docs/PLAY-STORE.md](docs/PLAY-STORE.md).
+
 ## 최신 — 러닝 시작 메뉴: 혼자 러닝 · 크루만 열기 (2026-10-27)
 
 사용자 "러닝챌린지 · 다이어트 모드 등 크루달리기랑 혼자 러닝 빼면 비활성화 · 준비중 · 자물쇠". 러닝 시작 메뉴(`RunStartMenuContent`)의

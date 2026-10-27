@@ -203,6 +203,7 @@
     <string name="items_collection">图鉴</string>
     <string name="items_collection_progress">%1$d / %2$d 种组合</string>
     <string name="items_mint_title">铸造新球鞋</string>
+    <string name="items_mint_title_store">抽取新跑鞋</string>
     <string name="items_mint_desc">所有抽取都免费：首次10次、每天3次，连接钱包后还可获得高级抽取。</string>
     <string name="items_mint_desc_store">抽取全部免费。开始可抽 10 次，每天再免费抽 3 次。</string>
     <string name="toast_sign_in_required">登录后即可使用 SUP 和运动鞋。</string>

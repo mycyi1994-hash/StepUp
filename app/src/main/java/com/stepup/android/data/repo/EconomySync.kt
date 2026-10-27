@@ -45,6 +45,7 @@ class EconomySync(
 ) {
     private val lock = Mutex()
     private var bootstrapped: String? = null
+    private var checkedIn: String? = null
 
     private val _state = MutableStateFlow(EconomySyncState.UNKNOWN)
     val state: StateFlow<EconomySyncState> = _state
@@ -110,6 +111,9 @@ class EconomySync(
             api.setDailyGoal(prefs.dailyGoal.first())
             bootstrapped = userId
         }
+        // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
+        val checkIn = "$userId:${LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))}"
+        if (checkedIn != checkIn && api.checkIn() is ServerResult.Ok) checkedIn = checkIn
         importLegacy(userId)?.let { return it }
 
         val economy = when (val r = api.economy()) { is ServerResult.Ok -> r.value; else -> return r.cast() }

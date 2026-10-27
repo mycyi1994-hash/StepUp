@@ -13,7 +13,7 @@
 | `GET /v2/meta/:tokenId` · `GET /v3/meta/:tokenId` | 신발 NFT 메타데이터 — 체인 스탯을 읽어 이름 · 그림 · 속성을 만든다 (`tokenURI` 가 가리키는 곳) |
 | `GET /health` | 설정된 주소들 |
 | 1분마다 | ① 확정 블록까지 이벤트를 읽어 서버에 반영(v3 포함) ② 유효 시간 + 안전 마진이 지난 작업을 체인 확인 뒤 되돌림 ③ 체인과 서버 장부 대조 — 서버가 모르는 지급 · 발행이 보이면 **서버와 컨트랙트를 모두 정지** |
-| 2분마다(따로) | 체인 기록 보내기(`src/jobs.js`, 0044 `chain_jobs`) — 러닝 증명 · 코스 완주 · 배지(EAS), 뽑은 신발 금고 발행 · 강화 · 수리 반영(v3). v3 컨트랙트가 없으면 한 번 배포한다(`src/v3.js`) |
+| 2분마다(따로) | 체인 기록 보내기(`src/jobs.js`, 0044 `chain_jobs`) — 러닝 증명 · 코스 완주 · 배지 · 게임 · 크루 · 매일 활동(EAS, 0078 — `ACTIVITY_SCHEMAS`), 뽑은 신발 금고 발행 · 강화 · 수리 반영(v3). v3 컨트랙트가 없으면 한 번 배포한다(`src/v3.js`) |
 
 ### 체인 기록 (2분마다)
 
@@ -38,6 +38,9 @@
 워커 자신의 로그인(전용 계정)은 한 번에 하나만 하고, 실패하면 1분(수 제한이면 5분) 동안 다시 하지 않는다 —
 Supabase 로그인 요청 수 제한(5분에 30번)을 실패한 재시도들이 계속 채우지 않게. 실패하면 로그에
 `attester login failed <상태> <오류 코드>` 가 남는다(`invalid_credentials` 면 `ATTESTER_PASSWORD` 를 다시 넣는다).
+
+체인 기록 하나를 대조하려면(0078 — 나중에 필요할 때만) 서버에서 `admin_chain_audit(<job id>)` 로 증명 번호 · data_hash 를 보고
+`node scripts/audit.mjs <증명 번호> <data_hash>` — 체인에서 읽어 맞대어 본다(읽기만, 키 필요 없음).
 
 실행 기록은 Actions → **Attester logs** → Run workflow 로 몇 분 받아 볼 수 있다(`.github/workflows/attester-logs.yml`).
 

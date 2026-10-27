@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 테스트 APK(debug · qa) 에만 들어간다 — 새 버전을 받아 스스로 업데이트하는 데 필요하다(core/TestUpdates.kt).
-     스토어 빌드(release)에는 이 권한도 받는 쪽도 없다. -->
+<!-- 테스트 APK(debug · qa) 에만 들어간다 — 새 버전을 받아 스스로 업데이트하는 데 필요하다(src/selfUpdate 의 core/TestUpdates.kt)
+     · 지갑 앱 찾기. 스토어 빌드(release · storePreview)에는 이 권한도 받는 쪽도 지갑 앱 찾기도 없다. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <!-- WEB3 지갑 연결(2026-10-18) — 지갑 앱이 깔려 있는지 보고 연다(MetaMask · OKX · Rabby). 스토어 판은 지갑 기능이 없어 넣지 않는다 -->
+    <queries>
+        <package android:name="io.metamask" />
+        <package android:name="com.okinc.okex.gp" />
+        <package android:name="com.debank.rabbymobile" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="okx" />
+        </intent>
+    </queries>
 
     <application>
         <!-- 새 버전이 깔린 직후 -->

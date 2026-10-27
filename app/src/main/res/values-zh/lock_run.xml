@@ -4,6 +4,7 @@
     <string name="lock_run_open">解锁并打开应用</string>
     <!-- 혼자 러닝 버튼 셋(일시정지 · 정지 · 화면 잠금) 중 정지 — 1초 길게 눌러 마친다 -->
     <string name="run_stop">结束</string>
+    <string name="run_start_failed">无法开始跑步。请在打开应用的状态下检查身体活动和位置权限后重试。</string>
     <!-- 자유러닝 시작 전 신발 교체(1초 꾹 눌러 고르기) -->
     <string name="run_free_check_change">更换跑鞋</string>
     <string name="run_shoe_pick_title">选择跑鞋</string>
