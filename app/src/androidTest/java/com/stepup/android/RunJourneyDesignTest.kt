@@ -186,27 +186,13 @@ class RunJourneyDesignTest {
             awaitTag("run-menu-free")
             compose.onNodeWithTag("sup-balance", useUnmergedTree = true).assertExists()
             shot("U01")
-            tap("run-menu-goals")
-            awaitTag("run-goals")
-            shot("U02")
-            // C03 — 지난 도전(이 검사가 넣은 도전 셋 — 끝나면 지운다)
-            runBlocking {
-                val day = 86_400_000L
-                val at = System.currentTimeMillis()
-                ServiceLocator.userPrefs.clearGoalAttempts()
-                listOf(
-                    GoalAttempt(at - 4 * day, RunGoal.TEN_MIN, true, 600, 1.28),
-                    GoalAttempt(at - 6 * day, RunGoal.ONE_KM, true, 412, 1.0),
-                    GoalAttempt(at - 7 * day, RunGoal.THREE_KM, true, 1_260, 3.0),
-                ).forEach { ServiceLocator.userPrefs.addGoalAttempt(it) }
+            // 러닝 챌린지 · 추천 코스 · 다이어트 · 코칭은 아직 열지 않는다(2026-10-27) — 자물쇠 · 준비 중, 눌러도 화면이 바뀌지 않는다
+            for (tag in listOf("run-menu-goals", "run-menu-course", "run-menu-diet")) {
+                compose.onNodeWithTag(tag).assertTextContains(label(R.string.runflow_soon), substring = true)
             }
-            tap("run-goals-history")
-            awaitTag("run-goal-history")
-            shot("C03")
-            back()
-            awaitTag("run-goals")
-            back()
-            awaitTag("run-menu-free")
+            tap("run-menu-goals")
+            compose.waitForIdle()
+            compose.onAllNodesWithTag("run-goals").assertCountEquals(0)
             back()
             awaitTag("home-start-run")
 

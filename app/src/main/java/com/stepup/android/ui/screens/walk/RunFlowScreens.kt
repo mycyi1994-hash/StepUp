@@ -161,22 +161,29 @@ internal fun RunStartMenuContent(
                 enabled = onCrew != null, badge = if (onCrew == null) stringResource(R.string.runflow_soon) else null,
                 modifier = Modifier.testTag("run-menu-crew"),
             )
+            // 러닝 챌린지 · 추천 코스 · 다이어트 · 코칭은 아직 열지 않는다(2026-10-27 사용자 "크루 · 혼자 러닝 빼면 비활성화 ·
+            // 준비 중 · 자물쇠") — 누르면 곧 열린다는 안내만. 다시 열려면 RunMenuLocks 의 값을 끈다
+            val locked = { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() }
+            val soonBadge = stringResource(R.string.runflow_soon)
             RunModeCard(
                 stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
-                Icons.Filled.EmojiEvents, onGoals, modifier = Modifier.testTag("run-menu-goals"),
+                Icons.Filled.EmojiEvents, if (RunMenuLocks.CHALLENGE) locked else onGoals,
+                enabled = !RunMenuLocks.CHALLENGE, locked = RunMenuLocks.CHALLENGE,
+                badge = soonBadge.takeIf { RunMenuLocks.CHALLENGE }, modifier = Modifier.testTag("run-menu-goals"),
             )
+            val courseOpen = onCourse != null && !RunMenuLocks.COURSE
             RunModeCard(
                 stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
-                Icons.Filled.Route, onCourse ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
-                enabled = onCourse != null, badge = if (onCourse == null) stringResource(R.string.runflow_soon) else null,
+                Icons.Filled.Route, onCourse.takeIf { courseOpen } ?: locked,
+                enabled = courseOpen, locked = !courseOpen, badge = soonBadge.takeIf { !courseOpen },
                 modifier = Modifier.testTag("run-menu-course"),
             )
+            val dietOpen = onDiet != null && !RunMenuLocks.DIET
             RunModeCard(
                 stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),
                 ImageVector.vectorResource(R.drawable.ic_tab_shoes),
-                onDiet ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
-                enabled = onDiet != null,
-                badge = if (onDiet == null) stringResource(R.string.runflow_soon) else null,
+                onDiet.takeIf { dietOpen } ?: locked,
+                enabled = dietOpen, locked = !dietOpen, badge = soonBadge.takeIf { !dietOpen },
                 modifier = Modifier.testTag("run-menu-diet"),
             )
             Spacer(Modifier.height(4.dp))
@@ -184,13 +191,25 @@ internal fun RunStartMenuContent(
             Spacer(Modifier.height(4.dp))
             RunLinkRow(stringResource(R.string.run_menu_records), onRecords, Modifier.testTag("run-menu-records"))
             if (onCoaching != null) {
-                RunLinkRow(stringResource(R.string.coach_menu_entry), onCoaching, Modifier.testTag("run-menu-coaching"))
+                RunLinkRow(
+                    stringResource(R.string.coach_menu_entry), if (RunMenuLocks.COACHING) locked else onCoaching,
+                    Modifier.testTag("run-menu-coaching"), trailing = soonBadge.takeIf { RunMenuLocks.COACHING },
+                    locked = RunMenuLocks.COACHING,
+                )
             }
             if (onLeaderboard != null) {
                 RunLinkRow(stringResource(R.string.lb_menu_entry), onLeaderboard, Modifier.testTag("run-menu-leaderboard"))
             }
         }
     }
+}
+
+/** 러닝 시작 메뉴에서 아직 열지 않은 곳(2026-10-27) — 혼자 러닝 · 크루만 연다. false 로 바꾸면 다시 열린다 */
+internal object RunMenuLocks {
+    const val CHALLENGE = true
+    const val COURSE = true
+    const val DIET = true
+    const val COACHING = true
 }
 
 /** 러닝 챌린지(시안 U02) — 10분 · 1km · 3km 같은 크기의 카드. 카드를 누르면 그 도전이 바로 시작된다(안에 버튼을 또 두지 않는다) */

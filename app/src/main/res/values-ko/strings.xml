@@ -1781,7 +1781,7 @@ StepUp과 함께 달려보세요.</string>
     <string name="runflow_diet">다이어트 모드</string>
     <string name="runflow_diet_desc">내게 맞는 러닝 방법 찾기</string>
     <string name="runflow_soon">준비 중</string>
-    <string name="runflow_soon_toast">곧 열어요. 지금은 자유 러닝이나 러닝 챌린지로 달려 주세요.</string>
+    <string name="runflow_soon_toast">곧 열어요. 지금은 혼자 러닝이나 크루 러닝으로 달려 주세요.</string>
     <string name="runflow_goals_title">러닝 챌린지</string>
     <string name="runflow_goals_headline">오늘의 러닝 목표</string>
     <string name="runflow_goals_sub">준비된 목표로 가볍게 도전해요.</string>

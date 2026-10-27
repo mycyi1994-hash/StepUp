@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -785,6 +786,8 @@ fun RunModeCard(
     badge: String? = null,
     titleStyle: TextStyle? = null,
     minHeight: Dp = 76.dp,
+    /** 아직 열지 않은 방법(2026-10-27) — 흐리게 · 오른쪽 자물쇠. 누르면 [onClick](곧 열린다는 안내) */
+    locked: Boolean = false,
 ) {
     val t = runTone()
     val shape = RoundedCornerShape(RunSpec.CardRadius)
@@ -792,7 +795,7 @@ fun RunModeCard(
         modifier.fillMaxWidth().heightIn(min = minHeight)
             .clip(shape)
             .background(t.panel, shape)
-            .feedbackClickable(enabled = enabled, onClick = onClick)
+            .feedbackClickable(enabled = enabled || locked, onClick = onClick)
             .padding(start = 18.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -813,13 +816,24 @@ fun RunModeCard(
             }
             Text(subtitle, style = runTextStyle(13.5.sp, if (enabled) t.label else t.muted, FontWeight.Normal))
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted, modifier = Modifier.size(24.dp))
+        Icon(
+            if (locked) Icons.Filled.Lock else Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted,
+            modifier = Modifier.size(if (locked) 20.dp else 24.dp),
+        )
+        if (locked) Spacer(Modifier.width(4.dp))
     }
 }
 
 /** 한 줄 이동 칸 — "내 러닝 기록 >" · "지난 도전 보기 >"(묶음 면 한 줄) */
 @Composable
-fun RunLinkRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, trailing: String? = null) {
+fun RunLinkRow(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    trailing: String? = null,
+    /** 아직 열지 않은 곳(2026-10-27) — 흐린 이름 · 오른쪽 자물쇠 */
+    locked: Boolean = false,
+) {
     val t = runTone()
     val shape = RoundedCornerShape(RunSpec.CardRadius)
     Row(
@@ -828,12 +842,15 @@ fun RunLinkRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier
             .padding(start = 16.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = runTextStyle(16.sp, t.text, FontWeight.Bold), modifier = Modifier.weight(1f))
+        Text(label, style = runTextStyle(16.sp, if (locked) t.muted else t.text, FontWeight.Bold), modifier = Modifier.weight(1f))
         if (trailing != null) {
             Text(trailing, style = runTextStyle(13.5.sp, t.label, FontWeight.Normal))
             Spacer(Modifier.width(4.dp))
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted, modifier = Modifier.size(22.dp))
+        Icon(
+            if (locked) Icons.Filled.Lock else Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted,
+            modifier = Modifier.size(if (locked) 18.dp else 22.dp),
+        )
     }
 }
 

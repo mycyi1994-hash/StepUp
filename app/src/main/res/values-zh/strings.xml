@@ -1781,7 +1781,7 @@
     <string name="runflow_diet">减重模式</string>
     <string name="runflow_diet_desc">找到适合自己的跑法</string>
     <string name="runflow_soon">即将推出</string>
-    <string name="runflow_soon_toast">即将开放。现在请使用自由跑或跑步挑战。</string>
+    <string name="runflow_soon_toast">即将开放。现在请使用单人跑或跑团跑。</string>
     <string name="runflow_goals_title">跑步挑战</string>
     <string name="runflow_goals_headline">今天的跑步目标</string>
     <string name="runflow_goals_sub">选一个准备好的目标，轻松挑战。</string>

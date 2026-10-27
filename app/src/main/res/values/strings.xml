@@ -1783,7 +1783,7 @@ Start running with StepUp.</string>
     <string name="runflow_diet">Diet mode</string>
     <string name="runflow_diet_desc">Find a way of running that suits you</string>
     <string name="runflow_soon">Coming soon</string>
-    <string name="runflow_soon_toast">Coming soon. For now, try a free run or a running challenge.</string>
+    <string name="runflow_soon_toast">Coming soon. For now, run solo or join a crew run.</string>
     <string name="runflow_goals_title">Running challenge</string>
     <string name="runflow_goals_headline">Today\'s running goal</string>
     <string name="runflow_goals_sub">Pick a ready-made goal and give it a go.</string>
