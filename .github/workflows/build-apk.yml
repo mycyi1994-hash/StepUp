@@ -73,6 +73,13 @@ jobs:
           set -o pipefail
           ./gradlew :app:assembleQa --stacktrace 2>&1 | tee -a build-output.log
 
+      # 스토어 판 미리 보기 — release 와 같은 설정(블록체인 기능 없음)에 테스트 APK 와 같은 서명 · 번호(2026-10-27).
+      # 폰에서 실제 출시 모습을 본다. 구글 제출용은 Release AAB 다.
+      - name: Build store preview APK (release settings, test signature)
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleStorePreview --stacktrace 2>&1 | tee -a build-output.log
+
       # 고정 키스토어로 서명됐는지 확인한다. 지문이 빌드마다 달라지면
       # 기기에 이미 설치된 앱을 덮어쓸 수 없다(INSTALL_FAILED_UPDATE_INCOMPATIBLE).
       - name: Verify APK signature is stable
@@ -81,7 +88,8 @@ jobs:
           EXPECTED=$(keytool -list -v -keystore app/debug.keystore -storepass android \
             | grep 'SHA256:' | head -1 | tr -d ' ')
           echo "keystore : $EXPECTED"
-          for apk in app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/qa/app-qa.apk; do
+          for apk in app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/qa/app-qa.apk \
+              app/build/outputs/apk/storePreview/app-storePreview.apk; do
             ACTUAL=$(keytool -printcert -jarfile "$apk" | grep 'SHA256:' | head -1 | tr -d ' ')
             echo "$apk : $ACTUAL"
             if [ "$EXPECTED" != "$ACTUAL" ]; then
@@ -139,6 +147,12 @@ jobs:
           name: StepUp-qa-apk
           path: app/build/outputs/apk/qa/app-qa.apk
 
+      - name: Upload store preview APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StepUp-store-preview-apk
+          path: app/build/outputs/apk/storePreview/app-storePreview.apk
+
       - name: Preserve generated Room schemas
         uses: actions/upload-artifact@v4
         with:
@@ -172,6 +186,12 @@ jobs:
           name: StepUp-qa-apk
           path: built
 
+      - name: Download store preview APK
+        uses: actions/download-artifact@v4
+        with:
+          name: StepUp-store-preview-apk
+          path: built
+
       # 저장소 밖의 새 키로 다시 서명한다(옛 공개 키 → 새 키 서명 이력을 붙여 깔린 앱 위에 그대로 덮어 설치된다).
       # 키를 아직 넣지 않았으면 전처럼 공개 debug 키 서명 그대로 올리고 경고만 남긴다.
       - name: Sign test APK with the private test key
@@ -181,6 +201,7 @@ jobs:
           set -euo pipefail
           if [ -z "$TEST_APK_SIGNING_KEY" ]; then
             cp built/app-qa.apk StepUp-test.apk
+            cp built/app-storePreview.apk StepUp-store-preview.apk
             echo "SIGNED_WITH=debug" >> "$GITHUB_ENV"
             echo "::warning::TEST_APK_SIGNING_KEY 가 없어 공개 debug 키 서명 그대로 올립니다 — docs/TEST-APK-SIGNING.md"
             exit 0
@@ -189,6 +210,8 @@ jobs:
           key="$RUNNER_TEMP/test-apk.pk8"
           printf '%s' "$TEST_APK_SIGNING_KEY" | tr -d ' \r\n' | base64 -d > "$key"
           bash tools/sign_test_apk.sh built/app-qa.apk StepUp-test.apk "$key" app/test-apk-signing.x509.pem
+          # 스토어 판 미리 보기도 같은 키로 — 깔린 테스트 앱 위에 덮어 깔린다
+          bash tools/sign_test_apk.sh built/app-storePreview.apk StepUp-store-preview.apk "$key" app/test-apk-signing.x509.pem
           rm -f "$key"
           echo "SIGNED_WITH=test-key" >> "$GITHUB_ENV"
 
@@ -255,6 +278,12 @@ jobs:
           > 예전 테스트 APK 위에 그대로 덮어 설치됩니다.
           > 이 파일은 푸시할 때마다 같은 주소에서 최신으로 바뀝니다.
           > 한 번 설치한 뒤로는 앱이 새 버전을 알려 줍니다(내 정보 › 설정 › 테스트 빌드 업데이트).
+
+          ## 스토어 판 미리 보기
+
+          \`StepUp-store-preview.apk\` 는 구글 플레이에 낼 판과 같은 설정입니다(지갑 · 체인 기능 없음, 업데이트 알림 · 시험 도구 없음).
+          깔린 테스트 앱 위에 그대로 덮어 깔리고(기록 · 로그인 그대로), 위의 \`StepUp-test.apk\` 를 다시 깔면 테스트 판으로 돌아갑니다.
+          구글 제출용 파일은 이것이 아니라 Actions › Release AAB 의 AAB 입니다.
           EOF
 
           # 릴리스를 통째로 지우고 다시 만든다. 파일만 바꿔 끼우면(--clobber),
@@ -264,7 +293,7 @@ jobs:
           if gh release view test-apk >/dev/null 2>&1; then
             gh release delete test-apk --yes
           fi
-          gh release create test-apk StepUp-test.apk StepUp-test.json \
+          gh release create test-apk StepUp-test.apk StepUp-test.json StepUp-store-preview.apk \
             --prerelease \
             --title "테스트 APK — ${VERSION} (${SHORT})" \
             --notes-file notes.md
@@ -275,6 +304,8 @@ jobs:
             echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/test-apk/StepUp-test.apk"
             echo
             echo "서명: ${SIGNED_NOTE}"
+            echo
+            echo "스토어 판 미리 보기: https://github.com/${GITHUB_REPOSITORY}/releases/download/test-apk/StepUp-store-preview.apk"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # 컨테이너/사용자가 git으로 바로 받아갈 수 있도록 APK를 배포 전용 브랜치에 커밋한다.

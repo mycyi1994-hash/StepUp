@@ -198,6 +198,16 @@ android {
             buildConfigField("boolean", "WEB3", "true")
             buildConfigField("String", "WALLET_URL", "\"$walletUrl\"")
         }
+        // 스토어 판 미리 보기(2026-10-27 사용자 "스토어판을 실제로 보고 싶어") — release 와 같은 코드 · 설정
+        // (블록체인 기능 없음 · 자가 업데이트 없음 · 시험 도구 없음 · R8 · 리소스 줄이기)에 서명 · versionCode 만 테스트 APK 와 같다.
+        // 그래서 깔린 테스트 앱 위에 그대로 덮어 깔리고(이 폰의 기록 · 로그인 그대로), 테스트 APK 를 다시 깔면 돌아간다.
+        // 구글 제출용은 이것이 아니라 Release AAB 다(docs/PLAY-STORE.md).
+        create("storePreview") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            matchingFallbacks += listOf("release")
+        }
     }
     sourceSets {
         // 새 버전을 받아 설치 화면을 여는 권한(REQUEST_INSTALL_PACKAGES)은 debug 와 같은 파일을 쓴다.
@@ -238,7 +248,8 @@ android {
 val testVersionCode = roomSchemaVersion * 1000 + releaseVersionCode
 androidComponents {
     onVariants { variant ->
-        if (variant.buildType == "debug" || variant.buildType == "qa") {
+        // storePreview 도 — 깔린 테스트 앱 위에 덮어 깔고 다시 되돌릴 수 있게 같은 번호를 쓴다
+        if (variant.buildType == "debug" || variant.buildType == "qa" || variant.buildType == "storePreview") {
             variant.outputs.forEach { it.versionCode.set(testVersionCode) }
         }
     }

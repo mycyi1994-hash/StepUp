@@ -377,6 +377,8 @@ X 주소 변형 · 끝 마침표 이메일은 보내기 전에 맞춘다, 법적
 - Build APK → `test-apk` 사전 배포에 `StepUp-test.apk`(최적화 빌드 `qa` — R8 · 디버그 불가. debug 를 올리면 화면 전체가 끊긴다.
   서명은 main 의 publish 작업이 테스트 전용 키로 다시 한다 — 작업 브랜치 아티팩트는 debug 키) — **main 에 들어간 것만** 올라간다.
   작업 브랜치의 APK 는 그 실행의 Actions 아티팩트에서 받는다. 사용자가 받을 앱은 main 에 합쳐야 바뀐다.
+- 같은 test-apk 사전 배포에 `StepUp-store-preview.apk`(2026-10-27) — 스토어 판(release) 설정 그대로(지갑 · 체인 없음, 자가 업데이트 · 시험 도구 없음)에
+  서명 · versionCode 만 테스트 APK 와 같아(빌드 종류 `storePreview`) 깔린 테스트 앱 위에 덮어 깔고 되돌린다. 구글 제출용은 이것이 아니라 Release AAB.
 - Experience QA → 에뮬레이터 캡처를 `qa-captures` 사전 배포의 `qa-review.zip` 에.
 - 로컬에서 되는 검사: `python3 scripts/check-strings.py`,
   `python3 tools/check_experience_assets.py`.
