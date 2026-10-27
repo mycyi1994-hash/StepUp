@@ -65,6 +65,18 @@ class EconomyApiTest {
         assertEquals("FREE_DRAW", shoe.origin)
     }
 
+    @Test fun checkInCallsTheServerOnceAndNewChainKindsAreKnown() = runBlocking {
+        val http = Http { HttpResponse(200, "true") }
+        assertEquals(ServerResult.Ok(Unit), api(http).checkIn())
+        assertEquals("https://test.supabase.co/rest/v1/rpc/chain_check_in", http.calls.single().first)
+        // 0078 새 기록 — 서버 종류 이름 그대로, 모르는 이름은 UNKNOWN
+        listOf("SHOE_DRAW", "SHOE_FORGE", "SHOE_REPAIR", "SHOE_POINTS", "SHOE_TRADE",
+            "CREW_RUN", "FLASH_RUN", "CREW_JOIN", "DAILY_STEPS", "CHECK_IN").forEach {
+            assertEquals(it, com.stepup.android.domain.ChainRecord.kindOf(it).name)
+        }
+        assertEquals(com.stepup.android.domain.ChainRecord.Kind.UNKNOWN, com.stepup.android.domain.ChainRecord.kindOf("NEW_KIND"))
+    }
+
     @Test fun writesGoThroughServerFunctionsWithTheShoeNumber() = runBlocking {
         val http = Http { url ->
             when (url.substringAfterLast('/')) {

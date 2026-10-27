@@ -49,6 +49,9 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             )
         }.mapBody { serverJson.decodeFromString<List<BoostRow>>(it) }
 
+    /** 오늘 출석(0078) — 서버가 하루 한 번만 체인 기록 줄에 세운다. 이미 했으면 false */
+    suspend fun checkIn(): ServerResult<Unit> = rpc("chain_check_in", "{}") { Unit }
+
     /** 내 체인 기록(0044) — 최근 것부터. 확정 전에는 거래 번호가 없다 */
     suspend fun chainActivity(limit: Int = 100): ServerResult<List<ChainActivityRow>> =
         rpc("my_chain_activity", "{\"p_limit\":$limit}") { serverJson.decodeFromString<List<ChainActivityRow>>(it) }

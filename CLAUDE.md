@@ -1,5 +1,13 @@
 # StepUp — 작업 메모
 
+## 최신 — 체인 기록 넓히기: 게임 · 크루 · 매일 활동 (2026-10-27)
+
+사용자 "거래수가중요해" — GIWA 테스트넷에 우리 릴레이어가 EAS 증명으로 올리는 기록을 늘렸다(서버 0078, 표는 [docs/온체인-거래-발생-지도.md](docs/온체인-거래-발생-지도.md)).
+뽑기(씨앗 해시 · 뽑기 번호 — 공정성) · 강화 · 수리 · 포인트 나누기 · 거래소 체결 · 크루 러닝 완주 · 번개 출석(둘 이상) · 크루 가입 · 하루 걸음(그날 끝난 뒤) · 앱 출석(`chain_check_in`, `EconomySync` 가 하루 한 번).
+러닝 증명은 200m · 하루 30(전 1km · 10). 모두 가명, 위치 · 이름 · 계정 번호 없음. 줄 세우기는 `economy.activity_enqueue`(종류마다 1인 하루 상한 `chain_activity_daily`,
+끄기 `chain_activity_enabled`), 보낼 재료는 `economy.activity_payload` — 키가 워커 `attester/src/eas.js` `ACTIVITY_SCHEMAS` 칸 이름 그대로(`attester/test/activity.test.js` 가 맞대어 본다).
+새 종류를 더하면 셋(서버 종류 · 재료, 워커 스키마, 앱 `ChainRecord.Kind` · `ca_kind_*`)을 함께 고친다. 보내는 속도 상한은 워커 2분마다 3건(하루 약 2,000).
+
 ## 최신 — 러닝 시작 메뉴: 혼자 러닝 · 크루만 열기 (2026-10-27)
 
 사용자 "러닝챌린지 · 다이어트 모드 등 크루달리기랑 혼자 러닝 빼면 비활성화 · 준비중 · 자물쇠". 러닝 시작 메뉴(`RunStartMenuContent`)의

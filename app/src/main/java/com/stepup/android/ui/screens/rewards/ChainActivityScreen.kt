@@ -23,13 +23,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.DirectionsWalk
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Casino
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.GroupAdd
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MilitaryTech
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Token
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Upgrade
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -317,6 +327,16 @@ private fun chainIcon(kind: ChainRecord.Kind): ImageVector = when (kind) {
     ChainRecord.Kind.BADGE -> Icons.Outlined.MilitaryTech
     ChainRecord.Kind.VAULT_MINT -> Icons.Outlined.Token
     ChainRecord.Kind.STATS_SYNC -> Icons.Outlined.Sync
+    ChainRecord.Kind.SHOE_DRAW -> Icons.Outlined.Casino
+    ChainRecord.Kind.SHOE_FORGE -> Icons.Outlined.Upgrade
+    ChainRecord.Kind.SHOE_REPAIR -> Icons.Outlined.Build
+    ChainRecord.Kind.SHOE_POINTS -> Icons.Outlined.Tune
+    ChainRecord.Kind.SHOE_TRADE -> Icons.Outlined.SwapHoriz
+    ChainRecord.Kind.CREW_RUN -> Icons.Outlined.Groups
+    ChainRecord.Kind.FLASH_RUN -> Icons.Outlined.Bolt
+    ChainRecord.Kind.CREW_JOIN -> Icons.Outlined.GroupAdd
+    ChainRecord.Kind.DAILY_STEPS -> Icons.AutoMirrored.Outlined.DirectionsWalk
+    ChainRecord.Kind.CHECK_IN -> Icons.Outlined.EventAvailable
     ChainRecord.Kind.UNKNOWN -> Icons.Outlined.Link
 }
 
@@ -327,6 +347,16 @@ private fun chainTitle(record: ChainRecord): String = when (record.kind) {
     ChainRecord.Kind.BADGE -> stringResource(R.string.ca_kind_badge, badgeLabel(record.badge, record.badgeValue))
     ChainRecord.Kind.VAULT_MINT -> stringResource(R.string.ca_kind_mint)
     ChainRecord.Kind.STATS_SYNC -> stringResource(R.string.ca_kind_sync)
+    ChainRecord.Kind.SHOE_DRAW -> stringResource(R.string.ca_kind_draw)
+    ChainRecord.Kind.SHOE_FORGE -> stringResource(R.string.ca_kind_forge)
+    ChainRecord.Kind.SHOE_REPAIR -> stringResource(R.string.ca_kind_repair)
+    ChainRecord.Kind.SHOE_POINTS -> stringResource(R.string.ca_kind_points)
+    ChainRecord.Kind.SHOE_TRADE -> stringResource(R.string.ca_kind_trade)
+    ChainRecord.Kind.CREW_RUN -> stringResource(R.string.ca_kind_crew_run)
+    ChainRecord.Kind.FLASH_RUN -> stringResource(R.string.ca_kind_flash)
+    ChainRecord.Kind.CREW_JOIN -> stringResource(R.string.ca_kind_crew_join)
+    ChainRecord.Kind.DAILY_STEPS -> stringResource(R.string.ca_kind_steps)
+    ChainRecord.Kind.CHECK_IN -> stringResource(R.string.ca_kind_check_in)
     ChainRecord.Kind.UNKNOWN -> stringResource(R.string.ca_kind_other)
 }
 
@@ -341,12 +371,15 @@ private fun badgeLabel(badge: String?, value: Int?): String = when (badge) {
 /** 무엇의 값 — 러닝은 거리 · 시간, 신발은 이름(폰에 없으면 "신발") */
 @Composable
 private fun chainDetail(record: ChainRecord, sneaker: Sneaker?): String? = when (record.kind) {
-    ChainRecord.Kind.RUN_PROOF, ChainRecord.Kind.COURSE_RUN -> record.distanceM?.let { m ->
+    ChainRecord.Kind.RUN_PROOF, ChainRecord.Kind.COURSE_RUN, ChainRecord.Kind.CREW_RUN -> record.distanceM?.let { m ->
         val km = String.format(Locale.US, "%.1f", m / 1000.0)
         val minutes = record.durationSec?.let { (it + 30) / 60 }
         if (minutes != null && minutes > 0) stringResource(R.string.ca_run_detail, km, minutes) else stringResource(R.string.ca_run_km, km)
     }
-    ChainRecord.Kind.VAULT_MINT, ChainRecord.Kind.STATS_SYNC -> sneaker?.variantLabel() ?: stringResource(R.string.ca_sneaker)
+    ChainRecord.Kind.VAULT_MINT, ChainRecord.Kind.STATS_SYNC,
+    ChainRecord.Kind.SHOE_DRAW, ChainRecord.Kind.SHOE_FORGE, ChainRecord.Kind.SHOE_REPAIR,
+    ChainRecord.Kind.SHOE_POINTS, ChainRecord.Kind.SHOE_TRADE,
+    -> sneaker?.variantLabel() ?: stringResource(R.string.ca_sneaker)
     else -> null
 }
 
@@ -393,6 +426,9 @@ fun ChainGuideSheet(onClose: () -> Unit) {
             Triple(Icons.Outlined.Flag, R.string.ca_guide_course_head, R.string.ca_guide_course_body),
             Triple(Icons.Outlined.Token, R.string.ca_guide_mint_head, R.string.ca_guide_mint_body),
             Triple(Icons.Outlined.Sync, R.string.ca_guide_sync_head, R.string.ca_guide_sync_body),
+            Triple(Icons.Outlined.Casino, R.string.ca_guide_game_head, R.string.ca_guide_game_body),
+            Triple(Icons.Outlined.Groups, R.string.ca_guide_crew_head, R.string.ca_guide_crew_body),
+            Triple(Icons.Outlined.EventAvailable, R.string.ca_guide_daily_head, R.string.ca_guide_daily_body),
             Triple(Icons.Outlined.Link, R.string.ca_guide_wallet_head, R.string.ca_guide_wallet_body),
         ).forEach { (icon, head, body) ->
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.Top) {
