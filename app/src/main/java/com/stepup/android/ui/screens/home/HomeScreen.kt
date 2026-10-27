@@ -305,8 +305,10 @@ private fun StepsHero(
         return
     }
     val detailsLabel = stringResource(R.string.home_open_details)
+    // 둥근 모서리로 자르지 않는다 — 안쪽 여백이 없어 왼쪽 위 "오늘 걸음" 첫 글자가 모서리에 잘렸다(2026-10-27).
+    // 누름 효과(살짝 작아짐 · 그린 픽셀만 어둡게)는 자르지 않아도 그대로다
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
+        Modifier.fillMaxWidth()
             .feedbackClickable(role = Role.Button, onClick = onOpenDetails)
             .semantics { onClick(label = detailsLabel) { onOpenDetails(); true } }
             .testTag("home-steps"),

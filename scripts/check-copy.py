@@ -31,8 +31,10 @@ ALLOW = {
     # 블록체인 판 전용(스토어 판 WEB3 = false 에서는 숨는다)
     "ca_guide_intro", "about_network_value", "wl_web3_unavailable", "wl_web3_soon", "wc_soon",
     # 예전 화면(캐릭터 · 옛 상점 · 옛 소식 · 옛 시작 메뉴 배지 — 지금 길에서는 열리지 않는다)
-    "store_soon", "feed_soon", "journey_soon", "runflow_soon", "runflow_soon_toast", "market_outfit_soon", "feed_deal_store_title", "avatar_art_base_look", "customize_preview_missing_badge",
+    "store_soon", "feed_soon", "journey_soon", "market_outfit_soon", "feed_deal_store_title", "avatar_art_base_look", "customize_preview_missing_badge",
     "customize_equipped_art_pending", "avatar_art_base_shoes", "avatar_art_base_outfit",
+    # 러닝 시작 메뉴의 아직 열지 않은 방법(챌린지 · 코스 · 다이어트 · 코칭) — 자물쇠와 "준비 중"을 보이라는 사용자 결정(2026-10-27)
+    "runflow_soon", "runflow_soon_toast",
     # 주간 포인트 판은 서버가 순위를 줄 때만 보인다(없으면 판째 숨는다)
     "lb_points_unavailable_title", "lb_points_unavailable_body",
 }

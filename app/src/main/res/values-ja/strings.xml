@@ -1782,7 +1782,7 @@ StepUp と走り出そう。</string>
     <string name="runflow_diet">ダイエットモード</string>
     <string name="runflow_diet_desc">自分に合う走り方を見つける</string>
     <string name="runflow_soon">準備中</string>
-    <string name="runflow_soon_toast">まもなく公開します。今はフリーランかランチャレンジをお使いください。</string>
+    <string name="runflow_soon_toast">まもなく公開します。今はひとりランかクルーランをお使いください。</string>
     <string name="runflow_goals_title">ランチャレンジ</string>
     <string name="runflow_goals_headline">今日のラン目標</string>
     <string name="runflow_goals_sub">用意された目標に気軽に挑戦しましょう。</string>

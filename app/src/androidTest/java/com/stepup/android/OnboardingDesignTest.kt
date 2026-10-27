@@ -151,7 +151,8 @@ class OnboardingDesignTest {
 
         // 12~19 — 러닝 방법과 그 위에 차례로 뜨는 권한 안내
         show("s12-running-menu", "run-menu-free", menuWith(null))
-        compose.onNodeWithTag("run-menu-course", useUnmergedTree = true).assertIsNotEnabled()
+        // 추천 코스는 아직 열지 않는다(2026-10-27) — 자물쇠 · 준비 중
+        compose.onNodeWithTag("run-menu-course").assertTextContains(text(R.string.runflow_soon), substring = true)
         show("s13-activity-rationale", "perm-sheet-activity", menuWith(RunPermissionSheet.ActivityRationale))
         compose.onNodeWithTag("perm-primary").assertTextEquals(text(R.string.run_pm_allow))
         compose.onNodeWithTag("perm-secondary").assertTextEquals(text(R.string.run_perm_later))
