@@ -39,6 +39,9 @@
 Supabase 로그인 요청 수 제한(5분에 30번)을 실패한 재시도들이 계속 채우지 않게. 실패하면 로그에
 `attester login failed <상태> <오류 코드>` 가 남는다(`invalid_credentials` 면 `ATTESTER_PASSWORD` 를 다시 넣는다).
 
+체인 기록 하나를 대조하려면(0078 — 나중에 필요할 때만) 서버에서 `admin_chain_audit(<job id>)` 로 증명 번호 · data_hash 를 보고
+`node scripts/audit.mjs <증명 번호> <data_hash>` — 체인에서 읽어 맞대어 본다(읽기만, 키 필요 없음).
+
 실행 기록은 Actions → **Attester logs** → Run workflow 로 몇 분 받아 볼 수 있다(`.github/workflows/attester-logs.yml`).
 
 ## 키 (전부 Secret)

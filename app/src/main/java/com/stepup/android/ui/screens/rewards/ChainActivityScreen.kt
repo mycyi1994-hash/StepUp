@@ -33,8 +33,11 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MilitaryTech
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Token
@@ -73,6 +76,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.R
 import com.stepup.android.core.SafeUrl
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.data.remote.ChainSettingsRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.ChainNetwork
 import com.stepup.android.domain.ChainRecord
@@ -80,6 +84,7 @@ import com.stepup.android.domain.Sneaker
 import com.stepup.android.ui.components.SecondaryHeader
 import com.stepup.android.ui.components.SettingsPrimaryButton
 import com.stepup.android.ui.components.SettingsSheet
+import com.stepup.android.ui.components.SettingsSwitchRow
 import com.stepup.android.ui.components.settingsPalette
 import com.stepup.android.ui.components.variantLabel
 import com.stepup.android.ui.experience.feedbackClickable
@@ -122,7 +127,36 @@ class ChainActivityViewModel : ViewModel() {
         .map { list -> list.associateBy { it.id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
+    /** 지갑으로 받기(0078) — 지갑이 연결된 사람에게만 줄을 보인다. 읽기 전 · 못 읽으면 null(줄을 두지 않는다) */
+    private val _settings = MutableStateFlow<ChainSettingsRow?>(null)
+    val settings: StateFlow<ChainSettingsRow?> = _settings.asStateFlow()
+
+    fun setRecipient(on: Boolean) {
+        val before = _settings.value ?: return
+        _settings.value = before.copy(walletRecipient = on)
+        viewModelScope.launch {
+            val ok = try {
+                ServiceLocator.economyApi.setChainRecipient(on) is ServerResult.Ok
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                false
+            }
+            if (!ok) _settings.value = before
+        }
+    }
+
     fun reload() {
+        viewModelScope.launch {
+            try {
+                if (ServiceLocator.serverEconomyOn && ServiceLocator.sessionHolder.isSignedIn()) {
+                    (ServiceLocator.economyApi.chainSettings() as? ServerResult.Ok)?.let { _settings.value = it.value }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+            }
+        }
         viewModelScope.launch {
             if (_state.value !is ChainActivityLoad.Ready) _state.value = ChainActivityLoad.Loading
             _state.value = try {
@@ -154,6 +188,7 @@ fun ChainActivityScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sneakers by viewModel.sneakers.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // 러닝 · 뽑기를 하고 돌아오면 바로 보이게 — 화면에 돌아올 때마다 다시 읽는다
     LifecycleResumeEffect(Unit) {
@@ -165,6 +200,8 @@ fun ChainActivityScreen(
         sneakers = sneakers,
         onBack = onBack,
         onReload = viewModel::reload,
+        walletRecipient = settings?.takeIf { it.walletLinked }?.walletRecipient,
+        onWalletRecipient = viewModel::setRecipient,
         onOpenTx = { url ->
             if (SafeUrl.looksSafe(url)) {
                 try {
@@ -182,6 +219,8 @@ fun ChainActivityContent(
     sneakers: Map<Long, Sneaker> = emptyMap(),
     onBack: () -> Unit = {},
     onReload: () -> Unit = {},
+    walletRecipient: Boolean? = null,
+    onWalletRecipient: (Boolean) -> Unit = {},
     onOpenTx: (String) -> Unit = {},
     zone: ZoneId = ZoneId.systemDefault(),
     thisYear: Int = Year.now(zone).value,
@@ -215,6 +254,15 @@ fun ChainActivityContent(
                 contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 4.dp, bottom = 28.dp),
             ) {
                 item(key = "summary") { ChainSummary(state as? ChainActivityLoad.Ready) }
+                if (walletRecipient != null) {
+                    item(key = "recipient") {
+                        SettingsSwitchRow(
+                            title = stringResource(R.string.ca_recipient_title), description = stringResource(R.string.ca_recipient_body),
+                            checked = walletRecipient, onCheckedChange = onWalletRecipient,
+                            modifier = Modifier.padding(top = 8.dp).testTag("ca-recipient"),
+                        )
+                    }
+                }
                 when (state) {
                     is ChainActivityLoad.Ready -> if (state.records.isEmpty()) {
                         item(key = "empty") {
@@ -332,6 +380,10 @@ private fun chainIcon(kind: ChainRecord.Kind): ImageVector = when (kind) {
     ChainRecord.Kind.SHOE_REPAIR -> Icons.Outlined.Build
     ChainRecord.Kind.SHOE_POINTS -> Icons.Outlined.Tune
     ChainRecord.Kind.SHOE_TRADE -> Icons.Outlined.SwapHoriz
+    ChainRecord.Kind.DRAW_SEED, ChainRecord.Kind.DRAW_REVEAL -> Icons.Outlined.Key
+    ChainRecord.Kind.RUN_SETTLE -> Icons.Outlined.ReceiptLong
+    ChainRecord.Kind.SHOE_WEAR -> Icons.Outlined.Speed
+    ChainRecord.Kind.PARTY_START -> Icons.Outlined.Flag
     ChainRecord.Kind.CREW_RUN -> Icons.Outlined.Groups
     ChainRecord.Kind.FLASH_RUN -> Icons.Outlined.Bolt
     ChainRecord.Kind.CREW_JOIN -> Icons.Outlined.GroupAdd
@@ -352,6 +404,11 @@ private fun chainTitle(record: ChainRecord): String = when (record.kind) {
     ChainRecord.Kind.SHOE_REPAIR -> stringResource(R.string.ca_kind_repair)
     ChainRecord.Kind.SHOE_POINTS -> stringResource(R.string.ca_kind_points)
     ChainRecord.Kind.SHOE_TRADE -> stringResource(R.string.ca_kind_trade)
+    ChainRecord.Kind.DRAW_SEED -> stringResource(R.string.ca_kind_seed)
+    ChainRecord.Kind.DRAW_REVEAL -> stringResource(R.string.ca_kind_reveal)
+    ChainRecord.Kind.RUN_SETTLE -> stringResource(R.string.ca_kind_settle)
+    ChainRecord.Kind.SHOE_WEAR -> stringResource(R.string.ca_kind_wear)
+    ChainRecord.Kind.PARTY_START -> stringResource(R.string.ca_kind_party_start)
     ChainRecord.Kind.CREW_RUN -> stringResource(R.string.ca_kind_crew_run)
     ChainRecord.Kind.FLASH_RUN -> stringResource(R.string.ca_kind_flash)
     ChainRecord.Kind.CREW_JOIN -> stringResource(R.string.ca_kind_crew_join)
@@ -371,14 +428,15 @@ private fun badgeLabel(badge: String?, value: Int?): String = when (badge) {
 /** 무엇의 값 — 러닝은 거리 · 시간, 신발은 이름(폰에 없으면 "신발") */
 @Composable
 private fun chainDetail(record: ChainRecord, sneaker: Sneaker?): String? = when (record.kind) {
-    ChainRecord.Kind.RUN_PROOF, ChainRecord.Kind.COURSE_RUN, ChainRecord.Kind.CREW_RUN -> record.distanceM?.let { m ->
+    ChainRecord.Kind.RUN_PROOF, ChainRecord.Kind.COURSE_RUN, ChainRecord.Kind.CREW_RUN, ChainRecord.Kind.RUN_SETTLE,
+    -> record.distanceM?.let { m ->
         val km = String.format(Locale.US, "%.1f", m / 1000.0)
         val minutes = record.durationSec?.let { (it + 30) / 60 }
         if (minutes != null && minutes > 0) stringResource(R.string.ca_run_detail, km, minutes) else stringResource(R.string.ca_run_km, km)
     }
     ChainRecord.Kind.VAULT_MINT, ChainRecord.Kind.STATS_SYNC,
     ChainRecord.Kind.SHOE_DRAW, ChainRecord.Kind.SHOE_FORGE, ChainRecord.Kind.SHOE_REPAIR,
-    ChainRecord.Kind.SHOE_POINTS, ChainRecord.Kind.SHOE_TRADE,
+    ChainRecord.Kind.SHOE_POINTS, ChainRecord.Kind.SHOE_TRADE, ChainRecord.Kind.SHOE_WEAR,
     -> sneaker?.variantLabel() ?: stringResource(R.string.ca_sneaker)
     else -> null
 }
@@ -426,6 +484,7 @@ fun ChainGuideSheet(onClose: () -> Unit) {
             Triple(Icons.Outlined.Flag, R.string.ca_guide_course_head, R.string.ca_guide_course_body),
             Triple(Icons.Outlined.Token, R.string.ca_guide_mint_head, R.string.ca_guide_mint_body),
             Triple(Icons.Outlined.Sync, R.string.ca_guide_sync_head, R.string.ca_guide_sync_body),
+            Triple(Icons.Outlined.ReceiptLong, R.string.ca_guide_settle_head, R.string.ca_guide_settle_body),
             Triple(Icons.Outlined.Casino, R.string.ca_guide_game_head, R.string.ca_guide_game_body),
             Triple(Icons.Outlined.Groups, R.string.ca_guide_crew_head, R.string.ca_guide_crew_body),
             Triple(Icons.Outlined.EventAvailable, R.string.ca_guide_daily_head, R.string.ca_guide_daily_body),

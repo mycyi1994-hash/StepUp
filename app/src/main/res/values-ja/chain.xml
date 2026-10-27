@@ -35,6 +35,15 @@
     <string name="ca_kind_crew_join">クルー加入</string>
     <string name="ca_kind_steps">1日の歩数</string>
     <string name="ca_kind_check_in">出席</string>
+    <string name="ca_kind_seed">ガチャのシード約束</string>
+    <string name="ca_kind_reveal">ガチャのシード公開</string>
+    <string name="ca_kind_settle">ランの精算記録</string>
+    <string name="ca_kind_wear">靴の走行記録</string>
+    <string name="ca_kind_party_start">一緒にスタートした名簿</string>
+    <string name="ca_recipient_title">自分のウォレットで記録を受け取る</string>
+    <string name="ca_recipient_body">オンにすると、チェーン記録の受取人が連携したウォレットになります。1つのウォレットで活動がまとめて見える可能性があるため、初期設定はオフです。</string>
+    <string name="ca_guide_settle_head">ラン精算・靴の走行 — ランごと</string>
+    <string name="ca_guide_settle_body">ランを保存すると、距離・時間・判定・獲得ポイントと、履いた靴のそのランの距離・累計距離・残り耐久度を記録します。</string>
     <string name="ca_badge_first_run">初ラン</string>
     <string name="ca_badge_distance">累計 %1$dkm</string>
     <string name="ca_badge_streak">%1$d日連続</string>
@@ -56,12 +65,12 @@
     <string name="ca_guide_wallet_head">ウォレットページ — 引き出し・預け入れ</string>
     <string name="ca_guide_wallet_body">SUPや靴をウォレットに引き出したりアプリに預け入れたりするときも取引が発生します。預け入れはご自身のウォレットで署名します。</string>
     <string name="ca_guide_game_head">ゲーム — 靴タブ</string>
-    <string name="ca_guide_game_body">ガチャ（等級・抽選番号・シードハッシュ — シードを公開すれば誰でも結果を確かめられます）、強化結果、修理、ステータスポイントの割り振り、取引所の約定を1回ごとに記録します。</string>
+    <string name="ca_guide_game_body">ガチャ（等級・抽選番号・シードハッシュ）、強化結果、修理、ステータスポイントの割り振り、取引所の約定を1回ごとに記録します。シードは使う前にハッシュを先に記録し、公開すれば誰でも同じ結果を再計算できます。</string>
     <string name="ca_guide_crew_head">クルー — 一緒に走るタブ</string>
-    <string name="ca_guide_crew_body">クルーランの完走（距離・時間・一緒にスタートした人数）、2人以上で一緒にスタートしたフラッシュラン、クルー加入（同じクルーは1回）。</string>
+    <string name="ca_guide_crew_body">クルーランの完走（距離・時間・一緒にスタートした人数）、ルームごとのスタート名簿、2人以上で一緒にスタートしたフラッシュラン、クルー加入（同じクルーは1回）。</string>
     <string name="ca_guide_daily_head">毎日</string>
-    <string name="ca_guide_daily_body">アプリを開いた日の出席1件、1日の歩数1件（その日が終わった後の最終値）。</string>
-    <string name="ca_guide_foot">記録しないもの：200m未満またはルートのないラン、アプリ内のSUP獲得・使用、靴の装着、走行による耐久度の減少。記録するのは仮名だけで、位置・ルート・名前・アカウントは記録しません。</string>
+    <string name="ca_guide_daily_body">アプリを開いた日の出席1件、その日の歩数目標を達成したかどうか1件（その日が終わった後）。歩数そのものは記録しません。</string>
+    <string name="ca_guide_foot">記録しないもの：200m未満またはルートのないラン、アプリ内のSUP獲得・使用、靴の装着、走行による耐久度の減少。位置・ルート・名前・アカウントは記録しません。記録するのは人ごとに異なる仮名だけで、アカウントを削除するとその仮名をあなたと結び付けられなくなります。各記録には後で照合できるよう原本の指紋（ソルト付きハッシュ）だけを載せ、送信時刻は数十分ずらします。チェーンに載った記録は削除できません。</string>
     <string name="wl_chain_row">チェーン記録</string>
     <string name="wl_chain_row_sub">ラン・靴・クルーの活動 — ガス代はStepUpが支払います</string>
 </resources>

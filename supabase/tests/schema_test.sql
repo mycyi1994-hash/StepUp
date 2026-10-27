@@ -4301,6 +4301,8 @@ delete from public.announcements;
 
 \echo ''
 \echo '── 온체인 활동(0044) — 러닝 증명 · 배지 · 코스 완주 · 금고 발행 · 스탯 갱신 ──────────'
+-- 0078 의 무작위 늦추기는 검사에서 끈다(바로 가져가 본다) — 늦추기 자체는 0078 검사가 본다
+update public.economy_settings set value = '0' where key in ('chain_jitter_min_min', 'chain_jitter_max_min');
 reset role;
 select set_config('request.jwt.claims', '', false);
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -4446,7 +4448,8 @@ declare r record;
 begin
   select count(*) filter (where status = 'PENDING') as pending, count(*) filter (where tx_hash is not null) as tx,
          count(*) as n
-    into r from public.my_chain_activity();
+    into r from public.my_chain_activity() where kind in ('RUN_PROOF', 'COURSE_RUN', 'BADGE');
+  -- (0078 의 러닝 정산 · 신발 주행 기록도 같은 목록에 함께 보인다 — 여기서는 0044 기록만 센다)
   perform pg_temp.ok(r.n = 5 and r.pending = 5 and r.tx = 0,
     format('내 체인 기록 — 확정 전에는 대기(%s건), 거래 번호 없음', r.n));
 end $$;
@@ -4469,10 +4472,10 @@ begin
             where c.round = 1 and j.user_id in ('c4c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4', 'c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5') loop
     v_n := v_n + 1;
     perform pg_temp.ok(r.op_ref = economy.op_ref((select op_id from public.chain_jobs where id = r.job_id))
-                       and r.payload ->> 'runner' = economy.pseudonym('runner', r.user_id::text)
+                       and r.payload ->> 'runner' = economy.person_pseudonym(r.user_id)
                        and r.payload ->> 'runner' <> economy.account_ref(r.user_id)
                        and r.payload ->> 'recipient' = '0x0000000000000000000000000000000000000000',
-      format('%s: 계정 번호 대신 가명 · 지갑이 없으면 받는 사람 없음', r.kind));
+      format('%s: 계정 번호 대신 사람 가명(0078 — 사람마다 비밀값) · 지갑으로 받기를 켜지 않으면 받는 사람 없음', r.kind));
     if r.kind = 'RUN_PROOF' and r.job_id = (select id from public.chain_jobs where ref = 'run:' || pg_temp.fx('c4_run')) then
       perform pg_temp.ok(r.payload ->> 'run' = economy.pseudonym('run', pg_temp.fx('c4_run'))
                          and (r.payload ->> 'distance_m')::int = 5000 and (r.payload ->> 'duration_sec')::int = 1800
@@ -4770,7 +4773,7 @@ call pg_temp.login('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5');
 do $$ begin
   perform pg_temp.ok((select confirmed_total from public.admin_chain_jobs_stats() where kind = 'RUN_PROOF') = 1
                      and (select confirmed_total from public.admin_chain_jobs_stats() where kind = 'VAULT_MINT') = 1
-                     and (select count(*) from public.admin_chain_jobs_stats()) = 15,
+                     and (select count(*) from public.admin_chain_jobs_stats()) = 20,
     '관리자는 종류마다 확정 수를 본다');
 end $$;
 reset role;
@@ -9361,7 +9364,7 @@ begin
   select * into j from public.chain_jobs where kind = 'SHOE_TRADE' and user_id = 'a7800000-0000-0000-0000-000000000001';
   v := economy.activity_payload(j);
   perform pg_temp.ok(v ->> 'priceCenti' = '1235' and v ->> 'buyer' = v ->> 'runner'
-                     and v ->> 'seller' = economy.pseudonym('runner', 'a7800000-0000-0000-0000-000000000002')
+                     and v ->> 'seller' = economy.person_pseudonym('a7800000-0000-0000-0000-000000000002')
                      and (v ->> 'level')::int = 3,
     format('거래 재료 — 값(센트) · 판 사람 · 산 사람 가명(%s)', v));
 end $$;
@@ -9402,9 +9405,12 @@ begin
   insert into public.party_runs (party_id, user_id, starts_at) values (v_alone, 'a7800000-0000-0000-0000-000000000001', now());
   perform pg_temp.ok(pg_temp.act('a7800000-0000-0000-0000-000000000001', 'FLASH_RUN') = 0, '혼자 출발한 번개는 출석 기록이 없다');
   insert into public.parties (flash_post_id, host_id, status, starts_at)
-  values (pg_temp.fx('p76_remote')::bigint, 'a7800000-0000-0000-0000-000000000001', 'FINISHED', now()) returning id into v_two;
+  values (pg_temp.fx('p76_remote')::bigint, 'a7800000-0000-0000-0000-000000000001', 'LOBBY', now()) returning id into v_two;
   insert into public.party_runs (party_id, user_id, starts_at) values
     (v_two, 'a7800000-0000-0000-0000-000000000001', now()), (v_two, 'a7800000-0000-0000-0000-000000000002', now());
+  update public.parties set status = 'COUNTDOWN' where id = v_two;
+  perform pg_temp.ok((select count(*) = 1 from public.chain_jobs where kind = 'PARTY_START' and ref = 'party_start:' || v_two),
+    '방이 출발하면 진행자의 출발 명단 기록 하나');
   perform pg_temp.ok(pg_temp.act('a7800000-0000-0000-0000-000000000001', 'FLASH_RUN') = 1
                      and pg_temp.act('a7800000-0000-0000-0000-000000000002', 'FLASH_RUN') = 1
                      and (select bool_and((args ->> 'together')::int = 2) from public.chain_jobs where kind = 'FLASH_RUN'
@@ -9426,7 +9432,9 @@ begin
                      and pg_temp.act('a7800000-0000-0000-0000-000000000002', 'DAILY_STEPS') = 0
                      and j.next_at > now() and j.next_at = economy.game_day_start(economy.game_day(now()) + 1) + interval '10 minutes',
     '오늘 걸음 → 하루 하나, 한국 자정 + 10분 뒤에 보낸다(지난 날 · 0걸음은 없다)');
-  perform pg_temp.ok((economy.activity_payload(j) ->> 'steps')::int = 8400, '보낼 때 그날의 마지막 값');
+  perform pg_temp.ok((economy.activity_payload(j) ->> 'goalMet')::boolean and not (economy.activity_payload(j) ? 'steps')
+                     and (economy.activity_payload(j) -> '_audit' ->> 'steps')::int = 8400,
+    '보낼 때 그날의 마지막 값 — 체인에는 목표 달성 여부만, 걸음 수는 대조용 스냅숏에만');
 end $$;
 
 -- 앱 출석 — 하루 한 번, 로그인한 사람만
@@ -9475,8 +9483,8 @@ set role stepup_attester;
 select set_config('request.jwt.claims',
   (coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb || '{"role":"stepup_attester"}')::text, false);
 insert into claimed select 5, c.* from public.attester_jobs_claim(
-  array['SHOE_DRAW', 'SHOE_FORGE', 'SHOE_REPAIR', 'SHOE_POINTS', 'SHOE_TRADE', 'CREW_RUN', 'FLASH_RUN', 'CREW_JOIN',
-        'DAILY_STEPS', 'CHECK_IN'], 50) c;
+  array['SHOE_DRAW', 'SHOE_FORGE', 'SHOE_REPAIR', 'SHOE_POINTS', 'SHOE_TRADE', 'DRAW_SEED', 'DRAW_REVEAL', 'RUN_SETTLE',
+        'SHOE_WEAR', 'CREW_RUN', 'FLASH_RUN', 'CREW_JOIN', 'PARTY_START', 'DAILY_STEPS', 'CHECK_IN'], 50) c;
 reset role;
 select set_config('request.jwt.claims', '', false);
 do $$
@@ -9484,9 +9492,18 @@ declare v_kinds text[];
 begin
   select array_agg(distinct c.kind order by c.kind) into v_kinds from claimed c
     join public.chain_jobs j on j.id = c.job_id where j.user_id in ('a7800000-0000-0000-0000-000000000001', 'a7800000-0000-0000-0000-000000000002');
-  perform pg_temp.ok(v_kinds = array['CHECK_IN', 'CREW_JOIN', 'DAILY_STEPS', 'FLASH_RUN', 'SHOE_DRAW', 'SHOE_FORGE',
-                                     'SHOE_POINTS', 'SHOE_REPAIR', 'SHOE_TRADE'],
+  perform pg_temp.ok(v_kinds @> array['CHECK_IN', 'CREW_JOIN', 'DAILY_STEPS', 'DRAW_SEED', 'FLASH_RUN', 'PARTY_START',
+                                      'RUN_SETTLE', 'SHOE_DRAW', 'SHOE_FORGE', 'SHOE_POINTS', 'SHOE_REPAIR', 'SHOE_TRADE'],
     format('새 기록을 가져간다(%s)', v_kinds));
+  perform pg_temp.ok(not exists (select 1 from claimed c where c.round = 5
+                                   and (c.payload ->> 'dataHash' !~ '^0x[0-9a-f]{64}$' or c.payload ? '_audit'
+                                        or c.payload ->> 'recipient' <> '0x0000000000000000000000000000000000000000')),
+    '보내는 재료마다 dataHash(소금 친 원본 해시), 스냅숏 전용 값은 빠지고, 받는 사람은 기본 비움');
+  perform pg_temp.ok((select bool_and(au.data_hash = c.payload ->> 'dataHash'
+                                      and au.data_hash = '0x' || encode(sha256(au.salt || convert_to(au.snapshot, 'UTF8')), 'hex')
+                                      and au.snapshot like 'stepup-audit-v1|' || c.kind || '|%')
+                        from claimed c join economy.chain_audit au on au.job_id = c.job_id where c.round = 5),
+    '서버에 남은 소금 · 스냅숏으로 dataHash 를 다시 만들 수 있다(나중에 대조)');
   perform pg_temp.ok((select status = 'CANCELLED' from public.chain_jobs where kind = 'CREW_RUN'
                        and user_id = 'a7800000-0000-0000-0000-000000000001'),
     '무효가 된 크루 러닝은 거둔다');
@@ -9497,6 +9514,78 @@ begin
 end $$;
 -- 다음 검사가 쓰지 않게 가져간 것을 돌려 둔다
 update public.chain_jobs set status = 'QUEUED', lease_until = null where id in (select job_id from claimed where round = 5);
+
+-- 다시 가져가면(임대가 끝남) 처음 봉인한 재료 그대로 — 그 사이 값이 바뀌어도 서명한 값과 스냅숏이 어긋나지 않는다
+do $$
+declare j public.chain_jobs; v1 jsonb; v2 jsonb;
+begin
+  select * into j from public.chain_jobs where kind = 'RUN_SETTLE' and user_id = 'a7800000-0000-0000-0000-000000000001' limit 1;
+  v1 := economy.activity_seal(j);
+  update public.walk_sessions set steps = steps + 5 where id = (j.args ->> 'session_id')::bigint;
+  v2 := economy.activity_seal(j);
+  perform pg_temp.ok(v1 is not null and v1 = v2 and v1 ->> 'distanceM' is not null and v1 ->> 'pointsMilli' is not null,
+    '다시 봉인해도 처음 재료 그대로');
+end $$;
+
+-- 지갑으로 받기 — 켠 사람만. 사람 가명은 계정을 지우면 다시 만들 수 없다
+insert into public.wallet_links (user_id, address) values ('a7800000-0000-0000-0000-000000000002', '0x' || repeat('ab', 20))
+on conflict do nothing;
+call pg_temp.login('a7800000-0000-0000-0000-000000000002');
+set role authenticated;
+do $$ begin
+  perform pg_temp.ok(not (public.my_chain_settings() ->> 'wallet_recipient')::boolean
+                     and (public.my_chain_settings() ->> 'wallet_linked')::boolean, '지갑으로 받기는 기본 꺼짐');
+  perform public.chain_recipient_set(true);
+  perform pg_temp.ok((public.my_chain_settings() ->> 'wallet_recipient')::boolean, '켤 수 있다');
+end $$;
+reset role;
+do $$
+declare v_old text := economy.person_pseudonym('a7800000-0000-0000-0000-000000000002');
+begin
+  perform pg_temp.ok(economy.chain_recipient('a7800000-0000-0000-0000-000000000002') = '0x' || repeat('ab', 20)
+                     and economy.chain_recipient('a7800000-0000-0000-0000-000000000001') = '0x0000000000000000000000000000000000000000',
+    '켠 사람만 지갑이 받는 사람');
+  perform pg_temp.ok(v_old = economy.person_pseudonym('a7800000-0000-0000-0000-000000000002')
+                     and v_old <> economy.person_pseudonym('a7800000-0000-0000-0000-000000000001')
+                     and v_old <> economy.pseudonym('runner', 'a7800000-0000-0000-0000-000000000002'),
+    '사람 가명 — 같은 사람은 늘 같고, 사람마다 다르고, 계정 번호로 만든 가명과 다르다');
+  delete from economy.chain_person_keys where user_id = 'a7800000-0000-0000-0000-000000000002';
+  perform pg_temp.ok(v_old <> economy.person_pseudonym('a7800000-0000-0000-0000-000000000002'),
+    '비밀값이 지워지면(계정 삭제) 옛 가명을 다시 만들 수 없다');
+  perform pg_temp.ok((select confdeltype = 'c' from pg_constraint
+                       where conrelid = 'economy.chain_person_keys'::regclass and contype = 'f')
+                     and (select bool_and(confdeltype = 'c') from pg_constraint
+                           where conrelid = 'economy.chain_audit'::regclass and contype = 'f'),
+    '계정을 지우면 비밀값 · 대조용 원본도 함께 지워진다(on delete cascade)');
+  perform pg_temp.ok(not exists (select 1 from economy.chain_audit au join public.chain_jobs c on c.id = au.job_id
+                                  where au.user_id is distinct from c.user_id),
+    '대조용 원본은 그 기록의 사람에게 묶인다');
+end $$;
+
+-- 뽑기 공정성 — 씨앗 약속이 줄에 서고, 공개된 씨앗으로 누구나 같은 등급을 다시 굴린다
+do $$
+declare v_seed bytea := economy.random_bytes32(); v jsonb; v_rarity text;
+begin
+  perform pg_temp.ok(exists (select 1 from public.chain_jobs where kind = 'DRAW_SEED' and user_id = 'a7800000-0000-0000-0000-000000000001'
+                                and next_at <= now() + interval '1 second'),
+    '씨앗 약속은 바로 보낸다(뽑기 기록보다 먼저)');
+  v := public.draw_verify(encode(v_seed, 'hex'), 7, 'FREE');
+  v_rarity := economy.roll_rarity_v3(economy.bytes_int(sha256(v_seed || convert_to(':7', 'UTF8')), 0, 4), 'FREE', null);
+  perform pg_temp.ok(v ->> 'rarity' = v_rarity and v ->> 'seed_hash' = encode(sha256(v_seed), 'hex'),
+    format('다시 굴려 보기 = 뽑기가 쓰는 계산(%s)', v));
+end $$;
+call pg_temp.must_fail($q$ select public.draw_verify('zz', 1, 'FREE') $q$, '틀린 씨앗은 받지 않는다');
+
+-- 무작위 늦추기 — 켜면 러닝 · 게임 기록은 10 ~ 60분 뒤, 씨앗 약속은 바로
+update public.economy_settings set value = '10' where key = 'chain_jitter_min_min';
+update public.economy_settings set value = '60' where key = 'chain_jitter_max_min';
+do $$ begin
+  perform economy.activity_enqueue('CREW_JOIN', 'crew_join:jitter', 'a7800000-0000-0000-0000-000000000002', economy.game_day(now()) + 1, '{}');
+  perform pg_temp.ok((select next_at between now() + interval '10 minutes' and now() + interval '60 minutes'
+                        from public.chain_jobs where ref = 'crew_join:jitter'),
+    '보내는 시각을 10 ~ 60분 늦춘다(생활 패턴이 드러나지 않게)');
+end $$;
+update public.economy_settings set value = '0' where key in ('chain_jitter_min_min', 'chain_jitter_max_min');
 update public.chain_jobs j set next_at = h.next_at from held_jobs h where h.id = j.id;
 
 \echo ''

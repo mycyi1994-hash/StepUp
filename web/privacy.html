@@ -24,7 +24,7 @@
 
 <header><div class="wrap">
   <h1 data-en="Privacy Policy">개인정보처리방침</h1>
-  <div class="meta" data-en="StepUp app and website · Effective 2026-10-21">StepUp 앱·웹사이트 · 시행일 2026-10-21</div>
+  <div class="meta" data-en="StepUp app and website · Effective 2026-10-27">StepUp 앱·웹사이트 · 시행일 2026-10-27</div>
   <div class="lang"><a class="on" href="#ko">한국어</a><a href="#en">English</a></div>
 </div></header>
 
@@ -58,6 +58,7 @@
   <tr><td><strong>사진</strong></td><td>직접 고르거나 찍어 보낼 때만. 크루 대표 이미지, 크루 채팅에 보낸 사진(러닝 공유 카드 포함). 프로필 사진은 <strong>기기에만</strong> 저장합니다</td><td>크루·채팅 표시</td><td>서버</td></tr>
   <tr><td><strong>포인트(SUP)·신발</strong></td><td>적립·사용할 때. SUP 내역, 보유 신발, 뽑기, 수리·강화, 다른 이용자와의 거래소 거래</td><td>잔액과 내역, 거래</td><td>서버</td></tr>
   <tr><td><strong>지갑 연결</strong></td><td>지갑을 연결할 때. 지갑 주소(공개 주소)와 연결·변경 시각, 출금 요청의 주소·수량. 연결 서명은 확인만 하고 저장하지 않으며, <strong>개인키·시드 문구는 받지 않습니다</strong>. 웹 지갑 페이지의 2단계 인증(인증 앱 OTP)은 Supabase 인증이 처리합니다</td><td>지갑 연결, 출금, 같은 지갑으로 혜택을 거듭 받는 것 방지</td><td>서버 · 블록체인</td></tr>
+  <tr><td><strong>활동 기록(블록체인)</strong></td><td>러닝 저장 · 뽑기 · 강화 · 수리 · 포인트 나누기 · 거래소 체결 · 크루 가입 · 크루 · 번개 러닝 · 앱 출석 · 하루 걸음 목표 달성 때 서버가 자동으로. 날짜, 거리 · 시간 · 판정 · 받은 포인트, 신발 등급 · 레벨 · 내구도, 함께 출발한 인원, 걸음 목표 달성 여부 같은 값과 <strong>사람마다 다른 가명</strong>, 원본 대조용 지문(무작위 값을 섞은 해시). <strong>위치 · 경로 · 이름 · 이메일 · 계정 번호 · 걸음 수는 올리지 않습니다.</strong> 받는 사람은 기본 비움이며, 직접 켠 경우에만 연결한 지갑 주소가 함께 기록됩니다</td><td>기록의 위변조를 나중에 대조할 수 있게(뽑기 공정성 · 보상 근거)</td><td>서버 · 블록체인(GIWA 테스트넷, 공개)</td></tr>
   <tr><td><strong>러닝 코칭</strong></td><td>코칭 화면에서 정할 때. 목표·주당 횟수·시간, 시간대. AI 분석은 지금 꺼져 있고, 켤 때는 먼저 동의를 받습니다</td><td>러닝 계획</td><td>서버</td></tr>
   <tr><td><strong>알림</strong></td><td>푸시 토큰(Firebase), 앱 언어, 알림 설정</td><td>댓글·크루·파티런 알림</td><td>서버 · Google</td></tr>
   <tr><td><strong>이용 통계</strong></td><td>Firebase Analytics — 앱 사용 이벤트(로그인, 러닝 완료와 거리, 크루 가입 등)와 앱 인스턴스 식별자</td><td>서비스 개선</td><td>Google</td></tr>
@@ -79,6 +80,7 @@
   <li>땅따먹기 지도에는 크루가 차지한 칸(약 200m 육각형)이 보입니다. 개인의 경로는 보이지 않습니다</li>
   <li>크루 달리기 중에는 같은 방 사람끼리 서로의 현재 위치가 보입니다(위치 공유를 켠 경우)</li>
   <li><strong>지갑으로 출금하면</strong> 지갑 주소와 수량이 블록체인에 공개로 기록되며, 블록체인의 성격상 지울 수 없습니다</li>
+  <li><strong>활동 기록(블록체인)</strong>은 누구나 볼 수 있습니다. 같은 가명의 기록끼리는 서로 이어 볼 수 있고(예: 한 가명이 언제 · 얼마나 달렸는지, 같은 크루 가명), 거래 시각으로 활동 시각을 짐작하지 못하도록 수십 분씩 늦춰 보냅니다. 지갑으로 받기를 켜면 그 지갑 주소와 활동이 이어집니다</li>
 </ul>
 
 <h2>3. 처리 위탁과 국외 이전</h2>
@@ -106,6 +108,7 @@
       크루 채팅에 남긴 메시지·사진·공지는 대화가 끊기지 않도록 남기되, 계정과의 연결을 지워 작성자를 “탈퇴한 사용자”로 표시합니다.</li>
   <li>다른 이용자와의 거래 기록은 상대방 기록에서 내 계정 정보만 지워지고 거래 사실은 남습니다.</li>
   <li>연결했던 지갑 주소는 같은 지갑으로 혜택을 거듭 받는 것을 막기 위해 계정을 지워도 <strong>계정과의 연결 없이</strong> 남깁니다. 블록체인에 기록된 출금은 지울 수 없습니다.</li>
+  <li>블록체인에 올라간 활동 기록은 지울 수 없습니다. 대신 계정을 지우면 가명을 만드는 그 사람만의 비밀값과 대조용 원본을 함께 지워, StepUp 을 포함해 누구도 그 기록을 다시 그 사람과 이을 수 없게 합니다(지갑으로 받기를 켰던 기록은 지갑 주소가 남습니다).</li>
   <li>푸시 토큰은 앱을 지우거나 토큰이 바뀌면 삭제합니다.</li>
   <li>이용 통계는 Google Analytics 보존 설정(기본 2개월)에 따라 지워집니다.</li>
   <li>기기 안의 정보는 앱을 삭제하면 함께 지워집니다.</li>
@@ -141,7 +144,7 @@
 
 <section id="en">
 <h2 style="margin-top:44px">Privacy Policy (English)</h2>
-<p style="color:var(--slate);font-size:13.5px">StepUp app and website · Effective 2026-10-21.
+<p style="color:var(--slate);font-size:13.5px">StepUp app and website · Effective 2026-10-27.
 The Korean text above is authoritative; this is a translation for convenience.</p>
 
 <div class="note">
@@ -173,7 +176,8 @@ The Korean text above is authoritative; this is a translation for convenience.</
 No ad SDKs. No background location permission.</p>
 <p><strong>Visible to other users:</strong> your display name; ranking distance/speed/points; posts and comments; flash-run
 meeting points; <strong>routes of courses you share</strong>; crew territory cells (about 200 m hexagons, never individual
-routes); place stories and the run route attached to them; crew chat messages and photos (to members of that crew), crew image and area; how much you add to the day's crew stamina (your equipped shoe's energy maximum, to members of your crew); live positions inside the same crew-run room (if location sharing is on). <strong>If you withdraw to a wallet</strong>, the wallet address and amount are recorded publicly on the blockchain and cannot be erased.</p>
+routes); place stories and the run route attached to them; crew chat messages and photos (to members of that crew), crew image and area; how much you add to the day's crew stamina (your equipped shoe's energy maximum, to members of your crew); live positions inside the same crew-run room (if location sharing is on). <strong>If you withdraw to a wallet</strong>, the wallet address and amount are recorded publicly on the blockchain and cannot be erased.
+<strong>Activity records on the blockchain</strong> (GIWA testnet, public): when you save a run, draw, upgrade, repair, allocate points, trade, join a crew, finish a crew or flash run, check in, or hit a daily step goal, the server records values such as the date, distance, time, verdict and points earned, shoe grade/level/durability, how many started together and whether the step goal was met, under a <strong>per-person pseudonym</strong> with a salted fingerprint of the original for later checks. <strong>Never your location, route, name, email, account ID or step count.</strong> Anyone can read these records and link records with the same pseudonym; sending is delayed by tens of minutes so the time of day is not revealed. The recipient is empty unless you turn on “Receive records in my wallet”, which ties that wallet to the records.</p>
 
 <h3>2. Processors and international transfer</h3>
 <p>Supabase, Inc. (USA; StepUp data is stored in <strong>Singapore</strong>, AWS ap-southeast-1) — server database, sign-in and server functions; Google LLC (USA) — Google sign-in, Firebase
@@ -193,7 +197,7 @@ in your browser settings.</p>
 <p>Server data is kept <strong>until you delete your account</strong> and is deleted promptly when you do. If a crew owner
 deletes their account, the longest-standing member becomes owner. Crew chat messages, photos and notices stay so the
 conversation stays whole, unlinked from the account and shown as from a “Deleted user”. Trade records keep the fact of the trade but drop your
-account from them. Linked wallet addresses are kept after account deletion, unlinked from the account, so one wallet cannot claim the same bonus twice; withdrawals recorded on the blockchain cannot be erased. Analytics data follows Google Analytics retention (2 months by default). On-device data is removed when
+account from them. Linked wallet addresses are kept after account deletion, unlinked from the account, so one wallet cannot claim the same bonus twice; withdrawals recorded on the blockchain cannot be erased. Activity records on the blockchain cannot be erased either; when you delete your account we delete your per-person pseudonym key and the originals kept for checks, so no one, including StepUp, can link those records to you again (records you chose to receive in your wallet keep that wallet address). Analytics data follows Google Analytics retention (2 months by default). On-device data is removed when
 you uninstall the app.</p>
 
 <h3>4. Your rights</h3>

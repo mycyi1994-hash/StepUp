@@ -12,20 +12,26 @@ import { EAS_ABI, SCHEMA_REGISTRY_ABI } from './chain.js'
  */
 
 /**
- * 0078 새 기록 — 게임 · 러닝 · 크루 · 매일 활동. 서버 재료(economy.activity_payload)의 키가 칸 이름 그대로다.
+ * 0078 새 기록 — 게임 · 러닝 · 크루 · 매일 활동. 서버 재료(economy.activity_seal)의 키가 칸 이름 그대로다.
  * 사람 · 신발 · 크루 · 방은 가명(bytes32), 글자 칸은 대문자 이름(FREE · RARE …)뿐이다.
+ * dataHash = sha256(기록마다 다른 소금 ‖ 원본 스냅숏) — 나중에 서버의 스냅숏과 대조한다(scripts/audit.mjs). 소금이 있어 추측해 맞출 수 없다.
  */
 export const ACTIVITY_SCHEMAS = {
-  SHOE_DRAW: 'bytes32 runner,bytes32 shoe,string drawKind,string rarity,uint32 modelId,uint64 drawNonce,bytes32 seedHash,uint32 day',
-  SHOE_FORGE: 'bytes32 runner,bytes32 shoe,bool success,uint32 levelBefore,uint32 levelAfter,uint32 ratePermille,uint32 roll,uint32 materials,uint32 day',
-  SHOE_REPAIR: 'bytes32 runner,bytes32 shoe,uint32 points,uint32 day',
-  SHOE_POINTS: 'bytes32 runner,bytes32 shoe,uint32 efficiency,uint32 comfort,uint32 durability,uint32 day',
-  SHOE_TRADE: 'bytes32 seller,bytes32 buyer,bytes32 shoe,string rarity,uint32 level,uint64 priceCenti,uint32 day',
-  CREW_RUN: 'bytes32 runner,bytes32 crew,bytes32 room,bytes32 run,uint32 distanceM,uint32 activeSec,uint32 together,uint32 day',
-  FLASH_RUN: 'bytes32 runner,bytes32 flash,uint32 together,uint32 day',
-  CREW_JOIN: 'bytes32 runner,bytes32 crew,uint32 day',
-  DAILY_STEPS: 'bytes32 runner,uint32 steps,uint32 day',
-  CHECK_IN: 'bytes32 runner,uint32 day',
+  SHOE_DRAW: 'bytes32 runner,bytes32 shoe,string drawKind,string rarity,uint32 modelId,uint64 drawNonce,bytes32 seedHash,bytes32 dataHash,uint32 day',
+  SHOE_FORGE: 'bytes32 runner,bytes32 shoe,bool success,uint32 levelBefore,uint32 levelAfter,uint32 ratePermille,uint32 roll,uint32 materials,bytes32 dataHash,uint32 day',
+  SHOE_REPAIR: 'bytes32 runner,bytes32 shoe,uint32 points,bytes32 dataHash,uint32 day',
+  SHOE_POINTS: 'bytes32 runner,bytes32 shoe,uint32 efficiency,uint32 comfort,uint32 durability,bytes32 dataHash,uint32 day',
+  SHOE_TRADE: 'bytes32 seller,bytes32 buyer,bytes32 shoe,string rarity,uint32 level,uint64 priceCenti,bytes32 dataHash,uint32 day',
+  DRAW_SEED: 'bytes32 runner,bytes32 seedHash,uint64 firstNonce,bytes32 dataHash,uint32 day',
+  DRAW_REVEAL: 'bytes32 runner,bytes32 seed,bytes32 seedHash,uint64 firstNonce,uint64 lastNonce,bytes32 dataHash,uint32 day',
+  RUN_SETTLE: 'bytes32 runner,bytes32 run,uint32 distanceM,uint32 durationSec,uint64 pointsMilli,string verdict,bytes32 dataHash,uint32 day',
+  SHOE_WEAR: 'bytes32 runner,bytes32 shoe,bytes32 run,uint32 runM,uint64 totalM,uint32 durability,bytes32 dataHash,uint32 day',
+  CREW_RUN: 'bytes32 runner,bytes32 crew,bytes32 room,bytes32 run,uint32 distanceM,uint32 activeSec,uint32 together,bytes32 dataHash,uint32 day',
+  FLASH_RUN: 'bytes32 runner,bytes32 flash,uint32 together,bytes32 dataHash,uint32 day',
+  CREW_JOIN: 'bytes32 runner,bytes32 crew,bytes32 dataHash,uint32 day',
+  PARTY_START: 'bytes32 runner,bytes32 room,bytes32 crew,uint32 starters,bytes32 dataHash,uint32 day',
+  DAILY_STEPS: 'bytes32 runner,bool goalMet,bytes32 dataHash,uint32 day',
+  CHECK_IN: 'bytes32 runner,bytes32 dataHash,uint32 day',
 }
 
 export const SCHEMAS = {

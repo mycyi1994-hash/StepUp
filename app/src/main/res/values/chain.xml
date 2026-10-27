@@ -35,6 +35,15 @@
     <string name="ca_kind_crew_join">Joined a crew</string>
     <string name="ca_kind_steps">Daily steps</string>
     <string name="ca_kind_check_in">Check-in</string>
+    <string name="ca_kind_seed">Draw seed committed</string>
+    <string name="ca_kind_reveal">Draw seed revealed</string>
+    <string name="ca_kind_settle">Run settlement</string>
+    <string name="ca_kind_wear">Shoe mileage</string>
+    <string name="ca_kind_party_start">Group start roster</string>
+    <string name="ca_recipient_title">Receive records in my wallet</string>
+    <string name="ca_recipient_body">When on, your linked wallet becomes the recipient of your chain records. One wallet could tie all your activity together, so this is off by default.</string>
+    <string name="ca_guide_settle_head">Run settlement · shoe mileage — every run</string>
+    <string name="ca_guide_settle_body">When you save a run: distance, time, verdict and points earned, plus the run distance, total distance and remaining durability of the shoe you wore.</string>
     <string name="ca_badge_first_run">First run</string>
     <string name="ca_badge_distance">%1$d km total</string>
     <string name="ca_badge_streak">%1$d-day streak</string>
@@ -56,12 +65,12 @@
     <string name="ca_guide_wallet_head">Wallet page — take out or put in</string>
     <string name="ca_guide_wallet_body">Moving SUP or shoes between the app and your wallet is a transaction too. Putting them back in is signed by your wallet.</string>
     <string name="ca_guide_game_head">Game — Shoes tab</string>
-    <string name="ca_guide_game_body">Every draw (grade, draw number and seed hash — once the seed is revealed anyone can re-check the result), upgrade result, repair, stat point allocation and market trade.</string>
+    <string name="ca_guide_game_body">Every draw (grade, draw number and seed hash), upgrade result, repair, stat point allocation and market trade. A draw seed’s hash goes up before it is used, and once revealed anyone can re-roll the same result.</string>
     <string name="ca_guide_crew_head">Crews — Together tab</string>
-    <string name="ca_guide_crew_body">Finished crew runs (distance, time, how many started together), flash runs that two or more started together, and joining a crew (once per crew).</string>
+    <string name="ca_guide_crew_body">Finished crew runs (distance, time, how many started together), each room’s start roster, flash runs that two or more started together, and joining a crew (once per crew).</string>
     <string name="ca_guide_daily_head">Every day</string>
-    <string name="ca_guide_daily_body">One check-in on each day you open the app, and one daily step count (the final number, after the day ends).</string>
-    <string name="ca_guide_foot">Not recorded: runs under 200 m or without a route, earning or spending SUP in the app, putting shoes on, wear from running. Only a pseudonym is recorded — never your location, route, name or account.</string>
+    <string name="ca_guide_daily_body">One check-in on each day you open the app, and whether you hit that day’s step goal (after the day ends). Step counts are not recorded.</string>
+    <string name="ca_guide_foot">Not recorded: runs under 200 m or without a route, earning or spending SUP in the app, putting shoes on, wear from running. Never your location, route, name or account. Only a per-person pseudonym is recorded, and once you delete your account it can no longer be linked to you. Each record carries only a salted fingerprint of the original for later checks, and sending is delayed by tens of minutes. Records on the chain cannot be erased.</string>
     <string name="wl_chain_row">Chain records</string>
     <string name="wl_chain_row_sub">Runs, shoes and crew activity — StepUp pays the gas</string>
 </resources>

@@ -4,6 +4,7 @@
     <string name="lock_run_open">잠금 해제하고 앱 열기</string>
     <!-- 혼자 러닝 버튼 셋(일시정지 · 정지 · 화면 잠금) 중 정지 — 1초 길게 눌러 마친다 -->
     <string name="run_stop">정지</string>
+    <string name="run_start_failed">러닝을 시작하지 못했어요. 앱을 연 채로 걸음 · 위치 권한을 확인하고 다시 시작해 주세요.</string>
     <!-- 자유러닝 시작 전 신발 교체(1초 꾹 눌러 고르기) -->
     <string name="run_free_check_change">신발 교체</string>
     <string name="run_shoe_pick_title">신발 고르기</string>

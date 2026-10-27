@@ -322,7 +322,7 @@ fun ItemsScreen(
                     HexEmblem(size = 44.dp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(
-                            text = stringResource(R.string.items_mint_title),
+                            text = stringResource(if (com.stepup.android.BuildConfig.WEB3) R.string.items_mint_title else R.string.items_mint_title_store),
                             style = MaterialTheme.typography.titleMedium,
                             color = Snow,
                         )

@@ -49,6 +49,14 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             )
         }.mapBody { serverJson.decodeFromString<List<BoostRow>>(it) }
 
+    /** 체인 기록 설정(0078) — 지갑으로 받기를 켰는가 · 지갑이 연결돼 있는가 */
+    suspend fun chainSettings(): ServerResult<ChainSettingsRow> =
+        rpc("my_chain_settings", "{}") { serverJson.decodeFromString<ChainSettingsRow>(it) }
+
+    /** 체인 기록의 받는 사람을 내 지갑으로(켬) · 비움(끔). 기본은 꺼짐 */
+    suspend fun setChainRecipient(on: Boolean): ServerResult<Boolean> =
+        rpc("chain_recipient_set", "{\"p_on\":$on}") { it.trim().toBooleanStrictOrNull() }
+
     /** 오늘 출석(0078) — 서버가 하루 한 번만 체인 기록 줄에 세운다. 이미 했으면 false */
     suspend fun checkIn(): ServerResult<Unit> = rpc("chain_check_in", "{}") { Unit }
 
@@ -255,6 +263,12 @@ data class ServerSneakerRow(
     @SerialName("points_respec") val pointsRespec: Boolean = false,
     /** 내구도 1(10m) 고치는 값 — [repairCostPerPoint] 는 예전 앱이 읽는 1% 값 */
     @SerialName("repair_cost_per_unit") val repairCostPerUnit: Double = 0.0,
+)
+
+@Serializable
+data class ChainSettingsRow(
+    @SerialName("wallet_recipient") val walletRecipient: Boolean = false,
+    @SerialName("wallet_linked") val walletLinked: Boolean = false,
 )
 
 @Serializable

@@ -205,6 +205,7 @@
     <string name="items_collection">Collection</string>
     <string name="items_collection_progress">%1$d / %2$d combinations</string>
     <string name="items_mint_title">Mint a new pair</string>
+    <string name="items_mint_title_store">Draw a new pair</string>
     <string name="items_mint_desc">All draws are free: 10 to start and 3 every day, plus premium draws once you connect a wallet.</string>
     <string name="items_mint_desc_store">All draws are free: 10 to start and 3 more every day.</string>
     <string name="toast_sign_in_required">Sign in to use SUP and sneakers.</string>

@@ -203,6 +203,7 @@
     <string name="items_collection">도감</string>
     <string name="items_collection_progress">%1$d / %2$d 조합</string>
     <string name="items_mint_title">새 스니커즈 민팅</string>
+    <string name="items_mint_title_store">새 신발 뽑기</string>
     <string name="items_mint_desc">뽑기는 모두 무료예요. 처음 10회, 매일 3회 무료로 뽑고, 지갑을 연결하면 상급 뽑기도 받아요.</string>
     <string name="items_mint_desc_store">뽑기는 모두 무료예요. 처음 10회, 매일 3회 무료로 뽑아요.</string>
     <string name="toast_sign_in_required">로그인하면 SUP와 신발을 쓸 수 있어요.</string>

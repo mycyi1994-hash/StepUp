@@ -35,6 +35,15 @@
     <string name="ca_kind_crew_join">크루 가입</string>
     <string name="ca_kind_steps">하루 걸음</string>
     <string name="ca_kind_check_in">출석</string>
+    <string name="ca_kind_seed">뽑기 씨앗 약속</string>
+    <string name="ca_kind_reveal">뽑기 씨앗 공개</string>
+    <string name="ca_kind_settle">러닝 정산 기록</string>
+    <string name="ca_kind_wear">신발 주행 기록</string>
+    <string name="ca_kind_party_start">함께 출발 명단</string>
+    <string name="ca_recipient_title">내 지갑으로 기록 받기</string>
+    <string name="ca_recipient_body">켜면 체인 기록의 받는 사람이 연결한 지갑이 돼요. 지갑 하나로 내 활동이 한데 묶여 보일 수 있어 기본은 꺼져 있어요.</string>
+    <string name="ca_guide_settle_head">러닝 정산 · 신발 주행 — 러닝마다</string>
+    <string name="ca_guide_settle_body">러닝을 저장하면 거리 · 시간 · 판정 · 받은 포인트, 신은 신발의 그 러닝 거리 · 누적 거리 · 남은 내구도가 기록돼요.</string>
     <string name="ca_badge_first_run">첫 러닝</string>
     <string name="ca_badge_distance">누적 %1$dkm</string>
     <string name="ca_badge_streak">%1$d일 연속</string>
@@ -56,12 +65,12 @@
     <string name="ca_guide_wallet_head">지갑 페이지 — 꺼내기 · 넣기</string>
     <string name="ca_guide_wallet_body">SUP · 신발을 지갑으로 꺼내거나 앱으로 넣을 때도 거래가 생겨요. 넣기는 내 지갑이 서명해요.</string>
     <string name="ca_guide_game_head">게임 — 신발 탭</string>
-    <string name="ca_guide_game_body">뽑기(등급 · 뽑기 번호 · 씨앗 해시 — 씨앗을 공개하면 누구나 결과를 다시 확인해요), 강화 결과, 수리, 스탯 포인트 나누기, 거래소 체결이 한 번마다 기록돼요.</string>
+    <string name="ca_guide_game_body">뽑기(등급 · 뽑기 번호 · 씨앗 해시), 강화 결과, 수리, 스탯 포인트 나누기, 거래소 체결이 한 번마다 기록돼요. 뽑기 씨앗은 쓰기 전에 해시를 먼저 올리고, 공개하면 누구나 같은 결과를 다시 굴려 볼 수 있어요.</string>
     <string name="ca_guide_crew_head">크루 — 함께 뛰기 탭</string>
-    <string name="ca_guide_crew_body">크루 러닝 완주(거리 · 시간 · 함께 출발한 수), 둘 이상 함께 출발한 번개러닝, 크루 가입(같은 크루는 한 번).</string>
+    <string name="ca_guide_crew_body">크루 러닝 완주(거리 · 시간 · 함께 출발한 수), 방마다 함께 출발한 명단, 둘 이상 함께 출발한 번개러닝, 크루 가입(같은 크루는 한 번).</string>
     <string name="ca_guide_daily_head">매일</string>
-    <string name="ca_guide_daily_body">앱을 연 날 출석 하나, 하루 걸음 하나(그날이 끝난 뒤 마지막 값).</string>
-    <string name="ca_guide_foot">기록하지 않는 것: 200m 미만이거나 경로 없는 러닝, 앱 안의 SUP 적립 · 사용, 신발 신기, 달려서 닳는 내구도. 가명만 올리고 위치 · 경로 · 이름 · 계정은 올리지 않아요.</string>
+    <string name="ca_guide_daily_body">앱을 연 날 출석 하나, 그날 걸음 목표를 채웠는지 하나(그날이 끝난 뒤). 걸음 수는 올리지 않아요.</string>
+    <string name="ca_guide_foot">기록하지 않는 것: 200m 미만이거나 경로 없는 러닝, 앱 안의 SUP 적립 · 사용, 신발 신기, 달려서 닳는 내구도. 위치 · 경로 · 이름 · 계정은 올리지 않아요. 사람마다 다른 가명만 올리고, 계정을 지우면 그 가명을 다시 나와 이을 수 없어요. 기록마다 원본의 지문(소금 친 해시)만 올려 나중에 대조할 수 있고, 보내는 시각은 몇십 분씩 늦춰요. 체인에 올라간 기록은 지울 수 없어요.</string>
     <string name="wl_chain_row">체인 기록</string>
     <string name="wl_chain_row_sub">러닝 · 신발 · 크루 활동 — 가스비는 StepUp이 내요</string>
 </resources>

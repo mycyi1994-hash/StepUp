@@ -35,6 +35,15 @@
     <string name="ca_kind_crew_join">加入跑团</string>
     <string name="ca_kind_steps">每日步数</string>
     <string name="ca_kind_check_in">签到</string>
+    <string name="ca_kind_seed">抽取种子承诺</string>
+    <string name="ca_kind_reveal">抽取种子公开</string>
+    <string name="ca_kind_settle">跑步结算记录</string>
+    <string name="ca_kind_wear">跑鞋里程记录</string>
+    <string name="ca_kind_party_start">一起出发名单</string>
+    <string name="ca_recipient_title">用我的钱包接收记录</string>
+    <string name="ca_recipient_body">开启后，链上记录的接收方会是你连接的钱包。一个钱包可能把你的所有活动关联在一起，所以默认关闭。</string>
+    <string name="ca_guide_settle_head">跑步结算 · 跑鞋里程 — 每次跑步</string>
+    <string name="ca_guide_settle_body">保存跑步后，会记录距离、时间、判定和获得的积分，以及所穿跑鞋本次距离、累计距离和剩余耐久度。</string>
     <string name="ca_badge_first_run">首次跑步</string>
     <string name="ca_badge_distance">累计 %1$d 公里</string>
     <string name="ca_badge_streak">连续 %1$d 天</string>
@@ -56,12 +65,12 @@
     <string name="ca_guide_wallet_head">钱包页面 — 取出 · 存入</string>
     <string name="ca_guide_wallet_body">将 SUP 或跑鞋取出到钱包、或存回应用时也会产生交易。存入由你的钱包签名。</string>
     <string name="ca_guide_game_head">游戏 — 跑鞋页</string>
-    <string name="ca_guide_game_body">每次抽取（等级、抽取编号和种子哈希——公开种子后任何人都能复核结果）、强化结果、修理、属性点分配和交易所成交都会记录。</string>
+    <string name="ca_guide_game_body">每次抽取（等级、抽取编号和种子哈希）、强化结果、修理、属性点分配和交易所成交都会记录。种子在使用前先上传哈希，公开后任何人都能重新算出相同结果。</string>
     <string name="ca_guide_crew_head">跑团 — 一起跑页</string>
-    <string name="ca_guide_crew_body">跑团跑步完成（距离、时间、一起出发的人数）、两人以上一起出发的闪电跑、加入跑团（同一跑团只记一次）。</string>
+    <string name="ca_guide_crew_body">跑团跑步完成（距离、时间、一起出发的人数）、每个房间的出发名单、两人以上一起出发的闪电跑、加入跑团（同一跑团只记一次）。</string>
     <string name="ca_guide_daily_head">每天</string>
-    <string name="ca_guide_daily_body">打开应用的日子签到一次，每日步数一条（当天结束后的最终值）。</string>
-    <string name="ca_guide_foot">不记录：不足 200 米或没有路线的跑步、应用内 SUP 的获得与使用、穿鞋、跑步造成的耐久度损耗。只记录化名，不会记录位置、路线、名字或账户。</string>
+    <string name="ca_guide_daily_body">打开应用的日子签到一次，以及当天是否达到步数目标一次（当天结束后）。不会记录步数本身。</string>
+    <string name="ca_guide_foot">不记录：不足 200 米或没有路线的跑步、应用内 SUP 的获得与使用、穿鞋、跑步造成的耐久度损耗。不会记录位置、路线、名字或账户。只记录每人各不相同的化名，删除账户后该化名就无法再与你关联。每条记录只附带原始数据的指纹（加盐哈希）以便日后核对，发送时间会推迟几十分钟。上链的记录无法删除。</string>
     <string name="wl_chain_row">链上记录</string>
     <string name="wl_chain_row_sub">跑步 · 跑鞋 · 跑团活动 — Gas 费由 StepUp 支付</string>
 </resources>

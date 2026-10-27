@@ -212,6 +212,12 @@ android {
     sourceSets {
         // 새 버전을 받아 설치 화면을 여는 권한(REQUEST_INSTALL_PACKAGES)은 debug 와 같은 파일을 쓴다.
         getByName("qa") { manifest.srcFile("src/debug/AndroidManifest.xml") }
+        // 테스트 APK 의 스스로 업데이트 코드는 debug · qa 에만 넣는다. 스토어 판에는 빈 자리만 —
+        // Play 는 Play 밖에서 스스로 업데이트하는 앱을 막고, 자동 검사는 꺼 둔 코드도 본다(2026-10-27 출시 점검)
+        getByName("debug") { java.srcDir("src/selfUpdate/java") }
+        getByName("qa") { java.srcDir("src/selfUpdate/java") }
+        getByName("release") { java.srcDir("src/noSelfUpdate/java") }
+        getByName("storePreview") { java.srcDir("src/noSelfUpdate/java") }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

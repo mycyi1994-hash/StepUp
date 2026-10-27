@@ -7,20 +7,27 @@ import { ACTIVITY_SCHEMAS, EAS_KINDS, SCHEMAS, attestRequest, attestationData, s
 // 0078 새 기록 — 서버 재료(economy.activity_payload)의 키가 스키마 칸 이름 그대로다
 const H = (b) => '0x' + b.repeat(32)
 const base = { recipient: zeroAddress, runner: H('aa'), day: 20261027 }
+const D = { dataHash: H('99') }
 const PAYLOADS = {
-  SHOE_DRAW: { ...base, shoe: H('bb'), drawKind: 'FREE', rarity: 'RARE', modelId: 12, drawNonce: 7, seedHash: H('cc') },
-  SHOE_FORGE: { ...base, shoe: H('bb'), success: true, levelBefore: 3, levelAfter: 4, ratePermille: 600, roll: 123, materials: 3 },
-  SHOE_REPAIR: { ...base, shoe: H('bb'), points: 25 },
-  SHOE_POINTS: { ...base, shoe: H('bb'), efficiency: 2, comfort: 1, durability: 0 },
-  SHOE_TRADE: { ...base, seller: H('dd'), buyer: H('aa'), shoe: H('bb'), rarity: 'EPIC', level: 5, priceCenti: '123456' },
-  CREW_RUN: { ...base, crew: H('ee'), room: H('ff'), run: H('11'), distanceM: 4200, activeSec: 1500, together: 3 },
-  FLASH_RUN: { ...base, flash: H('ff'), together: 2 },
-  CREW_JOIN: { ...base, crew: H('ee') },
-  DAILY_STEPS: { ...base, steps: 8400 },
-  CHECK_IN: { ...base },
+  SHOE_DRAW: { ...base, ...D, shoe: H('bb'), drawKind: 'FREE', rarity: 'RARE', modelId: 12, drawNonce: 7, seedHash: H('cc') },
+  SHOE_FORGE: { ...base, ...D, shoe: H('bb'), success: true, levelBefore: 3, levelAfter: 4, ratePermille: 600, roll: 123, materials: 3 },
+  SHOE_REPAIR: { ...base, ...D, shoe: H('bb'), points: 25 },
+  SHOE_POINTS: { ...base, ...D, shoe: H('bb'), efficiency: 2, comfort: 1, durability: 0 },
+  SHOE_TRADE: { ...base, ...D, seller: H('dd'), buyer: H('aa'), shoe: H('bb'), rarity: 'EPIC', level: 5, priceCenti: '123456' },
+  DRAW_SEED: { ...base, ...D, seedHash: H('cc'), firstNonce: 0 },
+  DRAW_REVEAL: { ...base, ...D, seed: H('12'), seedHash: H('cc'), firstNonce: 0, lastNonce: 41 },
+  RUN_SETTLE: { ...base, ...D, run: H('11'), distanceM: 5200, durationSec: 1800, pointsMilli: '12500', verdict: 'CLEAN' },
+  SHOE_WEAR: { ...base, ...D, shoe: H('bb'), run: H('11'), runM: 5000, totalM: '42000', durability: 820 },
+  CREW_RUN: { ...base, ...D, crew: H('ee'), room: H('ff'), run: H('11'), distanceM: 4200, activeSec: 1500, together: 3 },
+  FLASH_RUN: { ...base, ...D, flash: H('ff'), together: 2 },
+  CREW_JOIN: { ...base, ...D, crew: H('ee') },
+  PARTY_START: { ...base, ...D, room: H('ff'), crew: H('00'), starters: 4 },
+  DAILY_STEPS: { ...base, ...D, goalMet: true },
+  CHECK_IN: { ...base, ...D },
 }
 
-test('새 기록 열 가지가 모두 EAS 일이다(스키마가 다 다르다)', () => {
+
+test('새 기록이 모두 EAS 일이다(스키마가 다 다르다)', () => {
   assert.deepEqual(Object.keys(ACTIVITY_SCHEMAS).sort(), Object.keys(PAYLOADS).sort())
   for (const kind of Object.keys(ACTIVITY_SCHEMAS)) assert.ok(EAS_KINDS.includes(kind), kind)
   const uids = new Set(Object.values(SCHEMAS).map((s) => schemaUid(s)))
@@ -49,7 +56,8 @@ test('새 기록 — 틀린 재료는 만들지 않는다', () => {
   assert.throws(() => attestationData('SHOE_TRADE', { ...PAYLOADS.SHOE_TRADE, priceCenti: '12.5' }))
   assert.throws(() => attestationData('SHOE_TRADE', { ...PAYLOADS.SHOE_TRADE, priceCenti: (2n ** 64n).toString() }))
   assert.throws(() => attestationData('SHOE_FORGE', { ...PAYLOADS.SHOE_FORGE, success: 'yes' }))
-  assert.throws(() => attestationData('DAILY_STEPS', { ...PAYLOADS.DAILY_STEPS, steps: undefined }))
+  assert.throws(() => attestationData('DAILY_STEPS', { ...PAYLOADS.DAILY_STEPS, goalMet: 1 }))
+  assert.throws(() => attestationData('RUN_SETTLE', { ...PAYLOADS.RUN_SETTLE, dataHash: undefined }))
   assert.throws(() => attestationData('CHECK_IN', { ...PAYLOADS.CHECK_IN, runner: '0x12' }))
 })
 
@@ -63,7 +71,7 @@ test('서버 재료의 키 = 워커 스키마 칸 이름(0078 activity_payload �
     const branch = body.slice(start, start + 1 + next)
     for (const field of schema.split(',')) {
       const name = field.trim().split(/\s+/)[1]
-      if (['runner', 'day'].includes(name)) continue // 모든 기록에 공통으로 넣는다
+      if (['runner', 'day', 'dataHash'].includes(name)) continue // 모든 기록에 공통으로 넣는다(dataHash 는 봉인할 때)
       assert.ok(branch.includes(`'${name}'`), `${kind}.${name} 를 서버가 주지 않는다`)
     }
   }
