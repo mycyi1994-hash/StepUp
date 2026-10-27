@@ -100,14 +100,17 @@ class ExperienceFeedback(context: Context, private val view: View) : AutoCloseab
             )
         } }.getOrDefault(audio.isMusicActive)
 
+    /** 기기가 조용히 하라고 하지 않을 때만 — 무음 · 진동 · 방해 금지 · 시스템 소리 0 · 다른 음악 재생 중이면 false */
+    fun deviceAllowsSound(): Boolean = !closed && !otherMediaActive() &&
+        audio.ringerMode == AudioManager.RINGER_MODE_NORMAL &&
+        audio.getStreamVolume(AudioManager.STREAM_SYSTEM) > 0 &&
+        notifications.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL
+
     /** Scene loops are opt-in, foreground-only and yield to other media. */
     private fun refreshAmbient() {
         if (closed) return
         val scene = ambientScene?.takeIf {
-            soundsEnabled && ambientEnabled && foreground && !otherMediaActive() &&
-                audio.ringerMode == AudioManager.RINGER_MODE_NORMAL &&
-                audio.getStreamVolume(AudioManager.STREAM_SYSTEM) > 0 &&
-                notifications.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL
+            soundsEnabled && ambientEnabled && foreground && deviceAllowsSound()
         }
         if (scene == ambientPlaying) return
         stopAmbient()

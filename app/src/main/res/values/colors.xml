@@ -3,6 +3,8 @@
     <!-- 첫 프레임 전 창 바닥 · 시스템 시작 화면 바닥(UI 최종 통합안 2026-10-25) — 화이트블루는 흰색, 다크블루는 values-night 의 #070B14.
          앱 안 바닥(#F2F2F7 · #070B14)은 Compose 테마(ui/theme/Color.kt)가 칠한다. -->
     <color name="night">#FFFFFF</color>
+    <!-- 시작 인트로 영상의 첫 장면 바닥(2026-10-27) — 테마와 상관없이 어둡다. 시스템 시작 화면도 이 색이라 영상으로 넘어갈 때 번쩍이지 않는다 -->
+    <color name="launch_ground">#050A10</color>
     <color name="volt">#1F5EFF</color>
     <!-- 런처 아이콘 바닥. 홈 화면에서 아이콘이 배경에 묻지 않게 짙은 네이비로 둔다. -->
     <color name="ic_launcher_background">#101D40</color>
