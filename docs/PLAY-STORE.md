@@ -31,7 +31,7 @@ Play Console 에 앱을 등록할 때 채우는 칸을 이 앱의 실제 동작�
 | `stepupofficial@stepupcrew.com` 받기 | Cloudflare › stepupcrew.com › Email › Email Routing | 개인 메일로 전달. 개인정보처리방침·계정 삭제 페이지·스토어 연락처가 이 주소를 쓴다 |
 | 위치기반서비스사업 신고 | 방송통신위원회(위치정보 사업 신고) | 위치를 서버에 저장하므로 국내 출시 전 확인 |
 | 목표 API | `app/build.gradle.kts` | **36(안드로이드 16)** — 2026-08-31 부터 새 앱 · 업데이트에 필요하다. 16KB 페이지 대응(네이티브 라이브러리 2개, 16KB 정렬)도 됐다 |
-| Play App Signing 인증서 SHA-256 | Play Console › 설정 › 앱 무결성 | `web/.well-known/assetlinks.json` 의 `sha256_cert_fingerprints` 에 **추가**(디버그 값은 남긴다). 그래야 스토어 판에서도 초대 링크가 앱으로 바로 열린다 |
+| Play App Signing 인증서 SHA-256 | Play Console › Protected with Play › App signing(2026-10 메뉴 이동) | **넣었다(2026-10-29, `02:4A:65:…:B6:60`)** — `web/.well-known/assetlinks.json` 의 `sha256_cert_fingerprints` 에 추가(디버그 값은 남긴다). 스토어 판에서도 초대 링크가 앱으로 바로 열린다. 같은 화면의 SHA-1 은 Google Cloud 의 Android OAuth 클라이언트로 등록(구글 로그인) |
 
 ## 스토어 판에 없는 것 — 블록체인 기능 (2026-10-20)
 
