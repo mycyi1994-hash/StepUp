@@ -90,6 +90,8 @@ class ProfileViewModel(
         val balance: Double = 0.0,
         val streak: Int = 0,
         val lifetimeSteps: Long = 0,
+        /** 이 계정이 지금까지 달린 거리(서버 profiles.lifetime_km) — 폰 걸음이 아니라 계정을 따른다(2026-10-28) */
+        val accountKm: Double = 0.0,
         val monthSteps: Long = 0,
         val ownedSneakers: Int = 0,
         val runnerUid: String = "",
@@ -105,7 +107,7 @@ class ProfileViewModel(
         /** 실제 값이 도착했는가 — 도착 전에는 잔액을 0 으로 보이지 않는다 */
         val loaded: Boolean = false,
     ) {
-        /** 러너 레벨 — 누적으로 걸은 거리가 곧 경험치다 */
+        /** 러너 레벨 — 계정이 서버에 기록한 누적 거리가 경험치다(로그아웃 · 다른 계정이면 그 계정 값) */
         val runner: RunnerProgress get() = RunnerLevels.of(lifetimeKm)
         /**
          * 신고 있는 신발의 적립 배수. 적립 계산(RewardRepository)과 같은 값을 쓴다 —
@@ -114,7 +116,7 @@ class ProfileViewModel(
         val multiplier: Double get() = equipped?.earningMultiplier ?: 1.0
         /** 신고 있는 신발의 다음 강화 비용 — 희귀도에 따라 다르다 */
         val upgradeCost: Double get() = equipped?.upgradeCost ?: RewardEconomy.upgradeCost(sneakerLevel)
-        val lifetimeKm: Double get() = lifetimeSteps * RewardEconomy.STRIDE_METERS / 1000
+        val lifetimeKm: Double get() = accountKm
         val monthKm: Double get() = monthSteps * RewardEconomy.STRIDE_METERS / 1000
         val monthCalories: Double get() = monthSteps * RewardEconomy.KCAL_PER_STEP
         val lifetimeCalories: Double get() = lifetimeSteps * RewardEconomy.KCAL_PER_STEP
@@ -134,7 +136,8 @@ class ProfileViewModel(
         combine(
             sneakerRepository.ownedCount,
             stepRepository.observeWeek(),
-        ) { owned, week -> owned to week },
+            prefs.accountLifetimeKm,
+        ) { owned, week, km -> Triple(owned, week, km) },
         combine(
             stepRepository.observeTotalDurationSec(),
             stepRepository.recentSessions(30),
@@ -146,7 +149,7 @@ class ProfileViewModel(
             prefs.avatarRev,
             sneakerRepository.equipped,
         ) { uid, nick, avatar, rev, equipped -> Ident(uid, nick, avatar, rev, equipped) },
-    ) { (goal, level, balance), (streak, lifetime, month), (owned, week), (totalSec, sessions), ident ->
+    ) { (goal, level, balance), (streak, lifetime, month), (owned, week, accountKm), (totalSec, sessions), ident ->
         // 최근 세션 기반 요약 — 세션 기록이 없으면 0으로 두고 화면에서 "—" 처리
         val sessionSec = sessions.sumOf { it.durationSec }
         val sessionKm = sessions.sumOf { it.distanceMeters } / 1000.0
@@ -156,6 +159,7 @@ class ProfileViewModel(
             balance = balance,
             streak = streak,
             lifetimeSteps = lifetime,
+            accountKm = accountKm ?: 0.0,
             monthSteps = month,
             ownedSneakers = owned,
             runnerUid = ident.uid,
