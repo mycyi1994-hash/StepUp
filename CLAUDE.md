@@ -9,6 +9,7 @@
 - 운영자 코드(1인용 · 공용 · 정한 글자) · 사용자 코드(하루 `access_user_daily_codes` 개, 설정 › 베타 초대 코드) · 차단(코드 · 계정, 그 코드로 들어온 사람까지) ·
   확인(`admin_access_codes` · `admin_access_code_uses` · `admin_access_users`) · 공개 베타 고르기(`admin_open_beta_invite`). SQL 은 문서에.
 - 출시 때 Play Console › 앱 액세스에 심사용 코드를 적는다.
+- 로그아웃(2026-10-28): 설정 › 연결된 계정의 계정 삭제 위 한 줄 → 확인 창. 이 폰의 로그인 · 사본만 지운다(`forgetAccountOnPhone` — 계정 삭제와 같은 정리).
 
 ## 최신 — 체인 기록 넓히기 · 나중에 대조 · 개인정보 최소 · 출시 점검 (2026-10-27)
 

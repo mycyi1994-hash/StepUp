@@ -87,6 +87,9 @@
     <string name="set_wallet_unknown">Couldn\'t check</string>
     <string name="set_external_note">We\'ll let you know when more connections are ready.</string>
     <string name="set_delete_account">Delete account</string>
+    <string name="set_logout">Sign out</string>
+    <string name="set_logout_title">Sign out?</string>
+    <string name="set_logout_body">You\'ll be signed out on this phone only. Your runs, shoes and points stay with your account and come back when you sign in with the same Google account.</string>
     <string name="set_delete_title">Delete your account?</string>
     <string name="set_delete_heading">This deletes the following from the server:</string>
     <string name="set_delete_item_runs">Runs and GPS routes</string>

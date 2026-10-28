@@ -85,6 +85,9 @@
     <string name="set_wallet_unknown">无法确认</string>
     <string name="set_external_note">可用的连接功能准备好后会通知你。</string>
     <string name="set_delete_account">删除账号</string>
+    <string name="set_logout">退出登录</string>
+    <string name="set_logout_title">要退出登录吗？</string>
+    <string name="set_logout_body">仅在这部手机上退出登录。跑步记录、跑鞋和积分会保留在账号中，用同一个 Google 账号重新登录即可恢复。</string>
     <string name="set_delete_title">要删除账号吗？</string>
     <string name="set_delete_heading">将删除服务器上保存的以下信息。</string>
     <string name="set_delete_item_runs">跑步记录和GPS路线</string>

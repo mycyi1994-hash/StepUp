@@ -85,6 +85,9 @@
     <string name="set_wallet_unknown">확인하지 못함</string>
     <string name="set_external_note">사용 가능한 연결 기능이 준비되면 안내해요.</string>
     <string name="set_delete_account">계정 삭제</string>
+    <string name="set_logout">로그아웃</string>
+    <string name="set_logout_title">로그아웃할까요?</string>
+    <string name="set_logout_body">이 휴대폰에서만 로그아웃돼요. 러닝 기록 · 신발 · 포인트는 계정에 그대로 남아 같은 구글 계정으로 다시 로그인하면 돌아와요.</string>
     <string name="set_delete_title">계정을 삭제할까요?</string>
     <string name="set_delete_heading">서버에 보관된 다음 정보가 삭제돼요.</string>
     <string name="set_delete_item_runs">러닝 기록과 GPS 경로</string>
