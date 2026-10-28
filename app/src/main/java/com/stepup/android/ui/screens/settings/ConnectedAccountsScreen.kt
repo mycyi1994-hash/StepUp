@@ -95,6 +95,16 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     }
     var step by remember { mutableStateOf(DeleteStep.Closed) }
     var contactOpen by remember { mutableStateOf(false) }
+    // 로그아웃(2026-10-28) — 확인 창 · 처리 중
+    var logoutOpen by remember { mutableStateOf(false) }
+    var loggingOut by remember { mutableStateOf(false) }
+
+    fun logout() {
+        if (loggingOut) return
+        loggingOut = true
+        // 서버 기록은 그대로 — 이 폰의 로그인 · 사본만 지우고 로그인 첫 화면으로
+        scope.launch { withContext(NonCancellable) { forgetAccountOnPhone(context) } }
+    }
 
     fun delete() {
         if (step == DeleteStep.Deleting) return
@@ -117,32 +127,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
                     // 로그인 표시를 지우는 순간 첫 화면이 로그인으로 바뀌며 이 화면이 닫히고, 이 코루틴도
                     // 함께 취소된다. 그 뒤에 지우면 앞 계정의 잔고 · 신발 · 키 · 몸무게가 남을 수 있다 —
                     // 폰에 남은 것을 취소되지 않게 먼저 다 지우고, 로그인 표시는 맨 마지막에 지운다.
-                    withContext(NonCancellable) {
-                        // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
-                        if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-                            com.stepup.android.service.WalkSessionService.stop(context)
-                        }
-                        // 서버 계정이 사라졌다
-                        ServiceLocator.sessionHolder.signOut()
-                        // 지운 계정의 잔고 · 신발 사본도 이 폰에서 지운다
-                        ServiceLocator.economySync.clearLocal()
-                        // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
-                        ServiceLocator.userPrefs.clearStoryData()
-                        // 쓰다 둔 크루 만들기 초안(사진 파일 포함) · 크루 채팅의 쓰다 만 공지도 지운다
-                        ServiceLocator.userPrefs.clearCrewData()
-                        runCatching { java.io.File(context.filesDir, "crew_drafts").deleteRecursively() }
-                        // 이 폰에 들고 있던 크루 채팅 대화 · 받은 사진도 지운다
-                        runCatching { ServiceLocator.crewChat.clearAll() }
-                        // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
-                        ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
-                        ServiceLocator.userPrefs.clearGoalAttempts()
-                        ServiceLocator.userPrefs.clearShoeNicknames()
-                        // 업적 최고값(계정마다)도 이 폰에서 지운다
-                        ServiceLocator.userPrefs.clearAchievementBest()
-                        ServiceLocator.userPrefs.setRunExperience(null)
-                        // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
-                        ServiceLocator.userPrefs.setLoginMethod("")
-                    }
+                    // 서버 계정이 사라졌다 — 이 폰의 로그인 · 사본도 지운다
+                    withContext(NonCancellable) { forgetAccountOnPhone(context) }
                     step = DeleteStep.Closed
                 }
                 AccountDeletion.NotDeleted -> step = DeleteStep.Failed
@@ -155,6 +141,9 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
         signedIn = signedIn, wallet = wallet, step = step, contactOpen = contactOpen,
         onBack = onBack, onConnectWallet = onConnectWallet,
         onAskDelete = { step = DeleteStep.Confirm }, onDelete = ::delete,
+        logoutOpen = logoutOpen, loggingOut = loggingOut,
+        onAskLogout = { logoutOpen = true }, onLogout = ::logout,
+        onCloseLogout = { if (!loggingOut) logoutOpen = false },
         onCloseDelete = {
             if (step != DeleteStep.Deleting) {
                 val wasUnknown = step == DeleteStep.Unknown
@@ -180,6 +169,11 @@ fun ConnectedAccountsContent(
     onCloseDelete: () -> Unit = {},
     onOpenContact: () -> Unit = {},
     onCloseContact: () -> Unit = {},
+    logoutOpen: Boolean = false,
+    loggingOut: Boolean = false,
+    onAskLogout: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onCloseLogout: () -> Unit = {},
 ) {
     BluePage(title = stringResource(R.string.set_connected), onBack = onBack, subtitle = stringResource(R.string.set_connected_intro)) {
         item {
@@ -233,6 +227,10 @@ fun ConnectedAccountsContent(
                 Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
                     Box(Modifier.fillMaxWidth().height(1.dp).background(runTone().divider))
                     BlueNavRow(
+                        stringResource(R.string.set_logout), onClick = onAskLogout, plain = true,
+                        modifier = Modifier.padding(top = 4.dp).testTag("connected-logout"),
+                    )
+                    BlueNavRow(
                         stringResource(R.string.set_delete_account), onClick = onAskDelete, danger = true, plain = true,
                         modifier = Modifier.padding(top = 4.dp).testTag("connected-delete"),
                     )
@@ -247,6 +245,25 @@ fun ConnectedAccountsContent(
         DeleteStep.Closed -> Unit
     }
     if (contactOpen) ContactSheet(onDismiss = onCloseContact)
+    if (logoutOpen) LogoutSheet(loggingOut, onLogout, onCloseLogout)
+}
+
+/** 로그아웃 확인(2026-10-28) — 이 휴대폰에서만 나가고, 계정 · 기록은 서버에 그대로 */
+@Composable
+private fun LogoutSheet(busy: Boolean, onLogout: () -> Unit, onDismiss: () -> Unit) {
+    val t = runTone()
+    BlueSheet(
+        title = stringResource(R.string.set_logout_title), onDismiss = onDismiss,
+        dismissible = !busy, showClose = !busy, modifier = Modifier.testTag("logout-sheet"),
+        actions = {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                RunButton(stringResource(R.string.set_cancel), onDismiss, Modifier.weight(1f), kind = RunButtonKind.Secondary)
+                RunButton(stringResource(R.string.set_logout), onLogout, Modifier.weight(1f).testTag("logout-confirm"), busy = busy)
+            }
+        },
+    ) {
+        Text(stringResource(R.string.set_logout_body), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.5f))
+    }
 }
 
 /**
@@ -311,6 +328,40 @@ private fun DeleteUnknownSheet(onContact: () -> Unit, onClose: () -> Unit) {
         Text(stringResource(R.string.set_delete_unknown_body), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.55f),
             textAlign = TextAlign.Center)
     }
+}
+
+/**
+ * 이 폰에서 계정을 잊는다 — 계정 삭제(서버가 지운 뒤) · 로그아웃(2026-10-28) 둘 다.
+ * 로그인 표시를 지우는 순간 첫 화면이 로그인으로 바뀌며 화면이 닫히고 부른 코루틴도 함께 취소된다 —
+ * NonCancellable 안에서 부르고, 앞 계정의 잔고 · 신발 · 키 · 몸무게가 남지 않게 로그인 표시는 맨 마지막에 지운다.
+ * 서버 기록은 건드리지 않는다(로그아웃은 같은 계정으로 다시 들어오면 그대로다).
+ */
+internal suspend fun forgetAccountOnPhone(context: Context) {
+    // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
+    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+        com.stepup.android.service.WalkSessionService.stop(context)
+    }
+    ServiceLocator.sessionHolder.signOut()
+    // 앞 계정의 잔고 · 신발 사본도 이 폰에서 지운다
+    ServiceLocator.economySync.clearLocal()
+    // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
+    ServiceLocator.userPrefs.clearStoryData()
+    // 쓰다 둔 크루 만들기 초안(사진 파일 포함) · 크루 채팅의 쓰다 만 공지도 지운다
+    ServiceLocator.userPrefs.clearCrewData()
+    runCatching { java.io.File(context.filesDir, "crew_drafts").deleteRecursively() }
+    // 이 폰에 들고 있던 크루 채팅 대화 · 받은 사진도 지운다
+    runCatching { ServiceLocator.crewChat.clearAll() }
+    // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
+    ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
+    ServiceLocator.userPrefs.clearGoalAttempts()
+    ServiceLocator.userPrefs.clearShoeNicknames()
+    // 업적 최고값(계정마다)도 이 폰에서 지운다
+    ServiceLocator.userPrefs.clearAchievementBest()
+    ServiceLocator.userPrefs.setRunExperience(null)
+    // 접속 코드 권한 사본도 지운다 — 다음 계정이 앞 계정의 권한을 들고 있지 않게
+    com.stepup.android.core.AccessGate.forget(context)
+    // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
+    ServiceLocator.userPrefs.setLoginMethod("")
 }
 
 private fun hasNetwork(context: Context): Boolean {

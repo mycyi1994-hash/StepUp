@@ -85,6 +85,9 @@
     <string name="set_wallet_unknown">確認できません</string>
     <string name="set_external_note">利用できる連携機能が準備できたらお知らせします。</string>
     <string name="set_delete_account">アカウントを削除</string>
+    <string name="set_logout">ログアウト</string>
+    <string name="set_logout_title">ログアウトしますか？</string>
+    <string name="set_logout_body">このスマホからだけログアウトします。ラン記録・シューズ・ポイントはアカウントに残り、同じGoogleアカウントで再ログインすると戻ります。</string>
     <string name="set_delete_title">アカウントを削除しますか？</string>
     <string name="set_delete_heading">サーバーに保管された次の情報が削除されます。</string>
     <string name="set_delete_item_runs">ランの記録とGPSルート</string>
