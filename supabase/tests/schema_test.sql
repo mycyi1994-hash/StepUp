@@ -9771,6 +9771,50 @@ select set_config('request.jwt.claims', '', false);
 select set_config('request.path', '', false);
 select public.admin_access_mode_set('OPEN');
 
+-- ════════════════════════════════════════════════════════════════════
+--  0080 기존 계정도 코드를 넣어야 들어온다 (2026-10-28)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 기존 계정도 코드(0080) ─────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email) values
+  ('a8000000-0000-0000-0000-000000000001', 'staff@test'),
+  ('a8000000-0000-0000-0000-000000000002', 'boss@test');
+insert into economy.access_grants (user_id, source) values
+  ('a8000000-0000-0000-0000-000000000001', 'LEGACY'), ('a8000000-0000-0000-0000-000000000002', 'LEGACY');
+insert into public.app_admins (user_id) values ('a8000000-0000-0000-0000-000000000002') on conflict do nothing;
+select public.admin_access_mode_set('CLOSED_BETA');
+create temp table staff_codes as select * from public.admin_access_codes_create(2);
+
+call pg_temp.as_app('a8000000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '배포 때 있던 계정(LEGACY)도 코드를 넣기 전에는 막힌다');
+call pg_temp.as_app('a8000000-0000-0000-0000-000000000002', '/rpc/economy_bootstrap');
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '운영자 계정도 앱에서는 코드를 넣어야 한다');
+call pg_temp.as_app('a8000000-0000-0000-0000-000000000001', '/rpc/access_redeem');
+do $$
+declare v jsonb;
+begin
+  v := public.access_status();
+  perform pg_temp.ok(not (v ->> 'granted')::boolean and not (v ->> 'can_issue')::boolean, format('LEGACY 는 권한이 아니다(%s)', v));
+  v := public.access_redeem((select code from staff_codes order by code limit 1));
+  perform pg_temp.ok((v ->> 'ok')::boolean and not (v ->> 'already')::boolean, '코드를 넣으면 들어온다');
+  perform pg_temp.ok((select source = 'CODE' and code is not null from economy.access_grants
+                       where user_id = 'a8000000-0000-0000-0000-000000000001'),
+    '같은 줄이 CODE 권한으로 바뀐다(기록은 지우지 않는다)');
+  perform pg_temp.ok((public.access_status() ->> 'can_issue')::boolean, '코드로 들어오면 코드 만들기');
+  perform public.access_gate();
+end $$;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+do $$ begin
+  perform pg_temp.ok((select value = '["CODE", "ADMIN"]'::jsonb from public.economy_settings where key = 'access_issue_sources'),
+    '코드 만들기는 코드 · 운영자가 준 권한만(LEGACY 빼기)');
+end $$;
+select public.admin_access_mode_set('OPEN');
+delete from public.app_admins where user_id = 'a8000000-0000-0000-0000-000000000002';
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

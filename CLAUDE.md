@@ -5,7 +5,7 @@
 [docs/access-codes-2026-10-28.md](docs/access-codes-2026-10-28.md) — 서버 0079. 사용자 "closed beta 는 access code 로만 · open beta 는 사전예약자 중 일부 ·
 코드 생성 · 차단 · 사용 여부 체크 · 코드로 들어온 사람이 하루 몇 개씩 발행".
 - 문 `access_mode`: OPEN(기본) · CLOSED_BETA · OPEN_BETA — `admin_access_mode_set`. 막는 곳은 서버(`pgrst.db_pre_request = public.access_gate` → 403 `access_required`),
-  앱은 막힌 사람에게 코드 입력 화면만(`AccessGate` · `ui/screens/access/AccessScreens.kt`, 루트 stage 4). 0079 배포 때 있던 계정은 LEGACY 권한.
+  앱은 막힌 사람에게 코드 입력 화면만(`AccessGate` · `ui/screens/access/AccessScreens.kt`, 루트 stage 4). 기존 · 운영자 계정도 코드를 넣어야 한다(0080 — LEGACY 줄은 남지만 문을 열지 않는다).
 - 운영자 코드(1인용 · 공용 · 정한 글자) · 사용자 코드(하루 `access_user_daily_codes` 개, 설정 › 베타 초대 코드) · 차단(코드 · 계정, 그 코드로 들어온 사람까지) ·
   확인(`admin_access_codes` · `admin_access_code_uses` · `admin_access_users`) · 공개 베타 고르기(`admin_open_beta_invite`). SQL 은 문서에.
 - 출시 때 Play Console › 앱 액세스에 심사용 코드를 적는다.
