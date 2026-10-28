@@ -9,6 +9,7 @@
     <string name="wl_spent">Total spent</string>
     <string name="wl_web3">WEB3 wallet</string>
     <string name="wl_web3_unlinked">Connect for premium draws</string>
+    <string name="wl_web3_unlinked_plain">Link your wallet address to this account</string>
     <string name="wl_web3_linked">Connected</string>
     <string name="wl_web3_checking">Checking connection</string>
     <string name="wl_web3_unavailable">Connection coming soon</string>
@@ -55,6 +56,7 @@
     <string name="wl_linked_title">WEB3 wallet</string>
     <string name="wl_linked_head">Your wallet is connected</string>
     <string name="wl_linked_body">Check premium draw chances in Shoes.</string>
+    <string name="wl_linked_plain_body">Your wallet address is linked to this STEPUP account. StepUp never holds your keys or moves your assets.</string>
     <string name="wl_linked_gift">The connection gift appears once it\'s confirmed.</string>
     <string name="wl_open_draw">Go to Shoe Draw</string>
     <string name="wl_benefit_title">Get premium draws for free</string>

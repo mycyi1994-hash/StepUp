@@ -9,6 +9,7 @@
     <string name="wl_spent">누적 사용</string>
     <string name="wl_web3">WEB3 지갑</string>
     <string name="wl_web3_unlinked">연결하면 상급 뽑기 혜택</string>
+    <string name="wl_web3_unlinked_plain">지갑 주소를 이 계정에 연결해요</string>
     <string name="wl_web3_linked">연결됨</string>
     <string name="wl_web3_checking">연결 상태 확인 중</string>
     <string name="wl_web3_unavailable">연결 기능 준비 중</string>
@@ -55,6 +56,7 @@
     <string name="wl_linked_title">WEB3 지갑</string>
     <string name="wl_linked_head">지갑이 연결되어 있어요</string>
     <string name="wl_linked_body">상급 뽑기 기회는 신발에서 확인해요.</string>
+    <string name="wl_linked_plain_body">이 STEPUP 계정에 지갑 주소가 연결돼 있어요. StepUp 은 개인키를 받거나 자산을 옮기지 않아요.</string>
     <string name="wl_linked_gift">연결 선물은 지급 확인 후 반영돼요.</string>
     <string name="wl_open_draw">신발 뽑기 보기</string>
     <string name="wl_benefit_title">상급 뽑기 무료로 받기</string>

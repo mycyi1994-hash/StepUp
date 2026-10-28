@@ -744,7 +744,6 @@
 StepUp と走り出そう。</string>
     <string name="login_google">Google で続行</string>
     <string name="login_google_progress">ログイン中…</string>
-    <string name="login_terms">続行すると利用規約とプライバシーポリシーに同意したものとみなされます。</string>
     <string name="login_failed">ログインに失敗しました。もう一度お試しください。</string>
     <string name="login_no_account">この端末にGoogleアカウントがありません。設定で追加してからお試しください。</string>
     <string name="login_offline">接続できません。通信環境をご確認ください。</string>

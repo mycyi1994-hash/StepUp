@@ -187,11 +187,12 @@ class WalletDesignTest {
             sheet: String? = null,
             entry: RewardEntity? = null,
             web3Enabled: Boolean = true,
+            walletLinkEnabled: Boolean = true,
         ): @Composable () -> Unit = {
             WalletContent(
                 totals = totals, history = history, filter = (history as? HistoryLoad.Ready)?.filter ?: LedgerFilter.ALL,
                 web3 = web3, status = status, zone = SEOUL, thisYear = 2026, initialSheet = sheet, initialEntry = entry,
-                web3Enabled = web3Enabled,
+                web3Enabled = web3Enabled, walletLinkEnabled = walletLinkEnabled,
             )
         }
 
@@ -201,10 +202,13 @@ class WalletDesignTest {
         compose.onNodeWithTag("wl-spent").assertTextContains("20.00")
         compose.onNodeWithTag("wl-web3").assertHasClickAction()
         show("s02-wallet-linked", "wl-row-7", wallet(web3 = Web3State.Linked))
-        // 스토어 판(BuildConfig.WEB3 = false) — WEB3 지갑 · 체인 줄 없이 SUP 잔액 · 내역만(docs/PLAY-STORE.md, 2026-10-26 확인)
+        // 스토어 판(BuildConfig.WEB3 = false) — 체인 줄 · 뽑기 혜택 없이 SUP 잔액 · 내역 + 지갑 주소 연결 줄만(2026-10-29)
         show("s02-store-wallet", "wl-row-7", wallet(web3Enabled = false))
-        compose.onAllNodesWithTag("wl-web3").assertCountEquals(0)
+        compose.onNodeWithTag("wl-web3-state").assertTextEquals(compose.activity.getString(R.string.wl_web3_unlinked_plain))
         compose.onAllNodesWithTag("wl-chain").assertCountEquals(0)
+        show("s02-store-wallet-linked", "wl-web3", wallet(web3Enabled = false, web3 = Web3State.Linked, sheet = "Linked"))
+        compose.onAllNodesWithTag("wl-open-draw").assertCountEquals(0)
+        compose.onAllNodesWithTag("wl-open-wallet-page").assertCountEquals(0)
         compose.onNodeWithTag("wl-balance").assertTextContains("83.07")
         show("s03-earned-filter", "wl-row-7", wallet(history = earned, web3 = Web3State.Linked))
         compose.onNodeWithTag("wl-filter-earned").assertIsSelected()

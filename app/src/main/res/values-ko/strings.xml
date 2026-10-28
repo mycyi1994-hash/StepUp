@@ -743,7 +743,6 @@
 StepUp과 함께 달려보세요.</string>
     <string name="login_google">Google로 계속하기</string>
     <string name="login_google_progress">로그인 중…</string>
-    <string name="login_terms">계속하면 이용약관과 개인정보처리방침에 동의하는 것으로 봅니다.</string>
     <string name="login_failed">로그인에 실패했습니다. 다시 시도해 주세요.</string>
     <string name="login_no_account">기기에 구글 계정이 없습니다. 설정에서 추가한 뒤 다시 시도해 주세요.</string>
     <string name="login_offline">연결할 수 없어요. 네트워크를 확인해 주세요.</string>

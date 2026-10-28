@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,22 +58,17 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.Analytics
-import com.stepup.android.core.ExternalIntents
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.sync.SessionUploadWorker
 import com.stepup.android.ui.components.RunBackdrop
 import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
-import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.BrandLogoRole
 import com.stepup.android.ui.theme.StepUpSans
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** 약관 · 개인정보처리방침 — 기존 주소 그대로. 문서 내용은 앱이 새로 쓰거나 요약하지 않는다 */
-private const val TERMS_URL = "https://stepupcrew.com/terms.html"
-private const val PRIVACY_URL = "https://stepupcrew.com/privacy.html"
 
 /**
  * 첫 진입 로그인.
@@ -158,9 +151,10 @@ fun LoginScreen(onDone: () -> Unit) {
 }
 
 /**
- * 로그인 화면(파란 톤 v4 ONB01 · ONB05~10) — 로고 → 큰 제목 → 한 줄 → 아치 강변 → 버튼 위 안내 칸 → Google 버튼 → 동의 문구 · 법적 링크.
+ * 로그인 화면(파란 톤 v4 ONB01 · ONB05~09) — 로고 → 큰 제목 → 한 줄 → 아치 강변 → 버튼 위 안내 칸 → Google 버튼.
+ * 아래 동의 문구 · 약관 링크는 뺐다(2026-10-29 사용자 — 이용약관 · 개인정보처리방침은 내 정보 › 설정 › 약관 및 정책).
  * 안내 칸은 가장 긴 문구(제목 + 두 줄) 높이를 늘 잡아 두어, 상태가 바뀌어도 Google 버튼 자리가 움직이지 않는다.
- * 한 스크롤 면이라 큰 글씨 · 작은 화면에서도 버튼과 약관 링크까지 닿는다(사진부터 줄인다).
+ * 한 스크롤 면이라 큰 글씨 · 작은 화면에서도 버튼까지 닿는다(사진부터 줄인다).
  * 상태만 넣어 그릴 수 있다(시안 검사). 실제 상태는 [LoginScreen] 의 로그인 결과에서만 온다.
  */
 @Composable
@@ -169,28 +163,8 @@ internal fun LoginContent(
     phase: LoginPhase,
     notice: LoginNotice?,
     onSignIn: () -> Unit,
-    /** 시안 10 을 그대로 그려 볼 때만 — 실제로는 약관 링크를 열지 못했을 때 잠깐 뜬다 */
-    legalFailedAtStart: Boolean = false,
 ) {
-    val context = LocalContext.current
     val t = runTone()
-    var legalFailed by remember { mutableStateOf(legalFailedAtStart) }
-    var legalFailures by remember { mutableIntStateOf(0) }
-    LaunchedEffect(legalFailures) {
-        if (legalFailures > 0) {
-            delay(4_000)
-            legalFailed = false
-        }
-    }
-    // 여는 것 자체가 실패했을 때만 알린다 — 브라우저 안의 결과는 짐작하지 않는다. 돌아오면 로그인 화면은 그대로다
-    fun openLegal(url: String) {
-        if (ExternalIntents.tryOpenUrl(context, url)) {
-            legalFailed = false
-        } else {
-            legalFailed = true
-            legalFailures++
-        }
-    }
     val largeText = LocalDensity.current.fontScale > 1.2f
     val archHeight = loginArchHeight(LocalConfiguration.current.screenHeightDp, largeText)
     Box(Modifier.fillMaxSize()) {
@@ -215,7 +189,7 @@ internal fun LoginContent(
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.onb_login_subtitle), style = runTextStyle(17.sp, t.label, FontWeight.Medium, 1.45f))
             Spacer(Modifier.height(30.dp))
-            // 아치 아래 한 칸 — 로그인 중이면 확인 중, 링크를 열지 못했으면 그 안내(10, 4초), 결과 안내가 있으면 그 안내, 아니면 시작 안내.
+            // 아치 아래 한 칸 — 로그인 중이면 확인 중, 결과 안내가 있으면 그 안내, 아니면 시작 안내.
             // 안내 칸은 바닥색으로 녹아드는 아치 아랫부분에 걸쳐 놓아, 어떤 상태든 Google 버튼 자리가 같다
             Box(Modifier.fillMaxWidth()) {
                 LoginArch(
@@ -231,10 +205,6 @@ internal fun LoginContent(
                             stringResource(R.string.onb_login_verifying),
                             Modifier.testTag("login-verifying").semantics { liveRegion = LiveRegionMode.Polite },
                         )
-                        legalFailed -> LoginSlotNotice(
-                            stringResource(R.string.onb_legal_failed_title), stringResource(R.string.onb_legal_failed_body),
-                            Modifier.testTag("login-legal-failed"),
-                        )
                         notice != null -> {
                             val (title, body) = noticeText(notice)
                             LoginSlotNotice(title, body, Modifier.testTag("login-notice-${notice.name.lowercase()}"))
@@ -244,22 +214,8 @@ internal fun LoginContent(
                 }
             }
             Spacer(Modifier.height(14.dp))
-            GoogleSignInButton(phase, onClick = {
-                legalFailed = false
-                onSignIn()
-            })
+            GoogleSignInButton(phase, onClick = onSignIn)
             Spacer(Modifier.height(18.dp))
-            Text(
-                stringResource(R.string.login_terms), style = runTextStyle(13.sp, t.label, FontWeight.Normal, 1.55f),
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            )
-            // 큰 글씨 · 긴 번역이면 두 줄로 — 두 링크가 늘 화면 안에 있다
-            FlowRow(
-                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterHorizontally),
-            ) {
-                LegalLink(stringResource(R.string.login_terms_link), Modifier.testTag("login-terms")) { openLegal(TERMS_URL) }
-                LegalLink(stringResource(R.string.login_privacy_link), Modifier.testTag("login-privacy")) { openLegal(PRIVACY_URL) }
-            }
         }
     }
 }
@@ -336,18 +292,6 @@ private fun LoginArch(@androidx.annotation.DrawableRes image: Int, modifier: Mod
                 Brush.verticalGradient(0f to Color.Transparent, 0.72f to t.screen.copy(alpha = 0.10f), 1f to t.screenBottom),
             ),
         )
-    }
-}
-
-/** 약관 링크 — 글자는 작아도 누르는 곳은 48dp 이상 */
-@Composable
-private fun LegalLink(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
-        modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).feedbackClickable(onClick = onClick)
-            .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = runTextStyle(15.sp, runTone().cobaltText, FontWeight.SemiBold))
     }
 }
 

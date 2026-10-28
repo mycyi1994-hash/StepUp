@@ -9,6 +9,7 @@
     <string name="wl_spent">累計使用</string>
     <string name="wl_web3">WEB3ウォレット</string>
     <string name="wl_web3_unlinked">接続するとプレミアム抽選の特典</string>
+    <string name="wl_web3_unlinked_plain">ウォレットアドレスをこのアカウントに連携します</string>
     <string name="wl_web3_linked">接続済み</string>
     <string name="wl_web3_checking">接続状態を確認中</string>
     <string name="wl_web3_unavailable">接続機能は準備中</string>
@@ -55,6 +56,7 @@
     <string name="wl_linked_title">WEB3ウォレット</string>
     <string name="wl_linked_head">ウォレットが接続されています</string>
     <string name="wl_linked_body">プレミアム抽選の回数はシューズで確認します。</string>
+    <string name="wl_linked_plain_body">このSTEPUPアカウントにウォレットアドレスが連携されています。StepUpが秘密鍵を預かったり資産を移動したりすることはありません。</string>
     <string name="wl_linked_gift">接続ギフトは付与が確認されてから反映されます。</string>
     <string name="wl_open_draw">シューズ抽選を見る</string>
     <string name="wl_benefit_title">プレミアム抽選を無料で受け取る</string>

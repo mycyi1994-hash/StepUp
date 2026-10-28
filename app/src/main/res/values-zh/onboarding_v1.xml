@@ -18,8 +18,6 @@
     <string name="onb_login_no_account_body">请在设备上添加账号后重试。</string>
     <string name="onb_login_again_title">请重新登录</string>
     <string name="onb_login_again_body">使用同一账号登录即可继续你的记录。</string>
-    <string name="onb_legal_failed_title">无法打开页面。</string>
-    <string name="onb_legal_failed_body">请检查浏览器后再点一次。</string>
 
     <!-- 02 첫 사용 안내 · 20 다시 보기 -->
     <string name="onb_guide_title">了解这些就能开始</string>

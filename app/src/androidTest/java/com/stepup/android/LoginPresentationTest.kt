@@ -56,10 +56,8 @@ class LoginPresentationTest {
             compose.onNodeWithTag("login-google").performScrollTo().assertIsEnabled().performClick()
             compose.onNodeWithTag("login-notice-offline").assertDoesNotExist()
             compose.runOnIdle { assertEquals(before + 2, clicks); phase = LoginPhase.Idle }
-            for (tag in listOf("login-terms", "login-privacy")) {
-                compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed().assertHasClickAction()
-            }
-            capture("$scale-legal")
+            // 약관 문구 · 링크는 로그인 화면에 없다(2026-10-29 — 설정 › 약관 및 정책)
+            compose.onNodeWithTag("login-privacy").assertDoesNotExist()
         }
     }
 
