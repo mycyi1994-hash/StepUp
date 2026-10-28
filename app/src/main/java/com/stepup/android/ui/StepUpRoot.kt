@@ -409,10 +409,11 @@ fun StepUpRoot() {
                 signedIn = loginMethod == "google",
                 onGranted = { accessScope.launch { com.stepup.android.core.AccessGate.refresh(accessContext) } },
                 onSignOut = {
+                    // 다른 계정으로 — 설정의 로그아웃과 같은 정리(앞 계정의 사본 · 접속 권한 · 로그인을 이 폰에서 지운다)
                     accessScope.launch {
-                        runCatching { ServiceLocator.sessionHolder.signOut() }
-                        com.stepup.android.core.AccessGate.forget(accessContext)
-                        ServiceLocator.userPrefs.setLoginMethod("")
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                            com.stepup.android.ui.screens.settings.forgetAccountOnPhone(accessContext)
+                        }
                     }
                 },
             )

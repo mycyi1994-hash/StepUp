@@ -35,6 +35,14 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             )
         }.mapBody { serverJson.decodeFromString<List<LedgerEntryRow>>(it) }
 
+    /** 이 계정이 지금까지 달린 거리(km) — 서버 profiles.lifetime_km, 러닝을 기록할 때마다 서버가 더한다. 러너 레벨은 이 값으로 센다 */
+    suspend fun lifetimeKm(userId: String): ServerResult<Double> =
+        server.authed { token ->
+            server.http.get("${server.restUrl}/profiles?select=lifetime_km&id=eq.$userId", server.headers(token))
+        }.mapBody { body ->
+            serverJson.decodeFromString<List<LifetimeRow>>(body).firstOrNull()?.lifetimeKm ?: 0.0
+        }
+
     suspend fun drawGrants(): ServerResult<List<DrawGrantRow>> =
         server.authed { token ->
             server.http.get("${server.restUrl}/draw_grants?select=kind,granted,used", server.headers(token))
@@ -348,3 +356,6 @@ data class BoostRow(
     @SerialName("starts_at") val startsAt: String,
     @SerialName("ends_at") val endsAt: String,
 )
+
+@kotlinx.serialization.Serializable
+data class LifetimeRow(@kotlinx.serialization.SerialName("lifetime_km") val lifetimeKm: Double = 0.0)

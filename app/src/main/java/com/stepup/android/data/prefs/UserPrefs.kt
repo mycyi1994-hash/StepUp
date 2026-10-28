@@ -127,6 +127,7 @@ class UserPrefs(
         val AUTH_SESSION = stringPreferencesKey("auth_session")
         val MARKET_LEDGER_CURSOR = longPreferencesKey("market_ledger_cursor")
         val SERVER_ENERGY_MAX = doublePreferencesKey("server_energy_max")
+        val ACCOUNT_LIFETIME_KM = doublePreferencesKey("account_lifetime_km")
         val FREE_DRAWS_LEFT = intPreferencesKey("free_draws_left")
         val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
         val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
@@ -1037,11 +1038,19 @@ class UserPrefs(
     suspend fun clearServerEconomy() {
         store.edit {
             it.remove(Keys.SERVER_ENERGY_MAX)
+            it.remove(Keys.ACCOUNT_LIFETIME_KM)
             it.remove(Keys.FREE_DRAWS_LEFT)
             it.remove(Keys.BONUS_DRAWS_LEFT)
             it.remove(Keys.ENERGY)
             it.remove(Keys.ENERGY_DAY)
         }
+    }
+
+    /** 이 계정이 지금까지 달린 거리(km, 서버 profiles.lifetime_km) — 러너 레벨. 받기 전 · 로그아웃 뒤에는 null */
+    val accountLifetimeKm: Flow<Double?> = store.data.map { it[Keys.ACCOUNT_LIFETIME_KM] }
+
+    suspend fun setAccountLifetimeKm(km: Double) {
+        store.edit { it[Keys.ACCOUNT_LIFETIME_KM] = km.coerceAtLeast(0.0) }
     }
 
     /** 남은 무료 뽑기 (서버 draw_grants FREE) */

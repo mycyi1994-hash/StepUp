@@ -141,6 +141,8 @@ class EconomySync(
         // 저장된 세션만 본다 — 출입증을 다시 받으면(네트워크) 느린 연결에서 다 받아 온 사본을 버렸다(2026-10-17 점검)
         val stillSame = sessions.currentUserId() == userId
         if (!stillSame) return ServerResult.Retry("계정이 바뀌어 다시 맞춥니다")
+        // 러너 레벨 — 계정의 누적 거리(서버). 못 받으면 지난 값을 두고 동기화는 계속한다
+        (api.lifetimeKm(userId) as? ServerResult.Ok)?.let { prefs.setAccountLifetimeKm(it.value) }
 
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }
         db.withTransaction {
