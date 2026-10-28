@@ -21,7 +21,7 @@ import { ensureCatalog } from './catalog.js'
  *
  * ## 한 번에 조금씩
  *
- * CHAIN_JOBS_PER_RUN(기본 3)건씩. 거래마다 가스를 미리 재 보고(estimateGas), 체인이 받지 않을 일은
+ * CHAIN_JOBS_PER_RUN(코드 기본 3 · 운영 20 — 유료 요금제, 2026-10-28)건씩. 거래마다 가스를 미리 재 보고(estimateGas), 체인이 받지 않을 일은
  * 보내지 않는다 — 바뀐 것 없는 갱신 · 금고에 없는 신발은 거두고, 하루 상한 · 멈춤은 뒤로 미룬다.
  * 릴레이어 잔액이 JOBS_MIN_RELAYER_WEI 아래면 보내지 않는다 — 사용자의 꺼내기 가스비를 남겨 둔다.
  */

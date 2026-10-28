@@ -5,7 +5,7 @@
 [docs/access-codes-2026-10-28.md](docs/access-codes-2026-10-28.md) — 서버 0079. 사용자 "closed beta 는 access code 로만 · open beta 는 사전예약자 중 일부 ·
 코드 생성 · 차단 · 사용 여부 체크 · 코드로 들어온 사람이 하루 몇 개씩 발행".
 - 문 `access_mode`: OPEN(기본) · CLOSED_BETA · OPEN_BETA — `admin_access_mode_set`. 막는 곳은 서버(`pgrst.db_pre_request = public.access_gate` → 403 `access_required`),
-  앱은 막힌 사람에게 코드 입력 화면만(`AccessGate` · `ui/screens/access/AccessScreens.kt`, 루트 stage 4). 0079 배포 때 있던 계정은 LEGACY 권한.
+  앱은 막힌 사람에게 코드 입력 화면만(`AccessGate` · `ui/screens/access/AccessScreens.kt`, 루트 stage 4). 기존 · 운영자 계정도 코드를 넣어야 한다(0080 — LEGACY 줄은 남지만 문을 열지 않는다).
 - 운영자 코드(1인용 · 공용 · 정한 글자) · 사용자 코드(하루 `access_user_daily_codes` 개, 설정 › 베타 초대 코드) · 차단(코드 · 계정, 그 코드로 들어온 사람까지) ·
   확인(`admin_access_codes` · `admin_access_code_uses` · `admin_access_users`) · 공개 베타 고르기(`admin_open_beta_invite`). SQL 은 문서에.
 - 출시 때 Play Console › 앱 액세스에 심사용 코드를 적는다.
@@ -20,7 +20,7 @@
   재료 봉인은 `economy.activity_seal`(다시 가져가도 같은 재료), 재료 키 = 워커 `ACTIVITY_SCHEMAS` 칸 이름(`attester/test/activity.test.js` 가 맞대어 본다).
 - 개인정보: 사람 가명 = 사람마다 비밀값(`economy.person_pseudonym` · `chain_person_keys` — 계정 삭제 때 cascade 로 지워 다시 못 잇는다), 받는 사람 기본 비움
   (체인 기록 화면 "내 지갑으로 기록 받기" — `chain_recipient_set`), 보내는 시각 10 ~ 60분 무작위 늦춤. 개인정보처리방침 · Play Data safety("공유: 예")에 밝혔다.
-- 새 종류를 더하면 셋(서버 `activity_kinds` · `activity_payload`, 워커 스키마, 앱 `ChainRecord.Kind` · `ca_kind_*`)을 함께 고친다. 보내는 속도 상한은 워커 2분마다 3건(하루 약 2,000).
+- 새 종류를 더하면 셋(서버 `activity_kinds` · `activity_payload`, 워커 스키마, 앱 `ChainRecord.Kind` · `ca_kind_*`)을 함께 고친다. 보내는 속도 상한은 워커 2분마다 20건(하루 약 14,000 — 2026-10-28 유료 요금제로 3 → 20).
 - 출시 점검(별도 검토): 테스트 APK 스스로 업데이트 코드는 `src/selfUpdate`(debug · qa)로 옮기고 스토어 판은 `src/noSelfUpdate` 빈 자리, `TestUpdatesTest` 는 `src/testDebug`.
   지갑 앱 찾기(`<queries>`)는 `src/debug` 매니페스트로, Firebase 광고 서비스 권한(`ACCESS_ADSERVICES_*`)은 뺐다. 신발 기록의 체인 등록 줄 · "민팅" 제목은 `WEB3` 판에만.
   러닝 서비스가 전경으로 못 오르면 죽지 않고 알린다(`run_start_failed`). 남은 일은 [docs/PLAY-STORE.md](docs/PLAY-STORE.md).
