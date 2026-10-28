@@ -83,7 +83,7 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
         scope.launch {
             phase = when (val reply = ServiceLocator.economyApi.walletLinkChallenge()) {
                 is ServerResult.Ok -> {
-                    val page = WalletLinkRequest.parse(reply.value)?.pageUrl(BuildConfig.WALLET_URL)
+                    val page = WalletLinkRequest.parse(reply.value)?.pageUrl(BuildConfig.WALLET_LINK_URL)
                     if (page == null) WalletPickPhase.Failed else openWallet(context, app, page)
                 }
                 is ServerResult.SignInRequired -> WalletPickPhase.SignIn

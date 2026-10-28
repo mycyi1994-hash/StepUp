@@ -99,8 +99,9 @@ class OnboardingDesignTest {
                 }
             }
         }
-        val login: (LoginPhase, LoginNotice?, Boolean) -> @Composable () -> Unit = { phase, notice, legal ->
-            { LoginContent(phase = phase, notice = notice, onSignIn = {}, legalFailedAtStart = legal) }
+        // 로그인 아래 약관 문구 · 링크는 뺐다(2026-10-29) — 세 번째 값은 예전 시안 10(링크 열기 실패) 자리라 쓰지 않는다
+        val login: (LoginPhase, LoginNotice?, Boolean) -> @Composable () -> Unit = { phase, notice, _ ->
+            { LoginContent(phase = phase, notice = notice, onSignIn = {}) }
         }
         val menuWith: (RunPermissionSheet?) -> @Composable () -> Unit = { sheet ->
             {
@@ -118,8 +119,7 @@ class OnboardingDesignTest {
         // 01 · 05~10 — 로그인. Google 버튼 위 한 줄만 결과에 따라 바뀐다
         show("s01-login", "login-caption", login(LoginPhase.Idle, null, false))
         compose.onNodeWithTag("login-google").assertIsEnabled()
-        compose.onNodeWithTag("login-terms").assertHasClickAction()
-        compose.onNodeWithTag("login-privacy").assertHasClickAction()
+        compose.onNodeWithTag("login-terms").assertDoesNotExist()
         show("s03-launch-loading", "launch-loading") { LaunchScene(LaunchStage.Loading) }
         show("s04-launch-error", "launch-retry") { LaunchScene(LaunchStage.Error) }
         compose.onNodeWithTag("launch-retry").assertHasClickAction()
@@ -130,7 +130,6 @@ class OnboardingDesignTest {
         show("s07-login-failed", "login-notice-failed", login(LoginPhase.Idle, LoginNotice.Failed, false))
         show("s08-no-account", "login-notice-noaccount", login(LoginPhase.Idle, LoginNotice.NoAccount, false))
         show("s09-sign-in-again", "login-notice-signinagain", login(LoginPhase.Idle, LoginNotice.SignInAgain, false))
-        show("s10-legal-link-error", "login-legal-failed", login(LoginPhase.Idle, null, true))
 
         // 11 · 02 — 첫 러닝 홈과 그 위의 첫 안내 한 장. 안내 줄은 설명이라 누를 곳이 없다
         show("s11-first-home", "home-first-run", firstHome)
@@ -186,7 +185,6 @@ class OnboardingDesignTest {
         compose.runOnIdle { light = false; large = true }
         show("s35-large-login-error", "login-notice-failed", login(LoginPhase.Idle, LoginNotice.Failed, false))
         compose.onNodeWithTag("login-google").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("login-privacy").performScrollTo().assertIsDisplayed()
         show("s36-large-activity-settings", "perm-sheet-activity-settings", menuWith(RunPermissionSheet.ActivitySettings))
         show("s37-large-first-guide", "first-guide-sheet") {
             firstHome()

@@ -196,8 +196,8 @@ fun ConnectedAccountsContent(
         item {
             BlueGroupLabel(stringResource(R.string.set_group_external))
             BlueGroup {
-                // 스토어 판(WEB3 = false)에는 지갑 연결이 없다
-                if (com.stepup.android.BuildConfig.WEB3) when (wallet) {
+                // 지갑 주소 연결은 모든 판에(WALLET_LINK, 2026-10-29) — 스토어 판도 서명으로 계정에 잇기만 한다
+                if (com.stepup.android.BuildConfig.WALLET_LINK) when (wallet) {
                     // SET33 · SET34 — 연결 전이거나 서버에서 읽지 못했으면 웹 지갑 페이지에서 확인 · 연결한다(탭만으로 연결됨을 보이지 않는다)
                     WalletLink.NotLinked, WalletLink.Unknown -> BlueNavRow(
                         stringResource(R.string.set_web3_wallet), onClick = onConnectWallet,

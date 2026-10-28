@@ -112,8 +112,8 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
         .map { if (it is HistoryLoad.Ready && !it.pageFailed && !it.stale) it.also { ready -> lastReady = ready } else it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryLoad.Loading)
 
-    /** 연결 기능이 이 빌드에 있는가 — 웹 지갑 페이지 주소가 있을 때만 */
-    val walletPageAvailable: Boolean = BuildConfig.WALLET_URL.isNotBlank()
+    /** 지갑 연결이 이 빌드에 있는가 — 연결 페이지 주소가 있을 때만(스토어 판도 있다 — 출금 · 뽑기 페이지[WALLET_URL]와 따로) */
+    val walletPageAvailable: Boolean = BuildConfig.WALLET_LINK && BuildConfig.WALLET_LINK_URL.isNotBlank()
 
     private val _web3 = MutableStateFlow(if (walletPageAvailable) Web3State.Checking else Web3State.Unavailable)
     val web3: StateFlow<Web3State> = _web3.asStateFlow()

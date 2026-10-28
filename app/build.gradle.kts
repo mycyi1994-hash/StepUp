@@ -84,6 +84,10 @@ android {
         buildConfigField("String", "WALLET_URL", "\"$walletUrl\"")
         // 블록체인 기능(지갑 연결 · 출금 · 상급 뽑기 · 체인 안내). 스토어 판(release)은 끈다 — 아래 release 블록.
         buildConfigField("boolean", "WEB3", "true")
+        // 지갑 주소 연결만(2026-10-29 사용자 — 셀프 커스터디 지갑을 서명으로 계정에 잇는 것) — 모든 판에서 켠다.
+        // 연결 페이지(wallet.html?l=…)는 서명 한 번 · "연결했어요"만 보인다(출금 · 뽑기 없음). 스토어 판도 이 주소는 둔다
+        buildConfigField("boolean", "WALLET_LINK", "true")
+        buildConfigField("String", "WALLET_LINK_URL", "\"$walletUrl\"")
 
         // ── 서버·로그인 설정 ────────────────────────────────────────
         //
@@ -175,8 +179,9 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             // 스토어 판에는 블록체인 기능을 넣지 않는다(2026-10-20). Google Play 는 2026-01-28 부터 한국에서 암호화폐 거래소 ·
-            // 지갑 앱에 금융정보분석원 가상자산사업자 신고 수리를 요구한다 — 지갑 연결 · 출금 · 상급 뽑기(지갑 연결 혜택)를 숨기고
-            // 웹 지갑 페이지 주소도 비운다. 테스트 APK(qa) · debug 는 그대로 켠다(docs/PLAY-STORE.md)
+            // 지갑 앱에 금융정보분석원 가상자산사업자 신고 수리를 요구한다 — 출금 · 상급 뽑기(지갑 연결 혜택) · 체인 안내를 숨기고
+            // 웹 지갑 페이지(출금 · 뽑기) 주소도 비운다. 지갑 주소 연결(서명)만은 둔다(WALLET_LINK, 2026-10-29 — 지갑 서비스가 아니다).
+            // 테스트 APK(qa) · debug 는 그대로 켠다(docs/PLAY-STORE.md)
             buildConfigField("boolean", "WEB3", "false")
             buildConfigField("String", "WALLET_URL", "\"\"")
         }

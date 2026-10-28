@@ -745,7 +745,6 @@
 Start running with StepUp.</string>
     <string name="login_google">Continue with Google</string>
     <string name="login_google_progress">Signing in…</string>
-    <string name="login_terms">By continuing you agree to the Terms and Privacy Policy.</string>
     <string name="login_failed">Sign-in failed. Please try again.</string>
     <string name="login_no_account">No Google account on this device. Add one in Settings and try again.</string>
     <string name="login_offline">Can\'t connect. Check your connection.</string>

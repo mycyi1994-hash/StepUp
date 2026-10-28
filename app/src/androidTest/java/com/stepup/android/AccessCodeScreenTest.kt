@@ -24,7 +24,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 접속 코드 입력(서버 0079) — 틀린 코드는 까닭을 보이고, 맞으면 앱으로 들어간다 */
+/** 접속 코드 입력(서버 0079, 로그인 위 모달 2026-10-29) — 틀린 코드는 까닭을 보이고, 맞으면 앱으로 들어간다 */
 @RunWith(AndroidJUnit4::class)
 class AccessCodeScreenTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
@@ -49,13 +49,43 @@ class AccessCodeScreenTest {
         val activity = compose.activity
         compose.onNodeWithText(activity.getString(R.string.access_title_closed_beta)).assertIsDisplayed()
         compose.onNodeWithTag("access-enter").assertIsNotEnabled()
-        capture("access-gate-empty.png")
+        capture("access-modal-empty.png")
 
         compose.onNode(hasSetTextAction()).performTextInput("OLD-CODE")
         compose.onNodeWithTag("access-enter").assertIsEnabled().performClick()
         compose.onNodeWithText(activity.getString(R.string.access_error_expired)).assertIsDisplayed()
-        capture("access-gate-error.png")
+        capture("access-modal-error.png")
         compose.runOnIdle { assertEquals(0, granted) }
+    }
+
+    /** 핸드오프 2026-10-29 — X 는 모달만 닫고(로그인 화면이 남는다) 앱에 들이지 않는다. 구글 버튼이 다시 연다 */
+    @Test fun closingOnlyHidesTheModalAndLoginButtonReopensIt() {
+        var granted = 0
+        var signOut = 0
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                AccessCodeScreen(
+                    status = AccessStatusRow(mode = "CLOSED_BETA", granted = false),
+                    signedIn = true,
+                    onGranted = { granted++ },
+                    onSignOut = { signOut++ },
+                    redeem = { ServerResult.Ok(AccessRedeemRow(error = "not_found")) },
+                )
+            } }
+        }
+        compose.onNodeWithTag("access-modal").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("BETA-2026")
+        capture("access-modal-entered.png")
+        compose.onNodeWithTag("access-close").performClick()
+        compose.onNodeWithTag("access-modal").assertDoesNotExist()
+        compose.onNodeWithTag("login-google").assertIsDisplayed()
+        capture("access-modal-closed.png")
+        compose.runOnIdle {
+            assertEquals(0, granted)
+            assertEquals(0, signOut)
+        }
+        compose.onNodeWithTag("login-google").performClick()
+        compose.onNodeWithTag("access-modal").assertIsDisplayed()
     }
 
     @Test fun signedOutVisitorIsAskedToSignInFirst() {

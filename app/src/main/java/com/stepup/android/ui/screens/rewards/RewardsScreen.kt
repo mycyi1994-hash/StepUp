@@ -143,9 +143,12 @@ fun WalletContent(
     thisYear: Int = Year.now(zone).value,
     initialSheet: String? = null,
     initialEntry: RewardEntity? = null,
-    /** 블록체인 줄(WEB3 지갑 · 체인 안내)을 보이나 — 스토어 판(WEB3 = false)은 SUP 잔액 · 내역만 */
+    /** 블록체인 줄(WEB3 지갑 · 체인 안내)을 보이나 — 스토어 판(WEB3 = false)은 SUP 잔액 · 내역 + 지갑 주소 연결만 */
     web3Enabled: Boolean = com.stepup.android.BuildConfig.WEB3,
+    /** 지갑 주소 연결 줄(2026-10-29) — 스토어 판은 이것만: 뽑기 혜택 · 지갑 페이지(출금) 없이 연결 · 연결됨만 */
+    walletLinkEnabled: Boolean = com.stepup.android.BuildConfig.WALLET_LINK,
 ) {
+    val linkOnly = !web3Enabled && walletLinkEnabled
     val p = settingsPalette()
     var sheet by rememberSaveable { mutableStateOf(initialSheet?.let { WalletSheet.valueOf(it) } ?: WalletSheet.None) }
     var opened by remember { mutableStateOf(initialEntry) }
@@ -174,17 +177,19 @@ fun WalletContent(
             contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 4.dp, bottom = 28.dp),
         ) {
             item(key = "balance") { BalanceCard(totals) }
-            if (web3Enabled) item(key = "web3") {
+            if (web3Enabled || linkOnly) item(key = "web3") {
                 Web3Row(
                     web3,
                     onClick = {
                         when (web3) {
-                            Web3State.NotLinked -> sheet = WalletSheet.Benefit
+                            // 연결만 하는 판은 혜택(뽑기) 안내 없이 바로 지갑 고르기로
+                            Web3State.NotLinked -> if (linkOnly) onConnectWallet() else sheet = WalletSheet.Benefit
                             Web3State.Linked -> sheet = WalletSheet.Linked
                             else -> Unit
                         }
                     },
                     onRetry = onRetryWeb3,
+                    linkOnly = linkOnly,
                 )
             }
             if (web3Enabled) item(key = "chain") { ChainLinkRow(onOpenChain) }
@@ -231,7 +236,7 @@ fun WalletContent(
     opened?.let { entry -> EntrySheet(entry, zone, onClose = { opened = null }) }
     when (sheet) {
         WalletSheet.Info -> InfoSheet(onClose = { sheet = WalletSheet.None })
-        WalletSheet.Linked -> LinkedSheet(
+        WalletSheet.Linked -> if (linkOnly) LinkedPlainSheet(onClose = { sheet = WalletSheet.None }) else LinkedSheet(
             onOpenDraw = {
                 sheet = WalletSheet.None
                 onOpenDraw()
@@ -304,7 +309,7 @@ private fun TotalColumn(label: String, value: String?, tag: String, modifier: Mo
 
 /** WEB3 지갑 줄 — 실제로 되는 것만 누를 수 있다 */
 @Composable
-private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit) {
+private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit, linkOnly: Boolean = false) {
     val p = settingsPalette()
     val clickable = web3 == Web3State.NotLinked || web3 == Web3State.Linked
     Column(Modifier.fillMaxWidth().padding(top = 14.dp)) {
@@ -330,7 +335,7 @@ private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit) {
                                 Web3State.Checking -> R.string.wl_web3_checking
                                 Web3State.Unavailable -> R.string.wl_web3_unavailable
                                 Web3State.SignedOut -> R.string.wl_web3_signed_out
-                                Web3State.NotLinked -> R.string.wl_web3_unlinked
+                                Web3State.NotLinked -> if (linkOnly) R.string.wl_web3_unlinked_plain else R.string.wl_web3_unlinked
                                 Web3State.Linked -> R.string.wl_web3_linked
                                 Web3State.Unknown -> R.string.wl_web3_unknown
                             },
@@ -613,6 +618,25 @@ private fun LinkedSheet(onOpenDraw: () -> Unit, onOpenWalletPage: () -> Unit, on
         ) {
             Text(stringResource(R.string.wallet_web_open), color = p.accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
+    }
+}
+
+/** 연결됨 — 지갑 주소 연결만 하는 판(스토어). 뽑기 · 지갑 페이지(출금) 길 없이 연결됐다는 것만 */
+@Composable
+private fun LinkedPlainSheet(onClose: () -> Unit) {
+    val p = settingsPalette()
+    SettingsSheet(
+        title = stringResource(R.string.wl_linked_title), onDismiss = onClose, modifier = Modifier.testTag("wl-linked-sheet"),
+        actions = { SettingsPrimaryButton(stringResource(R.string.common_close), onClose, Modifier.fillMaxWidth()) },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(42.dp).clip(CircleShape).background(p.surface), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+            Text(stringResource(R.string.wl_linked_head), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        }
+        Text(stringResource(R.string.wl_linked_plain_body), color = p.secondary, fontSize = 15.sp)
     }
 }
 

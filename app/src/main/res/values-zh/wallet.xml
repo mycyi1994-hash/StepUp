@@ -9,6 +9,7 @@
     <string name="wl_spent">累计使用</string>
     <string name="wl_web3">WEB3 钱包</string>
     <string name="wl_web3_unlinked">连接后可获得高级抽取福利</string>
+    <string name="wl_web3_unlinked_plain">将钱包地址关联到此账号</string>
     <string name="wl_web3_linked">已连接</string>
     <string name="wl_web3_checking">正在确认连接状态</string>
     <string name="wl_web3_unavailable">连接功能准备中</string>
@@ -55,6 +56,7 @@
     <string name="wl_linked_title">WEB3 钱包</string>
     <string name="wl_linked_head">钱包已连接</string>
     <string name="wl_linked_body">高级抽取次数请在鞋子中查看。</string>
+    <string name="wl_linked_plain_body">此 STEPUP 账号已关联钱包地址。StepUp 不会获取你的私钥，也不会转移你的资产。</string>
     <string name="wl_linked_gift">连接礼物会在发放确认后显示。</string>
     <string name="wl_open_draw">查看鞋子抽取</string>
     <string name="wl_benefit_title">免费获得高级抽取</string>

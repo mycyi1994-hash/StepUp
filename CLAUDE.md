@@ -1,5 +1,13 @@
 # StepUp — 작업 메모
 
+## 최신 — 접속 코드 모달 · 로그인 약관 줄 빼기 · 스토어 판 지갑 주소 연결 (2026-10-29)
+
+- 접속 코드는 로그인 화면(`LoginContent`) 위 가운데 모달(`AccessCodeScreen` → `AccessCodeModal`, 핸드오프 StepUP_AccessCode_Modal_HANDOFF):
+  X · 뒤로 가기는 모달만 닫고(앱에 들이지 않는다), 구글 버튼이 다시 연다. 모달 밖 터치로는 안 닫힌다. 확인 중에 닫으면 답을 버리고 서버에 다시 묻는다.
+- 로그인 화면 아래 동의 문구 · 이용약관 · 개인정보 링크는 뺐다(모든 판) — 약관은 설정 › 약관 및 정책.
+- 스토어 판도 **지갑 주소 연결만** 한다(`BuildConfig.WALLET_LINK` · `WALLET_LINK_URL`, 사용자 "셀프 커스터디 지갑 연동은 VASP 아님") — 출금 · 보너스 뽑기 ·
+  체인 줄 · 웹 지갑 페이지(`WALLET_URL`)는 여전히 `WEB3` 판에만. 지갑 화면은 연결 · 연결됨만(`linkOnly`). [docs/PLAY-STORE.md](docs/PLAY-STORE.md) 데이터 보안에 지갑 주소.
+
 ## 최신 — 접속 코드: 비공개 베타 · 공개 베타 (2026-10-28)
 
 [docs/access-codes-2026-10-28.md](docs/access-codes-2026-10-28.md) — 서버 0079. 사용자 "closed beta 는 access code 로만 · open beta 는 사전예약자 중 일부 ·

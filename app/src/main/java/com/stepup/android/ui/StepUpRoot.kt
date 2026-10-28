@@ -476,7 +476,7 @@ private fun MainScaffoldContent(
     // WEB3 지갑 고르기(2026-10-18) — 앱의 "지갑 연결" 버튼은 모두 이 창을 연다(MetaMask · OKX · Rabby, GIWA 준비 중)
     var walletPicker by rememberSaveable { mutableStateOf(false) }
     // 스토어 판(WEB3 = false)에는 지갑 연결이 없다 — 여는 버튼도 숨기지만, 혹시 남은 길이 있어도 창을 열지 않는다
-    if (walletPicker && com.stepup.android.BuildConfig.WEB3) com.stepup.android.ui.screens.rewards.WalletConnectSheet(onDismiss = { walletPicker = false })
+    if (walletPicker && com.stepup.android.BuildConfig.WALLET_LINK) com.stepup.android.ui.screens.rewards.WalletConnectSheet(onDismiss = { walletPicker = false })
 
     pendingRun?.takeIf { currentOwner != null }?.let { checkpoint ->
         if (StepPermissions.hasActivityRecognition(context)) {
