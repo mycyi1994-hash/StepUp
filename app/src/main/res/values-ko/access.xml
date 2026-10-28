@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 접속 코드(비공개 · 공개 베타) · 베타 초대 코드 — 서버 0079 -->
+<resources>
+    <string name="access_title_closed_beta">접속 코드가 필요해요</string>
+    <string name="access_title_open_beta">공개 베타 기간이에요</string>
+    <string name="access_body_closed_beta">지금은 초대받은 분만 쓰는 비공개 베타예요. 받은 접속 코드를 입력해 주세요.</string>
+    <string name="access_body_open_beta">선정된 사전 예약자는 사전 예약한 이메일의 구글 계정으로 로그인하면 바로 들어와요. 접속 코드가 있으면 입력해 주세요.</string>
+    <string name="access_body_sign_in">지금은 베타 기간이라 구글로 로그인한 뒤 접속 코드로 들어올 수 있어요.</string>
+    <string name="access_body_revoked">이 계정은 이용이 멈춰 있어요. 문의 stepupofficial@stepupcrew.com</string>
+    <string name="access_code_label">접속 코드</string>
+    <string name="access_enter">들어가기</string>
+    <string name="access_other_account">다른 계정으로 로그인</string>
+    <string name="access_sign_in">구글로 로그인</string>
+    <string name="access_error_not_found">맞지 않는 코드예요. 다시 확인해 주세요.</string>
+    <string name="access_error_revoked">더 이상 쓸 수 없는 코드예요.</string>
+    <string name="access_error_expired">기한이 지난 코드예요.</string>
+    <string name="access_error_used_up">이미 다 쓰인 코드예요.</string>
+    <string name="access_error_too_many">여러 번 틀렸어요. 1시간 뒤에 다시 해 주세요.</string>
+    <string name="access_error_network">연결이 끊겼어요. 다시 해 주세요.</string>
+    <string name="beta_codes_title">베타 초대 코드</string>
+    <string name="beta_codes_left">오늘 %1$d개 더 만들 수 있어요(하루 %2$d개). 코드 하나는 한 명이 쓸 수 있어요.</string>
+    <string name="beta_codes_not_allowed">지금은 초대 코드를 만들 수 없어요.</string>
+    <string name="beta_codes_failed">코드를 불러오지 못했어요.</string>
+    <string name="beta_codes_empty">아직 만든 코드가 없어요.</string>
+    <string name="beta_codes_make">코드 만들기</string>
+    <string name="beta_codes_limit">오늘 만들 수 있는 코드를 다 만들었어요.</string>
+    <string name="beta_codes_date">M월 d일</string>
+    <string name="beta_code_used">사용됨 · %1$s</string>
+    <string name="beta_code_expired">기한 지남</string>
+    <string name="beta_code_revoked">쓸 수 없음</string>
+    <string name="beta_code_open">아직 안 씀 · %1$s까지</string>
+    <string name="beta_code_share_text">StepUp 베타 초대 코드: %1$s
+앱에서 구글로 로그인한 뒤 입력해 주세요.</string>
+    <string name="beta_code_copy">코드 복사</string>
+    <string name="beta_code_share">코드 공유</string>
+</resources>

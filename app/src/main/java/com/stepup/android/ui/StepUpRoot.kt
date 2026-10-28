@@ -79,6 +79,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
+import com.stepup.android.core.blocked
 import com.stepup.android.R
 import com.stepup.android.BuildConfig
 import com.stepup.android.core.InviteLinks
@@ -248,6 +249,7 @@ object Routes {
     const val SETTINGS_BODY = "settings/body"
     const val SETTINGS_MODE = "settings/mode"
     const val INVITE = "invite"
+    const val BETA_CODES = "beta_codes"
     const val CHALLENGE_HISTORY = "challenge-history"
     const val SNEAKER = "sneaker/{id}"
 
@@ -368,12 +370,26 @@ fun StepUpRoot() {
         sessionChecked = true
     }
 
+    // 접속 코드 문(0079) — 로그인 · 계정이 바뀔 때와 앱으로 돌아올 때마다 다시 묻는다. 막힌 사람은 코드 입력 화면만 본다
+    val accessContext = androidx.compose.ui.platform.LocalContext.current
+    val access by com.stepup.android.core.AccessGate.state.collectAsState()
+    LaunchedEffect(loginMethod, sessionChecked) {
+        if (loginMethod != null && sessionChecked) com.stepup.android.core.AccessGate.refresh(accessContext)
+    }
+    val accessScope = rememberCoroutineScope()
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        val job = accessScope.launch { com.stepup.android.core.AccessGate.refresh(accessContext) }
+        onPauseOrDispose { job.cancel() }
+    }
+
     Box(Modifier.fillMaxSize()) {
         NightCanvas(Modifier.fillMaxSize())
 
+        val blocked = access?.blocked == true
         val stage = when {
             !ready || loginMethod == null || guideSeen == null || setupSeen == null || !sessionChecked -> 0
             loginMethod!!.isEmpty() -> 1
+            blocked -> 4
             // S2 첫 설정은 새로 온 사람(가이드를 아직 안 본 사람)에게만 — 기존 사용자를 다시 붙잡지 않는다
             guideSeen == false && setupSeen == false -> 3
             else -> 2
@@ -387,6 +403,19 @@ fun StepUpRoot() {
             1 -> LoginScreen(onDone = {})
 
             3 -> com.stepup.android.ui.screens.setup.S2SetupFlow(onDone = {})
+
+            4 -> com.stepup.android.ui.screens.access.AccessCodeScreen(
+                status = access ?: com.stepup.android.data.remote.AccessStatusRow(),
+                signedIn = loginMethod == "google",
+                onGranted = { accessScope.launch { com.stepup.android.core.AccessGate.refresh(accessContext) } },
+                onSignOut = {
+                    accessScope.launch {
+                        runCatching { ServiceLocator.sessionHolder.signOut() }
+                        com.stepup.android.core.AccessGate.forget(accessContext)
+                        ServiceLocator.userPrefs.setLoginMethod("")
+                    }
+                },
+            )
 
             else -> MainScaffold(startTour = guideSeen == false)
         }
@@ -1017,6 +1046,7 @@ private fun MainScaffoldContent(
                     onOpenInbox = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenAchievements = { navController.navigate(Routes.ACHIEVEMENTS) },
                     onOpenInvite = { navController.navigate(Routes.INVITE) },
+                    onOpenBetaCodes = { navController.navigate(Routes.BETA_CODES) },
                     onOpenBody = { navController.navigate(Routes.SETTINGS_BODY) },
                     onOpenMode = { navController.navigate(Routes.SETTINGS_MODE) },
                 )
@@ -1454,6 +1484,9 @@ private fun MainScaffoldContent(
             }
             composable(Routes.INVITE) {
                 com.stepup.android.ui.screens.invite.InviteScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.BETA_CODES) {
+                com.stepup.android.ui.screens.access.BetaCodesScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS_MODE) {
                 com.stepup.android.ui.screens.setup.ModeSettingsScreen(onBack = { navController.popBackStack() })

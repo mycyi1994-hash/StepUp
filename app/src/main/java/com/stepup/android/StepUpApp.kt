@@ -25,6 +25,8 @@ class StepUpApp : Application() {
         val theme = runCatching { runBlocking { ServiceLocator.userPrefs.themeModeNow() } }
             .getOrDefault("")
         AppTheme.bootstrap(theme)
+        // 접속 코드 문(0079) — 마지막으로 받은 상태로 첫 화면을 정한다(연결 없이 켜도 들어온 사람을 다시 막지 않게)
+        com.stepup.android.core.AccessGate.load(this)
         // 푸시 주소를 서버에 적어 둔다. 로그인 전이면 서버가 받지 않고, 로그인하면
         // 로그인 화면이 다시 부른다. 네트워크를 쓰므로 첫 화면을 기다리게 하지 않는다.
         PushService.createChannel(this)

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 접속 코드(비공개 · 공개 베타) · 베타 초대 코드 — 서버 0079 -->
+<resources>
+    <string name="access_title_closed_beta">Access code needed</string>
+    <string name="access_title_open_beta">Open beta</string>
+    <string name="access_body_closed_beta">StepUp is in a private beta for invited runners. Enter the access code you received.</string>
+    <string name="access_body_open_beta">Selected pre-registrants get in right away by signing in with the Google account of their pre-registration email. If you have an access code, enter it.</string>
+    <string name="access_body_sign_in">During the beta, sign in with Google and then enter an access code.</string>
+    <string name="access_body_revoked">This account is paused. Contact stepupofficial@stepupcrew.com</string>
+    <string name="access_code_label">Access code</string>
+    <string name="access_enter">Enter</string>
+    <string name="access_other_account">Use another account</string>
+    <string name="access_sign_in">Sign in with Google</string>
+    <string name="access_error_not_found">That code doesn’t match. Please check it.</string>
+    <string name="access_error_revoked">This code can no longer be used.</string>
+    <string name="access_error_expired">This code has expired.</string>
+    <string name="access_error_used_up">This code has already been used.</string>
+    <string name="access_error_too_many">Too many tries. Please try again in an hour.</string>
+    <string name="access_error_network">Connection lost. Please try again.</string>
+    <string name="beta_codes_title">Beta invite codes</string>
+    <string name="beta_codes_left">You can make %1$d more today (%2$d a day). Each code is for one person.</string>
+    <string name="beta_codes_not_allowed">You can’t make invite codes right now.</string>
+    <string name="beta_codes_failed">Couldn’t load your codes.</string>
+    <string name="beta_codes_empty">No codes yet.</string>
+    <string name="beta_codes_make">Make a code</string>
+    <string name="beta_codes_limit">You’ve made all of today’s codes.</string>
+    <string name="beta_codes_date">MMM d</string>
+    <string name="beta_code_used">Used · %1$s</string>
+    <string name="beta_code_expired">Expired</string>
+    <string name="beta_code_revoked">No longer valid</string>
+    <string name="beta_code_open">Not used yet · until %1$s</string>
+    <string name="beta_code_share_text">StepUp beta invite code: %1$s
+Sign in with Google in the app, then enter it.</string>
+    <string name="beta_code_copy">Copy code</string>
+    <string name="beta_code_share">Share code</string>
+</resources>
