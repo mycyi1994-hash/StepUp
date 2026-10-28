@@ -83,6 +83,7 @@ fun SettingsHomeScreen(
     onOpenInbox: () -> Unit = {},
     onOpenAchievements: () -> Unit = {},
     onOpenInvite: () -> Unit = {},
+    onOpenBetaCodes: () -> Unit = {},
     onOpenBody: () -> Unit = {},
     onOpenMode: () -> Unit = {},
 ) {
@@ -136,6 +137,11 @@ fun SettingsHomeScreen(
                 BlueNavRow(stringResource(R.string.profile_achievements), onClick = onOpenAchievements,
                     modifier = Modifier.testTag("settings-achievements"))
                 BlueNavRow(stringResource(R.string.invite_title), onClick = onOpenInvite, modifier = Modifier.testTag("settings-invite"))
+                // 베타 초대 코드(0079) — 비공개 · 공개 베타에서 코드를 만들 수 있는 사람에게만
+                val access by com.stepup.android.core.AccessGate.state.collectAsState()
+                if (access?.canIssue == true) {
+                    BlueNavRow(stringResource(R.string.beta_codes_title), onClick = onOpenBetaCodes, modifier = Modifier.testTag("settings-beta-codes"))
+                }
                 BlueNavRow(stringResource(R.string.settings_body), onClick = onOpenBody, modifier = Modifier.testTag("settings-body"))
                 BlueNavRow(stringResource(R.string.settings_mode), onClick = onOpenMode, modifier = Modifier.testTag("settings-mode"))
             }

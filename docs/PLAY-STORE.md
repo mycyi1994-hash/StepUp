@@ -98,6 +98,11 @@ test-apk 사전 배포의 `StepUp-store-preview.apk` — 빌드 종류 `storePre
 ### 타겟층
 - 만 14세 이상(13–15 포함 안 함 권장) — 위치 공유와 사용자 간 소통이 있다
 
+### 앱 액세스(2026-10-28 접속 코드)
+- 비공개 · 공개 베타(서버 0079 `access_mode` 가 OPEN 이 아님) 동안 앱은 구글 로그인 뒤 접속 코드를 요구한다 → Play Console › 앱 콘텐츠 › **앱 액세스**:
+  "일부 기능이 제한됨" + 심사용 접속 코드와 사용법(구글로 로그인 → 코드 입력)을 적는다. 코드는 `admin_access_code_named('PLAYREVIEW2026', 20, 60, 'Play 심사')`
+  ([docs/access-codes-2026-10-28.md](access-codes-2026-10-28.md)). 정식 출시(OPEN)면 "제한 없음".
+
 ### 데이터 보안 (Data safety)
 
 | 질문 | 답 |

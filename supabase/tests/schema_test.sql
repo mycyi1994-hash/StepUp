@@ -9588,6 +9588,189 @@ end $$;
 update public.economy_settings set value = '0' where key in ('chain_jitter_min_min', 'chain_jitter_max_min');
 update public.chain_jobs j set next_at = h.next_at from held_jobs h where h.id = j.id;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0079 접속 코드 — 비공개 베타 · 공개 베타 (2026-10-28)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 접속 코드(0079) ─────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+call pg_temp.login(null);
+insert into auth.users (id, email) values
+  ('a7900000-0000-0000-0000-000000000001', 'beta1@test'),
+  ('a7900000-0000-0000-0000-000000000002', 'beta2@test'),
+  ('a7900000-0000-0000-0000-000000000003', 'beta3@test'),
+  ('a7900000-0000-0000-0000-000000000004', 'early@test');
+insert into public.waitlist_entries (email, consented_at, receipt_hash) values
+  ('early@test', now() - interval '3 days', 'r-early'), ('late@test', now(), 'r-late');
+
+-- 로그인한 사람의 요청을 흉내 — 문지기가 보는 역할 · 경로
+create or replace procedure pg_temp.as_app(p_user uuid, p_path text)
+language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', p_user::text, false);
+  perform set_config('request.jwt.claims', jsonb_build_object('role', 'authenticated', 'sub', p_user)::text, false);
+  perform set_config('request.path', p_path, false);
+end $$;
+
+do $$ begin
+  perform pg_temp.ok(economy.access_mode() = 'OPEN', '기본은 열린 문 — 배포하자마자 막지 않는다');
+  perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'access_v1_applied'),
+    '배포 때 있던 계정은 한 번만 권한(LEGACY)');
+end $$;
+-- 열린 문에서는 아무도 막지 않는다
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '열린 문 — 권한 없는 사람도 지나간다'); end $$;
+
+-- 비공개 베타로 닫는다(SQL Editor 처럼 로그인 없이)
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select public.admin_access_mode_set('CLOSED_BETA');
+create temp table beta_codes as select * from public.admin_access_codes_create(2, 1, 7, '직원 초대');
+select public.admin_access_code_named('stepup-beta', 2, null, '행사');
+do $$ begin
+  perform pg_temp.ok((select count(*) = 2 and bool_and(code ~ '^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$') from beta_codes),
+    '운영자 코드 — 8자(헷갈리는 0 · O · 1 · I · L 없음), XXXX-XXXX');
+end $$;
+call pg_temp.must_fail($q$ select public.admin_access_mode_set('WIDE') $q$, '문은 세 가지만');
+
+-- 권한 없는 사람은 막힌다 — 접속 코드 함수 · 계정 삭제만 지나간다
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '비공개 베타 — 권한 없는 사람의 앱 요청은 막힌다(403 access_required)');
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/access_redeem');
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '코드 넣기 · 상태 · 계정 삭제는 지나간다'); end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/account_delete');
+do $$ begin perform public.access_gate(); end $$;
+-- 로그인 안 한 요청(홈페이지 사전 등록)은 막지 않는다
+select set_config('request.jwt.claim.sub', '', false);
+select set_config('request.jwt.claims', '{"role":"anon"}', false);
+select set_config('request.path', '/rpc/waitlist_register', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '로그인 안 한 요청은 막지 않는다'); end $$;
+
+-- 코드 넣기
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/access_status');
+do $$
+declare v jsonb; c text := (select code from beta_codes order by code limit 1);
+begin
+  v := public.access_status();
+  perform pg_temp.ok(v ->> 'mode' = 'CLOSED_BETA' and not (v ->> 'granted')::boolean and not (v ->> 'can_issue')::boolean,
+    format('권한 없음 상태(%s)', v));
+  perform pg_temp.ok(public.access_redeem('nope-nope') ->> 'error' = 'not_found', '없는 코드');
+  v := public.access_redeem(lower(replace(c, '-', ' ')));
+  perform pg_temp.ok((v ->> 'ok')::boolean, '코드는 대소문자 · 띄어쓰기 · - 를 가리지 않는다');
+  perform pg_temp.ok((public.access_status() ->> 'granted')::boolean and (public.access_status() ->> 'can_issue')::boolean,
+    '코드로 들어오면 권한 · 내 코드 만들기');
+  perform public.access_gate();
+  perform pg_temp.ok(true, '권한이 생기면 앱 요청이 지나간다');
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000002', '/rpc/access_redeem');
+do $$
+declare c text := (select code from beta_codes order by code limit 1);
+begin
+  perform pg_temp.ok(public.access_redeem(c) ->> 'error' = 'used_up', '1인용 코드는 한 번만');
+  perform pg_temp.ok((public.access_redeem('STEPUPBETA') ->> 'ok')::boolean, '정한 글자 공용 코드');
+end $$;
+
+-- 하루 N개 만들기
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/access_code_issue');
+update public.economy_settings set value = '2' where key = 'access_user_daily_codes';
+do $$
+declare v1 jsonb; v2 jsonb; v3 jsonb;
+begin
+  v1 := public.access_code_issue();
+  v2 := public.access_code_issue();
+  v3 := public.access_code_issue();
+  perform pg_temp.ok(v1 ->> 'code' ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}$' and v2 ->> 'code' <> v1 ->> 'code'
+                     and v3 ->> 'error' = 'daily_limit',
+    format('하루 2개까지(%s · %s · %s)', v1, v2, v3));
+  insert into fix (k, v) values ('beta_user_code', v1 ->> 'code'), ('beta_user_code2', v2 ->> 'code');
+  perform pg_temp.ok((select count(*) = 2 and bool_and(status = 'OPEN') from public.my_access_codes()), '내가 만든 코드 — 아직 안 씀');
+  perform pg_temp.ok(public.access_redeem(v1 ->> 'code') ->> 'ok' = 'true', '(이미 권한이 있으면 코드를 쓰지 않는다)');
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000003', '/rpc/access_redeem');
+do $$ begin
+  perform pg_temp.ok((public.access_redeem(pg_temp.fx('beta_user_code')) ->> 'ok')::boolean, '친구가 내 코드로 들어온다');
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/my_access_codes');
+do $$ begin
+  perform pg_temp.ok((select count(*) filter (where status = 'USED' and used_at is not null) = 1 from public.my_access_codes()),
+    '내 코드가 쓰였는지 보인다(누가 썼는지는 안 보인다)');
+end $$;
+
+-- 운영자 확인 · 차단
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+do $$
+declare v jsonb;
+begin
+  perform pg_temp.ok((select used_count = 1 and status = 'USED' and creator_email = 'beta1@test'
+                        from public.admin_access_codes('USER') where code = pg_temp.fx('beta_user_code')),
+    '운영자 — 사용자 코드 목록(만든 사람 · 사용 수 · 상태)');
+  perform pg_temp.ok((select email = 'beta3@test' from public.admin_access_code_uses(pg_temp.fx('beta_user_code'))),
+    '운영자 — 코드를 누가 언제 썼나');
+  perform pg_temp.ok((select source = 'CODE' and code_creator is null and codes_issued = 2 and codes_used = 1
+                        from public.admin_access_users() where email = 'beta1@test')
+                     and (select code_creator = 'beta1@test' from public.admin_access_users() where email = 'beta3@test'),
+    '운영자 — 권한 명단(들어온 길 · 만든 코드 · 쓰인 수)');
+  v := public.admin_access_code_revoke((select code from beta_codes order by code limit 1), '유출', true);
+  perform pg_temp.ok((v ->> 'users_revoked')::int = 1 and (v ->> 'codes_revoked')::int = 1,
+    format('코드 차단 — 그 코드로 들어온 사람과 그 사람의 안 쓴 코드도(%s)', v));
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '차단된 사람은 다시 막힌다');
+do $$ begin
+  perform pg_temp.ok(public.access_redeem('STEPUPBETA') ->> 'error' = 'blocked', '차단된 계정은 코드로 되살리지 못한다');
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000002', '/rpc/access_redeem');
+do $$ begin
+  perform pg_temp.ok(public.access_redeem(pg_temp.fx('beta_user_code2')) ->> 'ok' = 'true', '(이미 권한)');
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000004', '/rpc/access_redeem');
+do $$ begin
+  perform pg_temp.ok(public.access_redeem(pg_temp.fx('beta_user_code2')) ->> 'error' = 'revoked', '차단된 코드는 쓰지 못한다');
+end $$;
+
+-- 틀린 코드 맞혀 보기 막기
+do $$
+declare i int; v jsonb;
+begin
+  for i in 1 .. 12 loop v := public.access_redeem('WRONG' || i); end loop;
+  perform pg_temp.ok(v ->> 'error' = 'too_many', '틀린 코드는 1시간 10번까지');
+end $$;
+delete from economy.access_attempts;
+
+-- 공개 베타 — 고른 사전 예약자는 코드 없이
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select public.admin_access_mode_set('OPEN_BETA');
+do $$
+declare v_n int := public.admin_open_beta_invite(null, array['EARLY@test', 'nobody@test']);
+begin
+  perform pg_temp.ok(v_n = 1 and exists (select 1 from public.admin_open_beta_list() where email = 'early@test' and not joined),
+    format('공개 베타 — 사전 예약자 중 고른다(예약하지 않은 이메일은 빠진다) — %s명, %s', v_n,
+           (select jsonb_agg(to_jsonb(x)) from public.admin_open_beta_list() x)));
+  perform pg_temp.ok(public.admin_open_beta_invite(1) = 1, '또는 먼저 등록한 순서로 N명');
+end $$;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000004', '/rpc/access_status');
+do $$ begin
+  perform pg_temp.ok((public.access_status() ->> 'granted')::boolean and public.access_status() ->> 'source' = 'WAITLIST'
+                     and not (public.access_status() ->> 'can_issue')::boolean,
+    '고른 사전 예약 이메일로 로그인하면 바로 권한(코드 만들기는 코드로 들어온 사람 · 운영자 몫)');
+end $$;
+
+-- 운영자 함수는 앱 사용자가 부르지 못한다
+set role authenticated;
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000003', '/rpc/admin_access_codes');
+call pg_temp.must_fail($q$ select * from public.admin_access_codes() $q$, '운영자 함수는 운영자만');
+call pg_temp.must_fail($q$ select public.admin_access_mode_set('OPEN') $q$, '문 바꾸기도 운영자만');
+call pg_temp.must_fail($q$ select * from economy.access_codes $q$, '코드 표는 앱이 읽지 못한다');
+reset role;
+
+-- 문을 다시 연다
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+select public.admin_access_mode_set('OPEN');
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

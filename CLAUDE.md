@@ -1,5 +1,15 @@
 # StepUp — 작업 메모
 
+## 최신 — 접속 코드: 비공개 베타 · 공개 베타 (2026-10-28)
+
+[docs/access-codes-2026-10-28.md](docs/access-codes-2026-10-28.md) — 서버 0079. 사용자 "closed beta 는 access code 로만 · open beta 는 사전예약자 중 일부 ·
+코드 생성 · 차단 · 사용 여부 체크 · 코드로 들어온 사람이 하루 몇 개씩 발행".
+- 문 `access_mode`: OPEN(기본) · CLOSED_BETA · OPEN_BETA — `admin_access_mode_set`. 막는 곳은 서버(`pgrst.db_pre_request = public.access_gate` → 403 `access_required`),
+  앱은 막힌 사람에게 코드 입력 화면만(`AccessGate` · `ui/screens/access/AccessScreens.kt`, 루트 stage 4). 0079 배포 때 있던 계정은 LEGACY 권한.
+- 운영자 코드(1인용 · 공용 · 정한 글자) · 사용자 코드(하루 `access_user_daily_codes` 개, 설정 › 베타 초대 코드) · 차단(코드 · 계정, 그 코드로 들어온 사람까지) ·
+  확인(`admin_access_codes` · `admin_access_code_uses` · `admin_access_users`) · 공개 베타 고르기(`admin_open_beta_invite`). SQL 은 문서에.
+- 출시 때 Play Console › 앱 액세스에 심사용 코드를 적는다.
+
 ## 최신 — 체인 기록 넓히기 · 나중에 대조 · 개인정보 최소 · 출시 점검 (2026-10-27)
 
 사용자 "거래수가중요해" → "검증은 나중에 필요하면 대조할 정도" → "해시에 개인정보 유출 없게" → "안드로이드 출시에 심혈". 서버 0078, 표는 [docs/온체인-거래-발생-지도.md](docs/온체인-거래-발생-지도.md).
