@@ -4,6 +4,7 @@ import { linkWallet, linkWalletRequest, executeOp } from './handlers.js'
 import { indexEvents, expireOps, reconcile, keepPaused } from './indexer.js'
 import { sneakerMetadata } from './meta.js'
 import { JOBS_CRON, runJobs } from './jobs.js'
+import { registerWaitlist } from './waitlist.js'
 
 /**
  * StepUp 어테스터 v2 — 서버가 허락한 체인 작업만 서명하고, 가스비를 대신 내 보낸다.
@@ -152,6 +153,10 @@ export default {
       }
       if (url.pathname === '/v2/wallet/link-request' && request.method === 'POST') {
         return json(request, env, await linkWalletRequest(request, env, deps))
+      }
+      // 홈페이지 대기 명단 — 사람 확인(Turnstile)을 거친 등록만(서버 0083)
+      if (url.pathname === '/v1/waitlist/register' && request.method === 'POST') {
+        return json(request, env, await registerWaitlist(request, env, deps))
       }
 
       const m = url.pathname.match(/^\/v2\/ops\/([^/]+)\/execute$/)

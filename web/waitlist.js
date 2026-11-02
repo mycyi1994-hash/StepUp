@@ -1,8 +1,12 @@
-import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-sec';
-import { t, lang, onLangChange } from './i18n.js?v=20261102-sec';
+import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-sec2';
+import { t, lang, onLangChange } from './i18n.js?v=20261102-sec2';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
+// 사람 확인(Cloudflare Turnstile, 2026-11-02 — 서버 0083). 사이트 키는 공개 값이다. 비어 있으면 예전처럼 서버에 바로 등록한다.
+// 키를 넣으면 등록은 워커(/v1/waitlist/register)가 토큰을 확인한 뒤에만 들어간다.
+const TURNSTILE_SITE_KEY = '';
+const WAITLIST_WORKER = 'https://stepup-attester.gana003.workers.dev/v1/waitlist/register';
 const RECEIPT_KEY = 'stepup.waitlist.receipt';
 const EMAIL_KEY = 'stepup.waitlist.email';
 const REF_KEY = 'stepup.waitlist.ref';
@@ -130,6 +134,63 @@ async function callWaitlist(name, body) {
     }
     return result;
   } finally { clearTimeout(timeout); }
+}
+
+// ── 사람 확인 ─────────────────────────────────────────────────────────
+let turnstileLoad = null;
+function loadTurnstile() {
+  turnstileLoad ??= new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(Object.assign(new Error('network'), { network: true })));
+    script.onerror = () => { turnstileLoad = null; reject(Object.assign(new Error('network'), { network: true })); };
+    document.head.append(script);
+  });
+  return turnstileLoad;
+}
+
+/** 한 번 쓰는 확인 토큰 — 대부분 보이지 않고 끝나고, 의심스러울 때만 확인 칸이 보인다 */
+async function humanToken() {
+  const turnstile = await loadTurnstile();
+  let box = document.getElementById('waitlist-turnstile');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'waitlist-turnstile';
+    registerSubmit.insertAdjacentElement('beforebegin', box);
+  }
+  return new Promise((resolve, reject) => {
+    let id = null;
+    const done = (fn, value) => { try { if (id !== null) turnstile.remove(id); } catch { /* already gone */ } fn(value); };
+    id = turnstile.render(box, {
+      sitekey: TURNSTILE_SITE_KEY,
+      appearance: 'interaction-only',
+      language: lang() === 'en' ? 'en' : 'ko',
+      callback: token => done(resolve, token),
+      'error-callback': () => done(reject, new Error('verification failed')),
+      'expired-callback': () => done(reject, new Error('verification failed')),
+      'timeout-callback': () => done(reject, new Error('verification failed')),
+    });
+  });
+}
+
+/** 확인 토큰과 함께 워커로 등록 — 답의 모양은 서버(waitlist_register)와 같다 */
+async function registerViaWorker(body) {
+  const token = await humanToken();
+  let response;
+  try {
+    response = await fetch(WAITLIST_WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: body.p_email, consent: body.p_consent, trap: body.p_trap, ref: body.p_ref || '', token }),
+    });
+  } catch {
+    throw Object.assign(new Error('network'), { network: true });
+  }
+  let result = null;
+  try { result = await response.json(); } catch { /* not JSON */ }
+  if (!response.ok || !result?.ok) throw new Error(result?.message || result?.error || `HTTP ${response.status}`);
+  return result;
 }
 
 function platformStatus(item, key) {
@@ -353,7 +414,8 @@ registerForm.addEventListener('submit', async event => {
     let result;
     // A referral must never block registration — but only an older server without p_ref is retried without it
     // (a typo used to send the request twice and still fail).
-    if (invitedBy) {
+    if (TURNSTILE_SITE_KEY) result = await registerViaWorker({ ...body, p_ref: invitedBy || '' });
+    else if (invitedBy) {
       try { result = await callWaitlist('waitlist_register', { ...body, p_ref: invitedBy }); }
       catch (error) {
         if (!error.missingFunction) throw error;
