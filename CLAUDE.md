@@ -1,5 +1,13 @@
 # StepUp — 작업 메모
 
+## 최신 — 보안 네 겹: 사람 확인 · CSP · 보안 감시 · Dependabot (2026-11-02, 서버 0083)
+
+[docs/security-2026-11-02.md](docs/security-2026-11-02.md) — 사용자 "보안 4배 — 전부 진행". 1층(계정 2단계 인증 등)은 사용자 몫.
+- 대기 명단 사람 확인(Turnstile): 워커 `/v1/waitlist/register`(attester/src/waitlist.js) → `attester_waitlist_register`. 키 전에는 꺼짐 —
+  `TURNSTILE_SITE_KEY`(web/waitlist.js) · 워커 비밀 `TURNSTILE_SECRET` 을 넣은 뒤 `waitlist_require_turnstile = true`. 규칙 · 횟수 · 저장은 `economy.waitlist_register_core` 하나.
+- CSP(web/_headers 홈 · 초대 · 약관): 인라인 `<script>` 를 고치면 해시도 — `web/test/csp.test.js`.
+- 보안 감시 `.github/workflows/security-watch.yml`(한 시간마다 읽기만 → 이슈 `security-alert`), Dependabot `.github/dependabot.yml`.
+
 ## 최신 — 대기 명단 등록 단단하게 (2026-11-02, 서버 0082)
 
 11-02 13:05 ~ 13:20(KST) 공개 등록 API 에 자동 점검(example.com · XSS 흉내 @evil.com · 운영자 주소 대신 등록)이 들어왔다. 사용자 결정 "검사 강화 · 가짜와 운영자 주소 줄 지우기".

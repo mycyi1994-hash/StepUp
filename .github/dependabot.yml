@@ -1,0 +1,27 @@
+# 의존성 보안 알림 · 업데이트 PR(2026-11-02 보안 강화). 한 주에 한 번, 묶어서 — PR 이 쏟아지지 않게.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "09:00", timezone: Asia/Seoul }
+    open-pull-requests-limit: 3
+    groups:
+      gradle: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /attester
+    schedule: { interval: weekly, day: monday, time: "09:00", timezone: Asia/Seoul }
+    open-pull-requests-limit: 2
+    groups:
+      attester: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /web
+    schedule: { interval: weekly, day: monday, time: "09:00", timezone: Asia/Seoul }
+    open-pull-requests-limit: 2
+    groups:
+      web: { patterns: ["*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "09:00", timezone: Asia/Seoul }
+    open-pull-requests-limit: 2
+    groups:
+      actions: { patterns: ["*"] }

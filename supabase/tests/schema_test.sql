@@ -9858,6 +9858,39 @@ select set_config('request.headers', '', false);
 delete from public.waitlist_entries where email like 'limit%@gmail.com';
 delete from economy.waitlist_attempts;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0083 대기 명단 사람 확인(워커) (2026-11-02)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 대기 명단 사람 확인(0083) ─────────────'
+select set_config('request.jwt.claims', '', false);
+call pg_temp.login('a8000000-0000-0000-0000-000000000001');
+call pg_temp.must_fail($q$ select public.attester_waitlist_register('w1@gmail.com', true, '', '', '198.51.100.1') $q$,
+  '어테스터가 아니면 워커용 등록을 부르지 못한다');
+call pg_temp.login(null);
+set role stepup_attester;
+select set_config('request.jwt.claims', '{"role":"stepup_attester"}', false);
+do $$
+declare v jsonb; i int;
+begin
+  v := public.attester_waitlist_register('Worker.Ok@Gmail.com', true, '', '', '198.51.100.1');
+  perform pg_temp.ok((v ->> 'ok')::boolean and length(v ->> 'receipt') = 64, format('워커가 확인한 등록은 들어간다(%s)', v));
+  v := public.attester_waitlist_register('<b>@evil.com', true, '', '', '198.51.100.1');
+  perform pg_temp.ok(v ->> 'message' = 'invalid waitlist registration', '워커로 와도 이메일 규칙은 같다');
+  for i in 1..4 loop perform public.attester_waitlist_register(format('w%s@gmail.com', i), true, '', '', '198.51.100.1'); end loop;
+  v := public.attester_waitlist_register('w9@gmail.com', true, '', '', '198.51.100.1');
+  perform pg_temp.ok(v ->> 'message' = 'too many waitlist attempts', format('워커가 넘긴 IP 로 같은 곳을 센다(%s)', v));
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+update public.economy_settings set value = 'true'::jsonb where key = 'waitlist_require_turnstile';
+do $$ begin
+  perform pg_temp.ok(public.waitlist_register('direct@gmail.com', true) ->> 'message' = 'verification required',
+    '사람 확인을 켜면 공개 등록은 받지 않는다');
+end $$;
+update public.economy_settings set value = 'false'::jsonb where key = 'waitlist_require_turnstile';
+delete from public.waitlist_entries where email in ('worker.ok@gmail.com', 'w1@gmail.com', 'w2@gmail.com', 'w3@gmail.com', 'w4@gmail.com');
+delete from economy.waitlist_attempts;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
