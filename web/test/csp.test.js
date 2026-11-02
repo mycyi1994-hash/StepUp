@@ -31,7 +31,7 @@ test('every inline script on CSP pages is allowed by its hash', () => {
       assert.doesNotMatch(csp, /script-src[^;]*'unsafe-inline'/, `${path} 는 인라인 스크립트를 통째로 열지 않는다`);
     }
   }
-  for (const path of ['/privacy*', '/terms*', '/delete-account*']) assert.match(cspFor(path), /script-src 'self';/);
+  for (const path of ['/privacy*', '/terms*', '/delete-account*']) assert.match(cspFor(path), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
 });
 
 // Cloudflare Pages 는 같은 경로를 두 번 적으면 뒤 것만 쓴다 — 2026-11-02 '/' 의 CSP 가 아래 Cache-Control 줄에 덮였다
