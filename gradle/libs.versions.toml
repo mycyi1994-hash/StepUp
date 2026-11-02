@@ -1,14 +1,17 @@
 [versions]
 agp = "8.10.1"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.27"
+# Kotlin 2.3 — iOS 앱을 App Store 에 내려면 Xcode 26 으로 빌드해야 하고, Kotlin/Native 는 2.2.20 부터 Xcode 26 을 안다(2026-11-02).
+# KSP 는 2.3 부터 Kotlin 판과 따로 번호를 매긴다(KSP2).
+kotlin = "2.3.21"
+ksp = "2.3.6"
 coreKtx = "1.15.0"
 activityCompose = "1.9.3"
 # Compose UI 1.8.2 includes non-floating Dialog inset dispatch for target SDK 35.
 composeBom = "2025.06.00"
 lifecycle = "2.8.7"
 navigationCompose = "2.8.5"
-room = "2.6.1"
+# 2.7 부터 KSP2 · Kotlin Multiplatform(iOS)을 지원한다. 폰 DB(strideup.db) 판 · 스키마는 그대로
+room = "2.8.5"
 datastore = "1.1.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
@@ -18,13 +21,11 @@ googleid = "1.1.1"
 # 구글 위치 서비스(구글 지도와 같은 위치 엔진 — GPS · 와이파이 · 기지국을 섞는다). 러닝 위치를 받는다
 playServicesLocation = "21.3.0"
 # 푸시(FCM)와 사용자 분석. BoM 이 개별 라이브러리 판을 맞춘다.
-# Kotlin 2.0 과 맞는 판 — 더 새 판은 Kotlin 2.1+ 로 컴파일돼 이 프로젝트에서 읽지 못한다.
 firebaseBom = "33.7.0"
 googleServices = "4.4.2"
 junit = "4.13.2"
-# iOS 앱(Kotlin Multiplatform, 2026-11-02 — docs/APP-STORE.md). Kotlin 2.0.21 과 맞는 판이다 — 더 새 판은 Kotlin 2.1+ 로 만들어졌다.
-# Kotlin 을 올릴 때(App Store 제출은 Xcode 26 이 필요하다 — docs/ios/README.md) 이 판도 함께 올린다.
-composeMultiplatform = "1.7.0"
+# iOS 앱 화면(Compose Multiplatform — docs/ios/README.md). Kotlin 2.2.20 으로 만들어진 판이라 위 Kotlin 에서 읽힌다
+composeMultiplatform = "1.12.2"
 androidxTestJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 androidxTestRules = "1.6.1"

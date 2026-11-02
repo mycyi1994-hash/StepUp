@@ -16,8 +16,8 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    // iOS 시뮬레이터 검사 기기 — Xcode 16 의 기본 시뮬레이터. 다른 기기는 -Pstepup.iosTestDevice="iPhone 16 Pro"
-    val testDevice = providers.gradleProperty("stepup.iosTestDevice").getOrElse("iPhone 16")
+    // iOS 시뮬레이터 검사 기기 — Xcode 26 의 기본 시뮬레이터. 다른 기기는 -Pstepup.iosTestDevice="iPhone 17 Pro"(이름이나 UDID — CI 는 UDID)
+    val testDevice = providers.gradleProperty("stepup.iosTestDevice").getOrElse("iPhone 17")
     targets.withType<KotlinNativeTargetWithSimulatorTests>().configureEach {
         testRuns.named("test") { deviceId = testDevice }
     }

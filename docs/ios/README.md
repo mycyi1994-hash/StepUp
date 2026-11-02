@@ -1,6 +1,9 @@
 # iOS 앱 — Kotlin Multiplatform (2026-11-02 ~)
 
 사용자 결정 "KMP로 가자"(2026-11-02). 안드로이드 앱의 규칙 · 화면을 iOS 와 함께 쓰고, 기기마다 다른 일만 따로 짠다.
+
+**브랜치**(2026-11-02 사용자 "아이폰 어플용 브랜치를 따로 만들어서 분리"): iOS 작업은 `ios-app` 에 모은다 — 단계마다 작업 브랜치에서
+`ios-app` 으로 PR 을 낸다. `main`(안드로이드 스토어 판)에는 안드로이드가 테스트 APK 로 확인된 뒤에만 합친다. `main` 이 바뀌면 `ios-app` 에 합쳐 둔다.
 스토어에 낼 때 채우는 칸 · 사용자가 준비할 것은 [../APP-STORE.md](../APP-STORE.md).
 
 ## 구조
@@ -42,7 +45,7 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 | 단계 | 할 일 | 안드로이드에 닿나 |
 |---|---|---|
 | 0. 뼈대 (끝남, 2026-11-02) | 모듈 셋 · Xcode 앱 · 로고 화면 · 아이콘 · CI · 공용 규칙 둘 | 규칙 둘이 `shared/` 로 이사(동작 같음) |
-| **1. Kotlin 올리기** | 2.0.21 → 2.2.20 이상(Xcode 26 지원 판). KSP · Room(2.7+ — KMP) · Compose Multiplatform(1.9) · Firebase BoM 을 함께 맞춘다. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
+| **1. Kotlin 올리기** (진행 중) | 2.0.21 → **2.3.21** · KSP **2.3.6**(KSP2) · Room **2.8.5** · Compose Multiplatform **1.12.2**. `android { kotlinOptions }` → `kotlin { compilerOptions }`. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
 | 2. 규칙 옮기기 | `domain/` 44개 · `domain/coaching/` 을 `shared/` 로. `java.time` · `java.util` 은 kotlinx-datetime 등으로. `check-coaching-twin.py` 경로를 함께 고친다 | 예(동작 같음) |
 | 3. 데이터 | 서버 호출(`data/remote` — 지금 `HttpURLConnection`)을 Ktor 로, 폰 DB 를 Room KMP 로, 설정을 DataStore KMP 로. 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
 | 4. 화면 | `ui/` 를 `sharedUi/` 로 화면 묶음씩(테마 · 부품 → 로그인 · 접속 코드 → 홈 · 러닝 → 함께 뛰기 → 신발 → 내 정보). 글자(`res/values*` 4개 언어) · 글꼴 · 그림은 `composeResources/` 로 — `check-strings.py` · `check-copy.py` 도 새 자리를 본다 | 예 — 안드로이드 앱이 `sharedUi` 의 화면을 쓴다 |
@@ -71,6 +74,8 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 
 ## 판 맞춤
 
-- Kotlin 2.0.21 · Compose Multiplatform 1.7.0(`gradle/libs.versions.toml`) — 안드로이드 앱과 한 빌드라 Kotlin 판이 같아야 한다.
-  더 새 Compose Multiplatform 은 Kotlin 2.1+ 로 만들어져 지금 판에서 읽지 못할 수 있다. 1단계에서 함께 올린다.
-- App Store 제출은 Xcode 26 · iOS 26 SDK 가 필요하다(2026-04 부터). Kotlin 2.0.21 은 Xcode 16 까지와 맞춰 나왔으므로 지금 CI 는 Xcode 16 을 고른다.
+- Kotlin 2.3.21 · KSP 2.3.6 · Room 2.8.5 · Compose Multiplatform 1.12.2 · AGP 8.10.1 그대로(`gradle/libs.versions.toml`, 2026-11-02 1단계).
+  안드로이드 앱과 한 빌드라 Kotlin 판이 하나다.
+  - 더 새 KSP(2.3.13 에서 확인)는 AGP 8.12 이상을 요구한다 — AGP 를 올릴 때 함께 올린다.
+  - Compose Multiplatform 1.12 는 Kotlin 2.2.20 으로 만들어졌다 — Kotlin 은 그보다 같거나 새 판이어야 한다.
+- App Store 제출은 Xcode 26 · iOS 26 SDK 가 필요하다(2026-04 부터). Kotlin/Native 는 2.2.20 부터 Xcode 26 을 안다 — CI 는 Xcode 26 중 가장 새 판을 고른다.
