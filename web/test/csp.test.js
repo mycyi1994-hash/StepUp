@@ -33,3 +33,9 @@ test('every inline script on CSP pages is allowed by its hash', () => {
   }
   for (const path of ['/privacy*', '/terms*', '/delete-account*']) assert.match(cspFor(path), /script-src 'self';/);
 });
+
+// Cloudflare Pages 는 같은 경로를 두 번 적으면 뒤 것만 쓴다 — 2026-11-02 '/' 의 CSP 가 아래 Cache-Control 줄에 덮였다
+test('no path is listed twice in _headers', () => {
+  const paths = headers.split('\n').filter(line => line.startsWith('/'));
+  assert.deepEqual(paths.filter((p, i) => paths.indexOf(p) !== i), []);
+});
