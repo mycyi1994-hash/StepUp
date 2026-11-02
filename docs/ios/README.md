@@ -33,7 +33,8 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 ## CI
 
 `.github/workflows/ios.yml`(macOS 러너) — `shared/` · `sharedUi/` · `iosApp/` · Gradle 설정이 바뀔 때만 돈다(macOS 러너는 비공개 저장소에서 분이 10배로 깎인다).
-공용 규칙 검사(JVM · iOS 시뮬레이터) → XcodeGen → 서명 없는 시뮬레이터 빌드 → `StepUp-ios-simulator` 아티팩트(7일).
+공용 규칙 검사(JVM · iOS 시뮬레이터) → XcodeGen → 서명 없는 시뮬레이터 빌드 → 시뮬레이터에 띄워 화면 찍기(충돌 기록이 남으면 실패) →
+`ios-launch-screenshot` · `StepUp-ios-simulator` 아티팩트(7일).
 리눅스(안드로이드 CI)에서는 iOS 대상이 꺼진다(`kotlin.native.ignoreDisabledTargets=true`) — Kotlin/Native 도구를 받지 않아 안드로이드 빌드가 느려지지 않는다.
 
 ## 만드는 순서

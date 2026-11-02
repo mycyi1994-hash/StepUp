@@ -89,6 +89,29 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build | tee xcodebuild.log
 
+      # 빌드만으로는 모른다 — 시뮬레이터에 깔아 띄우고 화면을 찍는다. Compose 화면이 뜨다 멈추면(충돌 기록이 남으면) 실패
+      - name: Launch on simulator and capture
+        run: |
+          APP=iosApp/build/Build/Products/Debug-iphonesimulator/StepUp.app
+          BUNDLE=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          DEVICE=$(xcrun simctl list devices available | grep -m1 -E "iPhone 16 \(" | grep -oE "[0-9A-F-]{36}")
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP"
+          xcrun simctl launch "$DEVICE" "$BUNDLE"
+          sleep 10
+          xcrun simctl io "$DEVICE" screenshot ios-launch.png
+          if ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i stepup; then echo "앱이 멈췄다(충돌 기록)"; exit 1; fi
+
+      - name: Upload launch screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-launch-screenshot
+          path: ios-launch.png
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload simulator app
         uses: actions/upload-artifact@v4
         with:
