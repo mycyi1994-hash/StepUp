@@ -94,17 +94,46 @@ jobs:
             build | tee xcodebuild.log
 
       # 빌드만으로는 모른다 — 시뮬레이터에 깔아 띄우고 화면을 찍는다. Compose 화면이 뜨다 멈추면(충돌 기록이 남으면) 실패
+      # 빌드만으로는 모른다 — 시뮬레이터에 깔아 띄우고 화면을 찍는다. Compose 화면이 뜨다 멈추면(충돌 기록이 남으면) 실패.
+      # 2026-11-02 Xcode 26 첫 실행: iOS 26 시뮬레이터 부팅(simctl)이 아무 출력 없이 34분 멈춰 작업 시간 제한에 잘렸다 —
+      # 부팅마다 8분 제한을 두고, 안 되면 iOS 18 iPhone 16 으로 넘어간다. 단계마다 줄을 남겨 어디서 멈췄는지 보이게 한다.
       - name: Launch on simulator and capture
+        timeout-minutes: 25
         run: |
           APP=iosApp/build/Build/Products/Debug-iphonesimulator/StepUp.app
           BUNDLE=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
-          DEVICE="$IOS_SIM"
-          xcrun simctl boot "$DEVICE"
-          xcrun simctl bootstatus "$DEVICE" -b
-          xcrun simctl install "$DEVICE" "$APP"
-          xcrun simctl launch "$DEVICE" "$BUNDLE"
+          # 시간 제한 실행(macOS 에는 timeout 이 없다)
+          limit() { perl -e 'alarm shift @ARGV; exec @ARGV or die "exec: $!"' "$@"; }
+          # 고를 기기 차례: iOS 26 iPhone 17 → iOS 18 iPhone 16
+          CANDIDATES=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = json.load(sys.stdin)["devices"]
+          order = []
+          for runtime_prefix, name_prefix in (("iOS-26", "iPhone 17"), ("iOS-18", "iPhone 16")):
+              for rt in sorted((r for r in devs if runtime_prefix in r), reverse=True):
+                  for d in devs[rt]:
+                      if d["name"].startswith(name_prefix) and d["isAvailable"]:
+                          order.append(rt.split(".")[-1] + " " + d["name"].replace(" ", "_") + " " + d["udid"])
+                          break
+                  else:
+                      continue
+                  break
+          print("\n".join(order))')
+          echo "후보:"; echo "$CANDIDATES"
+          xcrun simctl shutdown all || true
+          DEVICE=""
+          while read -r RUNTIME NAME UDID; do
+            [ -n "$UDID" ] || continue
+            echo "부팅: $NAME ($RUNTIME) $UDID"
+            if limit 480 xcrun simctl bootstatus "$UDID" -b; then DEVICE="$UDID"; break; fi
+            echo "부팅이 8분 안에 끝나지 않았다 — 다음 기기로"
+            limit 60 xcrun simctl shutdown "$UDID" || true
+          done <<< "$CANDIDATES"
+          if [ -z "$DEVICE" ]; then echo "띄울 시뮬레이터가 없다"; exit 1; fi
+          echo "설치"; limit 300 xcrun simctl install "$DEVICE" "$APP"
+          echo "실행"; limit 120 xcrun simctl launch "$DEVICE" "$BUNDLE"
           sleep 10
-          xcrun simctl io "$DEVICE" screenshot ios-launch.png
+          echo "화면 찍기"; limit 60 xcrun simctl io "$DEVICE" screenshot ios-launch.png
           if ls ~/Library/Logs/DiagnosticReports 2>/dev/null | grep -i stepup; then echo "앱이 멈췄다(충돌 기록)"; exit 1; fi
 
       - name: Upload launch screenshot
