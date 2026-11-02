@@ -1,11 +1,11 @@
-import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-sec2';
-import { t, lang, onLangChange } from './i18n.js?v=20261102-sec2';
+import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-ts';
+import { t, lang, onLangChange } from './i18n.js?v=20261102-ts';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
 // 사람 확인(Cloudflare Turnstile, 2026-11-02 — 서버 0083). 사이트 키는 공개 값이다. 비어 있으면 예전처럼 서버에 바로 등록한다.
 // 키를 넣으면 등록은 워커(/v1/waitlist/register)가 토큰을 확인한 뒤에만 들어간다.
-const TURNSTILE_SITE_KEY = '';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAFwSGcKev3bQRGVx';
 const WAITLIST_WORKER = 'https://stepup-attester.gana003.workers.dev/v1/waitlist/register';
 const RECEIPT_KEY = 'stepup.waitlist.receipt';
 const EMAIL_KEY = 'stepup.waitlist.email';
