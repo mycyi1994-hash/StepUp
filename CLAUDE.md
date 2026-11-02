@@ -7,7 +7,7 @@
   `iosApp/`(SwiftUI 입구, `project.yml` 을 XcodeGen 으로 — `.xcodeproj` 는 저장소에 없다). 지금 옮긴 규칙은 `RunPace` · `RunStill` 둘, 화면은 로고 하나.
 - 공용 규칙을 고치면 `./gradlew :shared:jvmTest`(Build APK 에서도 돈다). iOS 빌드는 `.github/workflows/ios.yml`(macOS — iOS 쪽 파일이 바뀔 때만).
 - 다음은 Kotlin 올리기(2.0.21 → Xcode 26 을 지원하는 판 — App Store 제출 요건) → 규칙 · 데이터 · 화면 옮기기. 안드로이드에 닿는 단계는 테스트 APK 로 확인하고 넘어간다.
-- 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · 개인/조직 계정 · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
+- 계정은 조직(법인)으로 신청했다(2026-11-02, 애플 확인 대기). 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
 
 ## 최신 — 대기 명단 등록 단단하게 (2026-11-02, 서버 0082)
 
