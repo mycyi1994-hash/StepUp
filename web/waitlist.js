@@ -1,5 +1,5 @@
-import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261023-qa2';
-import { t, lang, onLangChange } from './i18n.js?v=20261023-qa2';
+import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-sec';
+import { t, lang, onLangChange } from './i18n.js?v=20261102-sec';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';

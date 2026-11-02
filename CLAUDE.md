@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 최신 — 대기 명단 등록 단단하게 (2026-11-02, 서버 0082)
+
+11-02 13:05 ~ 13:20(KST) 공개 등록 API 에 자동 점검(example.com · XSS 흉내 @evil.com · 운영자 주소 대신 등록)이 들어왔다. 사용자 결정 "검사 강화 · 가짜와 운영자 주소 줄 지우기".
+- 이메일 규칙은 서버 `economy.waitlist_email_ok` 하나(영문 · 숫자 · `._%+-`, 시험용 도메인 거절) — 홈페이지 `validEmail`(web/waitlist-core.mjs)이 같은 규칙. 바꾸면 둘을 함께.
+- 같은 곳(IP 해시 — `economy.waitlist_client`, 원문 안 남김) 10분 6 · 하루 30(`waitlist_ip_per_10min` · `waitlist_ip_per_day`). 틀림 · 잦음은 예외 대신 `{ok:false, message}`(시도 기록이 남게).
+- 그때 들어온 줄은 한 번만 지웠다(표시 `waitlist_cleanup_20261102` — 다시 배포해도 그 뒤 등록은 안 지운다).
+
 ## 최신 — 접속 코드 모달 · 로그인 약관 줄 빼기 · 스토어 판 지갑 주소 연결 (2026-10-29)
 
 - 접속 코드는 로그인 화면(`LoginContent`) 위 가운데 모달(`AccessCodeScreen` → `AccessCodeModal`, 핸드오프 StepUP_AccessCode_Modal_HANDOFF):

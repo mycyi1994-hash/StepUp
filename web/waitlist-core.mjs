@@ -23,8 +23,11 @@ export const PLATFORMS = {
   reels: { label: '릴스', creator: true, target: 'https://www.instagram.com/', placeholder: 'https://www.instagram.com/reel/…' },
 };
 
-// The server's rule (waitlist_register): after trim + lower-case, something@something.something, at most 254 characters.
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// The server's rule (economy.waitlist_email_ok, 0082 — 2026-11-02): letters · digits · . _ % + - before @ (64 at most),
+// dot-separated letter/digit/hyphen labels after it, ending in 2–24 letters. Test domains (example.*, .test, .invalid,
+// .localhost, .example) are refused.
+const EMAIL = /^[a-z0-9._%+-]{1,64}@([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/;
+const TEST_DOMAIN = /(^|\.)(example\.(com|net|org)|example|test|invalid|localhost)$/;
 
 /** 입력한 이메일을 서버가 받는 모양으로 — 전각 ＠·．(한글 입력기)을 반각으로, 앞뒤 공백을 빼고 소문자로. */
 export function normalizeEmail(value) {
@@ -35,8 +38,9 @@ export function normalizeEmail(value) {
 /** 서버(waitlist_register)와 같은 규칙. 통과하지 못하면 보내지 않고 이메일을 다시 확인하라고 알린다. */
 export function validEmail(value) {
   const email = normalizeEmail(value);
-  // 서버 규칙에 더해, 메일이 갈 수 없는 '..' · '@.' 모양은 보내기 전에 막는다.
-  return email.length >= 3 && email.length <= 254 && EMAIL.test(email) && !/\.\.|@\.|^\./.test(email);
+  // 서버와 같은 규칙 — '..' · 점으로 시작 · @ 앞 점도 막는다.
+  return email.length >= 6 && email.length <= 254 && EMAIL.test(email) && !/\.\.|^\.|\.@/.test(email)
+    && !TEST_DOMAIN.test(email.split('@')[1]);
 }
 
 /**
