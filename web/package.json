@@ -8,9 +8,9 @@
   },
   "dependencies": {
     "@metamask/connect-evm": "^2.1.1",
-    "viem": "^2.21.0"
+    "viem": "^2.57.13"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.28.2"
   }
 }
