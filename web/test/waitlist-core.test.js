@@ -49,7 +49,10 @@ test('emails follow the server rule after the same clean-up', async () => {
   // The server lower-cases and trims; full-width ＠ ． from Korean/Japanese keyboards become ASCII.
   assert.equal(normalizeEmail('  Name@Example.COM '), 'name@example.com');
   assert.equal(normalizeEmail('name＠example．com'), 'name@example.com');
-  for (const ok of ['a@b.co', 'name@example.com', 'name+tag@sub.example.kr', 'name＠example．com']) assert.equal(validEmail(ok), true, ok);
+  for (const ok of ['ab@b.co', 'name@gmail.com', 'name+tag@sub.example.kr', 'name＠gmail．com', 'a_b.c%d@mail.co.kr']) assert.equal(validEmail(ok), true, ok);
+  // 2026-11-02 자동 점검으로 들어온 모양 — 서버(0082)와 같이 막는다
+  for (const bad of ['<script>alert(1)</script>@evil.com', '"onmouseover="alert(1)"@evil.com', 'javascript:alert(1)@evil.com',
+    'baseline_test_001@example.com', 'a@b.test', 'name.@gmail.com']) assert.equal(validEmail(bad), false, bad);
   // These passed the browser's check but the server refused them, and the page said "try again later" forever.
   for (const bad of ['', '   ', 'a@b', 'name@naver', 'name@gmailcom', 'name@gmail,com', 'a b@c.de', 'no-at-sign.com', '@example.com', `${'x'.repeat(250)}@e.com`]) {
     assert.equal(validEmail(bad), false, bad);
