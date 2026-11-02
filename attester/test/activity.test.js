@@ -24,6 +24,10 @@ const PAYLOADS = {
   PARTY_START: { ...base, ...D, room: H('ff'), crew: H('00'), starters: 4 },
   DAILY_STEPS: { ...base, ...D, goalMet: true },
   CHECK_IN: { ...base, ...D },
+  // 0081 스냅숏 — slot = 한국 시간 칸의 시작(YYYYMMDDHH)
+  SNAP_USER: { recipient: zeroAddress, runner: H('aa'), ...D, totalM: '42195', runs: 12, pointsMilli: '1250000', shoes: 3, crews: 1, slot: 2026110206 },
+  SNAP_CREW: { recipient: zeroAddress, ...D, crew: H('ee'), members: 8, level: 2, runM: '128400', slot: 2026110206 },
+  SNAP_ALL: { recipient: zeroAddress, ...D, accounts: 1300, crews: 40, runs: '5200', totalM: '9876543', shoes: '4100', pointsMilli: '987654321', slot: 2026110206 },
 }
 
 
@@ -61,12 +65,17 @@ test('새 기록 — 틀린 재료는 만들지 않는다', () => {
   assert.throws(() => attestationData('CHECK_IN', { ...PAYLOADS.CHECK_IN, runner: '0x12' }))
 })
 
-test('서버 재료의 키 = 워커 스키마 칸 이름(0078 activity_payload 와 맞대어 본다)', () => {
-  const sql = readFileSync(new URL('../../supabase/migrations/0078_chain_activity.sql', import.meta.url), 'utf8')
-  const body = sql.slice(sql.indexOf('create or replace function economy.activity_payload'))
+test('서버 재료의 키 = 워커 스키마 칸 이름(0078 activity_payload · 0081 snapshot_payload 와 맞대어 본다)', () => {
+  const read = (file, fn) => {
+    const sql = readFileSync(new URL(`../../supabase/migrations/${file}`, import.meta.url), 'utf8')
+    return sql.slice(sql.indexOf(`create or replace function economy.${fn}`))
+  }
+  const activity = read('0078_chain_activity.sql', 'activity_payload')
+  const snapshot = read('0081_chain_snapshots.sql', 'snapshot_payload')
   for (const [kind, schema] of Object.entries(ACTIVITY_SCHEMAS)) {
+    const body = kind.startsWith('SNAP_') ? snapshot : activity
     const start = body.indexOf(`'${kind}'`)
-    assert.ok(start > 0, `${kind} 가 activity_payload 에 없다`)
+    assert.ok(start > 0, `${kind} 가 서버 재료 함수에 없다`)
     const next = body.slice(start + 1).search(/\n  (elsif j\.kind|end if;)/)
     const branch = body.slice(start, start + 1 + next)
     for (const field of schema.split(',')) {

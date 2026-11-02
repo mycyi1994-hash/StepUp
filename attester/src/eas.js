@@ -32,6 +32,10 @@ export const ACTIVITY_SCHEMAS = {
   PARTY_START: 'bytes32 runner,bytes32 room,bytes32 crew,uint32 starters,bytes32 dataHash,uint32 day',
   DAILY_STEPS: 'bytes32 runner,bool goalMet,bytes32 dataHash,uint32 day',
   CHECK_IN: 'bytes32 runner,bytes32 dataHash,uint32 day',
+  // 0081 스냅숏 — 6시간마다 상태 전체(활동이 없어도). slot = 한국 시간 칸의 시작 YYYYMMDDHH. 재료는 economy.snapshot_payload
+  SNAP_USER: 'bytes32 runner,uint64 totalM,uint32 runs,uint64 pointsMilli,uint32 shoes,uint32 crews,bytes32 dataHash,uint32 slot',
+  SNAP_CREW: 'bytes32 crew,uint32 members,uint32 level,uint64 runM,bytes32 dataHash,uint32 slot',
+  SNAP_ALL: 'uint32 accounts,uint32 crews,uint64 runs,uint64 totalM,uint64 shoes,uint64 pointsMilli,bytes32 dataHash,uint32 slot',
 }
 
 export const SCHEMAS = {

@@ -1,5 +1,13 @@
 # StepUp — 작업 메모
 
+## 최신 — 체인 스냅숏: 6시간마다 사람 · 크루 · 전체 (2026-11-02)
+
+사용자 "새로운 게 있어야만 찍는 거임? 모든 데이터를 스냅샷처럼 주기적으로" → 사람 + 크루 + 전체 · 6시간마다 · 활동 기록 15종은 그대로. 서버 0081,
+표는 [docs/온체인-거래-발생-지도.md](docs/온체인-거래-발생-지도.md) "6시간마다 스냅숏".
+- 워커 2분 작업이 `attester_snapshot_tick()` — 이번 칸(한국 0 · 6 · 12 · 18시)을 한 번만 줄 세운다(`economy.snapshot_slots`). `SNAP_USER`(계정마다) · `SNAP_CREW`(크루마다, 크루장 이름) ·
+  `SNAP_ALL`(하나, 어테스터 계정 이름). 재료 `economy.snapshot_payload`, 봉인 · 가명 · 늦춤은 0078 그대로. 앱 체인 기록 화면에는 안 보인다.
+- 끄기 `snapshot_enabled`, 칸 길이 `snapshot_hours`. 계정 약 3,000 을 넘으면 워커 하루 몫(약 14,000)을 넘는다 — 그때 칸을 늘리거나 기록 전용 컨트랙트(사용자 "나중에").
+
 ## 최신 — 접속 코드 모달 · 로그인 약관 줄 빼기 · 스토어 판 지갑 주소 연결 (2026-10-29)
 
 - 접속 코드는 로그인 화면(`LoginContent`) 위 가운데 모달(`AccessCodeScreen` → `AccessCodeModal`, 핸드오프 StepUP_AccessCode_Modal_HANDOFF):
