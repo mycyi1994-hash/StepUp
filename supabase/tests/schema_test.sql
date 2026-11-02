@@ -96,7 +96,7 @@ begin
 end $$;
 set role anon;
 insert into fix (k, v)
-select 'waitlist-receipt', public.waitlist_register('Waitlist@Test.Example', true, '')->>'receipt';
+select 'waitlist-receipt', public.waitlist_register('Waitlist@RunnerMail.com', true, '')->>'receipt';
 do $$
 begin
   call pg_temp.must_fail('select * from public.waitlist_entries', '공개 역할은 이메일 목록을 읽지 못한다');
@@ -128,12 +128,12 @@ end $$;
 reset role;
 do $$
 begin
-  perform pg_temp.ok((select email from public.waitlist_entries where email = 'waitlist@test.example') = 'waitlist@test.example',
+  perform pg_temp.ok((select email from public.waitlist_entries where email = 'waitlist@runnermail.com') = 'waitlist@runnermail.com',
     '이메일은 소문자로 정규화해 저장한다');
   perform pg_temp.ok((select count(*) from public.waitlist_share_claims where platform = 'x') = 1,
     '공유 신청을 플랫폼별로 따로 저장한다');
   perform pg_temp.ok((select all_three_submitted and creator_submitted and not all_three_verified
-    from public.waitlist_bonus_candidates where email = 'waitlist@test.example'),
+    from public.waitlist_bonus_candidates where email = 'waitlist@runnermail.com'),
     '일반 공유 3개와 크리에이터 참여는 기록되지만 검증 완료가 되지는 않는다');
   perform pg_temp.ok((select post_url = 'https://www.youtube.com/watch?v=Abcdef123_-'
     from public.waitlist_share_claims where platform = 'youtube'), '유튜브 영상 ID를 보존해 주소를 정규화한다');
@@ -144,17 +144,17 @@ begin
 end $$;
 set role anon;
 insert into fix (k, v)
-select 'waitlist-ref', public.waitlist_register('Referrer@Test.Example', true, '')->>'referral_code';
+select 'waitlist-ref', public.waitlist_register('Referrer@RunnerMail.com', true, '')->>'referral_code';
 do $$
 declare v_other text;
 begin
   perform pg_temp.ok(pg_temp.fx('waitlist-ref') ~ '^[A-HJ-NP-Z2-9]{8}$', '등록하면 공개 추천 코드를 받는다');
-  perform pg_temp.ok((public.waitlist_register('Friend@Test.Example', true, '', lower(pg_temp.fx('waitlist-ref')))->>'ok')::boolean,
+  perform pg_temp.ok((public.waitlist_register('Friend@RunnerMail.com', true, '', lower(pg_temp.fx('waitlist-ref')))->>'ok')::boolean,
     '추천 코드로 등록한다(대소문자 무관)');
-  v_other := public.waitlist_register('Other@Test.Example', true, '')->>'referral_code';
-  perform public.waitlist_register('Friend@Test.Example', true, '', v_other);
-  perform public.waitlist_register('Referrer@Test.Example', true, '', pg_temp.fx('waitlist-ref'));
-  perform pg_temp.ok((public.waitlist_register('Stranger@Test.Example', true, '', 'NOTACODE!')->>'ok')::boolean,
+  v_other := public.waitlist_register('Other@RunnerMail.com', true, '')->>'referral_code';
+  perform public.waitlist_register('Friend@RunnerMail.com', true, '', v_other);
+  perform public.waitlist_register('Referrer@RunnerMail.com', true, '', pg_temp.fx('waitlist-ref'));
+  perform pg_temp.ok((public.waitlist_register('Stranger@RunnerMail.com', true, '', 'NOTACODE!')->>'ok')::boolean,
     '틀린 추천 코드는 등록을 막지 않는다');
   call pg_temp.must_fail('select * from public.waitlist_referral_counts', '공개 역할은 추천 기록을 읽지 못한다');
 end $$;
@@ -162,13 +162,13 @@ reset role;
 do $$
 begin
   perform pg_temp.ok((select r.referral_code = pg_temp.fx('waitlist-ref') from public.waitlist_entries f
-    join public.waitlist_entries r on r.id = f.referred_by where f.email = 'friend@test.example'),
+    join public.waitlist_entries r on r.id = f.referred_by where f.email = 'friend@runnermail.com'),
     '추천 링크로 등록한 사람의 추천인을 기록하고, 다시 등록해도 바뀌지 않는다');
-  perform pg_temp.ok((select referred_by is null from public.waitlist_entries where email = 'referrer@test.example'),
+  perform pg_temp.ok((select referred_by is null from public.waitlist_entries where email = 'referrer@runnermail.com'),
     '자기 추천 코드는 기록하지 않는다');
-  perform pg_temp.ok((select referral_code = pg_temp.fx('waitlist-ref') from public.waitlist_entries where email = 'referrer@test.example'),
+  perform pg_temp.ok((select referral_code = pg_temp.fx('waitlist-ref') from public.waitlist_entries where email = 'referrer@runnermail.com'),
     '다시 등록해도 추천 코드는 그대로다');
-  perform pg_temp.ok((select referred_count = 1 from public.waitlist_referral_counts where email = 'referrer@test.example'),
+  perform pg_temp.ok((select referred_count = 1 from public.waitlist_referral_counts where email = 'referrer@runnermail.com'),
     '운영자 보기에서 추천 수를 센다');
   perform pg_temp.ok((public.waitlist_status(pg_temp.fx('waitlist-receipt')) ? 'referral_code'),
     '영수증으로 내 추천 코드를 다시 받는다');
@@ -9814,6 +9814,49 @@ do $$ begin
 end $$;
 select public.admin_access_mode_set('OPEN');
 delete from public.app_admins where user_id = 'a8000000-0000-0000-0000-000000000002';
+
+-- ════════════════════════════════════════════════════════════════════
+--  0082 대기 명단 등록 단단하게 (2026-11-02)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 대기 명단 검사 · 같은 곳 횟수(0082) ─────────────'
+do $$
+declare v jsonb;
+begin
+  perform pg_temp.ok(economy.waitlist_email_ok('runner.kim+1@gmail.com') and economy.waitlist_email_ok('a_b@mail.co.kr'),
+    '보통 이메일은 받는다');
+  perform pg_temp.ok(not economy.waitlist_email_ok('<script>alert(1)</script>@evil.com')
+    and not economy.waitlist_email_ok('"onmouseover="alert(1)"@evil.com')
+    and not economy.waitlist_email_ok('javascript:alert(1)@evil.com'), 'XSS 흉내는 받지 않는다');
+  perform pg_temp.ok(not economy.waitlist_email_ok('baseline_test_001@example.com')
+    and not economy.waitlist_email_ok('a@b.test') and not economy.waitlist_email_ok('a@localhost'), '시험용 도메인은 받지 않는다');
+  perform pg_temp.ok(not economy.waitlist_email_ok('a..b@gmail.com') and not economy.waitlist_email_ok('.a@gmail.com')
+    and not economy.waitlist_email_ok('a.@gmail.com') and not economy.waitlist_email_ok('a@gmail'), '모양이 틀린 주소는 받지 않는다');
+  v := public.waitlist_register('<svg/onload=alert(1)>@evil.com', true);
+  perform pg_temp.ok(not (v ->> 'ok')::boolean and v ->> 'message' = 'invalid waitlist registration', format('틀린 주소는 ok:false(%s)', v));
+  perform pg_temp.ok(not exists (select 1 from public.waitlist_entries where email like '%evil.com'), '틀린 주소는 남지 않는다');
+  perform pg_temp.ok((select value = 'true'::jsonb from public.economy_settings where key = 'waitlist_cleanup_20261102'),
+    '2026-11-02 정리는 한 번만(표시)');
+end $$;
+select set_config('request.headers', '{"x-forwarded-for": "203.0.113.9, 10.0.0.1"}', false);
+do $$
+declare v jsonb; i int;
+begin
+  for i in 1..6 loop
+    v := public.waitlist_register(format('limit%s@gmail.com', i), true);
+    perform pg_temp.ok((v ->> 'ok')::boolean, format('같은 곳 %s번째는 된다', i));
+  end loop;
+  v := public.waitlist_register('limit7@gmail.com', true);
+  perform pg_temp.ok(not (v ->> 'ok')::boolean and v ->> 'message' = 'too many waitlist attempts', format('10분 7번째는 막는다(%s)', v));
+  perform pg_temp.ok(not exists (select 1 from public.waitlist_entries where email = 'limit7@gmail.com'), '막힌 등록은 남지 않는다');
+  perform pg_temp.ok(not exists (select 1 from economy.waitlist_attempts where ip_hash like '%203.0.113.9%'), 'IP 원문은 남기지 않는다');
+end $$;
+select set_config('request.headers', '{"x-forwarded-for": "198.51.100.7"}', false);
+do $$ begin
+  perform pg_temp.ok((public.waitlist_register('limit8@gmail.com', true) ->> 'ok')::boolean, '다른 곳은 따로 센다');
+end $$;
+select set_config('request.headers', '', false);
+delete from public.waitlist_entries where email like 'limit%@gmail.com';
+delete from economy.waitlist_attempts;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
