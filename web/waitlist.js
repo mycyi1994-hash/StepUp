@@ -1,11 +1,11 @@
-import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-sec2';
-import { t, lang, onLangChange } from './i18n.js?v=20261102-sec2';
+import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-ts2';
+import { t, lang, onLangChange } from './i18n.js?v=20261102-ts2';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
 // 사람 확인(Cloudflare Turnstile, 2026-11-02 — 서버 0083). 사이트 키는 공개 값이다. 비어 있으면 예전처럼 서버에 바로 등록한다.
 // 키를 넣으면 등록은 워커(/v1/waitlist/register)가 토큰을 확인한 뒤에만 들어간다.
-const TURNSTILE_SITE_KEY = '';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAFwSGcKev3bQRGVx';
 const WAITLIST_WORKER = 'https://stepup-attester.gana003.workers.dev/v1/waitlist/register';
 const RECEIPT_KEY = 'stepup.waitlist.receipt';
 const EMAIL_KEY = 'stepup.waitlist.email';
@@ -161,6 +161,8 @@ async function humanToken() {
   }
   return new Promise((resolve, reject) => {
     let id = null;
+    // 30초 안에 답이 없으면(막힌 연결) 실패로 — 버튼이 영영 '저장 중'에 머물지 않게
+    setTimeout(() => done(reject, new Error('verification failed')), 30000);
     const done = (fn, value) => { try { if (id !== null) turnstile.remove(id); } catch { /* already gone */ } fn(value); };
     id = turnstile.render(box, {
       sitekey: TURNSTILE_SITE_KEY,
@@ -414,7 +416,16 @@ registerForm.addEventListener('submit', async event => {
     let result;
     // A referral must never block registration — but only an older server without p_ref is retried without it
     // (a typo used to send the request twice and still fail).
-    if (TURNSTILE_SITE_KEY) result = await registerViaWorker({ ...body, p_ref: invitedBy || '' });
+    // 사람 확인이 이 브라우저에서 안 되면(차단기 · 연결) 예전 경로로 — 서버가 사람 확인을 요구하면(waitlist_require_turnstile) 그 경로는
+    // 'verification required' 로 거절하므로, 켠 뒤에는 이 우회가 문이 되지 않는다. 서버가 답한 거절(이메일 · 횟수)은 그대로 보인다.
+    let viaWorker = null;
+    if (TURNSTILE_SITE_KEY) {
+      try { viaWorker = await registerViaWorker({ ...body, p_ref: invitedBy || '' }); }
+      catch (error) {
+        if (/invalid waitlist registration|too many waitlist attempts/.test(error.message)) throw error;
+      }
+    }
+    if (viaWorker) result = viaWorker;
     else if (invitedBy) {
       try { result = await callWaitlist('waitlist_register', { ...body, p_ref: invitedBy }); }
       catch (error) {

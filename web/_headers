@@ -9,17 +9,17 @@
 
 # 홈페이지(아래 '/' 줄에 함께 — 같은 경로를 두 번 적으면 뒤 것만 쓰인다) · 초대 · 약관 — 스크립트는 이 사이트 것과 아래 해시의 인라인 스크립트만(2026-11-02 보안 강화).
 # XSS 가 끼어들어도 다른 곳의 스크립트를 불러오거나 몰래 보내지 못하게. 인라인 <script> 를 고치면 해시를 다시 넣는다
-# (web/test/csp.test.js 가 맞대어 본다). 사람 확인(Turnstile) · 유튜브 · Supabase · 어테스터 워커만 밖으로 연다.
+# (web/test/csp.test.js 가 맞대어 본다). 사람 확인(Turnstile) · 유튜브 · Supabase · 어테스터 워커 · Cloudflare 방문 통계(Pages 가 넣는 beacon)만 밖으로 연다.
 /c/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-k0EV6D/RHCTFKcC1br2o+bgSXSGaFHqC/YYBaUfYdDc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-k0EV6D/RHCTFKcC1br2o+bgSXSGaFHqC/YYBaUfYdDc=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /invite*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-k0EV6D/RHCTFKcC1br2o+bgSXSGaFHqC/YYBaUfYdDc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-k0EV6D/RHCTFKcC1br2o+bgSXSGaFHqC/YYBaUfYdDc=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /privacy*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /terms*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /delete-account*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 # 안드로이드가 앱 링크를 확인할 때 읽는 파일. JSON 으로, 다른 곳으로 넘기지 않고 준다.
 /.well-known/assetlinks.json
@@ -41,10 +41,10 @@
 # 같은 이름으로 갱신되는 홈페이지 파일은 다시 방문할 때 최신 버전을 확인한다.
 /
   Cache-Control: no-cache
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev https://cloudflareinsights.com; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 /index.html
   Cache-Control: no-cache
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev https://cloudflareinsights.com; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 /styles.css
   Cache-Control: no-cache
 /site.js
