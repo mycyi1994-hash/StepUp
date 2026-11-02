@@ -22,6 +22,8 @@ on:
       - "scripts/check-coaching-twin.py"
       - "coach-worker/**"
       - "app/src/main/java/com/stepup/android/domain/coaching/**"
+      # 코칭 쌍둥이가 읽는 경제 규칙(RewardEconomy)은 공용 모듈로 옮겼다(2026-11-02 KMP)
+      - "shared/src/commonMain/kotlin/com/stepup/android/domain/**"
       - ".github/workflows/test-sql.yml"
   pull_request:
   workflow_dispatch:

@@ -15,7 +15,16 @@
 | `iosApp/` | Xcode 앱 — SwiftUI 입구(`StepUpApp.swift`)가 Kotlin 화면(`MainViewController`)을 띄운다. 프로젝트는 `project.yml`(XcodeGen)에서 만들고 저장소에 넣지 않는다 | iOS 16+, 아이폰만 |
 | `app/` | 안드로이드 앱 — 그대로. `implementation(project(":shared"))` 로 공용 규칙을 받는다 | Android |
 
-지금 공용으로 옮긴 것: `RunPace`(페이스 · 속도) · `RunStill`(오래 서 있음)과 그 검사. 나머지 `domain/` 은 아직 `app/` 에 있다.
+지금 공용으로 옮긴 것(2026-11-02 2단계 1차 — 24개): 거리 · 페이스 · 경고(`RunDistance` · `RunPace` · `RunStill` · `RunOverspeed` · `TrackFixRule` · `RunTrack` · `RunIntegrity`) ·
+코스 · 땅따먹기(`RunCourse` · `Territory` · `DemoCourses`) · 신발 · 경제(`Sneaker` · `ShoeCatalog` · `ShoeNickname` · `RewardEconomy` · `RunnerLevel` · `StreakRules` · `Achievements`) ·
+`Avatar` · `AvatarArt` · `BodyProfile` · `ChainRecord` · `Onboarding` · `RecordingOwner` · `WeatherScene`.
+- JVM 전용 호출은 같은 값을 내는 공용 함수로(`Platform.kt`): `Math.toRadians/toDegrees` → 같은 상수, `Math.rint` → `round`, `Math.round` → `roundToLong`,
+  `System.currentTimeMillis()` → `epochMillis()`, 좌표 소수 둘째 자리 반올림 → `roundHalfUp2`(안드로이드는 그대로 `BigDecimal`, iOS 는 `NSDecimalNumber`),
+  `"%03d".format` → `padStart`, `String.codePoints` → 코드 포인트 세기.
+- 앱에 남긴 것(다음 차례): `java.time` · `Locale` · `BigDecimal` 을 쓰거나 그런 파일에 기대는 20개 — `CrewCards` · `CrewChat` · `CrewHome` · `CrewRoom` · `CrewRunPool` ·
+  `Leaderboard` · `RunRecords` · `StoryRuns` · `Stories` · `Community` · `FeaturedMeetup` · `RunPlan` · `DietRoutine` · `RunNotificationText` · `CourseRecommendations` ·
+  `ShoeDraw` · `ShoeForge` · `ShoeTier` · `WalletApps` · `coaching/` 다섯. 화면 글자인 `formatKm`(기기 언어를 따르는 `%.2f`)은 `RunCourseFormat.kt` 로 앱에 남겼다.
+- 검사는 아직 `app/src/test` 에 있다(안드로이드에서 돈다) — 공용 검사(`commonTest`)로 옮기는 것은 kotlin.test 로 바꾸며 차례로.
 
 ## Mac 에서 돌리기
 
@@ -45,8 +54,8 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 | 단계 | 할 일 | 안드로이드에 닿나 |
 |---|---|---|
 | 0. 뼈대 (끝남, 2026-11-02) | 모듈 셋 · Xcode 앱 · 로고 화면 · 아이콘 · CI · 공용 규칙 둘 | 규칙 둘이 `shared/` 로 이사(동작 같음) |
-| **1. Kotlin 올리기** (진행 중) | 2.0.21 → **2.3.21** · KSP **2.3.6**(KSP2) · Room **2.8.5** · Compose Multiplatform **1.12.2**. `android { kotlinOptions }` → `kotlin { compilerOptions }`. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
-| 2. 규칙 옮기기 | `domain/` 44개 · `domain/coaching/` 을 `shared/` 로. `java.time` · `java.util` 은 kotlinx-datetime 등으로. `check-coaching-twin.py` 경로를 함께 고친다 | 예(동작 같음) |
+| 1. Kotlin 올리기 (끝남, #152) | 2.0.21 → **2.3.21** · KSP **2.3.6**(KSP2) · Room **2.8.5** · Compose Multiplatform **1.12.2**. `android { kotlinOptions }` → `kotlin { compilerOptions }`. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
+| **2. 규칙 옮기기** (1차 진행 중 — 24개) | `domain/` 44개 · `domain/coaching/` 을 `shared/` 로. `java.time` · `java.util` 은 kotlinx-datetime 등으로. `check-coaching-twin.py` 경로를 함께 고친다 | 예(동작 같음) |
 | 3. 데이터 | 서버 호출(`data/remote` — 지금 `HttpURLConnection`)을 Ktor 로, 폰 DB 를 Room KMP 로, 설정을 DataStore KMP 로. 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
 | 4. 화면 | `ui/` 를 `sharedUi/` 로 화면 묶음씩(테마 · 부품 → 로그인 · 접속 코드 → 홈 · 러닝 → 함께 뛰기 → 신발 → 내 정보). 글자(`res/values*` 4개 언어) · 글꼴 · 그림은 `composeResources/` 로 — `check-strings.py` · `check-copy.py` 도 새 자리를 본다 | 예 — 안드로이드 앱이 `sharedUi` 의 화면을 쓴다 |
 | 5. iOS 전용 | 아래 표 | 아니요 |

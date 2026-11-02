@@ -4,7 +4,8 @@
 
 사용자 "다음은 애플 차례" → "KMP로 가자". [docs/ios/README.md](docs/ios/README.md)(구조 · 만드는 순서 · 안드로이드 ↔ iOS 대응) · [docs/APP-STORE.md](docs/APP-STORE.md)(App Store Connect 칸 · 사용자가 준비할 것).
 - `shared/`(공용 규칙, jvm + iOS — 패키지는 그대로 `com.stepup.android.domain`, 안드로이드 앱이 `implementation(project(":shared"))`) · `sharedUi/`(iOS 화면, Compose Multiplatform → 틀 `StepUpKit`) ·
-  `iosApp/`(SwiftUI 입구, `project.yml` 을 XcodeGen 으로 — `.xcodeproj` 는 저장소에 없다). 지금 옮긴 규칙은 `RunPace` · `RunStill` 둘, 화면은 로고 하나.
+  `iosApp/`(SwiftUI 입구, `project.yml` 을 XcodeGen 으로 — `.xcodeproj` 는 저장소에 없다). 옮긴 규칙은 24개(2단계 1차 — 거리 · 경고 · 코스 · 땅따먹기 · 신발 · 경제, 목록은 ios/README), 화면은 로고 하나.
+  공용 규칙에서는 JVM 함수 대신 `Platform.kt`(`epochMillis` · `roundHalfUp2` · `toRadians`)를 쓴다 — 안드로이드 값이 비트까지 같아야 한다(땅따먹기 칸은 서버와 맞대어 본다).
 - 공용 규칙을 고치면 `./gradlew :shared:jvmTest`(Build APK 에서도 돈다). iOS 빌드는 `.github/workflows/ios.yml`(macOS — iOS 쪽 파일이 바뀔 때만).
 - **브랜치**: iOS 작업은 `ios-app` 에 모은다(사용자 "아이폰 어플용 브랜치 따로 분리") — 단계마다 작업 브랜치 → `ios-app` PR. `main` 에는 안드로이드가 테스트 APK 로 확인된 뒤에만.
 - Kotlin 2.3.21 · KSP 2.3.6(KSP2 — 더 새 KSP 는 AGP 8.12+) · Room 2.8.5 · Compose Multiplatform 1.12.2 · CI Xcode 26(2026-11-02 1단계, `ios-app`). `android { kotlinOptions }` 는 `kotlin { compilerOptions }` 로.

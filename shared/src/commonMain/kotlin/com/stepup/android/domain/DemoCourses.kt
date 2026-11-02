@@ -136,7 +136,7 @@ internal const val METERS_PER_DEGREE_LAT = 111_320.0
 
 /** 경도 1도의 거리(m) — 위도가 높을수록 좁아진다 */
 internal fun metersPerDegreeLng(lat: Double): Double =
-    METERS_PER_DEGREE_LAT * cos(Math.toRadians(lat)).coerceAtLeast(0.01)
+    METERS_PER_DEGREE_LAT * cos(toRadians(lat)).coerceAtLeast(0.01)
 
 /**
  * 한 점을 중심으로 도는 닫힌 고리를 만든다.

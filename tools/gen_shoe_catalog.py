@@ -8,7 +8,7 @@ catalog.json 이 원본이다. 모델 번호는 서버(sneaker_models) · 체인
 만드는 것
   앱   res/drawable-nodpi/shoe_<번호>.webp          --images 를 주면 거기서(파일 이름 = catalog 의 file) 복사
        res/values{,-ko,-ja,-zh}/shoes.xml            이름 — 기본 · ja · zh 는 영어, ko 는 한국어(기존 도감과 같은 규칙)
-       java/.../domain/ShoeCatalog.kt                번호 → 등급 · 시리즈 · 영어 이름
+       shared/.../domain/ShoeCatalog.kt              번호 → 등급 · 시리즈 · 영어 이름
        java/.../ui/components/ShoeCatalogRes.kt      번호 → 그림 · 이름 리소스
   서버 supabase/migrations/0045_shoe_catalog.sql     '-- 도감 시작' ~ '-- 도감 끝' 사이
   워커 attester/src/shoe-catalog.js                  메타데이터 이름 · 그림 · v3 도감 추가
@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / 'design/shoes-2026-09/catalog.json'
 RES = ROOT / 'app/src/main/res'
 DRAWABLE = RES / 'drawable-nodpi'
-DOMAIN = ROOT / 'app/src/main/java/com/stepup/android/domain/ShoeCatalog.kt'
+DOMAIN = ROOT / 'shared/src/commonMain/kotlin/com/stepup/android/domain/ShoeCatalog.kt'
 UI_RES = ROOT / 'app/src/main/java/com/stepup/android/ui/components/ShoeCatalogRes.kt'
 SQL = ROOT / 'supabase/migrations/0045_shoe_catalog.sql'
 WORKER = ROOT / 'attester/src/shoe-catalog.js'

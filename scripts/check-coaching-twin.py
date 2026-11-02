@@ -16,11 +16,22 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 KT = ROOT / "app/src/main/java/com/stepup/android/domain"
+# 안드로이드 · iOS 공용 규칙(2026-11-02 KMP) — 옮긴 파일은 여기서 찾는다
+SHARED = ROOT / "shared/src/commonMain/kotlin/com/stepup/android/domain"
+
+
+def domain(rel):
+    for base in (SHARED, KT):
+        if (base / rel).exists():
+            return (base / rel).read_text(encoding="utf-8")
+    raise SystemExit(f"{rel} 를 app/ · shared/ 어디에서도 찾지 못했다")
+
+
 SQL = (ROOT / "supabase/migrations/0060_coaching.sql").read_text(encoding="utf-8")
-splits = (KT / "coaching/CoachingSplits.kt").read_text(encoding="utf-8")
-plans = (KT / "coaching/CoachingPlans.kt").read_text(encoding="utf-8")
-ai = (KT / "coaching/CoachingAi.kt").read_text(encoding="utf-8")
-economy = (KT / "RewardEconomy.kt").read_text(encoding="utf-8")
+splits = domain("coaching/CoachingSplits.kt")
+plans = domain("coaching/CoachingPlans.kt")
+ai = domain("coaching/CoachingAi.kt")
+economy = domain("RewardEconomy.kt")
 
 errors = []
 

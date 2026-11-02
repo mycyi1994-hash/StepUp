@@ -5,6 +5,7 @@ import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.exp
+import kotlin.math.round
 import kotlin.math.ln
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -32,16 +33,16 @@ object Territory {
     private const val EARTH_R = 6378137.0
     private val SQRT3 = sqrt(3.0)
 
-    fun mercatorX(lng: Double): Double = EARTH_R * Math.toRadians(lng)
+    fun mercatorX(lng: Double): Double = EARTH_R * toRadians(lng)
 
     fun mercatorY(lat: Double): Double {
         val clamped = lat.coerceIn(-85.0, 85.0)
-        return EARTH_R * ln(tan(PI / 4 + Math.toRadians(clamped) / 2))
+        return EARTH_R * ln(tan(PI / 4 + toRadians(clamped) / 2))
     }
 
-    private fun latOf(y: Double): Double = Math.toDegrees(2 * atan(exp(y / EARTH_R)) - PI / 2)
+    private fun latOf(y: Double): Double = toDegrees(2 * atan(exp(y / EARTH_R)) - PI / 2)
 
-    private fun lngOf(x: Double): Double = Math.toDegrees(x / EARTH_R)
+    private fun lngOf(x: Double): Double = toDegrees(x / EARTH_R)
 
     /** 좌표가 속한 칸 이름 */
     fun cellOf(lat: Double, lng: Double): String {
@@ -53,9 +54,9 @@ object Territory {
         val cx = q
         val cz = r
         val cy = -cx - cz
-        var rx = Math.rint(cx)
-        var ry = Math.rint(cy)
-        var rz = Math.rint(cz)
+        var rx = round(cx)
+        var ry = round(cy)
+        var rz = round(cz)
         val dx = abs(rx - cx)
         val dy = abs(ry - cy)
         val dz = abs(rz - cz)
@@ -92,7 +93,7 @@ object Territory {
         val (q, r) = axial(cell) ?: return emptyList()
         val (cx, cy) = centerXY(q, r)
         return (0 until 6).map { i ->
-            val angle = Math.toRadians(60.0 * i - 30.0)
+            val angle = toRadians(60.0 * i - 30.0)
             GeoPoint(latOf(cy + HEX_SIZE * sin(angle)), lngOf(cx + HEX_SIZE * cos(angle)))
         }
     }

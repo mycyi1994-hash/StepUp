@@ -6,6 +6,8 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTes
 // 여기에는 안드로이드 · iOS 어느 쪽 API 도 들이지 않는다 — 기기마다 다른 일은 앱 쪽에 둔다.
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    // 뽑기 확률 표(DrawOdds.parse)가 서버 JSON 을 읽는다
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -23,6 +25,10 @@ kotlin {
     }
 
     sourceSets {
+        commonMain.dependencies {
+            implementation(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.json)
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }

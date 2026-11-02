@@ -252,7 +252,7 @@ object SneakerDesigns {
         rows.map { (index, name, stats) ->
             val (rarity, variant) = slotOf(index)
             SneakerDesign(
-                code = "${prefix[faction]}-%03d".format(index),
+                code = "${prefix[faction]}-${index.toString().padStart(3, '0')}",
                 faction = faction,
                 rarity = rarity,
                 variant = variant,
@@ -577,7 +577,7 @@ object SneakerMint {
             comfort = rollStat(random, rarity, 0.30),
             durability = 100,
             equipped = false,
-            acquiredAt = System.currentTimeMillis(),
+            acquiredAt = epochMillis(),
         )
     }
 
@@ -594,7 +594,7 @@ object SneakerMint {
         comfort = 1.12,
         durability = 100,
         equipped = true,
-        acquiredAt = System.currentTimeMillis(),
+        acquiredAt = epochMillis(),
     )
 }
 

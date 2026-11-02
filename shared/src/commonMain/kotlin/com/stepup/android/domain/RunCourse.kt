@@ -1,7 +1,5 @@
 package com.stepup.android.domain
 
-import java.math.BigDecimal
-import java.math.RoundingMode
 import kotlin.math.floor
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -97,7 +95,7 @@ fun List<GeoPoint>.normalizedTrack(): List<Pair<Float, Float>> {
     val minLng = lngs.min()
     val maxLng = lngs.max()
     val midLat = (minLat + maxLat) / 2
-    val scaleLng = cos(Math.toRadians(midLat)).coerceAtLeast(0.05)
+    val scaleLng = cos(toRadians(midLat)).coerceAtLeast(0.05)
 
     val spanY = max(maxLat - minLat, 1e-6)
     val spanX = max((maxLng - minLng) * scaleLng, 1e-6)
@@ -119,15 +117,15 @@ fun List<GeoPoint>.normalizedTrack(): List<Pair<Float, Float>> {
  */
 fun GeoPoint.coarse(): GeoPoint = GeoPoint(coarse(lat), coarse(lng))
 
-private fun coarse(value: Double): Double = BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).toDouble()
+private fun coarse(value: Double): Double = roundHalfUp2(value)
 
 /** 좌표 사이 실제 거리(m) — 하버사인 */
 fun haversineMeters(a: GeoPoint, b: GeoPoint): Double {
     val r = 6_371_000.0
-    val dLat = Math.toRadians(b.lat - a.lat)
-    val dLng = Math.toRadians(b.lng - a.lng)
+    val dLat = toRadians(b.lat - a.lat)
+    val dLng = toRadians(b.lng - a.lng)
     val s = sin(dLat / 2) * sin(dLat / 2) +
-        cos(Math.toRadians(a.lat)) * cos(Math.toRadians(b.lat)) *
+        cos(toRadians(a.lat)) * cos(toRadians(b.lat)) *
         sin(dLng / 2) * sin(dLng / 2)
     return r * 2 * atan2(sqrt(s), sqrt(1 - s))
 }
@@ -140,9 +138,9 @@ fun distanceToPathMeters(point: GeoPoint, path: List<GeoPoint>): Double {
     if (path.isEmpty()) return Double.POSITIVE_INFINITY
     if (path.size == 1) return haversineMeters(point, path[0])
     val r = 6_371_000.0
-    val cosLat = cos(Math.toRadians(point.lat))
-    fun x(g: GeoPoint) = Math.toRadians(g.lng - point.lng) * cosLat * r
-    fun y(g: GeoPoint) = Math.toRadians(g.lat - point.lat) * r
+    val cosLat = cos(toRadians(point.lat))
+    fun x(g: GeoPoint) = toRadians(g.lng - point.lng) * cosLat * r
+    fun y(g: GeoPoint) = toRadians(g.lat - point.lat) * r
     var best = Double.POSITIVE_INFINITY
     for (i in 1 until path.size) {
         val ax = x(path[i - 1])
@@ -186,5 +184,3 @@ fun RunCourse.startsNear(point: GeoPoint, meters: Double = 400.0): Boolean {
     return haversineMeters(first, point) <= meters
 }
 
-/** 표시용 — 소수점 아래 자리가 흔들리지 않게 고정 */
-fun formatKm(km: Double): String = "%.2f".format(min(abs(km), 999.99))

@@ -1247,7 +1247,7 @@ private fun LevelsSheet(crewToday: CrewRunToday?, rules: CrewRunRules, onClose: 
  */
 @Composable
 private fun ShoesSheet(shoes: List<Sneaker>, picked: Long?, crewLevel: Int, onConfirm: (Long) -> Unit, onClose: () -> Unit) {
-    val choices = shoes.filter { it.server != null && it.server.status == "OWNED" && it.server.chainState == "APP" }
+    val choices = shoes.filter { it.server?.let { s -> s.status == "OWNED" && s.chainState == "APP" } == true }
         .sortedWith(compareByDescending<Sneaker> { it.id == picked }.thenByDescending { it.server?.durabilityMax ?: 0 }.thenByDescending { it.level })
     var draft by rememberSaveable { mutableStateOf(picked ?: choices.firstOrNull { it.equipped }?.id ?: choices.firstOrNull()?.id) }
     LobbySheetFrame(stringResource(R.string.crew5_shoes_title), onClose, Modifier.testTag("party-shoe-sheet")) {
