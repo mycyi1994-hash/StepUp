@@ -55,20 +55,24 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Kotlin 2.0.21 은 Xcode 16 까지와 맞춰 나왔다. 러너에 있는 Xcode 16 중 가장 새 것을 쓴다(없으면 러너 기본값).
-      # 판 번호 없는 Xcode_16.app(16.0)은 맞는 시뮬레이터 런타임이 러너에 없어 에셋 컴파일이 멈췄다(2026-11-02 첫 실행) — 높은 판부터 찾는다.
-      # App Store 제출은 Xcode 26 이 필요하다 — Kotlin 을 올리는 단계에서 이 줄을 Xcode 26 으로 바꾼다(docs/ios/README.md).
-      - name: Pick Xcode 16
+      # App Store 는 Xcode 26 · iOS 26 SDK 로 만든 빌드만 받는다(2026-04 부터) — Kotlin 2.3 에 맞춰 Xcode 26 중 가장 새 판을 쓴다(2026-11-02).
+      # 판 번호 없는 이름(Xcode_26.app)보다 번호 있는 판을 먼저 찾는다 — 번호 없는 Xcode_16.app 은 맞는 시뮬레이터 런타임이 없었다(2026-11-02).
+      - name: Pick Xcode 26
         run: |
           ls -d /Applications/Xcode*.app || true
-          for v in 16.4 16.3 16.2 16.1; do
-            if [ -d "/Applications/Xcode_$v.app" ]; then sudo xcode-select -s "/Applications/Xcode_$v.app"; break; fi
-          done
+          XCODE=$(ls -d /Applications/Xcode_26.*.app 2>/dev/null | sort -t. -k2 -n | tail -1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | tail -1)
+          if [ -z "$XCODE" ]; then echo "러너에 Xcode 26 이 없다"; exit 1; fi
+          sudo xcode-select -s "$XCODE"
+          # 시뮬레이터 하나를 정해 검사 · 실행 캡처가 같은 기기를 쓴다(iPhone 17 이 없으면 16)
+          SIM=$(xcrun simctl list devices available | grep -m1 -E "iPhone 17 \(" | grep -oE "[0-9A-F-]{36}" || true)
+          [ -n "$SIM" ] || SIM=$(xcrun simctl list devices available | grep -m1 -E "iPhone 16 \(" | grep -oE "[0-9A-F-]{36}")
+          echo "IOS_SIM=$SIM" >> "$GITHUB_ENV"
           xcodebuild -version
           xcrun simctl list devices available | grep -i iphone | head -20
 
       - name: Shared rules tests (JVM · iOS simulator)
-        run: ./gradlew :shared:jvmTest :shared:iosSimulatorArm64Test --stacktrace
+        run: ./gradlew :shared:jvmTest :shared:iosSimulatorArm64Test -Pstepup.iosTestDevice="$IOS_SIM" --stacktrace
 
       - name: Generate Xcode project
         run: |
@@ -94,7 +98,7 @@ jobs:
         run: |
           APP=iosApp/build/Build/Products/Debug-iphonesimulator/StepUp.app
           BUNDLE=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
-          DEVICE=$(xcrun simctl list devices available | grep -m1 -E "iPhone 16 \(" | grep -oE "[0-9A-F-]{36}")
+          DEVICE="$IOS_SIM"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP"

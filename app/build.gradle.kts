@@ -228,9 +228,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -281,6 +278,13 @@ tasks.matching {
             }
         }
     }
+
+// Kotlin 2.2 부터 android { kotlinOptions } 는 쓸 수 없다 — 같은 값을 kotlin { compilerOptions } 로
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")

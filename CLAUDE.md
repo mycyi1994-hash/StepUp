@@ -6,7 +6,9 @@
 - `shared/`(공용 규칙, jvm + iOS — 패키지는 그대로 `com.stepup.android.domain`, 안드로이드 앱이 `implementation(project(":shared"))`) · `sharedUi/`(iOS 화면, Compose Multiplatform → 틀 `StepUpKit`) ·
   `iosApp/`(SwiftUI 입구, `project.yml` 을 XcodeGen 으로 — `.xcodeproj` 는 저장소에 없다). 지금 옮긴 규칙은 `RunPace` · `RunStill` 둘, 화면은 로고 하나.
 - 공용 규칙을 고치면 `./gradlew :shared:jvmTest`(Build APK 에서도 돈다). iOS 빌드는 `.github/workflows/ios.yml`(macOS — iOS 쪽 파일이 바뀔 때만).
-- 다음은 Kotlin 올리기(2.0.21 → Xcode 26 을 지원하는 판 — App Store 제출 요건) → 규칙 · 데이터 · 화면 옮기기. 안드로이드에 닿는 단계는 테스트 APK 로 확인하고 넘어간다.
+- **브랜치**: iOS 작업은 `ios-app` 에 모은다(사용자 "아이폰 어플용 브랜치 따로 분리") — 단계마다 작업 브랜치 → `ios-app` PR. `main` 에는 안드로이드가 테스트 APK 로 확인된 뒤에만.
+- Kotlin 2.3.21 · KSP 2.3.6(KSP2 — 더 새 KSP 는 AGP 8.12+) · Room 2.8.5 · Compose Multiplatform 1.12.2 · CI Xcode 26(2026-11-02 1단계, `ios-app`). `android { kotlinOptions }` 는 `kotlin { compilerOptions }` 로.
+  다음은 규칙 · 데이터 · 화면 옮기기. 안드로이드에 닿는 단계는 테스트 APK 로 확인하고 넘어간다.
 - 계정은 조직(법인)으로 신청했다(2026-11-02, 애플 확인 대기). 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
 
 ## 최신 — 대기 명단 등록 단단하게 (2026-11-02, 서버 0082)
