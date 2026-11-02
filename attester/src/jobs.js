@@ -292,7 +292,7 @@ export async function sendJobs(env, deps, c, kinds) {
   return out
 }
 
-/** 2분 작업 — 확인 → v3 준비 → 보내기. 한 단계가 실패해도 다음 단계는 한다. */
+/** 2분 작업 — 확인 → 스냅숏 줄 세우기 → v3 준비 → 보내기. 한 단계가 실패해도 다음 단계는 한다. */
 export async function runJobs(env, deps) {
   const c = deps.clients(env)
   const step = (name, fn) =>
@@ -301,11 +301,13 @@ export async function runJobs(env, deps) {
       return { error: true }
     })
   const confirm = await step('confirm', () => confirmJobs(env, deps, c))
+  // 스냅숏(0081) — 이번 칸(6시간)을 아직 줄 세우지 않았으면 서버가 한 번만 줄 세운다. 보내기는 다른 기록과 같은 줄로
+  const snapshot = c.addresses.eas ? await step('snapshot', () => deps.rpc(env, 'attester_snapshot_tick', {})) : null
   const v3 = await step('v3', () => ensureV3(env, deps, c))
   // 새 도감 모델이 v3 도감에 다 들어간 뒤에 v3 일(금고 발행 · 갱신)을 보낸다 — 없는 모델은 컨트랙트가 받지 않는다
   const catalog = v3?.ready ? await step('catalog', () => ensureCatalog(env, deps, c)) : null
   const kinds = [...(c.addresses.eas ? EAS_KINDS : []), ...(v3?.ready && catalog?.ready ? V3_KINDS : [])]
   const send = await step('send', () => sendJobs(env, deps, c, kinds))
-  return { confirm, v3, catalog, send }
+  return { confirm, snapshot, v3, catalog, send }
 }
 

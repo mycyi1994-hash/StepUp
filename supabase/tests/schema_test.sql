@@ -4773,7 +4773,7 @@ call pg_temp.login('c5c5c5c5-c5c5-c5c5-c5c5-c5c5c5c5c5c5');
 do $$ begin
   perform pg_temp.ok((select confirmed_total from public.admin_chain_jobs_stats() where kind = 'RUN_PROOF') = 1
                      and (select confirmed_total from public.admin_chain_jobs_stats() where kind = 'VAULT_MINT') = 1
-                     and (select count(*) from public.admin_chain_jobs_stats()) = 20,
+                     and (select count(*) from public.admin_chain_jobs_stats()) = 23, -- 0081 스냅숏 셋(SNAP_USER · SNAP_CREW · SNAP_ALL)까지
     '관리자는 종류마다 확정 수를 본다');
 end $$;
 reset role;
@@ -9814,6 +9814,142 @@ do $$ begin
 end $$;
 select public.admin_access_mode_set('OPEN');
 delete from public.app_admins where user_id = 'a8000000-0000-0000-0000-000000000002';
+
+-- ════════════════════════════════════════════════════════════════════
+--  0081 체인 스냅숏 — 6시간마다 사람 · 크루 · 전체 (2026-11-02)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 체인 스냅숏(0081) ─────────────────'
+reset role;
+select set_config('request.jwt.claims', '', false);
+call pg_temp.login(null);
+-- 전체 스냅숏은 어테스터 계정 이름으로 줄 선다 — 검사에서는 있는 계정 하나를 어테스터로
+update public.economy_settings set value = to_jsonb('a7800000-0000-0000-0000-000000000002'::text) where key = 'attester_user_id';
+update public.economy_settings set value = 'true' where key = 'chain_jobs_enabled';
+delete from economy.snapshot_slots;
+do $$
+declare v int := economy.snapshot_slot(now());
+begin
+  perform pg_temp.ok(v between 2000010100 and 2099123118 and (v % 100) in (0, 6, 12, 18),
+    format('칸 = 한국 시간 6시간 칸의 시작 YYYYMMDDHH(%s)', v));
+  perform pg_temp.ok(economy.snapshot_slot(timestamptz '2026-11-02 05:59:00+09') = 2026110200
+                     and economy.snapshot_slot(timestamptz '2026-11-02 06:00:00+09') = 2026110206
+                     and economy.snapshot_slot(timestamptz '2026-11-01 23:30:00+00') = 2026110206,
+    '칸 경계는 한국 시간 0 · 6 · 12 · 18시');
+end $$;
+
+call pg_temp.login('a7800000-0000-0000-0000-000000000001');
+set role authenticated;
+call pg_temp.must_fail($q$ select public.attester_snapshot_tick() $q$, '사용자는 스냅숏을 줄 세우지 못한다');
+reset role;
+
+set role stepup_attester;
+select set_config('request.jwt.claims', '{"role":"stepup_attester"}', false);
+create temp table snap_ticks as select 1 as n, public.attester_snapshot_tick() as v;
+insert into snap_ticks select 2, public.attester_snapshot_tick();
+reset role;
+select set_config('request.jwt.claims', '', false);
+do $$
+declare v1 jsonb := (select v from snap_ticks where n = 1);
+        v2 jsonb := (select v from snap_ticks where n = 2);
+        v_slot int := economy.snapshot_slot(now());
+begin
+  perform pg_temp.ok((v1 ->> 'slot')::int = v_slot
+                     and (v1 ->> 'users')::int = (select count(*) from public.profiles)
+                     and (v1 ->> 'crews')::int = (select count(*) from public.crews)
+                     and (v1 ->> 'all')::int = 1,
+    format('이번 칸 — 계정마다 · 크루마다 · 전체 하나(%s)', v1));
+  perform pg_temp.ok((v2 ->> 'already')::boolean and (select count(*) from public.chain_jobs
+                       where kind = 'SNAP_ALL' and (args ->> 'slot')::int = v_slot) = 1,
+    '같은 칸은 한 번만(다시 불러도 줄이 늘지 않는다)');
+  perform pg_temp.ok(exists (select 1 from public.chain_jobs where kind = 'SNAP_USER'
+                              and user_id = 'a7800000-0000-0000-0000-000000000001' and (args ->> 'slot')::int = v_slot)
+                     and not exists (select 1 from public.chain_jobs j where j.kind = 'SNAP_CREW'
+                                      and j.user_id is distinct from (select c.owner_id from public.crews c
+                                                                       where c.id = (j.args ->> 'crew_id')::uuid))
+                     and (select user_id from public.chain_jobs where kind = 'SNAP_ALL' and (args ->> 'slot')::int = v_slot)
+                         = 'a7800000-0000-0000-0000-000000000002',
+    '사람 스냅숏은 그 사람, 크루 스냅숏은 크루장, 전체는 어테스터 계정 이름으로');
+end $$;
+
+-- 재료 — 가명 · 서버 값 그대로, 대조용 값은 빠지고 dataHash 가 붙는다
+do $$
+declare j public.chain_jobs; v jsonb;
+begin
+  select * into j from public.chain_jobs where kind = 'SNAP_USER' and user_id = 'a7800000-0000-0000-0000-000000000001'
+   order by id desc limit 1;
+  v := economy.activity_seal(j);
+  perform pg_temp.ok(v ->> 'runner' = economy.person_pseudonym(j.user_id)
+                     and v ->> 'totalM' = round((select lifetime_km from public.profiles where id = j.user_id) * 1000)::bigint::text
+                     and (v ->> 'runs')::int = (select count(*) from public.walk_sessions
+                                                  where user_id = j.user_id and verdict <> 'VOID')
+                     and (v ->> 'shoes')::int = (select count(*) from public.market_sneakers where owner_id = j.user_id)
+                     and v ->> 'pointsMilli' ~ '^\d+$' and v ->> 'dataHash' ~ '^0x[0-9a-f]{64}$'
+                     and not v ? '_audit' and v::text !~* 'a7800000',
+    format('사람 스냅숏 — 누적 거리 · 러닝 · 신발 · 잔고, 가명만(%s)', v));
+  select * into j from public.chain_jobs where kind = 'SNAP_ALL' order by id desc limit 1;
+  v := economy.activity_seal(j);
+  perform pg_temp.ok((v ->> 'accounts')::int = (select count(*) from public.profiles)
+                     and (v ->> 'crews')::int = (select count(*) from public.crews)
+                     and v ->> 'runs' = (select count(*) from public.walk_sessions where verdict <> 'VOID')::text
+                     and v ->> 'recipient' = '0x0000000000000000000000000000000000000000'
+                     and not v ? 'runner',
+    format('전체 스냅숏 — 합계만, 사람 없음(%s)', v));
+  select * into j from public.chain_jobs where kind = 'SNAP_CREW' order by id desc limit 1;
+  if found then
+    v := economy.activity_seal(j);
+    perform pg_temp.ok(v ->> 'crew' = economy.pseudonym('crew', j.args ->> 'crew_id')
+                       and (v ->> 'members')::int = (select count(*) from public.crew_members
+                                                       where crew_id = (j.args ->> 'crew_id')::uuid)
+                       and v ->> 'runM' ~ '^\d+$',
+      format('크루 스냅숏 — 크루 가명 · 인원 · 크루 러닝 거리(%s)', v));
+  end if;
+end $$;
+
+-- 어테스터가 다른 기록과 같은 줄로 가져간다
+create temp table snap_held as select id from public.chain_jobs
+ where status = 'QUEUED' and not (kind = any (economy.snapshot_kinds())
+                                  and (user_id = 'a7800000-0000-0000-0000-000000000001' or kind = 'SNAP_ALL'));
+update public.chain_jobs set next_at = now() + interval '1 day' where id in (select id from snap_held);
+update public.chain_jobs set next_at = now() - interval '1 second'
+ where kind = any (economy.snapshot_kinds()) and id not in (select id from snap_held);
+set role stepup_attester;
+select set_config('request.jwt.claims', '{"role":"stepup_attester"}', false);
+create temp table snap_claimed as
+  select c.* from public.attester_jobs_claim(array['SNAP_USER', 'SNAP_CREW', 'SNAP_ALL'], 50) c;
+reset role;
+select set_config('request.jwt.claims', '', false);
+do $$ begin
+  perform pg_temp.ok((select array_agg(distinct kind order by kind) from snap_claimed)
+                     = (select array_agg(distinct kind order by kind) from public.chain_jobs
+                         where kind = any (economy.snapshot_kinds()) and id not in (select id from snap_held))
+                     and (select array_agg(distinct kind order by kind) from snap_claimed) @> array['SNAP_ALL', 'SNAP_USER']
+                     and not exists (select 1 from snap_claimed where payload ->> 'dataHash' !~ '^0x[0-9a-f]{64}$'),
+    '스냅숏도 가져간다 — 봉인한 재료 그대로(dataHash)');
+end $$;
+update public.chain_jobs set next_at = now() where id in (select id from snap_held);
+
+-- 앱의 내 체인 기록에는 스냅숏을 보이지 않는다
+call pg_temp.login('a7800000-0000-0000-0000-000000000001');
+set role authenticated;
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from public.my_chain_activity(200) where kind like 'SNAP\_%'),
+    '내 체인 기록에는 스냅숏이 없다(6시간마다 쌓여 활동 기록을 가린다)');
+end $$;
+reset role;
+
+-- 끄면 새 칸을 줄 세우지 않는다
+call pg_temp.login(null);
+update public.economy_settings set value = 'false' where key = 'snapshot_enabled';
+delete from economy.snapshot_slots;
+set role stepup_attester;
+select set_config('request.jwt.claims', '{"role":"stepup_attester"}', false);
+do $$ begin
+  perform pg_temp.ok(public.attester_snapshot_tick() ->> 'skipped' = 'off', '스냅숏을 끄면 줄 세우지 않는다');
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+update public.economy_settings set value = 'true' where key = 'snapshot_enabled';
+update public.economy_settings set value = 'null'::jsonb where key = 'attester_user_id';
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

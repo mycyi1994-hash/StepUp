@@ -39,6 +39,11 @@
 Supabase 로그인 요청 수 제한(5분에 30번)을 실패한 재시도들이 계속 채우지 않게. 실패하면 로그에
 `attester login failed <상태> <오류 코드>` 가 남는다(`invalid_credentials` 면 `ATTESTER_PASSWORD` 를 다시 넣는다).
 
+**스냅숏(0081)**: 2분 작업은 확정 다음에 `attester_snapshot_tick()` 을 부른다 — 서버가 이번 6시간 칸(한국 시간 0 · 6 · 12 · 18시)을
+아직 줄 세우지 않았으면 계정 · 크루 · 전체 스냅숏(`SNAP_USER` · `SNAP_CREW` · `SNAP_ALL`)을 한 번만 줄 세우고, 이미 했으면 `already` 만 돌려준다.
+보내는 것은 다른 기록과 같은 줄이다. 스키마 칸은 `src/eas.js` `ACTIVITY_SCHEMAS`, 서버 재료는 `economy.snapshot_payload`(`test/activity.test.js` 가 맞대어 본다).
+계정 × 하루 4건이 쌓이니 계정이 약 3,000을 넘으면 하루 몫(약 14,000건)을 넘는다 — [지도](../docs/온체인-거래-발생-지도.md) "6시간마다 스냅숏".
+
 체인 기록 하나를 대조하려면(0078 — 나중에 필요할 때만) 서버에서 `admin_chain_audit(<job id>)` 로 증명 번호 · data_hash 를 보고
 `node scripts/audit.mjs <증명 번호> <data_hash>` — 체인에서 읽어 맞대어 본다(읽기만, 키 필요 없음).
 
