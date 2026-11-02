@@ -71,6 +71,21 @@ pull_captures() {
   done
   return 1
 }
+# 위 두 줄로도 이미 떠 있는 "응답 없음" 창은 남는다 — 2026-11-02 PR #152 · #142 에서 런처(nexuslauncher)의 ANR 창이
+# 초점을 쥔 채(mCurrentFocus=… Application Not Responding: …) 검사가 돌아 키보드 · 뒤로 가기 검사 6개가 앱과 무관하게 깨졌다.
+# 묶음마다 시작 전에 초점을 보고, ANR 창이면 그 앱을 멈춰 창을 거둔다(런처는 홈으로 다시 뜬다). 거둔 기록은 남긴다.
+dismiss_anr_focus() {
+  local phase="$1" focus pkg
+  for _ in 1 2 3; do
+    focus=$(timeout 10s adb shell dumpsys window 2>/dev/null | grep -m1 'mCurrentFocus=' | tr -d '\r') || true
+    [[ "$focus" == *"Application Not Responding: "* ]] || return 0
+    pkg=${focus##*Application Not Responding: }
+    pkg=${pkg%%\}*}
+    printf '%s %s: %s 을(를) 멈춰 ANR 창을 거둔다\n' "$(date -u +%H:%M:%S)" "$phase" "$pkg" >> screen-gallery/anr-dismissed.txt
+    timeout 10s adb shell am force-stop "$pkg" || true
+    sleep 3
+  done
+}
 # Leave time for partial screenshots/reports to upload before the workflow's 30-minute cap.
 run_instrumentation() {
   local phase="$1" classes="$2" gallery_part="${3:-}" result=0
@@ -82,6 +97,7 @@ run_instrumentation() {
   # 앱과 무관하게 깨진다(2026-09-26 PR #31). 시스템 오류 창을 숨기고, 떠 있는 창은 닫고 시작한다.
   timeout 10s adb shell settings put global hide_error_dialogs 1 || true
   timeout 10s adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
+  dismiss_anr_focus "$phase"
   timeout --signal=TERM --kill-after=20s 9m ./gradlew :app:connectedDebugAndroidTest \
     "${runner_args[@]}" \
     -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || result=$?
