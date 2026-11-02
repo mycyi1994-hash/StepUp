@@ -13,3 +13,9 @@ local.properties
 /.kotlin/
 /qa-captures/
 __pycache__/
+# iOS — Xcode 프로젝트는 iosApp/project.yml 에서 XcodeGen 으로 만든다
+/iosApp/StepUp.xcodeproj/
+/iosApp/build/
+xcuserdata/
+/shared/build
+/sharedUi/build

@@ -59,7 +59,7 @@ jobs:
       - name: Unit tests
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --stacktrace 2>&1 | tee -a build-output.log
+          ./gradlew :app:testDebugUnitTest :shared:jvmTest --stacktrace 2>&1 | tee -a build-output.log
 
       - name: Build debug APK
         run: |

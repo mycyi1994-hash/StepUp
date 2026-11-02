@@ -1,9 +1,8 @@
-package com.stepup.android
+package com.stepup.android.domain
 
-import com.stepup.android.domain.RunStill
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** 러닝 중 오래 서 있음(2026-10-17 "너무 오래 멈췄을 때(30초 이상) 경고도 떠야") — 걸음 · 경로 점이 30초 넘게 그대로면 알린다 */
 class RunStillTest {

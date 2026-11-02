@@ -22,6 +22,9 @@ playServicesLocation = "21.3.0"
 firebaseBom = "33.7.0"
 googleServices = "4.4.2"
 junit = "4.13.2"
+# iOS 앱(Kotlin Multiplatform, 2026-11-02 — docs/APP-STORE.md). Kotlin 2.0.21 과 맞는 판이다 — 더 새 판은 Kotlin 2.1+ 로 만들어졌다.
+# Kotlin 을 올릴 때(App Store 제출은 Xcode 26 이 필요하다 — docs/ios/README.md) 이 판도 함께 올린다.
+composeMultiplatform = "1.7.0"
 androidxTestJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 androidxTestRules = "1.6.1"
@@ -65,6 +68,8 @@ androidx-test-runner = { group = "androidx.test", name = "runner", version.ref =
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRules" }
 
 [plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

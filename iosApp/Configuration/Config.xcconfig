@@ -1,0 +1,8 @@
+// iOS 앱 식별 값 — docs/APP-STORE.md "0. 먼저 해 둘 것".
+// BUNDLE_ID 는 App Store Connect 에 처음 올린 뒤로는 바꿀 수 없다. 사용자가 확정하기 전까지 아래는 임시 값이다.
+BUNDLE_ID = com.stepupcrew.stepup
+// Apple Developer › Membership 의 Team ID(10자리). 비워 두면 시뮬레이터 빌드만 된다(실기기 · TestFlight 는 이 값이 있어야 한다).
+TEAM_ID =
+
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1

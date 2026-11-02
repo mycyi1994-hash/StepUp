@@ -287,6 +287,8 @@ ksp {
 }
 
 dependencies {
+    // 안드로이드 · iOS 가 함께 쓰는 규칙(2026-11-02 KMP — docs/ios/README.md). 패키지는 그대로 com.stepup.android.domain
+    implementation(project(":shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)

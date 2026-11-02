@@ -1,5 +1,14 @@
 # StepUp — 작업 메모
 
+## 최신 — iOS 앱: Kotlin Multiplatform 뼈대 (2026-11-02)
+
+사용자 "다음은 애플 차례" → "KMP로 가자". [docs/ios/README.md](docs/ios/README.md)(구조 · 만드는 순서 · 안드로이드 ↔ iOS 대응) · [docs/APP-STORE.md](docs/APP-STORE.md)(App Store Connect 칸 · 사용자가 준비할 것).
+- `shared/`(공용 규칙, jvm + iOS — 패키지는 그대로 `com.stepup.android.domain`, 안드로이드 앱이 `implementation(project(":shared"))`) · `sharedUi/`(iOS 화면, Compose Multiplatform → 틀 `StepUpKit`) ·
+  `iosApp/`(SwiftUI 입구, `project.yml` 을 XcodeGen 으로 — `.xcodeproj` 는 저장소에 없다). 지금 옮긴 규칙은 `RunPace` · `RunStill` 둘, 화면은 로고 하나.
+- 공용 규칙을 고치면 `./gradlew :shared:jvmTest`(Build APK 에서도 돈다). iOS 빌드는 `.github/workflows/ios.yml`(macOS — iOS 쪽 파일이 바뀔 때만).
+- 다음은 Kotlin 올리기(2.0.21 → Xcode 26 을 지원하는 판 — App Store 제출 요건) → 규칙 · 데이터 · 화면 옮기기. 안드로이드에 닿는 단계는 테스트 APK 로 확인하고 넘어간다.
+- 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · 개인/조직 계정 · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
+
 ## 최신 — 접속 코드 모달 · 로그인 약관 줄 빼기 · 스토어 판 지갑 주소 연결 (2026-10-29)
 
 - 접속 코드는 로그인 화면(`LoginContent`) 위 가운데 모달(`AccessCodeScreen` → `AccessCodeModal`, 핸드오프 StepUP_AccessCode_Modal_HANDOFF):
