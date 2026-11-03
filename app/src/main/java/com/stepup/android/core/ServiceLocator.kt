@@ -435,6 +435,13 @@ object ServiceLocator {
             sync = economySync.takeIf { serverEconomy },
         )
         val crewApi = CrewApi(server)
+        com.stepup.android.data.repo.RepoEvents.sink = object : com.stepup.android.data.repo.RepoEventSink {
+            override fun crewJoined(requested: Boolean) = Analytics.crewJoined(requested)
+            override fun crewCreated() = Analytics.crewCreated()
+            override fun postWritten(category: String) = Analytics.postWritten(category)
+            override fun flashJoined() = Analytics.flashJoined()
+            override fun partyStarted(size: Int) = Analytics.partyStarted(size)
+        }
         crewRepository = CrewRepository(
             api = crewApi,
             crewDao = database.crewDao(),
@@ -459,6 +466,11 @@ object ServiceLocator {
             shareByDefault = { userPrefs.partyShareLocation.first() },
             exitedParties = { userPrefs.exitedParties.first() },
             rememberExit = { userPrefs.addExitedParty(it) },
+            groupRun = {
+                WalkSessionService.state.value.let {
+                    com.stepup.android.data.repo.GroupRunState(it.isActive, it.isPaused, it.group != com.stepup.android.service.RunGroup.NONE)
+                }
+            },
         )
         // 계정이 바뀌면(다시 로그인 · 계정 삭제 · 새 로그인) 앞 계정의 대기실 · 가입 표시를 지운다 — 옛 방을 새 계정으로
         // 계속 묻거나, 앞 계정이 가입한 크루를 내 크루처럼 보이지 않게

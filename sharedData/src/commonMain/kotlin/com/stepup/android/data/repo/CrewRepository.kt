@@ -1,6 +1,5 @@
 package com.stepup.android.data.repo
 
-import androidx.annotation.VisibleForTesting
 import com.stepup.android.data.local.CrewDao
 import com.stepup.android.data.local.CrewInfoDao
 import com.stepup.android.data.local.NotificationType
@@ -20,10 +19,9 @@ import com.stepup.android.domain.RoomCourse
 import com.stepup.android.domain.RoomTarget
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.haversineMeters
-import com.stepup.android.core.Analytics
 import com.stepup.android.domain.RankPeriod
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
+import com.stepup.android.domain.ConcurrentMap
+import com.stepup.android.domain.AtomicCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -268,6 +266,8 @@ class CrewRepository(
     /** 이 폰이 러닝을 마치고 나온 방(최근 것) — 나가기가 서버에 닿지 않았어도 그 방에 다시 붙지 않게 */
     private val exitedParties: suspend () -> Set<Long> = { emptySet() },
     private val rememberExit: suspend (Long) -> Unit = {},
+    /** 이 폰이 지금 뛰는 러닝 — 모임 러닝을 실제로 뛰는 중일 때만 방에 위치를 보낸다 */
+    private val groupRun: () -> GroupRunState = { GroupRunState.NONE },
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -289,7 +289,7 @@ class CrewRepository(
     private val refreshLock = Mutex()
 
     /** 계정이 바뀔 때마다 늘어난다 — 바뀌기 전에 보낸 목록 요청의 답(앞 계정 것)을 버린다 */
-    @Volatile private var accountEpoch = 0
+    @kotlin.concurrent.Volatile private var accountEpoch = 0
 
     fun crewOf(id: String): Crew? = crews.value.firstOrNull { it.id == id }
 
@@ -360,7 +360,7 @@ class CrewRepository(
         }
         refresh()
         if (outcome == CrewActionResult.Joined || outcome == CrewActionResult.Requested) {
-            Analytics.crewJoined(requested = outcome == CrewActionResult.Requested)
+            RepoEvents.sink.crewJoined(requested = outcome == CrewActionResult.Requested)
         }
         if (outcome == CrewActionResult.Joined) {
             crewOf(crewId)?.let {
@@ -399,7 +399,7 @@ class CrewRepository(
         val outcome = when (
             val result = api.create(trimmed, monogram, tagline.trim(), area.trim(), joinPolicy.name)
         ) {
-            is ServerResult.Ok -> CrewActionResult.Created(result.value).also { Analytics.crewCreated() }
+            is ServerResult.Ok -> CrewActionResult.Created(result.value).also { RepoEvents.sink.crewCreated() }
             else -> result.asFailure()
         }
         refresh()
@@ -436,7 +436,6 @@ class CrewRepository(
     }
 
     /** 화면 검사용 — 서버 없이 크루 목록을 채운다. */
-    @VisibleForTesting
     fun showForTest(list: List<Crew>) {
         _crews.value = list
         _sync.value = CrewSyncState.Ready
@@ -483,25 +482,25 @@ class CrewRepository(
      * 앞서 받은 방의 서버 명단(방 번호와 함께) — 소식이 끊겨 화면 명단에서 잠시 뺀 사람도 들어 있다.
      * 출발한 뒤 이 명단에서 줄이 실제로 없어진 사람만 "나갔어요"로 알린다([partyDepartures]).
      */
-    @Volatile private var lastRoster: Pair<Long, List<PartyMember>>? = null
+    @kotlin.concurrent.Volatile private var lastRoster: Pair<Long, List<PartyMember>>? = null
 
     /** 마지막으로 방 상태를 받은 때(단조 ms) — 물음이 걸려 있는 동안에도 [watchLink] 가 이것으로 끊김을 잰다 */
-    @Volatile private var heardAt = 0L
+    @kotlin.concurrent.Volatile private var heardAt = 0L
 
     /** 답을 받지 못한 준비 · 준비 취소의 누른 값 — 다음 방 상태가 같으면 닿은 것, 다르면 닿지 않았다([lobbyProblem]) */
-    @Volatile private var readyTap: Boolean? = null
+    @kotlin.concurrent.Volatile private var readyTap: Boolean? = null
 
     /** 준비를 누른 차례 — 앞서 누른 것의 늦은 답이 나중에 누른 것을 덮지 않게 */
-    private val readyTaps = AtomicInteger()
+    private val readyTaps = com.stepup.android.domain.AtomicCounter()
 
     /** 나가기가 아직 서버에 닿지 않은 방 → 다시 보내는 일([leaveLater]). 서버가 그 방을 다시 내줘도 붙지 않는다 */
-    private val leaving = ConcurrentHashMap<Long, Job>()
+    private val leaving = com.stepup.android.domain.ConcurrentMap<Long, Job>()
 
     /** 출발을 보낸 방 — 두 번 눌러도 한 번만 보낸다(두 번째는 서버가 거절해 실패 안내가 남았다) */
     private var startingParty: Long? = null
 
     /** 코스 판을 본 방 — 다른 방의 첫 상태를 "코스가 바뀌었다"로 읽지 않게 */
-    @Volatile private var lastCourseRoom: Long? = null
+    @kotlin.concurrent.Volatile private var lastCourseRoom: Long? = null
 
     /** 크루 로비. 크루원만 들어갈 수 있다. */
     fun openLobby(crewId: String) {
@@ -521,7 +520,7 @@ class CrewRepository(
     /** 크루의 열린 대기실 목록(0072) — 보기만 한다(들어가지 않는다) */
     suspend fun rooms(crewId: String): ServerResult<CrewRooms> = when (val result = partyApi.rooms(crewId)) {
         is ServerResult.Ok -> {
-            val offset = result.value.serverNow.isoToMillis() - System.currentTimeMillis()
+            val offset = result.value.serverNow.isoToMillis() - com.stepup.android.domain.epochMillis()
             ServerResult.Ok(
                 CrewRooms(
                     rooms = result.value.rooms.map { it.toDomain(offset) },
@@ -561,7 +560,7 @@ class CrewRepository(
             crewId, name, course?.name, course?.km, course?.encodeTrack(), requestKey,
             mode = mode.wire,
             meetPlace = meetPlace?.trim()?.takeIf { it.isNotEmpty() && mode == com.stepup.android.domain.RoomMode.TOGETHER },
-            planAt = planAtMs?.let { java.time.Instant.ofEpochMilli(it).toString() },
+            planAt = planAtMs?.let { kotlin.time.Instant.fromEpochMilliseconds(it).toString() },
             capacity = capacity,
         )
         if (result is ServerResult.Rejected && result.reason.contains("party_create_v2") && result.reason.contains("function")) {
@@ -793,8 +792,7 @@ class CrewRepository(
                 // 이 폰이 이 모임의 러닝을 실제로 뛰는 중일 때만 위치를 보낸다 — 서버는 출발 2분 뒤에도 서로 곁에서
                 // 위치를 보낸 사람을 인원으로 센다(0056). 준비만 누르고 뛰지 않는 폰이나, 대기실을 떠나 따로 켠 자유
                 // 러닝이 방에 위치를 보내면 남의 보너스가 된다.
-                val running = com.stepup.android.service.WalkSessionService.state.value
-                    .let { it.isActive && !it.isPaused && it.group != com.stepup.android.service.RunGroup.NONE }
+                val running = groupRun().let { it.active && !it.paused && it.inGroup }
                 // 이번 차례의 보내기가 하나라도 서버에 닿지 못하면 바로 끊겼다고 적고, 남은 보내기는 건너뛰어 방 상태부터 묻는다.
                 // 묻는 사이 "다시 연결"(null)을 누르면 걸려 있던 것을 두고 처음부터 다시 한다
                 var reached = true
@@ -914,14 +912,14 @@ class CrewRepository(
     }
 
     /** 단조 시계(ms) — 폰 시계를 바꿔도 끊김을 틀리게 재지 않는다 */
-    private fun monotonicMs(): Long = System.nanoTime() / 1_000_000
+    private fun monotonicMs(): Long = com.stepup.android.domain.monotonicMillis()
 
     /** 닫힌 방에 내 러닝이 끝날 때까지 위치만 보낸다(곁 판정용) — 마치면([finishParty]) · 다른 방으로 가면 멈춘다 */
     private suspend fun pingWhileRunning(partyId: Long) {
         while (_party.value.partyId == partyId && _party.value.phase == PartyPhase.RUNNING) {
-            val run = com.stepup.android.service.WalkSessionService.state.value
-            if (!run.isActive || run.group == com.stepup.android.service.RunGroup.NONE) return
-            if (!run.isPaused) {
+            val run = groupRun()
+            if (!run.active || !run.inGroup) return
+            if (!run.paused) {
                 val here = currentLocation()
                 partyApi.ping(partyId, here?.lat, here?.lng)
             }
@@ -934,7 +932,7 @@ class CrewRepository(
         while (true) {
             val state = _party.value
             if (state.partyId != partyId || state.phase != PartyPhase.COUNTDOWN) return
-            val left = state.startsAtLocal - System.currentTimeMillis()
+            val left = state.startsAtLocal - com.stepup.android.domain.epochMillis()
             if (left <= 0) {
                 _party.value = state.copy(phase = PartyPhase.RUNNING, countdown = 0)
                 return
@@ -947,7 +945,7 @@ class CrewRepository(
 
     private suspend fun applyRoom(row: PartyStateRow) {
         val before = _party.value
-        val offset = row.serverNow.isoToMillis() - System.currentTimeMillis()
+        val offset = row.serverNow.isoToMillis() - com.stepup.android.domain.epochMillis()
         val host = row.members.firstOrNull { it.isHost }
         val hostPoint = host?.let { h -> h.lat?.let { lat -> h.lng?.let { lng -> GeoPoint(lat, lng) } } }
         // 서버가 내 공유 선택을 받았으면 기다림을 푼다. 아직이면 화면은 내가 고른 값을 보인다
@@ -1138,7 +1136,7 @@ class CrewRepository(
         val rev = state.courseRev.takeIf { it > 0 }
         act { id ->
             (if (rev != null) partyApi.startRev(id, rev) else partyApi.start(id)).also {
-                if (it is ServerResult.Ok) Analytics.partyStarted(state.readyCount) else startingParty = null
+                if (it is ServerResult.Ok) RepoEvents.sink.partyStarted(state.readyCount) else startingParty = null
             }
         }
     }
@@ -1150,7 +1148,7 @@ class CrewRepository(
     fun startIsFresh(): Boolean {
         val state = _party.value
         return state.phase == PartyPhase.RUNNING &&
-            System.currentTimeMillis() - state.startsAtLocal <= LATE_START_MS
+            com.stepup.android.domain.epochMillis() - state.startsAtLocal <= LATE_START_MS
     }
 
     /** 함께 출발을 놓쳤다 — 그 방에서 나오고(다시 붙지 않게 적어 둔다) 같은 크루(번개)의 새 대기실을 연다. */
@@ -1244,7 +1242,6 @@ class CrewRepository(
     }
 
     /** 화면 검사용 — 서버 없이 로비를 채운다. */
-    @VisibleForTesting
     fun showPartyForTest(state: PartyState) {
         pollJob?.cancel()
         _party.value = state

@@ -1,6 +1,11 @@
 package com.stepup.android.data.repo
 
-import androidx.annotation.VisibleForTesting
+import com.stepup.android.domain.minusDaysKx
+import kotlinx.datetime.toInstant
+
+import kotlinx.datetime.toLocalDateTime
+import com.stepup.android.domain.minusWeeksKx
+import kotlinx.coroutines.IO
 import com.stepup.android.data.local.CommentDao
 import com.stepup.android.data.local.NotificationDao
 import com.stepup.android.data.local.NotificationType
@@ -17,11 +22,8 @@ import com.stepup.android.domain.Post
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.domain.storyPlace
 import com.stepup.android.domain.toThreads
-import com.stepup.android.core.Analytics
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneId
+import kotlinx.datetime.DayOfWeek
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -245,7 +247,7 @@ class CommunityRepository(
         return when (result) {
             is ServerResult.Ok -> {
                 updatePost(id) { it.copy(joined = joining, joinedCount = result.value) }
-                if (joining) Analytics.flashJoined()
+                if (joining) RepoEvents.sink.flashJoined()
                 BoardResult.Ok()
             }
             else -> {
@@ -279,7 +281,7 @@ class CommunityRepository(
     ): BoardResult {
         val flash = category == PostCategory.FLASH
         val meetAt = if (flash) {
-            Instant.ofEpochMilli(System.currentTimeMillis() + meetInMinutes.coerceAtLeast(1) * 60_000L)
+            kotlin.time.Instant.fromEpochMilliseconds(com.stepup.android.domain.epochMillis() + meetInMinutes.coerceAtLeast(1) * 60_000L)
                 .toString()
         } else {
             ""
@@ -300,7 +302,7 @@ class CommunityRepository(
         )
         return when (result) {
             is ServerResult.Ok -> {
-                Analytics.postWritten(category.id)
+                RepoEvents.sink.postWritten(category.id)
                 refresh()
                 BoardResult.Ok(result.value)
             }
@@ -358,14 +360,12 @@ class CommunityRepository(
     }
 
     /** 화면 검사용 — 서버 없이 글 목록을 채운다. */
-    @VisibleForTesting
     fun showForTest(list: List<Post>) {
         _posts.value = list
         _sync.value = BoardSyncState.Ready
     }
 
     /** 화면 검사용 — 빈 게시판의 서버/로그인 상태를 실제 화면에 표시한다. */
-    @VisibleForTesting
     fun showBoardStateForTest(state: BoardSyncState) {
         _posts.value = emptyList()
         _sync.value = state
@@ -393,7 +393,7 @@ class CommunityRepository(
      * 화면을 열 때마다 불러도 된다 — 갱신 시각이 지나지 않았으면 아무 일도
      * 하지 않는다.
      */
-    suspend fun refreshHotIfDue(now: Long = System.currentTimeMillis()) {
+    suspend fun refreshHotIfDue(now: Long = com.stepup.android.domain.epochMillis()) {
         val due = lastHotRotation(now)
         if (prefs.hotRotatedAt() >= due) return
 
@@ -550,14 +550,14 @@ class CommunityRepository(
         val runId = run?.id?.takeIf { it > 0 }
         return when (val result = api.createStory(title, body, place.name, place.address, place.lat, place.lng, runId, clientKey)) {
             is ServerResult.Ok -> {
-                Analytics.postWritten("STORY")
+                RepoEvents.sink.postWritten("STORY")
                 val id = result.value
                 rememberStoryPlace(place)
                 if (refresh() != BoardSyncState.Ready && _posts.value.none { it.id == id }) {
                     _posts.value = listOf(
                         Post(
                             id = id, category = PostCategory.FREE, crewId = "", author = "", title = title.trim(),
-                            body = body, createdAt = System.currentTimeMillis(), likes = 0, liked = false,
+                            body = body, createdAt = com.stepup.android.domain.epochMillis(), likes = 0, liked = false,
                             commentCount = 0, mine = true, place = place.name, distanceKm = 0.0, meetAt = 0L,
                             capacity = 0, joinedCount = 0, joined = false, lat = place.lat, lng = place.lng,
                             placeAddress = place.address, run = run?.takeIf { runId != null }?.copy(id = 0),
@@ -639,7 +639,7 @@ class CommunityRepository(
         runCatching { prefs.addStoryRecentPlace(owner(), place, RECENT_PLACES) }
     }
 
-    private val likeInFlight = mutableSetOf<Long>()
+    private val likeInFlight = com.stepup.android.domain.ConcurrentSet<Long>()
 
     /**
      * 좋아요 — 누르는 순간 표시와 개수를 함께 바꾸고, 서버가 거절하면 되돌린다. 바라는 상태를 보내므로 응답을 잃은 뒤
@@ -648,13 +648,13 @@ class CommunityRepository(
      */
     suspend fun toggleStoryLike(id: Long): BoardResult {
         val before = _posts.value.firstOrNull { it.id == id } ?: return BoardResult.Failed("")
-        synchronized(likeInFlight) { if (!likeInFlight.add(id)) return BoardResult.Ok() }
+        if (!likeInFlight.add(id)) return BoardResult.Ok()
         try {
             val wanted = !before.liked
             updatePost(id) { it.copy(liked = wanted, likes = (it.likes + if (wanted) 1 else -1).coerceAtLeast(0)) }
             return sendLike(id, wanted, rollback = before)
         } finally {
-            synchronized(likeInFlight) { likeInFlight.remove(id) }
+            likeInFlight.remove(id)
         }
     }
 
@@ -673,7 +673,7 @@ class CommunityRepository(
                     if (now.none { it.id == id }) {
                         val mine = Comment(
                             id = id, postId = postId, parentId = 0L, author = "", body = text,
-                            createdAt = System.currentTimeMillis(), mine = true,
+                            createdAt = com.stepup.android.domain.epochMillis(), mine = true,
                         )
                         _comments.value = _comments.value + (postId to now + mine)
                         updatePost(postId) { it.copy(commentCount = it.commentCount + 1) }
@@ -696,7 +696,6 @@ class CommunityRepository(
         }
 
     /** 화면 검사용 — 서버 없이 댓글을 채운다. */
-    @VisibleForTesting
     fun showCommentsForTest(postId: Long, list: List<Comment>) {
         _comments.value = _comments.value + (postId to list)
     }
@@ -712,7 +711,7 @@ class CommunityRepository(
         const val RECENT_PLACES = 5
 
         /** 갱신 시각 — 한국 시간 월요일 09:00 */
-        private val ROTATION_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
+        private val ROTATION_ZONE: kotlinx.datetime.TimeZone = com.stepup.android.domain.KST
         private val ROTATION_DAY: DayOfWeek = DayOfWeek.MONDAY
         private const val ROTATION_HOUR = 9
 
@@ -724,21 +723,19 @@ class CommunityRepository(
          * 같은 값이 나오므로 한 주를 통째로 건너뛰지 않는다.
          */
         fun lastHotRotation(now: Long): Long {
-            val zoned = Instant.ofEpochMilli(now).atZone(ROTATION_ZONE)
-            var boundary = zoned.with(ROTATION_DAY)
-                .withHour(ROTATION_HOUR)
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0)
-            if (boundary.isAfter(zoned)) boundary = boundary.minusWeeks(1)
-            return boundary.toInstant().toEpochMilli()
+            val zoned = kotlin.time.Instant.fromEpochMilliseconds(now).toLocalDateTime(ROTATION_ZONE)
+            // java.time 의 with(MONDAY) — 같은 ISO 주(월 ~ 일)의 월요일
+            val monday = zoned.date.minusDaysKx(zoned.date.dayOfWeek.ordinal - ROTATION_DAY.ordinal)
+            var boundary = kotlinx.datetime.LocalDateTime(monday, kotlinx.datetime.LocalTime(ROTATION_HOUR, 0))
+            if (boundary > zoned) boundary = kotlinx.datetime.LocalDateTime(boundary.date.minusWeeksKx(1), boundary.time)
+            return boundary.toInstant(ROTATION_ZONE).toEpochMilliseconds()
         }
     }
 }
 
 /** ISO-8601 시각(서버 timestamptz) → epoch 밀리초. 못 읽으면 0. */
 internal fun String?.isoToMillis(): Long =
-    this?.let { runCatching { OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() } ?: 0L
+    this?.let { com.stepup.android.data.remote.isoOffsetMillis(it) } ?: 0L
 
 /** 서버 줄 → 도메인 모델 */
 fun PostRow.toDomain(): Post = Post(

@@ -94,7 +94,6 @@ import com.stepup.android.ui.theme.Volt
 import com.stepup.android.ui.theme.VoltDeep
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
-import java.util.Locale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn

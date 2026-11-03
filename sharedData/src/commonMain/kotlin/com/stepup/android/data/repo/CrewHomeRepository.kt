@@ -58,10 +58,10 @@ class CrewHomeRepository(
     private val homes = MutableStateFlow<Map<String, CrewHomeSummary>>(emptyMap())
 
     /** 들고 있는 홈의 주인 — 계정이 바뀌면 앞사람의 홈을 지운다 */
-    @Volatile private var holder: String? = null
+    @kotlin.concurrent.Volatile private var holder: String? = null
 
     /** 모임마다 저장이 끝난 참석 응답 수와 마지막으로 서버가 돌려준 모임 — 그 전에 시작한 읽기가 늦게 와도 되돌리지 않는다 */
-    private val saved = java.util.concurrent.ConcurrentHashMap<Long, Pair<Int, CrewMeeting>>()
+    private val saved = com.stepup.android.domain.ConcurrentMap<Long, Pair<Int, CrewMeeting>>()
 
     private suspend fun ownerNow() {
         val now = owner()
