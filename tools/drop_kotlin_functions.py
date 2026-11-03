@@ -13,7 +13,7 @@ from pathlib import Path
 path, names = Path(sys.argv[1]), sys.argv[2:]
 lines = path.read_text().split("\n")
 for name in names:
-    pat = re.compile(rf"^(?:(?:internal|private|public) )?fun (?:[\w.<>]+\.)?{re.escape(name)}\b")
+    pat = re.compile(rf"^(?:(?:internal|private|public) )?(?:suspend )?fun (?:[\w.<>]+\.)?{re.escape(name)}\b")
     start = next((i for i, l in enumerate(lines) if pat.match(l)), None)
     if start is None:
         sys.exit(f"없는 함수: {name}")

@@ -39,7 +39,6 @@ import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.StepUpDesign
 import kotlinx.coroutines.delay
 import kotlin.time.Instant
-import java.time.format.FormatStyle
 
 /** Upcoming runs and joined crews come from the repositories; no sample cards. */
 @Composable
@@ -59,7 +58,7 @@ internal fun TogetherTab(
     val featured = featuredMeetup(posts, now)
     val upcoming = posts.filter { it.isFlash && it.crewId.isBlank() && it.meetAt > now && !it.isFull }
         .sortedWith(compareBy<com.stepup.android.domain.Post> { it.meetAt }.thenBy { it.id }).take(3)
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = androidx.compose.ui.text.intl.Locale.current
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
     val others = upcoming.filter { it.id != featured?.id }
     // S2 같이 뛰기 — 가장 가까운 모임 하나를 크게(제목 · 장소 · 큰 시간 · 인원), 아래로 이어지는 모임과 내 크루.
@@ -93,7 +92,7 @@ internal fun TogetherTab(
                         val at = kotlin.time.Instant.fromEpochMilliseconds(featured.meetAt).toLocalDateTime(zone)
                         Text(
                             stringResource(Res.string.community_s2_meet_time) + " · " +
-                                at.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)),
+                                com.stepup.android.domain.DatePattern.mediumDate(locale.language, at),
                             color = Silver, fontSize = 12.sp,
                         )
                         S2Number(at.formatPattern("HH:mm", androidx.compose.ui.text.intl.Locale.current.language), 68.sp, Modifier.padding(vertical = 6.dp))
@@ -159,7 +158,7 @@ internal fun TogetherTab(
 
 /** 이어서 열리는 모임 한 줄 — 제목, 시간 · 장소, 인원 */
 @Composable
-private fun S2MeetupRow(meetup: com.stepup.android.domain.Post, locale: java.util.Locale, onClick: () -> Unit) {
+private fun S2MeetupRow(meetup: com.stepup.android.domain.Post, locale: androidx.compose.ui.text.intl.Locale, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().quietClickable(onClick).padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
@@ -168,7 +167,7 @@ private fun S2MeetupRow(meetup: com.stepup.android.domain.Post, locale: java.uti
                     maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.testTag("community-meetup-${meetup.id}"))
                 Text(kotlin.time.Instant.fromEpochMilliseconds(meetup.meetAt).toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
-                    .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)) +
+                    .let { com.stepup.android.domain.DatePattern.mediumDateShortTime(locale.language, it) } +
                     " · " + meetup.place,
                     color = Silver, fontSize = 13.sp, maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)

@@ -6,7 +6,6 @@ import com.stepup.android.ui.components.ButtonState
 import com.stepup.android.ui.components.DangerButton
 import com.stepup.android.ui.components.SecondaryBusyButton
 import com.stepup.android.ui.components.PrimaryButton
-import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -205,7 +204,7 @@ private val CrewPersonColors = listOf(
 )
 
 internal fun crewPersonFace(name: String): Color =
-    CrewPersonColors[Math.floorMod(name.trim().hashCode(), CrewPersonColors.size)]
+    CrewPersonColors[com.stepup.android.domain.javaFloorMod(com.stepup.android.domain.javaHash(name.trim()), CrewPersonColors.size)]
 
 // ── 패널 ─────────────────────────────────────────────────────
 
@@ -246,7 +245,7 @@ internal fun CrewImageFace(
     textSize: TextUnit? = null,
 ) {
     val shape = RoundedCornerShape(radius)
-    Box(modifier.size(size).clip(shape).background(CrewNamedColors[Math.floorMod(bg, CrewNamedColors.size)]), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(shape).background(CrewNamedColors[com.stepup.android.domain.javaFloorMod(bg, CrewNamedColors.size)]), contentAlignment = Alignment.Center) {
         if (photo != null) {
             Image(photo, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         } else {
@@ -290,7 +289,7 @@ internal fun rememberDraftPhoto(path: String?): ImageBitmap? {
     LaunchedEffect(path) {
         bitmap = path?.let { p ->
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                com.stepup.android.data.repo.CrewPhotos.decodeFile(java.io.File(p))?.asImageBitmap()
+                com.stepup.android.ui.components.decodeImageFile(p)
             }
         }
     }
@@ -360,7 +359,7 @@ internal fun CrewAvatar(name: String, size: Dp, face: Color, textColor: Color, m
 }
 
 /** 크루장 동그라미 색 — 크루 바탕과 같은 결 */
-internal fun leaderFace(card: CrewCard): Color = CrewLeaderColors[Math.floorMod(card.bg, CrewLeaderColors.size)]
+internal fun leaderFace(card: CrewCard): Color = CrewLeaderColors[com.stepup.android.domain.javaFloorMod(card.bg, CrewLeaderColors.size)]
 
 /** 이번 주 목표 한 줄 — "이번 주 126 / 160km ━━━━━ 79%". 막대 길이는 실제 비율, 100% 를 넘으면 막대만 끝까지 */
 @Composable
@@ -1111,7 +1110,7 @@ internal fun rememberCompact(content: @Composable (Boolean) -> Unit) {
 }
 
 /** 비트맵이 없을 때의 편의 */
-internal fun Bitmap?.orImage(): ImageBitmap? = this?.asImageBitmap()
+internal fun ImageBitmap?.orImage(): ImageBitmap? = this
 
 /** 글자 스타일 — 러닝 리메이크와 같은 글꼴 · 줄 간격 */
 internal fun crewText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal): TextStyle = runTextStyle(size, color, weight)

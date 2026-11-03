@@ -2,8 +2,6 @@ package com.stepup.android.ui.screens.community
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -170,14 +168,10 @@ internal fun startsInLabel(meetAt: Long, now: Long): String {
 }
 
 /** 모임 공유 — 제목 · 시간 · 장소를 글로 보낸다(앱 밖 공유 시트) */
-internal fun shareMeetup(context: Context, post: Post) {
+internal fun shareMeetup(post: Post) {
     val at = kotlin.time.Instant.fromEpochMilliseconds(post.meetAt).toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
     val text = listOf(post.title, at.formatPattern("M/d HH:mm", androidx.compose.ui.text.intl.Locale.current.language) + " · " + post.place).filter { it.isNotBlank() }.joinToString("\n")
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, text)
-    }
-    runCatching { context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    runCatching { com.stepup.android.core.ExternalIntents.shareText(text) }
 }
 
 /** 사진 썸네일만(크루 화면 등에서 다시 쓴다) */

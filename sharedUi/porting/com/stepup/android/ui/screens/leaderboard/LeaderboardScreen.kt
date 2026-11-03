@@ -789,9 +789,9 @@ private fun MyRunsSheet(board: RunnerBoard) {
         Text(stringResource(Res.string.lb_records_empty), style = lbText(13.sp, Lb.Ice), modifier = Modifier.padding(vertical = 12.dp))
         return
     }
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = androidx.compose.ui.text.intl.Locale.current
     val zone = remember(board.period.timezone) { runCatching { TimeZone.of(board.period.timezone) }.getOrDefault(TimeZone.currentSystemDefault()) }
-    val dates = DateTimeFormatter.ofPattern(stringResource(Res.string.lb_run_date_pattern), locale)
+    val dates = com.stepup.android.domain.PatternFormatter(stringResource(Res.string.lb_run_date_pattern), (locale).language)
     board.myRunList.forEachIndexed { i, run ->
         val day = kotlin.time.Instant.fromEpochMilliseconds(run.startedAt.toEpochMilliseconds()).toLocalDateTime(zone)
         Row(

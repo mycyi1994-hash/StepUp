@@ -2,7 +2,6 @@ package com.stepup.android.ui.screens.notifications
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.minusDaysKx
-import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -158,7 +157,7 @@ fun NotificationsScreen(
     var missingOpen by rememberSaveable { mutableStateOf(false) }
     var checking by remember { mutableStateOf(false) }
     // 이 화면이 열린 때 — 로그인하고 돌아와 새로 열린 화면만 멈춰 둔 초대를 다시 연다
-    val openedAt = rememberSaveable { SystemClock.elapsedRealtime() }
+    val openedAt = rememberSaveable { com.stepup.android.domain.monotonicMillis() }
     val inboxState = rememberLazyListState()
     val noticeState = rememberLazyListState()
 
@@ -553,7 +552,7 @@ private fun NoticePane(
 
 /** 공지 한 줄 — 제목과 게시일. 임의의 "중요" · NEW 배지나 그림을 넣지 않는다 */
 @Composable
-private fun NoticeRow(notice: Announcement, language: String, date: DateTimeFormatter, zone: kotlinx.datetime.TimeZone, onClick: () -> Unit) {
+private fun NoticeRow(notice: Announcement, language: String, date: com.stepup.android.domain.PatternFormatter, zone: kotlinx.datetime.TimeZone, onClick: () -> Unit) {
     val t = runTone()
     Column(Modifier.fillMaxWidth().feedbackClickable(role = Role.Button, onClick = onClick).testTag("notice-row-${notice.id}")) {
         Row(Modifier.fillMaxWidth().heightIn(min = 92.dp).padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -648,10 +647,10 @@ internal fun timeLabel(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZo
 }
 
 @Composable
-internal fun rememberPattern(pattern: org.jetbrains.compose.resources.StringResource): DateTimeFormatter {
+internal fun rememberPattern(pattern: org.jetbrains.compose.resources.StringResource): com.stepup.android.domain.PatternFormatter {
     val text = stringResource(pattern)
-    val locale = LocalConfiguration.current.locales[0]
-    return remember(text, locale) { DateTimeFormatter.ofPattern(text, locale) }
+    val locale = androidx.compose.ui.text.intl.Locale.current
+    return remember(text, locale) { com.stepup.android.domain.PatternFormatter(text, (locale).language) }
 }
 
 @Composable

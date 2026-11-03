@@ -50,7 +50,7 @@ fun CrewNoticeToast(viewModel: CommunityViewModel) {
     }
 }
 
-private fun CrewNotice.messageRes(): Int = when (this) {
+private fun CrewNotice.messageRes(): org.jetbrains.compose.resources.StringResource = when (this) {
     CrewNotice.JOINED -> Res.string.crew_notice_joined
     CrewNotice.REQUESTED -> Res.string.crew_notice_requested
     CrewNotice.CANCELLED -> Res.string.crew_notice_cancelled
@@ -164,7 +164,7 @@ fun CrewPolicyPicker(selected: CrewJoinPolicy, onSelect: (CrewJoinPolicy) -> Uni
     }
 }
 
-fun CrewJoinPolicy.labelRes(): Int = when (this) {
+fun CrewJoinPolicy.labelRes(): org.jetbrains.compose.resources.StringResource = when (this) {
     CrewJoinPolicy.OPEN -> Res.string.crew_policy_open
     CrewJoinPolicy.APPROVAL -> Res.string.crew_policy_approval
 }

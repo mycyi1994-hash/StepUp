@@ -44,6 +44,12 @@ class DateNamesJvmTest {
                     DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale).format(j),
                     DatePattern.mediumDate(lang, d), "$lang medium $d",
                 )
+                val at = kotlinx.datetime.LocalDateTime(d, kotlinx.datetime.LocalTime((it * 5) % 24, (it * 7) % 60))
+                assertEquals(
+                    DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT).withLocale(locale)
+                        .format(java.time.LocalDateTime.of(j, java.time.LocalTime.of(at.hour, at.minute))).replace('\u202f', ' '),
+                    DatePattern.mediumDateShortTime(lang, at), "$lang medium+short $at",
+                )
                 for ((k, js) in styles) {
                     assertEquals(j.dayOfWeek.getDisplayName(js, locale), d.dayOfWeek.displayName(k, lang), "$lang $k $d")
                 }

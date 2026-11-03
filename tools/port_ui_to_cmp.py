@@ -114,6 +114,18 @@ s = re.sub(r"(?:java\.time\.format\.)?DateTimeFormatter\.ofLocalizedDate\((?:jav
            "com.stepup.android.domain.DatePattern.mediumDate(androidx.compose.ui.text.intl.Locale.current.language, ", s)
 s = re.sub(r"\.getDisplayName\(\s*(?:java\.time\.format\.)?TextStyle\.(NARROW|SHORT|FULL)\s*,(?:[^()]|\([^()]*\))*\)",
            r".displayName(com.stepup.android.domain.DateNameStyle.\1, androidx.compose.ui.text.intl.Locale.current.language)", s)
+s = s.replace("androidx.compose.ui.platform.LocalConfiguration.current.locales[0]", "androidx.compose.ui.text.intl.Locale.current")
+s = s.replace("LocalConfiguration.current.locales[0]", "androidx.compose.ui.text.intl.Locale.current")
+s = re.sub(r":\s*(?:java\.time\.format\.)?DateTimeFormatter\b", ": com.stepup.android.domain.PatternFormatter", s)
+s = re.sub(r"(?<![\w.(])(?:java\.time\.format\.)?DateTimeFormatter\.ofPattern\(([^(),]+(?:\([^()]*\))?[^(),]*),\s*([^()]+?(?:\([^()]*\))?)\)",
+           r"com.stepup.android.domain.PatternFormatter(\1, (\2).language)", s)
+s = re.sub(r"(?<![\w.(])(?:java\.time\.format\.)?DateTimeFormatter\.ofPattern\(([^(),]+(?:\([^()]*\))?[^(),]*)\)",
+           r"com.stepup.android.domain.PatternFormatter(\1, androidx.compose.ui.text.intl.Locale.current.language)", s)
+s = re.sub(r"\.withZone\((?:java\.time\.)?ZoneId\.systemDefault\(\)\)", ".withZone(kotlinx.datetime.TimeZone.currentSystemDefault())", s)
+s = re.sub(r"\(\s*(?:java\.util\.)?Locale\.getDefault\(\)\s*\)\.language", "androidx.compose.ui.text.intl.Locale.current.language", s)
+s = re.sub(r"(?:java\.util\.)?Locale\.getDefault\(\)\.language", "androidx.compose.ui.text.intl.Locale.current.language", s)
+# 이름이 …Res() 인 함수가 Int 를 돌려주면 글자
+s = re.sub(r"(fun (?:[\w.<>]+\.)?\w*Res\([^)]*\)):\s*Int\b", r"\1: org.jetbrains.compose.resources.StringResource", s)
 def _pattern_calls(text):
     out, pos = [], 0
     lang = "androidx.compose.ui.text.intl.Locale.current.language"
@@ -176,6 +188,35 @@ if "asImageBitmap()" in s and "import com.stepup.android.ui.components.asImageBi
     s = s.replace("import androidx.compose.ui.graphics.asImageBitmap\n", "")
     s = re.sub(r"\n(import [^\n]+\n)", "\nimport com.stepup.android.ui.components.asImageBitmap\n\\1", s, count=1)
 s = re.sub(r"\b(?:com\.stepup\.android\.ui\.)?StepPermissions\.(has\w+)\(\s*\w*[cC]ontext\s*\)", r"com.stepup.android.ui.StepPermissions.\1()", s)
+s = re.sub(r"\bandroidx\.activity\.compose\.BackHandler\(", "com.stepup.android.ui.components.SystemBackHandler(", s)
+s = re.sub(r"android\.text\.format\.DateFormat\.getBestDateTimePattern\(\s*\w+\s*,\s*", "com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, ", s)
+s = re.sub(r"\.offsetByCodePoints\(0,\s*", ".offsetOfCodePoints(", s)
+s = re.sub(r"String\(Character\.toChars\((\w+)\.codePointAt\(0\)\)\)", r"\1.firstCodePoint()", s)
+s = re.sub(r"(?:android\.os\.)?SystemClock\.elapsedRealtime\(\)", "com.stepup.android.domain.monotonicMillis()", s)
+s = s.replace("import android.os.SystemClock\n", "")
+s = re.sub(r"\.toJavaDayOfWeek\(\)", "", s)
+s = re.sub(r"\.getDisplayName\(\s*\w*TextStyle\.(NARROW|SHORT|FULL)\s*,(?:[^()]|\([^()]*\))*\)", r".displayName(com.stepup.android.domain.DateNameStyle.\1, androidx.compose.ui.text.intl.Locale.current.language)", s)
+s = s.replace("androidx.compose.ui.platform.androidx.compose.ui.text.intl.Locale.current", "androidx.compose.ui.text.intl.Locale.current")
+s = re.sub(r"\bMath\.floorMod\(", "com.stepup.android.domain.javaFloorMod(", s)
+s = re.sub(r"(?:com\.stepup\.android\.data\.repo\.)?CrewPhotos\.decodeFile\(java\.io\.File\(([^()]+)\)\)\?\.asImageBitmap\(\)", r"com.stepup.android.ui.components.decodeImageFile(\1)", s)
+s = re.sub(r"System::currentTimeMillis", "{ com.stepup.android.domain.epochMillis() }", s)
+s = re.sub(r"\.with\((?:java\.time\.temporal\.)?TemporalAdjusters\.previousOrSame\((?:java\.time\.|kotlinx\.datetime\.)?DayOfWeek\.MONDAY\)\)", ".let { d -> d.minusDaysKx(d.dayOfWeek.ordinal) }", s)
+s = re.sub(r"\.withDayOfMonth\(1\)", ".let { d -> kotlinx.datetime.LocalDate(d.year, d.month, 1) }", s)
+s = re.sub(r"\.atStartOfDay\(([^()]+)\)\.toInstant\(\)", r".atStartOfDayIn(\1)", s)
+s = s.replace("import java.time.temporal.TemporalAdjusters\n", "")
+s = re.sub(r"(?:com\.stepup\.android\.service\.)?WalkSessionService\.state\.map \{ it\.isActive \}", "com.stepup.android.core.AppServices.runActive()", s)
+s = re.sub(r"(?:com\.stepup\.android\.service\.)?WalkSessionService\.state\.value\.isActive", "com.stepup.android.core.AppServices.runActive().value", s)
+# 남은 Locale(타입 · 기본값) — Compose 의 Locale(language · current)로
+if re.search(r"(?<![\w.])Locale\b", s.replace("import java.util.Locale\n", "")) and "Locale.ROOT" not in s:
+    s = re.sub(r"\bjava\.util\.Locale\.getDefault\(\)", "androidx.compose.ui.text.intl.Locale.current", s)
+    s = re.sub(r"(?<![\w.])Locale\.getDefault\(\)", "Locale.current", s)
+    s = re.sub(r":\s*java\.util\.Locale\b", ": androidx.compose.ui.text.intl.Locale", s)
+    s = s.replace("import java.util.Locale\n", "import androidx.compose.ui.text.intl.Locale\n")
+# 길 인자 — 멀티플랫폼 navigation 은 savedStateHandle 로
+s = re.sub(r"(\w+)\.arguments\?\.getString\(([^()]+)\)", r"\1.savedStateHandle.get<String>(\2)", s)
+s = re.sub(r"(\w+)\.arguments\?\.getLong\(([^(),]+)\)", r"\1.savedStateHandle.get<Long>(\2)", s)
+s = re.sub(r"(\w+)\.arguments\?\.getInt\(([^(),]+)\)", r"\1.savedStateHandle.get<Int>(\2)", s)
+s = re.sub(r"(\w+)\.arguments\?\.getBoolean\(([^(),]+)\)", r"\1.savedStateHandle.get<Boolean>(\2)", s)
 # 저장소는 공용 AppServices 에서(안드로이드 ServiceLocator 의 화면 쪽 자리)
 s = s.replace("import com.stepup.android.core.ServiceLocator\n", "import com.stepup.android.core.AppServices\n")
 s = re.sub(r"\b(?:com\.stepup\.android\.core\.)?ServiceLocator\.", "AppServices.", s)
@@ -301,13 +342,17 @@ _NEED = [
         "com.stepup.android.domain.plusWeeksKx", "com.stepup.android.domain.minusWeeksKx", "com.stepup.android.domain.plusMonthsKx",
         "com.stepup.android.domain.minusMonthsKx", "com.stepup.android.domain.plusYearsKx", "com.stepup.android.domain.minusYearsKx"]),
     (r"\.formatPattern\(", ["com.stepup.android.domain.formatPattern"]),
+    (r"\.format\(\s*(?:com\.stepup\.android\.domain\.PatternFormatter\(|rememberFormatter|rememberPattern|formatter\b|[a-z]\w*Format\w*\b)", ["com.stepup.android.domain.format"]),
     (r"\.isoWeek(?:BasedYear|OfWeekBasedYear)\(", ["com.stepup.android.domain.isoWeekBasedYear", "com.stepup.android.domain.isoWeekOfWeekBasedYear"]),
     (r"\.displayName\(com\.stepup\.android\.domain\.DateNameStyle", ["com.stepup.android.domain.displayName"]),
     (r"\.toLocalDateTime\(", ["kotlinx.datetime.toLocalDateTime"]),
+    (r"\.atStartOfDayIn\(", ["kotlinx.datetime.atStartOfDayIn"]),
     (r"\.month\.number\b", ["kotlinx.datetime.number"]),
     (r"\.isoDayNumber\b", ["kotlinx.datetime.isoDayNumber"]),
     (r"\.toEpochDays\(\)", []),
     (r"\bcodePointLength\(\)", ["com.stepup.android.domain.codePointLength"]),
+    (r"\.offsetOfCodePoints\(", ["com.stepup.android.domain.offsetOfCodePoints"]),
+    (r"\.firstCodePoint\(\)", ["com.stepup.android.domain.firstCodePoint"]),
 ]
 for rx, names in _NEED:
     if re.search(rx, s):

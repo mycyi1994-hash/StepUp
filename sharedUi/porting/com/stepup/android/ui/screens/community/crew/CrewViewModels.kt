@@ -111,13 +111,13 @@ class CrewListViewModel(
     }
 
     fun refresh() {
-        refreshedAt = android.os.SystemClock.elapsedRealtime()
+        refreshedAt = com.stepup.android.domain.monotonicMillis()
         viewModelScope.launch { repo.refresh() }
     }
 
     /** 목록으로 돌아왔다 — 방금 읽었으면(30초 안) 다시 읽지 않는다 */
     fun refreshOnResume() {
-        if (android.os.SystemClock.elapsedRealtime() - refreshedAt > RESUME_REFRESH_MS) refresh()
+        if (com.stepup.android.domain.monotonicMillis() - refreshedAt > RESUME_REFRESH_MS) refresh()
     }
 
     /** 화면이 받은 내 위치 — 조금 움직인 것으로는 목록을 다시 세지 않는다 */

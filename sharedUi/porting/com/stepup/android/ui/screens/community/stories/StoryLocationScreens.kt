@@ -1,8 +1,5 @@
 package com.stepup.android.ui.screens.community.stories
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -70,7 +67,7 @@ fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
     val scope = rememberCoroutineScope()
     var denied by rememberSaveable { mutableStateOf(false) }
     val region by AppServices.userPrefs.storyRegion.collectAsState(initial = null)
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+    val permission = com.stepup.android.ui.components.rememberLocationPermissionRequest {
         if (com.stepup.android.ui.StepPermissions.hasLocation()) {
             // 내 위치로 본다 — 고른 지역을 푼다
             scope.saveRegionThen(null, onBack)
@@ -83,7 +80,7 @@ fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
             scope.saveRegionThen(null, onBack)
             Unit
         } else {
-            permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            permission()
         }
     }
     Column(Modifier.fillMaxSize().testTag("story-location")) {
@@ -123,7 +120,7 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
         result = AppServices.placeSearch.regions(query, null)
         searching = false
     }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+    val permission = com.stepup.android.ui.components.rememberLocationPermissionRequest {
         if (com.stepup.android.ui.StepPermissions.hasLocation()) scope.saveRegionThen(null, onChosen)
     }
     Column(Modifier.fillMaxSize().imePadding().testTag("story-region")) {
@@ -147,7 +144,7 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
                         if (com.stepup.android.ui.StepPermissions.hasLocation()) {
                             scope.saveRegionThen(null, onChosen)
                         } else {
-                            permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                            permission()
                         }
                     }).testTag("story-region-my-location"),
                     verticalAlignment = Alignment.CenterVertically,

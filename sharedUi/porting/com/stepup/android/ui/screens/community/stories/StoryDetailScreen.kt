@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.stories
 
+import com.stepup.android.domain.offsetOfCodePoints
 import com.stepup.android.ui.components.SystemBackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -263,7 +264,7 @@ fun StoryDetailScreen(
                 value = draft,
                 onValueChange = { next ->
                     draft = if (StoryText.length(next) <= StoryText.COMMENT_MAX_CHARS) next
-                    else next.substring(0, next.offsetByCodePoints(0, StoryText.COMMENT_MAX_CHARS))
+                    else next.substring(0, next.offsetOfCodePoints(StoryText.COMMENT_MAX_CHARS))
                 },
                 busy = busy,
                 retry = error == StoryDetailError.COMMENT,

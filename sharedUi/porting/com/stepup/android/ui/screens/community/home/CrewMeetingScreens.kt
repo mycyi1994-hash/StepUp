@@ -1,9 +1,5 @@
 package com.stepup.android.ui.screens.community.home
 
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import com.stepup.android.ui.components.SystemBackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -457,7 +452,6 @@ fun CrewAttendeesScreen(viewModel: CrewAttendeesViewModel, onBack: () -> Unit, o
 @Composable
 fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded: () -> Unit) {
     val ink = blueInk()
-    val context = LocalContext.current
     val meeting by viewModel.meeting.collectAsStateWithLifecycle()
     val ended by viewModel.ended.collectAsStateWithLifecycle()
     var toast by remember { mutableStateOf<String?>(null) }
@@ -539,7 +533,7 @@ fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded
             BlueBottomBar {
                 BlueButton(
                     stringResource(Res.string.crewhome_place_open),
-                    { current?.let { if (!openMaps(context, it)) toast = noApp } },
+                    { current?.let { if (!openMaps(it)) toast = noApp } },
                     Modifier.testTag("home-place-open"), kind = BlueKind.SECONDARY, enabled = current != null,
                 )
                 Spacer(Modifier.height(12.dp))
@@ -551,18 +545,12 @@ fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded
 }
 
 /** 지도 앱으로 — 좌표가 있으면 그 자리에 이름을 붙여, 없으면 장소 이름으로 찾는다 */
-internal fun openMaps(context: Context, meeting: CrewMeeting): Boolean {
+internal fun openMaps(meeting: CrewMeeting): Boolean {
     val label = meeting.place.ifBlank { meeting.title }
-    val uri = meeting.point?.let { p -> Uri.parse("geo:${p.lat},${p.lng}?q=${p.lat},${p.lng}(${Uri.encode(label)})") }
-        ?: Uri.parse("geo:0,0?q=${Uri.encode(label)}")
-    return try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        true
-    } catch (_: ActivityNotFoundException) {
-        false
-    } catch (_: SecurityException) {
-        false
-    }
+    val p = meeting.point
+    // 좌표가 있으면 그 자리, 없으면 장소 이름으로 찾는다(기기 지도 앱)
+    if (p != null) com.stepup.android.core.ExternalIntents.openCoordinateInMaps(p) else com.stepup.android.core.ExternalIntents.openPlaceInMaps(label)
+    return true
 }
 
 /** 크루 이름(모임 화면 위 작은 글자) — 명함에서 */

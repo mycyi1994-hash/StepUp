@@ -33,6 +33,17 @@ object DatePattern {
 
     fun mediumDate(language: String, at: LocalDateTime): String = mediumDate(language, at.date)
 
+    /** DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT) — 네 언어(JDK · CLDR 와 같은 꼴) */
+    fun mediumDateShortTime(language: String, at: LocalDateTime): String {
+        val date = mediumDate(language, at.date)
+        return when (lang(language)) {
+            "ko" -> "$date ${format(at.time, "a h:mm", "ko")}"
+            "ja" -> "$date ${format(at.time, "H:mm", "ja")}"
+            "zh" -> "$date ${format(at.time, "HH:mm", "zh")}"
+            else -> "$date, ${format(at.time, "h:mm a", "en")}"
+        }
+    }
+
     /** DayOfWeek.getDisplayName(style, locale) */
     fun dayName(day: DayOfWeek, style: DateNameStyle, language: String): String {
         val names = Names.of(language)

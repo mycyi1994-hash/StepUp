@@ -1,8 +1,8 @@
 package com.stepup.android.ui.screens.records
 
+import com.stepup.android.domain.displayName
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.plusDaysKx
-import kotlinx.datetime.toJavaDayOfWeek
 import com.stepup.android.domain.isAfter
 import com.stepup.android.domain.isBefore
 import androidx.compose.foundation.Canvas
@@ -84,7 +84,6 @@ import com.stepup.android.ui.theme.StepUpFonts
 import kotlin.time.Instant
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.TimeZone
-import java.time.format.TextStyle as DateTextStyle
 import kotlin.math.ceil
 
 /**
@@ -339,9 +338,9 @@ private fun BarChart(
     val ticks = (0..((top / step).toInt())).map { it * step }
     val dayFormat = rememberFormatter(Res.string.date_month_day)
     val rangeLabel = @Composable { bar: RunBar -> stringResource(Res.string.rec_bar_range, bar.first.day, bar.last.day) }
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = androidx.compose.ui.text.intl.Locale.current
     val labels = bars.map { bar ->
-        if (weekly) bar.first.dayOfWeek.toJavaDayOfWeek().getDisplayName(DateTextStyle.SHORT, locale) else rangeLabel(bar)
+        if (weekly) bar.first.dayOfWeek.displayName(com.stepup.android.domain.DateNameStyle.SHORT, androidx.compose.ui.text.intl.Locale.current.language) else rangeLabel(bar)
     }
     val spoken = bars.map { bar -> if (weekly) dayFormat.format(bar.first) else rangeLabel(bar) }
     val cds = bars.mapIndexed { i, bar ->

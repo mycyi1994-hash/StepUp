@@ -1,8 +1,5 @@
 package com.stepup.android.ui.screens.community.crew
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -97,7 +94,7 @@ fun CrewRegionScreen(viewModel: CrewRegionViewModel, target: CrewRegionTarget, o
         hereFailed = false
         if (target == CrewRegionTarget.LIST) onPicked(null) else locating = true
     }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+    val permission = com.stepup.android.ui.components.rememberLocationPermissionRequest {
         if (com.stepup.android.ui.StepPermissions.hasLocation()) useHere()
     }
     LaunchedEffect(locating) {
@@ -230,7 +227,7 @@ fun CrewRegionScreen(viewModel: CrewRegionViewModel, target: CrewRegionTarget, o
             Spacer(Modifier.height(26.dp))
             CrewButton(stringResource(Res.string.crew_location_use), {
                 sheet = false
-                permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                permission()
             }, Modifier.testTag("crew-location-use"))
             Spacer(Modifier.height(8.dp))
             CrewButton(stringResource(Res.string.crew_location_search), {

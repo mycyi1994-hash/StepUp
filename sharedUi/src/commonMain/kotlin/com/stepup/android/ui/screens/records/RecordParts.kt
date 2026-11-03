@@ -165,10 +165,10 @@ internal fun speedText(seconds: Long, meters: Double): String? =
     com.stepup.android.domain.RunPace.kmh(seconds, meters)?.let { "${com.stepup.android.domain.formatFixed((it).toDouble(), 1)}" }
 
 @Composable
-internal fun rememberFormatter(pattern: org.jetbrains.compose.resources.StringResource): DateTimeFormatter {
+internal fun rememberFormatter(pattern: org.jetbrains.compose.resources.StringResource): com.stepup.android.domain.PatternFormatter {
     val text = stringResource(pattern)
-    val locale = LocalConfiguration.current.locales[0]
-    return remember(text, locale) { DateTimeFormatter.ofPattern(text, locale) }
+    val locale = androidx.compose.ui.text.intl.Locale.current
+    return remember(text, locale) { com.stepup.android.domain.PatternFormatter(text, (locale).language) }
 }
 
 /** 빈 · 못 읽음 그림 — 첫 기록 전(문서 위 러너) · 기간 빔(위치 핀) · 못 읽음(신호 + 느낌표) · 찾을 수 없음 */

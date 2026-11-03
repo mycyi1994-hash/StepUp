@@ -154,7 +154,7 @@ fun NavGraphBuilder.crewGraph(
     val openChat: (String) -> Unit = { id -> navController.openChatRoom(id) }
 
     composable(CrewRoutes.DETAIL, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         val vm: CrewScreenViewModel = viewModel(factory = CrewScreenViewModel.Factory)
         CrewDetailScreen(
             CrewDetailActions(
@@ -182,7 +182,7 @@ fun NavGraphBuilder.crewGraph(
         CrewImageScreen(viewModel(factory = CrewScreenViewModel.Factory), onBack = back)
     }
     composable(CrewRoutes.LEADER, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewLeaderScreen(
             viewModel(factory = CrewScreenViewModel.Factory), onBack = back,
             onOpenCrew = { navController.showCrew(id, CrewRoutes.LEADER) },
@@ -192,8 +192,8 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.MEMBERS,
         arguments = listOf(crewIdArg, navArgument("mode") { type = NavType.StringType; defaultValue = CrewRosterMode.MEMBERS.name }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
-        val mode = CrewRosterMode.entries.firstOrNull { it.name == entry.arguments?.getString("mode") } ?: CrewRosterMode.MEMBERS
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
+        val mode = CrewRosterMode.entries.firstOrNull { it.name == entry.savedStateHandle.get<String>("mode") } ?: CrewRosterMode.MEMBERS
         CrewRosterScreen(
             viewModel(factory = CrewScreenViewModel.Factory), mode, onBack = back,
             onOpenLeader = { navController.navigate(CrewRoutes.leader(id)) },
@@ -205,10 +205,10 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.PERSON,
         arguments = listOf(crewIdArg, navArgument("userId") { type = NavType.StringType }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewPersonScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
-            userId = entry.arguments?.getString("userId").orEmpty(),
+            userId = entry.savedStateHandle.get<String>("userId").orEmpty(),
             onBack = back,
             onOpenCrew = { navController.showCrew(id, CrewRoutes.PERSON) },
             onTransfer = { userId, name -> navController.navigate(CrewRoutes.transfer(id, userId, name)) },
@@ -216,7 +216,7 @@ fun NavGraphBuilder.crewGraph(
         )
     }
     composable(CrewRoutes.GOAL, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewGoalScreen(
             viewModel(factory = CrewScreenViewModel.Factory), onBack = back,
             onParticipants = { navController.navigate(CrewRoutes.members(id, CrewRosterMode.WEEK)) },
@@ -224,7 +224,7 @@ fun NavGraphBuilder.crewGraph(
         )
     }
     composable(CrewRoutes.GOAL_EDIT, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewGoalEditScreen(
             viewModel(factory = CrewScreenViewModel.Factory), onBack = back,
             onApplied = {
@@ -236,7 +236,7 @@ fun NavGraphBuilder.crewGraph(
         )
     }
     composable(CrewRoutes.JOIN, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewJoinScreen(
             viewModel(factory = CrewScreenViewModel.Factory), onBack = back,
             onPending = { applicationId ->
@@ -253,10 +253,10 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.APPLICATION,
         arguments = listOf(crewIdArg, navArgument("applicationId") { type = NavType.LongType }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewPendingScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
-            applicationId = entry.arguments?.getLong("applicationId") ?: 0L,
+            applicationId = entry.savedStateHandle.get<Long>("applicationId") ?: 0L,
             onBack = { navController.showCrew(id, CrewRoutes.APPLICATION) },
             onBackToCrew = { navController.showCrew(id, CrewRoutes.APPLICATION) },
             onResult = { applicationId ->
@@ -268,10 +268,10 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.RESULT,
         arguments = listOf(crewIdArg, navArgument("applicationId") { type = NavType.LongType }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewResultScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
-            applicationId = entry.arguments?.getLong("applicationId") ?: 0L,
+            applicationId = entry.savedStateHandle.get<Long>("applicationId") ?: 0L,
             onBack = back,
             onOpenCrew = { navController.showCrew(id, CrewRoutes.RESULT) },
             onOtherCrews = toList,
@@ -279,7 +279,7 @@ fun NavGraphBuilder.crewGraph(
         )
     }
     composable(CrewRoutes.JOINED, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         val vm: CrewScreenViewModel = viewModel(factory = CrewScreenViewModel.Factory)
         val card by vm.card.collectAsStateWithLifecycle()
         CrewJoinedNowScreen(card, onBack = back, onOpenCrew = { navController.showCrew(id, CrewRoutes.JOINED) }, onOpenChat = { openChat(id) })
@@ -291,8 +291,8 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.MANAGE,
         arguments = listOf(crewIdArg, navArgument("created") { type = NavType.BoolType; defaultValue = false }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
-        val created = entry.arguments?.getBoolean("created") == true
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
+        val created = entry.savedStateHandle.get<Boolean>("created") == true
         CrewManageScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
             created = created,
@@ -312,7 +312,7 @@ fun NavGraphBuilder.crewGraph(
         )
     }
     composable(CrewRoutes.REQUESTS, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewRequestsScreen(
             viewModel(factory = CrewScreenViewModel.Factory), onBack = back,
             onOpen = { applicationId -> navController.navigate(CrewRoutes.review(id, applicationId)) },
@@ -330,10 +330,10 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.REVIEW,
         arguments = listOf(crewIdArg, navArgument("applicationId") { type = NavType.LongType }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewReviewScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
-            applicationId = entry.arguments?.getLong("applicationId") ?: 0L,
+            applicationId = entry.savedStateHandle.get<Long>("applicationId") ?: 0L,
             onBack = back,
             onApplicantProfile = { userId -> navController.navigate(CrewRoutes.person(id, userId)) },
             onDecided = { approved, name, members, capacity, pending ->
@@ -355,7 +355,7 @@ fun NavGraphBuilder.crewGraph(
             navArgument("pending") { type = NavType.IntType; defaultValue = 0 },
         ),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         val args = entry.arguments
         CrewDecidedScreen(
             approved = args?.getBoolean("approved") != false,
@@ -374,7 +374,7 @@ fun NavGraphBuilder.crewGraph(
         )
     }
     composable(CrewRoutes.SETTINGS, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewSettingsScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
             CrewSettingsActions(
@@ -393,18 +393,18 @@ fun NavGraphBuilder.crewGraph(
             navArgument("name") { type = NavType.StringType; defaultValue = "" },
         ),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewTransferScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
-            presetUserId = entry.arguments?.getString("userId")?.takeIf { it.isNotBlank() },
-            presetName = entry.arguments?.getString("name")?.takeIf { it.isNotBlank() },
+            presetUserId = entry.savedStateHandle.get<String>("userId")?.takeIf { it.isNotBlank() },
+            presetName = entry.savedStateHandle.get<String>("name")?.takeIf { it.isNotBlank() },
             onBack = back,
             // 59 · 86 — 넘긴 뒤에는 멤버로 보는 상세
             onDone = { navController.showCrew(id, CrewRoutes.TRANSFER) },
         )
     }
     composable(CrewRoutes.CREATED, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewCreatedScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
             onBack = toList,
@@ -434,7 +434,7 @@ fun NavGraphBuilder.crewGraph(
         CrewRoutes.REGION,
         arguments = listOf(navArgument("target") { type = NavType.StringType; defaultValue = CrewRegionTarget.LIST.name }),
     ) { entry ->
-        val target = CrewRegionTarget.entries.firstOrNull { it.name == entry.arguments?.getString("target") } ?: CrewRegionTarget.LIST
+        val target = CrewRegionTarget.entries.firstOrNull { it.name == entry.savedStateHandle.get<String>("target") } ?: CrewRegionTarget.LIST
         val scope = rememberCoroutineScope()
         CrewRegionScreen(
             viewModel(factory = CrewRegionViewModel.Factory),

@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.stories
 
+import com.stepup.android.domain.firstCodePoint
 import com.stepup.android.ui.components.ButtonState
 import com.stepup.android.ui.components.DangerButton
 import com.stepup.android.ui.components.SecondaryBusyButton
@@ -291,7 +292,7 @@ fun StoryConfirmDialog(
 @Composable
 fun StoryAvatar(name: String, modifier: Modifier = Modifier, size: Dp = 30.dp) {
     val t = runTone()
-    val initial = name.trim().takeIf { it.isNotEmpty() }?.let { String(Character.toChars(it.codePointAt(0))) } ?: "?"
+    val initial = name.trim().takeIf { it.isNotEmpty() }?.let { it.firstCodePoint() } ?: "?"
     Box(
         modifier.size(size).clip(CircleShape)
             .background(if (t.dark) Color(0xFF0E3468) else t.chipFace),

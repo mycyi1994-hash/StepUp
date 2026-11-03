@@ -204,13 +204,13 @@ private fun chatPreviewText(room: ChatRoomSummary): String = when (val preview =
 }
 
 /** 오늘이면 "19:12", 올해면 "9월 28일", 그 전이면 "2025. 9. 28." */
-internal fun chatListTime(millis: Long, now: Long = com.stepup.android.domain.epochMillis(), zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault(), locale: Locale = Locale.getDefault()): String {
+internal fun chatListTime(millis: Long, now: Long = com.stepup.android.domain.epochMillis(), zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault(), locale: androidx.compose.ui.text.intl.Locale = androidx.compose.ui.text.intl.Locale.current): String {
     val at = kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone)
     val today = kotlin.time.Instant.fromEpochMilliseconds(now).toLocalDateTime(zone)
     return when {
         at.date == today.date -> chatTime(millis, zone)
         at.year == today.year -> chatDate(millis, locale, zone)
-        else -> at.formatPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "yMd"), androidx.compose.ui.text.intl.Locale.current.language)
+        else -> at.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "yMd"), androidx.compose.ui.text.intl.Locale.current.language)
     }
 }
 

@@ -2,8 +2,6 @@ package com.stepup.android.ui.screens.community
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
-import android.content.Intent
-import android.provider.CalendarContract
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -40,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -107,7 +104,6 @@ fun FlashRunDetailScreen(
     // 실패하면(정원이 찼다 등) 로딩을 거둔다 — 같은 글이 다시 오면 joined 가 그대로 false
     LaunchedEffect(joining) { if (joining) { kotlinx.coroutines.delay(8_000); joining = false } }
     val here = rememberCurrentLocation()
-    val context = LocalContext.current
     val c = StepUpUi.colors
 
     // "파티 채팅"이 여는 댓글 창은 이 화면 위에 그대로 뜬다
@@ -122,7 +118,7 @@ fun FlashRunDetailScreen(
             }
             return@Box
         }
-        val share = { shareFlash(context, post) }
+        val share = { shareFlash(post) }
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
                 FlashPoster(post, onBack = onBack, onShare = share, onMore = { more = true })
@@ -277,9 +273,8 @@ internal fun FlashStats(post: Post, here: GeoPoint?) {
 @Composable
 internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, onChat: () -> Unit) {
     val c = StepUpUi.colors
-    val context = LocalContext.current
     val photo = rememberPlacePhoto(post.place, post.lat, post.lng, seed = "flash-${post.id}")
-    androidx.activity.compose.BackHandler(onBack = onClose)
+    com.stepup.android.ui.components.SystemBackHandler(onBack = onClose)
     Column(Modifier.fillMaxSize().background(c.background).testTag("flash-joined")) {
         Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
             CircleIconButton(Icons.Rounded.Close, stringResource(Res.string.common_close), onClose, modifier = Modifier.align(Alignment.CenterEnd))
@@ -321,7 +316,7 @@ internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, 
                             value = stringResource(Res.string.flash_chat_people, post.joinedCount))
                     },
                     {
-                        NavListRow(Icons.Outlined.CalendarMonth, stringResource(Res.string.flash_calendar), { addToCalendar(context, post) },
+                        NavListRow(Icons.Outlined.CalendarMonth, stringResource(Res.string.flash_calendar), { addToCalendar(post) },
                             value = meetClock(post.meetAt), modifier = Modifier.testTag("flash-joined-calendar"))
                     },
                 ),
@@ -337,27 +332,15 @@ internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, 
 }
 
 /** 친구 부르기 · 공유 — 제목 · 시각 · 장소를 글로(앱 밖 공유 창) */
-private fun shareFlash(context: android.content.Context, post: Post) {
+private fun shareFlash(post: Post) {
     val where = if (post.remote) com.stepup.android.ui.components.stringNow(Res.string.d26_room_remote_line) else post.place.ifBlank { "—" }
     val text = com.stepup.android.ui.components.stringNow(Res.string.flash_share_text, post.title, meetClock(post.meetAt), where)
-    runCatching {
-        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
+    runCatching { com.stepup.android.core.ExternalIntents.shareText(text) }
 }
 
 /** 캘린더에 넣기 — 기기 캘린더 앱의 새 일정 화면(집결 시각부터 1시간 · 장소 · 제목). 저장은 사용자가 그 앱에서 한다 */
-private fun addToCalendar(context: android.content.Context, post: Post) {
-    runCatching {
-        context.startActivity(
-            Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI)
-                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, post.meetAt)
-                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, post.meetAt + 60 * 60_000L)
-                .putExtra(CalendarContract.Events.TITLE, post.title)
-                .putExtra(CalendarContract.Events.EVENT_LOCATION, post.place)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
+private fun addToCalendar(post: Post) {
+    runCatching { com.stepup.android.core.ExternalIntents.addToCalendar(post.title, post.place, post.meetAt, post.meetAt + 60 * 60_000L) }
 }
 
 /** 참여자 — 서버의 명단 그대로(주최자가 첫 줄). 이니셜 동그라미 없이 이름 줄만(UI 최종 통합안) */

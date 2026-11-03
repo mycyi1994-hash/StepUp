@@ -9,6 +9,8 @@ import platform.Foundation.NSURL
 import platform.Foundation.NSUserDefaults
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
+import platform.UIKit.popoverPresentationController
+import platform.Foundation.dateWithTimeIntervalSince1970
 
 internal actual fun applyAppLanguage(tag: String): Boolean {
     val defaults = NSUserDefaults.standardUserDefaults
@@ -49,6 +51,47 @@ actual object ExternalIntents {
     }
 
     actual fun tryOpenUrl(url: String): Boolean = open(url)
+
+    private fun top(): platform.UIKit.UIViewController? {
+        var top = UIApplication.sharedApplication.keyWindow?.rootViewController
+        while (top?.presentedViewController != null) top = top.presentedViewController
+        return top
+    }
+
+    actual fun shareText(text: String, title: String?): Boolean {
+        val vc = top() ?: return false
+        val sheet = platform.UIKit.UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
+        // 아이패드는 떠 있을 자리가 있어야 한다
+        sheet.popoverPresentationController?.sourceView = vc.view
+        vc.presentViewController(sheet, animated = true, completion = null)
+        return true
+    }
+
+    private val eventStore by lazy { platform.EventKit.EKEventStore() }
+    private val calendarDelegate by lazy {
+        object : platform.darwin.NSObject(), platform.EventKitUI.EKEventEditViewDelegateProtocol {
+            override fun eventEditViewController(controller: platform.EventKitUI.EKEventEditViewController, didCompleteWithAction: platform.EventKitUI.EKEventEditViewAction) {
+                controller.dismissViewControllerAnimated(true, completion = null)
+            }
+        }
+    }
+
+    actual fun addToCalendar(title: String, place: String, beginMs: Long, endMs: Long): Boolean {
+        val vc = top() ?: return false
+        val event = platform.EventKit.EKEvent.eventWithEventStore(eventStore).apply {
+            this.title = title
+            location = place
+            startDate = platform.Foundation.NSDate.dateWithTimeIntervalSince1970(beginMs / 1000.0)
+            endDate = platform.Foundation.NSDate.dateWithTimeIntervalSince1970(endMs / 1000.0)
+        }
+        val editor = platform.EventKitUI.EKEventEditViewController().apply {
+            this.eventStore = this@ExternalIntents.eventStore
+            this.event = event
+            editViewDelegate = calendarDelegate
+        }
+        vc.presentViewController(editor, animated = true, completion = null)
+        return true
+    }
 
     actual fun composeEmail(address: String, subject: String): Boolean =
         open("mailto:$address?subject=" + urlEncodeUtf8(subject).replace("+", "%20"))
@@ -102,3 +145,17 @@ actual fun readPermissionSnapshot(): PermissionState {
 
 /** iOS 는 연결 상태를 바로 물을 수 있는 동기 API 가 없다 — 보내 보고 답으로 안다(답을 못 받으면 Unknown 으로 안내) */
 actual fun hasNetwork(): Boolean = true
+
+actual object LocalFlags {
+    actual fun getInt(file: String, key: String, default: Int): Int {
+        val d = NSUserDefaults.standardUserDefaults
+        val k = "$file.$key"
+        return if (d.objectForKey(k) == null) default else d.integerForKey(k).toInt()
+    }
+
+    actual fun putInt(file: String, key: String, value: Int) {
+        NSUserDefaults.standardUserDefaults.setInteger(value.toLong(), forKey = "$file.$key")
+    }
+}
+
+actual fun locationServicesOn(): Boolean = platform.CoreLocation.CLLocationManager.locationServicesEnabled()

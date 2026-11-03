@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.profile
 
+import kotlinx.datetime.atStartOfDayIn
+import com.stepup.android.domain.minusDaysKx
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -45,8 +47,6 @@ import com.stepup.android.ui.components.StepUpMap
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
-import kotlinx.datetime.DayOfWeek
-import java.time.temporal.TemporalAdjusters
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -101,11 +101,11 @@ class HistoryMapViewModel(dao: WalkSessionDao) : ViewModel() {
         val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
         val today = com.stepup.android.domain.todayIn(zone)
         val start = when (p) {
-            HistoryPeriod.WEEK -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            HistoryPeriod.MONTH -> today.withDayOfMonth(1)
+            HistoryPeriod.WEEK -> today.let { d -> d.minusDaysKx(d.dayOfWeek.ordinal) }
+            HistoryPeriod.MONTH -> today.let { d -> kotlinx.datetime.LocalDate(d.year, d.month, 1) }
             HistoryPeriod.ALL -> return 0L
         }
-        return start.atStartOfDay(zone).toInstant().toEpochMilliseconds()
+        return start.atStartOfDayIn(zone).toEpochMilliseconds()
     }
 
     companion object {

@@ -153,7 +153,7 @@ fun NavGraphBuilder.chatGraph(
     val ended: () -> Unit = { navController.toChatEnded(communityRoute) }
 
     composable(ChatRoutes.ROOM, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatRoomScreen(
             viewModel(factory = ChatRoomViewModel.Factory),
             ChatRoomActions(
@@ -174,7 +174,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.INFO, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatInfoScreen(
             viewModel(factory = ChatInfoViewModel.Factory),
             ChatInfoActions(
@@ -191,7 +191,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.MEMBERS, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatMembersScreen(
             viewModel(factory = ChatPeopleViewModel.Factory),
             onBack = back,
@@ -201,7 +201,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.MEMBER, arguments = listOf(crewIdArg, navArgument("userId") { type = NavType.StringType })) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatMemberScreen(
             viewModel(factory = ChatPeopleViewModel.Factory),
             onBack = back,
@@ -212,7 +212,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.NOTICES, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatNoticesScreen(
             viewModel(factory = ChatNoticesViewModel.Factory),
             onBack = back,
@@ -221,7 +221,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.NOTICE, arguments = listOf(crewIdArg, navArgument("noticeId") { type = NavType.LongType })) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatNoticeScreen(
             viewModel(factory = ChatNoticesViewModel.Factory),
             onBack = back,
@@ -240,7 +240,7 @@ fun NavGraphBuilder.chatGraph(
             navArgument("fromMessage") { type = NavType.BoolType; defaultValue = false },
         ),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatNoticeEditScreen(
             viewModel(factory = ChatNoticeEditViewModel.Factory),
             onBack = back,
@@ -254,7 +254,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.SEARCH, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatSearchScreen(
             viewModel(factory = ChatSearchViewModel.Factory),
             onBack = back,
@@ -266,7 +266,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.PHOTO, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatPhotoScreen(
             viewModel(factory = ChatPhotoViewModel.Factory),
             onBack = back,
@@ -275,7 +275,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.VIEWER, arguments = listOf(crewIdArg, navArgument("messageId") { type = NavType.LongType })) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatViewerScreen(
             viewModel(factory = ChatViewerViewModel.Factory),
             onBack = back,
@@ -284,7 +284,7 @@ fun NavGraphBuilder.chatGraph(
         )
     }
     composable(ChatRoutes.REPORTED, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         ChatReportedScreen(onBack = back, onRoom = { navController.backToRoom(id) })
     }
     composable(ChatRoutes.ENDED) {

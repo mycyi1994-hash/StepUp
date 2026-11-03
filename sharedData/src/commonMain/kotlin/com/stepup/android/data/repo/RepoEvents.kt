@@ -11,6 +11,7 @@ interface RepoEventSink {
     fun flashJoined() {}
     fun partyStarted(size: Int) {}
     fun courseShared() {}
+    fun crewInviteShared() {}
 }
 
 object RepoEvents {

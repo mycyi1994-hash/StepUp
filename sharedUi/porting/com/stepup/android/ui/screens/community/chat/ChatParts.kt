@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.chat
 
+import androidx.compose.ui.text.intl.Locale
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.ui.components.asImageBitmap
@@ -393,8 +394,8 @@ internal fun chatTime(millis: Long, zone: kotlinx.datetime.TimeZone = kotlinx.da
     kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone).time.formatPattern("HH:mm", androidx.compose.ui.text.intl.Locale.current.language)
 
 /** "9월 28일 · 19:05" 모양의 날짜 — 언어별 짧은 날짜 */
-internal fun chatDate(millis: Long, locale: Locale = Locale.getDefault(), zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): String {
-    val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "MMMd")
+internal fun chatDate(millis: Long, locale: Locale = Locale.current, zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): String {
+    val pattern = com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "MMMd")
     return kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone).formatPattern(pattern, androidx.compose.ui.text.intl.Locale.current.language)
 }
 

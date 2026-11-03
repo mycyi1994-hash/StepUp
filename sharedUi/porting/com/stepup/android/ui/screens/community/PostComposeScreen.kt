@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community
 
+import androidx.compose.ui.text.intl.Locale
 import com.stepup.android.domain.plusDaysKx
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -224,7 +225,7 @@ private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Mod
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
     val at = java.time.ZonedDateTime.now(zone).plusMinutes(minutes.toLong())
     val is24 = android.text.format.DateFormat.is24HourFormat(context)
-    val time = java.time.format.DateTimeFormatter.ofPattern(if (is24) "HH:mm" else "a h:mm", Locale.getDefault()).format(at)
+    val time = com.stepup.android.domain.PatternFormatter(if (is24) "HH:mm" else "a h:mm", androidx.compose.ui.text.intl.Locale.current.language).format(at)
     val day = if (at.date == kotlinx.datetime.com.stepup.android.domain.todayIn(zone)) stringResource(Res.string.d26_when_today, time)
         else stringResource(Res.string.d26_when_tomorrow, time)
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)

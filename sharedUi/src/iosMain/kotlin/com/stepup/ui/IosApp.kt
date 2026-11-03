@@ -162,6 +162,7 @@ object IosApp {
         s.crewChat = crewChat
         s.crewImage = { id, ver -> crewImages.image(id, ver) }
         s.crewHome = crewHome
+        s.crewRun = com.stepup.android.data.repo.CrewRunRepository(api = com.stepup.android.data.remote.CrewRunApi(server), owner = { sessions.recordingOwner() })
         s.communityRepository = community
         s.coachingRepository = coaching
         s.runRecordsRepository = runRecords
@@ -183,6 +184,7 @@ object IosApp {
             cache = com.stepup.android.data.repo.FileAnnouncementCache(IosDirs.documents + "/announcements.json"),
         )
         s.recordingOwnerFlow = ::ownerFlow
+        s.runActive = { IosRunSession.activeFlow }
         s.forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi,
             pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(prefs),

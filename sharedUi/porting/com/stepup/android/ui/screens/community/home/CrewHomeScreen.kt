@@ -158,18 +158,15 @@ fun CrewHomeScreen(viewModel: CrewHomeViewModel, actions: CrewHomeActions) {
     }
 
     // 크루 레벨 업(서버 0071) — 지난 하루 안의 레벨 업을 크루 · 레벨마다 한 번만(이 폰에 본 레벨을 적는다)
-    val context = androidx.compose.ui.platform.LocalContext.current
     val levelEvent = today?.levelEvent?.takeIf { com.stepup.android.domain.epochMillis() - it.reachedAtMs < 24 * 3_600_000L }
     var levelSeen by remember(today?.crewId, levelEvent?.level) {
         mutableStateOf(
-            levelEvent == null || context.getSharedPreferences(CREW_LEVEL_SEEN, android.content.Context.MODE_PRIVATE)
-                .getInt(today?.crewId.orEmpty(), 0) >= levelEvent.level,
+            levelEvent == null || com.stepup.android.core.LocalFlags.getInt(CREW_LEVEL_SEEN, today?.crewId.orEmpty(), 0) >= levelEvent.level,
         )
     }
     if (!levelSeen && levelEvent != null && today != null) {
         val seen = {
-            context.getSharedPreferences(CREW_LEVEL_SEEN, android.content.Context.MODE_PRIVATE).edit()
-                .putInt(today.crewId, levelEvent.level).apply()
+            com.stepup.android.core.LocalFlags.putInt(CREW_LEVEL_SEEN, today.crewId, levelEvent.level)
             levelSeen = true
         }
         CrewLevelUpSheet(levelEvent, onDismiss = seen, onOpen = { seen(); actions.onLevel() })

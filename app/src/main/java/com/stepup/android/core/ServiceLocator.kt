@@ -1,4 +1,5 @@
 package com.stepup.android.core
+import com.stepup.android.data.repo.startBeats
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -442,6 +443,7 @@ object ServiceLocator {
             override fun flashJoined() = Analytics.flashJoined()
             override fun partyStarted(size: Int) = Analytics.partyStarted(size)
             override fun courseShared() = Analytics.courseShared()
+            override fun crewInviteShared() = Analytics.crewInviteShared()
         }
         crewRepository = CrewRepository(
             api = crewApi,

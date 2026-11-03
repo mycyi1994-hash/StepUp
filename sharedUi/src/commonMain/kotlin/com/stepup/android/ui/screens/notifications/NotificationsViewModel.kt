@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.notifications
 
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -377,7 +376,7 @@ class NotificationsViewModel(
     /** 로그인이 필요한 초대 — 로그인하고 돌아오면 이 초대를 다시 연다(자동 수락 없음) */
     fun rememberForSignIn(entity: NotificationEntity) {
         step(entity.id, null)
-        repo.reopenAfterSignIn(SignInReturn(entity.id, SystemClock.elapsedRealtime()))
+        repo.reopenAfterSignIn(SignInReturn(entity.id, com.stepup.android.domain.monotonicMillis()))
     }
 
     companion object {

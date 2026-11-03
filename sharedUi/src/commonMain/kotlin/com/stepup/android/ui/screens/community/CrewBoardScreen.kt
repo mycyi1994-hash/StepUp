@@ -3,9 +3,6 @@ package com.stepup.android.ui.screens.community
 import androidx.compose.material.icons.filled.Groups
 
 import com.stepup.android.core.InviteLinks
-import com.stepup.android.core.Analytics
-import androidx.compose.ui.platform.LocalContext
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -87,18 +84,13 @@ fun CrewBoardScreen(
     ) {
         if (crew != null && isMember) {
             item {
-                val context = LocalContext.current
                 val message = stringResource(Res.string.crew_invite_message, crew.name, InviteLinks.crewLink(crew.id))
                 val chooser = stringResource(Res.string.crew_invite_chooser)
                 GhostButton(
                     text = stringResource(Res.string.crew_invite_share),
                     onClick = {
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, message)
-                        }
-                        context.startActivity(Intent.createChooser(send, chooser))
-                        Analytics.crewInviteShared()
+                        com.stepup.android.core.ExternalIntents.shareText(message, chooser)
+                        com.stepup.android.data.repo.RepoEvents.sink.crewInviteShared()
                     },
                 )
             }

@@ -70,14 +70,14 @@ internal object LeaderboardMotion {
 
     /** 트랙 한 줄의 빛 회전(도) — 18초에 한 바퀴, 줄마다 시작 위상이 다르다 */
     fun lightDegrees(clockMs: Long, lane: Int): Float {
-        val t = Math.floorMod(clockMs - LIGHT_PHASES[lane], LIGHT_MS)
+        val t = com.stepup.android.domain.javaFloorMod(clockMs - LIGHT_PHASES[lane], LIGHT_MS)
         return 360f * t / LIGHT_MS
     }
 
     /** 부드러운 빛 — 16초 왕복(alternate), 투명도 .58→1 · 이동 (0,0)→(−12,10) */
     fun glow(clockMs: Long, reduced: Boolean): Triple<Float, Float, Float> {
         if (reduced) return Triple(0.7f, 0f, 0f)
-        val cycle = Math.floorMod(clockMs - GLOW_PHASE, 2 * GLOW_MS)
+        val cycle = com.stepup.android.domain.javaFloorMod(clockMs - GLOW_PHASE, 2 * GLOW_MS)
         val forward = if (cycle < GLOW_MS) cycle.toFloat() / GLOW_MS else 1f - (cycle - GLOW_MS).toFloat() / GLOW_MS
         val p = GlowEasing.transform(forward.coerceIn(0f, 1f))
         return Triple(0.58f + 0.42f * p, -12f * p, 10f * p)
@@ -85,7 +85,7 @@ internal object LeaderboardMotion {
 
     /** 크루 1위 띠 — 10초에 한 번 대각선으로 지난다. (이동 비율 0..1, 투명도) */
     fun sheen(clockMs: Long): Pair<Float, Float> {
-        val p = Math.floorMod(clockMs - SHEEN_PHASE, SHEEN_MS).toFloat() / SHEEN_MS
+        val p = com.stepup.android.domain.javaFloorMod(clockMs - SHEEN_PHASE, SHEEN_MS).toFloat() / SHEEN_MS
         val alpha = when {
             p < 0.1f -> 0.2f * (p / 0.1f)
             p < 0.5f -> 0.2f + 0.45f * ((p - 0.1f) / 0.4f)

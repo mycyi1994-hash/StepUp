@@ -201,11 +201,10 @@ private fun CrewDetailContent(
     val ink = crewInk()
     val c = com.stepup.android.ui.components.StepUpUi.colors
     val words = rememberCrewWords()
-    val context = androidx.compose.ui.platform.LocalContext.current
     CrewPage(Modifier.testTag("crew-detail")) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             CrewPoster(card, onBack = actions.onBack, onImage = actions.onOpenImage, onMore = onMore,
-                onShare = { shareCrew(context, card) })
+                onShare = { shareCrew(card) })
             card.unseenResult?.let { result ->
                 Row(
                     Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().heightIn(min = 52.dp)
@@ -333,15 +332,9 @@ private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, 
 }
 
 /** 크루 공유 — 이름 · 동네 · 한 줄 소개를 글로(앱 밖 공유 창) */
-private fun shareCrew(context: android.content.Context, card: CrewCard) {
+private fun shareCrew(card: CrewCard) {
     val text = listOf(card.name, card.area, card.tagline).filter { it.isNotBlank() }.joinToString(" · ")
-    runCatching {
-        context.startActivity(
-            android.content.Intent.createChooser(
-                android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, text), null,
-            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
+    runCatching { com.stepup.android.core.ExternalIntents.shareText(text) }
 }
 
 @Composable

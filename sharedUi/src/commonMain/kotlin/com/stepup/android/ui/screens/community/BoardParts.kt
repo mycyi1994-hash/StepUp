@@ -52,7 +52,7 @@ fun BoardNoticeToast(viewModel: CommunityViewModel) {
     }
 }
 
-private fun BoardNotice.messageRes(): Int = when (this) {
+private fun BoardNotice.messageRes(): org.jetbrains.compose.resources.StringResource = when (this) {
     BoardNotice.Reported -> Res.string.board_notice_reported
     BoardNotice.Blocked -> Res.string.board_notice_blocked
     // 닿지 못했거나 결과를 모른다. 거절은 [BoardNoticeToast] 가 서버의 이유를 그대로 보인다
@@ -190,7 +190,7 @@ fun ReportDialog(
     )
 }
 
-private fun ReportReason.labelRes(): Int = when (this) {
+private fun ReportReason.labelRes(): org.jetbrains.compose.resources.StringResource = when (this) {
     ReportReason.SPAM -> Res.string.report_reason_spam
     ReportReason.ABUSE -> Res.string.report_reason_abuse
     ReportReason.SEXUAL -> Res.string.report_reason_sexual

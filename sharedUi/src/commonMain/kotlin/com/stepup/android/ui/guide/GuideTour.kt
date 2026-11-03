@@ -58,7 +58,6 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import com.stepup.ui.res.*
 import com.stepup.android.ui.components.GhostButton
-import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.theme.Overlay
 import com.stepup.android.ui.theme.Scrim
 import com.stepup.android.ui.theme.ScrimAlpha

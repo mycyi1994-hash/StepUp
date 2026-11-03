@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.crew
 
+import androidx.compose.ui.text.intl.Locale
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import android.content.Context
@@ -125,6 +126,6 @@ class CrewWords(private val context: Context, private val locale: Locale) {
 fun rememberCrewWords(): CrewWords {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    val locale = configuration.locales[0] ?: Locale.getDefault()
+    val locale = configuration.locales[0] ?: Locale.current
     return remember(context, locale) { CrewWords(context, locale) }
 }

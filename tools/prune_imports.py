@@ -27,5 +27,11 @@ for name in sys.argv[1:]:
             continue
         if not re.search(rf"(?<![\w]){re.escape(simple)}(?![\w])", body):
             drop.add(i)
-    p.write_text("\n".join(l for i, l in enumerate(lines) if i not in drop))
+    out = "\n".join(l for i, l in enumerate(lines) if i not in drop)
+    # 쓰지 않게 된 안드로이드 Context 선언(val context = …LocalContext.current)도 뺀다
+    decl = re.compile(r"^[ \t]*val context = (?:androidx\.compose\.ui\.platform\.)?LocalContext\.current(?:\.applicationContext)?\n", re.M)
+    if len(re.findall(r"\bcontext\b", out)) == len(decl.findall(out)):
+        out = decl.sub("", out)
+        out = out.replace("import androidx.compose.ui.platform.LocalContext\n", "")
+    p.write_text(out)
     print(p, f"− import {len(drop)}")

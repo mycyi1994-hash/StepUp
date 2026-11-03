@@ -3,7 +3,6 @@ package com.stepup.android.ui.screens.community.home
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.domain.minusDaysKx
-import com.stepup.android.core.format
 import com.stepup.android.domain.localDate
 import com.stepup.android.domain.todayIn
 import kotlinx.datetime.number
@@ -72,7 +71,6 @@ import com.stepup.android.ui.screens.community.stories.rangeSpan
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import java.time.format.TextStyle as DayStyle
 
 /*
  * 내 크루 홈(확정 4번) — 화면들이 함께 쓰는 부품. 색 · 여백은 크루 명함형(blueInk · 좌우 24)과 같은 값을 쓴다.
@@ -80,14 +78,14 @@ import java.time.format.TextStyle as DayStyle
  */
 
 @Composable
-internal fun homeLocale(): Locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+internal fun homeLocale(): androidx.compose.ui.text.intl.Locale = androidx.compose.ui.text.intl.Locale.current
 
 /** "9월 29일" — 언어별 짧은 날짜 */
 @Composable
 internal fun homeDate(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
-        day.formatPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "MMMd"), androidx.compose.ui.text.intl.Locale.current.language)
+        day.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "MMMd"), androidx.compose.ui.text.intl.Locale.current.language)
     }
 }
 
@@ -96,7 +94,7 @@ internal fun homeDate(day: LocalDate): String {
 internal fun homeDateWeekday(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
-        day.formatPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "MMMMdEEEE"), androidx.compose.ui.text.intl.Locale.current.language)
+        day.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "MMMMdEEEE"), androidx.compose.ui.text.intl.Locale.current.language)
     }
 }
 
@@ -105,7 +103,7 @@ internal fun homeDateWeekday(day: LocalDate): String {
 internal fun homeShortDate(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
-        day.formatPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "Md"), androidx.compose.ui.text.intl.Locale.current.language)
+        day.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "Md"), androidx.compose.ui.text.intl.Locale.current.language)
             .let { if (locale.language == "ko") "${day.month.number}.${day.day}" else it }
     }
 }
@@ -148,7 +146,7 @@ internal fun durationLong(seconds: Int): String {
 internal fun weekdayLabels(): List<String> {
     val locale = homeLocale()
     return remember(locale) {
-        kotlinx.datetime.DayOfWeek.entries.map { it.getDisplayName(if (locale.language == "en") DayStyle.SHORT else DayStyle.NARROW, locale) }
+        kotlinx.datetime.DayOfWeek.entries.map { com.stepup.android.domain.DatePattern.dayName(it, if (locale.language == "en") com.stepup.android.domain.DateNameStyle.SHORT else com.stepup.android.domain.DateNameStyle.NARROW, locale.language) }
     }
 }
 

@@ -1,7 +1,5 @@
 package com.stepup.android.ui.screens.community.stories
 
-import android.content.Context
-import android.location.LocationManager
 import com.stepup.android.ui.components.SystemBackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
@@ -38,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.location.LocationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -91,7 +87,6 @@ fun StoryComposeScreen(
     val recent by viewModel.recentPlaces.collectAsStateWithLifecycle()
     val origin = rememberStoryOrigin()
     val words = rememberStoryWords()
-    val context = LocalContext.current
 
     var step by rememberSaveable { mutableStateOf(ComposeStep.WRITE) }
     var pickMode by rememberSaveable { mutableStateOf(StoryPickMode.NEARBY) }
@@ -143,7 +138,7 @@ fun StoryComposeScreen(
         step = ComposeStep.PICK
     }
     val openQuick = { mode: StoryPickMode ->
-        if (mode == StoryPickMode.NEARBY && !locationUsable(context, locationAllowed)) {
+        if (mode == StoryPickMode.NEARBY && !locationUsable(locationAllowed)) {
             quick = null
             showNoLocation = true
         } else {
@@ -369,11 +364,7 @@ fun StoryComposeScreen(
 }
 
 /** 지금 내 위치를 쓸 수 있는가 — 권한과 위치 기능이 모두 켜져 있어야 한다 */
-private fun locationUsable(context: Context, allowed: Boolean): Boolean {
-    if (!allowed) return false
-    val manager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
-    return LocationManagerCompat.isLocationEnabled(manager)
-}
+private fun locationUsable(allowed: Boolean): Boolean = allowed && com.stepup.android.core.locationServicesOn()
 
 /**
  * 올리기 위 안내 한 줄 — 올리지 못했으면 그 사실, 코스를 정리해야 하면 그 사실, 빠진 것(장소 · 이야기)이 있으면

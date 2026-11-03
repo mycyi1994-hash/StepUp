@@ -39,3 +39,23 @@ fun LocalDate.isoWeekOfWeekBasedYear(): Int {
     val thursday = plusDaysKx(4 - (dayOfWeek.ordinal + 1))
     return (thursday.dayOfYear - 1) / 7 + 1
 }
+
+/**
+ * DateTimeFormatter.ofPattern(pattern, locale) 자리 — 같은 꼴 · 같은 글자([DatePattern]). [zone] 을 주면 시각(Instant)도 받는다(withZone).
+ */
+class PatternFormatter(val pattern: String, val language: String, val zone: kotlinx.datetime.TimeZone? = null) {
+    fun format(date: LocalDate): String = DatePattern.format(date, pattern, language)
+    fun format(at: LocalDateTime): String = DatePattern.format(at, pattern, language)
+    fun format(time: LocalTime): String = DatePattern.format(time, pattern, language)
+    fun format(month: YearMonth): String = DatePattern.format(LocalDate(month.year, month.month, 1), pattern, language)
+    fun format(instant: kotlin.time.Instant): String =
+        DatePattern.format(instant.toEpochMilliseconds(), requireNotNull(zone) { "withZone 없이 시각을 꼴로" }, pattern, language)
+
+    fun withZone(zone: kotlinx.datetime.TimeZone): PatternFormatter = PatternFormatter(pattern, language, zone)
+}
+
+/** java.time 의 date.format(formatter) 자리 */
+fun LocalDate.format(f: PatternFormatter): String = f.format(this)
+fun LocalDateTime.format(f: PatternFormatter): String = f.format(this)
+fun LocalTime.format(f: PatternFormatter): String = f.format(this)
+fun YearMonth.format(f: PatternFormatter): String = f.format(this)

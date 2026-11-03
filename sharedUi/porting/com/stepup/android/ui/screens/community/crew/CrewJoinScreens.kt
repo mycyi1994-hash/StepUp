@@ -423,7 +423,7 @@ fun CrewReportedScreen(onBack: () -> Unit, onDone: () -> Unit) {
  */
 @Composable
 internal fun withParticle(word: String, withFinal: String, without: String): String {
-    val korean = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]?.language == "ko"
+    val korean = androidx.compose.ui.text.intl.Locale.current?.language == "ko"
     return if (korean) word + koreanParticle(word, withFinal, without) else word
 }
 

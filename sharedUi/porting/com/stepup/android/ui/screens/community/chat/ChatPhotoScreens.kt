@@ -1,7 +1,6 @@
 package com.stepup.android.ui.screens.community.chat
 
 import com.stepup.android.ui.components.asImageBitmap
-import com.stepup.android.data.repo.file
 import com.stepup.android.ui.components.SystemBackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -65,7 +64,7 @@ fun ChatPhotoScreen(viewModel: ChatPhotoViewModel, onBack: () -> Unit, onSent: (
         }
     }
     SystemBackHandler(onBack = cancel)
-    val image = rememberDraftPhoto(photo?.file?.path)
+    val image = rememberDraftPhoto(photo?.path)
 
     BluePage(Modifier.imePadding().testTag("chat-photo-preview")) {
         BlueTopBar(stringResource(Res.string.chat_preview_bar), cancel)

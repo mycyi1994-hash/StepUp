@@ -87,6 +87,10 @@ object IosRunSession {
 
     val active: Boolean get() = engine != null
 
+    /** 러닝 중인가 — 화면이 본다(안드로이드 WalkSessionService.state.isActive) */
+    val activeFlow: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false).also { activeState = it }
+    private lateinit var activeState: MutableStateFlow<Boolean>
+
     /** 러닝 전에 위치 권한("사용하는 동안")을 묻는다 — 3 · 2 · 1 동안 시스템 창이 뜨지 않게 신발 점검에서 먼저 */
     fun askLocation() {
         manager.requestWhenInUseAuthorization()
@@ -153,6 +157,7 @@ object IosRunSession {
 
     private fun publish() {
         _state.value = engine?.state(epochMillis())
+        if (::activeState.isInitialized) activeState.value = engine != null
     }
 
     data class Finished(val state: RunEngine.State, val meters: Double)

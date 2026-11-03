@@ -130,7 +130,7 @@ fun PartyLobbyScreen(
     ) {
         if (party.phase == PartyPhase.RUNNING && com.stepup.android.ui.StepPermissions.hasActivityRecognition()) {
             when {
-                WalkSessionService.state.value.isActive -> onRunStarted()
+                com.stepup.android.core.AppServices.runActive().value -> onRunStarted()
                 // 위치 없이는 출발하지 않는다 — 준비한 뒤 권한을 거둔 경우. 왜 출발하지 않는지 알린다
                 !com.stepup.android.ui.StepPermissions.hasPreciseLocation() ->
                     showToast(needPrecise, long = true)
@@ -152,7 +152,7 @@ fun PartyLobbyScreen(
     }
     // CR17 — 준비 전 확인에서 "위치 사용 허용": OS 창의 결과를 다시 읽어 걸음 권한 · 정확한 위치가 있으면 준비한다
     var readyCheck by rememberSaveable { mutableStateOf(false) }
-    val readyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+    val readyLauncher = com.stepup.android.ui.components.rememberLocationPermissionRequest {
         readyCheck = false
         when {
             !com.stepup.android.ui.StepPermissions.hasActivityRecognition() -> Unit
@@ -173,7 +173,7 @@ fun PartyLobbyScreen(
     LaunchedEffect(crewId, flashPostId, partyId) {
         // 이미 달리는 중이면 새 대기실을 열지 않고 지금 러닝으로 간다 — 다른 방을 열면 달리던 방에서 말없이
         // 나오고, 그 방 진행자가 출발하면 러닝이 하나 더 켜졌다
-        if (WalkSessionService.state.value.isActive) {
+        if (com.stepup.android.core.AppServices.runActive().value) {
             onRunStarted()
             return@LaunchedEffect
         }
@@ -200,7 +200,7 @@ fun PartyLobbyScreen(
         if (party.phase == PartyPhase.RUNNING) {
             when {
                 // 이 폰의 러닝이 이미 돌고 있다 — 하나 더 켜지 않고 그 러닝으로 간다
-                WalkSessionService.state.value.isActive -> onRunStarted()
+                com.stepup.android.core.AppServices.runActive().value -> onRunStarted()
                 // 출발한 지 오래됐다(대기실을 떠나 있었다) — 옛 방의 러닝을 늦게 켜지 않고 새 대기실을 연다
                 !viewModel.startIsFresh() -> viewModel.missedStart()
                 else -> {

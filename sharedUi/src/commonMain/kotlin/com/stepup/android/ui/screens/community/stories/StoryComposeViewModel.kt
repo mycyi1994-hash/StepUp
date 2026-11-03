@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.stories
 
+import com.stepup.android.domain.offsetOfCodePoints
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.createSavedStateHandle
@@ -57,7 +58,7 @@ class StoryComposeViewModel(
     private val repository: CommunityRepository,
     private val saved: SavedStateHandle,
     activeRun: Flow<Boolean> = flowOf(false),
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = { com.stepup.android.domain.epochMillis() },
 ) : ViewModel() {
 
     /** 고치는 글 번호. 새 글이면 0 */
@@ -227,7 +228,7 @@ class StoryComposeViewModel(
 
     private fun clamp(next: String): String =
         if (StoryText.length(next) <= StoryText.MAX_CHARS) next
-        else next.substring(0, next.offsetByCodePoints(0, StoryText.MAX_CHARS))
+        else next.substring(0, next.offsetOfCodePoints(StoryText.MAX_CHARS))
 
     fun setPlace(next: StoryPlace?, source: StoryPlaceSource? = null) {
         writePlace(next)
@@ -403,7 +404,7 @@ class StoryComposeViewModel(
                 StoryComposeViewModel(
                     repository = AppServices.communityRepository,
                     saved = createSavedStateHandle(),
-                    activeRun = com.stepup.android.service.WalkSessionService.state.map { it.isActive },
+                    activeRun = com.stepup.android.core.AppServices.runActive(),
                 )
             }
         }

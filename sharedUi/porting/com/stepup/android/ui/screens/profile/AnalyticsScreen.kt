@@ -2,6 +2,7 @@ package com.stepup.android.ui.screens.profile
 
 import kotlinx.datetime.isoDayNumber
 import com.stepup.android.domain.displayName
+import com.stepup.android.domain.format
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.domain.minusWeeksKx
 import com.stepup.android.domain.minusDaysKx
@@ -135,8 +136,8 @@ class AnalyticsViewModel(private val stepRepository: StepRepository) : ViewModel
     }
 }
 
-private val sessionTimeFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("M.d HH:mm").withZone(kotlinx.datetime.TimeZone.currentSystemDefault())
+private val sessionTimeFormatter: com.stepup.android.domain.PatternFormatter =
+    com.stepup.android.domain.PatternFormatter("M.d HH:mm", androidx.compose.ui.text.intl.Locale.current.language).withZone(kotlinx.datetime.TimeZone.currentSystemDefault())
 
 @Composable
 fun AnalyticsScreen(
@@ -214,7 +215,7 @@ fun AnalyticsScreen(
  */
 @Composable
 private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val locale = androidx.compose.ui.text.intl.Locale.current
     val stepsLabel = stringResource(Res.string.stat_steps)
     val today = com.stepup.android.domain.todayIn().toEpochDays()
     val days = (0..6).map { offset -> today - 6 + offset }
@@ -546,8 +547,8 @@ private fun CalloutRow(label: String, value: String) {
     }
 }
 
-private val calloutDateFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("M.d (E)", Locale.getDefault())
+private val calloutDateFormatter: com.stepup.android.domain.PatternFormatter =
+    com.stepup.android.domain.PatternFormatter("M.d (E)", androidx.compose.ui.text.intl.Locale.current.language)
 
 // ═══════════════════════════════════════════════════════════════════
 //  주간 탭 — 이번 주 한눈에
@@ -868,7 +869,7 @@ private fun QuarterSummaryCard(days: List<DailyStepsEntity>, goal: Int) {
 @Composable
 private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
     val byMonth = remember(days) {
-        days.groupBy { kotlinx.datetime.LocalDate.fromEpochDays(it.epochDay).withDayOfMonth(1) }
+        days.groupBy { kotlinx.datetime.LocalDate.fromEpochDays(it.epochDay).let { d -> kotlinx.datetime.LocalDate(d.year, d.month, 1) } }
             .toSortedMap(compareByDescending { it })
     }
     val maxSteps = byMonth.values.maxOfOrNull { list -> list.sumOf { it.steps.toLong() } } ?: 1L
@@ -981,11 +982,11 @@ private fun formatDurationShort(totalSec: Long): String {
     }
 }
 
-private val monthDayFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("M.d", Locale.getDefault())
+private val monthDayFormatter: com.stepup.android.domain.PatternFormatter =
+    com.stepup.android.domain.PatternFormatter("M.d", androidx.compose.ui.text.intl.Locale.current.language)
 
-private val monthFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("yyyy.M", Locale.getDefault())
+private val monthFormatter: com.stepup.android.domain.PatternFormatter =
+    com.stepup.android.domain.PatternFormatter("yyyy.M", androidx.compose.ui.text.intl.Locale.current.language)
 
 /** 기록 지도로 들어가는 한 줄 */
 @Composable

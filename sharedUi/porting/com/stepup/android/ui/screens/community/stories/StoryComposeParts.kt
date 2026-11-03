@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.stories
 
+import androidx.compose.ui.text.intl.Locale
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.domain.minusDaysKx
@@ -227,7 +228,7 @@ class StoryWords(private val context: Context, private val locale: Locale) {
 fun rememberStoryWords(): StoryWords {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    return remember(context, configuration) { StoryWords(context, configuration.locales[0] ?: Locale.getDefault()) }
+    return remember(context, configuration) { StoryWords(context, configuration.locales[0] ?: Locale.current) }
 }
 
 

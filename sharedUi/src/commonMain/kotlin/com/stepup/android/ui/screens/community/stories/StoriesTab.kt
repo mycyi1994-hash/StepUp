@@ -1,9 +1,6 @@
 package com.stepup.android.ui.screens.community.stories
 
 import androidx.compose.foundation.lazy.itemsIndexed
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -136,12 +133,12 @@ fun StoriesTab(
     // 권한 요청 — 거절 · 다시 묻지 않음이어도 "지역 직접 선택"으로 이어 갈 수 있다. 거절된 뒤에는 다시 묻지 않고 설정으로
     var denied by rememberSaveable { mutableStateOf(false) }
     var askClosed by rememberSaveable { mutableStateOf(false) }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+    val permission = com.stepup.android.ui.components.rememberLocationPermissionRequest {
         allowed = com.stepup.android.ui.StepPermissions.hasLocation()
         denied = !allowed
     }
     val askLocation = {
-        permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        permission()
     }
 
     val ready = status == StoryLocationStatus.READY && origin != null

@@ -27,6 +27,7 @@ object AppServices {
     lateinit var crewRepository: com.stepup.android.data.repo.CrewRepository
     lateinit var communityRepository: com.stepup.android.data.repo.CommunityRepository
     lateinit var crewHome: com.stepup.android.data.repo.CrewHomeRepository
+    lateinit var crewRun: com.stepup.android.data.repo.CrewRunRepository
     lateinit var runRecordsRepository: com.stepup.android.data.repo.RunRecordsRepository
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
     lateinit var announcementRepository: com.stepup.android.data.repo.AnnouncementRepository
@@ -42,6 +43,9 @@ object AppServices {
     lateinit var crewChat: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>
     /** 크루 대표 사진(화면 그림) — 없거나 못 받으면 null */
     var crewImage: suspend (crewId: String, version: Int) -> androidx.compose.ui.graphics.ImageBitmap? = { _, _ -> null }
+
+    /** 이 폰이 지금 러닝 중인가(안드로이드 WalkSessionService.state.isActive · iOS 러닝 세션) */
+    var runActive: () -> kotlinx.coroutines.flow.StateFlow<Boolean> = { kotlinx.coroutines.flow.MutableStateFlow(false) }
 
     /** 지금 계정의 기록 주인이 바뀌는 흐름(안드로이드 ServiceLocator.recordingOwnerFlow) */
     var recordingOwnerFlow: () -> kotlinx.coroutines.flow.Flow<String> = { kotlinx.coroutines.flow.flowOf("") }

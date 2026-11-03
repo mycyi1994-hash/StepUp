@@ -105,7 +105,7 @@ fun NavGraphBuilder.crewHomeGraph(
     val ended: () -> Unit = { navController.toCrewHomeEnded(communityRoute) }
 
     composable(CrewHomeRoutes.HOME, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewHomeScreen(
             viewModel(factory = CrewHomeViewModel.Factory),
             CrewHomeActions(
@@ -129,7 +129,7 @@ fun NavGraphBuilder.crewHomeGraph(
         )
     }
     composable(CrewHomeRoutes.INTRO, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         HomeAccessGuard(viewModel(factory = CrewHomeAccessViewModel.Factory), ended)
         CrewIntroScreen(
             viewModel(factory = CrewScreenViewModel.Factory),
@@ -140,12 +140,12 @@ fun NavGraphBuilder.crewHomeGraph(
         )
     }
     composable(CrewHomeRoutes.LEVEL, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         HomeAccessGuard(viewModel(factory = CrewHomeAccessViewModel.Factory), ended)
         CrewLevelScreen(viewModel(factory = CrewScreenViewModel.Factory), onBack = back, onWeekly = { navController.navigate(CrewHomeRoutes.week(id)) })
     }
     composable(CrewHomeRoutes.MEMBERS, arguments = listOf(crewIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         HomeAccessGuard(viewModel(factory = CrewHomeAccessViewModel.Factory), ended)
         CrewMembersHomeScreen(
             viewModel(factory = CrewHomeMembersViewModel.Factory),
@@ -154,7 +154,7 @@ fun NavGraphBuilder.crewHomeGraph(
         )
     }
     composable(CrewHomeRoutes.PERSON, arguments = listOf(crewIdArg, navArgument("userId") { type = NavType.StringType })) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewPersonHomeScreen(
             viewModel(factory = CrewHomePersonViewModel.Factory),
             onBack = back,
@@ -163,8 +163,8 @@ fun NavGraphBuilder.crewHomeGraph(
         )
     }
     composable(CrewHomeRoutes.MEETING, arguments = listOf(crewIdArg, meetingIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
-        val meetingId = entry.arguments?.getLong("meetingId") ?: 0L
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
+        val meetingId = entry.savedStateHandle.get<Long>("meetingId") ?: 0L
         CrewMeetingScreen(
             viewModel(factory = CrewMeetingViewModel.Factory),
             crewName = crewNameOf(id),
@@ -176,7 +176,7 @@ fun NavGraphBuilder.crewHomeGraph(
         )
     }
     composable(CrewHomeRoutes.ATTENDEES, arguments = listOf(crewIdArg, meetingIdArg)) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewAttendeesScreen(
             viewModel(factory = CrewAttendeesViewModel.Factory),
             onBack = back,
@@ -191,7 +191,7 @@ fun NavGraphBuilder.crewHomeGraph(
         CrewHomeRoutes.WEEK,
         arguments = listOf(crewIdArg, navArgument("week") { type = NavType.StringType; defaultValue = "" }),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewWeekScreen(
             viewModel(factory = CrewWeekViewModel.Factory),
             CrewWeekActions(
@@ -212,7 +212,7 @@ fun NavGraphBuilder.crewHomeGraph(
             navArgument("name") { type = NavType.StringType; defaultValue = "" },
         ),
     ) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewRunsScreen(
             viewModel(factory = CrewRunsViewModel.Factory),
             onBack = back,
@@ -221,7 +221,7 @@ fun NavGraphBuilder.crewHomeGraph(
         )
     }
     composable(CrewHomeRoutes.RUN, arguments = listOf(crewIdArg, navArgument("runId") { type = NavType.LongType })) { entry ->
-        val id = entry.arguments?.getString("crewId").orEmpty()
+        val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
         CrewRunScreen(
             viewModel(factory = CrewRunViewModel.Factory),
             onBack = back,
