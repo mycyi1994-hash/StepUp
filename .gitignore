@@ -19,3 +19,4 @@ __pycache__/
 xcuserdata/
 /shared/build
 /sharedUi/build
+/sharedData/build
