@@ -15,7 +15,10 @@ interface IosSignInUi {
      */
     fun apple(hashedNonce: String, onDone: (String?, String?, String?) -> Unit)
 
-    /** 구글 로그인 창. 앱에 iOS 클라이언트 ID 가 없으면 error = "not_configured". 끝나면 onDone(idToken, error) */
+    /**
+     * 구글 로그인 창. 앱에 iOS 클라이언트 ID 가 없으면 error = "not_configured". 끝나면 onDone(idToken, error).
+     * 구글 iOS SDK 는 우리 nonce 를 토큰에 넣지 않으므로 [hashedNonce] 는 쓰지 않아도 된다(서버에도 nonce 없이 보낸다).
+     */
     fun google(hashedNonce: String, onDone: (String?, String?) -> Unit)
 }
 
@@ -78,7 +81,7 @@ object IosAuth {
             error == "cancelled" -> IosSignInResult.Cancelled
             error == "not_configured" -> IosSignInResult.NotConfigured("google")
             idToken.isNullOrBlank() -> IosSignInResult.Failed(error ?: "구글 로그인 응답이 비었습니다", retry = true)
-            else -> finish(auth.signInWithGoogle(idToken, nonce.raw), store, "google")
+            else -> finish(auth.signInWithGoogle(idToken, nonce = null), store, "google")
         }
     }
 

@@ -31,7 +31,8 @@ final class SignInUi: NSObject, IosSignInUi {
             return
         }
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientId)
-        GIDSignIn.sharedInstance.signIn(withPresenting: top, hint: nil, additionalScopes: nil, nonce: hashedNonce) { result, error in
+        // 구글 iOS SDK 의 토큰에는 우리 nonce 를 넣지 않는다(Supabase iOS 안내와 같다) — 서버에도 nonce 없이 보낸다(IosAuth)
+        GIDSignIn.sharedInstance.signIn(withPresenting: top, hint: nil, additionalScopes: nil) { result, error in
             if let error = error as NSError? {
                 onDone(nil, error.code == GIDSignInError.canceled.rawValue ? "cancelled" : error.localizedDescription)
                 return
