@@ -194,6 +194,9 @@ object CrewRules {
         return label.substring(0, cut) + "\n" + label.substring(cut + 1)
     }
 
+    // iOS 헤더(ObjC)에서는 C 의 NAME_MAX 매크로(255)와 부딪혀 이름을 바꾼다 — Kotlin · 안드로이드 이름은 그대로
+    @OptIn(kotlin.experimental.ExperimentalObjCName::class)
+    @kotlin.native.ObjCName("nameMaxLength")
     const val NAME_MAX = 40
     const val TAGLINE_MAX = 120
     const val NOTE_MAX = 300

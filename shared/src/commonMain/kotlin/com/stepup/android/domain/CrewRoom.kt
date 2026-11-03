@@ -110,6 +110,9 @@ sealed interface RoomTarget {
 }
 
 object CrewRoomRules {
+    // iOS 헤더(ObjC)에서는 C 의 NAME_MAX 매크로(255)와 부딪혀 이름을 바꾼다 — Kotlin · 안드로이드 이름은 그대로
+    @OptIn(kotlin.experimental.ExperimentalObjCName::class)
+    @kotlin.native.ObjCName("nameMaxLength")
     const val NAME_MAX = 30
 
     /** 만나는 곳 글자 한도 · 정원 최소(0074 — 서버와 같다) */
