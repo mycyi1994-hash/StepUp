@@ -122,7 +122,7 @@ if 'markAllRead()' in notifications and 'LaunchedEffect(Unit) { viewModel.markAl
     errors.append('Opening the inbox must not mark everything read')
 if 'viewModel::clearAll' in notifications:
     errors.append('Mark all read must preserve notifications, not delete them')
-notification_repo = (ROOT/'app/src/main/java/com/stepup/android/data/repo/NotificationRepository.kt').read_text(encoding='utf-8')
+notification_repo = (ROOT/'sharedData/src/commonMain/kotlin/com/stepup/android/data/repo/NotificationRepository.kt').read_text(encoding='utf-8')
 if 'rewardRepository.credit' in notification_repo or 'seedWelcome' in notification_repo:
     errors.append('Notifications cannot fabricate or locally pay rewards without a server receipt')
 if root.count('MainHeader(') != 1:
