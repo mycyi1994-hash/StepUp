@@ -1,11 +1,5 @@
 package com.stepup.android.ui.screens.settings
 
-import android.content.ActivityNotFoundException
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,7 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -154,7 +147,7 @@ private fun FaqRow(question: String, answer: String, open: Boolean, onToggle: ()
 @Composable
 internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
     val t = runTone()
-    val context = LocalContext.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     val address = stringResource(Res.string.support_email)
     val subject = stringResource(Res.string.set_mail_subject)
     val copiedText = stringResource(Res.string.set_address_copied)
@@ -167,7 +160,8 @@ internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
         }
     }
     fun copy() {
-        if (copyToClipboard(context, address)) copied = copiedText
+        // 클립보드에 넣은 뒤에만 알린다(안드로이드와 같다)
+        if (runCatching { clipboard.setText(androidx.compose.ui.text.AnnotatedString(address)) }.isSuccess) copied = copiedText
     }
     BlueSheet(
         title = stringResource(if (failed) Res.string.set_mail_open_failed else Res.string.set_contact_mail),
@@ -180,7 +174,7 @@ internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
             } else {
                 RunButton(
                     stringResource(Res.string.set_open_mail_app),
-                    onClick = { if (!openMailApp(context, address, subject)) failed = true },
+                    onClick = { if (!openMailApp(address, subject)) failed = true },
                     modifier = Modifier.testTag("contact-open-mail"),
                 )
                 RunButton(stringResource(Res.string.set_copy_address), ::copy, Modifier.testTag("contact-copy"), kind = RunButtonKind.Secondary)
@@ -197,29 +191,6 @@ internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
     }
 }
 
-/** 메일 앱의 작성 창 — 받는 사람과 제목만 채운다. 열 곳이 없으면 false */
-private fun openMailApp(context: Context, address: String, subject: String): Boolean {
-    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-        putExtra(Intent.EXTRA_EMAIL, arrayOf(address))
-        putExtra(Intent.EXTRA_SUBJECT, subject)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    return try {
-        context.startActivity(intent)
-        true
-    } catch (_: ActivityNotFoundException) {
-        false
-    } catch (_: SecurityException) {
-        false
-    }
-}
-
-private fun copyToClipboard(context: Context, text: String): Boolean = try {
-    val clipboard = context.getSystemService(ClipboardManager::class.java)
-    if (clipboard == null) false else {
-        clipboard.setPrimaryClip(ClipData.newPlainText("StepUp", text))
-        true
-    }
-} catch (_: Exception) {
-    false
-}
+/** 메일 앱의 작성 창 — 받는 사람과 제목만 채운다. 열 곳이 없으면 false(공용 ExternalIntents.composeEmail) */
+private fun openMailApp(address: String, subject: String): Boolean =
+    com.stepup.android.core.ExternalIntents.composeEmail(address, subject)

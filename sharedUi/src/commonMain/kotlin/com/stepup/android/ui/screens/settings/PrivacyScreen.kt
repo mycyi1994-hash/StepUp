@@ -17,7 +17,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,13 +66,12 @@ enum class ClearStep { Closed, Confirm, Clearing, Failed }
  */
 @Composable
 fun PrivacyScreen(onBack: () -> Unit = {}) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
-    var permissions by remember(context) { mutableStateOf(readPermissions(context)) }
-    DisposableEffect(lifecycleOwner, context) {
+    var permissions by remember { mutableStateOf(readPermissions()) }
+    DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) permissions = readPermissions(context)
+            if (event == Lifecycle.Event.ON_RESUME) permissions = readPermissions()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -242,13 +240,7 @@ private fun ClearHistorySheet(step: ClearStep, onClear: () -> Unit, onDismiss: (
     }
 }
 
-internal fun readPermissions(context: android.content.Context): PermissionSnapshot {
-    fun granted(permission: String) = androidx.core.content.ContextCompat.checkSelfPermission(context, permission) ==
-        android.content.pm.PackageManager.PERMISSION_GRANTED
-    return PermissionSnapshot(
-        activity = com.stepup.android.ui.StepPermissions.hasActivityRecognition(context),
-        preciseLocation = granted(android.Manifest.permission.ACCESS_FINE_LOCATION),
-        approximateLocation = granted(android.Manifest.permission.ACCESS_COARSE_LOCATION),
-        notifications = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled(),
-    )
+/** 지금 권한(걸음 · 정확한 위치 · 대략 위치 · 알림) — 기기마다 읽는다(core/Permissions) */
+internal fun readPermissions(): PermissionSnapshot = com.stepup.android.core.readPermissionSnapshot().let {
+    PermissionSnapshot(it.activity, it.preciseLocation, it.approximateLocation, it.notifications)
 }

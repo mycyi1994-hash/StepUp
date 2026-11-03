@@ -81,9 +81,10 @@ object IosApp {
         )
     }
     val avatars by lazy { com.stepup.android.data.repo.AvatarRepository(prefs, sneakers) }
+    val notifications by lazy { com.stepup.android.data.repo.NotificationRepository(db.notificationDao()) }
 
     /** 공용 화면이 쓰는 저장소를 채운다(안드로이드 ServiceLocator 와 같은 이름 — AppServices) */
-    fun connectServices(onReturnToSignIn: suspend () -> Unit) {
+    fun connectServices(onReturnToSignIn: suspend () -> Unit, onSignedOut: () -> Unit) {
         val s = com.stepup.android.core.AppServices
         s.userPrefs = prefs
         s.rewardRepository = rewards
@@ -92,13 +93,24 @@ object IosApp {
         s.economySync = economySync
         s.stepRepository = steps
         s.avatarRepository = avatars
+        s.notificationRepository = notifications
         s.forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi,
             pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(prefs),
             resync = { economySync.refresh() },
         )
+        s.sessionHolder = sessions
+        s.server = server
+        s.economyApi = economyApi
+        s.deleteAccount = { com.stepup.android.data.remote.IosAuth.deleteAccount(server, sessions, sessionStore, attesterUrl) }
+        s.onForgetAccount = {
+            // 달리던 러닝은 먼저 끝낸다(기록은 남긴다) · 이 폰의 로그인(키체인)도 지운다
+            if (IosRunSession.active) IosRunSession.stop()
+            com.stepup.android.data.remote.IosAuth.signOut(sessionStore)
+        }
         s.serverEconomyOn = supabaseUrl.isNotEmpty()
         s.onReturnToSignIn = onReturnToSignIn
+        s.onSignedOut = onSignedOut
         com.stepup.android.core.AppBuild.VERSION_NAME = plist("CFBundleShortVersionString")
     }
 }

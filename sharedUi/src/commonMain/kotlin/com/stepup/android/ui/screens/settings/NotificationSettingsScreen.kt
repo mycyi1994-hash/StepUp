@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,18 +15,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.stepup.ui.res.*
 import com.stepup.android.core.AppServices
 import com.stepup.android.data.prefs.NotifyPrefs
-import com.stepup.android.push.NotificationSyncState
+import com.stepup.android.core.NotificationSyncState
+import com.stepup.android.core.rememberNotificationsAllowed
 import com.stepup.android.ui.components.BlueAlertIcon
 import com.stepup.android.ui.components.BlueGroup
 import com.stepup.android.ui.components.BlueLoadFailed
@@ -86,7 +81,6 @@ data class NotificationSettingsUi(
  */
 @Composable
 fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var attempt by remember { mutableIntStateOf(0) }
     val load by remember(attempt) {
@@ -240,18 +234,3 @@ internal fun SavingLine(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** 휴대폰(OS)이 이 앱의 알림을 허락했는가 — 휴대폰 설정에서 돌아올 때마다 다시 본다 */
-@Composable
-internal fun rememberNotificationsAllowed(): Boolean {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var allowed by remember(context) { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
-    DisposableEffect(lifecycleOwner, context) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) allowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    return allowed
-}

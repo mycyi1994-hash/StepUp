@@ -1,8 +1,5 @@
 package com.stepup.android.ui.screens.settings
 
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +67,6 @@ enum class DeleteStep { Closed, Confirm, Deleting, Failed, Unknown }
 @Composable
 fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     var reads by remember { mutableIntStateOf(0) }
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
     var wallet by remember { mutableStateOf(WalletLink.Checking) }
@@ -102,20 +97,20 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
         if (loggingOut) return
         loggingOut = true
         // 서버 기록은 그대로 — 이 폰의 로그인 · 사본만 지우고 로그인 첫 화면으로
-        scope.launch { withContext(NonCancellable) { forgetAccountOnPhone(context) } }
+        scope.launch { withContext(NonCancellable) { forgetAccountOnPhone() } }
     }
 
     fun delete() {
         if (step == DeleteStep.Deleting) return
         // 인터넷이 없으면 보내지 않는다 — 처리되지 않은 것이 확실하다
-        if (!hasNetwork(context)) {
+        if (!com.stepup.android.core.hasNetwork()) {
             step = DeleteStep.Failed
             return
         }
         step = DeleteStep.Deleting
         scope.launch {
             val outcome = try {
-                AppServices.server.deleteAccount()
+                AppServices.deleteAccount()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -127,7 +122,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
                     // 함께 취소된다. 그 뒤에 지우면 앞 계정의 잔고 · 신발 · 키 · 몸무게가 남을 수 있다 —
                     // 폰에 남은 것을 취소되지 않게 먼저 다 지우고, 로그인 표시는 맨 마지막에 지운다.
                     // 서버 계정이 사라졌다 — 이 폰의 로그인 · 사본도 지운다
-                    withContext(NonCancellable) { forgetAccountOnPhone(context) }
+                    withContext(NonCancellable) { forgetAccountOnPhone() }
                     step = DeleteStep.Closed
                 }
                 AccountDeletion.NotDeleted -> step = DeleteStep.Failed
@@ -335,21 +330,16 @@ private fun DeleteUnknownSheet(onContact: () -> Unit, onClose: () -> Unit) {
  * NonCancellable 안에서 부르고, 앞 계정의 잔고 · 신발 · 키 · 몸무게가 남지 않게 로그인 표시는 맨 마지막에 지운다.
  * 서버 기록은 건드리지 않는다(로그아웃은 같은 계정으로 다시 들어오면 그대로다).
  */
-internal suspend fun forgetAccountOnPhone(context: Context) {
-    // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
-    if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
-        com.stepup.android.service.WalkSessionService.stop(context)
-    }
+suspend fun forgetAccountOnPhone() {
+    // 달리는 중이면 먼저 끝낸다 · 앱 파일(크루 초안 · 채팅 사본) — 앱마다 다른 일(AppServices.onForgetAccount)
+    AppServices.onForgetAccount()
     AppServices.sessionHolder.signOut()
     // 앞 계정의 잔고 · 신발 사본도 이 폰에서 지운다
     AppServices.economySync.clearLocal()
     // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
     AppServices.userPrefs.clearStoryData()
-    // 쓰다 둔 크루 만들기 초안(사진 파일 포함) · 크루 채팅의 쓰다 만 공지도 지운다
+    // 쓰다 둔 크루 만들기 초안 · 크루 채팅의 쓰다 만 공지도 지운다
     AppServices.userPrefs.clearCrewData()
-    runCatching { java.io.File(context.filesDir, "crew_drafts").deleteRecursively() }
-    // 이 폰에 들고 있던 크루 채팅 대화 · 받은 사진도 지운다
-    runCatching { AppServices.crewChat.clearAll() }
     // 첫 설정에서 적은 키 · 몸무게 · 목표도 이 폰에서 지운다(서버에는 애초에 없다)
     AppServices.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
     AppServices.userPrefs.clearGoalAttempts()
@@ -358,13 +348,9 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     AppServices.userPrefs.clearAchievementBest()
     AppServices.userPrefs.setRunExperience(null)
     // 접속 코드 권한 사본도 지운다 — 다음 계정이 앞 계정의 권한을 들고 있지 않게
-    com.stepup.android.core.AccessGate.forget(context)
+    com.stepup.android.core.AccessGate.forget()
     // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
     AppServices.userPrefs.setLoginMethod("")
+    AppServices.onSignedOut()
 }
 
-private fun hasNetwork(context: Context): Boolean {
-    val manager = context.getSystemService(ConnectivityManager::class.java) ?: return true
-    val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
-    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-}

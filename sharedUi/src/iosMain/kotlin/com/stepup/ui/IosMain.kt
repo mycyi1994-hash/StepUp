@@ -74,9 +74,19 @@ private fun IosProfileTab(stack: List<String>, push: (String) -> Unit, pop: () -
             onBack = pop,
             onOpenTheme = { push(THEME) },
             onOpenLanguage = { push(LANGUAGE) },
+            onOpenNotificationSettings = { push(NOTIFY) },
+            onOpenPrivacy = { push(PRIVACY) },
+            onOpenSupport = { push(SUPPORT) },
+            onOpenConnected = { push(CONNECTED) },
+            onOpenExperience = { push(EXPERIENCE) },
         )
         THEME -> com.stepup.android.ui.screens.settings.ThemeScreen(onBack = pop)
         LANGUAGE -> com.stepup.android.ui.screens.settings.LanguageScreen(onBack = pop)
+        NOTIFY -> com.stepup.android.ui.screens.settings.NotificationSettingsScreen(onBack = pop)
+        PRIVACY -> com.stepup.android.ui.screens.settings.PrivacyScreen(onBack = pop)
+        SUPPORT -> com.stepup.android.ui.screens.settings.SupportScreen(onBack = pop)
+        CONNECTED -> com.stepup.android.ui.screens.settings.ConnectedAccountsScreen(onBack = pop)
+        EXPERIENCE -> com.stepup.android.ui.screens.settings.ExperienceSettingsScreen(onBack = pop)
         else -> pop()
     }
 }
@@ -84,3 +94,8 @@ private fun IosProfileTab(stack: List<String>, push: (String) -> Unit, pop: () -
 private const val SETTINGS = "settings"
 private const val THEME = "settings/theme"
 private const val LANGUAGE = "settings/language"
+private const val NOTIFY = "settings/notifications"
+private const val PRIVACY = "settings/privacy"
+private const val SUPPORT = "settings/support"
+private const val CONNECTED = "settings/accounts"
+private const val EXPERIENCE = "settings/experience"

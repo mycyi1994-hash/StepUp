@@ -62,7 +62,7 @@ private fun IosRootContent() {
             IosRunSession.stop()
             IosAuth.signOut(IosApp.sessionStore)
             stage = Stage.SignedOut
-        })
+        }, onSignedOut = { stage = Stage.SignedOut })
         IosApp.connectUploads()
         if (IosApp.sessionStore.load() != null) afterSignIn() else stage = Stage.SignedOut
     }

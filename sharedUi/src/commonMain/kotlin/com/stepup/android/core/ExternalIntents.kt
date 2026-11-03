@@ -14,4 +14,6 @@ expect object ExternalIntents {
     fun openCoordinateInMaps(point: GeoPoint)
     fun openUrl(url: String)
     fun tryOpenUrl(url: String): Boolean
+    /** 메일 앱의 작성 창(받는 사람 · 제목). 열 곳이 없으면 false */
+    fun composeEmail(address: String, subject: String): Boolean
 }

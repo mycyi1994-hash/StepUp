@@ -1,5 +1,8 @@
 package com.stepup.android.core
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.urlEncodeUtf8
 import platform.Foundation.NSURL
@@ -46,4 +49,56 @@ actual object ExternalIntents {
     }
 
     actual fun tryOpenUrl(url: String): Boolean = open(url)
+
+    actual fun composeEmail(address: String, subject: String): Boolean =
+        open("mailto:$address?subject=" + urlEncodeUtf8(subject).replace("+", "%20"))
 }
+
+@androidx.compose.runtime.Composable
+actual fun rememberNotificationsAllowed(): Boolean {
+    var allowed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycle) {
+        fun check() {
+            platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { s ->
+                val status = s?.authorizationStatus
+                // 아직 묻지 않았으면 막힌 것으로 보지 않는다(처음 알림을 켤 때 시스템이 묻는다)
+                allowed = status != platform.UserNotifications.UNAuthorizationStatusDenied
+            }
+        }
+        check()
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, e -> if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) check() }
+        lifecycle.lifecycle.addObserver(observer)
+        onDispose { lifecycle.lifecycle.removeObserver(observer) }
+    }
+    return allowed
+}
+
+
+/** 알림 허락 — 시스템이 비동기로 답해서 마지막 값을 들고 있다(처음은 묻기 전 = 허락 안 함으로 보지 않는다) */
+private var notificationsAllowedCache = true
+
+private fun refreshNotificationCache() {
+    platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { s ->
+        notificationsAllowedCache = s?.authorizationStatus == platform.UserNotifications.UNAuthorizationStatusAuthorized ||
+            s?.authorizationStatus == platform.UserNotifications.UNAuthorizationStatusProvisional
+    }
+}
+
+actual fun readPermissionSnapshot(): PermissionState {
+    refreshNotificationCache()
+    val location = platform.CoreLocation.CLLocationManager()
+    val status = location.authorizationStatus
+    val located = status == platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse ||
+        status == platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
+    val precise = located && location.accuracyAuthorization == platform.CoreLocation.CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy
+    return PermissionState(
+        activity = platform.CoreMotion.CMPedometer.authorizationStatus() == platform.CoreMotion.CMAuthorizationStatusAuthorized,
+        preciseLocation = precise,
+        approximateLocation = located,
+        notifications = notificationsAllowedCache,
+    )
+}
+
+/** iOS 는 연결 상태를 바로 물을 수 있는 동기 API 가 없다 — 보내 보고 답으로 안다(답을 못 받으면 Unknown 으로 안내) */
+actual fun hasNetwork(): Boolean = true

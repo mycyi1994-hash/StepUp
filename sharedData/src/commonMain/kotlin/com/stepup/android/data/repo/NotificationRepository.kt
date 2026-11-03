@@ -61,8 +61,8 @@ class NotificationRepository(
     }
 
     /** 크루 초대 수락 — 크루 가입 후 알림을 처리 상태로 바꾼다 */
-    suspend fun acceptCrewInvite(entity: NotificationEntity, crewRepository: CrewRepository): CrewActionResult =
-        acceptCrewInvitation(dao, entity, crewRepository::join)
+    suspend fun acceptCrewInvite(entity: NotificationEntity, join: suspend (String) -> CrewActionResult): CrewActionResult =
+        acceptCrewInvitation(dao, entity, join)
 
     /**
      * 수락 응답을 못 받았는데, 다시 받은 서버 크루 목록에 가입 · 신청이 있다 — 초대는 응답한 것으로 둔다.
@@ -96,7 +96,7 @@ class NotificationRepository(
 }
 
 /** Do not consume an invitation until the server accepts joining or requesting membership. */
-internal suspend fun acceptCrewInvitation(
+suspend fun acceptCrewInvitation(
     dao: NotificationDao,
     entity: NotificationEntity,
     join: suspend (String) -> CrewActionResult,

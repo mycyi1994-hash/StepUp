@@ -22,6 +22,7 @@ object AppServices {
     lateinit var economySync: EconomySync
     lateinit var stepRepository: com.stepup.android.data.repo.StepRepository
     lateinit var avatarRepository: com.stepup.android.data.repo.AvatarRepository
+    lateinit var notificationRepository: com.stepup.android.data.repo.NotificationRepository
 
     lateinit var forgeRepository: com.stepup.android.data.repo.ForgeRepository
 
@@ -30,6 +31,22 @@ object AppServices {
 
     /** 다시 로그인하러 갈 때 앱이 할 일(달리던 러닝 멈추기 · 로그인 화면으로) */
     var onReturnToSignIn: suspend () -> Unit = {}
+
+    lateinit var sessionHolder: com.stepup.android.data.remote.SessionHolder
+    lateinit var server: com.stepup.android.data.remote.StepUpServer
+    lateinit var economyApi: com.stepup.android.data.remote.EconomyApi
+
+    /** 계정 지우기 — 서버가 지웠는가. iOS 는 Apple 로그인 토큰 철회를 먼저 한다(App Store 5.1.1(v)) */
+    var deleteAccount: suspend () -> com.stepup.android.data.remote.AccountDeletion = { server.deleteAccount() }
+
+    /** 이 폰에서 계정을 잊을 때 앱이 먼저 할 일(달리는 러닝 멈추기 · 앱 파일 지우기 · 로그인 저장 지우기) */
+    var onForgetAccount: suspend () -> Unit = {}
+
+    /** 이 폰에서 계정을 다 잊었다 — 앱 뿌리가 로그인 첫 화면으로(안드로이드는 로그인 표시가 지워지면 저절로) */
+    var onSignedOut: () -> Unit = {}
+
+    /** 알림 설정을 서버로 보내는 쪽 — iOS 는 푸시를 붙이기 전까지 NoPush */
+    var pushRegistrar: PushPreferences = NoPush
 
     /** 서버 경제인가(서버 주소가 있는 빌드는 언제나) */
     var serverEconomyOn: Boolean = true
