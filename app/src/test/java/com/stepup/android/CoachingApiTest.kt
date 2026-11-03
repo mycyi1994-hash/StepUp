@@ -14,7 +14,7 @@ import com.stepup.android.data.remote.parseInstantMillis
 import com.stepup.android.domain.coaching.CoachIds
 import com.stepup.android.domain.coaching.CoachKind
 import com.stepup.android.domain.coaching.CoachServerState
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -116,7 +116,7 @@ class CoachingApiTest {
         assertTrue(state.consented)
         assertEquals(450, state.prefs!!.targetPaceSec)
         assertEquals(4L, state.prefs!!.revision)
-        assertEquals(LocalDate.of(2026, 10, 19) to "easy_25", state.plans.single().days.single())
+        assertEquals(LocalDate(2026, 10, 19) to "easy_25", state.plans.single().days.single())
     }
 
     @Test fun `선호 저장 — 판이 다르면 저장하지 않았다고 읽는다`() = runBlocking {

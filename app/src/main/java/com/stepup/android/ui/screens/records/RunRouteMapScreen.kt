@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.records
 
+import kotlinx.datetime.toJavaLocalDate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +46,7 @@ import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.theme.StepUpSans
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 
 /**
  * 저장된 경로(시안 H12) — 상세에서 고른 그 러닝의 저장 좌표만, 실제 지도(타일 · 출처 표기 그대로) 위에. 처음엔 경로 전체가
@@ -68,7 +69,7 @@ fun RunRouteMapContent(
     record: RecordLookup,
     route: List<GeoPoint>?,
     onBack: () -> Unit = {},
-    zone: ZoneId = ZoneId.systemDefault(),
+    zone: TimeZone = TimeZone.currentSystemDefault(),
 ) {
     val t = runTone()
     val session = (record as? RecordLookup.Found)?.session
@@ -119,9 +120,9 @@ fun RunRouteMapContent(
 
 /** 지도 아래 요약 — 날짜 | 거리 | 시간(한 덩어리로 읽힌다) */
 @Composable
-private fun RouteSummary(session: WalkSessionEntity, zone: ZoneId) {
+private fun RouteSummary(session: WalkSessionEntity, zone: TimeZone) {
     val t = runTone()
-    val day = rememberFormatter(R.string.date_month_day).format(session.startedAt.localDate(zone))
+    val day = rememberFormatter(R.string.date_month_day).format(session.startedAt.localDate(zone).toJavaLocalDate())
     RunCard(
         Modifier.padding(top = 10.dp).semantics(mergeDescendants = true) {}.testTag("route-summary"),
         padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),

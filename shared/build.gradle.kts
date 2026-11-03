@@ -26,6 +26,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // 날짜 타입이 공용 규칙의 공개 API 에 나온다(앱이 받는다)
+            api(libs.kotlinx.datetime)
+            // 러닝 계획(RunPlan)의 상태 흐름
+            api(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)
         }

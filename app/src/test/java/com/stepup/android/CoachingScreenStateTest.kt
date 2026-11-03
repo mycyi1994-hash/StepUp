@@ -19,7 +19,9 @@ import com.stepup.android.ui.screens.coaching.aiOf
 import com.stepup.android.ui.screens.coaching.providerKnown
 import com.stepup.android.ui.screens.coaching.shownAi
 import com.stepup.android.ui.screens.coaching.todayWorkout
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
+import com.stepup.android.domain.plusDays
+import com.stepup.android.domain.minusWeeks
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -33,8 +35,8 @@ import org.junit.Test
 class CoachingScreenStateTest {
     private val me = "account:u1"
     private val other = "account:u2"
-    private val today: LocalDate = LocalDate.of(2026, 10, 16) // 금요일
-    private val monday: LocalDate = LocalDate.of(2026, 10, 12)
+    private val today: LocalDate = LocalDate(2026, 10, 16) // 금요일
+    private val monday: LocalDate = LocalDate(2026, 10, 12)
 
     private fun snapshot(
         consented: Boolean = true,

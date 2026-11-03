@@ -24,7 +24,9 @@ import com.stepup.android.domain.StoryRun
 import com.stepup.android.domain.StoryRunOptions
 import com.stepup.android.domain.StoryRunProblem
 import com.stepup.android.domain.StoryRunRules
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,9 +42,9 @@ import org.junit.Test
  */
 class StoryRunsTest {
 
-    private val sep28 = LocalDate.of(2026, 9, 28)
-    private val sep29 = LocalDate.of(2026, 9, 29)
-    private val sep25 = LocalDate.of(2026, 9, 25)
+    private val sep28 = LocalDate(2026, 9, 28)
+    private val sep29 = LocalDate(2026, 9, 29)
+    private val sep25 = LocalDate(2026, 9, 25)
     private val route = listOf(GeoPoint(37.531, 126.931), GeoPoint(37.533, 126.935), GeoPoint(37.536, 126.939))
 
     private fun run(id: Long, day: LocalDate, withRoute: Boolean = true) = StoryRun(
@@ -58,7 +60,7 @@ class StoryRunsTest {
         runs: List<StoryRun> = emptyList(),
         local: StoryLocalRuns = StoryLocalRuns(),
     ) = StoryRecords.Ready(
-        StoryRunOptions(today, total, voided, lastDay?.atTime(20, 0)?.atZone(StoryRunRules.ZONE)?.toInstant()?.toEpochMilli(), runs),
+        StoryRunOptions(today, total, voided, lastDay?.atTime(20, 0)?.toInstant(StoryRunRules.ZONE)?.toEpochMilliseconds(), runs),
         local,
     )
 
@@ -75,7 +77,7 @@ class StoryRunsTest {
     @Test fun `9월 28일에는 9월 25일 기록까지 붙일 수 있고 24일은 안 된다`() {
         assertTrue(StoryRunRules.attachable(sep25, sep28))
         assertTrue(StoryRunRules.attachable(sep28, sep28))
-        assertFalse(StoryRunRules.attachable(LocalDate.of(2026, 9, 24), sep28))
+        assertFalse(StoryRunRules.attachable(LocalDate(2026, 9, 24), sep28))
         assertEquals(sep28, StoryRunRules.lastAttachDay(sep25))
     }
 
@@ -90,7 +92,7 @@ class StoryRunsTest {
 
     @Test fun `날짜는 한국 시간의 끝난 날로 센다`() {
         // 9월 25일 23:50 KST = 14:50 UTC — 기기 시간대와 상관없이 25일
-        val ended = java.time.ZonedDateTime.of(2026, 9, 25, 23, 50, 0, 0, StoryRunRules.ZONE).toInstant().toEpochMilli()
+        val ended = kotlinx.datetime.LocalDateTime(2026, 9, 25, 23, 50).toInstant(StoryRunRules.ZONE).toEpochMilliseconds()
         assertEquals(sep25, StoryRunRules.dayOf(ended))
     }
 
@@ -107,8 +109,8 @@ class StoryRunsTest {
     }
 
     @Test fun `4일 이상 지난 기록만 있는 사람 — 마지막 날짜와 며칠 전`() {
-        val shown = card(records = ready(total = 6, lastDay = LocalDate.of(2026, 9, 24)))
-        assertEquals(StoryRecordCard.Old(LocalDate.of(2026, 9, 24), 4), shown)
+        val shown = card(records = ready(total = 6, lastDay = LocalDate(2026, 9, 24)))
+        assertEquals(StoryRecordCard.Old(LocalDate(2026, 9, 24), 4), shown)
         assertEquals(StoryPhraseSet.RETURNING, StoryComposeRules.phraseSet(shown))
     }
 
@@ -160,7 +162,7 @@ class StoryRunsTest {
     }
 
     @Test fun `이미 올린 글의 첨부는 기간이 지나도 그대로다`() {
-        val kept = StoryAttachment(run(0, LocalDate.of(2026, 9, 1)), kept = true)
+        val kept = StoryAttachment(run(0, LocalDate(2026, 9, 1)), kept = true)
         assertEquals(StoryRecordCard.Attached(kept, 27), card(kept, ready()))
     }
 
@@ -170,7 +172,7 @@ class StoryRunsTest {
     }
 
     @Test fun `방금 달린 러닝이 서버 확인 전이면 확인 중으로 보인다`() {
-        assertEquals(StoryRecordCard.Pending, card(records = ready(total = 5, lastDay = LocalDate.of(2026, 9, 20),
+        assertEquals(StoryRecordCard.Pending, card(records = ready(total = 5, lastDay = LocalDate(2026, 9, 20),
             local = StoryLocalRuns(count = 6, pendingRecent = true))))
     }
 

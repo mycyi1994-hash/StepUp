@@ -785,14 +785,14 @@ private fun PostRow.storyRun(): com.stepup.android.domain.StoryRun? {
 
 /** 서버의 기록 칸 → 도메인. 날짜를 못 읽는 줄은 뺀다(지어내지 않는다) */
 internal fun com.stepup.android.data.remote.StoryRunsRow.toDomain(): com.stepup.android.domain.StoryRunOptions? {
-    val todayDate = runCatching { java.time.LocalDate.parse(today) }.getOrNull() ?: return null
+    val todayDate = runCatching { kotlinx.datetime.LocalDate.parse(today) }.getOrNull() ?: return null
     return com.stepup.android.domain.StoryRunOptions(
         today = todayDate,
         total = total,
         voided = voided,
         lastEndedAt = lastEndedAt.isoToMillis().takeIf { it > 0 },
         runs = runs.mapNotNull { row ->
-            val day = runCatching { java.time.LocalDate.parse(row.day) }.getOrNull() ?: return@mapNotNull null
+            val day = runCatching { kotlinx.datetime.LocalDate.parse(row.day) }.getOrNull() ?: return@mapNotNull null
             val ended = row.endedAt.isoToMillis().takeIf { it > 0 } ?: return@mapNotNull null
             com.stepup.android.domain.StoryRun(
                 id = row.id,

@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.coaching
 
+import kotlinx.datetime.toJavaLocalDate
+import com.stepup.android.domain.plusDays
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +80,7 @@ import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.records.rememberFormatter
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -549,7 +551,7 @@ private fun PlanContent(monday: LocalDate, days: List<Pair<LocalDate, WorkoutTem
     RunDivider()
     days.forEach { (date, template) ->
         Row(Modifier.fillMaxWidth().padding(vertical = 15.dp).testTag("coach-plan-day-$date"), verticalAlignment = Alignment.CenterVertically) {
-            Text(spoken.format(date), style = runTextStyle(17.sp, t.text, FontWeight.Bold), modifier = Modifier.weight(0.9f))
+            Text(spoken.format(date.toJavaLocalDate()), style = runTextStyle(17.sp, t.text, FontWeight.Bold), modifier = Modifier.weight(0.9f))
             Text(stringResource(familyName(template.family)), style = runTextStyle(17.sp, t.text, FontWeight.Bold), modifier = Modifier.weight(1.4f))
             Text(stringResource(R.string.coach_minutes, template.minutes), style = runTextStyle(17.sp, t.label, FontWeight.SemiBold))
         }
@@ -580,12 +582,12 @@ private fun PlanStrip(monday: LocalDate, planned: Set<LocalDate>) {
         (0L until 7L).forEach { offset ->
             val date = monday.plusDays(offset)
             val on = date in planned
-            val cd = if (on) stringResource(R.string.coach_plan_day_cd, spoken.format(date)) else spoken.format(date)
+            val cd = if (on) stringResource(R.string.coach_plan_day_cd, spoken.format(date.toJavaLocalDate())) else spoken.format(date.toJavaLocalDate())
             Column(
                 Modifier.weight(1f).clearAndSetSemantics { contentDescription = cd },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(weekday.format(date), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+                Text(weekday.format(date.toJavaLocalDate()), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
                 Spacer(Modifier.height(8.dp))
                 Box(
                     Modifier.size(40.dp).clip(CircleShape)

@@ -10,7 +10,7 @@ import com.stepup.android.domain.CrewWeekMember
 import com.stepup.android.domain.MeetingAttendee
 import com.stepup.android.domain.MeetingFace
 import com.stepup.android.domain.MeetingResponse
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNull

@@ -80,7 +80,7 @@ class CoachingApi(private val server: StepUpServer) {
             put("p_request", request)
         }) { parseStatus(it) }
 
-    suspend fun week(userId: String, monday: java.time.LocalDate, zone: String, locale: String, request: Boolean): ServerResult<CoachStatus> =
+    suspend fun week(userId: String, monday: kotlinx.datetime.LocalDate, zone: String, locale: String, request: Boolean): ServerResult<CoachStatus> =
         rpc(userId, "coaching_week", jsonBody {
             put("p_week_start", monday.toString())
             put("p_tz", zone)
@@ -104,7 +104,7 @@ class CoachingApi(private val server: StepUpServer) {
             put("p_expected_revision", expectedRevision)
         }) { CoachPrefsSave.parse(it) }
 
-    suspend fun applyPlan(userId: String, monday: java.time.LocalDate, zone: String, expectedRevision: Long): ServerResult<CoachPlanApply> =
+    suspend fun applyPlan(userId: String, monday: kotlinx.datetime.LocalDate, zone: String, expectedRevision: Long): ServerResult<CoachPlanApply> =
         rpc(userId, "coaching_apply_plan", jsonBody {
             put("p_week_start", monday.toString())
             put("p_tz", zone)
@@ -176,13 +176,13 @@ data class CoachPrefsSave(val ok: Boolean, val conflict: Boolean, val prefs: Coa
 }
 
 /** 적용한 주간 계획 — 날짜와 템플릿 id(서버가 지금 선호로 만든 것) */
-data class CoachPlanApplied(val weekStart: java.time.LocalDate, val days: List<Pair<java.time.LocalDate, String>>) {
+data class CoachPlanApplied(val weekStart: kotlinx.datetime.LocalDate, val days: List<Pair<kotlinx.datetime.LocalDate, String>>) {
     companion object {
         fun of(o: JsonObject): CoachPlanApplied? {
-            val start = o.string("week_start")?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return null
+            val start = o.string("week_start")?.let { runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull() } ?: return null
             val days = (o["days"] as? JsonArray).orEmpty().mapNotNull { day ->
                 val d = day as? JsonObject ?: return@mapNotNull null
-                val date = d.string("date")?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
+                val date = d.string("date")?.let { runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
                 date to (d.string("template") ?: return@mapNotNull null)
             }
             return CoachPlanApplied(start, days)

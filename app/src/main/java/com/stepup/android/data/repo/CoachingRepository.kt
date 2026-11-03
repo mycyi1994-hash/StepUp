@@ -20,7 +20,7 @@ import com.stepup.android.domain.coaching.LapCodec
 import com.stepup.android.domain.coaching.RunSplits
 import com.stepup.android.domain.coaching.runSplits
 import com.stepup.android.domain.toGeoPoints
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

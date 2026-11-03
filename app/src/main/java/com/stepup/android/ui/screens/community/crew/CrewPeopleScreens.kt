@@ -322,7 +322,7 @@ fun CrewRosterScreen(
                 val sub = when {
                     crew == null -> ""
                     mode == CrewRosterMode.WEEK -> stringResource(R.string.crew_participants_sub, crew.name, CrewRules.km(shown.sumOf { it.weekKm }))
-                    crew.capacity != null -> stringResource(R.string.crew_members_sub_capacity, crew.name, crew.capacity)
+                    crew.capacity != null -> stringResource(R.string.crew_members_sub_capacity, crew.name, crew.capacity!!)
                     else -> crew.name
                 }
                 Text(sub, color = ink.text.copy(alpha = 0.86f), fontSize = 17.sp)

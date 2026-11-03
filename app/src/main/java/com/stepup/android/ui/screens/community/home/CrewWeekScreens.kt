@@ -1,5 +1,10 @@
 package com.stepup.android.ui.screens.community.home
 
+import com.stepup.android.core.format
+import com.stepup.android.core.toEpochDay
+import com.stepup.android.domain.KST
+import com.stepup.android.domain.plusDays
+import com.stepup.android.domain.todayIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +69,7 @@ import com.stepup.android.domain.CrewWeekMember
 import com.stepup.android.domain.CrewHomeRules
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.chat.ChatRetryState
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 /** "9.28 – 10.4" */
 @Composable
@@ -141,7 +146,7 @@ fun CrewWeekScreen(viewModel: CrewWeekViewModel, actions: CrewWeekActions) {
                     Spacer(Modifier.height(30.dp))
                     Text(stringResource(R.string.crewhome_week_days), style = blueText(20.sp, ink.text, FontWeight.Bold))
                     Spacer(Modifier.height(16.dp))
-                    val today = if (current.thisWeek) (LocalDate.now(CrewHomeRules.KST).toEpochDay() - current.start.toEpochDay()).toInt() else null
+                    val today = if (current.thisWeek) (todayIn(CrewHomeRules.KST).toEpochDay() - current.start.toEpochDay()).toInt() else null
                     WeekBars(
                         current.days, today, Modifier.testTag("home-week-bars"),
                         onDay = if (current.empty) null else { index -> actions.onRuns(current.start, current.start.plusDays(index.toLong()), null) },
@@ -272,7 +277,7 @@ private fun WeekMemberRow(member: CrewWeekMember, onClick: () -> Unit) {
                 Spacer(Modifier.height(6.dp))
                 val day = recordDayLabel(lastAt)
                 Text(
-                    if (localDay(lastAt) == LocalDate.now()) stringResource(R.string.crewhome_week_member_last, day, km(lastKm), homeClock(lastAt))
+                    if (localDay(lastAt) == todayIn()) stringResource(R.string.crewhome_week_member_last, day, km(lastKm), homeClock(lastAt))
                     else stringResource(R.string.crewhome_week_member_last_day, day, km(lastKm)),
                     style = blueText(14.5.sp, ink.secondary, FontWeight.Medium),
                 )
@@ -393,7 +398,7 @@ private fun RunsHead(scope: CrewRunsScope, week: CrewWeek?, name: String, onSele
                 day != null -> {
                     val index = (day.toEpochDay() - week.start.toEpochDay()).toInt()
                     val dayKm = week.days.getOrNull(index) ?: 0.0
-                    val dayLabel = if (day == LocalDate.now()) stringResource(R.string.crewhome_today) else homeDate(day)
+                    val dayLabel = if (day == todayIn()) stringResource(R.string.crewhome_today) else homeDate(day)
                     stringResource(R.string.crewhome_runs_sub, dayLabel, km(dayKm), weekLabel, km(week.km))
                 }
                 scope.userId != null -> {

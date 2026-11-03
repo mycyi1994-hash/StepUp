@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.records
 
+import kotlinx.datetime.toJavaZoneId
+import kotlinx.datetime.toJavaLocalDate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +58,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.walk.challengeTitle
 import java.time.Instant
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 
 /**
  * 지난 러닝 상세(시안 H11 · H13 · H14 · H16) — 목록에서 고른 그 러닝 하나(세션 id). 러닝 종류 · 날짜 · 시작 시각 ·
@@ -103,7 +105,7 @@ fun RunRecordContent(
     onAskDelete: () -> Unit = {},
     onCloseDelete: () -> Unit = {},
     onConfirmDelete: () -> Unit = {},
-    zone: ZoneId = ZoneId.systemDefault(),
+    zone: TimeZone = TimeZone.currentSystemDefault(),
     /** 러닝 종류(챌린지 이름 · 크루 러닝) — 모르면 null. 시간만 남은 러닝은 "시간 기록" */
     kind: String? = null,
 ) {
@@ -146,8 +148,8 @@ fun RunRecordContent(
                     if (subtitle != null) {
                         Text17(subtitle, Modifier.padding(top = 4.dp))
                     }
-                    val date = rememberFormatter(R.string.run_rec_date_pattern).format(s.startedAt.localDate(zone))
-                    val time = rememberFormatter(R.string.rec_time_pattern).format(Instant.ofEpochMilli(s.startedAt).atZone(zone))
+                    val date = rememberFormatter(R.string.run_rec_date_pattern).format(s.startedAt.localDate(zone).toJavaLocalDate())
+                    val time = rememberFormatter(R.string.rec_time_pattern).format(Instant.ofEpochMilli(s.startedAt).atZone(zone.toJavaZoneId()))
                     androidx.compose.material3.Text(
                         stringResource(R.string.run_rec_date_time, date, time),
                         style = runTextStyle(14.sp, t.label, FontWeight.Medium),
@@ -270,9 +272,9 @@ private fun RouteCard(session: WalkSessionEntity, route: List<GeoPoint>?, onOpen
 
 /** 삭제 확인(H14) — 무엇을 지우는지(날짜 · 거리 · 시간), 되돌릴 수 없음, 지우는 범위. 지우는 동안은 닫히지 않는다 */
 @Composable
-private fun DeleteSheet(session: WalkSessionEntity, deleting: Boolean, onCancel: () -> Unit, onDelete: () -> Unit, zone: ZoneId) {
+private fun DeleteSheet(session: WalkSessionEntity, deleting: Boolean, onCancel: () -> Unit, onDelete: () -> Unit, zone: TimeZone) {
     val t = runTone()
-    val day = rememberFormatter(R.string.date_month_day).format(session.startedAt.localDate(zone))
+    val day = rememberFormatter(R.string.date_month_day).format(session.startedAt.localDate(zone).toJavaLocalDate())
     val subject = listOfNotNull(
         day,
         if (session.distanceMeters > 0) "${km2(session.distanceMeters)}km" else null,

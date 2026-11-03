@@ -1,5 +1,12 @@
 package com.stepup.android.ui.screens.community.home
 
+import com.stepup.android.core.format
+import com.stepup.android.core.toEpochDay
+import kotlinx.datetime.toJavaZoneId
+import com.stepup.android.domain.localDate
+import com.stepup.android.domain.minusDays
+import com.stepup.android.domain.todayIn
+import kotlinx.datetime.number
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,8 +71,8 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.chat.ChatFace
 import com.stepup.android.ui.screens.community.stories.rangeSpan
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayStyle
 import java.util.Locale
@@ -102,18 +109,18 @@ internal fun homeShortDate(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
         day.format(DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "Md"), locale))
-            .let { if (locale.language == "ko") "${day.monthValue}.${day.dayOfMonth}" else it }
+            .let { if (locale.language == "ko") "${day.month.number}.${day.dayOfMonth}" else it }
     }
 }
 
-internal fun localDay(millis: Long, zone: ZoneId = ZoneId.systemDefault()): LocalDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+internal fun localDay(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): LocalDate = (millis).localDate(zone)
 
-internal fun homeClock(millis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
-    Instant.ofEpochMilli(millis).atZone(zone).toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+internal fun homeClock(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
+    Instant.ofEpochMilli(millis).atZone(zone.toJavaZoneId()).toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
 
 /** 모임 날짜 — 오늘 · 내일 · "9월 30일" */
 @Composable
-internal fun meetingDayLabel(meetAt: Long): String = when (CrewHomeRules.whenOf(meetAt, System.currentTimeMillis(), ZoneId.systemDefault())) {
+internal fun meetingDayLabel(meetAt: Long): String = when (CrewHomeRules.whenOf(meetAt, System.currentTimeMillis(), TimeZone.currentSystemDefault())) {
     CrewHomeRules.When.TODAY -> stringResource(R.string.crewhome_today)
     CrewHomeRules.When.TOMORROW -> stringResource(R.string.crewhome_tomorrow)
     CrewHomeRules.When.LATER -> homeDate(localDay(meetAt))
@@ -123,7 +130,7 @@ internal fun meetingDayLabel(meetAt: Long): String = when (CrewHomeRules.whenOf(
 @Composable
 internal fun recordDayLabel(millis: Long): String {
     val day = localDay(millis)
-    val today = LocalDate.now()
+    val today = todayIn()
     return when (day) {
         today -> stringResource(R.string.crewhome_today)
         today.minusDays(1) -> stringResource(R.string.crewhome_yesterday)

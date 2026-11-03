@@ -1,6 +1,5 @@
 package com.stepup.android.domain
 
-import kotlin.math.roundToLong
 
 /**
  * 시각이 붙은 GPS 좌표.
@@ -38,7 +37,7 @@ object RunTrack {
 
     private fun Double.trimmed(): String {
         val factor = 1_000_000.0 // 10^COORD_DECIMALS
-        return ((this * factor).roundToLong() / factor).toString()
+        return (javaRound(this * factor) / factor).toString()
     }
 
     fun encode(points: List<TrackPoint>): String = points.joinToString(POINT_SEPARATOR.toString()) {

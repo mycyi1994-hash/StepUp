@@ -1,5 +1,7 @@
 package com.stepup.android.ui
 
+import com.stepup.android.core.toKotlinYearMonth
+import com.stepup.android.core.toJavaYearMonth
 import kotlinx.coroutines.flow.map
 
 import androidx.compose.foundation.layout.RowScope
@@ -1390,7 +1392,7 @@ private fun MainScaffoldContent(
             composable(Routes.RECORDS) {
                 com.stepup.android.ui.screens.records.RecordsScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenStats = { month -> navController.navigate(Routes.recordStats(month)) },
+                    onOpenStats = { month -> navController.navigate(Routes.recordStats(month.toJavaYearMonth())) },
                     onOpenRun = { id -> navController.navigate(Routes.runRecord(id)) },
                     // 러닝 시작하기(H01 · H07) — 달리던 러닝이 있으면 그 러닝으로, 아니면 러닝 방법 고르기(U01)
                     onStartRun = { startRunFromRecords(navController) },
@@ -1403,7 +1405,7 @@ private fun MainScaffoldContent(
                 val month = entry.arguments?.getString("month")
                     ?.let { runCatching { java.time.YearMonth.parse(it) }.getOrNull() } ?: java.time.YearMonth.now()
                 com.stepup.android.ui.screens.records.RecordStatsScreen(
-                    start = month,
+                    start = month.toKotlinYearMonth(),
                     onBack = { navController.popBackStack() },
                     onOpenStepStats = { navController.navigate(Routes.ANALYTICS) },
                     // 통계 없음(H15)의 러닝 시작 · 고른 날짜의 기록(H05 → H11 · H13)

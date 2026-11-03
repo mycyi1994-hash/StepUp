@@ -25,8 +25,10 @@ import com.stepup.android.domain.MeetingResponse
 import com.stepup.android.ui.AppChromePolicy
 import com.stepup.android.ui.screens.community.home.CrewHomeRoutes
 import com.stepup.android.ui.screens.community.home.endsWithConsonant
-import java.time.LocalDate
-import java.time.ZoneOffset
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -126,8 +128,8 @@ class CrewHomeTest {
                 "members":[{"user_id":"u-jiyeon","name":"지연","km":18.6,"runs":3,"last_km":5.2,"last_at":"2026-09-29T09:15:00+00:00"}],
                 "weeks":["2026-09-28","2026-09-21","2026-09-14"]}""",
         ).toDomain()!!
-        assertEquals(LocalDate.of(2026, 9, 28), week.start)
-        assertEquals(LocalDate.of(2026, 10, 4), week.end)
+        assertEquals(LocalDate(2026, 9, 28), week.start)
+        assertEquals(LocalDate(2026, 10, 4), week.end)
         assertEquals(listOf(61.2, 64.8, null, null, null, null, null), week.days)
         assertEquals(34.0, week.progress!!.remainingKm, 1e-9)
         assertEquals(3, week.weeks.size)
@@ -161,11 +163,11 @@ class CrewHomeTest {
 
     @Test
     fun `모임 날짜는 오늘 · 내일 · 그 밖`() {
-        val zone = ZoneOffset.UTC
-        val now = LocalDate.of(2026, 9, 29).atTime(9, 0).toInstant(zone).toEpochMilli()
-        val today = LocalDate.of(2026, 9, 29).atTime(19, 30).toInstant(zone).toEpochMilli()
-        val tomorrow = LocalDate.of(2026, 9, 30).atTime(7, 0).toInstant(zone).toEpochMilli()
-        val later = LocalDate.of(2026, 10, 2).atTime(7, 0).toInstant(zone).toEpochMilli()
+        val zone = TimeZone.UTC
+        val now = LocalDate(2026, 9, 29).atTime(9, 0).toInstant(zone).toEpochMilliseconds()
+        val today = LocalDate(2026, 9, 29).atTime(19, 30).toInstant(zone).toEpochMilliseconds()
+        val tomorrow = LocalDate(2026, 9, 30).atTime(7, 0).toInstant(zone).toEpochMilliseconds()
+        val later = LocalDate(2026, 10, 2).atTime(7, 0).toInstant(zone).toEpochMilliseconds()
         assertEquals(CrewHomeRules.When.TODAY, CrewHomeRules.whenOf(today, now, zone))
         assertEquals(CrewHomeRules.When.TOMORROW, CrewHomeRules.whenOf(tomorrow, now, zone))
         assertEquals(CrewHomeRules.When.LATER, CrewHomeRules.whenOf(later, now, zone))
@@ -177,8 +179,8 @@ class CrewHomeTest {
         assertTrue(CrewHomeRules.matches("Jiyeon", " yeon "))
         assertFalse(CrewHomeRules.matches("민수", "지연"))
         assertTrue(CrewHomeRules.matches("민수", "  "))
-        assertTrue(CrewHomeRules.inWeek(LocalDate.of(2026, 10, 4), LocalDate.of(2026, 9, 28)))
-        assertFalse(CrewHomeRules.inWeek(LocalDate.of(2026, 10, 5), LocalDate.of(2026, 9, 28)))
+        assertTrue(CrewHomeRules.inWeek(LocalDate(2026, 10, 4), LocalDate(2026, 9, 28)))
+        assertFalse(CrewHomeRules.inWeek(LocalDate(2026, 10, 5), LocalDate(2026, 9, 28)))
     }
 
     @Test
@@ -279,10 +281,10 @@ class CrewHomeTest {
             """[{"id":71,"user_id":"u-jiyeon","name":"지연","distance_m":5200,"duration_s":2184,
                  "started_at":"2026-09-29T08:39:00+00:00","ended_at":"2026-09-29T09:15:00.123456+00:00"}]""",
         )
-        val first = repo.runs("c1", CrewRunsScope(week = LocalDate.of(2026, 9, 28)), after = null)
+        val first = repo.runs("c1", CrewRunsScope(week = LocalDate(2026, 9, 28)), after = null)
         val run = (first as HomeOutcome.Ok).value.single()
         assertEquals(420, run.paceSecPerKm)
-        repo.runs("c1", CrewRunsScope(week = LocalDate.of(2026, 9, 28)), after = run)
+        repo.runs("c1", CrewRunsScope(week = LocalDate(2026, 9, 28)), after = run)
         val body = http.bodies["crew_runs"]!!
         assertTrue(body, body.contains("\"p_before_at\":\"2026-09-29T09:15:00.123456+00:00\""))
         assertTrue(body, body.contains("\"p_before_id\":71"))

@@ -1290,7 +1290,7 @@ class RunJourneyDesignTest {
         val courses = runBlocking { repo.courses.first().filter { it.hasTrack } }
         val roomCourse = com.stepup.android.domain.RoomCourse.of(courses.first()).copy(rev = 2)
         val now = System.currentTimeMillis()
-        val day = java.time.LocalDate.now(com.stepup.android.domain.CrewHomeRules.KST)
+        val day = com.stepup.android.domain.todayIn(com.stepup.android.domain.CrewHomeRules.KST)
         val pool = com.stepup.android.domain.CrewPoolSnap(day, total = 1200.0, remaining = 720.0, consumed = 480.0, contributors = 12,
             activeRunners = 0, exhausted = false, low = false, version = 1, asOfMs = now)
         val mine = com.stepup.android.domain.CrewRunMine(usedToday = false, state = null, crewId = null, crewName = null, partyId = null,

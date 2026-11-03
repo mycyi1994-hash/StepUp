@@ -6,8 +6,8 @@ import com.stepup.android.data.remote.serverJson
 import com.stepup.android.data.repo.toBoard
 import com.stepup.android.domain.LeaderboardMath
 import com.stepup.android.ui.screens.leaderboard.LeaderboardMotion
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toLocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -75,8 +75,8 @@ class LeaderboardTest {
              "my_run_list":[{"started_at":"2026-10-14T21:30:00+00:00","meters":800000}]}
         """.trimIndent()
         val board = serverJson.decodeFromString<RunnerBoardRow>(json).toBoard()
-        assertEquals(LocalDate.of(2026, 10, 12), board.period.startDate)
-        assertEquals(LocalDate.of(2026, 10, 18), board.period.lastDate)
+        assertEquals(LocalDate(2026, 10, 12), board.period.startDate)
+        assertEquals(LocalDate(2026, 10, 18), board.period.lastDate)
         assertEquals(3, board.me!!.rank)
         assertEquals(800.0, board.me!!.metric, 1e-9)
         assertEquals("다", board.me!!.mark)
@@ -85,8 +85,8 @@ class LeaderboardTest {
         assertEquals(0.0, LeaderboardMath.gapToNext(board.me!!.metric, board.ahead!!.metric)!!, 0.0)
         assertEquals("다온", board.myName)
         // 화요일 21:30 UTC 는 한국 시간 수요일 06:30 — 시트의 날짜는 그 주의 시간대로
-        val day = board.myRunList.single().startedAt.atZone(ZoneId.of(board.period.timezone)).toLocalDate()
-        assertEquals(LocalDate.of(2026, 10, 15), day)
+        val day = board.myRunList.single().startedAt.toLocalDateTime(kotlinx.datetime.TimeZone.of(board.period.timezone)).date
+        assertEquals(LocalDate(2026, 10, 15), day)
     }
 
     @Test fun `순위가 없는 나 — 내 줄 · 바로 앞이 없고 이번 주 합은 0`() {

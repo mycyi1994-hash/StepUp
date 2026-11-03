@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.coaching
 
+import com.stepup.android.domain.isAfter
+import com.stepup.android.domain.minusWeeks
+import com.stepup.android.domain.plusWeeks
+import com.stepup.android.domain.todayIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -33,8 +37,8 @@ import com.stepup.android.domain.coaching.weekSummary
 import com.stepup.android.domain.mondayOf
 import com.stepup.android.domain.weekRange
 import com.stepup.android.ui.screens.records.thin
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -242,8 +246,8 @@ data class ChangeData(val summary: WeekSummary, val recent: List<WeekSummary>)
 class CoachingHubViewModel(
     repo: CoachingRepository,
     initialRun: Long?,
-    private val zone: ZoneId = ZoneId.systemDefault(),
-    private val clock: () -> LocalDate = { LocalDate.now(zone) },
+    private val zone: TimeZone = TimeZone.currentSystemDefault(),
+    private val clock: () -> LocalDate = { todayIn(zone) },
 ) : CoachingBaseViewModel(repo) {
     /** 서버에 보낼 언어 — 화면이 자기 글자의 언어를 알려 준다. 알기 전에는 AI 를 묻지 않는다 */
     private val locale = MutableStateFlow<String?>(null)
@@ -515,8 +519,8 @@ class CoachingHubViewModel(
 /** 동의(05) · 목표(06) · 계획(13) · 설정(14 · 15) · 훈련(02) — 서버 상태를 바꾸는 화면들. AI 를 부르지 않는다 */
 class CoachingSetupViewModel(
     repo: CoachingRepository,
-    private val zone: ZoneId = ZoneId.systemDefault(),
-    private val clock: () -> LocalDate = { LocalDate.now(zone) },
+    private val zone: TimeZone = TimeZone.currentSystemDefault(),
+    private val clock: () -> LocalDate = { todayIn(zone) },
 ) : CoachingBaseViewModel(repo) {
     private val _save = MutableStateFlow(SaveState.Idle)
     val save: StateFlow<SaveState> = _save.asStateFlow()

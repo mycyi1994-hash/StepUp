@@ -1,5 +1,11 @@
 package com.stepup.android.ui.screens.records
 
+import com.stepup.android.domain.minusWeeks
+import com.stepup.android.domain.plusWeeks
+import com.stepup.android.domain.todayIn
+import kotlinx.datetime.minusMonth
+import kotlinx.datetime.plusMonth
+import kotlinx.datetime.yearMonth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -26,9 +32,9 @@ import com.stepup.android.domain.range
 import com.stepup.android.domain.weekBars
 import com.stepup.android.domain.weekForMonth
 import com.stepup.android.domain.weekRange
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,10 +77,10 @@ sealed interface RecordsLoad {
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecordsViewModel(
     private val repo: RunRecordsRepository,
-    private val zone: ZoneId = ZoneId.systemDefault(),
-    today: LocalDate = LocalDate.now(zone),
+    private val zone: TimeZone = TimeZone.currentSystemDefault(),
+    today: LocalDate = todayIn(zone),
 ) : ViewModel() {
-    private val _period = MutableStateFlow<RecordPeriod>(RecordPeriod.Month(YearMonth.from(today)))
+    private val _period = MutableStateFlow<RecordPeriod>(RecordPeriod.Month((today).yearMonth))
     val period: StateFlow<RecordPeriod> = _period.asStateFlow()
     private val limit = MutableStateFlow(PAGE)
     private val attempt = MutableStateFlow(0)
@@ -169,10 +175,10 @@ data class StatsUi(
 class RecordStatsViewModel(
     private val repo: RunRecordsRepository,
     start: YearMonth,
-    private val zone: ZoneId = ZoneId.systemDefault(),
-    private val today: () -> LocalDate = { LocalDate.now(zone) },
+    private val zone: TimeZone = TimeZone.currentSystemDefault(),
+    private val today: () -> LocalDate = { todayIn(zone) },
 ) : ViewModel() {
-    private val _window = MutableStateFlow<StatWindow>(StatWindow.Month(minOf(start, YearMonth.from(today()))))
+    private val _window = MutableStateFlow<StatWindow>(StatWindow.Month(minOf(start, (today()).yearMonth)))
     val window: StateFlow<StatWindow> = _window.asStateFlow()
     private val attempt = MutableStateFlow(0)
 
@@ -181,10 +187,10 @@ class RecordStatsViewModel(
         combine(repo.totals(range), repo.marks(range), repo.totals(RecordPeriod.All.range(zone))) { totals, marks, all ->
             val now = today()
             when (w) {
-                is StatWindow.Week -> StatsUi(w, totals, weekBars(w.monday, marks, now, zone), hasNextWeek(w.monday, now), YearMonth.from(now))
-                is StatWindow.Month -> StatsUi(w, totals, monthBars(w.month, marks, now, zone), hasNextMonth(w.month, now), YearMonth.from(now))
+                is StatWindow.Week -> StatsUi(w, totals, weekBars(w.monday, marks, now, zone), hasNextWeek(w.monday, now), (now).yearMonth)
+                is StatWindow.Month -> StatsUi(w, totals, monthBars(w.month, marks, now, zone), hasNextMonth(w.month, now), (now).yearMonth)
             }.copy(marks = marks, best = bestDay(marks, zone), anyRecords = all.runs > 0)
-        }.catch { emit(StatsUi(w, null, emptyList(), canGoNext = false, thisMonth = YearMonth.from(today()), failed = true)) }
+        }.catch { emit(StatsUi(w, null, emptyList(), canGoNext = false, thisMonth = (today()).yearMonth, failed = true)) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private fun StatWindow.range(): TimeRange = when (this) {
@@ -206,7 +212,7 @@ class RecordStatsViewModel(
     fun previous() {
         _window.value = when (val w = _window.value) {
             is StatWindow.Week -> StatWindow.Week(w.monday.minusWeeks(1))
-            is StatWindow.Month -> StatWindow.Month(w.month.minusMonths(1))
+            is StatWindow.Month -> StatWindow.Month(w.month.minusMonth())
         }
     }
 
@@ -214,7 +220,7 @@ class RecordStatsViewModel(
         val now = today()
         _window.value = when (val w = _window.value) {
             is StatWindow.Week -> if (hasNextWeek(w.monday, now)) StatWindow.Week(w.monday.plusWeeks(1)) else w
-            is StatWindow.Month -> if (hasNextMonth(w.month, now)) StatWindow.Month(w.month.plusMonths(1)) else w
+            is StatWindow.Month -> if (hasNextMonth(w.month, now)) StatWindow.Month(w.month.plusMonth()) else w
         }
     }
 

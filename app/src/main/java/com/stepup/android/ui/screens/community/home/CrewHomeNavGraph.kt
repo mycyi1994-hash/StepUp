@@ -14,7 +14,7 @@ import com.stepup.android.ui.screens.community.crew.CrewRosterMode
 import com.stepup.android.ui.screens.community.crew.CrewRoutes
 import com.stepup.android.ui.screens.community.crew.CrewScreenViewModel
 import com.stepup.android.ui.screens.community.crew.toCrewList
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 /**
  * 내 크루 홈(확정 4번, 2026-09-29) 화면의 길 — 같은 crewId 를 이어 쓰고, 고른 모임(meetingId) · 크루원(userId) ·

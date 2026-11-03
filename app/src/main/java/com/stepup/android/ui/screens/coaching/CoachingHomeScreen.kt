@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.coaching
 
+import kotlinx.datetime.toJavaZoneId
+import kotlinx.datetime.toJavaLocalDate
+import com.stepup.android.domain.isBefore
+import com.stepup.android.domain.minusWeeks
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -102,8 +106,8 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.records.rememberFormatter
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -255,7 +259,7 @@ private fun WeekStrip(days: List<WeekDay>) {
     val spoken = rememberFormatter(R.string.coach_date_wd)
     Row(Modifier.fillMaxWidth()) {
         days.forEach { day ->
-            val dayText = spoken.format(day.date)
+            val dayText = spoken.format(day.date.toJavaLocalDate())
             val cd = when {
                 day.done -> stringResource(R.string.coach_day_done_cd, dayText)
                 day.today -> stringResource(R.string.coach_day_today_cd, dayText)
@@ -265,7 +269,7 @@ private fun WeekStrip(days: List<WeekDay>) {
                 Modifier.weight(1f).clearAndSetSemantics { contentDescription = cd }.testTag("coach-day-${day.date}"),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(weekday.format(day.date), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.2f))
+                Text(weekday.format(day.date.toJavaLocalDate()), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.2f))
                 Spacer(Modifier.height(6.dp))
                 Box(
                     Modifier.size(38.dp).clip(CircleShape).background(if (day.today) t.cobalt else Color.Transparent),
@@ -391,7 +395,7 @@ private fun RecLine(rec: CoachAi, workout: TodayWorkout?, consented: Boolean, on
 @Composable
 private fun RecentCard(row: RunRecordRow, viewModel: CoachingHubViewModel, onClick: () -> Unit) {
     val t = runTone()
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = remember { TimeZone.currentSystemDefault() }
     val short = rememberFormatter(R.string.coach_date_short)
     RunCard(padding = PaddingValues(10.dp), onClick = onClick, tag = "coach-recent") {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -399,7 +403,7 @@ private fun RecentCard(row: RunRecordRow, viewModel: CoachingHubViewModel, onCli
             Column(Modifier.weight(1f).padding(start = 14.dp)) {
                 RunNumber(kmText(row.distanceMeters), unit = "km", size = 34.sp, unitSize = 17.sp, italicUnit = false)
                 Text(
-                    stringResource(R.string.coach_recent_line, short.format(row.startedAt.localDate(zone)), clockText(row.durationSec)),
+                    stringResource(R.string.coach_recent_line, short.format(row.startedAt.localDate(zone).toJavaLocalDate()), clockText(row.durationSec)),
                     style = runTextStyle(15.sp, t.label, FontWeight.Medium),
                 )
             }
@@ -530,9 +534,9 @@ private fun AnalysisContent(
     onPace: (CoachResult) -> Unit,
 ) {
     val t = runTone()
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = remember { TimeZone.currentSystemDefault() }
     val md = rememberFormatter(R.string.coach_date_md)
-    val dateText = md.format(shown.startedAt.localDate(zone))
+    val dateText = md.format(shown.startedAt.localDate(zone).toJavaLocalDate())
     val average = averagePace(shown.durationSec, shown.distanceMeters)
     val splits = remember(shown.distanceMeters, shown.durationSec, shown.laps) {
         runSplits(shown.distanceMeters, shown.durationSec, shown.laps)
@@ -791,7 +795,7 @@ private fun ReadyBlock(
 ) {
     val t = runTone()
     val fact = result.fact?.let { factText(it) }
-    val generated = rememberFormatter(R.string.coach_date_short).format(result.generatedAt.localDate(ZoneId.systemDefault()))
+    val generated = rememberFormatter(R.string.coach_date_short).format(result.generatedAt.localDate(TimeZone.currentSystemDefault()).toJavaLocalDate())
     CoachQuote(
         stringResource(R.string.coach_ai_label),
         Modifier.testTag("coach-ai-ready"),
@@ -903,7 +907,7 @@ private fun SheetNotice(text: String, kind: RunNoticeKind, tag: String) {
 /** 분석할 기록 고르기 — 최근 먼저(이 계정의 기록만) */
 @Composable
 private fun RecordPicker(rows: List<RunRecordRow>, selectedId: Long?, onPick: (Long) -> Unit, onDismiss: () -> Unit) {
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = remember { TimeZone.currentSystemDefault() }
     val md = rememberFormatter(R.string.coach_date_md)
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("coach-record-picker")) {
         RunSheetText(stringResource(R.string.coach_pick_record_title))
@@ -911,7 +915,7 @@ private fun RecordPicker(rows: List<RunRecordRow>, selectedId: Long?, onPick: (L
         Column(Modifier.fillMaxWidth().heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
             rows.forEach { row ->
                 RunChoiceRow(
-                    title = stringResource(R.string.coach_recent_line, md.format(row.startedAt.localDate(zone)), kmText(row.distanceMeters) + "km"),
+                    title = stringResource(R.string.coach_recent_line, md.format(row.startedAt.localDate(zone).toJavaLocalDate()), kmText(row.distanceMeters) + "km"),
                     description = clockText(row.durationSec),
                     selected = row.id == selectedId,
                     onSelect = { onPick(row.id) },
@@ -1156,5 +1160,5 @@ internal fun CoachLoadFailed() {
 private fun dateTimeText(epochMillis: Long): String {
     val locale = LocalConfiguration.current.locales[0]
     val formatter = remember(locale) { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(locale) }
-    return formatter.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
+    return formatter.format(Instant.ofEpochMilli(epochMillis).atZone(TimeZone.currentSystemDefault().toJavaZoneId()))
 }

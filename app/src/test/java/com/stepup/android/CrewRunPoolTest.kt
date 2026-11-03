@@ -10,7 +10,7 @@ import com.stepup.android.domain.CrewEarning
 import com.stepup.android.domain.CrewPoolSnap
 import com.stepup.android.domain.CrewTerminal
 import com.stepup.android.domain.CrewRunMath
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.decodeFromString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,7 +69,7 @@ class CrewRunPoolTest {
 
     @Test
     fun `공용 체력 보간 — 지금 쓰는 사람 수만큼만 줄고 0 아래로 가지 않는다`() {
-        val snap = CrewPoolSnap(LocalDate.of(2026, 10, 22), 816.0, 612.0, 204.0, 6, 3, false, false, 1, asOfMs = 1_000_000L)
+        val snap = CrewPoolSnap(LocalDate(2026, 10, 22), 816.0, 612.0, 204.0, 6, 3, false, false, 1, asOfMs = 1_000_000L)
         // 3명 × 60초 ÷ 12 = 15
         assertEquals(597.0, snap.remainingAt(1_060_000L), 1e-9)
         assertEquals(0.0, snap.remainingAt(1_000_000L + 10_000_000L), 0.0)

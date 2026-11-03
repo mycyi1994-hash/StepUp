@@ -24,3 +24,7 @@ actual fun roundHalfUp2(value: Double): Double {
     // BigDecimal.toDouble() 처럼 가장 가까운 double 이 된다.
     return NSDecimalNumber(string = value.toString()).decimalNumberByRoundingAccordingToBehavior(handler).stringValue.toDouble()
 }
+
+actual fun formatFixed(value: Double, decimals: Int): String = formatFixedPortable(value, decimals)
+
+actual fun exactHalfUp(value: Double, scale: Int): String = exactHalfUpPortable(value, scale)

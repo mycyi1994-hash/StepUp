@@ -53,11 +53,19 @@ import com.stepup.android.ui.screens.records.StatsUi
 import com.stepup.android.ui.theme.StepUpTheme
 import com.stepup.android.ui.theme.ThemeMode
 import java.io.File
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.YearMonth
-import java.time.ZoneId
+import com.stepup.android.core.toJavaYearMonth
+import com.stepup.android.domain.localDate
+import com.stepup.android.domain.minusDays
+import com.stepup.android.domain.plusDays
+import com.stepup.android.domain.todayIn
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.yearMonth
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
@@ -97,9 +105,9 @@ class RecordsDesignTest {
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "running-records").apply { mkdirs() }
 
     @Test fun recordsInTheApp() {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
-        val month = YearMonth.from(today)
+        val zone = TimeZone.currentSystemDefault()
+        val today = todayIn(zone)
+        val month = today.yearMonth
         val repo = ServiceLocator.runRecordsRepository
         val dao = ServiceLocator.database.walkSessionDao()
         val db = ServiceLocator.database.openHelper.writableDatabase
@@ -107,16 +115,16 @@ class RecordsDesignTest {
         // 이번 달 안의 날(오늘부터 이틀씩 거슬러, 1일 앞으로는 가지 않는다) — 경로 있는 셋 + 시간만 있는 하나
         val now = System.currentTimeMillis()
         fun at(daysBack: Long, time: LocalTime): Long {
-            val day = maxOf(month.atDay(1), today.minusDays(daysBack))
-            return minOf(LocalDateTime.of(day, time).atZone(zone).toInstant().toEpochMilli(), now - 10 * 60_000L)
+            val day = maxOf(month.firstDay, today.minusDays(daysBack))
+            return minOf(LocalDateTime(day, time).toInstant(zone).toEpochMilliseconds(), now - 10 * 60_000L)
         }
         val fixtures = listOf(
-            Fixture(at(0, LocalTime.of(7, 12)), 3200.0, 1344, shape = 0),
-            Fixture(at(2, LocalTime.of(19, 3)), 5000.0, 1950, shape = 1),
-            Fixture(at(4, LocalTime.of(6, 48)), 4000.0, 1600, shape = 2),
-            Fixture(at(6, LocalTime.of(8, 10)), 0.0, 1470, shape = null),
+            Fixture(at(0, LocalTime(7, 12)), 3200.0, 1344, shape = 0),
+            Fixture(at(2, LocalTime(19, 3)), 5000.0, 1950, shape = 1),
+            Fixture(at(4, LocalTime(6, 48)), 4000.0, 1600, shape = 2),
+            Fixture(at(6, LocalTime(8, 10)), 0.0, 1470, shape = null),
         )
-        val inMonth = fixtures.filter { YearMonth.from(java.time.Instant.ofEpochMilli(it.startedAt).atZone(zone)) == month }
+        val inMonth = fixtures.filter { it.startedAt.localDate(zone).yearMonth == month }
         val range = RecordPeriod.Month(month).range(zone)
         val before = runBlocking { repo.totals(range).first() }
         val ids = runBlocking {
@@ -190,7 +198,7 @@ class RecordsDesignTest {
             awaitSelected("stats-weekly")
             awaitTag("stats-chart")
             shot("04-week-statistics")
-            val todayBar = today.dayOfWeek.value - 1
+            val todayBar = today.dayOfWeek.isoDayNumber - 1
             tap("stats-bar-$todayBar")
             awaitTag("stats-tip")
             compose.onNodeWithTag("stats-bar-$todayBar").assertIsSelected()
@@ -280,7 +288,7 @@ class RecordsDesignTest {
                 }
             }
         }
-        val september = YearMonth.of(2026, 9)
+        val september = YearMonth(2026, 9)
         val rows = SAMPLE.mapIndexed { i, s ->
             RunRecordRow(i + 1L, s.startedAt, s.startedAt + s.seconds * 1000, s.seconds, s.meters, 4000, "SIGNED", hasTrack = true)
         }
@@ -297,7 +305,7 @@ class RecordsDesignTest {
         show("s02-all-records", "records-list", records(list.copy(period = RecordPeriod.All), RecordPeriod.All))
         show("s03-period-sheet", "period-sheet") {
             RecordsContent(list, RecordPeriod.Month(september), route = routeOf, zone = SEOUL, today = TODAY)
-            PeriodSheet(RecordPeriod.Month(september), september, YearMonth.of(2026, 7), onApply = {}, onDismiss = {})
+            PeriodSheet(RecordPeriod.Month(september), september, YearMonth(2026, 7), onApply = {}, onDismiss = {})
         }
         // 이번 달부터 첫 기록의 달까지 — 아직 오지 않은 달은 목록에 없다
         compose.onNodeWithTag("period-month-2026-09").assertIsSelected()
@@ -305,8 +313,8 @@ class RecordsDesignTest {
         show("s07-first-empty", "records-empty",
             records(RecordsLoad.Ready(RecordPeriod.Month(september), totals(emptyList()), emptyList(), anyRecords = false, more = false)))
         show("s08-period-empty", "records-period-empty",
-            records(RecordsLoad.Ready(RecordPeriod.Month(YearMonth.of(2026, 8)), totals(emptyList()), emptyList(), anyRecords = true, more = false),
-                RecordPeriod.Month(YearMonth.of(2026, 8))))
+            records(RecordsLoad.Ready(RecordPeriod.Month(YearMonth(2026, 8)), totals(emptyList()), emptyList(), anyRecords = true, more = false),
+                RecordPeriod.Month(YearMonth(2026, 8))))
         show("s09-loading", "records-loading", records(RecordsLoad.Loading))
         compose.onAllNodesWithTag("records-distance", useUnmergedTree = true).assertCountEquals(0)
         show("s10-load-error", "records-failed", records(RecordsLoad.Failed))
@@ -314,8 +322,8 @@ class RecordsDesignTest {
 
         // 통계 — 주는 9월 21일 ~ 27일, 달은 9월(오늘 2026-09-28: 29 · 30일은 아직 오지 않아 막대가 없다)
         val marks = SAMPLE.mapIndexed { i, s -> RunMark(s.startedAt, s.meters, i + 1L) }
-        val monday = LocalDate.of(2026, 9, 21)
-        fun inWeek(at: Long) = java.time.Instant.ofEpochMilli(at).atZone(SEOUL).toLocalDate() in monday..monday.plusDays(6)
+        val monday = LocalDate(2026, 9, 21)
+        fun inWeek(at: Long) = at.localDate(SEOUL) in monday..monday.plusDays(6)
         val weekRuns = SAMPLE.filter { inWeek(it.startedAt) }
         val weekMarks = marks.filter { inWeek(it.startedAt) }
         val week = StatsUi(StatWindow.Week(monday), totals(weekRuns), weekBars(monday, marks, TODAY, SEOUL), canGoNext = true, thisMonth = september,
@@ -338,15 +346,15 @@ class RecordsDesignTest {
         // 29 · 30일 칸은 아직 오지 않은 날 — 누를 수 없다
         compose.onNodeWithTag("stats-bar-4").assertIsNotEnabled()
         show("s15-statistics-empty", "stats-empty") {
-            RecordStatsContent(StatsUi(StatWindow.Week(LocalDate.of(2026, 9, 21)), totals(emptyList()),
-                weekBars(LocalDate.of(2026, 9, 21), emptyList(), TODAY, SEOUL), canGoNext = true, thisMonth = september, anyRecords = false))
+            RecordStatsContent(StatsUi(StatWindow.Week(LocalDate(2026, 9, 21)), totals(emptyList()),
+                weekBars(LocalDate(2026, 9, 21), emptyList(), TODAY, SEOUL), canGoNext = true, thisMonth = september, anyRecords = false))
         }
         // 기록이 하나도 없으면 "—" 와 빈 축, 러닝 시작(U01)
         compose.onNodeWithTag("stats-distance").assertTextEquals("—")
         compose.onNodeWithTag("stats-start-run").assertIsDisplayed()
         show("s15b-statistics-empty-period", "stats-empty") {
-            RecordStatsContent(StatsUi(StatWindow.Month(YearMonth.of(2026, 8)), totals(emptyList()),
-                monthBars(YearMonth.of(2026, 8), emptyList(), TODAY, SEOUL), canGoNext = true, thisMonth = september))
+            RecordStatsContent(StatsUi(StatWindow.Month(YearMonth(2026, 8)), totals(emptyList()),
+                monthBars(YearMonth(2026, 8), emptyList(), TODAY, SEOUL), canGoNext = true, thisMonth = september))
         }
 
         // 상세 · 경로 · 삭제
@@ -430,7 +438,7 @@ class RecordsDesignTest {
     private fun km(meters: Double) = String.format(Locale.ROOT, "%,.1f", meters / 1000.0)
 
     private fun monthLabel(month: YearMonth): String =
-        java.time.format.DateTimeFormatter.ofPattern(korean(R.string.rec_month_pattern), Locale.KOREAN).format(month)
+        java.time.format.DateTimeFormatter.ofPattern(korean(R.string.rec_month_pattern), Locale.KOREAN).format(month.toJavaYearMonth())
 
     private var scene by mutableStateOf<@Composable () -> Unit>({})
 
@@ -511,11 +519,11 @@ class RecordsDesignTest {
     private companion object {
         /** 이 테스트가 넣은 러닝만 골라 지운다 */
         const val MARK = "records-test"
-        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
-        val TODAY: LocalDate = LocalDate.of(2026, 9, 28)
+        val SEOUL: TimeZone = TimeZone.of("Asia/Seoul")
+        val TODAY: LocalDate = LocalDate(2026, 9, 28)
 
         private fun kst(month: Int, day: Int, hour: Int, minute: Int): Long =
-            LocalDateTime.of(2026, month, day, hour, minute).atZone(SEOUL).toInstant().toEpochMilli()
+            LocalDateTime(2026, month, day, hour, minute).toInstant(SEOUL).toEpochMilliseconds()
 
         /** 전달본 sample-data.json 의 9월 러닝 8개(예시) — 최근 먼저 */
         val SAMPLE = listOf(

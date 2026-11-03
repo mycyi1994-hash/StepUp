@@ -10,7 +10,7 @@ import com.stepup.android.domain.CrewRunsScope
 import com.stepup.android.domain.CrewWeek
 import com.stepup.android.domain.MeetingAttendee
 import com.stepup.android.domain.RecordingOwner
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
