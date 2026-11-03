@@ -30,7 +30,7 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
         }
-        iosTest.dependencies {
+        commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
         }

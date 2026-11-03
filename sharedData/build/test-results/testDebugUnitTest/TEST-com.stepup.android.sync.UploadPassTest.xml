@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.stepup.android.sync.UploadPassTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-03T08:17:11" hostname="vm" time="0.177">
+  <properties/>
+  <testcase name="reportsFirstOtherwiseRetryWithoutUploading" classname="com.stepup.android.sync.UploadPassTest" time="0.147"/>
+  <testcase name="keepsGoingUntilQueueIsEmpty" classname="com.stepup.android.sync.UploadPassTest" time="0.025"/>
+  <testcase name="blockedIsDoneFailureIsRetry" classname="com.stepup.android.sync.UploadPassTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

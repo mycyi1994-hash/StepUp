@@ -46,6 +46,10 @@
   iOS 는 `buildIosDatabase()` — 문서 폴더 strideup.db · 번들 SQLite · 판 19 에서 시작(옮길 옛 DB 가 없다). 판을 올리면 iOS 길도 연결(SQLiteConnection)로 더한다.
   iOS Room 의 KSP 는 Mac 에서만 돈다 — 검사는 CI 의 `:sharedData:iosSimulatorArm64Test`(IosDatabaseTest).
 
+- **러닝 올리기**(2026-11-03): 규칙(과속 신고 먼저 · 10개씩 이어서 · 막혔으면 끝 · 실패면 다시)은 공용 `UploadPass`(`:sharedData`, `UploadPassTest`) —
+  안드로이드 `SessionUploadWorker` 가 그대로 쓰고, iOS 는 `BGProcessingTask`(`iosApp/StepUp/UploadTask.swift`, 네트워크 필요) · 앱이 앞에 올 때
+  `IosUploads.run` 이 같은 것을 돈다. 대기열 처리 `ClaimRepository` 도 `:sharedData` 로 옮겼다. iOS 의 올릴 곳은 화면 · 저장소를 붙일 때 `IosUploads.connect`.
+
 ## Mac 에서 돌리기
 
 ```bash

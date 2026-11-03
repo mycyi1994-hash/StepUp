@@ -1,0 +1,322 @@
+[
+  {
+    "moduleId": "project ::shared",
+    "file": "/home/user/StepUp/shared/build/classes/kotlin/metadata/iosMain/klib/shared_iosMain",
+    "sourceSetName": "iosMain"
+  },
+  {
+    "moduleId": "project ::shared",
+    "file": "/home/user/StepUp/shared/build/classes/kotlin/metadata/appleMain/klib/shared_appleMain",
+    "sourceSetName": "appleMain"
+  },
+  {
+    "moduleId": "project ::shared",
+    "file": "/home/user/StepUp/shared/build/classes/kotlin/metadata/nativeMain/klib/shared_nativeMain",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module androidx.room:room-runtime:2.8.5",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.room-room-runtime-2.8.5-nativeMain-zrw9yA.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module androidx.room:room-runtime:2.8.5",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.room-room-runtime-2.8.5-jvmNativeMain-zrw9yA.klib",
+    "sourceSetName": "jvmNativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-datetime:0.7.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-datetime-0.7.1-darwinMain-HeEIcg.klib",
+    "sourceSetName": "darwinMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-datetime:0.7.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-datetime-0.7.1-tzdbOnFilesystemMain-uTxUqg.klib",
+    "sourceSetName": "tzdbOnFilesystemMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-datetime:0.7.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-datetime-0.7.1-tzfileMain-uTxUqg.klib",
+    "sourceSetName": "tzfileMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-datetime:0.7.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-datetime-0.7.1-commonKotlinMain-uTxUqg.klib",
+    "sourceSetName": "commonKotlinMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-coroutines-core-1.11.0-nativeDarwinMain-_rPXvA.klib",
+    "sourceSetName": "nativeDarwinMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-coroutines-core-1.11.0-nativeMain-BviMwQ.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-serialization-core-1.11.0-nativeMain-POu6Pw.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-serialization-json-1.7.3-nativeMain-O4ZS7Q.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-client-core:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-client-core-3.6.0-posixMain-0ifOOg.klib",
+    "sourceSetName": "posixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-client-core:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-client-core-3.6.0-nonJvmMain-0ifOOg.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-client-core:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-client-core-3.6.0-jvmAndPosixMain-0ifOOg.klib",
+    "sourceSetName": "jvmAndPosixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-client-core:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-client-core-3.6.0-commonMain-0ifOOg.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-client-darwin:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-client-darwin-3.6.0-darwinMain-5Bbt-g.klib",
+    "sourceSetName": "darwinMain"
+  },
+  {
+    "moduleId": "module androidx.annotation:annotation:1.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.annotation-annotation-1.9.1-nonJvmMain-WmoUwA.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module androidx.collection:collection:1.5.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.collection-collection-1.5.0-darwinMain-1oCDtg.klib",
+    "sourceSetName": "darwinMain"
+  },
+  {
+    "moduleId": "module androidx.collection:collection:1.5.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.collection-collection-1.5.0-unixMain-j7f1lg.klib",
+    "sourceSetName": "unixMain"
+  },
+  {
+    "moduleId": "module androidx.collection:collection:1.5.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.collection-collection-1.5.0-nativeMain-j7f1lg.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module androidx.collection:collection:1.5.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.collection-collection-1.5.0-nonJvmMain-j7f1lg.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module androidx.room:room-common:2.8.5",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.room-room-common-2.8.5-nativeMain-FV9dPA.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module androidx.sqlite:sqlite:2.6.2",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.sqlite-sqlite-2.6.2-nativeMain-Y3bhRQ.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module androidx.sqlite:sqlite-framework:2.6.2",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.sqlite-sqlite-framework-2.6.2-nativeMain-5Ubkcg.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:atomicfu:0.27.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-atomicfu-0.27.0-nativeUnixLikeMain-7K06eQ.klib",
+    "sourceSetName": "nativeUnixLikeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:atomicfu:0.27.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-atomicfu-0.27.0-nativeMain-7K06eQ.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:atomicfu:0.27.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-atomicfu-0.27.0-commonMain-7K06eQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-http:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-http-3.6.0-posixMain-SJ5Lsw.klib",
+    "sourceSetName": "posixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-http:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-http-3.6.0-commonMain-SJ5Lsw.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-http-cio:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-http-cio-3.6.0-nonJvmMain-OBhW_w.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-http-cio:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-http-cio-3.6.0-jvmAndPosixMain-OBhW_w.klib",
+    "sourceSetName": "jvmAndPosixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-http-cio:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-http-cio-3.6.0-commonMain-OBhW_w.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-events:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-events-3.6.0-commonMain-uuFDaw.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-websocket-serialization:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-websocket-serialization-3.6.0-commonMain-iH8_IQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-sse:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-sse-3.6.0-commonMain-F-gmyQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network-tls:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-tls-3.6.0-nonJvmMain-bglXaA.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network-tls:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-tls-3.6.0-commonMain-bglXaA.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-utils:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-utils-3.6.0-darwinMain-TXWDDA.klib",
+    "sourceSetName": "darwinMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-utils:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-utils-3.6.0-nixMain-spT_hw.klib",
+    "sourceSetName": "nixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-utils:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-utils-3.6.0-posixMain-spT_hw.klib",
+    "sourceSetName": "posixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-utils:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-utils-3.6.0-commonMain-spT_hw.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-io:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-io-3.6.0-darwinMain-OjVc0Q.klib",
+    "sourceSetName": "darwinMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-io:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-io-3.6.0-posixMain-JJtjyg.klib",
+    "sourceSetName": "posixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-io:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-io-3.6.0-nonJvmMain-JJtjyg.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-io:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-io-3.6.0-jvmAndPosixMain-JJtjyg.klib",
+    "sourceSetName": "jvmAndPosixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-io:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-io-3.6.0-commonMain-JJtjyg.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-serialization:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-serialization-3.6.0-commonMain-wM1nNg.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-3.6.0-iosMain-nLGlHA.klib",
+    "sourceSetName": "iosMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-3.6.0-darwinMain-nLGlHA.klib",
+    "sourceSetName": "darwinMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-3.6.0-nixMain-mEDV5g.klib",
+    "sourceSetName": "nixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-3.6.0-posixMain-mEDV5g.klib",
+    "sourceSetName": "posixMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-3.6.0-nonJvmMain-mEDV5g.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-network:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-network-3.6.0-commonMain-mEDV5g.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-core:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-core-0.9.1-appleMain-Kako3A.klib",
+    "sourceSetName": "appleMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-core:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-core-0.9.1-nativeNonAndroidMain-LSdToQ.klib",
+    "sourceSetName": "nativeNonAndroidMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-core:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-core-0.9.1-nativeMain-LSdToQ.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-core:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-core-0.9.1-commonMain-LSdToQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-websockets:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-websockets-3.6.0-nonJvmMain-sxoKrw.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module io.ktor:ktor-websockets:3.6.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/io.ktor-ktor-websockets-3.6.0-commonMain-sxoKrw.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-bytestring:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-bytestring-0.9.1-appleMain-6F6c7g.klib",
+    "sourceSetName": "appleMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-bytestring:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-bytestring-0.9.1-nativeMain-ypuSdQ.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-io-bytestring:0.9.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-io-bytestring-0.9.1-commonMain-ypuSdQ.klib",
+    "sourceSetName": "commonMain"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "locationBySourceSetName": {
+    "appleMain": "/home/user/StepUp/sharedData/build/classes/kotlin/metadata/appleMain/klib/sharedData_appleMain",
+    "commonMain": "/home/user/StepUp/sharedData/build/classes/kotlin/metadata/commonMain",
+    "iosMain": "/home/user/StepUp/sharedData/build/classes/kotlin/metadata/iosMain/klib/sharedData_iosMain",
+    "nativeMain": "/home/user/StepUp/sharedData/build/classes/kotlin/metadata/nativeMain/klib/sharedData_nativeMain"
+  }
+}

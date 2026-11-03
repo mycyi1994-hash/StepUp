@@ -56,7 +56,7 @@ interface SessionRecorder {
 class ClaimRepository(
     private val sessionDao: WalkSessionDao,
     private val recorder: SessionRecorder,
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = { com.stepup.android.domain.epochMillis() },
     private val uploadOwner: suspend () -> String = { "legacy" },
     /**
      * 서버가 러닝을 하나라도 확인했으면 한 번 부른다 — 잔고 · 에너지를 다시 받아 온다. 이번 차례에 확인받은 러닝들의
@@ -190,7 +190,7 @@ class ClaimRepository(
     }
 
     /** 뒤 일이 남은 러닝이 없다고 본 계정 — 다시 훑지 않는다. 앱을 켠 뒤 처음 한 번은 훑고, 뒤 일이 실패하면 그 계정을 다시 훑는다 */
-    private val followUpsClear: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+    private val followUpsClear = ConcurrentStringSet()
 
     /** 뒤 일을 한 번 낸다. 마쳤으면 표시를 지운다 — 실패해도 그 러닝의 확인(SIGNED)은 그대로다 */
     private suspend fun followUp(row: WalkSessionEntity): ServerResult<Unit> {
@@ -243,5 +243,28 @@ class ClaimRepository(
 
         /** 한 차례에 뒤 일을 다시 낼 러닝 수(오래된 것부터) */
         private const val FOLLOW_UP_SCAN = 30
+    }
+}
+
+/** 여러 일꾼이 함께 써도 되는 글자 모음(예전 ConcurrentHashMap.newKeySet() — 공용 코드라 원자 참조의 바꿔 쓰기로) */
+@OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
+internal class ConcurrentStringSet {
+    private val items = kotlin.concurrent.atomics.AtomicReference(emptySet<String>())
+
+    /** 새로 넣었으면 true(이미 있으면 false) */
+    fun add(value: String): Boolean {
+        while (true) {
+            val now = items.load()
+            if (value in now) return false
+            if (items.compareAndSet(now, now + value)) return true
+        }
+    }
+
+    fun remove(value: String) {
+        while (true) {
+            val now = items.load()
+            if (value !in now) return
+            if (items.compareAndSet(now, now - value)) return
+        }
     }
 }
