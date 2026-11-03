@@ -27,7 +27,7 @@ class RunGeometryTest {
         assertEquals(setOf(2), segmentBreaks(points))
     }
 
-    @Test fun `천천히 걸을 때의 드문 점(30~60초 간격)은 끊김이 아니다`() {
+    @Test fun `천천히 걸을 때의 드문 점 30–60초 간격은 끊김이 아니다`() {
         // 구글 위치 서비스는 오차의 두 배를 움직여야 점을 찍는다 — 오차 20m 로 걸으면 40m 마다 36초 남짓
         val points = listOf(
             TrackPoint(origin.lat, origin.lng, 0L),

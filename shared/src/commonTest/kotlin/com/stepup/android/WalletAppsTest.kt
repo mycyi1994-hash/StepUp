@@ -15,7 +15,7 @@ class WalletAppsTest {
     // 서버 economy.wallet_link_message 와 같은 꼴
     private val message = "StepUp 지갑 연결\n계정: $user\n확인 번호: $nonce\n\n이 서명은 거래가 아니며 수수료가 들지 않습니다."
 
-    @Test fun `GIWA 가 맨 위 · 준비 중, 그다음 MetaMask · OKX · Rabby`() {
+    @Test fun `GIWA 가 맨 위 · 준비 중 · 그다음 MetaMask · OKX · Rabby`() {
         assertEquals(listOf(WalletApp.GIWA, WalletApp.METAMASK, WalletApp.OKX, WalletApp.RABBY), WalletApp.entries)
         assertFalse(WalletApp.GIWA.ready)
         assertTrue(WalletApp.entries.drop(1).all { it.ready })
@@ -31,7 +31,7 @@ class WalletAppsTest {
         assertNull(WalletLinkRequest.parse("StepUp 지갑 연결\n계정: $user\n확인 번호: 123"))
     }
 
-    @Test fun `지갑 앱 브라우저로 여는 주소 — MetaMask 는 공식 dapp 링크, OKX 는 인코딩, Rabby 는 복사`() {
+    @Test fun `지갑 앱 브라우저로 여는 주소 — MetaMask 는 공식 dapp 링크 · OKX 는 인코딩 · Rabby 는 복사`() {
         val page = "https://stepupcrew.com/wallet.html?l=$user.$nonce"
         assertEquals("https://link.metamask.io/dapp/stepupcrew.com/wallet.html?l=$user.$nonce", WalletApp.METAMASK.openUrl(page))
         assertEquals(

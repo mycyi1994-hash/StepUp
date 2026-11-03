@@ -19,7 +19,7 @@ import kotlin.test.Test
 class SneakerDesignsTest {
 
     @Test
-    fun `속성마다 13종, 모두 52종이다`() {
+    fun `속성마다 13종 · 모두 52종이다`() {
         assertEquals(13, VARIANTS_PER_FACTION)
         assertEquals(52, TOTAL_COLLECTION)
         assertEquals(52, SneakerDesigns.all.size)

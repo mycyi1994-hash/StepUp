@@ -32,7 +32,7 @@ class CoachingWeeksTest {
 
     private fun run(id: Long, d: LocalDate, meters: Double, seconds: Long, h: Int = 7) = CoachRun(id, at(d, h), meters, seconds)
 
-    @Test fun `이번 주 띠 — 월요일부터, 기록이 있는 날만 체크, 미래는 따로`() {
+    @Test fun `이번 주 띠 — 월요일부터 · 기록이 있는 날만 체크 · 미래는 따로`() {
         val runs = listOf(run(1, LocalDate(2026, 10, 12), 3000.0, 1300), run(2, LocalDate(2026, 10, 14), 3240.0, 1458))
         val strip = weekStrip(today, runs, seoul)
         assertEquals(LocalDate(2026, 10, 12), strip.first().date)
@@ -42,17 +42,17 @@ class CoachingWeeksTest {
         assertEquals(listOf(false, false, false, false, false, true, true), strip.map { it.future })
     }
 
-    @Test fun `무효 러닝(거리 0)은 체크하지 않는다`() {
+    @Test fun `무효 러닝 거리 0은 체크하지 않는다`() {
         val strip = weekStrip(today, listOf(run(1, LocalDate(2026, 10, 13), 0.0, 0)), seoul)
         assertFalse(strip[1].done)
     }
 
-    @Test fun `미래 날짜에 찍힌 기록은 세지 않는다(폰 시계가 틀린 경우)`() {
+    @Test fun `미래 날짜에 찍힌 기록은 세지 않는다 폰 시계가 틀린 경우`() {
         val strip = weekStrip(today, listOf(run(1, LocalDate(2026, 10, 17), 3000.0, 1300)), seoul)
         assertEquals(0, strip[5].runs)
     }
 
-    @Test fun `검수 숫자 — 9km 1시간8분24초는 456초 per km, 러닝별 페이스의 평균이 아니다`() {
+    @Test fun `검수 숫자 — 9km 1시간8분24초는 456초 per km · 러닝별 페이스의 평균이 아니다`() {
         val monday = LocalDate(2026, 10, 5)
         val runs = listOf(
             run(1, monday, 2000.0, 960), // 480 s/km
@@ -69,7 +69,7 @@ class CoachingWeeksTest {
         assertTrue(kotlin.math.abs(naive - 456.0) > 5)
     }
 
-    @Test fun `주 경계 — 일요일 23시59분은 그 주, 월요일 0시는 다음 주`() {
+    @Test fun `주 경계 — 일요일 23시59분은 그 주 · 월요일 0시는 다음 주`() {
         val monday = LocalDate(2026, 10, 5)
         val sundayLate = CoachRun(1, at(LocalDate(2026, 10, 11), 23, 59), 1000.0, 400)
         val mondayZero = CoachRun(2, at(LocalDate(2026, 10, 12), 0, 0), 1000.0, 400)
@@ -102,13 +102,13 @@ class CoachingWeeksTest {
         assertNull(future.averagePaceSec)
     }
 
-    @Test fun `최근 4주는 오래된 주부터, 선택한 주까지`() {
+    @Test fun `최근 4주는 오래된 주부터 · 선택한 주까지`() {
         val weeks = recentWeeks(LocalDate(2026, 10, 5), 4, emptyList(), today, seoul)
         assertEquals(listOf(14, 21, 28, 5), weeks.map { it.monday.dayOfMonth })
         assertTrue(weeks.all { it.state == WeekState.DONE && it.runs == 0 })
     }
 
-    @Test fun `이어진 주 — 끊기면 멈추고, 그 주가 0회면 0`() {
+    @Test fun `이어진 주 — 끊기면 멈추고 · 그 주가 0회면 0`() {
         val runs = (0L until 4L).map { back -> run(back, LocalDate(2026, 10, 5).minusWeeks(back), 3000.0, 1300) } +
             run(9, LocalDate(2026, 9, 1), 3000.0, 1300) // 끊긴 뒤의 옛 주
         assertEquals(4, weekStreak(LocalDate(2026, 10, 5), runs, seoul))
