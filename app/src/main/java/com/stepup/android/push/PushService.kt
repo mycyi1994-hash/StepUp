@@ -31,6 +31,14 @@ class PushService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        // 로그아웃한 폰에는 띄우지 않는다 — 떼기 전에 보낸 앞 계정의 소식이 늦게 와도(일꾼 스레드라 잠깐 기다려도 된다)
+        ServiceLocator.init(applicationContext)
+        val signedIn = kotlinx.coroutines.runBlocking {
+            kotlinx.coroutines.withTimeoutOrNull(2_000) {
+                runCatching { ServiceLocator.sessionHolder.isSignedIn() }.getOrDefault(true)
+            }
+        }
+        if (signedIn == false) return
         val title = message.notification?.title ?: message.data["title"] ?: return
         val body = message.notification?.body ?: message.data["body"].orEmpty()
         val link = message.data["link"].orEmpty()

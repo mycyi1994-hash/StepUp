@@ -44,6 +44,17 @@ class InviteLinksTest {
     }
 
     @Test
+    fun `가입 신청 알림은 신청 목록 링크로 읽고 예전 크루 링크도 그대로 읽는다`() {
+        assertEquals(id, InviteLinks.crewRequestsIdOfPush("crew/$id/requests"))
+        assertNull(InviteLinks.crewRequestsIdOfPush("crew/$id"))
+        assertNull(InviteLinks.crewRequestsIdOfPush("crew/$id/other"))
+        assertNull(InviteLinks.crewRequestsIdOfPush("crew/not-a-crew/requests"))
+        // 신청 목록 링크는 크루 상세 링크로 새지 않고, 예전 링크(crew/<id>)는 그대로 상세
+        assertNull(InviteLinks.crewIdOfPush("crew/$id/requests"))
+        assertEquals(id, InviteLinks.crewIdOfPush("crew/$id"))
+    }
+
+    @Test
     fun `크루 채팅 알림은 방 링크로만 읽는다`() {
         assertEquals(id, InviteLinks.chatIdOfPush("crew-chat/$id"))
         assertNull(InviteLinks.chatIdOfPush("crew/$id"))

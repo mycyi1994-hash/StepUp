@@ -32,6 +32,9 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     COMMENT: (a) => ["새 댓글", `${a.name}님이 "${a.title}"에 댓글을 남겼어요`],
     REPLY: (a) => ["새 답글", `${a.name}님이 내 댓글에 답글을 남겼어요`],
     CREW_REQUEST: (a) => ["가입 신청", `${a.name}님이 ${a.crew} 크루에 가입을 신청했어요`],
+    CREW_DECIDED: (a) => a.approved === "1"
+      ? ["가입 승인 🎉", `${a.crew} 크루에 가입됐어요. 같이 달려요!`]
+      : ["가입 결과", `${a.crew} 크루 가입이 이번엔 승인되지 않았어요`],
     PARTY_OPEN: (a) => ["파티런 로비가 열렸어요 🏃", `${a.name}님이 ${a.crew} 파티런을 열었어요. 같이 달려요!`],
     CREW_FLASH: (a) => ["크루 번개 ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 사진을 보냈어요` : `${a.name}: ${a.text}`],
@@ -41,6 +44,9 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     COMMENT: (a) => ["New comment", `${a.name} commented on "${a.title}"`],
     REPLY: (a) => ["New reply", `${a.name} replied to your comment`],
     CREW_REQUEST: (a) => ["Join request", `${a.name} wants to join ${a.crew}`],
+    CREW_DECIDED: (a) => a.approved === "1"
+      ? ["Request approved 🎉", `You're now a member of ${a.crew}. Let's run together!`]
+      : ["Join request update", `Your request to join ${a.crew} wasn't approved this time`],
     PARTY_OPEN: (a) => ["Party run lobby is open 🏃", `${a.name} opened a ${a.crew} party run. Join in!`],
     CREW_FLASH: (a) => ["Crew flash run ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: sent a photo` : `${a.name}: ${a.text}`],
@@ -50,6 +56,9 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     COMMENT: (a) => ["新しいコメント", `${a.name}さんが「${a.title}」にコメントしました`],
     REPLY: (a) => ["新しい返信", `${a.name}さんがあなたのコメントに返信しました`],
     CREW_REQUEST: (a) => ["参加申請", `${a.name}さんが${a.crew}への参加を申請しました`],
+    CREW_DECIDED: (a) => a.approved === "1"
+      ? ["参加が承認されました 🎉", `${a.crew}のメンバーになりました。一緒に走りましょう！`]
+      : ["参加申請の結果", `今回は${a.crew}への参加が承認されませんでした`],
     PARTY_OPEN: (a) => ["パーティーランのロビーが開きました 🏃", `${a.name}さんが${a.crew}のパーティーランを開きました`],
     CREW_FLASH: (a) => ["クルーのフラッシュラン ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 写真を送りました` : `${a.name}: ${a.text}`],
@@ -59,6 +68,9 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     COMMENT: (a) => ["新评论", `${a.name} 评论了「${a.title}」`],
     REPLY: (a) => ["新回复", `${a.name} 回复了你的评论`],
     CREW_REQUEST: (a) => ["加入申请", `${a.name} 申请加入 ${a.crew}`],
+    CREW_DECIDED: (a) => a.approved === "1"
+      ? ["加入申请已通过 🎉", `你已加入 ${a.crew}，一起跑吧！`]
+      : ["加入申请结果", `你加入 ${a.crew} 的申请这次未通过`],
     PARTY_OPEN: (a) => ["组队跑大厅已开启 🏃", `${a.name} 开启了 ${a.crew} 组队跑，一起来吧！`],
     CREW_FLASH: (a) => ["跑团闪电跑 ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 发送了一张照片` : `${a.name}: ${a.text}`],

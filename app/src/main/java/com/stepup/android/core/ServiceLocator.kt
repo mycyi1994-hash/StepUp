@@ -332,6 +332,8 @@ object ServiceLocator {
             store = PrefsAuthSessionStore(userPrefs),
         )
         server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
+        // 접속 코드 문에 막힌 요청 — 권한을 다시 묻는다(코드를 넣었으면 문이 열리고 로그인 뒤 일을 다시 한다)
+        server.onAccessRequired = { AccessGate.onServerBlocked(app) }
         Analytics.init(app)
         pushRegistrar = PushRegistrar(
             PushApi(server),

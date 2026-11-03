@@ -30,7 +30,8 @@
     <string name="beta_code_revoked">쓸 수 없음</string>
     <string name="beta_code_open">아직 안 씀 · %1$s까지</string>
     <string name="beta_code_share_text">StepUp 베타 초대 코드: %1$s
-앱에서 구글로 로그인한 뒤 입력해 주세요.</string>
+앱에서 구글로 로그인한 뒤 입력해 주세요.
+앱 받기: %2$s</string>
     <string name="beta_code_copy">코드 복사</string>
     <string name="beta_code_share">코드 공유</string>
 </resources>

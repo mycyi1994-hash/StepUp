@@ -97,9 +97,12 @@ internal object TogetherList {
         .flatMap { (id, name) -> rooms[id]?.let { CrewRoomRules.ordered(it.rooms) }.orEmpty().map { CrewRunEntry(id, name, it) } }
         .sortedWith(compareByDescending<CrewRunEntry> { it.room.mine }.thenByDescending { it.room.createdAtMs }.thenByDescending { it.room.id })
 
-    /** 앞으로 열릴 전체 번개 — 가까운 시각 먼저. 찬 번개는 내가 참가한 것만 남긴다 */
+    /**
+     * 앞으로 열릴 전체 번개 — 가까운 시각 먼저. 찬 번개는 내가 참가한 것만 남긴다.
+     * 내가 참가한(쓴) 번개는 모이는 시각이 지나도 대기실이 열려 있는 동안([Post.lobbyOpen]) 남긴다.
+     */
     fun flashes(posts: List<Post>, now: Long): List<Post> = posts
-        .filter { it.isFlash && it.crewId.isBlank() && it.meetAt > now && (!it.isFull || it.joined) }
+        .filter { it.isFlash && it.crewId.isBlank() && (it.meetAt > now || it.lobbyOpen(now)) && (!it.isFull || it.joined || it.mine) }
         .sortedWith(compareBy<Post> { it.meetAt }.thenBy { it.id })
 }
 
@@ -120,6 +123,11 @@ internal fun TogetherRoomsSegment(
     val sync by viewModel.boardSync.collectAsStateWithLifecycle()
     val allCrews by viewModel.crews.collectAsStateWithLifecycle()
     val crews = remember(allCrews) { allCrews.filter { it.joined }.map { it.id to it.name } }
+    // 탭을 오가도 뷰모델은 남는다 — 돌아올 때 30초가 지났으면 번개 · 크루를 다시 받는다(새로 생긴 번개 · 승인된 크루)
+    androidx.lifecycle.compose.LifecycleResumeEffect(viewModel) {
+        viewModel.refreshTogetherOnResume()
+        onPauseOrDispose { }
+    }
     val now by produceState(System.currentTimeMillis()) {
         while (true) { value = System.currentTimeMillis(); delay(30_000) }
     }

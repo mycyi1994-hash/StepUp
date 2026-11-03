@@ -335,9 +335,9 @@ private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, 
     }
 }
 
-/** 크루 공유 — 이름 · 동네 · 한 줄 소개를 글로(앱 밖 공유 창) */
+/** 크루 공유 — 초대 글(이름 · 초대 링크, 링크를 누르면 앱이 이 크루를 연다)을 앱 밖 공유 창으로 */
 private fun shareCrew(context: android.content.Context, card: CrewCard) {
-    val text = listOf(card.name, card.area, card.tagline).filter { it.isNotBlank() }.joinToString(" · ")
+    val text = context.getString(R.string.crew_invite_message, card.name, com.stepup.android.core.InviteLinks.crewLink(card.id))
     runCatching {
         context.startActivity(
             android.content.Intent.createChooser(

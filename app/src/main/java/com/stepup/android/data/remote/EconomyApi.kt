@@ -43,6 +43,14 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             serverJson.decodeFromString<List<LifetimeRow>>(body).firstOrNull()?.lifetimeKm ?: 0.0
         }
 
+    /** 서버의 내 프로필 이름(가입 때의 구글 이름 · 앱에서 바꾼 이름) — 이 폰에 이름이 없을 때 받아 온다 */
+    suspend fun displayName(userId: String): ServerResult<String> =
+        server.authed { token ->
+            server.http.get("${server.restUrl}/profiles?select=display_name&id=eq.$userId", server.headers(token))
+        }.mapBody { body ->
+            serverJson.decodeFromString<List<DisplayNameRow>>(body).firstOrNull()?.displayName.orEmpty()
+        }
+
     suspend fun drawGrants(): ServerResult<List<DrawGrantRow>> =
         server.authed { token ->
             server.http.get("${server.restUrl}/draw_grants?select=kind,granted,used", server.headers(token))
@@ -362,6 +370,9 @@ data class BoostRow(
     @SerialName("starts_at") val startsAt: String,
     @SerialName("ends_at") val endsAt: String,
 )
+
+@kotlinx.serialization.Serializable
+data class DisplayNameRow(@kotlinx.serialization.SerialName("display_name") val displayName: String? = null)
 
 @kotlinx.serialization.Serializable
 data class LifetimeRow(@kotlinx.serialization.SerialName("lifetime_km") val lifetimeKm: Double = 0.0)

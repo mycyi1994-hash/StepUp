@@ -72,6 +72,18 @@ data class Post(
     }
     val isFull: Boolean get() = capacity > 0 && joinedCount >= capacity
     val isClosed: Boolean get() = isFlash && meetAt > 0L && meetAt < System.currentTimeMillis()
+
+    /**
+     * 번개 대기실에 아직 들어갈 수 있나 — 참가한 사람(쓴 사람)은 모이는 시각이 지나도 [LOBBY_GRACE_MS] 동안 대기실로 간다
+     * (모임 시각에 막 모여 출발하는데 버튼이 꺼지던 것). 참가하지 않은 사람에게는 [isClosed] 그대로 마감이다.
+     */
+    fun lobbyOpen(now: Long = System.currentTimeMillis()): Boolean =
+        isFlash && (joined || mine) && (meetAt <= 0L || now < meetAt + LOBBY_GRACE_MS)
+
+    companion object {
+        /** 모이는 시각 뒤에도 참가자의 대기실을 열어 두는 시간 — 60분 */
+        const val LOBBY_GRACE_MS: Long = 60 * 60 * 1000L
+    }
 }
 
 /** 번개러닝에 참가한 사람 한 명 */

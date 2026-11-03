@@ -91,6 +91,7 @@ fun AccessCodeScreen(
     onGranted: () -> Unit,
     onSignOut: () -> Unit,
     redeem: suspend (String) -> ServerResult<com.stepup.android.data.remote.AccessRedeemRow> = { ServiceLocator.accessApi.redeem(it) },
+    checkFailed: Boolean = false,
 ) {
     // 모달이 열렸는가 — 화면 상태일 뿐, 접속 권한(서버 · AccessGate)과 따로 둔다
     var open by rememberSaveable { mutableStateOf(true) }
@@ -99,6 +100,7 @@ fun AccessCodeScreen(
         if (open) {
             AccessCodeModal(
                 status = status, signedIn = signedIn, redeem = redeem, onGranted = onGranted, onSignOut = onSignOut,
+                checkFailed = checkFailed,
                 onClose = { wasChecking ->
                     open = false
                     // 확인 중에 닫았다 — 서버가 이미 받았을 수 있으니 권한을 다시 묻는다(답에 따라 AccessGate 가 정한다)
@@ -117,6 +119,7 @@ private fun AccessCodeModal(
     onGranted: () -> Unit,
     onSignOut: () -> Unit,
     onClose: (wasChecking: Boolean) -> Unit,
+    checkFailed: Boolean = false,
 ) {
     val c = StepUpUi.colors
     val type = StepUpUi.type
@@ -173,7 +176,7 @@ private fun AccessCodeModal(
                     FormField(
                         label = stringResource(R.string.access_code_label), value = code,
                         // 확인 중에는 바꾸지 않는다 · 고치면 앞 오류를 지운다
-                        onValueChange = { v -> if (!busy) { code = v.take(40); error = null } },
+                        onValueChange = { v -> if (!busy) { code = pastedAccessCode(v).take(40); error = null } },
                         placeholder = "XXXX-XXXX", keyboardType = KeyboardType.Ascii,
                         modifier = Modifier.fillMaxWidth().testTag("access-code-field"),
                     )
@@ -212,6 +215,16 @@ private fun AccessCodeModal(
                     Spacer(Modifier.height(20.dp))
                 }
                 Spacer(Modifier.height(4.dp))
+                // 권한을 묻지 못했다 — 이미 들어온 사람이 연결 탓에 막히지 않게 조용히 다시 묻는다(주 버튼이 아닌 글자)
+                if (signedIn && checkFailed) {
+                    Box(
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+                            .pressable(enabled = !busy, onClick = onGranted).testTag("access-check-again"),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(stringResource(R.string.access_check_again), style = type.smallButton, color = c.secondaryLabel)
+                    }
+                }
                 Box(
                     Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
                         .pressable(enabled = !busy, onClick = onSignOut).testTag("access-sign-out"),
@@ -225,6 +238,20 @@ private fun AccessCodeModal(
             }
         }
     }
+}
+
+private val CODE_IN_TEXT = Regex("(?<![A-Za-z0-9])([A-Za-z0-9]{4})-([A-Za-z0-9]{4})(?![A-Za-z0-9])")
+private val BARE_CODE_IN_TEXT = Regex("(?<![A-Za-z0-9])[A-Z0-9]{8}(?![A-Za-z0-9])")
+
+/**
+ * 공유받은 글 통째로 붙여 넣었을 때 코드만 꺼낸다 — 글 안에 XXXX-XXXX(또는 대문자 8자)가 있으면 그것.
+ * 코드 글자(영문 · 숫자 · '-')만 쳤으면 그대로 둔다.
+ */
+internal fun pastedAccessCode(raw: String): String {
+    val trimmed = raw.trim()
+    if (trimmed.all { it.isLetterOrDigit() && it.code < 128 || it == '-' }) return raw
+    CODE_IN_TEXT.find(raw)?.let { return it.value }
+    return BARE_CODE_IN_TEXT.find(raw)?.value ?: raw
 }
 
 internal fun errorText(error: String?): Int = when (error) {
@@ -328,7 +355,13 @@ private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
         "REVOKED" -> stringResource(R.string.beta_code_revoked)
         else -> stringResource(R.string.beta_code_open, fmt(row.expiresAt) ?: "")
     }
-    val share = stringResource(R.string.beta_code_share_text, row.code)
+    // 테스트 판(debug · qa)은 테스트 APK 받기 주소, 스토어 판은 홈페이지 — 스토어 앱이 밖의 APK 를 나누지 않게
+    val appLink = if (com.stepup.android.BuildConfig.BUILD_TYPE == "debug" || com.stepup.android.BuildConfig.BUILD_TYPE == "qa") {
+        "https://${com.stepup.android.core.InviteLinks.HOST}/downloads/StepUp-MVP.apk"
+    } else {
+        "https://${com.stepup.android.core.InviteLinks.HOST}"
+    }
+    val share = stringResource(R.string.beta_code_share_text, row.code, appLink)
     Row(
         Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(16.dp)).background(c.card)
             .heightIn(min = 64.dp).padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp).testTag("beta-code-${row.code}"),
@@ -342,6 +375,8 @@ private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
             IconButton(onClick = {
                 val clip = context.getSystemService(ClipboardManager::class.java)
                 clip?.setPrimaryClip(ClipData.newPlainText("StepUp", row.code))
+                // 복사됐다고 알린다(기기마다 시스템 알림이 없기도 하다)
+                android.widget.Toast.makeText(context, R.string.beta_code_copied, android.widget.Toast.LENGTH_SHORT).show()
             }, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Filled.ContentCopy, stringResource(R.string.beta_code_copy), tint = c.secondaryLabel)
             }

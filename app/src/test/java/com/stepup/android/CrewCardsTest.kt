@@ -90,6 +90,16 @@ class CrewCardsTest {
         assertEquals(21, CrewRules.progress(card("a", goalKm = 200, weekKm = 42.0))!!.percent)
     }
 
+    @Test fun `이름 찾기 — 이름 · 동네 · 소개에서 대소문자 · 앞뒤 빈칸 없이 찾는다`() {
+        val crew = card("a", name = "Mangwon Night Runners").copy(area = "마포구 망원동", tagline = "한강 저녁 러닝")
+        assertTrue(CrewRules.matches(crew, ""))
+        assertTrue(CrewRules.matches(crew, "   "))
+        assertTrue(CrewRules.matches(crew, " night "))
+        assertTrue(CrewRules.matches(crew, "망원"))
+        assertTrue(CrewRules.matches(crew, "한강"))
+        assertFalse(CrewRules.matches(crew, "반포"))
+    }
+
     @Test fun `거리 글자 — 100km 이상은 정수, 그 아래는 소수 한 자리`() {
         assertEquals("126", CrewRules.km(126.0))
         assertEquals("126", CrewRules.km(126.4))

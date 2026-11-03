@@ -258,6 +258,16 @@ object CrewRules {
      * 목록에 보일 크루. 전국이면 모두. 범위가 있으면 그 안의 크루만 — 위치가 없는 크루는 거리를 잴 수 없어 뺀다. 내가 멤버 · 크루장 ·
      * 신청 중인 크루는 범위 밖이어도 남긴다(찾으러 목록을 옮기지 않게).
      */
+    /**
+     * 크루 이름 찾기 — 이름 · 동네 · 한 줄 소개에 [text] 가 들어 있나(앞뒤 빈칸 무시 · 대소문자 무시).
+     * 빈 글자면 모두 맞다. 이미 받은 카드만 거른다(서버에 다시 묻지 않는다).
+     */
+    fun matches(card: CrewCard, text: String): Boolean {
+        val needle = text.trim()
+        if (needle.isEmpty()) return true
+        return listOf(card.name, card.area, card.tagline).any { it.contains(needle, ignoreCase = true) }
+    }
+
     fun visible(cards: List<CrewCard>, query: CrewListQuery): List<CrewCard> {
         val center = query.center
         val kept = cards.filter { card ->

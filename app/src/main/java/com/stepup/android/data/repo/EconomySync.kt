@@ -46,6 +46,8 @@ class EconomySync(
     private val lock = Mutex()
     private var bootstrapped: String? = null
     private var checkedIn: String? = null
+    // 서버 이름을 받아 와 본 계정(이름이 없을 때만 묻는다)
+    private var nicknamePulled: String? = null
 
     private val _state = MutableStateFlow(EconomySyncState.UNKNOWN)
     val state: StateFlow<EconomySyncState> = _state
@@ -186,10 +188,37 @@ class EconomySync(
 
     private suspend fun syncNickname(userId: String) {
         val name = prefs.nickname.first().trim()
-        if (name.isEmpty()) return
+        if (name.isEmpty()) {
+            pullNickname(userId)
+            return
+        }
         val mark = "$userId:$name"
         if (prefs.nicknameSynced() == mark) return
         if (api.setDisplayName(name) is ServerResult.Ok) prefs.setNicknameSynced(mark)
+    }
+
+    /**
+     * 이 폰에 이름이 없으면(새로 로그인) 서버 이름을 받아 온다 — 내 정보와 크루 화면의 이름이 같게.
+     * 받아 온 이름은 올린 것으로 적어 다시 올리지 않는다. 계정마다 한 번만 묻고, 실패해도 동기화는 계속한다.
+     */
+    private suspend fun pullNickname(userId: String) {
+        if (nicknamePulled == userId) return
+        val r = try {
+            api.displayName(userId)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return
+        }
+        if (r !is ServerResult.Ok) return
+        nicknamePulled = userId
+        val server = r.value.trim()
+        if (server.isEmpty() || server == "러너") return
+        // 받아 오는 사이에 이름을 적었거나 계정이 바뀌었으면 건드리지 않는다
+        if (prefs.nickname.first().isNotBlank() || sessions.currentUserId() != userId) return
+        prefs.setNickname(server)
+        val saved = prefs.nickname.first().trim()
+        if (saved.isNotEmpty()) prefs.setNicknameSynced("$userId:$saved")
     }
 
     suspend fun clearLocal() = lock.withLock {

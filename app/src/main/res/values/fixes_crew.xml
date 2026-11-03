@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-03 크루 · 번개 손보기: 번개 지우기 확인 · 쓴 사람의 번개 취소 · 크루 이름 찾기 -->
+<resources>
+    <string name="fx_flash_cancel_host">Cancel flash run</string>
+    <string name="fx_flash_delete_title">Cancel this flash run?</string>
+    <string name="fx_flash_delete_body">Joined so far: %1$d. It will disappear from their lists too.</string>
+    <string name="fx_post_delete_title">Delete this post?</string>
+    <string name="fx_post_delete_body">A deleted post can\'t be restored.</string>
+    <string name="fx_crew_search_hint">Crew name, area or intro</string>
+    <string name="fx_crew_search_open">Search crews</string>
+    <string name="fx_crew_search_close">Close search</string>
+    <string name="fx_crew_search_empty_title">No matching crews</string>
+    <string name="fx_crew_search_empty_body">No crew matches “%1$s”. Try another word or start your own crew.</string>
+</resources>

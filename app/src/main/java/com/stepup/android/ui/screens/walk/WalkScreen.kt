@@ -63,6 +63,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.LaunchedEffect
+import com.stepup.android.ui.screens.items.withPendingWear
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -200,6 +201,7 @@ fun RunScreen(
     val course = viewModel.selectedCourse.collectAsStateWithLifecycle().value
     val lastUpload by viewModel.lastUpload.collectAsStateWithLifecycle()
     val lastServerPoints by viewModel.lastServerPoints.collectAsStateWithLifecycle()
+    val lastShoeSettled by viewModel.lastShoeSettled.collectAsStateWithLifecycle()
     val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -225,6 +227,8 @@ fun RunScreen(
     var locationOffGate by rememberSaveable { mutableStateOf(false) }
     // 자유러닝 — 시작 전에 신고 있는 신발을 확인하는 중(2026-10-17 전달본 SHOE_CHECK). 닫으면 아무것도 시작하지 않는다
     var shoeCheck by rememberSaveable { mutableStateOf(false) }
+    // 수리 시트를 연 신발(신고 있는 신발) — 출발 전 점검 · 러닝 완료의 "수리"에서 연다. 열려 있는 동안 점검창은 잠깐 숨긴다
+    var repairShoeId by rememberSaveable { mutableStateOf<Long?>(null) }
     val startScope = androidx.compose.runtime.rememberCoroutineScope()
     var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
@@ -645,14 +649,13 @@ fun RunScreen(
         placeAt?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
     }
     // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸 · 결과. 달리는 동안은 이번 러닝으로 닳을 만큼(달린 1분마다 5 — 움직였든 서 있었든,
-    // 서버 0064 · 0068)을 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하기 전까지는 미리 뺀 값을 보인다 — 예전엔 결과에서 러닝 전
-    // 값(100%)으로 되돌아가 "안 닳는다"로 보였다(2026-10-17 점검). 확인된 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게).
-    // 무효 러닝은 닳지 않는다
+    // 서버 0064 · 0068)을 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하고 그 뒤 동기화가 신발 사본을 새로 받을 때까지는 미리 뺀 값을
+    // 보인다 — 예전엔 결과에서 러닝 전 값(100%)으로 되돌아가 "안 닳는다"로 보였다(2026-10-17 점검), 확인된 순간 동기화 전에도 그랬다
+    // (2026-11-03 점검). 사본이 새로 온 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게). 무효 러닝은 닳지 않는다
     val freeDurability = equipped?.let {
         when {
             session.isActive && !freeVoid -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.elapsedSec)
-            !session.isActive && session.lastElapsedSec > 0 && session.lastVerdict != RunVerdict.VOID &&
-                lastUpload != UploadState.SIGNED.name ->
+            !session.isActive && session.lastElapsedSec > 0 && session.lastVerdict != RunVerdict.VOID && !lastShoeSettled ->
                 com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.lastElapsedSec)
             else -> com.stepup.android.ui.screens.items.durabilityPercent(it)
         }
@@ -906,6 +909,8 @@ fun RunScreen(
                     onDeleteBack = { deleteFailed = null },
                     penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null,
                     shoeNote = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null,
+                    // 다 쓴 신발을 바로 고칠 수 있게 — 신고 있는 신발의 수리 시트(신발 탭과 같은 수리)
+                    onShoeRepair = equipped?.takeIf { session.lastShoeWornOut }?.let { shoe -> { repairShoeId = shoe.id } },
                     startedAt = session.lastStartedAt,
                     place = remember(session.track.firstOrNull()) {
                         session.track.firstOrNull()?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
@@ -1403,14 +1408,20 @@ fun RunScreen(
                 onOpenSettings = { ExternalIntents.openLocationSettings(context) },
             )
         }
-        if (shoeCheck && !session.isActive) {
+        if (shoeCheck && !session.isActive && repairShoeId == null) {
             val shoes by viewModel.shoes.collectAsStateWithLifecycle()
             val wearing by viewModel.wearing.collectAsStateWithLifecycle()
+            // 아직 서버가 빼지 않은(또는 이 폰 사본에 아직 들지 않은) 러닝의 닳음을 신은 신발에서 미리 뺀다 — 화면에만(2026-11-03 점검).
+            // 러닝 줄에 신은 신발이 남지 않아 지금 신은 신발에서만 뺀다
+            val pendingWear by viewModel.pendingShoeWear.collectAsStateWithLifecycle()
+            val checkShoe = equipped?.withPendingWear(pendingWear)
             FreeRunShoeCheck(
-                shoe = equipped,
-                shoes = shoes,
+                shoe = checkShoe,
+                shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it },
                 wearing = wearing,
                 onWear = viewModel::wear,
+                // 다 닳았으면 수리로 — 신발 탭과 같은 수리 시트를 이 화면에서 연다
+                onRepair = { id -> repairShoeId = id },
                 onStart = {
                     // PREPARING — 권한 · 위치 기능이 다 있으면 점검창에서 바로 3-2-1. 아니면 기존 안내(권한 · E07)를 지난다
                     startScope.launch {
@@ -1432,6 +1443,39 @@ fun RunScreen(
                     if (autoStart) onBack()
                 },
             )
+        }
+        // 수리 시트 — 출발 전 점검(다 닳은 신발) · 러닝 완료(내구도 다 씀)의 "수리". 신발 탭 상세와 같은 수리 길([ShoeCareStore]):
+        // 최신 내구도 · 비용 · 잔고를 읽고, 확인을 눌렀을 때만 서버에 한 번 보낸다. 닫으면 점검창이 다시 보인다(새 내구도로)
+        repairShoeId?.let { id ->
+            val careStore = com.stepup.android.ui.screens.items.ShoeCareStore.shared
+            val repairs by careStore.repair.collectAsStateWithLifecycle()
+            val ownedShoes by viewModel.shoes.collectAsStateWithLifecycle()
+            val repairShoe = equipped?.takeIf { it.id == id } ?: ownedShoes.firstOrNull { it.id == id }
+            LaunchedEffect(id) {
+                if (careStore.repair.value[id] == null) careStore.openRepair(id)
+            }
+            val closeRepair = {
+                repairShoeId = null
+                careStore.closeRepair(id)
+            }
+            // 러닝이 다시 켜졌거나 신발이 목록에서 사라졌으면 닫는다
+            if (session.isActive) LaunchedEffect(Unit) { closeRepair() }
+            if (repairShoe != null && !session.isActive) {
+                com.stepup.android.ui.screens.items.ShoeRepairSheet(
+                    shoe = repairShoe,
+                    phase = repairs[id] ?: com.stepup.android.ui.screens.items.RepairPhase.Loading,
+                    onConfirm = { careStore.confirmRepair(id) },
+                    onRecheck = { careStore.recheckRepair(id) },
+                    onReload = { careStore.reloadRepair(id) },
+                    // 로그인 화면으로 — 돌아온 뒤 저절로 수리하지 않는다. 서버 설정이 없는 빌드는 로그인할 수 없다(버튼 없음)
+                    onSignIn = if (!com.stepup.android.core.ServiceLocator.serverEconomyOn) null else ({
+                        startScope.launch { runCatching { com.stepup.android.ui.components.returnToSignIn(context) } }
+                    }),
+                    onClose = closeRepair,
+                )
+            } else if (repairShoe == null && ownedShoes.isNotEmpty()) {
+                LaunchedEffect(Unit) { closeRepair() }
+            }
         }
         // 3-2-1 을 시작한 순간의 러닝 종류로 끝까지 — 기록이 시작된 뒤 모습이 바뀌어도(챌린지로 묶임 등) 연출이 끊기지 않게
         val freeLaunch = rememberSaveable(countingDown) { countingDown && freeRunNow }

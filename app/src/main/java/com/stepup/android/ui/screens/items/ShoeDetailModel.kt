@@ -123,6 +123,19 @@ fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long): Int {
 }
 
 /**
+ * 화면에만 쓰는 사본 — 서버가 아직 빼지 않은(또는 폰 사본에 아직 들지 않은) 러닝의 닳음 [wear](내구도 점)을 미리 뺀 신발.
+ * 남은 내구도 · 남은 비율 · 다 닳음([ServerStats.durabilityFactor])이 함께 줄어 출발 전 점검의 막대 · "약 N분" · 다 닳음 안내가 맞는다.
+ * 서버에 보내는 값(수리 견적 · 수리 점)에는 쓰지 않는다. 최대 내구도를 모르는 신발은 그대로다.
+ */
+fun Sneaker.withPendingWear(wear: Int): Sneaker {
+    val server = server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 } ?: return this
+    if (wear <= 0) return this
+    val left = (server.durabilityNow - wear).coerceIn(0, server.durabilityMax)
+    val pts = minOf(server.durabilityPts, 100.0 * left / server.durabilityMax)
+    return copy(server = server.copy(durabilityNow = left, durabilityPts = pts))
+}
+
+/**
  * 남은 내구도(서버 0059 — 신발마다 최대가 다르다. 0064 부터 달린 1분마다 5 준다). 서버가 아직 최대 내구도를 보내지 않았거나
  * (예전 서버) 폰에만 있던 신발이면 남은 비율(100 기준)을 그대로 쓴다.
  */
@@ -253,6 +266,9 @@ enum class EquipFailure {
 
     /** 보내기 전에 다시 보니 내 신발 목록에 없다(15) — 착용을 건드리지 않았다 */
     MISSING,
+
+    /** 러닝이 켜져 있다 — 보내지 않았다. 러닝을 마친 뒤 바꾼다 */
+    RUNNING,
 }
 
 /** 착용 변경 한 번의 결말. 상세가 한 번만 보여 주고 지운다(다시 들어와도 되풀이하지 않는다) */

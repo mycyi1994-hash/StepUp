@@ -917,6 +917,8 @@ internal fun FreeRunResult(
     penalty: String? = null,
     /** 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 보상에 들지 않았다는 안내 */
     shoeNote: String? = null,
+    /** [shoeNote] 아래 "수리하기" 글자 단추 — 신고 있는 신발의 수리 시트를 연다(null 이면 두지 않는다) */
+    onShoeRepair: (() -> Unit)? = null,
     /** 시작 시각(ms) · 시작 자리 근처 장소 — 위 한 줄 */
     startedAt: Long = 0L,
     place: String? = null,
@@ -964,7 +966,20 @@ internal fun FreeRunResult(
         notes = {
             if (deleteFailed) ResultNote(stringResource(R.string.run_free_delete_failed), stringResource(R.string.run_free_try_again), "run-delete-failed")
             if (penalty != null) ResultNote(penalty, null, "run-result-overspeed")
-            if (shoeNote != null) ResultNote(shoeNote, null, "run-result-shoe-worn")
+            if (shoeNote != null) {
+                ResultNote(shoeNote, null, "run-result-shoe-worn")
+                // 다 쓴 신발을 바로 고치는 길 — 글자 단추 하나(주 버튼은 아래 "완료" 그대로)
+                if (onShoeRepair != null) {
+                    Box(
+                        Modifier.padding(horizontal = 20.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp))
+                            .feedbackClickable(onClick = onShoeRepair).padding(horizontal = 6.dp).testTag("run-result-shoe-repair"),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(stringResource(R.string.care_repair), style = StepUpUi.type.smallButton, color = StepUpUi.colors.accentText,
+                            maxLines = 1)
+                    }
+                }
+            }
         },
         controls = {
             BottomActionBar {

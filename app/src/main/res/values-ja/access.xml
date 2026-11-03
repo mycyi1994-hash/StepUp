@@ -30,7 +30,8 @@
     <string name="beta_code_revoked">使用不可</string>
     <string name="beta_code_open">未使用 · %1$sまで</string>
     <string name="beta_code_share_text">StepUp ベータ招待コード: %1$s
-アプリでGoogleにログインしてから入力してください。</string>
+アプリでGoogleにログインしてから入力してください。
+アプリのダウンロード: %2$s</string>
     <string name="beta_code_copy">コードをコピー</string>
     <string name="beta_code_share">コードを共有</string>
 </resources>

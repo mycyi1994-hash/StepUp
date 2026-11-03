@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-03 크루 · 번개 손보기: 번개 지우기 확인 · 쓴 사람의 번개 취소 · 크루 이름 찾기 -->
+<resources>
+    <string name="fx_flash_cancel_host">取消闪电跑</string>
+    <string name="fx_flash_delete_title">要取消这次闪电跑吗？</string>
+    <string name="fx_flash_delete_body">目前有 %1$d 人参加。参加者的列表中也会消失。</string>
+    <string name="fx_post_delete_title">要删除这条帖子吗？</string>
+    <string name="fx_post_delete_body">删除的帖子无法恢复。</string>
+    <string name="fx_crew_search_hint">跑团名称 · 区域 · 介绍</string>
+    <string name="fx_crew_search_open">搜索跑团</string>
+    <string name="fx_crew_search_close">关闭搜索</string>
+    <string name="fx_crew_search_empty_title">没有匹配的跑团</string>
+    <string name="fx_crew_search_empty_body">没有与“%1$s”匹配的跑团。换个词搜索，或者创建自己的跑团。</string>
+</resources>

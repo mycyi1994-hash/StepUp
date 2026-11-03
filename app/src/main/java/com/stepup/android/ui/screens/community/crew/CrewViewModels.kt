@@ -91,8 +91,18 @@ class CrewListViewModel(
         CrewListQuery(area?.point ?: point, km, order)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CrewListQuery())
 
-    val visible: StateFlow<List<CrewCard>> = combine(cards, query) { list, q -> CrewRules.visible(list, q) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    private val _search = MutableStateFlow("")
+
+    /** 이름 찾기 칸의 글자 — 받은 카드를 이름 · 동네 · 소개로 거른다([CrewRules.matches]) */
+    val search: StateFlow<String> = _search
+
+    val visible: StateFlow<List<CrewCard>> = combine(cards, query, _search) { list, q, text ->
+        CrewRules.visible(list, q).filter { CrewRules.matches(it, text) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun setSearch(text: String) {
+        _search.value = text
+    }
 
     /** 아직 보지 않은 가입 결과 — 목록 위 알림 줄(푸시 없이 앱 안에서 다시 읽은 결과) */
     val results: StateFlow<List<CrewCard>> = cards.map { list -> list.filter { it.unseenResult != null } }

@@ -182,6 +182,12 @@ class ItemsViewModel(
      */
     fun equip(id: Long) {
         if (equipping.value) return
+        // 달리는 중에는 신발을 바꾸지 않는다 — 서버는 러닝을 올릴 때 신은 신발을 닳게 한다. 보내지 않고 까닭만 말한다
+        if (com.stepup.android.data.repo.shoeChangeBlockedByRun()) {
+            equipResult.value = EquipResult.NotWorn(id, EquipFailure.RUNNING, keptId = null, confirmed = true)
+            ExperienceEvents.emit(FeedbackCue.Error)
+            return
+        }
         equipping.value = true
         equipResult.value = null
         viewModelScope.launch {

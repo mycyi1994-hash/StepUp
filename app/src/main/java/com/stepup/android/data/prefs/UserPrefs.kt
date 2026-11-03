@@ -501,6 +501,14 @@ class UserPrefs(
         }
     }
 
+    /** 로그아웃 — 기본 아바타로 돌리고 리비전을 올린다(화면이 지운 사진 파일을 다시 읽지 않게) */
+    suspend fun clearAvatar() {
+        store.edit {
+            it.remove(Keys.AVATAR_ID)
+            it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1
+        }
+    }
+
     /** 로그인 방식 — "google" / "guest" / ""(미선택) */
     val loginMethod: Flow<String> = store.data.map { it[Keys.LOGIN_METHOD] ?: "" }
 

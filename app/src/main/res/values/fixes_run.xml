@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 · 신발 점검 수정(2026-11-03) -->
+<resources>
+    <string name="run_equip_blocked">You can\'t change shoes during a run. Change them after you finish.</string>
+</resources>

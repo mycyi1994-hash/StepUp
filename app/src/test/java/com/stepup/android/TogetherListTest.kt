@@ -50,4 +50,18 @@ class TogetherListTest {
         )
         assertEquals(listOf(2L, 6L, 1L), TogetherList.flashes(posts, now).map { it.id })
     }
+
+    @Test fun `a joined flash run stays listed with its lobby open for an hour after meet time`() {
+        val meet = 10_000_000L
+        val grace = Post.LOBBY_GRACE_MS
+        val joinedPast = flash(7, meetAt = meet, mine = true)
+        val otherPast = flash(8, meetAt = meet)
+        val at = meet + grace / 2
+        assertEquals(listOf(7L), TogetherList.flashes(listOf(joinedPast, otherPast), at).map { it.id })
+        assertEquals(true, joinedPast.lobbyOpen(at))
+        assertEquals(false, otherPast.lobbyOpen(at))
+        // 한 시간이 지나면 참가자에게도 닫힌다
+        assertEquals(emptyList<Long>(), TogetherList.flashes(listOf(joinedPast), meet + grace + 1).map { it.id })
+        assertEquals(false, joinedPast.lobbyOpen(meet + grace + 1))
+    }
 }
