@@ -18,7 +18,7 @@ object RecordedBalances {
     private val _byStart = MutableStateFlow<Map<Long, Entry>>(emptyMap())
     val byStart: StateFlow<Map<Long, Entry>> = _byStart.asStateFlow()
 
-    fun put(startedAt: Long, owner: String, balance: Double, now: Long = System.currentTimeMillis()) {
+    fun put(startedAt: Long, owner: String, balance: Double, now: Long = com.stepup.android.domain.epochMillis()) {
         if (!balance.isFinite() || owner.isBlank()) return
         // 오래된 것은 버린다 — 결과 화면은 방금 끝난 러닝만 본다
         _byStart.update { (it + (startedAt to Entry(balance, now, owner))).entries.sortedByDescending { e -> e.value.recordedAt }.take(8).associate { e -> e.key to e.value } }

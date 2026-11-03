@@ -55,6 +55,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>
+		<string>location</string>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

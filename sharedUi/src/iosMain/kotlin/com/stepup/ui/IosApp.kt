@@ -23,5 +23,20 @@ object IosApp {
     val sessions by lazy { SessionHolder(auth, sessionStore) }
     val server by lazy { StepUpServer(supabaseUrl, supabaseKey, sessions) }
     /** 설정(안드로이드와 같은 UserPrefs — 문서 폴더의 strideup_prefs) */
+    /** 폰 DB(안드로이드와 같은 AppDatabase — 문서 폴더의 strideup.db) */
+    val db by lazy { com.stepup.android.data.local.buildIosDatabase() }
+    /** 러닝 올리기(안드로이드와 같은 ClaimRepository · ServerSessionRecorder) — 앱을 켜면 IosUploads 에 이어 둔다 */
+    val claims by lazy {
+        com.stepup.android.data.repo.ClaimRepository(
+            sessionDao = db.walkSessionDao(),
+            recorder = com.stepup.android.data.repo.ServerSessionRecorder(server),
+            uploadOwner = { sessions.recordingOwner() },
+        )
+    }
+
+    fun connectUploads() {
+        IosUploads.connect(flushReports = { true }, uploadPending = { claims.uploadPending() })
+    }
+
     val prefs by lazy { com.stepup.android.data.prefs.createIosUserPrefs() }
 }

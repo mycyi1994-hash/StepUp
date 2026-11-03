@@ -24,7 +24,7 @@ import com.stepup.android.ui.screens.login.LoginPhase
 import kotlinx.coroutines.launch
 
 /** iOS 앱의 차례 — 세션 확인 중 → 로그인 → 앱 안(하단 탭은 다음 단계에서 옮긴다) */
-private enum class Stage { Checking, SignedOut, AccessCode, SignedIn }
+private enum class Stage { Checking, SignedOut, AccessCode, SignedIn, Running }
 
 /**
  * iOS 맨 위 화면(안드로이드 StepUpRoot 의 로그인 단계 자리). 로그인 화면은 안드로이드와 같은 LoginContent 에 Apple 버튼을 더한 것.
@@ -47,6 +47,8 @@ fun IosRoot() = StepUpTheme {
     }
 
     LaunchedEffect(Unit) {
+        // 러닝 올리기를 이어 둔다 — 앞에 올 때 · 백그라운드 작업이 같은 규칙(UploadPass)으로 올린다
+        IosApp.connectUploads()
         if (IosApp.sessionStore.load() != null) afterSignIn() else stage = Stage.SignedOut
     }
 
@@ -81,6 +83,11 @@ fun IosRoot() = StepUpTheme {
             redeem = { accessApi.redeem(it) },
             showApple = true,
         )
-        Stage.SignedIn -> IosHome(onStartRun = { })
+        Stage.SignedIn -> IosHome(onStartRun = { stage = Stage.Running })
+        Stage.Running -> IosFreeRun(onClose = {
+            stage = Stage.SignedIn
+            // 방금 끝난 러닝을 바로 올려 본다(안 되면 다음 차례에)
+            IosUploads.run { }
+        })
     }
 }
