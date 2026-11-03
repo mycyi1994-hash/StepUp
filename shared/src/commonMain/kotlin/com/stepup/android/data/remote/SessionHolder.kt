@@ -30,9 +30,9 @@ interface AuthSessionStore {
 class SessionHolder(
     private val auth: SupabaseAuth,
     private val store: AuthSessionStore,
-    private val now: () -> Long = { System.currentTimeMillis() / 1000 },
+    private val now: () -> Long = { com.stepup.android.domain.epochMillis() / 1000 },
     /** 갱신 실패 뒤 쉬는 시간을 재는 시계(ms) — 폰 시계를 바꿔도 틀리지 않게 단조 시계. 검사에서 갈아끼운다 */
-    private val monotonicMs: () -> Long = { System.nanoTime() / 1_000_000 },
+    private val monotonicMs: () -> Long = { com.stepup.android.domain.monotonicMillis() },
 ) {
 
     // 여러 화면이 동시에 요청하면 갱신이 겹친다. 겹치면 한쪽의 refresh token 이

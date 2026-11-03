@@ -30,8 +30,14 @@ kotlin {
             api(libs.kotlinx.datetime)
             // 러닝 계획(RunPlan)의 상태 흐름
             api(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.core)
-            implementation(libs.kotlinx.serialization.json)
+            // 서버 응답 칸(@Serializable) · JSON 이 서버 호출(data/remote)의 공개 API 에 나온다
+            api(libs.kotlinx.serialization.core)
+            api(libs.kotlinx.serialization.json)
+        }
+        iosMain.dependencies {
+            // iOS 의 HTTP — 안드로이드(jvm)는 HttpURLConnection 그대로(UrlConnectionPoster)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

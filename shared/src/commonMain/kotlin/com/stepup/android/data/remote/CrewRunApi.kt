@@ -108,7 +108,7 @@ data class CrewPoolRow(
     @SerialName("as_of") val asOf: String? = null,
 ) {
     /** 날짜를 읽지 못하면 null — 어느 날의 풀인지 모르는 값은 보이지 않는다(0 으로 바꾸지 않는다) */
-    fun toDomain(receivedAtMs: Long = System.currentTimeMillis()): CrewPoolSnap? {
+    fun toDomain(receivedAtMs: Long = com.stepup.android.domain.epochMillis()): CrewPoolSnap? {
         val date = day.day() ?: return null
         return CrewPoolSnap(
             day = date, total = total, remaining = remaining, consumed = consumed, contributors = contributors,
@@ -164,7 +164,7 @@ data class CrewRunTodayRow(
     /** 날짜 · 풀을 읽지 못하면 null — 0/0 이나 참여 완료로 꾸미지 않는다 */
     fun toDomain(crewId: String): CrewRunToday? {
         val date = day.day() ?: return null
-        val now = System.currentTimeMillis()
+        val now = com.stepup.android.domain.epochMillis()
         return CrewRunToday(
             crewId = crewId, day = date, serverNowMs = serverNow.ms() ?: now, resetsAtMs = resetsAt.ms() ?: 0L,
             pool = pool?.toDomain(now) ?: return null, mine = mine.toDomain(),
@@ -266,7 +266,7 @@ data class CrewRunLiveRow(
     /** 크루 러닝이 아니면(서버가 이 방의 참여를 모른다) null */
     fun toDomain(): CrewRunLive? {
         if (!crewRun) return null
-        val now = System.currentTimeMillis()
+        val now = com.stepup.android.domain.epochMillis()
         return CrewRunLive(
             partyId = partyId, crewId = crewId, day = day.day(), startedAtMs = startedAt.ms(),
             state = CrewRunState.of(state) ?: return null, terminal = CrewTerminal.of(terminalReason),

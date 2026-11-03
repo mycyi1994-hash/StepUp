@@ -212,7 +212,7 @@ class MarketApi(private val server: StepUpServer) {
 
 /** 모델 하나 — 속성 × 등급 × 변형. 시세는 이 단위로 매겨진다. */
 data class ModelKey(val faction: String, val rarity: String, val variant: Int) {
-    internal fun filter(): String = "faction=eq.$faction&rarity=eq.$rarity&variant=eq.$variant"
+    fun filter(): String = "faction=eq.$faction&rarity=eq.$rarity&variant=eq.$variant"
 }
 
 @Serializable

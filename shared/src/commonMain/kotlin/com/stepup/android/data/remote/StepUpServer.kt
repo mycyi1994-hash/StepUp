@@ -92,12 +92,12 @@ class StepUpServer(
     private val baseUrl: String,
     private val apiKey: String,
     private val sessions: SessionHolder,
-    internal val http: HttpPoster = UrlConnectionPoster(),
+    val http: HttpPoster = defaultHttpPoster(),
 ) {
 
     val isConfigured: Boolean get() = baseUrl.isNotBlank() && apiKey.isNotBlank()
 
-    internal val restUrl get() = "${baseUrl.trimEnd('/')}/rest/v1"
+    val restUrl get() = "${baseUrl.trimEnd('/')}/rest/v1"
 
     /**
      * 러닝 세션을 서버에 기록한다.
@@ -244,14 +244,14 @@ class StepUpServer(
 
     // ── 공통 ────────────────────────────────────────────────────────
 
-    internal fun headers(token: String) = mapOf(
+    fun headers(token: String) = mapOf(
         "apikey" to apiKey,
         "Authorization" to "Bearer $token",
         "Content-Type" to "application/json",
     )
 
     /** 출입증을 챙겨서 요청하고, 응답을 결말로 옮긴다. */
-    internal suspend fun authed(
+    suspend fun authed(
         expectedUserId: String? = null,
         call: suspend (String) -> HttpResponse,
     ): ServerResult<String> {
@@ -297,7 +297,7 @@ class StepUpServer(
      * 대회·뉴스는 로그인하지 않아도 볼 수 있어야 한다. 다만 로그인해 있으면
      * 저장 여부(관심 대회)가 함께 와야 하므로, 있을 때는 출입증을 쓴다.
      */
-    internal suspend fun openPost(url: String, body: String): ServerResult<String> {
+    suspend fun openPost(url: String, body: String): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
         val token = (sessions.accessToken() as? TokenResult.Ok)?.accessToken
         val response = http.post(
@@ -308,20 +308,20 @@ class StepUpServer(
         return response.toResult()
     }
 
-    internal fun anonHeaders() = mapOf(
+    fun anonHeaders() = mapOf(
         "apikey" to apiKey,
         "Authorization" to "Bearer $apiKey",
         "Content-Type" to "application/json",
     )
 
-    internal suspend fun anonGet(url: String): ServerResult<String> {
+    suspend fun anonGet(url: String): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
         return http.get(url, anonHeaders()).toResult()
     }
 }
 
 /** 서버 응답(JSON 글자)을 화면이 쓰는 값으로. 못 읽으면 나중에 다시 한다. */
-internal fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): ServerResult<T> =
+fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): ServerResult<T> =
     when (this) {
         is ServerResult.Ok -> {
             val parsed = runCatching { transform(value) }.getOrNull()
@@ -333,10 +333,10 @@ internal fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): Server
         is ServerResult.SignInRequired -> this
     }
 
-internal val serverJson = Json { ignoreUnknownKeys = true }
+val serverJson = Json { ignoreUnknownKeys = true }
 
 /** 응답 코드를 결말로. 다시 해 볼 것과 그래 봐야 같은 것을 가른다. */
-internal fun HttpResponse.toResult(): ServerResult<String> = when {
+fun HttpResponse.toResult(): ServerResult<String> = when {
     status in 200..299 -> ServerResult.Ok(body)
     status == 0 -> ServerResult.Retry(body)
     status == 401 -> ServerResult.Retry("인증이 만료되었습니다")
@@ -350,18 +350,16 @@ internal fun HttpResponse.toResult(): ServerResult<String> = when {
  * 함수에서 raise 한 메시지(예: "SUP가 부족합니다")가 여기 들어 있다.
  * 흘리면 사용자에게 "알 수 없는 오류"만 보여주게 된다.
  */
-internal fun HttpResponse.postgrestMessage(): String {
+fun HttpResponse.postgrestMessage(): String {
     val obj = runCatching { Json.parseToJsonElement(body) }.getOrNull() as? JsonObject
     val message = listOf("message", "hint", "details")
         .firstNotNullOfOrNull { key -> (obj?.get(key) as? JsonPrimitive)?.contentOrNull }
     return message ?: "요청이 거절되었습니다 ($status)"
 }
 
-/** epoch 밀리초를 Postgres 가 읽는 ISO-8601 UTC 문자열로. */
-internal fun Long.toIsoInstant(): String = java.time.Instant.ofEpochMilli(this).toString()
 
 /** 손으로 JSON 을 만들 때 따옴표·역슬래시로 깨지지 않게. */
-internal fun jsonBody(build: MutableMap<String, Any>.() -> Unit): String {
+fun jsonBody(build: MutableMap<String, Any>.() -> Unit): String {
     val map = LinkedHashMap<String, Any>().apply(build)
     return map.entries.joinToString(",", "{", "}") { (key, value) ->
         val encoded = when (value) {

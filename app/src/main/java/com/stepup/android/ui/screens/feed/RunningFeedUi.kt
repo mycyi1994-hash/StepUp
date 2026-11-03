@@ -304,7 +304,7 @@ fun EventCard(row: EventRow, onOpen: () -> Unit, onToggleSave: () -> Unit, modif
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (isDemo(row.id)) FeedTag(stringResource(R.string.demo_example_event), accent = true)
             FeedTag(statusText, accent = !statusMuted, warn = statusMuted)
-            if (row.feeMin != null) FeedTag(stringResource(R.string.feed_fee_from, "%,d".format(row.feeMin.toLong())))
+            if (row.feeMin != null) FeedTag(stringResource(R.string.feed_fee_from, "%,d".format(row.feeMin!!.toLong())))
         }
         if (row.organizer.isNotBlank()) Text(row.organizer, style = MaterialTheme.typography.bodyMedium, color = Silver)
         GhostButton(stringResource(destinationRes(row.destinationType)), onClick = onOpen, modifier = Modifier.fillMaxWidth())

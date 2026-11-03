@@ -193,7 +193,7 @@ class EconomyApiTest {
 
     @Test fun goalClaimDaySendsTheDay() = runBlocking {
         val http = Http { url -> if (url.endsWith("/rpc/goal_claim_day")) HttpResponse(200, "2.75") else HttpResponse(404, "{}") }
-        assertEquals(ServerResult.Ok(2.75), api(http).goalClaimDay(java.time.LocalDate.of(2026, 10, 18)))
+        assertEquals(ServerResult.Ok(2.75), api(http).goalClaimDay(kotlinx.datetime.LocalDate(2026, 10, 18)))
         assertEquals(listOf("""{"p_day":"2026-10-18"}"""), http.calls.filter { it.first.endsWith("/rpc/goal_claim_day") }.map { it.second })
         assertTrue("새 함수가 있으면 오늘 보너스를 따로 부르지 않는다", http.calls.none { it.first.endsWith("/rpc/goal_claim") })
     }
@@ -212,7 +212,7 @@ class EconomyApiTest {
                 else -> HttpResponse(404, "{}")
             }
         }
-        assertEquals(ServerResult.Ok(2.5), api(http).goalClaimDay(java.time.LocalDate.of(2026, 10, 18)))
+        assertEquals(ServerResult.Ok(2.5), api(http).goalClaimDay(kotlinx.datetime.LocalDate(2026, 10, 18)))
         assertTrue(http.calls.any { it.first.endsWith("/rpc/goal_claim") && it.second == "{}" })
     }
 
@@ -225,7 +225,7 @@ class EconomyApiTest {
         }
         assertEquals(
             ServerResult.Rejected("아직 목표를 채우지 않았습니다"),
-            api(http).goalClaimDay(java.time.LocalDate.of(2026, 10, 18)),
+            api(http).goalClaimDay(kotlinx.datetime.LocalDate(2026, 10, 18)),
         )
         assertTrue("다른 거절은 오늘 보너스로 바꾸지 않는다", http.calls.none { it.first.endsWith("/rpc/goal_claim") })
     }
@@ -233,7 +233,7 @@ class EconomyApiTest {
     @Test fun goalDaysAreTheServerWindowOldestFirstInKoreanDays() {
         val seoul = java.time.ZoneId.of("Asia/Seoul")
         fun kst(at: String) = java.time.LocalDateTime.parse(at).atZone(seoul).toInstant().toEpochMilli()
-        fun day(d: Int) = java.time.LocalDate.of(2026, 10, d)
+        fun day(d: Int) = kotlinx.datetime.LocalDate(2026, 10, d)
         val now = kst("2026-10-18T12:00")
         // 서버가 받는 최근 7일(10-11)부터 오늘까지, 오래된 날부터 — 자정을 넘긴 러닝(10-17 23:30 시작)의 날도 든다
         val days = EconomyApi.goalDays(listOf(kst("2026-10-18T10:00"), kst("2026-10-17T23:30")), now = now)
@@ -248,7 +248,7 @@ class EconomyApiTest {
     @Test fun goalDaysWaitForAnOlderPendingRunInsideTheWindow() {
         val seoul = java.time.ZoneId.of("Asia/Seoul")
         fun kst(at: String) = java.time.LocalDateTime.parse(at).atZone(seoul).toInstant().toEpochMilli()
-        fun day(d: Int) = java.time.LocalDate.of(2026, 10, d)
+        fun day(d: Int) = kotlinx.datetime.LocalDate(2026, 10, d)
         val now = kst("2026-10-19T09:00")
         // 10-17 러닝이 아직 올라가지 못했다 — 10-18 · 오늘은 미룬다(먼저 받으면 10-17 이 빠진 짧은 연속 일수로 굳는다)
         assertEquals(

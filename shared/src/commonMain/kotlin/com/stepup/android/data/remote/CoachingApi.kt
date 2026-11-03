@@ -202,7 +202,7 @@ data class CoachPlanApply(val plan: CoachPlanApplied?, val conflict: Boolean) {
 }
 
 /** 상태 · 결과 JSON → 도메인 값. 모르는 상태 글자는 이해하지 못한 답(null)이다 */
-internal fun parseStatus(text: String): CoachStatus? {
+fun parseStatus(text: String): CoachStatus? {
     val o = text.obj() ?: return null
     val state = CoachServerState.of(o.string("state")) ?: return null
     return CoachStatus(
@@ -216,7 +216,7 @@ internal fun parseStatus(text: String): CoachStatus? {
     )
 }
 
-internal fun parseResult(o: JsonObject): CoachResult? {
+fun parseResult(o: JsonObject): CoachResult? {
     fun items(key: String): List<Pair<String, Map<String, Long>>> = (o[key] as? JsonArray).orEmpty().mapNotNull { item ->
         val entry = item as? JsonObject ?: return@mapNotNull null
         val id = entry.string("id") ?: return@mapNotNull null
@@ -241,9 +241,8 @@ internal fun parseResult(o: JsonObject): CoachResult? {
 }
 
 /** Postgres timestamptz 글자(2026-10-16 07:12:03.123+00 · ISO) → epoch ms */
-internal fun parseInstantMillis(text: String): Long? = runCatching {
-    java.time.OffsetDateTime.parse(text.replace(' ', 'T').let { if (Regex("[+-]\\d\\d$").containsMatchIn(it)) "$it:00" else it })
-        .toInstant().toEpochMilli()
+fun parseInstantMillis(text: String): Long? = runCatching {
+    isoOffsetMillis(text.replace(' ', 'T').let { if (Regex("[+-]\\d\\d$").containsMatchIn(it)) "$it:00" else it })
 }.getOrNull()
 
 private fun String.obj(): JsonObject? = runCatching { serverJson.parseToJsonElement(this) as? JsonObject }.getOrNull()

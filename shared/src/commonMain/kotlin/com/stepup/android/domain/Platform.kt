@@ -191,3 +191,8 @@ private class BigNat private constructor(private val limbs: MutableList<Long>) {
         }
     }
 }
+
+private val monotonicOrigin = kotlin.time.TimeSource.Monotonic.markNow()
+
+/** 멈추지 않고 되돌아가지 않는 시계(ms) — 차이만 뜻이 있다(System.nanoTime() / 1_000_000 대신) */
+fun monotonicMillis(): Long = monotonicOrigin.elapsedNow().inWholeMilliseconds

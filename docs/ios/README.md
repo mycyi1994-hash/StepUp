@@ -27,6 +27,14 @@
 - 다른 모듈의 `val` 은 스마트 캐스트가 안 된다 — 앱 화면에서 null 을 본 뒤 쓰는 곳은 `!!` 나 지역 값으로.
 - 검사: 규칙 검사 22개는 `shared/src/commonTest`(kotlin.test — JVM · iOS 시뮬레이터 둘 다에서 돈다). 서버 응답 · 화면을 함께 보는 검사(`CrewHomeTest` · `StoryRunsTest` …)는 `app/src/test` 에 남았다.
 
+## 데이터 (3단계)
+
+- **서버 호출**(2026-11-03): `data/remote` 의 API 22개(`StepUpServer` · `SupabaseAuth` · `SessionHolder` · `CrewApi` · `EconomyApi` …)와 강화 서버 약속 `data/repo/ForgeServer` 를
+  `shared/commonMain` 으로. 패키지는 그대로다. HTTP 는 `HttpPoster` 약속 하나로 — 기본값 `defaultHttpPoster()` 가 안드로이드는 예전 `UrlConnectionPoster`
+  (`shared/jvmMain`, `HttpURLConnection` 그대로 — 동작 같음), iOS 는 `KtorPoster`(Ktor 3.6 Darwin = NSURLSession, `iosMain` 에만 — 안드로이드는 Ktor 를 받지 않는다).
+  서버 시각 글자는 `Iso.kt`(`isoOffsetMillis` · `toIsoInstant`, `IsoJvmTest` 가 java.time 과 맞대어 본다).
+  앱에 남은 것: 구글 로그인(`GoogleSignIn` — Credential Manager), 러닝 증명 올리기(`AttesterClient`), 장소 찾기(`PlaceSearchApi` — 앱 설정의 MapTiler 키).
+
 ## Mac 에서 돌리기
 
 ```bash
@@ -57,7 +65,7 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 | 0. 뼈대 (끝남, 2026-11-02) | 모듈 셋 · Xcode 앱 · 로고 화면 · 아이콘 · CI · 공용 규칙 둘 | 규칙 둘이 `shared/` 로 이사(동작 같음) |
 | 1. Kotlin 올리기 (끝남, #152) | 2.0.21 → **2.3.21** · KSP **2.3.6**(KSP2) · Room **2.8.5** · Compose Multiplatform **1.12.2**. `android { kotlinOptions }` → `kotlin { compilerOptions }`. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
 | 2. 규칙 옮기기 (끝남, 2026-11-03) | `domain/` 44개 · `domain/coaching/` 을 `shared/` 로. `java.time` · `java.util` 은 kotlinx-datetime 등으로. `check-coaching-twin.py` 경로를 함께 고친다 | 예(동작 같음) |
-| 3. 데이터 | 서버 호출(`data/remote` — 지금 `HttpURLConnection`)을 Ktor 로, 폰 DB 를 Room KMP 로, 설정을 DataStore KMP 로. 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
+| **3. 데이터** (진행 중) | 서버 호출 · 로그인 · 폰 DB · 설정 · 올리기 — 아래 "데이터 (3단계)". 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
 | 4. 화면 | `ui/` 를 `sharedUi/` 로 화면 묶음씩(테마 · 부품 → 로그인 · 접속 코드 → 홈 · 러닝 → 함께 뛰기 → 신발 → 내 정보). 글자(`res/values*` 4개 언어) · 글꼴 · 그림은 `composeResources/` 로 — `check-strings.py` · `check-copy.py` 도 새 자리를 본다 | 예 — 안드로이드 앱이 `sharedUi` 의 화면을 쓴다 |
 | 5. iOS 전용 | 아래 표 | 아니요 |
 | 6. TestFlight | 서명 · 올리기 CI, 내부 → 외부 테스터 | 아니요 |

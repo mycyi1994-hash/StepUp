@@ -117,7 +117,7 @@ class PartyApi(
      * 끊긴 것을 늦게 알았고, 그동안 다른 사람의 옛 위치 · 인원이 지금 것처럼 보였다. 방 상태는 몇 초마다 다시 묻는다.
      * 서버에 흉내 낸 연결을 넣은 검사는 그것을 그대로 쓴다.
      */
-    internal val http: HttpPoster = server.http.let { if (it is UrlConnectionPoster) UrlConnectionPoster(timeoutMillis = TIMEOUT_MS) else it },
+    val http: HttpPoster = server.http.let { if (it is DefaultHttpPoster) defaultHttpPoster(timeoutMillis = TIMEOUT_MS) else it },
 ) {
 
     /** 방에 들어간다. 열린 방이 없으면 새로 연다. 방 번호가 돌아온다. */

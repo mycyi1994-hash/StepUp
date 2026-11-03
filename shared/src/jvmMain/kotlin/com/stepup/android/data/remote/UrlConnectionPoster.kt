@@ -7,28 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * HTTP 응답.
- *
- * [status] 가 0이면 응답을 받지 못한 것이다 — 연결 실패, 시간 초과, 끊김.
- * 서버가 준 오류(4xx·5xx)와 구분해야 한다. 앞의 것은 나중에 다시 하면 되고,
- * 뒤의 것은 다시 해도 같은 답이 온다.
- */
-data class HttpResponse(val status: Int, val body: String)
-
-/**
- * 요청을 보내는 쪽.
- *
- * 인터페이스로 둔 것은 네트워크 없이 서버 응답을 흉내 내기 위해서다.
- * 토큰 갱신이나 재시도 규칙은 실기기에서 재현하기 어려운데, 틀리면 사용자가
- * 로그아웃되거나 기록을 잃는다.
- */
-interface HttpPoster {
-    suspend fun post(url: String, body: String, headers: Map<String, String>): HttpResponse
-
-    suspend fun get(url: String, headers: Map<String, String>): HttpResponse
-}
-
-/**
  * [HttpURLConnection] 으로 보내는 기본 구현.
  *
  * HTTP 라이브러리를 새로 들이지 않는다. 쓰는 엔드포인트가 몇 개뿐이고,
@@ -36,7 +14,7 @@ interface HttpPoster {
  */
 class UrlConnectionPoster(
     private val timeoutMillis: Int = 20_000,
-) : HttpPoster {
+) : DefaultHttpPoster {
 
     override suspend fun post(url: String, body: String, headers: Map<String, String>) =
         send(url, "POST", body, headers)
@@ -83,3 +61,6 @@ class UrlConnectionPoster(
         }
     }
 }
+
+/** 안드로이드 · JVM 은 예전 그대로 [UrlConnectionPoster] */
+actual fun defaultHttpPoster(timeoutMillis: Int): HttpPoster = UrlConnectionPoster(timeoutMillis)

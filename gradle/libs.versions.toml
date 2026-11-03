@@ -1,4 +1,6 @@
 [versions]
+# iOS 의 HTTP(Darwin 엔진 — NSURLSession). 안드로이드는 HttpURLConnection 그대로라 Ktor 를 받지 않는다(2026-11-03)
+ktor = "3.6.0"
 agp = "8.10.1"
 # Kotlin 2.3 — iOS 앱을 App Store 에 내려면 Xcode 26 으로 빌드해야 하고, Kotlin/Native 는 2.2.20 부터 Xcode 26 을 안다(2026-11-02).
 # KSP 는 2.3 부터 Kotlin 판과 따로 번호를 매긴다(KSP2).
@@ -33,6 +35,8 @@ androidxTestRunner = "1.6.2"
 androidxTestRules = "1.6.1"
 
 [libraries]
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }

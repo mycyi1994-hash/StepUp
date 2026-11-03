@@ -10,7 +10,6 @@ import com.stepup.android.domain.ChatRole
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.domain.ChatRoomSummary
 import com.stepup.android.domain.ChatState
-import java.time.OffsetDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNull
@@ -324,5 +323,5 @@ data class ChatRoomRow(
 }
 
 /** Postgres 시각(끝이 +00:00) — Instant.parse 는 Z 로 끝나는 것만 읽는다 */
-internal fun String.chatMillis(): Long =
-    runCatching { OffsetDateTime.parse(this).toInstant().toEpochMilli() }.getOrDefault(0L)
+fun String.chatMillis(): Long =
+    isoOffsetMillis(this) ?: 0L

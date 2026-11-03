@@ -1,5 +1,11 @@
 package com.stepup.android.data.remote
 
+import com.stepup.android.domain.isAfter
+import com.stepup.android.domain.isBefore
+import com.stepup.android.domain.localDate
+import com.stepup.android.domain.minusDays
+import com.stepup.android.domain.plusDays
+
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -169,7 +175,7 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
      * 러닝도 그날 보너스를 받는다. 서버는 최근 7일 안의 날만 받고, 같은 날은 한 번만 준다(goal_claim 과 같은 꼬리표).
      * 서버에 아직 이 함수가 없으면(PostgREST PGRST202 "Could not find the function") 예전처럼 오늘의 보너스를 청구한다.
      */
-    suspend fun goalClaimDay(day: java.time.LocalDate): ServerResult<Double> {
+    suspend fun goalClaimDay(day: kotlinx.datetime.LocalDate): ServerResult<Double> {
         val result = rpc("goal_claim_day", jsonBody { put("p_day", day.toString()) }) { it.trim().toDoubleOrNull() }
         return if (result.missingServerFunction()) goalClaim() else result
     }
@@ -181,7 +187,7 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
 
     companion object {
         /** 게임의 하루 — 한국 시각(서버 economy.game_day) */
-        private val GAME_ZONE: java.time.ZoneId = java.time.ZoneId.of("Asia/Seoul")
+        private val GAME_ZONE: kotlinx.datetime.TimeZone = com.stepup.android.domain.KST
 
         /** 서버가 목표 보너스를 받는 지난날 수(0068 goal_claim_day — 오늘과 그 전 7일) */
         const val GOAL_CLAIM_WINDOW_DAYS = 7L
@@ -197,8 +203,8 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
         fun goalDays(
             signedStartedAt: Collection<Long>,
             pendingStartedAt: Collection<Long> = emptyList(),
-            now: Long = System.currentTimeMillis(),
-        ): List<java.time.LocalDate> {
+            now: Long = com.stepup.android.domain.epochMillis(),
+        ): List<kotlinx.datetime.LocalDate> {
             if (signedStartedAt.isEmpty()) return emptyList()
             val today = gameDay(now)
             val from = today.minusDays(GOAL_CLAIM_WINDOW_DAYS)
@@ -207,8 +213,7 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             return generateSequence(from) { it.plusDays(1) }.takeWhile { !it.isAfter(until) }.toList()
         }
 
-        private fun gameDay(epochMs: Long): java.time.LocalDate =
-            java.time.Instant.ofEpochMilli(epochMs).atZone(GAME_ZONE).toLocalDate()
+        private fun gameDay(epochMs: Long): kotlinx.datetime.LocalDate = epochMs.localDate(GAME_ZONE)
     }
 }
 
@@ -309,7 +314,7 @@ data class ChainActivityRow(
 }
 
 private fun String.isoMillis(): Long? =
-    runCatching { java.time.OffsetDateTime.parse(this).toInstant().toEpochMilli() }.getOrNull()
+    isoOffsetMillis(this)
 
 @Serializable
 data class LedgerEntryRow(

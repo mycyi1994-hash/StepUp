@@ -71,8 +71,8 @@ sealed interface AuthResult {
 class SupabaseAuth(
     private val baseUrl: String,
     private val apiKey: String,
-    private val http: HttpPoster = UrlConnectionPoster(),
-    private val now: () -> Long = { System.currentTimeMillis() / 1000 },
+    private val http: HttpPoster = defaultHttpPoster(),
+    private val now: () -> Long = { com.stepup.android.domain.epochMillis() / 1000 },
 ) {
 
     val isConfigured: Boolean get() = baseUrl.isNotBlank() && apiKey.isNotBlank()
@@ -151,13 +151,13 @@ class SupabaseAuth(
  * 토큰을 계속 보내 모든 요청이 401 로 돌아오고, 한 시간 넘게 빠르면 요청마다
  * 갱신한다. 남은 초가 있으면 그것으로 폰 시계 기준 시각을 만든다.
  */
-internal fun AuthSession.withExpiryFilled(nowSeconds: Long): AuthSession =
+fun AuthSession.withExpiryFilled(nowSeconds: Long): AuthSession =
     if (expiresIn > 0) copy(expiresAt = nowSeconds + expiresIn)
     else if (expiresAt > 0) this
     else copy(expiresAt = nowSeconds + 3600)
 
 /** JSON 문자열 리터럴로 감싼다 — 토큰에 따옴표나 역슬래시가 들어가도 깨지지 않게. */
-internal fun String.asJsonString(): String =
+fun String.asJsonString(): String =
     Json.encodeToString(String.serializer(), this)
 
 private fun HttpResponse.errorMessage(): String {

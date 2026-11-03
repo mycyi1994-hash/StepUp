@@ -453,7 +453,7 @@ class CrewApi(private val server: StepUpServer) {
 
     private fun body(build: JsonObjectBuilder.() -> Unit): String = buildJsonObject(build).toString()
 
-    private fun enc(value: String): String = java.net.URLEncoder.encode(value, "UTF-8")
+    private fun enc(value: String): String = com.stepup.android.domain.urlEncodeUtf8(value)
 
     /** null 을 담은 성공을 [mapBody] 가 실패로 보지 않게 감싼다 */
     private class Wrapped<T>(val value: T)
