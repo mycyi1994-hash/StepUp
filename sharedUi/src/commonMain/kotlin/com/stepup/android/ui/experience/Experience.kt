@@ -30,9 +30,15 @@ enum class FeedbackCue {
     DrawRare, DrawEpic, DrawLegendary, DrawCancel, DrawFail,
 }
 
+/** 화면 뒤에 은은히 까는 소리(안드로이드 AmbientScene 과 같은 이름) — 고르면 기기 쪽이 그 소리를 돌린다 */
+enum class AmbientScene { Dawn, Night, Wardrobe }
+
 /** 기기의 소리 · 진동 */
 fun interface ExperiencePlayer {
     fun play(cue: FeedbackCue)
+
+    /** 배경 소리 — null 이면 끈다. 배경 소리가 없는 기기는 아무것도 하지 않는다 */
+    fun setAmbientScene(scene: AmbientScene?) {}
 }
 
 data class MotionPreferences(val reduced: Boolean = false, val active: Boolean = true) {

@@ -261,7 +261,7 @@ class CoachingDesignTest {
         return CoachingRepository(
             dao = ServiceLocator.database.walkSessionDao(),
             api = CoachingApi(StepUpServer("https://qa.invalid", "qa", holder, http)),
-            cache = CoachingCacheStore(File(compose.activity.cacheDir, "coaching-qa-${System.nanoTime()}").apply { mkdirs() }),
+            cache = CoachingCacheStore(File(compose.activity.cacheDir, "coaching-qa-${System.nanoTime()}").apply { mkdirs() }.path),
             owner = flowOf(owner),
             online = { true },
         )

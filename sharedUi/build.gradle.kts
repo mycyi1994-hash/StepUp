@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.compose.multiplatform)
+    // 장소 목록(spots.json) 읽기
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -17,6 +19,11 @@ kotlin {
     }
 
     sourceSets {
+        iosMain.dependencies {
+            // 지도 타일 받기(TileFetch.ios.kt)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.darwin)
+        }
         commonMain.dependencies {
             api(project(":shared"))
             // 폰 DB(Room KMP) — iOS 는 buildIosDatabase()
@@ -27,6 +34,11 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
+            // 화면 상태(ViewModel) · 수명 주기 — 안드로이드와 같은 androidx.lifecycle(멀티플랫폼 판, CMP 가 끌어오는 판)
+            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+            implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+            // 화면 길(안드로이드와 같은 navigation-compose 의 멀티플랫폼 판) — 안드로이드 NavGraph 를 그대로 옮긴다
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
         }
     }
 }
@@ -40,6 +52,7 @@ val syncStepUpResources by tasks.registering(Exec::class) {
     val script = rootProject.layout.projectDirectory.file("tools/sync_compose_resources.py")
     inputs.files(fileTree(res) { include("values*/**", "font/**", "drawable/**", "drawable-nodpi/**") })
     inputs.dir(static)
+    inputs.dir(rootProject.layout.projectDirectory.dir("app/src/main/assets"))
     inputs.file(script)
     outputs.dir(stepupResources)
     commandLine("python3", script.asFile.path, res.asFile.path, stepupResources.get().asFile.path, static.asFile.path)

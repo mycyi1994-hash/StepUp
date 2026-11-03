@@ -194,10 +194,10 @@ object CrewRules {
         return label.substring(0, cut) + "\n" + label.substring(cut + 1)
     }
 
-    // iOS 헤더(ObjC)에서는 C 의 NAME_MAX 매크로(255)와 부딪혀 이름을 바꾼다 — Kotlin · 안드로이드 이름은 그대로
+    // iOS 헤더(ObjC)에서는 C 의 NAME_LENGTH_LIMIT 매크로(255)와 부딪혀 이름을 바꾼다 — Kotlin · 안드로이드 이름은 그대로
     @OptIn(kotlin.experimental.ExperimentalObjCName::class)
     @kotlin.native.ObjCName("nameMaxLength")
-    const val NAME_MAX = 40
+    const val NAME_LENGTH_LIMIT = 40
     const val TAGLINE_MAX = 120
     const val NOTE_MAX = 300
     const val AREA_MAX = 60
@@ -276,7 +276,7 @@ object CrewRules {
     }
 
     /** 이름만 있으면 다음 단계로 — 이름 중복 · 다른 칸은 기존 정책에 없어 막지 않는다 */
-    fun nameOk(name: String): Boolean = name.trim().length in 1..NAME_MAX
+    fun nameOk(name: String): Boolean = name.trim().length in 1..NAME_LENGTH_LIMIT
 
     /** 정원 입력 — 숫자만, 1명 이상. 넘으면 null */
     fun capacity(text: String): Int? = text.trim().toIntOrNull()?.takeIf { it in 1..CAPACITY_MAX }

@@ -110,9 +110,16 @@ def main() -> int:
             elif f.suffix.lower() == ".xml" and ET.parse(f).getroot().tag == "vector":
                 shutil.copy2(f, drawables / f.name)
                 pictures += 1
+    # 앱 assets(배경 사진 · 러닝 사진 · 장소 목록) → files/ — 화면은 Res.readBytes("files/…") 로 읽는다
+    assets = res.parent / "assets"
+    files = 0
+    for d in ("backgrounds", "run_photos"):
+        if (assets / d).is_dir():
+            shutil.copytree(assets / d, out / "files" / d, dirs_exist_ok=True)
+            files += sum(1 for p in (assets / d).rglob("*") if p.is_file())
     if static and static.is_dir():
         shutil.copytree(static, out, dirs_exist_ok=True)
-    print("composeResources:", ", ".join(f"{k} {v}" for k, v in counts.items()), f"· font {copied} · drawable {pictures}")
+    print("composeResources:", ", ".join(f"{k} {v}" for k, v in counts.items()), f"· font {copied} · drawable {pictures} · files {files}")
     return 0
 
 

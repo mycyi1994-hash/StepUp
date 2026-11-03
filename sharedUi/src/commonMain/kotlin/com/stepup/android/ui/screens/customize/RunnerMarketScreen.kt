@@ -1,0 +1,218 @@
+package com.stepup.android.ui.screens.customize
+
+import androidx.compose.material3.MaterialTheme
+import com.stepup.android.ui.components.AdaptiveNumber
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stepup.ui.res.*
+import com.stepup.android.domain.Faction
+import com.stepup.android.domain.Outfit
+import com.stepup.android.domain.Rarity
+import com.stepup.android.ui.components.BadgeTone
+import com.stepup.android.ui.components.OutfitArt
+import com.stepup.android.ui.components.outfitNameRes
+import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.RenewalCardPadding
+import com.stepup.android.ui.components.SmallBadge
+import com.stepup.android.ui.components.SneakerFrame
+import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.screens.market.MarketViewModel
+import com.stepup.android.ui.screens.market.modelName
+import com.stepup.android.ui.screens.market.previewSneaker
+import com.stepup.android.ui.theme.CarbonHigh
+import com.stepup.android.ui.theme.Edge
+import com.stepup.android.ui.theme.Silver
+import com.stepup.android.ui.theme.Slate
+import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.VoltText
+
+/**
+ * 러너 마켓 — 꾸미기 안에서 의상과 신발을 찾는 곳.
+ *
+ * 카드 두 줄, 필터 둘(의상 / 신발)이 전부다. 호가창 · 차트 · 수익률 같은
+ * 거래소의 것은 이 화면에 두지 않는다. 신발 카드를 누르면 그 모델의 상세로
+ * 가고, 사는 것은 거기서 **가격과 조건을 확인한 뒤** 한다(기존 구매 흐름).
+ *
+ * ── 의상 ──
+ *
+ * 의상은 아직 살 수 없다. 사고파는 흐름이 없기 때문이다. 그래서 가격을
+ * 적지 않고 "출시 예정"으로 둔다. 데모 모드에서는 입혀 볼 수만 있다.
+ *
+ * ── 신발 ──
+ *
+ * 지금 거래소에 올라와 있는 모델만 보여 준다. 값은 그 모델의 가장 싼
+ * 매물이다. 올라온 것이 없으면 없다고 적는다 — 52종을 전부 깔고 "매물
+ * 없음"을 52번 적지 않는다.
+ */
+@Composable
+fun RunnerMarketScreen(
+    onBack: () -> Unit = {},
+    onOpenWallet: () -> Unit = {},
+    onOpenModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
+    onOpenVault: () -> Unit = {},
+    viewModel: CustomizeViewModel = viewModel(factory = CustomizeViewModel.Factory),
+    marketViewModel: MarketViewModel = viewModel(factory = MarketViewModel.Factory),
+) {
+    com.stepup.android.ui.screens.items.ItemsScreen(
+        onBack = onBack, onOpenMarketModel = onOpenModel, initialTab = 1, marketOnly = true,
+        marketViewModel = marketViewModel,
+    )
+}
+
+/** 데모 신발 — 테스트용. 살 수 없고, 누르면 그렇다고 알린다. */
+private data class DemoShoe(val faction: Faction, val rarity: Rarity, val variant: Int, val price: Double)
+
+private val DEMO_SHOES = listOf(
+    DemoShoe(Faction.WATER, Rarity.RARE, 0, 600.0),
+    DemoShoe(Faction.LIGHTNING, Rarity.EPIC, 1, 800.0),
+    DemoShoe(Faction.WIND, Rarity.COMMON, 2, 250.0),
+    DemoShoe(Faction.FIRE, Rarity.LEGENDARY, 0, 2400.0),
+)
+
+@Composable
+private fun DemoNote() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(VoltText.copy(alpha = 0.10f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SmallBadge(stringResource(Res.string.demo_badge), tone = BadgeTone.Glow)
+        Text(
+            modifier = Modifier.weight(1f),
+            text = stringResource(Res.string.market_demo_note),
+            fontSize = 14.sp,
+            color = Silver,
+            lineHeight = 21.sp,
+        )
+    }
+}
+
+@Composable
+private fun StateCard(title: String, hint: String?, action: (@Composable () -> Unit)? = null) {
+    GlowCard(contentPadding = RenewalCardPadding, spacing = 8.dp) {
+        Text(text = title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Snow)
+        if (hint != null) Text(text = hint, fontSize = 14.sp, color = Silver, lineHeight = 21.sp)
+        action?.invoke()
+    }
+}
+
+/** 상품 행. 그림·상태·가격·터치 영역은 각각 독립적인 Compose 요소다. */
+@Composable
+private fun ProductCard(
+    onClick: () -> Unit,
+    badge: @Composable () -> Unit,
+    art: @Composable () -> Unit,
+    name: String,
+    price: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(CarbonHigh, shape)
+            .border(1.dp, Edge, shape).feedbackClickable(onClick = onClick).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 300.dp || LocalDensity.current.fontScale > 1.2f) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.fillMaxWidth().height(164.dp), contentAlignment = Alignment.Center) { art() }
+                    badge()
+                    Text(name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) { art() }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        badge()
+                        Text(name, style = MaterialTheme.typography.titleLarge, color = Snow)
+                    }
+                }
+            }
+        }
+        price()
+    }
+}
+
+@Composable
+private fun ShoeProduct(
+    faction: String,
+    rarity: String,
+    variant: Int,
+    price: Double?,
+    demo: Boolean,
+    onClick: () -> Unit,
+) {
+    ProductCard(
+        onClick = onClick,
+        badge = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (demo) SmallBadge(stringResource(Res.string.demo_badge), tone = BadgeTone.Glow)
+                SmallBadge("NFT", tone = BadgeTone.Nft)
+            }
+        },
+        art = {
+            SneakerFrame(
+                sneaker = previewSneaker(faction, rarity, variant),
+                modifier = Modifier.fillMaxSize(),
+            )
+        },
+        name = modelName(faction, rarity, variant),
+        price = {
+            AdaptiveNumber(price?.let { "${com.stepup.android.domain.formatGrouped((it).toDouble(), 0)}" } ?: "—", 28.sp)
+            Text("SUP", style = MaterialTheme.typography.bodyMedium, color = Silver)
+        },
+    )
+}
+
+@Composable
+private fun OutfitProduct(
+    outfit: Outfit,
+    demo: Boolean,
+    look: com.stepup.android.domain.AvatarLook,
+    onTry: () -> Unit,
+    onInfo: () -> Unit,
+) {
+    ProductCard(
+        onClick = if (demo) onTry else onInfo,
+        badge = { SmallBadge("NFT", tone = BadgeTone.Nft) },
+        art = { OutfitArt(outfit, look.gender, Modifier.fillMaxSize().padding(4.dp)) },
+        name = stringResource(outfitNameRes(outfit)),
+        price = {
+            // 팔지 않는 물건에 값을 적지 않는다
+            Text(
+                text = stringResource(if (demo) Res.string.market_outfit_try else Res.string.market_outfit_soon),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (demo) VoltText else Slate,
+            )
+        },
+    )
+}

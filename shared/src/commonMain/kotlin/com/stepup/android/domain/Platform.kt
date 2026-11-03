@@ -8,10 +8,10 @@ import kotlin.math.roundToLong
  */
 
 /** java.lang.Math.toRadians 와 같다(곱하는 상수가 같다 — PI / 180) */
-internal fun toRadians(degrees: Double): Double = degrees * DEGREES_TO_RADIANS
+fun toRadians(degrees: Double): Double = degrees * DEGREES_TO_RADIANS
 
 /** java.lang.Math.toDegrees 와 같다(180 / PI) */
-internal fun toDegrees(radians: Double): Double = radians * RADIANS_TO_DEGREES
+fun toDegrees(radians: Double): Double = radians * RADIANS_TO_DEGREES
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295
 private const val RADIANS_TO_DEGREES = 57.29577951308232
@@ -48,6 +48,12 @@ fun javaRound(value: Double): Long = if (value.isNaN()) 0L else value.roundToLon
 
 /** java.lang.Math.floorMod(Int, Int) */
 fun javaFloorMod(value: Int, mod: Int): Int = ((value % mod) + mod) % mod
+
+/** Math.floorMod(long, long) */
+fun javaFloorMod(value: Long, mod: Long): Long = ((value % mod) + mod) % mod
+
+/** Math.floorMod(long, int) — Java 9 부터 int 를 돌려준다 */
+fun javaFloorMod(value: Long, mod: Int): Int = javaFloorMod(value, mod.toLong()).toInt()
 
 /** java.lang.String.hashCode() — 플랫폼마다 hashCode 가 같다는 보장이 없어 직접 센다(크루 배경 고르기가 두 앱에서 같게) */
 fun javaHash(text: String): Int {
@@ -196,3 +202,13 @@ private val monotonicOrigin = kotlin.time.TimeSource.Monotonic.markNow()
 
 /** 멈추지 않고 되돌아가지 않는 시계(ms) — 차이만 뜻이 있다(System.nanoTime() / 1_000_000 대신) */
 fun monotonicMillis(): Long = monotonicOrigin.elapsedNow().inWholeMilliseconds
+
+/** android.net.Uri.encode — 영문 · 숫자와 -_.!~*'() 만 그대로, 나머지는 UTF-8 %XX(빈칸도 %20) */
+fun uriEncode(text: String): String = buildString {
+    for (b in text.encodeToByteArray()) {
+        val c = b.toInt() and 0xff
+        val ch = c.toChar()
+        if (ch in 'a'..'z' || ch in 'A'..'Z' || ch in '0'..'9' || ch in "-_.!~*'()") append(ch)
+        else { append('%'); append("0123456789ABCDEF"[c shr 4]); append("0123456789ABCDEF"[c and 0xf]) }
+    }
+}

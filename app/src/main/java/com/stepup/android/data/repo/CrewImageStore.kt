@@ -26,7 +26,14 @@ import kotlinx.coroutines.withContext
 class CrewImageStore(
     private val fetch: suspend (crewId: String) -> ServerResult<String>,
     private val dir: File,
-) {
+) : CrewPhotoMemory {
+    override fun encodeFile(path: String): String? = CrewPhotos.decodeFile(File(path))?.let(CrewPhotos::encode)
+
+    override fun rememberFile(crewId: String, version: Int, path: String) {
+        val bitmap: Bitmap = CrewPhotos.decodeFile(File(path)) ?: return
+        remember(crewId, version, bitmap)
+    }
+
     private val memory = object : LruCache<String, Bitmap>(MEMORY_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }

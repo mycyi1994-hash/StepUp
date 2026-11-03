@@ -1,0 +1,73 @@
+package com.stepup.android.ui.components
+
+import org.jetbrains.compose.resources.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
+import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.ui.res.*
+import com.stepup.android.ui.theme.Night
+
+/** Scenery only. The navigation shell owns chrome; the screen owns the equipped avatar. */
+enum class RunnerSetting {
+    Night, Sunset, Wardrobe, HomeBlueNight, HomeDawn, RunNight, RunSunset,
+}
+
+/** Only scenes with visible ground at the standing foot anchor belong here. */
+object WardrobeBackgrounds {
+    // The night skyline has water at the wardrobe foot anchor, so it stays out of this pool.
+    val settings = listOf(RunnerSetting.Wardrobe, RunnerSetting.Sunset)
+
+    fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
+}
+
+// 홈 바탕 사진은 HomePhotos(한국 풍경 30장)가 맡는다.
+
+/** A running session keeps one scene from preparation through its result. */
+object RunBackgrounds {
+    val settings = listOf(RunnerSetting.RunNight, RunnerSetting.RunSunset)
+}
+
+/** Grounded scenery compatible with the profile bench; artwork and controls stay separate. */
+object ProfileBackgrounds {
+    // The standing avatar's foot anchor lands on the near path in these scenes.
+    // Riverside home scenes place that same anchor in the water.
+    val settings = listOf(RunnerSetting.RunNight, RunnerSetting.RunSunset)
+
+    fun next(current: RunnerSetting): RunnerSetting = settings.filterNot { it == current }.random()
+}
+
+@Composable
+fun RunnerScene(
+    modifier: Modifier = Modifier,
+    setting: RunnerSetting = RunnerSetting.Night,
+    wardrobe: Boolean = false,
+    home: Boolean = false,
+) {
+    // Scenery now belongs to an independent banner, never to a full-screen character stage.
+    // 바닥은 S2 무대 — 오른쪽 위에서 번지는 남색.
+    S2Stage(modifier)
+}
+
+/** Independent, text-free scenery shared by home and login. */
+@Composable
+fun RunnerBanner(
+    modifier: Modifier = Modifier,
+    setting: RunnerSetting = RunnerSetting.HomeBlueNight,
+) {
+    val dawn = setting == RunnerSetting.HomeDawn || setting == RunnerSetting.Sunset || setting == RunnerSetting.RunSunset
+    Image(
+        painter = painterResource(if (dawn) Res.drawable.home_banner_dawn else Res.drawable.home_banner_blue_night),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier,
+    )
+}

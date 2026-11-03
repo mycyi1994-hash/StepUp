@@ -29,7 +29,7 @@ class StepTracker(
     private val prefs: UserPrefs,
     /** 오늘 이미 저장된 걸음 수 조회 (재부팅 시 오프셋 보존용) */
     private val todayPersistedSteps: suspend (Long) -> Int = { 0 },
-) : SensorEventListener {
+) : SensorEventListener, com.stepup.android.data.repo.DailyStepSource {
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val resolver = context.contentResolver
@@ -43,12 +43,12 @@ class StepTracker(
     private val events = Channel<Long>(capacity = Channel.CONFLATED)
 
     private val _todaySteps = MutableStateFlow(0)
-    val todaySteps: StateFlow<Int> = _todaySteps
+    override val todaySteps: StateFlow<Int> = _todaySteps
 
     /** 디버그 시뮬레이션으로 더한 걸음 (센서 미지원 환경용) */
     private var simulatedSteps = 0
 
-    val isAvailable: Boolean get() = stepSensor != null
+    override val isAvailable: Boolean get() = stepSensor != null
 
     /**
      * [todaySteps]가 실제 측정값을 반영하는지 여부.
@@ -72,7 +72,7 @@ class StepTracker(
     }
 
     /** 권한(ACTIVITY_RECOGNITION)이 허용된 뒤에 호출해야 한다. 중복 호출은 무시된다. */
-    fun start() {
+    override fun start() {
         if (started || stepSensor == null) return
         started = true
         sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_UI)
@@ -85,7 +85,7 @@ class StepTracker(
     }
 
     /** 에뮬레이터/센서 미지원 기기에서 데모용으로 걸음을 더한다. */
-    fun simulateSteps(count: Int) {
+    override fun simulateSteps(count: Int) {
         hasReading = true
         simulatedSteps += count.coerceAtLeast(0)
         _todaySteps.value = _todaySteps.value + count.coerceAtLeast(0)

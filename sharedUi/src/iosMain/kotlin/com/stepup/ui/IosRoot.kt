@@ -23,7 +23,7 @@ import com.stepup.android.ui.screens.login.LoginNotice
 import com.stepup.android.ui.screens.login.LoginPhase
 import kotlinx.coroutines.launch
 
-/** iOS 앱의 차례 — 세션 확인 중 → 로그인 → 앱 안(하단 탭은 다음 단계에서 옮긴다) */
+/** iOS 앱의 차례 — 세션 확인 중 → 로그인 → (접속 코드) → 앱 안(공용 MainScaffold) */
 private enum class Stage { Checking, SignedOut, AccessCode, SignedIn }
 
 /**
@@ -31,7 +31,10 @@ private enum class Stage { Checking, SignedOut, AccessCode, SignedIn }
  * 결과 안내도 안드로이드와 같다 — 취소는 아무것도 띄우지 않고, 서버가 거절하면 Failed, 닿지 못하면 Offline, 설정이 없으면 Failed.
  */
 @Composable
-fun IosRoot() = StepUpTheme {
+fun IosRoot() = StepUpTheme(mode = com.stepup.android.core.AppTheme.mode) { Box(Modifier.fillMaxSize()) { IosRootContent(); com.stepup.android.ui.components.ToastHost() } }
+
+@Composable
+private fun IosRootContent() {
     var stage by remember { mutableStateOf(Stage.Checking) }
     var phase by remember { mutableStateOf(LoginPhase.Idle) }
     var notice by remember { mutableStateOf<LoginNotice?>(null) }
@@ -43,10 +46,24 @@ fun IosRoot() = StepUpTheme {
     suspend fun afterSignIn() {
         val status = (accessApi.status() as? ServerResult.Ok)?.value
         access = status
+        com.stepup.android.core.AccessGate.set(status)
         stage = if (status != null && status.mode != "OPEN" && !status.granted) Stage.AccessCode else Stage.SignedIn
+        // 신발 · 잔고를 서버에서 받아 둔다(안드로이드 EconomySync 와 같다) — 못 받아도 앱은 열린다
+        if (stage == Stage.SignedIn) scope.launch { runCatching { IosApp.economySync.refresh() } }
     }
 
     LaunchedEffect(Unit) {
+        // 러닝 올리기를 이어 둔다 — 앞에 올 때 · 백그라운드 작업이 같은 규칙(UploadPass)으로 올린다
+        IosApp.configureMap()
+        // 고른 테마 · 언어를 첫 화면 전에(안드로이드 StepUpApp 과 같다)
+        com.stepup.android.core.AppTheme.bootstrap(IosApp.prefs.themeModeNow())
+        com.stepup.android.core.AppLocale.bootstrap(IosApp.prefs.languageNow())
+        IosApp.connectServices(onReturnToSignIn = {
+            IosRunSession.finish()
+            IosAuth.signOut(IosApp.sessionStore)
+            stage = Stage.SignedOut
+        }, onSignedOut = { stage = Stage.SignedOut })
+        IosApp.connectUploads()
         if (IosApp.sessionStore.load() != null) afterSignIn() else stage = Stage.SignedOut
     }
 
@@ -81,6 +98,10 @@ fun IosRoot() = StepUpTheme {
             redeem = { accessApi.redeem(it) },
             showApple = true,
         )
-        Stage.SignedIn -> StepUpRoot()
+        // 앱 안 — 안드로이드와 같은 공용 본체(하단 탭 넷 · 모든 길 · 러닝 화면). 크루 출발 연출은 맨 위 겹
+        Stage.SignedIn -> Box(Modifier.fillMaxSize()) {
+            com.stepup.android.ui.MainScaffold()
+            com.stepup.android.ui.screens.walk.CrewLaunchOverlay()
+        }
     }
 }

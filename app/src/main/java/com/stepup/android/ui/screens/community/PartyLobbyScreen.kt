@@ -454,7 +454,7 @@ fun PartyLobbyContent(
                 if (party.planAtLocal > 0) add(com.stepup.android.ui.screens.home.whenText(party.planAtLocal))
                 when {
                     party.roomMode == com.stepup.android.domain.RoomMode.REMOTE -> add(stringResource(R.string.d26_room_remote_line))
-                    party.meetPlace != null -> add(stringResource(R.string.d26_room_meet, party.meetPlace))
+                    party.meetPlace != null -> add(stringResource(R.string.d26_room_meet, party.meetPlace.orEmpty()))
                 }
             }
             Text(

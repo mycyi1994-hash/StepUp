@@ -64,8 +64,29 @@
   안드로이드 앱이 이 화면 코드를 쓰게 되는 것(`androidTarget`)은 화면 묶음을 옮기며 차례로 — 그때 app 쪽 같은 파일을 지운다.
 - **로그인 · 접속 코드 · 첫 안내(C1, 2026-11-03)**: `LoginContent`(+ iOS 에만 Apple 버튼) · `AccessCodeScreen` · 첫 안내(`OnboardingScreens`)를 공용으로.
   iOS 차례는 `IosRoot`(sharedUi/iosMain): 키체인 세션 → 문 확인(안드로이드 AccessGate 규칙) → 앱 안. 함께 옮긴 부품: `RunStyle` · `Components` · `UtilityParts` · `Motion` · `StepUpIcons` · `RunBackButton` · `Screen`.
-- **남은 화면(C2 ~ C6)**: 홈 · 혼자 러닝 · 지도(위치 · 걸음 · 지도 타일은 iOS 기기 코드가 따로 필요) → 신발 → 내 정보 · 설정 → 함께 뛰기 · 크루 · 채팅 · 커뮤니티 →
-  순위 · 기록 · 알림. 그다음 `:sharedUi` 에 `androidTarget()` 을 더해 안드로이드가 같은 화면을 쓰고 app 의 같은 파일을 지운다(테스트 APK 로 확인).
+- **홈 · 혼자 러닝 · 지도(C2, 2026-11-03)**: `HomeContent` · 자유 러닝 화면(`FreeRunLive` · `FreeRunResult`) · 지도(`LiveRouteMap` · `MapTiles` — 타일 받기만 기기별, iOS 는 Ktor) ·
+  신발 점검 · 3·2·1 · StepUP!(`FreeRunStart`). 러닝 셈은 공용 `RunEngine`(`shared`, 위치 거르기 · 거리 · 시간 · 지금 자리 — 안드로이드 러닝 서비스와 같은 규칙, 검사).
+  iOS 기기 코드: `IosRunSession`(Core Location · Core Motion → RunEngine), `IosSteps`(오늘 걸음), 기록은 같은 폰 DB · 같은 올리기.
+- **신발(C3)**: 신발 탭(`CustomizeScreen`) · 신발 상세 · 수리 · 스탯 포인트 · 이름 바꾸기 · 그림(`ShoeDisplay` — 공용 디코드 · 바이트 예산 캐시).
+  저장소(`SneakerRepository` · `RewardRepository` · `EconomySync` · `BoostRepository` · `ForgeRepository` · `RequestKeys`)는 `:sharedData` — 안드로이드도 같은 코드.
+- **내 정보 · 설정(C4)**: 내 정보 · 분석 · 프로필 수정(사진 — iOS PHPicker) · 설정 목록 · 테마 · 언어(iOS 는 다음 실행부터) · 알림 · 개인정보 · 도움말 · 연결 계정(로그아웃 · 계정 삭제 — Apple 토큰 철회).
+- **함께 뛰기 · 크루 · 채팅 · 커뮤니티 · 순위 · 기록 · 알림(C5 · C6)**: 화면 모두 `:sharedUi`. 저장소(크루 · 커뮤니티 · 크루 홈 · 명함 · 채팅 · 크루 러닝 · 순위 · 리더보드 ·
+  기록 · 코칭 · 공지 · 장소 찾기 · 코스 · 이벤트 · 마켓 · 알림)는 `:sharedData`. 사진은 기기마다 — 안드로이드 Bitmap(`AndroidChatImageCodec` · `CrewImageStore`),
+  iOS Skia(`IosImages` — 같은 크기 · 화질 단계). 공유 시트 · 캘린더 · 지도 앱 · 메일은 `ExternalIntents`(iOS UIActivityViewController · EventKit · Apple 지도).
+- **공용 화면이 쓰는 이음새**(sharedUi `core/`): `AppServices`(저장소 · 러닝 `RunSessionControl` · 기기 일), `AppBuild`(빌드 값 — iOS 는 스토어 판처럼 WEB3 · 지갑 연결 끔),
+  `AppTheme` · `AppLocale` · `AccessGate` · `InviteLinks` · `LocalFlags` · `Permissions`. 날짜는 `shared` 의 `DatePattern` · `PatternFormatter` · `DateCompat`
+  (DateTimeFormatter · java.time 셈 자리 — JDK 와 맞대어 검사), 돈은 `Decimal`(BigDecimal 자리), 동시성은 `Concurrent.kt`.
+- **앱 본체 · 남은 화면 전부(C7, 2026-11-03)**: 앱 본체 `MainScaffold`(하단 탭 넷 · 모든 길 · 머리 · 지갑 시트 · 러닝 되살리기)가 `:sharedUi` 에 있다 —
+  iOS 는 로그인 · 접속 코드 단계(`IosRoot`)를 지나면 이것을 그대로 쓴다(예전 손으로 만든 탭 `IosMain` 은 지웠다). 로그인 단계는 기기마다 둔다(안드로이드 구글 · iOS 애플).
+  뽑기 · 지갑 연결 · 체인 기록 · 코칭 · 소식 · 이벤트 · 초대 · 베타 코드 · 신발 보관함 · 마켓 · 지도 · 첫 설정 · 러닝 화면 전체(`WalkScreen` · 권한 안내 · 코스)도 공용.
+  공유 그림(`RunShareCard`)은 공용 Compose 그리기로 다시 썼다(같은 자리 · 크기 · 색). 러닝은 `AppServices.run`(iOS `IosRunSession` — 1초 시계 · 위치 · 걸음).
+  기기 이음새: 걸음 · 알림 권한 창(`rememberActivityPermissionLauncher` …), 그림 공유 · 사진첩(`shareImage` · `rememberRunImageSaver` — iOS 사진 보관함은 더하기만),
+  지갑 앱 열기(`openWallet` — iOS 는 유니버설 링크만), 클립보드(`ExternalIntents.copyText`), 마지막 위치(`lastKnownLocation` — 날씨 풍경), `RasterCache` · `RunLocationWarmup`.
+  잠금 화면 러닝 현황(`LockRunPanel`)은 안드로이드 전용이라 app 에 남는다(iOS 는 라이브 액티비티 — 따로 정할 일).
+- **옮기는 도구**: `tools/port_ui_to_cmp.py`(R → Res · java.time · String.format · Toast · Intent 일부 · Context 빼기 …), `tools/prune_imports.py`,
+  `tools/extract_kotlin_functions.py` · `tools/drop_kotlin_functions.py`.
+- **남은 일**: `:sharedUi` 에 `androidTarget()` 을 더해 안드로이드가 같은 화면(`MainScaffold`)을 쓰고 app 의 같은 파일을 지운다 —
+  안드로이드 쪽 이음새(actual: 권한 창 · 그림 공유 · 사진첩 · 지갑 앱 · RasterCache · 위치 미리 잡기 · 러닝 서비스 → `RunSessionControl`)를 채우고 테스트 APK 로 확인.
 
 ## Mac 에서 돌리기
 
@@ -97,8 +118,8 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 | 0. 뼈대 (끝남, 2026-11-02) | 모듈 셋 · Xcode 앱 · 로고 화면 · 아이콘 · CI · 공용 규칙 둘 | 규칙 둘이 `shared/` 로 이사(동작 같음) |
 | 1. Kotlin 올리기 (끝남, #152) | 2.0.21 → **2.3.21** · KSP **2.3.6**(KSP2) · Room **2.8.5** · Compose Multiplatform **1.12.2**. `android { kotlinOptions }` → `kotlin { compilerOptions }`. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
 | 2. 규칙 옮기기 (끝남, 2026-11-03) | `domain/` 44개 · `domain/coaching/` 을 `shared/` 로. `java.time` · `java.util` 은 kotlinx-datetime 등으로. `check-coaching-twin.py` 경로를 함께 고친다 | 예(동작 같음) |
-| **3. 데이터** (진행 중) | 서버 호출 · 로그인 · 폰 DB · 설정 · 올리기 — 아래 "데이터 (3단계)". 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
-| 4. 화면 | `ui/` 를 `sharedUi/` 로 화면 묶음씩(테마 · 부품 → 로그인 · 접속 코드 → 홈 · 러닝 → 함께 뛰기 → 신발 → 내 정보). 글자(`res/values*` 4개 언어) · 글꼴 · 그림은 `composeResources/` 로 — `check-strings.py` · `check-copy.py` 도 새 자리를 본다 | 예 — 안드로이드 앱이 `sharedUi` 의 화면을 쓴다 |
+| 3. 데이터 (끝남, 2026-11-03) | 서버 호출 · 로그인 · 폰 DB · 설정 · 올리기 — 아래 "데이터 (3단계)". 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
+| **4. 화면** (진행 중 — 위 "화면") | `ui/` 를 `sharedUi/` 로 화면 묶음씩(테마 · 부품 → 로그인 · 접속 코드 → 홈 · 러닝 → 함께 뛰기 → 신발 → 내 정보). 글자(`res/values*` 4개 언어) · 글꼴 · 그림은 `composeResources/` 로 — `check-strings.py` · `check-copy.py` 도 새 자리를 본다 | 예 — 안드로이드 앱이 `sharedUi` 의 화면을 쓴다 |
 | 5. iOS 전용 | 아래 표 | 아니요 |
 | 6. TestFlight | 서명 · 올리기 CI, 내부 → 외부 테스터 | 아니요 |
 | 7. 심사 | APP-STORE.md | 아니요 |

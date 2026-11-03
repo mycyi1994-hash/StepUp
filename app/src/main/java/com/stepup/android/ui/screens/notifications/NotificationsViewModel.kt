@@ -283,7 +283,7 @@ class NotificationsViewModel(
         step(entity.id, InviteStep.Busy)
         viewModelScope.launch {
             val next = try {
-                when (val result = repo.acceptCrewInvite(entity, crewRepository)) {
+                when (val result = repo.acceptCrewInvite(entity, crewRepository::join)) {
                     CrewActionResult.Joined -> InviteStep.Joined
                     CrewActionResult.Requested -> InviteStep.Requested
                     CrewActionResult.Done -> crewStatus(entity.argExtra) ?: InviteStep.Answered

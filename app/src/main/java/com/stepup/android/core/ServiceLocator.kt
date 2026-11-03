@@ -1,4 +1,5 @@
 package com.stepup.android.core
+import com.stepup.android.data.repo.startBeats
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -79,22 +80,22 @@ object ServiceLocator {
         private set
 
     /** 크루 명함형 — 목록 · 상세 · 가입 신청 · 크루장 관리 · 만들기(2026-09-28) */
-    lateinit var crewCards: com.stepup.android.data.repo.CrewCardRepository
+    lateinit var crewCards: com.stepup.android.data.repo.CrewCardRepository<com.stepup.android.data.repo.CrewImageStore>
         private set
 
     /** 기기 검사용 — 크루 화면을 흉내 낸 서버로 돌린다(CrewCardsTest). 앱 코드는 부르지 않는다. */
     @androidx.annotation.VisibleForTesting
-    fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository) {
+    fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository<com.stepup.android.data.repo.CrewImageStore>) {
         crewCards = repository
     }
 
     /** 크루 채팅 — 크루마다 크루원 전용 방 하나(2026-09-29) */
-    lateinit var crewChat: com.stepup.android.data.repo.CrewChatRepository
+    lateinit var crewChat: com.stepup.android.data.repo.AndroidCrewChat
         private set
 
     /** 기기 검사용 — 채팅 화면을 흉내 낸 서버로 돌린다(CrewChatDesignTest). 앱 코드는 부르지 않는다. */
     @androidx.annotation.VisibleForTesting
-    fun useCrewChatForTest(repository: com.stepup.android.data.repo.CrewChatRepository) {
+    fun useCrewChatForTest(repository: com.stepup.android.data.repo.AndroidCrewChat) {
         crewChat = repository
     }
 
@@ -193,7 +194,7 @@ object ServiceLocator {
         com.stepup.android.data.repo.CoachingRepository(
             dao = database.walkSessionDao(),
             api = com.stepup.android.data.remote.CoachingApi(server),
-            cache = com.stepup.android.data.repo.CoachingCacheStore(java.io.File(appContext.noBackupFilesDir, "coaching")),
+            cache = com.stepup.android.data.repo.CoachingCacheStore(java.io.File(appContext.noBackupFilesDir, "coaching").path),
             owner = recordingOwnerFlow(),
             online = { hasNetwork(appContext) },
         )
@@ -232,7 +233,10 @@ object ServiceLocator {
         com.stepup.android.data.repo.ProfileEditor(
             saveNickname = { userPrefs.setNickname(it) },
             saveAvatarId = { userPrefs.setAvatarId(it) },
-            savePhotoFile = { open -> photos.save(open) },
+            savePhotoFile = { open: Any ->
+                @Suppress("UNCHECKED_CAST")
+                photos.save(open as () -> java.io.InputStream?)
+            },
             scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate),
         )
     }
@@ -415,6 +419,7 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
             pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
             owner = recordingOwnerFlow(),
+            runActive = { com.stepup.android.service.WalkSessionService.state.value.isActive },
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,
@@ -434,6 +439,15 @@ object ServiceLocator {
             sync = economySync.takeIf { serverEconomy },
         )
         val crewApi = CrewApi(server)
+        com.stepup.android.data.repo.RepoEvents.sink = object : com.stepup.android.data.repo.RepoEventSink {
+            override fun crewJoined(requested: Boolean) = Analytics.crewJoined(requested)
+            override fun crewCreated() = Analytics.crewCreated()
+            override fun postWritten(category: String) = Analytics.postWritten(category)
+            override fun flashJoined() = Analytics.flashJoined()
+            override fun partyStarted(size: Int) = Analytics.partyStarted(size)
+            override fun courseShared() = Analytics.courseShared()
+            override fun crewInviteShared() = Analytics.crewInviteShared()
+        }
         crewRepository = CrewRepository(
             api = crewApi,
             crewDao = database.crewDao(),
@@ -458,6 +472,11 @@ object ServiceLocator {
             shareByDefault = { userPrefs.partyShareLocation.first() },
             exitedParties = { userPrefs.exitedParties.first() },
             rememberExit = { userPrefs.addExitedParty(it) },
+            groupRun = {
+                WalkSessionService.state.value.let {
+                    com.stepup.android.data.repo.GroupRunState(it.isActive, it.isPaused, it.group != com.stepup.android.service.RunGroup.NONE)
+                }
+            },
         )
         // 계정이 바뀌면(다시 로그인 · 계정 삭제 · 새 로그인) 앞 계정의 대기실 · 가입 표시를 지운다 — 옛 방을 새 계정으로
         // 계속 묻거나, 앞 계정이 가입한 크루를 내 크루처럼 보이지 않게
@@ -474,14 +493,15 @@ object ServiceLocator {
             prefs = userPrefs,
             owner = { sessionHolder.recordingOwner() },
             ownerFlow = recordingOwnerFlow(),
-            draftDir = java.io.File(app.filesDir, "crew_drafts"),
+            draftDir = java.io.File(app.filesDir, "crew_drafts").path,
         )
         crewChat = com.stepup.android.data.repo.CrewChatRepository(
             api = com.stepup.android.data.remote.CrewChatApi(server),
             crewApi = crewApi,
             prefs = userPrefs,
             owner = { sessionHolder.recordingOwner() },
-            photoDir = java.io.File(app.cacheDir, "chat_photos"),
+            photoDir = java.io.File(app.cacheDir, "chat_photos").path,
+            codec = com.stepup.android.data.repo.AndroidChatImageCodec,
         )
         crewRun = com.stepup.android.data.repo.CrewRunRepository(
             api = com.stepup.android.data.remote.CrewRunApi(server),
@@ -524,8 +544,9 @@ object ServiceLocator {
             },
         )
         placeSearch = com.stepup.android.data.repo.PlaceSearch(
-            api = com.stepup.android.data.remote.PlaceSearchApi(),
+            api = com.stepup.android.data.remote.androidPlaceSearchApi(),
             platform = com.stepup.android.data.repo.AndroidGeocoder(app),
+            language = { com.stepup.android.data.repo.placeSearchLanguage() },
         )
         courseRepository = CourseRepository(
             dao = database.courseDao(),
@@ -551,7 +572,7 @@ object ServiceLocator {
         runningFeedRepository = RunningFeedRepository(RunningFeedApi(server))
         announcementRepository = com.stepup.android.data.repo.AnnouncementRepository(
             source = com.stepup.android.data.remote.AnnouncementApi(server),
-            cache = com.stepup.android.data.repo.FileAnnouncementCache(java.io.File(app.filesDir, "announcements.json")),
+            cache = com.stepup.android.data.repo.FileAnnouncementCache(java.io.File(app.filesDir, "announcements.json").path),
         )
         newsRepository = NewsRepository(
             server = server,
