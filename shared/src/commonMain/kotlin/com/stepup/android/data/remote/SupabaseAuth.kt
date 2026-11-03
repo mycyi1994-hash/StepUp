@@ -92,9 +92,19 @@ class SupabaseAuth(
      * 브라우저를 띄우는 방식이 아니라 안드로이드가 준 ID 토큰을 그대로 보내는
      * 방식이다. 앱을 벗어나지 않으므로 로그인 도중에 이탈하는 사람이 적다.
      */
-    suspend fun signInWithGoogle(idToken: String, nonce: String? = null): AuthResult {
+    suspend fun signInWithGoogle(idToken: String, nonce: String? = null): AuthResult = signInWithIdToken("google", idToken, nonce)
+
+    /**
+     * Apple 로그인(iOS — App Store 심사 4.8). Apple 이 준 id_token 과 그때 쓴 원래 nonce(해시 전)를 보낸다.
+     * Supabase 의 Apple 공급자(대상 = 앱 번들 ID)가 켜져 있어야 한다 — docs/APP-STORE.md.
+     */
+    suspend fun signInWithApple(idToken: String, nonce: String): AuthResult = signInWithIdToken("apple", idToken, nonce)
+
+    private suspend fun signInWithIdToken(provider: String, idToken: String, nonce: String?): AuthResult {
         val body = buildString {
-            append("""{"provider":"google","id_token":""")
+            append("""{"provider":""")
+            append(provider.asJsonString())
+            append(""","id_token":""")
             append(idToken.asJsonString())
             if (!nonce.isNullOrBlank()) {
                 append(""","nonce":""")

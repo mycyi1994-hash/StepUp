@@ -32,6 +32,9 @@ SCHEMA_REGISTRY_ADDRESS = "0x4200000000000000000000000000000000000020"
 # 앱과 같은 Supabase. 이 키는 앱에 들어가는 공개 키다.
 SUPABASE_URL = "https://pupjzcmybuoyhzfwrsdf.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO"
+# iOS 앱 번들 ID — Apple 로그인 토큰 철회(src/apple.js)의 client_id. 번들 ID 를 정하면 함께 바꾼다(지금은 임시, docs/APP-STORE.md).
+# 철회는 Secret APPLE_TEAM_ID · APPLE_KEY_ID · APPLE_PRIVATE_KEY 가 있어야 켜진다.
+APPLE_CLIENT_ID = "com.stepupcrew.stepup"
 ALLOWED_ORIGINS = "https://stepupcrew.com,https://www.stepupcrew.com"
 # 신발 그림 — 웹사이트(web/assets/sneakers)
 IMAGE_BASE = "https://stepupcrew.com/assets/sneakers/"

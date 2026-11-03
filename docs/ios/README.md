@@ -35,6 +35,11 @@
   서버 시각 글자는 `Iso.kt`(`isoOffsetMillis` · `toIsoInstant`, `IsoJvmTest` 가 java.time 과 맞대어 본다).
   앱에 남은 것: 구글 로그인(`GoogleSignIn` — Credential Manager), 러닝 증명 올리기(`AttesterClient`), 장소 찾기(`PlaceSearchApi` — 앱 설정의 MapTiler 키).
 
+- **로그인**(2026-11-03): 구글 · Apple 모두 Supabase id_token 로그인(`SupabaseAuth.signInWithGoogle` · `signInWithApple`), 일회용 값은 공용 `AuthNonce`
+  (안드로이드 예전 방식 그대로 — 32바이트 16진수 · SHA-256). iOS 로그인 창만 Swift(`iosApp/StepUp/SignInUi.swift` — Apple AuthenticationServices,
+  구글 GoogleSignIn SDK 8 · Swift 패키지)이고 나머지는 Kotlin `IosAuth`(세션은 키체인 `KeychainSessionStore` — 이 기기에만, 새로 깐 첫 실행에 지운다).
+  Apple 계정을 지울 때는 Apple 토큰을 먼저 철회한다(워커 `/v1/apple/revoke` — `attester/src/apple.js`). 설정할 것은 [../APP-STORE.md](../APP-STORE.md) "0. 먼저 해 둘 것".
+
 ## Mac 에서 돌리기
 
 ```bash

@@ -6,3 +6,9 @@ TEAM_ID =
 
 MARKETING_VERSION = 0.1.0
 CURRENT_PROJECT_VERSION = 1
+
+// 구글 로그인(iOS) — Google Cloud › 사용자 인증 정보 › OAuth 클라이언트 ID(유형 iOS, 번들 ID 위와 같게)를 만들어 채운다.
+// URL_SCHEME 은 클라이언트 ID 를 거꾸로 쓴 값(com.googleusercontent.apps.…). 비워 두면 구글 버튼은 "준비되지 않음"으로 답한다.
+// Supabase › Authentication › Google 의 Client IDs 에도 이 iOS 클라이언트 ID 를 더한다(docs/APP-STORE.md).
+GOOGLE_IOS_CLIENT_ID =
+GOOGLE_IOS_URL_SCHEME = com.stepupcrew.stepup.google-unset
