@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
 <resources>
-    <string name="wc_title">WEB3 지갑 연결</string>
+    <string name="wc_title">지갑 연결</string>
     <string name="wc_body">지갑을 고르면 그 지갑 앱 안에서 열려요. 서명 한 번이면 연결돼요. 서명은 거래가 아니라 수수료가 들지 않아요.</string>
     <string name="wc_note">한 지갑은 한 STEPUP 계정에만 연결돼요. 연결 요청은 10분 동안만 쓸 수 있어요.</string>
     <string name="wc_sub_open">지갑 앱에서 바로 열려요</string>

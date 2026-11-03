@@ -29,7 +29,9 @@ ALLOW = {
     # 디버그 · 테스트 빌드 전용(TEST_TOOLS · SELF_UPDATE)
     "run_simulate", "finish_simulated", "test_update_body", "test_update_row", "test_update_failed_signature",
     # 블록체인 판 전용(스토어 판 WEB3 = false 에서는 숨는다)
-    "ca_guide_intro", "about_network_value", "wl_web3_unavailable", "wl_web3_soon", "wc_soon",
+    "ca_guide_intro", "about_network_value", "wl_web3_unavailable", "wl_web3_soon",
+    # 지갑 고르기의 "준비 중"(GIWA) — 스토어 판은 준비 안 된 지갑 줄을 빼고 보인다(WalletApp.shown(WEB3 = false))
+    "wc_soon",
     # 예전 화면(캐릭터 · 옛 상점 · 옛 소식 · 옛 시작 메뉴 배지 — 지금 길에서는 열리지 않는다)
     "store_soon", "feed_soon", "journey_soon", "market_outfit_soon", "feed_deal_store_title", "avatar_art_base_look", "customize_preview_missing_badge",
     "customize_equipped_art_pending", "avatar_art_base_shoes", "avatar_art_base_outfit",

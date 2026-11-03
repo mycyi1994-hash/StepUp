@@ -27,6 +27,14 @@ enum class WalletApp(val key: String, val packageName: String?, val ready: Boole
 
     /** 앱이 없을 때 — 플레이 스토어 */
     fun storeUrl(): String? = packageName?.let { "https://play.google.com/store/apps/details?id=$it" }
+
+    companion object {
+        /**
+         * 지갑 고르기 창에 보일 지갑. 블록체인 판(WEB3)은 넷 다(GIWA 는 "준비 중"으로), 스토어 판은 준비된 지갑만 —
+         * 쓸 수 없는 "준비 중" 줄을 스토어 판에 두지 않는다.
+         */
+        fun shown(web3: Boolean): List<WalletApp> = if (web3) entries else entries.filter { it.ready }
+    }
 }
 
 /** 서버가 준 지갑 연결 문장에서 꺼낸 계정 번호 · 확인 번호 */

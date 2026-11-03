@@ -373,6 +373,11 @@ data class Sneaker(
     val modelId: Int? = null,
     /** 체인 토큰 번호 — v2(1~) · v3 금고(1,000,001~). null 이면 아직 체인에 없다 */
     val tokenId: Long? = null,
+    /**
+     * 서버 · 폰 DB 에 적힌 속성 글자 그대로. 0066 부터 새 신발은 "NONE" 인데 [faction] 은 그림 · 색 때문에 FIRE 로 기운다 —
+     * 거래소 모델(속성 · 등급 · 변형)을 찾을 때는 이 값을 쓴다(FIRE 로 찾으면 내 신발이 하나도 안 잡힌다).
+     */
+    val factionId: String = faction.id,
 ) {
     /** 새 도감 모델 — 그림 · 이름은 이것을 따른다. 없으면 예전 도감([design]) */
     val catalogModel: ShoeCatalog.Model? get() = ShoeCatalog.of(modelId)

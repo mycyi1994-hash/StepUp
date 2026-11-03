@@ -413,7 +413,8 @@ class DrawViewModel(
         }
         val account = account()
         val added = runChancesAdded(source.memory.seenRunChances(account), status)
-        if (added > 0 && notice.value == null) notice.value = DrawNotice.RunReward(added)
+        // "상급 뽑기 +N" 은 상급 뽑기 칸이 있는 블록체인 판에만 — 스토어 판(WEB3 = false)은 그 칸을 숨긴다(DrawHome)
+        if (added > 0 && notice.value == null && com.stepup.android.BuildConfig.WEB3) notice.value = DrawNotice.RunReward(added)
         source.memory.seeRunChances(account, status.runLeft)
     }
 

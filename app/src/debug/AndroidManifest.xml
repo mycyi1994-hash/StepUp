@@ -4,11 +4,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <!-- WEB3 지갑 연결(2026-10-18) — 지갑 앱이 깔려 있는지 보고 연다(MetaMask · OKX · Rabby). 스토어 판은 지갑 기능이 없어 넣지 않는다 -->
+    <!-- WEB3 지갑 연결(2026-10-18) — 지갑 앱이 깔려 있는지 보고 연다(MetaMask · OKX). Rabby 는 스토어 판도 지갑 주소를 이어
+         src/main 매니페스트에 있다 -->
     <queries>
         <package android:name="io.metamask" />
         <package android:name="com.okinc.okex.gp" />
-        <package android:name="com.debank.rabbymobile" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="okx" />

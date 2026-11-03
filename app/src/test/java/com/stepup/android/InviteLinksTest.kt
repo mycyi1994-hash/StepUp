@@ -63,4 +63,31 @@ class InviteLinksTest {
         // 채팅 링크는 크루 상세로 새지 않는다
         assertNull(InviteLinks.crewIdOfPush("crew-chat/$id"))
     }
+
+    @Test
+    fun `글 · 번개 · 대기실 알림은 그 자리로 읽는다`() {
+        assertEquals(InviteLinks.PushTarget.Post(42L), InviteLinks.pushTargetOf("post/42"))
+        assertEquals(InviteLinks.PushTarget.Flash(7L), InviteLinks.pushTargetOf("flash/7"))
+        assertEquals(
+            InviteLinks.PushTarget.Room(id, 123L),
+            InviteLinks.pushTargetOf("room/${id.uppercase()}/123"),
+        )
+        // 모양이 틀리면 받지 않는다
+        assertNull(InviteLinks.pushTargetOf("post/"))
+        assertNull(InviteLinks.pushTargetOf("post/abc"))
+        assertNull(InviteLinks.pushTargetOf("post/-1"))
+        assertNull(InviteLinks.pushTargetOf("post/0"))
+        assertNull(InviteLinks.pushTargetOf("post/42/x"))
+        assertNull(InviteLinks.pushTargetOf("flash/99999999999999999999"))
+        assertNull(InviteLinks.pushTargetOf("room/not-a-crew/1"))
+        assertNull(InviteLinks.pushTargetOf("room/$id"))
+        assertNull(InviteLinks.pushTargetOf("room/$id/x"))
+        assertNull(InviteLinks.pushTargetOf(null))
+        // 예전 링크는 예전 길 그대로 — 새 읽기가 가로채지 않고, 새 링크는 크루 상세로 새지 않는다
+        assertNull(InviteLinks.pushTargetOf("crew/$id"))
+        assertNull(InviteLinks.pushTargetOf("crew-chat/$id"))
+        assertNull(InviteLinks.pushTargetOf("crew/$id/requests"))
+        assertNull(InviteLinks.crewIdOfPush("room/$id/123"))
+        assertNull(InviteLinks.crewIdOfPush("post/42"))
+    }
 }

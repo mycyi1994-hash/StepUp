@@ -221,7 +221,7 @@ fun EmptyNote(text: String, modifier: Modifier = Modifier) {
 fun MarketMessageBar(message: MarketMessage, modifier: Modifier = Modifier) {
     val text = when (message) {
         is MarketMessage.Text -> message.value
-        is MarketMessage.Res -> stringResource(message.id)
+        is MarketMessage.Res -> message.arg?.let { stringResource(message.id, it) } ?: stringResource(message.id)
     }
     Box(
         modifier = modifier

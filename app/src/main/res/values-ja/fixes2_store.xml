@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스토어 출시 전 고침(2026-11-03): 스토어 판 신발 번호 · 업적(민팅 대신 뽑기) · 거래소 거절 · 등록 안내 -->
+<resources>
+    <string name="sneaker_serial_no">No. %1$04d</string>
+    <string name="ach_cat_draw_store">抽選</string>
+    <string name="ach_goal_draw_store">SUPでスニーカーを%1$s回抽選</string>
+    <string name="market_msg_listed">出品しました。</string>
+    <string name="market_msg_bid_placed">入札しました。</string>
+    <string name="market_err_price_invalid">価格をもう一度確認してください。</string>
+    <string name="market_err_price_low">価格が低すぎます。</string>
+    <string name="market_err_not_mine">自分のスニーカーではありません。</string>
+    <string name="market_err_already_listed">すでに出品中のスニーカーです。</string>
+    <string name="market_err_listing_closed">この出品はすでに終了しています。</string>
+    <string name="market_err_own_listing">自分の出品は購入できません。</string>
+    <string name="market_err_not_my_listing">自分の出品ではありません。</string>
+    <string name="market_err_not_enough_sup">SUPが足りません。</string>
+    <string name="market_err_bid_closed">この入札はすでに終了しています。</string>
+    <string name="market_err_own_bid">自分の入札には売れません。</string>
+    <string name="market_err_not_my_bid">自分の入札ではありません。</string>
+    <string name="market_err_model_mismatch">入札したモデルと違うスニーカーです。</string>
+    <string name="market_err_level_low">入札の条件よりスニーカーのレベルが低いです。</string>
+    <string name="market_err_import_limit">出せるスニーカーの数を超えました。</string>
+    <string name="market_err_locked_shoe">履いている、またはウォレットにあるスニーカーは売れません。</string>
+    <string name="market_err_not_transferable">売ることのできないスニーカーです。</string>
+    <string name="market_err_run_more">このスニーカーであと%1$skm走ると売れます。</string>
+    <string name="market_err_other">リクエストを処理できませんでした。しばらくしてからもう一度お試しください。</string>
+</resources>

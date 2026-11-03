@@ -513,6 +513,10 @@ fun RunScreen(
         com.stepup.android.ui.screens.events.ChallengeRunFocus.isChallengeRun(if (session.isActive) session.startedAt else session.lastStartedAt)
     // 모임 러닝은 출발할 때 적은 모임으로 가른다 — 대기실을 떠나 따로 켠 러닝은 뒤에서 방이 출발했어도(party.isActive) 자유 러닝이다
     val freeRunNow = plan is RunPlan.Free && coursePoints.isEmpty() && !crewRun && !flashRun && !recordingCourse && !focusRun
+    // 잠금 화면 · 러닝 알림이 이 화면과 같은 거리를 보이게 적어 둔다(자유 러닝은 GPS 거리, 다른 러닝은 RunDistance.liveKm)
+    LaunchedEffect(session.isActive, session.startedAt, freeRunNow) {
+        if (session.isActive) com.stepup.android.domain.RunNotificationText.markShown(session.startedAt, freeRunNow)
+    }
     // 달리는 중 뒤로 가기는 화면을 닫지 않는다 — 달리고 있으면 일시정지(R03), 멈춰 있으면 마칠지 묻는다(R04)
     // 자유 러닝(UI 최종 통합안)은 마칠지 묻지 않는다 — 멈춘 뒤 뒤로 가기는 화면만 닫는다(러닝은 멈춘 채 남고 홈의 "러닝 이어가기"로 돌아온다).
     // 마치기는 멈춘 화면의 "길게 눌러 종료"(1초)
@@ -940,8 +944,19 @@ fun RunScreen(
                     else kotlinx.coroutines.flow.flowOf(null)
                 }
                 val outcomeSlot by outcomeFlow.collectAsStateWithLifecycle(initialValue = null)
-                LaunchedEffect(session.lastStartedAt, groupRun, confirmed) {
-                    if (groupRun && confirmed) com.stepup.android.core.ServiceLocator.crewRun.loadOutcome(session.lastStartedAt)
+                // 한 번 못 읽으면(연결 끊김) 보상 줄이 끝내 안 보였다 — 결과가 떠 있는 동안 3 · 6 · 12초 … (최대 1분) 간격으로 5분까지
+                // 다시 읽는다. 인터넷이 다시 되면(NetworkWatch) 바로 한 번 더(2026-11-03)
+                val netBack by com.stepup.android.core.NetworkWatch.back.collectAsStateWithLifecycle()
+                LaunchedEffect(session.lastStartedAt, groupRun, confirmed, netBack) {
+                    if (!groupRun || !confirmed) return@LaunchedEffect
+                    val crewRunRepo = com.stepup.android.core.ServiceLocator.crewRun
+                    val until = android.os.SystemClock.elapsedRealtime() + CREW_OUTCOME_RETRY_FOR_MS
+                    var wait = CREW_OUTCOME_RETRY_FIRST_MS
+                    while (crewRunRepo.loadOutcome(session.lastStartedAt) == null) {
+                        if (android.os.SystemClock.elapsedRealtime() + wait > until) break
+                        kotlinx.coroutines.delay(wait)
+                        wait = (wait * 2).coerceAtMost(CREW_OUTCOME_RETRY_MAX_MS)
+                    }
                 }
                 val outcome = outcomeSlot?.value
                 val m = com.stepup.android.domain.CrewRunMath
@@ -1911,6 +1926,11 @@ private const val CREW_RUN_NO_ENERGY_LIMIT = 1e9
 /** 서버의 크루 러닝 출발 시각과 이 폰의 러닝 시작이 이만큼 안이면 같은 러닝으로 본다(카운트다운 · 시계 차이) */
 private const val CREW_LIVE_MATCH_MS = 10 * 60_000L
 private const val OFF_COURSE_MS = 15_000L
+
+/** 크루 러닝 결과의 보상 줄을 못 읽었을 때 다시 읽는 간격(처음 · 최대)과 그만둘 때까지의 시간 */
+private const val CREW_OUTCOME_RETRY_FIRST_MS = 3_000L
+private const val CREW_OUTCOME_RETRY_MAX_MS = 60_000L
+private const val CREW_OUTCOME_RETRY_FOR_MS = 5 * 60_000L
 
 /** "12분 30초" — 마칠까요 · 기록 없이 끝낼까요 · 삭제 확인의 한 줄 */
 @Composable

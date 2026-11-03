@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스토어 출시 전 고침(2026-11-03): 스토어 판 신발 번호 · 업적(민팅 대신 뽑기) · 거래소 거절 · 등록 안내 -->
+<resources>
+    <string name="sneaker_serial_no">编号 %1$04d</string>
+    <string name="ach_cat_draw_store">抽取</string>
+    <string name="ach_goal_draw_store">用 SUP 抽取跑鞋 %1$s 次</string>
+    <string name="market_msg_listed">已上架出售。</string>
+    <string name="market_msg_bid_placed">已出价。</string>
+    <string name="market_err_price_invalid">请重新确认价格。</string>
+    <string name="market_err_price_low">价格太低。</string>
+    <string name="market_err_not_mine">这不是你的跑鞋。</string>
+    <string name="market_err_already_listed">这双跑鞋已在出售中。</string>
+    <string name="market_err_listing_closed">该商品已结束。</string>
+    <string name="market_err_own_listing">不能购买自己的商品。</string>
+    <string name="market_err_not_my_listing">这不是你的商品。</string>
+    <string name="market_err_not_enough_sup">SUP 不足。</string>
+    <string name="market_err_bid_closed">该出价已结束。</string>
+    <string name="market_err_own_bid">不能卖给自己的出价。</string>
+    <string name="market_err_not_my_bid">这不是你的出价。</string>
+    <string name="market_err_model_mismatch">这双跑鞋与出价的型号不同。</string>
+    <string name="market_err_level_low">跑鞋等级低于出价要求。</string>
+    <string name="market_err_import_limit">已超过可上架的跑鞋数量。</string>
+    <string name="market_err_locked_shoe">正在穿着或在钱包中的跑鞋不能出售。</string>
+    <string name="market_err_not_transferable">这双跑鞋不能出售。</string>
+    <string name="market_err_run_more">再用这双跑鞋跑 %1$s km 才能出售。</string>
+    <string name="market_err_other">未能处理请求，请稍后重试。</string>
+</resources>

@@ -117,27 +117,9 @@ fun PartyLobbyScreen(
     // 크루 대기실만 크루 달리기 v2 모습 — 번개러닝 대기실은 예전 모습 그대로
     val crewRoom = flashPostId == null && crewId.isNotEmpty()
 
-    // 출발한 러닝에 이 방(크루 · 번개)과 이름을 적어 둔다 — 결과 · 공유 · 되살린 러닝이 같은 모임으로 보이게(정산과 무관)
-    val startRun = {
-        WalkSessionService.start(context, party.partySize, com.stepup.android.service.StartGroup.of(party, title))
-        onRunStarted()
-    }
     val needPrecise = stringResource(R.string.run_gps_need_precise)
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions(),
-    ) {
-        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) {
-            when {
-                WalkSessionService.state.value.isActive -> onRunStarted()
-                // 위치 없이는 출발하지 않는다 — 준비한 뒤 권한을 거둔 경우. 왜 출발하지 않는지 알린다
-                !StepPermissions.hasPreciseLocation(context) ->
-                    android.widget.Toast.makeText(context, needPrecise, android.widget.Toast.LENGTH_LONG).show()
-                // 권한 창에 오래 머물렀다 — 출발한 지 오래된 방의 러닝을 늦게 켜지 않는다(아래 출발과 같은 판단)
-                !viewModel.startIsFresh() -> viewModel.missedStart()
-                else -> startRun()
-            }
-        }
-    }
+    // 출발 시각에 러닝을 켜는 일 · 출발 연출 · 준비 중 화면 켜 두기는 앱 화면(PartyRunStartHost)이 맡는다 —
+    // 준비를 마친 사람이 크루 채팅에 가 있거나 화면이 꺼졌다 켜져도 함께 출발하게(2026-11-03)
     // 권한이 모두 있으면 바로 준비 — 위치 신호는 기다리지 않는다. 휴대폰 위치 기능이 꺼져 있으면 켜는 곳으로 보낸다
     val locationOff = stringResource(R.string.run_loc_off_body)
     val markReady: () -> Unit = {
@@ -160,11 +142,7 @@ fun PartyLobbyScreen(
         }
     }
     /** 준비에 필요한 권한 — 걸음 · 알림 · 위치. 대략적인 위치만 있으면 정확한 위치를 다시 묻는다(Android 12+ 는 바꾸기 창) */
-    fun readyPermissions(): Array<String> {
-        val missing = StepPermissions.missing(context)
-        if (StepPermissions.hasPreciseLocation(context) || android.Manifest.permission.ACCESS_FINE_LOCATION in missing) return missing
-        return missing + arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-    }
+    fun readyPermissions(): Array<String> = partyRunPermissions(context)
     var confirmStart by rememberSaveable { mutableStateOf(false) }
     var notify by rememberSaveable { mutableStateOf(false) }
 
@@ -182,33 +160,6 @@ fun PartyLobbyScreen(
             crewId.isNotEmpty() -> viewModel.openLobby(crewId)
         }
     }
-    // 크루 대기실의 출발 연출 — 서버 출발 시각에 맞춘 3 · 2 · 1 · 0 · StepUP! · 펼침(앱 맨 위 겹이 그린다 — 러닝 화면으로 옮겨도 끊기지 않게)
-    LaunchedEffect(crewRoom, party.phase, party.partyId, party.startsAtLocal) {
-        val id = party.partyId
-        if (!crewRoom || id == null) return@LaunchedEffect
-        when (party.phase) {
-            PartyPhase.COUNTDOWN -> if (party.startsAtLocal > 0) com.stepup.android.ui.screens.walk.CrewLaunch.begin(id, party.startsAtLocal)
-            PartyPhase.LOBBY, PartyPhase.IDLE -> com.stepup.android.ui.screens.walk.CrewLaunch.end(id)
-            else -> Unit
-        }
-    }
-
-    // 서버가 정한 출발 시각이 되면 실제 세션을 시작한다.
-    LaunchedEffect(party.phase) {
-        if (party.phase == PartyPhase.RUNNING) {
-            when {
-                // 이 폰의 러닝이 이미 돌고 있다 — 하나 더 켜지 않고 그 러닝으로 간다
-                WalkSessionService.state.value.isActive -> onRunStarted()
-                // 출발한 지 오래됐다(대기실을 떠나 있었다) — 옛 방의 러닝을 늦게 켜지 않고 새 대기실을 연다
-                !viewModel.startIsFresh() -> viewModel.missedStart()
-                else -> {
-                    val missing = readyPermissions()
-                    if (missing.isEmpty()) startRun() else permissionLauncher.launch(missing)
-                }
-            }
-        }
-    }
-
     val leave = {
         viewModel.leaveLobby()
         onBack()
@@ -317,9 +268,8 @@ fun PartyLobbyScreen(
     if (notify && canNotify && notifyCrew != null) {
         CrewNotifySheet(
             crewId = notifyCrew, crewName = title, waiting = party.partySize, onDismiss = { notify = false },
-            // 채팅으로 가도 출발을 놓치지 않는 사람만 — 진행자(출발은 내가 누른다)와 아직 준비 전인 사람(이번 출발 명단에 없다).
-            // 출발 3-2-1 은 이 대기실 화면에서만 러닝을 켠다 — 준비를 마친 참가자가 채팅에 가 있으면 함께 출발하지 못한다
-            onOpenChat = if (party.isHost || !party.myReady) ({ onOpenChat(notifyCrew) }) else null,
+            // 채팅에 가 있어도 출발은 놓치지 않는다 — 출발 시각에 러닝을 켜는 일은 앱 화면(PartyRunStartHost)이 맡는다(2026-11-03)
+            onOpenChat = { onOpenChat(notifyCrew) },
         )
     }
 }

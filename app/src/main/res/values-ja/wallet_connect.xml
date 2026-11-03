@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
 <resources>
-    <string name="wc_title">WEB3ウォレットを接続</string>
+    <string name="wc_title">ウォレットを接続</string>
     <string name="wc_body">ウォレットを選ぶとそのアプリ内で開きます。署名1回で接続できます。署名は取引ではないので手数料はかかりません。</string>
     <string name="wc_note">1つのウォレットは1つのSTEPUPアカウントにだけ接続できます。リクエストは10分間有効です。</string>
     <string name="wc_sub_open">ウォレットアプリで開きます</string>

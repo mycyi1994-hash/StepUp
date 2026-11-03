@@ -235,7 +235,7 @@ fun WalletContent(
     }
     opened?.let { entry -> EntrySheet(entry, zone, onClose = { opened = null }) }
     when (sheet) {
-        WalletSheet.Info -> InfoSheet(onClose = { sheet = WalletSheet.None })
+        WalletSheet.Info -> InfoSheet(showDraw = web3Enabled, onClose = { sheet = WalletSheet.None })
         WalletSheet.Linked -> if (linkOnly) LinkedPlainSheet(onClose = { sheet = WalletSheet.None }) else LinkedSheet(
             onOpenDraw = {
                 sheet = WalletSheet.None
@@ -575,7 +575,7 @@ private fun DetailLine(label: String, value: String, bold: Boolean = false) {
 
 /** SUP 안내(13) — SUP 와 뽑기 기회를 가른다 */
 @Composable
-private fun InfoSheet(onClose: () -> Unit) {
+private fun InfoSheet(showDraw: Boolean, onClose: () -> Unit) {
     val p = settingsPalette()
     SettingsSheet(
         title = stringResource(R.string.wl_info_title), onDismiss = onClose, modifier = Modifier.testTag("wl-info-sheet"),
@@ -583,9 +583,12 @@ private fun InfoSheet(onClose: () -> Unit) {
     ) {
         Text(stringResource(R.string.wl_info_head), color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         Text(stringResource(R.string.wl_info_body), color = p.secondary, fontSize = 15.sp)
-        Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(p.divider))
-        Text(stringResource(R.string.wl_info_draw_head), color = p.text, fontSize = 16.sp)
-        Text(stringResource(R.string.wl_info_draw_body), color = p.secondary, fontSize = 15.sp)
+        // 상급 뽑기 기회 안내는 블록체인 판에만 — 스토어 판(지갑 주소 연결만 · WEB3 = false)에는 상급 뽑기가 없다
+        if (showDraw) {
+            Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(p.divider))
+            Text(stringResource(R.string.wl_info_draw_head), color = p.text, fontSize = 16.sp)
+            Text(stringResource(R.string.wl_info_draw_body), color = p.secondary, fontSize = 15.sp)
+        }
     }
 }
 

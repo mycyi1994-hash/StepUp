@@ -12,6 +12,8 @@ import com.stepup.android.data.remote.ModelKey
 import com.stepup.android.data.remote.QuoteRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.repo.MarketOutcome
+import com.stepup.android.data.repo.MarketRefusal
+import com.stepup.android.data.repo.marketRefusalKm
 import com.stepup.android.data.repo.MarketRepository
 import com.stepup.android.data.repo.ModelBook
 import com.stepup.android.data.repo.MyMarket
@@ -42,7 +44,8 @@ enum class MarketProblem { OFFLINE, SIGN_IN, REJECTED }
 sealed interface MarketMessage {
     data class Text(val value: String) : MarketMessage
 
-    data class Res(@StringRes val id: Int) : MarketMessage
+    /** @property arg 문구에 넣을 값(남은 km 등). 없으면 null */
+    data class Res(@StringRes val id: Int, val arg: String? = null) : MarketMessage
 }
 
 /** 시세판 화면의 상태 */
@@ -236,22 +239,24 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
 
     fun sell(localId: Long, bidId: Long) = act { repo.sellInto(localId, bidId) }
 
-    fun listForSale(localId: Long, price: Double) = act { repo.listForSale(localId, price) }
+    // 바로 체결되지 않고 걸어 두었을 때도 알린다 — 말이 없으면 눌린 건지 알 수 없다
+    fun listForSale(localId: Long, price: Double) = act(R.string.market_msg_listed) { repo.listForSale(localId, price) }
 
     fun bid(minLevel: Int, price: Double) {
         val key = model ?: return
-        act { repo.placeBid(key, minLevel, price) }
+        act(R.string.market_msg_bid_placed) { repo.placeBid(key, minLevel, price) }
     }
 
     /** 요청이 서버에 가 있는 동안 — 두 번 눌러 두 번 사고, 두 번째 거절이 첫 성공을 덮지 않게 */
     private var acting = false
 
-    private fun act(block: suspend () -> MarketOutcome) {
+    /** @param placed 바로 체결되지 않고 걸어 두었을 때(Ok · traded = false) 할 말. null 이면 말없이 다시 불러온다 */
+    private fun act(@StringRes placed: Int? = null, block: suspend () -> MarketOutcome) {
         if (acting) return
         acting = true
         viewModelScope.launch {
             try {
-                message.value = block().say()
+                message.value = block().say(placed)
                 load()
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -287,15 +292,51 @@ private fun ServerResult<*>.problem(): MarketProblem = when (this) {
 /**
  * 결말을 사용자에게 할 말로.
  *
- * 서버가 적어 보낸 이유를 그대로 쓴다. "거래에 실패했습니다"로 덮으면
- * 무엇이 모자랐는지가 사라지고, 사용자는 같은 일을 또 시도하게 된다.
+ * 서버가 적어 보낸 이유를 갈래로 옮겨([MarketRefusal]) 번역된 문구로 보인다. "거래에 실패했습니다"로 덮으면
+ * 무엇이 모자랐는지가 사라지고, 한국어 문장을 그대로 띄우면 다른 언어 화면에 한국어가 뜬다.
+ *
+ * @param placed 걸어 두기만 했을 때(내놓기 · 구매 입찰) 할 말. 거두기는 목록이 바뀌는 것으로 충분해 null
  */
-private fun MarketOutcome.say(): MarketMessage? = when (this) {
-    is MarketOutcome.Ok -> if (traded) MarketMessage.Res(R.string.market_msg_traded) else null
+internal fun MarketOutcome.say(@StringRes placed: Int? = null): MarketMessage? = when (this) {
+    is MarketOutcome.Ok -> if (traded) MarketMessage.Res(R.string.market_msg_traded) else placed?.let { MarketMessage.Res(it) }
     MarketOutcome.Equipped -> MarketMessage.Res(R.string.market_msg_equipped)
-    is MarketOutcome.Failed -> MarketMessage.Text(reason)
+    is MarketOutcome.Failed -> refusalMessage(reason)
     // 통신 글("통신 실패: Read timed out")은 서버의 이유가 아니다 — 응답만 잃었을 수 있어 실패라고 하지 않고,
     // 같은 버튼을 다시 눌러도 두 번 되지 않는다고 알린다(요청 번호, 0062)
     is MarketOutcome.Offline -> MarketMessage.Res(R.string.market_msg_offline)
     MarketOutcome.SignInRequired -> MarketMessage.Res(R.string.market_msg_sign_in)
+}
+
+/** 거절 문장 → 번역된 문구. 남은 km 를 못 읽으면 일반 안내로 */
+internal fun refusalMessage(reason: String): MarketMessage.Res {
+    val refusal = MarketRefusal.of(reason)
+    if (refusal == MarketRefusal.RUN_MORE) {
+        val km = marketRefusalKm(reason) ?: return MarketMessage.Res(R.string.market_err_other)
+        return MarketMessage.Res(R.string.market_err_run_more, km)
+    }
+    return MarketMessage.Res(refusalRes(refusal))
+}
+
+/** 거절 갈래 → 문구 */
+@StringRes
+internal fun refusalRes(refusal: MarketRefusal): Int = when (refusal) {
+    MarketRefusal.PRICE_INVALID -> R.string.market_err_price_invalid
+    MarketRefusal.PRICE_TOO_LOW -> R.string.market_err_price_low
+    MarketRefusal.NOT_MINE, MarketRefusal.NO_SNEAKER -> R.string.market_err_not_mine
+    MarketRefusal.ALREADY_LISTED -> R.string.market_err_already_listed
+    MarketRefusal.LISTING_CLOSED -> R.string.market_err_listing_closed
+    MarketRefusal.OWN_LISTING -> R.string.market_err_own_listing
+    MarketRefusal.NOT_MY_LISTING -> R.string.market_err_not_my_listing
+    MarketRefusal.NOT_ENOUGH_SUP -> R.string.market_err_not_enough_sup
+    MarketRefusal.BID_CLOSED -> R.string.market_err_bid_closed
+    MarketRefusal.OWN_BID -> R.string.market_err_own_bid
+    MarketRefusal.NOT_MY_BID -> R.string.market_err_not_my_bid
+    MarketRefusal.MODEL_MISMATCH -> R.string.market_err_model_mismatch
+    MarketRefusal.LEVEL_TOO_LOW -> R.string.market_err_level_low
+    MarketRefusal.IMPORT_LIMIT -> R.string.market_err_import_limit
+    MarketRefusal.LOCKED_SHOE -> R.string.market_err_locked_shoe
+    MarketRefusal.NOT_TRANSFERABLE -> R.string.market_err_not_transferable
+    MarketRefusal.RUN_MORE -> R.string.market_err_run_more
+    MarketRefusal.SIGN_IN -> R.string.market_msg_sign_in
+    MarketRefusal.OTHER -> R.string.market_err_other
 }

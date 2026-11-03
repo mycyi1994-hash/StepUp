@@ -89,7 +89,8 @@ internal object RunNotification {
             ),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val km = state.gpsKm
+        // 러닝 화면과 같은 거리 — 자유 러닝은 GPS 거리, 다른 러닝은 경로 100m 전엔 걸음 거리(RunDistance.liveKm)
+        val km = RunNotificationText.km(state.startedAt, state.gpsKm, state.steps, state.group != RunGroup.NONE)
         val distance = context.getString(R.string.run_notif_distance, RunNotificationText.distance(km))
         val pace = RunNotificationText.pace(state.elapsedSec, km)
         val status = status(context, state)

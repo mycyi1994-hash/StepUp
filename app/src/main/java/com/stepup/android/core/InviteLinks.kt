@@ -38,6 +38,26 @@ object InviteLinks {
     /** 열어야 할 크루 채팅 방(크루 id). 화면이 열고 나면 [consumeChat] 한다. */
     val pendingChat: StateFlow<String?> = _pendingChat
 
+    /**
+     * 푸시 알림이 가리키는 글 · 번개 · 대기실(서버 0087 · 0088) — 크루 화면이 아니라 그 자리로 간다. 로그인 전에 눌렀으면
+     * [pendingCrew] 처럼 들고 있다가 로그인한 뒤 앱 화면이 연다. 화면이 열고 나면 [consumePush] 한다.
+     */
+    sealed interface PushTarget {
+        /** 댓글 · 답글 알림 — 그 글(`post/<id>`) */
+        data class Post(val postId: Long) : PushTarget
+
+        /** 번개러닝 알림 — 그 번개 글(`flash/<id>`) */
+        data class Flash(val postId: Long) : PushTarget
+
+        /** 크루 대기실이 열렸다는 알림 — 그 방(`room/<크루 id>/<방 번호>`) */
+        data class Room(val crewId: String, val partyId: Long) : PushTarget
+    }
+
+    private val _pendingPush = MutableStateFlow<PushTarget?>(null)
+
+    /** 열어야 할 글 · 번개 · 대기실. 화면이 열고 나면 [consumePush] 한다. */
+    val pendingPush: StateFlow<PushTarget?> = _pendingPush
+
     /** 이 크루로 초대하는 링크 */
     fun crewLink(crewId: String): String = "https://$HOST/c/$crewId"
 
@@ -76,9 +96,33 @@ object InviteLinks {
         return parts[1].takeIf { UUID.matches(it) }?.lowercase()
     }
 
-    /** 앱을 연 인텐트를 본다. 초대 링크나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을 연다. */
+    /** 글 · 번개 번호 — 1 이상 숫자만(앞자리 0 · 부호 · 너무 큰 수는 받지 않는다) */
+    private fun idOf(raw: String): Long? =
+        raw.takeIf { it.isNotEmpty() && it.length <= 18 && it[0] != '0' && it.all { c -> c in '0'..'9' } }?.toLongOrNull()
+
+    /**
+     * 푸시 알림이 싣고 온 앱 안 링크에서 글(`post/<id>`) · 번개(`flash/<id>`) · 대기실(`room/<크루 id>/<방 번호>`)을 꺼낸다.
+     * 다른 모양이면 null — 크루(`crew/<id>`) · 신청 목록 · 채팅 링크는 아래 함수들이 그대로 읽는다.
+     */
+    fun pushTargetOf(link: String?): PushTarget? {
+        val parts = link.orEmpty().trim('/').split('/')
+        return when {
+            parts.size == 2 && parts[0] == "post" -> idOf(parts[1])?.let { PushTarget.Post(it) }
+            parts.size == 2 && parts[0] == "flash" -> idOf(parts[1])?.let { PushTarget.Flash(it) }
+            parts.size == 3 && parts[0] == "room" && UUID.matches(parts[1]) ->
+                idOf(parts[2])?.let { PushTarget.Room(parts[1].lowercase(), it) }
+            else -> null
+        }
+    }
+
+    /** 앱을 연 인텐트를 본다. 초대 링크나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을, 글 · 번개 · 대기실 알림이면 그 자리를 연다. */
     fun handle(intent: Intent?) {
         intent ?: return
+        val target = pushTargetOf(intent.getStringExtra(PushService.EXTRA_LINK)) ?: pushTargetOf(intent.getStringExtra("link"))
+        if (target != null) {
+            _pendingPush.value = target
+            return
+        }
         val chatId = chatIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK)) ?: chatIdOfPush(intent.getStringExtra("link"))
         if (chatId != null) {
             _pendingChat.value = chatId
@@ -107,5 +151,9 @@ object InviteLinks {
 
     fun consumeChat() {
         _pendingChat.value = null
+    }
+
+    fun consumePush() {
+        _pendingPush.value = null
     }
 }

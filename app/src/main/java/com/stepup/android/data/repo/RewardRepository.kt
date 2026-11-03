@@ -318,6 +318,7 @@ fun com.stepup.android.data.local.SneakerEntity.toDomain(): Sneaker {
         ),
         modelId = modelId.takeIf { it > 0 },
         tokenId = tokenId.takeIf { it > 0 },
+        factionId = factionId,
     )
 }
 
@@ -325,7 +326,7 @@ fun com.stepup.android.data.local.SneakerEntity.toDomain(): Sneaker {
 fun Sneaker.toEntity(): com.stepup.android.data.local.SneakerEntity =
     com.stepup.android.data.local.SneakerEntity(
         id = id,
-        factionId = faction.id,
+        factionId = factionId,
         rarity = rarity.id,
         variant = variant,
         level = level,

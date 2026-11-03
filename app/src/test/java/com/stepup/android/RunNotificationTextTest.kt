@@ -23,4 +23,19 @@ class RunNotificationTextTest {
     @Test fun `시계 기준은 지금에서 달린 시간을 뺀 값`() {
         assertEquals(100_000L - 65_000L, RunNotificationText.chronometerBase(100_000L, 65))
     }
+
+    @Test fun `잠금 화면 거리 — 러닝 화면과 같다(자유 러닝은 GPS, 다른 러닝은 경로 100m 전 걸음 거리)`() {
+        val steps = 2_000
+        val stepKm = com.stepup.android.domain.RunDistance.liveKm(0.0, steps)
+        // 화면이 다른 러닝(챌린지 · 크루 등)으로 그렸다 — 걸음 거리
+        RunNotificationText.markShown(1_000L, freeRun = false)
+        assertEquals(stepKm, RunNotificationText.km(1_000L, 0.04, steps, groupRun = false), 1e-9)
+        // 경로가 100m 를 넘으면 GPS 거리
+        assertEquals(0.5, RunNotificationText.km(1_000L, 0.5, steps, groupRun = false), 1e-9)
+        // 자유 러닝 화면 — GPS 거리 그대로
+        RunNotificationText.markShown(2_000L, freeRun = true)
+        assertEquals(0.04, RunNotificationText.km(2_000L, 0.04, steps, groupRun = false), 1e-9)
+        // 화면이 아직 그리지 않은 모임 러닝 — 자유 러닝이 아니다
+        assertEquals(stepKm, RunNotificationText.km(3_000L, 0.04, steps, groupRun = true), 1e-9)
+    }
 }

@@ -34,7 +34,10 @@
 
     <!-- 번개러닝 집결지를 지도 앱으로 열기 위한 패키지 가시성 (Android 11+) -->
     <queries>
-        <!-- WEB3 지갑 앱 찾기(MetaMask · OKX · Rabby)는 블록체인 기능이 있는 테스트 판(src/debug 매니페스트 — debug · qa)에만 -->
+        <!-- 지갑 주소 연결(스토어 판도 WALLET_LINK) — Rabby 는 앱 브라우저로 바로 여는 링크가 없어 앱을 직접 찾아 연다
+             (getLaunchIntentForPackage, Android 11+ 는 이 줄이 없으면 못 찾는다). MetaMask 는 https · OKX 는 okx 링크로 연다.
+             MetaMask · OKX 패키지 찾기는 테스트 판(src/debug 매니페스트 — debug · qa)에만 -->
+        <package android:name="com.debank.rabbymobile" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />

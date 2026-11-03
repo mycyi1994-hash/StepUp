@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스토어 출시 전 고침(2026-11-03): 스토어 판 신발 번호 · 업적(민팅 대신 뽑기) · 거래소 거절 · 등록 안내 -->
+<resources>
+    <string name="sneaker_serial_no">No. %1$04d</string>
+    <string name="ach_cat_draw_store">Draws</string>
+    <string name="ach_goal_draw_store">Draw sneakers with SUP %1$s times</string>
+    <string name="market_msg_listed">Listed for sale.</string>
+    <string name="market_msg_bid_placed">Bid placed.</string>
+    <string name="market_err_price_invalid">Please enter a valid price.</string>
+    <string name="market_err_price_low">The price is too low.</string>
+    <string name="market_err_not_mine">This sneaker isn\'t yours.</string>
+    <string name="market_err_already_listed">This sneaker is already for sale.</string>
+    <string name="market_err_listing_closed">This listing has already ended.</string>
+    <string name="market_err_own_listing">You can\'t buy your own listing.</string>
+    <string name="market_err_not_my_listing">This isn\'t your listing.</string>
+    <string name="market_err_not_enough_sup">Not enough SUP.</string>
+    <string name="market_err_bid_closed">This bid has already ended.</string>
+    <string name="market_err_own_bid">You can\'t sell into your own bid.</string>
+    <string name="market_err_not_my_bid">This isn\'t your bid.</string>
+    <string name="market_err_model_mismatch">This sneaker is a different model from the bid.</string>
+    <string name="market_err_level_low">This sneaker\'s level is too low for the bid.</string>
+    <string name="market_err_import_limit">You\'ve reached the number of sneakers you can put up.</string>
+    <string name="market_err_locked_shoe">Sneakers you\'re wearing or that are in a wallet can\'t be sold.</string>
+    <string name="market_err_not_transferable">This sneaker can\'t be sold.</string>
+    <string name="market_err_run_more">Run %1$s km more in this sneaker before you can sell it.</string>
+    <string name="market_err_other">We couldn\'t process the request. Please try again in a moment.</string>
+</resources>

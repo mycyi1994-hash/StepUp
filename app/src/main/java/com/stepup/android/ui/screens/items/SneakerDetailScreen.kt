@@ -224,7 +224,7 @@ fun SneakerDetailScreen(
         onWear = { if (!care.busy) viewModel.equip(sneakerId) },
         onResultShown = viewModel::consumeEquipResult,
         onEnhance = { if (!care.repairPending) onUpgrade(sneakerId) },
-        onSell = { shoe -> onSell(shoe.faction.id, shoe.rarity.id, shoe.variant, shoe.id) },
+        onSell = { shoe -> onSell(shoe.factionId, shoe.rarity.id, shoe.variant, shoe.id) },
         care = care,
         repair = if (repairOpen) repairPhase ?: RepairPhase.Loading else null,
         onOpenRepair = {

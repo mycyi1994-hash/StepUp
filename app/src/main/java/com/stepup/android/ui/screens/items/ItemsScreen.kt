@@ -534,7 +534,7 @@ private fun CopiesDialog(
                         Text(stringResource(R.string.items_equipped), fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold, color = com.stepup.android.ui.theme.VoltText)
                     }
-                    Text(stringResource(R.string.sneaker_mint_no, copy.mintNumber) +
+                    Text(stringResource(com.stepup.android.ui.components.sneakerNoRes(), copy.mintNumber) +
                         " · +%.1f%%".format(copy.boostPercent), fontSize = 14.sp, color = Silver)
                 }
                 Icon(Icons.Filled.ChevronRight, null, tint = Silver, modifier = Modifier.size(20.dp))

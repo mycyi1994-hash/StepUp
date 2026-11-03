@@ -143,7 +143,8 @@ internal fun LockRunPanel(state: WalkSessionState, onToggle: () -> Unit, onOpen:
     val context = LocalContext.current
     val type = StepUpUi.type
     val paused = state.isPaused
-    val km = state.gpsKm
+    // 러닝 화면과 같은 거리 — 자유 러닝은 GPS 거리, 다른 러닝은 경로 100m 전엔 걸음 거리(RunDistance.liveKm)
+    val km = RunNotificationText.km(state.startedAt, state.gpsKm, state.steps, state.group != com.stepup.android.service.RunGroup.NONE)
     val pace = RunNotificationText.pace(state.elapsedSec, km)
     Box(
         Modifier
