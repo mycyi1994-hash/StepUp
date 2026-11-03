@@ -118,7 +118,7 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
                 RunSheetText(stringResource(R.string.wc_title), body = stringResource(R.string.wc_body))
                 Spacer(Modifier.height(16.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    WalletApp.entries.forEach { app ->
+                    WalletApp.shown(BuildConfig.WEB3).forEach { app ->
                         WalletRow(app, busy = phase == WalletPickPhase.Busy && picked == app,
                             enabled = app.ready && phase == WalletPickPhase.Pick, onClick = { start(app) })
                     }

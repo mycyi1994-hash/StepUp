@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스토어 출시 전 고침(2026-11-03): 스토어 판 신발 번호 · 업적(민팅 대신 뽑기) · 거래소 거절 · 등록 안내 -->
+<resources>
+    <string name="sneaker_serial_no">No. %1$04d</string>
+    <string name="ach_cat_draw_store">뽑기</string>
+    <string name="ach_goal_draw_store">SUP로 신발 %1$s회 뽑기</string>
+    <string name="market_msg_listed">판매 등록했어요.</string>
+    <string name="market_msg_bid_placed">입찰했어요.</string>
+    <string name="market_err_price_invalid">가격을 다시 확인해 주세요.</string>
+    <string name="market_err_price_low">가격이 너무 낮아요.</string>
+    <string name="market_err_not_mine">내 신발이 아니에요.</string>
+    <string name="market_err_already_listed">이미 판매 중인 신발이에요.</string>
+    <string name="market_err_listing_closed">이미 끝난 매물이에요.</string>
+    <string name="market_err_own_listing">내 매물은 살 수 없어요.</string>
+    <string name="market_err_not_my_listing">내 매물이 아니에요.</string>
+    <string name="market_err_not_enough_sup">SUP가 모자라요.</string>
+    <string name="market_err_bid_closed">이미 끝난 입찰이에요.</string>
+    <string name="market_err_own_bid">내 입찰에는 팔 수 없어요.</string>
+    <string name="market_err_not_my_bid">내 입찰이 아니에요.</string>
+    <string name="market_err_model_mismatch">입찰한 모델과 다른 신발이에요.</string>
+    <string name="market_err_level_low">입찰 조건보다 신발 레벨이 낮아요.</string>
+    <string name="market_err_import_limit">올릴 수 있는 신발 수를 넘었어요.</string>
+    <string name="market_err_locked_shoe">신고 있거나 지갑에 있는 신발은 팔 수 없어요.</string>
+    <string name="market_err_not_transferable">팔 수 없는 신발이에요.</string>
+    <string name="market_err_run_more">이 신발로 %1$skm를 더 달려야 팔 수 있어요.</string>
+    <string name="market_err_other">요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.</string>
+</resources>

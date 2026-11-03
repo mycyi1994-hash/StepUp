@@ -313,7 +313,8 @@ private fun AchievementCategory.label(): String = stringResource(
         AchievementCategory.SESSIONS -> R.string.ach_cat_sessions
         AchievementCategory.STREAK -> R.string.ach_cat_streak
         AchievementCategory.SUP -> R.string.ach_cat_sup
-        AchievementCategory.MINT -> R.string.ach_cat_mint
+        // 스토어 판(WEB3 = false)은 민팅 말 대신 뽑기 — 세는 것은 SUP 로 낸 뽑기(SPEND_DRAW · 예전 SPEND_MINT)다
+        AchievementCategory.MINT -> if (com.stepup.android.BuildConfig.WEB3) R.string.ach_cat_mint else R.string.ach_cat_draw_store
         AchievementCategory.COLLECTION -> R.string.ach_cat_collection
         AchievementCategory.UPGRADE -> R.string.ach_cat_upgrade
         AchievementCategory.PARTY -> R.string.ach_cat_party
@@ -334,7 +335,8 @@ private fun Achievement.goalText(): String {
         AchievementCategory.SESSIONS -> stringResource(R.string.ach_goal_sessions, n)
         AchievementCategory.STREAK -> stringResource(R.string.ach_goal_streak, n)
         AchievementCategory.SUP -> stringResource(R.string.ach_goal_sup, n)
-        AchievementCategory.MINT -> stringResource(R.string.ach_goal_mint, n)
+        AchievementCategory.MINT ->
+            stringResource(if (com.stepup.android.BuildConfig.WEB3) R.string.ach_goal_mint else R.string.ach_goal_draw_store, n)
         AchievementCategory.COLLECTION -> stringResource(R.string.ach_goal_collection, n)
         AchievementCategory.UPGRADE -> stringResource(R.string.ach_goal_upgrade, n)
         AchievementCategory.PARTY -> stringResource(R.string.ach_goal_party, n)

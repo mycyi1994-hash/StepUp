@@ -547,6 +547,18 @@ private fun MainScaffoldContent(
         InviteLinks.consume()
     }
 
+    // 글 · 번개 · 대기실 알림(post/<id> · flash/<id> · room/<크루>/<방>, 서버 0087 · 0088)으로 들어왔으면 그 자리를 연다.
+    // 글은 글 상세(댓글 포함 — 볼 수 없는 글이면 상세가 알린다), 번개는 번개 상세, 대기실은 함께 뛰기 목록에서 방을 고른 것과 같은 길
+    val pendingPush by InviteLinks.pendingPush.collectAsState()
+    LaunchedEffect(pendingPush) {
+        when (val target = pendingPush ?: return@LaunchedEffect) {
+            is InviteLinks.PushTarget.Post -> navController.navigate(Routes.storyDetail(target.postId)) { launchSingleTop = true }
+            is InviteLinks.PushTarget.Flash -> navController.navigate(Routes.flashDetail(target.postId)) { launchSingleTop = true }
+            is InviteLinks.PushTarget.Room -> navController.navigate(Routes.room(target.crewId, target.partyId)) { launchSingleTop = true }
+        }
+        InviteLinks.consumePush()
+    }
+
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val chrome = AppChromePolicy.destination(currentRoute)
@@ -1727,9 +1739,27 @@ private fun MainScaffoldContent(
     // 알림에서 눌러 들어온 댓글 창. 어느 탭에 있든 여기서 연다.
     FocusedCommentSheetHost()
 
+    // 모임(크루 · 번개) 러닝 출발 — 대기실이 아니라 여기서 맡는다(2026-11-03). 준비를 마친 사람이 채팅 등 다른 화면에 있어도
+    // 진행자가 출발하면 같이 러닝이 켜지고 러닝 화면으로 간다(대기실이 뒤에 있으면 그 위 화면까지 걷는다)
+    com.stepup.android.ui.screens.community.PartyRunStartHost(
+        onLobby = currentRoute == Routes.LOBBY || currentRoute == Routes.FLASH_LOBBY,
+        onRunStarted = {
+            // 모임 러닝은 챌린지 상세에서 시작한 러닝이 아니다
+            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+            com.stepup.android.domain.RunPlans.clear()
+            // 대기실은 걷는다 — 결과에서 뒤로 가면 대기실이 다시 열려(party_open) 새 방이 생기지 않게
+            val lobby = listOf(Routes.LOBBY, Routes.FLASH_LOBBY)
+                .firstOrNull { route -> runCatching { navController.getBackStackEntry(route) }.isSuccess }
+            navController.navigate(Routes.RUN) {
+                launchSingleTop = true
+                if (lobby != null) popUpTo(lobby) { inclusive = true }
+            }
+        },
+    )
+
     // 첫 사용 안내(시안 02) — 러닝 홈에서만, 먼저 처리할 목적지(초대 링크 · 로그인 뒤 다시 열 초대)나 멈춘 러닝이 없을 때.
     // 목적지가 있으면 그 화면을 먼저 보이고 안내는 다음에 러닝 홈에 올 때로 미룬다. 사람이 고른 뒤에만 "봤음"을 적는다.
-    val destinationPending = pendingCrew != null || pendingChat != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true
+    val destinationPending = pendingCrew != null || pendingChat != null || pendingPush != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true
     if (com.stepup.android.domain.FirstGuideRules.shouldShow(
             pending = startTour && !firstGuideClosed,
             onHome = currentRoute == Screen.Run.route,

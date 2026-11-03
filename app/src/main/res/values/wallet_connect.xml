@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
 <resources>
-    <string name="wc_title">Connect a Web3 wallet</string>
+    <string name="wc_title">Connect a wallet</string>
     <string name="wc_body">Pick your wallet. It opens inside the wallet app — sign once and you’re connected. Signing isn’t a transaction and costs nothing.</string>
     <string name="wc_note">One wallet links to one STEPUP account. The request is valid for 10 minutes.</string>
     <string name="wc_sub_open">Opens in the wallet app</string>

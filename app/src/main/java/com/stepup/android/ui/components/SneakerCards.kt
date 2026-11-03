@@ -79,6 +79,12 @@ fun Faction.tint(): Color = when (this) {
     Faction.WIND -> Color(0xFF4FA318)
 }
 
+/**
+ * 신발 번호 줄의 글자. 블록체인 판(WEB3)은 "민팅 #0001", 스토어 판은 "No. 0001" — 스토어 판에는 민팅 · NFT 말을 두지 않는다.
+ */
+fun sneakerNoRes(): Int =
+    if (com.stepup.android.BuildConfig.WEB3) R.string.sneaker_mint_no else R.string.sneaker_serial_no
+
 @Composable
 fun Faction.label(): String = stringResource(factionNameRes(this))
 
@@ -274,7 +280,7 @@ fun SneakerCollectionCard(
         if (sneaker.equipped) Text(stringResource(R.string.items_equipped), style = MaterialTheme.typography.bodyMedium, color = com.stepup.android.ui.theme.VoltText)
         if (count > 1) Text("×$count", style = MaterialTheme.typography.bodyMedium, color = Snow)
         Text(stringResource(R.string.level_chip, sneaker.level) + " · +%.1f%%".format(sneaker.boostPercent), style = MaterialTheme.typography.bodyMedium, color = Snow)
-        Text(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber), style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Text(stringResource(sneakerNoRes(), sneaker.mintNumber), style = MaterialTheme.typography.bodyMedium, color = Silver)
     }
 }
 
@@ -364,7 +370,7 @@ fun EquippedSneakerCard(
             modifier = Modifier.fillMaxWidth(),
         )
         androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
-        S2Subtitle(stringResource(R.string.sneaker_mint_no, sneaker.mintNumber) + " · " +
+        S2Subtitle(stringResource(sneakerNoRes(), sneaker.mintNumber) + " · " +
             stringResource(R.string.level_chip, sneaker.level))
         androidx.compose.foundation.layout.Spacer(Modifier.height(14.dp))
         S2ShoeStage(sneaker, Modifier.fillMaxWidth(0.86f))

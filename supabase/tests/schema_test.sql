@@ -9972,6 +9972,166 @@ do $$ begin
     '푸시와 상관없이 승인은 그대로 된다');
 end $$;
 
+
+-- 0087 — 크루 러닝 출발: 15초 넘게 묻지 않은 준비 인원은 빼고 · 대기실 열림 푸시는 크루마다 30분에 한 번
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('87000000-0000-0000-0000-000000000001', 'a87@test', '{"full_name":"진행자"}'),
+  ('87000000-0000-0000-0000-000000000002', 'b87@test', '{"full_name":"있음"}'),
+  ('87000000-0000-0000-0000-000000000003', 'c87@test', '{"full_name":"화면꺼짐"}'),
+  ('87000000-0000-0000-0000-000000000004', 'd87@test', '{"full_name":"있음둘"}'),
+  ('87000000-0000-0000-0000-000000000005', 'e87@test', '{"full_name":"다섯"}'),
+  ('87000000-0000-0000-0000-000000000006', 'f87@test', '{"full_name":"여섯"}');
+insert into public.crews (id, owner_id, name)
+values ('87000000-0000-0000-0000-0000000000cc', '87000000-0000-0000-0000-000000000001', '자리 크루');
+insert into public.crew_members (crew_id, user_id, role)
+select '87000000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER'
+  from unnest(array['87000000-0000-0000-0000-000000000001', '87000000-0000-0000-0000-000000000002',
+                    '87000000-0000-0000-0000-000000000003', '87000000-0000-0000-0000-000000000004',
+                    '87000000-0000-0000-0000-000000000005', '87000000-0000-0000-0000-000000000006']) u
+on conflict do nothing;
+insert into public.push_tokens (token, user_id) values
+  ('b87-token-0000000000000000000000000', '87000000-0000-0000-0000-000000000002'),
+  ('c87-token-0000000000000000000000000', '87000000-0000-0000-0000-000000000003');
+delete from public.push_outbox;
+set role authenticated;
+call pg_temp.login('87000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('p87', public.party_open('87000000-0000-0000-0000-0000000000cc', null)::text);
+  perform public.party_ready(pg_temp.fx('p87')::bigint, true);
+end $$;
+call pg_temp.login('87000000-0000-0000-0000-000000000002');
+do $$ begin perform public.party_open('87000000-0000-0000-0000-0000000000cc', null);
+  perform public.party_ready(pg_temp.fx('p87')::bigint, true); end $$;
+call pg_temp.login('87000000-0000-0000-0000-000000000003');
+do $$ begin perform public.party_open('87000000-0000-0000-0000-0000000000cc', null);
+  perform public.party_ready(pg_temp.fx('p87')::bigint, true); end $$;
+call pg_temp.login('87000000-0000-0000-0000-000000000004');
+do $$ begin perform public.party_open('87000000-0000-0000-0000-0000000000cc', null);
+  perform public.party_ready(pg_temp.fx('p87')::bigint, true); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'PARTY_OPEN' and args->>'crew' = '자리 크루'
+                                      and link = 'room/87000000-0000-0000-0000-0000000000cc/' || pg_temp.fx('p87'))
+       from public.push_outbox where user_id = '87000000-0000-0000-0000-000000000002'),
+    '크루 러닝 대기실이 열리면 크루원에게 푸시 — 누르면 그 대기실(room/<크루>/<방>)');
+end $$;
+-- 셋째는 화면이 꺼져 20초째 대기실에 묻지 않았다
+update public.party_members set last_seen = now() - interval '20 seconds'
+ where party_id = pg_temp.fx('p87')::bigint and user_id = '87000000-0000-0000-0000-000000000003';
+-- 진행자 자신의 last_seen 이 오래돼도 누른 사람은 출발한다
+update public.party_members set last_seen = now() - interval '1 minute'
+ where party_id = pg_temp.fx('p87')::bigint and user_id = '87000000-0000-0000-0000-000000000001';
+set role authenticated;
+call pg_temp.login('87000000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_start(pg_temp.fx('p87')::bigint); end $$;
+reset role;
+do $$
+declare v_day date := economy.game_day(now());
+begin
+  perform pg_temp.ok(
+    (select array_agg(c.user_id::text order by c.user_id) from economy.crew_runs c where c.party_id = pg_temp.fx('p87')::bigint)
+    = array['87000000-0000-0000-0000-000000000001', '87000000-0000-0000-0000-000000000002', '87000000-0000-0000-0000-000000000004'],
+    '15초 넘게 묻지 않은 준비 인원은 출발 명단에 없다 — 진행자 · 자리에 있던 둘만 출발');
+  perform pg_temp.ok(
+    not exists (select 1 from economy.crew_runs c where c.user_id = '87000000-0000-0000-0000-000000000003' and c.day = v_day)
+    and not exists (select 1 from public.party_members m where m.party_id = pg_temp.fx('p87')::bigint
+                                                         and m.user_id = '87000000-0000-0000-0000-000000000003')
+    and not exists (select 1 from public.party_runs r where r.party_id = pg_temp.fx('p87')::bigint
+                                                      and r.user_id = '87000000-0000-0000-0000-000000000003'),
+    '빠진 사람은 크루 러닝 줄 · 출발 명단이 없다 — 오늘을 그대로 쓴다');
+  perform pg_temp.ok(
+    (select d.contributors = 3 from economy.crew_day_pools d
+      where d.crew_id = '87000000-0000-0000-0000-0000000000cc' and d.day = v_day),
+    '공용 체력 기여도 출발한 셋만');
+end $$;
+
+-- 빠진 사람은 오늘 다른 방에서 준비할 수 있다. 남은 사람이 자리에 없으면 "2명 이상"을 채우지 못한다
+set role authenticated;
+call pg_temp.login('87000000-0000-0000-0000-000000000003');
+do $$ begin
+  insert into fix (k, v) values ('p87b', public.party_open('87000000-0000-0000-0000-0000000000cc', null)::text);
+  perform public.party_ready(pg_temp.fx('p87b')::bigint, true);
+end $$;
+call pg_temp.login('87000000-0000-0000-0000-000000000005');
+do $$ begin perform public.party_open('87000000-0000-0000-0000-0000000000cc', null);
+  perform public.party_ready(pg_temp.fx('p87b')::bigint, true); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(pg_temp.fx('p87b')::bigint <> pg_temp.fx('p87')::bigint
+                     and (select count(*) = 2 from public.party_members m where m.party_id = pg_temp.fx('p87b')::bigint and m.ready),
+    '출발 명단에서 빠진 사람은 오늘 새 대기실에서 다시 준비한다');
+  perform pg_temp.ok(
+    (select count(*) = 1 from public.push_outbox where user_id = '87000000-0000-0000-0000-000000000002' and kind = 'PARTY_OPEN'),
+    '같은 크루의 대기실이 30분 안에 또 열려도 푸시는 다시 가지 않는다');
+end $$;
+update public.party_members set last_seen = now() - interval '20 seconds'
+ where party_id = pg_temp.fx('p87b')::bigint and user_id = '87000000-0000-0000-0000-000000000005';
+set role authenticated;
+call pg_temp.login('87000000-0000-0000-0000-000000000003');
+call pg_temp.must_fail($q$ select public.party_start(pg_temp.fx('p87b')::bigint) $q$,
+  '자리에 없는 준비 인원은 "2명 이상"에 들지 않는다');
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select status = 'LOBBY' from public.parties where id = pg_temp.fx('p87b')::bigint)
+    and not exists (select 1 from economy.crew_runs c where c.party_id = pg_temp.fx('p87b')::bigint),
+    '출발하지 못한 방은 대기실 그대로 · 누구의 오늘도 쓰지 않는다');
+end $$;
+-- 30분이 지나면 다음 대기실은 다시 알린다
+update economy.crew_party_push set sent_at = now() - interval '31 minutes'
+ where crew_id = '87000000-0000-0000-0000-0000000000cc';
+insert into public.parties (crew_id, host_id) values ('87000000-0000-0000-0000-0000000000cc', '87000000-0000-0000-0000-000000000006');
+do $$ begin
+  perform pg_temp.ok(
+    (select count(*) = 2 from public.push_outbox where user_id = '87000000-0000-0000-0000-000000000002' and kind = 'PARTY_OPEN'),
+    '30분이 지나면 크루 러닝 대기실 열림 푸시가 다시 간다');
+end $$;
+
+
+-- 0088 — 푸시를 누르면 그 글 · 번개로: 댓글 · 답글은 post/<글>(번개 글이면 flash/<글>), 크루 번개는 flash/<글>
+reset role;
+delete from public.push_outbox;
+do $$
+declare v_free bigint; v_flash bigint; v_c bigint;
+begin
+  -- 86..02(c86 크루원)가 크루 번개를 올린다 → 크루장 86..01 에게(폰 없는 86..04 는 빼고)
+  insert into public.posts (author_id, crew_id, category, title, body)
+  values ('86000000-0000-0000-0000-000000000002', pg_temp.fx('c86')::uuid, 'FLASH', '푸시 번개', '')
+  returning id into v_flash;
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'CREW_FLASH' and link = 'flash/' || v_flash::text)
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000001'),
+    '크루 번개 푸시는 그 번개를 연다(0088)');
+
+  -- 86..02 가 86..01 의 글에 댓글 → post/<글>, 86..01 이 답글 → 86..02 에게 post/<글>
+  delete from public.push_outbox;
+  insert into public.posts (author_id, category, title, body)
+  values ('86000000-0000-0000-0000-000000000001', 'FREE', '푸시 글', '') returning id into v_free;
+  insert into public.comments (post_id, author_id, body)
+  values (v_free, '86000000-0000-0000-0000-000000000002', '좋아요') returning id into v_c;
+  insert into public.comments (post_id, parent_id, author_id, body)
+  values (v_free, v_c, '86000000-0000-0000-0000-000000000001', '고마워요');
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'COMMENT' and link = 'post/' || v_free::text)
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000001'),
+    '댓글 푸시는 그 글을 연다(0088)');
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'REPLY' and link = 'post/' || v_free::text)
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000002'),
+    '답글 푸시도 그 글을 연다(0088)');
+
+  -- 번개 글에 달린 댓글은 번개 상세로
+  delete from public.push_outbox;
+  insert into public.comments (post_id, author_id, body)
+  values (v_flash, '86000000-0000-0000-0000-000000000001', '저도 갈게요');
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'COMMENT' and link = 'flash/' || v_flash::text)
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000002'),
+    '번개 글의 댓글 푸시는 그 번개를 연다(0088)');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

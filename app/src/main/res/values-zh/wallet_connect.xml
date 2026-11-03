@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- WEB3 지갑 고르기 · 연결(2026-10-18) -->
 <resources>
-    <string name="wc_title">连接 WEB3 钱包</string>
+    <string name="wc_title">连接钱包</string>
     <string name="wc_body">选择钱包后会在该钱包应用内打开。签名一次即可连接。签名不是交易，不收手续费。</string>
     <string name="wc_note">一个钱包只能连接一个 STEPUP 账号。连接请求 10 分钟内有效。</string>
     <string name="wc_sub_open">在钱包应用中打开</string>

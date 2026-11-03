@@ -6,6 +6,9 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * 인터넷이 다시 되면 밀린 일을 한 번 다시 한다(2026-10-17 인터넷 끊김 점검) — 잔고 · 신발 맞추기, 푸시 주소 적기, 러닝 올리기,
@@ -23,6 +26,11 @@ object NetworkWatch {
     /** 지금 망이 인터넷이 되는가. 처음 알기 전에는 null — 그때는 "다시 됐다"로 치지 않는다 */
     @Volatile private var online: Boolean? = null
 
+    private val _back = MutableStateFlow(0)
+
+    /** 인터넷이 다시 된 횟수 — 화면이 "다시 됐다"에 맞춰 못 읽은 것을 한 번 더 묻게(크루 러닝 결과 보상 줄 등, 2026-11-03) */
+    val back: StateFlow<Int> = _back
+
     fun start(context: Context, onBack: () -> Unit) {
         if (started) return
         val manager = context.applicationContext.getSystemService(ConnectivityManager::class.java) ?: return
@@ -31,7 +39,10 @@ object NetworkWatch {
             manager.activeNetwork?.let { manager.getNetworkCapabilities(it)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) } ?: false
         }.getOrNull()
         val main = Handler(Looper.getMainLooper())
-        val run = Runnable { runCatching(onBack) }
+        val run = Runnable {
+            _back.update { it + 1 }
+            runCatching(onBack)
+        }
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
                 val now = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)

@@ -22,6 +22,11 @@ class WalletAppsTest {
         assertNull(WalletApp.GIWA.storeUrl())
     }
 
+    @Test fun `스토어 판 지갑 고르기에는 준비 중인 GIWA 줄이 없다`() {
+        assertEquals(WalletApp.entries, WalletApp.shown(web3 = true))
+        assertEquals(listOf(WalletApp.METAMASK, WalletApp.OKX, WalletApp.RABBY), WalletApp.shown(web3 = false))
+    }
+
     @Test fun `서버 문장에서 계정 · 확인 번호를 읽고 연결 페이지 주소를 만든다`() {
         val request = requireNotNull(WalletLinkRequest.parse(message))
         assertEquals(WalletLinkRequest(user, nonce), request)
