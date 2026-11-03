@@ -50,6 +50,38 @@ if "StepUpFonts." in s and "import com.stepup.android.ui.theme.StepUpFonts" not 
 s = re.sub(r"@(?:androidx\.annotation\.)?StringRes\s+(val |var )?(\w+): Int", r"\1\2: org.jetbrains.compose.resources.StringResource", s)
 s = s.replace("import androidx.annotation.StringRes\n", "")
 s = s.replace("import com.stepup.android.ui.Screen\n", "import com.stepup.android.ui.Screen\n")
+# 글자(코드 포인트) 세기 — 공용 Text.kt
+s = re.sub(r"(\w+)\.codePointCount\(0, \1\.length\)", r"\1.codePointLength()", s)
+s = s.replace("preloadShoeArt(context, ", "preloadShoeArt(")
+# 시스템 뒤로 가기 — 공용 SystemBackHandler(iOS 는 받지 않는다)
+s = s.replace("import androidx.activity.compose.BackHandler\n", "import com.stepup.android.ui.components.SystemBackHandler\n")
+s = re.sub(r"(?<![\w.])BackHandler\(", "SystemBackHandler(", s)
+s = re.sub(r"(?<![\w.])BackHandler \{", "SystemBackHandler {", s)
+s = re.sub(r",\s*decorFitsSystemWindows = false", "", s)
+s = re.sub(r"decorFitsSystemWindows = false,\s*", "", s)
+# 짧은 알림 — 공용 showToast(앱 뿌리의 ToastHost 가 띄운다)
+s = s.replace("import android.widget.Toast\n", "import com.stepup.android.ui.components.showToast\n")
+s = re.sub(r"(?:android\.widget\.)?Toast\.makeText\(\s*\w+(?:\.applicationContext)?\s*,\s*", "showToast(", s)
+s = re.sub(r",\s*(?:android\.widget\.)?Toast\.LENGTH_SHORT\s*\)\.show\(\)", ")", s)
+s = re.sub(r",\s*(?:android\.widget\.)?Toast\.LENGTH_LONG\s*\)\.show\(\)", ", long = true)", s)
+# 글자 읽기 — Composable 밖은 공용 getString(suspend)
+s = re.sub(r"\b\w*[cC]ontext\.getString\(", "org.jetbrains.compose.resources.getString(", s)
+s = s.replace("com.stepup.android.ui.components.returnToSignIn(context)", "com.stepup.android.ui.components.returnToSignIn()")
+s = re.sub(r"(?<![\w.])returnToSignIn\(context\)", "returnToSignIn()", s)
+# 화면 언어
+s = s.replace("LocalConfiguration.current.locales[0].language", "androidx.compose.ui.text.intl.Locale.current.language")
+# 빌드 판 값 — 공용 AppBuild
+s = s.replace("import com.stepup.android.BuildConfig\n", "")
+s = re.sub(r"\b(?:com\.stepup\.android\.)?BuildConfig\.", "com.stepup.android.core.AppBuild.", s)
+# 시간대 — kotlinx-datetime
+s = s.replace("import java.time.ZoneId\n", "")
+s = re.sub(r"(?:java\.time\.)?ZoneId\.systemDefault\(\)", "kotlinx.datetime.TimeZone.currentSystemDefault()", s)
+s = re.sub(r":\s*(?:java\.time\.)?ZoneId\b", ": kotlinx.datetime.TimeZone", s)
+# 저장소는 공용 AppServices 에서(안드로이드 ServiceLocator 의 화면 쪽 자리)
+s = s.replace("import com.stepup.android.core.ServiceLocator\n", "import com.stepup.android.core.AppServices\n")
+s = re.sub(r"\b(?:com\.stepup\.android\.core\.)?ServiceLocator\.", "AppServices.", s)
+if "AppServices." in s and "import com.stepup.android.core.AppServices" not in s:
+    s = re.sub(r"\n(import [^\n]+\n)", "\nimport com.stepup.android.core.AppServices\n\\1", s, count=1)
 for fn in ("painterResource", "stringResource", "pluralStringResource"):
     if re.search(rf"(?<![\w.]){fn}\(", s) and f"import org.jetbrains.compose.resources.{fn}\n" not in s:
         s = re.sub(r"\n(import [^\n]+\n)", f"\nimport org.jetbrains.compose.resources.{fn}\n\\1", s, count=1)
@@ -92,7 +124,14 @@ def _formats(text):
     return "".join(out)
 
 
+# 쓰지 않게 된 안드로이드 Context — 선언만 남았으면 지운다
+if len(re.findall(r"\bcontext\b", s)) == len(re.findall(r"val context = LocalContext\.current(?:\.applicationContext)?\n", s)):
+    s = re.sub(r"[ \t]*val context = LocalContext\.current(?:\.applicationContext)?\n", "", s)
+if "LocalContext" not in s.replace("import androidx.compose.ui.platform.LocalContext\n", ""):
+    s = s.replace("import androidx.compose.ui.platform.LocalContext\n", "")
+
 s = _formats(s)
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text(s)
 print(f"{src} → {dst}")
+

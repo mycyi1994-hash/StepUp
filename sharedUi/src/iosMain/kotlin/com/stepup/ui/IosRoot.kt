@@ -32,7 +32,10 @@ private enum class Stage { Checking, SignedOut, AccessCode, SignedIn, ShoeCheck,
  * 결과 안내도 안드로이드와 같다 — 취소는 아무것도 띄우지 않고, 서버가 거절하면 Failed, 닿지 못하면 Offline, 설정이 없으면 Failed.
  */
 @Composable
-fun IosRoot() = StepUpTheme {
+fun IosRoot() = StepUpTheme { Box(Modifier.fillMaxSize()) { IosRootContent(); com.stepup.android.ui.components.ToastHost() } }
+
+@Composable
+private fun IosRootContent() {
     var stage by remember { mutableStateOf(Stage.Checking) }
     var phase by remember { mutableStateOf(LoginPhase.Idle) }
     var notice by remember { mutableStateOf<LoginNotice?>(null) }
@@ -52,6 +55,11 @@ fun IosRoot() = StepUpTheme {
     LaunchedEffect(Unit) {
         // 러닝 올리기를 이어 둔다 — 앞에 올 때 · 백그라운드 작업이 같은 규칙(UploadPass)으로 올린다
         IosApp.configureMap()
+        IosApp.connectServices(onReturnToSignIn = {
+            IosRunSession.stop()
+            IosAuth.signOut(IosApp.sessionStore)
+            stage = Stage.SignedOut
+        })
         IosApp.connectUploads()
         if (IosApp.sessionStore.load() != null) afterSignIn() else stage = Stage.SignedOut
     }
@@ -88,7 +96,7 @@ fun IosRoot() = StepUpTheme {
             showApple = true,
         )
         Stage.SignedIn, Stage.ShoeCheck -> Box(Modifier.fillMaxSize()) {
-            IosHome(onStartRun = { stage = Stage.ShoeCheck })
+            IosMain(onStartRun = { stage = Stage.ShoeCheck })
             // 자유 러닝 신발 점검 — 안드로이드와 같은 점검창(이 신발로 출발 · 돌아가기 · 신발 교체, 신발은 1초 꾹)
             if (stage == Stage.ShoeCheck) IosShoeCheck(onStart = { stage = Stage.Starting }, onCancel = { stage = Stage.SignedIn })
         }

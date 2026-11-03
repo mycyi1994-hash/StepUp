@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.stepup.android.data.repo
 
 import com.stepup.android.data.remote.ServerResult
@@ -12,7 +14,7 @@ import com.stepup.android.domain.ForgeTarget
 import com.stepup.android.domain.ForgeTargetBlock
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
-import java.util.UUID
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -84,8 +86,8 @@ class ForgeRepository(
     private val server: ForgeServer?,
     private val pendingStore: ForgePendingStore,
     private val resync: suspend () -> Unit = {},
-    private val now: () -> Long = System::currentTimeMillis,
-    private val newKey: () -> String = { UUID.randomUUID().toString() },
+    private val now: () -> Long = { com.stepup.android.domain.epochMillis() },
+    private val newKey: () -> String = { kotlin.uuid.Uuid.random().toString() },
 ) {
     suspend fun pending(): ForgePending? = pendingStore.load()
 

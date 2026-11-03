@@ -66,4 +66,23 @@ object IosApp {
     val sneakers by lazy {
         com.stepup.android.data.repo.SneakerRepository(db, rewards, economy = economyApi, sync = economySync, prefs = prefs)
     }
+    val boosts by lazy { com.stepup.android.data.repo.BoostRepository(db, rewards, prefs, economy = economyApi, sync = economySync) }
+
+    /** 공용 화면이 쓰는 저장소를 채운다(안드로이드 ServiceLocator 와 같은 이름 — AppServices) */
+    fun connectServices(onReturnToSignIn: suspend () -> Unit) {
+        val s = com.stepup.android.core.AppServices
+        s.userPrefs = prefs
+        s.rewardRepository = rewards
+        s.sneakerRepository = sneakers
+        s.boostRepository = boosts
+        s.economySync = economySync
+        s.forgeRepository = com.stepup.android.data.repo.ForgeRepository(
+            server = economyApi,
+            pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(prefs),
+            resync = { economySync.refresh() },
+        )
+        s.serverEconomyOn = supabaseUrl.isNotEmpty()
+        s.onReturnToSignIn = onReturnToSignIn
+        com.stepup.android.core.AppBuild.VERSION_NAME = plist("CFBundleShortVersionString")
+    }
 }

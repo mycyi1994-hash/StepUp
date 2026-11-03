@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -73,7 +74,8 @@ fun IosHome(onStartRun: () -> Unit) {
     }
     val photoIndex = remember { kotlin.random.Random.nextInt(RunPhotos.names.size) }
     val loaded = steps != null && goal > 0
-    Box(Modifier.fillMaxSize().background(StepUpColors.night).safeDrawingPadding()) {
+    // 아래 안전 영역은 하단 탭(IosMain)이 받는다
+    Box(Modifier.fillMaxSize().background(StepUpColors.night).statusBarsPadding()) {
         HomeContent(
             loaded = loaded, todaySteps = steps ?: 0, goal = goal,
             hasPermission = stepsAllowed, firstHome = false, running = false,
