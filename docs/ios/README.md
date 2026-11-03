@@ -88,4 +88,5 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
   안드로이드 앱과 한 빌드라 Kotlin 판이 하나다.
   - 더 새 KSP(2.3.13 에서 확인)는 AGP 8.12 이상을 요구한다 — AGP 를 올릴 때 함께 올린다.
   - Compose Multiplatform 1.12 는 Kotlin 2.2.20 으로 만들어졌다 — Kotlin 은 그보다 같거나 새 판이어야 한다.
+  - 축소기 R8 은 **9.0.55** 로 고정(`build.gradle.kts` 의 `buildscript`) — AGP 8.10 에 딸린 R8 은 Kotlin 2.3 메타데이터를 못 읽어 릴리스 · qa 빌드가 경고를 수백 줄 냈다. AGP 를 올리면 지운다.
 - App Store 제출은 Xcode 26 · iOS 26 SDK 가 필요하다(2026-04 부터). Kotlin/Native 는 2.2.20 부터 Xcode 26 을 안다 — CI 는 Xcode 26 중 가장 새 판을 고른다.
