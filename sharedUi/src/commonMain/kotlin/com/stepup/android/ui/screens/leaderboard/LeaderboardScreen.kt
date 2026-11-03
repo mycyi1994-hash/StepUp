@@ -1,9 +1,9 @@
 package com.stepup.android.ui.screens.leaderboard
 
+import com.stepup.android.domain.displayName
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.ui.components.asImageBitmap
 import kotlinx.datetime.number
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +39,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,7 +57,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -74,7 +72,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.ui.res.*
@@ -92,7 +89,6 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
 import kotlinx.datetime.TimeZone
-import java.time.format.TextStyle as JavaTextStyle
 
 /*
  * 리더보드(2026-10-17 전달본) — 크루 순위 · 개인 러닝 순위 · 주간 포인트 세 판. 늘 딥 네이비 한 벌이다.
@@ -803,7 +799,7 @@ private fun MyRunsSheet(board: RunnerBoard) {
             Column(Modifier.weight(1f)) {
                 Text(dates.format(day), style = lbText(14.sp, Lb.White, FontWeight.SemiBold))
                 Spacer(Modifier.height(4.dp))
-                Text(day.dayOfWeek.getDisplayName(JavaTextStyle.FULL, locale), style = lbText(11.sp, Lb.Muted))
+                Text(day.dayOfWeek.displayName(com.stepup.android.domain.DateNameStyle.FULL, androidx.compose.ui.text.intl.Locale.current.language), style = lbText(11.sp, Lb.Muted))
             }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(LeaderboardMath.km(run.km), style = lbNumber(22.sp, Lb.White, FontWeight.SemiBold))
@@ -1091,24 +1087,7 @@ private fun moveText(rise: Int): String = when {
 
 /** 화면이 늘 남색이라 상태바 · 내비바 아이콘을 밝게 — 떠나면 앞의 값으로 되돌린다 */
 @Composable
-private fun LightSystemBarIcons() {
-    val view = LocalView.current
-    if (view.isInEditMode) return
-    DisposableEffect(view) {
-        val window = (view.context as? Activity)?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        val status = controller?.isAppearanceLightStatusBars
-        val navigation = controller?.isAppearanceLightNavigationBars
-        controller?.isAppearanceLightStatusBars = false
-        controller?.isAppearanceLightNavigationBars = false
-        onDispose {
-            if (controller != null) {
-                status?.let { controller.isAppearanceLightStatusBars = it }
-                navigation?.let { controller.isAppearanceLightNavigationBars = it }
-            }
-        }
-    }
-}
+private fun LightSystemBarIcons() = com.stepup.android.ui.components.LightSystemBarIcons()
 
 /** 시안의 선 아이콘(lucide, 24 격자 · 두께 2 · 둥근 끝) */
 internal object LbIcons {

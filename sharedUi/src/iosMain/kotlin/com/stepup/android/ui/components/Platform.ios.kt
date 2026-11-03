@@ -31,3 +31,7 @@ actual fun clearDialogProperties(dismissOnClickOutside: Boolean): androidx.compo
         dismissOnClickOutside = dismissOnClickOutside, usePlatformDefaultWidth = false,
         scrimColor = androidx.compose.ui.graphics.Color.Transparent,
     )
+
+
+@androidx.compose.runtime.Composable
+actual fun LightSystemBarIcons() = Unit

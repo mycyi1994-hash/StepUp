@@ -49,6 +49,12 @@ fun javaRound(value: Double): Long = if (value.isNaN()) 0L else value.roundToLon
 /** java.lang.Math.floorMod(Int, Int) */
 fun javaFloorMod(value: Int, mod: Int): Int = ((value % mod) + mod) % mod
 
+/** Math.floorMod(long, long) */
+fun javaFloorMod(value: Long, mod: Long): Long = ((value % mod) + mod) % mod
+
+/** Math.floorMod(long, int) — Java 9 부터 int 를 돌려준다 */
+fun javaFloorMod(value: Long, mod: Int): Int = javaFloorMod(value, mod.toLong()).toInt()
+
 /** java.lang.String.hashCode() — 플랫폼마다 hashCode 가 같다는 보장이 없어 직접 센다(크루 배경 고르기가 두 앱에서 같게) */
 fun javaHash(text: String): Int {
     var h = 0

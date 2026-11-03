@@ -34,3 +34,32 @@ fun androidx.compose.ui.graphics.ImageBitmap.asImageBitmap(): androidx.compose.u
  */
 fun stringNow(res: org.jetbrains.compose.resources.StringResource, vararg args: Any): String =
     kotlinx.coroutines.runBlocking { org.jetbrains.compose.resources.getString(res, *args) }
+
+/**
+ * 원뿔(스윕) 그라디언트를 [degrees] 만큼 돌린 붓 — 안드로이드 SweepGradient + setLocalMatrix(setRotate) 자리.
+ * 돌리는 대신 색 자리를 같은 만큼 민다(한 바퀴를 넘는 자리는 앞으로 돌리고, 넘는 곳의 색은 사이 값으로 이어 붙인다).
+ */
+fun rotatedSweepBrush(
+    center: androidx.compose.ui.geometry.Offset,
+    colors: List<androidx.compose.ui.graphics.Color>,
+    stops: List<Float>,
+    degrees: Float,
+): androidx.compose.ui.graphics.Brush {
+    val shift = (((degrees / 360f) % 1f) + 1f) % 1f
+    if (shift == 0f) return androidx.compose.ui.graphics.Brush.sweepGradient(*stops.zip(colors).toTypedArray(), center = center)
+    // 원래 자리 1 - shift 에서 한 바퀴를 넘는다 — 그 자리의 색
+    val cut = 1f - shift
+    var i = stops.indexOfFirst { it >= cut }.coerceAtLeast(1)
+    val t = if (stops[i] == stops[i - 1]) 0f else (cut - stops[i - 1]) / (stops[i] - stops[i - 1])
+    val atCut = androidx.compose.ui.graphics.lerp(colors[i - 1], colors[i], t.coerceIn(0f, 1f))
+    val moved = mutableListOf<Pair<Float, androidx.compose.ui.graphics.Color>>()
+    moved += 0f to atCut
+    stops.forEachIndexed { k, p -> if (p >= cut) moved += (p - cut) to colors[k] }
+    stops.forEachIndexed { k, p -> if (p < cut) moved += (p + shift) to colors[k] }
+    moved += 1f to atCut
+    return androidx.compose.ui.graphics.Brush.sweepGradient(*moved.sortedBy { it.first }.toTypedArray(), center = center)
+}
+
+/** 화면이 늘 어두워서 상태바 · 내비바 아이콘을 밝게 — 떠나면 되돌린다(iOS 는 상태바 글자색을 앱이 정해 두어 할 일 없음) */
+@androidx.compose.runtime.Composable
+expect fun LightSystemBarIcons()

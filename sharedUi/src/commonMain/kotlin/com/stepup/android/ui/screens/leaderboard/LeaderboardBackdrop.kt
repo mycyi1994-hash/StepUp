@@ -1,7 +1,5 @@
 package com.stepup.android.ui.screens.leaderboard
 
-import android.graphics.Matrix
-import android.graphics.SweepGradient
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,13 +24,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -206,28 +202,12 @@ internal fun LeaderboardBackdrop(
  * 색 차례는 conic-gradient(from -90deg, 투명 0~235° · #1450FF1A 260° · #1450FF88 320° · #75A9FF 354° · #DAE9FF 359° · 투명 360°).
  */
 private class LaneLight {
-    private var shader: SweepGradient? = null
-    private var brush: ShaderBrush? = null
-    private var at: Offset = Offset.Unspecified
-    private val matrix = Matrix()
-
-    fun brush(center: Offset, degrees: Float): ShaderBrush {
-        val current = shader?.takeIf { at == center } ?: SweepGradient(
-            center.x, center.y,
-            intArrayOf(
-                Color.Transparent.toArgb(), Color.Transparent.toArgb(), Color(0x1A1450FF).toArgb(), Color(0x881450FF).toArgb(),
-                Color(0xFF75A9FF).toArgb(), Color(0xFFDAE9FF).toArgb(), Color.Transparent.toArgb(),
-            ),
-            floatArrayOf(0f, 235f / 360f, 260f / 360f, 320f / 360f, 354f / 360f, 359f / 360f, 1f),
-        ).also {
-            shader = it
-            brush = ShaderBrush(it)
-            at = center
-        }
-        matrix.setRotate(degrees, center.x, center.y)
-        current.setLocalMatrix(matrix)
-        return brush ?: ShaderBrush(current).also { brush = it }
-    }
+    fun brush(center: Offset, degrees: Float): Brush = com.stepup.android.ui.components.rotatedSweepBrush(
+        center,
+        listOf(Color.Transparent, Color.Transparent, Color(0x1A1450FF), Color(0x881450FF), Color(0xFF75A9FF), Color(0xFFDAE9FF), Color.Transparent),
+        listOf(0f, 235f / 360f, 260f / 360f, 320f / 360f, 354f / 360f, 359f / 360f, 1f),
+        degrees,
+    )
 }
 
 /** 크루 1위 빛 띠의 붓 — 폭 90 띠의 가로 그라디언트(한 번 만들어 둔다) */
