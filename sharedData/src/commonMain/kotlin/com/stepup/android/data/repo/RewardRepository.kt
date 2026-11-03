@@ -15,8 +15,11 @@ import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.SessionReward
 import com.stepup.android.domain.Sneaker
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import com.stepup.android.domain.epochMillis
+import com.stepup.android.domain.todayIn
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -80,7 +83,7 @@ class RewardRepository(
         if (amount <= 0) return
         rewardDao.insert(
             RewardEntity(
-                timestamp = System.currentTimeMillis(),
+                timestamp = epochMillis(),
                 type = type,
                 amount = amount,
                 description = description,
@@ -93,7 +96,7 @@ class RewardRepository(
         if (amount <= 0) return true
         return rewardDao.spendIfEnough(
             RewardEntity(
-                timestamp = System.currentTimeMillis(),
+                timestamp = epochMillis(),
                 type = type,
                 amount = -amount,
                 description = description,
@@ -116,9 +119,9 @@ class RewardRepository(
 
     /** [day](epochDay) 하루 중 스트릭 보호막이 켜져 있던 때가 있었는가 */
     suspend fun streakShieldCovered(day: Long): Boolean {
-        val zone = ZoneId.systemDefault()
-        val from = LocalDate.ofEpochDay(day).atStartOfDay(zone).toInstant().toEpochMilli()
-        val to = LocalDate.ofEpochDay(day + 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val zone = TimeZone.currentSystemDefault()
+        val from = LocalDate.fromEpochDays(day).atStartOfDayIn(zone).toEpochMilliseconds()
+        val to = LocalDate.fromEpochDays(day + 1).atStartOfDayIn(zone).toEpochMilliseconds()
         return boostDao.activeDuring(BoostType.STREAK_SHIELD.id, from, to) != null
     }
 
@@ -130,7 +133,7 @@ class RewardRepository(
     ) {
         notificationDao.insert(
             NotificationEntity(
-                timestamp = System.currentTimeMillis(),
+                timestamp = epochMillis(),
                 type = type,
                 argText = argText,
                 argAmount = argAmount,
@@ -188,10 +191,10 @@ class RewardRepository(
     suspend fun calculateSessionReward(
         steps: Int,
         partySize: Int = 1,
-        today: Long = LocalDate.now().toEpochDay(),
+        today: Long = todayIn().toEpochDays(),
         /** 멈춘 시간을 뺀 달린 시간(초) — 신발이 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066). 0 이면 빼지 않는다 */
         activeSec: Long = 0L,
-        startedAt: Long = System.currentTimeMillis(),
+        startedAt: Long = epochMillis(),
     ): SessionReward {
         syncEnergyCap()
         val energyRemaining = prefs.currentEnergy(today)
@@ -237,7 +240,7 @@ class RewardRepository(
         // 서버 경제에서는 GPS 러닝으로 확인된 걸음만 적립된다. 평소 걸음은 적립하지 않는다.
         if (steps <= 0 || serverEconomy) return SessionReward(0, 0.0, 0.0)
         recoverRunEnergy()
-        val today = LocalDate.now().toEpochDay()
+        val today = todayIn().toEpochDays()
         syncEnergyCap()
         val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()
@@ -246,7 +249,7 @@ class RewardRepository(
             ?: RewardEconomy.sneakerMultiplier(prefs.sneakerLevel.first())
         val energyEfficiency = equipped?.energyEfficiency ?: 1.0
 
-        val now = System.currentTimeMillis()
+        val now = epochMillis()
         val xpBoosted = boostDao.activeOf(BoostType.XP_BOOSTER.id, now) != null
         val boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0
 

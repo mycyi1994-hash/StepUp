@@ -64,6 +64,9 @@ object Spots {
 
     suspend fun match(text: String?): Spot? = matchIn(all(), text)
 
+    /** 장소 하나(안드로이드 Spots.byId 와 같다) */
+    suspend fun byId(id: String): Spot? = all().firstOrNull { it.id == id }
+
     /** [match] 의 판정만 — 장소 목록을 받아서(검사가 먹여 본다) */
     fun matchIn(spots: List<Spot>, text: String?): Spot? {
         if (text.isNullOrBlank()) return null

@@ -1,6 +1,6 @@
 package com.stepup.android.data.repo
 
-import androidx.room.withTransaction
+import com.stepup.android.data.local.inTransaction
 import com.stepup.android.data.local.AppDatabase
 import com.stepup.android.data.local.BoostEntity
 import com.stepup.android.data.local.RewardEntity
@@ -13,9 +13,11 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.ServerSneakerRow
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.TokenResult
-import java.time.Instant
-import java.time.LocalDate
-import java.time.OffsetDateTime
+import com.stepup.android.domain.KST
+import com.stepup.android.domain.epochMillis
+import com.stepup.android.domain.todayIn
+import kotlinx.datetime.LocalDate
+import com.stepup.android.data.remote.toIsoInstant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -41,7 +43,7 @@ class EconomySync(
     private val db: AppDatabase,
     private val prefs: UserPrefs,
     private val sessions: SessionHolder,
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = { epochMillis() },
 ) {
     private val lock = Mutex()
     private var bootstrapped: String? = null
@@ -112,14 +114,14 @@ class EconomySync(
             bootstrapped = userId
         }
         // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
-        val checkIn = "$userId:${LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))}"
+        val checkIn = "$userId:${todayIn(KST)}"
         if (checkedIn != checkIn && api.checkIn() is ServerResult.Ok) checkedIn = checkIn
         importLegacy(userId)?.let { return it }
 
         val economy = when (val r = api.economy()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
         val sneakers = when (val r = api.sneakers()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
         val grants = when (val r = api.drawGrants()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
-        val boosts = when (val r = api.boosts(Instant.ofEpochMilli(now() - BOOST_KEEP_MILLIS).toString())) {
+        val boosts = when (val r = api.boosts((now() - BOOST_KEEP_MILLIS).toIsoInstant())) {
             is ServerResult.Ok -> r.value
             else -> return r.cast()
         }
@@ -145,7 +147,7 @@ class EconomySync(
         (api.lifetimeKm(userId) as? ServerResult.Ok)?.let { prefs.setAccountLifetimeKm(it.value) }
 
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }
-        db.withTransaction {
+        db.inTransaction {
             db.sneakerDao().deleteAll()
             db.sneakerDao().insertAll(sneakers.map { it.toEntity(previous[it.id]?.acquiredAt ?: now()) })
             db.rewardDao().deleteAll()
@@ -157,7 +159,7 @@ class EconomySync(
         }
         val left = { kind: String -> grants.filter { it.kind == kind }.sumOf { (it.granted - it.used).coerceAtLeast(0) } }
         prefs.setServerEconomy(
-            today = runCatching { LocalDate.parse(economy.gameDay) }.getOrElse { LocalDate.now(java.time.ZoneId.of("Asia/Seoul")) }.toEpochDay(),
+            today = runCatching { LocalDate.parse(economy.gameDay) }.getOrElse { todayIn(KST) }.toEpochDays(),
             energyLeft = economy.energyLeft,
             energyMax = economy.energyMax,
             freeDraws = left("FREE"),
@@ -178,7 +180,7 @@ class EconomySync(
     private suspend fun clearCopy() {
         // 앞 계정이 방금 올린 러닝의 잔고도 버린다 — 다음 계정의 결과 화면에 보이지 않게
         RecordedBalances.clear()
-        db.withTransaction {
+        db.inTransaction {
             db.sneakerDao().deleteAll()
             db.rewardDao().deleteAll()
             db.boostDao().deleteAll()
@@ -287,7 +289,7 @@ private fun <T> ServerResult<T>.failure(): ServerResult<Unit>? = when (this) {
 private fun <T> ServerResult<*>.cast(): ServerResult<T> = this as ServerResult<T>
 
 private fun String.toMillis(): Long =
-    runCatching { OffsetDateTime.parse(this).toInstant().toEpochMilli() }.getOrElse { System.currentTimeMillis() }
+    com.stepup.android.data.remote.isoOffsetMillis(this) ?: epochMillis()
 
 /** 로그인 전 폰이 준 기본 첫 신발(바람 · 일반 · 1번 · 1레벨) */
 private fun SneakerEntity.isDefaultStarter(): Boolean =

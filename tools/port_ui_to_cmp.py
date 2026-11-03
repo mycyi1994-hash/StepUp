@@ -27,20 +27,32 @@ s = s.replace("System.currentTimeMillis()", "com.stepup.android.domain.epochMill
 s = s.replace("com.stepup.android.ui.components.cachedPainterResource(", "painterResource(")
 s = s.replace("cachedPainterResource(", "painterResource(")
 s = s.replace("com.stepup.android.ui.components.painterResource(", "painterResource(")
-s = re.sub(r"@(?:androidx\.annotation\.)?DrawableRes\s+(\w+): Int", r"\1: org.jetbrains.compose.resources.DrawableResource", s)
+s = re.sub(r"@(?:androidx\.annotation\.)?DrawableRes\s+(val |var )?(\w+): Int\b", r"\1\2: org.jetbrains.compose.resources.DrawableResource", s)
+# 그림 · 글자 번호를 돌려주는 함수(@DrawableRes / @StringRes 가 붙은 fun … : Int)
+_RES_TYPES = {"DrawableRes": "DrawableResource", "StringRes": "StringResource", "PluralsRes": "PluralStringResource"}
+s = re.sub(r"@(?:androidx\.annotation\.)?(DrawableRes|StringRes|PluralsRes)\s*\n(\s*)((?:(?:internal|private|public) )?(?:fun [^\n]*\)|val \w+(?:\.\w+)*))\s*:\s*Int\b",
+           lambda m: f"{m.group(2)}{m.group(3)}: org.jetbrains.compose.resources.{_RES_TYPES[m.group(1)]}", s)
+s = s.replace("import androidx.annotation.DrawableRes\n", "")
 for fn in ("painterResource", "stringResource", "pluralStringResource"):
     s = s.replace(f"androidx.compose.ui.res.{fn}(", f"org.jetbrains.compose.resources.{fn}(")
 # 화면 높이(dp) — CMP 에는 LocalConfiguration 이 없다
 s = s.replace("LocalConfiguration.current.screenHeightDp", "with(androidx.compose.ui.platform.LocalDensity.current) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.height.toDp().value.toInt() }")
 s = s.replace("LocalConfiguration.current.screenWidthDp", "with(androidx.compose.ui.platform.LocalDensity.current) { androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp().value.toInt() }")
 s = s.replace("import androidx.compose.ui.platform.LocalConfiguration\n", "")
-s = re.sub(r"\bMath\.(PI|sin|cos|sqrt|abs|min|max|atan2|hypot)\b", r"kotlin.math.\1", s)
+s = re.sub(r"\bMath\.(PI|sin|cos|tan|asin|acos|atan|sqrt|abs|min|max|atan2|hypot|floor|ceil|exp|ln|log10|pow|round)\b", r"kotlin.math.\1", s)
+s = re.sub(r"\bMath\.toRadians\(", "com.stepup.android.domain.toRadians(", s)
+s = re.sub(r"\bMath\.toDegrees\(", "com.stepup.android.domain.toDegrees(", s)
+s = s.replace("kotlin.math.pow(", "Math_pow_unsupported(")
+s = s.replace("kotlin.math.log(", "kotlin.math.ln(")
 s = re.sub(r"\n\s*platformStyle = PlatformTextStyle\(includeFontPadding = false\),", "", s)
 if "StepUpFonts." in s and "import com.stepup.android.ui.theme.StepUpFonts" not in s and "import com.stepup.android.ui.theme.*" not in s:
     s = re.sub(r"\n(import [^\n]+\n)", r"\nimport com.stepup.android.ui.theme.StepUpFonts\n\1", s, count=1)
 s = re.sub(r"@(?:androidx\.annotation\.)?StringRes\s+(val |var )?(\w+): Int", r"\1\2: org.jetbrains.compose.resources.StringResource", s)
 s = s.replace("import androidx.annotation.StringRes\n", "")
 s = s.replace("import com.stepup.android.ui.Screen\n", "import com.stepup.android.ui.Screen\n")
+for fn in ("painterResource", "stringResource", "pluralStringResource"):
+    if re.search(rf"(?<![\w.]){fn}\(", s) and f"import org.jetbrains.compose.resources.{fn}\n" not in s:
+        s = re.sub(r"\n(import [^\n]+\n)", f"\nimport org.jetbrains.compose.resources.{fn}\n\\1", s, count=1)
 
 
 def _call_end(text, start):

@@ -48,6 +48,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import com.stepup.android.ui.screens.walk.FreeRunShoeCheck
 import platform.CoreLocation.CLActivityTypeFitness
 import platform.CoreLocation.CLLocation
 import platform.CoreLocation.CLLocationManager
@@ -84,6 +86,11 @@ object IosRunSession {
     }
 
     val active: Boolean get() = engine != null
+
+    /** 러닝 전에 위치 권한("사용하는 동안")을 묻는다 — 3 · 2 · 1 동안 시스템 창이 뜨지 않게 신발 점검에서 먼저 */
+    fun askLocation() {
+        manager.requestWhenInUseAuthorization()
+    }
 
     fun start() {
         if (engine != null) return
@@ -170,7 +177,7 @@ fun IosFreeRun(onClose: () -> Unit) {
     var finished by remember { mutableStateOf<IosRunSession.Finished?>(null) }
     var saving by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (!IosRunSession.active && finished == null) IosRunSession.start()
+        // 러닝은 시작 연출(FreeRunStartSequence)이 켠다 — 여기서는 시계만
         while (true) {
             IosRunSession.tick()
             delay(1_000)
@@ -242,4 +249,46 @@ fun IosFreeRun(onClose: () -> Unit) {
             )
         }
     }
+}
+
+/**
+ * 자유 러닝 신발 점검(안드로이드 WalkScreen 의 FreeRunShoeCheck 자리) — 신은 신발 · 내 신발 목록은 폰 DB 의 서버 사본,
+ * 갈아 신기는 서버에서(안드로이드와 같은 SneakerRepository.equipOnServer — 확인된 뒤 점검으로).
+ */
+@Composable
+fun IosShoeCheck(onStart: () -> Unit, onCancel: () -> Unit) {
+    val equipped by IosApp.sneakers.equipped.collectAsState(initial = null)
+    val shoes by IosApp.sneakers.inventory.collectAsState(initial = emptyList())
+    var wearing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { IosRunSession.askLocation() }
+    FreeRunShoeCheck(
+        shoe = equipped,
+        shoes = shoes,
+        wearing = wearing,
+        onWear = { id, done ->
+            if (!wearing) {
+                wearing = true
+                scope.launch {
+                    // 안드로이드 WalkViewModel.wear 와 같다 — 됐거나 답을 잃었으면 다시 받은 목록에서 그 신발이 신겨졌는지 본다
+                    val worn = try {
+                        val outcome = IosApp.sneakers.equipOnServer(id)
+                        if (outcome == com.stepup.android.data.repo.EconomyOutcome.Ok || outcome == com.stepup.android.data.repo.EconomyOutcome.Offline) {
+                            kotlinx.coroutines.withTimeoutOrNull(5_000) { IosApp.sneakers.equipped.first { it?.id == id } } != null
+                        } else false
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        wearing = false
+                        throw cancelled
+                    } catch (_: Exception) {
+                        false
+                    }
+                    if (!worn) scope.launch { runCatching { IosApp.economySync.refresh() } }
+                    wearing = false
+                    done(worn)
+                }
+            }
+        },
+        onStart = onStart,
+        onCancel = onCancel,
+    )
 }

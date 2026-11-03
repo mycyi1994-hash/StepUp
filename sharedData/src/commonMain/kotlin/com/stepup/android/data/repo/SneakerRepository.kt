@@ -4,7 +4,7 @@ import com.stepup.android.data.local.NotificationType
 import com.stepup.android.data.local.RewardType
 import com.stepup.android.data.local.AppDatabase
 import com.stepup.android.data.local.SneakerEntity
-import androidx.room.withTransaction
+import com.stepup.android.data.local.inTransaction
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.ShoeCatalog
@@ -154,25 +154,25 @@ class SneakerRepository(
     val ownedCount: Flow<Int> = sneakerDao.observeCount()
 
     /** 첫 실행 시 스타터 스니커즈를 지급한다. 이미 있으면 아무것도 하지 않는다. */
-    suspend fun ensureStarter() = database.withTransaction {
-        if (sneakerDao.count() > 0) return@withTransaction
+    suspend fun ensureStarter() = database.inTransaction {
+        if (sneakerDao.count() > 0) return@inTransaction
         sneakerDao.insert(SneakerMint.starter().toEntity())
     }
 
     suspend fun equip(id: Long): Boolean = sneakerDao.equipExclusively(id) > 0
 
     /** 강화. 잔액 부족이거나 최대 레벨이면 null. */
-    suspend fun upgrade(id: Long): Sneaker? = database.withTransaction {
-        val entity = sneakerDao.byId(id) ?: return@withTransaction null
+    suspend fun upgrade(id: Long): Sneaker? = database.inTransaction {
+        val entity = sneakerDao.byId(id) ?: return@inTransaction null
         val current = entity.toDomain()
-        if (!current.canUpgrade) return@withTransaction null
+        if (!current.canUpgrade) return@inTransaction null
         val cost = current.upgradeCost
         val ok = rewardRepository.spend(
             RewardType.SPEND_UPGRADE,
             cost,
             "${current.displayName} Lv.${current.level} → Lv.${current.level + 1}",
         )
-        if (!ok) return@withTransaction null
+        if (!ok) return@inTransaction null
         val upgraded = entity.copy(
             level = entity.level + 1,
             // 강화하면 스탯도 소폭 상승한다
@@ -192,14 +192,14 @@ class SneakerRepository(
      * 새 스니커즈 민팅. 착용 중인 스니커즈의 행운 스탯이 상위 희귀도 확률을 올린다.
      * 잔액 부족이면 null.
      */
-    suspend fun mint(): Sneaker? = database.withTransaction {
+    suspend fun mint(): Sneaker? = database.inTransaction {
         val cost = RewardEconomy.MINT_COST
         val luck = sneakerDao.equippedNow()?.luck?.minus(1.0)?.coerceAtLeast(0.0) ?: 0.0
-        if (!rewardRepository.spend(RewardType.SPEND_MINT, cost, "스니커즈 민팅")) return@withTransaction null
+        if (!rewardRepository.spend(RewardType.SPEND_MINT, cost, "스니커즈 민팅")) return@inTransaction null
 
         val mintNumber = sneakerDao.maxMintNumber() + 1
         val minted = SneakerMint.mint(
-            random = Random(System.nanoTime()),
+            random = Random.Default,
             mintNumber = mintNumber,
             luck = luck,
         )
@@ -231,5 +231,5 @@ class SneakerRepository(
  * 옛 영수증을 받아, 고치지도 치르지도 않은 채 "됐어요"로 보이고 결과 확인에 머물렀다. 남은 비율은 최대 내구도를 보내지 않는
  * 예전 서버(남은 · 최대가 0)에서도 나뉘게 한다.
  */
-internal fun repairAction(shoe: SneakerEntity): String =
+fun repairAction(shoe: SneakerEntity): String =
     "REPAIR:${shoe.id}:${shoe.durabilityNow}/${shoe.durabilityMax}/${shoe.durabilityPts}"

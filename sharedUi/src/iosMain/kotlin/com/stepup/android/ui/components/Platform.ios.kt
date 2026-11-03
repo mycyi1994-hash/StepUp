@@ -24,3 +24,10 @@ actual fun readCustomAvatar(): ImageBitmap? = runCatching {
     if (bytes.isNotEmpty()) bytes.usePinned { memcpy(it.addressOf(0), data.bytes, data.length) }
     org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap()
 }.getOrNull()
+
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+actual fun clearDialogProperties(dismissOnClickOutside: Boolean): androidx.compose.ui.window.DialogProperties =
+    androidx.compose.ui.window.DialogProperties(
+        dismissOnClickOutside = dismissOnClickOutside, usePlatformDefaultWidth = false,
+        scrimColor = androidx.compose.ui.graphics.Color.Transparent,
+    )

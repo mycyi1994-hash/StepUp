@@ -46,4 +46,24 @@ object IosApp {
     }
 
     val prefs by lazy { com.stepup.android.data.prefs.createIosUserPrefs() }
+
+    /** 서버 경제(신발 · 잔고 · 에너지) — 안드로이드 ServiceLocator 와 같은 공용 저장소. 폰의 목록은 서버 원장의 사본이다 */
+    val economyApi by lazy { com.stepup.android.data.remote.EconomyApi(server) }
+    val economySync by lazy {
+        com.stepup.android.data.repo.EconomySync(
+            api = economyApi, market = com.stepup.android.data.remote.MarketApi(server), db = db, prefs = prefs, sessions = sessions,
+        )
+    }
+    val rewards by lazy {
+        com.stepup.android.data.repo.RewardRepository(
+            rewardDao = db.rewardDao(), sneakerDao = db.sneakerDao(), boostDao = db.boostDao(), notificationDao = db.notificationDao(),
+            prefs = prefs, serverEconomy = true,
+            claimGoalOnServer = {
+                if (economyApi.goalClaim() is com.stepup.android.data.remote.ServerResult.Ok) economySync.refresh()
+            },
+        )
+    }
+    val sneakers by lazy {
+        com.stepup.android.data.repo.SneakerRepository(db, rewards, economy = economyApi, sync = economySync, prefs = prefs)
+    }
 }
