@@ -7,6 +7,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -622,7 +624,13 @@ class CrewCardsDesignTest {
             shot("59-transfer-confirm")
             tapTag("crew-transfer-confirm-yes")
             awaitTag("crew-detail")
-            awaitText("크루장 민수")
+            // 크루장은 상세의 "크루장" 줄 값으로 보인다(10-25 통합안 — 예전 "크루장 민수" 한 줄 대신). 넘긴 뒤 그 줄이 새 크루장이다
+            val end = android.os.SystemClock.uptimeMillis() + 20_000
+            while (compose.onAllNodes(hasTestTag("crew-detail-leader") and hasText("민수", substring = true)).fetchSemanticsNodes().isEmpty()) {
+                if (android.os.SystemClock.uptimeMillis() > end) throw AssertionError("leader row did not show 민수 after transfer")
+                compose.waitForIdle()
+                Thread.sleep(40)
+            }
             shot("86-after-transfer")
         }
     }
