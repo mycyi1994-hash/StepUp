@@ -1,9 +1,5 @@
 package com.stepup.android.ui.screens.community.chat
 
-import com.stepup.android.data.repo.file
-import com.stepup.android.data.repo.preparePhoto
-import android.content.Context
-import android.net.Uri
 import androidx.compose.runtime.saveable.Saver
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -18,7 +14,6 @@ import com.stepup.android.data.repo.ChatPhoto
 import com.stepup.android.data.repo.ChatRoomsState
 import com.stepup.android.data.repo.ChatSync
 import com.stepup.android.data.repo.CrewChatRepository
-import com.stepup.android.data.repo.CrewPhotos
 import com.stepup.android.domain.ChatDelivery
 import com.stepup.android.domain.ChatKind
 import com.stepup.android.domain.ChatMessage
@@ -1118,7 +1113,7 @@ object ChatPhotoDraft {
     fun get(crewId: String): ChatPhoto? = photos[crewId]
 
     fun clear(crewId: String) {
-        photos.remove(crewId)?.file?.delete()
+        photos.remove(crewId)?.path?.let { com.stepup.android.data.local.TextFiles.delete(it) }
     }
 }
 
@@ -1185,7 +1180,7 @@ class ChatViewerViewModel(
     val crewId: String = saved.get<String>("crewId").orEmpty()
     val messageId: Long = saved.get<Long>("messageId") ?: 0L
     val message: ChatMessage? = repo.snapshot(crewId)?.messages?.firstOrNull { it.id == messageId }
-    val image = MutableStateFlow<ChatLoad<android.graphics.Bitmap>>(
+    val image = MutableStateFlow<ChatLoad<androidx.compose.ui.graphics.ImageBitmap>>(
         repo.imageNow(messageId)?.let { ChatLoad.Ready(it) } ?: ChatLoad.Loading,
     )
 
@@ -1215,10 +1210,12 @@ class ChatViewerViewModel(
 }
 
 /** 고른 사진을 보낼 모양으로(25 → 26) */
-internal suspend fun prepareChatPhoto(context: Context, crewId: String, uri: Uri): CrewPhotos.Loaded {
-    val (photo, loaded) = AppServices.crewChat.preparePhoto(context, uri)
+internal suspend fun prepareChatPhoto(crewId: String, path: String): com.stepup.android.ui.components.PhotoTools.Loaded {
+    val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { com.stepup.android.ui.components.PhotoTools.load(path) }
+    val source = (loaded as? com.stepup.android.ui.components.PhotoTools.Loaded.Ok)?.image ?: return loaded
+    val photo = AppServices.crewChat.photoOf(source)
     if (photo != null) ChatPhotoDraft.put(crewId, photo)
-    return if (photo == null && loaded is CrewPhotos.Loaded.Ok) CrewPhotos.Loaded.Broken else loaded
+    return if (photo == null) com.stepup.android.ui.components.PhotoTools.Loaded.Broken else loaded
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1241,7 +1238,7 @@ val ChatOutgoingSaver: Saver<ChatMessage?, Any> = Saver(
 val ChatOutgoingPhotoSaver: Saver<Pair<ChatMessage, ChatPhoto?>?, Any> = Saver(
     save = { pending ->
         pending?.let { (message, photo) ->
-            outgoingState(message)?.let { arrayListOf<Any?>(it, photo?.file?.path, photo?.width, photo?.height) }
+            outgoingState(message)?.let { arrayListOf<Any?>(it, photo?.path, photo?.width, photo?.height) }
         }
     },
     restore = { raw ->
@@ -1274,7 +1271,8 @@ private fun outgoingOf(raw: Any?): ChatMessage? {
 
 /** 앱 안 파일에서 보낼 사진을 다시 — 올릴 모양은 그 파일 그대로의 JPEG base64(줄바꿈 없이). 없거나 읽을 수 없으면 null */
 private fun savedPhoto(path: String?, width: Int?, height: Int?): ChatPhoto? {
-    val file = path?.let { java.io.File(it) }?.takeIf { it.isFile } ?: return null
-    val bytes = runCatching { file.readBytes() }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return null
-    return ChatPhoto(java.util.Base64.getEncoder().encodeToString(bytes), file, width ?: 0, height ?: 0)
+    val p = path?.takeIf { com.stepup.android.data.local.TextFiles.exists(it) } ?: return null
+    val bytes = com.stepup.android.ui.components.readFileBytes(p)?.takeIf { it.isNotEmpty() } ?: return null
+    @OptIn(kotlin.io.encoding.ExperimentalEncodingApi::class)
+    return ChatPhoto(kotlin.io.encoding.Base64.encode(bytes), p, width ?: 0, height ?: 0)
 }

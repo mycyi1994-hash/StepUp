@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.community.chat
 
-import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -66,7 +65,7 @@ object ChatRoutes {
     fun room(crewId: String) = "chat/room/$crewId"
     fun info(crewId: String) = "chat/room/$crewId/info"
     fun members(crewId: String) = "chat/room/$crewId/members"
-    fun member(crewId: String, userId: String) = "chat/room/$crewId/member/${Uri.encode(userId)}"
+    fun member(crewId: String, userId: String) = "chat/room/$crewId/member/${com.stepup.android.domain.uriEncode(userId)}"
     fun notices(crewId: String) = "chat/room/$crewId/notices"
     fun notice(crewId: String, noticeId: Long) = "chat/room/$crewId/notice/$noticeId"
     fun noticeEdit(crewId: String, noticeId: Long? = null, fromMessage: Boolean = false) =

@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.community.home
 
-import android.net.Uri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -65,14 +64,14 @@ object CrewHomeRoutes {
     fun intro(crewId: String) = "crew/home/$crewId/intro"
     fun level(crewId: String) = "crew/home/$crewId/level"
     fun members(crewId: String) = "crew/home/$crewId/members"
-    fun person(crewId: String, userId: String) = "crew/home/$crewId/person/${Uri.encode(userId)}"
+    fun person(crewId: String, userId: String) = "crew/home/$crewId/person/${com.stepup.android.domain.uriEncode(userId)}"
     fun meeting(crewId: String, meetingId: Long) = "crew/home/$crewId/meeting/$meetingId"
     fun attendees(crewId: String, meetingId: Long) = "crew/home/$crewId/meeting/$meetingId/attendees"
     fun place(crewId: String, meetingId: Long) = "crew/home/$crewId/meeting/$meetingId/place"
     fun week(crewId: String, week: LocalDate? = null) = "crew/home/$crewId/week?week=${week?.toString().orEmpty()}"
     fun runs(crewId: String, week: LocalDate?, day: LocalDate? = null, userId: String? = null, name: String? = null) =
         "crew/home/$crewId/runs?week=${week?.toString().orEmpty()}&day=${day?.toString().orEmpty()}" +
-            "&userId=${Uri.encode(userId.orEmpty())}&name=${Uri.encode(name.orEmpty())}"
+            "&userId=${com.stepup.android.domain.uriEncode(userId.orEmpty())}&name=${com.stepup.android.domain.uriEncode(name.orEmpty())}"
     fun run(crewId: String, runId: Long) = "crew/home/$crewId/run/$runId"
 }
 

@@ -3,10 +3,8 @@ package com.stepup.android.ui.screens.community.crew
 import androidx.compose.ui.text.intl.Locale
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import com.stepup.ui.res.*
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewDistance
@@ -18,8 +16,8 @@ import kotlin.time.Instant
 import kotlinx.datetime.LocalTime
 
 /** 크루 화면의 글자 — 요일 · 시간 · 거리 · 분위기 · 날짜를 앱 언어로 */
-class CrewWords(private val context: Context, private val locale: Locale) {
-    private fun s(id: Int, vararg args: Any): String = com.stepup.android.ui.components.stringNow(id, *args)
+class CrewWords(private val locale: Locale) {
+    private fun s(id: org.jetbrains.compose.resources.StringResource, vararg args: Any): String = com.stepup.android.ui.components.stringNow(id, *args)
 
     private val days = listOf(
         Res.string.crew_day_mon, Res.string.crew_day_tue, Res.string.crew_day_wed, Res.string.crew_day_thu,
@@ -124,8 +122,6 @@ class CrewWords(private val context: Context, private val locale: Locale) {
 
 @Composable
 fun rememberCrewWords(): CrewWords {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val locale = configuration.locales[0] ?: Locale.current
-    return remember(context, locale) { CrewWords(context, locale) }
+    val locale = Locale.current
+    return remember(locale) { CrewWords(locale) }
 }

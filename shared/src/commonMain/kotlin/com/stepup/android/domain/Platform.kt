@@ -202,3 +202,13 @@ private val monotonicOrigin = kotlin.time.TimeSource.Monotonic.markNow()
 
 /** 멈추지 않고 되돌아가지 않는 시계(ms) — 차이만 뜻이 있다(System.nanoTime() / 1_000_000 대신) */
 fun monotonicMillis(): Long = monotonicOrigin.elapsedNow().inWholeMilliseconds
+
+/** android.net.Uri.encode — 영문 · 숫자와 -_.!~*'() 만 그대로, 나머지는 UTF-8 %XX(빈칸도 %20) */
+fun uriEncode(text: String): String = buildString {
+    for (b in text.encodeToByteArray()) {
+        val c = b.toInt() and 0xff
+        val ch = c.toChar()
+        if (ch in 'a'..'z' || ch in 'A'..'Z' || ch in '0'..'9' || ch in "-_.!~*'()") append(ch)
+        else { append('%'); append("0123456789ABCDEF"[c shr 4]); append("0123456789ABCDEF"[c and 0xf]) }
+    }
+}

@@ -54,6 +54,8 @@ actual fun decodeImageFile(path: String): ImageBitmap? = runCatching {
     Image.makeFromEncoded(data.toByteArray()).toComposeImageBitmap()
 }.getOrNull()
 
+actual fun readFileBytes(path: String): ByteArray? = NSData.dataWithContentsOfFile(path)?.toByteArray()
+
 actual fun writeFileBytes(path: String, bytes: ByteArray): Boolean {
     NSFileManager.defaultManager.createDirectoryAtPath(path.substringBeforeLast('/'), withIntermediateDirectories = true, attributes = null, error = null)
     val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
@@ -129,6 +131,39 @@ actual fun rememberLocationPermissionRequest(onResult: (Boolean) -> Unit): () ->
             val status = manager.authorizationStatus
             if (status == kCLAuthorizationStatusNotDetermined) manager.requestWhenInUseAuthorization()
             else callback.value(status == kCLAuthorizationStatusAuthorizedWhenInUse || status == kCLAuthorizationStatusAuthorizedAlways)
+        }
+    }
+}
+
+@Composable
+actual fun rememberCameraCapture(onTaken: (String?) -> Unit): (() -> Unit)? {
+    if (!platform.UIKit.UIImagePickerController.isSourceTypeAvailable(platform.UIKit.UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera)) return null
+    val callback = rememberUpdatedState(onTaken)
+    val delegate = remember {
+        object : NSObject(), platform.UIKit.UIImagePickerControllerDelegateProtocol, platform.UIKit.UINavigationControllerDelegateProtocol {
+            override fun imagePickerController(picker: platform.UIKit.UIImagePickerController, didFinishPickingMediaWithInfo: Map<Any?, *>) {
+                picker.dismissViewControllerAnimated(true, completion = null)
+                val image = didFinishPickingMediaWithInfo[platform.UIKit.UIImagePickerControllerOriginalImage] as? UIImage
+                val path = image?.let { UIImageJPEGRepresentation(it, 0.95) }?.let {
+                    val p = "$pickedDir/camera-${com.stepup.android.domain.randomUuid()}.jpg"
+                    if (writeFileBytes(p, it.toByteArray())) p else null
+                }
+                callback.value(path)
+            }
+
+            override fun imagePickerControllerDidCancel(picker: platform.UIKit.UIImagePickerController) {
+                picker.dismissViewControllerAnimated(true, completion = null)
+                callback.value(null)
+            }
+        }
+    }
+    return remember {
+        {
+            val picker = platform.UIKit.UIImagePickerController().apply {
+                sourceType = platform.UIKit.UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
+                this.delegate = delegate
+            }
+            topController()?.presentViewController(picker, animated = true, completion = null)
         }
     }
 }

@@ -1,15 +1,8 @@
 package com.stepup.android.ui.screens.community.crew
 
+import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.ui.components.asImageBitmap
-import android.app.TimePickerDialog
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
-import android.text.format.DateFormat
 import com.stepup.android.ui.components.SystemBackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,7 +49,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -88,7 +80,6 @@ import com.stepup.android.domain.CrewRules
 import com.stepup.android.domain.CrewSchedule
 import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.experience.feedbackClickable
-import kotlinx.datetime.LocalTime
 import kotlin.math.min
 
 // ─────────────────────────────────────────────────────────────
@@ -206,7 +197,6 @@ private const val SHEET_LEAVE = "leave"
 @Composable
 fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
     val ink = crewInk()
-    val context = LocalContext.current
     val words = rememberCrewWords()
     val draft by viewModel.draft.collectAsStateWithLifecycle()
     val ready by viewModel.ready.collectAsStateWithLifecycle()
@@ -222,17 +212,17 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
     val problem = (save as? CrewSave.Failed)?.problem
     val scroll = rememberScrollState()
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val picker = com.stepup.android.ui.components.rememberPhotoPicker { path ->
         // 고르지 않고 돌아오면 이미지는 그대로
-        if (uri != null) viewModel.loadPhoto(context, uri)
+        if (path != null) viewModel.loadPhoto(path)
     }
     val pickPhoto = {
         sheet = ""
         val staged = CrewPhotoPickerForTest.answer
         when {
             CrewPhotoPickerForTest.unavailable -> viewModel.photoUnavailable()
-            staged != null -> viewModel.loadPhoto(context, staged)
-            else -> runCatching { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+            staged != null -> viewModel.loadPhoto(staged)
+            else -> runCatching { picker() }
                 .onFailure { viewModel.photoUnavailable() }
         }
         Unit
@@ -435,12 +425,7 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
             denied = true,
             onPrimary = {
                 viewModel.closePhoto()
-                runCatching {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
-                }
+                runCatching { com.stepup.android.core.ExternalIntents.openAppSettings() }
             },
             onNamed = { viewModel.closePhoto(); named = true },
             onDismiss = viewModel::closePhoto,
@@ -454,7 +439,8 @@ fun CrewDraftScreen(viewModel: CrewDraftViewModel, actions: CrewDraftActions) {
  * 앱에서는 늘 비어 있다.
  */
 object CrewPhotoPickerForTest {
-    @kotlin.concurrent.Volatile var answer: Uri? = null
+    /** 고른 사진 파일 경로 */
+    @kotlin.concurrent.Volatile var answer: String? = null
     @kotlin.concurrent.Volatile var unavailable: Boolean = false
 }
 
@@ -980,9 +966,9 @@ private fun CrewNamedImagesPage(name: String, initial: Int, onBack: () -> Unit, 
 @Composable
 private fun CrewScheduleSheet(initial: CrewSchedule, words: CrewWords, onApply: (CrewSchedule) -> Unit, onDismiss: () -> Unit) {
     val ink = crewInk()
-    val context = LocalContext.current
     var days by rememberSaveable { mutableIntStateOf(initial.days) }
     var minutes by rememberSaveable { mutableStateOf(initial.minutes) }
+    val pickTime = com.stepup.android.ui.components.rememberTimePicker { hour, minute -> minutes = hour * 60 + minute }
     val schedule = CrewSchedule(days, minutes)
     CrewSheet(stringResource(Res.string.crew_schedule_title), onDismiss, Modifier.testTag("crew-schedule-sheet")) {
         Spacer(Modifier.height(16.dp))
@@ -1000,12 +986,9 @@ private fun CrewScheduleSheet(initial: CrewSchedule, words: CrewWords, onApply: 
             if (days != 0) minutes?.let(words::timeLong).orEmpty() else "",
             stringResource(if (days != 0) Res.string.crew_schedule_time_hint else Res.string.crew_schedule_time_days_first),
             {
-                val start = minutes ?: LocalTime.now().hour * 60
-                TimePickerDialog(
-                    context,
-                    { _, hour, minute -> minutes = hour * 60 + minute },
-                    start / 60, start % 60, DateFormat.is24HourFormat(context),
-                ).show()
+                val start = minutes ?: kotlin.time.Instant.fromEpochMilliseconds(com.stepup.android.domain.epochMillis())
+                    .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour * 60
+                pickTime(start / 60, start % 60)
             },
             Modifier.testTag("crew-schedule-time"),
             enabled = days != 0,

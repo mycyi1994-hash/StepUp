@@ -224,6 +224,7 @@ s = s.replace(".toSortedMap()", ".entries.sortedBy { it.key }.associate { it.key
 # 사진 고르기 — 공용 rememberPhotoPicker(고른 사진은 앱 캐시의 JPEG 파일 경로)
 s = re.sub(r"rememberLauncherForActivityResult\(ActivityResultContracts\.PickVisualMedia\(\)\)\s*\{", "com.stepup.android.ui.components.rememberPhotoPicker {", s)
 s = re.sub(r"(\w+)\.launch\(PickVisualMediaRequest\(ActivityResultContracts\.PickVisualMedia\.ImageOnly\)\)", r"\1()", s)
+s = re.sub(r"(?:android\.net\.)?\bUri\.encode\(", "com.stepup.android.domain.uriEncode(", s)
 # 저장소는 공용 AppServices 에서(안드로이드 ServiceLocator 의 화면 쪽 자리)
 s = s.replace("import com.stepup.android.core.ServiceLocator\n", "import com.stepup.android.core.AppServices\n")
 s = re.sub(r"\b(?:com\.stepup\.android\.core\.)?ServiceLocator\.", "AppServices.", s)

@@ -34,12 +34,7 @@ import com.stepup.android.domain.CrewRules
 import com.stepup.android.domain.CrewSort
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.haversineMeters
-import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
-import com.stepup.android.data.repo.CrewPhotos
 import com.stepup.android.domain.CrewGoalChoice
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -359,7 +354,7 @@ internal fun CrewOpState.cancelStatus(): CrewApplicationStatus? = payload as? Cr
 sealed interface CrewPhotoStep {
     data object Idle : CrewPhotoStep
     data object Loading : CrewPhotoStep
-    data class Crop(val source: Bitmap) : CrewPhotoStep
+    data class Crop(val source: androidx.compose.ui.graphics.ImageBitmap) : CrewPhotoStep
     data object Saving : CrewPhotoStep
     data object Broken : CrewPhotoStep
     data object Denied : CrewPhotoStep
@@ -441,14 +436,14 @@ class CrewDraftViewModel(
     val photo: StateFlow<CrewPhotoStep> = _photo
 
     /** OS 사진 선택기가 준 사진을 읽는다 — 읽히면 자르기(28), 아니면 29 · 69 */
-    fun loadPhoto(context: Context, uri: Uri) {
+    /** 고른 사진(앱 캐시의 JPEG 파일) */
+    fun loadPhoto(path: String) {
         _photo.value = CrewPhotoStep.Loading
-        val app = context.applicationContext
         viewModelScope.launch {
-            _photo.value = when (val loaded = CrewPhotos.load(app, uri)) {
-                is CrewPhotos.Loaded.Ok -> CrewPhotoStep.Crop(loaded.bitmap)
-                CrewPhotos.Loaded.Broken -> CrewPhotoStep.Broken
-                CrewPhotos.Loaded.Denied -> CrewPhotoStep.Denied
+            _photo.value = when (val loaded = withContext(Dispatchers.Default) { com.stepup.android.ui.components.PhotoTools.load(path) }) {
+                is com.stepup.android.ui.components.PhotoTools.Loaded.Ok -> CrewPhotoStep.Crop(loaded.image)
+                com.stepup.android.ui.components.PhotoTools.Loaded.Broken -> CrewPhotoStep.Broken
+                com.stepup.android.ui.components.PhotoTools.Loaded.Denied -> CrewPhotoStep.Denied
             }
         }
     }
@@ -463,12 +458,14 @@ class CrewDraftViewModel(
         val source = (_photo.value as? CrewPhotoStep.Crop)?.source ?: return
         _photo.value = CrewPhotoStep.Saving
         viewModelScope.launch {
-            val file = java.io.File(repo.newDraftPhotoPath())
+            val path = repo.newDraftPhotoPath()
             val ok = withContext(Dispatchers.Default) {
-                runCatching { CrewPhotos.save(CrewPhotos.crop(source, left, top, side), file) }.getOrDefault(false)
+                runCatching {
+                    com.stepup.android.ui.components.PhotoTools.save(com.stepup.android.ui.components.PhotoTools.crop(source, left, top, side), path)
+                }.getOrDefault(false)
             }
             if (ok) {
-                replaceImage(CrewImageChoice.Photo(file.path))
+                replaceImage(CrewImageChoice.Photo(path))
                 _photo.value = CrewPhotoStep.Idle
             } else {
                 _photo.value = CrewPhotoStep.Broken
@@ -487,7 +484,7 @@ class CrewDraftViewModel(
         if (before != null && before != (next as? CrewImageChoice.Photo)?.path) {
             viewModelScope.launch {
                 val kept = (repo.storedDraft(_draft.value.key)?.image as? CrewImageChoice.Photo)?.path
-                if (kept != before) withContext(Dispatchers.IO) { runCatching { File(before).delete() } }
+                if (kept != before) withContext(Dispatchers.IO) { runCatching { com.stepup.android.data.local.TextFiles.delete(before) } }
             }
         }
     }
@@ -602,7 +599,7 @@ class CrewDraftViewModel(
     }
 
     /** 새 사진 파일 자리 */
-    fun newPhotoFile(): java.io.File = java.io.File(repo.newDraftPhotoPath())
+    fun newPhotoFile(): String = repo.newDraftPhotoPath()
 
     companion object {
         private const val KEY_DRAFT = "crew_draft"

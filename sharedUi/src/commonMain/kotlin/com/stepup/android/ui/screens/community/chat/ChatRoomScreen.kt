@@ -1,12 +1,5 @@
 package com.stepup.android.ui.screens.community.chat
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.widthIn
@@ -47,7 +40,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -55,11 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.ui.res.*
-import com.stepup.android.data.repo.CrewPhotos
 import com.stepup.android.domain.ChatItem
 import com.stepup.android.domain.ChatKind
 import com.stepup.android.domain.ChatReportReason
@@ -68,7 +58,6 @@ import com.stepup.android.domain.CrewCard
 import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.crew.CrewImage
-import java.io.File
 import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,7 +83,8 @@ class ChatRoomActions(
  * ([unavailable]). 앱에서는 늘 비어 있다.
  */
 object ChatPhotoPickerForTest {
-    @kotlin.concurrent.Volatile var answer: Uri? = null
+    /** 고른 사진 파일 경로 */
+    @kotlin.concurrent.Volatile var answer: String? = null
     @kotlin.concurrent.Volatile var unavailable: Boolean = false
 }
 
@@ -109,7 +99,6 @@ private const val PROBLEM_DENIED = "denied"
 @Composable
 fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
     val ink = blueInk()
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val draft by viewModel.draft.collectAsStateWithLifecycle()
@@ -160,33 +149,29 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
     }
 
     // 고른 사진 → 보낼 모양으로 → 26 확인. 읽을 수 없거나 접근이 막혔으면 안내(글 대화는 그대로)
-    fun handlePicked(uri: Uri, taken: File? = null) {
+    fun handlePicked(path: String, taken: String? = null) {
         scope.launch {
-            val loaded = prepareChatPhoto(context, crewId, uri)
+            val loaded = prepareChatPhoto(crewId, path)
             // 카메라로 찍은 원본은 보낼 모양으로 옮긴 뒤 지운다(캐시에 쌓이지 않게)
-            taken?.delete()
+            taken?.let { com.stepup.android.data.local.TextFiles.delete(it) }
             when (loaded) {
-                is CrewPhotos.Loaded.Ok -> {
+                is com.stepup.android.ui.components.PhotoTools.Loaded.Ok -> {
                     // 첨부 시트 창이 닫히는 프레임이 지난 뒤에 26 으로 — 닫히는 창과 새 화면이 한 프레임에 겹치지 않게
                     withFrameNanos { }
                     withFrameNanos { }
                     actions.onPhoto()
                 }
-                CrewPhotos.Loaded.Broken -> photoProblem = PROBLEM_BROKEN
-                CrewPhotos.Loaded.Denied -> photoProblem = PROBLEM_DENIED
+                com.stepup.android.ui.components.PhotoTools.Loaded.Broken -> photoProblem = PROBLEM_BROKEN
+                com.stepup.android.ui.components.PhotoTools.Loaded.Denied -> photoProblem = PROBLEM_DENIED
             }
         }
     }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val picker = com.stepup.android.ui.components.rememberPhotoPicker { path ->
         // 고르지 않고 돌아오면 쓰던 글 그대로
-        if (uri != null) handlePicked(uri)
+        if (path != null) handlePicked(path)
     }
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val file = cameraPath?.let(::File)
-        cameraPath = null
-        val uri = if (ok && file != null) runCatching { FileProvider.getUriForFile(context, "${context.packageName}.share", file) }.getOrNull() else null
-        if (uri != null) handlePicked(uri, taken = file) else file?.delete()
-    }
+    // 카메라 — 찍은 사진은 앱 캐시의 JPEG 파일(보낼 모양으로 옮긴 뒤 지운다). 카메라가 없는 기기면 null
+    val camera = com.stepup.android.ui.components.rememberCameraCapture { path -> if (path != null) handlePicked(path, taken = path) }
     val cameraMissing = stringResource(Res.string.chat_camera_missing)
     val pickPhoto: () -> Unit = {
         viewModel.closeSheet()
@@ -194,28 +179,14 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
         when {
             ChatPhotoPickerForTest.unavailable -> photoProblem = PROBLEM_DENIED
             staged != null -> handlePicked(staged)
-            else -> runCatching { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+            else -> runCatching { picker() }
                 .onFailure { photoProblem = PROBLEM_BROKEN }
         }
     }
     val takePhoto: () -> Unit = {
         viewModel.closeSheet()
-        val file = runCatching {
-            File(context.cacheDir, "camera").apply { mkdirs() }.let { dir -> File(dir, "chat-${com.stepup.android.domain.epochMillis()}.jpg") }
-        }.getOrNull()
-        val uri = file?.let { runCatching { FileProvider.getUriForFile(context, "${context.packageName}.share", it) }.getOrNull() }
-        if (file == null || uri == null) {
-            toast = cameraMissing
-        } else {
-            cameraPath = file.path
-            try {
-                camera.launch(uri)
-            } catch (_: ActivityNotFoundException) {
-                toast = cameraMissing
-            } catch (_: SecurityException) {
-                photoProblem = PROBLEM_DENIED
-            }
-        }
+        val launch = camera
+        if (launch == null) toast = cameraMissing else runCatching { launch() }.onFailure { photoProblem = PROBLEM_DENIED }
     }
 
     val meta = ui.meta
@@ -280,7 +251,7 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
         }
     }
 
-    ChatRoomSheets(sheet, ui, viewModel, actions, context, pickPhoto, takePhoto)
+    ChatRoomSheets(sheet, ui, viewModel, actions, androidx.compose.ui.platform.LocalClipboardManager.current, pickPhoto, takePhoto)
     when (photoProblem) {
         PROBLEM_BROKEN, PROBLEM_DENIED -> ChatPhotoProblemSheet(
             denied = photoProblem == PROBLEM_DENIED,
@@ -288,12 +259,7 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
                 val denied = photoProblem == PROBLEM_DENIED
                 photoProblem = ""
                 if (denied) {
-                    runCatching {
-                        context.startActivity(
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                        )
-                    }
+                    runCatching { com.stepup.android.core.ExternalIntents.openAppSettings() }
                 } else {
                     pickPhoto()
                 }
@@ -465,7 +431,7 @@ private fun ChatRoomSheets(
     ui: ChatRoomUi,
     viewModel: ChatRoomViewModel,
     actions: ChatRoomActions,
-    context: android.content.Context,
+    clipboard: androidx.compose.ui.platform.ClipboardManager,
     onPick: () -> Unit,
     onCamera: () -> Unit,
 ) {
@@ -494,7 +460,7 @@ private fun ChatRoomSheets(
                 ChatSheetRow(stringResource(Res.string.chat_menu_reply), { viewModel.reply(message) }, "chat-menu-reply")
                 if (body != null) {
                     ChatSheetRow(stringResource(Res.string.chat_menu_copy), {
-                        copyChatText(context, body)
+                        copyChatText(clipboard, body)
                         viewModel.copied()
                     }, "chat-menu-copy")
                 }

@@ -91,6 +91,8 @@ class ConcurrentSet<T> {
         }
     }
     operator fun contains(value: T): Boolean = value in ref.load()
+    operator fun plusAssign(value: T) { add(value) }
+    operator fun minusAssign(value: T) { remove(value) }
     fun clear() { ref.store(emptySet()) }
     fun snapshot(): Set<T> = ref.load()
     val size: Int get() = ref.load().size

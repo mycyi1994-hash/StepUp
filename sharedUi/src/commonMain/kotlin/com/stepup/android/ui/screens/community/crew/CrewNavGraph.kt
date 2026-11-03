@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.community.crew
 
-import android.net.Uri
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,7 +68,7 @@ object CrewRoutes {
     fun image(crewId: String) = "crew/card/$crewId/image"
     fun leader(crewId: String) = "crew/card/$crewId/leader"
     fun members(crewId: String, mode: CrewRosterMode = CrewRosterMode.MEMBERS) = "crew/card/$crewId/members?mode=${mode.name}"
-    fun person(crewId: String, userId: String) = "crew/card/$crewId/person/${Uri.encode(userId)}"
+    fun person(crewId: String, userId: String) = "crew/card/$crewId/person/${com.stepup.android.domain.uriEncode(userId)}"
     fun goal(crewId: String) = "crew/card/$crewId/goal"
     fun goalEdit(crewId: String) = "crew/card/$crewId/goal-edit"
     fun join(crewId: String) = "crew/card/$crewId/join"
@@ -81,10 +80,10 @@ object CrewRoutes {
     fun requests(crewId: String) = "crew/card/$crewId/requests"
     fun review(crewId: String, applicationId: Long) = "crew/card/$crewId/review/$applicationId"
     fun decided(crewId: String, approved: Boolean, name: String, members: Int, capacity: Int?, pending: Int) =
-        "crew/card/$crewId/decided?approved=$approved&name=${Uri.encode(name)}&members=$members&capacity=${capacity ?: -1}&pending=$pending"
+        "crew/card/$crewId/decided?approved=$approved&name=${com.stepup.android.domain.uriEncode(name)}&members=$members&capacity=${capacity ?: -1}&pending=$pending"
     fun settings(crewId: String) = "crew/card/$crewId/settings"
     fun transfer(crewId: String, userId: String? = null, name: String? = null) =
-        "crew/card/$crewId/transfer?userId=${Uri.encode(userId.orEmpty())}&name=${Uri.encode(name.orEmpty())}"
+        "crew/card/$crewId/transfer?userId=${com.stepup.android.domain.uriEncode(userId.orEmpty())}&name=${com.stepup.android.domain.uriEncode(name.orEmpty())}"
     fun created(crewId: String) = "crew/card/$crewId/created"
     fun draft(mode: CrewDraftMode, crewId: String = "", resume: Boolean = false) =
         "crew/draft?mode=${mode.name}&crewId=$crewId&resume=$resume"
@@ -356,14 +355,14 @@ fun NavGraphBuilder.crewGraph(
         ),
     ) { entry ->
         val id = entry.savedStateHandle.get<String>("crewId").orEmpty()
-        val args = entry.arguments
+        val args = entry.savedStateHandle
         CrewDecidedScreen(
-            approved = args?.getBoolean("approved") != false,
-            name = args?.getString("name").orEmpty(),
+            approved = args.get<Boolean>("approved") != false,
+            name = args.get<String>("name").orEmpty(),
             crewName = AppServices.crewCards.cardNow(id)?.name.orEmpty(),
-            members = args?.getInt("members") ?: 0,
-            capacity = args?.getInt("capacity")?.takeIf { it >= 0 },
-            pending = args?.getInt("pending") ?: 0,
+            members = args.get<Int>("members") ?: 0,
+            capacity = args.get<Int>("capacity")?.takeIf { it >= 0 },
+            pending = args.get<Int>("pending") ?: 0,
             onBack = back,
             // 51 · 53 남은 신청 보기 — 신청 목록(79)은 돌아오면 다시 읽는다
             onRemaining = {

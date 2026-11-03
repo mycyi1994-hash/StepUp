@@ -2,6 +2,7 @@
 
 package com.stepup.android.ui.components
 
+import platform.Foundation.currentLocale
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.text.style.LineBreak
@@ -35,3 +36,7 @@ actual fun clearDialogProperties(dismissOnClickOutside: Boolean): androidx.compo
 
 @androidx.compose.runtime.Composable
 actual fun LightSystemBarIcons() = Unit
+
+/** 기기 시각 꼴에 오전/오후(a)가 없으면 24시간 */
+actual fun is24HourClock(): Boolean =
+    platform.Foundation.NSDateFormatter.dateFormatFromTemplate("j", 0u, platform.Foundation.NSLocale.currentLocale)?.contains("a") != true

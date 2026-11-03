@@ -5,10 +5,6 @@ import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.ui.components.asImageBitmap
 import kotlinx.coroutines.IO
-import com.stepup.android.data.repo.decodeFile
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -611,7 +607,7 @@ private fun ChatPhotoBox(crewId: String, message: ChatMessage, modifier: Modifie
         if (bitmap != null) return@LaunchedEffect
         val local = message.localImage
         bitmap = if (id == null && local != null) {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { AppServices.crewChat.decodeFile(java.io.File(local))?.asImageBitmap() }
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { AppServices.crewChat.decodeFile(local)?.asImageBitmap() }
         } else if (id != null) {
             val outcome = AppServices.crewChat.image(crewId, id)
             (outcome as? com.stepup.android.data.repo.ChatOutcome.Ok)?.value?.asImageBitmap().also { failed = it == null }
@@ -829,8 +825,6 @@ internal fun ChatRetryState(title: String, body: String, button: String, onRetry
 }
 
 /** 복사 — 고른 메시지 내용만 */
-internal fun copyChatText(context: Context, text: String) {
-    runCatching {
-        context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("StepUp", text))
-    }
+internal fun copyChatText(clipboard: androidx.compose.ui.platform.ClipboardManager, text: String) {
+    runCatching { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)) }
 }

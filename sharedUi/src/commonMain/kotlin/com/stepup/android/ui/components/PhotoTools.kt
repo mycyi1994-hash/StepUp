@@ -81,6 +81,8 @@ expect fun decodeImageFile(path: String): ImageBitmap?
 
 expect fun writeFileBytes(path: String, bytes: ByteArray): Boolean
 
+expect fun readFileBytes(path: String): ByteArray?
+
 /**
  * 사진 고르기(안드로이드 PickVisualMedia 자리) — 고른 사진을 앱 캐시의 JPEG 파일로 두고 그 경로를 준다. 고르지 않으면 null.
  * 돌려받은 함수를 부르면 고르기 창이 열린다.
@@ -91,3 +93,7 @@ expect fun rememberPhotoPicker(onPicked: (String?) -> Unit): () -> Unit
 /** 위치 권한 묻기(안드로이드 RequestMultiplePermissions 자리) — 허락했으면 true */
 @Composable
 expect fun rememberLocationPermissionRequest(onResult: (Boolean) -> Unit): () -> Unit
+
+/** 카메라로 찍기(안드로이드 TakePicture 자리) — 찍은 사진은 앱 캐시의 JPEG 파일 경로, 그만두면 null. 카메라가 없으면 null 을 돌려준다 */
+@Composable
+expect fun rememberCameraCapture(onTaken: (String?) -> Unit): (() -> Unit)?

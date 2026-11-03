@@ -2,9 +2,6 @@ package com.stepup.android.ui.screens.community.chat
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,7 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.ui.res.*
@@ -67,7 +62,7 @@ class ChatInfoActions(
 @Composable
 fun ChatInfoScreen(viewModel: ChatInfoViewModel, actions: ChatInfoActions) {
     val ink = blueInk()
-    val context = LocalContext.current
+    val deviceAllowed = com.stepup.android.core.rememberNotificationsAllowed()
     val meta by viewModel.meta.collectAsStateWithLifecycle()
     val notifyChoice by viewModel.notifyChoice.collectAsStateWithLifecycle()
     val notifyState by viewModel.notifyState.collectAsStateWithLifecycle()
@@ -128,7 +123,7 @@ fun ChatInfoScreen(viewModel: ChatInfoViewModel, actions: ChatInfoActions) {
                 {
                     viewModel.applyNotify { on ->
                         // 방 알림을 켰는데 기기 알림이 꺼져 있으면 37 — 이 화면이 기기 권한을 바꾸지는 않는다
-                        val device = ChatDeviceNotificationsForTest.enabled ?: NotificationManagerCompat.from(context).areNotificationsEnabled()
+                        val device = ChatDeviceNotificationsForTest.enabled ?: deviceAllowed
                         if (on && !device) osSheet = true
                     }
                 },
@@ -147,7 +142,7 @@ fun ChatInfoScreen(viewModel: ChatInfoViewModel, actions: ChatInfoActions) {
                 stringResource(Res.string.chat_os_settings),
                 {
                     osSheet = false
-                    openNotificationSettings(context)
+                    openNotificationSettings()
                 },
                 Modifier.testTag("chat-os-settings"),
             )
@@ -177,19 +172,9 @@ object ChatDeviceNotificationsForTest {
     @kotlin.concurrent.Volatile var enabled: Boolean? = null
 }
 
-/** 기기의 StepUp 알림 설정 — 없으면 앱 정보 */
-private fun openNotificationSettings(context: android.content.Context) {
-    val notify = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(notify) }.onFailure {
-        runCatching {
-            context.startActivity(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }
-    }
+/** 기기의 StepUp 알림 설정 — iOS 는 앱 설정(알림 줄이 있다) */
+private fun openNotificationSettings() {
+    runCatching { com.stepup.android.core.ExternalIntents.openAppSettings() }
 }
 
 @Composable
