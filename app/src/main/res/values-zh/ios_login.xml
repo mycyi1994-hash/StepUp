@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS 로그인 화면(:sharedUi)만 쓴다 — Apple 로그인 버튼(App Store 심사 4.8). 안드로이드 화면에는 없다 -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="login_apple" tools:ignore="UnusedResources">通过 Apple 登录</string>
+</resources>

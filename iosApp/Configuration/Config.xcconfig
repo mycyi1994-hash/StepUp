@@ -12,3 +12,11 @@ CURRENT_PROJECT_VERSION = 1
 // Supabase › Authentication › Google 의 Client IDs 에도 이 iOS 클라이언트 ID 를 더한다(docs/APP-STORE.md).
 GOOGLE_IOS_CLIENT_ID =
 GOOGLE_IOS_URL_SCHEME = com.stepupcrew.stepup.google-unset
+
+// 서버(Supabase) 주소 · 공개 키 — 앱에 들어가도 되는 값만(sb_publishable). 안드로이드 BuildConfig 와 같은 서버.
+// xcconfig 에서 // 는 주석이라 주소의 // 를 $(SLASH) 로 잇는다.
+SLASH = /
+STEPUP_SUPABASE_URL = https:$(SLASH)$(SLASH)pupjzcmybuoyhzfwrsdf.supabase.co
+STEPUP_SUPABASE_KEY = sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO
+// 어테스터 워커(Apple 토큰 철회 · 러닝 증명) — 비우면 철회를 건너뛴다
+STEPUP_ATTESTER_URL =
