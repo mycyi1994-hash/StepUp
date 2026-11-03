@@ -157,7 +157,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: StepUp-room-schemas
-          path: app/schemas/
+          path: sharedData/schemas/
 
   # main 에 들어간 빌드만 폰에 올린다 — 쓰기 권한과 테스트 APK 서명 키는 이 작업에만 있다.
   publish:
