@@ -535,7 +535,7 @@ private fun CrewIdentityForm(draft: CrewDraft, card: CrewCard?, problem: CrewPro
     Spacer(Modifier.height(12.dp))
     CrewTextField(
         draft.name, { next -> touched = true; viewModel.update { it.copy(name = next.replace('\n', ' ')) } }, Modifier.testTag("crew-draft-name"),
-        placeholder = stringResource(R.string.crew_field_name_hint), maxChars = CrewRules.NAME_MAX, error = nameError,
+        placeholder = stringResource(R.string.crew_field_name_hint), maxChars = CrewRules.NAME_LENGTH_LIMIT, error = nameError,
     )
     Spacer(Modifier.height(10.dp))
     if (nameError) CrewHelp(stringResource(R.string.crew_field_name_error), error = true, modifier = Modifier.testTag("crew-draft-name-error"))

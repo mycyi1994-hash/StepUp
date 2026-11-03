@@ -58,6 +58,19 @@ actual object ExternalIntents {
         return top
     }
 
+    actual fun copyText(text: String) {
+        platform.UIKit.UIPasteboard.generalPasteboard.string = text
+    }
+
+    /** 공유 시트(글 · 그림) — 맨 위 화면에 띄운다 */
+    fun share(items: List<Any>): Boolean {
+        val vc = top() ?: return false
+        val sheet = platform.UIKit.UIActivityViewController(activityItems = items, applicationActivities = null)
+        sheet.popoverPresentationController?.sourceView = vc.view
+        vc.presentViewController(sheet, animated = true, completion = null)
+        return true
+    }
+
     actual fun shareText(text: String, title: String?): Boolean {
         val vc = top() ?: return false
         val sheet = platform.UIKit.UIActivityViewController(activityItems = listOf(text), applicationActivities = null)

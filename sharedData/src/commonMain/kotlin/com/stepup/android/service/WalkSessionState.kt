@@ -39,15 +39,15 @@ data class StartGroup(val group: RunGroup, val crewId: String, val name: String)
         val NONE = StartGroup(RunGroup.NONE, "", "")
 
         /** 저장본에 남길 이름 길이 — 번개 글 제목이 길어도 저장본 칸(writeUTF)을 넘기지 않게 */
-        const val NAME_MAX = 80
+        const val NAME_LENGTH_LIMIT = 80
 
         /**
          * 출발한 방에서 — 번개 글의 방이면 번개, 크루가 있으면 크루, 둘 다 아니면 모임 없음.
          * [name] 은 대기실이 보인 이름(크루 이름 · 번개 글 제목)이다.
          */
         fun of(room: com.stepup.android.data.repo.PartyState, name: String): StartGroup = when {
-            room.flashPostId != null -> StartGroup(RunGroup.FLASH, "", name.trim().take(NAME_MAX))
-            !room.crewId.isNullOrBlank() -> StartGroup(RunGroup.CREW, room.crewId.orEmpty(), name.trim().take(NAME_MAX))
+            room.flashPostId != null -> StartGroup(RunGroup.FLASH, "", name.trim().take(NAME_LENGTH_LIMIT))
+            !room.crewId.isNullOrBlank() -> StartGroup(RunGroup.CREW, room.crewId.orEmpty(), name.trim().take(NAME_LENGTH_LIMIT))
             else -> NONE
         }
     }

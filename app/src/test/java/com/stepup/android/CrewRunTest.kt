@@ -47,7 +47,7 @@ class CrewRunTest {
         // 크루도 번개 글도 없는 방은 모임이 아니다
         assertEquals(StartGroup.NONE, StartGroup.of(running.copy(crewId = null), ""))
         // 저장본 칸을 넘기지 않게 이름은 잘라 둔다
-        assertEquals(StartGroup.NAME_MAX, StartGroup.of(flash, "가".repeat(500)).name.length)
+        assertEquals(StartGroup.NAME_LENGTH_LIMIT, StartGroup.of(flash, "가".repeat(500)).name.length)
     }
 
     @Test fun linkFollowsTheRunsOwnRoom() {

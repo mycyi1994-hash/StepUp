@@ -63,3 +63,7 @@ fun YearMonth.format(f: PatternFormatter): String = f.format(this)
 /** java.time 의 isBefore · isAfter 자리(날짜는 Dates.kt) */
 fun LocalDateTime.isBefore(other: LocalDateTime): Boolean = this < other
 fun LocalDateTime.isAfter(other: LocalDateTime): Boolean = this > other
+
+/** YearMonth.now() — 기기 시간대의 이번 달 */
+fun yearMonthNow(zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): YearMonth =
+    todayIn(zone).let { YearMonth(it.year, it.month) }

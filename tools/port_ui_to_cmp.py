@@ -16,6 +16,7 @@ from pathlib import Path
 src, dst = Path(sys.argv[1]), Path(sys.argv[2])
 s = src.read_text()
 s = s.replace("import com.stepup.android.R\n", "import com.stepup.ui.res.*\n")
+s = s.replace("com.stepup.android.R.string.", "Res.string.").replace("com.stepup.android.R.drawable.", "Res.drawable.")
 for fn in ("stringResource", "pluralStringResource", "painterResource"):
     s = s.replace(f"import androidx.compose.ui.res.{fn}\n", f"import org.jetbrains.compose.resources.{fn}\n")
 s = re.sub(r"\bR\.(string|plurals|drawable|font|array)\.", r"Res.\1.", s)

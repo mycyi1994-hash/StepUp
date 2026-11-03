@@ -36,6 +36,12 @@ class DateNamesJvmTest {
         assertEquals("Nov 3, 2026, 9:05 PM", DatePattern.mediumDateShortTime("en", at))
         assertEquals("2026/11/03 21:05", DatePattern.mediumDateShortTime("ja", at))
         assertEquals("2026年11月3日 21:05", DatePattern.mediumDateShortTime("zh", at))
+        val am = kotlinx.datetime.LocalDateTime(2026, 1, 3, 9, 5)
+        assertEquals("26. 1. 3. 오전 9:05", DatePattern.shortDateTime("ko", am))
+        assertEquals("1/3/26, 9:05 AM", DatePattern.shortDateTime("en", am))
+        assertEquals("2026/01/03 9:05", DatePattern.shortDateTime("ja", am))
+        assertEquals("2026/1/3 09:05", DatePattern.shortDateTime("zh", am))
+        assertEquals("26. 11. 3. 오후 9:05", DatePattern.shortDateTime("ko", at))
     }
 
     @Test fun mediumDateAndDayNamesMatchJdk() {
@@ -58,6 +64,11 @@ class DateNamesJvmTest {
                     DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT).withLocale(locale)
                         .format(java.time.LocalDateTime.of(j, java.time.LocalTime.of(at.hour, at.minute))).replace('\u202f', ' '),
                     DatePattern.mediumDateShortTime(lang, at), "$lang medium+short $at",
+                )
+                if (Runtime.version().feature() >= 21) assertEquals(
+                    DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.SHORT).withLocale(locale)
+                        .format(java.time.LocalDateTime.of(j, java.time.LocalTime.of(at.hour, at.minute))).replace('\u202f', ' '),
+                    DatePattern.shortDateTime(lang, at), "$lang short $at",
                 )
                 for ((k, js) in styles) {
                     assertEquals(j.dayOfWeek.getDisplayName(js, locale), d.dayOfWeek.displayName(k, lang), "$lang $k $d")

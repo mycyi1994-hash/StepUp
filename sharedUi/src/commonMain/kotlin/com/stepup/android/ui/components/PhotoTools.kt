@@ -97,3 +97,24 @@ expect fun rememberLocationPermissionRequest(onResult: (Boolean) -> Unit): () ->
 /** 카메라로 찍기(안드로이드 TakePicture 자리) — 찍은 사진은 앱 캐시의 JPEG 파일 경로, 그만두면 null. 카메라가 없으면 null 을 돌려준다 */
 @Composable
 expect fun rememberCameraCapture(onTaken: (String?) -> Unit): (() -> Unit)?
+
+/**
+ * 걸음(활동) 권한 시스템 창(안드로이드 ACTIVITY_RECOGNITION · iOS 동작 및 피트니스) — 돌려준 함수가 창을 띄우고, 띄우지 못하면 false.
+ * 결과는 [onResult](허용했나)로 온다.
+ */
+@Composable
+expect fun rememberActivityPermissionLauncher(onResult: (Boolean) -> Unit): () -> Boolean
+
+/** 알림 권한 시스템 창(안드로이드 POST_NOTIFICATIONS · iOS 알림) — 띄우지 못하면 false */
+@Composable
+expect fun rememberNotificationPermissionLauncher(onResult: (Boolean) -> Unit): () -> Boolean
+
+/** OS 가 지금 걸음 권한 설명을 권하는가(안드로이드 shouldShowRequestPermissionRationale) — 화면이 없거나 iOS 는 false */
+@Composable
+expect fun rememberActivityRationale(): () -> Boolean
+
+/**
+ * 권한 차례의 기기 판(안드로이드 Build.VERSION.SDK_INT) — 걸음 권한(29) · 알림 권한(33)을 실행 중에 묻는가를 가른다.
+ * iOS 는 둘 다 실행 중에 묻는다.
+ */
+expect val permissionApiLevel: Int

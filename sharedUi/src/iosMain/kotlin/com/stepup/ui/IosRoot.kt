@@ -59,7 +59,7 @@ private fun IosRootContent() {
         com.stepup.android.core.AppTheme.bootstrap(IosApp.prefs.themeModeNow())
         com.stepup.android.core.AppLocale.bootstrap(IosApp.prefs.languageNow())
         IosApp.connectServices(onReturnToSignIn = {
-            IosRunSession.stop()
+            IosRunSession.finish()
             IosAuth.signOut(IosApp.sessionStore)
             stage = Stage.SignedOut
         }, onSignedOut = { stage = Stage.SignedOut })
@@ -104,7 +104,7 @@ private fun IosRootContent() {
             if (stage == Stage.ShoeCheck) IosShoeCheck(onStart = { stage = Stage.Starting }, onCancel = { stage = Stage.SignedIn })
         }
         Stage.Starting, Stage.Running -> {
-            val session by IosRunSession.state.collectAsState()
+            val session by IosRunSession.live.collectAsState()
             Box(Modifier.fillMaxSize()) {
                 if (session != null || stage == Stage.Running) {
                     IosFreeRun(onClose = {

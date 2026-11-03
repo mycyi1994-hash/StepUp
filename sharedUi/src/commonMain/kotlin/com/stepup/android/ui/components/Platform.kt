@@ -63,3 +63,7 @@ fun rotatedSweepBrush(
 /** 화면이 늘 어두워서 상태바 · 내비바 아이콘을 밝게 — 떠나면 되돌린다(iOS 는 상태바 글자색을 앱이 정해 두어 할 일 없음) */
 @androidx.compose.runtime.Composable
 expect fun LightSystemBarIcons()
+
+/** 화면 밖에서 수에 맞는 글자(안드로이드 resources.getQuantityString 자리) */
+fun pluralNow(res: org.jetbrains.compose.resources.PluralStringResource, quantity: Int, vararg args: Any): String =
+    kotlinx.coroutines.runBlocking { org.jetbrains.compose.resources.getPluralString(res, quantity, *args) }

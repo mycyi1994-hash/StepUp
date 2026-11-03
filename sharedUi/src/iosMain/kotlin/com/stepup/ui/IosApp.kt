@@ -94,7 +94,7 @@ object IosApp {
             shareByDefault = { prefs.partyShareLocation.first() },
             exitedParties = { prefs.exitedParties.first() },
             rememberExit = { prefs.addExitedParty(it) },
-            groupRun = { com.stepup.android.data.repo.GroupRunState(IosRunSession.active, IosRunSession.state.value?.paused == true, inGroup = false) },
+            groupRun = { IosRunSession.state.value.let { com.stepup.android.data.repo.GroupRunState(it.isActive, it.isPaused, it.group != com.stepup.android.service.RunGroup.NONE) } },
         )
     }
     private fun ownerFlow() = prefs.loginMethod.map { sessions.recordingOwner() }.distinctUntilChanged()
@@ -210,9 +210,13 @@ object IosApp {
         s.deleteAccount = { com.stepup.android.data.remote.IosAuth.deleteAccount(server, sessions, sessionStore, attesterUrl) }
         s.onForgetAccount = {
             // 달리던 러닝은 먼저 끝낸다(기록은 남긴다) · 이 폰의 로그인(키체인)도 지운다
-            if (IosRunSession.active) IosRunSession.stop()
+            if (IosRunSession.active) IosRunSession.finish()
             com.stepup.android.data.remote.IosAuth.signOut(sessionStore)
         }
+        s.run = IosRunSession
+        s.territoryApi = com.stepup.android.data.remote.TerritoryApi(server)
+        s.inviteApi = com.stepup.android.data.remote.InviteApi(server)
+        s.drawMemory = IosDrawMemory()
         s.serverEconomyOn = supabaseUrl.isNotEmpty()
         s.onReturnToSignIn = onReturnToSignIn
         s.onSignedOut = onSignedOut

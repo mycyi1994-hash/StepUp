@@ -52,7 +52,16 @@ object AppServices {
     var run: RunSessionControl = NoRunSession
 
     /** 모임(크루 · 번개) 러닝을 켠다 — 켜졌으면 true(안드로이드 WalkSessionService.start · iOS 러닝 세션) */
-    var startGroupRun: (party: com.stepup.android.data.repo.PartyState, title: String) -> Boolean = { _, _ -> false }
+    /** 뽑기 화면의 기억(결과를 아직 모르는 요청 · 본 기회 수) — 안드로이드 설정 파일 stepup_draw · iOS UserDefaults */
+    var drawMemory: com.stepup.android.ui.screens.gacha.DrawMemory = com.stepup.android.ui.screens.gacha.InMemoryDrawMemory()
+    /** 뽑기 서버(검사는 흉내 낸 서버로 바꾼다) */
+    var drawSource: () -> com.stepup.android.ui.screens.gacha.DrawSource = { com.stepup.android.ui.screens.gacha.ServerDrawSource() }
+    lateinit var territoryApi: com.stepup.android.data.remote.TerritoryApi
+    lateinit var inviteApi: com.stepup.android.data.remote.InviteApi
+    var startGroupRun: (party: com.stepup.android.data.repo.PartyState, title: String) -> Boolean = { party, title ->
+        run.start(party.partySize, com.stepup.android.service.StartGroup.of(party, title))
+        true
+    }
 
     /** 지금 계정의 기록 주인이 바뀌는 흐름(안드로이드 ServiceLocator.recordingOwnerFlow) */
     var recordingOwnerFlow: () -> kotlinx.coroutines.flow.Flow<String> = { kotlinx.coroutines.flow.flowOf("") }

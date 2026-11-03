@@ -511,7 +511,7 @@ internal fun CrewRoomCreateContent(
         val nameLabel = stringResource(Res.string.d26_create_name)
         BasicTextField(
             value = name,
-            onValueChange = { v -> onName(v.take(CrewRoomRules.NAME_MAX * 2)) },
+            onValueChange = { v -> onName(v.take(CrewRoomRules.NAME_LENGTH_LIMIT * 2)) },
             singleLine = true,
             textStyle = type.section.copy(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = c.label),
             cursorBrush = SolidColor(c.primary),
@@ -532,7 +532,7 @@ internal fun CrewRoomCreateContent(
             if (name.isNotEmpty() && !nameOk) com.stepup.android.ui.components.runTone().errorEdge else c.separator))
         if (name.isNotEmpty() && !nameOk) {
             Text(
-                stringResource(Res.string.crew5_create_name_invalid, CrewRoomRules.NAME_MAX), style = type.caption, color = c.live,
+                stringResource(Res.string.crew5_create_name_invalid, CrewRoomRules.NAME_LENGTH_LIMIT), style = type.caption, color = c.live,
                 modifier = Modifier.padding(top = 6.dp).testTag("crew-create-name-invalid"),
             )
         }

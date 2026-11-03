@@ -69,7 +69,7 @@ class RunCheckpointStore(file: File) {
                     // 판 3: 이 러닝을 연 모임(크루 달리기 · 번개)도 남긴다 — 되살린 크루 달리기가 자유 러닝으로 보이지 않게
                     data.writeUTF(group.name)
                     data.writeUTF(groupCrewId)
-                    data.writeUTF(groupName.take(StartGroup.NAME_MAX))
+                    data.writeUTF(groupName.take(StartGroup.NAME_LENGTH_LIMIT))
                     // 판 4: 테스트 도구의 걸음 흉내 표시 — 빠지면 앱을 죽였다 되살린 러닝의 흉내 걸음이 그대로 올라간다
                     data.writeBoolean(simulated)
                 }

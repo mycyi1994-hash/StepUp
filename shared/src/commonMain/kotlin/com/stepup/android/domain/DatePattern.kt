@@ -44,6 +44,18 @@ object DatePattern {
         }
     }
 
+    /** DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT) — 네 언어(JDK · CLDR 와 같은 꼴) */
+    fun shortDateTime(language: String, at: LocalDateTime): String {
+        val m = at.date.month.ordinal + 1
+        val d = at.date.day
+        return when (lang(language)) {
+            "ko" -> "${zeroPad(at.date.year % 100, 2)}. $m. $d. ${format(at.time, "a h:mm", "ko")}"
+            "ja" -> "${at.date.year}/${zeroPad(m, 2)}/${zeroPad(d, 2)} ${format(at.time, "H:mm", "ja")}"
+            "zh" -> "${at.date.year}/$m/$d ${format(at.time, "HH:mm", "zh")}"
+            else -> "$m/$d/${zeroPad(at.date.year % 100, 2)}, ${format(at.time, "h:mm a", "en")}"
+        }
+    }
+
     /** DayOfWeek.getDisplayName(style, locale) */
     fun dayName(day: DayOfWeek, style: DateNameStyle, language: String): String {
         val names = Names.of(language)

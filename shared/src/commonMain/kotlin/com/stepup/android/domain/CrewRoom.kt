@@ -110,10 +110,10 @@ sealed interface RoomTarget {
 }
 
 object CrewRoomRules {
-    // iOS 헤더(ObjC)에서는 C 의 NAME_MAX 매크로(255)와 부딪혀 이름을 바꾼다 — Kotlin · 안드로이드 이름은 그대로
+    // iOS 헤더(ObjC)에서는 C 의 NAME_LENGTH_LIMIT 매크로(255)와 부딪혀 이름을 바꾼다 — Kotlin · 안드로이드 이름은 그대로
     @OptIn(kotlin.experimental.ExperimentalObjCName::class)
     @kotlin.native.ObjCName("nameMaxLength")
-    const val NAME_MAX = 30
+    const val NAME_LENGTH_LIMIT = 30
 
     /** 만나는 곳 글자 한도 · 정원 최소(0074 — 서버와 같다) */
     const val MEET_MAX = 60
@@ -131,7 +131,7 @@ object CrewRoomRules {
     /** 방 이름 길이 — 서버 char_length 처럼 글자(코드 포인트)로 센다 */
     fun nameLength(raw: String): Int = normalizeName(raw).let { it.codePointLength() }
 
-    fun nameValid(raw: String): Boolean = nameLength(raw) in 1..NAME_MAX
+    fun nameValid(raw: String): Boolean = nameLength(raw) in 1..NAME_LENGTH_LIMIT
 
     /** 코스 이름 — 앞뒤 공백을 빼고 60자 안(넘으면 자른다 — 코스 이름은 사용자가 방에서 고친 값이 아니다) */
     fun courseName(raw: String): String {
