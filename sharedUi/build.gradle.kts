@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.compose.multiplatform)
+    // 장소 목록(spots.json) 읽기
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -40,6 +42,7 @@ val syncStepUpResources by tasks.registering(Exec::class) {
     val script = rootProject.layout.projectDirectory.file("tools/sync_compose_resources.py")
     inputs.files(fileTree(res) { include("values*/**", "font/**", "drawable/**", "drawable-nodpi/**") })
     inputs.dir(static)
+    inputs.dir(rootProject.layout.projectDirectory.dir("app/src/main/assets"))
     inputs.file(script)
     outputs.dir(stepupResources)
     commandLine("python3", script.asFile.path, res.asFile.path, stepupResources.get().asFile.path, static.asFile.path)

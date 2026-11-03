@@ -81,6 +81,6 @@ fun IosRoot() = StepUpTheme {
             redeem = { accessApi.redeem(it) },
             showApple = true,
         )
-        Stage.SignedIn -> StepUpRoot()
+        Stage.SignedIn -> IosHome(onStartRun = { })
     }
 }

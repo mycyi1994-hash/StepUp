@@ -22,4 +22,6 @@ object IosApp {
     val auth by lazy { SupabaseAuth(supabaseUrl, supabaseKey) }
     val sessions by lazy { SessionHolder(auth, sessionStore) }
     val server by lazy { StepUpServer(supabaseUrl, supabaseKey, sessions) }
+    /** 설정(안드로이드와 같은 UserPrefs — 문서 폴더의 strideup_prefs) */
+    val prefs by lazy { com.stepup.android.data.prefs.createIosUserPrefs() }
 }

@@ -41,6 +41,46 @@ if "StepUpFonts." in s and "import com.stepup.android.ui.theme.StepUpFonts" not 
 s = re.sub(r"@(?:androidx\.annotation\.)?StringRes\s+(val |var )?(\w+): Int", r"\1\2: org.jetbrains.compose.resources.StringResource", s)
 s = s.replace("import androidx.annotation.StringRes\n", "")
 s = s.replace("import com.stepup.android.ui.Screen\n", "import com.stepup.android.ui.Screen\n")
+
+
+def _call_end(text, start):
+    """text[start] == '(' — 짝이 맞는 ')' 뒤 자리"""
+    depth, i, quote = 0, start, None
+    while i < len(text):
+        ch = text[i]
+        if quote:
+            if ch == "\\": i += 2; continue
+            if ch == quote: quote = None
+        elif ch in "\"'": quote = ch
+        elif ch == "(": depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0: return i + 1
+        i += 1
+    return -1
+
+
+def _formats(text):
+    """\"%.2f\".format(x) · \"%,d\".format(x) · \"%02d\".format(x) → 공용 함수(Platform.kt — 안드로이드와 같은 글자)"""
+    out, pos = [], 0
+    pat = re.compile(r'"(%\.(\d)f|%,d|%,\.(\d)f|%0(\d)d|%d)"\.format\(')
+    while True:
+        m = pat.search(text, pos)
+        if not m: out.append(text[pos:]); break
+        end = _call_end(text, m.end() - 1)
+        if end < 0: out.append(text[pos:]); break
+        arg = text[m.end():end - 1]
+        fmt = m.group(1)
+        if fmt.startswith("%.") and fmt.endswith("f"): rep = f"com.stepup.android.domain.formatFixed(({arg}).toDouble(), {m.group(2)})"
+        elif fmt == "%,d": rep = f"com.stepup.android.domain.formatGrouped(({arg}).toLong())"
+        elif fmt.startswith("%,."): rep = f"com.stepup.android.domain.formatGrouped(({arg}).toDouble(), {m.group(3)})"
+        elif fmt.startswith("%0"): rep = f"com.stepup.android.domain.zeroPad(({arg}).toLong(), {m.group(4)})"
+        else: rep = f"({arg}).toString()"
+        out.append(text[pos:m.start()]); out.append(rep); pos = end
+    return "".join(out)
+
+
+s = _formats(s)
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text(s)
 print(f"{src} → {dst}")

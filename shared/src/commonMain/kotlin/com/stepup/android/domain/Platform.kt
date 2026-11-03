@@ -8,10 +8,10 @@ import kotlin.math.roundToLong
  */
 
 /** java.lang.Math.toRadians 와 같다(곱하는 상수가 같다 — PI / 180) */
-internal fun toRadians(degrees: Double): Double = degrees * DEGREES_TO_RADIANS
+fun toRadians(degrees: Double): Double = degrees * DEGREES_TO_RADIANS
 
 /** java.lang.Math.toDegrees 와 같다(180 / PI) */
-internal fun toDegrees(radians: Double): Double = radians * RADIANS_TO_DEGREES
+fun toDegrees(radians: Double): Double = radians * RADIANS_TO_DEGREES
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295
 private const val RADIANS_TO_DEGREES = 57.29577951308232
