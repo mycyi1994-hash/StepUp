@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.home
 
+import kotlinx.datetime.toJavaZoneId
+import com.stepup.android.domain.plusDays
+import com.stepup.android.domain.todayIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -68,8 +71,8 @@ import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.pressable
 import com.stepup.android.ui.screens.walk.RoomsUi
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -210,10 +213,10 @@ internal fun RoomsState(
 /** 시각 — 오늘 · 내일이면 "오늘 19:00", 그 뒤면 "10/27 19:00" */
 @Composable
 internal fun whenText(ms: Long): String {
-    val zone = ZoneId.systemDefault()
-    val at = Instant.ofEpochMilli(ms).atZone(zone)
+    val zone = TimeZone.currentSystemDefault()
+    val at = Instant.ofEpochMilli(ms).atZone(zone.toJavaZoneId())
     val hm = DateTimeFormatter.ofPattern("HH:mm").format(at)
-    val today = LocalDate.now(zone)
+    val today = todayIn(zone)
     return when (at.toLocalDate()) {
         today -> stringResource(R.string.d26_when_today, hm)
         today.plusDays(1) -> stringResource(R.string.d26_when_tomorrow, hm)
@@ -258,7 +261,7 @@ internal fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showC
         )
         val third = when {
             room.mode == RoomMode.REMOTE -> stringResource(R.string.d26_room_remote_line)
-            room.meetPlace != null -> stringResource(R.string.d26_room_meet, room.meetPlace)
+            room.meetPlace != null -> stringResource(R.string.d26_room_meet, room.meetPlace!!)
             course != null -> "${course.name} · ${com.stepup.android.ui.screens.walk.courseKm(course.km)}km"
             else -> stringResource(R.string.d26_room_host, room.hostName)
         }

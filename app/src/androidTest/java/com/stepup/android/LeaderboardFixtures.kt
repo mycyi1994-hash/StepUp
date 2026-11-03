@@ -9,8 +9,7 @@ import com.stepup.android.domain.LeaderRun
 import com.stepup.android.domain.PointScope
 import com.stepup.android.domain.PointsBoard
 import com.stepup.android.domain.RunnerBoard
-import java.time.LocalDate
-import java.time.OffsetDateTime
+import kotlinx.datetime.LocalDate
 
 /**
  * 개발용 고정 값 — 리더보드 기기 검사에서만 [LeaderboardSource] 경계로 넣는다(앱 코드는 부르지 않는다). 실제 순위가 아니다.
@@ -27,7 +26,7 @@ class FixtureLeaderboards(
 }
 
 object LeaderboardSamples {
-    val period = LeaderPeriod(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 19), "Asia/Seoul")
+    val period = LeaderPeriod(LocalDate(2026, 10, 12), LocalDate(2026, 10, 19), "Asia/Seoul")
 
     private fun crew(rank: Int, name: String, mark: String, km: Double, runners: Int, previous: Int?, mine: Boolean = false) =
         LeaderEntry(id = "crew-$rank", name = name, mark = mark, rank = rank, previousRank = previous, metric = km, isMe = mine,
@@ -55,7 +54,7 @@ object LeaderboardSamples {
     private fun runner(rank: Int, name: String, km: Double, me: Boolean = false, previous: Int? = null, runs: Int? = null) =
         LeaderEntry(id = "runner-$rank", name = name, mark = name.take(1), rank = rank, previousRank = previous, metric = km, isMe = me, runs = runs)
 
-    private fun at(text: String) = OffsetDateTime.parse(text).toInstant()
+    private fun at(text: String) = kotlin.time.Instant.parse(text)
 
     fun runners(ranked: Boolean = true): RunnerBoard {
         val me = runner(127, "가나", 32.6, me = true, previous = 139, runs = 4)

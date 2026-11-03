@@ -257,7 +257,7 @@ fun RunScreen(
     // 이 러닝의 서버 상태만 — 같은 크루 · 출발 시각이 이 러닝 무렵(앞 러닝의 값을 이어 보이지 않게)
     val crewNow = crewLiveAll?.takeIf { live ->
         crewRunGroup && live.crewId == session.groupCrewId &&
-            (live.startedAtMs == null || kotlin.math.abs(live.startedAtMs - session.startedAt) < CREW_LIVE_MATCH_MS)
+            (live.startedAtMs == null || kotlin.math.abs(live.startedAtMs!! - session.startedAt) < CREW_LIVE_MATCH_MS)
     }
     // 서버 상태를 아직 못 받았어도(첫 5초 · 끊김) 출발한 크루 방이면 크루 러닝으로 본다
     val crewPoolRun = crewRunGroup && (crewNow != null || (crewRunRoomNow != null && crewRunRoomNow?.status != "LOBBY"))
@@ -947,13 +947,13 @@ fun RunScreen(
                     !outcome.settled || outcome.base == null || outcome.total == null -> listOf(stringResource(R.string.crew_result_pending))
                     else -> buildList {
                         val counted = outcome.bonus.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && outcome.bonus.count >= 2
-                        add(stringResource(R.string.crew_result_base, m.sup(outcome.base)))
+                        add(stringResource(R.string.crew_result_base, m.sup(outcome.base!!)))
                         add(
                             if (counted) stringResource(R.string.crew_result_headcount, outcome.bonus.count, m.percent(outcome.headcountPct), m.sup(outcome.headcount ?: 0.0))
                             else stringResource(R.string.crew_result_headcount_none),
                         )
                         add(stringResource(R.string.crew_result_level_bonus, outcome.levelBefore ?: 1, m.percent(outcome.levelPct), m.sup(outcome.level ?: 0.0)))
-                        add(stringResource(R.string.crew_result_total, m.sup(outcome.base), m.percent(outcome.headcountPct), m.percent(outcome.levelPct), m.sup(outcome.total)))
+                        add(stringResource(R.string.crew_result_total, m.sup(outcome.base!!), m.percent(outcome.headcountPct), m.percent(outcome.levelPct), m.sup(outcome.total!!)))
                         add(stringResource(R.string.crew_result_pool, m.amount(outcome.contribution), m.amount(outcome.consumed)))
                         outcome.pool?.let { add(stringResource(R.string.crew_result_pool_now, m.amount(it.remaining), m.amount(it.total))) }
                         add(stringResource(R.string.crew_result_personal))
@@ -1673,14 +1673,14 @@ fun RunScreen(
             live.earning != com.stepup.android.domain.CrewEarning.POOL_EMPTY
         ) {
             CrewLowSheet(
-                com.stepup.android.domain.CrewRunMath.amount(live.pool.remaining), com.stepup.android.domain.CrewRunMath.amount(live.pool.total),
+                com.stepup.android.domain.CrewRunMath.amount(live.pool!!.remaining), com.stepup.android.domain.CrewRunMath.amount(live.pool!!.total),
                 onClose = { crewLowSeen = true },
             )
         }
     }
     // 서버가 나를 끝냈다(마지막 한 사람) — 러닝은 저장되어 결과로 간다. 결과 위에 한 번 알린다
     crewLiveAll?.takeIf { it.endedAlone && !session.isActive && session.lastStartedAt > 0 && crewAloneSeen != session.lastStartedAt &&
-        it.startedAtMs != null && kotlin.math.abs(it.startedAtMs - session.lastStartedAt) < CREW_LIVE_MATCH_MS
+        it.startedAtMs != null && kotlin.math.abs(it.startedAtMs!! - session.lastStartedAt) < CREW_LIVE_MATCH_MS
     }?.let {
         CrewAloneSheet(
             distance = "%.2f".format(finishKm(session)), time = formatDuration(session.lastElapsedSec),
@@ -2763,8 +2763,8 @@ private fun RunPlanPanel(
             progress = goal.fraction(elapsedSec, km),
             captions = listOf(when {
                 goalReached -> stringResource(R.string.runflow_goal_reached_title)
-                goal.km != null -> stringResource(R.string.runflow_goal_dist_left, "%.2f".format(max(goal.km - km, 0.0)))
-                goal.seconds != null -> stringResource(R.string.runflow_goal_time_left, formatDurationWords(max(goal.seconds - elapsedSec, 0L)))
+                goal.km != null -> stringResource(R.string.runflow_goal_dist_left, "%.2f".format(max(goal.km!! - km, 0.0)))
+                goal.seconds != null -> stringResource(R.string.runflow_goal_time_left, formatDurationWords(max(goal.seconds!! - elapsedSec, 0L)))
                 else -> goalName(goal)
             }),
         )

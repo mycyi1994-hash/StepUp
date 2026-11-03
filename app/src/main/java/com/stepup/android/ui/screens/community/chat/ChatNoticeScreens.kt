@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.chat
 
+import kotlinx.datetime.toJavaZoneId
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -47,7 +48,7 @@ import com.stepup.android.domain.ChatNotice
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.ui.experience.feedbackClickable
 import java.time.Instant
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -56,7 +57,7 @@ import java.util.Locale
 private fun noticeDay(millis: Long): String {
     val pattern = stringResource(R.string.chat_notice_date_pattern)
     return runCatching {
-        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
+        Instant.ofEpochMilli(millis).atZone(TimeZone.currentSystemDefault().toJavaZoneId()).format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
     }.getOrDefault("")
 }
 
@@ -271,7 +272,7 @@ internal fun noticeMeetingLine(meeting: com.stepup.android.domain.ChatNoticeMeet
     val at = meeting.meetAt
     val place = meeting.place.ifBlank { meeting.title }
     if (at == null) return listOf(meeting.title, meeting.place).filter { it.isNotBlank() }.joinToString(" · ")
-    val day = when (com.stepup.android.domain.CrewHomeRules.whenOf(at, System.currentTimeMillis(), ZoneId.systemDefault())) {
+    val day = when (com.stepup.android.domain.CrewHomeRules.whenOf(at, System.currentTimeMillis(), TimeZone.currentSystemDefault())) {
         com.stepup.android.domain.CrewHomeRules.When.TODAY -> stringResource(R.string.crewhome_today)
         com.stepup.android.domain.CrewHomeRules.When.TOMORROW -> stringResource(R.string.crewhome_tomorrow)
         com.stepup.android.domain.CrewHomeRules.When.LATER -> noticeDay(at)

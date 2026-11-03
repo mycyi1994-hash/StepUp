@@ -1299,7 +1299,7 @@ internal data class StoryRunJson(
     val route: String = "",
 ) {
     fun toDomain(): com.stepup.android.domain.StoryRun? {
-        val date = runCatching { java.time.LocalDate.parse(day) }.getOrNull() ?: return null
+        val date = runCatching { kotlinx.datetime.LocalDate.parse(day) }.getOrNull() ?: return null
         return com.stepup.android.domain.StoryRun(
             id, startedAt, endedAt, distanceM, durationS, date, com.stepup.android.domain.StoryRunRules.decodeRoute(route),
         )

@@ -140,7 +140,7 @@ kilometre plus a manual lap button.
 
 ## 4. Run integrity — proving it was a run
 
-[`domain/RunIntegrity.kt`](../app/src/main/java/com/stepup/android/domain/RunIntegrity.kt).
+[`domain/RunIntegrity.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RunIntegrity.kt).
 A step sensor cannot tell a runner from a phone rattling in a car, so GPS
 segment speed is judged alongside it. Two layers plus one independent axis:
 
@@ -160,7 +160,7 @@ covered by unit tests that run in CI.
 
 ## 5. Reward economy
 
-[`domain/RewardEconomy.kt`](../app/src/main/java/com/stepup/android/domain/RewardEconomy.kt)
+[`domain/RewardEconomy.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RewardEconomy.kt)
 — pure functions, no Android, unit-tested.
 
 ```
@@ -510,7 +510,7 @@ StepUp은 세 개의 층으로 나뉘고, **그 나눔 자체가 설계**입니�
 
 ## 4. 러닝 판정 — "정말 뛰었는가"
 
-[`domain/RunIntegrity.kt`](../app/src/main/java/com/stepup/android/domain/RunIntegrity.kt).
+[`domain/RunIntegrity.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RunIntegrity.kt).
 걸음 센서만으로는 달리는 사람과 차 안에서 흔들리는 폰을 구분할 수 없으므로 GPS
 구간 속도를 함께 봅니다. 두 층 + 독립된 한 축입니다.
 
@@ -530,7 +530,7 @@ StepUp은 세 개의 층으로 나뉘고, **그 나눔 자체가 설계**입니�
 
 ## 5. 리워드 이코노미
 
-[`domain/RewardEconomy.kt`](../app/src/main/java/com/stepup/android/domain/RewardEconomy.kt)
+[`domain/RewardEconomy.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RewardEconomy.kt)
 — 순수 함수, 안드로이드 의존 없음, 단위 테스트 대상.
 
 ```

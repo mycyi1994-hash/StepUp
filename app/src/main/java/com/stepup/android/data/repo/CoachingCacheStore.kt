@@ -98,8 +98,8 @@ class CoachingCacheStore(private val dir: File) {
 
         fun runKeyPrefix(startedAt: Long) = "run:$startedAt:"
         fun runKey(startedAt: Long, locale: String) = "${runKeyPrefix(startedAt)}$locale"
-        fun weekKey(monday: java.time.LocalDate, zone: String, locale: String) = "week:$monday:$zone:$locale"
-        fun recKey(monday: java.time.LocalDate, locale: String) = "rec:$monday:$locale"
+        fun weekKey(monday: kotlinx.datetime.LocalDate, zone: String, locale: String) = "week:$monday:$zone:$locale"
+        fun recKey(monday: kotlinx.datetime.LocalDate, locale: String) = "rec:$monday:$locale"
     }
 }
 

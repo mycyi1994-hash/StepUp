@@ -136,7 +136,7 @@ private fun CrewNewCrewHead(crew: CrewCard) {
                 CrewLevelChip(crew.level)
                 Spacer(Modifier.width(14.dp))
                 Text(
-                    if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity)
+                    if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity!!)
                     else stringResource(R.string.crew_members_only, crew.memberCount),
                     color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
                 )
@@ -151,7 +151,7 @@ private fun CrewNewCrewHead(crew: CrewCard) {
 @Composable
 internal fun crewLevelMembers(crew: CrewCard): String {
     val level = crew.level?.let { stringResource(R.string.crew_level_value, it) } ?: stringResource(R.string.crew_level_new)
-    val members = if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity)
+    val members = if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity!!)
     else stringResource(R.string.crew_members_only, crew.memberCount)
     return "$level · $members"
 }
@@ -195,7 +195,7 @@ fun CrewRequestsScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onOpe
                     val crew = card
                     CrewHeading(
                         stringResource(R.string.crew_requests_heading, list.size),
-                        sub = if (crew?.capacity != null) stringResource(R.string.crew_requests_sub, crew.name, crew.memberCount, crew.capacity)
+                        sub = if (crew?.capacity != null) stringResource(R.string.crew_requests_sub, crew.name, crew.memberCount, crew.capacity!!)
                         else stringResource(R.string.crew_requests_sub_waiting),
                         titleTag = "crew-requests-heading",
                     )
@@ -495,8 +495,8 @@ fun CrewSettingsScreen(viewModel: CrewScreenViewModel, actions: CrewSettingsActi
                 title = stringResource(R.string.crew_resume_recruit_title),
                 body = when {
                     it.capacity == null -> stringResource(R.string.crew_resume_recruit_body_open)
-                    it.full -> stringResource(R.string.crew_resume_recruit_body_full, it.memberCount, it.capacity)
-                    else -> stringResource(R.string.crew_resume_recruit_body, it.memberCount, it.capacity, it.capacity - it.memberCount)
+                    it.full -> stringResource(R.string.crew_resume_recruit_body_full, it.memberCount, it.capacity!!)
+                    else -> stringResource(R.string.crew_resume_recruit_body, it.memberCount, it.capacity!!, it.capacity!! - it.memberCount)
                 },
                 confirm = stringResource(R.string.crew_resume_recruit_confirm),
                 busy = op.op == CrewOp.RESUME && op.running,

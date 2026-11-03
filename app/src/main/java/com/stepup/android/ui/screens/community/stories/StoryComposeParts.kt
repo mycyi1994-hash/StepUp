@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.community.stories
 
+import com.stepup.android.core.format
+import com.stepup.android.core.toEpochDay
+import kotlinx.datetime.toJavaZoneId
+import com.stepup.android.domain.minusDays
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -91,7 +95,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import java.time.Instant
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -143,7 +147,7 @@ class StoryWords(private val context: Context, private val locale: Locale) {
     fun date(day: LocalDate): String = day.format(DateTimeFormatter.ofPattern(s(R.string.story_run_date_pattern), locale))
 
     private fun time(millis: Long): String =
-        Instant.ofEpochMilli(millis).atZone(StoryRunRules.ZONE).format(DateTimeFormatter.ofPattern(s(R.string.story_run_time_pattern), locale))
+        Instant.ofEpochMilli(millis).atZone(StoryRunRules.ZONE.toJavaZoneId()).format(DateTimeFormatter.ofPattern(s(R.string.story_run_time_pattern), locale))
 
     /** "오늘" · "어제" · "3일 전" */
     fun ago(days: Long): String = when (days) {

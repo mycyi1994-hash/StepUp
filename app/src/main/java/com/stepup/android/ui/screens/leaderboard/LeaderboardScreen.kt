@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.leaderboard
 
+import kotlinx.datetime.toJavaZoneId
+import kotlinx.datetime.number
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -90,7 +92,7 @@ import com.stepup.android.ui.components.RunTopBar
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as JavaTextStyle
 
@@ -251,7 +253,7 @@ private fun LbHeading(title: String, subtitle: String?, period: LeaderPeriod?, c
 
 /** "10.12–10.18" — 서버가 준 주의 첫날 · 마지막 날 */
 private fun periodLabel(period: LeaderPeriod): String =
-    "${period.startDate.monthValue}.${period.startDate.dayOfMonth}–${period.lastDate.monthValue}.${period.lastDate.dayOfMonth}"
+    "${period.startDate.month.number}.${period.startDate.dayOfMonth}–${period.lastDate.month.number}.${period.lastDate.dayOfMonth}"
 
 /** 불러오는 중 · 실패 · 로그인 · 준비 중 — 지어낸 숫자 대신 이 칸을 보인다. 그 밖의 상태(Ready)면 false */
 @Composable
@@ -790,10 +792,10 @@ private fun MyRunsSheet(board: RunnerBoard) {
         return
     }
     val locale = LocalConfiguration.current.locales[0]
-    val zone = remember(board.period.timezone) { runCatching { ZoneId.of(board.period.timezone) }.getOrDefault(ZoneId.systemDefault()) }
+    val zone = remember(board.period.timezone) { runCatching { TimeZone.of(board.period.timezone) }.getOrDefault(TimeZone.currentSystemDefault()) }
     val dates = DateTimeFormatter.ofPattern(stringResource(R.string.lb_run_date_pattern), locale)
     board.myRunList.forEachIndexed { i, run ->
-        val day = run.startedAt.atZone(zone)
+        val day = java.time.Instant.ofEpochMilli(run.startedAt.toEpochMilliseconds()).atZone(zone.toJavaZoneId())
         Row(
             Modifier.fillMaxWidth().heightIn(min = 61.dp)
                 .then(if (i < board.myRunList.lastIndex) Modifier.lbDivider(Color(0xFF34516B)) else Modifier)

@@ -1,5 +1,6 @@
 package com.stepup.android.data.repo
 
+import kotlin.time.toKotlinInstant
 import com.stepup.android.data.remote.CrewBoardEntryRow
 import com.stepup.android.data.remote.CrewBoardRow
 import com.stepup.android.data.remote.LeaderboardApi
@@ -16,7 +17,7 @@ import com.stepup.android.domain.PointScope
 import com.stepup.android.domain.PointsBoard
 import com.stepup.android.domain.RunnerBoard
 import java.time.Instant
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import java.time.OffsetDateTime
 
 /**
@@ -72,7 +73,7 @@ internal fun RunnerBoardRow.toBoard(): RunnerBoard = RunnerBoard(
     myKm = myMeters / 1000.0,
     myRuns = myRuns,
     myRunList = myRunList.mapNotNull { run ->
-        runCatching { LeaderRun(run.startedAt.toInstant(), run.meters / 1000.0) }.getOrNull()
+        runCatching { LeaderRun(run.startedAt.toInstant().toKotlinInstant(), run.meters / 1000.0) }.getOrNull()
     },
 )
 

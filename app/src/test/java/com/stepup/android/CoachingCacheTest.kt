@@ -41,12 +41,12 @@ class CoachingCacheTest {
         cache.put("account:A", CoachingCacheStore.runKey(1, "ko"), result, 1)
         cache.put("account:A", CoachingCacheStore.runKey(1, "en"), result, 2)
         cache.put("account:A", CoachingCacheStore.runKey(10, "ko"), result, 3)
-        cache.put("account:A", CoachingCacheStore.weekKey(java.time.LocalDate.of(2026, 10, 5), "Asia/Seoul", "ko"), result, 4)
+        cache.put("account:A", CoachingCacheStore.weekKey(kotlinx.datetime.LocalDate(2026, 10, 5), "Asia/Seoul", "ko"), result, 4)
         cache.removeRun("account:A", 1)
         assertNull(cache.get("account:A", CoachingCacheStore.runKey(1, "ko")))
         assertNull(cache.get("account:A", CoachingCacheStore.runKey(1, "en")))
         assertTrue(cache.get("account:A", CoachingCacheStore.runKey(10, "ko")) != null)
-        assertTrue(cache.get("account:A", CoachingCacheStore.weekKey(java.time.LocalDate.of(2026, 10, 5), "Asia/Seoul", "ko")) != null)
+        assertTrue(cache.get("account:A", CoachingCacheStore.weekKey(kotlinx.datetime.LocalDate(2026, 10, 5), "Asia/Seoul", "ko")) != null)
     }
 
     @Test fun `해제하며 삭제를 고르면 그 계정의 사본만 지운다`() = runBlocking {

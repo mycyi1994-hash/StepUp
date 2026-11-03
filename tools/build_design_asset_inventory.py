@@ -12,9 +12,9 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs/redesign"
-AVATAR = ROOT / "app/src/main/java/com/stepup/android/domain/Avatar.kt"
-ART = ROOT / "app/src/main/java/com/stepup/android/domain/AvatarArt.kt"
-SHOES = ROOT / "app/src/main/java/com/stepup/android/domain/Sneaker.kt"
+AVATAR = ROOT / "shared/src/commonMain/kotlin/com/stepup/android/domain/Avatar.kt"
+ART = ROOT / "shared/src/commonMain/kotlin/com/stepup/android/domain/AvatarArt.kt"
+SHOES = ROOT / "shared/src/commonMain/kotlin/com/stepup/android/domain/Sneaker.kt"
 RES = ROOT / "app/src/main/res/drawable-nodpi"
 
 

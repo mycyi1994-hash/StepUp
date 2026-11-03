@@ -1,5 +1,12 @@
 package com.stepup.android.ui.screens.records
 
+import com.stepup.android.core.toJavaYearMonth
+import kotlinx.datetime.toJavaLocalDate
+import com.stepup.android.domain.isAfter
+import com.stepup.android.domain.isBefore
+import com.stepup.android.domain.todayIn
+import kotlinx.datetime.minusMonth
+import kotlinx.datetime.yearMonth
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -87,9 +94,9 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpSans
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.TimeZone
 
 /**
  * 내 러닝 기록(시안 H01 · H02 · H03 · H07 · H08 · H09 · H10) — 내 정보의 "내 러닝 기록 보기" · 러닝 결과의 "기록".
@@ -110,8 +117,8 @@ fun RecordsScreen(
     val period by viewModel.period.collectAsStateWithLifecycle()
     val first by viewModel.firstRecordAt.collectAsStateWithLifecycle()
     var sheetOpen by rememberSaveable { mutableStateOf(false) }
-    val zone = remember { ZoneId.systemDefault() }
-    val thisMonth = YearMonth.now(zone)
+    val zone = remember { TimeZone.currentSystemDefault() }
+    val thisMonth = todayIn(zone).yearMonth
     RecordsContent(
         load = load, period = period, onBack = onBack,
         onOpenStats = { onOpenStats((period as? RecordPeriod.Month)?.month ?: thisMonth) },
@@ -122,7 +129,7 @@ fun RecordsScreen(
     if (sheetOpen) {
         PeriodSheet(
             current = period, thisMonth = thisMonth,
-            firstMonth = minOf(first?.let { YearMonth.from(it.localDate(zone)) } ?: thisMonth, thisMonth),
+            firstMonth = minOf(first?.let { (it.localDate(zone)).yearMonth } ?: thisMonth, thisMonth),
             onApply = {
                 viewModel.setPeriod(it)
                 sheetOpen = false
@@ -147,10 +154,10 @@ fun RecordsContent(
     route: suspend (Long) -> List<GeoPoint> = { emptyList() },
     cachedRoute: (Long) -> List<GeoPoint>? = { null },
     listState: LazyListState = rememberLazyListState(),
-    zone: ZoneId = ZoneId.systemDefault(),
-    today: LocalDate = LocalDate.now(zone),
+    zone: TimeZone = TimeZone.currentSystemDefault(),
+    today: LocalDate = todayIn(zone),
 ) {
-    val thisMonth = YearMonth.from(today)
+    val thisMonth = (today).yearMonth
     // 첫 기록 전(H07) · 못 읽음(H10)은 제목만 — 기간 · 통계로 갈 것이 없다
     val firstEmpty = load is RecordsLoad.Ready && load.rows.isEmpty() && (!load.anyRecords || period == RecordPeriod.All)
     val bare = firstEmpty || load == RecordsLoad.Failed
@@ -221,7 +228,7 @@ fun RecordsContent(
 @Composable
 private fun periodLabel(period: RecordPeriod): String = when (period) {
     RecordPeriod.All -> stringResource(R.string.rec_period_all)
-    is RecordPeriod.Month -> rememberFormatter(R.string.rec_month_pattern).format(period.month)
+    is RecordPeriod.Month -> rememberFormatter(R.string.rec_month_pattern).format(period.month.toJavaYearMonth())
 }
 
 /** 기간 알약 — 파란 면 · 흰 글자 · ▾. 누르는 곳은 48dp(알약은 그 안에) */
@@ -268,7 +275,7 @@ private fun Summary(period: RecordPeriod, totals: RecordTotals, thisMonth: YearM
             when (period) {
                 RecordPeriod.All -> stringResource(R.string.run_rec_sum_all)
                 is RecordPeriod.Month -> if (period.month == thisMonth) stringResource(R.string.run_rec_sum_month)
-                else stringResource(R.string.run_rec_sum_named, rememberFormatter(R.string.rec_month_name_pattern).format(period.month))
+                else stringResource(R.string.run_rec_sum_named, rememberFormatter(R.string.rec_month_name_pattern).format(period.month.toJavaYearMonth()))
             },
             style = runTextStyle(15.sp, t.label, FontWeight.SemiBold),
         )
@@ -295,13 +302,13 @@ private fun RecordRow(
     row: RunRecordRow,
     route: suspend (Long) -> List<GeoPoint>,
     cachedRoute: (Long) -> List<GeoPoint>?,
-    zone: ZoneId,
+    zone: TimeZone,
     today: LocalDate,
     onClick: () -> Unit,
 ) {
     val t = runTone()
     val date = row.startedAt.localDate(zone)
-    val dateText = rememberFormatter(if (date.year == today.year) R.string.run_rec_row_date else R.string.run_rec_row_date_year).format(date)
+    val dateText = rememberFormatter(if (date.year == today.year) R.string.run_rec_row_date else R.string.run_rec_row_date_year).format(date.toJavaLocalDate())
     val hasDistance = row.distanceMeters > 0
     RunCard(Modifier.padding(vertical = 5.dp), padding = PaddingValues(8.dp), onClick = onClick, tag = "record-row-${row.id}") {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -461,8 +468,8 @@ fun PeriodSheet(
     var pending by remember { mutableStateOf(current) }
     val monthFormat = rememberFormatter(R.string.rec_month_pattern)
     val months = remember(thisMonth, firstMonth, current) {
-        val listed = generateSequence(thisMonth) { it.minusMonths(1) }.takeWhile { !it.isBefore(firstMonth) }.toList()
-        val chosen = (current as? RecordPeriod.Month)?.month?.takeIf { !it.isAfter(thisMonth) }
+        val listed = generateSequence(thisMonth) { it.minusMonth() }.takeWhile { it >= firstMonth }.toList()
+        val chosen = (current as? RecordPeriod.Month)?.month?.takeIf { it <= thisMonth }
         (listed + listOfNotNull(chosen)).distinct().sortedDescending()
     }
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("period-sheet"), showClose = false) {
@@ -483,7 +490,7 @@ fun PeriodSheet(
                 pending = RecordPeriod.All
             }
             months.forEach { month ->
-                PeriodChoice(monthFormat.format(month), pending == RecordPeriod.Month(month), "period-month-$month") {
+                PeriodChoice(monthFormat.format(month.toJavaYearMonth()), pending == RecordPeriod.Month(month), "period-month-$month") {
                     pending = RecordPeriod.Month(month)
                 }
             }

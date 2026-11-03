@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.coaching
 
+import kotlinx.datetime.toJavaLocalDate
+import com.stepup.android.domain.plusDays
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -81,7 +83,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.records.rememberFormatter
 import com.stepup.android.ui.theme.StepUpSans
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 /*
  * AI 코칭 화면들의 공통 조각 — 러닝 화면과 같은 남색 바닥 · 공용 머리(RunTopBar: 뒤로 · 공식 로고) · RunStyle 버튼과 시트.
@@ -400,8 +402,8 @@ internal fun weekRangeText(monday: LocalDate): String {
     val md = rememberFormatter(R.string.coach_date_md)
     val d = rememberFormatter(R.string.coach_date_d)
     val sunday = monday.plusDays(6)
-    val end = if (sunday.month == monday.month) d.format(sunday) else md.format(sunday)
-    return stringResource(R.string.coach_week_range, md.format(monday), end)
+    val end = if (sunday.month == monday.month) d.format(sunday.toJavaLocalDate()) else md.format(sunday.toJavaLocalDate())
+    return stringResource(R.string.coach_week_range, md.format(monday.toJavaLocalDate()), end)
 }
 
 // ── 그림 ─────────────────────────────────────────────────────────
@@ -523,7 +525,7 @@ internal fun WeekBars(weeks: List<WeekSummary>, top: Double, selected: LocalDate
     Row(modifier.fillMaxWidth().height(chart + 56.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         weeks.forEach { week ->
             val km = kmTextShort(week.meters)
-            val label = short.format(week.monday)
+            val label = short.format(week.monday.toJavaLocalDate())
             val on = week.monday == selected
             val cd = stringResource(R.string.coach_bar_cd, label, km)
             Column(

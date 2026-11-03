@@ -16,7 +16,7 @@ import com.stepup.android.domain.CrewRunRules
 import com.stepup.android.domain.CrewRunState
 import com.stepup.android.domain.CrewRunToday
 import com.stepup.android.domain.CrewTerminal
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNull

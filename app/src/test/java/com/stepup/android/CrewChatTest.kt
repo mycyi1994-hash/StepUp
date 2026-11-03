@@ -26,8 +26,9 @@ import com.stepup.android.ui.screens.community.chat.ChatOutgoingPhotoSaver
 import com.stepup.android.ui.screens.community.chat.ChatOutgoingSaver
 import com.stepup.android.ui.screens.community.chat.ChatRoutes
 import java.io.File
-import java.time.LocalDate
-import java.time.ZoneOffset
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.TimeZone
 import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -41,9 +42,9 @@ import org.junit.Test
  */
 class CrewChatTest {
     private val me = "u-me"
-    private val zone = ZoneOffset.UTC
+    private val zone = TimeZone.UTC
 
-    private fun at(minute: Int, day: Int = 28): Long = LocalDate.of(2026, 9, day).atStartOfDay(zone).toInstant().toEpochMilli() + 19 * 3_600_000L + minute * 60_000L
+    private fun at(minute: Int, day: Int = 28): Long = LocalDate(2026, 9, day).atStartOfDayIn(zone).toEpochMilliseconds() + 19 * 3_600_000L + minute * 60_000L
 
     private fun server(id: Long, author: String, body: String = "m$id", minute: Int = id.toInt(), client: String? = null, rev: Long = id, day: Int = 28) = ChatMessage(
         id = id, seq = id, rev = rev, authorId = author, authorName = author.removePrefix("u-"), kind = ChatKind.TEXT, body = body,

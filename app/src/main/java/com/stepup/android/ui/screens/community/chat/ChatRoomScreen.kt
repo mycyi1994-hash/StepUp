@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.chat
 
+import kotlinx.datetime.toJavaLocalDate
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -74,7 +75,7 @@ import com.stepup.android.ui.components.SettingsToast
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.crew.CrewImage
 import java.io.File
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -319,7 +320,7 @@ private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: 
     val meta = ui.meta ?: return
     val ink = blueInk()
     val listState = rememberLazyListState()
-    val items = remember(ui.messages, meta, ui.me) { ChatRules.timeline(ui.messages, meta, ui.me, ZoneId.systemDefault()).reversed() }
+    val items = remember(ui.messages, meta, ui.me) { ChatRules.timeline(ui.messages, meta, ui.me, TimeZone.currentSystemDefault()).reversed() }
     val latestItems by rememberUpdatedState(items)
     // 사용자가 스크롤을 멈춘 곳이 맨 아래인가 — 새 메시지가 들어오는 순간이 아니라 스크롤이 끝날 때만 바꾼다
     var stick by remember { mutableStateOf(true) }
@@ -379,7 +380,7 @@ private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: 
         ) {
             items(items, key = { it.key }, contentType = { it::class.simpleName }) { item ->
                 when (item) {
-                    is ChatItem.Day -> ChatDayLine(item.day)
+                    is ChatItem.Day -> ChatDayLine(item.day.toJavaLocalDate())
                     is ChatItem.Line -> ChatSystemLine(item.message)
                     is ChatItem.Bubble -> ChatBubbleRow(
                         crewId = viewModel.crewId,
