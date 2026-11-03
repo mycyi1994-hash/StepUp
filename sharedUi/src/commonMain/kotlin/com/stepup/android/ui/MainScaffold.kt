@@ -1,8 +1,6 @@
 package com.stepup.android.ui
 
 import kotlinx.datetime.toLocalDateTime
-import com.stepup.android.core.toKotlinYearMonth
-import com.stepup.android.core.toJavaYearMonth
 import kotlinx.coroutines.flow.map
 
 import androidx.compose.foundation.layout.RowScope
@@ -67,7 +65,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,6 +81,7 @@ import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import com.stepup.android.core.blocked
 import com.stepup.ui.res.*
+import com.stepup.android.ui.components.showToast
 import com.stepup.android.core.InviteLinks
 import com.stepup.android.core.AppServices
 import com.stepup.android.ui.components.HairlineDivider
@@ -106,7 +104,6 @@ import com.stepup.android.ui.screens.events.EventsScreen
 import com.stepup.android.ui.screens.events.NewsScreen
 import com.stepup.android.ui.screens.home.HomeScreen
 import com.stepup.android.ui.screens.gacha.MysteryBoxScreen
-import com.stepup.android.ui.screens.login.LoginScreen
 import com.stepup.android.ui.screens.market.MarketModelScreen
 import com.stepup.android.ui.screens.items.ItemsScreen
 import com.stepup.android.ui.screens.items.SneakerDetailScreen
@@ -183,7 +180,6 @@ private fun MainScaffoldContent(
 ) {
     RunFeedback()
     val motion = LocalMotion.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     // 첫 사용 안내(시작·로그인·첫 사용 v1 시안 02)는 한 장짜리 시트다 — 아래 FirstGuideSheet. 예전 스포트라이트 투어는 시작하지 않는다.
@@ -290,7 +286,7 @@ private fun MainScaffoldContent(
     val weatherPick = weather.takeIf { weatherOn }
     LaunchedEffect(weatherOn, currentRoute) {
         if (!weatherOn) com.stepup.android.data.weather.WeatherBackground.clear()
-        else if (currentRoute == Screen.Run.route) com.stepup.android.data.weather.WeatherBackground.refresh(context)
+        else if (currentRoute == Screen.Run.route) com.stepup.android.data.weather.WeatherBackground.refresh()
     }
     LaunchedEffect(weatherPick) {
         weatherPick?.let { homePhoto = com.stepup.android.ui.components.HomePhotos.forWeather(it, homePhoto) }
@@ -306,7 +302,7 @@ private fun MainScaffoldContent(
                 // 미리 풀기가 아직 안 끝났으면 그 사진을 기다리지 않고(화면 스레드가 멈춘다) 지금 사진을 그대로 둔다
                 val ready = upcomingPhoto?.takeIf {
                     (weatherPick == null || com.stepup.android.ui.components.HomePhotos.all[it].suits(weatherPick)) &&
-                        com.stepup.android.ui.components.RasterCache.isReady(context.resources, com.stepup.android.ui.components.HomePhotos.all[it].res)
+                        com.stepup.android.ui.components.RasterCache.isReady(com.stepup.android.ui.components.HomePhotos.all[it].res)
                 }
                 if (ready != null) {
                     homePhoto = ready
@@ -317,7 +313,7 @@ private fun MainScaffoldContent(
             } else if (previousRoute == Screen.Run.route && currentRoute in tabs) {
                 val next = com.stepup.android.ui.components.HomePhotos.shuffle(homePhoto, weatherPick)
                 upcomingPhoto = next
-                com.stepup.android.ui.components.RasterCache.prewarm(context.resources, com.stepup.android.ui.components.HomePhotos.all[next].res)
+                com.stepup.android.ui.components.RasterCache.prewarm(com.stepup.android.ui.components.HomePhotos.all[next].res)
             }
             previousRoute = currentRoute
         }
@@ -326,7 +322,6 @@ private fun MainScaffoldContent(
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(1_500)
         com.stepup.android.ui.components.RasterCache.prewarm(
-            context.resources,
             Res.drawable.home_banner_blue_night,
             Res.drawable.draw_box_closed_free,
             Res.drawable.draw_box_closed_premium,
@@ -1057,7 +1052,7 @@ private fun MainScaffoldContent(
                     onOpenDraw = { navController.switchTab(Screen.Draw) },
                     // 연결하기 · 지갑 페이지 — 기존 웹 지갑 페이지. 주소를 만들지 못하면(연결) 여기서 알린다
                     onOpenWalletPage = {
-                        walletScope.openWalletPage(context) {
+                        walletScope.openWalletPage {
                             showToast(com.stepup.android.ui.components.stringNow(Res.string.wallet_web_offline))
                         }
                     },
@@ -1135,7 +1130,7 @@ private fun MainScaffoldContent(
                 arguments = listOf(navArgument("month") { type = NavType.StringType; nullable = true; defaultValue = null }),
             ) { entry ->
                 val month = entry.savedStateHandle.get<String>("month")
-                    ?.let { runCatching { kotlinx.datetime.YearMonth.parse(it) }.getOrNull() } ?: kotlinx.datetime.YearMonth.now()
+                    ?.let { runCatching { kotlinx.datetime.YearMonth.parse(it) }.getOrNull() } ?: com.stepup.android.domain.yearMonthNow()
                 com.stepup.android.ui.screens.records.RecordStatsScreen(
                     start = month,
                     onBack = { navController.popBackStack() },

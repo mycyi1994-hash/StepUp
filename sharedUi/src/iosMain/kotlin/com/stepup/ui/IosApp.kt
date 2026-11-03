@@ -216,6 +216,7 @@ object IosApp {
         s.run = IosRunSession
         s.territoryApi = com.stepup.android.data.remote.TerritoryApi(server)
         s.inviteApi = com.stepup.android.data.remote.InviteApi(server)
+        s.accessApi = com.stepup.android.data.remote.AccessApi(server)
         s.drawMemory = IosDrawMemory()
         s.serverEconomyOn = supabaseUrl.isNotEmpty()
         s.onReturnToSignIn = onReturnToSignIn

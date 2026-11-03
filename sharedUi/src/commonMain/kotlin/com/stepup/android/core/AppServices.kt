@@ -58,6 +58,7 @@ object AppServices {
     var drawSource: () -> com.stepup.android.ui.screens.gacha.DrawSource = { com.stepup.android.ui.screens.gacha.ServerDrawSource() }
     lateinit var territoryApi: com.stepup.android.data.remote.TerritoryApi
     lateinit var inviteApi: com.stepup.android.data.remote.InviteApi
+    lateinit var accessApi: com.stepup.android.data.remote.AccessApi
     var startGroupRun: (party: com.stepup.android.data.repo.PartyState, title: String) -> Boolean = { party, title ->
         run.start(party.partySize, com.stepup.android.service.StartGroup.of(party, title))
         true

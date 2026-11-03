@@ -40,3 +40,24 @@ actual fun LightSystemBarIcons() = Unit
 /** 기기 시각 꼴에 오전/오후(a)가 없으면 24시간 */
 actual fun is24HourClock(): Boolean =
     platform.Foundation.NSDateFormatter.dateFormatFromTemplate("j", 0u, platform.Foundation.NSLocale.currentLocale)?.contains("a") != true
+
+actual object RasterCache {
+    actual fun isReady(id: org.jetbrains.compose.resources.DrawableResource): Boolean = true
+    actual fun prewarm(vararg ids: org.jetbrains.compose.resources.DrawableResource) = Unit
+}
+
+/** iOS — 화면에 있는 동안 위치를 켜 둔다(사용하는 동안 권한일 때만). 화면을 떠나면 끈다 */
+@androidx.compose.runtime.Composable
+actual fun RunLocationWarmup(enabled: Boolean) {
+    androidx.compose.runtime.DisposableEffect(enabled) {
+        val manager = platform.CoreLocation.CLLocationManager()
+        val status = manager.authorizationStatus
+        val allowed = status == platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse ||
+            status == platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
+        if (enabled && allowed) {
+            manager.desiredAccuracy = platform.CoreLocation.kCLLocationAccuracyBest
+            manager.startUpdatingLocation()
+        }
+        onDispose { manager.stopUpdatingLocation() }
+    }
+}

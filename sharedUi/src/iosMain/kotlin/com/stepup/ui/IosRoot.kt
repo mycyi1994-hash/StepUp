@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,8 +23,8 @@ import com.stepup.android.ui.screens.login.LoginNotice
 import com.stepup.android.ui.screens.login.LoginPhase
 import kotlinx.coroutines.launch
 
-/** iOS 앱의 차례 — 세션 확인 중 → 로그인 → 앱 안(하단 탭은 다음 단계에서 옮긴다) */
-private enum class Stage { Checking, SignedOut, AccessCode, SignedIn, ShoeCheck, Starting, Running }
+/** iOS 앱의 차례 — 세션 확인 중 → 로그인 → (접속 코드) → 앱 안(공용 MainScaffold) */
+private enum class Stage { Checking, SignedOut, AccessCode, SignedIn }
 
 /**
  * iOS 맨 위 화면(안드로이드 StepUpRoot 의 로그인 단계 자리). 로그인 화면은 안드로이드와 같은 LoginContent 에 Apple 버튼을 더한 것.
@@ -47,6 +46,7 @@ private fun IosRootContent() {
     suspend fun afterSignIn() {
         val status = (accessApi.status() as? ServerResult.Ok)?.value
         access = status
+        com.stepup.android.core.AccessGate.set(status)
         stage = if (status != null && status.mode != "OPEN" && !status.granted) Stage.AccessCode else Stage.SignedIn
         // 신발 · 잔고를 서버에서 받아 둔다(안드로이드 EconomySync 와 같다) — 못 받아도 앱은 열린다
         if (stage == Stage.SignedIn) scope.launch { runCatching { IosApp.economySync.refresh() } }
@@ -98,33 +98,10 @@ private fun IosRootContent() {
             redeem = { accessApi.redeem(it) },
             showApple = true,
         )
-        Stage.SignedIn, Stage.ShoeCheck -> Box(Modifier.fillMaxSize()) {
-            IosMain(onStartRun = { stage = Stage.ShoeCheck })
-            // 자유 러닝 신발 점검 — 안드로이드와 같은 점검창(이 신발로 출발 · 돌아가기 · 신발 교체, 신발은 1초 꾹)
-            if (stage == Stage.ShoeCheck) IosShoeCheck(onStart = { stage = Stage.Starting }, onCancel = { stage = Stage.SignedIn })
-        }
-        Stage.Starting, Stage.Running -> {
-            val session by IosRunSession.live.collectAsState()
-            Box(Modifier.fillMaxSize()) {
-                if (session != null || stage == Stage.Running) {
-                    IosFreeRun(onClose = {
-                        stage = Stage.SignedIn
-                        // 방금 끝난 러닝을 바로 올려 본다(안 되면 다음 차례에)
-                        IosUploads.run { }
-                    })
-                }
-                // 3 · 2 · 1 · 0 → StepUP! → 지도 펼침 — 안드로이드와 같은 연출. 펼칠 때 러닝을 켠다
-                if (stage == Stage.Starting) {
-                    com.stepup.android.ui.screens.walk.FreeRunStartSequence(
-                        sessionActive = session != null,
-                        startRefusals = 0,
-                        onStartSession = { IosRunSession.start(); true },
-                        onFinished = { stage = Stage.Running },
-                        onFailed = { stage = Stage.SignedIn },
-                        onCancel = { stage = Stage.SignedIn },
-                    )
-                }
-            }
+        // 앱 안 — 안드로이드와 같은 공용 본체(하단 탭 넷 · 모든 길 · 러닝 화면). 크루 출발 연출은 맨 위 겹
+        Stage.SignedIn -> Box(Modifier.fillMaxSize()) {
+            com.stepup.android.ui.MainScaffold()
+            com.stepup.android.ui.screens.walk.CrewLaunchOverlay()
         }
     }
 }

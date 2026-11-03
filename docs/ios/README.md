@@ -76,10 +76,17 @@
 - **공용 화면이 쓰는 이음새**(sharedUi `core/`): `AppServices`(저장소 · 러닝 `RunSessionControl` · 기기 일), `AppBuild`(빌드 값 — iOS 는 스토어 판처럼 WEB3 · 지갑 연결 끔),
   `AppTheme` · `AppLocale` · `AccessGate` · `InviteLinks` · `LocalFlags` · `Permissions`. 날짜는 `shared` 의 `DatePattern` · `PatternFormatter` · `DateCompat`
   (DateTimeFormatter · java.time 셈 자리 — JDK 와 맞대어 검사), 돈은 `Decimal`(BigDecimal 자리), 동시성은 `Concurrent.kt`.
+- **앱 본체 · 남은 화면 전부(C7, 2026-11-03)**: 앱 본체 `MainScaffold`(하단 탭 넷 · 모든 길 · 머리 · 지갑 시트 · 러닝 되살리기)가 `:sharedUi` 에 있다 —
+  iOS 는 로그인 · 접속 코드 단계(`IosRoot`)를 지나면 이것을 그대로 쓴다(예전 손으로 만든 탭 `IosMain` 은 지웠다). 로그인 단계는 기기마다 둔다(안드로이드 구글 · iOS 애플).
+  뽑기 · 지갑 연결 · 체인 기록 · 코칭 · 소식 · 이벤트 · 초대 · 베타 코드 · 신발 보관함 · 마켓 · 지도 · 첫 설정 · 러닝 화면 전체(`WalkScreen` · 권한 안내 · 코스)도 공용.
+  공유 그림(`RunShareCard`)은 공용 Compose 그리기로 다시 썼다(같은 자리 · 크기 · 색). 러닝은 `AppServices.run`(iOS `IosRunSession` — 1초 시계 · 위치 · 걸음).
+  기기 이음새: 걸음 · 알림 권한 창(`rememberActivityPermissionLauncher` …), 그림 공유 · 사진첩(`shareImage` · `rememberRunImageSaver` — iOS 사진 보관함은 더하기만),
+  지갑 앱 열기(`openWallet` — iOS 는 유니버설 링크만), 클립보드(`ExternalIntents.copyText`), 마지막 위치(`lastKnownLocation` — 날씨 풍경), `RasterCache` · `RunLocationWarmup`.
+  잠금 화면 러닝 현황(`LockRunPanel`)은 안드로이드 전용이라 app 에 남는다(iOS 는 라이브 액티비티 — 따로 정할 일).
 - **옮기는 도구**: `tools/port_ui_to_cmp.py`(R → Res · java.time · String.format · Toast · Intent 일부 · Context 빼기 …), `tools/prune_imports.py`,
-  `tools/extract_kotlin_functions.py` · `tools/drop_kotlin_functions.py`. 아직 다 고치지 못한 파일은 `sharedUi/porting/`(컴파일하지 않음).
-- **남은 일**: 뽑기 · 지갑 · 코칭 · 이벤트 · 마켓 · 러닝 소식 · 첫 설정 · 신발 강화 · 상점 · 도감 · 지도 · 러닝 화면 전체(`WalkScreen`) · 앱 뿌리(`StepUpRoot`)를 공용으로 고치기,
-  그다음 `:sharedUi` 에 `androidTarget()` 을 더해 안드로이드가 같은 화면을 쓰고 app 의 같은 파일을 지운다(테스트 APK 로 확인).
+  `tools/extract_kotlin_functions.py` · `tools/drop_kotlin_functions.py`.
+- **남은 일**: `:sharedUi` 에 `androidTarget()` 을 더해 안드로이드가 같은 화면(`MainScaffold`)을 쓰고 app 의 같은 파일을 지운다 —
+  안드로이드 쪽 이음새(actual: 권한 창 · 그림 공유 · 사진첩 · 지갑 앱 · RasterCache · 위치 미리 잡기 · 러닝 서비스 → `RunSessionControl`)를 채우고 테스트 APK 로 확인.
 
 ## Mac 에서 돌리기
 

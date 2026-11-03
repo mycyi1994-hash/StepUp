@@ -67,3 +67,20 @@ expect fun LightSystemBarIcons()
 /** 화면 밖에서 수에 맞는 글자(안드로이드 resources.getQuantityString 자리) */
 fun pluralNow(res: org.jetbrains.compose.resources.PluralStringResource, quantity: Int, vararg args: Any): String =
     kotlinx.coroutines.runBlocking { org.jetbrains.compose.resources.getPluralString(res, quantity, *args) }
+
+/**
+ * 큰 그림(webp · png)을 한 번 풀어 앱 전체에서 다시 쓰는 곳 — 안드로이드는 화면 스레드에서 원본 크기로 푸는 것을 미리 뒤에서 해 둔다
+ * (2026-10-04 "렉 걸린다"). iOS 는 Compose 리소스가 처음 그릴 때 읽어 할 일이 없다.
+ */
+expect object RasterCache {
+    /** 이미 풀어 두었는가 — 모르면 true(기다리지 않는다) */
+    fun isReady(id: org.jetbrains.compose.resources.DrawableResource): Boolean
+    fun prewarm(vararg ids: org.jetbrains.compose.resources.DrawableResource)
+}
+
+/**
+ * [enabled] 인 동안, 앱이 화면에 있을 때만 위치를 미리 잡아 둔다(러닝 탭 · 시작 흐름 · 크루 대기실) — 러닝을 누를 때 위치가 이미 잡혀 있게.
+ * 앱이 뒤로 가면 끈다.
+ */
+@androidx.compose.runtime.Composable
+expect fun RunLocationWarmup(enabled: Boolean)

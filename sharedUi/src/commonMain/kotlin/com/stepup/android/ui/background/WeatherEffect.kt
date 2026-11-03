@@ -3,6 +3,8 @@ package com.stepup.android.ui.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -49,13 +51,12 @@ object WeatherSource {
     }
 }
 
-/** 지금 날씨 효과 — 앱이 받아 둔 날씨 코드(Open-Meteo WMO)에서. iOS 는 날씨를 아직 받지 않아 맑음(효과 없음) */
-object CurrentWeather {
-    val code = androidx.compose.runtime.mutableStateOf<Int?>(null)
-}
-
+/** 지금 날씨 효과 — 앱이 받아 둔 날씨 코드에서. 날씨를 받지 않았으면 맑음(효과 없음) */
 @Composable
-fun currentWeather(): Weather = WeatherSource.fromWmo(CurrentWeather.code.value)
+fun currentWeather(): Weather {
+    val code by com.stepup.android.data.weather.WeatherBackground.weatherCode.collectAsState()
+    return WeatherSource.fromWmo(code)
+}
 
 /** 사진 위에 얹는 날씨 효과. 동작 줄이기 · 시스템 '애니메이션 끄기'면 멈춘 한 장면으로 그린다 */
 @Composable
