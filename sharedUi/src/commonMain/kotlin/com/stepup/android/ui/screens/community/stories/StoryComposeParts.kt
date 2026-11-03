@@ -4,7 +4,6 @@ import androidx.compose.ui.text.intl.Locale
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.domain.minusDaysKx
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -61,7 +60,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -137,8 +135,8 @@ internal val ComposeGutter = 20.dp
 // ── 글자 ─────────────────────────────────────────────────────────
 
 /** 러닝 이야기의 날짜 · 시간 · 문장 — 앱 언어의 문자열로 만든다 */
-class StoryWords(private val context: Context, private val locale: Locale) {
-    private fun s(id: Int, vararg args: Any): String = com.stepup.android.ui.components.stringNow(id, *args)
+class StoryWords(private val locale: Locale) {
+    private fun s(id: org.jetbrains.compose.resources.StringResource, vararg args: Any): String = com.stepup.android.ui.components.stringNow(id, *args)
 
     /** "9월 25일" — 저장되는 문장에도 이 고정 날짜를 쓴다(나중에 열어도 사실이 달라지지 않게) */
     fun date(day: LocalDate): String = day.formatPattern(s(Res.string.story_run_date_pattern), androidx.compose.ui.text.intl.Locale.current.language)
@@ -198,13 +196,13 @@ class StoryWords(private val context: Context, private val locale: Locale) {
      */
     fun starter(phrase: StoryPhrase?, run: StoryRun?, place: StoryPlace?): String {
         val where = place?.name?.let(StoryComposeRules::shortPlace)?.takeIf { it.isNotEmpty() }
-        fun record(withPlace: Int, noPlace: Int, none: Int): String = when {
-            run == null -> if (none == 0) "" else s(none)
+        fun record(withPlace: org.jetbrains.compose.resources.StringResource, noPlace: org.jetbrains.compose.resources.StringResource, none: org.jetbrains.compose.resources.StringResource?): String = when {
+            run == null -> if (none == null) "" else s(none)
             where != null -> s(withPlace, date(run.day), where, StoryComposeRules.km(run.distanceMeters))
             else -> s(noPlace, date(run.day), StoryComposeRules.km(run.distanceMeters))
         }
         return when (phrase) {
-            null -> record(Res.string.story_auto_run_place, Res.string.story_auto_run, 0)
+            null -> record(Res.string.story_auto_run_place, Res.string.story_auto_run, null)
             StoryPhrase.START -> s(Res.string.story_phrase_start_text)
             StoryPhrase.WHERE -> s(Res.string.story_phrase_where_text)
             StoryPhrase.SHOES -> s(Res.string.story_phrase_shoes_text)
@@ -226,9 +224,8 @@ class StoryWords(private val context: Context, private val locale: Locale) {
 
 @Composable
 fun rememberStoryWords(): StoryWords {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    return remember(context, configuration) { StoryWords(context, configuration.locales[0] ?: Locale.current) }
+    val locale = Locale.current
+    return remember(locale) { StoryWords(locale) }
 }
 
 

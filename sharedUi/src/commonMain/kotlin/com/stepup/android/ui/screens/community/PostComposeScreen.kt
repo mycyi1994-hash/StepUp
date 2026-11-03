@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.community
 
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.toInstant
 import androidx.compose.ui.text.intl.Locale
 import com.stepup.android.domain.plusDaysKx
 import androidx.compose.foundation.layout.Arrangement
@@ -77,7 +79,7 @@ fun PostComposeScreen(
     // 글쓰기 화면마다 한 요청 키 — 응답을 못 받고 다시 올려도 서버(0062)가 같은 글 번호를 돌려준다(번개 모임이 둘이 되지 않게)
     var clientKey by rememberSaveable { mutableStateOf(com.stepup.android.domain.randomUuid()) }
     // 번개러닝 제목은 기본 제목 10개 중 하나로 채워 둔다 — 치지 않고 바로 올릴 수 있게(2026-10-26). 고친 제목은 그대로 쓴다
-    val templates = androidx.compose.ui.res.stringArrayResource(R.array.flash_title_templates)
+    val templates = org.jetbrains.compose.resources.stringArrayResource(Res.array.flash_title_templates)
     val pick by rememberSaveable { mutableIntStateOf(kotlin.random.Random.nextInt(FLASH_TITLE_TEMPLATES)) }
     val template = templates[pick % templates.size]
 
@@ -107,7 +109,7 @@ fun PostComposeScreen(
         StepUpTabs(
             categories.map { it.label() }, categories.indexOf(selected), { category = categories[it].id },
             Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 6.dp),
-            tags = categories.map { "post-cat-${it.id.lowercase(Locale.ROOT)}" },
+            tags = categories.map { "post-cat-${it.id.lowercase()}" },
         )
         Column(
             Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(top = 14.dp).testTag("form-content"),
@@ -221,12 +223,12 @@ fun PostComposeScreen(
 @Composable
 private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Modifier = Modifier) {
     val c = StepUpUi.colors
-    val context = androidx.compose.ui.platform.LocalContext.current
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
-    val at = java.time.ZonedDateTime.now(zone).plusMinutes(minutes.toLong())
-    val is24 = android.text.format.DateFormat.is24HourFormat(context)
+    val at = kotlin.time.Instant.fromEpochMilliseconds(com.stepup.android.domain.epochMillis() + minutes * 60_000L).toLocalDateTime(zone)
+    val is24 = com.stepup.android.ui.components.is24HourClock()
+    val pickTime = com.stepup.android.ui.components.rememberTimePicker { h, m -> onMinutes(minutesUntil(h, m)) }
     val time = com.stepup.android.domain.PatternFormatter(if (is24) "HH:mm" else "a h:mm", androidx.compose.ui.text.intl.Locale.current.language).format(at)
-    val day = if (at.date == kotlinx.datetime.com.stepup.android.domain.todayIn(zone)) stringResource(Res.string.d26_when_today, time)
+    val day = if (at.date == com.stepup.android.domain.todayIn(zone)) stringResource(Res.string.d26_when_today, time)
         else stringResource(Res.string.d26_when_tomorrow, time)
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
     Column(modifier.fillMaxWidth()) {
@@ -236,7 +238,7 @@ private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Mod
             Modifier.fillMaxWidth().height(56.dp).clip(shape).background(c.card, shape)
                 .border(1.dp, c.separator, shape)
                 .feedbackClickable {
-                    android.app.TimePickerDialog(context, { _, h, m -> onMinutes(minutesUntil(h, m)) }, at.hour, at.minute, is24).show()
+                    pickTime(at.hour, at.minute)
                 }
                 .padding(horizontal = 16.dp).testTag("post-starts"),
             verticalAlignment = Alignment.CenterVertically,
@@ -253,10 +255,18 @@ private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Mod
 }
 
 /** 고른 시 · 분까지 남은 분 — 이미 지났으면 다음 날, 5분 ~ 24시간으로 자른다(서버 규칙) */
-internal fun minutesUntil(hour: Int, minute: Int, now: java.time.ZonedDateTime = java.time.ZonedDateTime.now()): Int {
-    var at = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
-    if (at.isBefore(now.plusMinutes(5))) at = at.plusDaysKx(1)
-    val diff = java.time.Duration.between(now, at).toMinutes().toInt()
+internal fun minutesUntil(
+    hour: Int, minute: Int,
+    nowMs: Long = com.stepup.android.domain.epochMillis(),
+    zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault(),
+): Int {
+    // java.time ZonedDateTime 과 같은 셈 — 그 날의 그 시각(초 0), 5분 안이면 다음 날, 남은 분은 내림
+    val now = kotlin.time.Instant.fromEpochMilliseconds(nowMs).toLocalDateTime(zone)
+    var at = kotlinx.datetime.LocalDateTime(now.date, kotlinx.datetime.LocalTime(hour, minute)).toInstant(zone)
+    if (at.toEpochMilliseconds() < nowMs + 5 * 60_000L) {
+        at = kotlinx.datetime.LocalDateTime(now.date.plusDaysKx(1), kotlinx.datetime.LocalTime(hour, minute)).toInstant(zone)
+    }
+    val diff = ((at.toEpochMilliseconds() - nowMs) / 60_000L).toInt()
     return diff.coerceIn(5, 24 * 60)
 }
 

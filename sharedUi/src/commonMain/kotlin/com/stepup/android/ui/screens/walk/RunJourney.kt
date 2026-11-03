@@ -64,8 +64,13 @@ import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.TrackPoint
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.tier
+import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.ShoeArtThumbnail
+import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.components.formatSupDown
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.screens.items.durabilityPercent
+import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpFonts
 
@@ -82,16 +87,16 @@ import com.stepup.android.ui.theme.StepUpFonts
 // ── 현재 속도 ──────────────────────────────────────────────────────
 
 /** 최근 이만큼(ms)의 경로 점으로 지금 속도를 잰다 */
-const val SPEED_WINDOW_MS = 20_000L
+internal const val SPEED_WINDOW_MS = 20_000L
 
 /** 새 점이 이만큼 안 오면 멈춰 선 것으로 본다 — GPS 는 8m 넘게 움직여야 경로에 점을 더한다 */
-const val SPEED_STILL_MS = 20_000L
+internal const val SPEED_STILL_MS = 20_000L
 
 /** 이웃한 두 점이 이보다 멀면(신호가 끊겼다 이어짐) 속도를 모른다 */
-const val SPEED_MAX_GAP_MS = 60_000L
+internal const val SPEED_MAX_GAP_MS = 60_000L
 
 /** 걸음이 이만큼(ms) 안에 늘었으면 새 경로 점이 없어도 아직 움직이는 중으로 본다 */
-const val SPEED_MOVING_GRACE_MS = 10_000L
+internal const val SPEED_MOVING_GRACE_MS = 10_000L
 
 /**
  * 지금 속도(km/h) — 경로의 마지막 점과 그 앞 [SPEED_WINDOW_MS] 안의 점들로 잰다. 모르면 null.
@@ -101,7 +106,7 @@ const val SPEED_MOVING_GRACE_MS = 10_000L
  * 걸음이 늘고 있으면([movingAt], 마지막으로 걸음이 는 때) 점이 드문 것뿐이라 마지막 속도를 그대로 보인다 — 구글 위치 서비스는
  * 오차의 두 배를 움직여야 점을 찍어, 천천히 걸으면 20~40초마다라 속도가 0 과 값을 오갔다(2026-10-17 점검).
  */
-fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long, movingAt: Long = 0L): Double? {
+internal fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long, movingAt: Long = 0L): Double? {
     val last = track.lastOrNull() ?: return null
     if (flaggedAt > last.at) return null
     if (now - last.at > SPEED_STILL_MS && now - movingAt > SPEED_MOVING_GRACE_MS) return 0.0
@@ -117,17 +122,17 @@ fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long, movingA
 }
 
 /** 평균 속도(km/h) — 50m 를 넘게 달렸을 때만 */
-fun averageSpeedKmh(km: Double, elapsedSec: Long): Double? =
+internal fun averageSpeedKmh(km: Double, elapsedSec: Long): Double? =
     if (km >= 0.05 && elapsedSec > 0) km / (elapsedSec / 3600.0) else null
 
 /** 보상 수 — 1 SUP 아래는 둘째 자리, 그 위는 첫째 자리까지. 버린다(받을 것보다 크게 보이지 않게) */
-fun rewardAmount(value: Double): String =
+internal fun rewardAmount(value: Double): String =
     formatSupDown(value, if (kotlin.math.abs(value) < 1.0) 2 else 1)
 
 // ── 색 ─────────────────────────────────────────────────────────────
 
 @Immutable
-class RunPalette(
+internal class RunPalette(
     val screen: Color,
     val panel: Color,
     val panelEdge: Color,
@@ -160,7 +165,7 @@ class RunPalette(
 )
 
 // UI 최종 통합안(2026-10-25) — 다크블루 · 화이트블루, 평평한 블루(그라데이션 없음) · 회색 채움
-val DarkRun = RunPalette(
+private val DarkRun = RunPalette(
     screen = Color(0xFF070B14), panel = Color(0xF20E1424), panelEdge = Color(0x17FFFFFF), divider = Color(0x17FFFFFF),
     label = Color(0xFF969CAA), text = Color.White, muted = Color(0xFF6E7586), unit = Color(0xFF969CAA),
     track = Color(0xFF222A3D), bar = listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF)),
@@ -174,7 +179,7 @@ val DarkRun = RunPalette(
     emblemFace = Color(0xFF202736), emblemInk = Color(0xFFE2E8F5),
 )
 
-val LightRun = RunPalette(
+private val LightRun = RunPalette(
     screen = Color(0xFFF2F2F7), panel = Color(0xF2FFFFFF), panelEdge = Color(0x293C3C43), divider = Color(0x293C3C43),
     label = Color(0xFF848489), text = Color.Black, muted = Color(0xFF9C9CA2), unit = Color(0xFF848489),
     track = Color(0xFFE3E3E8), bar = listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF)),
@@ -189,7 +194,7 @@ val LightRun = RunPalette(
 )
 
 @Composable
-fun runPalette(): RunPalette = if (StepUpColors.dark) DarkRun else LightRun
+internal fun runPalette(): RunPalette = if (StepUpColors.dark) DarkRun else LightRun
 
 private fun numberStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.ExtraBold) = TextStyle(
     fontFamily = StepUpFonts.sans, fontWeight = weight, fontSize = size, color = color,
@@ -200,7 +205,7 @@ private fun numberStyle(size: TextUnit, color: Color, weight: FontWeight = FontW
  * 큰 수 + 작은 단위 한 줄 — 폭이 모자라면(큰 글씨 · 좁은 화면) 둘을 같은 비율로 줄인다. 두 줄로 넘기지 않는다.
  */
 @Composable
-fun FitNumber(
+internal fun FitNumber(
     value: String,
     unit: String?,
     valueSize: TextUnit,
@@ -239,7 +244,7 @@ fun FitNumber(
 
 /** 판 — 남색 면, 은은한 테두리, 모서리 18dp(전달본) */
 @Composable
-fun RunPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+internal fun RunPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val p = runPalette()
     val shape = RoundedCornerShape(18.dp)
     Column(
@@ -280,7 +285,7 @@ private fun PanelValue(
  * 선을 그림으로 긋는다 — 칸 안의 큰 수([FitNumber])는 폭을 재는 칸이라 "높이를 먼저 물어보는" 줄(IntrinsicSize)에 넣을 수 없다.
  */
 @Composable
-fun DividedRow(
+internal fun DividedRow(
     columns: Int,
     gap: Dp,
     modifier: Modifier = Modifier,
@@ -308,7 +313,7 @@ fun DividedRow(
  * 왼쪽 큰 수가 이 화면의 주인공이다(run-hero-value).
  */
 @Composable
-fun RunTopPanel(
+internal fun RunTopPanel(
     left: Pair<String, String>,
     right: Pair<String, String>,
     rightUnit: String?,
@@ -336,7 +341,7 @@ fun RunTopPanel(
 
 /** 채움 막대 — 어두운 바탕에 파란 채움(내구도 · 진행) */
 @Composable
-fun RunBar(fraction: Float, modifier: Modifier) {
+internal fun RunBar(fraction: Float, modifier: Modifier) {
     val p = runPalette()
     val shape = RoundedCornerShape(50)
     Box(modifier.clip(shape).background(p.track, shape)) {
@@ -348,10 +353,70 @@ fun RunBar(fraction: Float, modifier: Modifier) {
 }
 
 /**
+ * 러닝 중 아래 판 — 현재 속도 | 내구도 한 줄(같은 무게의 두 칸). 평균 페이스 · 예상 보상 · 신발 그림은 두지 않는다.
+ * 속도를 모르면 "—", 방금 읽은 속도가 사람 속도를 넘었으면 앞에 노란 경고.
+ */
+@Composable
+internal fun RunBottomPanel(
+    speedKmh: Double?,
+    speedError: Boolean,
+    shoe: Sneaker?,
+    dim: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val p = runPalette()
+    val speedLabel = stringResource(Res.string.run_current_speed)
+    val unit = stringResource(Res.string.run_speed_unit)
+    val unknown = stringResource(Res.string.run_speed_unknown)
+    val durabilityLabel = stringResource(Res.string.sdv_stat_durability)
+    // 남은 비율(%) — 남은 · 최대 내구도(1 = 10m)는 신발 상세에
+    val points = shoe?.let { durabilityPercent(it) }
+    RunPanel(modifier.testTag("run-bottom-panel")) {
+        DividedRow(columns = 2, gap = 28.dp) {
+            Column(
+                Modifier.weight(1f).semantics(mergeDescendants = true) {
+                    contentDescription = if (speedKmh == null) "$speedLabel · $unknown" else "$speedLabel ${"${com.stepup.android.domain.formatFixed((speedKmh).toDouble(), 1)}"} $unit"
+                }.testTag("run-speed"),
+            ) {
+                Text(speedLabel, color = p.label, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (speedError) {
+                        Icon(Icons.Filled.Warning, contentDescription = null, tint = p.warnIcon,
+                            modifier = Modifier.size(24.dp).testTag("run-speed-warning"))
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    FitNumber(
+                        speedKmh?.let { "${com.stepup.android.domain.formatFixed((it).toDouble(), 1)}" } ?: "—", unit, valueSize = 32.sp, unitSize = 20.sp,
+                        valueColor = if (dim) p.muted else p.text, unitColor = p.label, modifier = Modifier.weight(1f),
+                        valueTag = "run-speed-value", unitWeight = FontWeight.Normal,
+                    )
+                }
+            }
+            Column(
+                Modifier.weight(1f).semantics(mergeDescendants = true) {
+                    contentDescription = "$durabilityLabel ${points ?: "—"}%"
+                }.testTag("run-durability"),
+            ) {
+                Text(durabilityLabel, color = p.label, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(4.dp))
+                FitNumber(
+                    points?.toString() ?: "—", "%", valueSize = 32.sp, unitSize = 18.sp,
+                    valueColor = p.text, unitColor = p.label, modifier = Modifier.fillMaxWidth(),
+                    valueTag = "run-durability-value", unitWeight = FontWeight.Normal,
+                )
+                Spacer(Modifier.height(8.dp))
+                RunBar((points ?: 0) / 100f, Modifier.fillMaxWidth().height(8.dp))
+            }
+        }
+    }
+}
+
+/**
  * 위 알림 띠 — 속도 측정 오류(노랑) · 세션 무효(빨강). 누르면 까닭(러닝 정보)을 연다.
  */
 @Composable
-fun RunAlertBanner(text: String, void: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun RunAlertBanner(text: String, void: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val p = runPalette()
     val shape = RoundedCornerShape(16.dp)
     val face = if (void) p.voidFace else p.warnFace
@@ -373,7 +438,7 @@ fun RunAlertBanner(text: String, void: Boolean, onClick: () -> Unit, modifier: M
 
 /** 지도 위 작은 판 — 위치 안내 · 같이 뛰는 순위 · 챌린지 진행 · GPS 상태처럼 가끔만 보이는 것 */
 @Composable
-fun RunOverlayCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+internal fun RunOverlayCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val p = runPalette()
     val shape = RoundedCornerShape(16.dp)
     Column(
@@ -385,7 +450,7 @@ fun RunOverlayCard(modifier: Modifier = Modifier, content: @Composable ColumnSco
 
 /** 주 버튼 — 파란 면 · 흰 글자(일시정지 · 다시 달리기 · 러닝 시작 · 완료) */
 @Composable
-fun RunPrimaryButton(
+internal fun RunPrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -414,7 +479,7 @@ fun RunPrimaryButton(
 
 /** 종료 — 어두운 면 · 빨간 네모 · 흰 글자 */
 @Composable
-fun RunStopButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun RunStopButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val p = runPalette()
     val shape = RoundedCornerShape(18.dp)
     Row(
@@ -435,7 +500,7 @@ fun RunStopButton(label: String, onClick: () -> Unit, modifier: Modifier = Modif
  * 창 높이([viewport])를 넘겨 쌓는다 — 부모가 스크롤한다(작은 화면 · 큰 글씨).
  */
 @Composable
-fun RunOverlayLayout(
+internal fun RunOverlayLayout(
     viewport: Int,
     minGap: Dp,
     modifier: Modifier = Modifier,
@@ -462,3 +527,315 @@ fun RunOverlayLayout(
 
 // ── 러닝 완료 ──────────────────────────────────────────────────────
 
+internal enum class Settle { PENDING, DONE, VOID, NOT_PAID }
+
+/** 결과 카드의 보상 줄 — 이름 · 수 · 정산 상태, 아래에 덧붙일 설명 */
+@Immutable
+internal data class ResultReward(
+    val label: String,
+    val amount: String,
+    val settle: Settle,
+    val notes: List<String> = emptyList(),
+    val signIn: Boolean = false,
+)
+
+/**
+ * 위 · 무대(지도) · 아래를 쌓는다 — 위 · 아래를 먼저 재고 지도에 남은 높이를 준다([minStage]–[maxStage]).
+ * [viewport] 안에 다 들면 스크롤이 없다. 모자라면 지도는 [minStage] 로 두고 넘친다 — 부모가 스크롤한다.
+ */
+@Composable
+private fun ResultFitColumn(
+    viewport: Int,
+    minStage: Dp,
+    maxStage: Dp,
+    gap: Dp,
+    modifier: Modifier,
+    top: @Composable () -> Unit,
+    stage: @Composable () -> Unit,
+    bottom: @Composable () -> Unit,
+) {
+    Layout(contents = listOf(top, stage, bottom), modifier = modifier) { (t, s, b), constraints ->
+        val width = constraints.maxWidth
+        val loose = Constraints(maxWidth = width)
+        val topP = t.first().measure(loose)
+        val bottomP = b.first().measure(loose)
+        val fixed = topP.height + gap.roundToPx() * 2 + bottomP.height
+        val stageH = if (viewport == Constraints.Infinity) maxStage.roundToPx()
+        else (viewport - fixed).coerceIn(minStage.roundToPx(), maxStage.roundToPx())
+        val stageP = s.first().measure(Constraints.fixed(width, stageH))
+        layout(width, fixed + stageH) {
+            topP.place(0, 0)
+            stageP.place(0, topP.height + gap.roundToPx())
+            bottomP.place(0, topP.height + gap.roundToPx() * 2 + stageH)
+        }
+    }
+}
+
+/** 결과 카드의 바깥 여백 · 안쪽 위아래 여백 — 지도 높이를 셈할 때 뺀다 */
+internal val ResultCardMargin = 12.dp
+internal val ResultCardPadding = 16.dp
+
+/** 결과 카드 지도의 가장 낮은 높이 — 이보다 좁으면 카드가 넘기기로 바뀐다 */
+internal val ResultMapMin = 88.dp
+
+/**
+ * 러닝 완료 카드(전달본 03) — 로고 · 날짜 / 큰 거리 / 지도 / 러닝 시간 · 평균 페이스 · 평균 속도 / 신발(이름 끝 등급 배지 · 내구도) / 보상.
+ * [viewport] 는 카드가 쓸 수 있는 높이(px) — 지도가 남는 높이를 채운다.
+ */
+@Composable
+internal fun RunResultCard(
+    viewport: Int,
+    date: String?,
+    km: Double,
+    note: String?,
+    track: List<GeoPoint>,
+    time: String,
+    paceSec: Long?,
+    speedKmh: Double?,
+    shoe: Sneaker?,
+    reward: ResultReward,
+    modifier: Modifier = Modifier,
+    brand: @Composable () -> Unit,
+) {
+    val p = runPalette()
+    val shape = RoundedCornerShape(20.dp)
+    val hasRoute = track.isNotEmpty()
+    ResultFitColumn(
+        viewport = viewport,
+        // 작은 화면(360×780 · 360×800)에서는 지도가 88dp 까지 줄어 보상 줄까지 카드가 한 화면에 든다
+        minStage = if (hasRoute) ResultMapMin else 56.dp,
+        maxStage = if (hasRoute) 260.dp else 56.dp,
+        gap = 12.dp,
+        modifier = modifier.fillMaxWidth().clip(shape).background(p.card, shape).border(1.dp, p.cardEdge, shape)
+            .padding(horizontal = 12.dp, vertical = ResultCardPadding).testTag("run-result-card"),
+        top = {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    brand()
+                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.width(8.dp))
+                    if (date != null) {
+                        Text(date, color = p.label, fontSize = 13.sp, maxLines = 1, modifier = Modifier.testTag("run-result-date"))
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                FitNumber(
+                    "${com.stepup.android.domain.formatFixed((km).toDouble(), 2)}", "km", valueSize = 76.sp, unitSize = 38.sp,
+                    valueColor = p.text, unitColor = p.unit, modifier = Modifier.fillMaxWidth(),
+                    valueTag = "run-result-distance", unitWeight = FontWeight.Normal,
+                )
+                if (note != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(note, color = p.label, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.testTag("run-result-note"))
+                }
+            }
+        },
+        stage = {
+            val mapShape = RoundedCornerShape(16.dp)
+            if (hasRoute) {
+                Box(Modifier.fillMaxSize().clip(mapShape).border(1.dp, p.cardEdge, mapShape).testTag("run-result-map")) {
+                    LiveRouteMap(points = track, modifier = Modifier.fillMaxSize())
+                }
+            } else {
+                Box(
+                    Modifier.fillMaxSize().clip(mapShape).background(p.panel, mapShape).border(1.dp, p.cardEdge, mapShape)
+                        .testTag("run-result-no-route"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(stringResource(Res.string.run_route_unavailable), color = p.muted, fontSize = 14.sp, textAlign = TextAlign.Center)
+                }
+            }
+        },
+        bottom = {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                ResultStats(time, paceSec, speedKmh)
+                if (shoe != null) {
+                    ResultDivider()
+                    ResultShoe(shoe)
+                }
+                ResultDivider()
+                ResultRewardRow(reward)
+            }
+        },
+    )
+}
+
+@Composable
+private fun ResultDivider() {
+    Box(Modifier.fillMaxWidth().padding(vertical = 12.dp).height(1.dp).background(runPalette().divider))
+}
+
+/** 러닝 시간 · 평균 페이스 · 평균 속도 — 같은 폭 세 칸, 사이에 가는 세로선 */
+@Composable
+private fun ResultStats(time: String, paceSec: Long?, speedKmh: Double?) {
+    DividedRow(columns = 3, gap = 20.dp, modifier = Modifier.testTag("run-result-stats")) {
+        ResultStat(stringResource(Res.string.runflow_time_label), time, null, Modifier.weight(1f), "run-result-time")
+        ResultStat(stringResource(Res.string.run_avg_pace), paceSec?.let { formatPace(it) } ?: "—", "/km", Modifier.weight(1f), "run-result-pace")
+        ResultStat(stringResource(Res.string.analytics_avg_speed), speedKmh?.let { "${com.stepup.android.domain.formatFixed((it).toDouble(), 1)}" } ?: "—",
+            stringResource(Res.string.run_speed_unit), Modifier.weight(1f), "run-result-speed")
+    }
+}
+
+@Composable
+private fun ResultStat(label: String, value: String, unit: String?, modifier: Modifier, tag: String) {
+    val p = runPalette()
+    Column(modifier.semantics(mergeDescendants = true) {}.testTag(tag)) {
+        Text(label, color = p.label, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(2.dp))
+        FitNumber(
+            value, unit, valueSize = 28.sp, unitSize = 14.sp, valueColor = p.text, unitColor = p.label,
+            modifier = Modifier.fillMaxWidth(), unitWeight = FontWeight.Normal,
+        )
+    }
+}
+
+/** 신고 달린 신발 — 그림(틀 없이) · 이름 끝 등급 배지 · 내구도 수 · 막대 */
+@Composable
+private fun ResultShoe(shoe: Sneaker) {
+    val p = runPalette()
+    val points = durabilityPercent(shoe)
+    Row(Modifier.fillMaxWidth().testTag("run-result-shoe"), verticalAlignment = Alignment.CenterVertically) {
+        ShoeArtThumbnail(shoe, Modifier.width(120.dp).height(68.dp).testTag("run-result-shoe-image"))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            ShoeNameWithBadge(
+                name = shoe.shoeName(), tier = shoe.tier,
+                style = TextStyle(color = p.text, fontSize = 16.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp),
+                maxLines = 2, modifier = Modifier.fillMaxWidth().testTag("run-result-shoe-name"),
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(stringResource(Res.string.sdv_stat_durability), color = p.label, fontSize = 13.sp,
+                    modifier = Modifier.alignByBaseline())
+                Spacer(Modifier.width(8.dp))
+                Text("$points", color = p.text, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.alignByBaseline().testTag("run-result-durability"))
+                Text("%", color = p.label, fontSize = 13.sp, modifier = Modifier.alignByBaseline())
+            }
+            Spacer(Modifier.height(6.dp))
+            RunBar(points / 100f, Modifier.fillMaxWidth().height(8.dp))
+        }
+    }
+}
+
+/** 보상 — 상자 표 · 이름("예상 보상" / "보상") · 수 SUP · 오른쪽 정산 상태 알약. 아래에 까닭 한두 줄 */
+@Composable
+private fun ResultRewardRow(reward: ResultReward) {
+    val p = runPalette()
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(48.dp).clip(CircleShape).background(p.emblemFace), contentAlignment = Alignment.Center) {
+                CubeGlyph(p.emblemInk, Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(reward.label, color = p.label, fontSize = 13.sp, maxLines = 1, modifier = Modifier.testTag("run-result-reward-label"))
+                FitNumber(
+                    reward.amount, "SUP", valueSize = 30.sp, unitSize = 24.sp, valueColor = p.text, unitColor = p.label,
+                    modifier = Modifier.fillMaxWidth().testTag("run-result-reward"), unitWeight = FontWeight.Normal,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            SettleChip(reward.settle)
+        }
+        reward.notes.forEach { line ->
+            Spacer(Modifier.height(6.dp))
+            Text(line, color = p.muted, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.testTag("run-result-reward-note"))
+        }
+        // 로그인이 풀려 올리지 못했다 — 카드 안에 둔다(지도 높이를 셈할 때 함께 잰다)
+        if (reward.signIn) {
+            Spacer(Modifier.height(8.dp))
+            com.stepup.android.ui.components.SignInAgainButton()
+        }
+    }
+}
+
+/** 정산 상태 알약 — 정산 대기(시계) · 적립 완료 · 무효 · 지급 안 됨. 누르는 곳이 아니다 */
+@Composable
+private fun SettleChip(settle: Settle) {
+    val p = runPalette()
+    val shape = RoundedCornerShape(50)
+    val (text, color) = when (settle) {
+        Settle.PENDING -> stringResource(Res.string.result_settle_pending) to p.chipText
+        Settle.DONE -> stringResource(Res.string.result_settle_done) to p.doneText
+        Settle.VOID -> stringResource(Res.string.result_settle_void) to p.stopMark
+        Settle.NOT_PAID -> stringResource(Res.string.result_settle_rejected) to p.chipText
+    }
+    Row(
+        Modifier.heightIn(min = 34.dp).clip(shape).border(1.dp, p.chipEdge, shape)
+            .padding(horizontal = 12.dp, vertical = 6.dp).testTag("run-result-settle-${settle.name.lowercase()}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (settle == Settle.PENDING) {
+            Icon(Icons.Outlined.Schedule, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(text, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+    }
+}
+
+/** 보상 상자 표 — 육각형 윤곽과 가운데에서 갈라지는 세 선(정육면체) */
+@Composable
+private fun CubeGlyph(color: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        val r = size.minDimension / 2f * 0.92f
+        val c = Offset(size.width / 2f, size.height / 2f)
+        val pts = (0 until 6).map { i ->
+            val a = com.stepup.android.domain.toRadians((-90.0 + i * 60.0))
+            Offset(c.x + r * kotlin.math.cos(a).toFloat(), c.y + r * kotlin.math.sin(a).toFloat())
+        }
+        val stroke = Stroke(width = size.minDimension * 0.08f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val outline = Path().apply {
+            moveTo(pts[0].x, pts[0].y)
+            for (i in 1 until 6) lineTo(pts[i].x, pts[i].y)
+            close()
+        }
+        drawPath(outline, color, style = stroke)
+        // 윗면 · 두 옆면이 만나는 선 — 가운데에서 위 왼쪽 · 위 오른쪽 · 아래로
+        val inner = Path().apply {
+            moveTo(pts[5].x, pts[5].y); lineTo(c.x, c.y); lineTo(pts[1].x, pts[1].y)
+            moveTo(c.x, c.y); lineTo(pts[3].x, pts[3].y)
+        }
+        drawPath(inner, color, style = stroke)
+    }
+}
+
+/** 결과 아래 보조 버튼 — 어두운 면 · 테두리 · 아이콘 + 글자(이미지 저장 · 공유하기) */
+@Composable
+internal fun RunOutlineButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val p = runPalette()
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier.heightIn(min = 52.dp).clip(shape).background(p.ghostFace, shape).border(1.dp, p.ghostEdge, shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        val ink = if (enabled) p.text else p.muted
+        Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(label, color = ink, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** 머리 오른쪽 닫기(✕) — 어두운 원 */
+@Composable
+internal fun RunCloseButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val p = runPalette()
+    Box(
+        modifier.size(48.dp).clip(CircleShape).feedbackClickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(38.dp).clip(CircleShape).background(p.ghostFace), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Close, contentDescription = null, tint = p.text, modifier = Modifier.size(22.dp))
+        }
+    }
+}

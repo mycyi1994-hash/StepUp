@@ -48,6 +48,9 @@ object AppServices {
     /** 이 폰이 지금 러닝 중인가(안드로이드 WalkSessionService.state.isActive · iOS 러닝 세션) */
     var runActive: () -> kotlinx.coroutines.flow.StateFlow<Boolean> = { kotlinx.coroutines.flow.MutableStateFlow(false) }
 
+    /** 모임(크루 · 번개) 러닝을 켠다 — 켜졌으면 true(안드로이드 WalkSessionService.start · iOS 러닝 세션) */
+    var startGroupRun: (party: com.stepup.android.data.repo.PartyState, title: String) -> Boolean = { _, _ -> false }
+
     /** 지금 계정의 기록 주인이 바뀌는 흐름(안드로이드 ServiceLocator.recordingOwnerFlow) */
     var recordingOwnerFlow: () -> kotlinx.coroutines.flow.Flow<String> = { kotlinx.coroutines.flow.flowOf("") }
 

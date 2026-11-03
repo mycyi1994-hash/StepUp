@@ -1,10 +1,9 @@
 package com.stepup.android.ui.screens.community
 
+import com.stepup.android.ui.components.showToast
 import com.stepup.android.core.AppServices
 import com.stepup.android.ui.theme.StepUpFonts
 import com.stepup.android.ui.components.SystemBackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +38,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -58,7 +56,6 @@ import com.stepup.android.data.repo.PartyPhase
 import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.data.repo.PartyState
 import com.stepup.android.domain.GeoPoint
-import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.components.RunButton
 import com.stepup.android.ui.components.RunButtonKind
@@ -108,7 +105,6 @@ fun PartyLobbyScreen(
     viewModel: PartyLobbyViewModel = viewModel(factory = PartyLobbyViewModel.Factory),
     community: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
-    val context = LocalContext.current
     val party by viewModel.party.collectAsStateWithLifecycle()
     val resultPoints by viewModel.resultServerPoints.collectAsStateWithLifecycle()
 
@@ -121,13 +117,11 @@ fun PartyLobbyScreen(
 
     // 출발한 러닝에 이 방(크루 · 번개)과 이름을 적어 둔다 — 결과 · 공유 · 되살린 러닝이 같은 모임으로 보이게(정산과 무관)
     val startRun = {
-        WalkSessionService.start(context, party.partySize, com.stepup.android.service.StartGroup.of(party, title))
-        onRunStarted()
+        // 안드로이드 WalkSessionService.start(파티 인원 · 모임) · iOS 러닝 세션 — 앱이 정한다(AppServices.startGroupRun)
+        if (com.stepup.android.core.AppServices.startGroupRun(party, title)) onRunStarted()
     }
     val needPrecise = stringResource(Res.string.run_gps_need_precise)
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions(),
-    ) {
+    val permissionLauncher = com.stepup.android.ui.components.rememberLocationPermissionRequest {
         if (party.phase == PartyPhase.RUNNING && com.stepup.android.ui.StepPermissions.hasActivityRecognition()) {
             when {
                 com.stepup.android.core.AppServices.runActive().value -> onRunStarted()
@@ -143,7 +137,7 @@ fun PartyLobbyScreen(
     // 권한이 모두 있으면 바로 준비 — 위치 신호는 기다리지 않는다. 휴대폰 위치 기능이 꺼져 있으면 켜는 곳으로 보낸다
     val locationOff = stringResource(Res.string.run_loc_off_body)
     val markReady: () -> Unit = {
-        if (com.stepup.android.ui.screens.walk.locationServicesOn(context)) {
+        if (com.stepup.android.core.locationServicesOn()) {
             viewModel.setReady(true)
         } else {
             showToast(locationOff, long = true)
@@ -162,11 +156,9 @@ fun PartyLobbyScreen(
         }
     }
     /** 준비에 필요한 권한 — 걸음 · 알림 · 위치. 대략적인 위치만 있으면 정확한 위치를 다시 묻는다(Android 12+ 는 바꾸기 창) */
-    fun readyPermissions(): Array<String> {
-        val missing = StepPermissions.missing(context)
-        if (com.stepup.android.ui.StepPermissions.hasPreciseLocation() || android.Manifest.permission.ACCESS_FINE_LOCATION in missing) return missing
-        return missing + arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-    }
+    /** 준비에 필요한 권한이 다 있는가 — 걸음 · 정확한 위치(공용: 묻는 창은 기기가 한꺼번에 띄운다) */
+    fun readyPermissionsMissing(): Boolean =
+        !com.stepup.android.ui.StepPermissions.hasPreciseLocation() || !com.stepup.android.ui.StepPermissions.hasActivityRecognition()
     var confirmStart by rememberSaveable { mutableStateOf(false) }
     var notify by rememberSaveable { mutableStateOf(false) }
 
@@ -204,8 +196,7 @@ fun PartyLobbyScreen(
                 // 출발한 지 오래됐다(대기실을 떠나 있었다) — 옛 방의 러닝을 늦게 켜지 않고 새 대기실을 연다
                 !viewModel.startIsFresh() -> viewModel.missedStart()
                 else -> {
-                    val missing = readyPermissions()
-                    if (missing.isEmpty()) startRun() else permissionLauncher.launch(missing)
+                    if (!readyPermissionsMissing()) startRun() else permissionLauncher()
                 }
             }
         }
@@ -291,12 +282,11 @@ fun PartyLobbyScreen(
         CrewReadyCheckSheet(
             locationAllowed = com.stepup.android.ui.StepPermissions.hasPreciseLocation(), share = party.myShare, onShare = viewModel::setShare,
             onAllow = {
-                val missing = readyPermissions()
-                if (missing.isEmpty()) {
+                if (!readyPermissionsMissing()) {
                     readyCheck = false
                     markReady()
                 } else {
-                    readyLauncher.launch(missing)
+                    readyLauncher()
                 }
             },
             onLater = { readyCheck = false },

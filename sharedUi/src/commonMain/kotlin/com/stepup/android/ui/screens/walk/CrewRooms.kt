@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.walk
 
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.plusDaysKx
 import com.stepup.android.ui.components.SystemBackHandler
@@ -362,18 +363,26 @@ internal enum class CourseChoice { SET, FREE }
 /** 출발 시각 기본값 — 지금부터 15분 넘게 남은 가장 가까운 30분(19:00 · 19:30) */
 internal fun defaultPlanAt(nowMs: Long = com.stepup.android.domain.epochMillis()): Long {
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
-    var at = kotlin.time.Instant.fromEpochMilliseconds(nowMs + 15 * 60_000L).toLocalDateTime(zone).withSecond(0).withNano(0)
-    at = if (at.minute == 0 || at.minute == 30) at else if (at.minute < 30) at.withMinute(30) else at.plusHours(1).withMinute(0)
-    return at.toInstant().toEpochMilliseconds()
+    // java.time 과 같은 셈 — 초는 버리고, 정각 · 30분이 아니면 다음 30분(그 시각 넘으면 다음 정각)
+    val base = kotlin.time.Instant.fromEpochMilliseconds(nowMs + 15 * 60_000L).toLocalDateTime(zone)
+    val at = kotlinx.datetime.LocalDateTime(base.date, kotlinx.datetime.LocalTime(base.hour, base.minute))
+    val rounded = when {
+        at.minute == 0 || at.minute == 30 -> at.toInstant(zone)
+        at.minute < 30 -> kotlinx.datetime.LocalDateTime(at.date, kotlinx.datetime.LocalTime(at.hour, 30)).toInstant(zone)
+        // plusHours(1) 은 시각(Instant)으로 한 시간 — 여름 시간이 바뀌는 날도 java 와 같다
+        else -> (kotlinx.datetime.LocalDateTime(at.date, kotlinx.datetime.LocalTime(at.hour, 0)).toInstant(zone) + kotlin.time.Duration.parse("1h"))
+            .toLocalDateTime(zone).let { kotlinx.datetime.LocalDateTime(it.date, kotlinx.datetime.LocalTime(it.hour, 0)) }.toInstant(zone)
+    }
+    return rounded.toEpochMilliseconds()
 }
 
 /** 고른 시 · 분을 다음 그 시각으로 — 10분 넘게 지났으면 내일(서버는 지금 − 10분 ~ 14일만 받는다) */
 internal fun planAtFor(hour: Int, minute: Int, nowMs: Long = com.stepup.android.domain.epochMillis()): Long {
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
     val now = kotlin.time.Instant.fromEpochMilliseconds(nowMs).toLocalDateTime(zone)
-    var at = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
-    if (at.toInstant().toEpochMilliseconds() < nowMs - 10 * 60_000L) at = at.plusDaysKx(1)
-    return at.toInstant().toEpochMilliseconds()
+    var at = kotlinx.datetime.LocalDateTime(now.date, kotlinx.datetime.LocalTime(hour, minute))
+    if (at.toInstant(zone).toEpochMilliseconds() < nowMs - 10 * 60_000L) at = kotlinx.datetime.LocalDateTime(at.date.plusDaysKx(1), at.time)
+    return at.toInstant(zone).toEpochMilliseconds()
 }
 
 /**
@@ -479,7 +488,7 @@ internal fun CrewRoomCreateContent(
     val nameOk = CrewRoomRules.nameValid(name)
     val ready = nameOk && !(courseChoice == CourseChoice.SET && course == null)
     val focus = LocalFocusManager.current
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val pickTime = com.stepup.android.ui.components.rememberTimePicker { h, m -> onPlanAt(planAtFor(h, m)) }
     val remote = mode == com.stepup.android.domain.RoomMode.REMOTE
     CrewPage(
         title = stringResource(Res.string.d26_create_header), onBack = onBack, badge = false,
@@ -624,12 +633,12 @@ internal fun CrewRoomCreateContent(
                 Text(stringResource(Res.string.d26_create_time), style = type.rowSubtitle, color = c.secondaryLabel)
                 Spacer(Modifier.height(8.dp))
                 val at = kotlin.time.Instant.fromEpochMilliseconds(planAt).toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
-                val is24 = android.text.format.DateFormat.is24HourFormat(context)
+                val is24 = com.stepup.android.ui.components.is24HourClock()
                 val timeText = com.stepup.android.domain.PatternFormatter(if (is24) "HH:mm" else "a hh:mm", androidx.compose.ui.text.intl.Locale.current.language).format(at)
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(cardShape).background(c.card, cardShape).border(1.dp, c.separator, cardShape)
                         .feedbackClickable(role = Role.Button) {
-                            android.app.TimePickerDialog(context, { _, h, m -> onPlanAt(planAtFor(h, m)) }, at.hour, at.minute, is24).show()
+                            pickTime(at.hour, at.minute)
                         }
                         .padding(horizontal = 16.dp).testTag("crew-create-time"),
                     verticalAlignment = Alignment.CenterVertically,
@@ -688,7 +697,7 @@ internal fun CrewRoomCreateContent(
 private fun roomWhen(ms: Long, time: String): String {
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
     val day = kotlin.time.Instant.fromEpochMilliseconds(ms).toLocalDateTime(zone).date
-    val today = kotlinx.datetime.com.stepup.android.domain.todayIn(zone)
+    val today = com.stepup.android.domain.todayIn(zone)
     return when (day) {
         today -> time
         today.plusDaysKx(1) -> stringResource(Res.string.d26_when_tomorrow, time)

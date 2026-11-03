@@ -1,7 +1,6 @@
 package com.stepup.android.ui.screens.walk
 
 import com.stepup.android.ui.components.asImageBitmap
-import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -799,7 +798,7 @@ internal fun CrewShareScreen(
     km: String,
     time: String,
     pace: String,
-    card: suspend (Boolean) -> Bitmap?,
+    card: suspend (Boolean) -> androidx.compose.ui.graphics.ImageBitmap?,
     hasRoute: Boolean,
     onClose: () -> Unit,
     onOpenChat: (() -> Unit)? = null,
@@ -807,7 +806,7 @@ internal fun CrewShareScreen(
     val chat = AppServices.crewChat
     val scope = rememberCoroutineScope()
     var includeRoute by rememberSaveable { mutableStateOf(false) }
-    var preview by remember { mutableStateOf<Bitmap?>(null) }
+    var preview by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     var state by rememberSaveable { mutableStateOf(CrewSend.Idle) }
     // 보낸 것(요청 키 · 그림)은 다시 보낼 때 그대로 — 경로를 바꾸면 새 메시지로
     var pending by rememberSaveable(stateSaver = com.stepup.android.ui.screens.community.chat.ChatOutgoingPhotoSaver) { mutableStateOf<Pair<ChatMessage, ChatPhoto?>?>(null) }
@@ -851,7 +850,7 @@ internal fun CrewShareContent(
     message: String,
     includeRoute: Boolean,
     hasRoute: Boolean,
-    preview: Bitmap?,
+    preview: androidx.compose.ui.graphics.ImageBitmap?,
     state: CrewSend,
     onRoute: (Boolean) -> Unit,
     onShare: () -> Unit,

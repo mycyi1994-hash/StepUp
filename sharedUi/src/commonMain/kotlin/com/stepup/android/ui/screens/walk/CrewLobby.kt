@@ -480,7 +480,7 @@ private fun LobbyHeader(
                 ) { Icon(Icons.Filled.MoreHoriz, contentDescription = null, tint = LobbyInk.Text) }
                 DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = LobbyInk.Sheet) {
                     @Composable
-                    fun item(res: Int, which: LobbyMenu, tag: String) = DropdownMenuItem(
+                    fun item(res: org.jetbrains.compose.resources.StringResource, which: LobbyMenu, tag: String) = DropdownMenuItem(
                         text = { Text(stringResource(res), style = navyText(15.sp, LobbyInk.Text, FontWeight.Medium)) },
                         onClick = {
                             open = false

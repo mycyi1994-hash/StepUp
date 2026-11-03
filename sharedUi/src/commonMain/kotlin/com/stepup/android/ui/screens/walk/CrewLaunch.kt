@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
@@ -120,13 +119,12 @@ private fun CrewLaunchSequence(launch: CrewLaunch.Launch) {
     SystemBackHandler { }
     // 펼칠 러닝 화면의 지도 타일을 미리 받는다(지금 자리 둘레) — 펼친 지도가 바로 그려지게
     val here = rememberCurrentLocation(enabled = revealAt < 0)
-    val context = LocalContext.current
     val density = LocalDensity.current.density
     val window = LocalWindowInfo.current.containerSize
     val latestHere by rememberUpdatedState(here)
     LaunchedEffect(launch) {
         val center = snapshotFlow { latestHere }.filterNotNull().first()
-        runCatching { prefetchRunMapTiles(context, center, window.width, (window.height * 0.7f).toInt(), density) }
+        runCatching { prefetchRunMapTiles(center, window.width, (window.height * 0.7f).toInt(), density) }
     }
     val clock = crewLaunchClock(launch.startsAtLocal, now)
     if (clock < 0) {
