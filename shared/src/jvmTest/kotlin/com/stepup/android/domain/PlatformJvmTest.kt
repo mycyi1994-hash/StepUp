@@ -74,7 +74,10 @@ class PlatformJvmTest {
         }
         assertEquals("😀😀a".offsetByCodePoints(0, 2), "😀😀a".offsetOfCodePoints(2))
         val cjk = setOf(Character.UnicodeScript.HANGUL, Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA, Character.UnicodeScript.KATAKANA)
-        val wrong = (0..0xFFFF).filter { c -> (Character.UnicodeScript.of(c) in cjk) != isCjkNameLetter(c.toChar()) }
+        // 이 JDK 가 아직 모르는 글자(새 유니코드 판에서 생긴 글자 — CI 의 JDK 17 은 유니코드 13)는 맞대어 볼 수 없어 뺀다.
+        // 표(isCjkNameLetter)는 안드로이드 15 의 유니코드 15 에 맞춘 것이다.
+        val wrong = (0..0xFFFF).filter { c -> Character.getType(c) != Character.UNASSIGNED.toInt() }
+            .filter { c -> (Character.UnicodeScript.of(c) in cjk) != isCjkNameLetter(c.toChar()) }
         assertEquals(emptyList(), wrong.map { "%04X".format(it) }.take(40), "한중일 판별이 다른 글자")
     }
 }
