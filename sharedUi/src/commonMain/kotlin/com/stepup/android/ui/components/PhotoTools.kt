@@ -74,6 +74,8 @@ object PhotoTools {
 /** 화면 그림 → JPEG */
 expect fun ImageBitmap.encodeJpeg(quality: Int): ByteArray?
 
+fun jpegOf(image: ImageBitmap, quality: Int): ByteArray? = image.encodeJpeg(quality)
+
 /** 앱 안 사진 파일 → 화면 그림. 못 읽으면 null */
 expect fun decodeImageFile(path: String): ImageBitmap?
 

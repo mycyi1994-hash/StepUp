@@ -28,6 +28,7 @@ object AppServices {
     lateinit var communityRepository: com.stepup.android.data.repo.CommunityRepository
     lateinit var crewHome: com.stepup.android.data.repo.CrewHomeRepository
     lateinit var crewRun: com.stepup.android.data.repo.CrewRunRepository
+    lateinit var profileEditor: com.stepup.android.data.repo.ProfileEditor
     lateinit var runRecordsRepository: com.stepup.android.data.repo.RunRecordsRepository
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
     lateinit var announcementRepository: com.stepup.android.data.repo.AnnouncementRepository

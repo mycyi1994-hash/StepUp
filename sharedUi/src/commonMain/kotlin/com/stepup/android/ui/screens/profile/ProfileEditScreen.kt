@@ -1,9 +1,6 @@
 package com.stepup.android.ui.screens.profile
 
 import com.stepup.android.ui.components.SystemBackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -60,7 +57,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringArrayResource
+import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -138,9 +135,9 @@ class ProfileEditViewModel(
         }
     }
 
-    fun savePhoto(uri: android.net.Uri) {
-        val resolver = AppServices.appContext.contentResolver
-        editor.savePhoto { resolver.openInputStream(uri) }
+    /** 고른 사진(앱 캐시의 JPEG 파일) — 저장은 앱이 정한 곳으로(ProfileEditor 의 savePhotoFile) */
+    fun savePhoto(path: String) {
+        editor.savePhoto(path)
     }
 
     fun saveDefaultImage(id: Int) = editor.saveDefaultImage(id, avatarId.value)
@@ -205,11 +202,11 @@ fun ProfileEditScreen(
     var sheet by rememberSaveable { mutableStateOf(EditSheet.None) }
     // PRO14 — 저장 중인 기본 이미지(그 칸에만 도는 표시). 저장이 끝나면(성공 · 실패) 지운다
     var pendingDefault by remember { mutableStateOf<Int?>(null) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val picker = com.stepup.android.ui.components.rememberPhotoPicker { uri ->
         // 고르지 않고 돌아오면 사진 · 이름 초안 모두 그대로
         if (uri != null) viewModel.savePhoto(uri)
     }
-    val pickPhoto = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+    val pickPhoto = { picker() }
     val nameSaving = name is NameWork.Saving
     val dirty = nicknameChanged(storedName, field.text.toString(), UserPrefs.NICKNAME_MAX)
     val askLeave = dirty && !nameSaving
@@ -436,7 +433,7 @@ internal fun ProfileEditLoading(onBack: () -> Unit) {
 @Composable
 private fun EditAvatar(avatarId: Int, photo: ImageBitmap?, saving: Boolean, modifier: Modifier = Modifier) {
     val t = runTone()
-    val names = stringArrayResource(R.array.pe_avatar_names)
+    val names = stringArrayResource(Res.array.pe_avatar_names)
     val label = stringResource(Res.string.pe_photo_cd)
     val savingLabel = stringResource(Res.string.pe_photo_saving_chip)
     Box(
@@ -583,7 +580,7 @@ internal fun DefaultImageSheet(
 ) {
     val t = runTone()
     val c = blueListColors()
-    val names = stringArrayResource(R.array.pe_avatar_names)
+    val names = stringArrayResource(Res.array.pe_avatar_names)
     val selectedLabel = stringResource(Res.string.pe_selected)
     val savingLabel = stringResource(Res.string.pe_photo_saving_chip)
     BlueSheet(

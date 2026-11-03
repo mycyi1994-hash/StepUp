@@ -870,7 +870,7 @@ private fun QuarterSummaryCard(days: List<DailyStepsEntity>, goal: Int) {
 private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
     val byMonth = remember(days) {
         days.groupBy { kotlinx.datetime.LocalDate.fromEpochDays(it.epochDay).let { d -> kotlinx.datetime.LocalDate(d.year, d.month, 1) } }
-            .toSortedMap(compareByDescending { it })
+            .entries.sortedByDescending { it.key }.associate { it.key to it.value }
     }
     val maxSteps = byMonth.values.maxOfOrNull { list -> list.sumOf { it.steps.toLong() } } ?: 1L
 

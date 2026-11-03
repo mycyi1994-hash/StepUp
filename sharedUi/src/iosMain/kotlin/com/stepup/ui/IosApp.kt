@@ -184,6 +184,20 @@ object IosApp {
             cache = com.stepup.android.data.repo.FileAnnouncementCache(IosDirs.documents + "/announcements.json"),
         )
         s.recordingOwnerFlow = ::ownerFlow
+        // 프로필 사진 — 고른 사진(JPEG 파일)을 문서 폴더의 아바타 파일로(안드로이드 AvatarPhotoStore 와 같은 이름 · 화질 90)
+        s.profileEditor = com.stepup.android.data.repo.ProfileEditor(
+            saveNickname = { prefs.setNickname(it) },
+            saveAvatarId = { prefs.setAvatarId(it) },
+            savePhotoFile = { source ->
+                val path = source as? String
+                val image = path?.let { com.stepup.android.ui.components.decodeImageFile(it) }
+                val bytes = image?.let { com.stepup.android.ui.components.jpegOf(it, 90) }
+                val ok = bytes != null && com.stepup.android.ui.components.writeFileBytes(IosDirs.documents + "/" + com.stepup.android.data.prefs.UserPrefs.AVATAR_FILE, bytes)
+                if (ok) prefs.useCustomAvatar()
+                ok
+            },
+            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main),
+        )
         s.runActive = { IosRunSession.activeFlow }
         s.forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi,

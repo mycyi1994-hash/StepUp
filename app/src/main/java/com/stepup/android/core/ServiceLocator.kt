@@ -233,7 +233,8 @@ object ServiceLocator {
         com.stepup.android.data.repo.ProfileEditor(
             saveNickname = { userPrefs.setNickname(it) },
             saveAvatarId = { userPrefs.setAvatarId(it) },
-            savePhotoFile = { open -> photos.save(open) },
+            @Suppress("UNCHECKED_CAST")
+            savePhotoFile = { open -> photos.save(open as () -> java.io.InputStream?) },
             scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate),
         )
     }
