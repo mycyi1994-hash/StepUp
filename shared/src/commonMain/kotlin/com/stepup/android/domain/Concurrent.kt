@@ -48,6 +48,9 @@ class ConcurrentMap<K, V> {
         return out as V
     }
 
+    /** MutableMap.getOrPut 자리(ConcurrentHashMap 에서 쓰던 이름) — 없으면 한 번만 넣는다 */
+    fun getOrPut(key: K, f: () -> V): V = computeIfAbsent(key) { f() }
+
     val keys: Set<K> get() = ref.load().keys
     val values: Collection<V> get() = ref.load().values
     val entries: Set<Map.Entry<K, V>> get() = ref.load().entries
@@ -96,3 +99,37 @@ class ConcurrentSet<T> {
 /** UUID.randomUUID().toString() 자리(같은 꼴 — 소문자 8-4-4-4-12) */
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 fun randomUuid(): String = kotlin.uuid.Uuid.random().toString()
+
+/**
+ * 바이트로 재는 최근 사용 사본(android.util.LruCache 자리) — 넘치면 가장 오래 안 쓴 것부터 버린다. 한 번에 하나(원자 참조).
+ */
+class ByteLruCache<K, V>(private val budget: Int, private val sizeOf: (V) -> Int) {
+    private val ref = AtomicReference(LinkedHashMap<K, V>())
+
+    private inline fun <R> edit(change: (LinkedHashMap<K, V>) -> R): R {
+        while (true) {
+            val old = ref.load()
+            val copy = LinkedHashMap(old)
+            val out = change(copy)
+            if (ref.compareAndSet(old, copy)) return out
+        }
+    }
+
+    fun get(key: K): V? = edit { m -> m.remove(key)?.also { m[key] = it } }
+
+    fun put(key: K, value: V) = edit { m ->
+        m.remove(key)
+        m[key] = value
+        var total = m.values.sumOf(sizeOf)
+        val it = m.entries.iterator()
+        while (total > budget && m.size > 1 && it.hasNext()) {
+            val e = it.next()
+            if (e.key == key) continue
+            total -= sizeOf(e.value)
+            it.remove()
+        }
+    }
+
+    fun remove(key: K): V? = edit { m -> m.remove(key) }
+    fun evictAll() { ref.store(LinkedHashMap()) }
+}

@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.chat
 
+import com.stepup.android.data.repo.file
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

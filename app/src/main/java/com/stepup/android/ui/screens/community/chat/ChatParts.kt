@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.chat
 
+import com.stepup.android.data.repo.decodeFile
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context

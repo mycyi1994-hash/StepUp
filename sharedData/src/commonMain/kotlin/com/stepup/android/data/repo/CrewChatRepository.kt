@@ -1,11 +1,6 @@
 package com.stepup.android.data.repo
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.util.Base64
-import android.util.LruCache
+import kotlinx.coroutines.IO
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.ChatMessageRow
 import com.stepup.android.data.remote.CrewApi
@@ -23,10 +18,8 @@ import com.stepup.android.domain.CrewMember
 import com.stepup.android.domain.CrewPerson
 import com.stepup.android.domain.CrewPersonRole
 import com.stepup.android.domain.RecordingOwner
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
+import com.stepup.android.domain.ConcurrentMap
+import com.stepup.android.domain.ConcurrentSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,7 +49,7 @@ sealed interface ChatOutcome<out T> {
 data class ChatSync(val meta: ChatRoomMeta, val messages: List<ChatMessage>, val reset: Boolean, val lastRev: Long)
 
 /** 보낼 사진 — 올릴 모양(JPEG base64)과 화면에 보일 앱 안 파일 */
-data class ChatPhoto(val data: String, val file: File, val width: Int, val height: Int)
+data class ChatPhoto(val data: String, val path: String, val width: Int, val height: Int)
 
 /** 01 내 크루 대화의 상태 */
 sealed interface ChatRoomsState {
@@ -73,32 +66,32 @@ sealed interface ChatRoomsState {
  * 입력창에 쓰던 글만 들고 있다(앱이 살아 있는 동안). 이 방에 참여할 수 없게 되면 그 방의 대화 · 사진 · 쓰다 만 공지를
  * 지운다([forget]) — 다시 보이지 않게.
  */
-class CrewChatRepository(
+class CrewChatRepository<Img : Any>(
     private val api: CrewChatApi,
     private val crewApi: CrewApi,
     private val prefs: UserPrefs,
     private val owner: suspend () -> String,
     /** 보낼 사진을 잠깐 두는 곳(cacheDir/chat_photos) */
-    private val photoDir: File,
+    private val photoDir: String,
+    /** 사진 읽기 · 줄이기 · JPEG 만들기(안드로이드 Bitmap · iOS UIImage) */
+    private val codec: ChatImageCodec<Img>,
 ) {
     private val _rooms = MutableStateFlow<ChatRoomsState>(ChatRoomsState.Loading)
     val rooms: StateFlow<ChatRoomsState> = _rooms
 
     /** 방마다 — 이 폰에만 있는 내 메시지 · 입력창 글 */
-    private val locals = ConcurrentHashMap<String, List<ChatMessage>>()
-    private val drafts = ConcurrentHashMap<String, String>()
+    private val locals = com.stepup.android.domain.ConcurrentMap<String, List<ChatMessage>>()
+    private val drafts = com.stepup.android.domain.ConcurrentMap<String, String>()
 
     /** 방마다 마지막으로 본 대화(다시 열 때 먼저 보인다 — 서버가 확인하면 바뀐다) */
-    private val snapshots = ConcurrentHashMap<String, ChatSync>()
+    private val snapshots = com.stepup.android.domain.ConcurrentMap<String, ChatSync>()
 
-    private val images = object : LruCache<Long, Bitmap>(IMAGE_BYTES) {
-        override fun sizeOf(key: Long, value: Bitmap): Int = value.byteCount
-    }
-    private val imageRooms = ConcurrentHashMap<Long, String>()
-    private val imageLocks = ConcurrentHashMap<Long, Mutex>()
+    private val images = com.stepup.android.domain.ByteLruCache<Long, Img>(IMAGE_BYTES) { codec.byteCount(it) }
+    private val imageRooms = com.stepup.android.domain.ConcurrentMap<Long, String>()
+    private val imageLocks = com.stepup.android.domain.ConcurrentMap<Long, Mutex>()
 
     /** 이 폰에 들고 있는 대화의 주인 — 계정이 바뀌면 앞사람의 대화 · 사진 · 입력 글을 모두 지운다 */
-    @Volatile private var holder: String? = null
+    @kotlin.concurrent.Volatile private var holder: String? = null
 
     private suspend fun ownerNow(): String {
         val now = owner()
@@ -187,11 +180,11 @@ class CrewChatRepository(
                 kind = it.kind, state = it.state, body = it.body, authorDeleted = it.authorDeleted,
             )
         },
-        clientId = UUID.randomUUID().toString(),
+        clientId = com.stepup.android.domain.randomUuid(),
         canDelete = false,
-        createdAt = System.currentTimeMillis(),
+        createdAt = com.stepup.android.domain.epochMillis(),
         delivery = ChatDelivery.SENDING,
-        localImage = photo?.file?.path,
+        localImage = photo?.path,
     )
 
     /** 보내기 — 같은 요청 키로(다시 보내도 서버에는 하나) */
@@ -202,7 +195,7 @@ class CrewChatRepository(
         if (outcome is ChatOutcome.Ok && photo != null) {
             val id = outcome.value.id
             // 보낸 사진을 다시 읽는 것은 화면 스레드 밖에서(큰 JPEG)
-            if (id != null) withContext(Dispatchers.IO) { decodeFile(photo.file) }?.let { rememberImage(crewId, id, it) }
+            if (id != null) withContext(Dispatchers.IO) { decodeFile(photo.path) }?.let { rememberImage(crewId, id, it) }
         }
         if (outcome is ChatOutcome.Ended) forget(crewId)
         return outcome
@@ -247,7 +240,7 @@ class CrewChatRepository(
     // ── 사진 ────────────────────────────────────────────────────
 
     /** 받은 사진 — 방에 들어갈 수 있을 때만 서버가 준다. 앱이 살아 있는 동안 메모리에만 둔다 */
-    suspend fun image(crewId: String, messageId: Long): ChatOutcome<Bitmap> {
+    suspend fun image(crewId: String, messageId: Long): ChatOutcome<Img> {
         images.get(messageId)?.let { return ChatOutcome.Ok(it) }
         val lock = imageLocks.getOrPut(messageId) { Mutex() }
         return lock.withLock {
@@ -271,9 +264,9 @@ class CrewChatRepository(
         }
     }
 
-    fun imageNow(messageId: Long): Bitmap? = images.get(messageId)
+    fun imageNow(messageId: Long): Img? = images.get(messageId)
 
-    private fun rememberImage(crewId: String, messageId: Long, bitmap: Bitmap) {
+    private fun rememberImage(crewId: String, messageId: Long, bitmap: Img) {
         images.put(messageId, bitmap)
         imageRooms[messageId] = crewId
     }
@@ -283,53 +276,15 @@ class CrewChatRepository(
         imageRooms.remove(messageId)
     }
 
-    /**
-     * 고른 사진을 보낼 모양으로 — 긴 변 [PHOTO_SIDE] 까지 줄이고 크루 대표 사진과 같은 기술 한도(base64 200,000자 —
-     * 넉넉히 180,000자) 안의 JPEG 로. 읽을 수 없으면 null, 접근이 막혔으면 [CrewPhotos.Loaded.Denied].
-     */
-    suspend fun preparePhoto(context: Context, uri: Uri): Pair<ChatPhoto?, CrewPhotos.Loaded> {
-        val loaded = CrewPhotos.load(context, uri)
-        val source = (loaded as? CrewPhotos.Loaded.Ok)?.bitmap ?: return null to loaded
-        val photo = withContext(Dispatchers.Default) { encodePhoto(source) }
-        return photo to loaded
+    /** 앱이 그린 그림(러닝 기록 공유 카드) · 고른 사진을 보낼 모양으로 — 긴 변 [PHOTO_SIDE] · base64 [PHOTO_MAX_BASE64] 자 안. 못 줄이면 null */
+    suspend fun photoOf(bitmap: Img): ChatPhoto? = withContext(Dispatchers.Default) {
+        com.stepup.android.data.local.TextFiles.mkdirs(photoDir)
+        codec.encode(bitmap, photoDir, PHOTO_SIDE, PHOTO_MAX_BASE64)
     }
 
-    /** 앱이 그린 그림(러닝 기록 공유 카드)을 보낼 모양으로 — [preparePhoto] 와 같은 크기 · 용량 한도. 못 줄이면 null */
-    suspend fun photoOf(bitmap: Bitmap): ChatPhoto? = withContext(Dispatchers.Default) { encodePhoto(bitmap) }
+    fun decodeFile(path: String): Img? = codec.decodeFile(path)
 
-    private fun encodePhoto(source: Bitmap): ChatPhoto? {
-        var side = PHOTO_SIDE
-        while (side >= 480) {
-            val scale = side.toFloat() / maxOf(source.width, source.height)
-            val bitmap = if (scale >= 1f) source else Bitmap.createScaledBitmap(
-                source, (source.width * scale).toInt().coerceAtLeast(1), (source.height * scale).toInt().coerceAtLeast(1), true,
-            )
-            var quality = 84
-            while (quality >= 46) {
-                val bytes = ByteArrayOutputStream().use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, out)
-                    out.toByteArray()
-                }
-                val text = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                if (text.length <= PHOTO_MAX_BASE64) {
-                    photoDir.mkdirs()
-                    val file = File(photoDir, "photo-${UUID.randomUUID()}.jpg")
-                    file.writeBytes(bytes)
-                    return ChatPhoto(text, file, bitmap.width, bitmap.height)
-                }
-                quality -= 12
-            }
-            side -= 240
-        }
-        return null
-    }
-
-    fun decodeFile(file: File): Bitmap? = runCatching { BitmapFactory.decodeFile(file.path) }.getOrNull()
-
-    private fun decodeBase64(data: String): Bitmap? = runCatching {
-        val bytes = Base64.decode(data, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-    }.getOrNull()
+    private fun decodeBase64(data: String): Img? = codec.decodeBase64(data)
 
     // ── 공지 ────────────────────────────────────────────────────
 
@@ -360,7 +315,7 @@ class CrewChatRepository(
     suspend fun saveNoticeDraft(draft: ChatNoticeDraft?, crewId: String, noticeId: Long?) {
         prefs.setChatNoticeDraft(
             owner(), com.stepup.android.domain.ChatRules.noticeDraftKey(crewId, noticeId),
-            draft?.copy(savedAt = System.currentTimeMillis()),
+            draft?.copy(savedAt = com.stepup.android.domain.epochMillis()),
         )
     }
 
@@ -418,7 +373,7 @@ class CrewChatRepository(
         images.evictAll()
         imageRooms.clear()
         _rooms.value = ChatRoomsState.Loading
-        photoDir.listFiles()?.forEach { it.delete() }
+        codec.clearDir(photoDir)
     }
 
     companion object {
@@ -428,7 +383,7 @@ class CrewChatRepository(
         const val PHOTO_SIDE = 1200
 
         /** 서버 칸(200,000자)보다 넉넉히 작게 — 크루 대표 사진과 같은 한도 */
-        private const val PHOTO_MAX_BASE64 = 180_000
+        const val PHOTO_MAX_BASE64 = 180_000
     }
 }
 
@@ -441,7 +396,7 @@ private fun <T, R> ChatOutcome<T>.map(transform: (T) -> R): ChatOutcome<R> = whe
 }
 
 /** 서버의 답을 채팅의 결말로 — 멤버가 아니면 Ended, 크루장 권한이 없으면 NotOwner */
-internal fun <T> ServerResult<T>.chat(): ChatOutcome<T> = when (this) {
+fun <T> ServerResult<T>.chat(): ChatOutcome<T> = when (this) {
     is ServerResult.Ok -> ChatOutcome.Ok(value)
     is ServerResult.Rejected -> when {
         reason.contains("chat_not_member") -> ChatOutcome.Ended
