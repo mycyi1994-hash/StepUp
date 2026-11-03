@@ -936,15 +936,3 @@ private fun DrawScope.drawRouteFlag(at: Offset) {
     drawPath(flag, Volt)
 }
 
-/** 지도 판이 없을 때(타일 계획 전) 깔리는 추상 격자 — 실제 길처럼 보이지 않는다(안드로이드 CourseMap.drawStreets 와 같다) */
-@Suppress("UNUSED_PARAMETER")
-fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStreets(seed: Int) {
-    drawRect(Color(0xFF0C1930))
-    val line = com.stepup.android.ui.theme.Snow.copy(alpha = 0.055f)
-    for (step in 1..5) {
-        val x = size.width * step / 6f
-        val y = size.height * step / 6f
-        drawLine(line, Offset(x, 0f), Offset(x, size.height), 1.dp.toPx())
-        drawLine(line, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
-    }
-}

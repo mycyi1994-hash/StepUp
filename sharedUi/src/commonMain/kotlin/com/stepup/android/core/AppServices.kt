@@ -45,8 +45,11 @@ object AppServices {
     /** 크루 대표 사진(화면 그림) — 없거나 못 받으면 null */
     var crewImage: suspend (crewId: String, version: Int) -> androidx.compose.ui.graphics.ImageBitmap? = { _, _ -> null }
 
-    /** 이 폰이 지금 러닝 중인가(안드로이드 WalkSessionService.state.isActive · iOS 러닝 세션) */
+    /** 이 폰이 지금 러닝 중인가(안드로이드 com.stepup.android.core.AppServices.run.state.isActive · iOS 러닝 세션) */
     var runActive: () -> kotlinx.coroutines.flow.StateFlow<Boolean> = { kotlinx.coroutines.flow.MutableStateFlow(false) }
+
+    /** 러닝 한 번(안드로이드 WalkSessionService · iOS 러닝 세션) */
+    var run: RunSessionControl = NoRunSession
 
     /** 모임(크루 · 번개) 러닝을 켠다 — 켜졌으면 true(안드로이드 WalkSessionService.start · iOS 러닝 세션) */
     var startGroupRun: (party: com.stepup.android.data.repo.PartyState, title: String) -> Boolean = { _, _ -> false }

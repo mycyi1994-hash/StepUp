@@ -30,6 +30,14 @@ class DatePatternJvmTest {
 }
 
 class DateNamesJvmTest {
+    @Test fun mediumDateShortTimeFixed() {
+        val at = kotlinx.datetime.LocalDateTime(2026, 11, 3, 21, 5)
+        assertEquals("2026. 11. 3. 오후 9:05", DatePattern.mediumDateShortTime("ko", at))
+        assertEquals("Nov 3, 2026, 9:05 PM", DatePattern.mediumDateShortTime("en", at))
+        assertEquals("2026/11/03 21:05", DatePattern.mediumDateShortTime("ja", at))
+        assertEquals("2026年11月3日 21:05", DatePattern.mediumDateShortTime("zh", at))
+    }
+
     @Test fun mediumDateAndDayNamesMatchJdk() {
         val styles = mapOf(
             DateNameStyle.NARROW to java.time.format.TextStyle.NARROW, DateNameStyle.SHORT to java.time.format.TextStyle.SHORT,
@@ -45,7 +53,8 @@ class DateNamesJvmTest {
                     DatePattern.mediumDate(lang, d), "$lang medium $d",
                 )
                 val at = kotlinx.datetime.LocalDateTime(d, kotlinx.datetime.LocalTime((it * 5) % 24, (it * 7) % 60))
-                assertEquals(
+                // 날짜 + 시각 꼴은 JDK 판마다 CLDR 이 달라(17 과 21) 21 이상에서만 맞대어 본다 — 아래 고정 값은 어디서나 본다
+                if (Runtime.version().feature() >= 21) assertEquals(
                     DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT).withLocale(locale)
                         .format(java.time.LocalDateTime.of(j, java.time.LocalTime.of(at.hour, at.minute))).replace('\u202f', ' '),
                     DatePattern.mediumDateShortTime(lang, at), "$lang medium+short $at",

@@ -10,7 +10,10 @@
 - 공용 규칙을 고치면 `./gradlew :shared:jvmTest`(Build APK 에서도 돈다). iOS 빌드는 `.github/workflows/ios.yml`(macOS — iOS 쪽 파일이 바뀔 때만).
 - **브랜치**: iOS 작업은 `ios-app` 에 모은다(사용자 "아이폰 어플용 브랜치 따로 분리") — 단계마다 작업 브랜치 → `ios-app` PR. `main` 에는 안드로이드가 테스트 APK 로 확인된 뒤에만.
 - Kotlin 2.3.21 · KSP 2.3.6(KSP2 — 더 새 KSP 는 AGP 8.12+) · Room 2.8.5 · Compose Multiplatform 1.12.2 · CI Xcode 26(2026-11-02 1단계, `ios-app`). `android { kotlinOptions }` 는 `kotlin { compilerOptions }` 로.
-  다음은 규칙 · 데이터 · 화면 옮기기. 안드로이드에 닿는 단계는 테스트 APK 로 확인하고 넘어간다.
+  데이터(3단계)는 끝났다 — 저장소 대부분이 `sharedData/.../data/repo`(안드로이드도 같은 코드, 사진 · 파일 · 러닝 서비스만 기기별 이음새). 러닝 상태 `WalkSessionState` 도 `sharedData`(패키지 `service` 그대로).
+  화면(4단계, 2026-11-03 진행 중): 로그인 · 홈 · 자유 러닝 · 신발 · 내 정보 · 설정 · 함께 뛰기 · 크루 · 채팅 · 커뮤니티 · 순위 · 기록 · 알림이 `sharedUi`(iOS 앱이 쓴다).
+  공용 화면의 기기 일은 `sharedUi/.../core/AppServices` · `ExternalIntents` · `AppBuild`, 날짜 꼴은 `shared` 의 `DatePattern`. 남은 파일은 `sharedUi/porting/`.
+  그다음 안드로이드가 같은 화면을 쓴다(`androidTarget`) — 테스트 APK 로 확인하고 넘어간다. 자세한 것은 docs/ios/README.md "화면".
 - 계정은 조직(법인)으로 신청했다(2026-11-02, 애플 확인 대기). 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
 
 ## 최신 — 보안 네 겹: 사람 확인 · CSP · 보안 감시 · Dependabot (2026-11-02, 서버 0083)
