@@ -10,7 +10,7 @@ import kotlin.test.Test
  */
 class TrackFixRuleTest {
 
-    @Test fun `first usable non-gps fix starts the track, cell-sized fixes only move the map dot`() {
+    @Test fun `first usable non-gps fix starts the track · cell-sized fixes only move the map dot`() {
         // 첫 점 · 끊긴 뒤 새 구간 — 오차가 50m 안이면 경로를 시작한다
         assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 18f, anchorDistanceM = null, anchorAccuracyM = null))
         // 기지국 위치처럼 오차가 크면 지도의 지금 자리만
@@ -32,7 +32,7 @@ class TrackFixRuleTest {
         assertEquals(TrackFixRule.Fix.COMMIT, TrackFixRule.decide(accuracyM = 2f, anchorDistanceM = 8.0, anchorAccuracyM = 2f))
     }
 
-    @Test fun `a much sharper fix inside the anchor's error moves the anchor instead of stalling`() {
+    @Test fun `a much sharper fix inside the anchors error moves the anchor instead of stalling`() {
         // 와이파이(오차 35m)로 잡힌 출발점 근처에 GPS(오차 5m)가 왔다 — 같은 자리를 더 정확히 안 것: 기준점만 옮긴다(거리는 더하지 않는다).
         // 예전엔 70m(35m 의 두 배)를 움직일 때까지 거리가 0 에 멈춰 있었다(2026-10-16 "인식도 잘 안 되고 느려")
         assertEquals(TrackFixRule.Fix.REFINE, TrackFixRule.decide(accuracyM = 5f, anchorDistanceM = 28.0, anchorAccuracyM = 35f))

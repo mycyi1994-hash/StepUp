@@ -55,7 +55,7 @@ class CoachingAiStateTest {
         assertEquals(CoachAi.NotVerified, ai(server = CoachStatus(CoachServerState.NOT_FOUND)))
     }
 
-    @Test fun `오프라인 — 저장된 분석이 있으면 생성 시각과 함께, 없으면 연결 안내`() {
+    @Test fun `오프라인 — 저장된 분석이 있으면 생성 시각과 함께 · 없으면 연결 안내`() {
         val offline = ai(online = false, cached = cache) as CoachAi.Ready
         assertTrue(offline.offline)
         assertEquals(cache.savedAt, offline.savedAt)
@@ -66,7 +66,7 @@ class CoachingAiStateTest {
         assertEquals(CoachAi.Loading, ai())
     }
 
-    @Test fun `서버가 답하지 못하면 저장된 분석, 없으면 재시도할 수 있는 실패`() {
+    @Test fun `서버가 답하지 못하면 저장된 분석 · 없으면 재시도할 수 있는 실패`() {
         assertTrue(ai(failed = true, cached = cache) is CoachAi.Ready)
         assertEquals(CoachAi.Failed(null, retryable = true), ai(failed = true))
     }
@@ -97,7 +97,7 @@ class CoachingAiStateTest {
         assertEquals(CoachAi.Failed(5, retryable = true), ai(server = CoachStatus(CoachServerState.READY, jobId = 5)))
     }
 
-    @Test fun `운영자가 꺼 두면 AI 칸을 숨기고, 이미 저장된 분석은 읽게 둔다`() {
+    @Test fun `운영자가 꺼 두면 AI 칸을 숨기고 · 이미 저장된 분석은 읽게 둔다`() {
         assertEquals(CoachAi.Hidden, ai(server = CoachStatus(CoachServerState.DISABLED)))
         assertTrue(ai(server = CoachStatus(CoachServerState.DISABLED, result = result)) is CoachAi.Ready)
     }

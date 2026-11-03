@@ -63,7 +63,7 @@ class RunRecordsTest {
         assertTrue(hasNextMonth(YearMonth(2026, 8), today))
     }
 
-    @Test fun `주간 막대는 날짜별 거리, 아직 오지 않은 날은 비운다`() {
+    @Test fun `주간 막대는 날짜별 거리 · 아직 오지 않은 날은 비운다`() {
         val runs = listOf(
             RunMark(at(2026, 9, 21), 3000.0), RunMark(at(2026, 9, 23), 4000.0),
             RunMark(at(2026, 9, 25), 5000.0), RunMark(at(2026, 9, 25, 20), 1000.0),
@@ -76,7 +76,7 @@ class RunRecordsTest {
         assertEquals(listOf(false, false, false, false, false, true, true), bars.map { it.future })
     }
 
-    @Test fun `월간 막대는 날짜 구간(1–7 · 8–14 · 15–21 · 22–28 · 29–말일)`() {
+    @Test fun `월간 막대는 날짜 구간 1–7 · 8–14 · 15–21 · 22–28 · 29–말일`() {
         val runs = listOf(RunMark(at(2026, 9, 7), 3500.0), RunMark(at(2026, 9, 8), 9500.0), RunMark(at(2026, 9, 30), 1200.0))
         val bars = monthBars(YearMonth(2026, 9), runs, LocalDate(2026, 9, 27), seoul)
         assertEquals(5, bars.size)

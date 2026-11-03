@@ -59,7 +59,7 @@ class CoachingPlansTest {
         assertEquals("easy_15", CoachingTemplates.basic(CoachPrefs(CoachGoal.IMPROVE, 2, 15)).id)
     }
 
-    @Test fun `다음 주 계획 — 주 3회는 월 수 금, 편안한 러닝과 걷기와 달리기를 번갈아`() {
+    @Test fun `다음 주 계획 — 주 3회는 월 수 금 · 편안한 러닝과 걷기와 달리기를 번갈아`() {
         val monday = LocalDate(2026, 10, 19)
         val plan = weekPlan(monday, CoachPrefs(CoachGoal.STEADY, 3, 25))
         assertEquals(listOf(19, 21, 23), plan.map { it.date.dayOfMonth })
@@ -85,7 +85,7 @@ class CoachingPlansTest {
         assertEquals("3.24", kmText(3240.0))
     }
 
-    @Test fun `구간 그래프 축 — 빠른 값이 위, 7분에서 8분으로 내려가면 느려지는 방향`() {
+    @Test fun `구간 그래프 축 — 빠른 값이 위 · 7분에서 8분으로 내려가면 느려지는 방향`() {
         val axis = paceAxis(listOf(432, 446, 472), 450.0)
         assertEquals(420L, axis.fastSec)
         assertEquals(480L, axis.slowSec)

@@ -28,7 +28,7 @@ class CoachingSplitsTest {
         assertEquals("7'30\"", paceText(pace))
     }
 
-    @Test fun `검수 숫자 — 전체 1km 구간 432 446 472 와 마지막 0_24km 108초, 합계 1458초`() {
+    @Test fun `검수 숫자 — 전체 1km 구간 432 446 472 와 마지막 0_24km 108초 · 합계 1458초`() {
         val splits = runSplits(3240.0, 1458, sampleLaps) as RunSplits.Ready
         assertEquals(listOf(KmSplit(1, 432), KmSplit(2, 446), KmSplit(3, 472)), splits.full)
         val partial = splits.partial!!
