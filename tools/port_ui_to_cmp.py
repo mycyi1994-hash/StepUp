@@ -36,6 +36,8 @@ s = s.replace("LocalConfiguration.current.screenWidthDp", "with(androidx.compose
 s = s.replace("import androidx.compose.ui.platform.LocalConfiguration\n", "")
 s = re.sub(r"\bMath\.(PI|sin|cos|sqrt|abs|min|max|atan2|hypot)\b", r"kotlin.math.\1", s)
 s = re.sub(r"\n\s*platformStyle = PlatformTextStyle\(includeFontPadding = false\),", "", s)
+if "StepUpFonts." in s and "import com.stepup.android.ui.theme.StepUpFonts" not in s and "import com.stepup.android.ui.theme.*" not in s:
+    s = re.sub(r"\n(import [^\n]+\n)", r"\nimport com.stepup.android.ui.theme.StepUpFonts\n\1", s, count=1)
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text(s)
 print(f"{src} → {dst}")
