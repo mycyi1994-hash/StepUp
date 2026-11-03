@@ -174,7 +174,8 @@ class CommunityStoriesTest {
 
         // ── 01 목록 · 02 펼침 ─────────────────────────────────────────
         awaitTag("story-row-301")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
         // UI 최종 통합안(2026-10-25) — 큰 제목 대신 목록 위 "여의도동 · 지역에서 1km" 한 줄(누르면 지역 바꾸기)
         compose.onNode(hasTestTag("stories-area") and hasText("여의도동", substring = true)).assertIsDisplayed()
         // 1km 밖(샛강, 약 1.05km)과 번개 글은 목록에 없다 — 끝(장소 없는 이전 글)까지 내려가 확인한다
@@ -193,7 +194,8 @@ class CommunityStoriesTest {
         tapTag("story-range-M500")
         shot("17-radius")
         tapTag("story-sheet-close")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
         tapTag("stories-range")
         tapTag("story-range-KM3")
         tapTag("story-range-apply")
@@ -395,7 +397,8 @@ class CommunityStoriesTest {
         tapTag("stories-range")
         tapTag("story-range-KM1")
         tapTag("story-range-apply")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
 
         // ── 28 빈 목록 · 29 불러오는 중 · 30 연결 오류 ──────────────────────
         ServiceLocator.communityRepository.showForTest(emptyList())

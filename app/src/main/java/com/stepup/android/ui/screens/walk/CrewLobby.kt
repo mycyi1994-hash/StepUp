@@ -232,7 +232,8 @@ internal fun CrewLobbyContent(
                 )
                 // 달리는 방식 · 출발 예정 시각 · 만나는 곳(원격이면 각자의 위치) · 정원 — 방을 만들 때 정한 값(0074, 안내일 뿐)
                 LobbyPlanLine(party)
-                Spacer(Modifier.height(12.dp))
+                // 위 계획 줄(2026-10-26)이 생긴 만큼 아래 간격을 줄여 390 × 844 에서 내 신발 카드가 버튼 칸 위에 다 보이게(시안 10 · 12 · 23)
+                Spacer(Modifier.height(8.dp))
                 LobbyNotices(party, doneToday, crewToday, room, shoeFailed, courseFailed, onReconnect)
                 if (loading) {
                     LobbyLoading()
@@ -243,7 +244,7 @@ internal fun CrewLobbyContent(
                         onCall = onNotify,
                     )
                     // 간격은 버튼 아래 글자 한 줄(준비 취소 · 크루원 부르기)이 있어도 390 × 844 에서 내 신발 카드가 다 보이게(시안 10 · 12 · 23)
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(8.dp))
                     Overview(
                         party, crewToday, room,
                         onStamina = { sheet = LobbySheet.Stamina },
@@ -251,7 +252,7 @@ internal fun CrewLobbyContent(
                         onCourse = openCourse,
                         canSetCourse = party.isHost && lobby,
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     ShoeFrame(room, shoes, onChange = { sheet = LobbySheet.Shoes }, enabled = lobby && room != null)
                     Spacer(Modifier.height(18.dp))
                 }
