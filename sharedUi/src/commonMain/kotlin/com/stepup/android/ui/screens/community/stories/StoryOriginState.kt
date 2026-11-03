@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import org.jetbrains.compose.resources.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.stepup.ui.res.*
@@ -24,10 +23,9 @@ import com.stepup.android.ui.components.rememberCurrentLocation
  */
 @Composable
 fun rememberStoryOrigin(): StoryOrigin? {
-    val context = LocalContext.current
-    var allowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
+    var allowed by remember { mutableStateOf(com.stepup.android.ui.StepPermissions.hasLocation()) }
     LifecycleResumeEffect(Unit) {
-        allowed = StepPermissions.hasLocation(context)
+        allowed = com.stepup.android.ui.StepPermissions.hasLocation()
         onPauseOrDispose { }
     }
     val region by AppServices.userPrefs.storyRegion.collectAsState(initial = null)

@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.community.chat
 
+import com.stepup.android.data.repo.file
+import com.stepup.android.data.repo.preparePhoto
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.saveable.Saver
@@ -68,8 +70,8 @@ private fun <T> ChatOutcome<T>.confirmError(): ChatConfirmError =
 // ─────────────────────────────────────────────────────────────
 
 class ChatListViewModel(
-    private val repo: CrewChatRepository,
-    crewCards: com.stepup.android.data.repo.CrewCardRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
+    crewCards: com.stepup.android.data.repo.CrewCardRepository<*>,
 ) : ViewModel() {
     val rooms: StateFlow<ChatRoomsState> = repo.rooms
 
@@ -147,7 +149,7 @@ sealed interface ChatEventOnce {
 }
 
 class ChatRoomViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -583,7 +585,7 @@ object ChatNoticeSeed {
 // ─────────────────────────────────────────────────────────────
 
 class ChatInfoViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -680,7 +682,7 @@ class ChatInfoViewModel(
 // ─────────────────────────────────────────────────────────────
 
 class ChatPeopleViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -772,7 +774,7 @@ class ChatPeopleViewModel(
 // ─────────────────────────────────────────────────────────────
 
 class ChatNoticesViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -835,7 +837,7 @@ sealed interface ChatNoticeSheet {
 }
 
 class ChatNoticeEditViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -1044,7 +1046,7 @@ sealed interface ChatSearchState {
 }
 
 class ChatSearchViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -1121,7 +1123,7 @@ object ChatPhotoDraft {
 }
 
 class ChatPhotoViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -1177,7 +1179,7 @@ class ChatPhotoViewModel(
 }
 
 class ChatViewerViewModel(
-    private val repo: CrewChatRepository,
+    private val repo: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()

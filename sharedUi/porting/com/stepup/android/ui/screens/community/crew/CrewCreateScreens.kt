@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.asImageBitmap
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
@@ -53,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext

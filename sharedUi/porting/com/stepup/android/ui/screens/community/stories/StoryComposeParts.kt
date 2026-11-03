@@ -3,7 +3,6 @@ package com.stepup.android.ui.screens.community.stories
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.domain.minusDaysKx
-import kotlinx.datetime.toJavaZoneId
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -138,13 +137,13 @@ internal val ComposeGutter = 20.dp
 
 /** 러닝 이야기의 날짜 · 시간 · 문장 — 앱 언어의 문자열로 만든다 */
 class StoryWords(private val context: Context, private val locale: Locale) {
-    private fun s(id: Int, vararg args: Any): String = org.jetbrains.compose.resources.getString(id, *args)
+    private fun s(id: Int, vararg args: Any): String = com.stepup.android.ui.components.stringNow(id, *args)
 
     /** "9월 25일" — 저장되는 문장에도 이 고정 날짜를 쓴다(나중에 열어도 사실이 달라지지 않게) */
     fun date(day: LocalDate): String = day.formatPattern(s(Res.string.story_run_date_pattern), androidx.compose.ui.text.intl.Locale.current.language)
 
     private fun time(millis: Long): String =
-        kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(StoryRunRules.ZONE.toJavaZoneId()).formatPattern(s(Res.string.story_run_time_pattern), androidx.compose.ui.text.intl.Locale.current.language)
+        kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(StoryRunRules.ZONE).formatPattern(s(Res.string.story_run_time_pattern), androidx.compose.ui.text.intl.Locale.current.language)
 
     /** "오늘" · "어제" · "3일 전" */
     fun ago(days: Long): String = when (days) {

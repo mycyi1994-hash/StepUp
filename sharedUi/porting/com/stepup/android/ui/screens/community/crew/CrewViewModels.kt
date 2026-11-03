@@ -70,7 +70,7 @@ private fun <T> CrewOutcome<T>.asLoad(): CrewLoad<T> = when (this) {
 // ─────────────────────────────────────────────────────────────
 
 class CrewListViewModel(
-    private val repo: CrewCardRepository,
+    private val repo: CrewCardRepository<*>,
     private val places: PlaceSearch,
 ) : ViewModel() {
     val cards: StateFlow<List<CrewCard>> = repo.cards
@@ -173,7 +173,7 @@ data class CrewOpState(
 )
 
 class CrewScreenViewModel(
-    private val repo: CrewCardRepository,
+    private val repo: CrewCardRepository<*>,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.get<String>("crewId").orEmpty()
@@ -374,7 +374,7 @@ sealed interface CrewSave {
 }
 
 class CrewDraftViewModel(
-    private val repo: CrewCardRepository,
+    private val repo: CrewCardRepository<*>,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val mode: CrewDraftMode = CrewDraftMode.entries.firstOrNull { it.name == saved.get<String>("mode") } ?: CrewDraftMode.CREATE
@@ -463,7 +463,7 @@ class CrewDraftViewModel(
         val source = (_photo.value as? CrewPhotoStep.Crop)?.source ?: return
         _photo.value = CrewPhotoStep.Saving
         viewModelScope.launch {
-            val file = repo.newDraftPhotoFile()
+            val file = java.io.File(repo.newDraftPhotoPath())
             val ok = withContext(Dispatchers.Default) {
                 runCatching { CrewPhotos.save(CrewPhotos.crop(source, left, top, side), file) }.getOrDefault(false)
             }
@@ -602,7 +602,7 @@ class CrewDraftViewModel(
     }
 
     /** 새 사진 파일 자리 */
-    fun newPhotoFile(): java.io.File = repo.newDraftPhotoFile()
+    fun newPhotoFile(): java.io.File = java.io.File(repo.newDraftPhotoPath())
 
     companion object {
         private const val KEY_DRAFT = "crew_draft"

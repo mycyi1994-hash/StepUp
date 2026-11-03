@@ -338,8 +338,8 @@ internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, 
 
 /** 친구 부르기 · 공유 — 제목 · 시각 · 장소를 글로(앱 밖 공유 창) */
 private fun shareFlash(context: android.content.Context, post: Post) {
-    val where = if (post.remote) org.jetbrains.compose.resources.getString(Res.string.d26_room_remote_line) else post.place.ifBlank { "—" }
-    val text = org.jetbrains.compose.resources.getString(Res.string.flash_share_text, post.title, meetClock(post.meetAt), where)
+    val where = if (post.remote) com.stepup.android.ui.components.stringNow(Res.string.d26_room_remote_line) else post.place.ifBlank { "—" }
+    val text = com.stepup.android.ui.components.stringNow(Res.string.flash_share_text, post.title, meetClock(post.meetAt), where)
     runCatching {
         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

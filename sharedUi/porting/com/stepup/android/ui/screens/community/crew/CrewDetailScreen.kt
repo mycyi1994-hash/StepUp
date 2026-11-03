@@ -1,6 +1,7 @@
 package com.stepup.android.ui.screens.community.crew
 
 import com.stepup.android.core.AppServices
+import com.stepup.android.ui.components.asImageBitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,7 +49,6 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.asImageBitmap
 import com.stepup.ui.res.*
 import com.stepup.android.data.repo.CrewApplied
 import com.stepup.android.domain.CrewApplicationStatus
@@ -303,7 +303,7 @@ private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, 
     var bitmap by remember(card.id) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     LaunchedEffect(card.id, card.imageVer, card.hasImage) {
         bitmap = if (!card.hasImage) null else runCatching {
-            AppServices.crewCards.images.bitmap(card.id, card.imageVer)?.asImageBitmap()
+            com.stepup.android.core.AppServices.crewImage(card.id, card.imageVer)?.asImageBitmap()
         }.getOrNull()
     }
     val place = com.stepup.android.ui.background.rememberPlacePhoto(card.area, card.lat, card.lng, seed = "crew-${card.id}")

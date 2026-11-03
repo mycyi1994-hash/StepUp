@@ -128,11 +128,11 @@ fun PartyLobbyScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
-        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) {
+        if (party.phase == PartyPhase.RUNNING && com.stepup.android.ui.StepPermissions.hasActivityRecognition()) {
             when {
                 WalkSessionService.state.value.isActive -> onRunStarted()
                 // 위치 없이는 출발하지 않는다 — 준비한 뒤 권한을 거둔 경우. 왜 출발하지 않는지 알린다
-                !StepPermissions.hasPreciseLocation(context) ->
+                !com.stepup.android.ui.StepPermissions.hasPreciseLocation() ->
                     showToast(needPrecise, long = true)
                 // 권한 창에 오래 머물렀다 — 출발한 지 오래된 방의 러닝을 늦게 켜지 않는다(아래 출발과 같은 판단)
                 !viewModel.startIsFresh() -> viewModel.missedStart()
@@ -155,8 +155,8 @@ fun PartyLobbyScreen(
     val readyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         readyCheck = false
         when {
-            !StepPermissions.hasActivityRecognition(context) -> Unit
-            StepPermissions.hasPreciseLocation(context) -> markReady()
+            !com.stepup.android.ui.StepPermissions.hasActivityRecognition() -> Unit
+            com.stepup.android.ui.StepPermissions.hasPreciseLocation() -> markReady()
             // 대략적인 위치만 허용했거나 거절했다 — 설정에서 정확한 위치를 켜야 준비할 수 있다
             else -> showToast(needPrecise, long = true)
         }
@@ -164,7 +164,7 @@ fun PartyLobbyScreen(
     /** 준비에 필요한 권한 — 걸음 · 알림 · 위치. 대략적인 위치만 있으면 정확한 위치를 다시 묻는다(Android 12+ 는 바꾸기 창) */
     fun readyPermissions(): Array<String> {
         val missing = StepPermissions.missing(context)
-        if (StepPermissions.hasPreciseLocation(context) || android.Manifest.permission.ACCESS_FINE_LOCATION in missing) return missing
+        if (com.stepup.android.ui.StepPermissions.hasPreciseLocation() || android.Manifest.permission.ACCESS_FINE_LOCATION in missing) return missing
         return missing + arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
     }
     var confirmStart by rememberSaveable { mutableStateOf(false) }
@@ -244,14 +244,14 @@ fun PartyLobbyScreen(
         .collectAsStateWithLifecycle(initialValue = emptyList())
     var shoeFailed by remember { mutableStateOf(false) }
     val shoeScope = androidx.compose.runtime.rememberCoroutineScope()
-    val here = rememberCurrentLocation(enabled = party.phase == PartyPhase.COUNTDOWN && StepPermissions.hasLocation(context))
+    val here = rememberCurrentLocation(enabled = party.phase == PartyPhase.COUNTDOWN && com.stepup.android.ui.StepPermissions.hasLocation())
     val monogram = party.crewId?.let { AppServices.crewRepository.crewOf(it)?.monogram }.orEmpty()
     PartyLobbyContent(
         party = party, title = title, resultPoints = resultPoints, canNotify = canNotify, here = here, monogram = monogram,
         onBack = leave,
         onReady = {
             // 걸음 · 정확한 위치 권한이 없으면 먼저 묻는다(CR17) — 둘 다 있으면 바로 준비
-            if (StepPermissions.hasActivityRecognition(context) && StepPermissions.hasPreciseLocation(context)) markReady()
+            if (com.stepup.android.ui.StepPermissions.hasActivityRecognition() && com.stepup.android.ui.StepPermissions.hasPreciseLocation()) markReady()
             else readyCheck = true
         },
         onCancelReady = { viewModel.setReady(false) },
@@ -289,7 +289,7 @@ fun PartyLobbyScreen(
     )
     if (readyCheck && party.phase == PartyPhase.LOBBY) {
         CrewReadyCheckSheet(
-            locationAllowed = StepPermissions.hasPreciseLocation(context), share = party.myShare, onShare = viewModel::setShare,
+            locationAllowed = com.stepup.android.ui.StepPermissions.hasPreciseLocation(), share = party.myShare, onShare = viewModel::setShare,
             onAllow = {
                 val missing = readyPermissions()
                 if (missing.isEmpty()) {
@@ -456,7 +456,7 @@ fun PartyLobbyContent(
                 if (party.planAtLocal > 0) add(com.stepup.android.ui.screens.home.whenText(party.planAtLocal))
                 when {
                     party.roomMode == com.stepup.android.domain.RoomMode.REMOTE -> add(stringResource(Res.string.d26_room_remote_line))
-                    party.meetPlace != null -> add(stringResource(Res.string.d26_room_meet, party.meetPlace))
+                    party.meetPlace != null -> add(stringResource(Res.string.d26_room_meet, party.meetPlace.orEmpty()))
                 }
             }
             Text(

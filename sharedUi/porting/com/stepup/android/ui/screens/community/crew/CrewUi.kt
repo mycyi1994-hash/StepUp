@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.asImageBitmap
 import kotlinx.coroutines.IO
 import com.stepup.android.ui.components.ButtonState
 import com.stepup.android.ui.components.DangerButton
@@ -66,7 +67,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -228,7 +228,7 @@ internal fun CrewImage(card: CrewCard, size: Dp, radius: Dp, modifier: Modifier 
     var bitmap by remember(card.id) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(card.id, card.imageVer, card.hasImage) {
         bitmap = if (!card.hasImage) null else runCatching {
-            AppServices.crewCards.images.bitmap(card.id, card.imageVer)?.asImageBitmap()
+            com.stepup.android.core.AppServices.crewImage(card.id, card.imageVer)?.asImageBitmap()
         }.getOrNull()
     }
     CrewImageFace(card.name, card.bg, bitmap, size, radius, modifier.testTag("crew-image"), textSize)

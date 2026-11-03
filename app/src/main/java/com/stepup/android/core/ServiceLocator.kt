@@ -541,7 +541,7 @@ object ServiceLocator {
         placeSearch = com.stepup.android.data.repo.PlaceSearch(
             api = com.stepup.android.data.remote.androidPlaceSearchApi(),
             platform = com.stepup.android.data.repo.AndroidGeocoder(app),
-            language = com.stepup.android.data.repo::placeSearchLanguage,
+            language = { com.stepup.android.data.repo.placeSearchLanguage() },
         )
         courseRepository = CourseRepository(
             dao = database.courseDao(),

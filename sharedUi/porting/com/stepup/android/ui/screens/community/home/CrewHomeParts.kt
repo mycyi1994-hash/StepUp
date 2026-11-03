@@ -4,7 +4,6 @@ import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
 import com.stepup.android.domain.minusDaysKx
 import com.stepup.android.core.format
-import kotlinx.datetime.toJavaZoneId
 import com.stepup.android.domain.localDate
 import com.stepup.android.domain.todayIn
 import kotlinx.datetime.number
@@ -114,7 +113,7 @@ internal fun homeShortDate(day: LocalDate): String {
 internal fun localDay(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): LocalDate = (millis).localDate(zone)
 
 internal fun homeClock(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
-    kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone.toJavaZoneId()).time.formatPattern("HH:mm", androidx.compose.ui.text.intl.Locale.current.language)
+    kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone).time.formatPattern("HH:mm", androidx.compose.ui.text.intl.Locale.current.language)
 
 /** 모임 날짜 — 오늘 · 내일 · "9월 30일" */
 @Composable

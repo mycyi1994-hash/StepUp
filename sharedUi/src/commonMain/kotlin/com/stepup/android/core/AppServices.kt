@@ -23,6 +23,28 @@ object AppServices {
     lateinit var stepRepository: com.stepup.android.data.repo.StepRepository
     lateinit var avatarRepository: com.stepup.android.data.repo.AvatarRepository
     lateinit var notificationRepository: com.stepup.android.data.repo.NotificationRepository
+    lateinit var database: com.stepup.android.data.local.AppDatabase
+    lateinit var crewRepository: com.stepup.android.data.repo.CrewRepository
+    lateinit var communityRepository: com.stepup.android.data.repo.CommunityRepository
+    lateinit var crewHome: com.stepup.android.data.repo.CrewHomeRepository
+    lateinit var runRecordsRepository: com.stepup.android.data.repo.RunRecordsRepository
+    lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
+    lateinit var announcementRepository: com.stepup.android.data.repo.AnnouncementRepository
+    lateinit var rankingRepository: com.stepup.android.data.repo.RankingRepository
+    lateinit var leaderboards: com.stepup.android.data.repo.LeaderboardSource
+    lateinit var courseRepository: com.stepup.android.data.repo.CourseRepository
+    lateinit var eventRepository: com.stepup.android.data.repo.EventRepository
+    lateinit var marketRepository: com.stepup.android.data.repo.MarketRepository
+    lateinit var runningFeedRepository: com.stepup.android.data.repo.RunningFeedRepository
+    lateinit var coachingRepository: com.stepup.android.data.repo.CoachingRepository
+    /** 크루 명함 · 채팅 — 사진은 화면 그림(ImageBitmap)으로 받는다(안드로이드는 Bitmap 을 감싼다) */
+    lateinit var crewCards: com.stepup.android.data.repo.CrewCardRepository<*>
+    lateinit var crewChat: com.stepup.android.data.repo.CrewChatRepository<androidx.compose.ui.graphics.ImageBitmap>
+    /** 크루 대표 사진(화면 그림) — 없거나 못 받으면 null */
+    var crewImage: suspend (crewId: String, version: Int) -> androidx.compose.ui.graphics.ImageBitmap? = { _, _ -> null }
+
+    /** 지금 계정의 기록 주인이 바뀌는 흐름(안드로이드 ServiceLocator.recordingOwnerFlow) */
+    var recordingOwnerFlow: () -> kotlinx.coroutines.flow.Flow<String> = { kotlinx.coroutines.flow.flowOf("") }
 
     lateinit var forgeRepository: com.stepup.android.data.repo.ForgeRepository
 

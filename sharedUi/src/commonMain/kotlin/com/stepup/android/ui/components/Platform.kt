@@ -24,3 +24,13 @@ expect fun rememberCurrentLocation(enabled: Boolean = true): com.stepup.android.
 
 /** 창 그늘 없는 대화 창 — 화면이 직접 뒷면을 그린다(안드로이드는 창 그늘 0 · 시스템 창 겹치기, iOS 는 그늘 없음) */
 expect fun clearDialogProperties(dismissOnClickOutside: Boolean = true): androidx.compose.ui.window.DialogProperties
+
+/** 안드로이드 Bitmap.asImageBitmap() 자리 — 공용 저장소의 사진은 이미 화면 그림이다(옮긴 화면 코드가 그대로 부른다) */
+fun androidx.compose.ui.graphics.ImageBitmap.asImageBitmap(): androidx.compose.ui.graphics.ImageBitmap = this
+
+/**
+ * Composable 밖에서 글자 하나(안드로이드 context.getString 자리) — 공유 글 · 알림처럼 누르는 순간 만드는 글자.
+ * 글자 표는 앱이 이미 읽어 둔 것이라 기다림이 없다.
+ */
+fun stringNow(res: org.jetbrains.compose.resources.StringResource, vararg args: Any): String =
+    kotlinx.coroutines.runBlocking { org.jetbrains.compose.resources.getString(res, *args) }

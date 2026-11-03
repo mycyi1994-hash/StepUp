@@ -25,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.heading
@@ -65,8 +64,7 @@ fun StoryMapScreen(
     @Suppress("UNUSED_PARAMETER") onPlaceFeed: () -> Unit = onBack,
 ) {
     val t = runTone()
-    val context = LocalContext.current
-    val allowed = StepPermissions.hasLocation(context)
+    val allowed = com.stepup.android.ui.StepPermissions.hasLocation()
     val here = rememberCurrentLocation(enabled = allowed)
     LaunchedEffect(here, allowed) { viewModel.onLocation(here, allowed) }
     val origin by viewModel.origin.collectAsStateWithLifecycle()

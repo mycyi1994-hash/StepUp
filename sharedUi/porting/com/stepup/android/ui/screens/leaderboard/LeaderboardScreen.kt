@@ -1,7 +1,7 @@
 package com.stepup.android.ui.screens.leaderboard
 
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.toJavaZoneId
+import com.stepup.android.ui.components.asImageBitmap
 import kotlinx.datetime.number
 import android.app.Activity
 import androidx.compose.foundation.background
@@ -55,7 +55,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.layout.ContentScale
@@ -546,7 +545,7 @@ private fun LbCrewAvatar(entry: LeaderEntry, size: Dp, radius: Dp, face: Color, 
     var photo by remember(entry.id, entry.photoVersion) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(entry.id, entry.photoVersion) {
         val version = entry.photoVersion ?: return@LaunchedEffect
-        photo = runCatching { AppServices.crewCards.images.bitmap(entry.id, version)?.asImageBitmap() }.getOrNull()
+        photo = runCatching { com.stepup.android.core.AppServices.crewImage(entry.id, version)?.asImageBitmap() }.getOrNull()
     }
     val shape = RoundedCornerShape(radius)
     Box(Modifier.size(size).clip(shape).background(face, shape), contentAlignment = Alignment.Center) {
@@ -794,7 +793,7 @@ private fun MyRunsSheet(board: RunnerBoard) {
     val zone = remember(board.period.timezone) { runCatching { TimeZone.of(board.period.timezone) }.getOrDefault(TimeZone.currentSystemDefault()) }
     val dates = DateTimeFormatter.ofPattern(stringResource(Res.string.lb_run_date_pattern), locale)
     board.myRunList.forEachIndexed { i, run ->
-        val day = kotlin.time.Instant.fromEpochMilliseconds(run.startedAt.toEpochMilliseconds()).toLocalDateTime(zone.toJavaZoneId())
+        val day = kotlin.time.Instant.fromEpochMilliseconds(run.startedAt.toEpochMilliseconds()).toLocalDateTime(zone)
         Row(
             Modifier.fillMaxWidth().heightIn(min = 61.dp)
                 .then(if (i < board.myRunList.lastIndex) Modifier.lbDivider(Color(0xFF34516B)) else Modifier)

@@ -2,7 +2,6 @@ package com.stepup.android.ui.screens.community.chat
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
-import kotlinx.datetime.toJavaZoneId
 import com.stepup.android.ui.components.SystemBackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,7 +52,7 @@ import kotlinx.datetime.TimeZone
 private fun noticeDay(millis: Long): String {
     val pattern = stringResource(Res.string.chat_notice_date_pattern)
     return runCatching {
-        kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault().toJavaZoneId()).formatPattern(pattern, androidx.compose.ui.text.intl.Locale.current.language)
+        kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault()).formatPattern(pattern, androidx.compose.ui.text.intl.Locale.current.language)
     }.getOrDefault("")
 }
 

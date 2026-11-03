@@ -2,10 +2,7 @@ package com.stepup.android.ui.screens.records
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.plusDaysKx
-import com.stepup.android.core.toJavaYearMonth
 import kotlinx.datetime.toJavaDayOfWeek
-import kotlinx.datetime.toJavaZoneId
-import kotlinx.datetime.toJavaLocalDate
 import com.stepup.android.domain.isAfter
 import com.stepup.android.domain.isBefore
 import androidx.compose.foundation.Canvas
@@ -219,10 +216,10 @@ private fun WindowRow(ui: StatsUi, onPrevious: () -> Unit, onNext: () -> Unit) {
     val label = when (val w = ui.window) {
         is StatWindow.Week -> {
             val sunday = w.monday.plusDaysKx(6)
-            if (sunday.month == w.monday.month) "${day.format(w.monday.toJavaLocalDate())} – ${dayOnly.format(sunday.toJavaLocalDate())}"
-            else "${day.format(w.monday.toJavaLocalDate())} – ${day.format(sunday.toJavaLocalDate())}"
+            if (sunday.month == w.monday.month) "${day.format(w.monday)} – ${dayOnly.format(sunday)}"
+            else "${day.format(w.monday)} – ${day.format(sunday)}"
         }
-        is StatWindow.Month -> rememberFormatter(Res.string.rec_month_pattern).format(w.month.toJavaYearMonth())
+        is StatWindow.Month -> rememberFormatter(Res.string.rec_month_pattern).format(w.month)
     }
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         ArrowButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -311,7 +308,7 @@ private fun EmptyChartMessage(ui: StatsUi, weekly: Boolean) {
                 when {
                     month == null -> stringResource(Res.string.rec_stats_empty_week)
                     month == ui.thisMonth -> stringResource(Res.string.rec_stats_empty_month)
-                    else -> stringResource(Res.string.rec_stats_empty_named_month, monthName.format(month.toJavaYearMonth()))
+                    else -> stringResource(Res.string.rec_stats_empty_named_month, monthName.format(month))
                 },
                 style = runTextStyle(15.sp, t.text, FontWeight.SemiBold, 1.45f), textAlign = TextAlign.Center,
             )
@@ -346,7 +343,7 @@ private fun BarChart(
     val labels = bars.map { bar ->
         if (weekly) bar.first.dayOfWeek.toJavaDayOfWeek().getDisplayName(DateTextStyle.SHORT, locale) else rangeLabel(bar)
     }
-    val spoken = bars.map { bar -> if (weekly) dayFormat.format(bar.first.toJavaLocalDate()) else rangeLabel(bar) }
+    val spoken = bars.map { bar -> if (weekly) dayFormat.format(bar.first) else rangeLabel(bar) }
     val cds = bars.mapIndexed { i, bar ->
         if (bar.future) stringResource(Res.string.rec_bar_future_cd, spoken[i])
         else stringResource(Res.string.rec_bar_cd, spoken[i], km(bar.meters))
@@ -495,7 +492,7 @@ private fun BoxScope.Bar(bar: RunBar, top: Double, chartHeight: androidx.compose
 private fun DayCard(bar: RunBar, weekly: Boolean, runs: List<RunMark>, onOpenRun: (Long) -> Unit, zone: TimeZone) {
     val t = runTone()
     val single = runs.singleOrNull()?.id?.takeIf { it > 0 }
-    val label = if (weekly) rememberFormatter(Res.string.run_rec_day_pattern).format(bar.first.toJavaLocalDate())
+    val label = if (weekly) rememberFormatter(Res.string.run_rec_day_pattern).format(bar.first)
     else stringResource(Res.string.rec_bar_range, bar.first.day, bar.last.day)
     RunCard(
         Modifier.padding(top = 12.dp), padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
@@ -530,7 +527,7 @@ private fun DayCard(bar: RunBar, weekly: Boolean, runs: List<RunMark>, onOpenRun
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        kotlin.time.Instant.fromEpochMilliseconds(mark.startedAt).toLocalDateTime(zone.toJavaZoneId()).let { at ->
+                        kotlin.time.Instant.fromEpochMilliseconds(mark.startedAt).toLocalDateTime(zone).let { at ->
                             if (weekly) time.format(at) else day.format(at) + " " + time.format(at)
                         },
                         style = runTextStyle(15.sp, t.label, FontWeight.SemiBold), modifier = Modifier.weight(1f),
@@ -559,7 +556,7 @@ private fun BestDayCard(best: RunBar) {
                     Text(stringResource(Res.string.run_rec_best_day), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
                 }
                 Text(
-                    rememberFormatter(Res.string.date_month_day).format(best.first.toJavaLocalDate()),
+                    rememberFormatter(Res.string.date_month_day).format(best.first),
                     style = TextStyle(
                         fontFamily = StepUpFonts.sans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
                         fontSize = 32.sp, letterSpacing = (-0.02).em, color = t.text,

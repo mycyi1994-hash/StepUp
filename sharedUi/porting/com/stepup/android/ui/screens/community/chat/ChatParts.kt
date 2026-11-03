@@ -2,7 +2,9 @@ package com.stepup.android.ui.screens.community.chat
 
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.formatPattern
+import com.stepup.android.ui.components.asImageBitmap
 import kotlinx.coroutines.IO
+import com.stepup.android.data.repo.decodeFile
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -56,7 +58,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag

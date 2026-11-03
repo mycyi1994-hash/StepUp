@@ -108,9 +108,9 @@ fun StoryComposeScreen(
     val scope = rememberCoroutineScope()
 
     // 내 주변 — 위치 권한과 위치 기능을 확인한다. 쓸 수 없으면 검색 · 지도로 이어 가게 한다
-    var locationAllowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
+    var locationAllowed by remember { mutableStateOf(com.stepup.android.ui.StepPermissions.hasLocation()) }
     LifecycleResumeEffect(Unit) {
-        locationAllowed = StepPermissions.hasLocation(context)
+        locationAllowed = com.stepup.android.ui.StepPermissions.hasLocation()
         viewModel.onReturn()
         onPauseOrDispose { }
     }
@@ -343,7 +343,7 @@ fun StoryComposeScreen(
             },
             onSettings = {
                 showNoLocation = false
-                if (!StepPermissions.hasLocation(context)) ExternalIntents.openAppSettings()
+                if (!com.stepup.android.ui.StepPermissions.hasLocation()) ExternalIntents.openAppSettings()
                 else ExternalIntents.openLocationSettings()
             },
             onDismiss = { showNoLocation = false },

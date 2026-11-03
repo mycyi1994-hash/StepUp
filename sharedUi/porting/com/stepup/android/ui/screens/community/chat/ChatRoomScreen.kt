@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.community.chat
 
-import kotlinx.datetime.toJavaLocalDate
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -375,7 +374,7 @@ private fun ChatMessages(ui: ChatRoomUi, viewModel: ChatRoomViewModel, actions: 
         ) {
             items(items, key = { it.key }, contentType = { it::class.simpleName }) { item ->
                 when (item) {
-                    is ChatItem.Day -> ChatDayLine(item.day.toJavaLocalDate())
+                    is ChatItem.Day -> ChatDayLine(item.day)
                     is ChatItem.Line -> ChatSystemLine(item.message)
                     is ChatItem.Bubble -> ChatBubbleRow(
                         crewId = viewModel.crewId,

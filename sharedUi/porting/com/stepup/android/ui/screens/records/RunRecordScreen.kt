@@ -1,8 +1,6 @@
 package com.stepup.android.ui.screens.records
 
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.toJavaZoneId
-import kotlinx.datetime.toJavaLocalDate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -149,8 +147,8 @@ fun RunRecordContent(
                     if (subtitle != null) {
                         Text17(subtitle, Modifier.padding(top = 4.dp))
                     }
-                    val date = rememberFormatter(Res.string.run_rec_date_pattern).format(s.startedAt.localDate(zone).toJavaLocalDate())
-                    val time = rememberFormatter(Res.string.rec_time_pattern).format(kotlin.time.Instant.fromEpochMilliseconds(s.startedAt).toLocalDateTime(zone.toJavaZoneId()))
+                    val date = rememberFormatter(Res.string.run_rec_date_pattern).format(s.startedAt.localDate(zone))
+                    val time = rememberFormatter(Res.string.rec_time_pattern).format(kotlin.time.Instant.fromEpochMilliseconds(s.startedAt).toLocalDateTime(zone))
                     androidx.compose.material3.Text(
                         stringResource(Res.string.run_rec_date_time, date, time),
                         style = runTextStyle(14.sp, t.label, FontWeight.Medium),
@@ -275,7 +273,7 @@ private fun RouteCard(session: WalkSessionEntity, route: List<GeoPoint>?, onOpen
 @Composable
 private fun DeleteSheet(session: WalkSessionEntity, deleting: Boolean, onCancel: () -> Unit, onDelete: () -> Unit, zone: TimeZone) {
     val t = runTone()
-    val day = rememberFormatter(Res.string.date_month_day).format(session.startedAt.localDate(zone).toJavaLocalDate())
+    val day = rememberFormatter(Res.string.date_month_day).format(session.startedAt.localDate(zone))
     val subject = listOfNotNull(
         day,
         if (session.distanceMeters > 0) "${km2(session.distanceMeters)}km" else null,

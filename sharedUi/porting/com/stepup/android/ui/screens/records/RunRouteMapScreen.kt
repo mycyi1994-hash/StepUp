@@ -1,6 +1,5 @@
 package com.stepup.android.ui.screens.records
 
-import kotlinx.datetime.toJavaLocalDate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -122,7 +121,7 @@ fun RunRouteMapContent(
 @Composable
 private fun RouteSummary(session: WalkSessionEntity, zone: TimeZone) {
     val t = runTone()
-    val day = rememberFormatter(Res.string.date_month_day).format(session.startedAt.localDate(zone).toJavaLocalDate())
+    val day = rememberFormatter(Res.string.date_month_day).format(session.startedAt.localDate(zone))
     RunCard(
         Modifier.padding(top = 10.dp).semantics(mergeDescendants = true) {}.testTag("route-summary"),
         padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),

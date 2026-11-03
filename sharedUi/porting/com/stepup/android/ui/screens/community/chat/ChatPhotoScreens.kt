@@ -1,5 +1,7 @@
 package com.stepup.android.ui.screens.community.chat
 
+import com.stepup.android.ui.components.asImageBitmap
+import com.stepup.android.data.repo.file
 import com.stepup.android.ui.components.SystemBackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource

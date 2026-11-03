@@ -54,7 +54,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -85,7 +84,6 @@ enum class CrewRegionTarget { LIST, DRAFT }
 @Composable
 fun CrewRegionScreen(viewModel: CrewRegionViewModel, target: CrewRegionTarget, onBack: () -> Unit, onPicked: (CrewArea?) -> Unit) {
     val ink = crewInk()
-    val context = LocalContext.current
     val query by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sheet by rememberSaveable { mutableStateOf(false) }
@@ -100,7 +98,7 @@ fun CrewRegionScreen(viewModel: CrewRegionViewModel, target: CrewRegionTarget, o
         if (target == CrewRegionTarget.LIST) onPicked(null) else locating = true
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (StepPermissions.hasLocation(context)) useHere()
+        if (com.stepup.android.ui.StepPermissions.hasLocation()) useHere()
     }
     LaunchedEffect(locating) {
         if (!locating) return@LaunchedEffect
@@ -159,7 +157,7 @@ fun CrewRegionScreen(viewModel: CrewRegionViewModel, target: CrewRegionTarget, o
                 Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape).background(ink.secondaryButton, shape)
                     .border(1.5.dp, Color(0xFF2E6BE6), shape)
                     .feedbackClickable(enabled = !locating, role = Role.Button) {
-                        if (StepPermissions.hasLocation(context)) useHere() else sheet = true
+                        if (com.stepup.android.ui.StepPermissions.hasLocation()) useHere() else sheet = true
                     }
                     .padding(horizontal = 16.dp)
                     .testTag("crew-region-here"),

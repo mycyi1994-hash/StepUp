@@ -41,7 +41,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -68,12 +67,11 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var denied by rememberSaveable { mutableStateOf(false) }
     val region by AppServices.userPrefs.storyRegion.collectAsState(initial = null)
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (StepPermissions.hasLocation(context)) {
+        if (com.stepup.android.ui.StepPermissions.hasLocation()) {
             // 내 위치로 본다 — 고른 지역을 푼다
             scope.saveRegionThen(null, onBack)
         } else {
@@ -81,7 +79,7 @@ fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
         }
     }
     val useLocation = {
-        if (StepPermissions.hasLocation(context)) {
+        if (com.stepup.android.ui.StepPermissions.hasLocation()) {
             scope.saveRegionThen(null, onBack)
             Unit
         } else {
@@ -112,7 +110,6 @@ fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
 @Composable
 fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
     val t = runTone()
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
     var result by remember { mutableStateOf<PlaceSearchResult?>(null) }
@@ -127,7 +124,7 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
         searching = false
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (StepPermissions.hasLocation(context)) scope.saveRegionThen(null, onChosen)
+        if (com.stepup.android.ui.StepPermissions.hasLocation()) scope.saveRegionThen(null, onChosen)
     }
     Column(Modifier.fillMaxSize().imePadding().testTag("story-region")) {
         StoryHeader(stringResource(Res.string.story_region_title), onBack)
@@ -147,7 +144,7 @@ fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape).background(t.secondaryFace, shape)
                         .border(1.5.dp, t.cyan, shape).feedbackClickable(role = Role.Button, onClick = {
-                        if (StepPermissions.hasLocation(context)) {
+                        if (com.stepup.android.ui.StepPermissions.hasLocation()) {
                             scope.saveRegionThen(null, onChosen)
                         } else {
                             permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))

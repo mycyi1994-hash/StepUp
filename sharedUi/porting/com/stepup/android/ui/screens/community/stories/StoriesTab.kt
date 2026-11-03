@@ -45,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.stringResource
@@ -100,10 +99,9 @@ fun StoriesTab(
     /** 함께 뛰기 머리의 연필을 누를 때마다 1씩 오른다 — 쓰다 만 글이 있으면 이어 쓰기부터 묻는다(아래 큰 글쓰기 버튼 대신) */
     writeRequest: Int = 0,
 ) {
-    val context = LocalContext.current
-    var allowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
+    var allowed by remember { mutableStateOf(com.stepup.android.ui.StepPermissions.hasLocation()) }
     LifecycleResumeEffect(Unit) {
-        allowed = StepPermissions.hasLocation(context)
+        allowed = com.stepup.android.ui.StepPermissions.hasLocation()
         onPauseOrDispose { }
     }
     val here = rememberCurrentLocation(enabled = allowed)
@@ -139,7 +137,7 @@ fun StoriesTab(
     var denied by rememberSaveable { mutableStateOf(false) }
     var askClosed by rememberSaveable { mutableStateOf(false) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        allowed = StepPermissions.hasLocation(context)
+        allowed = com.stepup.android.ui.StepPermissions.hasLocation()
         denied = !allowed
     }
     val askLocation = {

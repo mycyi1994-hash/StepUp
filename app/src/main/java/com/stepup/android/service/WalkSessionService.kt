@@ -133,7 +133,7 @@ data class StartGroup(val group: RunGroup, val crewId: String, val name: String)
          */
         fun of(room: com.stepup.android.data.repo.PartyState, name: String): StartGroup = when {
             room.flashPostId != null -> StartGroup(RunGroup.FLASH, "", name.trim().take(NAME_MAX))
-            !room.crewId.isNullOrBlank() -> StartGroup(RunGroup.CREW, room.crewId, name.trim().take(NAME_MAX))
+            !room.crewId.isNullOrBlank() -> StartGroup(RunGroup.CREW, room.crewId.orEmpty(), name.trim().take(NAME_MAX))
             else -> NONE
         }
     }

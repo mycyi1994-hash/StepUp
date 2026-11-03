@@ -1,7 +1,5 @@
 package com.stepup.android.ui.screens.records
 
-import com.stepup.android.core.toJavaYearMonth
-import kotlinx.datetime.toJavaLocalDate
 import com.stepup.android.domain.todayIn
 import kotlinx.datetime.minusMonth
 import kotlinx.datetime.yearMonth
@@ -225,7 +223,7 @@ fun RecordsContent(
 @Composable
 private fun periodLabel(period: RecordPeriod): String = when (period) {
     RecordPeriod.All -> stringResource(Res.string.rec_period_all)
-    is RecordPeriod.Month -> rememberFormatter(Res.string.rec_month_pattern).format(period.month.toJavaYearMonth())
+    is RecordPeriod.Month -> rememberFormatter(Res.string.rec_month_pattern).format(period.month)
 }
 
 /** 기간 알약 — 파란 면 · 흰 글자 · ▾. 누르는 곳은 48dp(알약은 그 안에) */
@@ -272,7 +270,7 @@ private fun Summary(period: RecordPeriod, totals: RecordTotals, thisMonth: YearM
             when (period) {
                 RecordPeriod.All -> stringResource(Res.string.run_rec_sum_all)
                 is RecordPeriod.Month -> if (period.month == thisMonth) stringResource(Res.string.run_rec_sum_month)
-                else stringResource(Res.string.run_rec_sum_named, rememberFormatter(Res.string.rec_month_name_pattern).format(period.month.toJavaYearMonth()))
+                else stringResource(Res.string.run_rec_sum_named, rememberFormatter(Res.string.rec_month_name_pattern).format(period.month))
             },
             style = runTextStyle(15.sp, t.label, FontWeight.SemiBold),
         )
@@ -305,7 +303,7 @@ private fun RecordRow(
 ) {
     val t = runTone()
     val date = row.startedAt.localDate(zone)
-    val dateText = rememberFormatter(if (date.year == today.year) Res.string.run_rec_row_date else Res.string.run_rec_row_date_year).format(date.toJavaLocalDate())
+    val dateText = rememberFormatter(if (date.year == today.year) Res.string.run_rec_row_date else Res.string.run_rec_row_date_year).format(date)
     val hasDistance = row.distanceMeters > 0
     RunCard(Modifier.padding(vertical = 5.dp), padding = PaddingValues(8.dp), onClick = onClick, tag = "record-row-${row.id}") {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -487,7 +485,7 @@ fun PeriodSheet(
                 pending = RecordPeriod.All
             }
             months.forEach { month ->
-                PeriodChoice(monthFormat.format(month.toJavaYearMonth()), pending == RecordPeriod.Month(month), "period-month-$month") {
+                PeriodChoice(monthFormat.format(month), pending == RecordPeriod.Month(month), "period-month-$month") {
                     pending = RecordPeriod.Month(month)
                 }
             }

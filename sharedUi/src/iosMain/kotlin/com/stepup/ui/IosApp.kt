@@ -5,6 +5,7 @@ import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import platform.Foundation.NSBundle
 
@@ -83,6 +84,67 @@ object IosApp {
     val avatars by lazy { com.stepup.android.data.repo.AvatarRepository(prefs, sneakers) }
     val notifications by lazy { com.stepup.android.data.repo.NotificationRepository(db.notificationDao()) }
 
+    // ── 함께 뛰기 · 크루 · 커뮤니티 · 기록(안드로이드 ServiceLocator 와 같은 저장소 · 같은 인자) ──
+    private val crewApi by lazy { com.stepup.android.data.remote.CrewApi(server) }
+    val crewImages by lazy { IosCrewImages(crewApi::image) }
+    val crews by lazy {
+        com.stepup.android.data.repo.CrewRepository(
+            api = crewApi, crewDao = db.crewDao(), crewInfoDao = db.crewInfoDao(), walkSessionDao = db.walkSessionDao(),
+            rewardRepository = rewards, partyApi = com.stepup.android.data.remote.PartyApi(server),
+            shareByDefault = { prefs.partyShareLocation.first() },
+            exitedParties = { prefs.exitedParties.first() },
+            rememberExit = { prefs.addExitedParty(it) },
+            groupRun = { com.stepup.android.data.repo.GroupRunState(IosRunSession.active, IosRunSession.state.value?.paused == true, inGroup = false) },
+        )
+    }
+    private fun ownerFlow() = prefs.loginMethod.map { sessions.recordingOwner() }.distinctUntilChanged()
+    val crewCards by lazy {
+        com.stepup.android.data.repo.CrewCardRepository(
+            api = crewApi, crews = crews, images = crewImages, prefs = prefs,
+            owner = { sessions.recordingOwner() }, ownerFlow = ownerFlow(),
+            draftDir = IosDirs.documents + "/crew_drafts",
+        )
+    }
+    val crewChat by lazy {
+        com.stepup.android.data.repo.CrewChatRepository(
+            api = com.stepup.android.data.remote.CrewChatApi(server), crewApi = crewApi, prefs = prefs,
+            owner = { sessions.recordingOwner() }, photoDir = IosDirs.caches + "/chat_photos", codec = IosChatImageCodec,
+        )
+    }
+    val crewHome by lazy {
+        com.stepup.android.data.repo.CrewHomeRepository(
+            api = com.stepup.android.data.remote.CrewHomeApi(server), owner = { sessions.recordingOwner() },
+            onEnded = { crewId -> crewChat.forget(crewId) },
+        )
+    }
+    val community by lazy {
+        com.stepup.android.data.repo.CommunityRepository(
+            api = com.stepup.android.data.remote.CommunityApi(server), postDao = db.postDao(), commentDao = db.commentDao(),
+            notificationDao = db.notificationDao(), prefs = prefs, owner = { sessions.recordingOwner() }, ownerFlow = ownerFlow(),
+            localRuns = { owner, since ->
+                val dao = db.walkSessionDao()
+                com.stepup.android.domain.StoryLocalRuns(count = dao.countFor(owner), pendingRecent = dao.pendingSince(owner, since) > 0)
+            },
+        )
+    }
+    val coaching by lazy {
+        com.stepup.android.data.repo.CoachingRepository(
+            dao = db.walkSessionDao(), api = com.stepup.android.data.remote.CoachingApi(server),
+            cache = com.stepup.android.data.repo.CoachingCacheStore(IosDirs.documents + "/coaching"),
+            owner = ownerFlow(), online = { com.stepup.android.core.hasNetwork() },
+        )
+    }
+    val runRecords by lazy {
+        com.stepup.android.data.repo.RunRecordsRepository(db.walkSessionDao(), ownerFlow(), onDeleted = { record -> coaching.forgetRun(record) })
+    }
+    val placeSearch by lazy {
+        com.stepup.android.data.repo.PlaceSearch(
+            api = com.stepup.android.data.remote.PlaceSearchApi(key = com.stepup.android.ui.components.MapTiles.mapTilerKey, fetch = ::iosDownloadText),
+            platform = null,
+            language = { com.stepup.android.core.AppLocale.tag.ifEmpty { androidx.compose.ui.text.intl.Locale.current.language }.takeIf { it in com.stepup.android.core.AppLocale.SUPPORTED } ?: "ko" },
+        )
+    }
+
     /** 공용 화면이 쓰는 저장소를 채운다(안드로이드 ServiceLocator 와 같은 이름 — AppServices) */
     fun connectServices(onReturnToSignIn: suspend () -> Unit, onSignedOut: () -> Unit) {
         val s = com.stepup.android.core.AppServices
@@ -94,6 +156,33 @@ object IosApp {
         s.stepRepository = steps
         s.avatarRepository = avatars
         s.notificationRepository = notifications
+        s.database = db
+        s.crewRepository = crews
+        s.crewCards = crewCards
+        s.crewChat = crewChat
+        s.crewImage = { id, ver -> crewImages.image(id, ver) }
+        s.crewHome = crewHome
+        s.communityRepository = community
+        s.coachingRepository = coaching
+        s.runRecordsRepository = runRecords
+        s.placeSearch = placeSearch
+        s.rankingRepository = com.stepup.android.data.repo.RankingRepository(server)
+        s.leaderboards = com.stepup.android.data.repo.ServerLeaderboardSource(com.stepup.android.data.remote.LeaderboardApi(server))
+        s.courseRepository = com.stepup.android.data.repo.CourseRepository(
+            dao = db.courseDao(), prefs = prefs, rewardRepository = rewards,
+            api = com.stepup.android.data.remote.CourseApi(server), serverEconomy = true,
+        )
+        s.eventRepository = com.stepup.android.data.repo.EventRepository(dao = db.claimedEventDao(), api = com.stepup.android.data.remote.EventApi(server), stepDao = db.stepDao())
+        s.marketRepository = com.stepup.android.data.repo.MarketRepository(
+            api = com.stepup.android.data.remote.MarketApi(server), server = server, sneakerDao = db.sneakerDao(),
+            rewardDao = db.rewardDao(), prefs = prefs, economySync = economySync,
+        )
+        s.runningFeedRepository = com.stepup.android.data.repo.RunningFeedRepository(com.stepup.android.data.remote.RunningFeedApi(server))
+        s.announcementRepository = com.stepup.android.data.repo.AnnouncementRepository(
+            source = com.stepup.android.data.remote.AnnouncementApi(server),
+            cache = com.stepup.android.data.repo.FileAnnouncementCache(IosDirs.documents + "/announcements.json"),
+        )
+        s.recordingOwnerFlow = ::ownerFlow
         s.forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi,
             pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(prefs),
@@ -114,3 +203,9 @@ object IosApp {
         com.stepup.android.core.AppBuild.VERSION_NAME = plist("CFBundleShortVersionString")
     }
 }
+
+/** 장소 찾기 받기(안드로이드 placeSearchDownload 와 같은 6초 · User-Agent) */
+private suspend fun iosDownloadText(url: String): String? = runCatching {
+    val bytes = com.stepup.android.ui.components.fetchTileBytes(url, com.stepup.android.ui.components.MapTiles.userAgent).bytes ?: return null
+    bytes.decodeToString()
+}.getOrNull()
