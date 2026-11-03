@@ -38,6 +38,9 @@ s = re.sub(r"\bMath\.(PI|sin|cos|sqrt|abs|min|max|atan2|hypot)\b", r"kotlin.math
 s = re.sub(r"\n\s*platformStyle = PlatformTextStyle\(includeFontPadding = false\),", "", s)
 if "StepUpFonts." in s and "import com.stepup.android.ui.theme.StepUpFonts" not in s and "import com.stepup.android.ui.theme.*" not in s:
     s = re.sub(r"\n(import [^\n]+\n)", r"\nimport com.stepup.android.ui.theme.StepUpFonts\n\1", s, count=1)
+s = re.sub(r"@(?:androidx\.annotation\.)?StringRes\s+(val |var )?(\w+): Int", r"\1\2: org.jetbrains.compose.resources.StringResource", s)
+s = s.replace("import androidx.annotation.StringRes\n", "")
+s = s.replace("import com.stepup.android.ui.Screen\n", "import com.stepup.android.ui.Screen\n")
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text(s)
 print(f"{src} → {dst}")
