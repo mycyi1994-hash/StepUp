@@ -124,6 +124,18 @@ run_instrumentation() {
   timeout --signal=TERM --kill-after=20s 9m ./gradlew :app:connectedDebugAndroidTest \
     "${runner_args[@]}" \
     -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || result=$?
+  # 묶음 도중 에뮬레이터가 통째로 사라졌으면(검사 실패가 아니라 기기가 없어진 것 — "Expected N tests, received 0") 다시 띄워
+  # 그 묶음을 한 번만 더 돌린다(2026-11-03). 에뮬레이터가 살아 있는 실패는 다시 돌리지 않는다 — 진짜 실패를 가리지 않게.
+  if (( result != 0 )) && ! timeout 10s adb get-state 2>/dev/null | grep -q device; then
+    printf '%s exit=%s (emulator gone — retrying once)\n' "$phase" "$result" >> screen-gallery/phase-results.txt
+    ensure_emulator "$phase-retry"
+    timeout 10s adb shell settings put global hide_error_dialogs 1 || true
+    dismiss_anr_focus "$phase"
+    result=0
+    timeout --signal=TERM --kill-after=20s 9m ./gradlew :app:connectedDebugAndroidTest \
+      "${runner_args[@]}" \
+      -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || result=$?
+  fi
   printf '%s exit=%s\n' "$phase" "$result" >> screen-gallery/phase-results.txt
   if (( result != 0 )); then
     status=$result

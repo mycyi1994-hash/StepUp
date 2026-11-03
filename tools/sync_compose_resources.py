@@ -29,6 +29,8 @@ def normalize(text: str) -> str:
     if text is None:
         return text
     text = text.replace("\\@", "@").replace("\\?", "?")
+    # 안드로이드 글자 탈출 \' \" — Compose 리소스는 \n · \u 만 풀고 이 둘은 그대로 둔다("That\'s" 로 보이던 것)
+    text = text.replace("\\'", "'").replace('\\"', '"')
     if re.search(r"%(?!\d+\$)(?!%)[sd]", text) and not re.search(r"%\d+\$[sd]", text):
         n = 0
 
