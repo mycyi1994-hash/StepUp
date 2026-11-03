@@ -68,7 +68,7 @@ jobs:
           # (효과음 26개를 읽는 중). 손님 커널 기록(-show-kernel)을 남겨 멎는 까닭을 보고, CPU 를 러너만큼(4) 준다(기본 2).
           cores: 4
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none -show-kernel
-          script: bash tools/run_device_qa.sh
+          script: STEPUP_EMULATOR_OPTIONS="-no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none -show-kernel" bash tools/run_device_qa.sh
       # 에뮬레이터가 아무 말 없이 통째로 사라지면(PR #86 Experience QA 38545387775 · 38555432814) 까닭을 남긴다 —
       # 러너 커널이 메모리 부족으로 프로세스를 끝냈는지(OOM), 그때 메모리를 많이 쓰던 프로세스
       - name: Host memory diagnostics
