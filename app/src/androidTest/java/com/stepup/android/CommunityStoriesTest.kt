@@ -188,18 +188,14 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-thumb-301").assertHasClickAction()
         shot("01-list", settle = 1_800)
 
-        // ── 17 범위 — 고르다 닫으면 그대로, "이 범위로 보기"를 눌러야 바뀐다 ───────────
-        tapTag("stories-range")
-        awaitTag("story-range-apply")
-        tapTag("story-range-M500")
-        shot("17-radius")
-        tapTag("story-sheet-close")
+        // ── 17 범위 — UI 최종 통합안(2026-10-25)부터 목록 위 글자 탭(500m · 1km · 3km …)을 누르면 바로 바뀐다(예전 범위 시트 · "이 범위로 보기" 없음)
         // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
         compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
-        tapTag("stories-range")
-        tapTag("story-range-KM3")
-        tapTag("story-range-apply")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        tapTag("stories-range-m500")
+        shot("17-radius")
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "500m"), substring = true)).assertIsDisplayed()
+        tapTag("stories-range-km3")
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "3km"), substring = true)).assertIsDisplayed()
         // 목록 → 상세 → 뒤로: 스크롤 위치와 범위가 그대로다
         openRow(305)
         awaitTag("story-detail")
@@ -394,9 +390,7 @@ class CommunityStoriesTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-toast").fetchSemanticsNodes().isEmpty() }
 
         // 범위를 기본(1km)으로 돌린다 — 빈 목록에 "더 넓은 범위에서 보기"가 보이게
-        tapTag("stories-range")
-        tapTag("story-range-KM1")
-        tapTag("story-range-apply")
+        tapTag("stories-range-km1")
         // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
         compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
 
