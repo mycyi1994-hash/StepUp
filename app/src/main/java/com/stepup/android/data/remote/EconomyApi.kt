@@ -160,6 +160,12 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun setDailyGoal(goal: Int): ServerResult<Int> =
         rpc("profile_set_daily_goal", jsonBody { put("p_goal", goal) }) { it.trim().toIntOrNull() }
 
+    /** 프로필 이름을 서버에 적는다(0084) — 크루장 · 크루원 명단 · 대기실이 이 이름을 보인다. 적힌 이름을 돌려준다 */
+    suspend fun setDisplayName(name: String): ServerResult<String> =
+        rpc("profile_name_set", jsonBody { put("p_name", name) }) { body ->
+            runCatching { serverJson.decodeFromString<String>(body) }.getOrNull()
+        }
+
     /** 오늘 목표 달성 보너스. 서버가 확인한 러닝 걸음으로 판정한다. */
     suspend fun goalClaim(): ServerResult<Double> =
         rpc("goal_claim", "{}") { it.trim().toDoubleOrNull() }

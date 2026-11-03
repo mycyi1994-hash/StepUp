@@ -137,7 +137,7 @@ fun CrewListTab(
         // 지역 · 정렬 줄은 목록 위에 고정(95) — 카드 목록만 넘어간다
         CrewFilterRow(
             place = region?.name ?: hereName,
-            ranged = query.center != null,
+            ranged = CrewRules.ranged(query),
             sort = sort,
             onRegion = { sheet = SHEET_REGION },
             onSort = { sheet = SHEET_SORT },
@@ -331,7 +331,7 @@ private fun CrewFilterRow(place: String?, ranged: Boolean, sort: CrewSort, onReg
                 when {
                     place != null && ranged -> stringResource(R.string.crew_region_near, place)
                     ranged -> stringResource(R.string.crew_region_here)
-                    else -> stringResource(R.string.crew_region_choose)
+                    else -> stringResource(R.string.crew_region_nationwide)
                 },
                 color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),
@@ -560,7 +560,8 @@ private fun CrewRangeSheet(place: String?, manual: Boolean, radius: Int, onPlace
         Spacer(Modifier.height(8.dp))
         CrewChoiceRow {
             CrewRules.RADII.forEach { km ->
-                CrewChoice(stringResource(R.string.crew_range_km, km), picked == km, { picked = km }, Modifier.weight(1f).testTag("crew-range-$km"))
+                val label = if (km == CrewRules.NATIONWIDE) stringResource(R.string.crew_range_nationwide) else stringResource(R.string.crew_range_km, km)
+                CrewChoice(label, picked == km, { picked = km }, Modifier.weight(1f).testTag("crew-range-$km"))
             }
         }
         Spacer(Modifier.height(26.dp))

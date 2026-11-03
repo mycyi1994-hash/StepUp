@@ -2382,7 +2382,7 @@
     <string name="crew_discard_confirm">删除并重新创建</string>
     <string name="crew_region_near">%1$s附近</string>
     <string name="crew_region_here">我附近</string>
-    <string name="crew_region_choose">选择区域</string>
+    <string name="crew_region_nationwide">全国</string>
     <string name="crew_sort_near">距离最近</string>
     <string name="crew_sort_recent">最新招募</string>
     <string name="crew_sort_active">最活跃</string>
@@ -2391,6 +2391,7 @@
     <string name="crew_range_area_none">我的位置</string>
     <string name="crew_range_from_here">距离范围</string>
     <string name="crew_range_km">%1$d公里</string>
+    <string name="crew_range_nationwide">全国</string>
     <string name="crew_range_apply">按此范围查看</string>
     <string name="crew_sort_title">排序方式</string>
     <string name="crew_selected">已选择</string>

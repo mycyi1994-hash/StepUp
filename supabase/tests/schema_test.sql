@@ -9891,6 +9891,24 @@ update public.economy_settings set value = 'false'::jsonb where key = 'waitlist_
 delete from public.waitlist_entries where email in ('worker.ok@gmail.com', 'w1@gmail.com', 'w2@gmail.com', 'w3@gmail.com', 'w4@gmail.com');
 delete from economy.waitlist_attempts;
 
+-- 0084 — 프로필 이름을 서버에도(크루장 · 명단이 따라온다)
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+do $$ begin
+  perform pg_temp.ok(public.profile_name_set('  락페이스클라이밍  ') = '락페이스클라이밍', '앞뒤 공백을 뗀다');
+  perform pg_temp.ok(public.profile_name_set(repeat('가', 30)) = repeat('가', 16), '16자로 자른다');
+  perform pg_temp.ok(public.profile_name_set(E'\t \n') = '러너', '비면 러너');
+  perform public.profile_name_set(E'새\n이름');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select display_name from public.profiles where id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3') = '새이름',
+    '제어 문자를 빼고 프로필에 남는다');
+end $$;
+set role anon;
+call pg_temp.must_fail($q$ select public.profile_name_set('x') $q$, '로그인 없이는 이름을 못 바꾼다');
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

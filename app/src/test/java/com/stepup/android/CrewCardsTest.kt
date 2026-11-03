@@ -139,6 +139,18 @@ class CrewCardsTest {
         assertEquals(5, CrewRules.visible(listOf(far, mid, near, noPlace, mine), CrewListQuery(null)).size)
     }
 
+    @Test fun `전국이 기본 — 위치가 있어도 모든 크루, 가까운 순 정렬 · 위치 없는 크루는 끝`() {
+        val here = GeoPoint(37.5446, 126.9515)
+        val near = card("near", lat = 37.5460, lng = 126.9500)
+        val busan = card("busan", lat = 35.1796, lng = 129.0756)
+        val noPlace = card("noplace")
+        assertEquals(CrewRules.NATIONWIDE, CrewListQuery().radiusKm)
+        val visible = CrewRules.visible(listOf(noPlace, busan, near), CrewListQuery(here, sort = CrewSort.NEAR))
+        assertEquals(listOf("near", "busan", "noplace"), visible.map { it.id })
+        assertEquals(false, CrewRules.ranged(CrewListQuery(here)))
+        assertEquals(true, CrewRules.ranged(CrewListQuery(here, 3)))
+    }
+
     @Test fun `정렬 — 활동 많은 순은 이번 주 거리, 최근 모집순은 모집 시작 시각`() {
         val a = card("a", weekKm = 10.0, changedAt = 3)
         val b = card("b", weekKm = 30.0, changedAt = 1)

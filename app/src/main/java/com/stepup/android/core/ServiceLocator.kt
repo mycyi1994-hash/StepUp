@@ -229,7 +229,11 @@ object ServiceLocator {
             appContext.filesDir, com.stepup.android.data.prefs.UserPrefs.AVATAR_FILE, commit = { userPrefs.useCustomAvatar() },
         )
         com.stepup.android.data.repo.ProfileEditor(
-            saveNickname = { userPrefs.setNickname(it) },
+            // 폰에 적고 서버 이름(크루장 · 명단)도 바꾼다 — 서버에 못 닿으면 다음 동기화가 한다
+            saveNickname = {
+                userPrefs.setNickname(it)
+                runCatching { economySync.pushNickname() }
+            },
             saveAvatarId = { userPrefs.setAvatarId(it) },
             savePhotoFile = { open -> photos.save(open) },
             scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate),

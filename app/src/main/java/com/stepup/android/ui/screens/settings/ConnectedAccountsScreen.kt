@@ -355,6 +355,9 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
     ServiceLocator.userPrefs.clearGoalAttempts()
     ServiceLocator.userPrefs.clearShoeNicknames()
+    // 프로필 이름도 — 다음 계정의 서버 이름으로 올라가지 않게(서버의 이 계정 이름은 그대로)
+    ServiceLocator.userPrefs.setNickname("")
+    ServiceLocator.userPrefs.setNicknameSynced(null)
     // 업적 최고값(계정마다)도 이 폰에서 지운다
     ServiceLocator.userPrefs.clearAchievementBest()
     ServiceLocator.userPrefs.setRunExperience(null)

@@ -73,6 +73,7 @@ class UserPrefs(
         val ENERGY_CAP_LEVEL = intPreferencesKey("energy_cap_level")
         val RUNNER_UID = stringPreferencesKey("runner_uid")
         val NICKNAME = stringPreferencesKey("nickname")
+        val NICKNAME_SYNCED = stringPreferencesKey("nickname_synced")
 
         // ── 핫글 ──
         /** 이번 주 핫글 목록 (순서 있는 글 id) */
@@ -359,7 +360,8 @@ class UserPrefs(
 
     private fun crewDraftKey(owner: String, key: String) = stringPreferencesKey("crew_draft:$owner:$key")
     private val crewRegionKey = stringPreferencesKey("crew_region")
-    private val crewRadiusKey = intPreferencesKey("crew_radius")
+    // v2(2026-11-03) — 기본이 전국으로 바뀌어 예전 값(기본 3km)은 읽지 않는다
+    private val crewRadiusKey = intPreferencesKey("crew_radius_v2")
     private val crewSortKey = stringPreferencesKey("crew_sort")
 
     fun crewDraft(owner: String, key: String): Flow<com.stepup.android.domain.CrewDraft?> =
@@ -383,7 +385,7 @@ class UserPrefs(
         }
     }
 
-    val crewRadius: Flow<Int> = store.data.map { prefs -> prefs[crewRadiusKey] ?: 3 }
+    val crewRadius: Flow<Int> = store.data.map { prefs -> prefs[crewRadiusKey] ?: com.stepup.android.domain.CrewRules.NATIONWIDE }
 
     suspend fun setCrewRadius(km: Int) {
         store.edit { it[crewRadiusKey] = km }
@@ -474,6 +476,13 @@ class UserPrefs(
     suspend fun setNickname(name: String) {
         val cleaned = name.trim().take(NICKNAME_MAX)
         store.edit { it[Keys.NICKNAME] = cleaned }
+    }
+
+    /** 서버에 마지막으로 적은 이름 — "계정:이름". 다르면 다음 동기화 때 다시 적는다(0084) */
+    suspend fun nicknameSynced(): String? = store.data.map { it[Keys.NICKNAME_SYNCED] }.first()
+
+    suspend fun setNicknameSynced(mark: String?) {
+        store.edit { if (mark == null) it.remove(Keys.NICKNAME_SYNCED) else it[Keys.NICKNAME_SYNCED] = mark }
     }
 
     suspend fun setAvatarId(id: Int) {
