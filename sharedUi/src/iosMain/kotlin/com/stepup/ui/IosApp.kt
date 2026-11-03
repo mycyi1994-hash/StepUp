@@ -26,6 +26,13 @@ object IosApp {
         com.stepup.android.ui.components.MapTiles.mapTilerKey = plist("StepUpMapTilerKey")
         val version = plist("CFBundleShortVersionString")
         com.stepup.android.ui.components.MapTiles.userAgent = "StepUp/$version (iOS; +https://stepupcrew.com)"
+        com.stepup.android.ui.components.MapTiles.disk = object : com.stepup.android.ui.components.TileDisk {
+            private val root = IosDirs.caches + "/tiles"
+            override fun read(path: String): ByteArray? = com.stepup.android.ui.components.readFileBytes("$root/$path")
+            override fun write(path: String, bytes: ByteArray) {
+                com.stepup.android.ui.components.writeFileBytes("$root/$path", bytes)
+            }
+        }
     }
 
     val sessionStore by lazy { KeychainSessionStore() }

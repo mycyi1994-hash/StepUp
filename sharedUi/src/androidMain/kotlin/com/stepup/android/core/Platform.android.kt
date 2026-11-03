@@ -37,11 +37,22 @@ actual fun applyAppLanguage(tag: String): Boolean {
     }
 }
 
+/**
+ * 프로세스 기본 언어(Locale · LocaleList 기본값)를 앱 언어로 — 공용 화면의 글자(Compose 리소스)는 이 값(Compose Locale.current)으로
+ * 언어를 고른다. 안드로이드 13+ 의 앱 언어(LocaleManager)는 화면 리소스만 바꾸고 이 값을 바로 바꾸지 않아, 화면이 기기 언어로 남았다.
+ * 빈 태그면 기기 언어.
+ */
+fun setProcessLocale(tag: String) {
+    val locale = if (tag.isEmpty()) systemLocale() else Locale.forLanguageTag(tag)
+    Locale.setDefault(locale)
+    LocaleList.setDefault(LocaleList(locale))
+}
+
 /** 안드로이드 13 미만 — 프로세스 기본 언어와 앱 리소스 언어를 바꾼다(앱이 켜질 때 · 바꿀 때) */
 @Suppress("DEPRECATION")
 fun applyLanguageToProcess(context: Context, tag: String) {
     val locale = if (tag.isEmpty()) systemLocale() else Locale.forLanguageTag(tag)
-    Locale.setDefault(locale)
+    setProcessLocale(tag)
     val resources = context.applicationContext.resources
     val config = Configuration(resources.configuration)
     config.setLocale(locale)

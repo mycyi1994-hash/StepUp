@@ -174,7 +174,7 @@ class CommunityStoriesTest {
 
         // ── 01 목록 · 02 펼침 ─────────────────────────────────────────
         awaitTag("story-row-301")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        compose.assertDisplayedOrExplain(androidx.compose.ui.test.hasText(context.getString(R.string.story_range_from_region, "1km")), "story range line")
         // UI 최종 통합안(2026-10-25) — 큰 제목 대신 목록 위 "여의도동 · 지역에서 1km" 한 줄(누르면 지역 바꾸기)
         compose.onNode(hasTestTag("stories-area") and hasText("여의도동", substring = true)).assertIsDisplayed()
         // 1km 밖(샛강, 약 1.05km)과 번개 글은 목록에 없다 — 끝(장소 없는 이전 글)까지 내려가 확인한다

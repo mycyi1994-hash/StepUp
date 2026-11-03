@@ -21,6 +21,8 @@ object AndroidLocale {
     fun bootstrap(context: Context, saved: String) {
         AppLocale.bootstrap(saved)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) applyLanguageToProcess(context, AppLocale.tag)
+        // 공용 화면 글자는 프로세스 기본 언어로 고른다 — 13+ 도 앱 언어로 맞춘다
+        else setProcessLocale(AppLocale.tag)
     }
 
     /** 시스템이 기억하고 있는 값을 읽어 언어를 맞춘다 (API 33+ 전용) */
@@ -28,6 +30,7 @@ object AndroidLocale {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         val locales = context.getSystemService(LocaleManager::class.java)?.applicationLocales
         AppLocale.bootstrap(locales?.takeIf { !it.isEmpty }?.get(0)?.language.orEmpty())
+        setProcessLocale(AppLocale.tag)
     }
 
     /** 액티비티가 붙기 전 베이스 컨텍스트를 선택한 언어로 감싼다 (API 33 미만) */

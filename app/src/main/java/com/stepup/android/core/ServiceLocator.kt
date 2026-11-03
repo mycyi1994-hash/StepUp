@@ -323,6 +323,19 @@ object ServiceLocator {
      * 검사가 저장소를 바꾸면(use…ForTest) 다시 부른다.
      */
     fun connectAppServices() {
+        // 빌드 판 값 — 공용 화면은 BuildConfig 대신 AppBuild 를 본다(WEB3 · 지갑 주소 연결 · 시험 도구 · 판 이름)
+        AppBuild.WEB3 = com.stepup.android.BuildConfig.WEB3
+        AppBuild.WALLET_LINK = com.stepup.android.BuildConfig.WALLET_LINK
+        AppBuild.WALLET_LINK_URL = com.stepup.android.BuildConfig.WALLET_LINK_URL
+        AppBuild.WALLET_URL = com.stepup.android.BuildConfig.WALLET_URL
+        AppBuild.TEST_TOOLS = com.stepup.android.BuildConfig.TEST_TOOLS
+        AppBuild.VERSION_NAME = com.stepup.android.BuildConfig.VERSION_NAME
+        // 지도 타일 — 예전 MapTiles 와 같은 키 · 앱 이름 · 디스크 캐시(cacheDir/tiles)
+        com.stepup.android.ui.components.MapTiles.mapTilerKey = com.stepup.android.BuildConfig.MAPTILER_KEY.trim()
+        com.stepup.android.ui.components.MapTiles.userAgent =
+            "StepUp/${com.stepup.android.BuildConfig.VERSION_NAME} (Android; +https://stepupcrew.com)"
+        com.stepup.android.ui.components.MapTiles.disk =
+            com.stepup.android.ui.components.AndroidTileDisk(java.io.File(appContext.cacheDir, "tiles"))
         val s = AppServices
         s.userPrefs = userPrefs
         s.rewardRepository = rewardRepository

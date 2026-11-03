@@ -225,7 +225,7 @@ class DesignReferenceTest {
                     capture("$name-chat")
                 }
                 if (s == Scene.ANALYTICS) {
-                    compose.onNodeWithText(korean(R.string.analytics_tab_quarter)).performClick()
+                    compose.clickOrExplain(androidx.compose.ui.test.hasText(korean(R.string.analytics_tab_quarter)), "analytics quarter tab") { it.performClick() }
                     compose.onNode(hasText(korean(R.string.analytics_tab_quarter)) and isSelected()).assertExists()
                     capture("$name-quarter")
                 }
@@ -235,7 +235,7 @@ class DesignReferenceTest {
                 }
                 if (s == Scene.COURSES) {
                     // 글자 탭(코스 선택 · 코스 만들기 · 코스 게시판) — 같은 글의 화면 제목과 가르려고 누를 수 있는 것만
-                    compose.onNode(hasText(korean(R.string.courses_make)) and hasClickAction()).performClick()
+                    compose.clickOrExplain(hasText(korean(R.string.courses_make)) and hasClickAction(), "courses make tab") { it.performClick() }
                     capture("$name-make")
                     compose.onNode(hasText(korean(R.string.courses_board)) and hasClickAction()).performClick()
                     capture("$name-board")
