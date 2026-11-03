@@ -154,6 +154,19 @@ s = s.replace("import androidx.annotation.VisibleForTesting\n", "")
 s = re.sub(r"@VisibleForTesting(?:\([^)]*\))?\s*", "", s)
 s = re.sub(r"(?:java\.util\.)?UUID\.randomUUID\(\)\.toString\(\)", "com.stepup.android.domain.randomUuid()", s)
 s = s.replace("import java.util.UUID\n", "")
+# 서버 시각 · 시간대 · ISO 주
+s = s.replace("import java.time.OffsetDateTime\n", "")
+s = re.sub(r"(?:java\.time\.)?OffsetDateTime\.parse\(", "kotlin.time.Instant.parse(", s)
+s = s.replace("import kotlinx.datetime.toKotlinInstant\n", "")
+s = re.sub(r"\.toKotlinInstant\(\)", "", s)
+s = re.sub(r'(?:java\.time\.)?ZoneId\.of\("Asia/Seoul"\)', "com.stepup.android.domain.KST", s)
+s = re.sub(r"(?:java\.time\.)?ZoneId\.of\(", "kotlinx.datetime.TimeZone.of(", s)
+s = re.sub(r"\.get\((?:java\.time\.temporal\.)?IsoFields\.WEEK_OF_WEEK_BASED_YEAR\)", ".isoWeekOfWeekBasedYear()", s)
+s = re.sub(r"\.get\((?:java\.time\.temporal\.)?IsoFields\.WEEK_BASED_YEAR\)", ".isoWeekBasedYear()", s)
+s = s.replace("import java.time.temporal.IsoFields\n", "")
+s = s.replace("Analytics.courseShared()", "RepoEvents.sink.courseShared()")
+s = re.sub(r"(kotlin\.time\.Instant\.parse\([^()]*\))\.toInstant\(\)", r"\1", s)
+s = re.sub(r"(->|<|,)\s*(?:java\.time\.)?ZoneId\b(?!\.)", r"\1 kotlinx.datetime.TimeZone", s)
 # 저장소는 공용 AppServices 에서(안드로이드 ServiceLocator 의 화면 쪽 자리)
 s = s.replace("import com.stepup.android.core.ServiceLocator\n", "import com.stepup.android.core.AppServices\n")
 s = re.sub(r"\b(?:com\.stepup\.android\.core\.)?ServiceLocator\.", "AppServices.", s)
@@ -219,7 +232,7 @@ def _spec_expr(flag_group, zero, prec, conv, arg):
 def _formats(text):
     """\"…%.2f km\".format(x) 처럼 String.format 꼴 → 공용 함수를 쓴 글자 틀(Platform.kt — 안드로이드와 같은 글자)"""
     out, pos = [], 0
-    pat = re.compile(r'"((?:[^"\\$]|\\.)*%(?:[^"\\]|\\.)*)"\.format\(')
+    pat = re.compile(r'"((?:[^"\\]|\\.)*%(?:[^"\\]|\\.)*)"\.format\(')
     while True:
         m = pat.search(text, pos)
         if not m: out.append(text[pos:]); break
@@ -227,9 +240,10 @@ def _formats(text):
         if end < 0: out.append(text[pos:]); break
         fmt = m.group(1)
         args = _split_args(text[m.end():end - 1])
+        if args and re.fullmatch(r"(?:java\.util\.)?Locale\.\w+(?:\(\))?", args[0]): args = args[1:]
         pieces, k, ok, last = [], 0, True, 0
         for sm in _SPEC.finditer(fmt):
-            pieces.append(fmt[last:sm.start()].replace("$", "\\$"))
+            pieces.append(fmt[last:sm.start()])
             last = sm.end()
             idx, group, zero, prec, conv = sm.groups()
             if conv == "%": pieces.append("%"); continue
@@ -239,7 +253,7 @@ def _formats(text):
             e = _spec_expr(group, zero, prec, conv, args[ai])
             if e is None: ok = False; break
             pieces.append("${" + e + "}")
-        pieces.append(fmt[last:].replace("$", "\\$"))
+        pieces.append(fmt[last:])
         if not ok or "%" in "".join(p for p in pieces if not p.startswith("${")).replace("%", "", fmt.count("%%")):
             out.append(text[pos:end]); pos = end; continue
         out.append(text[pos:m.start()]); out.append('"' + "".join(pieces) + '"'); pos = end
@@ -278,6 +292,7 @@ _NEED = [
         "com.stepup.android.domain.plusWeeksKx", "com.stepup.android.domain.minusWeeksKx", "com.stepup.android.domain.plusMonthsKx",
         "com.stepup.android.domain.minusMonthsKx", "com.stepup.android.domain.plusYearsKx", "com.stepup.android.domain.minusYearsKx"]),
     (r"\.formatPattern\(", ["com.stepup.android.domain.formatPattern"]),
+    (r"\.isoWeek(?:BasedYear|OfWeekBasedYear)\(", ["com.stepup.android.domain.isoWeekBasedYear", "com.stepup.android.domain.isoWeekOfWeekBasedYear"]),
     (r"\.displayName\(com\.stepup\.android\.domain\.DateNameStyle", ["com.stepup.android.domain.displayName"]),
     (r"\.toLocalDateTime\(", ["kotlinx.datetime.toLocalDateTime"]),
     (r"\.month\.number\b", ["kotlinx.datetime.number"]),

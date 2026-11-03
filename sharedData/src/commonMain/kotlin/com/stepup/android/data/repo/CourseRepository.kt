@@ -15,7 +15,6 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.simplify
 import com.stepup.android.domain.trackDistanceKm
-import com.stepup.android.core.Analytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -196,7 +195,7 @@ class CourseRepository(
                 likes = 0,
                 liked = false,
                 runCount = 0,
-                createdAt = System.currentTimeMillis(),
+                createdAt = com.stepup.android.domain.epochMillis(),
             )
         )
         if (shared) setShared(id, true)
@@ -217,7 +216,7 @@ class CourseRepository(
         }
         if (result !is ServerResult.Ok) return result.asBoardFailure()
         dao.update(entity.copy(shared = shared))
-        if (shared) Analytics.courseShared()
+        if (shared) RepoEvents.sink.courseShared()
         refreshBoard()
         return BoardResult.Ok()
     }
@@ -329,7 +328,7 @@ class CourseRepository(
      * 위를 지난다 — 예전 데모 코스가 한강을 가로지르던 이유다.
      */
     private fun seedCourses(): List<CourseEntity> {
-        val now = System.currentTimeMillis()
+        val now = com.stepup.android.domain.epochMillis()
         return DemoCourses.parks.map { park ->
             val points = park.track()
             val km = points.trackDistanceKm()

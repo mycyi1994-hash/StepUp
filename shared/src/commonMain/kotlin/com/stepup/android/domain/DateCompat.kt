@@ -31,3 +31,11 @@ fun YearMonth.minusYearsKx(n: Number): YearMonth = minus(n.toLong(), DateTimeUni
 fun LocalDate.formatPattern(pattern: String, language: String): String = DatePattern.format(this, pattern, language)
 fun LocalDateTime.formatPattern(pattern: String, language: String): String = DatePattern.format(this, pattern, language)
 fun LocalTime.formatPattern(pattern: String, language: String): String = DatePattern.format(this, pattern, language)
+
+/** IsoFields.WEEK_BASED_YEAR · WEEK_OF_WEEK_BASED_YEAR — 그 주의 목요일이 든 해 · 그 해의 몇째 주(ISO 8601) */
+fun LocalDate.isoWeekBasedYear(): Int = plusDaysKx(4 - (dayOfWeek.ordinal + 1)).year
+
+fun LocalDate.isoWeekOfWeekBasedYear(): Int {
+    val thursday = plusDaysKx(4 - (dayOfWeek.ordinal + 1))
+    return (thursday.dayOfYear - 1) / 7 + 1
+}

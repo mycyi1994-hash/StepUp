@@ -80,7 +80,7 @@ class RunningFeedRepository(private val api: RunningFeedApi) {
         )
         return when (result) {
             is ServerResult.Ok -> {
-                val cached = Cached(result.value, System.currentTimeMillis())
+                val cached = Cached(result.value, com.stepup.android.domain.epochMillis())
                 eventCache[key] = cached
                 ServerResult.Ok(cached)
             }
@@ -107,7 +107,7 @@ class RunningFeedRepository(private val api: RunningFeedApi) {
         )
         return when (result) {
             is ServerResult.Ok -> {
-                val cached = Cached(result.value, System.currentTimeMillis())
+                val cached = Cached(result.value, com.stepup.android.domain.epochMillis())
                 newsCache[key] = cached
                 ServerResult.Ok(cached)
             }
@@ -123,7 +123,7 @@ class RunningFeedRepository(private val api: RunningFeedApi) {
         sourceCache?.takeIf { fresh(it, SOURCE_TTL_MS) }?.let { return ServerResult.Ok(it.value) }
         return when (val result = api.sources()) {
             is ServerResult.Ok -> {
-                sourceCache = Cached(result.value, System.currentTimeMillis())
+                sourceCache = Cached(result.value, com.stepup.android.domain.epochMillis())
                 result
             }
             else -> sourceCache?.let { ServerResult.Ok(it.value) } ?: result
@@ -143,7 +143,7 @@ class RunningFeedRepository(private val api: RunningFeedApi) {
         api.saveNews(id, on).also { if (it is ServerResult.Ok) newsCache.clear() }
 
     private fun fresh(c: Cached<*>, ttl: Long = LIST_TTL_MS): Boolean =
-        System.currentTimeMillis() - c.loadedAtMillis < ttl
+        com.stepup.android.domain.epochMillis() - c.loadedAtMillis < ttl
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> ServerResult<*>.carry(): ServerResult<T> = this as ServerResult<T>

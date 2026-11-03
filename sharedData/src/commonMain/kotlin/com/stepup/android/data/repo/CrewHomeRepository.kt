@@ -186,7 +186,7 @@ class CrewHomeRepository(
 }
 
 /** 서버가 거절한 까닭(raise 의 첫 마디) → 화면이 고를 다음 */
-internal fun homeRejection(reason: String): HomeOutcome<Nothing> = when {
+fun homeRejection(reason: String): HomeOutcome<Nothing> = when {
     reason.contains("crew_not_member") || reason.contains("chat_not_member") -> HomeOutcome.Ended
     reason.contains("meeting_missing") || reason.contains("run_missing") || reason.contains("notice_missing") ||
         reason.contains("번개러닝 글을 찾을 수 없습니다") -> HomeOutcome.Missing

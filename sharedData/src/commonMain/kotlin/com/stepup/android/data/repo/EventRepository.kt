@@ -1,14 +1,13 @@
 package com.stepup.android.data.repo
 
+import com.stepup.android.domain.isoWeekOfWeekBasedYear
+import com.stepup.android.domain.isoWeekBasedYear
 import com.stepup.android.data.local.ClaimedEventDao
 import com.stepup.android.data.local.ClaimedEventEntity
 import com.stepup.android.data.local.StepDao
 import com.stepup.android.data.remote.EventApi
 import com.stepup.android.data.remote.ServerResult
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.temporal.IsoFields
-import java.util.Locale
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -70,7 +69,7 @@ class EventRepository(
     private val api: EventApi,
     private val stepDao: StepDao,
     /** 받는 단위(이번 주)를 세는 시간대 — 서버와 같은 한국 시각 */
-    private val zone: () -> ZoneId = { ZoneId.of(EventApi.SERVER_TIME_ZONE) },
+    private val zone: () -> kotlinx.datetime.TimeZone = { kotlinx.datetime.TimeZone.of(EventApi.SERVER_TIME_ZONE) },
 ) {
 
     /**
@@ -108,7 +107,7 @@ class EventRepository(
             is ServerResult.Ok -> {
                 if (!result.value.isFinite() || result.value <= 0) return EventClaimResult.Failed
                 val recorded = dao.recordPaidClaim(
-                    ClaimedEventEntity(key, System.currentTimeMillis(), result.value), def.id)
+                    ClaimedEventEntity(key, com.stepup.android.domain.epochMillis(), result.value), def.id)
                 if (recorded) EventClaimResult.Paid(result.value) else EventClaimResult.AlreadyClaimed
             }
             is ServerResult.Rejected ->
@@ -117,7 +116,7 @@ class EventRepository(
                     // Do not invent credit. Cross-device/server receipt recovery remains separate work.
                     // 이 줄은 "받음" 표시뿐이다(금액 0, 원장 줄이 아니다 — 금액은 어디에도 보이거나 더해지지 않는다).
                     // 받은 금액은 서버 원장에 있으므로 화면이 잔고를 서버 값으로 다시 받는다.
-                    dao.insert(ClaimedEventEntity(key, System.currentTimeMillis(), 0.0))
+                    dao.insert(ClaimedEventEntity(key, com.stepup.android.domain.epochMillis(), 0.0))
                     EventClaimResult.AlreadyClaimed
                 } else if (result.reason.contains(NOT_FINISHED)) {
                     EventClaimResult.NotFinished
@@ -139,7 +138,7 @@ class EventRepository(
      * 한 번씩 받는 단위의 이름. 주간 도전은 ISO 주마다(`step_surge:2026-W39`),
      * 나머지는 한 번(`night_quest`). 서버의 economy.event_period 와 같은 규칙이다.
      */
-    fun periodKey(def: EventDef, today: LocalDate = LocalDate.now(zone())): String =
+    fun periodKey(def: EventDef, today: LocalDate = com.stepup.android.domain.todayIn(zone())): String =
         eventPeriodKey(def, today)
 
     private companion object {
@@ -153,11 +152,11 @@ class EventRepository(
 }
 
 /** [EventRepository.periodKey] 의 규칙 — 서버의 economy.event_period 와 같다. */
-internal fun eventPeriodKey(def: EventDef, today: LocalDate): String =
+fun eventPeriodKey(def: EventDef, today: LocalDate): String =
     if (def == Events.STEP_SURGE) {
-        val week = today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
-        val year = today.get(IsoFields.WEEK_BASED_YEAR)
-        "${def.id}:%d-W%02d".format(Locale.ROOT, year, week)
+        val week = today.isoWeekOfWeekBasedYear()
+        val year = today.isoWeekBasedYear()
+        "${def.id}:${year}-W${com.stepup.android.domain.zeroPad((week).toLong(), 2)}"
     } else {
         def.id
     }

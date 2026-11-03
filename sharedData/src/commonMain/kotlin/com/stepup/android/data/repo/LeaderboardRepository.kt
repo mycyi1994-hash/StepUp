@@ -1,6 +1,5 @@
 package com.stepup.android.data.repo
 
-import kotlin.time.toKotlinInstant
 import com.stepup.android.data.remote.CrewBoardEntryRow
 import com.stepup.android.data.remote.CrewBoardRow
 import com.stepup.android.data.remote.LeaderboardApi
@@ -16,9 +15,8 @@ import com.stepup.android.domain.LeaderboardMath
 import com.stepup.android.domain.PointScope
 import com.stepup.android.domain.PointsBoard
 import com.stepup.android.domain.RunnerBoard
-import java.time.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
-import java.time.OffsetDateTime
 
 /**
  * 리더보드 세 화면이 기대는 곳(어댑터 경계). 화면은 이 모양만 안다 — 서버 함수 이름 · 응답 칸은 구현이 감춘다.
@@ -62,7 +60,7 @@ private inline fun <R, T> ServerResult<R>.toLoad(map: (R) -> T): LeaderLoad<T> =
 private fun period(start: String, end: String, timezone: String) =
     LeaderPeriod(LocalDate.parse(start.take(10)), LocalDate.parse(end.take(10)), timezone)
 
-internal fun RunnerBoardRow.toBoard(): RunnerBoard = RunnerBoard(
+fun RunnerBoardRow.toBoard(): RunnerBoard = RunnerBoard(
     period = period(weekStart, weekEnd, timezone),
     total = total,
     me = me?.toEntry(),
@@ -73,7 +71,7 @@ internal fun RunnerBoardRow.toBoard(): RunnerBoard = RunnerBoard(
     myKm = myMeters / 1000.0,
     myRuns = myRuns,
     myRunList = myRunList.mapNotNull { run ->
-        runCatching { LeaderRun(run.startedAt.toInstant().toKotlinInstant(), run.meters / 1000.0) }.getOrNull()
+        runCatching { LeaderRun(run.startedAt.toInstant(), run.meters / 1000.0) }.getOrNull()
     },
 )
 
@@ -88,7 +86,7 @@ private fun RunnerRow.toEntry() = LeaderEntry(
     runs = runs,
 )
 
-internal fun CrewBoardRow.toBoard(): CrewBoard = CrewBoard(
+fun CrewBoardRow.toBoard(): CrewBoard = CrewBoard(
     period = period(weekStart, weekEnd, timezone),
     total = total,
     top = top.map { it.toEntry() },
@@ -112,5 +110,5 @@ private fun CrewBoardEntryRow.toEntry() = LeaderEntry(
 /** Postgres 시각("2026-10-16T09:12:00.123+00:00" · "2026-10-16 09:12:00+00") → Instant */
 private fun String.toInstant(): Instant {
     val t = trim().replace(' ', 'T').let { if (Regex("[+-]\\d\\d$").containsMatchIn(it)) "$it:00" else it }
-    return runCatching { OffsetDateTime.parse(t).toInstant() }.getOrElse { Instant.parse(t) }
+    return runCatching { kotlin.time.Instant.parse(t) }.getOrElse { Instant.parse(t) }
 }

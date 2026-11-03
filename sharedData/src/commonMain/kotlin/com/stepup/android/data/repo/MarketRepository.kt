@@ -16,7 +16,6 @@ import com.stepup.android.data.remote.QuoteRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.TradeRow
-import java.time.OffsetDateTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -277,7 +276,7 @@ class MarketRepository(
                     comfort = row.comfort,
                     durability = row.durability,
                     equipped = false,
-                    acquiredAt = System.currentTimeMillis(),
+                    acquiredAt = com.stepup.android.domain.epochMillis(),
                     serverId = row.id,
                 )
             )
@@ -389,7 +388,7 @@ class MarketRepository(
  * 응답을 잃으면(Retry) 번호를 남겨, 같은 거래를 다시 보내면 같은 번호로 간다. 답을 받으면(성공 · 거절 · 로그인 필요)
  * 버린다 — 다음은 새 거래다(잃은 번호도 10분 뒤에는 버린다, [RequestKeys]).
  */
-internal suspend fun <T> RequestKeys.sendOnce(action: String, call: suspend (String) -> ServerResult<T>): ServerResult<T> {
+suspend fun <T> RequestKeys.sendOnce(action: String, call: suspend (String) -> ServerResult<T>): ServerResult<T> {
     val key = keyFor(action)
     return call(key).also { if (it !is ServerResult.Retry) done(action, key) }
 }
@@ -402,5 +401,5 @@ internal suspend fun <T> RequestKeys.sendOnce(action: String, call: suspend (Str
  * 못 읽으면 지금으로 친다 — 시각 하나 때문에 원장 줄을 버릴 이유는 없다.
  */
 private fun String.toMillis(): Long =
-    runCatching { OffsetDateTime.parse(this).toInstant().toEpochMilli() }
-        .getOrElse { System.currentTimeMillis() }
+    runCatching { kotlin.time.Instant.parse(this).toEpochMilliseconds() }
+        .getOrElse { com.stepup.android.domain.epochMillis() }

@@ -6,7 +6,6 @@ import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.NewsItemRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.StepUpServer
-import java.time.OffsetDateTime
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -50,7 +49,7 @@ class NewsRepository(
      */
     suspend fun refresh(kind: String = RUN_EVENT, force: Boolean = false): Boolean {
         val last = prefs.newsFetchedAtNow()
-        val now = System.currentTimeMillis()
+        val now = com.stepup.android.domain.epochMillis()
         if (!force && now - last < REFRESH_EVERY_MS) return false
 
         val result = server.newsItems(kind, LIMIT)
@@ -84,6 +83,6 @@ private fun NewsItemRow.toEntity(kind: String) = NewsItemEntity(
     source = source,
     summary = summary,
     kind = kind,
-    publishedAt = runCatching { OffsetDateTime.parse(publishedAt).toInstant().toEpochMilli() }
-        .getOrElse { System.currentTimeMillis() },
+    publishedAt = runCatching { kotlin.time.Instant.parse(publishedAt).toEpochMilliseconds() }
+        .getOrElse { com.stepup.android.domain.epochMillis() },
 )

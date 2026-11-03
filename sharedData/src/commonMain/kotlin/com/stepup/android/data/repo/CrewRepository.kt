@@ -1330,7 +1330,7 @@ class CrewRepository(
  * 같이 뛰는 방(대기실)과 끊겼다고 볼까 — 이번 차례에 서버에 닿지 못한 보내기 · 물음이 있었으면 바로,
  * 마지막으로 방 상태를 받은 지 [CrewRepository.LINK_LOST_MS] 가 지났으면 물음이 아직 걸려 있어도.
  */
-internal fun partyOffline(missed: Boolean, heardAtMs: Long, nowMs: Long): Boolean =
+fun partyOffline(missed: Boolean, heardAtMs: Long, nowMs: Long): Boolean =
     missed || nowMs - heardAtMs >= CrewRepository.LINK_LOST_MS
 
 /**
@@ -1340,7 +1340,7 @@ internal fun partyOffline(missed: Boolean, heardAtMs: Long, nowMs: Long): Boolea
  *
  * @param previous 앞서 받은 같은 방의 서버 명단(화면 명단에서 잠시 뺀 사람 포함) — [wasPhase] 는 그때의 단계
  */
-internal fun partyDepartures(
+fun partyDepartures(
     previous: List<PartyMember>,
     wasPhase: PartyPhase,
     now: List<PartyMember>,
@@ -1357,7 +1357,7 @@ internal fun partyDepartures(
  * 무언가를 누를 때까지 둔다(출발 뒤까지 남으면 달리는 내내 실패 안내가 남았다). 답을 받지 못한 준비 · 준비 취소([readyTap])는
  * 서버 값이 누른 것과 같으면 닿은 것(답만 잃었다 — 안내 없음), 다르면 닿지 않은 것이다. 연결 · 로그인 안내는 받았으니 푼다.
  */
-internal fun lobbyProblem(
+fun lobbyProblem(
     closed: Boolean,
     phase: PartyPhase,
     before: PartyProblem?,
@@ -1372,18 +1372,18 @@ internal fun lobbyProblem(
 }
 
 /** 지금 상태가 아직 이 대기실(크루 · 번개 글)인가 — 떠났거나(빈 상태) 다른 대기실로 옮겼으면 아니다 */
-internal fun PartyState.inLobby(crewId: String?, flashPostId: Long?): Boolean =
+fun PartyState.inLobby(crewId: String?, flashPostId: Long?): Boolean =
     phase != PartyPhase.IDLE && this.crewId == crewId && this.flashPostId == flashPostId
 
 /**
  * 답을 쓰지 않은 방 열기(기다리는 사이 대기실을 떠났거나 "다시 연결"로 버렸다)가 뒤늦게 [room] 을 내줬다 — 그 방에서 나올까.
  * 같은 대기실에 아직(또는 다시) 있고 그 방을 쓰거나 아직 방을 받기 전이면 둔다 — 같은 대기실은 같은 방을 받는다.
  */
-internal fun leaveLateRoom(now: PartyState, crewId: String?, flashPostId: Long?, room: Long): Boolean =
+fun leaveLateRoom(now: PartyState, crewId: String?, flashPostId: Long?, room: Long): Boolean =
     !now.inLobby(crewId, flashPostId) || (now.partyId ?: room) != room || (now.pickedRoom ?: room) != room
 
 /** [attempt] 번째 나가기가 닿지 않았을 때 다시 보내기까지(ms) — 2초부터 두 배씩, 30초까지 */
-internal fun leaveRetryDelayMs(attempt: Int): Long =
+fun leaveRetryDelayMs(attempt: Int): Long =
     (CrewRepository.LEAVE_RETRY_MS shl (attempt - 1).coerceIn(0, 5)).coerceAtMost(CrewRepository.LEAVE_RETRY_MAX_MS)
 
 /** 서버 줄 → 도메인 모델 */
@@ -1446,7 +1446,7 @@ private fun ServerResult<*>.asJoinProblem(): PartyProblem = when (this) {
     else -> asPartyProblem()
 }
 
-internal fun joinProblem(reason: String): PartyProblem = when {
+fun joinProblem(reason: String): PartyProblem = when {
     reason.contains("room_full") -> PartyProblem.FULL
     reason.contains("room_started") -> PartyProblem.STARTED
     reason.contains("room_closed") -> PartyProblem.CLOSED
@@ -1454,7 +1454,7 @@ internal fun joinProblem(reason: String): PartyProblem = when {
 }
 
 /** 서버 줄 → 열린 대기실(시각은 서버와 이 폰 시계의 차이로 고친다) */
-internal fun PartyRoomRow.toDomain(offsetMs: Long): CrewRoom = CrewRoom(
+fun PartyRoomRow.toDomain(offsetMs: Long): CrewRoom = CrewRoom(
     id = id,
     name = name?.takeIf { it.isNotBlank() }.orEmpty(),
     status = status,

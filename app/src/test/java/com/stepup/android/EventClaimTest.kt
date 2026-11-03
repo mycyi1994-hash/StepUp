@@ -21,7 +21,7 @@ import com.stepup.android.data.repo.EventClaimResult
 import com.stepup.android.data.repo.EventRepository
 import com.stepup.android.data.repo.Events
 import com.stepup.android.data.repo.eventPeriodKey
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -79,9 +79,9 @@ class EventClaimTest {
     @Test
     fun `주간 도전은 ISO 주마다 이름이 바뀐다`() {
         // 2026-09-23 은 ISO 39주, 2027-01-01 은 2026년의 53주다(해가 바뀌어도 주가 이어진다)
-        assertEquals("step_surge:2026-W39", eventPeriodKey(Events.STEP_SURGE, LocalDate.of(2026, 9, 23)))
-        assertEquals("step_surge:2026-W53", eventPeriodKey(Events.STEP_SURGE, LocalDate.of(2027, 1, 1)))
-        assertEquals("night_quest", eventPeriodKey(Events.NIGHT_QUEST, LocalDate.of(2026, 9, 23)))
+        assertEquals("step_surge:2026-W39", eventPeriodKey(Events.STEP_SURGE, LocalDate(2026, 9, 23)))
+        assertEquals("step_surge:2026-W53", eventPeriodKey(Events.STEP_SURGE, LocalDate(2027, 1, 1)))
+        assertEquals("night_quest", eventPeriodKey(Events.NIGHT_QUEST, LocalDate(2026, 9, 23)))
     }
 
     @Test

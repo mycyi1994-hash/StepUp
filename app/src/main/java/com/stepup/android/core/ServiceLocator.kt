@@ -441,6 +441,7 @@ object ServiceLocator {
             override fun postWritten(category: String) = Analytics.postWritten(category)
             override fun flashJoined() = Analytics.flashJoined()
             override fun partyStarted(size: Int) = Analytics.partyStarted(size)
+            override fun courseShared() = Analytics.courseShared()
         }
         crewRepository = CrewRepository(
             api = crewApi,

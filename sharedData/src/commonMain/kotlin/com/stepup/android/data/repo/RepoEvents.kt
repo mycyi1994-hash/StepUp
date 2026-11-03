@@ -10,6 +10,7 @@ interface RepoEventSink {
     fun postWritten(category: String) {}
     fun flashJoined() {}
     fun partyStarted(size: Int) {}
+    fun courseShared() {}
 }
 
 object RepoEvents {

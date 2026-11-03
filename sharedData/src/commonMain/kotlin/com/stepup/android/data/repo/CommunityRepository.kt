@@ -734,7 +734,7 @@ class CommunityRepository(
 }
 
 /** ISO-8601 시각(서버 timestamptz) → epoch 밀리초. 못 읽으면 0. */
-internal fun String?.isoToMillis(): Long =
+fun String?.isoToMillis(): Long =
     this?.let { com.stepup.android.data.remote.isoOffsetMillis(it) } ?: 0L
 
 /** 서버 줄 → 도메인 모델 */
@@ -781,7 +781,7 @@ private fun PostRow.storyRun(): com.stepup.android.domain.StoryRun? {
 }
 
 /** 서버의 기록 칸 → 도메인. 날짜를 못 읽는 줄은 뺀다(지어내지 않는다) */
-internal fun com.stepup.android.data.remote.StoryRunsRow.toDomain(): com.stepup.android.domain.StoryRunOptions? {
+fun com.stepup.android.data.remote.StoryRunsRow.toDomain(): com.stepup.android.domain.StoryRunOptions? {
     val todayDate = runCatching { kotlinx.datetime.LocalDate.parse(today) }.getOrNull() ?: return null
     return com.stepup.android.domain.StoryRunOptions(
         today = todayDate,
@@ -817,7 +817,7 @@ fun CommentRow.toDomain(): Comment = Comment(
 )
 
 /** 서버가 받아 주지 않은 결말을 화면이 쓰는 실패로 */
-internal fun ServerResult<*>.asBoardFailure(): BoardResult.Failed = when (this) {
+fun ServerResult<*>.asBoardFailure(): BoardResult.Failed = when (this) {
     is ServerResult.SignInRequired -> BoardResult.Failed(reason, signIn = true)
     is ServerResult.Rejected -> BoardResult.Failed(reason, rejected = true)
     is ServerResult.Retry -> BoardResult.Failed(reason)
