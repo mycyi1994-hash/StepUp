@@ -25,6 +25,14 @@ object InviteLinks {
     /** 열어야 할 크루. 화면이 열고 나면 [consume] 한다. */
     val pendingCrew: StateFlow<String?> = _pendingCrew
 
+    /**
+     * [pendingCrew] 를 연 뒤 그 크루의 가입 신청 목록까지 열까 — 크루장이 받은 가입 신청 알림(`crew/<id>/requests`, 서버 0086).
+     * [pendingCrew] 보다 먼저 정해 두고 [consume] 이 끈다.
+     */
+    @Volatile
+    var pendingCrewRequests: Boolean = false
+        private set
+
     private val _pendingChat = MutableStateFlow<String?>(null)
 
     /** 열어야 할 크루 채팅 방(크루 id). 화면이 열고 나면 [consumeChat] 한다. */
@@ -54,6 +62,13 @@ object InviteLinks {
         return parts[1].takeIf { UUID.matches(it) }?.lowercase()
     }
 
+    /** 가입 신청 알림이 싣고 온 앱 안 링크(`crew/<id>/requests`)에서 크루 id 를 꺼낸다 — 크루장의 신청 목록으로 간다 */
+    fun crewRequestsIdOfPush(link: String?): String? {
+        val parts = link.orEmpty().trim('/').split('/')
+        if (parts.size != 3 || parts[0] != "crew" || parts[2] != "requests") return null
+        return parts[1].takeIf { UUID.matches(it) }?.lowercase()
+    }
+
     /** 크루 채팅 알림이 싣고 온 앱 안 링크(`crew-chat/<id>`)에서 크루 id 를 꺼낸다. */
     fun chatIdOfPush(link: String?): String? {
         val parts = link.orEmpty().trim('/').split('/')
@@ -69,16 +84,24 @@ object InviteLinks {
             _pendingChat.value = chatId
             return
         }
+        val requestsId = crewRequestsIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK)) ?: crewRequestsIdOfPush(intent.getStringExtra("link"))
+        if (requestsId != null) {
+            pendingCrewRequests = true
+            _pendingCrew.value = requestsId
+            return
+        }
         val crewId = crewIdOf(intent.dataString)
             // 앱이 켜져 있을 때 받은 알림은 PushService 가 이 이름으로 싣는다
             ?: crewIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK))
             // 앱이 꺼져 있을 때는 안드로이드가 알림을 띄우고, 누르면 data 칸이 그대로 온다
             ?: crewIdOfPush(intent.getStringExtra("link"))
             ?: return
+        pendingCrewRequests = false
         _pendingCrew.value = crewId
     }
 
     fun consume() {
+        pendingCrewRequests = false
         _pendingCrew.value = null
     }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,11 +28,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.stringResource
@@ -170,7 +175,9 @@ fun FlashRunCard(
                 color = Slate,
             )
             if (onDelete != null && post.mine) {
-                androidx.compose.material3.IconButton(onClick = onDelete) {
+                var askDelete by remember { mutableStateOf(false) }
+                if (askDelete) PostDeleteConfirmSheet(post, onConfirm = { askDelete = false; onDelete() }, onDismiss = { askDelete = false })
+                androidx.compose.material3.IconButton(onClick = { askDelete = true }) {
                     Icon(Icons.Filled.Delete, stringResource(R.string.post_delete), tint = Silver, modifier = Modifier.size(20.dp))
                 }
             }
@@ -262,6 +269,30 @@ fun FlashRunCard(
     }
 }
 
+/**
+ * 글 지우기 확인 — 휴지통을 한 번 잘못 눌러 글(번개면 모임까지)이 사라지지 않게 한 번 묻는다.
+ * 번개는 참가한 사람 수를 함께 보인다(그 사람들 목록에서도 사라진다).
+ */
+@Composable
+internal fun PostDeleteConfirmSheet(post: Post, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    com.stepup.android.ui.components.RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("post-delete-confirm")) {
+        com.stepup.android.ui.components.RunSheetText(
+            title = stringResource(if (post.isFlash) R.string.fx_flash_delete_title else R.string.fx_post_delete_title),
+            body = if (post.isFlash && post.joinedCount > 1) stringResource(R.string.fx_flash_delete_body, post.joinedCount)
+            else stringResource(R.string.fx_post_delete_body),
+        )
+        Spacer(Modifier.height(20.dp))
+        com.stepup.android.ui.components.DangerButton(
+            stringResource(if (post.isFlash) R.string.fx_flash_cancel_host else R.string.post_delete), onClick = onConfirm,
+            modifier = Modifier.fillMaxWidth().testTag("post-delete-yes"),
+        )
+        Spacer(Modifier.height(10.dp))
+        com.stepup.android.ui.components.SecondaryButton(
+            stringResource(R.string.common_cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
 /** 자유/꿀팁 글 카드 */
 @Composable
 fun TextPostCard(
@@ -282,7 +313,9 @@ fun TextPostCard(
             }
             CategoryChip(post.category)
             if (post.mine && onDelete != null) {
-                androidx.compose.material3.IconButton(onClick = onDelete) {
+                var askDelete by remember { mutableStateOf(false) }
+                if (askDelete) PostDeleteConfirmSheet(post, onConfirm = { askDelete = false; onDelete() }, onDismiss = { askDelete = false })
+                androidx.compose.material3.IconButton(onClick = { askDelete = true }) {
                     Icon(Icons.Filled.Delete, stringResource(R.string.post_delete), tint = Silver, modifier = Modifier.size(20.dp))
                 }
             } else if (!post.mine && onReport != null) {

@@ -29833,6 +29833,195 @@ $$;
 revoke all on function public.attester_waitlist_register(text, boolean, text, text, text) from public, anon;
 grant execute on function public.attester_waitlist_register(text, boolean, text, text, text) to authenticated;
 
+-- ══════════════════════════════════════════════════════════════════
+-- 0084_profile_name.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0084 — 프로필 이름을 서버에도 (2026-11-03)
+--
+--  베타 테스터 피드백 "개인 프로필 이름은 바꿨는데 크루장 이름은 그대로". 앱은 이름을 폰에만 적었고,
+--  크루장 · 크루원 명단 · 대기실 진행자는 서버 profiles.display_name(가입 때의 구글 이름)을 보였다.
+--  앱이 이름을 저장할 때(그리고 예전에 바꿔 둔 이름은 다음 동기화 때 한 번) 이 함수로 서버 이름도 바꾼다.
+--  · 앞뒤 공백을 떼고 제어 문자를 빼고 16자로 자른다(앱 UserPrefs.NICKNAME_MAX 와 같다). 비면 '러너'.
+-- ════════════════════════════════════════════════════════════════════
+
+create or replace function public.profile_name_set(p_name text)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_user uuid := auth.uid();
+  v_name text := left(btrim(regexp_replace(coalesce(p_name, ''), '[[:cntrl:]]', '', 'g')), 16);
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if v_name = '' then
+    v_name := '러너';
+  end if;
+  update public.profiles set display_name = v_name where id = v_user;
+  if not found then
+    insert into public.profiles (id, display_name) values (v_user, v_name)
+    on conflict (id) do update set display_name = excluded.display_name;
+  end if;
+  return v_name;
+end $$;
+
+revoke all on function public.profile_name_set(text) from public, anon;
+grant execute on function public.profile_name_set(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0085_invite_pause.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0085 — 친구 초대 코드(0036) 잠시 멈춤 (2026-11-03)
+--
+--  사용자 결정 "지금은 개인 초대 코드는 비활성화". 베타 동안 입장은 베타 초대 코드(0079 접속 코드)뿐인데
+--  설정 › 친구 초대의 코드(STEP-XXXXXX, 추천 100 SUP)와 헷갈렸다(베타 테스터 피드백).
+--  · 설정 invite_enabled(기본 false) — false 면 invite_redeem 이 새 입력을 받지 않는다. 앱은 설정의 친구 초대 줄을 숨긴다.
+--  · 이미 입력해 둔 사람(invite_redemptions)의 첫 러닝 적립(economy.invite_reward_after_session)은 그대로다.
+--  · 다시 켜려면: select admin_economy_set('invite_enabled', 'true');  (앱은 InviteFeature.ENABLED 도 함께)
+-- ════════════════════════════════════════════════════════════════════
+
+insert into public.economy_settings (key, value) values ('invite_enabled', 'false'::jsonb)
+on conflict (key) do nothing;
+
+create or replace function public.invite_redeem(p_code text)
+returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_code text := upper(regexp_replace(coalesce(p_code, ''), '\s', '', 'g'));
+  v_inviter uuid;
+  v_cfg economy.invite_config;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  -- 0085 — 베타 동안 친구 초대 코드는 받지 않는다(입장은 베타 초대 코드)
+  if not coalesce((select value = 'true'::jsonb from public.economy_settings where key = 'invite_enabled'), false) then
+    raise exception '지금은 친구 초대 코드를 받지 않아요' using errcode = '22023';
+  end if;
+  if v_code !~ '^STEP-' then
+    v_code := 'STEP-' || v_code;
+  end if;
+  select c.user_id into v_inviter from public.invite_codes c where c.code = v_code;
+  if v_inviter is null then
+    raise exception '초대 코드를 찾을 수 없어요' using errcode = 'P0002';
+  end if;
+  if v_inviter = v_user then
+    raise exception '내 초대 코드는 입력할 수 없어요' using errcode = '22023';
+  end if;
+  if exists (select 1 from public.invite_redemptions r where r.invitee = v_user) then
+    raise exception '이미 초대 코드를 입력했어요' using errcode = '23505';
+  end if;
+  -- 서로 맞초대로 두 번 받지 못하게
+  if exists (select 1 from public.invite_redemptions r where r.invitee = v_inviter and r.inviter = v_user) then
+    raise exception '나를 초대한 사람의 코드는 입력할 수 없어요' using errcode = '22023';
+  end if;
+  select * into v_cfg from economy.invite_config where id;
+  if not exists (select 1 from auth.users u where u.id = v_user
+                  and u.created_at > now() - coalesce(v_cfg.redeem_window, interval '7 days')) then
+    raise exception '초대 코드는 가입하고 7일 안에만 입력할 수 있어요' using errcode = '22023';
+  end if;
+  insert into public.invite_redemptions (invitee, inviter) values (v_user, v_inviter);
+  return (select coalesce(p.display_name, '러너') from public.profiles p where p.id = v_inviter);
+end $$;
+revoke all on function public.invite_redeem(text) from public, anon;
+grant execute on function public.invite_redeem(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0086_crew_notify.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0086 — 크루 가입 알림 다듬기 (2026-11-03)
+--
+--  · 신청한 사람에게 결과 푸시(CREW_DECIDED) — 크루장이 승인 · 미승인하면 알린다(예전엔 앱을 다시 열어야 알았다).
+--    값: crew(크루 이름) · approved('1' 승인 / '0' 미승인). 누르면 그 크루(crew/<id>) — 결과 줄은 크루 목록 위에 그대로 있다.
+--    글은 받는 사람의 언어로 push-send 가 짓는다. 알림 설정의 푸시를 끈 사람 · 받을 폰이 없는 사람에게는 적지 않는다(push_enqueue).
+--  · 크루장이 받는 가입 신청 푸시(CREW_REQUEST)는 크루 상세 대신 그 크루의 신청 목록을 연다(crew/<id>/requests).
+--    예전 앱은 이 링크를 모르면 앱만 연다. 예전 링크(crew/<id>)는 앱이 그대로 읽는다.
+--  가입 · 정원 · 신청서 규칙은 0056 그대로다 — 푸시 한 줄만 더했다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- 가입 신청이 들어오면 크루장에게 — 0047 과 같고 링크만 신청 목록으로
+create or replace function public.push_on_crew_request()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner uuid;
+  v_name text;
+begin
+  if new.status <> 'PENDING' then
+    return new;
+  end if;
+  select c.owner_id, c.name into v_owner, v_name from public.crews c where c.id = new.crew_id;
+  if v_owner is not null and v_owner <> new.user_id then
+    perform public.push_enqueue(
+      v_owner, 'CREW_REQUEST',
+      jsonb_build_object('name', public.push_display_name(new.user_id), 'crew', coalesce(v_name, '')),
+      'crew/' || new.crew_id::text || '/requests');
+  end if;
+  return new;
+end;
+$$;
+
+-- 승인 · 미승인 — 0056 과 같고, 정한 뒤 신청한 사람에게 결과 푸시
+create or replace function public.crew_application_decide(p_application bigint, p_approve boolean)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_crew_id uuid;
+  v_crew public.crews%rowtype;
+  v_app public.crew_applications%rowtype;
+  v_count int;
+begin
+  select a.crew_id into v_crew_id from public.crew_applications a where a.id = p_application;
+  if not found then
+    raise exception 'application_missing' using errcode = '22023', detail = '신청서를 찾을 수 없습니다';
+  end if;
+  perform public.crew_lock_owner(v_crew_id);
+  select * into v_crew from public.crews c where c.id = v_crew_id;
+  select * into v_app from public.crew_applications a where a.id = p_application for update;
+  if v_app.status <> 'PENDING' then
+    raise exception 'application_decided' using errcode = '22023', detail = v_app.status;
+  end if;
+
+  select count(*) into v_count from public.crew_members m where m.crew_id = v_crew_id;
+  if coalesce(p_approve, false) then
+    if v_crew.capacity is not null and v_count >= v_crew.capacity then
+      raise exception 'crew_full' using errcode = '22023', detail = '정원이 가득 찼습니다';
+    end if;
+    insert into public.crew_members (crew_id, user_id, role) values (v_crew_id, v_app.user_id, 'MEMBER')
+    on conflict do nothing;
+    update public.crew_applications set status = 'APPROVED', decided_at = now() where id = p_application;
+  else
+    update public.crew_applications set status = 'DECLINED', decided_at = now() where id = p_application;
+  end if;
+
+  -- 0086 — 신청한 사람에게 결과를 알린다(받을 폰이 없거나 푸시를 껐으면 push_enqueue 가 건너뛴다)
+  perform public.push_enqueue(
+    v_app.user_id, 'CREW_DECIDED',
+    jsonb_build_object('crew', coalesce(v_crew.name, ''),
+                       'approved', case when coalesce(p_approve, false) then '1' else '0' end),
+    'crew/' || v_crew_id::text);
+
+  return jsonb_build_object(
+    'status', case when coalesce(p_approve, false) then 'APPROVED' else 'DECLINED' end,
+    'member_count', (select count(*) from public.crew_members m where m.crew_id = v_crew_id),
+    'capacity', v_crew.capacity,
+    'pending_count', (select count(*) from public.crew_applications a where a.crew_id = v_crew_id and a.status = 'PENDING'));
+end;
+$$;
+
 commit;
 
 -- ════════════════════════════════════════════════════════════════════

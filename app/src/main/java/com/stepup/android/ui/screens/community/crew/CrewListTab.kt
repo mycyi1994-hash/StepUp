@@ -22,8 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
@@ -44,6 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,6 +111,9 @@ fun CrewListTab(
     val sort by viewModel.sort.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
+    val search by viewModel.search.collectAsStateWithLifecycle()
+    // 이름 찾기 칸 — 지역 · 정렬 줄의 돋보기로 연다. 닫으면 글자를 비운다
+    var searching by rememberSaveable { mutableStateOf(search.isNotEmpty()) }
     val draft by viewModel.createDraft.collectAsStateWithLifecycle()
     val here = rememberCurrentLocation()
     LaunchedEffect(here) { viewModel.setHere(here) }
@@ -137,11 +144,24 @@ fun CrewListTab(
         // 지역 · 정렬 줄은 목록 위에 고정(95) — 카드 목록만 넘어간다
         CrewFilterRow(
             place = region?.name ?: hereName,
-            ranged = query.center != null,
+            ranged = CrewRules.ranged(query),
             sort = sort,
             onRegion = { sheet = SHEET_REGION },
             onSort = { sheet = SHEET_SORT },
+            searching = searching,
+            onSearch = { if (searching) viewModel.setSearch(""); searching = !searching },
         )
+        if (searching) {
+            CrewTextField(
+                value = search,
+                onValueChange = { viewModel.setSearch(it.replace('\n', ' ')) },
+                placeholder = stringResource(R.string.fx_crew_search_hint),
+                maxChars = 40,
+                minHeight = 48.dp,
+                keyboard = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                modifier = Modifier.padding(horizontal = CrewGutter).padding(bottom = 8.dp).testTag("crew-search-input"),
+            )
+        }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             LazyColumn(
                 Modifier.fillMaxSize().testTag("crew-list-scroll"),
@@ -188,14 +208,22 @@ fun CrewListTab(
                         }
                     }
                     visible.isEmpty() -> item(key = "empty") {
+                        // 이름으로 찾다 비었으면 찾는 글자 탓 — 지역 넓히기 대신 그 안내. 전국이면 더 넓힐 곳이 없어 넓히기를 두지 않는다
+                        val searched = search.isNotBlank()
+                        val widen = !searched && CrewRules.ranged(query)
                         CrewEmptyState(
-                            icon = { CrewStateIcon(Icons.Outlined.Groups) },
-                            title = stringResource(R.string.crew_list_empty_title),
-                            body = stringResource(R.string.crew_list_empty_body),
+                            icon = { CrewStateIcon(if (searched) Icons.Filled.Search else Icons.Outlined.Groups) },
+                            title = stringResource(if (searched) R.string.fx_crew_search_empty_title else R.string.crew_list_empty_title),
+                            body = if (searched) stringResource(R.string.fx_crew_search_empty_body, search.trim())
+                            else stringResource(R.string.crew_list_empty_body),
                             modifier = Modifier.padding(top = 72.dp).testTag("crew-list-empty"),
                         ) {
-                            CrewButton(stringResource(R.string.crew_list_widen), { sheet = SHEET_REGION }, Modifier.testTag("crew-list-widen"))
-                            CrewButton(stringResource(R.string.crew_create_button), { startCreate() }, kind = CrewButtonKind.SECONDARY)
+                            if (widen) CrewButton(stringResource(R.string.crew_list_widen), { sheet = SHEET_REGION }, Modifier.testTag("crew-list-widen"))
+                            // 넓히기가 없으면 만들기가 주 버튼(한 화면에 주 버튼 하나)
+                            CrewButton(
+                                stringResource(R.string.crew_create_button), { startCreate() },
+                                kind = if (widen) CrewButtonKind.SECONDARY else CrewButtonKind.PRIMARY,
+                            )
                         }
                     }
                     else -> items(visible, key = { it.id }) { card ->
@@ -317,7 +345,15 @@ internal const val SHEET_DRAFT_DISCARD = "discard"
 
 /** 지역 · 정렬 줄 — "📍 도화동 주변 ⌄"  "가까운 순 ⌄" (목록 위 고정) */
 @Composable
-private fun CrewFilterRow(place: String?, ranged: Boolean, sort: CrewSort, onRegion: () -> Unit, onSort: () -> Unit) {
+private fun CrewFilterRow(
+    place: String?,
+    ranged: Boolean,
+    sort: CrewSort,
+    onRegion: () -> Unit,
+    onSort: () -> Unit,
+    searching: Boolean,
+    onSearch: () -> Unit,
+) {
     val ink = crewInk()
     Row(Modifier.fillMaxWidth().padding(horizontal = CrewGutter - 4.dp).padding(top = 2.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(
@@ -331,7 +367,7 @@ private fun CrewFilterRow(place: String?, ranged: Boolean, sort: CrewSort, onReg
                 when {
                     place != null && ranged -> stringResource(R.string.crew_region_near, place)
                     ranged -> stringResource(R.string.crew_region_here)
-                    else -> stringResource(R.string.crew_region_choose)
+                    else -> stringResource(R.string.crew_region_nationwide)
                 },
                 color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),
@@ -339,6 +375,15 @@ private fun CrewFilterRow(place: String?, ranged: Boolean, sort: CrewSort, onReg
             Icon(Icons.Filled.KeyboardArrowDown, null, tint = ink.link, modifier = Modifier.padding(start = 4.dp).size(22.dp))
         }
         Spacer(Modifier.weight(0.01f))
+        // 이름 찾기 — 누르면 아래에 찾기 칸이 열리고, 다시 누르면 닫고 비운다
+        val searchLabel = stringResource(if (searching) R.string.fx_crew_search_close else R.string.fx_crew_search_open)
+        Box(
+            Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button, onClick = onSearch)
+                .semantics { contentDescription = searchLabel }.testTag("crew-search"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(if (searching) Icons.Filled.Close else Icons.Filled.Search, null, tint = ink.link, modifier = Modifier.size(22.dp))
+        }
         Row(
             Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button, onClick = onSort)
                 .padding(horizontal = 4.dp).testTag("crew-sort"),
@@ -560,7 +605,8 @@ private fun CrewRangeSheet(place: String?, manual: Boolean, radius: Int, onPlace
         Spacer(Modifier.height(8.dp))
         CrewChoiceRow {
             CrewRules.RADII.forEach { km ->
-                CrewChoice(stringResource(R.string.crew_range_km, km), picked == km, { picked = km }, Modifier.weight(1f).testTag("crew-range-$km"))
+                val label = if (km == CrewRules.NATIONWIDE) stringResource(R.string.crew_range_nationwide) else stringResource(R.string.crew_range_km, km)
+                CrewChoice(label, picked == km, { picked = km }, Modifier.weight(1f).testTag("crew-range-$km"))
             }
         }
         Spacer(Modifier.height(26.dp))

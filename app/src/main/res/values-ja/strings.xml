@@ -2383,7 +2383,7 @@ StepUp と走り出そう。</string>
     <string name="crew_discard_confirm">削除して新しく作る</string>
     <string name="crew_region_near">%1$s周辺</string>
     <string name="crew_region_here">自分の周り</string>
-    <string name="crew_region_choose">エリアを選ぶ</string>
+    <string name="crew_region_nationwide">全国</string>
     <string name="crew_sort_near">近い順</string>
     <string name="crew_sort_recent">新しい募集順</string>
     <string name="crew_sort_active">活動が多い順</string>
@@ -2392,6 +2392,7 @@ StepUp と走り出そう。</string>
     <string name="crew_range_area_none">現在地</string>
     <string name="crew_range_from_here">そこから</string>
     <string name="crew_range_km">%1$dkm</string>
+    <string name="crew_range_nationwide">全国</string>
     <string name="crew_range_apply">この範囲で見る</string>
     <string name="crew_sort_title">並び順</string>
     <string name="crew_selected">選択中</string>

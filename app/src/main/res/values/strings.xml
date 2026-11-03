@@ -2384,7 +2384,7 @@ Start running with StepUp.</string>
     <string name="crew_discard_confirm">Delete and start over</string>
     <string name="crew_region_near">Near %1$s</string>
     <string name="crew_region_here">Near me</string>
-    <string name="crew_region_choose">Choose area</string>
+    <string name="crew_region_nationwide">All regions</string>
     <string name="crew_sort_near">Nearest</string>
     <string name="crew_sort_recent">Newest</string>
     <string name="crew_sort_active">Most active</string>
@@ -2393,6 +2393,7 @@ Start running with StepUp.</string>
     <string name="crew_range_area_none">My location</string>
     <string name="crew_range_from_here">From there</string>
     <string name="crew_range_km">%1$d km</string>
+    <string name="crew_range_nationwide">Nationwide</string>
     <string name="crew_range_apply">Show this range</string>
     <string name="crew_sort_title">Sort by</string>
     <string name="crew_selected">Selected</string>

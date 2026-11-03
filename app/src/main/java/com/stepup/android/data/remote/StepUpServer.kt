@@ -99,6 +99,10 @@ class StepUpServer(
 
     internal val restUrl get() = "${baseUrl.trimEnd('/')}/rest/v1"
 
+    /** 접속 코드 문(0079)이 요청을 막았을 때(403 access_required) 부른다 — 권한을 다시 묻게. 앱이 정한다 */
+    @Volatile
+    var onAccessRequired: (() -> Unit)? = null
+
     /**
      * 러닝 세션을 서버에 기록한다.
      *
@@ -281,7 +285,13 @@ class StepUpServer(
             // 429 는 요청이 몰린 것, 5xx 는 서버 문제 — 둘 다 나중에 다시.
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")
-            else -> ServerResult.Rejected(response.postgrestMessage())
+            else -> {
+                // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다)
+                if (response.status == 403 && response.body.contains("access_required")) {
+                    runCatching { onAccessRequired?.invoke() }
+                }
+                ServerResult.Rejected(response.postgrestMessage())
+            }
         }
     }
 

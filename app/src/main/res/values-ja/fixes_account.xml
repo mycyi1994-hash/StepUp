@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="access_check_again">もう一度確認</string>
+    <string name="beta_code_copied">コピーしました</string>
+    <string name="set_notif_allow">通知を許可</string>
+</resources>

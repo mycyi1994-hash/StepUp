@@ -174,6 +174,8 @@ internal fun FreeRunShoeCheck(
     onWear: (Long, (Boolean) -> Unit) -> Unit,
     onStart: () -> Unit,
     onCancel: () -> Unit,
+    /** 다 닳은 신발의 "수리" — 이 신발의 수리 시트를 연다(null 이면 줄을 두지 않는다) */
+    onRepair: ((Long) -> Unit)? = null,
 ) {
     Dialog(
         onDismissRequest = onCancel,
@@ -182,7 +184,7 @@ internal fun FreeRunShoeCheck(
         // 창이 깔아 주는 회색 대신 시안의 뒷면(#020B16 · 73%)을 직접 그린다
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
         SideEffect { window?.setDimAmount(0f) }
-        FreeRunShoeCheckContent(shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear)
+        FreeRunShoeCheckContent(shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair)
     }
 }
 
@@ -196,6 +198,7 @@ internal fun FreeRunShoeCheckContent(
     shoes: List<Sneaker> = emptyList(),
     wearing: Boolean = false,
     onWear: (Long, (Boolean) -> Unit) -> Unit = { _, _ -> },
+    onRepair: ((Long) -> Unit)? = null,
 ) {
     val reduced = LocalMotion.current.reduced
     // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
@@ -262,7 +265,7 @@ internal fun FreeRunShoeCheckContent(
                     )
                     if (shoe != null) {
                         CheckShoe(shoe, onClick = if (canChange) ({ picking = true }) else null)
-                        CheckShoeFacts(shoe)
+                        CheckShoeFacts(shoe, onRepair = onRepair?.let { repair -> { repair(shoe.id) } }.takeIf { !wearing })
                     } else {
                         CheckNoShoe()
                     }
@@ -326,9 +329,9 @@ private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
     }
 }
 
-/** 이름 줄(등급 · 레벨) · 남은 내구도 막대 · 준비 줄 */
+/** 이름 줄(등급 · 레벨) · 남은 내구도 막대 · 준비 줄. 다 닳았으면 경고 줄 아래 "수리하기"([onRepair]) — 주 버튼은 그대로 하나다 */
 @Composable
-private fun CheckShoeFacts(shoe: Sneaker) {
+private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
     val points = durabilityPercent(shoe)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.run_free_check_equipped), style = checkText(17.sp, Color.White, FontWeight.SemiBold),
@@ -373,6 +376,16 @@ private fun CheckShoeFacts(shoe: Sneaker) {
                 },
                 style = checkText(12.sp, CheckWarnText),
             )
+        }
+        if (worn && onRepair != null) {
+            // 글자 단추 — 경고 줄과 같은 들여쓰기. 큰 버튼을 더하지 않는다(주 행동은 "이 신발로 출발" 하나)
+            Box(
+                Modifier.padding(start = 16.dp, top = 2.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+                    .feedbackClickable(onClick = onRepair).padding(horizontal = 6.dp).testTag("run-shoe-check-repair"),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(stringResource(R.string.care_repair), style = checkText(13.sp, CheckValue, FontWeight.SemiBold), maxLines = 1)
+            }
         }
     } else {
         Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {

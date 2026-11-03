@@ -175,10 +175,10 @@ data class CrewGoalProgress(val goalKm: Int, val doneKm: Double) {
 /** 목록 정렬 */
 enum class CrewSort { NEAR, RECENT, ACTIVE }
 
-/** 목록을 보는 범위 — [center] 가 없으면 모든 크루 */
+/** 목록을 보는 범위 — [center] 가 없거나 [radiusKm] 가 [CrewRules.NATIONWIDE] 면 모든 크루(가까운 순 정렬에는 [center] 를 쓴다) */
 data class CrewListQuery(
     val center: GeoPoint? = null,
-    val radiusKm: Int = 3,
+    val radiusKm: Int = CrewRules.NATIONWIDE,
     val sort: CrewSort = CrewSort.NEAR,
 )
 
@@ -207,8 +207,14 @@ object CrewRules {
     /** 이름 이미지 바탕 네 가지 */
     const val BG_COUNT = 4
 
-    /** 지역 범위 버튼 */
-    val RADII = listOf(1, 3, 5)
+    /** 거리로 거르지 않는다 — 전국(2026-11-03 기본, 베타 테스터가 3km 밖 크루를 못 찾았다) */
+    const val NATIONWIDE = 0
+
+    /** 지역 범위 버튼 — 전국 · 내 주변 1 · 3 · 5km */
+    val RADII = listOf(NATIONWIDE, 1, 3, 5)
+
+    /** 거리로 거르는 범위인가 — 전국이 아니고 기준점이 있을 때 */
+    fun ranged(query: CrewListQuery): Boolean = query.center != null && query.radiusKm > NATIONWIDE
 
     /** 만들기 3단계 · 모집 설정의 목표 버튼 */
     val CREATE_GOALS = listOf(50, 100)
@@ -249,13 +255,23 @@ object CrewRules {
     }
 
     /**
-     * 목록에 보일 크루. 범위가 있으면 그 안의 크루만 — 위치가 없는 크루는 거리를 잴 수 없어 뺀다. 내가 멤버 · 크루장 ·
+     * 목록에 보일 크루. 전국이면 모두. 범위가 있으면 그 안의 크루만 — 위치가 없는 크루는 거리를 잴 수 없어 뺀다. 내가 멤버 · 크루장 ·
      * 신청 중인 크루는 범위 밖이어도 남긴다(찾으러 목록을 옮기지 않게).
      */
+    /**
+     * 크루 이름 찾기 — 이름 · 동네 · 한 줄 소개에 [text] 가 들어 있나(앞뒤 빈칸 무시 · 대소문자 무시).
+     * 빈 글자면 모두 맞다. 이미 받은 카드만 거른다(서버에 다시 묻지 않는다).
+     */
+    fun matches(card: CrewCard, text: String): Boolean {
+        val needle = text.trim()
+        if (needle.isEmpty()) return true
+        return listOf(card.name, card.area, card.tagline).any { it.contains(needle, ignoreCase = true) }
+    }
+
     fun visible(cards: List<CrewCard>, query: CrewListQuery): List<CrewCard> {
         val center = query.center
         val kept = cards.filter { card ->
-            if (card.role != CrewRole.VISITOR || center == null) return@filter true
+            if (card.role != CrewRole.VISITOR || !ranged(query)) return@filter true
             val km = distanceKm(card, center) ?: return@filter false
             km <= query.radiusKm + 1e-9
         }

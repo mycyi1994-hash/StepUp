@@ -77,7 +77,7 @@ class CrewListViewModel(
     val sync: StateFlow<CrewSyncState> = repo.sync
 
     val region: StateFlow<CrewArea?> = repo.region.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val radius: StateFlow<Int> = repo.radius.stateIn(viewModelScope, SharingStarted.Eagerly, 3)
+    val radius: StateFlow<Int> = repo.radius.stateIn(viewModelScope, SharingStarted.Eagerly, CrewRules.NATIONWIDE)
     val sort: StateFlow<CrewSort> = repo.sort.map { name -> CrewSort.entries.firstOrNull { it.name == name } ?: CrewSort.NEAR }
         .stateIn(viewModelScope, SharingStarted.Eagerly, CrewSort.NEAR)
 
@@ -91,8 +91,18 @@ class CrewListViewModel(
         CrewListQuery(area?.point ?: point, km, order)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CrewListQuery())
 
-    val visible: StateFlow<List<CrewCard>> = combine(cards, query) { list, q -> CrewRules.visible(list, q) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    private val _search = MutableStateFlow("")
+
+    /** 이름 찾기 칸의 글자 — 받은 카드를 이름 · 동네 · 소개로 거른다([CrewRules.matches]) */
+    val search: StateFlow<String> = _search
+
+    val visible: StateFlow<List<CrewCard>> = combine(cards, query, _search) { list, q, text ->
+        CrewRules.visible(list, q).filter { CrewRules.matches(it, text) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun setSearch(text: String) {
+        _search.value = text
+    }
 
     /** 아직 보지 않은 가입 결과 — 목록 위 알림 줄(푸시 없이 앱 안에서 다시 읽은 결과) */
     val results: StateFlow<List<CrewCard>> = cards.map { list -> list.filter { it.unseenResult != null } }
@@ -140,11 +150,12 @@ class CrewListViewModel(
         viewModelScope.launch { repo.setSort(next.name) }
     }
 
-    /** 범위 넓히기(05) — 한 단계 넓힌다. 가장 넓으면 지역을 풀어 모든 크루를 본다 */
+    /** 범위 넓히기(05) — 한 단계 넓힌다. 가장 넓으면 전국 */
     fun widen() {
         viewModelScope.launch {
-            val next = CrewRules.RADII.firstOrNull { it > radius.value }
-            if (next != null) repo.setRadius(next) else repo.setRegion(null)
+            val current = radius.value
+            val next = if (current == CrewRules.NATIONWIDE) null else CrewRules.RADII.firstOrNull { it > current }
+            repo.setRadius(next ?: CrewRules.NATIONWIDE)
         }
     }
 

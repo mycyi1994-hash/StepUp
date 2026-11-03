@@ -849,6 +849,13 @@ private fun EquipErrorSheet(
             leftLabel = stringResource(R.string.common_close)
             right = stringResource(R.string.sdv_back_to_owned) to onOpenOwned
         }
+        failure.reason == EquipFailure.RUNNING -> {
+            title = stringResource(R.string.sdv_error_title)
+            body = stringResource(R.string.run_equip_blocked)
+            note = null
+            leftLabel = stringResource(R.string.common_close)
+            right = null
+        }
         !failure.confirmed -> {
             title = stringResource(R.string.care_wear_check_title)
             body = stringResource(R.string.care_wear_check_body)

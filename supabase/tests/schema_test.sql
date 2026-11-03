@@ -3905,6 +3905,8 @@ insert into auth.users (id, created_at) values
   ('1a1a1a1a-0000-0000-0000-000000000002', now()),                      -- 초대받는 사람(새 계정)
   ('1a1a1a1a-0000-0000-0000-000000000003', now() - interval '30 days')  -- 오래된 계정
 on conflict do nothing;
+-- 0085 — 친구 초대는 기본 꺼짐: 이 묶음은 켜고 본다(꺼짐 검사는 아래)
+update public.economy_settings set value = 'true'::jsonb where key = 'invite_enabled';
 set role authenticated;
 call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000001');
 do $$
@@ -5236,9 +5238,9 @@ do $$
 begin
   perform pg_temp.ok(
     (select count(*) = 1 and bool_and(kind = 'CREW_REQUEST' and args->>'name' = '민수' and args->>'crew' = '퇴근런'
-                                      and link = 'crew/' || pg_temp.fx('cc'))
+                                      and link = 'crew/' || pg_temp.fx('cc') || '/requests')
        from public.push_outbox where user_id = '47000000-0000-0000-0000-000000000001'),
-    '가입 신청이 들어오면 크루장에게 가던 푸시가 그대로 간다');
+    '가입 신청이 들어오면 크루장에게 푸시가 간다 — 누르면 신청 목록(0086)');
 end $$;
 set role authenticated;
 
@@ -9890,6 +9892,85 @@ end $$;
 update public.economy_settings set value = 'false'::jsonb where key = 'waitlist_require_turnstile';
 delete from public.waitlist_entries where email in ('worker.ok@gmail.com', 'w1@gmail.com', 'w2@gmail.com', 'w3@gmail.com', 'w4@gmail.com');
 delete from economy.waitlist_attempts;
+
+-- 0084 — 프로필 이름을 서버에도(크루장 · 명단이 따라온다)
+set role authenticated;
+call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
+do $$ begin
+  perform pg_temp.ok(public.profile_name_set('  락페이스클라이밍  ') = '락페이스클라이밍', '앞뒤 공백을 뗀다');
+  perform pg_temp.ok(public.profile_name_set(repeat('가', 30)) = repeat('가', 16), '16자로 자른다');
+  perform pg_temp.ok(public.profile_name_set(E'\t \n') = '러너', '비면 러너');
+  perform public.profile_name_set(E'새\n이름');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select display_name from public.profiles where id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3') = '새이름',
+    '제어 문자를 빼고 프로필에 남는다');
+end $$;
+set role anon;
+call pg_temp.must_fail($q$ select public.profile_name_set('x') $q$, '로그인 없이는 이름을 못 바꾼다');
+reset role;
+
+-- 0085 — 친구 초대 코드 멈춤: 꺼져 있으면 새 입력을 받지 않는다
+update public.economy_settings set value = 'false'::jsonb where key = 'invite_enabled';
+set role authenticated;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000003');
+call pg_temp.must_fail(format($q$ select public.invite_redeem('%s') $q$, pg_temp.fx('invite_code')), '친구 초대가 꺼져 있으면 코드를 받지 않는다');
+reset role;
+
+-- 0086 — 크루 가입 알림: 신청한 사람에게 결과 푸시 · 크루장 푸시는 신청 목록으로
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('86000000-0000-0000-0000-000000000001', 'leader86@test', '{"full_name":"크루장"}'),
+  ('86000000-0000-0000-0000-000000000002', 'yes86@test', '{"full_name":"승인"}'),
+  ('86000000-0000-0000-0000-000000000003', 'no86@test', '{"full_name":"미승인"}'),
+  ('86000000-0000-0000-0000-000000000004', 'nophone86@test', '{"full_name":"폰없음"}');
+insert into public.push_tokens (token, user_id) values
+  ('leader86-token-000000000000000000', '86000000-0000-0000-0000-000000000001'),
+  ('yes86-token-00000000000000000000000', '86000000-0000-0000-0000-000000000002'),
+  ('no86-token-000000000000000000000000', '86000000-0000-0000-0000-000000000003');
+delete from public.push_outbox;
+set role authenticated;
+call pg_temp.login('86000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('c86',
+    public.crew_create_card('알림런', '', '', null, null, '', null, null, 0, null, null, '{}', 5)::text);
+end $$;
+call pg_temp.login('86000000-0000-0000-0000-000000000002');
+do $$ begin insert into fix (k, v) values ('c86_yes', public.crew_apply(pg_temp.fx('c86')::uuid, '{}', '', null)->>'application_id'); end $$;
+call pg_temp.login('86000000-0000-0000-0000-000000000003');
+do $$ begin insert into fix (k, v) values ('c86_no', public.crew_apply(pg_temp.fx('c86')::uuid, '{}', '', null)->>'application_id'); end $$;
+call pg_temp.login('86000000-0000-0000-0000-000000000004');
+do $$ begin insert into fix (k, v) values ('c86_nophone', public.crew_apply(pg_temp.fx('c86')::uuid, '{}', '', null)->>'application_id'); end $$;
+call pg_temp.login('86000000-0000-0000-0000-000000000001');
+do $$ begin
+  perform public.crew_application_decide(pg_temp.fx('c86_yes')::bigint, true);
+  perform public.crew_application_decide(pg_temp.fx('c86_no')::bigint, false);
+  perform public.crew_application_decide(pg_temp.fx('c86_nophone')::bigint, true);
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select count(*) = 3 and bool_and(kind = 'CREW_REQUEST' and link = 'crew/' || pg_temp.fx('c86') || '/requests')
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000001'),
+    '크루장의 가입 신청 푸시는 그 크루의 신청 목록을 연다');
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'CREW_DECIDED' and args->>'crew' = '알림런' and args->>'approved' = '1'
+                                      and link = 'crew/' || pg_temp.fx('c86'))
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000002'),
+    '승인되면 신청한 사람에게 결과 푸시(승인)가 간다');
+  perform pg_temp.ok(
+    (select count(*) = 1 and bool_and(kind = 'CREW_DECIDED' and args->>'approved' = '0')
+       from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000003'),
+    '미승인되어도 신청한 사람에게 결과 푸시(미승인)가 간다');
+  perform pg_temp.ok(
+    not exists (select 1 from public.push_outbox where user_id = '86000000-0000-0000-0000-000000000004'),
+    '받을 폰이 없으면 결과 푸시를 적지 않는다');
+  perform pg_temp.ok(
+    exists (select 1 from public.crew_members where crew_id = pg_temp.fx('c86')::uuid
+                                              and user_id = '86000000-0000-0000-0000-000000000004'),
+    '푸시와 상관없이 승인은 그대로 된다');
+end $$;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

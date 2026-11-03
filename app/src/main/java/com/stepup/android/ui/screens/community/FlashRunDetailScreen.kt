@@ -100,6 +100,10 @@ fun FlashRunDetailScreen(
     val post = posts.firstOrNull { it.id == postId }
     var showMembers by rememberSaveable { mutableStateOf(false) }
     var more by rememberSaveable { mutableStateOf(false) }
+    // 내가 쓴 번개를 지우기 전에 한 번 묻는다
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var deleting by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(deleting, post == null) { if (deleting && post == null) onBack() }
     // 참여를 눌렀고 서버가 받아 주면(joined 가 true 로 바뀌면) 참여 완료 화면
     var joining by rememberSaveable { mutableStateOf(false) }
     var joinedShown by rememberSaveable { mutableStateOf(false) }
@@ -125,6 +129,8 @@ fun FlashRunDetailScreen(
             return@Box
         }
         val share = { shareFlash(context, post) }
+        // 참가한 사람(쓴 사람)은 모이는 시각이 지나도 한동안 대기실로 간다(Post.lobbyOpen) — 다른 사람에게는 마감 그대로
+        val lobby = post.lobbyOpen()
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
                 FlashPoster(post, onBack = onBack, onShare = share, onMore = { more = true })
@@ -155,7 +161,7 @@ fun FlashRunDetailScreen(
                     ),
                 )
                 // 참가만 눌러 놓고 끝나면 이 글은 게시판 글일 뿐이다 — 실제로 같이 뛰려면 대기실(준비하고 모이면 출발)로 간다
-                if (post.joined && !post.isClosed) {
+                if (lobby) {
                     Text(
                         stringResource(R.string.flash_lobby_hint, RewardEconomy.partyBonusPercent(post.joinedCount.coerceAtLeast(1))),
                         style = StepUpUi.type.caption, color = c.secondaryLabel,
@@ -167,16 +173,18 @@ fun FlashRunDetailScreen(
             BottomActionBar {
                 PrimaryButton(
                     stringResource(when {
+                        lobby -> R.string.flash_lobby_cta
                         post.isClosed -> R.string.flash_closed_badge
                         post.joined -> R.string.flash_lobby_cta
                         post.isFull -> R.string.flash_full_badge
                         else -> R.string.flash_join_go
                     }),
                     onClick = {
-                        if (post.joined) onOpenLobby() else { joining = true; viewModel.toggleJoinFlash(post.id) }
+                        if (lobby || post.joined) onOpenLobby() else { joining = true; viewModel.toggleJoinFlash(post.id) }
                     },
                     state = when {
                         joining -> ButtonState.Loading
+                        lobby -> ButtonState.Idle
                         post.isClosed || (!post.joined && post.isFull) -> ButtonState.Disabled
                         else -> ButtonState.Idle
                     },
@@ -195,7 +203,14 @@ fun FlashRunDetailScreen(
                 stringResource(if (post.liked) R.string.post_unlike_action else R.string.post_like_action),
                 onClick = { more = false; viewModel.toggleLike(post.id) }, modifier = Modifier.fillMaxWidth(),
             )
-            if (post.joined && !post.isClosed) {
+            if (post.mine) {
+                // 쓴 사람은 참여 취소 대신 번개 취소(글 지우기) — 지우기 전에 한 번 묻는다
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.components.DangerButton(
+                    stringResource(R.string.fx_flash_cancel_host), onClick = { more = false; confirmDelete = true },
+                    modifier = Modifier.fillMaxWidth().testTag("flash-cancel-host"),
+                )
+            } else if (post.joined && !post.isClosed) {
                 Spacer(Modifier.height(10.dp))
                 com.stepup.android.ui.components.DangerButton(
                     stringResource(R.string.flash_cancel_join), onClick = { more = false; viewModel.toggleJoinFlash(post.id) },
@@ -203,6 +218,14 @@ fun FlashRunDetailScreen(
                 )
             }
         }
+    }
+    if (confirmDelete && post != null) {
+        PostDeleteConfirmSheet(
+            post,
+            // 바로 닫으면 이 화면의 뷰모델과 함께 지우기 요청이 끊긴다 — 글이 목록에서 빠진 것을 보고 닫는다(아래)
+            onConfirm = { confirmDelete = false; deleting = true; viewModel.deletePost(post.id) },
+            onDismiss = { confirmDelete = false },
+        )
     }
     if (showMembers && post != null) {
         val rosterFlow = remember(post.id, post.joinedCount) { viewModel.flashRoster(post.id) }

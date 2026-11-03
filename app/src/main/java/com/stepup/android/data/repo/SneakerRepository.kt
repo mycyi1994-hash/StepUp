@@ -17,6 +17,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
+ * 지금 러닝이 켜져 있는가 — 켜져 있으면 신발을 바꾸지 않는다. 서버(record_session)는 러닝을 올리는 때 신고 있는 신발로
+ * 내구도 · 적립을 매겨, 달리는 중에 바꾸면 달린 신발이 아닌 신발이 닳는다(2026-11-03 임시 막음). 러닝 전 점검의 신발 교체는
+ * 러닝이 켜지기 전이라 그대로 된다.
+ */
+fun shoeChangeBlockedByRun(): Boolean =
+    runCatching { com.stepup.android.service.WalkSessionService.state.value.isActive }.getOrDefault(false)
+
+/** [SneakerRepository.equipOnServer] 가 러닝 중이라 바꾸지 않았을 때의 까닭(기록용 — 화면 글자가 아니다) */
+const val RUN_ACTIVE_REASON = "run_active"
+
+/**
  * 스니커즈 인벤토리 — 뽑기 · 착용 · 강화 · 수리.
  *
  * 서버 경제가 연결돼 있으면([economy] · [sync]) 모든 변경은 서버 함수가 하고, 폰의 목록은
@@ -53,8 +64,12 @@ class SneakerRepository(
         return outcome
     }
 
-    /** 착용. 서버 신발이면 서버에서, 폰에만 있던 옛 신발(로그인 전)이면 폰에서. */
+    /**
+     * 착용. 서버 신발이면 서버에서, 폰에만 있던 옛 신발(로그인 전)이면 폰에서.
+     * 달리는 중에는 바꾸지 않는다([shoeChangeBlockedByRun]) — 화면이 먼저 막고 까닭을 말한다. 여기는 마지막 울타리다.
+     */
     suspend fun equipOnServer(id: Long): EconomyOutcome {
+        if (shoeChangeBlockedByRun()) return EconomyOutcome.Rejected(RUN_ACTIVE_REASON)
         val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
         val api = economy
         if (!serverEconomy || api == null || local.origin.isBlank()) {

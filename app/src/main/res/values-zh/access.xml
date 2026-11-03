@@ -30,7 +30,8 @@
     <string name="beta_code_revoked">不可用</string>
     <string name="beta_code_open">未使用 · 有效至 %1$s</string>
     <string name="beta_code_share_text">StepUp 测试邀请码：%1$s
-在应用中用 Google 登录后输入。</string>
+在应用中用 Google 登录后输入。
+下载应用：%2$s</string>
     <string name="beta_code_copy">复制邀请码</string>
     <string name="beta_code_share">分享邀请码</string>
 </resources>

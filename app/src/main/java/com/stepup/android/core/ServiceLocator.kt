@@ -229,7 +229,11 @@ object ServiceLocator {
             appContext.filesDir, com.stepup.android.data.prefs.UserPrefs.AVATAR_FILE, commit = { userPrefs.useCustomAvatar() },
         )
         com.stepup.android.data.repo.ProfileEditor(
-            saveNickname = { userPrefs.setNickname(it) },
+            // 폰에 적고 서버 이름(크루장 · 명단)도 바꾼다 — 서버에 못 닿으면 다음 동기화가 한다
+            saveNickname = {
+                userPrefs.setNickname(it)
+                runCatching { economySync.pushNickname() }
+            },
             saveAvatarId = { userPrefs.setAvatarId(it) },
             savePhotoFile = { open -> photos.save(open) },
             scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main.immediate),
@@ -328,6 +332,8 @@ object ServiceLocator {
             store = PrefsAuthSessionStore(userPrefs),
         )
         server = StepUpServer(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY, sessionHolder)
+        // 접속 코드 문에 막힌 요청 — 권한을 다시 묻는다(코드를 넣었으면 문이 열리고 로그인 뒤 일을 다시 한다)
+        server.onAccessRequired = { AccessGate.onServerBlocked(app) }
         Analytics.init(app)
         pushRegistrar = PushRegistrar(
             PushApi(server),

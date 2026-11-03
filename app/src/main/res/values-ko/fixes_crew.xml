@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-03 크루 · 번개 손보기: 번개 지우기 확인 · 쓴 사람의 번개 취소 · 크루 이름 찾기 -->
+<resources>
+    <string name="fx_flash_cancel_host">번개 취소</string>
+    <string name="fx_flash_delete_title">이 번개를 취소할까요?</string>
+    <string name="fx_flash_delete_body">지금 %1$d명이 참가했어요. 참가한 사람들의 목록에서도 사라져요.</string>
+    <string name="fx_post_delete_title">이 글을 지울까요?</string>
+    <string name="fx_post_delete_body">지운 글은 되돌릴 수 없어요.</string>
+    <string name="fx_crew_search_hint">크루 이름 · 동네 · 소개</string>
+    <string name="fx_crew_search_open">크루 찾기</string>
+    <string name="fx_crew_search_close">찾기 닫기</string>
+    <string name="fx_crew_search_empty_title">맞는 크루가 없어요</string>
+    <string name="fx_crew_search_empty_body">“%1$s”에 맞는 크루가 없어요. 다른 말로 찾거나 크루를 만들어 보세요.</string>
+</resources>

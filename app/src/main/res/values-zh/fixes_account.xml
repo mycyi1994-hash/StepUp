@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="access_check_again">重新检查</string>
+    <string name="beta_code_copied">已复制</string>
+    <string name="set_notif_allow">允许通知</string>
+</resources>

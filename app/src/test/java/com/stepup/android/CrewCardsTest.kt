@@ -90,6 +90,16 @@ class CrewCardsTest {
         assertEquals(21, CrewRules.progress(card("a", goalKm = 200, weekKm = 42.0))!!.percent)
     }
 
+    @Test fun `이름 찾기 — 이름 · 동네 · 소개에서 대소문자 · 앞뒤 빈칸 없이 찾는다`() {
+        val crew = card("a", name = "Mangwon Night Runners").copy(area = "마포구 망원동", tagline = "한강 저녁 러닝")
+        assertTrue(CrewRules.matches(crew, ""))
+        assertTrue(CrewRules.matches(crew, "   "))
+        assertTrue(CrewRules.matches(crew, " night "))
+        assertTrue(CrewRules.matches(crew, "망원"))
+        assertTrue(CrewRules.matches(crew, "한강"))
+        assertFalse(CrewRules.matches(crew, "반포"))
+    }
+
     @Test fun `거리 글자 — 100km 이상은 정수, 그 아래는 소수 한 자리`() {
         assertEquals("126", CrewRules.km(126.0))
         assertEquals("126", CrewRules.km(126.4))
@@ -137,6 +147,18 @@ class CrewCardsTest {
         assertEquals(listOf("near", "mine"), CrewRules.visible(listOf(far, mid, near, noPlace, mine), CrewListQuery(here, 1)).map { it.id })
         // 기준 위치가 없으면 모든 크루(최근 모집순)
         assertEquals(5, CrewRules.visible(listOf(far, mid, near, noPlace, mine), CrewListQuery(null)).size)
+    }
+
+    @Test fun `전국이 기본 — 위치가 있어도 모든 크루, 가까운 순 정렬 · 위치 없는 크루는 끝`() {
+        val here = GeoPoint(37.5446, 126.9515)
+        val near = card("near", lat = 37.5460, lng = 126.9500)
+        val busan = card("busan", lat = 35.1796, lng = 129.0756)
+        val noPlace = card("noplace")
+        assertEquals(CrewRules.NATIONWIDE, CrewListQuery().radiusKm)
+        val visible = CrewRules.visible(listOf(noPlace, busan, near), CrewListQuery(here, sort = CrewSort.NEAR))
+        assertEquals(listOf("near", "busan", "noplace"), visible.map { it.id })
+        assertEquals(false, CrewRules.ranged(CrewListQuery(here)))
+        assertEquals(true, CrewRules.ranged(CrewListQuery(here, 3)))
     }
 
     @Test fun `정렬 — 활동 많은 순은 이번 주 거리, 최근 모집순은 모집 시작 시각`() {

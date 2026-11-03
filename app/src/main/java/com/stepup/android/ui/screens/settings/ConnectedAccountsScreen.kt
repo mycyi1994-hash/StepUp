@@ -341,6 +341,8 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
         com.stepup.android.service.WalkSessionService.stop(context)
     }
+    // 이 폰의 푸시 주소를 이 계정에서 뗀다 — 로그인이 남아 있을 때(서버가 누구의 주소인지 안다). 잠깐만 기다리고 실패해도 넘어간다
+    runCatching { ServiceLocator.pushRegistrar.unregister() }
     ServiceLocator.sessionHolder.signOut()
     // 앞 계정의 잔고 · 신발 사본도 이 폰에서 지운다
     ServiceLocator.economySync.clearLocal()
@@ -355,6 +357,12 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     ServiceLocator.userPrefs.setBodyProfile(com.stepup.android.domain.BodyProfile())
     ServiceLocator.userPrefs.clearGoalAttempts()
     ServiceLocator.userPrefs.clearShoeNicknames()
+    // 프로필 이름도 — 다음 계정의 서버 이름으로 올라가지 않게(서버의 이 계정 이름은 그대로)
+    ServiceLocator.userPrefs.setNickname("")
+    ServiceLocator.userPrefs.setNicknameSynced(null)
+    // 프로필 사진도 — 다음 계정에 앞 계정의 사진이 보이지 않게
+    runCatching { java.io.File(context.filesDir, com.stepup.android.data.prefs.UserPrefs.AVATAR_FILE).delete() }
+    ServiceLocator.userPrefs.clearAvatar()
     // 업적 최고값(계정마다)도 이 폰에서 지운다
     ServiceLocator.userPrefs.clearAchievementBest()
     ServiceLocator.userPrefs.setRunExperience(null)

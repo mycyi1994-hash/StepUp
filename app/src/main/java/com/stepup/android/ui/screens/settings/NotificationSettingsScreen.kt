@@ -97,6 +97,22 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
     }.collectAsState(initial = SettingsLoad.Loading)
     val sync by ServiceLocator.pushRegistrar.preferenceSync.collectAsState()
     val osBlocked = !rememberNotificationsAllowed()
+    // 안드로이드 13 부터는 알림 권한을 여기서 바로 묻는다 — 러닝을 시작할 때만 묻던 것(설정에서 켤 길이 없었다)
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (!granted) {
+            // 다시 물을 수 없게 거절돼 있으면(창이 뜨지 않는다) 휴대폰 설정으로
+            val activity = context.findActivity()
+            val canAskAgain = activity != null && androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(
+                activity, android.Manifest.permission.POST_NOTIFICATIONS,
+            )
+            if (!canAskAgain) com.stepup.android.core.ExternalIntents.openAppSettings(context)
+        }
+    }
+    val canRequestPermission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+        androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=
+        android.content.pm.PackageManager.PERMISSION_GRANTED
     var saving by remember { mutableStateOf(false) }
     var saveFailed by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf<String?>(null) }
@@ -131,7 +147,15 @@ fun NotificationSettingsScreen(onBack: () -> Unit = {}) {
         ui = NotificationSettingsUi(load, osBlocked, sync, saving, saveFailed, toast),
         onBack = onBack,
         onChange = ::save,
-        onOpenPhoneSettings = { com.stepup.android.core.ExternalIntents.openAppSettings(context) },
+        onOpenPhoneSettings = {
+            if (canRequestPermission) {
+                runCatching { permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS) }
+                    .onFailure { com.stepup.android.core.ExternalIntents.openAppSettings(context) }
+            } else {
+                com.stepup.android.core.ExternalIntents.openAppSettings(context)
+            }
+        },
+        askPermission = canRequestPermission,
         onRetrySync = { ServiceLocator.pushRegistrar.syncPrefsInBackground() },
         onReload = { attempt++ },
     )
@@ -143,6 +167,7 @@ fun NotificationSettingsContent(
     onBack: () -> Unit = {},
     onChange: (NotifyPrefs) -> Unit = {},
     onOpenPhoneSettings: () -> Unit = {},
+    askPermission: Boolean = false,
     onRetrySync: () -> Unit = {},
     onReload: () -> Unit = {},
 ) {
@@ -170,7 +195,8 @@ fun NotificationSettingsContent(
                             BlueNotice(
                                 stringResource(R.string.set_notif_blocked), stringResource(R.string.set_notif_blocked_body),
                                 Modifier.testTag("notif-blocked"),
-                                actionLabel = stringResource(R.string.set_open_phone_settings), onAction = onOpenPhoneSettings,
+                                actionLabel = stringResource(if (askPermission) R.string.set_notif_allow else R.string.set_open_phone_settings),
+                                onAction = onOpenPhoneSettings,
                                 actionStyle = BlueNoticeAction.Primary,
                             )
                         }
@@ -255,4 +281,14 @@ internal fun rememberNotificationsAllowed(): Boolean {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     return allowed
+}
+
+/** 권한 창을 띄울 화면(Activity) — LocalContext 가 래퍼일 수 있어 벗겨 내며 찾는다 */
+private fun android.content.Context.findActivity(): android.app.Activity? {
+    var current: android.content.Context? = this
+    while (current is android.content.ContextWrapper) {
+        if (current is android.app.Activity) return current
+        current = current.baseContext
+    }
+    return null
 }

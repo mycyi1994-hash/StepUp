@@ -98,6 +98,11 @@ class CustomizeViewModel(
                 message.value = R.string.customize_not_owned
                 return@saveLook
             }
+            // 달리는 중에는 신발을 바꾸지 않는다(서버는 올릴 때 신은 신발을 닳게 한다)
+            if (com.stepup.android.data.repo.shoeChangeBlockedByRun()) {
+                message.value = R.string.run_equip_blocked
+                return@saveLook
+            }
             when (sneakers.equipOnServer(id)) {
                 com.stepup.android.data.repo.EconomyOutcome.Ok -> Unit
                 com.stepup.android.data.repo.EconomyOutcome.SignInRequired -> {

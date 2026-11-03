@@ -166,6 +166,21 @@ class CommunityViewModel(
         viewModelScope.launch { communityRepository.refresh() }
     }
 
+    /** 게시판 · 크루를 마지막으로 다시 받은 때(기기 부팅 뒤 시간) — 처음 만들 때 받은 것도 친다 */
+    private var togetherRefreshedAt = android.os.SystemClock.elapsedRealtime()
+
+    /**
+     * 함께 뛰기로 돌아왔다 — 뷰모델은 탭을 오가도 남아 처음 한 번만 받으므로, 30초가 지났으면 게시판(번개) · 크루를 다시 받는다
+     * (CrewListViewModel.refreshOnResume 과 같은 간격). 방금 받았으면 묻지 않는다.
+     */
+    fun refreshTogetherOnResume() {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - togetherRefreshedAt <= TOGETHER_RESUME_REFRESH_MS) return
+        togetherRefreshedAt = now
+        refreshBoard()
+        refreshCrews()
+    }
+
     val boardPosts: StateFlow<List<Post>> = communityRepository.boardPosts
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -584,6 +599,9 @@ class CommunityViewModel(
     }
 
     companion object {
+        /** 함께 뛰기로 돌아왔을 때 다시 받는 간격 */
+        private const val TOGETHER_RESUME_REFRESH_MS = 30_000L
+
         val Factory = viewModelFactory {
             initializer {
                 CommunityViewModel(

@@ -43,6 +43,14 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             serverJson.decodeFromString<List<LifetimeRow>>(body).firstOrNull()?.lifetimeKm ?: 0.0
         }
 
+    /** 서버의 내 프로필 이름(가입 때의 구글 이름 · 앱에서 바꾼 이름) — 이 폰에 이름이 없을 때 받아 온다 */
+    suspend fun displayName(userId: String): ServerResult<String> =
+        server.authed { token ->
+            server.http.get("${server.restUrl}/profiles?select=display_name&id=eq.$userId", server.headers(token))
+        }.mapBody { body ->
+            serverJson.decodeFromString<List<DisplayNameRow>>(body).firstOrNull()?.displayName.orEmpty()
+        }
+
     suspend fun drawGrants(): ServerResult<List<DrawGrantRow>> =
         server.authed { token ->
             server.http.get("${server.restUrl}/draw_grants?select=kind,granted,used", server.headers(token))
@@ -159,6 +167,12 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     /** 하루 목표를 서버에 적는다 — 목표 달성 보너스를 서버가 이 값으로 판정한다. 적힌 값을 돌려준다. */
     suspend fun setDailyGoal(goal: Int): ServerResult<Int> =
         rpc("profile_set_daily_goal", jsonBody { put("p_goal", goal) }) { it.trim().toIntOrNull() }
+
+    /** 프로필 이름을 서버에 적는다(0084) — 크루장 · 크루원 명단 · 대기실이 이 이름을 보인다. 적힌 이름을 돌려준다 */
+    suspend fun setDisplayName(name: String): ServerResult<String> =
+        rpc("profile_name_set", jsonBody { put("p_name", name) }) { body ->
+            runCatching { serverJson.decodeFromString<String>(body) }.getOrNull()
+        }
 
     /** 오늘 목표 달성 보너스. 서버가 확인한 러닝 걸음으로 판정한다. */
     suspend fun goalClaim(): ServerResult<Double> =
@@ -356,6 +370,9 @@ data class BoostRow(
     @SerialName("starts_at") val startsAt: String,
     @SerialName("ends_at") val endsAt: String,
 )
+
+@kotlinx.serialization.Serializable
+data class DisplayNameRow(@kotlinx.serialization.SerialName("display_name") val displayName: String? = null)
 
 @kotlinx.serialization.Serializable
 data class LifetimeRow(@kotlinx.serialization.SerialName("lifetime_km") val lifetimeKm: Double = 0.0)

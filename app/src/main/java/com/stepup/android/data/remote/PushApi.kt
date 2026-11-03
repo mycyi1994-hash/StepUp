@@ -20,6 +20,16 @@ class PushApi(private val server: StepUpServer) {
             )
         }.mapBody { }
 
+    /** 이 폰의 FCM 토큰을 지금 로그인한 사람에게서 뗀다(로그아웃) — 앞 계정의 알림이 이 폰으로 오지 않게 */
+    suspend fun unregister(token: String): ServerResult<Unit> =
+        server.authed { accessToken ->
+            server.http.post(
+                "${server.restUrl}/rpc/push_unregister",
+                jsonBody { put("p_token", token) },
+                server.headers(accessToken),
+            )
+        }.mapBody { }
+
     /** 받을 푸시 종류를 적는다. 보내는 쪽이 보내기 전에 본다. */
     suspend fun setPrefs(push: Boolean, goalReminder: Boolean, partyInvite: Boolean, eventNews: Boolean): ServerResult<Unit> =
         server.authed { accessToken ->

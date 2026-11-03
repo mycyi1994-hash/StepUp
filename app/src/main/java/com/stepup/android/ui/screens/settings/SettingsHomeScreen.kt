@@ -136,7 +136,10 @@ fun SettingsHomeScreen(
                     modifier = Modifier.testTag("settings-inbox"))
                 BlueNavRow(stringResource(R.string.profile_achievements), onClick = onOpenAchievements,
                     modifier = Modifier.testTag("settings-achievements"))
-                BlueNavRow(stringResource(R.string.invite_title), onClick = onOpenInvite, modifier = Modifier.testTag("settings-invite"))
+                // 친구 초대(0036) — 베타 동안 멈춤(서버 0085 invite_enabled). 화면 · 길은 그대로 두고 줄만 숨긴다
+                if (InviteFeature.ENABLED) {
+                    BlueNavRow(stringResource(R.string.invite_title), onClick = onOpenInvite, modifier = Modifier.testTag("settings-invite"))
+                }
                 // 베타 초대 코드(0079) — 비공개 · 공개 베타에서 코드를 만들 수 있는 사람에게만
                 val access by com.stepup.android.core.AccessGate.state.collectAsState()
                 if (access?.canIssue == true) {
@@ -318,4 +321,12 @@ private fun GoalFact(label: String, value: String) {
         Text(label, style = runTextStyle(16.sp, t.text, FontWeight.SemiBold), modifier = Modifier.weight(1f))
         Text(value, style = runTextStyle(16.sp, t.text, FontWeight.Medium))
     }
+}
+
+/**
+ * 친구 초대 코드(STEP-XXXXXX · 추천 100 SUP) — 2026-11-03 사용자 결정 "베타 동안은 비활성화". 입장은 베타 초대 코드(0079)뿐이다.
+ * 오픈 베타 · 정식 오픈에서 베타 코드를 없앨 때 이 값과 서버 설정 invite_enabled 를 함께 켠다.
+ */
+object InviteFeature {
+    const val ENABLED = false
 }

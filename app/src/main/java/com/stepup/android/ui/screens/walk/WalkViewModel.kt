@@ -67,6 +67,11 @@ class WalkViewModel(
      */
     fun wear(id: Long, onResult: (Boolean) -> Unit) {
         if (wearing.value) return
+        // 러닝이 켜진 뒤에는 바꾸지 않는다 — 점검의 신발 교체는 러닝 전이라 그대로 된다
+        if (com.stepup.android.data.repo.shoeChangeBlockedByRun()) {
+            onResult(false)
+            return
+        }
         wearing.value = true
         viewModelScope.launch {
             val worn = try {
@@ -195,6 +200,31 @@ class WalkViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
+     * 방금 끝난 러닝의 신발 닳음이 이 폰의 신발 사본에 들어왔는가 — 서버가 이 러닝을 확인한(SIGNED) **뒤에 시작한** 동기화가
+     * 성공했을 때만. 그 전까지 결과 화면은 미리 뺀 내구도를 보인다 — 예전엔 확인되자마자 러닝 전 값으로 되돌아갔다가 동기화 뒤에야
+     * 줄었다(2026-11-03 점검). 서버가 거절한 러닝은 닳지 않으므로 사본 그대로다.
+     */
+    val lastShoeSettled: StateFlow<Boolean> = combine(
+        WalkSessionService.state,
+        stepRepository.recentSessions(5),
+        ServiceLocator.economySync.syncedFrom,
+    ) { state, rows, syncedFrom ->
+        val row = rows.firstOrNull { it.startedAt == state.lastStartedAt }
+        row != null && shoeWearSettled(row, syncedFrom)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /**
+     * 이 계정의 러닝 가운데 서버가 아직 확인하지 않았거나, 확인했어도 그 뒤 동기화가 아직 없는 러닝이 신발을 닳게 할 양(내구도 점) —
+     * 출발 전 점검이 신은 신발에서 빼서 보인다(화면에만 — 서버에 보내지 않는다). 러닝 줄에는 신은 신발이 남지 않아 지금 신은 신발에서 뺀다.
+     */
+    val pendingShoeWear: StateFlow<Int> = combine(
+        stepRepository.recentSessions(PENDING_WEAR_SCAN),
+        ServiceLocator.economySync.syncedFrom,
+    ) { rows, syncedFrom ->
+        pendingShoeWearOf(rows, syncedFrom, System.currentTimeMillis())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /**
      * 서버가 확인한 이번 러닝의 적립액. 확인 전이면 null — 완료 화면은 확인된 뒤에만 금액을 보인다.
      * 폰이 계산한 값은 예상치일 뿐이라 여기 쓰지 않는다.
      */
@@ -238,3 +268,41 @@ class WalkViewModel(
         }
     }
 }
+
+/** [WalkViewModel.pendingShoeWear] 가 훑는 최근 러닝 수 */
+private const val PENDING_WEAR_SCAN = 20
+
+/** 서버가 7일 지난 러닝은 받지 않는다 — 그보다 오래된 줄은 올라가지 않아 닳지도 않는다 */
+private const val PENDING_WEAR_WINDOW_MS = 7L * 24 * 60 * 60 * 1000
+
+/**
+ * 이 러닝의 신발 닳음이 폰의 신발 사본에 이미 들었는가. 확인(SIGNED)된 뒤 시작한 동기화([syncedFrom] — 마지막으로 성공한 동기화가
+ * 시작된 시각)가 있으면 들었다. 확인 시각은 [com.stepup.android.data.local.WalkSessionEntity.uploadAttemptedAt](확인할 때 적는다).
+ * 거절된 러닝은 서버가 닳게 하지 않는다 — 처음부터 들 것이 없다.
+ */
+internal fun shoeWearSettled(row: com.stepup.android.data.local.WalkSessionEntity, syncedFrom: Long): Boolean =
+    when (row.uploadState) {
+        com.stepup.android.data.local.UploadState.REJECTED.name -> true
+        com.stepup.android.data.local.UploadState.SIGNED.name -> syncedFrom > row.uploadAttemptedAt
+        else -> false
+    }
+
+/**
+ * 아직 사본에 들지 않은 러닝들의 닳음 합(러닝마다 [com.stepup.android.ui.screens.items.durabilityWear] — 서버가 러닝마다 뺀다).
+ * - 확인 전(PENDING · FAILED): 올라갈 러닝만 — 시간이 있고, 가짜 위치(서버가 무효로 본다)가 아니고, 7일 안이고, 계정이 있는 줄.
+ * - 확인됨(SIGNED): 이 앱이 켜진 뒤 동기화가 한 번이라도 성공했고([syncedFrom] > 0) 그 동기화가 확인보다 앞설 때만. 앱을 막 켜
+ *   동기화 전이면 사본이 이미 그 닳음을 담았을 수 있다 — 두 번 빼지 않게 세지 않는다.
+ */
+internal fun pendingShoeWearOf(rows: List<com.stepup.android.data.local.WalkSessionEntity>, syncedFrom: Long, now: Long): Int =
+    rows.sumOf { row ->
+        val unsettled = when (row.uploadState) {
+            com.stepup.android.data.local.UploadState.PENDING.name,
+            com.stepup.android.data.local.UploadState.FAILED.name ->
+                row.recordingOwner != com.stepup.android.domain.RecordingOwner.LEGACY && !row.mockLocation &&
+                    row.startedAt >= now - PENDING_WEAR_WINDOW_MS &&
+                    (row.steps > 0 || row.startedAt >= com.stepup.android.data.local.ZERO_STEP_UPLOAD_FROM_MS)
+            com.stepup.android.data.local.UploadState.SIGNED.name -> syncedFrom > 0 && !shoeWearSettled(row, syncedFrom)
+            else -> false
+        }
+        if (unsettled) com.stepup.android.ui.screens.items.durabilityWear(row.durationSec) else 0
+    }

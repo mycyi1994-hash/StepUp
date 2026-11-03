@@ -46,6 +46,8 @@ class EconomySync(
     private val lock = Mutex()
     private var bootstrapped: String? = null
     private var checkedIn: String? = null
+    // 서버 이름을 받아 와 본 계정(이름이 없을 때만 묻는다)
+    private var nicknamePulled: String? = null
 
     private val _state = MutableStateFlow(EconomySyncState.UNKNOWN)
     val state: StateFlow<EconomySyncState> = _state
@@ -101,6 +103,9 @@ class EconomySync(
         if (owner != null && owner != userId) {
             clearCopy()
             db.notificationDao().clear()
+            // 앞 계정의 프로필 이름을 새 계정 서버 이름으로 올리지 않게
+            prefs.setNickname("")
+            prefs.setNicknameSynced(null)
         }
         if (owner != userId) prefs.setEconomyOwner(userId)
 
@@ -114,6 +119,8 @@ class EconomySync(
         // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
         val checkIn = "$userId:${LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))}"
         if (checkedIn != checkIn && api.checkIn() is ServerResult.Ok) checkedIn = checkIn
+        // 폰에서 바꾼 프로필 이름을 서버에도(0084) — 예전 앱은 폰에만 적어 크루장 이름이 그대로였다. 실패해도 동기화는 계속한다
+        syncNickname(userId)
         importLegacy(userId)?.let { return it }
 
         val economy = when (val r = api.economy()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
@@ -167,6 +174,53 @@ class EconomySync(
     }
 
     /** 계정을 지웠을 때 — 그 계정의 사본(신발 · 원장 · 부스터 · 에너지 · 뽑기 횟수)을 폰에서 지운다 */
+    /**
+     * 프로필 이름을 저장한 뒤 — 서버 이름도 바꾼다. 연결이 없거나 로그인 전이면 다음 동기화가 한다.
+     * 이 폰의 사본이 다른 계정 것이면(계정을 바꾼 직후) 올리지 않는다.
+     */
+    suspend fun pushNickname() {
+        if (!api.isConfigured) return
+        val userId = (sessions.accessToken() as? TokenResult.Ok)?.userId ?: return
+        val owner = prefs.economyOwner()
+        if (owner != null && owner != userId) return
+        syncNickname(userId)
+    }
+
+    private suspend fun syncNickname(userId: String) {
+        val name = prefs.nickname.first().trim()
+        if (name.isEmpty()) {
+            pullNickname(userId)
+            return
+        }
+        val mark = "$userId:$name"
+        if (prefs.nicknameSynced() == mark) return
+        if (api.setDisplayName(name) is ServerResult.Ok) prefs.setNicknameSynced(mark)
+    }
+
+    /**
+     * 이 폰에 이름이 없으면(새로 로그인) 서버 이름을 받아 온다 — 내 정보와 크루 화면의 이름이 같게.
+     * 받아 온 이름은 올린 것으로 적어 다시 올리지 않는다. 계정마다 한 번만 묻고, 실패해도 동기화는 계속한다.
+     */
+    private suspend fun pullNickname(userId: String) {
+        if (nicknamePulled == userId) return
+        val r = try {
+            api.displayName(userId)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return
+        }
+        if (r !is ServerResult.Ok) return
+        nicknamePulled = userId
+        val server = r.value.trim()
+        if (server.isEmpty() || server == "러너") return
+        // 받아 오는 사이에 이름을 적었거나 계정이 바뀌었으면 건드리지 않는다
+        if (prefs.nickname.first().isNotBlank() || sessions.currentUserId() != userId) return
+        prefs.setNickname(server)
+        val saved = prefs.nickname.first().trim()
+        if (saved.isNotEmpty()) prefs.setNicknameSynced("$userId:$saved")
+    }
+
     suspend fun clearLocal() = lock.withLock {
         clearCopy()
         // 알림에도 그 계정의 적립 · 구매 금액이 남는다 — 다음에 로그인하는 계정에 보이지 않게

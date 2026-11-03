@@ -373,8 +373,19 @@ fun StepUpRoot() {
     // 접속 코드 문(0079) — 로그인 · 계정이 바뀔 때와 앱으로 돌아올 때마다 다시 묻는다. 막힌 사람은 코드 입력 화면만 본다
     val accessContext = androidx.compose.ui.platform.LocalContext.current
     val access by com.stepup.android.core.AccessGate.state.collectAsState()
+    val accessChecked by com.stepup.android.core.AccessGate.checked.collectAsState()
+    val accessFailed by com.stepup.android.core.AccessGate.failed.collectAsState()
     LaunchedEffect(loginMethod, sessionChecked) {
         if (loginMethod != null && sessionChecked) com.stepup.android.core.AccessGate.refresh(accessContext)
+    }
+    // 첫 답을 8초 넘게 못 받으면(세션이 끊김 · 느린 연결) 더 기다리지 않는다 — 불러오는 중에 갇히지 않게
+    var accessWaitOver by remember(loginMethod) { mutableStateOf(false) }
+    LaunchedEffect(loginMethod, accessChecked) {
+        accessWaitOver = false
+        if (!accessChecked) {
+            kotlinx.coroutines.delay(8_000)
+            accessWaitOver = true
+        }
     }
     val accessScope = rememberCoroutineScope()
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
@@ -386,9 +397,12 @@ fun StepUpRoot() {
         NightCanvas(Modifier.fillMaxSize())
 
         val blocked = access?.blocked == true
+        // 로그인 직후 이 계정의 첫 답을 기다리는 동안 — 코드 창이 번쩍 떴다 사라지지 않게 불러오는 중을 보인다(못 받으면 아는 값대로)
+        val accessWaiting = loginMethod == "google" && !accessChecked && !accessFailed && !accessWaitOver && access?.mode != "OPEN"
         val stage = when {
             !ready || loginMethod == null || guideSeen == null || setupSeen == null || !sessionChecked -> 0
             loginMethod!!.isEmpty() -> 1
+            accessWaiting -> 5
             blocked -> 4
             // S2 첫 설정은 새로 온 사람(가이드를 아직 안 본 사람)에게만 — 기존 사용자를 다시 붙잡지 않는다
             guideSeen == false && setupSeen == false -> 3
@@ -402,12 +416,15 @@ fun StepUpRoot() {
 
             1 -> LoginScreen(onDone = {})
 
+            5 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Loading)
+
             3 -> com.stepup.android.ui.screens.setup.S2SetupFlow(onDone = {})
 
             4 -> com.stepup.android.ui.screens.access.AccessCodeScreen(
                 status = access ?: com.stepup.android.data.remote.AccessStatusRow(),
                 signedIn = loginMethod == "google",
                 onGranted = { accessScope.launch { com.stepup.android.core.AccessGate.refresh(accessContext) } },
+                checkFailed = accessFailed,
                 onSignOut = {
                     // 다른 계정으로 — 설정의 로그아웃과 같은 정리(앞 계정의 사본 · 접속 권한 · 로그인을 이 폰에서 지운다)
                     accessScope.launch {
@@ -523,6 +540,10 @@ private fun MainScaffoldContent(
         val crewId = pendingCrew ?: return@LaunchedEffect
         // 크루 명함형(2026-09-28) — 크루의 첫 화면은 상세(게시판 · 같이 달리기는 상세 안에서)
         navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.detail(crewId))
+        // 크루장의 가입 신청 알림(crew/<id>/requests)은 상세 위에 신청 목록까지 연다 — 뒤로 가면 크루 상세
+        if (InviteLinks.pendingCrewRequests) {
+            navController.navigate(com.stepup.android.ui.screens.community.crew.CrewRoutes.requests(crewId))
+        }
         InviteLinks.consume()
     }
 

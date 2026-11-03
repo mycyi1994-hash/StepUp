@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="access_check_again">Check again</string>
+    <string name="beta_code_copied">Copied</string>
+    <string name="set_notif_allow">Allow notifications</string>
+</resources>
