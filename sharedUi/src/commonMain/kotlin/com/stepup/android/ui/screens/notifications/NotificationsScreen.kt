@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.notifications
 
+import com.stepup.android.domain.isBefore
 import kotlinx.datetime.toLocalDateTime
 import com.stepup.android.domain.minusDaysKx
 import androidx.compose.foundation.background
@@ -392,7 +393,7 @@ private fun InboxPane(
             )
         } else {
             val groups = remember(load.items, ui.now, zone) {
-                load.items.groupBy { dayGroup(it.timestamp, ui.now, zone) }.toSortedMap().toList()
+                load.items.groupBy { dayGroup(it.timestamp, ui.now, zone) }.toList().sortedBy { it.first }
             }
             LazyColumn(
                 state = state,

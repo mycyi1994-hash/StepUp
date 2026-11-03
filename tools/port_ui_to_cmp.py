@@ -217,6 +217,7 @@ s = re.sub(r"(\w+)\.arguments\?\.getString\(([^()]+)\)", r"\1.savedStateHandle.g
 s = re.sub(r"(\w+)\.arguments\?\.getLong\(([^(),]+)\)", r"\1.savedStateHandle.get<Long>(\2)", s)
 s = re.sub(r"(\w+)\.arguments\?\.getInt\(([^(),]+)\)", r"\1.savedStateHandle.get<Int>(\2)", s)
 s = re.sub(r"(\w+)\.arguments\?\.getBoolean\(([^(),]+)\)", r"\1.savedStateHandle.get<Boolean>(\2)", s)
+s = s.replace(".toSortedMap().toList()", ".toList().sortedBy { it.first }")
 # 저장소는 공용 AppServices 에서(안드로이드 ServiceLocator 의 화면 쪽 자리)
 s = s.replace("import com.stepup.android.core.ServiceLocator\n", "import com.stepup.android.core.AppServices\n")
 s = re.sub(r"\b(?:com\.stepup\.android\.core\.)?ServiceLocator\.", "AppServices.", s)
@@ -342,6 +343,7 @@ _NEED = [
         "com.stepup.android.domain.plusWeeksKx", "com.stepup.android.domain.minusWeeksKx", "com.stepup.android.domain.plusMonthsKx",
         "com.stepup.android.domain.minusMonthsKx", "com.stepup.android.domain.plusYearsKx", "com.stepup.android.domain.minusYearsKx"]),
     (r"\.formatPattern\(", ["com.stepup.android.domain.formatPattern"]),
+    (r"\.is(?:Before|After)\(", ["com.stepup.android.domain.isBefore", "com.stepup.android.domain.isAfter"]),
     (r"\.format\(\s*(?:com\.stepup\.android\.domain\.PatternFormatter\(|rememberFormatter|rememberPattern|formatter\b|[a-z]\w*Format\w*\b)", ["com.stepup.android.domain.format"]),
     (r"\.isoWeek(?:BasedYear|OfWeekBasedYear)\(", ["com.stepup.android.domain.isoWeekBasedYear", "com.stepup.android.domain.isoWeekOfWeekBasedYear"]),
     (r"\.displayName\(com\.stepup\.android\.domain\.DateNameStyle", ["com.stepup.android.domain.displayName"]),

@@ -59,3 +59,7 @@ fun LocalDate.format(f: PatternFormatter): String = f.format(this)
 fun LocalDateTime.format(f: PatternFormatter): String = f.format(this)
 fun LocalTime.format(f: PatternFormatter): String = f.format(this)
 fun YearMonth.format(f: PatternFormatter): String = f.format(this)
+
+/** java.time 의 isBefore · isAfter 자리(날짜는 Dates.kt) */
+fun LocalDateTime.isBefore(other: LocalDateTime): Boolean = this < other
+fun LocalDateTime.isAfter(other: LocalDateTime): Boolean = this > other
