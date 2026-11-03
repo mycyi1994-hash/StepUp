@@ -3905,6 +3905,8 @@ insert into auth.users (id, created_at) values
   ('1a1a1a1a-0000-0000-0000-000000000002', now()),                      -- 초대받는 사람(새 계정)
   ('1a1a1a1a-0000-0000-0000-000000000003', now() - interval '30 days')  -- 오래된 계정
 on conflict do nothing;
+-- 0085 — 친구 초대는 기본 꺼짐: 이 묶음은 켜고 본다(꺼짐 검사는 아래)
+update public.economy_settings set value = 'true'::jsonb where key = 'invite_enabled';
 set role authenticated;
 call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000001');
 do $$
@@ -9907,6 +9909,13 @@ do $$ begin
 end $$;
 set role anon;
 call pg_temp.must_fail($q$ select public.profile_name_set('x') $q$, '로그인 없이는 이름을 못 바꾼다');
+reset role;
+
+-- 0085 — 친구 초대 코드 멈춤: 꺼져 있으면 새 입력을 받지 않는다
+update public.economy_settings set value = 'false'::jsonb where key = 'invite_enabled';
+set role authenticated;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000003');
+call pg_temp.must_fail(format($q$ select public.invite_redeem('%s') $q$, pg_temp.fx('invite_code')), '친구 초대가 꺼져 있으면 코드를 받지 않는다');
 reset role;
 
 \echo ''
