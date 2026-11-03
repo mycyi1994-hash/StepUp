@@ -54,7 +54,8 @@
         ],
         "moduleDependency": [
           "StepUp:shared",
-          "androidx.room:room-runtime"
+          "androidx.room:room-runtime",
+          "androidx.datastore:datastore-preferences-core"
         ],
         "sourceSetCInteropMetadataDirectory": "appleMain-cinterop",
         "binaryLayout": "klib",
@@ -66,6 +67,7 @@
         "moduleDependency": [
           "StepUp:shared",
           "androidx.room:room-runtime",
+          "androidx.datastore:datastore-preferences-core",
           "org.jetbrains.kotlin:kotlin-stdlib"
         ],
         "binaryLayout": "klib"
@@ -78,6 +80,7 @@
         "moduleDependency": [
           "StepUp:shared",
           "androidx.room:room-runtime",
+          "androidx.datastore:datastore-preferences-core",
           "androidx.sqlite:sqlite-bundled"
         ],
         "sourceSetCInteropMetadataDirectory": "iosMain-cinterop",
@@ -91,7 +94,8 @@
         ],
         "moduleDependency": [
           "StepUp:shared",
-          "androidx.room:room-runtime"
+          "androidx.room:room-runtime",
+          "androidx.datastore:datastore-preferences-core"
         ],
         "sourceSetCInteropMetadataDirectory": "nativeMain-cinterop",
         "binaryLayout": "klib",

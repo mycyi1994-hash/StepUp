@@ -12,6 +12,9 @@ on:
       - "main"
     paths:
       - "shared/**"
+      - "app/src/main/res/values*/**"
+      - "app/src/main/res/font/**"
+      - "tools/sync_compose_resources.py"
       - "sharedData/**"
       - "sharedUi/**"
       - "iosApp/**"
@@ -23,6 +26,9 @@ on:
   pull_request:
     paths:
       - "shared/**"
+      - "app/src/main/res/values*/**"
+      - "app/src/main/res/font/**"
+      - "tools/sync_compose_resources.py"
       - "sharedData/**"
       - "sharedUi/**"
       - "iosApp/**"
