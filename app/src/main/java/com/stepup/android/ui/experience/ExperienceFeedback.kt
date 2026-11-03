@@ -16,7 +16,7 @@ import androidx.annotation.RawRes
 import com.stepup.android.R
 
 /** 효과음 파일 · 크기 — 공용 이름([FeedbackCue])마다 안드로이드 소리(res/raw) */
-private val FeedbackCue.sound: Int @RawRes get() = when (this) {
+internal val FeedbackCue.sound: Int @RawRes get() = when (this) {
     FeedbackCue.Tap -> R.raw.ui_tap
     FeedbackCue.Select -> R.raw.ui_select
     FeedbackCue.Back -> R.raw.ui_back
@@ -45,7 +45,7 @@ private val FeedbackCue.sound: Int @RawRes get() = when (this) {
     FeedbackCue.DrawFail -> R.raw.draw_fail
 }
 
-private val FeedbackCue.gain: Float get() = when (this) {
+internal val FeedbackCue.gain: Float get() = when (this) {
     FeedbackCue.Tap -> .28f
     FeedbackCue.Select -> .35f
     FeedbackCue.Back -> .32f
@@ -60,7 +60,7 @@ private val FeedbackCue.gain: Float get() = when (this) {
     else -> .55f
 }
 
-private val AmbientScene.sound: Int @RawRes get() = when (this) {
+internal val AmbientScene.sound: Int @RawRes get() = when (this) {
     AmbientScene.Night -> R.raw.ambience_night_river
     AmbientScene.Dawn -> R.raw.ambience_dawn_river
     AmbientScene.Wardrobe -> R.raw.ambience_wardrobe_terrace
