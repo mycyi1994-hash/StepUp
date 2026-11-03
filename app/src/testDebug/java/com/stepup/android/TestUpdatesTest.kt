@@ -43,7 +43,7 @@ class TestUpdatesTest {
     @Test fun testBuildsCarryTheDatabaseVersionInVersionCode() {
         // app/build.gradle.kts — debug · qa 의 versionCode = 데이터베이스 판 × 1000 + 스토어 versionCode (스토어 빌드는 손으로 올린 값)
         assumeTrue(BuildConfig.BUILD_TYPE != "release")
-        val schemas = listOf(File("schemas/com.stepup.android.data.local.AppDatabase"), File("app/schemas/com.stepup.android.data.local.AppDatabase"))
+        val schemas = listOf(File("../sharedData/schemas/com.stepup.android.data.local.AppDatabase"), File("sharedData/schemas/com.stepup.android.data.local.AppDatabase"))
             .first { it.isDirectory }
         val newest = schemas.listFiles().orEmpty().mapNotNull { it.name.removeSuffix(".json").toIntOrNull() }.max()
         assertEquals(newest, BuildConfig.VERSION_CODE / 1000)

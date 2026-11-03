@@ -19,6 +19,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":shared"))
+            // 폰 DB(Room KMP) — iOS 는 buildIosDatabase()
+            implementation(project(":sharedData"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.ui)

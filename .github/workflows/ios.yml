@@ -12,6 +12,7 @@ on:
       - "main"
     paths:
       - "shared/**"
+      - "sharedData/**"
       - "sharedUi/**"
       - "iosApp/**"
       - "gradle/**"
@@ -22,6 +23,7 @@ on:
   pull_request:
     paths:
       - "shared/**"
+      - "sharedData/**"
       - "sharedUi/**"
       - "iosApp/**"
       - "gradle/**"
@@ -72,7 +74,7 @@ jobs:
           xcrun simctl list devices available | grep -i iphone | head -20
 
       - name: Shared rules tests (JVM · iOS simulator)
-        run: ./gradlew :shared:jvmTest :shared:iosSimulatorArm64Test -Pstepup.iosTestDevice="$IOS_SIM" --stacktrace
+        run: ./gradlew :shared:jvmTest :shared:iosSimulatorArm64Test :sharedData:iosSimulatorArm64Test -Pstepup.iosTestDevice="$IOS_SIM" --stacktrace
 
       - name: Generate Xcode project
         run: |

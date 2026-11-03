@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.room.Room
 import com.stepup.android.BuildConfig
 import com.stepup.android.data.local.AppDatabase
+import com.stepup.android.data.local.AppMigrations
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.CommunityApi
 import com.stepup.android.data.remote.CourseApi
@@ -317,7 +318,7 @@ object ServiceLocator {
             // 버전 7부터는 실제 마이그레이션을 쓴다. 러닝 기록이 SUP 청구의
             // 근거가 되는 순간부터, 스키마를 고쳤다고 사용자 기록을 지우는 것은
             // 개발 편의가 아니라 데이터 손실이다.
-            .addMigrations(*AppDatabase.MIGRATIONS)
+            .addMigrations(*AppMigrations.MIGRATIONS)
             // Unknown schemas must remain intact. Never erase records to make an
             // unsupported upgrade or downgrade appear successful.
             .build()

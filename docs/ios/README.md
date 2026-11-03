@@ -40,6 +40,12 @@
   구글 GoogleSignIn SDK 8 · Swift 패키지)이고 나머지는 Kotlin `IosAuth`(세션은 키체인 `KeychainSessionStore` — 이 기기에만, 새로 깐 첫 실행에 지운다).
   Apple 계정을 지울 때는 Apple 토큰을 먼저 철회한다(워커 `/v1/apple/revoke` — `attester/src/apple.js`). 설정할 것은 [../APP-STORE.md](../APP-STORE.md) "0. 먼저 해 둘 것".
 
+- **폰 DB**(2026-11-03): Room KMP 모듈 `:sharedData`(안드로이드 라이브러리 + iOS). 표 · DAO · `AppDatabase`(판 19)는 commonMain 하나.
+  안드로이드는 예전과 똑같이 연다 — `Room.databaseBuilder(context, AppDatabase::class.java, "strideup.db")` · SupportSQLite · 옛 판 길 `AppMigrations`
+  (androidMain, 예전 companion 의 MIGRATION_6_7 … 18_19 글자 그대로). 표 모양 기록은 `sharedData/schemas`(예전 `app/schemas`).
+  iOS 는 `buildIosDatabase()` — 문서 폴더 strideup.db · 번들 SQLite · 판 19 에서 시작(옮길 옛 DB 가 없다). 판을 올리면 iOS 길도 연결(SQLiteConnection)로 더한다.
+  iOS Room 의 KSP 는 Mac 에서만 돈다 — 검사는 CI 의 `:sharedData:iosSimulatorArm64Test`(IosDatabaseTest).
+
 ## Mac 에서 돌리기
 
 ```bash

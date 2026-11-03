@@ -52,7 +52,7 @@ val releaseVersionCode = 25
 
 // 앱 안 Room 데이터베이스의 판(AppDatabase 의 @Database(version = …)). 테스트 · 개발 빌드의 versionCode 에 담는다(아래 androidComponents)
 val roomSchemaVersion: Int = Regex("""(?m)^\s*version\s*=\s*(\d+)\s*,?\s*$""")
-    .find(file("src/main/java/com/stepup/android/data/local/AppDatabase.kt").readText())
+    .find(rootProject.file("sharedData/src/commonMain/kotlin/com/stepup/android/data/local/AppDatabase.kt").readText())
     ?.groupValues?.get(1)?.toInt()
     ?: error("AppDatabase.kt 에서 데이터베이스 판(version = …)을 찾지 못했습니다")
 check(releaseVersionCode in 1..999) { "versionCode 는 1~999 — 테스트 빌드는 데이터베이스 판 × 1000 을 더한다" }
@@ -286,13 +286,11 @@ kotlin {
     }
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 dependencies {
     // 안드로이드 · iOS 가 함께 쓰는 규칙(2026-11-02 KMP — docs/ios/README.md). 패키지는 그대로 com.stepup.android.domain
     implementation(project(":shared"))
+    // 폰 DB(Room KMP — 표 · DAO · AppDatabase, 옛 판 길 AppMigrations). 파일 이름 strideup.db 그대로
+    implementation(project(":sharedData"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)
@@ -311,7 +309,6 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
