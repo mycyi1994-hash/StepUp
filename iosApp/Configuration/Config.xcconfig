@@ -20,3 +20,5 @@ STEPUP_SUPABASE_URL = https:$(SLASH)$(SLASH)pupjzcmybuoyhzfwrsdf.supabase.co
 STEPUP_SUPABASE_KEY = sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO
 // 어테스터 워커(Apple 토큰 철회 · 러닝 증명) — 비우면 철회를 건너뛴다
 STEPUP_ATTESTER_URL =
+// 지도 타일(MapTiler) 공개 키 — 안드로이드 app/build.gradle.kts 의 기본 키와 같다(앱에 넣으라고 발급되는 키, 도메인 · 앱 제한은 MapTiler 대시보드).
+STEPUP_MAPTILER_KEY = Tsagjrb4rNikrZug4jBG

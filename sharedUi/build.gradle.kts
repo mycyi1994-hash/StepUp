@@ -19,6 +19,11 @@ kotlin {
     }
 
     sourceSets {
+        iosMain.dependencies {
+            // 지도 타일 받기(TileFetch.ios.kt)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.darwin)
+        }
         commonMain.dependencies {
             api(project(":shared"))
             // 폰 DB(Room KMP) — iOS 는 buildIosDatabase()

@@ -44,4 +44,19 @@ class RunEngineTest {
         // 걸음이 멈춘 지 30초가 넘으면 서 있음
         assertTrue(e.state(t0 + 40_000).still)
     }
+
+    @Test fun blurryFixKeepsHereFor30sAfterTrack() {
+        val e = RunEngine(t0)
+        e.fix(37.5000, 126.9500, 5f, t0)
+        // 경로가 생긴 뒤 30초 안의 흐린 위치는 지금 자리를 옮기지 않는다
+        e.fix(37.5100, 126.9500, 80f, t0 + 10_000)
+        assertEquals(37.5000, e.state(t0 + 10_000).here!!.lat)
+        assertTrue(e.state(t0 + 10_000).hereAccurate)
+        // 30초가 지나면 흐린 위치도 지도만 옮긴다
+        e.fix(37.5100, 126.9500, 80f, t0 + 31_000)
+        val s = e.state(t0 + 31_000)
+        assertEquals(37.5100, s.here!!.lat)
+        assertEquals(false, s.hereAccurate)
+        assertEquals(1, s.track.size)
+    }
 }

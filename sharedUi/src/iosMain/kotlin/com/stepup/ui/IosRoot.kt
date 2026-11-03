@@ -48,6 +48,7 @@ fun IosRoot() = StepUpTheme {
 
     LaunchedEffect(Unit) {
         // 러닝 올리기를 이어 둔다 — 앞에 올 때 · 백그라운드 작업이 같은 규칙(UploadPass)으로 올린다
+        IosApp.configureMap()
         IosApp.connectUploads()
         if (IosApp.sessionStore.load() != null) afterSignIn() else stage = Stage.SignedOut
     }

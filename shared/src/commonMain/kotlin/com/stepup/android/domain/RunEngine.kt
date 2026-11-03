@@ -20,6 +20,9 @@ class RunEngine(private val startedAtMs: Long) {
         val track: List<TrackPoint>,
         /** 지금 자리(지도 점) — 흐린 위치도 지도만 옮긴다 */
         val here: GeoPoint?,
+        /** [here] 를 받은 시각 · 흐리지 않은 위치였는가(지도의 내 점 [liveHead] 가 본다) */
+        val hereAt: Long,
+        val hereAccurate: Boolean,
         val paceSecPerKm: Double?,
         val still: Boolean,
     )
@@ -33,6 +36,9 @@ class RunEngine(private val startedAtMs: Long) {
     private var anchor: GeoPoint? = null
     private var anchorAccuracy: Float? = null
     private var here: GeoPoint? = null
+    private var hereAt = 0L
+    private var hereAccurate = true
+    private var goodHereAt = 0L
     private var lastMoveMs = startedAtMs
 
     /** 시계 — 1초마다 넣는다. 일시정지가 아니면 달린 시간에 더한다 */
@@ -65,10 +71,16 @@ class RunEngine(private val startedAtMs: Long) {
     /** 위치 하나 — [accuracyM] 는 수평 오차(m), 모르면 null */
     fun fix(lat: Double, lng: Double, accuracyM: Float?, atMs: Long) {
         val point = GeoPoint(lat, lng)
-        here = point
-        if (paused) return
         val a = anchor
         val decision = TrackFixRule.decide(accuracyM, a?.let { haversineMeters(it, point) }, anchorAccuracy)
+        val good = decision != TrackFixRule.Fix.MAP_ONLY
+        // 경로가 생긴 뒤의 흐린 위치는 좋은 위치를 받은 지 30초 안이면 지금 자리를 옮기지 않는다(안드로이드 러닝 서비스와 같다)
+        if (!good && TrackFixRule.keepHere(track.isNotEmpty(), atMs - goodHereAt)) return
+        if (good) goodHereAt = atMs
+        here = point
+        hereAt = atMs
+        hereAccurate = good
+        if (paused) return
         when (decision) {
             TrackFixRule.Fix.MAP_ONLY, TrackFixRule.Fix.HOLD -> Unit
             TrackFixRule.Fix.REFINE -> {
@@ -92,7 +104,7 @@ class RunEngine(private val startedAtMs: Long) {
         val km = RunDistance.liveKm(gpsKm, steps)
         return State(
             startedAt = startedAtMs, paused = paused, elapsedSec = elapsed, steps = steps,
-            gpsKm = gpsKm, liveKm = km, track = track.toList(), here = here,
+            gpsKm = gpsKm, liveKm = km, track = track.toList(), here = here, hereAt = hereAt, hereAccurate = hereAccurate,
             paceSecPerKm = RunPace.secPerKm(elapsed, km * 1000),
             still = RunStill.isStill(recording = !paused, sinceMoveMs = nowMs - lastMoveMs),
         )

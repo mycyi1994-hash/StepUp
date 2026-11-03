@@ -18,6 +18,13 @@ object IosApp {
     val supabaseKey: String by lazy { plist("StepUpSupabaseKey") }
     val attesterUrl: String by lazy { plist("StepUpAttesterUrl") }
 
+    /** 지도 타일 — 안드로이드 BuildConfig.MAPTILER_KEY 와 같은 공개 키(앱에 넣으라고 발급되는 키). 비면 OpenStreetMap */
+    fun configureMap() {
+        com.stepup.android.ui.components.MapTiles.mapTilerKey = plist("StepUpMapTilerKey")
+        val version = plist("CFBundleShortVersionString")
+        com.stepup.android.ui.components.MapTiles.userAgent = "StepUp/$version (iOS; +https://stepupcrew.com)"
+    }
+
     val sessionStore by lazy { KeychainSessionStore() }
     val auth by lazy { SupabaseAuth(supabaseUrl, supabaseKey) }
     val sessions by lazy { SessionHolder(auth, sessionStore) }

@@ -37,6 +37,8 @@
 	<string>$(STEPUP_SUPABASE_KEY)</string>
 	<key>StepUpAttesterUrl</key>
 	<string>$(STEPUP_ATTESTER_URL)</string>
+	<key>StepUpMapTilerKey</key>
+	<string>$(STEPUP_MAPTILER_KEY)</string>
 	<key>GIDClientID</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>

@@ -15,7 +15,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import com.stepup.android.domain.GeoPoint
+import com.stepup.android.domain.liveHead
+import com.stepup.android.domain.segmentBreaks
+import com.stepup.android.ui.components.LiveRouteMap
+import com.stepup.android.ui.components.RouteMarkers
+import com.stepup.android.ui.components.RunStateArt
+import com.stepup.android.ui.screens.walk.FreeRunRoute
+import com.stepup.android.ui.screens.walk.FreeRunRouteOutline
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunEngine
@@ -148,7 +160,7 @@ private fun clock(totalSec: Long): String {
 }
 
 /**
- * iOS 자유 러닝 화면 — 안드로이드와 같은 FreeRunLive · FreeRunResult. 지도 칸은 지도를 옮길 때까지 남색 판.
+ * iOS 자유 러닝 화면 — 안드로이드와 같은 FreeRunLive · FreeRunResult · LiveRouteMap(같은 지도 타일 · 경로 그림).
  * 1초 길게 눌러 마치면 기록을 남기고 결과를 보인다.
  */
 @Composable
@@ -164,8 +176,28 @@ fun IosFreeRun(onClose: () -> Unit) {
             delay(1_000)
         }
     }
+    // 두 손가락 확대 · 축소 배율 — 러닝마다 처음부터(안드로이드 liveMapZoom 과 같다)
+    val pinch = remember { mutableFloatStateOf(1f) }
+    // 자유 러닝 지도 — 안드로이드 freeLiveMap 과 같은 모습(경로 전에는 지금 자리 점만, 위치를 모르면 위치 그림)
     val mapSlot: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
-        Box(Modifier.fillMaxSize().background(Color(0xFF0B1A33)))
+        val s = state
+        val geoTrack = remember(s?.track) { s?.track.orEmpty().map { GeoPoint(it.lat, it.lng) } }
+        val here = s?.here
+        when {
+            s != null && geoTrack.isNotEmpty() -> LiveRouteMap(
+                points = geoTrack, modifier = Modifier.fillMaxSize(), follow = true,
+                breaks = remember(s.track) { segmentBreaks(s.track) }, routeColor = FreeRunRoute,
+                live = true, pinchZoom = pinch, routeOutline = FreeRunRouteOutline, markers = RouteMarkers.Pin,
+                head = liveHead(s.track, s.here, s.hereAt, s.hereAccurate),
+            )
+            here != null -> LiveRouteMap(
+                points = listOf(here), modifier = Modifier.fillMaxSize(), follow = true,
+                routeColor = FreeRunRoute, live = true, pinchZoom = pinch,
+            )
+            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                RunStateArt(Icons.Filled.GpsFixed, size = 72.dp)
+            }
+        }
     }
     Box(Modifier.fillMaxSize().background(StepUpColors.night).safeDrawingPadding()) {
         val done = finished
