@@ -182,7 +182,7 @@ class ForgeRepository(
         )
     }
 
-    internal fun parseLoad(body: String): ForgeLoad {
+    fun parseLoad(body: String): ForgeLoad {
         val root = obj(body)
         val t = root.child("target") ?: return ForgeLoad.Failed
         val block = ForgeTargetBlock.of(t.str("block"))
@@ -246,13 +246,13 @@ class ForgeRepository(
         )
     }
 
-    internal fun parseQuoteOrError(body: String, materials: List<Long>): ForgeOutcome {
+    fun parseQuoteOrError(body: String, materials: List<Long>): ForgeOutcome {
         val root = runCatching { obj(body) }.getOrNull() ?: return ForgeOutcome.Rejected("unreadable")
         errorOf(root)?.let { return it }
         return quoteOf(root, materials)?.let { ForgeOutcome.Quoted(it) } ?: ForgeOutcome.Rejected("unreadable")
     }
 
-    internal fun parseResultOrError(body: String, materials: List<Long>): ForgeOutcome? {
+    fun parseResultOrError(body: String, materials: List<Long>): ForgeOutcome? {
         val root = obj(body)
         errorOf(root)?.let { return it }
         return when (root.str("status")) {
@@ -292,21 +292,21 @@ class PrefsForgePendingStore(
 }
 
 /** 저장된 줄들 가운데 이 계정의 요청 */
-internal fun pendingFor(all: String?, owner: String): ForgePending? =
+fun pendingFor(all: String?, owner: String): ForgePending? =
     all.orEmpty().split('\n').firstNotNullOfOrNull { line -> decodePending(line, owner) }
 
 /** 이 계정의 줄만 바꾸거나([pending]) 지운다(null). 다른 계정의 줄은 그대로. 남은 줄이 없으면 null */
-internal fun upsertPending(all: String?, owner: String, pending: ForgePending?): String? {
+fun upsertPending(all: String?, owner: String, pending: ForgePending?): String? {
     val others = all.orEmpty().split('\n').filter { it.isNotBlank() && it.substringBefore('|') != owner }
     val lines = if (pending != null) others + encodePending(pending, owner) else others
     return lines.joinToString("\n").ifEmpty { null }
 }
 
-internal fun encodePending(p: ForgePending, owner: String): String =
+fun encodePending(p: ForgePending, owner: String): String =
     listOf(owner, p.requestKey, p.targetId, p.materialIds.joinToString(","), p.ratePermille, p.createdAt).joinToString("|")
 
 /** 다른 계정이 남긴 요청이면 null — 그 계정으로 다시 로그인하면 다시 보인다 */
-internal fun decodePending(raw: String, owner: String): ForgePending? {
+fun decodePending(raw: String, owner: String): ForgePending? {
     val parts = raw.split('|')
     if (parts.size != 6 || parts[0] != owner) return null
     return ForgePending(

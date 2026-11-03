@@ -23,6 +23,7 @@ import com.stepup.android.ui.screens.home.RunPhotos
 import com.stepup.android.ui.theme.StepUpColors
 import kotlin.coroutines.resume
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.CoreLocation.CLLocationManager
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
@@ -84,5 +85,29 @@ fun IosHome(onStartRun: () -> Unit) {
             onStartRun = onStartRun, onRequestPermission = { }, onOpenDetails = { },
             photoIndex = photoIndex, gps = gps,
         )
+    }
+}
+
+/** 오늘 걸음(안드로이드 StepTracker 자리) — Core Motion 을 5초마다 읽어 공용 StepRepository 에 낸다 */
+object IosStepSource : com.stepup.android.data.repo.DailyStepSource {
+    private val _today = kotlinx.coroutines.flow.MutableStateFlow(0)
+    override val todaySteps: kotlinx.coroutines.flow.StateFlow<Int> = _today
+    override val isAvailable: Boolean get() = CMPedometer.isStepCountingAvailable()
+    private var started = false
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
+
+    override fun start() {
+        if (started) return
+        started = true
+        scope.launch {
+            while (true) {
+                IosSteps.today()?.let { _today.value = it }
+                delay(5_000)
+            }
+        }
+    }
+
+    override fun simulateSteps(count: Int) {
+        _today.value += count
     }
 }

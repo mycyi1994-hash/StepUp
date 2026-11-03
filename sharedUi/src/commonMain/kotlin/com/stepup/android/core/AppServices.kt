@@ -20,8 +20,13 @@ object AppServices {
     lateinit var sneakerRepository: SneakerRepository
     lateinit var boostRepository: BoostRepository
     lateinit var economySync: EconomySync
+    lateinit var stepRepository: com.stepup.android.data.repo.StepRepository
+    lateinit var avatarRepository: com.stepup.android.data.repo.AvatarRepository
 
     lateinit var forgeRepository: com.stepup.android.data.repo.ForgeRepository
+
+    /** 이 크루의 대기실(출발 전 · 카운트다운)에 들어가 있으면 그 방 번호 — 크루 러닝을 옮기기 전에는 없다 */
+    var openCrewRoom: (crewId: String) -> Long? = { null }
 
     /** 다시 로그인하러 갈 때 앱이 할 일(달리던 러닝 멈추기 · 로그인 화면으로) */
     var onReturnToSignIn: suspend () -> Unit = {}

@@ -1,0 +1,1020 @@
+package com.stepup.android.ui.screens.profile
+
+import kotlinx.datetime.isoDayNumber
+import com.stepup.android.domain.displayName
+import com.stepup.android.domain.formatPattern
+import com.stepup.android.domain.minusWeeksKx
+import com.stepup.android.domain.minusDaysKx
+import com.stepup.android.domain.plusDaysKx
+import com.stepup.android.ui.theme.StepUpFonts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import com.stepup.android.ui.theme.CarbonHigh
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PathEffect
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.stepup.ui.res.*
+import com.stepup.android.core.AppServices
+import com.stepup.android.data.local.DailyStepsEntity
+import com.stepup.android.data.local.WalkSessionEntity
+import com.stepup.android.data.prefs.UserPrefs
+import com.stepup.android.data.repo.StepRepository
+import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.ui.components.BarMeter
+import com.stepup.android.ui.components.DetailPage
+import com.stepup.android.ui.components.Eyebrow
+import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.HairlineDivider
+import com.stepup.android.ui.components.IconSquare
+import com.stepup.android.ui.components.SectionHeader
+import com.stepup.android.ui.components.RecordMetric as StatCell
+import com.stepup.android.ui.components.quietClickable
+import com.stepup.android.ui.screens.community.SegmentedTabs
+import com.stepup.android.ui.theme.Night
+import com.stepup.android.ui.theme.OnVolt
+import com.stepup.android.ui.theme.Silver
+import com.stepup.android.ui.theme.Slate
+import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.Volt
+import com.stepup.android.ui.theme.VoltDeep
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import java.util.Locale
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+
+class AnalyticsViewModel(private val stepRepository: StepRepository) : ViewModel() {
+
+    val week: StateFlow<List<DailyStepsEntity>> = stepRepository.observeWeek()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val lifetimeSteps: StateFlow<Long> = stepRepository.observeLifetimeSteps()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    val monthSteps: StateFlow<Long> = stepRepository.observeMonthSteps()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    val goal: StateFlow<Int> = stepRepository.dailyGoal
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserPrefs.DEFAULT_GOAL)
+
+    val sessions: StateFlow<List<WalkSessionEntity>> = stepRepository.recentSessions(20)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 지난 90일. 과거 탭의 재료다. */
+    val quarter: StateFlow<List<DailyStepsEntity>> = stepRepository.observeDays(QUARTER_DAYS)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 과거 탭의 러닝 통계는 더 많은 세션이 필요하다 */
+    val allSessions: StateFlow<List<WalkSessionEntity>> = stepRepository.recentSessions(200)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    companion object {
+        /** 과거 탭이 보는 기간. 3개월. */
+        const val QUARTER_DAYS = 90
+
+        val Factory = viewModelFactory {
+            initializer {
+                AnalyticsViewModel(AppServices.stepRepository)
+            }
+        }
+    }
+}
+
+private val sessionTimeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("M.d HH:mm").withZone(kotlinx.datetime.TimeZone.currentSystemDefault())
+
+@Composable
+fun AnalyticsScreen(
+    onBack: () -> Unit = {},
+    onOpenHistoryMap: () -> Unit = {},
+    viewModel: AnalyticsViewModel = viewModel(factory = AnalyticsViewModel.Factory),
+) {
+    val week by viewModel.week.collectAsStateWithLifecycle()
+    val lifetimeSteps by viewModel.lifetimeSteps.collectAsStateWithLifecycle()
+    val monthSteps by viewModel.monthSteps.collectAsStateWithLifecycle()
+    val goal by viewModel.goal.collectAsStateWithLifecycle()
+    val sessions by viewModel.sessions.collectAsStateWithLifecycle()
+    val quarter by viewModel.quarter.collectAsStateWithLifecycle()
+    val allSessions by viewModel.allSessions.collectAsStateWithLifecycle()
+
+    // 주간과 3개월은 보는 눈이 다르다. 주간은 "어제보다 오늘", 3개월은
+    // "요즘 늘고 있나". 한 화면에 다 쌓으면 둘 다 흐려진다.
+    var tab by rememberSaveable { mutableIntStateOf(0) }
+
+    DetailPage(title = stringResource(Res.string.analytics_title), onBack = onBack) {
+        item {
+            SegmentedTabs(
+                labels = listOf(
+                    stringResource(Res.string.analytics_tab_week),
+                    stringResource(Res.string.analytics_tab_quarter),
+                ),
+                selected = tab,
+                onSelect = { tab = it },
+            )
+        }
+
+        if (tab == 0) {
+            item { WeekChartCard(week = week, goal = goal) }
+
+            item { WeekSummaryCard(week = week, goal = goal) }
+
+            item { HistoryMapEntry(onClick = onOpenHistoryMap) }
+
+            item {
+                StatGridCard(
+                    week = week,
+                    goal = goal,
+                    monthSteps = monthSteps,
+                    lifetimeSteps = lifetimeSteps,
+                )
+            }
+
+            item { SectionHeader(title = stringResource(Res.string.analytics_recent_runs)) }
+
+            item { RecentRunsCard(sessions = sessions) }
+        } else {
+            item { QuarterChartCard(days = quarter, goal = goal) }
+
+            item { QuarterSummaryCard(days = quarter, goal = goal) }
+
+            item { HistoryMapEntry(onClick = onOpenHistoryMap) }
+
+            item { SectionHeader(title = stringResource(Res.string.analytics_months)) }
+
+            item { MonthlyBreakdownCard(days = quarter) }
+
+            item { SectionHeader(title = stringResource(Res.string.analytics_run_stats)) }
+
+            item { RunStatsCard(sessions = allSessions) }
+        }
+    }
+}
+
+/**
+ * 지난 7일 큰 바 차트 — 볼트 바 + 점선 목표선 + 요일 이니셜.
+ *
+ * 막대를 누르면 그날의 기록이 작은 창으로 뜬다. 막대 높이만으로는 "수요일이
+ * 목요일보다 조금 높다"까지만 읽히고, 정작 궁금한 "그래서 몇 보 걸었나"는
+ * 알 수 없다. 누르는 동작 하나로 그 답을 준다.
+ */
+@Composable
+private fun WeekChartCard(week: List<DailyStepsEntity>, goal: Int) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val stepsLabel = stringResource(Res.string.stat_steps)
+    val today = com.stepup.android.domain.todayIn().toEpochDays()
+    val days = (0..6).map { offset -> today - 6 + offset }
+    val byDay = week.associateBy { it.epochDay }
+    val weekSteps = days.sumOf { (byDay[it]?.steps ?: 0).toLong() }
+    val maxValue = maxOf(week.maxOfOrNull { it.steps } ?: 0, goal, 1)
+
+    // 고른 날. 화면을 나갔다 와도 유지된다.
+    var selectedDay by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Eyebrow(text = stringResource(Res.string.analytics_week))
+                Text(
+                    text = "${com.stepup.android.domain.formatGrouped((weekSteps).toLong())}",
+                    fontSize = 36.sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpFonts.numbers,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1.2).sp,
+                    color = Snow,
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.padding(bottom = 6.dp),
+            ) {
+                Text(
+                    text = stringResource(Res.string.home_daily_goal, "${com.stepup.android.domain.formatGrouped((goal).toLong())}"),
+                    fontSize = 14.sp,
+                    color = Slate,
+                )
+                // 누를 수 있다는 것을 모르면 없는 기능이나 같다.
+                Text(
+                    text = stringResource(Res.string.analytics_tap_hint),
+                    fontSize = 14.sp,
+                    color = Silver,
+                )
+            }
+        }
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(190.dp),
+        ) {
+            val chartWidth = maxWidth
+            val gap = 8.dp
+            val slot = (chartWidth - gap * (days.size - 1)) / days.size
+
+            Row(
+                modifier = Modifier.matchParentSize(),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                days.forEach { day ->
+                    val steps = byDay[day]?.steps ?: 0
+                    val fraction = (steps.toFloat() / maxValue).coerceIn(0.04f, 1f)
+                    val selected = day == selectedDay
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            // 막대만 누르면 손가락보다 얇아 자꾸 빗나간다.
+                            // 칸 전체(빈 위쪽 포함)를 누를 수 있게 한다.
+                            .fillMaxHeight()
+                            .testTag("analytics-day-$day")
+                            .semantics {
+                                contentDescription = "${kotlinx.datetime.LocalDate.fromEpochDays(day)}, $steps $stepsLabel"
+                                this.selected = selected
+                                role = Role.Button
+                            }
+                            .quietClickable {
+                                selectedDay = if (selected) null else day
+                            },
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(fraction)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    when {
+                                        selected -> Volt
+                                        day == today -> Volt.copy(alpha = 0.75f)
+                                        else -> Volt.copy(alpha = 0.30f)
+                                    },
+                                ),
+                        )
+                    }
+                }
+            }
+            Canvas(Modifier.matchParentSize()) {
+                val y = size.height * (1f - (goal.toFloat() / maxValue).coerceIn(0f, 1f))
+                drawLine(
+                    color = VoltDeep.copy(alpha = 0.85f),
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = 1.5.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), 0f),
+                )
+            }
+
+
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            days.forEach { day ->
+                val label = kotlinx.datetime.LocalDate.fromEpochDays(day).dayOfWeek
+                    .displayName(com.stepup.android.domain.DateNameStyle.NARROW, androidx.compose.ui.text.intl.Locale.current.language)
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    if (day == today || day == selectedDay) {
+                        Box(
+                            modifier = Modifier
+                                .sizeIn(minWidth = 28.dp, minHeight = 28.dp)
+                                .background(Volt, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(label, color = OnVolt, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Text(label, color = Slate, fontSize = 14.sp)
+                    }
+                }
+            }
+        }
+        selectedDay?.takeIf { it in days }?.let { day ->
+            DayCallout(day, byDay[day]?.steps ?: 0, goal,
+                Modifier.fillMaxWidth().testTag("analytics-day-details"))
+        }
+    }
+}
+
+/** 주간 평균 · 최고 기록 · 목표 달성률 · 이달 거리 2×2 그리드 */
+@Composable
+private fun StatGridCard(
+    week: List<DailyStepsEntity>,
+    goal: Int,
+    monthSteps: Long,
+    lifetimeSteps: Long,
+) {
+    val today = com.stepup.android.domain.todayIn().toEpochDays()
+    val days = (0..6).map { offset -> today - 6 + offset }
+    val byDay = week.associateBy { it.epochDay }
+    val weekSteps = days.sumOf { (byDay[it]?.steps ?: 0).toLong() }
+    val dailyAvg = weekSteps / 7
+    val bestDay = week.maxOfOrNull { it.steps } ?: 0
+    val metDays = days.count { day ->
+        byDay[day]?.let { entry ->
+            entry.steps >= (if (entry.goal > 0) entry.goal else goal)
+        } == true
+    }
+    val goalRate = metDays * 100 / 7
+    val monthKm = monthSteps * RewardEconomy.STRIDE_METERS / 1000
+
+    GlowCard(contentPadding = PaddingValues(vertical = 18.dp, horizontal = 10.dp), spacing = 16.dp) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.TrendingUp,
+                label = stringResource(Res.string.analytics_daily_avg),
+                value = "${com.stepup.android.domain.formatGrouped((dailyAvg).toLong())}",
+            )
+            StatCell(
+                icon = Icons.Filled.EmojiEvents,
+                label = stringResource(Res.string.analytics_best_day),
+                value = "${com.stepup.android.domain.formatGrouped((bestDay).toLong())}",
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.CheckCircle,
+                label = stringResource(Res.string.analytics_goal_rate),
+                value = "$goalRate%",
+            )
+            StatCell(
+                icon = Icons.Filled.LocationOn,
+                label = stringResource(Res.string.stat_distance),
+                value = "${com.stepup.android.domain.formatFixed((monthKm).toDouble(), 2)} km",
+            )
+        }
+        HairlineDivider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Eyebrow(text = stringResource(Res.string.analytics_all))
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "${com.stepup.android.domain.formatGrouped((lifetimeSteps).toLong())}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Snow,
+            )
+            Spacer(Modifier.width(5.dp))
+            Text(
+                text = stringResource(Res.string.goal_steps_suffix),
+                fontSize = 14.sp,
+                color = Slate,
+            )
+        }
+    }
+}
+
+/** 최근 러닝 세션 최대 5건 — 날짜 · 시간 · 걸음 · 적립 */
+@Composable
+private fun RecentRunsCard(sessions: List<WalkSessionEntity>) {
+    if (sessions.isEmpty()) {
+        com.stepup.android.ui.components.StatePanel(
+            message = stringResource(Res.string.analytics_no_runs), icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+        )
+        return
+    }
+
+    GlowCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), spacing = 0.dp) {
+        sessions.take(5).forEachIndexed { index, session ->
+            if (index > 0) HairlineDivider()
+            SessionRow(session)
+        }
+    }
+}
+
+@Composable
+private fun SessionRow(session: WalkSessionEntity) {
+    val duration = "${com.stepup.android.domain.zeroPad((session.durationSec / 60).toLong(), 2)}:${com.stepup.android.domain.zeroPad((session.durationSec % 60).toLong(), 2)}"
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(13.dp),
+    ) {
+        IconSquare(icon = Icons.AutoMirrored.Filled.DirectionsWalk, size = 38.dp)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = sessionTimeFormatter.format(kotlin.time.Instant.fromEpochMilliseconds(session.startedAt)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Snow,
+            )
+            Text(
+                text = duration + " · " + stringResource(Res.string.notification_steps, session.steps),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Slate,
+            )
+        }
+        // 서버가 확인한 러닝만 금액을 보인다 — 확인 전 · 거절 · 옛(폰 계산) 기록은 "—"
+        val confirmed = session.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name
+        Text(
+            // 서버가 확인한 적립 — 반올림하면 받은 것보다 크게 보인다
+            text = if (confirmed) "+" + com.stepup.android.ui.components.formatSupDown(session.pointsEarned, 2) else "—",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (confirmed) Volt else Slate,
+        )
+    }
+}
+
+/**
+ * 막대 하나를 눌렀을 때 뜨는 작은 창.
+ *
+ * 걸음 수만 있으면 "5,200보"가 어느 정도인지 감이 안 온다. 거리와 칼로리를
+ * 같이 보여주면 같은 숫자가 몸으로 읽힌다 — 그래서 셋을 함께 둔다.
+ */
+@Composable
+private fun DayCallout(
+    day: Long,
+    steps: Int,
+    goal: Int,
+    modifier: Modifier = Modifier,
+) {
+    val date = kotlinx.datetime.LocalDate.fromEpochDays(day)
+    val km = RewardEconomy.distanceMeters(steps) / 1000.0
+    val kcal = RewardEconomy.calories(steps)
+    val rate = if (goal > 0) (steps * 100 / goal).coerceAtMost(999) else 0
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(13.dp))
+            .background(Night.copy(alpha = 0.95f))
+            .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = date.formatPattern("M.d (E)", androidx.compose.ui.text.intl.Locale.current.language),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+            )
+            Text(
+                text = "$rate%",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                // 목표를 넘긴 날은 색으로 먼저 보인다.
+                color = if (steps >= goal) Volt else Slate,
+            )
+        }
+
+        CalloutRow(stringResource(Res.string.stat_steps), "${com.stepup.android.domain.formatGrouped((steps).toLong())}")
+        CalloutRow(stringResource(Res.string.stat_distance), "${com.stepup.android.domain.formatFixed((km).toDouble(), 2)} km")
+        CalloutRow(stringResource(Res.string.stat_calories), "${com.stepup.android.domain.formatGrouped((kcal).toDouble(), 0)} kcal")
+    }
+}
+
+@Composable
+private fun CalloutRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(text = label, modifier = Modifier.weight(1f).padding(end = 12.dp), fontSize = 14.sp, color = Silver)
+        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Snow)
+    }
+}
+
+private val calloutDateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("M.d (E)", Locale.getDefault())
+
+// ═══════════════════════════════════════════════════════════════════
+//  주간 탭 — 이번 주 한눈에
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * 이번 주 합계.
+ *
+ * 막대 차트는 "어느 날이 높았나"를 보여 주지만 "그래서 이번 주에 얼마나
+ * 움직였나"는 더해 봐야 안다. 그 덧셈을 대신한다.
+ */
+@Composable
+private fun WeekSummaryCard(week: List<DailyStepsEntity>, goal: Int) {
+    val today = com.stepup.android.domain.todayIn().toEpochDays()
+    val days = (0..6).map { offset -> today - 6 + offset }
+    val byDay = week.associateBy { it.epochDay }
+    val steps = days.sumOf { (byDay[it]?.steps ?: 0).toLong() }
+    val metDays = days.count { day ->
+        byDay[day]?.let { it.steps >= (if (it.goal > 0) it.goal else goal) } == true
+    }
+    val activeDays = days.count { (byDay[it]?.steps ?: 0) > 0 }
+
+    GlowCard(contentPadding = PaddingValues(vertical = 18.dp, horizontal = 10.dp), spacing = 16.dp) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+                label = stringResource(Res.string.stat_steps),
+                value = "${com.stepup.android.domain.formatGrouped((steps).toLong())}",
+            )
+            StatCell(
+                icon = Icons.Filled.LocationOn,
+                label = stringResource(Res.string.stat_distance),
+                value = "${com.stepup.android.domain.formatFixed((steps * RewardEconomy.STRIDE_METERS / 1000).toDouble(), 1)} km",
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.LocalFireDepartment,
+                label = stringResource(Res.string.stat_calories),
+                value = "${com.stepup.android.domain.formatGrouped((steps * RewardEconomy.KCAL_PER_STEP).toDouble(), 0)}",
+            )
+            StatCell(
+                icon = Icons.Filled.CheckCircle,
+                label = stringResource(Res.string.analytics_goal_days),
+                value = stringResource(Res.string.analytics_days_of, metDays, activeDays),
+            )
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  과거 탭 — 3개월
+// ═══════════════════════════════════════════════════════════════════
+
+/** 한 주 묶음 — 과거 차트의 막대 하나 */
+private data class WeekBucket(
+    val start: LocalDate,
+    val end: LocalDate,
+    val steps: Long,
+    val activeDays: Int,
+)
+
+/**
+ * 90일을 주 단위로 묶는다.
+ *
+ * 90개 막대를 그대로 세우면 폰 화면에서 한 막대가 2dp 남짓이라 아무것도
+ * 읽히지 않는다. 주 단위로 묶으면 13개가 되고, 그 정도가 "요즘 늘고 있나"를
+ * 보기에 맞다.
+ */
+private fun weekBuckets(days: List<DailyStepsEntity>, weeks: Int = 13): List<WeekBucket> {
+    val byDay = days.associateBy { it.epochDay }
+    val today = com.stepup.android.domain.todayIn()
+    // 이번 주 월요일을 기준으로 뒤로 센다.
+    val thisMonday = today.minusDaysKx(((today.dayOfWeek.isoDayNumber + 6) % 7).toLong())
+    return (weeks - 1 downTo 0).map { back ->
+        val start = thisMonday.minusWeeksKx(back.toLong())
+        val end = start.plusDaysKx(6)
+        val range = (0..6).map { start.plusDaysKx(it.toLong()).toEpochDays() }
+        WeekBucket(
+            start = start,
+            end = end,
+            steps = range.sumOf { (byDay[it]?.steps ?: 0).toLong() },
+            activeDays = range.count { (byDay[it]?.steps ?: 0) > 0 },
+        )
+    }
+}
+
+/** 3개월 주간 막대 — 막대를 누르면 그 주 기록 */
+@Composable
+private fun QuarterChartCard(days: List<DailyStepsEntity>, goal: Int) {
+    val stepsLabel = stringResource(Res.string.stat_steps)
+    val buckets = remember(days) { weekBuckets(days) }
+    val maxValue = maxOf(buckets.maxOfOrNull { it.steps } ?: 0L, 1L)
+    val total = buckets.sumOf { it.steps }
+    var selected by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    GlowCard(accent = true, contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Eyebrow(text = stringResource(Res.string.analytics_tab_quarter))
+                Text(
+                    text = "${com.stepup.android.domain.formatGrouped((total).toLong())}",
+                    fontSize = 36.sp,
+                    fontFamily = com.stepup.android.ui.theme.StepUpFonts.numbers,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1.2).sp,
+                    color = Snow,
+                )
+            }
+            Text(
+                text = stringResource(Res.string.analytics_tap_hint_week),
+                fontSize = 14.sp,
+                color = Slate,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+        }
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(190.dp),
+        ) {
+            val chartWidth = maxWidth
+            val gap = 3.dp
+            val slot = (chartWidth - gap * (buckets.size - 1)) / buckets.size
+
+            Row(
+                modifier = Modifier.matchParentSize(),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                buckets.forEachIndexed { index, bucket ->
+                    val fraction = (bucket.steps.toFloat() / maxValue).coerceIn(0.03f, 1f)
+                    val isSelected = index == selected
+                    val isThisWeek = index == buckets.lastIndex
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .testTag("analytics-week-$index")
+                            .semantics {
+                                contentDescription = "${bucket.start} – ${bucket.end}, ${bucket.steps} $stepsLabel"
+                                this.selected = isSelected
+                                role = Role.Button
+                            }
+                            .quietClickable { selected = if (isSelected) null else index },
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(fraction)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    when {
+                                        isSelected -> Volt
+                                        isThisWeek -> Volt.copy(alpha = 0.75f)
+                                        else -> Volt.copy(alpha = 0.28f)
+                                    },
+                                ),
+                        )
+                    }
+                }
+            }
+
+        }
+
+        // 맨 왼쪽 주와 이번 주만 적는다. 13개를 다 적으면 글자가 겹친다.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = buckets.firstOrNull()?.start?.format(monthDayFormatter).orEmpty(),
+                fontSize = 14.sp,
+                color = Slate,
+            )
+            Text(
+                text = stringResource(Res.string.analytics_this_week),
+                fontSize = 14.sp,
+                color = Slate,
+            )
+        }
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(buckets.size) { index ->
+                com.stepup.android.ui.components.PillChip(
+                    text = buckets[index].start.format(monthDayFormatter) + " – " + buckets[index].end.format(monthDayFormatter),
+                    selected = selected == index,
+                    onClick = { selected = if (selected == index) null else index },
+                )
+            }
+        }
+        selected?.let { index ->
+            buckets.getOrNull(index)?.let { bucket ->
+                WeekCallout(bucket, goal, Modifier.fillMaxWidth().testTag("analytics-week-details"))
+            }
+        }
+    }
+}
+
+/** 주 막대를 눌렀을 때 뜨는 작은 창 */
+@Composable
+private fun WeekCallout(bucket: WeekBucket, goal: Int, modifier: Modifier = Modifier) {
+    val km = bucket.steps * RewardEconomy.STRIDE_METERS / 1000
+    val dailyAvg = if (bucket.activeDays > 0) bucket.steps / bucket.activeDays else 0L
+    val rate = if (goal > 0) (bucket.steps * 100 / (goal.toLong() * 7)).toInt() else 0
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(13.dp))
+            .background(Night.copy(alpha = 0.95f))
+            .border(1.dp, Volt.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = bucket.start.format(monthDayFormatter) + " – " +
+                    bucket.end.format(monthDayFormatter),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Snow,
+            )
+            Text(
+                text = "$rate%",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (rate >= 100) Volt else Slate,
+            )
+        }
+        CalloutRow(stringResource(Res.string.stat_steps), "${com.stepup.android.domain.formatGrouped((bucket.steps).toLong())}")
+        CalloutRow(stringResource(Res.string.stat_distance), "${com.stepup.android.domain.formatFixed((km).toDouble(), 1)} km")
+        CalloutRow(stringResource(Res.string.analytics_daily_avg), "${com.stepup.android.domain.formatGrouped((dailyAvg).toLong())}")
+        CalloutRow(
+            stringResource(Res.string.analytics_active_days),
+            stringResource(Res.string.analytics_days_count, bucket.activeDays),
+        )
+    }
+}
+
+/** 3개월 합계 */
+@Composable
+private fun QuarterSummaryCard(days: List<DailyStepsEntity>, goal: Int) {
+    val steps = days.sumOf { it.steps.toLong() }
+    val activeDays = days.count { it.steps > 0 }
+    val metDays = days.count { it.steps >= (if (it.goal > 0) it.goal else goal) }
+    val best = days.maxByOrNull { it.steps }
+    // 평균은 "걸은 날" 기준이다. 앱을 안 켠 날까지 나누면 실제보다 낮게 나오고,
+    // 그러면 열심히 뛴 사람이 자기 기록을 못 믿게 된다.
+    val dailyAvg = if (activeDays > 0) steps / activeDays else 0L
+
+    GlowCard(contentPadding = PaddingValues(vertical = 18.dp, horizontal = 10.dp), spacing = 16.dp) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+                label = stringResource(Res.string.stat_steps),
+                value = "${com.stepup.android.domain.formatGrouped((steps).toLong())}",
+            )
+            StatCell(
+                icon = Icons.Filled.LocationOn,
+                label = stringResource(Res.string.stat_distance),
+                value = "${com.stepup.android.domain.formatFixed((steps * RewardEconomy.STRIDE_METERS / 1000).toDouble(), 1)} km",
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.TrendingUp,
+                label = stringResource(Res.string.analytics_daily_avg),
+                value = "${com.stepup.android.domain.formatGrouped((dailyAvg).toLong())}",
+            )
+            StatCell(
+                icon = Icons.Filled.LocalFireDepartment,
+                label = stringResource(Res.string.stat_calories),
+                value = "${com.stepup.android.domain.formatGrouped((steps * RewardEconomy.KCAL_PER_STEP).toDouble(), 0)}",
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.CheckCircle,
+                label = stringResource(Res.string.analytics_goal_days),
+                value = stringResource(Res.string.analytics_days_of, metDays, activeDays),
+            )
+            StatCell(
+                icon = Icons.Filled.EmojiEvents,
+                label = stringResource(Res.string.analytics_best_day),
+                value = "${com.stepup.android.domain.formatGrouped((best?.steps ?: 0).toLong())}",
+            )
+        }
+        if (best != null && best.steps > 0) {
+            HairlineDivider()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Eyebrow(text = stringResource(Res.string.analytics_best_day))
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = kotlinx.datetime.LocalDate.fromEpochDays(best.epochDay).format(calloutDateFormatter),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Snow,
+                )
+            }
+        }
+    }
+}
+
+/** 최근 3개월을 달별로 */
+@Composable
+private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
+    val byMonth = remember(days) {
+        days.groupBy { kotlinx.datetime.LocalDate.fromEpochDays(it.epochDay).withDayOfMonth(1) }
+            .toSortedMap(compareByDescending { it })
+    }
+    val maxSteps = byMonth.values.maxOfOrNull { list -> list.sumOf { it.steps.toLong() } } ?: 1L
+
+    GlowCard(contentPadding = PaddingValues(18.dp), spacing = 13.dp) {
+        if (byMonth.isEmpty()) {
+            Text(
+                text = stringResource(Res.string.analytics_no_data),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Slate,
+            )
+        } else {
+            byMonth.forEach { (month, entries) ->
+                val steps = entries.sumOf { it.steps.toLong() }
+                val km = steps * RewardEconomy.STRIDE_METERS / 1000
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        Text(
+                            text = month.format(monthFormatter),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Snow,
+                        )
+                        Text(
+                            text = "${com.stepup.android.domain.formatGrouped((steps).toLong())}" + " · " + "${com.stepup.android.domain.formatFixed((km).toDouble(), 0)} km",
+                            fontSize = 14.sp,
+                            color = Silver,
+                        )
+                    }
+                    BarMeter(
+                        fraction = (steps.toFloat() / maxSteps).coerceIn(0f, 1f),
+                        height = 6.dp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 러닝 세션 통계 — 걸음 기록과 달리 "뛴 것"만 센다 */
+@Composable
+private fun RunStatsCard(sessions: List<WalkSessionEntity>) {
+    val totalSec = sessions.sumOf { it.durationSec }
+    val totalKm = sessions.sumOf { it.distanceMeters } / 1000.0
+    val longest = sessions.maxOfOrNull { it.durationSec } ?: 0L
+    // 페이스 · 평균 속도는 거리와 시간이 모두 있는 러닝만으로 — 기록 통계(observeRecordTotals)와 같은 바탕(서버가 무효로 본
+    // 러닝도 뺀다). 시간만 잰 러닝(거리 0)의 시간까지 나누면 평균이 느리게 나왔다(2026-10-17 점검).
+    val (pacedSec, pacedMeters) = com.stepup.android.domain.RunPace.pacedTotals(
+        sessions.filter { it.verdict != "VOID" }.map { it.durationSec to it.distanceMeters },
+    )
+    val pace = com.stepup.android.domain.RunPace.secPerKm(pacedSec, pacedMeters)?.toInt() ?: 0
+    // 최고 속도가 아니라 평균 속도다. 구간 최고 속도는 서버가 GPS 경로에서
+    // 재는 값이고, 폰에 저장된 세션에는 그 값이 없다. 없는 값을 있는 척
+    // 그리는 대신 가진 것으로 낼 수 있는 값을 낸다.
+    val avgSpeed = com.stepup.android.domain.RunPace.kmh(pacedSec, pacedMeters) ?: 0.0
+
+    GlowCard(contentPadding = PaddingValues(vertical = 18.dp, horizontal = 10.dp), spacing = 16.dp) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+                label = stringResource(Res.string.analytics_run_count),
+                value = stringResource(Res.string.analytics_times, sessions.size),
+            )
+            StatCell(
+                icon = Icons.Filled.TrendingUp,
+                label = stringResource(Res.string.analytics_total_time),
+                value = formatDurationShort(totalSec),
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.LocationOn,
+                label = stringResource(Res.string.analytics_avg_pace),
+                value = if (pace > 0) "${pace / 60}:${com.stepup.android.domain.zeroPad((pace % 60).toLong(), 2)}/km" else "—",
+            )
+            StatCell(
+                icon = Icons.Filled.EmojiEvents,
+                label = stringResource(Res.string.analytics_avg_speed),
+                value = if (avgSpeed > 0) "${com.stepup.android.domain.formatFixed((avgSpeed).toDouble(), 1)} km/h" else "—",
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatCell(
+                icon = Icons.Filled.CheckCircle,
+                label = stringResource(Res.string.analytics_longest_run),
+                value = formatDurationShort(longest),
+            )
+            StatCell(
+                icon = Icons.Filled.LocalFireDepartment,
+                label = stringResource(Res.string.stat_distance),
+                value = "${com.stepup.android.domain.formatFixed((totalKm).toDouble(), 1)} km",
+            )
+        }
+    }
+}
+
+/** 초 → "2시간 14분" · "38분" */
+@Composable
+private fun formatDurationShort(totalSec: Long): String {
+    val hours = totalSec / 3600
+    val minutes = (totalSec % 3600) / 60
+    return when {
+        totalSec <= 0 -> "—"
+        hours > 0 -> stringResource(Res.string.analytics_hours_minutes, hours, minutes)
+        else -> stringResource(Res.string.analytics_minutes, minutes)
+    }
+}
+
+private val monthDayFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("M.d", Locale.getDefault())
+
+private val monthFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy.M", Locale.getDefault())
+
+/** 기록 지도로 들어가는 한 줄 */
+@Composable
+private fun HistoryMapEntry(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CarbonHigh)
+            .quietClickable(onClick)
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Filled.Map, contentDescription = null, tint = Volt, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = stringResource(Res.string.history_map_title),
+                color = Snow,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+            Text(
+                text = stringResource(Res.string.history_map_entry_sub),
+                color = Silver,
+                fontSize = 14.sp,
+            )
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)
+    }
+}

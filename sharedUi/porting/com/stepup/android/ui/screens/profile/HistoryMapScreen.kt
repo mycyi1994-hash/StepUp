@@ -1,0 +1,215 @@
+package com.stepup.android.ui.screens.profile
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.stepup.ui.res.*
+import com.stepup.android.core.AppServices
+import com.stepup.android.data.local.WalkSessionDao
+import com.stepup.android.domain.GeoPoint
+import com.stepup.android.domain.RunTrack
+import com.stepup.android.domain.formatKm
+import com.stepup.android.domain.haversineMeters
+import com.stepup.android.domain.toGeoPoints
+import com.stepup.android.domain.trackDistanceKm
+import com.stepup.android.ui.components.SecondaryHeader
+import com.stepup.android.ui.theme.StepUpDesign
+import com.stepup.android.ui.components.GlowCard
+import com.stepup.android.ui.components.StepUpMap
+import com.stepup.android.ui.theme.Silver
+import com.stepup.android.ui.theme.Snow
+import com.stepup.android.ui.theme.Volt
+import kotlinx.datetime.DayOfWeek
+import java.time.temporal.TemporalAdjusters
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
+
+/** 기록 지도에서 볼 기간 */
+enum class HistoryPeriod { WEEK, MONTH, ALL }
+
+/** 기록 지도에 그릴 것 — 달린 길들과 합계 */
+data class HistoryMap(
+    val routes: List<List<GeoPoint>> = emptyList(),
+    val runs: Int = 0,
+    val km: Double = 0.0,
+)
+
+/**
+ * 기록 지도 — 이 폰에 남은 GPS 러닝을 한 지도에 겹친다.
+ *
+ * 선을 옅게 그려 겹칠수록 밝아지게 한다. 자주 달린 길이 저절로 히트맵처럼
+ * 떠오른다. 경로는 폰에만 있고 이 화면은 서버에 묻지 않는다.
+ */
+class HistoryMapViewModel(dao: WalkSessionDao) : ViewModel() {
+
+    val period = MutableStateFlow(HistoryPeriod.MONTH)
+
+    // 지금 계정의 러닝 경로만 — 다른 계정으로 다시 로그인하면 앞 계정의 경로(집 근처 등)가 보이지 않게
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val sessions = AppServices.recordingOwnerFlow()
+        .flatMapLatest { dao.observeRecentFor(it, MAX_SESSIONS) }
+
+    val map: StateFlow<HistoryMap> = combine(sessions, period) { sessions, p ->
+        val since = periodStart(p)
+        val routes = sessions
+            .filter { it.startedAt >= since && it.track.isNotBlank() }
+            .map { RunTrack.decode(it.track).toGeoPoints() }
+            .filter { it.size >= 2 }
+        HistoryMap(
+            // 그리기가 가볍도록 한 러닝당 최대 400점으로 솎는다
+            routes = routes.map { r -> if (r.size <= 400) r else r.filterIndexed { i, _ -> i % (r.size / 400 + 1) == 0 } },
+            runs = routes.size,
+            km = routes.sumOf { it.trackDistanceKm() },
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryMap())
+
+    private fun periodStart(p: HistoryPeriod): Long {
+        val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
+        val today = com.stepup.android.domain.todayIn(zone)
+        val start = when (p) {
+            HistoryPeriod.WEEK -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            HistoryPeriod.MONTH -> today.withDayOfMonth(1)
+            HistoryPeriod.ALL -> return 0L
+        }
+        return start.atStartOfDay(zone).toInstant().toEpochMilliseconds()
+    }
+
+    companion object {
+        private const val MAX_SESSIONS = 500
+
+        val Factory = viewModelFactory {
+            initializer { HistoryMapViewModel(AppServices.database.walkSessionDao()) }
+        }
+    }
+}
+
+/**
+ * 처음 맞출 경로들 — 가장 최근 러닝([routes] 의 처음) 둘레 [HISTORY_FOCUS_METERS] 안에서 달린 것만.
+ * 여행지 · 다른 도시에서 한 번 달린 기록까지 맞추면 지도가 나라 전체로 물러난다. 먼 기록도 그리기는 한다(축소하면 보인다).
+ */
+internal fun historyFocus(routes: List<List<GeoPoint>>): List<GeoPoint> {
+    val home = routes.firstOrNull { it.isNotEmpty() }?.middle() ?: return emptyList()
+    return routes.filter { it.isNotEmpty() && haversineMeters(home, it.middle()) <= HISTORY_FOCUS_METERS }.flatten()
+}
+
+/** 경로를 담는 사각형의 가운데 */
+private fun List<GeoPoint>.middle() = GeoPoint((minOf { it.lat } + maxOf { it.lat }) / 2, (minOf { it.lng } + maxOf { it.lng }) / 2)
+
+private const val HISTORY_FOCUS_METERS = 10_000.0
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun HistoryMapScreen(
+    onBack: () -> Unit = {},
+    viewModel: HistoryMapViewModel = viewModel(factory = HistoryMapViewModel.Factory),
+) {
+    val period by viewModel.period.collectAsStateWithLifecycle()
+    val map by viewModel.map.collectAsStateWithLifecycle()
+    val focus = remember(map) { historyFocus(map.routes) }
+
+    Column(Modifier.fillMaxSize()) {
+        SecondaryHeader(
+            title = stringResource(Res.string.history_map_title),
+            onBack = onBack, balance = null, onOpenWallet = null,
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
+        )
+
+        com.stepup.android.ui.components.TwoWaySwitch(
+            labels = listOf(stringResource(Res.string.history_period_week), stringResource(Res.string.history_period_month), stringResource(Res.string.history_period_all)),
+            selected = HistoryPeriod.entries.indexOf(period),
+            onSelect = { viewModel.period.value = HistoryPeriod.entries[it] },
+            modifier = Modifier.padding(horizontal = StepUpDesign.Gutter, vertical = 12.dp),
+        )
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = StepUpDesign.Gutter)
+                .clip(RoundedCornerShape(18.dp)),
+        ) {
+            StepUpMap(
+                focus = focus,
+                modifier = Modifier.fillMaxSize(),
+                interactive = focus.isNotEmpty(),
+            ) { plan ->
+                for (route in map.routes) {
+                    val screen = route.map { plan.toScreen(it) }
+                    val path = Path().apply {
+                        moveTo(screen[0].x, screen[0].y)
+                        for (i in 1 until screen.size) lineTo(screen[i].x, screen[i].y)
+                    }
+                    // 옅은 선을 더해 가며 겹친다 — 많이 달린 길일수록 밝게 타오른다
+                    drawPath(
+                        path,
+                        color = Volt.copy(alpha = 0.16f),
+                        style = Stroke(width = 9.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                        blendMode = BlendMode.Plus,
+                    )
+                    drawPath(
+                        path,
+                        color = Volt.copy(alpha = 0.55f),
+                        style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                    )
+                }
+            }
+        }
+
+        Box(Modifier.padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 12.dp, bottom = 18.dp)) {
+            GlowCard(contentPadding = PaddingValues(16.dp), spacing = 6.dp) {
+                if (map.runs == 0) {
+                    Text(
+                        text = stringResource(Res.string.history_map_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Silver,
+                    )
+                } else {
+                    Text(
+                        text = stringResource(Res.string.history_map_stats, map.runs, formatKm(map.km)),
+                        color = Snow,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(Res.string.history_map_sub),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Silver,
+                    )
+                }
+            }
+        }
+    }
+}

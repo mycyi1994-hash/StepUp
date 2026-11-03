@@ -415,6 +415,7 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
             pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
             owner = recordingOwnerFlow(),
+            runActive = { com.stepup.android.service.WalkSessionService.state.value.isActive },
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,

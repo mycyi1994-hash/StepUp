@@ -32,7 +32,7 @@ private enum class Stage { Checking, SignedOut, AccessCode, SignedIn, ShoeCheck,
  * 결과 안내도 안드로이드와 같다 — 취소는 아무것도 띄우지 않고, 서버가 거절하면 Failed, 닿지 못하면 Offline, 설정이 없으면 Failed.
  */
 @Composable
-fun IosRoot() = StepUpTheme { Box(Modifier.fillMaxSize()) { IosRootContent(); com.stepup.android.ui.components.ToastHost() } }
+fun IosRoot() = StepUpTheme(mode = com.stepup.android.core.AppTheme.mode) { Box(Modifier.fillMaxSize()) { IosRootContent(); com.stepup.android.ui.components.ToastHost() } }
 
 @Composable
 private fun IosRootContent() {
@@ -55,6 +55,9 @@ private fun IosRootContent() {
     LaunchedEffect(Unit) {
         // 러닝 올리기를 이어 둔다 — 앞에 올 때 · 백그라운드 작업이 같은 규칙(UploadPass)으로 올린다
         IosApp.configureMap()
+        // 고른 테마 · 언어를 첫 화면 전에(안드로이드 StepUpApp 과 같다)
+        com.stepup.android.core.AppTheme.bootstrap(IosApp.prefs.themeModeNow())
+        com.stepup.android.core.AppLocale.bootstrap(IosApp.prefs.languageNow())
         IosApp.connectServices(onReturnToSignIn = {
             IosRunSession.stop()
             IosAuth.signOut(IosApp.sessionStore)

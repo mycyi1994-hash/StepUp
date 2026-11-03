@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- iOS 로그인 화면(:sharedUi)만 쓴다 — Apple 로그인 버튼(App Store 심사 4.8). 안드로이드 화면에는 없다 -->
+<!-- iOS 화면(:sharedUi)만 쓴다 — Apple 로그인 버튼(App Store 심사 4.8) · 언어는 다음 실행부터. 안드로이드 화면에는 없다 -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="login_apple" tools:ignore="UnusedResources">Apple로 로그인</string>
+    <string name="ios_language_restart" tools:ignore="UnusedResources">다음에 StepUp을 열 때 새 언어로 보여요.</string>
 </resources>

@@ -77,6 +77,72 @@ s = re.sub(r"\b(?:com\.stepup\.android\.)?BuildConfig\.", "com.stepup.android.co
 s = s.replace("import java.time.ZoneId\n", "")
 s = re.sub(r"(?:java\.time\.)?ZoneId\.systemDefault\(\)", "kotlinx.datetime.TimeZone.currentSystemDefault()", s)
 s = re.sub(r":\s*(?:java\.time\.)?ZoneId\b", ": kotlinx.datetime.TimeZone", s)
+# 입출력 일꾼 — 공용 코드는 kotlinx.coroutines.IO 를 들여와야 Dispatchers.IO 가 보인다
+if "Dispatchers.IO" in s and "import kotlinx.coroutines.IO\n" not in s:
+    s = re.sub(r"\n(import [^\n]+\n)", "\nimport kotlinx.coroutines.IO\n\\1", s, count=1)
+# java.time → kotlinx-datetime(공용 규칙과 같은 날짜 값) · 날짜 꼴은 공용 DatePattern(JDK 와 맞대어 검사)
+for jt, kx in (("LocalDate", "kotlinx.datetime.LocalDate"), ("LocalTime", "kotlinx.datetime.LocalTime"),
+               ("LocalDateTime", "kotlinx.datetime.LocalDateTime"), ("YearMonth", "kotlinx.datetime.YearMonth"),
+               ("DayOfWeek", "kotlinx.datetime.DayOfWeek"), ("Instant", "kotlin.time.Instant")):
+    s = s.replace(f"import java.time.{jt}\n", f"import {kx}\n")
+    s = re.sub(rf"\bjava\.time\.{jt}\b", kx, s)
+s = s.replace("import java.time.ZonedDateTime\n", "")
+s = s.replace("import java.time.format.DateTimeFormatter\n", "")
+s = s.replace("import java.time.format.TextStyle\n", "")
+s = s.replace("kotlin.time.Instant.ofEpochMilli(", "kotlin.time.Instant.fromEpochMilliseconds(")
+s = re.sub(r"(?<![\w.])Instant\.ofEpochMilli\(", "kotlin.time.Instant.fromEpochMilliseconds(", s)
+s = re.sub(r"\.toEpochMilli\(\)", ".toEpochMilliseconds()", s)
+s = re.sub(r"\.atZone\(", ".toLocalDateTime(", s)
+s = re.sub(r"\.toLocalDate\(\)", ".date", s)
+s = re.sub(r"\.toLocalTime\(\)", ".time", s)
+s = re.sub(r"\bLocalDate\.now\(\)", "com.stepup.android.domain.todayIn()", s)
+s = re.sub(r"\bLocalDate\.now\(", "com.stepup.android.domain.todayIn(", s)
+s = re.sub(r"\.toEpochDay\(\)", ".toEpochDays()", s)
+s = re.sub(r"\bLocalDate\.ofEpochDay\(", "kotlinx.datetime.LocalDate.fromEpochDays(", s)
+s = re.sub(r"\bLocalDate\.of\(", "kotlinx.datetime.LocalDate(", s)
+s = re.sub(r"\bLocalTime\.of\(", "kotlinx.datetime.LocalTime(", s)
+s = re.sub(r"\bYearMonth\.of\(", "kotlinx.datetime.YearMonth(", s)
+for unit, k in (("Days", "DAY"), ("Weeks", "WEEK"), ("Months", "MONTH"), ("Years", "YEAR")):
+    s = re.sub(rf"\.plus{unit}\(", f".plus{unit}Kx(", s)
+    s = re.sub(rf"\.minus{unit}\(", f".minus{unit}Kx(", s)
+s = re.sub(r"\.dayOfMonth\b", ".day", s)
+s = re.sub(r"\.monthValue\b", ".month.number", s)
+s = re.sub(r"\.dayOfWeek\.value\b", ".dayOfWeek.isoDayNumber", s)
+s = re.sub(r"\bZoneOffset\.UTC\b", "kotlinx.datetime.TimeZone.UTC", s)
+s = re.sub(r"RunPhotos\.decode\(\s*\w*[cC]ontext\s*,\s*", "RunPhotos.decode(", s)
+s = re.sub(r"(?:java\.time\.format\.)?DateTimeFormatter\.ofLocalizedDate\((?:java\.time\.format\.)?FormatStyle\.MEDIUM\)\.format\(",
+           "com.stepup.android.domain.DatePattern.mediumDate(androidx.compose.ui.text.intl.Locale.current.language, ", s)
+s = re.sub(r"\.getDisplayName\(\s*(?:java\.time\.format\.)?TextStyle\.(NARROW|SHORT|FULL)\s*,(?:[^()]|\([^()]*\))*\)",
+           r".displayName(com.stepup.android.domain.DateNameStyle.\1, androidx.compose.ui.text.intl.Locale.current.language)", s)
+def _pattern_calls(text):
+    out, pos = [], 0
+    lang = "androidx.compose.ui.text.intl.Locale.current.language"
+    # X.format(DateTimeFormatter.ofPattern(P[, L]))
+    pat = re.compile(r"\.format\(\s*(?:java\.time\.format\.)?DateTimeFormatter\.ofPattern\(")
+    while True:
+        m = pat.search(text, pos)
+        if not m: out.append(text[pos:]); break
+        inner_end = _call_end(text, m.end() - 1)
+        close = inner_end
+        while close < len(text) and text[close] in " \n": close += 1
+        if inner_end < 0 or close >= len(text) or text[close] != ")": out.append(text[pos:m.end()]); pos = m.end(); continue
+        args = _split_args(text[m.end():inner_end - 1])
+        # 받는 값(X)은 앞의 식 — 부르는 쪽 그대로 두고 확장 함수로 받는다
+        out.append(text[pos:m.start()]); out.append(f".formatPattern({args[0]}, {lang})"); pos = close + 1
+    return "".join(out)
+# 앱 밖 열기 · 언어 — 공용 ExternalIntents · AppLocale(Context 없이)
+s = re.sub(r"ExternalIntents\.(\w+)\(\s*\w*[cC]ontext\s*,\s*", r"ExternalIntents.\1(", s)
+s = re.sub(r"ExternalIntents\.(\w+)\(\s*\w*[cC]ontext\s*\)", r"ExternalIntents.\1()", s)
+s = re.sub(r"AppLocale\.change\(\s*\w*[cC]ontext\s*,\s*", "AppLocale.change(", s)
+s = s.replace("com.stepup.android.core.ExternalIntents.", "com.stepup.android.core.ExternalIntents.")
+# 이름이 글자 번호(…Res)인 Int 칸 — 애노테이션이 없어도 글자(StringResource)로. 그림 이름(icon · image · art · drawable · photo)은 그림으로
+s = re.sub(r"\b(val |var )?(\w*(?:[lL]abel|[tT]itle|[bB]ody|[tT]ext|[dD]esc|[nN]ame|[hH]int|[mM]essage|[sS]ub|[sS]ummary|[cC]aption|[nN]ote|[dD]etail)\w*Res): Int\b",
+           r"\1\2: org.jetbrains.compose.resources.StringResource", s)
+s = re.sub(r"\b(val |var )?(\w*(?:[iI]con|[iI]mage|[aA]rt|[dD]rawable|[pP]hoto|[pP]icture)\w*Res): Int\b",
+           r"\1\2: org.jetbrains.compose.resources.DrawableResource", s)
+# 테스트 APK 스스로 업데이트는 안드로이드 시험 판에만 — 공용 화면에서는 빌드 이름만
+s = s.replace("com.stepup.android.core.TestUpdates.buildLabel", "com.stepup.android.core.AppBuild.VERSION_NAME")
+s = s.replace("if (com.stepup.android.core.TestUpdates.enabled) com.stepup.android.ui.components.TestUpdateSettingsLine()", "")
 # 저장소는 공용 AppServices 에서(안드로이드 ServiceLocator 의 화면 쪽 자리)
 s = s.replace("import com.stepup.android.core.ServiceLocator\n", "import com.stepup.android.core.AppServices\n")
 s = re.sub(r"\b(?:com\.stepup\.android\.core\.)?ServiceLocator\.", "AppServices.", s)
@@ -104,32 +170,116 @@ def _call_end(text, start):
     return -1
 
 
+def _split_args(text):
+    """맨 위 쉼표로 인자를 나눈다(괄호 · 따옴표 안 쉼표는 그대로)"""
+    args, depth, cur, quote, i = [], 0, [], None, 0
+    while i < len(text):
+        ch = text[i]
+        if quote:
+            cur.append(ch)
+            if ch == "\\": cur.append(text[i + 1]); i += 2; continue
+            if ch == quote: quote = None
+        elif ch in "\"'": quote = ch; cur.append(ch)
+        elif ch in "([{": depth += 1; cur.append(ch)
+        elif ch in ")]}": depth -= 1; cur.append(ch)
+        elif ch == "," and depth == 0: args.append("".join(cur).strip()); cur = []
+        else: cur.append(ch)
+        i += 1
+    if "".join(cur).strip(): args.append("".join(cur).strip())
+    return args
+
+
+_SPEC = re.compile(r"%(?:(\d+)\$)?(,)?(0\d+)?(?:\.(\d+))?([dsf%])")
+
+
+def _spec_expr(flag_group, zero, prec, conv, arg):
+    if conv == "s": return f"{arg}"
+    if conv == "d":
+        if flag_group: return f"com.stepup.android.domain.formatGrouped(({arg}).toLong())"
+        if zero: return f"com.stepup.android.domain.zeroPad(({arg}).toLong(), {int(zero[1:])})"
+        return f"{arg}"
+    if conv == "f":
+        n = int(prec) if prec is not None else 6
+        if flag_group: return f"com.stepup.android.domain.formatGrouped(({arg}).toDouble(), {n})"
+        return f"com.stepup.android.domain.formatFixed(({arg}).toDouble(), {n})"
+    return None
+
+
 def _formats(text):
-    """\"%.2f\".format(x) · \"%,d\".format(x) · \"%02d\".format(x) → 공용 함수(Platform.kt — 안드로이드와 같은 글자)"""
+    """\"…%.2f km\".format(x) 처럼 String.format 꼴 → 공용 함수를 쓴 글자 틀(Platform.kt — 안드로이드와 같은 글자)"""
     out, pos = [], 0
-    pat = re.compile(r'"(%\.(\d)f|%,d|%,\.(\d)f|%0(\d)d|%d)"\.format\(')
+    pat = re.compile(r'"((?:[^"\\$]|\\.)*%(?:[^"\\]|\\.)*)"\.format\(')
     while True:
         m = pat.search(text, pos)
         if not m: out.append(text[pos:]); break
         end = _call_end(text, m.end() - 1)
         if end < 0: out.append(text[pos:]); break
-        arg = text[m.end():end - 1]
         fmt = m.group(1)
-        if fmt.startswith("%.") and fmt.endswith("f"): rep = f"com.stepup.android.domain.formatFixed(({arg}).toDouble(), {m.group(2)})"
-        elif fmt == "%,d": rep = f"com.stepup.android.domain.formatGrouped(({arg}).toLong())"
-        elif fmt.startswith("%,."): rep = f"com.stepup.android.domain.formatGrouped(({arg}).toDouble(), {m.group(3)})"
-        elif fmt.startswith("%0"): rep = f"com.stepup.android.domain.zeroPad(({arg}).toLong(), {m.group(4)})"
-        else: rep = f"({arg}).toString()"
-        out.append(text[pos:m.start()]); out.append(rep); pos = end
+        args = _split_args(text[m.end():end - 1])
+        pieces, k, ok, last = [], 0, True, 0
+        for sm in _SPEC.finditer(fmt):
+            pieces.append(fmt[last:sm.start()].replace("$", "\\$"))
+            last = sm.end()
+            idx, group, zero, prec, conv = sm.groups()
+            if conv == "%": pieces.append("%"); continue
+            ai = int(idx) - 1 if idx else k
+            k += 0 if idx else 1
+            if ai >= len(args): ok = False; break
+            e = _spec_expr(group, zero, prec, conv, args[ai])
+            if e is None: ok = False; break
+            pieces.append("${" + e + "}")
+        pieces.append(fmt[last:].replace("$", "\\$"))
+        if not ok or "%" in "".join(p for p in pieces if not p.startswith("${")).replace("%", "", fmt.count("%%")):
+            out.append(text[pos:end]); pos = end; continue
+        out.append(text[pos:m.start()]); out.append('"' + "".join(pieces) + '"'); pos = end
     return "".join(out)
 
 
 # 쓰지 않게 된 안드로이드 Context — 선언만 남았으면 지운다
-if len(re.findall(r"\bcontext\b", s)) == len(re.findall(r"val context = LocalContext\.current(?:\.applicationContext)?\n", s)):
-    s = re.sub(r"[ \t]*val context = LocalContext\.current(?:\.applicationContext)?\n", "", s)
+_CTX = r"val context = (?:androidx\.compose\.ui\.platform\.)?LocalContext\.current(?:\.applicationContext)?\n"
+if len(re.findall(r"\bcontext\b", s)) == len(re.findall(_CTX, s)):
+    s = re.sub(r"[ \t]*" + _CTX, "", s)
+s = s.replace("import java.util.Locale\n", "")
 if "LocalContext" not in s.replace("import androidx.compose.ui.platform.LocalContext\n", ""):
     s = s.replace("import androidx.compose.ui.platform.LocalContext\n", "")
 
+def _string_format(text):
+    """String.format(Locale.X, "…", a) · String.format("…", a) → "…".format(a) — 이어서 _formats 가 바꾼다"""
+    pat = re.compile(r'(?:java\.lang\.)?String\.format\(\s*(?:(?:java\.util\.)?Locale\.\w+\s*,\s*)?(?=")')
+    out, pos = [], 0
+    while True:
+        m = pat.search(text, pos)
+        if not m: out.append(text[pos:]); break
+        end = _call_end(text, m.end() - 1 - (len(m.group(0)) - len(m.group(0).rstrip())) if False else text.index("(", m.start()))
+        if end < 0: out.append(text[pos:]); break
+        inner = text[m.end():end - 1]
+        args = _split_args(inner)
+        out.append(text[pos:m.start()])
+        out.append(args[0] + ".format(" + ", ".join(args[1:]) + ")")
+        pos = end
+    return "".join(out)
+
+
+s = _pattern_calls(s)
+# 쓰는 확장 함수 · 속성 들여오기
+_NEED = [
+    (r"\.(?:plus|minus)(?:Days|Weeks|Months|Years)Kx\(", ["com.stepup.android.domain.plusDaysKx", "com.stepup.android.domain.minusDaysKx",
+        "com.stepup.android.domain.plusWeeksKx", "com.stepup.android.domain.minusWeeksKx", "com.stepup.android.domain.plusMonthsKx",
+        "com.stepup.android.domain.minusMonthsKx", "com.stepup.android.domain.plusYearsKx", "com.stepup.android.domain.minusYearsKx"]),
+    (r"\.formatPattern\(", ["com.stepup.android.domain.formatPattern"]),
+    (r"\.displayName\(com\.stepup\.android\.domain\.DateNameStyle", ["com.stepup.android.domain.displayName"]),
+    (r"\.toLocalDateTime\(", ["kotlinx.datetime.toLocalDateTime"]),
+    (r"\.month\.number\b", ["kotlinx.datetime.number"]),
+    (r"\.isoDayNumber\b", ["kotlinx.datetime.isoDayNumber"]),
+    (r"\.toEpochDays\(\)", []),
+    (r"\bcodePointLength\(\)", ["com.stepup.android.domain.codePointLength"]),
+]
+for rx, names in _NEED:
+    if re.search(rx, s):
+        for n in names:
+            if f"import {n}\n" not in s:
+                s = re.sub(r"\n(import [^\n]+\n)", f"\nimport {n}\n\\1", s, count=1)
+s = _string_format(s)
 s = _formats(s)
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text(s)

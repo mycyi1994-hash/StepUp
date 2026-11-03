@@ -23,6 +23,35 @@ object DatePattern {
     fun format(epochMillis: Long, zone: TimeZone, pattern: String, language: String = "en"): String =
         format(Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(zone), pattern, language)
 
+    /** DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) — 네 언어(JDK · CLDR 와 같은 꼴) */
+    fun mediumDate(language: String, date: LocalDate): String = when (lang(language)) {
+        "ko" -> "${date.year}. ${date.month.ordinal + 1}. ${date.day}."
+        "ja" -> "${date.year}/${zeroPad(date.month.ordinal + 1, 2)}/${zeroPad(date.day, 2)}"
+        "zh" -> "${date.year}年${date.month.ordinal + 1}月${date.day}日"
+        else -> "${Names.of("en").monthShort[date.month.ordinal]} ${date.day}, ${date.year}"
+    }
+
+    fun mediumDate(language: String, at: LocalDateTime): String = mediumDate(language, at.date)
+
+    /** DayOfWeek.getDisplayName(style, locale) */
+    fun dayName(day: DayOfWeek, style: DateNameStyle, language: String): String {
+        val names = Names.of(language)
+        val i = day.ordinal
+        return when (style) {
+            DateNameStyle.FULL -> names.dayLong[i]
+            DateNameStyle.SHORT -> names.dayShort[i]
+            DateNameStyle.NARROW -> when (lang(language)) {
+                "en" -> names.dayLong[i].take(1)
+                "zh" -> "一二三四五六日"[i].toString()
+                else -> names.dayShort[i]
+            }
+        }
+    }
+
+    internal fun lang(language: String): String = language.lowercase().substringBefore('-').substringBefore('_').let {
+        if (it in setOf("ko", "ja", "zh")) it else "en"
+    }
+
     private fun render(date: LocalDate?, time: LocalTime?, pattern: String, language: String): String {
         val names = Names.of(language)
         val out = StringBuilder()
@@ -98,5 +127,7 @@ object DatePattern {
     }
 }
 
-@Suppress("unused")
-private val mondayFirst = DayOfWeek.MONDAY
+enum class DateNameStyle { NARROW, SHORT, FULL }
+
+/** DayOfWeek.getDisplayName(TextStyle, Locale) 자리 */
+fun DayOfWeek.displayName(style: DateNameStyle, language: String): String = DatePattern.dayName(this, style, language)

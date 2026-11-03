@@ -7,10 +7,8 @@ import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RunIntegrity
 import com.stepup.android.domain.StreakRules
-import com.stepup.android.sensor.StepTracker
-import com.stepup.android.service.WalkSessionService
-import java.time.LocalDate
-import java.util.concurrent.atomic.AtomicBoolean
+import com.stepup.android.domain.epochMillis
+import com.stepup.android.domain.todayIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,16 +25,19 @@ class StepRepository(
     private val stepDao: StepDao,
     private val walkSessionDao: WalkSessionDao,
     private val prefs: UserPrefs,
-    private val tracker: StepTracker,
+    private val tracker: DailyStepSource,
     private val rewardRepository: RewardRepository,
     /** 목표를 서버에도 적는다(목표 보너스를 서버가 이 값으로 판정). 서버가 없으면 null. */
     private val pushGoal: (suspend (Int) -> Unit)? = null,
     /** 지금 계정의 기록 주인 — 화면에 보일 러닝을 그 계정 것(+ 옛 기록)으로 좁힌다 */
     private val owner: Flow<String> = kotlinx.coroutines.flow.flowOf(com.stepup.android.domain.RecordingOwner.LEGACY),
+    /** 러닝이 도는 중인가 — 그쪽이 정산하니 평소 걸음 정산을 건너뛴다(안드로이드 WalkSessionService · iOS 러닝 세션) */
+    private val runActive: () -> Boolean = { false },
 ) {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val trackingStarted = AtomicBoolean(false)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
+    private val trackingStarted = kotlin.concurrent.atomics.AtomicBoolean(false)
 
     val todaySteps: StateFlow<Int> = tracker.todaySteps
     val dailyGoal: Flow<Int> = prefs.dailyGoal
@@ -49,7 +50,7 @@ class StepRepository(
     val streak: Flow<Int> = prefs.streakRecord
         .distinctUntilChanged()
         .map { (stored, lastMet) ->
-            val today = LocalDate.now().toEpochDay()
+            val today = todayIn().toEpochDays()
             val shielded = StreakRules.needsShield(lastMet, today) && rewardRepository.streakShieldCovered(today - 1)
             StreakRules.shown(stored, lastMet, today, shielded)
         }
@@ -102,6 +103,7 @@ class StepRepository(
     /** ACTIVITY_RECOGNITION 권한 허용 후 호출. 중복 호출해도 안전하다. */
     fun startTracking() {
         tracker.start()
+        @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
         if (!trackingStarted.compareAndSet(false, true)) return
         scope.launch {
             tracker.todaySteps.collect { steps ->
@@ -125,7 +127,7 @@ class StepRepository(
 
     /** 지난 7일(오늘 포함) 기록 */
     fun observeWeek(): Flow<List<DailyStepsEntity>> {
-        val from = LocalDate.now().toEpochDay() - 6
+        val from = todayIn().toEpochDays() - 6
         return stepDao.observeSince(from)
     }
 
@@ -136,14 +138,14 @@ class StepRepository(
      * 날까지 0으로 저장해 두면 앱을 안 쓴 날과 0보 걸은 날이 구별되지 않는다.
      */
     fun observeDays(days: Int): Flow<List<DailyStepsEntity>> =
-        stepDao.observeSince(LocalDate.now().toEpochDay() - (days - 1).coerceAtLeast(0))
+        stepDao.observeSince(todayIn().toEpochDays() - (days - 1).coerceAtLeast(0))
 
     /** 앱 설치 후 누적 걸음 수 */
     fun observeLifetimeSteps(): Flow<Long> = stepDao.observeTotalSteps()
 
     /** 이번 달 1일부터의 걸음 수 */
     fun observeMonthSteps(): Flow<Long> {
-        val from = LocalDate.now().withDayOfMonth(1).toEpochDay()
+        val from = todayIn().let { kotlinx.datetime.LocalDate(it.year, it.month, 1) }.toEpochDays()
         return stepDao.observeStepsSince(from)
     }
 
@@ -151,13 +153,13 @@ class StepRepository(
     fun simulateSteps(count: Int) = tracker.simulateSteps(count)
 
     private suspend fun onSteps(steps: Int) {
-        val today = LocalDate.now().toEpochDay()
+        val today = todayIn().toEpochDays()
         // 프로세스 재시작 직후 StateFlow 초기값(0)이 이미 저장된 오늘 기록을
         // 덮어쓰지 않도록, 저장값보다 작은 값은 무시한다.
         val stored = stepDao.byDay(today)?.steps ?: 0
         if (steps < stored) return
         val goal = prefs.dailyGoal.first()
-        stepDao.upsert(DailyStepsEntity(today, steps, goal, System.currentTimeMillis()))
+        stepDao.upsert(DailyStepsEntity(today, steps, goal, epochMillis()))
 
         val lastMet = prefs.lastGoalMetDay()
         if (steps >= goal && lastMet != today) {
@@ -190,7 +192,7 @@ class StepRepository(
      */
     private suspend fun accrueBackground(today: Long, todaySteps: Int) {
         // 러닝 세션이 도는 중이면 그쪽이 정산한다 — 같은 걸음을 두 번 세지 않는다
-        if (WalkSessionService.state.value.isActive) return
+        if (runActive()) return
 
         val accounted = prefs.accountedStepsToday(today)
         val pending = todaySteps - accounted
@@ -198,7 +200,7 @@ class StepRepository(
 
         // 케이던스는 **이번 배치 구간**으로 본다. 하루 전체 걸음을 하루 전체 시간으로
         // 나누면 어떤 값을 넣어도 240 spm을 못 넘어 검사가 죽은 코드가 된다.
-        val now = System.currentTimeMillis()
+        val now = epochMillis()
         val since = lastBatchAt
         val batchSec = if (since == 0L) 0L else (now - since) / 1000
         // cadenceImplausible()의 초반 60초 유예는 세션 시작용이다. 여기서 쓰면 500보가
@@ -221,7 +223,7 @@ class StepRepository(
     }
 
     /** 직전 백그라운드 배치를 정산한 시각. 케이던스를 구간으로 재기 위한 기준. */
-    @Volatile
+    @kotlin.concurrent.Volatile
     private var lastBatchAt: Long = 0L
 
     companion object {

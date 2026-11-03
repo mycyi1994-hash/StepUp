@@ -4,6 +4,8 @@ import com.stepup.android.data.remote.KeychainSessionStore
 import com.stepup.android.data.remote.SessionHolder
 import com.stepup.android.data.remote.StepUpServer
 import com.stepup.android.data.remote.SupabaseAuth
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import platform.Foundation.NSBundle
 
 /**
@@ -68,6 +70,18 @@ object IosApp {
     }
     val boosts by lazy { com.stepup.android.data.repo.BoostRepository(db, rewards, prefs, economy = economyApi, sync = economySync) }
 
+    val steps by lazy {
+        com.stepup.android.data.repo.StepRepository(
+            stepDao = db.stepDao(), walkSessionDao = db.walkSessionDao(), prefs = prefs, tracker = IosStepSource,
+            rewardRepository = rewards,
+            pushGoal = { goal -> economyApi.setDailyGoal(goal) },
+            // 안드로이드 ServiceLocator.recordingOwnerFlow 와 같다
+            owner = prefs.loginMethod.map { sessions.recordingOwner() }.distinctUntilChanged(),
+            runActive = { IosRunSession.active },
+        )
+    }
+    val avatars by lazy { com.stepup.android.data.repo.AvatarRepository(prefs, sneakers) }
+
     /** 공용 화면이 쓰는 저장소를 채운다(안드로이드 ServiceLocator 와 같은 이름 — AppServices) */
     fun connectServices(onReturnToSignIn: suspend () -> Unit) {
         val s = com.stepup.android.core.AppServices
@@ -76,6 +90,8 @@ object IosApp {
         s.sneakerRepository = sneakers
         s.boostRepository = boosts
         s.economySync = economySync
+        s.stepRepository = steps
+        s.avatarRepository = avatars
         s.forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi,
             pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(prefs),
