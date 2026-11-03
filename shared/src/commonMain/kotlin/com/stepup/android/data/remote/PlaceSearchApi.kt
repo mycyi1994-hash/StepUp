@@ -1,16 +1,9 @@
 package com.stepup.android.data.remote
 
-import com.stepup.android.BuildConfig
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.StoryPlace
 import com.stepup.android.domain.coarse
 import com.stepup.android.domain.haversineMeters
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
-import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -23,8 +16,10 @@ import kotlinx.serialization.json.Json
  * 그래서 화면은 "지도에서 장소 보기"로 직접 고르는 길을 늘 함께 둔다.
  */
 class PlaceSearchApi(
-    private val key: String = BuildConfig.MAPTILER_KEY.trim(),
-    private val fetch: suspend (String) -> String? = ::download,
+    /** MapTiler 공개 키(안드로이드 BuildConfig.MAPTILER_KEY · iOS Info.plist) */
+    private val key: String,
+    /** 주소 하나를 받아 본문 — 못 받으면 null(안드로이드 HttpURLConnection · iOS Ktor) */
+    private val fetch: suspend (String) -> String?,
 ) {
     val isConfigured: Boolean get() = key.isNotEmpty()
 
@@ -117,27 +112,11 @@ class PlaceSearchApi(
         fun parse(body: String): List<GeoFeature>? =
             runCatching { json.decodeFromString(GeoResponse.serializer(), body).features }.getOrNull()
 
-        private fun encode(text: String): String = URLEncoder.encode(text, "UTF-8").replace("+", "%20")
+        private fun encode(text: String): String = com.stepup.android.domain.urlEncodeUtf8(text).replace("+", "%20")
 
         /** 로케일에 따라 소수점이 쉼표가 되면 주소가 깨진다 */
-        private fun coordinate(value: Double): String = String.format(Locale.ROOT, "%.6f", value)
+        private fun coordinate(value: Double): String = com.stepup.android.domain.formatFixed(value, 6)
 
-        private val userAgent = "StepUp/${BuildConfig.VERSION_NAME} (Android; +https://stepupcrew.com)"
-
-        private suspend fun download(url: String): String? = withContext(Dispatchers.IO) {
-            runCatching {
-                val connection = URL(url).openConnection() as HttpURLConnection
-                try {
-                    connection.setRequestProperty("User-Agent", userAgent)
-                    connection.connectTimeout = 6_000
-                    connection.readTimeout = 6_000
-                    if (connection.responseCode != HttpURLConnection.HTTP_OK) null
-                    else connection.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
-                } finally {
-                    connection.disconnect()
-                }
-            }.getOrNull()
-        }
     }
 }
 

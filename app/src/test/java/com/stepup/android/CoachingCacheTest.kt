@@ -23,7 +23,7 @@ class CoachingCacheTest {
         candidateId = CoachIds.CAND_PACE_START_EASIER, actionReason = null, limitation = null, provider = "mock",
     )
 
-    private fun store() = CoachingCacheStore(Files.createTempDirectory("coach-cache").toFile())
+    private fun store() = CoachingCacheStore(Files.createTempDirectory("coach-cache").toFile().path)
 
     @Test fun `저장한 결과를 같은 계정 · 같은 열쇠로만 다시 읽는다`() = runBlocking {
         val cache = store()
@@ -67,7 +67,7 @@ class CoachingCacheTest {
 
     @Test fun `깨진 사본 파일은 결과로 보이지 않는다`() = runBlocking {
         val dir = Files.createTempDirectory("coach-cache").toFile()
-        val cache = CoachingCacheStore(dir)
+        val cache = CoachingCacheStore(dir.path)
         cache.put("account:A", "rec:x:ko", result, 1)
         dir.listFiles()!!.single().writeText("{ broken")
         assertNull(cache.get("account:A", "rec:x:ko"))

@@ -1,12 +1,9 @@
 package com.stepup.android.data.repo
 
+import kotlinx.coroutines.IO
 import com.stepup.android.data.remote.parseResult
 import com.stepup.android.domain.coaching.CachedCoach
 import com.stepup.android.domain.coaching.CoachResult
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -28,7 +25,7 @@ import kotlinx.serialization.json.addJsonObject
  * 화면에 붙지 않는다. 열쇠는 대상(기록의 시작 시각 · 주 · 추천) · 언어 — 같은 계정 · 같은 대상 · 같은 언어일 때만 보인다.
  * 로컬 기록을 지우면 그 기록의 사본도 지운다([removeRun]). 계정마다 [MAX_ENTRIES] 개까지만 둔다(오래된 것부터 버린다).
  */
-class CoachingCacheStore(private val dir: File) {
+class CoachingCacheStore(private val dir: String) {
     private val mutex = Mutex()
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -56,19 +53,18 @@ class CoachingCacheStore(private val dir: File) {
 
     /** 이 계정의 사본을 모두 지운다(동의 해제 때 "저장된 AI 분석도 삭제"를 골랐을 때) */
     suspend fun clear(owner: String) = withContext(Dispatchers.IO) {
-        mutex.withLock { fileOf(owner).delete() }
+        mutex.withLock { com.stepup.android.data.local.TextFiles.delete(fileOf(owner)) }
     }
 
-    private fun fileOf(owner: String): File {
-        val digest = MessageDigest.getInstance("SHA-256").digest(owner.toByteArray(Charsets.UTF_8))
-        return File(dir, digest.take(16).joinToString("") { "%02x".format(it) } + ".json")
+    private fun fileOf(owner: String): String {
+        val digest = com.stepup.android.data.remote.sha256(owner.encodeToByteArray())
+        return com.stepup.android.data.local.joinPath(dir, digest.take(16).joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') } + ".json")
     }
 
     /** 읽을 수 없는 파일은 빈 사본으로 본다 — 사본은 다시 받을 수 있고, 깨진 사본으로 결과를 보이지 않는다 */
     private fun read(owner: String): Map<String, CachedCoach> {
-        val file = fileOf(owner)
-        if (!file.exists()) return emptyMap()
-        val root = runCatching { json.parseToJsonElement(file.readText()) as? JsonObject }.getOrNull() ?: return emptyMap()
+        val text = com.stepup.android.data.local.TextFiles.read(fileOf(owner)) ?: return emptyMap()
+        val root = runCatching { json.parseToJsonElement(text) as? JsonObject }.getOrNull() ?: return emptyMap()
         return root.mapNotNull { (key, value) ->
             val entry = value as? JsonObject ?: return@mapNotNull null
             val savedAt = (entry["saved_at"] as? JsonPrimitive)?.longOrNull ?: return@mapNotNull null
@@ -78,7 +74,7 @@ class CoachingCacheStore(private val dir: File) {
     }
 
     private fun write(owner: String, entries: Map<String, CachedCoach>) {
-        dir.mkdirs()
+        com.stepup.android.data.local.TextFiles.mkdirs(dir)
         val target = fileOf(owner)
         val body = buildJsonObject {
             entries.forEach { (key, cached) ->
@@ -88,9 +84,7 @@ class CoachingCacheStore(private val dir: File) {
                 }
             }
         }.toString()
-        val temp = File(dir, target.name + ".tmp")
-        temp.writeText(body)
-        Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        com.stepup.android.data.local.TextFiles.writeAtomic(target, body)
     }
 
     companion object {
@@ -104,10 +98,10 @@ class CoachingCacheStore(private val dir: File) {
 }
 
 /** 결과 → 서버가 내는 것과 같은 JSON 모양([parseResult] 가 다시 읽는다) */
-internal fun resultJson(r: CoachResult): JsonObject = buildJsonObject {
+fun resultJson(r: CoachResult): JsonObject = buildJsonObject {
     put("id", r.id)
     put("kind", r.kind.key)
-    put("generated_at", java.time.Instant.ofEpochMilli(r.generatedAt).toString())
+    put("generated_at", kotlin.time.Instant.fromEpochMilliseconds(r.generatedAt).toString())
     put("locale", r.locale)
     putJsonArray("facts") { r.facts.forEach { f -> addJsonObject { put("id", f.id); putJsonObject("values") { f.values.forEach { (k, v) -> put(k, v) } } } } }
     put("fact_id", r.factId)

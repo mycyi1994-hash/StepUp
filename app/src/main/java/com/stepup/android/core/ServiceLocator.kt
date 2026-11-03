@@ -193,7 +193,7 @@ object ServiceLocator {
         com.stepup.android.data.repo.CoachingRepository(
             dao = database.walkSessionDao(),
             api = com.stepup.android.data.remote.CoachingApi(server),
-            cache = com.stepup.android.data.repo.CoachingCacheStore(java.io.File(appContext.noBackupFilesDir, "coaching")),
+            cache = com.stepup.android.data.repo.CoachingCacheStore(java.io.File(appContext.noBackupFilesDir, "coaching").path),
             owner = recordingOwnerFlow(),
             online = { hasNetwork(appContext) },
         )
@@ -538,8 +538,9 @@ object ServiceLocator {
             },
         )
         placeSearch = com.stepup.android.data.repo.PlaceSearch(
-            api = com.stepup.android.data.remote.PlaceSearchApi(),
+            api = com.stepup.android.data.remote.androidPlaceSearchApi(),
             platform = com.stepup.android.data.repo.AndroidGeocoder(app),
+            language = com.stepup.android.data.repo::placeSearchLanguage,
         )
         courseRepository = CourseRepository(
             dao = database.courseDao(),
@@ -565,7 +566,7 @@ object ServiceLocator {
         runningFeedRepository = RunningFeedRepository(RunningFeedApi(server))
         announcementRepository = com.stepup.android.data.repo.AnnouncementRepository(
             source = com.stepup.android.data.remote.AnnouncementApi(server),
-            cache = com.stepup.android.data.repo.FileAnnouncementCache(java.io.File(app.filesDir, "announcements.json")),
+            cache = com.stepup.android.data.repo.FileAnnouncementCache(java.io.File(app.filesDir, "announcements.json").path),
         )
         newsRepository = NewsRepository(
             server = server,

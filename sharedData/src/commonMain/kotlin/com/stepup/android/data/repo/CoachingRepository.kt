@@ -21,7 +21,6 @@ import com.stepup.android.domain.coaching.RunSplits
 import com.stepup.android.domain.coaching.runSplits
 import com.stepup.android.domain.toGeoPoints
 import kotlinx.datetime.LocalDate
-import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,8 +65,8 @@ class CoachingRepository(
     /** 지금 로그인한 계정의 기록 주인(account:… · guest · legacy) */
     val owner: Flow<String>,
     private val online: () -> Boolean,
-    private val zone: () -> ZoneId = { ZoneId.systemDefault() },
-    private val now: () -> Long = { System.currentTimeMillis() },
+    private val zone: () -> kotlinx.datetime.TimeZone = { kotlinx.datetime.TimeZone.currentSystemDefault() },
+    private val now: () -> Long = { com.stepup.android.domain.epochMillis() },
 ) {
     private val _snapshots = MutableStateFlow<Map<String, CoachServerSnapshot>>(emptyMap())
 

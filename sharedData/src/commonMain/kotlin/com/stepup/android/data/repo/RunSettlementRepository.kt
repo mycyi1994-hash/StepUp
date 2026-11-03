@@ -1,10 +1,11 @@
 package com.stepup.android.data.repo
 
-import androidx.room.withTransaction
+import kotlinx.datetime.toLocalDateTime
+import com.stepup.android.data.local.inTransaction
 import com.stepup.android.data.local.*
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.SessionReward
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -23,17 +24,17 @@ class RunSettlementRepository(
     suspend fun settle(session: WalkSessionEntity, calculate: suspend (Long) -> SessionReward): SessionReward = mutex.withLock {
         require(session.id == 0L && session.startedAt > 0 && session.recordingOwner.isNotBlank())
         reconcileEnergy()
-        val receipt = db.withTransaction {
-            db.runSettlementDao().find(session.recordingOwner, session.startedAt)?.let { return@withTransaction it }
+        val receipt = db.inTransaction {
+            db.runSettlementDao().find(session.recordingOwner, session.startedAt)?.let { return@inTransaction it }
             // 서버 경제의 에너지 하루는 한국 시각이다 — 폰 날짜를 쓰면 해외에서 에너지가 가득 찬 것처럼 보인다. 서버처럼 러닝을
             // 시작한 날로 센다 — 자정을 넘긴 러닝이 다음 날 에너지(가득)로 "+N 예상"을 보이고 서버는 0 을 치렀다(2026-10-17 점검)
             val energyDay = (
                 if (serverEconomy) {
-                    java.time.Instant.ofEpochMilli(session.startedAt).atZone(java.time.ZoneId.of("Asia/Seoul")).toLocalDate()
+                    kotlin.time.Instant.fromEpochMilliseconds(session.startedAt).toLocalDateTime(com.stepup.android.domain.KST).date
                 } else {
-                    LocalDate.now()
+                    com.stepup.android.domain.todayIn()
                 }
-                ).toEpochDay()
+                ).toEpochDays()
             val reward = calculate(energyDay)
             require(reward.rewardedSteps in 0..session.steps && reward.points.isFinite() && reward.points >= 0 &&
                 reward.energyUsed.isFinite() && reward.energyUsed >= 0)

@@ -1,13 +1,10 @@
 package com.stepup.android.data.repo
 
+import kotlinx.coroutines.IO
 import com.stepup.android.data.remote.AnnouncementRow
 import com.stepup.android.data.remote.AnnouncementSource
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.serverJson
-import java.io.File
-import java.io.IOException
-import java.time.OffsetDateTime
-import java.time.format.DateTimeParseException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +89,7 @@ class AnnouncementRepository(
         savedRead = true
         val saved = try {
             cache.read()
-        } catch (_: IOException) {
+        } catch (_: Exception) {
             null
         }
         if (saved != null && rows == null) {
@@ -104,7 +101,7 @@ class AnnouncementRepository(
     private suspend fun save(next: List<AnnouncementRow>) {
         try {
             cache.write(next)
-        } catch (_: IOException) {
+        } catch (_: Exception) {
             // 사본을 못 남겨도 지금 받은 목록은 보인다 — 다음에 열 때 다시 받는다
         }
     }
@@ -179,7 +176,7 @@ sealed interface NoticeDetail {
 }
 
 /** 지금 언어 → 한국어 → 영어 → 남은 아무 글 */
-internal fun pickText(texts: Map<String, String>, language: String): String {
+fun pickText(texts: Map<String, String>, language: String): String {
     val wanted = language.lowercase()
     return texts[wanted]
         ?: texts.entries.firstOrNull { it.key.lowercase().substringBefore('-') == wanted }?.value
@@ -188,10 +185,10 @@ internal fun pickText(texts: Map<String, String>, language: String): String {
         ?: texts.values.firstOrNull().orEmpty()
 }
 
-internal fun AnnouncementRow.toDomain(): Announcement? {
+fun AnnouncementRow.toDomain(): Announcement? {
     val published = try {
-        OffsetDateTime.parse(publishedAt).toInstant().toEpochMilli()
-    } catch (_: DateTimeParseException) {
+        kotlin.time.Instant.parse(publishedAt).toEpochMilliseconds()
+    } catch (_: IllegalArgumentException) {
         return null
     }
     val titles = title.texts()
@@ -243,31 +240,24 @@ interface AnnouncementCache {
     /** 없거나 읽지 못하면 null */
     suspend fun read(): List<AnnouncementRow>?
 
-    @Throws(IOException::class)
+    /** 못 쓰면 예외 */
     suspend fun write(rows: List<AnnouncementRow>)
 }
 
 /** 앱 파일 하나에 둔다 — 다 쓴 다음에 바꿔 끼워 반쯤 쓴 사본이 남지 않게 한다 */
-class FileAnnouncementCache(private val file: File) : AnnouncementCache {
+class FileAnnouncementCache(private val path: String) : AnnouncementCache {
     private val serializer = ListSerializer(AnnouncementRow.serializer())
 
     override suspend fun read(): List<AnnouncementRow>? = withContext(Dispatchers.IO) {
-        if (!file.exists()) return@withContext null
+        val text = com.stepup.android.data.local.TextFiles.read(path) ?: return@withContext null
         try {
-            serverJson.decodeFromString(serializer, file.readText())
+            serverJson.decodeFromString(serializer, text)
         } catch (_: IllegalArgumentException) {
-            null
-        } catch (_: IOException) {
             null
         }
     }
 
     override suspend fun write(rows: List<AnnouncementRow>) = withContext(Dispatchers.IO) {
-        val temp = File(file.parentFile, file.name + ".tmp")
-        temp.writeText(serverJson.encodeToString(serializer, rows))
-        if (!temp.renameTo(file)) {
-            file.delete()
-            if (!temp.renameTo(file)) throw IOException("공지 사본을 바꿔 끼우지 못했습니다")
-        }
+        com.stepup.android.data.local.TextFiles.writeAtomic(path, serverJson.encodeToString(serializer, rows))
     }
 }
