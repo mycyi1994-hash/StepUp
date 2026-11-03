@@ -1,0 +1,684 @@
+package com.stepup.android.ui.screens.community
+
+import com.stepup.android.core.AppServices
+import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.SystemBackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.stepup.ui.res.*
+import com.stepup.android.data.repo.PartyMember
+import com.stepup.android.data.repo.PartyPhase
+import com.stepup.android.data.repo.PartyProblem
+import com.stepup.android.data.repo.PartyState
+import com.stepup.android.domain.GeoPoint
+import com.stepup.android.service.WalkSessionService
+import com.stepup.android.ui.StepPermissions
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
+import com.stepup.android.ui.components.RunCard
+import com.stepup.android.ui.components.RunInitials
+import com.stepup.android.ui.components.RunNotice
+import com.stepup.android.ui.components.RunNoticeKind
+import com.stepup.android.ui.components.RunPage
+import com.stepup.android.ui.components.RunSwitch
+import com.stepup.android.ui.components.RunTextAction
+import com.stepup.android.ui.components.rememberCurrentLocation
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.screens.walk.CrewNotifySheet
+import com.stepup.android.ui.screens.walk.CrewReadyCheckSheet
+import com.stepup.android.ui.screens.walk.CrewStartConfirmSheet
+import com.stepup.android.ui.screens.walk.RunCountdownStage
+import com.stepup.android.ui.screens.walk.initialsOf
+
+/**
+ * 크루 러닝 대기실(러닝 전체 리메이크 2026-10-02 · 시안 CR04 · CR05 · CR06 · CR07 · CR08 · CR15 · CR17 · CR20).
+ *
+ * 크루 대기실과 번개러닝 대기실이 같은 화면을 쓴다. 준비 → 출발 → 같이 측정까지 흐름이 똑같고, 다른 것은 누가 모였는가뿐이다.
+ *
+ * 방은 서버에 있다. 같은 크루(번개 글)의 대기실을 연 사람들이 한 방에 모이고, 처음 연 사람이 진행자다(역할은 서버 값).
+ * 진행자는 사람을 내보낼 수 있고, **준비를 마친 사람들끼리** 출발한다 — 준비 전 인원이 있으면 한 번 묻는다(CR07).
+ * 출발 시각은 서버가 정하고 모두 같은 시각에 3-2-1(CR08). 이미 출발한 방에 늦게 온 사람은 서버가 새 방에 넣는다.
+ * 준비하기 전에 권한이 없으면 위치 사용 · 위치 공유(기본 끔)를 따로 묻는다(CR17).
+ * 준비는 정확한 위치 권한과 위치 기능이 있어야 된다(2026-10-16). 위치 신호는 기다리지 않는다 — 출발 뒤 러닝이 찾는다.
+ *
+ * @param crewId 크루 대기실이면 크루 id, 번개러닝 대기실이면 빈 문자열
+ * @param flashPostId 번개러닝 대기실이면 그 글의 id
+ */
+@Composable
+fun PartyLobbyScreen(
+    crewId: String = "",
+    flashPostId: Long? = null,
+    /** 목록에서 고른(또는 방금 연) 크루 대기실 번호(0072). 없으면 예전처럼 크루의 열린 방 하나에(번개러닝 · 옛 길) */
+    partyId: Long? = null,
+    onBack: () -> Unit,
+    onRunStarted: () -> Unit,
+    /** 크루에게 알리기를 보낸 뒤 "크루 채팅 보기"(CR20) — 그 크루의 채팅방 */
+    onOpenChat: (String) -> Unit = {},
+    /** 고른 방이 닫혔다 · 내보내졌다 · 찼다 · 출발했다 — 같은 크루의 열린 대기실 목록으로 */
+    onOtherRooms: (String) -> Unit = {},
+    viewModel: PartyLobbyViewModel = viewModel(factory = PartyLobbyViewModel.Factory),
+    community: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
+) {
+    val context = LocalContext.current
+    val party by viewModel.party.collectAsStateWithLifecycle()
+    val resultPoints by viewModel.resultServerPoints.collectAsStateWithLifecycle()
+
+    // 번개러닝이면 글에서 제목을 가져온다.
+    val posts by community.allPosts.collectAsStateWithLifecycle()
+    val flashPost = flashPostId?.let { id -> posts.firstOrNull { it.id == id } }
+    val title = party.crewName.ifBlank { flashPost?.title.orEmpty() }
+    // 크루 대기실만 크루 달리기 v2 모습 — 번개러닝 대기실은 예전 모습 그대로
+    val crewRoom = flashPostId == null && crewId.isNotEmpty()
+
+    // 출발한 러닝에 이 방(크루 · 번개)과 이름을 적어 둔다 — 결과 · 공유 · 되살린 러닝이 같은 모임으로 보이게(정산과 무관)
+    val startRun = {
+        WalkSessionService.start(context, party.partySize, com.stepup.android.service.StartGroup.of(party, title))
+        onRunStarted()
+    }
+    val needPrecise = stringResource(Res.string.run_gps_need_precise)
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        if (party.phase == PartyPhase.RUNNING && StepPermissions.hasActivityRecognition(context)) {
+            when {
+                WalkSessionService.state.value.isActive -> onRunStarted()
+                // 위치 없이는 출발하지 않는다 — 준비한 뒤 권한을 거둔 경우. 왜 출발하지 않는지 알린다
+                !StepPermissions.hasPreciseLocation(context) ->
+                    showToast(needPrecise, long = true)
+                // 권한 창에 오래 머물렀다 — 출발한 지 오래된 방의 러닝을 늦게 켜지 않는다(아래 출발과 같은 판단)
+                !viewModel.startIsFresh() -> viewModel.missedStart()
+                else -> startRun()
+            }
+        }
+    }
+    // 권한이 모두 있으면 바로 준비 — 위치 신호는 기다리지 않는다. 휴대폰 위치 기능이 꺼져 있으면 켜는 곳으로 보낸다
+    val locationOff = stringResource(Res.string.run_loc_off_body)
+    val markReady: () -> Unit = {
+        if (com.stepup.android.ui.screens.walk.locationServicesOn(context)) {
+            viewModel.setReady(true)
+        } else {
+            showToast(locationOff, long = true)
+            com.stepup.android.core.ExternalIntents.openLocationSettings()
+        }
+    }
+    // CR17 — 준비 전 확인에서 "위치 사용 허용": OS 창의 결과를 다시 읽어 걸음 권한 · 정확한 위치가 있으면 준비한다
+    var readyCheck by rememberSaveable { mutableStateOf(false) }
+    val readyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        readyCheck = false
+        when {
+            !StepPermissions.hasActivityRecognition(context) -> Unit
+            StepPermissions.hasPreciseLocation(context) -> markReady()
+            // 대략적인 위치만 허용했거나 거절했다 — 설정에서 정확한 위치를 켜야 준비할 수 있다
+            else -> showToast(needPrecise, long = true)
+        }
+    }
+    /** 준비에 필요한 권한 — 걸음 · 알림 · 위치. 대략적인 위치만 있으면 정확한 위치를 다시 묻는다(Android 12+ 는 바꾸기 창) */
+    fun readyPermissions(): Array<String> {
+        val missing = StepPermissions.missing(context)
+        if (StepPermissions.hasPreciseLocation(context) || android.Manifest.permission.ACCESS_FINE_LOCATION in missing) return missing
+        return missing + arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+    }
+    var confirmStart by rememberSaveable { mutableStateOf(false) }
+    var notify by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(crewId, flashPostId, partyId) {
+        // 이미 달리는 중이면 새 대기실을 열지 않고 지금 러닝으로 간다 — 다른 방을 열면 달리던 방에서 말없이
+        // 나오고, 그 방 진행자가 출발하면 러닝이 하나 더 켜졌다
+        if (WalkSessionService.state.value.isActive) {
+            onRunStarted()
+            return@LaunchedEffect
+        }
+        when {
+            flashPostId != null -> viewModel.openFlashLobby(flashPostId, flashPost?.title.orEmpty())
+            // 고른 방 — 같은 크루의 다른 방에 저절로 들어가지 않는다(0072)
+            crewId.isNotEmpty() && partyId != null -> viewModel.openRoom(crewId, partyId)
+            crewId.isNotEmpty() -> viewModel.openLobby(crewId)
+        }
+    }
+    // 크루 대기실의 출발 연출 — 서버 출발 시각에 맞춘 3 · 2 · 1 · 0 · StepUP! · 펼침(앱 맨 위 겹이 그린다 — 러닝 화면으로 옮겨도 끊기지 않게)
+    LaunchedEffect(crewRoom, party.phase, party.partyId, party.startsAtLocal) {
+        val id = party.partyId
+        if (!crewRoom || id == null) return@LaunchedEffect
+        when (party.phase) {
+            PartyPhase.COUNTDOWN -> if (party.startsAtLocal > 0) com.stepup.android.ui.screens.walk.CrewLaunch.begin(id, party.startsAtLocal)
+            PartyPhase.LOBBY, PartyPhase.IDLE -> com.stepup.android.ui.screens.walk.CrewLaunch.end(id)
+            else -> Unit
+        }
+    }
+
+    // 서버가 정한 출발 시각이 되면 실제 세션을 시작한다.
+    LaunchedEffect(party.phase) {
+        if (party.phase == PartyPhase.RUNNING) {
+            when {
+                // 이 폰의 러닝이 이미 돌고 있다 — 하나 더 켜지 않고 그 러닝으로 간다
+                WalkSessionService.state.value.isActive -> onRunStarted()
+                // 출발한 지 오래됐다(대기실을 떠나 있었다) — 옛 방의 러닝을 늦게 켜지 않고 새 대기실을 연다
+                !viewModel.startIsFresh() -> viewModel.missedStart()
+                else -> {
+                    val missing = readyPermissions()
+                    if (missing.isEmpty()) startRun() else permissionLauncher.launch(missing)
+                }
+            }
+        }
+    }
+
+    val leave = {
+        viewModel.leaveLobby()
+        onBack()
+    }
+    val otherRooms = {
+        val crew = party.crewId?.takeIf { it.isNotBlank() } ?: crewId
+        viewModel.leaveLobby()
+        onOtherRooms(crew)
+    }
+    // 진행자의 코스 바꾸기(07) — 서버가 받지 않으면 지금 코스 그대로 두고 알린다
+    var courseFailed by remember { mutableStateOf(false) }
+    val courseScope = androidx.compose.runtime.rememberCoroutineScope()
+    // 시스템 뒤로 가기도 화살표와 같이 방에서 나간다. 그냥 화면만 닫으면 앱 전체 수명의 폴링이 계속 돌아,
+    // 서버에는 떠난 사람이 방에 남는다(진행자면 아무도 출발 못 한다).
+    SystemBackHandler { leave() }
+
+    val canNotify = flashPostId == null && !party.crewId.isNullOrBlank()
+    // 크루 대기실이면 크루 러닝 3판(0070) — 오늘 했는지 · 방의 크루 체력 미리보기 · 고른 신발
+    val runCrew = if (flashPostId == null) party.crewId?.takeIf { it.isNotBlank() } ?: crewId.takeIf { it.isNotEmpty() } else null
+    val crewRunRepo = AppServices.crewRun
+    val todayFlow = remember(runCrew) { runCrew?.let { crewRunRepo.today(it) } ?: kotlinx.coroutines.flow.flowOf(null) }
+    val crewToday by todayFlow.collectAsStateWithLifecycle(initialValue = runCrew?.let { crewRunRepo.todayNow(it) })
+    LaunchedEffect(runCrew) { runCrew?.let { crewRunRepo.loadToday(it) } }
+    val roomId = party.partyId.takeIf { runCrew != null }
+    val roomFlow = remember(roomId) { roomId?.let { crewRunRepo.room(it) } ?: kotlinx.coroutines.flow.flowOf(null) }
+    val crewRunRoom by roomFlow.collectAsStateWithLifecycle(initialValue = roomId?.let { crewRunRepo.roomNow(it) })
+    // 사람이 오가거나 준비 · 출발이 바뀌면 다시 센다(인원 · 크루 체력 미리보기)
+    val roster = party.members.map { it.id to it.ready }
+    LaunchedEffect(roomId, roster, party.phase) { roomId?.let { crewRunRepo.loadRoom(it) } }
+    val shoes by AppServices.sneakerRepository.inventory
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    var shoeFailed by remember { mutableStateOf(false) }
+    val shoeScope = androidx.compose.runtime.rememberCoroutineScope()
+    val here = rememberCurrentLocation(enabled = party.phase == PartyPhase.COUNTDOWN && StepPermissions.hasLocation(context))
+    val monogram = party.crewId?.let { AppServices.crewRepository.crewOf(it)?.monogram }.orEmpty()
+    PartyLobbyContent(
+        party = party, title = title, resultPoints = resultPoints, canNotify = canNotify, here = here, monogram = monogram,
+        onBack = leave,
+        onReady = {
+            // 걸음 · 정확한 위치 권한이 없으면 먼저 묻는다(CR17) — 둘 다 있으면 바로 준비
+            if (StepPermissions.hasActivityRecognition(context) && StepPermissions.hasPreciseLocation(context)) markReady()
+            else readyCheck = true
+        },
+        onCancelReady = { viewModel.setReady(false) },
+        // 크루 대기실은 대기실 안 시트(33 · 34)가 묻고, 번개러닝 대기실은 예전처럼 준비 전 인원이 있을 때만 묻는다
+        onStart = { if (crewRoom || party.allReady) viewModel.startParty() else confirmStart = true },
+        onShare = viewModel::setShare,
+        onKick = viewModel::kick,
+        onNotify = { notify = true },
+        onRetry = viewModel::retry,
+        onLeave = leave,
+        onDismissResult = {
+            viewModel.dismissResult()
+            onBack()
+        },
+        // 서버에 닿지 못한 동안 — 걸려 있던 물음 · 방 열기를 기다리지 않고 지금 다시 묻는다
+        onReconnect = { AppServices.crewRepository.wakeParty() },
+        crewToday = crewToday?.takeIf { it.isToday() },
+        room = crewRunRoom,
+        shoes = shoes,
+        onPickShoe = { id ->
+            val pid = roomId
+            if (pid != null) shoeScope.launch { shoeFailed = !crewRunRepo.pickShoe(pid, id) }
+        },
+        shoeFailed = shoeFailed,
+        onOtherRooms = otherRooms,
+        onChangeCourse = { course ->
+            courseFailed = false
+            courseScope.launch {
+                courseFailed = viewModel.setCourse(course) !is com.stepup.android.data.remote.ServerResult.Ok
+            }
+        },
+        courseFailed = courseFailed,
+        onAcknowledgeCourse = viewModel::acknowledgeCourse,
+        overlay = readyCheck || notify || (confirmStart && !crewRoom),
+    )
+    if (readyCheck && party.phase == PartyPhase.LOBBY) {
+        CrewReadyCheckSheet(
+            locationAllowed = StepPermissions.hasPreciseLocation(context), share = party.myShare, onShare = viewModel::setShare,
+            onAllow = {
+                val missing = readyPermissions()
+                if (missing.isEmpty()) {
+                    readyCheck = false
+                    markReady()
+                } else {
+                    readyLauncher.launch(missing)
+                }
+            },
+            onLater = { readyCheck = false },
+            v2 = crewRoom,
+        )
+    }
+    if (confirmStart && party.phase == PartyPhase.LOBBY && party.canStart) {
+        // 열려 있는 동안 방 상태가 바뀌면 숫자도 바뀐다. 그새 모두 준비했으면 묻지 않고 출발 버튼 그대로
+        CrewStartConfirmSheet(
+            ready = party.readyCount, notReady = party.partySize - party.readyCount,
+            onGo = {
+                confirmStart = false
+                viewModel.startParty()
+            },
+            onWait = { confirmStart = false },
+            v2 = crewRoom,
+        )
+    }
+    val notifyCrew = party.crewId
+    if (notify && canNotify && notifyCrew != null) {
+        CrewNotifySheet(
+            crewId = notifyCrew, crewName = title, waiting = party.partySize, onDismiss = { notify = false },
+            // 채팅으로 가도 출발을 놓치지 않는 사람만 — 진행자(출발은 내가 누른다)와 아직 준비 전인 사람(이번 출발 명단에 없다).
+            // 출발 3-2-1 은 이 대기실 화면에서만 러닝을 켠다 — 준비를 마친 참가자가 채팅에 가 있으면 함께 출발하지 못한다
+            onOpenChat = if (party.isHost || !party.myReady) ({ onOpenChat(notifyCrew) }) else null,
+        )
+    }
+}
+
+/**
+ * 대기실의 모습 — 상태 없이 그린다(시안 검사도 이것을 그대로 그린다).
+ * 머리(뒤로 · "크루 러닝 대기실" · 로고) · 크루 이름 · 참여 | 준비 완료 · 크루원 줄 · 내 위치 공유 · 아래 버튼.
+ */
+@Composable
+fun PartyLobbyContent(
+    party: PartyState,
+    title: String,
+    resultPoints: Double?,
+    canNotify: Boolean,
+    here: GeoPoint?,
+    onBack: () -> Unit,
+    onReady: () -> Unit,
+    onCancelReady: () -> Unit,
+    onStart: () -> Unit,
+    onShare: (Boolean) -> Unit,
+    onKick: (String) -> Unit,
+    onNotify: () -> Unit,
+    onRetry: () -> Unit,
+    onLeave: () -> Unit,
+    onDismissResult: () -> Unit,
+    /** 크루가 정한 이니셜(번개러닝이면 비어 있다) */
+    monogram: String = "",
+    /** 서버에 닿지 못한 동안 "다시 연결" — 걸려 있던 물음을 기다리지 않고 지금 다시 묻는다 */
+    onReconnect: () -> Unit = {},
+    /** 크루 대기실의 크루 러닝 3판(0070) — 번개러닝 대기실은 쓰지 않는다 */
+    crewToday: com.stepup.android.domain.CrewRunToday? = null,
+    room: com.stepup.android.domain.CrewRunRoom? = null,
+    shoes: List<com.stepup.android.domain.Sneaker> = emptyList(),
+    onPickShoe: (Long?) -> Unit = {},
+    shoeFailed: Boolean = false,
+    onOtherRooms: () -> Unit = {},
+    onChangeCourse: (com.stepup.android.domain.RoomCourse?) -> Unit = {},
+    courseFailed: Boolean = false,
+    onAcknowledgeCourse: () -> Unit = {},
+    overlay: Boolean = false,
+) {
+    val t = runTone()
+    // 크루 대기실 · 동시 출발은 크루 달리기 v2 모습(2026-10-16). 번개러닝 대기실은 아래 예전 모습 그대로
+    if (party.flashPostId == null && !party.crewId.isNullOrBlank()) {
+        com.stepup.android.ui.screens.walk.CrewLobbyContent(
+            party = party, title = title, resultPoints = resultPoints, canNotify = canNotify,
+            onBack = onBack, onReady = onReady, onCancelReady = onCancelReady, onStart = onStart, onShare = onShare,
+            onKick = onKick, onNotify = onNotify, onRetry = onRetry, onLeave = onLeave, onDismissResult = onDismissResult,
+            onReconnect = onReconnect, crewToday = crewToday, room = room, shoes = shoes, onPickShoe = onPickShoe,
+            shoeFailed = shoeFailed, onOtherRooms = onOtherRooms, onChangeCourse = onChangeCourse, courseFailed = courseFailed,
+            onAcknowledgeCourse = onAcknowledgeCourse, overlay = overlay,
+        )
+        return
+    }
+    // CR08 — 서버가 정한 시각에 모두 같이. 한 사람이 끊을 수 없다(나가기는 뒤로)
+    if (party.phase == PartyPhase.COUNTDOWN) {
+        RunCountdownStage(
+            title = stringResource(Res.string.run_crew_title), subtitle = title.ifBlank { null },
+            kicker = stringResource(Res.string.run_cr_go_soon), digit = party.countdown.coerceAtLeast(1),
+            caption = stringResource(Res.string.run_cr_go_soon), here = here, onCancel = null,
+            modifier = Modifier.testTag("party-countdown"),
+            headline = {
+                // "함께 출발 27명" — 숫자만 시안 색으로 크게
+                val line = stringResource(Res.string.run_cr_go_together, party.readyCount)
+                val count = party.readyCount.toString()
+                val at = line.indexOf(count)
+                Text(
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        append(line)
+                        if (at >= 0) {
+                            addStyle(
+                                androidx.compose.ui.text.SpanStyle(
+                                    color = t.cyan, fontSize = 34.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                    fontWeight = FontWeight.ExtraBold,
+                                ),
+                                at, at + count.length,
+                            )
+                        }
+                    },
+                    style = runTextStyle(24.sp, t.text, FontWeight.ExtraBold), modifier = Modifier.testTag("party-countdown-together"),
+                )
+            },
+        )
+        return
+    }
+    val alone = party.partySize <= 1
+    val lobby = party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.IDLE
+    RunPage(
+        onBack = onBack, modifier = Modifier.testTag("party-lobby"), crumb = stringResource(Res.string.run_cr_room_title),
+        bottom = {
+            when {
+                party.phase == PartyPhase.FINISHED ->
+                    RunButton(stringResource(Res.string.common_ok), onDismissResult, Modifier.testTag("party-result-ok"))
+                // 누른 것이 막힌 것뿐(FAILED)이거나 새 대기실 안내면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
+                !lobby || (party.problem != null && party.problem != PartyProblem.FAILED &&
+                    party.problem != PartyProblem.MISSED_START) || party.partyId == null -> Unit
+                !party.myReady -> {
+                    RunButton(stringResource(Res.string.run_cr_get_ready), onReady, Modifier.testTag("party-ready"))
+                    if (alone && canNotify) {
+                        RunButton(stringResource(Res.string.run_cr_notify), onNotify, Modifier.testTag("party-notify"),
+                            kind = RunButtonKind.Secondary)
+                    }
+                }
+                party.isHost -> {
+                    RunButton(
+                        if (alone) stringResource(Res.string.run_cr_start_alone) else stringResource(Res.string.run_cr_start_n, party.readyCount),
+                        onStart, Modifier.testTag("party-start"),
+                    )
+                    if (alone && canNotify) {
+                        RunButton(stringResource(Res.string.run_cr_notify), onNotify, Modifier.testTag("party-notify"),
+                            kind = RunButtonKind.Secondary)
+                    } else {
+                        RunButton(stringResource(Res.string.run_cr_cancel_ready), onCancelReady, Modifier.testTag("party-cancel-ready"),
+                            kind = RunButtonKind.Secondary)
+                    }
+                }
+                // 크루원 준비 완료(CR05) — 출발은 진행자가 · 서버가
+                else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    RunButton(stringResource(Res.string.run_cr_waiting_start), {}, Modifier.weight(1.5f).testTag("party-waiting"),
+                        enabled = false)
+                    RunButton(stringResource(Res.string.run_cr_cancel_ready), onCancelReady, Modifier.weight(1f).testTag("party-cancel-ready"),
+                        kind = RunButtonKind.Secondary)
+                }
+            }
+        },
+    ) {
+        FlashTitleRow(title, monogram.ifBlank { initialsOf(title) })
+        // 달리는 방식 · 모임 시각 · 만나는 곳(원격이면 각자의 위치) — 번개 글에서 받은 값(0076)
+        if (party.partyId != null) {
+            val plan = buildList {
+                add(stringResource(if (party.roomMode == com.stepup.android.domain.RoomMode.REMOTE) Res.string.d26_mode_remote else Res.string.d26_mode_together))
+                if (party.planAtLocal > 0) add(com.stepup.android.ui.screens.home.whenText(party.planAtLocal))
+                when {
+                    party.roomMode == com.stepup.android.domain.RoomMode.REMOTE -> add(stringResource(Res.string.d26_room_remote_line))
+                    party.meetPlace != null -> add(stringResource(Res.string.d26_room_meet, party.meetPlace))
+                }
+            }
+            Text(
+                plan.joinToString(" · "), style = runTextStyle(13.sp, t.label, FontWeight.SemiBold),
+                modifier = Modifier.padding(top = 8.dp).testTag("party-lobby-plan"),
+            )
+        }
+        Spacer(Modifier.height(14.dp))
+        // 방에 못 들어갔거나 멈췄으면 왜인지부터
+        party.problem?.let { problem ->
+            ProblemNotice(problem, onRetry, onReconnect, onLeave)
+            Spacer(Modifier.height(12.dp))
+        }
+        when (party.phase) {
+            PartyPhase.FINISHED -> ResultCard(resultPoints)
+            PartyPhase.RUNNING -> RunNotice(
+                stringResource(Res.string.crew_running_together, party.partySize), icon = Icons.AutoMirrored.Filled.DirectionsRun,
+                tag = "party-running",
+            )
+            else -> if (party.partyId != null) {
+                Counts(party)
+                Spacer(Modifier.height(8.dp))
+                RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 4.dp), tag = "party-members") {
+                    party.members.forEachIndexed { index, member ->
+                        if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(t.divider))
+                        MemberRow(member, canKick = lobby && party.isHost && !member.isMe, onKick = { onKick(member.id) })
+                    }
+                    if (alone) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(t.divider))
+                        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Groups, contentDescription = null, tint = t.muted, modifier = Modifier.size(26.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(Res.string.run_cr_alone_body), style = runTextStyle(13.sp, t.label, FontWeight.Medium),
+                                modifier = Modifier.testTag("party-alone"))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                ShareRow(party.myShare, onShare)
+                if (canNotify && !alone && lobby) {
+                    RunTextAction(stringResource(Res.string.run_cr_notify), onNotify, Modifier.fillMaxWidth().testTag("party-notify-link"),
+                        chevron = true)
+                }
+                // 인원 보너스는 함께 출발한 사람 모두(0076 — 거리 · 원격 상관없이)
+                Text(
+                    stringResource(Res.string.tg_party_rule),
+                    style = runTextStyle(12.sp, t.muted), modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+/** 참여 N명 | ✓ 준비 완료 M명 */
+@Composable
+private fun Counts(party: PartyState) {
+    val t = runTone()
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp).testTag("party-counts"), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.Groups, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(Res.string.run_cr_joined, party.partySize), style = runTextStyle(16.sp, t.text, FontWeight.Bold),
+            modifier = Modifier.weight(1f))
+        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = t.cobaltText, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(Res.string.run_cr_ready_count, party.readyCount), style = runTextStyle(16.sp, t.text, FontWeight.Bold))
+    }
+}
+
+/** 크루원 한 줄 — 이니셜 · 이름(· 나) · 진행자 · 준비 상태. 진행자는 대기실에서 내보낼 수 있다 */
+@Composable
+private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit) {
+    val t = runTone()
+    val name = when {
+        member.isMe && member.name.isNotBlank() -> stringResource(Res.string.run_cr_me, member.name)
+        member.isMe -> stringResource(Res.string.run_cr_me_only)
+        else -> member.name
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics(mergeDescendants = true) {}.testTag("party-member-${member.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RunInitials(initialsOf(member.name.ifBlank { name }), size = 38.dp, filled = member.isMe)
+        Spacer(Modifier.width(12.dp))
+        Text(name, style = runTextStyle(16.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false))
+        if (member.isHost) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(Res.string.run_cr_host), style = runTextStyle(12.sp, t.cobaltText, FontWeight.Bold),
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(t.chipFace).padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+        }
+        Spacer(Modifier.weight(1f))
+        Icon(
+            if (member.ready) Icons.Filled.CheckCircle else Icons.Outlined.Circle, contentDescription = null,
+            tint = if (member.ready) t.cobaltText else t.label, modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            stringResource(if (member.ready) Res.string.run_cr_ready else Res.string.run_cr_not_ready),
+            style = runTextStyle(14.sp, if (member.ready) t.cobaltText else t.label, FontWeight.SemiBold),
+        )
+        if (canKick) {
+            val label = stringResource(Res.string.run_cr_kick)
+            Box(
+                Modifier.size(48.dp).clip(CircleShape).feedbackClickable(onClick = onKick)
+                    .semantics { contentDescription = label }.testTag("party-kick-${member.id}"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Close, contentDescription = null, tint = t.muted, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+/** 내 위치 공유 — 기본 끔. 대기실 · 달리는 중에 바꿀 수 있다(다음 방에서도 이 값으로 시작) */
+@Composable
+private fun ShareRow(share: Boolean, onShare: (Boolean) -> Unit) {
+    val t = runTone()
+    RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 10.dp), tag = "party-share-location") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(if (share) Res.string.run_cr_share_on else Res.string.run_cr_share_off),
+                    style = runTextStyle(15.sp, t.text, FontWeight.Bold))
+                Text(stringResource(if (share) Res.string.run_my_share_on else Res.string.run_my_share_off), style = runTextStyle(12.sp, t.label))
+            }
+            RunSwitch(share, onShare, Modifier.testTag("party-share-toggle"))
+        }
+    }
+}
+
+/** 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다(기다리지 않으려면 다시 연결). 나머지는 사람이 정한다 */
+@Composable
+private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnect: () -> Unit, onLeave: () -> Unit) {
+    val message = stringResource(
+        when (problem) {
+            PartyProblem.SIGN_IN -> Res.string.party_problem_sign_in
+            // 고른 방이 찼거나 출발한 것(0072)은 크루 대기실에서만 — 번개러닝 대기실은 빠진 것과 같다
+            PartyProblem.REMOVED, PartyProblem.FULL, PartyProblem.STARTED -> Res.string.party_problem_removed
+            PartyProblem.NETWORK -> Res.string.party_problem_network
+            PartyProblem.CLOSED -> Res.string.party_problem_closed
+            PartyProblem.FAILED -> Res.string.party_problem_failed
+            PartyProblem.MISSED_START -> Res.string.party_problem_missed_start
+        },
+    )
+    // 방이 닫혔거나 빠졌으면 다시 열기, 연결이 끊긴 동안이면 지금 다시 묻기(나가기만 있으면 기다리거나 떠나야 했다)
+    val action = when (problem) {
+        PartyProblem.CLOSED, PartyProblem.REMOVED -> stringResource(Res.string.crew_retry)
+        PartyProblem.NETWORK -> stringResource(Res.string.run_crew_reconnect)
+        else -> null
+    }
+    val onAction = when (problem) {
+        PartyProblem.CLOSED, PartyProblem.REMOVED -> onRetry
+        PartyProblem.NETWORK -> onReconnect
+        else -> null
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        RunNotice(
+            message,
+            kind = if (problem == PartyProblem.NETWORK || problem == PartyProblem.MISSED_START) RunNoticeKind.Warn else RunNoticeKind.Error,
+            tag = "party-problem",
+            action = action,
+            onAction = onAction,
+        )
+        // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
+        if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START) {
+            RunButton(stringResource(Res.string.run_cr_leave), onLeave, Modifier.testTag("party-leave"), kind = RunButtonKind.Secondary)
+        }
+    }
+}
+
+/** 끝난 크루 러닝 — 금액은 서버가 확인한 뒤에만(그 전에는 "서버 확인 중") */
+@Composable
+private fun ResultCard(resultPoints: Double?) {
+    val t = runTone()
+    RunCard(padding = PaddingValues(18.dp), tag = "party-result") {
+        Text(stringResource(Res.string.crew_result_title), style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold))
+        Spacer(Modifier.height(8.dp))
+        if (resultPoints != null) {
+            Text(stringResource(Res.string.run_cr_result_points), style = runTextStyle(13.sp, t.label))
+            com.stepup.android.ui.components.RunNumber(
+                "+${com.stepup.android.domain.formatFixed((resultPoints).toDouble(), 2)}", unit = "SUP", size = 34.sp, color = t.cyan,
+                modifier = Modifier.testTag("party-result-points"),
+            )
+        } else {
+            Text(stringResource(Res.string.finish_pending_short), style = runTextStyle(16.sp, t.label, FontWeight.SemiBold),
+                modifier = Modifier.testTag("party-result-pending"))
+        }
+    }
+}
+
+/** 번개러닝 대기실의 이름 줄 — 예전 모습 그대로(크루 대기실은 크루 달리기 v2 의 머리를 쓴다) */
+@Composable
+private fun FlashTitleRow(name: String, mark: String) {
+    val t = runTone()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val shape = RoundedCornerShape(56.dp * 0.28f)
+        Box(
+            Modifier.size(56.dp).clip(shape)
+                .background(androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(androidx.compose.ui.graphics.Color(0xFF1D6BFF), androidx.compose.ui.graphics.Color(0xFF0A3FC0)),
+                )),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                mark.take(2).uppercase(),
+                style = androidx.compose.ui.text.TextStyle(
+                    fontFamily = com.stepup.android.ui.theme.StepUpFonts.sans, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
+                    color = androidx.compose.ui.graphics.Color.White,
+                ),
+                maxLines = 1,
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Text(
+            name,
+            style = androidx.compose.ui.text.TextStyle(
+                fontFamily = com.stepup.android.ui.theme.StepUpFonts.sans, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp,
+                letterSpacing = (-0.03).em, color = t.text,
+            ),
+            maxLines = 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).semantics { heading() }.testTag("crew-title"),
+        )
+    }
+}

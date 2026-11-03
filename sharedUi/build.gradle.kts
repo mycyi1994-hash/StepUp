@@ -37,6 +37,8 @@ kotlin {
             // 화면 상태(ViewModel) · 수명 주기 — 안드로이드와 같은 androidx.lifecycle(멀티플랫폼 판, CMP 가 끌어오는 판)
             implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
             implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+            // 화면 길(안드로이드와 같은 navigation-compose 의 멀티플랫폼 판) — 안드로이드 NavGraph 를 그대로 옮긴다
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
         }
     }
 }

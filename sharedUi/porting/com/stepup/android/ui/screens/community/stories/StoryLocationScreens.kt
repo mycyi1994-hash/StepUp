@@ -1,0 +1,210 @@
+package com.stepup.android.ui.screens.community.stories
+
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.stepup.ui.res.*
+import com.stepup.android.core.ExternalIntents
+import com.stepup.android.core.AppServices
+import com.stepup.android.data.repo.PlaceSearchResult
+import com.stepup.android.domain.StoryPlace
+import com.stepup.android.ui.StepPermissions
+import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * 내 주변 — 목록 위 동네 이름을 누르면 온다. "내 위치 사용하기"는 실제 권한 요청, "지역 직접 선택"은
+ * 권한 없이 지역 검색. 권한을 허락받기 전의 안내를 허락받은 것과 섞지 않는다.
+ */
+@Composable
+fun StoryLocationScreen(onBack: () -> Unit, onChooseRegion: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var denied by rememberSaveable { mutableStateOf(false) }
+    val region by AppServices.userPrefs.storyRegion.collectAsState(initial = null)
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (StepPermissions.hasLocation(context)) {
+            // 내 위치로 본다 — 고른 지역을 푼다
+            scope.saveRegionThen(null, onBack)
+        } else {
+            denied = true
+        }
+    }
+    val useLocation = {
+        if (StepPermissions.hasLocation(context)) {
+            scope.saveRegionThen(null, onBack)
+            Unit
+        } else {
+            permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        }
+    }
+    Column(Modifier.fillMaxSize().testTag("story-location")) {
+        StoryHeader(stringResource(Res.string.story_location_screen_title), onBack)
+        StoryLocationPrompt(
+            locating = false,
+            denied = denied,
+            onUseLocation = useLocation,
+            onChooseRegion = onChooseRegion,
+            onOpenSettings = { ExternalIntents.openAppSettings() },
+            modifier = Modifier.weight(1f),
+        )
+        region?.let {
+            Text(
+                stringResource(Res.string.story_location_current_region, it.name),
+                style = runTextStyle(14.sp, runTone().label, FontWeight.Medium),
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 14.dp),
+            )
+        }
+    }
+}
+
+/** 지역 직접 선택(CM03 · CM04) — 동 · 구 이름으로 찾아 그 지역 한가운데를 기준점으로 쓴다. 결과가 없어도 이전 지역은 그대로 */
+@Composable
+fun StoryRegionScreen(onBack: () -> Unit, onChosen: () -> Unit) {
+    val t = runTone()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var query by rememberSaveable { mutableStateOf("") }
+    var result by remember { mutableStateOf<PlaceSearchResult?>(null) }
+    var searching by remember { mutableStateOf(false) }
+    var attempt by remember { mutableIntStateOf(0) }
+    LaunchedEffect(query, attempt) {
+        result = null
+        if (query.isBlank()) return@LaunchedEffect
+        searching = true
+        delay(350)
+        result = AppServices.placeSearch.regions(query, null)
+        searching = false
+    }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (StepPermissions.hasLocation(context)) scope.saveRegionThen(null, onChosen)
+    }
+    Column(Modifier.fillMaxSize().imePadding().testTag("story-region")) {
+        StoryHeader(stringResource(Res.string.story_region_title), onBack)
+        StorySearchField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = stringResource(Res.string.story_region_hint),
+            modifier = Modifier.padding(horizontal = StoryFormGutter),
+            tag = "story-region-search",
+        )
+        LazyColumn(
+            Modifier.fillMaxWidth().weight(1f),
+            contentPadding = PaddingValues(start = StoryFormGutter, end = StoryFormGutter, top = 14.dp, bottom = 24.dp),
+        ) {
+            item {
+                val shape = RoundedCornerShape(16.dp)
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape).background(t.secondaryFace, shape)
+                        .border(1.5.dp, t.cyan, shape).feedbackClickable(role = Role.Button, onClick = {
+                        if (StepPermissions.hasLocation(context)) {
+                            scope.saveRegionThen(null, onChosen)
+                        } else {
+                            permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                        }
+                    }).testTag("story-region-my-location"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(Icons.Filled.MyLocation, contentDescription = null, tint = t.cyan, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(Res.string.story_region_my_location), style = runTextStyle(17.sp, t.cyan, FontWeight.Bold))
+                }
+                Spacer(Modifier.height(18.dp))
+            }
+            val found = (result as? PlaceSearchResult.Found)?.places?.distinctBy { it.key }
+            when {
+                query.isBlank() -> Unit
+                searching || result == null -> item {
+                    Text(stringResource(Res.string.story_place_searching), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                        modifier = Modifier.padding(vertical = 12.dp))
+                }
+                result is PlaceSearchResult.Offline -> item {
+                    StoryStateBlock(Icons.Filled.Refresh, stringResource(Res.string.story_place_offline_title),
+                        stringResource(Res.string.story_error_body)) {
+                        StoryButton(stringResource(Res.string.story_retry), { attempt++ })
+                    }
+                }
+                found.isNullOrEmpty() -> item {
+                    StoryStateBlock(Icons.Filled.Search, stringResource(Res.string.story_region_empty_title),
+                        stringResource(Res.string.story_blue_region_empty_body), Modifier.testTag("story-region-empty")) {
+                        StoryTextButton(stringResource(Res.string.story_place_clear), { query = "" }, color = t.cyan)
+                    }
+                }
+                else -> {
+                    item {
+                        Text(stringResource(Res.string.story_region_results), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                            modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
+                    }
+                    items(found, key = { it.key }) { place ->
+                        StoryPlaceRow(place, "") {
+                            scope.saveRegionThen(place, onChosen)
+                        }
+                        StoryDivider()
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 기준 지역을 저장한 뒤 화면을 옮긴다(null 이면 내 위치로). 저장은 다른 스레드에서 끝날 수 있어,
+ * 화면 전환은 화면 스레드로 돌아와서 한다 — 아니면 내비게이션이 "main thread" 오류로 멈춘다.
+ */
+private fun CoroutineScope.saveRegionThen(place: StoryPlace?, then: () -> Unit) {
+    launch {
+        AppServices.userPrefs.setStoryRegion(place)
+        withContext(Dispatchers.Main.immediate) { then() }
+    }
+}
