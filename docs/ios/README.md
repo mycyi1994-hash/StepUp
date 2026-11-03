@@ -46,6 +46,9 @@
   iOS 는 `buildIosDatabase()` — 문서 폴더 strideup.db · 번들 SQLite · 판 19 에서 시작(옮길 옛 DB 가 없다). 판을 올리면 iOS 길도 연결(SQLiteConnection)로 더한다.
   iOS Room 의 KSP 는 Mac 에서만 돈다 — 검사는 CI 의 `:sharedData:iosSimulatorArm64Test`(IosDatabaseTest).
 
+- **설정**(2026-11-03): `UserPrefs`(DataStore Preferences)와 `CrewDraftCodec` 을 `:sharedData` 로 — DataStore 두 개를 받는다.
+  안드로이드는 `app/.../data/prefs/AndroidUserPrefs.kt` 의 `UserPrefs(context)` 가 예전 파일 그대로(`strideup_prefs` · `stepup_auth`, `preferencesDataStore` 대리자)를 넣는다 —
+  부르는 곳 · 파일 · 백업 규칙이 그대로다. iOS 는 `createIosUserPrefs()`(문서 폴더의 같은 이름 파일, 로그인 세션은 키체인).
 - **러닝 올리기**(2026-11-03): 규칙(과속 신고 먼저 · 10개씩 이어서 · 막혔으면 끝 · 실패면 다시)은 공용 `UploadPass`(`:sharedData`, `UploadPassTest`) —
   안드로이드 `SessionUploadWorker` 가 그대로 쓰고, iOS 는 `BGProcessingTask`(`iosApp/StepUp/UploadTask.swift`, 네트워크 필요) · 앱이 앞에 올 때
   `IosUploads.run` 이 같은 것을 돈다. 대기열 처리 `ClaimRepository` 도 `:sharedData` 로 옮겼다. iOS 의 올릴 곳은 화면 · 저장소를 붙일 때 `IosUploads.connect`.

@@ -1,2 +1,2 @@
 
-<StepUp:sharedData_iosMain>:com.stepup.android.data.local
+<StepUp:sharedData_iosMain>:com.stepup.android.data.local:com.stepup.android.data.prefs

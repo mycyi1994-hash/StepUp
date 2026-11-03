@@ -5,9 +5,9 @@
       resolved="::"/>
   <library
       name="androidx.room:room-runtime-android:2.8.5@aar"
-      jars="/root/.gradle/caches/8.11.1/transforms/8bc8d229831eb68ae0d01ad4e845aabd/transformed/room-runtime/jars/classes.jar"
+      jars="/root/.gradle/caches/8.11.1/transforms/20a94d3eb668f36967cb74340297f5ae/transformed/room-runtime/jars/classes.jar"
       resolved="androidx.room:room-runtime-android:2.8.5"
-      folder="/root/.gradle/caches/8.11.1/transforms/8bc8d229831eb68ae0d01ad4e845aabd/transformed/room-runtime"
+      folder="/root/.gradle/caches/8.11.1/transforms/20a94d3eb668f36967cb74340297f5ae/transformed/room-runtime"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -20,6 +20,27 @@
       name="androidx.room:room-common-jvm:2.8.5@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/androidx.room/room-common-jvm/2.8.5/3aeefef6615720bec8c860dd0786b48552ef3300/room-common-jvm-2.8.5.jar"
       resolved="androidx.room:room-common-jvm:2.8.5"/>
+  <library
+      name="androidx.datastore:datastore-preferences-core-jvm:1.1.1@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-core-jvm/1.1.1/e562d4a944240c0e67317f0b862da24aca3aabc/datastore-preferences-core-jvm-1.1.1.jar"
+      resolved="androidx.datastore:datastore-preferences-core-jvm:1.1.1"/>
+  <library
+      name="androidx.datastore:datastore-core-okio-jvm:1.1.1@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-core-okio-jvm/1.1.1/cba5887aaa9316d650b3ebc667243ed3a05f4407/datastore-core-okio-jvm-1.1.1.jar"
+      resolved="androidx.datastore:datastore-core-okio-jvm:1.1.1"/>
+  <library
+      name="androidx.datastore:datastore-core-android:1.1.1@aar"
+      jars="/root/.gradle/caches/8.11.1/transforms/b46c34b06bd5a5fbb3a4bcbcc8008771/transformed/datastore-core-release/jars/classes.jar"
+      resolved="androidx.datastore:datastore-core-android:1.1.1"
+      folder="/root/.gradle/caches/8.11.1/transforms/b46c34b06bd5a5fbb3a4bcbcc8008771/transformed/datastore-core-release"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
   <library
       name="org.jetbrains.kotlinx:kotlinx-datetime-jvm:0.7.1@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-datetime-jvm/0.7.1/81c2e0246bd28cc2dcbdf0ab53628322e66a9de9/kotlinx-datetime-jvm-0.7.1.jar"
@@ -46,9 +67,9 @@
       resolved="androidx.collection:collection-jvm:1.5.0"/>
   <library
       name="androidx.sqlite:sqlite-framework-android:2.6.2@aar"
-      jars="/root/.gradle/caches/8.11.1/transforms/f6ca75011e5ab313f1ccff78e0ce5ffe/transformed/sqlite-framework/jars/classes.jar"
+      jars="/root/.gradle/caches/8.11.1/transforms/c0a3b6727369045b96fcfdf6a92c9ba5/transformed/sqlite-framework/jars/classes.jar"
       resolved="androidx.sqlite:sqlite-framework-android:2.6.2"
-      folder="/root/.gradle/caches/8.11.1/transforms/f6ca75011e5ab313f1ccff78e0ce5ffe/transformed/sqlite-framework"
+      folder="/root/.gradle/caches/8.11.1/transforms/c0a3b6727369045b96fcfdf6a92c9ba5/transformed/sqlite-framework"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -59,9 +80,9 @@
       proguardRules="proguard.txt"/>
   <library
       name="androidx.sqlite:sqlite-android:2.6.2@aar"
-      jars="/root/.gradle/caches/8.11.1/transforms/930bfb372f348da741be73b554ac90ca/transformed/sqlite/jars/classes.jar"
+      jars="/root/.gradle/caches/8.11.1/transforms/9dc0e29547980f58b07b50769979dd0a/transformed/sqlite/jars/classes.jar"
       resolved="androidx.sqlite:sqlite-android:2.6.2"
-      folder="/root/.gradle/caches/8.11.1/transforms/930bfb372f348da741be73b554ac90ca/transformed/sqlite"
+      folder="/root/.gradle/caches/8.11.1/transforms/9dc0e29547980f58b07b50769979dd0a/transformed/sqlite"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -74,6 +95,18 @@
       name="androidx.annotation:annotation-jvm:1.9.1@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/androidx.annotation/annotation-jvm/1.9.1/b17951747e38bf3986a24431b9ba0d039958aa5f/annotation-jvm-1.9.1.jar"
       resolved="androidx.annotation:annotation-jvm:1.9.1"/>
+  <library
+      name="com.squareup.okio:okio-jvm:3.4.0@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/com.squareup.okio/okio-jvm/3.4.0/4e8bd78a52ab935ce383d0092646922154295e54/okio-jvm-3.4.0.jar"
+      resolved="com.squareup.okio:okio-jvm:3.4.0"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.8.0/ed04f49e186a116753ad70d34f0ac2925d1d8020/kotlin-stdlib-jdk8-1.8.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.8.0/3c91271347f678c239607abb676d4032a7898427/kotlin-stdlib-jdk7-1.8.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"/>
   <library
       name="org.jetbrains.kotlin:kotlin-stdlib:2.3.21@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.3.21/a2ee2c4e220fee522f0451b723bab2a43f3481a7/kotlin-stdlib-2.3.21.jar"
@@ -88,9 +121,9 @@
       resolved="org.jspecify:jspecify:1.0.0"/>
   <library
       name="androidx.annotation:annotation-experimental:1.5.0@aar"
-      jars="/root/.gradle/caches/8.11.1/transforms/cd935895fc2a369df08d7f4ace8d6897/transformed/annotation-experimental-1.5.0/jars/classes.jar"
+      jars="/root/.gradle/caches/8.11.1/transforms/893eb060d1c35d30739918427a53ca28/transformed/annotation-experimental-1.5.0/jars/classes.jar"
       resolved="androidx.annotation:annotation-experimental:1.5.0"
-      folder="/root/.gradle/caches/8.11.1/transforms/cd935895fc2a369df08d7f4ace8d6897/transformed/annotation-experimental-1.5.0"
+      folder="/root/.gradle/caches/8.11.1/transforms/893eb060d1c35d30739918427a53ca28/transformed/annotation-experimental-1.5.0"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -101,9 +134,9 @@
       proguardRules="proguard.txt"/>
   <library
       name="androidx.arch.core:core-runtime:2.2.0@aar"
-      jars="/root/.gradle/caches/8.11.1/transforms/808264010740a7030cc11c5e2e3eea69/transformed/core-runtime-2.2.0/jars/classes.jar"
+      jars="/root/.gradle/caches/8.11.1/transforms/17263c6fa1d15385a1c58667e365e6da/transformed/core-runtime-2.2.0/jars/classes.jar"
       resolved="androidx.arch.core:core-runtime:2.2.0"
-      folder="/root/.gradle/caches/8.11.1/transforms/808264010740a7030cc11c5e2e3eea69/transformed/core-runtime-2.2.0"
+      folder="/root/.gradle/caches/8.11.1/transforms/17263c6fa1d15385a1c58667e365e6da/transformed/core-runtime-2.2.0"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -116,4 +149,12 @@
       name="androidx.arch.core:core-common:2.2.0@jar"
       jars="/root/.gradle/caches/modules-2/files-2.1/androidx.arch.core/core-common/2.2.0/5e1b8b81dfd5f52c56a8d53b18ca759c19a301f3/core-common-2.2.0.jar"
       resolved="androidx.arch.core:core-common:2.2.0"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-parcelize-runtime:1.9.22@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-parcelize-runtime/1.9.22/de4a21d6560cadd035c69ba3af3ad1afecc95299/kotlin-parcelize-runtime-1.9.22.jar"
+      resolved="org.jetbrains.kotlin:kotlin-parcelize-runtime:1.9.22"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.22@jar"
+      jars="/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-android-extensions-runtime/1.9.22/ee3bc0c3b55cb516ac92d6a093e1b939166b86a2/kotlin-android-extensions-runtime-1.9.22.jar"
+      resolved="org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.22"/>
 </libraries>

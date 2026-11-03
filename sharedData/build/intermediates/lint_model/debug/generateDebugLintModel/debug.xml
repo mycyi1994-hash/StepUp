@@ -27,6 +27,6 @@
       applicationId="com.stepup.android.data"
       generatedSourceFolders="build/generated/ksp/android/androidDebug/java:build/generated/ksp/android/androidDebug/kotlin:build/generated/ap_generated_sources/debug/out"
       generatedResourceFolders="build/generated/res/resValues/debug"
-      desugaredMethodsFiles="/root/.gradle/caches/8.11.1/transforms/122cf1575f63d2e2d8744c315016e1c5/transformed/D8BackportedDesugaredMethods.txt">
+      desugaredMethodsFiles="/root/.gradle/caches/8.11.1/transforms/9762f5434a58a3235f2a70e680025ca2/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
 </variant>

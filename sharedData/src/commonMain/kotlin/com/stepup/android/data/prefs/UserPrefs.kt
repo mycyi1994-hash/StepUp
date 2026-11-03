@@ -1,0 +1,1366 @@
+package com.stepup.android.data.prefs
+
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.stepup.android.domain.Faction
+import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.domain.todayIn
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+data class ExperiencePreferences(
+    val sounds: Boolean = true,
+    val haptics: Boolean = true,
+    val reducedMotion: Boolean = false,
+    val ambience: Boolean = false,
+)
+
+/**
+ * 사용자 설정과 가벼운 상태(DataStore Preferences).
+ * 포인트 잔액은 Room의 rewards 원장 합계로 관리하고, 여기에는
+ * 목표/스니커즈 레벨/에너지/스트릭/걸음 기준점만 저장한다.
+ */
+class UserPrefs(
+    // 안드로이드: app 의 UserPrefs(context) 가 예전 파일 그대로(strideup_prefs · stepup_auth) 넣는다. iOS: 앱 문서 폴더의 같은 이름 파일
+    private val store: androidx.datastore.core.DataStore<Preferences>,
+    private val authStore: androidx.datastore.core.DataStore<Preferences>,
+    /**
+     * 예전 설정 파일의 세션을 이어받아도 되는가. 이 폰에서 **업데이트된** 설치일 때만 그렇다.
+     * 새 폰에 백업을 복원하면 옛 설정 파일(세션 포함)이 같이 오는데, 그때는 새 설치라
+     * 처음 설치 시각과 마지막 업데이트 시각이 같다 — 그 세션은 버리고 다시 로그인하게 한다.
+     */
+    private val legacySessionAdoptable: () -> Boolean,
+) {
+
+    private object Keys {
+        val SOUNDS = booleanPreferencesKey("experience_sounds")
+        val AMBIENCE = booleanPreferencesKey("experience_ambience")
+        val HAPTICS = booleanPreferencesKey("experience_haptics")
+        val REDUCED_MOTION = booleanPreferencesKey("experience_reduced_motion")
+        val DAILY_GOAL = intPreferencesKey("daily_goal")
+        val SNEAKER_LEVEL = intPreferencesKey("sneaker_level")
+        val ENERGY = doublePreferencesKey("energy_remaining")
+        val ENERGY_DAY = longPreferencesKey("energy_day")
+        val ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("energy_purchase_receipts")
+        val RUN_ENERGY_RECEIPTS = androidx.datastore.preferences.core.stringSetPreferencesKey("run_energy_receipts")
+        val STREAK = intPreferencesKey("streak")
+        val LAST_GOAL_MET_DAY = longPreferencesKey("last_goal_met_day")
+        /** 가장 길었던 연속 달성 일수 — 업적은 지금 이어진 값이 아니라 이 값으로 연다(2026-10-17 점검) */
+        val BEST_STREAK = intPreferencesKey("best_streak")
+        val BASELINE_DAY = longPreferencesKey("baseline_day")
+        val BASELINE_STEPS = longPreferencesKey("baseline_steps")
+        /** 기준점을 잡을 때의 기기 부팅 횟수. 바뀌었으면 재부팅이다(-1 = 모름). */
+        val BASELINE_BOOT = intPreferencesKey("baseline_boot")
+        /** 에너지 상한을 정하는 레벨 — 지금 신은 신발의 레벨. 없으면 옛 SNEAKER_LEVEL */
+        val ENERGY_CAP_LEVEL = intPreferencesKey("energy_cap_level")
+        val RUNNER_UID = stringPreferencesKey("runner_uid")
+        val NICKNAME = stringPreferencesKey("nickname")
+
+        // ── 핫글 ──
+        /** 이번 주 핫글 목록 (순서 있는 글 id) */
+        val HOT_POST_IDS = stringPreferencesKey("hot_post_ids")
+        /** 지금까지 한 번이라도 핫글에 오른 글 id — 다시 오르지 않게 기억한다 */
+        val HOT_FEATURED_IDS = stringPreferencesKey("hot_featured_ids")
+        /** 이 목록이 어느 갱신 시각의 것인지 (epoch millis) */
+        val HOT_ROTATED_AT = longPreferencesKey("hot_rotated_at")
+        val AVATAR_ID = intPreferencesKey("avatar_id")
+        val AVATAR_REV = intPreferencesKey("avatar_rev")
+        val LOGIN_METHOD = stringPreferencesKey("login_method")
+        val GUIDE_SEEN = intPreferencesKey("guide_seen")
+        val RUN_PERMISSION_PRIMER_SEEN = booleanPreferencesKey("run_permission_primer_seen")
+        // 시작·로그인·첫 사용 v1 — 권한 허용 여부가 아니라 "물어봤다 · 골랐다"만 적는다(허용은 늘 OS 에서 읽는다)
+        val RUN_ACTIVITY_HISTORY = stringPreferencesKey("run_activity_request_history")
+        val RUN_LOCATION_CHOSEN = booleanPreferencesKey("run_location_chosen")
+        val RUN_NOTIFICATION_CHOSEN = booleanPreferencesKey("run_notification_chosen")
+        /** 로그인했던 사람이 다시 로그인해야 해서 로그인 화면에 왔다(시안 09) — 로그인에 성공하면 지운다 */
+        val SIGN_IN_AGAIN = booleanPreferencesKey("sign_in_again")
+        val S2_SETUP_SEEN = booleanPreferencesKey("s2_setup_seen")
+        val WEATHER_BACKGROUND = booleanPreferencesKey("weather_background")
+        val PARTY_SHARE_LOCATION = booleanPreferencesKey("party_share_location")
+        val EXITED_PARTIES = stringPreferencesKey("exited_parties")
+        val RUN_MODE = stringPreferencesKey("run_mode")
+        val BODY_HEIGHT_CM = intPreferencesKey("body_height_cm")
+        val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
+        val BODY_GOAL_WEIGHT_KG = doublePreferencesKey("body_goal_weight_kg")
+        val BODY_GOAL_WEEKS = intPreferencesKey("body_goal_weeks")
+        val LANGUAGE = stringPreferencesKey("language")
+        /** 화면 테마 — ThemeMode 의 이름 문자열 */
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val SELECTED_COURSE = longPreferencesKey("selected_course")
+        /** 서버에 코스 기록으로 낼 러닝 — "시작시각\t코스 길" 줄들 */
+        val PENDING_COURSE_RUNS = stringPreferencesKey("pending_course_runs")
+        /** 과속으로 멈춘 뒤 러닝 금지가 끝나는 때(벽시계 ms) */
+        val RUN_BAN_UNTIL = longPreferencesKey("run_ban_until")
+        /** 서버에 아직 알리지 않은 과속 정지 — 줄마다 "시작\t멈춤\t기록 주인" */
+        val PENDING_OVERSPEED = stringPreferencesKey("pending_overspeed_stops")
+        /** 러닝 챌린지(10분 · 1km · 3km) 지난 도전 — GoalAttempt 줄들, 이 폰에만 */
+        val GOAL_ATTEMPTS = stringPreferencesKey("goal_attempts")
+        val SHOE_NICKNAMES = stringPreferencesKey("shoe_nicknames")
+        /** 다이어트 모드의 러닝 경험(RunExperience.key) — 이 폰에만 */
+        val RUN_EXPERIENCE = stringPreferencesKey("run_experience")
+        /** "지금부터 뛰는 길을 코스로 저장한다"를 켜 둔 상태 */
+        val COURSE_RECORDING = booleanPreferencesKey("course_recording")
+        /** 지금 심어져 있는 데모 코스가 몇 번째 판인지 */
+        val COURSE_SEED_VERSION = intPreferencesKey("course_seed_version")
+        val TOP_SPEED = doublePreferencesKey("top_speed_kmh")
+        val ACCOUNTED_STEPS = longPreferencesKey("accounted_steps")
+        val ACCOUNTED_DAY = longPreferencesKey("accounted_day")
+        val RUNNER_ADDRESS = stringPreferencesKey("runner_address")
+        val AUTH_SESSION = stringPreferencesKey("auth_session")
+        val MARKET_LEDGER_CURSOR = longPreferencesKey("market_ledger_cursor")
+        val SERVER_ENERGY_MAX = doublePreferencesKey("server_energy_max")
+        val ACCOUNT_LIFETIME_KM = doublePreferencesKey("account_lifetime_km")
+        val FREE_DRAWS_LEFT = intPreferencesKey("free_draws_left")
+        val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
+        val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
+        /** 폰의 서버 경제 사본(잔고 · 신발 · 부스터 · 받은 도전)이 어느 계정 것인가 */
+        val ECONOMY_OWNER = stringPreferencesKey("economy_owner")
+
+        /** 보낸 강화 요청(0054) — 결과를 확인할 때까지. "계정|키|대상|재료,재료,재료|확률|시각" */
+        val FORGE_PENDING = stringPreferencesKey("forge_pending")
+        val NEWS_FETCHED_AT = longPreferencesKey("news_fetched_at")
+
+        // ── 러너 캐릭터 ──
+        /** "M" / "F" — 기본 캐릭터 둘 중 무엇을 쓰는가 */
+        val AVATAR_GENDER = stringPreferencesKey("avatar_gender")
+        /** 입고 있는 의상 id. 실제로 가진 것만 들어간다. */
+        val AVATAR_OUTFIT = stringPreferencesKey("avatar_outfit")
+
+        // ── 데모 모드 ──
+        //
+        // 운영 데이터와 **다른 열쇠**를 쓴다. 데모에서 입혀 본 의상이
+        // AVATAR_OUTFIT 에 섞이면, 데모를 끈 뒤에도 갖지 않은 옷을 입고 있게 된다.
+        val DEMO_MODE = booleanPreferencesKey("demo_mode")
+        val NOTIFY_PUSH = booleanPreferencesKey("notify_push")
+        val NOTIFY_GOAL = booleanPreferencesKey("notify_goal_reminder")
+        val NOTIFY_PARTY = booleanPreferencesKey("notify_party_invite")
+        val NOTIFY_EVENT = booleanPreferencesKey("notify_event_news")
+        val DEMO_OUTFIT = stringPreferencesKey("demo_outfit")
+    }
+
+    val dailyGoal: Flow<Int> = store.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
+
+    // ── 러너 캐릭터 ──────────────────────────────────────────
+
+    val avatarGender: Flow<String> = store.data.map { it[Keys.AVATAR_GENDER] ?: "" }
+
+    suspend fun setAvatarGender(id: String) {
+        store.edit { it[Keys.AVATAR_GENDER] = id }
+    }
+
+    val avatarOutfit: Flow<String> = store.data.map { it[Keys.AVATAR_OUTFIT] ?: "" }
+
+    suspend fun setAvatarOutfit(id: String) {
+        store.edit { it[Keys.AVATAR_OUTFIT] = id }
+    }
+
+    // ── 데모 모드 ────────────────────────────────────────────
+
+    /**
+     * 서버 없이 화면을 둘러보는 모드.
+     *
+     * 켜져 있으면 소식 · 러너 마켓이 **예시 데이터**를 보여 주고, 화면마다
+     * "데모"라고 적힌다. 원장(SUP)과 서버에는 아무것도 쓰지 않는다.
+     */
+    val demoMode: Flow<Boolean> = store.data.map { it[Keys.DEMO_MODE] ?: false }
+
+    suspend fun setDemoMode(on: Boolean) {
+        store.edit {
+            it[Keys.DEMO_MODE] = on
+            // 끄면 체험으로 입힌 옷도 벗긴다. 남겨 두면 다음에 켤 때 갑자기
+            // 입고 나타난다 — 그 사이에 무엇을 했는지 사용자는 기억하지 못한다.
+            if (!on) it.remove(Keys.DEMO_OUTFIT)
+        }
+    }
+
+    /** 데모에서 체험으로 입혀 본 의상. 데모가 꺼지면 비어 있다. */
+    val demoOutfit: Flow<String> = store.data.map { it[Keys.DEMO_OUTFIT] ?: "" }
+
+    suspend fun setDemoOutfit(id: String) {
+        store.edit {
+            // 데모가 꺼져 있으면 체험 착용을 받지 않는다
+            if (it[Keys.DEMO_MODE] == true) it[Keys.DEMO_OUTFIT] = id
+        }
+    }
+
+    val experience: Flow<ExperiencePreferences> = store.data.map {
+        ExperiencePreferences(
+            sounds = it[Keys.SOUNDS] ?: true,
+            haptics = it[Keys.HAPTICS] ?: true,
+            reducedMotion = it[Keys.REDUCED_MOTION] ?: false,
+            ambience = it[Keys.AMBIENCE] ?: false,
+        )
+    }
+
+    suspend fun setSounds(enabled: Boolean) { store.edit { it[Keys.SOUNDS] = enabled } }
+    suspend fun setAmbience(enabled: Boolean) { store.edit { it[Keys.AMBIENCE] = enabled } }
+    suspend fun setHaptics(enabled: Boolean) { store.edit { it[Keys.HAPTICS] = enabled } }
+    suspend fun setReducedMotion(enabled: Boolean) { store.edit { it[Keys.REDUCED_MOTION] = enabled } }
+
+    // ── 알림 설정 ─────────────────────────────────────────────
+    //
+    // 알림은 서버가 보내므로 서버에도 같은 값을 올린다(notify_prefs). 여기는 화면이
+    // 바로 읽는 사본이다.
+
+    val notifyPrefs: Flow<NotifyPrefs> = store.data.map {
+        NotifyPrefs(
+            push = it[Keys.NOTIFY_PUSH] ?: true,
+            goalReminder = it[Keys.NOTIFY_GOAL] ?: true,
+            partyInvite = it[Keys.NOTIFY_PARTY] ?: true,
+            eventNews = it[Keys.NOTIFY_EVENT] ?: true,
+        )
+    }
+
+    suspend fun setNotifyPrefs(prefs: NotifyPrefs) {
+        store.edit {
+            it[Keys.NOTIFY_PUSH] = prefs.push
+            it[Keys.NOTIFY_GOAL] = prefs.goalReminder
+            it[Keys.NOTIFY_PARTY] = prefs.partyInvite
+            it[Keys.NOTIFY_EVENT] = prefs.eventNews
+        }
+    }
+
+    // ── 러너 식별 · 프로필 ───────────────────────────────────
+
+    /** 러너 고유 ID — "SU-XXXXXX". 발급 전이면 빈 문자열. */
+    val runnerUid: Flow<String> = store.data.map { it[Keys.RUNNER_UID] ?: "" }
+
+    /**
+     * 사용자가 정한 닉네임. 정하지 않았으면 빈 문자열이고, 화면은 기본 호칭을 쓴다.
+     *
+     * 빈 문자열을 "러너"로 채워 두지 않는 이유는, 그러면 "아직 안 정했다"와
+     * "러너라고 정했다"를 구별할 수 없기 때문이다.
+     */
+    val nickname: Flow<String> = store.data.map { it[Keys.NICKNAME] ?: "" }
+
+    // ── 핫글 ─────────────────────────────────────────────────
+
+    /** 이번 주 핫글 — 뽑힌 순서 그대로 */
+    val hotPostIds: Flow<List<Long>> =
+        store.data.map { it[Keys.HOT_POST_IDS].toIdList() }
+
+    /** 지금까지 핫글에 올랐던 글 전부 */
+    val hotFeaturedIds: Flow<Set<Long>> =
+        store.data.map { it[Keys.HOT_FEATURED_IDS].toIdList().toSet() }
+
+    suspend fun hotRotatedAt(): Long =
+        store.data.first()[Keys.HOT_ROTATED_AT] ?: 0L
+
+    /**
+     * 이번 주 핫글을 확정한다.
+     *
+     * 뽑힌 글은 "이미 올랐다" 목록에도 더해진다. 같은 글이 다음 주에 또 오르면
+     * 새 글이 올라올 자리가 없어지고, 핫글은 붙박이 명예의 전당이 된다.
+     */
+    suspend fun setHotPosts(ids: List<Long>, rotatedAt: Long) {
+        store.edit { prefs ->
+            val featured = prefs[Keys.HOT_FEATURED_IDS].toIdList().toMutableSet()
+            featured += ids
+            prefs[Keys.HOT_POST_IDS] = ids.joinToString(",")
+            prefs[Keys.HOT_FEATURED_IDS] = featured.joinToString(",")
+            prefs[Keys.HOT_ROTATED_AT] = rotatedAt
+        }
+    }
+
+    /**
+     * 핫글 기록을 비운다. 게시판이 서버로 옮겨 가 글 번호가 새로 매겨졌을 때 쓴다 —
+     * 옛 번호가 남아 있으면 같은 번호의 새 글이 "이미 올랐던 글"로 막힌다.
+     */
+    // ── 동네 이야기 ─────────────────────────────────────────────
+    //
+    // 쓰다 만 글 · 숨긴 글은 계정마다 따로 둔다(다른 계정으로 로그인하면 보이지 않는다).
+    // 직접 고른 지역은 이 폰의 보기 설정이라 계정과 상관없이 하나다.
+
+    private fun storyDraftKey(owner: String) = stringPreferencesKey("story_draft:$owner")
+    private fun storyHiddenKey(owner: String) = stringPreferencesKey("story_hidden:$owner")
+    private fun storyRecentKey(owner: String) = stringPreferencesKey("story_recent:$owner")
+    private val storyRegionKey = stringPreferencesKey("story_region")
+
+    fun storyDraft(owner: String): Flow<com.stepup.android.domain.StoryDraft?> =
+        store.data.map { prefs -> prefs[storyDraftKey(owner)]?.let(::decodeStoryDraft) }
+
+    suspend fun setStoryDraft(owner: String, draft: com.stepup.android.domain.StoryDraft?) {
+        store.edit {
+            if (draft == null || draft.text.isBlank() && draft.place == null && draft.run == null) it.remove(storyDraftKey(owner))
+            else it[storyDraftKey(owner)] = storyJson.encodeToString(StoryDraftJson.serializer(), StoryDraftJson.of(draft))
+        }
+    }
+
+    fun hiddenStories(owner: String): Flow<Set<Long>> =
+        store.data.map { prefs ->
+            prefs[storyHiddenKey(owner)].orEmpty().split(',').mapNotNull { it.trim().toLongOrNull() }.toSet()
+        }
+
+    suspend fun setStoryHidden(owner: String, id: Long, hidden: Boolean) {
+        store.edit {
+            val now = it[storyHiddenKey(owner)].orEmpty().split(',').mapNotNull { v -> v.trim().toLongOrNull() }
+            // 숨긴 글이 한없이 쌓이지 않게 최근 500개만 기억한다
+            val next = (if (hidden) now.filterNot { v -> v == id } + id else now.filterNot { v -> v == id }).takeLast(500)
+            if (next.isEmpty()) it.remove(storyHiddenKey(owner)) else it[storyHiddenKey(owner)] = next.joinToString(",")
+        }
+    }
+
+    /** 글에 붙였던 공개 장소 — 최근 것부터(러닝 이야기 글쓰기의 "최근 장소") */
+    fun storyRecentPlaces(owner: String): Flow<List<com.stepup.android.domain.StoryPlace>> =
+        store.data.map { prefs -> prefs[storyRecentKey(owner)]?.let(::decodeStoryPlaces).orEmpty() }
+
+    suspend fun addStoryRecentPlace(owner: String, place: com.stepup.android.domain.StoryPlace, keep: Int) {
+        store.edit {
+            val now = it[storyRecentKey(owner)]?.let(::decodeStoryPlaces).orEmpty()
+            val next = (listOf(place) + now.filterNot { saved -> saved.key == place.key }).take(keep)
+            it[storyRecentKey(owner)] = storyJson.encodeToString(
+                kotlinx.serialization.builtins.ListSerializer(StoryPlaceJson.serializer()), next.map(StoryPlaceJson::of),
+            )
+        }
+    }
+
+    /** 직접 고른 지역 — null 이면 내 위치로 본다 */
+    val storyRegion: Flow<com.stepup.android.domain.StoryPlace?> =
+        store.data.map { prefs -> prefs[storyRegionKey]?.let(::decodeStoryPlace) }
+
+    suspend fun setStoryRegion(place: com.stepup.android.domain.StoryPlace?) {
+        store.edit {
+            if (place == null) it.remove(storyRegionKey)
+            else it[storyRegionKey] = storyJson.encodeToString(StoryPlaceJson.serializer(), StoryPlaceJson.of(place))
+        }
+    }
+
+    /** 계정을 지웠을 때 — 이 폰에 남은 쓰다 만 글 · 숨긴 글 · 최근 장소를 모두 지운다 */
+    suspend fun clearStoryData() {
+        store.edit { prefs ->
+            prefs.asMap().keys
+                .filter {
+                    it.name.startsWith("story_draft:") || it.name.startsWith("story_hidden:") ||
+                        it.name.startsWith("story_recent:")
+                }
+                .forEach { key -> prefs.remove(key) }
+        }
+    }
+
+    // ── 크루 명함형(2026-09-28) — 만들기 · 수정 초안(계정마다), 목록의 지역 · 범위 · 정렬 ──
+
+    private fun crewDraftKey(owner: String, key: String) = stringPreferencesKey("crew_draft:$owner:$key")
+    private val crewRegionKey = stringPreferencesKey("crew_region")
+    private val crewRadiusKey = intPreferencesKey("crew_radius")
+    private val crewSortKey = stringPreferencesKey("crew_sort")
+
+    fun crewDraft(owner: String, key: String): Flow<com.stepup.android.domain.CrewDraft?> =
+        store.data.map { prefs -> prefs[crewDraftKey(owner, key)]?.let(::decodeCrewDraft) }
+
+    suspend fun setCrewDraft(owner: String, key: String, draft: com.stepup.android.domain.CrewDraft?) {
+        store.edit {
+            if (draft == null) it.remove(crewDraftKey(owner, key))
+            else it[crewDraftKey(owner, key)] = CrewDraftCodec.encode(draft)
+        }
+    }
+
+    /** 목록을 볼 지역(직접 고른 곳). 없으면 내 위치 · 전체 */
+    val crewRegion: Flow<com.stepup.android.domain.CrewArea?> =
+        store.data.map { prefs -> prefs[crewRegionKey]?.let(::decodeCrewArea) }
+
+    suspend fun setCrewRegion(area: com.stepup.android.domain.CrewArea?) {
+        store.edit {
+            if (area == null) it.remove(crewRegionKey)
+            else it[crewRegionKey] = CrewDraftCodec.encodeArea(area)
+        }
+    }
+
+    val crewRadius: Flow<Int> = store.data.map { prefs -> prefs[crewRadiusKey] ?: 3 }
+
+    suspend fun setCrewRadius(km: Int) {
+        store.edit { it[crewRadiusKey] = km }
+    }
+
+    val crewSort: Flow<String> = store.data.map { prefs -> prefs[crewSortKey].orEmpty() }
+
+    suspend fun setCrewSort(sort: String) {
+        store.edit { it[crewSortKey] = sort }
+    }
+
+    /** 계정을 지웠을 때 — 이 폰에 남은 크루 초안과 크루 채팅의 쓰다 만 공지를 지운다 */
+    suspend fun clearCrewData() {
+        store.edit { prefs ->
+            prefs.asMap().keys
+                .filter { it.name.startsWith("crew_draft:") || it.name.startsWith("chat_notice_draft:") }
+                .forEach { key -> prefs.remove(key) }
+        }
+    }
+
+    // ── 크루 채팅(2026-09-29) — 쓰다 만 공지(계정 · 방 · 새 공지/수정마다) ──
+
+    private fun chatNoticeDraftKey(owner: String, key: String) = stringPreferencesKey("chat_notice_draft:$owner:$key")
+
+    suspend fun chatNoticeDraft(owner: String, key: String): com.stepup.android.domain.ChatNoticeDraft? =
+        store.data.first()[chatNoticeDraftKey(owner, key)]?.let(ChatNoticeDraftCodec::decode)
+
+    suspend fun setChatNoticeDraft(owner: String, key: String, draft: com.stepup.android.domain.ChatNoticeDraft?) {
+        store.edit {
+            if (draft == null || draft.empty) it.remove(chatNoticeDraftKey(owner, key))
+            else it[chatNoticeDraftKey(owner, key)] = ChatNoticeDraftCodec.encode(draft)
+        }
+    }
+
+    /**
+     * 이 방에 참여할 수 없게 됐다 — 그 계정([owner])의 그 방 쓰다 만 공지를 지운다. 같은 폰의 다른 계정 초안은 그대로 둔다
+     * (그 사람은 아직 멤버일 수 있다). [owner] · [crewId] 가 없으면 넓혀서 지운다.
+     */
+    suspend fun clearChatNoticeDrafts(crewId: String? = null, owner: String? = null) {
+        store.edit { prefs ->
+            prefs.asMap().keys
+                .filter { key ->
+                    // 열쇠는 chat_notice_draft:<계정>:<크루 id>:new|edit:<공지> — 계정 칸에도 ':' 가 있어 계정을 모르면 크루 id 로 찾는다
+                    val name = key.name
+                    when {
+                        !name.startsWith("chat_notice_draft:") -> false
+                        owner != null && crewId != null -> name.startsWith("chat_notice_draft:$owner:$crewId:")
+                        owner != null -> name.startsWith("chat_notice_draft:$owner:")
+                        crewId != null -> name.contains(":$crewId:")
+                        else -> true
+                    }
+                }
+                .forEach { key -> prefs.remove(key) }
+        }
+    }
+
+    private fun decodeCrewDraft(raw: String): com.stepup.android.domain.CrewDraft? = CrewDraftCodec.decode(raw)
+
+    private fun decodeCrewArea(raw: String): com.stepup.android.domain.CrewArea? = CrewDraftCodec.decodeArea(raw)
+
+    private fun decodeStoryDraft(raw: String): com.stepup.android.domain.StoryDraft? =
+        runCatching { storyJson.decodeFromString(StoryDraftJson.serializer(), raw).toDomain() }.getOrNull()
+
+    private fun decodeStoryPlace(raw: String): com.stepup.android.domain.StoryPlace? =
+        runCatching { storyJson.decodeFromString(StoryPlaceJson.serializer(), raw).toDomain() }.getOrNull()
+
+    private fun decodeStoryPlaces(raw: String): List<com.stepup.android.domain.StoryPlace>? =
+        runCatching {
+            storyJson.decodeFromString(kotlinx.serialization.builtins.ListSerializer(StoryPlaceJson.serializer()), raw)
+                .map { it.toDomain() }
+        }.getOrNull()
+
+    suspend fun clearHotPosts() {
+        store.edit { prefs ->
+            prefs.remove(Keys.HOT_POST_IDS)
+            prefs.remove(Keys.HOT_FEATURED_IDS)
+            prefs.remove(Keys.HOT_ROTATED_AT)
+        }
+    }
+
+    /** 선택한 아바타 인덱스 (기본 0, [AVATAR_CUSTOM]이면 갤러리 사진) */
+    val avatarId: Flow<Int> = store.data.map { it[Keys.AVATAR_ID] ?: 0 }
+
+    /** 갤러리 사진이 바뀔 때마다 올라가는 리비전 — UI가 파일을 다시 읽는 신호 */
+    val avatarRev: Flow<Int> = store.data.map { it[Keys.AVATAR_REV] ?: 0 }
+
+    /** 앞뒤 공백을 떼고 [NICKNAME_MAX] 자로 자른다. 빈 값이면 기본 호칭으로 돌아간다. */
+    suspend fun setNickname(name: String) {
+        val cleaned = name.trim().take(NICKNAME_MAX)
+        store.edit { it[Keys.NICKNAME] = cleaned }
+    }
+
+    suspend fun setAvatarId(id: Int) {
+        store.edit { it[Keys.AVATAR_ID] = id }
+    }
+
+    suspend fun bumpAvatarRev() {
+        store.edit { it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1 }
+    }
+
+    /** 새 갤러리 사진을 쓴다 — 아바타 번호와 리비전을 한 번에(둘 중 하나만 적히지 않게) */
+    suspend fun useCustomAvatar() {
+        store.edit {
+            it[Keys.AVATAR_ID] = AVATAR_CUSTOM
+            it[Keys.AVATAR_REV] = (it[Keys.AVATAR_REV] ?: 0) + 1
+        }
+    }
+
+    /** 로그인 방식 — "google" / "guest" / ""(미선택) */
+    val loginMethod: Flow<String> = store.data.map { it[Keys.LOGIN_METHOD] ?: "" }
+
+    suspend fun setLoginMethod(method: String) {
+        store.edit { it[Keys.LOGIN_METHOD] = method }
+    }
+
+    /**
+     * 보상을 받을 지갑 주소. 지갑 기능이 붙기 전에는 비어 있다.
+     *
+     * 비어 있으면 세션은 올라가지 않고 기기에 쌓인다. 나중에 지갑을 만들었을
+     * 때 그동안 뛴 기록이 살아 있어야 하기 때문이다.
+     */
+    val runnerAddress: Flow<String> = store.data.map { it[Keys.RUNNER_ADDRESS] ?: "" }
+
+    suspend fun setRunnerAddress(address: String) {
+        store.edit { it[Keys.RUNNER_ADDRESS] = address.trim() }
+    }
+
+    // ── 로그인 세션 ──────────────────────────────────────────
+    //
+    // 서버가 준 출입증을 그대로 담아 둔다. 앱을 껐다 켜도 로그인이 유지되어야
+    // 하고, 유지되지 않으면 그 사람의 서버 기록에 다시 닿지 못한다.
+
+    //
+    // 세션은 백업에서 빠지는 별도 파일(stepup_auth)에 둔다. 예전 버전은 설정 파일에
+    // 두었으므로, 처음 읽을 때 옮기고 설정 파일에서는 지운다.
+
+    suspend fun authSessionJson(): String {
+        val current = authStore.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        if (current.isNotBlank()) return current
+        val legacy = store.data.map { it[Keys.AUTH_SESSION] ?: "" }.first()
+        if (legacy.isBlank()) return ""
+        val adopt = legacySessionAdoptable()
+        if (adopt) authStore.edit { it[Keys.AUTH_SESSION] = legacy }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
+        return if (adopt) legacy else ""
+    }
+
+    suspend fun setAuthSessionJson(json: String) {
+        authStore.edit { it[Keys.AUTH_SESSION] = json }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
+    }
+
+    suspend fun clearAuthSession() {
+        authStore.edit { it.remove(Keys.AUTH_SESSION) }
+        store.edit { it.remove(Keys.AUTH_SESSION) }
+    }
+
+    /** 앱 언어 태그. 빈 문자열이면 기기 설정을 따른다 */
+    val language: Flow<String> = store.data.map { it[Keys.LANGUAGE] ?: "" }
+
+    suspend fun setLanguage(tag: String) {
+        store.edit { it[Keys.LANGUAGE] = tag }
+    }
+
+    suspend fun languageNow(): String = store.data.first()[Keys.LANGUAGE] ?: ""
+
+    // ── 화면 테마 ────────────────────────────────────────────
+
+    /** 고른 화면 테마의 이름. 빈 문자열이면 아직 안 골랐다(기기 설정을 따른다). */
+    val themeMode: Flow<String> = store.data.map { it[Keys.THEME_MODE] ?: "" }
+
+    suspend fun setThemeMode(name: String) {
+        store.edit { it[Keys.THEME_MODE] = name }
+    }
+
+    suspend fun themeModeNow(): String = store.data.first()[Keys.THEME_MODE] ?: ""
+
+    /**
+     * 거래 원장을 어디까지 폰에 옮겨 적었는지.
+     *
+     * 거래는 서버 원장에서 일어나는데 화면이 보여 주는 잔고는 폰의 원장이다.
+     * 같은 거래를 두 번 적으면 잔고가 늘어나므로, 옮긴 줄의 번호를 기억해
+     * 그다음부터만 가져온다.
+     */
+    val marketLedgerCursor: Flow<Long> =
+        store.data.map { it[Keys.MARKET_LEDGER_CURSOR] ?: 0L }
+
+    suspend fun setMarketLedgerCursor(id: Long) {
+        store.edit { it[Keys.MARKET_LEDGER_CURSOR] = id }
+    }
+
+    /** 소식을 마지막으로 받아 온 시각. 하루에 한 번만 받으려고 쓴다. */
+    suspend fun newsFetchedAtNow(): Long =
+        store.data.first()[Keys.NEWS_FETCHED_AT] ?: 0L
+
+    suspend fun setNewsFetchedAt(millis: Long) {
+        store.edit { it[Keys.NEWS_FETCHED_AT] = millis }
+    }
+
+    /** 선택한 러닝 코스 id. -1이면 선택 없음 */
+    val selectedCourseId: Flow<Long> = store.data.map { it[Keys.SELECTED_COURSE] ?: -1L }
+
+    suspend fun setSelectedCourse(id: Long) {
+        store.edit { it[Keys.SELECTED_COURSE] = id }
+    }
+
+    suspend fun selectedCourseNow(): Long = store.data.first()[Keys.SELECTED_COURSE] ?: -1L
+
+    // ── 코스 기록으로 낼 러닝 ─────────────────────────────────
+    //
+    // 코스를 완주한 러닝은 서버에 올라간 **뒤에** 코스 기록으로 낸다(서버가 올라온
+    // 경로로 코스를 따라갔는지 본다). 그 사이 앱이 꺼져도 잊지 않게 여기 적어 둔다.
+
+    /** 이 러닝이 끝나면 [track] 코스의 기록으로 낸다 */
+    /** 러닝 챌린지 지난 도전(시안 C03) — 최근 것이 앞 */
+    val goalAttempts: Flow<List<com.stepup.android.domain.GoalAttempt>> =
+        store.data.map { com.stepup.android.domain.GoalAttempt.decodeAll(it[Keys.GOAL_ATTEMPTS]) }
+
+    suspend fun addGoalAttempt(attempt: com.stepup.android.domain.GoalAttempt) {
+        store.edit {
+            val rows = com.stepup.android.domain.GoalAttempt.merge(
+                com.stepup.android.domain.GoalAttempt.decodeAll(it[Keys.GOAL_ATTEMPTS]), attempt,
+            )
+            it[Keys.GOAL_ATTEMPTS] = rows.joinToString("\n") { row -> row.encode() }
+        }
+    }
+
+    /** 다이어트 모드에서 고른 러닝 경험 — 없으면 null */
+    val runExperience: Flow<com.stepup.android.domain.RunExperience?> =
+        store.data.map { com.stepup.android.domain.RunExperience.of(it[Keys.RUN_EXPERIENCE]) }
+
+    suspend fun setRunExperience(experience: com.stepup.android.domain.RunExperience?) {
+        store.edit { if (experience == null) it.remove(Keys.RUN_EXPERIENCE) else it[Keys.RUN_EXPERIENCE] = experience.key }
+    }
+
+    suspend fun clearGoalAttempts() {
+        store.edit { it.remove(Keys.GOAL_ATTEMPTS) }
+    }
+
+    /** 내가 붙인 신발 이름(2026-10-17) — 서버 신발 번호 → 이름. 이 폰에만 있다 */
+    val shoeNicknames: Flow<Map<Long, String>> =
+        store.data.map { com.stepup.android.domain.ShoeNickname.decode(it[Keys.SHOE_NICKNAMES]) }
+
+    /** [name] 이 비었으면 원래 이름으로 돌린다 */
+    suspend fun setShoeNickname(shoeId: Long, name: String?) {
+        store.edit {
+            val rows = com.stepup.android.domain.ShoeNickname.decode(it[Keys.SHOE_NICKNAMES]).toMutableMap()
+            val clean = com.stepup.android.domain.ShoeNickname.clean(name)
+            if (clean == null) rows.remove(shoeId) else rows[shoeId] = clean
+            if (rows.isEmpty()) it.remove(Keys.SHOE_NICKNAMES) else it[Keys.SHOE_NICKNAMES] = com.stepup.android.domain.ShoeNickname.encode(rows)
+        }
+    }
+
+    suspend fun clearShoeNicknames() {
+        store.edit { it.remove(Keys.SHOE_NICKNAMES) }
+    }
+
+    suspend fun addPendingCourseRun(startedAt: Long, track: String) {
+        if (track.isBlank()) return
+        store.edit {
+            val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
+            rows[startedAt] = track
+            // This is an outbox, not recent-history UI. Never discard an unacknowledged run.
+            it[Keys.PENDING_COURSE_RUNS] = rows.entries.sortedBy { e -> e.key }
+                .joinToString("\n") { e -> "${e.key}\t${e.value}" }
+        }
+    }
+
+    /** Read without consuming: a failed or account-mismatched request must retain it. */
+    suspend fun pendingCourseRun(startedAt: Long): String? =
+        decodePendingRuns(store.data.first()[Keys.PENDING_COURSE_RUNS])[startedAt]
+
+    /** Remove only after the server acknowledges this run. */
+    suspend fun takePendingCourseRun(startedAt: Long): String? {
+        var found: String? = null
+        store.edit {
+            val rows = decodePendingRuns(it[Keys.PENDING_COURSE_RUNS]).toMutableMap()
+            found = rows.remove(startedAt)
+            if (found != null) {
+                it[Keys.PENDING_COURSE_RUNS] = rows.entries.joinToString("\n") { e -> "${e.key}\t${e.value}" }
+            }
+        }
+        return found
+    }
+
+    /** 과속으로 멈춘 뒤 러닝 금지가 끝나는 때(벽시계 ms, 없으면 0) — 2026-10-17 사용자 결정 "10분 러닝 금지" */
+    val runBanUntil: Flow<Long> = store.data.map { it[Keys.RUN_BAN_UNTIL] ?: 0L }
+
+    /** 러닝 금지를 [until] 까지로 — 이미 더 늦게까지 금지면 그대로 둔다 */
+    suspend fun raiseRunBanUntil(until: Long) {
+        store.edit { if ((it[Keys.RUN_BAN_UNTIL] ?: 0L) < until) it[Keys.RUN_BAN_UNTIL] = until }
+    }
+
+    /** 서버에 알릴 과속 정지를 적어 둔다(보내는 곳: OverspeedReporter). 같은 러닝은 한 줄 */
+    suspend fun addPendingOverspeedStop(startedAt: Long, stoppedAt: Long, owner: String) {
+        store.edit {
+            val rows = OverspeedStop.decodeAll(it[Keys.PENDING_OVERSPEED]).associateBy { row -> row.startedAt }.toMutableMap()
+            rows[startedAt] = OverspeedStop(startedAt, stoppedAt, owner)
+            it[Keys.PENDING_OVERSPEED] = OverspeedStop.encodeAll(rows.values.sortedBy { row -> row.startedAt })
+        }
+    }
+
+    /** 아직 서버에 알리지 않은 과속 정지 — 읽기만 한다(서버가 받은 뒤에 [takePendingOverspeedStop]) */
+    suspend fun pendingOverspeedStops(): List<OverspeedStop> =
+        OverspeedStop.decodeAll(store.data.first()[Keys.PENDING_OVERSPEED])
+
+    /** 서버가 받았다(또는 받을 수 없다고 답했다) — 목록에서 뺀다 */
+    suspend fun takePendingOverspeedStop(startedAt: Long) {
+        store.edit {
+            val rows = OverspeedStop.decodeAll(it[Keys.PENDING_OVERSPEED]).filter { row -> row.startedAt != startedAt }
+            if (rows.isEmpty()) it.remove(Keys.PENDING_OVERSPEED) else it[Keys.PENDING_OVERSPEED] = OverspeedStop.encodeAll(rows)
+        }
+    }
+
+    private fun decodePendingRuns(raw: String?): Map<Long, String> =
+        raw.orEmpty().lineSequence().mapNotNull { line ->
+            val tab = line.indexOf('\t')
+            if (tab <= 0) return@mapNotNull null
+            val at = line.substring(0, tab).toLongOrNull() ?: return@mapNotNull null
+            at to line.substring(tab + 1)
+        }.toMap()
+
+    /**
+     * 코스 녹화 중인가 — "코스 만들기"를 누르고 아직 저장하지 않은 상태.
+     *
+     * 화면이 아니라 여기에 두는 이유는 러닝이 전경 서비스에서 돌기 때문이다.
+     * 러닝 중에 앱이 메모리에서 내려가도, 돌아왔을 때 "아, 이건 코스 녹화였지"를
+     * 기억하고 있어야 끝나고 저장 창을 띄울 수 있다.
+     */
+    val courseRecording: Flow<Boolean> =
+        store.data.map { it[Keys.COURSE_RECORDING] ?: false }
+
+    suspend fun setCourseRecording(on: Boolean) {
+        store.edit { it[Keys.COURSE_RECORDING] = on }
+    }
+
+    suspend fun courseSeedVersion(): Int =
+        store.data.first()[Keys.COURSE_SEED_VERSION] ?: 0
+
+    suspend fun setCourseSeedVersion(version: Int) {
+        store.edit { it[Keys.COURSE_SEED_VERSION] = version }
+    }
+
+    // ── 적립 정산 기준점 ─────────────────────────────────────────
+
+    /**
+     * 오늘 이미 정산에 반영한 걸음 수.
+     *
+     * 백그라운드 적립과 러닝 세션 정산이 같은 걸음을 두 번 세지 않게 하는
+     * 기준점이다. 세션이 끝나면 그 세션의 걸음이 여기 더해지고, 백그라운드
+     * 스윕은 "오늘 걸음 − 이 값"만 정산한다. 날짜가 바뀌면 0에서 시작한다.
+     */
+    suspend fun accountedStepsToday(today: Long): Int {
+        val prefs = store.data.first()
+        val day = prefs[Keys.ACCOUNTED_DAY] ?: -1L
+        if (day != today) return 0
+        return (prefs[Keys.ACCOUNTED_STEPS] ?: 0L).toInt()
+    }
+
+    /** 정산한 걸음을 기준점에 더한다. 날짜가 바뀌었으면 오늘치부터 다시 센다. */
+    suspend fun addAccountedSteps(today: Long, steps: Int) {
+        if (steps <= 0) return
+        store.edit { prefs ->
+            val day = prefs[Keys.ACCOUNTED_DAY] ?: -1L
+            val base = if (day == today) prefs[Keys.ACCOUNTED_STEPS] ?: 0L else 0L
+            prefs[Keys.ACCOUNTED_DAY] = today
+            prefs[Keys.ACCOUNTED_STEPS] = base + steps
+        }
+    }
+
+    /**
+     * 기준점을 [floorValue] 이상으로 끌어올린다. 이미 그보다 크면 두고, 절대 내리지 않는다.
+     *
+     * 세션 정산이 쓰는 경로다. 세션 걸음을 그냥 더하면 두 가지가 깨진다.
+     *  - **자정을 넘긴 세션**: 어제 걸은 몫까지 오늘 기준점에 얹혀, 오늘 처음 걷는
+     *    그만큼이 통째로 사라진다.
+     *  - **일시정지 중 걸음**: 세션 걸음에 안 잡히므로 더하기만으로는 기준점이
+     *    모자라고, 그 몫을 백그라운드가 다시 지급한다.
+     *
+     * 두 경우 모두 "지금 이 순간의 오늘 걸음 수"를 기준점으로 못 박으면 해결된다.
+     */
+    suspend fun raiseAccountedTo(today: Long, floorValue: Int) {
+        if (floorValue <= 0) return
+        store.edit { prefs ->
+            val day = prefs[Keys.ACCOUNTED_DAY] ?: -1L
+            val base = if (day == today) prefs[Keys.ACCOUNTED_STEPS] ?: 0L else 0L
+            prefs[Keys.ACCOUNTED_DAY] = today
+            prefs[Keys.ACCOUNTED_STEPS] = maxOf(base, floorValue.toLong())
+        }
+    }
+
+    // ── 랭킹 재료 ────────────────────────────────────────────────
+
+    /** 역대 최고 속도(km/h). 러닝 판정을 통과한 구간에서만 갱신된다. */
+    val topSpeedKmh: Flow<Double> = store.data.map { it[Keys.TOP_SPEED] ?: 0.0 }
+
+    suspend fun recordTopSpeed(kmh: Double) {
+        if (kmh <= 0.0) return
+        store.edit { prefs ->
+            val best = prefs[Keys.TOP_SPEED] ?: 0.0
+            if (kmh > best) prefs[Keys.TOP_SPEED] = kmh
+        }
+    }
+
+    /** 온보딩 가이드를 끝까지 봤는지 */
+    val guideSeen: Flow<Boolean> = store.data.map { (it[Keys.GUIDE_SEEN] ?: 0) == 1 }
+
+    suspend fun setGuideSeen() {
+        store.edit { it[Keys.GUIDE_SEEN] = 1 }
+    }
+
+    /** 러닝 권한 안내(S2)를 한 번 봤는지 — 걸음 권한이 없을 때는 이 값과 상관없이 다시 보인다 */
+    val runPermissionPrimerSeen: Flow<Boolean> = store.data.map { it[Keys.RUN_PERMISSION_PRIMER_SEEN] ?: false }
+
+    suspend fun setRunPermissionPrimerSeen() {
+        store.edit { it[Keys.RUN_PERMISSION_PRIMER_SEEN] = true }
+    }
+
+    /** 걸음 권한 시스템 창을 띄운 이력(시작·로그인·첫 사용 v1) — "처음 묻기도 전에 설정으로" 보내지 않으려고 둔다 */
+    val runActivityHistory: Flow<com.stepup.android.domain.ActivityRequestHistory> = store.data.map { prefs ->
+        com.stepup.android.domain.ActivityRequestHistory.entries.firstOrNull { it.name == prefs[Keys.RUN_ACTIVITY_HISTORY] }
+            ?: com.stepup.android.domain.ActivityRequestHistory.NEVER
+    }
+
+    suspend fun setRunActivityHistory(value: com.stepup.android.domain.ActivityRequestHistory) {
+        store.edit { it[Keys.RUN_ACTIVITY_HISTORY] = value.name }
+    }
+
+    /**
+     * 러닝 위치 안내(시안 16)에서 이미 골랐는지 — 허용 · 거절 · 경로 없이 계속. 예전 러닝 권한 안내(S2 시안 23)를 본 사람도
+     * 그때 골랐으므로 다시 묻지 않는다.
+     */
+    val runLocationChosen: Flow<Boolean> = store.data.map {
+        (it[Keys.RUN_LOCATION_CHOSEN] ?: false) || (it[Keys.RUN_PERMISSION_PRIMER_SEEN] ?: false)
+    }
+
+    suspend fun setRunLocationChosen() {
+        store.edit { it[Keys.RUN_LOCATION_CHOSEN] = true }
+    }
+
+    /** 러닝 알림 안내(시안 19)에서 이미 골랐는지 — 허용 · 거절 · 나중에. 나중에는 설정에서 바꾼다 */
+    val runNotificationChosen: Flow<Boolean> = store.data.map {
+        (it[Keys.RUN_NOTIFICATION_CHOSEN] ?: false) || (it[Keys.RUN_PERMISSION_PRIMER_SEEN] ?: false)
+    }
+
+    suspend fun setRunNotificationChosen() {
+        store.edit { it[Keys.RUN_NOTIFICATION_CHOSEN] = true }
+    }
+
+    /** 다시 로그인해야 해서 로그인 화면에 왔는지(시안 09) — 이유를 모르면 false 로 두고 일반 로그인 화면을 쓴다 */
+    val signInAgain: Flow<Boolean> = store.data.map { it[Keys.SIGN_IN_AGAIN] ?: false }
+
+    suspend fun setSignInAgain(value: Boolean) {
+        store.edit { it[Keys.SIGN_IN_AGAIN] = value }
+    }
+
+    /** S2 첫 설정(신체 정보 · 목표 · 모드)을 끝냈거나 건너뛰었는지 — 새로 가입한 사람에게만 한 번 보인다 */
+    val s2SetupSeen: Flow<Boolean> = store.data.map { it[Keys.S2_SETUP_SEEN] ?: false }
+
+    suspend fun setS2SetupSeen() {
+        store.edit { it[Keys.S2_SETUP_SEEN] = true }
+    }
+
+    /** 날씨에 맞춰 홈 풍경 바꾸기 — 대략적인 위치를 날씨 서비스에 보내므로 사용자가 켜야 동작한다 */
+    val weatherBackground: Flow<Boolean> = store.data.map { it[Keys.WEATHER_BACKGROUND] ?: false }
+
+    suspend fun setWeatherBackground(on: Boolean) {
+        store.edit { it[Keys.WEATHER_BACKGROUND] = on }
+    }
+
+    /** 파티런에서 "달리는 동안 내 위치 보이기"를 마지막에 켰는지 — 다음 방에 들어갈 때 그대로 */
+    val partyShareLocation: Flow<Boolean> = store.data.map { it[Keys.PARTY_SHARE_LOCATION] ?: false }
+
+    suspend fun setPartyShareLocation(on: Boolean) {
+        store.edit { it[Keys.PARTY_SHARE_LOCATION] = on }
+    }
+
+    /** 러닝을 마치고 나온 함께 달리기 방(최근 20개) — 나가기가 서버에 닿지 않았어도 그 방에 다시 붙지 않게 */
+    val exitedParties: Flow<Set<Long>> = store.data.map { it[Keys.EXITED_PARTIES].toIdList().toSet() }
+
+    suspend fun addExitedParty(id: Long) {
+        store.edit { prefs ->
+            prefs[Keys.EXITED_PARTIES] = (prefs[Keys.EXITED_PARTIES].toIdList().filter { it != id } + id)
+                .takeLast(20).joinToString(",")
+        }
+    }
+
+    /** 홈 구성 모드. 적립 규칙과는 상관없다. */
+    val runMode: Flow<com.stepup.android.domain.RunMode> = store.data.map { prefs ->
+        prefs[Keys.RUN_MODE]?.let { raw ->
+            com.stepup.android.domain.RunMode.entries.firstOrNull { it.name == raw }
+        } ?: com.stepup.android.domain.RunMode.LITE
+    }
+
+    suspend fun setRunMode(mode: com.stepup.android.domain.RunMode) {
+        store.edit { it[Keys.RUN_MODE] = mode.name }
+    }
+
+    /** 신체 정보와 목표 — 이 기기에만 둔다 */
+    val bodyProfile: Flow<com.stepup.android.domain.BodyProfile> = store.data.map {
+        com.stepup.android.domain.BodyProfile(
+            heightCm = it[Keys.BODY_HEIGHT_CM],
+            weightKg = it[Keys.BODY_WEIGHT_KG],
+            goalWeightKg = it[Keys.BODY_GOAL_WEIGHT_KG],
+            goalWeeks = it[Keys.BODY_GOAL_WEEKS],
+        )
+    }
+
+    suspend fun setBodyProfile(profile: com.stepup.android.domain.BodyProfile) {
+        store.edit { prefs ->
+            fun <T> put(key: Preferences.Key<T>, value: T?) { if (value == null) prefs.remove(key) else prefs[key] = value }
+            put(Keys.BODY_HEIGHT_CM, profile.heightCm)
+            put(Keys.BODY_WEIGHT_KG, profile.weightKg)
+            put(Keys.BODY_GOAL_WEIGHT_KG, profile.goalWeightKg)
+            put(Keys.BODY_GOAL_WEEKS, profile.goalWeeks)
+        }
+    }
+
+    /**
+     * 첫 실행 시 러너 UID를 발급한다. 이미 있으면 그 값을 반환한다.
+     * 헷갈리는 문자(0/O, 1/I)를 뺀 32문자 알파벳을 쓴다.
+     */
+    suspend fun ensureRunnerUid(): String {
+        val existing = store.data.first()[Keys.RUNNER_UID]
+        if (!existing.isNullOrBlank()) return existing
+        val alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        // 알파벳이 32자라 난수 바이트의 아래 5비트로 고르면 고르게 나온다(예전 SecureRandom.nextInt(32) 와 같은 분포)
+        val body = com.stepup.android.data.remote.secureRandomBytes(6)
+            .joinToString("") { alphabet[it.toInt() and 31].toString() }
+        val uid = "SU-$body"
+        store.edit { it[Keys.RUNNER_UID] = uid }
+        return uid
+    }
+
+    val sneakerLevel: Flow<Int> = store.data.map { it[Keys.SNEAKER_LEVEL] ?: 1 }
+
+    val streak: Flow<Int> = store.data.map { it[Keys.STREAK] ?: 0 }
+
+    /** 저장된 연속 달성 일수와 마지막으로 목표를 채운 날(epochDay, 없으면 -1) — 화면은 StreakRules 로 끊겼는지 본다 */
+    val streakRecord: Flow<Pair<Int, Long>> = store.data.map { (it[Keys.STREAK] ?: 0) to (it[Keys.LAST_GOAL_MET_DAY] ?: -1L) }
+
+    /**
+     * 가장 길었던 연속 달성 일수. 이 값을 적기 전의 기록은 저장된 연속 값이 곧 지금까지 닿은 값이다 — 끊긴 뒤 다시 채워
+     * 1 로 돌아갈 때 [setGoalMet] 이 그 값을 여기 남긴다.
+     */
+    val bestStreak: Flow<Int> = store.data.map { maxOf(it[Keys.BEST_STREAK] ?: 0, it[Keys.STREAK] ?: 0) }
+
+    // ── 업적 최고값(2026-10-17 점검) — 계정마다 ─────────────────────────
+    //
+    // 업적은 지금 값으로만 열면 다시 잠긴다(스트릭이 끊김 · 크루를 나감 · 강화 재료로 신발을 태움 · 연결 없이 0 을 읽음).
+    // 카테고리마다 닿은 가장 큰 값을 남기고 업적 화면은 지금 값과 이 값 중 큰 쪽으로 연다.
+
+    private fun achievementBestKey(owner: String) = stringPreferencesKey("achievement_best:$owner")
+
+    /** [owner](기록 주인 — account:… · guest · legacy)가 카테고리마다 닿은 가장 큰 값(AchievementCategory.id → 값) */
+    fun achievementBest(owner: String): Flow<Map<String, Double>> =
+        store.data.map { com.stepup.android.domain.AchievementBook.decodeBest(it[achievementBestKey(owner)]) }
+
+    /** 더 큰 값만 적는다 — 읽기와 쓰기를 한 편집으로(겹쳐 적어도 작은 값이 큰 값을 덮지 않게) */
+    suspend fun raiseAchievementBest(owner: String, values: Map<String, Double>) {
+        if (values.isEmpty()) return
+        store.edit {
+            val now = com.stepup.android.domain.AchievementBook.decodeBest(it[achievementBestKey(owner)])
+            it[achievementBestKey(owner)] = com.stepup.android.domain.AchievementBook.encodeBest(
+                com.stepup.android.domain.AchievementBook.mergeBest(now, values),
+            )
+        }
+    }
+
+    /** 계정을 지웠을 때 — 이 폰에 남은 업적 최고값을 지운다 */
+    suspend fun clearAchievementBest() {
+        store.edit { prefs ->
+            prefs.asMap().keys.filter { it.name.startsWith("achievement_best:") }.forEach { key -> prefs.remove(key) }
+        }
+    }
+
+    /**
+     * 표시용 에너지. 저장된 날짜가 오늘이 아니면 아직 소모가 없는 것이므로
+     * 최대치(= 자정 리필 후 값)로 보여준다. 실제 저장값 갱신은 [currentEnergy]가 담당.
+     */
+    val energy: Flow<Double> = store.data.map { prefs ->
+        val max = energyMax(prefs)
+        val day = prefs[Keys.ENERGY_DAY] ?: -1L
+        if (day != energyToday(prefs)) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
+    }
+
+    /**
+     * 에너지가 다시 차는 "오늘". 서버 경제에서는 서버의 하루(한국 시간 자정)를 따른다 —
+     * 폰의 자정으로 채우면 해외에서는 서버에 없는 에너지가 가득 찬 것처럼 보인다.
+     */
+    private fun energyToday(prefs: Preferences): Long =
+        if (prefs[Keys.SERVER_ENERGY_MAX] != null) todayIn(SERVER_ZONE).toEpochDays().toLong()
+        else todayIn().toEpochDays().toLong()
+
+    suspend fun setDailyGoal(goal: Int) {
+        store.edit { it[Keys.DAILY_GOAL] = goal }
+    }
+
+    suspend fun setSneakerLevel(level: Int) {
+        store.edit { it[Keys.SNEAKER_LEVEL] = level }
+    }
+
+    /**
+     * 오늘 남은 에너지를 반환한다. 날짜가 바뀌었으면 최대치로 리필해 저장한다.
+     *
+     * 리필도 edit 안에서 읽고 쓴다. 바깥에서 읽고 안에서 쓰면 자정 직후
+     * 동시에 들어온 소모가 리필에 덮여 사라진다.
+     */
+    suspend fun currentEnergy(today: Long): Double {
+        var remaining = 0.0
+        store.edit { prefs ->
+            remaining = energyIn(prefs, today)
+            if ((prefs[Keys.ENERGY_DAY] ?: -1L) != today) {
+                prefs[Keys.ENERGY] = remaining
+                prefs[Keys.ENERGY_DAY] = today
+            }
+        }
+        return remaining
+    }
+
+    /**
+     * 에너지 상한을 정하는 레벨을 적는다 — 착용 신발이 바뀌거나 강화될 때.
+     *
+     * 화면(홈·러닝)은 착용 신발 레벨로 상한을 보여 주는데, 소모·리필이 옛 레벨 값(기본 1)을
+     * 쓰면 강화해도 실제로 벌 수 있는 걸음이 늘지 않는다. 신발이 없으면 null.
+     */
+    suspend fun setEnergyCapLevel(level: Int?) {
+        store.edit { if (level == null) it.remove(Keys.ENERGY_CAP_LEVEL) else it[Keys.ENERGY_CAP_LEVEL] = level }
+    }
+
+    private fun energyMax(prefs: Preferences): Double =
+        prefs[Keys.SERVER_ENERGY_MAX]
+            ?: RewardEconomy.maxEnergy(prefs[Keys.ENERGY_CAP_LEVEL] ?: prefs[Keys.SNEAKER_LEVEL] ?: 1)
+
+    // ── 서버 경제의 사본 (EconomySync 가 적는다) ─────────────────────
+    //
+    // 에너지 · 뽑기 횟수는 서버가 정한다. 폰은 마지막으로 받아 온 값을 보여 줄 뿐이다.
+
+    /** @param today 서버의 오늘(my_economy.game_day, 한국 시간) */
+    suspend fun setServerEconomy(today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int) {
+        store.edit {
+            it[Keys.ENERGY] = energyLeft.coerceAtLeast(0.0)
+            it[Keys.ENERGY_DAY] = today
+            it[Keys.SERVER_ENERGY_MAX] = energyMax
+            it[Keys.FREE_DRAWS_LEFT] = freeDraws.coerceAtLeast(0)
+            it[Keys.BONUS_DRAWS_LEFT] = bonusDraws.coerceAtLeast(0)
+        }
+    }
+
+    /** 서버 경제의 사본을 지운다(계정 삭제) — 에너지는 폰 기본값으로 돌아간다 */
+    suspend fun clearServerEconomy() {
+        store.edit {
+            it.remove(Keys.SERVER_ENERGY_MAX)
+            it.remove(Keys.ACCOUNT_LIFETIME_KM)
+            it.remove(Keys.FREE_DRAWS_LEFT)
+            it.remove(Keys.BONUS_DRAWS_LEFT)
+            it.remove(Keys.ENERGY)
+            it.remove(Keys.ENERGY_DAY)
+        }
+    }
+
+    /** 이 계정이 지금까지 달린 거리(km, 서버 profiles.lifetime_km) — 러너 레벨. 받기 전 · 로그아웃 뒤에는 null */
+    val accountLifetimeKm: Flow<Double?> = store.data.map { it[Keys.ACCOUNT_LIFETIME_KM] }
+
+    suspend fun setAccountLifetimeKm(km: Double) {
+        store.edit { it[Keys.ACCOUNT_LIFETIME_KM] = km.coerceAtLeast(0.0) }
+    }
+
+    /** 남은 무료 뽑기 (서버 draw_grants FREE) */
+    val freeDrawsLeft: Flow<Int> = store.data.map { it[Keys.FREE_DRAWS_LEFT] ?: 0 }
+
+    /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
+    val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
+
+    /** 결과를 아직 확인하지 못한 강화 요청(저장 형식 그대로). 없으면 null */
+    suspend fun forgePending(): String? = store.data.map { it[Keys.FORGE_PENDING] }.first()
+
+    /** [forgePending] 과 지금 경제 사본의 계정 — 상세가 "강화 결과 확인"을 보일지 정한다 */
+    val forgePendingFlow: Flow<Pair<String?, String?>> =
+        store.data.map { it[Keys.FORGE_PENDING] to it[Keys.ECONOMY_OWNER] }
+
+    /** 저장된 강화 요청들을 한 번에 읽고 바꾼다(계정마다 한 줄 — 다른 계정 줄을 덮어쓰지 않게 읽기 · 쓰기를 한 편집으로) */
+    suspend fun updateForgePending(transform: (String?) -> String?) {
+        store.edit {
+            val next = transform(it[Keys.FORGE_PENDING])
+            if (next == null) it.remove(Keys.FORGE_PENDING) else it[Keys.FORGE_PENDING] = next
+        }
+    }
+
+    /** 폰의 서버 경제 사본이 어느 계정 것인가 — 다른 계정으로 로그인하면 사본을 먼저 지운다 */
+    suspend fun economyOwner(): String? = store.data.map { it[Keys.ECONOMY_OWNER] }.first()
+
+    /** [economyOwner] 를 따라 본다 — 업적이 원장 · 신발 사본을 지금 계정 것일 때만 최고값으로 적는다 */
+    val economyOwnerFlow: Flow<String?> = store.data.map { it[Keys.ECONOMY_OWNER] }
+
+    suspend fun setEconomyOwner(userId: String?) {
+        store.edit { if (userId == null) it.remove(Keys.ECONOMY_OWNER) else it[Keys.ECONOMY_OWNER] = userId }
+    }
+
+    /** 폰에만 있던 옛 신발을 이 계정으로 한 번 올렸는가 */
+    suspend fun legacyEconomyImported(userId: String): Boolean =
+        store.data.map { userId in (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',') }.first()
+
+    suspend fun setLegacyEconomyImported(userId: String) {
+        store.edit {
+            val done = (it[Keys.LEGACY_ECONOMY_IMPORTED] ?: "").split(',').filter(String::isNotBlank).toSet()
+            it[Keys.LEGACY_ECONOMY_IMPORTED] = (done + userId).joinToString(",")
+        }
+    }
+
+    /**
+     * 에너지를 소모한다.
+     *
+     * 읽기와 쓰기를 한 [edit] 블록 안에서 끝낸다. DataStore는 edit를 직렬화하므로
+     * 이렇게 해야 원자적이다. 백그라운드 적립이 생기면서 세션 정산과 동시에
+     * 에너지를 건드리는 일이 일상이 됐고, 바깥에서 읽고 안에서 쓰면 갱신이
+     * 유실되어 상한이 새거나 구매한 에너지 셀이 사라진다.
+     */
+    suspend fun consumeEnergy(today: Long, amount: Double) {
+        store.edit { prefs ->
+            val remaining = energyIn(prefs, today)
+            prefs[Keys.ENERGY] = (remaining - amount).coerceAtLeast(0.0)
+            prefs[Keys.ENERGY_DAY] = today
+        }
+    }
+
+    /** Receipt and debit are one durable preference edit, safe to replay after a Room-ack failure. */
+    suspend fun consumeRunEnergy(receiptId: String, energyDay: Long, amount: Double, today: Long = todayIn().toEpochDays().toLong()) {
+        require(receiptId.isNotBlank() && amount.isFinite() && amount >= 0)
+        // 영수증 날짜가 오늘보다 뒤(폰 날짜를 되돌림 · 서쪽으로 이동)면 오늘 에너지에서 빼지 않고 받은 것으로만
+        // 적는다 — 거절하면 이 영수증이 남아 그 뒤 모든 러닝의 저장이 날짜가 따라잡을 때까지 막힌다
+        store.edit { prefs ->
+            val receipts = prefs[Keys.RUN_ENERGY_RECEIPTS].orEmpty()
+            if (receiptId !in receipts) {
+                // A later day's refill supersedes the old day's consumption. Do not debit it twice.
+                if (energyDay == today) {
+                    prefs[Keys.ENERGY] = (energyIn(prefs, today) - amount).coerceAtLeast(0.0)
+                    prefs[Keys.ENERGY_DAY] = today
+                }
+                prefs[Keys.RUN_ENERGY_RECEIPTS] = receipts + receiptId
+            }
+        }
+    }
+
+    /** 에너지 셀 등으로 에너지를 회복한다. 최대치를 넘지 않는다. */
+    suspend fun restoreEnergy(today: Long, amount: Double) {
+        store.edit { prefs ->
+            val remaining = energyIn(prefs, today)
+            val max = energyMax(prefs)
+            prefs[Keys.ENERGY] = (remaining + amount).coerceIn(0.0, max)
+            prefs[Keys.ENERGY_DAY] = today
+        }
+    }
+
+    /** Applying a receipt and remembering it are one durable edit, including on replay. */
+    suspend fun hasEnergyCapacity(today: Long, amount: Double): Boolean {
+        require(amount.isFinite() && amount > 0)
+        val prefs = store.data.first()
+        return energyMax(prefs) - energyIn(prefs, today) >= amount
+    }
+
+    suspend fun restorePurchasedEnergy(receiptId: String, today: Long, amount: Double): Boolean {
+        require(receiptId.isNotBlank() && amount.isFinite() && amount > 0)
+        var applied = false
+        store.edit { prefs ->
+            val receipts = prefs[Keys.ENERGY_RECEIPTS].orEmpty()
+            if (receiptId in receipts) {
+                applied = true
+            } else {
+                val max = energyMax(prefs)
+                val remaining = energyIn(prefs, today)
+                if (max - remaining >= amount) {
+                    prefs[Keys.ENERGY] = remaining + amount
+                    prefs[Keys.ENERGY_DAY] = today
+                    prefs[Keys.ENERGY_RECEIPTS] = receipts + receiptId
+                    applied = true
+                }
+            }
+        }
+        return applied
+    }
+
+    /** 자정 리필을 반영한 현재 에너지. [consumeEnergy]/[restoreEnergy]가 edit 안에서 쓴다. */
+    private fun energyIn(prefs: Preferences, today: Long): Double {
+        val day = prefs[Keys.ENERGY_DAY] ?: -1L
+        val max = energyMax(prefs)
+        return if (day != today) max else (prefs[Keys.ENERGY] ?: max).coerceIn(0.0, max)
+    }
+
+    suspend fun streakValue(): Int = store.data.first()[Keys.STREAK] ?: 0
+
+    suspend fun lastGoalMetDay(): Long = store.data.first()[Keys.LAST_GOAL_MET_DAY] ?: -1L
+
+    suspend fun setGoalMet(day: Long, newStreak: Int) {
+        store.edit {
+            // 끊겨 1 로 돌아가기 전의 값까지 — 가장 길었던 연속은 줄지 않는다
+            it[Keys.BEST_STREAK] = maxOf(it[Keys.BEST_STREAK] ?: 0, it[Keys.STREAK] ?: 0, newStreak)
+            it[Keys.LAST_GOAL_MET_DAY] = day
+            it[Keys.STREAK] = newStreak
+        }
+    }
+
+    /** 걸음 센서 기준점 (기준 날짜 epochDay, 그 시점의 센서 누적값) */
+    suspend fun baseline(): Pair<Long, Long> {
+        val prefs = store.data.first()
+        return (prefs[Keys.BASELINE_DAY] ?: -1L) to (prefs[Keys.BASELINE_STEPS] ?: -1L)
+    }
+
+    /** 기준점을 잡을 때의 부팅 횟수. 모르면 -1 */
+    suspend fun baselineBoot(): Int = store.data.first()[Keys.BASELINE_BOOT] ?: -1
+
+    suspend fun setBaseline(day: Long, steps: Long, boot: Int) {
+        store.edit {
+            it[Keys.BASELINE_DAY] = day
+            it[Keys.BASELINE_STEPS] = steps
+            it[Keys.BASELINE_BOOT] = boot
+        }
+    }
+
+    companion object {
+        const val DEFAULT_GOAL = 8000
+        const val MIN_GOAL = 3000
+        const val MAX_GOAL = 20000
+
+        /** 쉼표로 이어 붙인 id 문자열을 목록으로. 비었거나 깨진 값은 건너뛴다. */
+        private fun String?.toIdList(): List<Long> =
+            this?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
+
+        /** 닉네임 최대 길이. 순위표 한 줄에 들어가야 해서 짧게 잡는다. */
+        const val NICKNAME_MAX = 16
+
+        /** avatarId가 이 값이면 갤러리에서 고른 사진을 쓴다 */
+        const val AVATAR_CUSTOM = -2
+
+        /** 갤러리 아바타 저장 파일명 (filesDir) */
+        const val AVATAR_FILE = "avatar_custom.jpg"
+    }
+}
+
+/** 받을 푸시 종류 — 알림 설정 화면의 네 가지 */
+data class NotifyPrefs(
+    val push: Boolean = true,
+    val goalReminder: Boolean = true,
+    val partyInvite: Boolean = true,
+    val eventNews: Boolean = true,
+)
+
+
+/** 서버의 하루 기준 (economy.game_day) */
+private val SERVER_ZONE: kotlinx.datetime.TimeZone = com.stepup.android.domain.KST
+
+private val storyJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+@kotlinx.serialization.Serializable
+private data class StoryPlaceJson(val name: String, val address: String = "", val lat: Double, val lng: Double) {
+    fun toDomain() = com.stepup.android.domain.StoryPlace(name, address, lat, lng)
+
+    companion object {
+        fun of(place: com.stepup.android.domain.StoryPlace) = StoryPlaceJson(place.name, place.address, place.lat, place.lng)
+    }
+}
+
+@kotlinx.serialization.Serializable
+private data class StoryDraftJson(
+    val text: String,
+    val place: StoryPlaceJson? = null,
+    val editingId: Long = 0,
+    val savedAt: Long = 0,
+    val run: StoryRunJson? = null,
+    val runKept: Boolean = false,
+    val runChanged: Boolean = false,
+    val clientKey: String = "",
+) {
+    fun toDomain() = com.stepup.android.domain.StoryDraft(
+        text = text,
+        place = place?.toDomain(),
+        editingId = editingId,
+        savedAt = savedAt,
+        run = run?.toDomain()?.let { com.stepup.android.domain.StoryAttachment(it, kept = runKept) },
+        runChanged = runChanged,
+        clientKey = clientKey,
+    )
+
+    companion object {
+        fun of(draft: com.stepup.android.domain.StoryDraft) = StoryDraftJson(
+            text = draft.text,
+            place = draft.place?.let(StoryPlaceJson::of),
+            editingId = draft.editingId,
+            savedAt = draft.savedAt,
+            run = draft.run?.run?.let(StoryRunJson::of),
+            runKept = draft.run?.kept == true,
+            runChanged = draft.runChanged,
+            clientKey = draft.clientKey,
+        )
+    }
+}
+
+/** 붙인 러닝 — 쓰다 만 글과 함께 둔다(날짜는 끝난 날, 한국 날짜) */
+@kotlinx.serialization.Serializable
+data class StoryRunJson(
+    val id: Long,
+    val startedAt: Long,
+    val endedAt: Long,
+    val distanceM: Int,
+    val durationS: Int,
+    val day: String,
+    val route: String = "",
+) {
+    fun toDomain(): com.stepup.android.domain.StoryRun? {
+        val date = runCatching { kotlinx.datetime.LocalDate.parse(day) }.getOrNull() ?: return null
+        return com.stepup.android.domain.StoryRun(
+            id, startedAt, endedAt, distanceM, durationS, date, com.stepup.android.domain.StoryRunRules.decodeRoute(route),
+        )
+    }
+
+    companion object {
+        fun of(run: com.stepup.android.domain.StoryRun) = StoryRunJson(
+            run.id, run.startedAt, run.endedAt, run.distanceMeters, run.durationSec, run.day.toString(),
+            com.stepup.android.domain.StoryRunRules.encodeRoute(run.route),
+        )
+
+        private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+        /** 화면 저장 상태(SavedStateHandle)에 담는 글자 — 비었으면 첨부 없음 */
+        fun encode(attachment: com.stepup.android.domain.StoryAttachment?): String =
+            attachment?.let { json.encodeToString(serializer(), of(it.run)) + if (it.kept) "\nkept" else "" }.orEmpty()
+
+        fun decode(raw: String): com.stepup.android.domain.StoryAttachment? {
+            if (raw.isBlank()) return null
+            val kept = raw.endsWith("\nkept")
+            val body = if (kept) raw.removeSuffix("\nkept") else raw
+            val run = runCatching { json.decodeFromString(serializer(), body) }.getOrNull()?.toDomain() ?: return null
+            return com.stepup.android.domain.StoryAttachment(run, kept)
+        }
+    }
+}
+
+/** 쓰다 만 공지를 글자로 */
+object ChatNoticeDraftCodec {
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+    @kotlinx.serialization.Serializable
+    private data class Row(
+        val crewId: String,
+        val noticeId: Long? = null,
+        val title: String = "",
+        val body: String = "",
+        val pinned: Boolean = true,
+        val savedAt: Long = 0L,
+        val meetingId: Long? = null,
+        val meetingTitle: String = "",
+        val meetingPlace: String = "",
+        val meetingAt: Long? = null,
+        val meetingChanged: Boolean = false,
+    )
+
+    fun encode(draft: com.stepup.android.domain.ChatNoticeDraft): String =
+        json.encodeToString(
+            Row.serializer(),
+            Row(
+                draft.crewId, draft.noticeId, draft.title, draft.body, draft.pinned, draft.savedAt,
+                draft.meeting?.id, draft.meeting?.title.orEmpty(), draft.meeting?.place.orEmpty(), draft.meeting?.meetAt, draft.meetingChanged,
+            ),
+        )
+
+    fun decode(raw: String): com.stepup.android.domain.ChatNoticeDraft? = runCatching {
+        json.decodeFromString(Row.serializer(), raw).let {
+            com.stepup.android.domain.ChatNoticeDraft(
+                it.crewId, it.noticeId, it.title, it.body, it.pinned, it.savedAt,
+                meeting = it.meetingId?.let { id -> com.stepup.android.domain.ChatNoticeMeeting(id, it.meetingTitle, it.meetingPlace, it.meetingAt) },
+                meetingChanged = it.meetingChanged,
+            )
+        }
+    }.getOrNull()
+}
+
+/** 서버에 알릴 과속 정지 한 건 — 러닝 시작 · 멈춘 때(벽시계 ms)와 그 러닝을 기록한 계정 */
+data class OverspeedStop(val startedAt: Long, val stoppedAt: Long, val owner: String) {
+    companion object {
+        fun encodeAll(rows: List<OverspeedStop>): String =
+            rows.joinToString("\n") { "${it.startedAt}\t${it.stoppedAt}\t${it.owner}" }
+
+        fun decodeAll(raw: String?): List<OverspeedStop> =
+            raw.orEmpty().lineSequence().mapNotNull { line ->
+                val parts = line.split('\t')
+                if (parts.size != 3) return@mapNotNull null
+                val started = parts[0].toLongOrNull() ?: return@mapNotNull null
+                val stopped = parts[1].toLongOrNull() ?: return@mapNotNull null
+                if (parts[2].isBlank()) null else OverspeedStop(started, stopped, parts[2])
+            }.toList()
+    }
+}

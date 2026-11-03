@@ -25,6 +25,11 @@
     "sourceSetName": "jvmNativeMain"
   },
   {
+    "moduleId": "module androidx.datastore:datastore-preferences-core:1.1.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.datastore-datastore-preferences-core-1.1.1-nativeMain-4e89wQ.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
     "moduleId": "module org.jetbrains.kotlinx:kotlinx-datetime:0.7.1",
     "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-datetime-0.7.1-darwinMain-HeEIcg.klib",
     "sourceSetName": "darwinMain"
@@ -142,6 +147,51 @@
   {
     "moduleId": "module org.jetbrains.kotlinx:atomicfu:0.27.0",
     "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-atomicfu-0.27.0-commonMain-7K06eQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module androidx.datastore:datastore-core:1.1.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.datastore-datastore-core-1.1.1-nativeMain-F5wAkA.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module androidx.datastore:datastore-core-okio:1.1.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/androidx.datastore-datastore-core-okio-1.1.1-nativeMain-o1WRng.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module com.squareup.okio:okio:3.4.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/com.squareup.okio-okio-3.4.0-appleMain-hYkc_Q.klib",
+    "sourceSetName": "appleMain"
+  },
+  {
+    "moduleId": "module com.squareup.okio:okio:3.4.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/com.squareup.okio-okio-3.4.0-unixMain-FFE3Tg.klib",
+    "sourceSetName": "unixMain"
+  },
+  {
+    "moduleId": "module com.squareup.okio:okio:3.4.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/com.squareup.okio-okio-3.4.0-nativeMain-FFE3Tg.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module com.squareup.okio:okio:3.4.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/com.squareup.okio-okio-3.4.0-nonJvmMain-FFE3Tg.klib",
+    "sourceSetName": "nonJvmMain"
+  },
+  {
+    "moduleId": "module com.squareup.okio:okio:3.4.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/com.squareup.okio-okio-3.4.0-hashFunctions-FFE3Tg.klib",
+    "sourceSetName": "hashFunctions"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.3",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-serialization-protobuf-1.6.3-nativeMain-a1M5Bg.klib",
+    "sourceSetName": "nativeMain"
+  },
+  {
+    "moduleId": "module org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.3",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/nativeMain/org.jetbrains.kotlinx-kotlinx-serialization-protobuf-1.6.3-commonMain-a1M5Bg.klib",
     "sourceSetName": "commonMain"
   },
   {

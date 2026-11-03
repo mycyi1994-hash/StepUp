@@ -1,16 +1,16 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml:2:13-83
-INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml:2:13-83
+ADDED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml:2:13-83
+INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml:2:13-83
 	package
-		INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml
+		INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml
 	xmlns:android
-		ADDED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml:2:23-81
+		ADDED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml:2:23-81
 uses-sdk
-INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml reason: use-sdk injection requested
-INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml
-INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml
+INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml reason: use-sdk injection requested
+INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml
+INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml
 	android:targetSdkVersion
-		INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml
+		INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml
 	android:minSdkVersion
-		INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest9043350254098097912.xml
+		INJECTED from /home/user/StepUp/sharedData/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest6006003014160849696.xml

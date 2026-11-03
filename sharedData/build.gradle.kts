@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
+    // 설정 저장소(UserPrefs)의 이야기 · 크루 초안 JSON
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -26,6 +28,8 @@ kotlin {
         commonMain.dependencies {
             api(project(":shared"))
             api(libs.androidx.room.runtime)
+            // 설정(UserPrefs) — 안드로이드는 예전 파일 strideup_prefs · stepup_auth 그대로(app 의 AndroidUserPrefs.kt)
+            api(libs.androidx.datastore.preferences.core)
         }
         iosMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)

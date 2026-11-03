@@ -10,6 +10,11 @@
     "sourceSetName": "commonMain"
   },
   {
+    "moduleId": "module androidx.datastore:datastore-preferences-core:1.1.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/commonMain/androidx.datastore-datastore-preferences-core-1.1.1-commonMain-4e89wQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
     "moduleId": "module org.jetbrains.kotlin:kotlin-stdlib:2.3.21",
     "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.kotlin-kotlin-stdlib-2.3.21-commonMain-F2oqMg.klib",
     "sourceSetName": "commonMain"
@@ -57,6 +62,21 @@
   {
     "moduleId": "module androidx.sqlite:sqlite:2.6.2",
     "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/commonMain/androidx.sqlite-sqlite-2.6.2-commonMain-Y3bhRQ.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module androidx.datastore:datastore-core:1.1.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/commonMain/androidx.datastore-datastore-core-1.1.1-commonMain-F5wAkA.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module androidx.datastore:datastore-core-okio:1.1.1",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/commonMain/androidx.datastore-datastore-core-okio-1.1.1-commonMain-o1WRng.klib",
+    "sourceSetName": "commonMain"
+  },
+  {
+    "moduleId": "module com.squareup.okio:okio:3.4.0",
+    "file": "/home/user/StepUp/sharedData/build/kotlinTransformedMetadataLibraries/commonMain/com.squareup.okio-okio-3.4.0-commonMain-FFE3Tg.klib",
     "sourceSetName": "commonMain"
   }
 ]
