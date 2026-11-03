@@ -23,12 +23,31 @@ kotlin {
             implementation(project(":sharedData"))
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
         }
     }
 }
 
+// 화면 글자(4개 언어) · 글꼴은 안드로이드 app/src/main/res 가 원본이다 — 빌드할 때 composeResources 로 만든다(저장소에 사본을 두지 않는다).
+// 로고처럼 iOS 에만 있는 그림은 src/commonMain/composeResources 에 두고 함께 담는다. tools/sync_compose_resources.py
+val stepupResources = layout.buildDirectory.dir("generated/stepupComposeResources")
+val syncStepUpResources by tasks.registering(Exec::class) {
+    val res = rootProject.layout.projectDirectory.dir("app/src/main/res")
+    val static = layout.projectDirectory.dir("src/commonMain/composeResources")
+    val script = rootProject.layout.projectDirectory.file("tools/sync_compose_resources.py")
+    inputs.files(fileTree(res) { include("values*/**", "font/**", "drawable/**", "drawable-nodpi/**") })
+    inputs.dir(static)
+    inputs.file(script)
+    outputs.dir(stepupResources)
+    commandLine("python3", script.asFile.path, res.asFile.path, stepupResources.get().asFile.path, static.asFile.path)
+}
+
 compose.resources {
     packageOfResClass = "com.stepup.ui.res"
+    // 바깥에서 쓸 수 있게(안드로이드 앱이 같은 화면을 쓸 때)
+    publicResClass = true
+    customDirectory(sourceSetName = "commonMain", directoryProvider = syncStepUpResources.map { stepupResources.get() })
 }

@@ -49,6 +49,10 @@ jobs:
       - name: Check user-facing copy
         run: python3 scripts/check-copy.py
 
+      # iOS 화면(:sharedUi)은 이 res 에서 글자 · 글꼴을 만든다(tools/sync_compose_resources.py) — 안드로이드 글자를 고쳐도 iOS 쪽이 읽히는지
+      - name: Compose resources for iOS
+        run: python3 tools/sync_compose_resources.py app/src/main/res "$RUNNER_TEMP/compose-resources"
+
       - name: Check shared design contract
         run: python3 tools/check_design_contract.py
 

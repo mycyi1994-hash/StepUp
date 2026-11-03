@@ -53,6 +53,20 @@
   안드로이드 `SessionUploadWorker` 가 그대로 쓰고, iOS 는 `BGProcessingTask`(`iosApp/StepUp/UploadTask.swift`, 네트워크 필요) · 앱이 앞에 올 때
   `IosUploads.run` 이 같은 것을 돈다. 대기열 처리 `ClaimRepository` 도 `:sharedData` 로 옮겼다. iOS 의 올릴 곳은 화면 · 저장소를 붙일 때 `IosUploads.connect`.
 
+## 화면 (4단계)
+
+- **바탕(C0, 2026-11-03)**: 화면 글자(영어 기본 · 한국어 · 일본어 · 중국어)와 글꼴의 원본은 안드로이드 `app/src/main/res` 하나다 —
+  `:sharedUi` 를 빌드할 때 `tools/sync_compose_resources.py` 가 composeResources 를 만든다(저장소에 사본 없음, `Res.string.*` · `Res.font.*`).
+  Compose 리소스가 모르는 `\@` · `\?` 는 풀고 자리 번호 없는 `%s` · `%d` 는 `%1$s` … 로. Build APK 가 이 변환을 매번 돌려 본다(글자를 고쳐 iOS 가 깨지지 않게).
+  테마(`ui/theme` — 팔레트 · 모양 · 글꼴 · 글자 크기)와 부품 `StepUpUi`(`ui/components`), 누름 · 모션(`ui/experience`)을 `:sharedUi` 에 같은 패키지 · 같은 이름으로 —
+  다른 점: 글꼴은 테마가 읽어 `StepUpFonts` 에 넣는다(CMP 글꼴은 화면 안에서 읽는다), 한글 줄바꿈은 기기마다(`koreanLineBreak`), 소리 · 진동은 `ExperiencePlayer`.
+  안드로이드 화면 코드를 옮길 때는 `tools/port_ui_to_cmp.py`(R → Res · 리소스 함수 · 글꼴 · 시계)로 기계 변환하고 남는 것만 손으로.
+  안드로이드 앱이 이 화면 코드를 쓰게 되는 것(`androidTarget`)은 화면 묶음을 옮기며 차례로 — 그때 app 쪽 같은 파일을 지운다.
+- **로그인 · 접속 코드 · 첫 안내(C1, 2026-11-03)**: `LoginContent`(+ iOS 에만 Apple 버튼) · `AccessCodeScreen` · 첫 안내(`OnboardingScreens`)를 공용으로.
+  iOS 차례는 `IosRoot`(sharedUi/iosMain): 키체인 세션 → 문 확인(안드로이드 AccessGate 규칙) → 앱 안. 함께 옮긴 부품: `RunStyle` · `Components` · `UtilityParts` · `Motion` · `StepUpIcons` · `RunBackButton` · `Screen`.
+- **남은 화면(C2 ~ C6)**: 홈 · 혼자 러닝 · 지도(위치 · 걸음 · 지도 타일은 iOS 기기 코드가 따로 필요) → 신발 → 내 정보 · 설정 → 함께 뛰기 · 크루 · 채팅 · 커뮤니티 →
+  순위 · 기록 · 알림. 그다음 `:sharedUi` 에 `androidTarget()` 을 더해 안드로이드가 같은 화면을 쓰고 app 의 같은 파일을 지운다(테스트 APK 로 확인).
+
 ## Mac 에서 돌리기
 
 ```bash

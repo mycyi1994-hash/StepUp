@@ -31,6 +31,12 @@
 	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>StepUpSupabaseUrl</key>
+	<string>$(STEPUP_SUPABASE_URL)</string>
+	<key>StepUpSupabaseKey</key>
+	<string>$(STEPUP_SUPABASE_KEY)</string>
+	<key>StepUpAttesterUrl</key>
+	<string>$(STEPUP_ATTESTER_URL)</string>
 	<key>GIDClientID</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>CFBundleURLTypes</key>
