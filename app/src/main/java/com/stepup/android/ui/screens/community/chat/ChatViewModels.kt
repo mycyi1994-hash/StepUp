@@ -70,7 +70,7 @@ private fun <T> ChatOutcome<T>.confirmError(): ChatConfirmError =
 
 class ChatListViewModel(
     private val repo: CrewChatRepository,
-    crewCards: com.stepup.android.data.repo.CrewCardRepository,
+    crewCards: com.stepup.android.data.repo.CrewCardRepository<*>,
 ) : ViewModel() {
     val rooms: StateFlow<ChatRoomsState> = repo.rooms
 

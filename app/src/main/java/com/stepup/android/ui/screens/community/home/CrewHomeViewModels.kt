@@ -57,7 +57,7 @@ private fun String?.day(): LocalDate? = this?.takeIf { it.isNotBlank() }?.let { 
 
 class CrewHomeViewModel(
     private val repo: CrewHomeRepository,
-    private val cards: CrewCardRepository,
+    private val cards: CrewCardRepository<*>,
     saved: SavedStateHandle,
     private val crewRun: com.stepup.android.data.repo.CrewRunRepository? = null,
 ) : ViewModel() {
@@ -189,7 +189,7 @@ class CrewHomeAccessViewModel(
 
 class CrewHomeMembersViewModel(
     private val repo: CrewHomeRepository,
-    private val cards: CrewCardRepository,
+    private val cards: CrewCardRepository<*>,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.crewId()
@@ -232,7 +232,7 @@ class CrewHomeMembersViewModel(
 
 class CrewHomePersonViewModel(
     private val repo: CrewHomeRepository,
-    private val cards: CrewCardRepository,
+    private val cards: CrewCardRepository<*>,
     saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.crewId()
@@ -402,7 +402,7 @@ class CrewAttendeesViewModel(
 
 class CrewWeekViewModel(
     private val repo: CrewHomeRepository,
-    private val cards: CrewCardRepository,
+    private val cards: CrewCardRepository<*>,
     private val saved: SavedStateHandle,
 ) : ViewModel() {
     val crewId: String = saved.crewId()

@@ -86,7 +86,7 @@ class CrewChatDesignTest {
 
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "crew-chat").apply { mkdirs() }
     private val notes = CopyOnWriteArrayList<String>()
-    private lateinit var originalCards: CrewCardRepository
+    private lateinit var originalCards: CrewCardRepository<com.stepup.android.data.repo.CrewImageStore>
     private lateinit var originalChat: CrewChatRepository
     private lateinit var originalHome: com.stepup.android.data.repo.CrewHomeRepository
     private val server = FakeChatServer()
@@ -516,7 +516,7 @@ class CrewChatDesignTest {
             prefs = ServiceLocator.userPrefs,
             owner = { owner },
             ownerFlow = flowOf(owner),
-            draftDir = File(context.filesDir, "chat_test_drafts").apply { deleteRecursively() },
+            draftDir = File(context.filesDir, "chat_test_drafts").apply { deleteRecursively() }.path,
         )
         val chat = CrewChatRepository(
             api = CrewChatApi(stepUp),

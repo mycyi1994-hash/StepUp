@@ -1,6 +1,5 @@
 package com.stepup.android.data.repo
 
-import android.graphics.Bitmap
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.data.remote.CrewApi
 import com.stepup.android.data.remote.CrewApplicationRow
@@ -20,7 +19,6 @@ import com.stepup.android.domain.CrewPersonRole
 import com.stepup.android.domain.CrewPhrase
 import com.stepup.android.domain.CrewProblem
 import com.stepup.android.domain.CrewRules
-import java.io.File
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -70,15 +68,16 @@ sealed interface CrewApplied {
  * 다시 읽어 목록 · 상세 · 관리 화면이 같은 값을 보게 한다. 크루 목록은 [CrewRepository] 가 한 번 받아 예전 화면
  * (크루 게시판 · 파티런 · 순위)과 나눠 쓴다.
  */
-class CrewCardRepository(
+class CrewCardRepository<Images : CrewPhotoMemory>(
     private val api: CrewApi,
     private val crews: CrewRepository,
-    val images: CrewImageStore,
+    /** 크루 대표 사진 사본(안드로이드 CrewImageStore) — 올린 사진을 바로 쓰고 올릴 모양을 만든다 */
+    val images: Images,
     private val prefs: UserPrefs,
     private val owner: suspend () -> String,
     private val ownerFlow: Flow<String>,
     /** 초안 사진을 두는 곳(filesDir/crew_drafts) */
-    private val draftDir: File,
+    private val draftDir: String,
 ) {
     val cards: StateFlow<List<CrewCard>> = crews.cards
     val sync: StateFlow<CrewSyncState> = crews.sync
@@ -374,7 +373,7 @@ class CrewCardRepository(
     suspend fun storedDraft(key: String): CrewDraft? = runCatching { prefs.crewDraft(owner(), key).first() }.getOrNull()
 
     suspend fun saveDraft(draft: CrewDraft) {
-        runCatching { prefs.setCrewDraft(owner(), draft.key, draft.copy(savedAt = System.currentTimeMillis())) }
+        runCatching { prefs.setCrewDraft(owner(), draft.key, draft.copy(savedAt = com.stepup.android.domain.epochMillis())) }
     }
 
     /** 초안을 지운다 — 초안이 쓰던 사진 파일도 함께(이 폰에 남겨 둔 같은 자리의 초안이 다른 사진을 썼으면 그것도) */
@@ -382,11 +381,11 @@ class CrewCardRepository(
         val stored = storedDraft(draft.key)
         runCatching { prefs.setCrewDraft(owner(), draft.key, null) }
         listOfNotNull(draft.image, stored?.image).mapNotNull { (it as? CrewImageChoice.Photo)?.path }.distinct()
-            .forEach { path -> runCatching { File(path).delete() } }
+            .forEach { path -> runCatching { com.stepup.android.data.local.TextFiles.delete(path) } }
     }
 
     /** 초안 사진 파일 — 자를 때마다 새 이름(되돌리기 · 두 초안이 같은 파일을 쓰지 않게) */
-    fun newDraftPhotoFile(): File = File(draftDir, "photo-${System.currentTimeMillis()}.jpg")
+    fun newDraftPhotoPath(): String = com.stepup.android.data.local.joinPath(draftDir, "photo-${com.stepup.android.domain.epochMillis()}.jpg")
 
     /** 목록 지역 · 범위 · 정렬 */
     val region: Flow<CrewArea?> = prefs.crewRegion
@@ -409,15 +408,13 @@ class CrewCardRepository(
             else -> CrewOutcome.Failed(result.problem())
         }
 
-    private fun encodePhoto(path: String): String? = CrewPhotos.decodeFile(File(path))?.let(CrewPhotos::encode)
+    private fun encodePhoto(path: String): String? = images.encodeFile(path)
 
     private fun rememberPhoto(crewId: String, version: Int, path: String) {
-        val bitmap: Bitmap = CrewPhotos.decodeFile(File(path)) ?: return
-        images.remember(crewId, version, bitmap)
+        images.rememberFile(crewId, version, path)
     }
 
     /** 화면 검사용 — 서버 없이 명함을 채운다 */
-    @androidx.annotation.VisibleForTesting
     fun showForTest(card: CrewCard) {
         extra.value = extra.value + (card.id to card)
     }
@@ -437,7 +434,7 @@ private fun CrewApplicationRow.toDomain(fallbackCrew: String = ""): CrewApplicat
 )
 
 /** 서버가 받아 주지 않은 까닭 → 화면이 고를 다음 */
-internal fun ServerResult<*>.problem(): CrewProblem = when (this) {
+fun ServerResult<*>.problem(): CrewProblem = when (this) {
     is ServerResult.SignInRequired -> CrewProblem.SIGN_IN
     is ServerResult.Retry -> CrewProblem.NETWORK
     is ServerResult.Rejected -> CrewProblem.of(reason)

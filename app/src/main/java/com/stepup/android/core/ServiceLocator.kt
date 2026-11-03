@@ -79,12 +79,12 @@ object ServiceLocator {
         private set
 
     /** 크루 명함형 — 목록 · 상세 · 가입 신청 · 크루장 관리 · 만들기(2026-09-28) */
-    lateinit var crewCards: com.stepup.android.data.repo.CrewCardRepository
+    lateinit var crewCards: com.stepup.android.data.repo.CrewCardRepository<com.stepup.android.data.repo.CrewImageStore>
         private set
 
     /** 기기 검사용 — 크루 화면을 흉내 낸 서버로 돌린다(CrewCardsTest). 앱 코드는 부르지 않는다. */
     @androidx.annotation.VisibleForTesting
-    fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository) {
+    fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository<com.stepup.android.data.repo.CrewImageStore>) {
         crewCards = repository
     }
 
@@ -488,7 +488,7 @@ object ServiceLocator {
             prefs = userPrefs,
             owner = { sessionHolder.recordingOwner() },
             ownerFlow = recordingOwnerFlow(),
-            draftDir = java.io.File(app.filesDir, "crew_drafts"),
+            draftDir = java.io.File(app.filesDir, "crew_drafts").path,
         )
         crewChat = com.stepup.android.data.repo.CrewChatRepository(
             api = com.stepup.android.data.remote.CrewChatApi(server),
