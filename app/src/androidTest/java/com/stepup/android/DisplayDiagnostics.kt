@@ -33,9 +33,14 @@ fun ComposeTestRule.clickOrExplain(matcher: SemanticsMatcher, what: String, clic
 
 private fun ComposeTestRule.explain(matcher: SemanticsMatcher, what: String) {
     val lines = mutableListOf("=== $what ===")
-    runCatching {
-        onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().forEach { lines += "node " + describe(it) }
-    }.onFailure { lines += "node lookup failed: ${it.message}" }
+    for (unmerged in listOf(false, true)) {
+        runCatching {
+            onAllNodes(matcher, useUnmergedTree = unmerged).fetchSemanticsNodes().forEach {
+                lines += (if (unmerged) "unmerged " else "merged ") + describe(it) + " parentChain=" +
+                    generateSequence(it.parent) { p -> p.parent }.take(6).joinToString(">") { p -> "${p.id}:${p.size}@${p.positionInWindow}" }
+            }
+        }.onFailure { lines += "lookup(unmerged=$unmerged) failed: ${it.message}" }
+    }
     runCatching {
         onAllNodes(isRoot()).fetchSemanticsNodes().forEachIndexed { i, root -> lines += "root[$i] " + describe(root) }
     }.onFailure { lines += "root lookup failed: ${it.message}" }
@@ -43,5 +48,5 @@ private fun ComposeTestRule.explain(matcher: SemanticsMatcher, what: String) {
 }
 
 private fun describe(node: SemanticsNode): String =
-    "id=${node.id} boundsInRoot=${node.boundsInRoot} boundsInWindow=${node.boundsInWindow} size=${node.size} " +
+    "id=${node.id} boundsInRoot=${node.boundsInRoot} boundsInWindow=${node.boundsInWindow} size=${node.size} pos=${node.positionInWindow} " +
         "placed=${node.layoutInfo.isPlaced} attached=${node.layoutInfo.isAttached} config=${node.config.toString().take(160)}"

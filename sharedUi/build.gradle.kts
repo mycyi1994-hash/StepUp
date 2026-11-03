@@ -57,6 +57,8 @@ kotlin {
 
 android {
     namespace = "com.stepup.ui"
+    // Compose 리소스 다리(Java — ui/theme/ComposeResourcesBridge.java)
+    sourceSets.getByName("main").java.srcDirs("src/androidMain/java")
     compileSdk = 36
     defaultConfig { minSdk = 26 }
     compileOptions {
