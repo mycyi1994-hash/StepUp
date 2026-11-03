@@ -12,7 +12,7 @@ composeResources 를 쓴다(저장소에 사본을 두지 않는다 — 글자 5
   색 · bool · 스타일 같은 다른 값은 뺀다.
 - 안드로이드 글자의 이스케이프 중 Compose 리소스가 모르는 \\@ · \\? 는 풀고, 자리 번호 없는 %s · %d 는 차례로 %1$s … 로 바꾼다
   (Compose 리소스는 자리 번호가 있는 %N$s · %N$d 만 채운다).
-- font/ 의 글꼴(.ttf · .otf)은 그대로 복사한다.
+- font/ 의 글꼴(.ttf · .otf), drawable-nodpi 의 그림 · drawable 의 벡터는 그대로 복사한다.
 - 정적 폴더(:sharedUi 의 src/commonMain/composeResources — 로고 그림 등)를 함께 복사한다.
 """
 import re
@@ -98,9 +98,21 @@ def main() -> int:
         if f.suffix.lower() in (".ttf", ".otf"):
             shutil.copy2(f, fonts / f.name)
             copied += 1
+    # 그림 — drawable-nodpi(사진 · 신발 · 로고, webp/png)와 drawable 의 벡터(xml 중 <vector> 만 — 안드로이드 아이콘 겹 같은 것은 뺀다)
+    drawables = out / "drawable"
+    drawables.mkdir(exist_ok=True)
+    pictures = 0
+    for d in ("drawable", "drawable-nodpi"):
+        for f in sorted((res / d).glob("*")) if (res / d).is_dir() else []:
+            if f.suffix.lower() in (".webp", ".png", ".jpg", ".jpeg"):
+                shutil.copy2(f, drawables / f.name)
+                pictures += 1
+            elif f.suffix.lower() == ".xml" and ET.parse(f).getroot().tag == "vector":
+                shutil.copy2(f, drawables / f.name)
+                pictures += 1
     if static and static.is_dir():
         shutil.copytree(static, out, dirs_exist_ok=True)
-    print("composeResources:", ", ".join(f"{k} {v}" for k, v in counts.items()), f"· font {copied}")
+    print("composeResources:", ", ".join(f"{k} {v}" for k, v in counts.items()), f"· font {copied} · drawable {pictures}")
     return 0
 
 

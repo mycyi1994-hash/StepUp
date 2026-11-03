@@ -38,7 +38,7 @@ val syncStepUpResources by tasks.registering(Exec::class) {
     val res = rootProject.layout.projectDirectory.dir("app/src/main/res")
     val static = layout.projectDirectory.dir("src/commonMain/composeResources")
     val script = rootProject.layout.projectDirectory.file("tools/sync_compose_resources.py")
-    inputs.files(fileTree(res) { include("values*/**", "font/**") })
+    inputs.files(fileTree(res) { include("values*/**", "font/**", "drawable/**", "drawable-nodpi/**") })
     inputs.dir(static)
     inputs.file(script)
     outputs.dir(stepupResources)
