@@ -55,13 +55,13 @@ class ChainActivityDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -193,9 +193,9 @@ class ChainActivityDesignTest {
     }
 
     private companion object {
-        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        val SEOUL: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.of("Asia/Seoul")
 
-        fun at(y: Int, m: Int, d: Int, h: Int, min: Int): Long = LocalDateTime.of(y, m, d, h, min).atZone(SEOUL).toInstant().toEpochMilli()
+        fun at(y: Int, m: Int, d: Int, h: Int, min: Int): Long = LocalDateTime.of(y, m, d, h, min).atZone(java.time.ZoneId.of(SEOUL.id)).toInstant().toEpochMilli()
 
         private fun tx(n: Int) = "0x" + n.toString(16).padStart(2, '0').repeat(32)
 

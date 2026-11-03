@@ -83,8 +83,8 @@ import com.stepup.android.ui.theme.StepUpFonts
  * 썸네일. 안쪽 화면의 머리는 뒤로 · 가운데 제목 · (더보기)이며 로고와 하단 탭을 반복하지 않는다.
  */
 
-internal val StoryListGutter = 20.dp
-internal val StoryFormGutter = 20.dp
+val StoryListGutter = 20.dp
+val StoryFormGutter = 20.dp
 
 /** 러닝 화면과 같은 남색 지도 색 — 실제 타일(길 · 물 · 이름)의 색만 옮긴다 */
 @Composable

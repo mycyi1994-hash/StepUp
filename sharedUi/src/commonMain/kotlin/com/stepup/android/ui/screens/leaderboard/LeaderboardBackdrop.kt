@@ -43,7 +43,7 @@ import androidx.lifecycle.compose.currentStateAsState
  * 목록 · 범위 · 데이터가 바뀌어도 처음부터 다시 돌지 않는다(시계를 화면 묶음에 하나 둔다).
  */
 
-internal object LeaderboardMotion {
+object LeaderboardMotion {
     val Navy = Color(0xFF061B30)
     val Accent = Color(0xFF1450FF)
     private val TrackLine = Color(0x443F79E5)
@@ -91,7 +91,7 @@ internal object LeaderboardMotion {
         return p to alpha
     }
 
-    internal fun trackLine() = TrackLine
+    fun trackLine() = TrackLine
 
     /** 세로 가림 — 화면 높이 1% 에서 투명, 13~51% 보임, 73% 에서 다시 투명 */
     val VerticalMask = arrayOf(0f to Color.Transparent, 0.01f to Color.Transparent, 0.13f to Color.Black, 0.51f to Color.Black, 0.73f to Color.Transparent, 1f to Color.Transparent)
@@ -102,7 +102,7 @@ internal object LeaderboardMotion {
  * 앱이 앞에 없으면(RESUMED 아님) 흐르지 않는다.
  */
 @Composable
-internal fun rememberLeaderboardClock(running: Boolean): MutableLongState {
+fun rememberLeaderboardClock(running: Boolean): MutableLongState {
     val clock = remember { mutableLongStateOf(0L) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val state by lifecycle.currentStateAsState()
@@ -127,7 +127,7 @@ internal fun rememberLeaderboardClock(running: Boolean): MutableLongState {
  * 길(Path) · 붓은 크기 · 판이 바뀔 때만 한 번 만들고(drawWithCache), 프레임마다는 투명도 · 위치 · 회전 행렬만 바꾼다.
  */
 @Composable
-internal fun LeaderboardBackdrop(
+fun LeaderboardBackdrop(
     scene: LeaderboardMotion.Scene,
     clock: () -> Long,
     reduced: Boolean,
@@ -211,11 +211,11 @@ private class LaneLight {
 }
 
 /** 크루 1위 빛 띠의 붓 — 폭 90 띠의 가로 그라디언트(한 번 만들어 둔다) */
-internal fun championSheenBrush(bandWidthPx: Float): Brush =
+fun championSheenBrush(bandWidthPx: Float): Brush =
     Brush.horizontalGradient(listOf(Color.Transparent, Color(0x44C1D7FF), Color.Transparent), startX = 0f, endX = bandWidthPx)
 
 /** 크루 1위 영역의 빛 띠 — 폭 90 · 높이 420 띠가 −22° 기울어 10초에 한 번 지난다(카드 안에서만, 글자 아래). 모션 감소면 그리지 않는다 */
-internal fun DrawScope.drawChampionSheen(clockMs: Long, band: Brush) {
+fun DrawScope.drawChampionSheen(clockMs: Long, band: Brush) {
     val unit = 1.dp.toPx()
     val (p, alpha) = LeaderboardMotion.sheen(clockMs)
     val bandW = 90f * unit

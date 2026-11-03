@@ -202,7 +202,7 @@ fun LiveRouteMap(
  * 지금 자리를 한가운데 두는 틀 — 곁에 둘 점([around])마다 지금 자리 건너편에 거울 점을 하나씩 더한다.
  * 지도는 틀의 가운데를 화면 가운데 두므로 지금 자리가 늘 가운데 오고, 곁의 점도 함께 들어온다.
  */
-internal fun followFrame(here: GeoPoint, around: List<GeoPoint>): List<GeoPoint> =
+fun followFrame(here: GeoPoint, around: List<GeoPoint>): List<GeoPoint> =
     listOf(here) + around.flatMap { listOf(it, mirror(it, here)) }
 
 /**
@@ -222,7 +222,7 @@ private fun mirror(point: GeoPoint, center: GeoPoint): GeoPoint {
  * [seenTop]..[seenBottom] 에서 위 · 아래가 바닥색에 녹아드는 띠를 빼고([clearTop]..[clearBottom] 만) 그 가운데에 둔다.
  * 스크롤할 때마다 지도가 흔들리지 않게 0.05 단위로 끊는다.
  */
-internal fun followAnchor(seenTop: Float, seenBottom: Float, clearTop: Float, clearBottom: Float): Float {
+fun followAnchor(seenTop: Float, seenBottom: Float, clearTop: Float, clearBottom: Float): Float {
     val top = seenTop.coerceIn(0f, 1f)
     val bottom = seenBottom.coerceIn(0f, 1f)
     val lo = maxOf(top, clearTop)

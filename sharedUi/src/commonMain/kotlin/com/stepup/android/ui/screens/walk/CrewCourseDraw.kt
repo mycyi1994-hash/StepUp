@@ -78,7 +78,7 @@ private val DRAW_FALLBACK = GeoPoint(37.5663, 126.9779)
 private const val DRAW_SPAN = 0.006
 
 /** 찍은 점을 화면 회전 · 잠깐 꺼짐에도 지킨다("위도,경도;…") */
-internal val DrawnPointsSaver = Saver<List<GeoPoint>, String>(
+val DrawnPointsSaver = Saver<List<GeoPoint>, String>(
     save = { points -> points.joinToString(";") { "${it.lat},${it.lng}" } },
     restore = { saved -> if (saved.isBlank()) emptyList() else RunCourse.decode(saved) },
 )
@@ -93,7 +93,7 @@ private val DrawCenterSaver = Saver<GeoPoint?, String>(
  * [onPick] 은 쓸 수 있는 코스(점 둘 이상 · 100km 안)일 때만 불린다.
  */
 @Composable
-internal fun CrewCourseDraw(
+fun CrewCourseDraw(
     points: List<GeoPoint>,
     onPoints: (List<GeoPoint>) -> Unit,
     onBack: () -> Unit,
@@ -125,7 +125,7 @@ internal fun CrewCourseDraw(
 }
 
 @Composable
-internal fun CrewCourseDrawContent(
+fun CrewCourseDrawContent(
     points: List<GeoPoint>,
     here: GeoPoint?,
     center: GeoPoint,

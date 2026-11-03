@@ -9,11 +9,15 @@
   안드로이드 값이 비트까지 같아야 한다(`PlatformJvmTest` 가 iOS 구현을 JVM 원본과 맞대어 본다). 앱 화면의 java.time 글자는 `core/DateCompat.kt` 로 잇는다.
 - 공용 규칙을 고치면 `./gradlew :shared:jvmTest`(Build APK 에서도 돈다). iOS 빌드는 `.github/workflows/ios.yml`(macOS — iOS 쪽 파일이 바뀔 때만).
 - **브랜치**: iOS 작업은 `ios-app` 에 모은다(사용자 "아이폰 어플용 브랜치 따로 분리") — 단계마다 작업 브랜치 → `ios-app` PR. `main` 에는 안드로이드가 테스트 APK 로 확인된 뒤에만.
-- Kotlin 2.3.21 · KSP 2.3.6(KSP2 — 더 새 KSP 는 AGP 8.12+) · Room 2.8.5 · Compose Multiplatform 1.12.2 · CI Xcode 26(2026-11-02 1단계, `ios-app`). `android { kotlinOptions }` 는 `kotlin { compilerOptions }` 로.
+- Kotlin 2.3.21 · KSP 2.3.6(KSP2 — 더 새 KSP 는 AGP 8.12+) · Room 2.8.5 · Compose Multiplatform 1.11.1 · CI Xcode 26(2026-11-02 1단계, `ios-app`). `android { kotlinOptions }` 는 `kotlin { compilerOptions }` 로.
   데이터(3단계)는 끝났다 — 저장소 대부분이 `sharedData/.../data/repo`(안드로이드도 같은 코드, 사진 · 파일 · 러닝 서비스만 기기별 이음새). 러닝 상태 `WalkSessionState` 도 `sharedData`(패키지 `service` 그대로).
-  화면(4단계, 2026-11-03 진행 중): 로그인 · 홈 · 자유 러닝 · 신발 · 내 정보 · 설정 · 함께 뛰기 · 크루 · 채팅 · 커뮤니티 · 순위 · 기록 · 알림이 `sharedUi`(iOS 앱이 쓴다).
-  공용 화면의 기기 일은 `sharedUi/.../core/AppServices` · `ExternalIntents` · `AppBuild`, 날짜 꼴은 `shared` 의 `DatePattern`. 남은 파일은 `sharedUi/porting/`.
-  그다음 안드로이드가 같은 화면을 쓴다(`androidTarget`) — 테스트 APK 로 확인하고 넘어간다. 자세한 것은 docs/ios/README.md "화면".
+  화면(4단계, 2026-11-03): **모든 화면이 `sharedUi`** — 앱 본체 `MainScaffold`(탭 · 모든 길)를 iOS(`IosRoot`) · 안드로이드(`app/ui/StepUpRoot.kt`)가 같이 쓴다(C8 `androidTarget`).
+  각 앱에 남은 것: 로그인 단계(안드로이드 구글 `AndroidLogin` · iOS 애플), 러닝 서비스 · 잠금 화면 현황(`LockRunPanel`) · 소리(`ExperienceFeedback` — 공용 `ExperiencePlayer`),
+  안드로이드 이음새(`core/AndroidGlue.kt` — 언어 · 초대 인텐트 · 접속 문 저장, `service/AndroidRunSession` → `AppServices.run`, `ServiceLocator.connectAppServices`).
+  공용 화면의 기기 일은 `sharedUi/.../core/AppServices` · `ExternalIntents` · `AppBuild`(+ androidMain · iosMain actual, 안드로이드 컨텍스트는 `AndroidHost`), 날짜 꼴은 `shared` 의 `DatePattern`.
+  화면 글자 · 그림은 Compose 리소스(`Res.*`, 원본은 그대로 `app/src/main/res` · `assets`) — 앱 APK 는 assets 를 두 벌 넣지 않고 res 는 엄격하게 줄인다(`res/raw/keep.xml`).
+  **Compose Multiplatform 1.11.1 · lifecycle 2.10.0**(JetBrains 판) — 1.12 는 androidx Compose 1.12(AGP 9.1 · compileSdk 37 필요)라 안드로이드가 못 쓴다. AGP 9 로 올리기 전까지 1.11.
+  자세한 것은 docs/ios/README.md "화면".
 - 계정은 조직(법인)으로 신청했다(2026-11-02, 애플 확인 대기). 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
 
 ## 최신 — 보안 네 겹: 사람 확인 · CSP · 보안 감시 · Dependabot (2026-11-02, 서버 0083)

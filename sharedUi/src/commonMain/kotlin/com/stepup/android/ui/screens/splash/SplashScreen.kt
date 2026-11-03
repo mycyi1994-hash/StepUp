@@ -45,7 +45,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** 앱 준비 중(시안 03) · 준비하지 못함(시안 04) */
-internal enum class LaunchStage { Loading, Error }
+enum class LaunchStage { Loading, Error }
 
 /**
  * 실제 준비가 끝나야 다음 화면으로 간다. 실패하거나 14초 안에 끝나지 않으면 다시 시도할 수 있게 둔다.
@@ -91,7 +91,7 @@ fun SplashScreen(onReady: () -> Unit) {
  * 갤러리 · 시안 검사도 이 화면을 상태만 넣어 그린다. 실제 상태는 위의 초기화에서만 온다.
  */
 @Composable
-internal fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
+fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
     val dark = StepUpColors.dark
     val ui = StepUpUi.colors
     val motion = LocalMotion.current

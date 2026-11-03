@@ -514,7 +514,7 @@ private fun ChatRoomSheets(
 }
 
 @Composable
-internal fun chatConfirmErrorText(error: ChatConfirmError): String = stringResource(
+fun chatConfirmErrorText(error: ChatConfirmError): String = stringResource(
     when (error) {
         ChatConfirmError.FAILED -> Res.string.chat_action_error
         ChatConfirmError.GONE -> Res.string.chat_action_gone
@@ -523,7 +523,7 @@ internal fun chatConfirmErrorText(error: ChatConfirmError): String = stringResou
 
 /** 메뉴 시트 — 제목과 줄들 */
 @Composable
-internal fun ChatMenuSheet(title: String, tag: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
+fun ChatMenuSheet(title: String, tag: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
     BlueSheet(title, onDismiss, Modifier.testTag(tag)) {
         ChatSheetTopLine()
         content()

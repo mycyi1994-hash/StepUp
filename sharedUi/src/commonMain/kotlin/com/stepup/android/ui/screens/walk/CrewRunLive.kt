@@ -73,7 +73,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 // ── 판단(화면 밖에서 검사한다 — CrewRunTest) ───────────────────────
 
 /** 크루 달리기 중 방과의 연결 — 명단 · 다른 사람 위치를 보일지 정한다 */
-internal enum class CrewLink {
+enum class CrewLink {
     /** 같이 뛰는 방과 이어져 있다 */
     Linked,
 
@@ -88,7 +88,7 @@ internal enum class CrewLink {
 }
 
 /** [crewId] 는 이 러닝을 연 크루(출발할 때 적은 값) — 지금 방이 다른 크루 · 번개면 이 러닝의 방이 아니다 */
-internal fun crewLink(party: PartyState, crewId: String): CrewLink = when {
+fun crewLink(party: PartyState, crewId: String): CrewLink = when {
     !party.isActive || party.flashPostId != null || (crewId.isNotBlank() && party.crewId != crewId) -> CrewLink.Detached
     party.roomClosed -> CrewLink.Closed
     party.problem == PartyProblem.REMOVED || party.problem == PartyProblem.SIGN_IN -> CrewLink.Detached
@@ -97,13 +97,13 @@ internal fun crewLink(party: PartyState, crewId: String): CrewLink = when {
 }
 
 /** 지도에 올릴 다른 사람 — 이어져 있는 동안, 위치 공유를 켰고 좌표가 있는 사람만. 공유하지 않는 사람은 줄에만 있다 */
-internal fun crewPins(party: PartyState, link: CrewLink): List<PartyMember> =
+fun crewPins(party: PartyState, link: CrewLink): List<PartyMember> =
     if (link != CrewLink.Linked) emptyList() else party.members.filter { !it.isMe && it.sharing && it.point != null }
 
 /** 마칠 때 무슨 일이 생기나 — 진행자가 마치면 방이 닫힌다(서버 party_finish), 참가자는 방에서 나온다(party_leave) */
-internal enum class CrewEnd { Host, Member, Alone }
+enum class CrewEnd { Host, Member, Alone }
 
-internal fun crewEnd(party: PartyState, link: CrewLink): CrewEnd = when {
+fun crewEnd(party: PartyState, link: CrewLink): CrewEnd = when {
     link != CrewLink.Linked && link != CrewLink.Offline -> CrewEnd.Alone
     party.members.count { !it.isMe } == 0 -> CrewEnd.Alone
     party.isHost -> CrewEnd.Host
@@ -113,10 +113,10 @@ internal fun crewEnd(party: PartyState, link: CrewLink): CrewEnd = when {
 // ── 달리는 중 ──────────────────────────────────────────────────────
 
 /** 크루 달리기 화면의 때 — 달리는 중(일시정지 포함) · 기록 저장 중 · 저장 실패(기록은 서비스에 그대로, 같은 러닝으로 다시 저장) */
-internal enum class CrewLiveMode { Live, Saving, Failed }
+enum class CrewLiveMode { Live, Saving, Failed }
 
 @Immutable
-internal data class CrewLiveUi(
+data class CrewLiveUi(
     val crewName: String,
     /** 이어져 있을 때의 명단(나 포함) — 아니면 비어 있다 */
     val members: List<PartyMember>,
@@ -138,7 +138,7 @@ internal data class CrewLiveUi(
  * 인원 보너스 판정(2분 전 확인 중 · 확정 · 없음) · 레벨 보너스 · 내 인증 · 일시정지. 값은 서버가 준 그대로(남은 양만 보간)
  */
 @Immutable
-internal data class CrewLivePool(
+data class CrewLivePool(
     val remaining: String,
     val total: String,
     val fraction: Float,
@@ -159,7 +159,7 @@ internal data class CrewLivePool(
  * [onPrimary] 는 일시정지 · 다시 달리기, [onFinish] 는 종료(멈추고 묻는다), [onDetails] 는 러닝 정보(E03 — 예상 보상 · 내구도).
  */
 @Composable
-internal fun CrewRunLive(
+fun CrewRunLive(
     ui: CrewLiveUi,
     map: @Composable BoxScope.() -> Unit,
     onPrimary: () -> Unit,
@@ -339,7 +339,7 @@ private fun CrewPoolBar(pool: CrewLivePool) {
  * 2명보다 적거나 확인할 수 없으면 "인원 보너스가 없어요". 인원 · 레벨 · 합(신발 능력치는 섞지 않는다).
  */
 @Composable
-internal fun CrewBonusSheet(
+fun CrewBonusSheet(
     count: Int,
     started: Int,
     bonusPct: Double,
@@ -380,7 +380,7 @@ internal fun CrewBonusSheet(
 
 /** 공용 체력이 20% 아래 — 한 번. 남은 / 총량과 0 이 되면 일어나는 일 */
 @Composable
-internal fun CrewLowSheet(remaining: String, total: String, onClose: () -> Unit) {
+fun CrewLowSheet(remaining: String, total: String, onClose: () -> Unit) {
     NavySheet(stringResource(Res.string.crew_live_pool_low), onClose, Modifier.testTag("run-crew-low-sheet")) {
         NavyCard {
             NavyRow(stringResource(Res.string.crew_live_pool), stringResource(Res.string.crew_run_pool_value, remaining, total), valueColor = CrewNavy.Warn, big = true)
@@ -394,7 +394,7 @@ internal fun CrewLowSheet(remaining: String, total: String, onClose: () -> Unit)
 
 /** 다른 참가자가 모두 끝내 서버가 내 크루 러닝도 끝냈다 — 기록은 그대로 저장된다 */
 @Composable
-internal fun CrewAloneSheet(distance: String, time: String, onClose: () -> Unit) {
+fun CrewAloneSheet(distance: String, time: String, onClose: () -> Unit) {
     NavySheet(stringResource(Res.string.crew_alone_title), onClose, Modifier.testTag("run-crew-alone-sheet")) {
         Text(stringResource(Res.string.crew_alone_body), style = navyText(16.sp, CrewNavy.Sub, FontWeight.Medium, 1.45f))
         Spacer(Modifier.height(14.dp))
@@ -409,7 +409,7 @@ internal fun CrewAloneSheet(distance: String, time: String, onClose: () -> Unit)
 
 /** 거리 | 시간 | 페이스 — 이름 위, 큰 수(세로선으로 나눈다) */
 @Composable
-internal fun CrewStatsRow(
+fun CrewStatsRow(
     distance: String,
     time: String,
     pace: String,
@@ -468,7 +468,7 @@ private fun CrewGoal(goalKm: Double, fraction: Float?, onDetails: (() -> Unit)?)
  * [myKm] 은 내 거리(위치 없이 기록하면 null — "—").
  */
 @Composable
-internal fun ColumnScope.CrewTogetherSheetContent(
+fun ColumnScope.CrewTogetherSheetContent(
     members: List<PartyMember>,
     myKm: Double?,
     myPaused: Boolean,
@@ -522,7 +522,7 @@ internal fun ColumnScope.CrewTogetherSheetContent(
  * 혼자: 저장하고 마친다. 선택하는 동안 내 기록은 멈춰 있다.
  */
 @Composable
-internal fun ColumnScope.CrewFinishSheetContent(
+fun ColumnScope.CrewFinishSheetContent(
     end: CrewEnd,
     distance: String,
     time: String,

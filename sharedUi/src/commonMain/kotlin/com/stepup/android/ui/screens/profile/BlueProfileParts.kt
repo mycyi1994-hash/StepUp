@@ -34,7 +34,7 @@ import com.stepup.android.ui.components.runTone
  * 사람 윤곽은 파일이 없을 때만의 대체 모양이다 — 저장된 기본 이미지나 사진을 덮지 않는다.
  */
 @Composable
-internal fun BlueAvatar(
+fun BlueAvatar(
     avatarId: Int,
     photo: ImageBitmap?,
     size: Dp,

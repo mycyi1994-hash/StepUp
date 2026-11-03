@@ -77,7 +77,7 @@ object CrewLaunch {
 }
 
 /** 연출 시계(ms, 숫자 3 이 보인 때부터) — 서버 출발 시각이 펼침 시작(REVEAL_AT)이 되게. 음수면 아직 3 전 */
-internal fun crewLaunchClock(startsAtLocal: Long, nowMs: Long): Long = FreeRunStartMotion.REVEAL_AT - (startsAtLocal - nowMs)
+fun crewLaunchClock(startsAtLocal: Long, nowMs: Long): Long = FreeRunStartMotion.REVEAL_AT - (startsAtLocal - nowMs)
 
 /** 앱 맨 위 겹 — 크루 출발이 정해진 동안만 */
 @Composable
@@ -142,7 +142,7 @@ private fun CrewLaunchSequence(launch: CrewLaunch.Launch) {
 
 /** 출발 신호를 맞추는 중(35) — 숫자 3 전. 카운트다운과 같은 바탕(남색 · 가운데 빛)에 짧은 글 · 도는 표시 */
 @Composable
-internal fun CrewStartingStage(modifier: Modifier = Modifier) {
+fun CrewStartingStage(modifier: Modifier = Modifier) {
     Box(
         modifier.fillMaxSize()
             .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }

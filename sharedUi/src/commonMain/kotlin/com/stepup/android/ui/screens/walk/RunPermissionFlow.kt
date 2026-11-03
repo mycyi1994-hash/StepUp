@@ -98,7 +98,7 @@ import kotlinx.coroutines.launch
  * - 러닝 서비스는 여기서 켜지 않는다. [onReady] 가 한 번만 불리고, 부른 쪽이 위치 기능 · GPS 신호를 확인하고 3-2-1 로 간다.
  */
 @Composable
-internal fun RunPermissionFlow(
+fun RunPermissionFlow(
     onReady: () -> Unit,
     onCancel: () -> Unit,
     onHome: () -> Unit,
@@ -254,7 +254,7 @@ internal fun RunPermissionFlow(
  * 러닝 권한 안내와 홈의 수동 권한 줄이 함께 쓴다 — 어디서 물었든 같은 이력이 남아 다음 판단이 맞는다.
  */
 @Composable
-internal fun rememberActivityPermissionRequest(onResult: (RunPermissionSheet?) -> Unit): () -> Unit {
+fun rememberActivityPermissionRequest(onResult: (RunPermissionSheet?) -> Unit): () -> Unit {
     val scope = rememberCoroutineScope()
     val prefs = AppServices.userPrefs
     val rationale = com.stepup.android.ui.components.rememberActivityRationale()
@@ -341,7 +341,7 @@ private fun specOf(sheet: RunPermissionSheet): SheetSpec = when (sheet) {
  * 스크린리더는 제목 → 설명 → 주 행동 → 보조 행동 차례로 읽는다. 시안 검사도 이 부품을 그대로 그린다.
  */
 @Composable
-internal fun RunPermissionSheetView(
+fun RunPermissionSheetView(
     sheet: RunPermissionSheet,
     onPrimary: () -> Unit,
     onSecondary: () -> Unit,
@@ -673,7 +673,7 @@ private fun NotificationArt() {
  * 지금 권한 상태 — OS 에서 매번 다시 읽는다. [RunPermissionRules.next] 가 [RunPermissionStep.Ready] 면 안내 없이 시작할 수 있다
  * (자유러닝 신발 점검이 이것으로 점검창 안에서 준비를 마친다).
  */
-internal suspend fun readRunPermissionState(activityRationale: Boolean): RunPermissionState {
+suspend fun readRunPermissionState(activityRationale: Boolean): RunPermissionState {
     val prefs = AppServices.userPrefs
     return RunPermissionState(
         api = com.stepup.android.ui.components.permissionApiLevel,

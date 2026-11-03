@@ -221,7 +221,7 @@ fun NotificationSettingsContent(
 
 /** 처리 중 한 줄 — 도는 표시 하나와 글(가짜 백분율 없음) */
 @Composable
-internal fun SavingLine(text: String, modifier: Modifier = Modifier) {
+fun SavingLine(text: String, modifier: Modifier = Modifier) {
     val t = runTone()
     Row(
         modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }

@@ -255,7 +255,7 @@ private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Mod
 }
 
 /** 고른 시 · 분까지 남은 분 — 이미 지났으면 다음 날, 5분 ~ 24시간으로 자른다(서버 규칙) */
-internal fun minutesUntil(
+fun minutesUntil(
     hour: Int, minute: Int,
     nowMs: Long = com.stepup.android.domain.epochMillis(),
     zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault(),
@@ -271,7 +271,7 @@ internal fun minutesUntil(
 }
 
 /** 출발까지 — 1시간 안은 5분씩, 그 뒤는 30분씩(5분 ~ 24시간) */
-internal fun stepMinutes(now: Int, dir: Int): Int {
+fun stepMinutes(now: Int, dir: Int): Int {
     val step = if (now < 60 || (now == 60 && dir < 0)) 5 else 30
     return (now + dir * step).coerceIn(5, 24 * 60)
 }

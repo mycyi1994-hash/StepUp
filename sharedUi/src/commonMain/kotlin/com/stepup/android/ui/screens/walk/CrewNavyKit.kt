@@ -96,7 +96,7 @@ fun navyText(size: TextUnit, color: Color = CrewNavy.Text, weight: FontWeight = 
 
 /** 큰 주 버튼 — 통합안 블루 알약 + 원 화살표. 요청 중이면 돌고 눌리지 않는다 */
 @Composable
-internal fun NavyPrimaryButton(
+fun NavyPrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -112,7 +112,7 @@ internal fun NavyPrimaryButton(
 
 /** 보조 버튼 — 남색 면 + 파란 테두리 */
 @Composable
-internal fun NavySecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun NavySecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val shape = RoundedCornerShape(16.dp)
     Box(
         modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(CrewNavy.Secondary, shape)
@@ -127,7 +127,7 @@ internal fun NavySecondaryButton(text: String, onClick: () -> Unit, modifier: Mo
 
 /** 카드 — 위가 조금 밝은 남색 면 · 테두리(강조면 파랑) */
 @Composable
-internal fun NavyCard(
+fun NavyCard(
     modifier: Modifier = Modifier,
     strong: Boolean = false,
     selected: Boolean = false,
@@ -148,7 +148,7 @@ internal fun NavyCard(
 
 /** 진행 막대 — 하늘색(주의면 붉은빛) 위에 어두운 길 */
 @Composable
-internal fun NavyBar(fraction: Float, modifier: Modifier = Modifier, warn: Boolean = false) {
+fun NavyBar(fraction: Float, modifier: Modifier = Modifier, warn: Boolean = false) {
     val shape = RoundedCornerShape(6.dp)
     Box(modifier.fillMaxWidth().height(10.dp).clip(shape).background(CrewNavy.Track, shape)) {
         Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(10.dp).clip(shape).background(if (warn) CrewNavy.Warn else CrewNavy.Cyan, shape))
@@ -157,7 +157,7 @@ internal fun NavyBar(fraction: Float, modifier: Modifier = Modifier, warn: Boole
 
 /** 작은 칩 — "Lv.7" · "크루 러닝" · "인원 확인 중" */
 @Composable
-internal fun NavyChip(text: String, modifier: Modifier = Modifier, warn: Boolean = false) {
+fun NavyChip(text: String, modifier: Modifier = Modifier, warn: Boolean = false) {
     Text(
         text, style = navyText(15.sp, if (warn) CrewNavy.Warn else CrewNavy.LevelInk, FontWeight.Bold),
         modifier = modifier.clip(RoundedCornerShape(10.dp)).background(if (warn) CrewNavy.WarnFace else CrewNavy.LevelFace)
@@ -167,7 +167,7 @@ internal fun NavyChip(text: String, modifier: Modifier = Modifier, warn: Boolean
 
 /** 안내 띠 — 방패 아이콘 + 한 줄(주의면 붉은 면) */
 @Composable
-internal fun NavyNote(text: String, modifier: Modifier = Modifier, icon: ImageVector = Icons.Outlined.VerifiedUser, warn: Boolean = false) {
+fun NavyNote(text: String, modifier: Modifier = Modifier, icon: ImageVector = Icons.Outlined.VerifiedUser, warn: Boolean = false) {
     val shape = RoundedCornerShape(16.dp)
     Row(
         modifier.fillMaxWidth().clip(shape).background(if (warn) CrewNavy.WarnFace else CrewNavy.Note, shape)
@@ -182,7 +182,7 @@ internal fun NavyNote(text: String, modifier: Modifier = Modifier, icon: ImageVe
 
 /** 이름 · 값 한 줄 */
 @Composable
-internal fun NavyRow(label: String, value: String, modifier: Modifier = Modifier, valueColor: Color = CrewNavy.Text, big: Boolean = false) {
+fun NavyRow(label: String, value: String, modifier: Modifier = Modifier, valueColor: Color = CrewNavy.Text, big: Boolean = false) {
     Row(modifier.fillMaxWidth().heightIn(min = 40.dp).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = navyText(16.sp, CrewNavy.Sub, FontWeight.Medium), modifier = Modifier.weight(1f))
         Spacer(Modifier.width(12.dp))
@@ -192,7 +192,7 @@ internal fun NavyRow(label: String, value: String, modifier: Modifier = Modifier
 
 /** 큰 수 + 단위("3.20 km") */
 @Composable
-internal fun RowScope.NavyBigNumber(value: String, unit: String?, size: TextUnit = 54.sp, color: Color = CrewNavy.Text, tag: String? = null) {
+fun RowScope.NavyBigNumber(value: String, unit: String?, size: TextUnit = 54.sp, color: Color = CrewNavy.Text, tag: String? = null) {
     Text(
         value, style = navyText(size, color, FontWeight.ExtraBold, 1.05f).copy(letterSpacing = (-0.03).em),
         modifier = if (tag != null) Modifier.testTag(tag) else Modifier, maxLines = 1,
@@ -206,7 +206,7 @@ internal fun RowScope.NavyBigNumber(value: String, unit: String?, size: TextUnit
 /** 시트 — 남색 면 · 제목 · 닫기. 바깥 탭 · 뒤로 가기 · 닫기는 부모의 선택 · 상태를 바꾸지 않는다 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun NavySheet(
+fun NavySheet(
     title: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -250,7 +250,7 @@ internal fun NavySheet(
 
 /** 시트 안 큰 제목(아이콘 · 두 줄) */
 @Composable
-internal fun NavyHeadline(text: String, icon: ImageVector? = null, color: Color = CrewNavy.Text) {
+fun NavyHeadline(text: String, icon: ImageVector? = null, color: Color = CrewNavy.Text) {
     if (icon != null) {
         Icon(icon, contentDescription = null, tint = CrewNavy.Cyan, modifier = Modifier.size(28.dp))
         Spacer(Modifier.height(6.dp))

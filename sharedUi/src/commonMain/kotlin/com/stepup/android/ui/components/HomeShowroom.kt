@@ -201,13 +201,13 @@ private const val CeilingFlashMs = 1_400
 private const val CeilingCycleMs = 6_000
 
 /** 한 바퀴 안의 시각([ms], 0 ~ 6,000)을 번쩍임 진행(0 ~ 1)으로 — 끝 1.4초만, 나머지는 0 */
-internal fun ceilingFlashOf(ms: Float): Float {
+fun ceilingFlashOf(ms: Float): Float {
     val start = (CeilingCycleMs - CeilingFlashMs).toFloat()
     return if (ms < start) 0f else ((ms - start) / CeilingFlashMs).coerceIn(0f, 1f)
 }
 
 /** 번쩍임 세기(0 ~ 1) — 진행 [p] 의 앞쪽에서 두 번 깜빡인다 */
-internal fun ceilingFlicker(p: Float): Float = when {
+fun ceilingFlicker(p: Float): Float = when {
     p <= 0f || p >= 1f -> 0f
     p < 0.10f -> kotlin.math.sin(p / 0.10f * kotlin.math.PI.toFloat())
     p < 0.16f -> 0f
@@ -216,7 +216,7 @@ internal fun ceilingFlicker(p: Float): Float = when {
 }
 
 /** 막대를 훑는 빛의 위치(0 ~ 1)와 세기 — 깜빡임 뒤(0.30 ~ 1.0)에 왼쪽에서 오른쪽으로 */
-internal fun ceilingSweep(p: Float): Pair<Float, Float> {
+fun ceilingSweep(p: Float): Pair<Float, Float> {
     if (p < 0.30f || p >= 1f) return 0f to 0f
     val q = (p - 0.30f) / 0.70f
     return q to kotlin.math.sin(q * kotlin.math.PI.toFloat())

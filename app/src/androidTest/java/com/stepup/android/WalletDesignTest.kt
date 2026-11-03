@@ -61,13 +61,13 @@ class WalletDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -344,9 +344,9 @@ class WalletDesignTest {
         const val MARK = "wallet-test"
         const val MINUTE = 60 * 1000L
         const val DAY = 24 * 60 * MINUTE
-        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        val SEOUL: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.of("Asia/Seoul")
 
-        fun at(y: Int, m: Int, d: Int, h: Int, min: Int): Long = LocalDateTime.of(y, m, d, h, min).atZone(SEOUL).toInstant().toEpochMilli()
+        fun at(y: Int, m: Int, d: Int, h: Int, min: Int): Long = LocalDateTime.of(y, m, d, h, min).atZone(java.time.ZoneId.of(SEOUL.id)).toInstant().toEpochMilli()
 
         /** 시안의 예시 원장(sample-ledger.json, isMock) — 테스트 화면에만 넣는다 */
         val SAMPLE = listOf(

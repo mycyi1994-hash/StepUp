@@ -211,7 +211,7 @@ private fun ChatSearchRow(message: ChatMessage, meta: ChatRoomMeta?, query: Stri
 }
 
 /** 본문에서 검색어(대소문자 무시)를 찾아 그 부분만 강조 */
-internal fun highlightQuery(text: String, query: String, color: Color): AnnotatedString {
+fun highlightQuery(text: String, query: String, color: Color): AnnotatedString {
     val needle = query.trim()
     if (needle.isEmpty()) return AnnotatedString(text)
     return buildAnnotatedString {

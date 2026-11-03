@@ -79,11 +79,11 @@ object RunShareCard {
     enum class Style { Classic, Free }
 
     /** 그리는 재료 — 글꼴(Paperlogy 보통 · 굵게) · 글자 재기 · 워드마크. 화면(Composable)에서 [rememberKit] 로 받는다 */
-    class Kit internal constructor(
-        internal val measurer: TextMeasurer,
-        internal val regular: FontFamily,
-        internal val heavy: FontFamily,
-        internal val logo: ImageBitmap?,
+    class Kit constructor(
+        val measurer: TextMeasurer,
+        val regular: FontFamily,
+        val heavy: FontFamily,
+        val logo: ImageBitmap?,
     )
 
     @Composable

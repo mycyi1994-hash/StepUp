@@ -90,7 +90,7 @@ import kotlinx.datetime.LocalDate
 
 /** 코칭 화면 틀 — 남색 바닥 · 머리(뒤로 · 로고 · 오른쪽 행동 하나). 상태 막대 · 하단 탭 자리는 앱 틀이 이미 비웠다 */
 @Composable
-internal fun CoachFrame(
+fun CoachFrame(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
@@ -107,7 +107,7 @@ internal fun CoachFrame(
 
 /** 큰 굵은 제목 — "코칭" 옆에 작은 "AI"(01 · 03 · 04), 화면 제목("오늘의 훈련" · "AI 코칭 설정") */
 @Composable
-internal fun CoachTitle(text: String, modifier: Modifier = Modifier, badge: String? = null) {
+fun CoachTitle(text: String, modifier: Modifier = Modifier, badge: String? = null) {
     val t = runTone()
     Row(modifier, verticalAlignment = Alignment.Bottom) {
         Text(
@@ -127,7 +127,7 @@ internal fun CoachTitle(text: String, modifier: Modifier = Modifier, badge: Stri
 
 /** 둥근 그림 버튼(설정 톱니) — 누르는 곳 48dp */
 @Composable
-internal fun CoachIconButton(icon: ImageVector, label: String, onClick: () -> Unit, tag: String) {
+fun CoachIconButton(icon: ImageVector, label: String, onClick: () -> Unit, tag: String) {
     val t = runTone()
     Box(
         Modifier.size(48.dp).clip(CircleShape).feedbackClickable(onClick = onClick)
@@ -140,7 +140,7 @@ internal fun CoachIconButton(icon: ImageVector, label: String, onClick: () -> Un
 
 /** 소제목 — "1km 구간 페이스" · "최근 4주" · "기록이 생기면" */
 @Composable
-internal fun CoachSection(text: String, modifier: Modifier = Modifier) {
+fun CoachSection(text: String, modifier: Modifier = Modifier) {
     val t = runTone()
     Text(text, style = runTextStyle(19.sp, t.text, FontWeight.ExtraBold, 1.3f), modifier = modifier.semantics { heading() })
 }
@@ -150,7 +150,7 @@ internal fun CoachSection(text: String, modifier: Modifier = Modifier) {
  * [extra] 는 이름표 오른쪽(생성 시각 · 모의 응답 · 진행 표시).
  */
 @Composable
-internal fun CoachQuote(
+fun CoachQuote(
     label: String?,
     modifier: Modifier = Modifier,
     extra: (@Composable () -> Unit)? = null,
@@ -177,21 +177,21 @@ internal fun CoachQuote(
 
 /** 인용 안의 큰 줄(근거 · 상태 제목) */
 @Composable
-internal fun CoachQuoteTitle(text: String, modifier: Modifier = Modifier, dim: Boolean = false) {
+fun CoachQuoteTitle(text: String, modifier: Modifier = Modifier, dim: Boolean = false) {
     val t = runTone()
     Text(text, style = runTextStyle(21.sp, if (dim) t.label else t.text, FontWeight.ExtraBold, 1.35f), modifier = modifier)
 }
 
 /** 인용 안의 작은 줄(AI 해석 · 이유 · 안내) */
 @Composable
-internal fun CoachQuoteBody(text: String, modifier: Modifier = Modifier) {
+fun CoachQuoteBody(text: String, modifier: Modifier = Modifier) {
     val t = runTone()
     Text(text, style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.45f), modifier = modifier.padding(top = 4.dp))
 }
 
 /** 작은 이름표 알약 — "모의 응답"(실제 AI 처럼 보이지 않게) · "제안 · 아직 적용 전" */
 @Composable
-internal fun CoachPill(text: String, modifier: Modifier = Modifier, accent: Boolean = false) {
+fun CoachPill(text: String, modifier: Modifier = Modifier, accent: Boolean = false) {
     val t = runTone()
     val shape = RoundedCornerShape(50)
     Text(
@@ -205,7 +205,7 @@ internal fun CoachPill(text: String, modifier: Modifier = Modifier, accent: Bool
 
 /** 글자 이동 줄 — "다음 주 계획 보기 →" · "저장된 분석 보기 →" · "기본 기록 보기 →". 위아래 얇은 줄 */
 @Composable
-internal fun CoachLinkRow(text: String, onClick: () -> Unit, tag: String, modifier: Modifier = Modifier, sub: String? = null) {
+fun CoachLinkRow(text: String, onClick: () -> Unit, tag: String, modifier: Modifier = Modifier, sub: String? = null) {
     val t = runTone()
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).feedbackClickable(onClick = onClick).testTag(tag).padding(vertical = 10.dp),
@@ -221,7 +221,7 @@ internal fun CoachLinkRow(text: String, onClick: () -> Unit, tag: String, modifi
 
 /** 고르는 칸 셋(2회 · 3회 · 4회 / 15분 · 25분 · 40분) — 하나만. 고른 칸은 파란 면 */
 @Composable
-internal fun CoachOptions(options: List<String>, selected: Int?, onSelect: (Int) -> Unit, tagPrefix: String, modifier: Modifier = Modifier) {
+fun CoachOptions(options: List<String>, selected: Int?, onSelect: (Int) -> Unit, tagPrefix: String, modifier: Modifier = Modifier) {
     val t = runTone()
     val shape = RoundedCornerShape(14.dp)
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -244,7 +244,7 @@ internal fun CoachOptions(options: List<String>, selected: Int?, onSelect: (Int)
 
 /** 체크 칸 한 줄(동의 05 · 분석 삭제 15) — 줄 전체가 누르는 곳 */
 @Composable
-internal fun CoachCheckRow(
+fun CoachCheckRow(
     checked: Boolean,
     onToggle: () -> Unit,
     title: String,
@@ -275,7 +275,7 @@ internal fun CoachCheckRow(
 
 /** 데이터 이용 안내(05 · 14 · 15의 링크) — 보내는 것 · 보내지 않는 것 · 계정 연결 · 해제 · 보관. 확정 전 초안 문구다 */
 @Composable
-internal fun CoachDataSheet(onDismiss: () -> Unit) {
+fun CoachDataSheet(onDismiss: () -> Unit) {
     val t = runTone()
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("coach-data-sheet")) {
         RunSheetText(stringResource(Res.string.coach_data_title))
@@ -297,7 +297,7 @@ internal fun CoachDataSheet(onDismiss: () -> Unit) {
 
 /** 근거 id → 앱의 번역 글자. 숫자는 서버가 저장된 기록으로 만든 값이다(AI 가 쓴 숫자가 아니다). 모르는 id 는 null */
 @Composable
-internal fun factText(fact: CoachFact): String? {
+fun factText(fact: CoachFact): String? {
     val v = fact.values
     return when (fact.id) {
         CoachIds.FACT_SPLIT_LAST_VS_FIRST -> {
@@ -329,7 +329,7 @@ internal fun factText(fact: CoachFact): String? {
 
 /** 페이스 후보의 제목 — [long] 은 확인 시트(16)의 두 줄 제목 */
 @Composable
-internal fun candidateTitle(candidate: CoachCandidate, long: Boolean): String? = when (candidate.id) {
+fun candidateTitle(candidate: CoachCandidate, long: Boolean): String? = when (candidate.id) {
     CoachIds.CAND_PACE_START_EASIER ->
         stringResource(if (long) Res.string.coach_cand_start_easier_long else Res.string.coach_cand_start_easier)
     CoachIds.CAND_PACE_KEEP -> stringResource(if (long) Res.string.coach_cand_keep_long else Res.string.coach_cand_keep)
@@ -338,7 +338,7 @@ internal fun candidateTitle(candidate: CoachCandidate, long: Boolean): String? =
 
 /** 페이스 후보의 작은 줄 — "7'30\"/km로 시작해 보세요" */
 @Composable
-internal fun candidateSub(candidate: CoachCandidate): String? {
+fun candidateSub(candidate: CoachCandidate): String? {
     val pace = paceText(candidate.values["pace_sec"]?.toDouble()) ?: return null
     return when (candidate.id) {
         CoachIds.CAND_PACE_START_EASIER -> stringResource(Res.string.coach_cand_pace_sub, pace)
@@ -347,31 +347,31 @@ internal fun candidateSub(candidate: CoachCandidate): String? {
     }
 }
 
-internal fun goalName(goal: CoachGoal): org.jetbrains.compose.resources.StringResource = when (goal) {
+fun goalName(goal: CoachGoal): org.jetbrains.compose.resources.StringResource = when (goal) {
     CoachGoal.STEADY -> Res.string.coach_goal_steady
     CoachGoal.FINISH_5K -> Res.string.coach_goal_5k
     CoachGoal.IMPROVE -> Res.string.coach_goal_improve
 }
 
-internal fun familyName(family: WorkoutFamily): org.jetbrains.compose.resources.StringResource = when (family) {
+fun familyName(family: WorkoutFamily): org.jetbrains.compose.resources.StringResource = when (family) {
     WorkoutFamily.EASY -> Res.string.coach_family_easy
     WorkoutFamily.WALK_RUN -> Res.string.coach_family_walk_run
 }
 
-internal fun familySub(family: WorkoutFamily): org.jetbrains.compose.resources.StringResource = when (family) {
+fun familySub(family: WorkoutFamily): org.jetbrains.compose.resources.StringResource = when (family) {
     WorkoutFamily.EASY -> Res.string.coach_family_easy_sub
     WorkoutFamily.WALK_RUN -> Res.string.coach_family_walk_run_sub
 }
 
 /** 단계의 짧은 이름(오늘 카드의 막대 아래) — 걷기 · 달리기 · 달리기 · 걷기 */
-internal fun stepShort(role: StepRole): org.jetbrains.compose.resources.StringResource = when (role) {
+fun stepShort(role: StepRole): org.jetbrains.compose.resources.StringResource = when (role) {
     StepRole.WARMUP -> Res.string.coach_step_warmup
     StepRole.EASY_RUN -> Res.string.coach_step_run
     StepRole.RUN_WALK -> Res.string.coach_step_runwalk
     StepRole.COOLDOWN -> Res.string.coach_step_cooldown
 }
 
-internal fun stepTitle(role: StepRole): org.jetbrains.compose.resources.StringResource = when (role) {
+fun stepTitle(role: StepRole): org.jetbrains.compose.resources.StringResource = when (role) {
     StepRole.WARMUP -> Res.string.coach_step_warmup_title
     StepRole.EASY_RUN -> Res.string.coach_step_easy_title
     StepRole.RUN_WALK -> Res.string.coach_step_runwalk_title
@@ -379,19 +379,19 @@ internal fun stepTitle(role: StepRole): org.jetbrains.compose.resources.StringRe
 }
 
 @Composable
-internal fun stepSub(step: WorkoutStep): String = when (step.role) {
+fun stepSub(step: WorkoutStep): String = when (step.role) {
     StepRole.WARMUP -> stringResource(Res.string.coach_step_warmup_sub)
     StepRole.EASY_RUN -> stringResource(Res.string.coach_step_easy_sub)
     StepRole.RUN_WALK -> stringResource(Res.string.coach_step_runwalk_sub, step.runMinutes, step.walkMinutes, step.rounds)
     StepRole.COOLDOWN -> stringResource(Res.string.coach_step_cooldown_sub)
 }
 
-internal fun stepIcon(step: WorkoutStep): ImageVector =
+fun stepIcon(step: WorkoutStep): ImageVector =
     if (step.walking) Icons.AutoMirrored.Outlined.DirectionsWalk else Icons.AutoMirrored.Outlined.DirectionsRun
 
 /** "10월 12일 – 18일" — 같은 달이면 끝은 날만 */
 @Composable
-internal fun weekRangeText(monday: LocalDate): String {
+fun weekRangeText(monday: LocalDate): String {
     val md = rememberFormatter(Res.string.coach_date_md)
     val d = rememberFormatter(Res.string.coach_date_d)
     val sunday = monday.plusDaysKx(6)
@@ -403,7 +403,7 @@ internal fun weekRangeText(monday: LocalDate): String {
 
 /** 훈련 막대 — 단계 시간에 비례한 칸(걷기는 옅은 파랑, 달리기는 진한 파랑). [labels] 면 칸 안에 "5분" */
 @Composable
-internal fun WorkoutBar(template: WorkoutTemplate, modifier: Modifier = Modifier, height: Dp = 22.dp, labels: Boolean = false) {
+fun WorkoutBar(template: WorkoutTemplate, modifier: Modifier = Modifier, height: Dp = 22.dp, labels: Boolean = false) {
     val t = runTone()
     val walk = t.cobaltText.copy(alpha = 0.55f)
     Row(
@@ -428,7 +428,7 @@ internal fun WorkoutBar(template: WorkoutTemplate, modifier: Modifier = Modifier
 
 /** 막대 아래 단계 이름 · 시간(오늘 카드) — 막대 칸과 같은 비율 */
 @Composable
-internal fun WorkoutBarLegend(template: WorkoutTemplate, modifier: Modifier = Modifier) {
+fun WorkoutBarLegend(template: WorkoutTemplate, modifier: Modifier = Modifier) {
     val t = runTone()
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         template.steps.forEach { step ->
@@ -448,7 +448,7 @@ internal fun WorkoutBarLegend(template: WorkoutTemplate, modifier: Modifier = Mo
  * 점이 많으면(긴 러닝) 값 글자는 생략하고 눈금 · km 글자는 건너뛴다. 화면 낭독은 구간을 차례로 읽는다.
  */
 @Composable
-internal fun PaceChart(splits: List<KmSplit>, average: Double?, axis: PaceAxis, modifier: Modifier = Modifier) {
+fun PaceChart(splits: List<KmSplit>, average: Double?, axis: PaceAxis, modifier: Modifier = Modifier) {
     val t = runTone()
     val measurer = rememberTextMeasurer()
     val averageLabel = stringResource(Res.string.coach_avg_line)
@@ -511,7 +511,7 @@ internal fun PaceChart(splits: List<KmSplit>, average: Double?, axis: PaceAxis, 
  * 최근 4주 막대(04) — 0km 에서 시작하는 축. 고른 주는 진한 파랑, 그 앞은 옅은 파랑. 미래 주는 그리지 않는다(0 으로 보이지 않게).
  */
 @Composable
-internal fun WeekBars(weeks: List<WeekSummary>, top: Double, selected: LocalDate, modifier: Modifier = Modifier) {
+fun WeekBars(weeks: List<WeekSummary>, top: Double, selected: LocalDate, modifier: Modifier = Modifier) {
     val t = runTone()
     val short = rememberFormatter(Res.string.coach_date_short)
     val chart = 160.dp

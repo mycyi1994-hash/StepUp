@@ -66,7 +66,7 @@ private val PlainBase = 4.dp
 
 /** 주 버튼 — 통합안 블루 알약 54 + 원 화살표. [busy] 면 가운데 스피너(누를 수 없다) */
 @Composable
-internal fun BluePlainButton(
+fun BluePlainButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -82,7 +82,7 @@ internal fun BluePlainButton(
 
 /** 둥근 보조 버튼 — 남색 면 · 파란 테두리(거절 · 취소 · 나중에) */
 @Composable
-internal fun BlueOutlineButton(
+fun BlueOutlineButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -104,7 +104,7 @@ internal fun BlueOutlineButton(
 
 /** 글자만 있는 보조 행동 — "건너뛰기" · "먼저 둘러보기". 누르는 곳은 48dp 이상 */
 @Composable
-internal fun BlueTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun BlueTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val t = runTone()
     Box(
         modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
@@ -121,7 +121,7 @@ internal fun BlueTextButton(text: String, onClick: () -> Unit, modifier: Modifie
  * 로고 · SUP 잔액은 두지 않는다(보조 화면). 제목은 양쪽 자리를 비워 늘 가운데에 선다.
  */
 @Composable
-internal fun BlueTitleBar(
+fun BlueTitleBar(
     title: String?,
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -150,7 +150,7 @@ internal fun BlueTitleBar(
 
 /** 머리 오른쪽 글자 행동 — "설정" */
 @Composable
-internal fun BlueHeaderText(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BlueHeaderText(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val t = runTone()
     Box(
         modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
@@ -163,7 +163,7 @@ internal fun BlueHeaderText(text: String, onClick: () -> Unit, modifier: Modifie
 
 /** 큰 제목 — 굵은 두 줄 제목 · 한 줄 설명(왼쪽 정렬) */
 @Composable
-internal fun BlueHeadline(title: String, modifier: Modifier = Modifier, subtitle: String? = null, size: Int = 32) {
+fun BlueHeadline(title: String, modifier: Modifier = Modifier, subtitle: String? = null, size: Int = 32) {
     val t = runTone()
     Column(modifier.fillMaxWidth()) {
         Text(
@@ -183,7 +183,7 @@ internal fun BlueHeadline(title: String, modifier: Modifier = Modifier, subtitle
 
 /** 가는 가로선 — 파란 둘레 색 */
 @Composable
-internal fun BlueRule(modifier: Modifier = Modifier, strong: Boolean = false) {
+fun BlueRule(modifier: Modifier = Modifier, strong: Boolean = false) {
     val t = runTone()
     Box(modifier.fillMaxWidth().height(1.dp).background(if (strong) t.panelEdge else t.divider))
 }

@@ -400,7 +400,7 @@ private fun HomeLinkRow(label: String, value: String?, onClick: () -> Unit, tag:
  * [headerIcon] 이면 배지 대신 동그란 사람들 아이콘(제목이 이미 "크루 달리기"인 입구).
  */
 @Composable
-internal fun CrewPage(
+fun CrewPage(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
@@ -463,7 +463,7 @@ private fun CrewEmpty(icon: androidx.compose.ui.graphics.vector.ImageVector, tit
 
 /** 크루 이름 줄 — 크루 표시(이니셜) · 큰 이름 · (한 줄 소개) */
 @Composable
-internal fun CrewTitleRow(name: String, monogram: String, tagline: String? = null) {
+fun CrewTitleRow(name: String, monogram: String, tagline: String? = null) {
     val c = crewColors()
     Row(verticalAlignment = Alignment.CenterVertically) {
         CrewMark(monogram.ifBlank { initialsOf(name) }, 64.dp)
@@ -485,7 +485,7 @@ internal fun CrewTitleRow(name: String, monogram: String, tagline: String? = nul
 
 /** 내 크루 선택(CR19) — 가입한 크루 중 하나. 고르기만 하고 대기실은 열지 않는다 */
 @Composable
-internal fun CrewPickSheet(crews: List<Crew>, selected: String, onApply: (String) -> Unit, onDismiss: () -> Unit) {
+fun CrewPickSheet(crews: List<Crew>, selected: String, onApply: (String) -> Unit, onDismiss: () -> Unit) {
     val c = crewColors()
     var pending by rememberSaveable { mutableStateOf(selected) }
     RunSheet(onDismiss = onDismiss, modifier = Modifier.testTag("crew-pick-sheet")) {
@@ -536,7 +536,7 @@ internal fun CrewPickSheet(crews: List<Crew>, selected: String, onApply: (String
  * [v2] 가 false 면 예전 모습(번개러닝 대기실 — 번개 디자인은 그대로 둔다).
  */
 @Composable
-internal fun CrewReadyCheckSheet(
+fun CrewReadyCheckSheet(
     locationAllowed: Boolean,
     share: Boolean,
     onShare: (Boolean) -> Unit,
@@ -551,7 +551,7 @@ internal fun CrewReadyCheckSheet(
 }
 
 @Composable
-internal fun ColumnScope.CrewReadyCheckBody(
+fun ColumnScope.CrewReadyCheckBody(
     locationAllowed: Boolean,
     share: Boolean,
     onShare: (Boolean) -> Unit,
@@ -641,14 +641,14 @@ private fun ColumnScope.FlashReadyCheckBody(
  * [v2] 가 false 면 예전 모습(번개러닝 대기실).
  */
 @Composable
-internal fun CrewStartConfirmSheet(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit, v2: Boolean = true) {
+fun CrewStartConfirmSheet(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit, v2: Boolean = true) {
     RunSheet(onDismiss = onWait, modifier = Modifier.testTag("crew-start-confirm"), showClose = false) {
         if (v2) CrewStartConfirmBody(ready, notReady, onGo, onWait) else FlashStartConfirmBody(ready, notReady, onGo, onWait)
     }
 }
 
 @Composable
-internal fun ColumnScope.CrewStartConfirmBody(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit) {
+fun ColumnScope.CrewStartConfirmBody(ready: Int, notReady: Int, onGo: () -> Unit, onWait: () -> Unit) {
     val c = crewColors()
     CrewSheetTitle(stringResource(Res.string.run_crew_go_title, ready), body = stringResource(Res.string.run_crew_go_body, notReady))
     Row(Modifier.fillMaxWidth().padding(vertical = 18.dp)) {
@@ -710,7 +710,7 @@ enum class CrewSend { Idle, Sending, Sent, Failed }
  * 보낸 뒤에만 [onOpenChat](그 크루의 채팅방)을 보인다 — null 이면 채팅으로 가지 않는다(곧 출발할 수 있는 준비 완료 참가자).
  */
 @Composable
-internal fun CrewNotifySheet(
+fun CrewNotifySheet(
     crewId: String,
     crewName: String,
     waiting: Int,
@@ -743,7 +743,7 @@ internal fun CrewNotifySheet(
 }
 
 @Composable
-internal fun ColumnScope.CrewNotifyBody(
+fun ColumnScope.CrewNotifyBody(
     crewName: String,
     text: String,
     state: CrewSend,
@@ -791,7 +791,7 @@ internal fun ColumnScope.CrewNotifyBody(
  * 함께 보내고(미리보기에도 그 그림), 끄면 그림 없이 글만 보낸다. 실패하면 같은 내용으로 다시 보낸다. 보낸 뒤에만 "크루 채팅 보기"([onOpenChat]).
  */
 @Composable
-internal fun CrewShareScreen(
+fun CrewShareScreen(
     crewId: String,
     crewName: String,
     monogram: String,
@@ -845,7 +845,7 @@ internal fun CrewShareScreen(
 }
 
 @Composable
-internal fun CrewShareContent(
+fun CrewShareContent(
     crewName: String,
     message: String,
     includeRoute: Boolean,

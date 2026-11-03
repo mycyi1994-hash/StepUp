@@ -5,9 +5,10 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-UI = ROOT/'app/src/main/java/com/stepup/android/ui'
+# 화면 코드는 공용(sharedUi, 2026-11-03 C8) — 안드로이드 · iOS 가 같은 길 · 같은 화면
+UI = ROOT/'sharedUi/src/commonMain/kotlin/com/stepup/android/ui'
 errors = []
-root = (UI/'StepUpRoot.kt').read_text(encoding='utf-8')
+root = (UI/'MainScaffold.kt').read_text(encoding='utf-8')
 policy = (UI/'AppChromePolicy.kt').read_text(encoding='utf-8')
 registered = set(re.findall(r'composable\(\s*(?:route\s*=\s*)?((?:Routes\.[A-Z_]+)|(?:Screen\.\w+\.route))', root))
 declared = re.findall(r'Destination\(([^,]+), Screen\.\w+, Header\.\w+\)', policy)

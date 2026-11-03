@@ -68,7 +68,7 @@ import kotlinx.coroutines.delay
 
 /** "9월 29일 화요일 · 19:30" */
 @Composable
-internal fun meetingWhenLong(meeting: CrewMeeting): String {
+fun meetingWhenLong(meeting: CrewMeeting): String {
     val at = meeting.meetAt ?: return ""
     return stringResource(Res.string.crewhome_meeting_when_place, homeDateWeekday(localDay(at)), homeClock(at))
 }
@@ -545,7 +545,7 @@ fun CrewPlaceScreen(viewModel: CrewMeetingViewModel, onBack: () -> Unit, onEnded
 }
 
 /** 지도 앱으로 — 좌표가 있으면 그 자리에 이름을 붙여, 없으면 장소 이름으로 찾는다 */
-internal fun openMaps(meeting: CrewMeeting): Boolean {
+fun openMaps(meeting: CrewMeeting): Boolean {
     val label = meeting.place.ifBlank { meeting.title }
     val p = meeting.point
     // 좌표가 있으면 그 자리, 없으면 장소 이름으로 찾는다(기기 지도 앱)
@@ -554,4 +554,4 @@ internal fun openMaps(meeting: CrewMeeting): Boolean {
 }
 
 /** 크루 이름(모임 화면 위 작은 글자) — 명함에서 */
-internal fun crewNameOf(crewId: String): String = AppServices.crewCards.cardNow(crewId)?.name.orEmpty()
+fun crewNameOf(crewId: String): String = AppServices.crewCards.cardNow(crewId)?.name.orEmpty()

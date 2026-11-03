@@ -533,4 +533,4 @@ private fun PeriodChoice(label: String, selected: Boolean, tag: String, onSelect
 
 /** 남색 러닝 바닥의 고른 면 — 통계 막대 말풍선 등에 쓴다 */
 @Composable
-internal fun selectedFace(): Color = if (runTone().dark) Color(0xFF16305A) else Color(0xFFE6EEFC)
+fun selectedFace(): Color = if (runTone().dark) Color(0xFF16305A) else Color(0xFFE6EEFC)

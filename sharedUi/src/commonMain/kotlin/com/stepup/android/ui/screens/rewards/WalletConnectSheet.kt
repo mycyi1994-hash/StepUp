@@ -232,4 +232,4 @@ private fun walletTint(app: WalletApp): Color = when (app) {
  * 지갑 앱을 연다 — 앱 안 브라우저로 바로 여는 링크가 있으면 그것, 없으면(Rabby) 연결 페이지 주소를 복사하고 앱을 연다.
  * 앱이 없으면 스토어로(기기마다 — 안드로이드 플레이 스토어).
  */
-internal expect fun openWallet(app: WalletApp, page: String): WalletPickPhase
+expect fun openWallet(app: WalletApp, page: String): WalletPickPhase

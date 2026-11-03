@@ -48,7 +48,7 @@ fun RepairPhase.sceneTag(): String = "repair-" + when (this) {
 private fun sup(balance: Double): String = formatSupDown(balance, 2) + " SUP"
 
 @Composable
-internal fun careBlockText(reason: CareBlock): String = stringResource(
+fun careBlockText(reason: CareBlock): String = stringResource(
     when (reason) {
         CareBlock.LISTED -> Res.string.care_block_listed
         CareBlock.ON_CHAIN -> Res.string.care_block_chain

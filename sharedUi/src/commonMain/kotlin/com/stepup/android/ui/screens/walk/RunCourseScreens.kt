@@ -57,7 +57,7 @@ import com.stepup.android.ui.components.runTone
 import kotlinx.coroutines.delay
 
 /** 추천 코스 화면의 상태 — 자리 확인 중(L03) · 찾는 중(K01) · 찾음(U04 · K02) · 없음(K03) · 위치 권한 없음 */
-internal sealed interface CourseRecUi {
+sealed interface CourseRecUi {
     /** 지금 자리를 아직 모른다(L03) — 자리를 모르면 지도에 아무 자리도 그리지 않는다 */
     data object Locating : CourseRecUi
     data object Finding : CourseRecUi
@@ -155,7 +155,7 @@ fun CourseRecommendScreen(
 
 /** 추천 코스 — 상태 없이 그린다 */
 @Composable
-internal fun CourseRecommendContent(
+fun CourseRecommendContent(
     ui: CourseRecUi,
     here: GeoPoint?,
     onBack: () -> Unit,

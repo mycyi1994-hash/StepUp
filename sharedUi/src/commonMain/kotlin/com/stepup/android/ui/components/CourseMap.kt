@@ -82,7 +82,7 @@ fun CourseTrackMap(
  * be mistaken for street data from the real map provider.
  */
 @Suppress("UNUSED_PARAMETER")
-internal fun DrawScope.drawStreets(seed: Int) {
+fun DrawScope.drawStreets(seed: Int) {
     drawRect(Color(0xFF0C1930))
     val line = Snow.copy(alpha = 0.055f)
     for (step in 1..5) {

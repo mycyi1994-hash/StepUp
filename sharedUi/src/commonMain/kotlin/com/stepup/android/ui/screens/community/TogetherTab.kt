@@ -42,7 +42,7 @@ import kotlin.time.Instant
 
 /** Upcoming runs and joined crews come from the repositories; no sample cards. */
 @Composable
-internal fun TogetherTab(
+fun TogetherTab(
     viewModel: CommunityViewModel,
     onOpenFlash: (Long) -> Unit,
     onWritePost: () -> Unit,

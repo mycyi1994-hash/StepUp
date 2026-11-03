@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import com.stepup.ui.res.*
 import com.stepup.android.core.blocked
 import com.stepup.android.data.remote.AccessApi
 import com.stepup.android.data.remote.AccessStatusRow
@@ -79,6 +80,6 @@ class AccessApiTest {
     @Test fun everyServerErrorHasAMessage() {
         val known = listOf("not_found", "revoked", "expired", "used_up", "too_many", "blocked").map(::errorText)
         assertEquals(known.size, known.toSet().size)
-        assertEquals(R.string.access_error_network, errorText("something_new"))
+        assertEquals(com.stepup.ui.res.Res.string.access_error_network, errorText("something_new"))
     }
 }

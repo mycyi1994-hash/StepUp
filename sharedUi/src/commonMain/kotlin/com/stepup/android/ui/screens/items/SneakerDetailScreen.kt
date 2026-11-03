@@ -888,7 +888,7 @@ private fun EquipErrorSheet(
  * 상세는 [CareStatePanel] 을 쓴다. 이것은 신발 탭(CustomizeScreen)이 그대로 쓴다.
  */
 @Composable
-internal fun ShoeStatePanel(
+fun ShoeStatePanel(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     body: String,
@@ -921,16 +921,16 @@ internal fun ShoeStatePanel(
  * 화면에 쓰는 신발 이름 — 기존 현지화 이름([variantLabel]). 이 앱이 모르는 새 도감 번호면 다른 신발 이름 대신 "신발 모델 1401".
  */
 @Composable
-internal fun Sneaker.shoeName(): String =
+fun Sneaker.shoeName(): String =
     // 내가 붙인 이름(2026-10-17)이 있으면 그것 — 이 폰에만 있다(domain/ShoeNickname)
     com.stepup.android.ui.components.LocalShoeNicknames.current[id] ?: modelShoeName()
 
 /** 내가 붙인 이름을 빼고 읽은 원래 이름(모델 이름) */
 @Composable
-internal fun Sneaker.modelShoeName(): String {
+fun Sneaker.modelShoeName(): String {
     val model = modelId
     return if (model != null && shoeModelNameRes(model) == null) stringResource(Res.string.sdv_unknown_model, model) else variantLabel()
 }
 
 /** 한국어 화면이면 목적격 조사를 붙인다("새벽 강변을") — 다른 언어 문장은 조사가 없다 */
-internal fun String.withParticle(korean: Boolean): String = if (korean) withObjectParticle(this) else this
+fun String.withParticle(korean: Boolean): String = if (korean) withObjectParticle(this) else this

@@ -74,7 +74,7 @@ fun AccessCodeScreen(
     signedIn: Boolean,
     onGranted: () -> Unit,
     onSignOut: () -> Unit,
-    redeem: suspend (String) -> ServerResult<com.stepup.android.data.remote.AccessRedeemRow>,
+    redeem: suspend (String) -> ServerResult<com.stepup.android.data.remote.AccessRedeemRow> = { com.stepup.android.core.AppServices.accessApi.redeem(it) },
     /** iOS — 로그인 화면 뒤판의 Apple 버튼(누르면 모달을 다시 연다) */
     showApple: Boolean = false,
 ) {

@@ -201,7 +201,7 @@ fun CrewGoalEditScreen(viewModel: CrewScreenViewModel, onBack: () -> Unit, onApp
 
 /** 가운데 정렬 설명(작은 화면용) */
 @Composable
-internal fun CrewCenteredNote(text: String) {
+fun CrewCenteredNote(text: String) {
     val ink = crewInk()
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Text(text, color = ink.secondary, fontSize = 15.sp, textAlign = TextAlign.Center)

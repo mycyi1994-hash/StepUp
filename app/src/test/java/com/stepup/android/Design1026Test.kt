@@ -60,11 +60,11 @@ class Design1026Test {
 
     @Test fun `flash start minutes stay within 5 minutes and 24 hours`() {
         val now = ZonedDateTime.of(2026, 10, 25, 18, 37, 0, 0, ZoneId.systemDefault())
-        assertEquals(23, minutesUntil(19, 0, now))
+        assertEquals(23, minutesUntil(19, 0, now.toInstant().toEpochMilli(), kotlinx.datetime.TimeZone.of(now.zone.id)))
         // 이미 지났으면 다음 날
-        assertEquals(24 * 60 - 37, minutesUntil(18, 0, now))
-        assertTrue(minutesUntil(18, 39, now) >= 5)
-        assertTrue(minutesUntil(18, 37, now) <= 24 * 60)
+        assertEquals(24 * 60 - 37, minutesUntil(18, 0, now.toInstant().toEpochMilli(), kotlinx.datetime.TimeZone.of(now.zone.id)))
+        assertTrue(minutesUntil(18, 39, now.toInstant().toEpochMilli(), kotlinx.datetime.TimeZone.of(now.zone.id)) >= 5)
+        assertTrue(minutesUntil(18, 37, now.toInstant().toEpochMilli(), kotlinx.datetime.TimeZone.of(now.zone.id)) <= 24 * 60)
     }
 
     @Test fun `next record is the next milestone above the total`() {

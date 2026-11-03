@@ -3024,7 +3024,7 @@ private fun FinishStat(label: String, value: String, unit: String, modifier: Mod
  * 거리는 각 폰이 잰 화면용 값이다(적립과 무관).
  */
 @Composable
-internal fun TogetherRanking(members: List<com.stepup.android.data.repo.PartyMember>, myKm: Double) {
+fun TogetherRanking(members: List<com.stepup.android.data.repo.PartyMember>, myKm: Double) {
     val rows = members.map { m -> Triple(m, if (m.isMe) myKm else m.km, m.isMe) }
         .sortedWith(compareByDescending<Triple<com.stepup.android.data.repo.PartyMember, Double?, Boolean>> { it.second != null }
             .thenByDescending { it.second ?: 0.0 })

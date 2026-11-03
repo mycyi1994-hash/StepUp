@@ -39,13 +39,13 @@ class ShoeCatalogDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -67,7 +67,7 @@ class ShoeCatalogDesignTest {
                 val id = shoes.getValue(model)
                 showTile(id)
                 compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
-                val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
+                val name = com.stepup.android.ui.components.stringNow(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
                 // 이름 칸 — UI 최종 통합안(2026-10-25)부터 이름 글 자체가 꼬리표를 단다(예전엔 글 · 배지를 감싼 칸이었다). 어느 쪽이든 본다
                 compose.waitUntil(10_000) {
                     compose.onAllNodes(
@@ -97,7 +97,7 @@ class ShoeCatalogDesignTest {
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { Box(Modifier.fillMaxSize()) { S2Stage(Modifier.fillMaxSize()); SneakerDexScreen() } } } }
             compose.waitUntil(10_000) { compose.onAllNodesWithText("${PICKS.size} / ${ShoeCatalog.models.size}").fetchSemanticsNodes().isNotEmpty() }
             shot("05-dex-top")
-            val names = PICKS.map { compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(it)!!) }
+            val names = PICKS.map { com.stepup.android.ui.components.stringNow(com.stepup.android.ui.components.shoeModelNameRes(it)!!) }
             // 이름 끝에 등급 배지가 붙는다 — 이름 글에 배지의 대체 글(" 에픽")이 이어지므로 이름을 포함하는 칸을 찾는다
             dexList().performScrollToNode(hasText(names[1], substring = true))
             shot("06-dex-epic")

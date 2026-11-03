@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import com.stepup.ui.res.*
 import com.stepup.android.data.repo.EconomyOutcome
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.Rarity
@@ -265,10 +266,10 @@ class ShoeDetailModelTest {
 
     @Test
     fun `그림 — 새 도감은 모델 번호로, 모르는 모델은 다른 신발 그림으로 채우지 않는다`() {
-        assertEquals(R.drawable.shoe_1101, sneakerArtRes(legacy().copy(modelId = 1101)))
+        assertEquals(com.stepup.ui.res.Res.drawable.shoe_1101, sneakerArtRes(legacy().copy(modelId = 1101)))
         assertNull(sneakerArtRes(legacy().copy(modelId = 1999)))
         // 예전 52종 — 속성 × 변형(바람 일반 0 = WND-010)
-        assertEquals(R.drawable.sneaker_wind_10, sneakerArtRes(legacy()))
+        assertEquals(com.stepup.ui.res.Res.drawable.sneaker_wind_10, sneakerArtRes(legacy()))
     }
 
     // ── 상세 본문 네 줄(카툰 입체형) ─────────────────────────────

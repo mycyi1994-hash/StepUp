@@ -55,7 +55,7 @@ import kotlin.time.Instant
 
 /** 머리 줄 — 오른쪽 원 버튼 셋(지도 · 크루 채팅 · 글쓰기). 글쓰기는 파란 연필 */
 @Composable
-internal fun TogetherTopBar(onMap: () -> Unit, onChat: () -> Unit, onWrite: () -> Unit, modifier: Modifier = Modifier) {
+fun TogetherTopBar(onMap: () -> Unit, onChat: () -> Unit, onWrite: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.End,
@@ -73,13 +73,13 @@ internal fun TogetherTopBar(onMap: () -> Unit, onChat: () -> Unit, onWrite: () -
 
 /** 큰 제목 "함께 뛰기" */
 @Composable
-internal fun TogetherTitle() {
+fun TogetherTitle() {
     LargeTitle(stringResource(Res.string.community_together), Modifier.padding(bottom = 2.dp))
 }
 
 /** 추천 크루 한 줄 — 동네 사진 52 · 이름 · "동네 · N명 · 승인제" · 작은 버튼(가입 · 신청 · 신청됨) */
 @Composable
-internal fun CrewSuggestionRow(crew: Crew, onToggle: () -> Unit, onOpen: () -> Unit) {
+fun CrewSuggestionRow(crew: Crew, onToggle: () -> Unit, onOpen: () -> Unit) {
     val photo = rememberPlacePhoto(crew.area, seed = "crew-${crew.id}", widthDp = 52)
     val approval = crew.joinPolicy == CrewJoinPolicy.APPROVAL
     val area = crew.area.ifBlank { stringResource(Res.string.crew_area_here) }
@@ -105,7 +105,7 @@ internal fun CrewSuggestionRow(crew: Crew, onToggle: () -> Unit, onOpen: () -> U
  * 신청은 기존 crew_join(서버가 승인제면 신청으로 받는다) 그대로다 — 이 길은 한 줄 소개를 서버에 보내지 않아 입력 칸을 두지 않는다.
  */
 @Composable
-internal fun CrewApplySheet(crew: Crew, onApply: () -> Unit, onDismiss: () -> Unit) {
+fun CrewApplySheet(crew: Crew, onApply: () -> Unit, onDismiss: () -> Unit) {
     val c = StepUpUi.colors
     val photo = rememberPlacePhoto(crew.area, seed = "crew-${crew.id}", widthDp = 60)
     val area = crew.area.ifBlank { stringResource(Res.string.crew_area_here) }
@@ -131,7 +131,7 @@ internal fun CrewApplySheet(crew: Crew, onApply: () -> Unit, onDismiss: () -> Un
 
 /** 가입한 크루 포스터(시안 mycrew) — 활동 지역 사진 · 이름 · "동네 · 인원 · 승인제" · 흰 "크루 보기" */
 @Composable
-internal fun CrewPoster(crew: Crew, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+fun CrewPoster(crew: Crew, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val photo = rememberPlacePhoto(crew.area, seed = "crew-${crew.id}", widthDp = 361)
     val approval = crew.joinPolicy == CrewJoinPolicy.APPROVAL
     val area = crew.area.ifBlank { stringResource(Res.string.crew_area_here) }
@@ -157,7 +157,7 @@ internal fun CrewPoster(crew: Crew, onOpen: () -> Unit, modifier: Modifier = Mod
 
 /** "23분 뒤 출발" · "3시간 뒤 출발" · 날짜(멀면) */
 @Composable
-internal fun startsInLabel(meetAt: Long, now: Long): String {
+fun startsInLabel(meetAt: Long, now: Long): String {
     val minutes = ((meetAt - now) / 60_000L).coerceAtLeast(0L)
     return when {
         minutes < 60 -> stringResource(Res.string.ui_starts_in_min, minutes.toInt())
@@ -168,7 +168,7 @@ internal fun startsInLabel(meetAt: Long, now: Long): String {
 }
 
 /** 모임 공유 — 제목 · 시간 · 장소를 글로 보낸다(앱 밖 공유 시트) */
-internal fun shareMeetup(post: Post) {
+fun shareMeetup(post: Post) {
     val at = kotlin.time.Instant.fromEpochMilliseconds(post.meetAt).toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
     val text = listOf(post.title, at.formatPattern("M/d HH:mm", androidx.compose.ui.text.intl.Locale.current.language) + " · " + post.place).filter { it.isNotBlank() }.joinToString("\n")
     runCatching { com.stepup.android.core.ExternalIntents.shareText(text) }
@@ -176,14 +176,14 @@ internal fun shareMeetup(post: Post) {
 
 /** 사진 썸네일만(크루 화면 등에서 다시 쓴다) */
 @Composable
-internal fun CrewPhotoThumb(area: String, seed: String) {
+fun CrewPhotoThumb(area: String, seed: String) {
     val photo = rememberPlacePhoto(area, seed = seed, widthDp = 52)
     PlaceThumb(photo?.painter)
 }
 
 /** 포스터에 쓰는 사진만 — Image 로 직접 그리는 곳 */
 @Composable
-internal fun PlacePhotoImage(place: String, seed: String, modifier: Modifier = Modifier) {
+fun PlacePhotoImage(place: String, seed: String, modifier: Modifier = Modifier) {
     val photo = rememberPlacePhoto(place, seed = seed)
     if (photo != null) {
         Image(photo.painter, null, modifier = modifier, contentScale = androidx.compose.ui.layout.ContentScale.Crop, colorFilter = photo.colorFilter)

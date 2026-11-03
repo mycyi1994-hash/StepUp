@@ -1,5 +1,7 @@
 package com.stepup.android
 
+import com.stepup.ui.res.inbox_marked_all
+import com.stepup.ui.res.inbox_mark_all_failed
 import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -75,13 +77,13 @@ class NotificationsDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -247,11 +249,11 @@ class NotificationsDesignTest {
 
         show("01b-inbox-sample", "inbox-list", list(ui))
         show("02b-read-all-sample", "settings-toast",
-            list(ui.copy(inbox = allRead, unread = 0, toast = InboxToast(R.string.inbox_marked_all, success = true, seq = 1))))
+            list(ui.copy(inbox = allRead, unread = 0, toast = InboxToast(com.stepup.ui.res.Res.string.inbox_marked_all, success = true, seq = 1))))
         compose.onAllNodesWithTag("inbox-read-all").assertCountEquals(0)
         // 13 — 읽음 저장 실패: 점과 새 알림 수는 저장된 그대로
         show("13-read-error", "settings-toast",
-            list(ui.copy(toast = InboxToast(R.string.inbox_mark_all_failed, success = false, seq = 2))))
+            list(ui.copy(toast = InboxToast(com.stepup.ui.res.Res.string.inbox_mark_all_failed, success = false, seq = 2))))
         compose.onNodeWithTag("inbox-summary").assertTextEquals(korean(R.string.inbox_new_count).format(3))
         show("10-empty-inbox", "inbox-empty", list(ui.copy(inbox = InboxLoad.Ready(emptyList(), 0), unread = 0)))
         show("11-inbox-loading", "inbox-loading", list(ui.copy(inbox = InboxLoad.Loading)))

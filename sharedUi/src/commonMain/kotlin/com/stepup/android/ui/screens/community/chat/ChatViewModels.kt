@@ -1210,7 +1210,7 @@ class ChatViewerViewModel(
 }
 
 /** 고른 사진을 보낼 모양으로(25 → 26) */
-internal suspend fun prepareChatPhoto(crewId: String, path: String): com.stepup.android.ui.components.PhotoTools.Loaded {
+suspend fun prepareChatPhoto(crewId: String, path: String): com.stepup.android.ui.components.PhotoTools.Loaded {
     val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { com.stepup.android.ui.components.PhotoTools.load(path) }
     val source = (loaded as? com.stepup.android.ui.components.PhotoTools.Loaded.Ok)?.image ?: return loaded
     val photo = AppServices.crewChat.photoOf(source)

@@ -38,8 +38,8 @@ import org.jetbrains.compose.resources.getString
  * 안드로이드 Toast.LENGTH_SHORT(2초) · LENGTH_LONG(3.5초)과 같은 시간.
  */
 object Toasts {
-    internal val messages = MutableSharedFlow<Pair<String, Boolean>>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    internal val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    val messages = MutableSharedFlow<Pair<String, Boolean>>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 }
 
 fun showToast(text: String, long: Boolean = false) {

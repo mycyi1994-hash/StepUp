@@ -87,16 +87,16 @@ import com.stepup.android.ui.theme.StepUpFonts
 // ── 현재 속도 ──────────────────────────────────────────────────────
 
 /** 최근 이만큼(ms)의 경로 점으로 지금 속도를 잰다 */
-internal const val SPEED_WINDOW_MS = 20_000L
+const val SPEED_WINDOW_MS = 20_000L
 
 /** 새 점이 이만큼 안 오면 멈춰 선 것으로 본다 — GPS 는 8m 넘게 움직여야 경로에 점을 더한다 */
-internal const val SPEED_STILL_MS = 20_000L
+const val SPEED_STILL_MS = 20_000L
 
 /** 이웃한 두 점이 이보다 멀면(신호가 끊겼다 이어짐) 속도를 모른다 */
-internal const val SPEED_MAX_GAP_MS = 60_000L
+const val SPEED_MAX_GAP_MS = 60_000L
 
 /** 걸음이 이만큼(ms) 안에 늘었으면 새 경로 점이 없어도 아직 움직이는 중으로 본다 */
-internal const val SPEED_MOVING_GRACE_MS = 10_000L
+const val SPEED_MOVING_GRACE_MS = 10_000L
 
 /**
  * 지금 속도(km/h) — 경로의 마지막 점과 그 앞 [SPEED_WINDOW_MS] 안의 점들로 잰다. 모르면 null.
@@ -106,7 +106,7 @@ internal const val SPEED_MOVING_GRACE_MS = 10_000L
  * 걸음이 늘고 있으면([movingAt], 마지막으로 걸음이 는 때) 점이 드문 것뿐이라 마지막 속도를 그대로 보인다 — 구글 위치 서비스는
  * 오차의 두 배를 움직여야 점을 찍어, 천천히 걸으면 20~40초마다라 속도가 0 과 값을 오갔다(2026-10-17 점검).
  */
-internal fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long, movingAt: Long = 0L): Double? {
+fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long, movingAt: Long = 0L): Double? {
     val last = track.lastOrNull() ?: return null
     if (flaggedAt > last.at) return null
     if (now - last.at > SPEED_STILL_MS && now - movingAt > SPEED_MOVING_GRACE_MS) return 0.0
@@ -122,17 +122,17 @@ internal fun currentSpeedKmh(track: List<TrackPoint>, now: Long, flaggedAt: Long
 }
 
 /** 평균 속도(km/h) — 50m 를 넘게 달렸을 때만 */
-internal fun averageSpeedKmh(km: Double, elapsedSec: Long): Double? =
+fun averageSpeedKmh(km: Double, elapsedSec: Long): Double? =
     if (km >= 0.05 && elapsedSec > 0) km / (elapsedSec / 3600.0) else null
 
 /** 보상 수 — 1 SUP 아래는 둘째 자리, 그 위는 첫째 자리까지. 버린다(받을 것보다 크게 보이지 않게) */
-internal fun rewardAmount(value: Double): String =
+fun rewardAmount(value: Double): String =
     formatSupDown(value, if (kotlin.math.abs(value) < 1.0) 2 else 1)
 
 // ── 색 ─────────────────────────────────────────────────────────────
 
 @Immutable
-internal class RunPalette(
+class RunPalette(
     val screen: Color,
     val panel: Color,
     val panelEdge: Color,
@@ -194,7 +194,7 @@ private val LightRun = RunPalette(
 )
 
 @Composable
-internal fun runPalette(): RunPalette = if (StepUpColors.dark) DarkRun else LightRun
+fun runPalette(): RunPalette = if (StepUpColors.dark) DarkRun else LightRun
 
 private fun numberStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.ExtraBold) = TextStyle(
     fontFamily = StepUpFonts.sans, fontWeight = weight, fontSize = size, color = color,
@@ -205,7 +205,7 @@ private fun numberStyle(size: TextUnit, color: Color, weight: FontWeight = FontW
  * 큰 수 + 작은 단위 한 줄 — 폭이 모자라면(큰 글씨 · 좁은 화면) 둘을 같은 비율로 줄인다. 두 줄로 넘기지 않는다.
  */
 @Composable
-internal fun FitNumber(
+fun FitNumber(
     value: String,
     unit: String?,
     valueSize: TextUnit,
@@ -244,7 +244,7 @@ internal fun FitNumber(
 
 /** 판 — 남색 면, 은은한 테두리, 모서리 18dp(전달본) */
 @Composable
-internal fun RunPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun RunPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val p = runPalette()
     val shape = RoundedCornerShape(18.dp)
     Column(
@@ -285,7 +285,7 @@ private fun PanelValue(
  * 선을 그림으로 긋는다 — 칸 안의 큰 수([FitNumber])는 폭을 재는 칸이라 "높이를 먼저 물어보는" 줄(IntrinsicSize)에 넣을 수 없다.
  */
 @Composable
-internal fun DividedRow(
+fun DividedRow(
     columns: Int,
     gap: Dp,
     modifier: Modifier = Modifier,
@@ -313,7 +313,7 @@ internal fun DividedRow(
  * 왼쪽 큰 수가 이 화면의 주인공이다(run-hero-value).
  */
 @Composable
-internal fun RunTopPanel(
+fun RunTopPanel(
     left: Pair<String, String>,
     right: Pair<String, String>,
     rightUnit: String?,
@@ -341,7 +341,7 @@ internal fun RunTopPanel(
 
 /** 채움 막대 — 어두운 바탕에 파란 채움(내구도 · 진행) */
 @Composable
-internal fun RunBar(fraction: Float, modifier: Modifier) {
+fun RunBar(fraction: Float, modifier: Modifier) {
     val p = runPalette()
     val shape = RoundedCornerShape(50)
     Box(modifier.clip(shape).background(p.track, shape)) {
@@ -357,7 +357,7 @@ internal fun RunBar(fraction: Float, modifier: Modifier) {
  * 속도를 모르면 "—", 방금 읽은 속도가 사람 속도를 넘었으면 앞에 노란 경고.
  */
 @Composable
-internal fun RunBottomPanel(
+fun RunBottomPanel(
     speedKmh: Double?,
     speedError: Boolean,
     shoe: Sneaker?,
@@ -416,7 +416,7 @@ internal fun RunBottomPanel(
  * 위 알림 띠 — 속도 측정 오류(노랑) · 세션 무효(빨강). 누르면 까닭(러닝 정보)을 연다.
  */
 @Composable
-internal fun RunAlertBanner(text: String, void: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun RunAlertBanner(text: String, void: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val p = runPalette()
     val shape = RoundedCornerShape(16.dp)
     val face = if (void) p.voidFace else p.warnFace
@@ -438,7 +438,7 @@ internal fun RunAlertBanner(text: String, void: Boolean, onClick: () -> Unit, mo
 
 /** 지도 위 작은 판 — 위치 안내 · 같이 뛰는 순위 · 챌린지 진행 · GPS 상태처럼 가끔만 보이는 것 */
 @Composable
-internal fun RunOverlayCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun RunOverlayCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val p = runPalette()
     val shape = RoundedCornerShape(16.dp)
     Column(
@@ -450,7 +450,7 @@ internal fun RunOverlayCard(modifier: Modifier = Modifier, content: @Composable 
 
 /** 주 버튼 — 파란 면 · 흰 글자(일시정지 · 다시 달리기 · 러닝 시작 · 완료) */
 @Composable
-internal fun RunPrimaryButton(
+fun RunPrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -479,7 +479,7 @@ internal fun RunPrimaryButton(
 
 /** 종료 — 어두운 면 · 빨간 네모 · 흰 글자 */
 @Composable
-internal fun RunStopButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun RunStopButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val p = runPalette()
     val shape = RoundedCornerShape(18.dp)
     Row(
@@ -500,7 +500,7 @@ internal fun RunStopButton(label: String, onClick: () -> Unit, modifier: Modifie
  * 창 높이([viewport])를 넘겨 쌓는다 — 부모가 스크롤한다(작은 화면 · 큰 글씨).
  */
 @Composable
-internal fun RunOverlayLayout(
+fun RunOverlayLayout(
     viewport: Int,
     minGap: Dp,
     modifier: Modifier = Modifier,
@@ -527,11 +527,11 @@ internal fun RunOverlayLayout(
 
 // ── 러닝 완료 ──────────────────────────────────────────────────────
 
-internal enum class Settle { PENDING, DONE, VOID, NOT_PAID }
+enum class Settle { PENDING, DONE, VOID, NOT_PAID }
 
 /** 결과 카드의 보상 줄 — 이름 · 수 · 정산 상태, 아래에 덧붙일 설명 */
 @Immutable
-internal data class ResultReward(
+data class ResultReward(
     val label: String,
     val amount: String,
     val settle: Settle,
@@ -572,18 +572,18 @@ private fun ResultFitColumn(
 }
 
 /** 결과 카드의 바깥 여백 · 안쪽 위아래 여백 — 지도 높이를 셈할 때 뺀다 */
-internal val ResultCardMargin = 12.dp
-internal val ResultCardPadding = 16.dp
+val ResultCardMargin = 12.dp
+val ResultCardPadding = 16.dp
 
 /** 결과 카드 지도의 가장 낮은 높이 — 이보다 좁으면 카드가 넘기기로 바뀐다 */
-internal val ResultMapMin = 88.dp
+val ResultMapMin = 88.dp
 
 /**
  * 러닝 완료 카드(전달본 03) — 로고 · 날짜 / 큰 거리 / 지도 / 러닝 시간 · 평균 페이스 · 평균 속도 / 신발(이름 끝 등급 배지 · 내구도) / 보상.
  * [viewport] 는 카드가 쓸 수 있는 높이(px) — 지도가 남는 높이를 채운다.
  */
 @Composable
-internal fun RunResultCard(
+fun RunResultCard(
     viewport: Int,
     date: String?,
     km: Double,
@@ -802,7 +802,7 @@ private fun CubeGlyph(color: Color, modifier: Modifier) {
 
 /** 결과 아래 보조 버튼 — 어두운 면 · 테두리 · 아이콘 + 글자(이미지 저장 · 공유하기) */
 @Composable
-internal fun RunOutlineButton(
+fun RunOutlineButton(
     label: String,
     icon: ImageVector,
     onClick: () -> Unit,
@@ -827,7 +827,7 @@ internal fun RunOutlineButton(
 
 /** 머리 오른쪽 닫기(✕) — 어두운 원 */
 @Composable
-internal fun RunCloseButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun RunCloseButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val p = runPalette()
     Box(
         modifier.size(48.dp).clip(CircleShape).feedbackClickable(role = Role.Button, onClick = onClick)

@@ -88,13 +88,13 @@ class MyShoesDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -250,7 +250,7 @@ class MyShoesDesignTest {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         SAMPLES.filter { it.modelId != null }.forEach { shoe ->
                             ShoeNameWithBadge(
-                                name = compose.activity.getString(shoeModelNameRes(requireNotNull(shoe.modelId))!!), tier = shoe.tier,
+                                name = com.stepup.android.ui.components.stringNow(shoeModelNameRes(requireNotNull(shoe.modelId))!!), tier = shoe.tier,
                                 style = TextStyle(color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.SemiBold),
                                 modifier = Modifier.fillMaxWidth().testTag("sample-name-${shoe.id}"),
                             )
@@ -418,7 +418,7 @@ class MyShoesDesignTest {
 
     private fun bounds(tag: String): Rect = compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
 
-    private fun modelName(model: Int): String = compose.activity.getString(requireNotNull(shoeModelNameRes(model)))
+    private fun modelName(model: Int): String = com.stepup.android.ui.components.stringNow(requireNotNull(shoeModelNameRes(model)))
 
     private fun string(id: Int): String = compose.activity.getString(id)
 

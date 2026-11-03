@@ -241,7 +241,7 @@ fun ShoeUpgradeContent(state: ShoeUpgradeState, actions: UpgradeActions) {
 // ── UP01 · UP03 · UP08 본문 ──────────────────────────────────────
 
 /** 선택에 따른 성공률 — 0 ~ 2개는 미리보기(서버가 준 기본 · 보정의 합), 3개는 서버 견적이 있으면 그 값 */
-internal fun upgradeRate(state: ShoeUpgradeState): Int? {
+fun upgradeRate(state: ShoeUpgradeState): Int? {
     val info = state.info ?: return null
     state.quote?.takeIf { it.materialIds.sorted() == state.selection.applied.sorted() }?.let { return it.ratePermille }
     return ShoeForge.ratePermille(info.basePermille, state.applied.map { it.bonusPermille })

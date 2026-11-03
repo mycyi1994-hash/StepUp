@@ -118,13 +118,13 @@ import com.stepup.android.ui.theme.StepUpFonts
 // ── 러닝 중 ────────────────────────────────────────────────────────
 
 /** 러닝 중 위치 표시 — 찾는 동안은 [None](아무것도 적지 않는다, 2026-10-17 지도 앱처럼) */
-internal enum class GpsBadge {
+enum class GpsBadge {
     Connected, Weak, Off, Approx, None,
 }
 
 /** 큰 수 자리 — 시간(달린 시간 · 경과 시간 · 구간 남은 시간) 또는 거리(1km · 3km 챌린지) */
 @Immutable
-internal sealed interface LiveHero {
+sealed interface LiveHero {
     data class Clock(
         val label: String,
         val value: String,
@@ -137,7 +137,7 @@ internal sealed interface LiveHero {
 }
 
 @Immutable
-internal data class LiveRunUi(
+data class LiveRunUi(
     val title: String,
     val subtitle: String? = null,
     val paused: Boolean = false,
@@ -168,7 +168,7 @@ internal data class LiveRunUi(
  * 큰 글씨 · 낮은 화면이면 위쪽을 넘기고 버튼은 늘 아래에 둔다.
  */
 @Composable
-internal fun RunLiveContent(
+fun RunLiveContent(
     ui: LiveRunUi,
     onBack: () -> Unit,
     onDetails: () -> Unit,
@@ -363,7 +363,7 @@ private fun GpsIndicator(gps: GpsBadge) {
 
 /** 위치 없이 기록할 때 지도 자리 — 가짜 지도를 그리지 않는다 */
 @Composable
-internal fun BoxScope.NoLocationMap() {
+fun BoxScope.NoLocationMap() {
     RunMapPlaceholder(
         Icons.Outlined.LocationOff, stringResource(Res.string.run_no_location_title), stringResource(Res.string.run_no_location_body),
         Modifier.testTag("run-no-location"),
@@ -372,7 +372,7 @@ internal fun BoxScope.NoLocationMap() {
 
 /** 크루 달리기 "함께 달리는 사람 27명 >" 한 줄 */
 @Composable
-internal fun TogetherRow(count: Int, onClick: () -> Unit) {
+fun TogetherRow(count: Int, onClick: () -> Unit) {
     val t = runTone()
     val shape = RoundedCornerShape(14.dp)
     Row(
@@ -390,7 +390,7 @@ internal fun TogetherRow(count: Int, onClick: () -> Unit) {
 
 /** CR18 — 크루 연결이 끊긴 동안: 함께 달리는 사람 · 크루 상태를 모른다(옛 값을 보이지 않는다) */
 @Composable
-internal fun CrewOfflineCard() {
+fun CrewOfflineCard() {
     val t = runTone()
     RunCard(padding = PaddingValues(horizontal = 16.dp, vertical = 10.dp), tag = "run-crew-offline-card") {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -416,7 +416,7 @@ internal fun CrewOfflineCard() {
  * 다른 사람이 달리는지 멈췄는지는 서버가 알려 주지 않는다 — 내 줄만 달리는 중 · 일시 정지를 적는다.
  */
 @Composable
-internal fun ColumnScope.TogetherSheetContent(
+fun ColumnScope.TogetherSheetContent(
     members: List<com.stepup.android.data.repo.PartyMember>,
     myKm: Double,
     myPaused: Boolean,
@@ -500,7 +500,7 @@ internal fun ColumnScope.TogetherSheetContent(
 }
 
 /** 이름 머리글 — 라틴 이름은 두 낱말의 첫 글자("DY"), 한글 · 한자는 첫 글자 */
-internal fun initialsOf(name: String): String {
+fun initialsOf(name: String): String {
     val words = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
     if (words.isEmpty()) return "?"
     val first = words[0]
@@ -516,7 +516,7 @@ internal fun initialsOf(name: String): String {
 
 /** R04 — 러닝을 마칠까요? 저장하고 마치기(주) · 계속 달리기(보조) · 기록 없이 끝내기(빨간 글) */
 @Composable
-internal fun ColumnScope.FinishSheetContent(
+fun ColumnScope.FinishSheetContent(
     time: String,
     km: String,
     onSave: () -> Unit,
@@ -540,7 +540,7 @@ internal fun ColumnScope.FinishSheetContent(
 
 /** R07 — 기록 없이 끝낼까요? 기록 없이 끝내기(빨강) · 취소 */
 @Composable
-internal fun ColumnScope.DiscardSheetContent(time: String, km: String, onDiscard: () -> Unit, onCancel: () -> Unit) {
+fun ColumnScope.DiscardSheetContent(time: String, km: String, onDiscard: () -> Unit, onCancel: () -> Unit) {
     RunSheetText(stringResource(Res.string.run_discard_title), body = stringResource(Res.string.run_discard_body, time, km))
     Spacer(Modifier.height(20.dp))
     RunButton(stringResource(Res.string.run_discard), onDiscard, kind = RunButtonKind.Danger, modifier = Modifier.testTag("run-discard-confirm"))
@@ -550,7 +550,7 @@ internal fun ColumnScope.DiscardSheetContent(time: String, km: String, onDiscard
 
 /** C01 — 목표 달성. 계속 달리면 기록이 이어진다 */
 @Composable
-internal fun ColumnScope.GoalReachedContent(goalShort: String, onSave: () -> Unit, onMore: () -> Unit) {
+fun ColumnScope.GoalReachedContent(goalShort: String, onSave: () -> Unit, onMore: () -> Unit) {
     val t = runTone()
     Box(
         Modifier.size(64.dp).clip(CircleShape).background(t.cobalt).border(3.dp, t.cobalt.copy(alpha = 0.35f), CircleShape),
@@ -566,7 +566,7 @@ internal fun ColumnScope.GoalReachedContent(goalShort: String, onSave: () -> Uni
 
 /** E02 — 러닝 목표(거리) 고치기. 0.5km 씩, 적용 · 취소 뒤에도 멈춘 채로 둔다 */
 @Composable
-internal fun ColumnScope.GoalEditContent(km: Double, onMinus: () -> Unit, onPlus: () -> Unit, onApply: () -> Unit, onCancel: () -> Unit) {
+fun ColumnScope.GoalEditContent(km: Double, onMinus: () -> Unit, onPlus: () -> Unit, onApply: () -> Unit, onCancel: () -> Unit) {
     val t = runTone()
     Text(stringResource(Res.string.run_goal_sheet_title), style = runTextStyle(24.sp, t.text, FontWeight.ExtraBold),
         modifier = Modifier.fillMaxWidth())
@@ -602,7 +602,7 @@ private fun StepButton(label: String, description: String, onClick: () -> Unit, 
 
 /** E03 — 러닝 상세 정보: 시간 | 거리, 목표와 달성률(수정), 예상 SUP(확인 중), 선택한 코스, 현재 속도 | 내구도 */
 @Immutable
-internal data class RunDetailsUi(
+data class RunDetailsUi(
     val time: String,
     val km: String,
     val goalKm: Double,
@@ -620,7 +620,7 @@ internal data class RunDetailsUi(
 )
 
 @Composable
-internal fun ColumnScope.RunDetailsContent(
+fun ColumnScope.RunDetailsContent(
     ui: RunDetailsUi,
     onEditGoal: () -> Unit,
     onCourse: () -> Unit,
@@ -711,7 +711,7 @@ internal fun ColumnScope.RunDetailsContent(
 
 /** L04 — 위치 신호가 약해요. 시간은 계속, 끊긴 구간 거리는 더하지 않는다 */
 @Composable
-internal fun ColumnScope.GpsLostContent(onRetry: () -> Unit, onTimeOnly: () -> Unit) {
+fun ColumnScope.GpsLostContent(onRetry: () -> Unit, onTimeOnly: () -> Unit) {
     val t = runTone()
     Icon(Icons.Outlined.SignalCellularConnectedNoInternet0Bar, null, tint = t.label, modifier = Modifier.size(34.dp))
     Spacer(Modifier.height(8.dp))
@@ -724,7 +724,7 @@ internal fun ColumnScope.GpsLostContent(onRetry: () -> Unit, onTimeOnly: () -> U
 
 /** K05 — 코스에서 벗어났어요. 기록은 이어진다 */
 @Composable
-internal fun ColumnScope.CourseOffContent(onMap: () -> Unit, onFree: () -> Unit) {
+fun ColumnScope.CourseOffContent(onMap: () -> Unit, onFree: () -> Unit) {
     val t = runTone()
     Box(Modifier.size(52.dp).clip(CircleShape).border(2.dp, t.cyan, CircleShape), contentAlignment = Alignment.Center) {
         Text("!", style = runTextStyle(26.sp, t.cyan, FontWeight.ExtraBold, 1.0f))
@@ -739,7 +739,7 @@ internal fun ColumnScope.CourseOffContent(onMap: () -> Unit, onFree: () -> Unit)
 
 /** K08 — 자유 러닝으로 바꿀까요? 코스 안내만 끈다 */
 @Composable
-internal fun ColumnScope.CourseFreeContent(onSwitch: () -> Unit, onCancel: () -> Unit) {
+fun ColumnScope.CourseFreeContent(onSwitch: () -> Unit, onCancel: () -> Unit) {
     RunSheetText(stringResource(Res.string.run_course_free_title), note = stringResource(Res.string.run_course_free_body))
     Spacer(Modifier.height(20.dp))
     RunButton(stringResource(Res.string.run_course_free_ok), onSwitch, modifier = Modifier.testTag("run-course-free-ok"))
@@ -749,7 +749,7 @@ internal fun ColumnScope.CourseFreeContent(onSwitch: () -> Unit, onCancel: () ->
 
 /** R06 · H14 — 이 기록을 삭제할까요? 기록 삭제(빨강) · 취소 */
 @Composable
-internal fun ColumnScope.DeleteSheetContent(subject: String, onDelete: () -> Unit, onCancel: () -> Unit, busy: Boolean = false) {
+fun ColumnScope.DeleteSheetContent(subject: String, onDelete: () -> Unit, onCancel: () -> Unit, busy: Boolean = false) {
     RunSheetText(stringResource(Res.string.run_delete_title), body = subject, note = stringResource(Res.string.run_delete_body))
     Spacer(Modifier.height(20.dp))
     RunButton(stringResource(Res.string.run_delete_confirm), onDelete, kind = RunButtonKind.Danger, busy = busy,
@@ -761,7 +761,7 @@ internal fun ColumnScope.DeleteSheetContent(subject: String, onDelete: () -> Uni
 
 /** S01 — 기록을 저장하지 못했어요. 같은 러닝으로 다시 저장 · 기록 확인하기 */
 @Composable
-internal fun ColumnScope.SaveFailedContent(onRetry: () -> Unit, onReview: () -> Unit) {
+fun ColumnScope.SaveFailedContent(onRetry: () -> Unit, onReview: () -> Unit) {
     val t = runTone()
     Box(Modifier.size(52.dp).clip(CircleShape).background(t.dangerFace.copy(alpha = 0.18f)).border(2.dp, t.dangerText, CircleShape),
         contentAlignment = Alignment.Center) {
@@ -778,7 +778,7 @@ internal fun ColumnScope.SaveFailedContent(onRetry: () -> Unit, onReview: () -> 
 // ── 저장 중(E04) ───────────────────────────────────────────────────
 
 @Composable
-internal fun RunSavingContent(
+fun RunSavingContent(
     stats: List<RunStat>,
     modifier: Modifier = Modifier,
     map: @Composable BoxScope.() -> Unit,
@@ -818,7 +818,7 @@ internal fun RunSavingContent(
 
 /** 결과 보상 칸 — 확인 중(E10) · 반영 완료(E11) · 지급 제외(E08) · 미지급(E09) */
 @Composable
-internal fun ResultRewardCard(reward: ResultReward, onReason: () -> Unit, onHistory: () -> Unit) {
+fun ResultRewardCard(reward: ResultReward, onReason: () -> Unit, onHistory: () -> Unit) {
     val t = runTone()
     RunCard(padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp), tag = "run-result-reward-card") {
         when (reward.settle) {
@@ -918,7 +918,7 @@ internal fun ResultRewardCard(reward: ResultReward, onReason: () -> Unit, onHist
  * [points] 는 남은 비율(%) — 서버가 이 러닝을 확인하기 전에는 이번 러닝으로 닳을 만큼을 미리 뺀 값을 넘긴다(WalkScreen)
  */
 @Composable
-internal fun ResultShoeCard(shoe: Sneaker, points: Int = durabilityPercent(shoe)) {
+fun ResultShoeCard(shoe: Sneaker, points: Int = durabilityPercent(shoe)) {
     val t = runTone()
     RunCard(padding = PaddingValues(horizontal = 12.dp, vertical = 10.dp), tag = "run-result-shoe") {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -951,7 +951,7 @@ internal fun ResultShoeCard(shoe: Sneaker, points: Int = durabilityPercent(shoe)
 }
 
 @Immutable
-internal data class RunResultUi(
+data class RunResultUi(
     val title: String,
     val subtitle: String? = null,
     val pill: String?,
@@ -973,7 +973,7 @@ internal data class RunResultUi(
  * 정보가 많아 화면을 넘기지만 아래 공유 | 기록 · 처음 화면으로는 늘 아래에 둔다.
  */
 @Composable
-internal fun RunResultContent(
+fun RunResultContent(
     ui: RunResultUi,
     onBack: () -> Unit,
     onDelete: (() -> Unit)?,
@@ -1063,7 +1063,7 @@ internal fun RunResultContent(
 
 /** 결과 아래 크루 칸(CR13) — 함께 출발한 인원과 내 기록 저장 */
 @Composable
-internal fun CrewResultCard(started: Int?) {
+fun CrewResultCard(started: Int?) {
     val t = runTone()
     RunCard(padding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), tag = "run-result-crew") {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1082,7 +1082,7 @@ internal fun CrewResultCard(started: Int?) {
 // ── 다이어트 완료(D10) ─────────────────────────────────────────────
 
 @Composable
-internal fun DietCompleteContent(totalMinutes: Int, runMinutes: Int, walkMinutes: Int, onSave: () -> Unit, saving: Boolean) {
+fun DietCompleteContent(totalMinutes: Int, runMinutes: Int, walkMinutes: Int, onSave: () -> Unit, saving: Boolean) {
     val t = runTone()
     Box(Modifier.fillMaxSize().testTag("run-diet-done")) {
         RunBackdrop(Modifier.fillMaxSize())
@@ -1142,7 +1142,7 @@ private fun DietTotal(icon: ImageVector, label: String, minutes: Int, modifier: 
 // ── 전체 지도(K07) ─────────────────────────────────────────────────
 
 @Composable
-internal fun RunFullMapContent(
+fun RunFullMapContent(
     title: String,
     courseName: String?,
     stats: List<RunStat>,
@@ -1191,7 +1191,7 @@ internal fun RunFullMapContent(
  * (토글만 끄고 내보내는 그림에 경로가 남지 않게 — 미리보기와 내보내기가 같은 그림).
  */
 @Composable
-internal fun RunSharePreviewContent(
+fun RunSharePreviewContent(
     title: String,
     subtitle: String,
     preview: ImageBitmap?,
@@ -1274,6 +1274,6 @@ internal fun RunSharePreviewContent(
 
 /** 저장 실패 · 삭제 실패 띠(H16) */
 @Composable
-internal fun FailureBanner(title: String, body: String, tag: String) {
+fun FailureBanner(title: String, body: String, tag: String) {
     RunNotice(title, body = body, kind = RunNoticeKind.Error, tag = tag)
 }

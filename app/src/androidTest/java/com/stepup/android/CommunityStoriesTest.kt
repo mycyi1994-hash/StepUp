@@ -70,13 +70,13 @@ class CommunityStoriesTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -157,7 +157,7 @@ class CommunityStoriesTest {
         awaitTag("stories-tab")
         if (compose.onAllNodesWithTag("stories-location-prompt").fetchSemanticsNodes().isNotEmpty()) {
             shot("26-permission")
-            if (StepPermissions.hasLocation(context)) notes += "26-permission: location was granted — the prompt shows the locating state"
+            if (StepPermissions.hasLocation()) notes += "26-permission: location was granted — the prompt shows the locating state"
             tapTag("stories-choose-region")
         } else {
             notes += "26-permission: location already known — opened 내 주변 from the area label instead"

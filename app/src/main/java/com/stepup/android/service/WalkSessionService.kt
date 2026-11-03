@@ -66,17 +66,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 
-/**
- * 이 좌표가 모의 위치(개발자 옵션의 "모의 위치 앱", 가짜 GPS 앱)에서 왔는가.
- * API 31 부터는 `isMock`, 그 전에는 `isFromMockProvider` 가 같은 표시다.
- */
-internal fun isMockLocation(location: Location): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        location.isMock
-    } else {
-        @Suppress("DEPRECATION")
-        location.isFromMockProvider
-    }
 
 
 /**

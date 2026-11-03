@@ -12,7 +12,7 @@ import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.UIKit.popoverPresentationController
 import platform.Foundation.dateWithTimeIntervalSince1970
 
-internal actual fun applyAppLanguage(tag: String): Boolean {
+actual fun applyAppLanguage(tag: String): Boolean {
     val defaults = NSUserDefaults.standardUserDefaults
     if (tag.isEmpty()) defaults.removeObjectForKey("AppleLanguages") else defaults.setObject(listOf(tag), forKey = "AppleLanguages")
     return true

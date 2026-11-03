@@ -1133,14 +1133,14 @@ private fun LoadingLine(text: String) {
 }
 
 @Composable
-internal fun CoachLoading() {
+fun CoachLoading() {
     Box(Modifier.fillMaxWidth().padding(vertical = 48.dp).testTag("coach-loading"), contentAlignment = Alignment.Center) {
         RunSpinner(Modifier.size(32.dp))
     }
 }
 
 @Composable
-internal fun CoachLoadFailed() {
+fun CoachLoadFailed() {
     val t = runTone()
     Text(
         stringResource(Res.string.coach_load_failed), style = runTextStyle(16.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,

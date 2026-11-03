@@ -74,7 +74,7 @@ import kotlin.math.sin
  *   모션 줄이기면 사진은 그대로, 빛의 세기만 천천히 바뀐다(이동 · 확대 · 회전 없음).
  * - 그 밖의 크루 화면(홈 · 목록 · 개설 · 코스 · 결과)은 앱의 기존 배경(crewColors)에 같은 틀만 쓴다.
  */
-internal object LobbyInk {
+object LobbyInk {
     val Bg = Color(0xFF031427)
     val Text = Color(0xFFF5F8FF)
     val Sub = Color(0xFFB5CBE6)
@@ -138,7 +138,7 @@ internal object LobbyInk {
 /**
  * CSS linear-gradient(각도) 를 이 크기의 붓으로 — 0도는 위, 90도는 오른쪽. 선은 가운데를 지나고 길이는 모서리까지(CSS 와 같다).
  */
-internal fun cssLinearGradient(degrees: Float, size: Size, vararg stops: Pair<Float, Color>): Brush {
+fun cssLinearGradient(degrees: Float, size: Size, vararg stops: Pair<Float, Color>): Brush {
     val rad = com.stepup.android.domain.toRadians(degrees.toDouble())
     val dx = sin(rad).toFloat()
     val dy = -cos(rad).toFloat()
@@ -157,7 +157,7 @@ internal fun cssLinearGradient(degrees: Float, size: Size, vararg stops: Pair<Fl
  * [dimmed] 면(고르지 않은 선택지) 바깥 테를 옅게, 안쪽 선을 어둡게 — 모양 · 크기는 같다.
  */
 @Composable
-internal fun DualRailFrame(
+fun DualRailFrame(
     modifier: Modifier = Modifier,
     padding: PaddingValues = PaddingValues(20.dp),
     dimmed: Boolean = false,
@@ -202,7 +202,7 @@ internal fun DualRailFrame(
 
 /** 대기실의 큰 주 버튼 — 통합안 블루 알약 54 + 원 화살표. 못 누르면 흐린 회색(실제로 막힌다) */
 @Composable
-internal fun LobbyPrimaryButton(
+fun LobbyPrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -217,10 +217,10 @@ internal fun LobbyPrimaryButton(
 }
 
 /** 작은 칩 — 준비(하늘 면) · 부드러운(남색 면) · 주의(모래 면). 누르는 것이 아니다 */
-internal enum class LobbyChipKind { Ready, Soft, Warn }
+enum class LobbyChipKind { Ready, Soft, Warn }
 
 @Composable
-internal fun LobbyChip(text: String, modifier: Modifier = Modifier, kind: LobbyChipKind = LobbyChipKind.Ready) {
+fun LobbyChip(text: String, modifier: Modifier = Modifier, kind: LobbyChipKind = LobbyChipKind.Ready) {
     val (face, ink) = when (kind) {
         LobbyChipKind.Ready -> LobbyInk.ChipFace to LobbyInk.ChipInk
         LobbyChipKind.Soft -> LobbyInk.ChipSoftFace to LobbyInk.ChipSoftInk
@@ -234,7 +234,7 @@ internal fun LobbyChip(text: String, modifier: Modifier = Modifier, kind: LobbyC
 
 /** 내 신발 변경 — 면 #95E6FF · 글자 #07384D · 모서리 8dp · 높이 44dp 이상(누르는 곳은 48dp) */
 @Composable
-internal fun ShoeChangeButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun ShoeChangeButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Box(
         modifier.heightIn(min = 48.dp).padding(vertical = 2.dp)
             .clip(RoundedCornerShape(8.dp))
@@ -249,7 +249,7 @@ internal fun ShoeChangeButton(text: String, onClick: () -> Unit, modifier: Modif
 
 /** 진행 막대 — 6dp, 어두운 길 위 하늘색(레벨은 연한 파랑) */
 @Composable
-internal fun LobbyTrack(fraction: Float, modifier: Modifier = Modifier, level: Boolean = false, height: Dp = 6.dp) {
+fun LobbyTrack(fraction: Float, modifier: Modifier = Modifier, level: Boolean = false, height: Dp = 6.dp) {
     val shape = RoundedCornerShape(6.dp)
     Box(modifier.fillMaxWidth().heightIn(min = height, max = height).clip(shape).background(LobbyInk.Track)) {
         Box(
@@ -261,7 +261,7 @@ internal fun LobbyTrack(fraction: Float, modifier: Modifier = Modifier, level: B
 
 /** 안내 띠 — 남색(정보) · 모래(주의) 면, 아이콘과 글(색만으로 가르지 않는다) */
 @Composable
-internal fun LobbyNotice(
+fun LobbyNotice(
     text: String,
     modifier: Modifier = Modifier,
     warn: Boolean = false,
@@ -287,7 +287,7 @@ internal fun LobbyNotice(
  * 대기실 터널의 시간표(04_DESIGN_BACKGROUND 6절 · prototype all-scenes.js) — 시각(ms)을 넣으면 모습이 나온다(LobbyTunnelMotionTest).
  * 사진 두 겹이 11초마다 앞으로 다가오며 겹친다(시작 위상 10% · 60%). 옆 빛은 4.2초 왕복, 가운데 빛은 같은 박자로 세기만.
  */
-internal object LobbyTunnelMotion {
+object LobbyTunnelMotion {
     const val PUSH_MS = 11_000L
     const val LIGHT_MS = 4_200L
     const val PHASE_A = 0.10f
@@ -336,7 +336,7 @@ internal object LobbyTunnelMotion {
 
 /** 대기실 시계 — [running] 이고 앱이 앞에 있을 때만 흐른다. 멈췄다 돌아오면 그 자리부터(처음부터 다시 돌지 않는다) */
 @Composable
-internal fun rememberLobbyClock(running: Boolean): MutableLongState {
+fun rememberLobbyClock(running: Boolean): MutableLongState {
     val clock = remember { mutableLongStateOf(0L) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val state by lifecycle.currentStateAsState()
@@ -360,7 +360,7 @@ internal fun rememberLobbyClock(running: Boolean): MutableLongState {
  * [still] 이면(불러오는 중 — LOBBY_STATIC) 사진과 덮개만. 사진은 이 화면에 들어올 때 한 번 읽는다(출발할 때마다 다시 읽지 않는다).
  */
 @Composable
-internal fun LobbyTunnelBackdrop(
+fun LobbyTunnelBackdrop(
     running: Boolean,
     reduced: Boolean,
     modifier: Modifier = Modifier,

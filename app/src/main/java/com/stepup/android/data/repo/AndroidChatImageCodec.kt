@@ -5,24 +5,31 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** 안드로이드 채팅 사진 — 예전 CrewChatRepository 의 Bitmap 코드 그대로(공용 저장소가 ChatImageCodec 으로 부른다) */
-object AndroidChatImageCodec : ChatImageCodec<Bitmap> {
-    override fun byteCount(img: Bitmap): Int = img.byteCount
+/**
+ * 안드로이드 채팅 사진 — 예전 CrewChatRepository 의 Bitmap 코드 그대로(공용 저장소가 ChatImageCodec 으로 부른다).
+ * 공용 화면이 그리는 모양(ImageBitmap)으로 주고받는다 — 속은 안드로이드 Bitmap 이다.
+ */
+object AndroidChatImageCodec : ChatImageCodec<ImageBitmap> {
+    override fun byteCount(img: ImageBitmap): Int = img.asAndroidBitmap().byteCount
 
-    override fun decodeFile(path: String): Bitmap? = runCatching { BitmapFactory.decodeFile(path) }.getOrNull()
+    override fun decodeFile(path: String): ImageBitmap? = runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull()
 
-    override fun decodeBase64(data: String): Bitmap? = runCatching {
+    override fun decodeBase64(data: String): ImageBitmap? = runCatching {
         val bytes = Base64.decode(data, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
     }.getOrNull()
 
-    override fun encode(source: Bitmap, dir: String, maxSide: Int, maxBase64: Int): ChatPhoto? {
+    override fun encode(image: ImageBitmap, dir: String, maxSide: Int, maxBase64: Int): ChatPhoto? {
+        val source = image.asAndroidBitmap()
         var side = maxSide
         while (side >= 480) {
             val scale = side.toFloat() / maxOf(source.width, source.height)
@@ -61,18 +68,18 @@ val ChatPhoto.file: File get() = File(path)
 fun ChatPhoto(data: String, file: File, width: Int, height: Int): ChatPhoto = ChatPhoto(data, file.path, width, height)
 
 /** 안드로이드 채팅 저장소 */
-typealias AndroidCrewChat = CrewChatRepository<Bitmap>
+typealias AndroidCrewChat = CrewChatRepository<ImageBitmap>
 
 /**
  * 고른 사진을 보낼 모양으로 — 긴 변 PHOTO_SIDE 까지 줄이고 크루 대표 사진과 같은 기술 한도(base64 200,000자 —
  * 넉넉히 180,000자) 안의 JPEG 로. 읽을 수 없으면 null, 접근이 막혔으면 [CrewPhotos.Loaded.Denied].
  */
-suspend fun CrewChatRepository<Bitmap>.preparePhoto(context: Context, uri: Uri): Pair<ChatPhoto?, CrewPhotos.Loaded> {
+suspend fun CrewChatRepository<ImageBitmap>.preparePhoto(context: Context, uri: Uri): Pair<ChatPhoto?, CrewPhotos.Loaded> {
     val loaded = CrewPhotos.load(context, uri)
     val source = (loaded as? CrewPhotos.Loaded.Ok)?.bitmap ?: return null to loaded
-    val photo = withContext(Dispatchers.Default) { photoOf(source) }
+    val photo = withContext(Dispatchers.Default) { photoOf(source.asImageBitmap()) }
     return photo to loaded
 }
 
 /** 예전 decodeFile(File) */
-fun CrewChatRepository<Bitmap>.decodeFile(file: File): Bitmap? = decodeFile(file.path)
+fun CrewChatRepository<ImageBitmap>.decodeFile(file: File): ImageBitmap? = decodeFile(file.path)

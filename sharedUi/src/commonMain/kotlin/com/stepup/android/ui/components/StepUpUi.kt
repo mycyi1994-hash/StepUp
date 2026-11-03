@@ -1390,6 +1390,6 @@ fun StatusBarSpacer() {
 
 /** 세로 꽉 찬 칸 안 가운데 정렬 — 미리보기용 보조 */
 @Composable
-internal fun FillCenter(content: @Composable BoxScope.() -> Unit) {
+fun FillCenter(content: @Composable BoxScope.() -> Unit) {
     Box(Modifier.fillMaxHeight().fillMaxWidth(), contentAlignment = Alignment.Center, content = content)
 }

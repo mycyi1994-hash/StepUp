@@ -58,11 +58,11 @@ import com.stepup.android.ui.experience.LocalMotion
 
 /** 뽑기 탭 바닥 — 러닝 · 신발 탭과 같은 남색 바닥(앱 셸이 상태 막대 밑까지 깐다) */
 @Composable
-internal fun DrawBackdrop(modifier: Modifier = Modifier) {
+fun DrawBackdrop(modifier: Modifier = Modifier) {
     RunBackdrop(modifier)
 }
 
-internal enum class DrawButtonStyle { Primary, Ghost, Off }
+enum class DrawButtonStyle { Primary, Ghost, Off }
 
 /**
  * 뽑기의 버튼 — 주 행동은 공통 주 버튼(흰 면 · 남색 글자 · 얇은 파란 아랫면, 눌리면 1~2dp 내려앉는다), 보조 행동은 글자 버튼
@@ -70,7 +70,7 @@ internal enum class DrawButtonStyle { Primary, Ghost, Off }
  * 화면마다 모양 · 크기를 바꾸지 않는다(전달서: 시안마다 다른 모서리는 공통 버튼 하나로).
  */
 @Composable
-internal fun DrawButton(
+fun DrawButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -93,7 +93,7 @@ internal fun DrawButton(
  * 모자라면(작은 화면 · 큰 글씨) 무대는 [minStage] 로 두고 넘친다 — 부모가 스크롤한다. 무대 칸은 폭 × 높이가 정해져 들어온다.
  */
 @Composable
-internal fun DrawFitLayout(
+fun DrawFitLayout(
     viewport: Int,
     modifier: Modifier,
     topGap: Dp,
@@ -129,7 +129,7 @@ internal fun DrawFitLayout(
 
 /** 러닝 진행 막대 — 모은 거리의 몫(서버 값). 공통 막대(파랑 → 시안) */
 @Composable
-internal fun DrawProgressBar(fraction: Float, modifier: Modifier = Modifier) {
+fun DrawProgressBar(fraction: Float, modifier: Modifier = Modifier) {
     RunMeter(fraction, modifier, height = 8.dp)
 }
 
@@ -149,7 +149,7 @@ private const val Img = 1254f
 private const val BoxScale = 0.266f
 private const val ShoeScale = 0.249f
 
-internal const val OpeningMillis = 2_000f
+const val OpeningMillis = 2_000f
 private const val ReducedMillis = 200f
 
 private val Move: Easing = CubicBezierEasing(0.77f, 0f, 0.175f, 1f)
@@ -199,7 +199,7 @@ private fun shoeMask(t: Float, reduced: Boolean): Float =
  * [play] 면 처음부터 끝까지 한 번 돌고 [onFinished]. [frozenAt] 은 기기 검사가 한 순간(밀리초)을 찍을 때만 쓴다.
  */
 @Composable
-internal fun UnboxingStage(
+fun UnboxingStage(
     shoe: Sneaker?,
     modifier: Modifier = Modifier,
     kind: DrawKind = DrawKind.FREE,

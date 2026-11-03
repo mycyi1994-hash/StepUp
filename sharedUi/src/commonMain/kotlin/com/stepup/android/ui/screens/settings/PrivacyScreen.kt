@@ -241,6 +241,6 @@ private fun ClearHistorySheet(step: ClearStep, onClear: () -> Unit, onDismiss: (
 }
 
 /** 지금 권한(걸음 · 정확한 위치 · 대략 위치 · 알림) — 기기마다 읽는다(core/Permissions) */
-internal fun readPermissions(): PermissionSnapshot = com.stepup.android.core.readPermissionSnapshot().let {
+fun readPermissions(): PermissionSnapshot = com.stepup.android.core.readPermissionSnapshot().let {
     PermissionSnapshot(it.activity, it.preciseLocation, it.approximateLocation, it.notifications)
 }

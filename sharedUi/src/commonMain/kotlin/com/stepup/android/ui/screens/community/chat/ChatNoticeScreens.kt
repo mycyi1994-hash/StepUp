@@ -263,7 +263,7 @@ private fun NoticeBody(notice: ChatNotice, meta: ChatRoomMeta?, modifier: Modifi
 
 /** "오늘 19:30 · 공덕역 2번 출구" — 시각이 없으면 모임 제목 · 장소 */
 @Composable
-internal fun noticeMeetingLine(meeting: com.stepup.android.domain.ChatNoticeMeeting): String {
+fun noticeMeetingLine(meeting: com.stepup.android.domain.ChatNoticeMeeting): String {
     val at = meeting.meetAt
     val place = meeting.place.ifBlank { meeting.title }
     if (at == null) return listOf(meeting.title, meeting.place).filter { it.isNotBlank() }.joinToString(" · ")

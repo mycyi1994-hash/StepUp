@@ -91,7 +91,7 @@ fun PointsPhase.sceneTag(): String = "points-" + when (this) {
  * 서버에 보낸다(앱 저장소 — 같은 초안은 같은 요청 번호). 답을 받은 뒤 최신 신발로 다음 장면을 정한다.
  * 연결이 끊기면 결과를 단정하지 않는다(같은 초안으로 다시 보낼 수 있게 남긴다).
  */
-internal suspend fun sendPoints(sending: PointsPhase.Sending): PointsPhase {
+suspend fun sendPoints(sending: PointsPhase.Sending): PointsPhase {
     val draft = sending.draft
     val outcome = try {
         AppServices.sneakerRepository.setPointsOnServer(sending.basis.shoeId, draft.efficiency, draft.comfort, draft.durability)

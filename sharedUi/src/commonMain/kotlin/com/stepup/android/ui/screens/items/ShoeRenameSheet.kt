@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
  * 누르면 모델 이름으로 돌아간다. 거래소 · 다른 사람에게는 늘 원래 이름이다.
  */
 @Composable
-internal fun ShoeRenameSheet(shoe: Sneaker, onDone: () -> Unit) {
+fun ShoeRenameSheet(shoe: Sneaker, onDone: () -> Unit) {
     val t = com.stepup.android.ui.components.runTone()
     val nicknames = com.stepup.android.ui.components.LocalShoeNicknames.current
     val current = nicknames[shoe.id]

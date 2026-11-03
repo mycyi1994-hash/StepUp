@@ -594,7 +594,7 @@ private fun TimeAndPace(totals: RecordTotals) {
  * 눈금 간격 — 칸은 셋 이하, 맨 위는 가장 큰 막대보다 한 뼘(10%) 이상 높게, 그중 맨 위가 가장 낮은 것(같으면 칸이 적은 것).
  * 예: 주간 5.0km → 3 간격(0 · 3 · 6), 월간 12.2km → 5 간격(0 · 5 · 10 · 15)
  */
-internal fun niceStep(maxKm: Double): Double {
+fun niceStep(maxKm: Double): Double {
     if (maxKm <= 0.0) return 0.5
     val steps = listOf(0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 25.0, 50.0, 100.0, 200.0, 250.0, 500.0, 1000.0)
     return steps.filter { ceil(maxKm / it) <= 3 && chartTop(maxKm, it) >= maxKm * 1.1 }
@@ -602,4 +602,4 @@ internal fun niceStep(maxKm: Double): Double {
 }
 
 /** 막대 그림의 맨 위 값 */
-internal fun chartTop(maxKm: Double, step: Double): Double = step * ceil(maxKm / step).coerceAtLeast(1.0)
+fun chartTop(maxKm: Double, step: Double): Double = step * ceil(maxKm / step).coerceAtLeast(1.0)

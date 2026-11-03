@@ -103,7 +103,7 @@ import kotlinx.datetime.LocalDate
 
 /** 글쓰기의 색 — [runTone] 에서 끌어낸다(밝은 테마도 같은 자리에 밝은 값) */
 @Immutable
-internal class ComposeInk(
+class ComposeInk(
     val text: Color,
     val secondary: Color,
     val accent: Color,
@@ -118,7 +118,7 @@ internal class ComposeInk(
 )
 
 @Composable
-internal fun composeInk(): ComposeInk {
+fun composeInk(): ComposeInk {
     val t = runTone()
     return remember(t) {
         ComposeInk(
@@ -130,7 +130,7 @@ internal fun composeInk(): ComposeInk {
     }
 }
 
-internal val ComposeGutter = 20.dp
+val ComposeGutter = 20.dp
 
 // ── 글자 ─────────────────────────────────────────────────────────
 
@@ -236,7 +236,7 @@ fun rememberStoryWords(): StoryWords {
  * [icon] 이 있으면 글자 앞(내 주변 · 최근 장소 · 직접 검색).
  */
 @Composable
-internal fun ComposeChip(
+fun ComposeChip(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -603,7 +603,7 @@ private fun ProblemCard(
 
 /** 코스 그림 — 저장된 좌표를 실제 남색 지도 위에. 좌표가 둘 미만이면 부르지 않는다(가짜 코스를 그리지 않는다) */
 @Composable
-internal fun StoryRouteThumb(route: List<GeoPoint>, modifier: Modifier, seed: Int, radius: Dp) {
+fun StoryRouteThumb(route: List<GeoPoint>, modifier: Modifier, seed: Int, radius: Dp) {
     val ink = composeInk()
     Box(modifier.clip(RoundedCornerShape(radius)).background(ink.skeleton).border(1.dp, ink.edge, RoundedCornerShape(radius))) {
         if (route.size >= 2) StoryMapTone { LiveRouteMap(route, Modifier.matchParentSize(), seed = seed, routeColor = runTone().cyan) }
@@ -614,7 +614,7 @@ internal fun StoryRouteThumb(route: List<GeoPoint>, modifier: Modifier, seed: In
 
 /** 장소 버튼 하나의 이름과 아이콘 */
 @Composable
-internal fun placeSourceLabel(source: StoryPlaceSource): Pair<String, ImageVector> = when (source) {
+fun placeSourceLabel(source: StoryPlaceSource): Pair<String, ImageVector> = when (source) {
     StoryPlaceSource.COURSE -> stringResource(Res.string.story_place_src_course) to Icons.Outlined.Route
     StoryPlaceSource.NEARBY -> stringResource(Res.string.story_place_src_nearby) to Icons.Outlined.GpsFixed
     StoryPlaceSource.RECENT -> stringResource(Res.string.story_place_src_recent) to Icons.Outlined.Schedule

@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import com.stepup.android.core.requiredPermissions
 import android.Manifest.permission.*
 import com.stepup.android.ui.StepPermissions
 import org.junit.Assert.*

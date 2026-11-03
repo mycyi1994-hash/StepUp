@@ -67,7 +67,7 @@ import com.stepup.android.ui.experience.feedbackClickable
  */
 
 @Immutable
-internal data class CrewResultUi(
+data class CrewResultUi(
     val crewName: String,
     /** 크루가 정한 머리글자(크루 목록) — 모르면 이름 머리글자 */
     val monogram: String?,
@@ -85,7 +85,7 @@ internal data class CrewResultUi(
 )
 
 @Composable
-internal fun CrewRunResult(
+fun CrewRunResult(
     ui: CrewResultUi,
     reward: ResultReward,
     map: (@Composable BoxScope.() -> Unit)?,

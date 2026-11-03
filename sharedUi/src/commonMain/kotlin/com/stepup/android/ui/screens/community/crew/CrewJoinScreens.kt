@@ -281,7 +281,7 @@ fun CrewPendingScreen(
  * [phrasesInside] 면 고른 문구를 칸 안 청록 글자로(신청 검토 49), 아니면 칸 밖 칩으로 따로 보인다(15).
  */
 @Composable
-internal fun CrewSentMessage(application: CrewApplication, words: CrewWords, label: String? = null, phrasesInside: Boolean = true) {
+fun CrewSentMessage(application: CrewApplication, words: CrewWords, label: String? = null, phrasesInside: Boolean = true) {
     val ink = crewInk()
     Column(Modifier.fillMaxWidth().testTag("crew-sent-message")) {
         CrewFieldLabel(label ?: stringResource(Res.string.crew_pending_sent_label))
@@ -306,7 +306,7 @@ internal fun CrewSentMessage(application: CrewApplication, words: CrewWords, lab
 
 /** 그림 한 줄 — "📍 공덕 · 화·목 오후 7시30분" · "🏃 3-5km" · "📅 신청일" */
 @Composable
-internal fun CrewIconLine(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
+fun CrewIconLine(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Row(modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = ink.info, modifier = Modifier.size(22.dp))
@@ -317,7 +317,7 @@ internal fun CrewIconLine(icon: ImageVector, text: String, modifier: Modifier = 
 
 /** 누르지 않는 칩들 — 한 줄에 둘씩(러닝 스타일 · 고른 문구) */
 @Composable
-internal fun CrewChipFlow(labels: List<String>) {
+fun CrewChipFlow(labels: List<String>) {
     val ink = crewInk()
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         labels.chunked(2).forEach { row ->
@@ -422,13 +422,13 @@ fun CrewReportedScreen(onBack: () -> Unit, onDone: () -> Unit) {
  * 이름에 한국어 조사를 붙인다("퇴근런과") — 앱이 한국어일 때만. 다른 언어는 이름 그대로(문자열 쪽이 문장을 짠다).
  */
 @Composable
-internal fun withParticle(word: String, withFinal: String, without: String): String {
+fun withParticle(word: String, withFinal: String, without: String): String {
     val korean = androidx.compose.ui.text.intl.Locale.current?.language == "ko"
     return if (korean) word + koreanParticle(word, withFinal, without) else word
 }
 
 /** 한국어 조사 — 받침이 있으면 [withFinal], 없으면 [without] */
-internal fun koreanParticle(word: String, withFinal: String, without: String): String {
+fun koreanParticle(word: String, withFinal: String, without: String): String {
     val last = word.trim().lastOrNull() ?: return without
     if (last in '가'..'힣') return if ((last - '가') % 28 != 0) withFinal else without
     // 숫자 · 영문 끝 — 읽는 소리로 대강(0 1 3 6 7 8 · l m n r 은 받침)

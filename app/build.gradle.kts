@@ -193,8 +193,9 @@ android {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             isDebuggable = false
-            // 리소스 줄이기는 크기만 줄이고 속도와 상관없다 — 이름으로 찾는 리소스가 빠지는 위험만 있어 끈다.
-            isShrinkResources = false
+            // 리소스 줄이기 — 화면 그림 · 글꼴은 공용 Compose 리소스(assets)로 담기므로 앱 res 의 같은 그림을 빼야 두 벌이 되지 않는다
+            // (2026-11-03 C8 — 앱 코드는 이름으로 리소스를 찾지 않는다. release 와 같다)
+            isShrinkResources = true
             proguardFiles("proguard-qa.pro")
             matchingFallbacks += listOf("release")
             buildConfigField("boolean", "SELF_UPDATE", "true")
@@ -215,6 +216,9 @@ android {
         }
     }
     sourceSets {
+        // 장소 사진 · 배경 · 라이선스(src/main/assets)는 공용 화면이 Compose 리소스(files/)로 읽는다 — sharedUi 가 빌드할 때 같은 파일을
+        // 담으므로 앱에는 두 벌을 넣지 않는다(2026-11-03 C8, 앱 코드는 assets 를 읽지 않는다). 원본 폴더는 그대로 둔다
+        getByName("main") { assets.setSrcDirs(emptyList<String>()) }
         // 새 버전을 받아 설치 화면을 여는 권한(REQUEST_INSTALL_PACKAGES)은 debug 와 같은 파일을 쓴다.
         getByName("qa") { manifest.srcFile("src/debug/AndroidManifest.xml") }
         // 테스트 APK 의 스스로 업데이트 코드는 debug · qa 에만 넣는다. 스토어 판에는 빈 자리만 —
@@ -291,6 +295,8 @@ dependencies {
     implementation(project(":shared"))
     // 폰 DB(Room KMP — 표 · DAO · AppDatabase, 옛 판 길 AppMigrations). 파일 이름 strideup.db 그대로
     implementation(project(":sharedData"))
+    // 화면(Compose Multiplatform) — 안드로이드 · iOS 가 같은 화면 코드를 쓴다(2026-11-03 C8, docs/ios/README.md "화면")
+    implementation(project(":sharedUi"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)

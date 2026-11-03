@@ -10,7 +10,7 @@ import kotlin.math.hypot
  * 3 → 2 → 1 → 0 → StepUP! → 가운데에서 지도가 펼쳐짐. t=0 은 신발 점검 · 권한 준비가 끝나고 숫자 3 이 보인 순간이다.
  * 화면은 이 값을 그리기만 한다 — 시각(ms)을 넣으면 숫자 · 원호 · 로고 · 펼침의 모습이 나온다(FreeRunStartMotionTest).
  */
-internal object FreeRunStartMotion {
+object FreeRunStartMotion {
     /** 숫자 3 · 2 · 1 · 0 이 나오는 시각 */
     const val STEP_MS = 1_000L
     const val ZERO_AT = 3_000L

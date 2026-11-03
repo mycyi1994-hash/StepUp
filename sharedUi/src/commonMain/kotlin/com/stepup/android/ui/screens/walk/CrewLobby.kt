@@ -100,11 +100,11 @@ import com.stepup.android.ui.theme.StepUpFonts
  */
 
 /** 그리드에 두는 칸 — 3 × 2. 더 많으면 다섯 사람과 "+N"(전체 명단) */
-internal const val CREW_GRID_MAX = 6
+const val CREW_GRID_MAX = 6
 
 /** 크루 대기실 — 상태 없이 그린다. 권한 · 중복 시작 막기는 서버와 저장소가 한다 */
 @Composable
-internal fun CrewLobbyContent(
+fun CrewLobbyContent(
     party: PartyState,
     title: String,
     resultPoints: Double?,
@@ -376,16 +376,16 @@ internal fun CrewLobbyContent(
 }
 
 /** 대기실 위 시트 — 하나만 */
-internal enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Levels, Shoes, Course, Leave, Start }
+enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Levels, Shoes, Course, Leave, Start }
 
 /** 진행자 메뉴(⋯) */
-internal enum class LobbyMenu { Roster, Course, Call, Rules, Leave }
+enum class LobbyMenu { Roster, Course, Call, Rules, Leave }
 
 /** 대기실 대신 보이는 한 화면 — 불러오기 실패(69) · 나옴(70) · 닫힘 · 찼음 · 출발함 · 출발을 놓침 · 로그인 */
-internal enum class LobbyTerminal { FAILED, REMOVED, CLOSED, FULL, STARTED, MISSED, SIGN_IN }
+enum class LobbyTerminal { FAILED, REMOVED, CLOSED, FULL, STARTED, MISSED, SIGN_IN }
 
 /** 이 상태면 방 화면 대신 한 화면 — 방에 들어가기 전의 연결 실패 · 다시 들어갈 수 없는 까닭 */
-internal fun lobbyTerminal(party: PartyState): LobbyTerminal? = when (party.problem) {
+fun lobbyTerminal(party: PartyState): LobbyTerminal? = when (party.problem) {
     PartyProblem.SIGN_IN -> LobbyTerminal.SIGN_IN
     PartyProblem.REMOVED -> LobbyTerminal.REMOVED
     PartyProblem.CLOSED -> LobbyTerminal.CLOSED
@@ -825,7 +825,7 @@ private fun Metric(
 }
 
 /** 공용 체력 숫자 — 소수 한 자리(0 이면 뗀다) · 천 단위 쉼표. 남은 양을 올려 보이지 않게 버린다 */
-internal fun poolNumber(value: Double): String {
+fun poolNumber(value: Double): String {
     val plain = CrewRunMath.amount(value)
     val whole = plain.substringBefore('.')
     val grouped = whole.reversed().chunked(3).joinToString(",").reversed()
@@ -937,7 +937,7 @@ private fun LobbyTextButton(label: String, onClick: () -> Unit, tag: String) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun LobbySheetFrame(
+fun LobbySheetFrame(
     title: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,

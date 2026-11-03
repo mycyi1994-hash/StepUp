@@ -165,4 +165,4 @@ private fun SummaryCell(label: String, modifier: Modifier, value: @Composable Co
 }
 
 /** 확대 지도에 그릴 경로 점 수 — 확대해도 꺾임이 보이지 않을 만큼 */
-internal const val ZOOM_ROUTE_POINTS = 1500
+const val ZOOM_ROUTE_POINTS = 1500

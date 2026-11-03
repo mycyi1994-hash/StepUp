@@ -472,7 +472,7 @@ private fun EmptyHistory(filter: LedgerFilter, onShowAll: () -> Unit) {
 
 /** 안내 한 덩어리 — 그림 · 제목 · 한 줄 · (있으면) 버튼 하나 */
 @Composable
-internal fun WalletState(
+fun WalletState(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     body: String,
@@ -677,7 +677,7 @@ private fun BenefitLine(label: String, value: String) {
  * 금액 글자 — 기존 정밀도(원장 소수 4자리 → 두 자리, 0 쪽으로). [signed] 면 +/−, 아니면 음수에만 −(잔액이 음수여도 숨기지 않는다).
  * 0 은 부호 없이("-0.00" 없음).
  */
-internal fun amountText(value: Double, signed: Boolean): String {
+fun amountText(value: Double, signed: Boolean): String {
     val magnitude = formatSupDown(kotlin.math.abs(value), 2)
     return when {
         magnitude == formatSupDown(0.0, 2) -> magnitude

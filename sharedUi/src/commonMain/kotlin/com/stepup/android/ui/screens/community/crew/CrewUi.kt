@@ -109,7 +109,7 @@ import com.stepup.android.ui.theme.StepUpFonts
 
 /** 크루 화면의 색 — 어두운 테마는 시안 값, 밝은 테마는 러닝 리메이크의 밝은 값과 같은 관계 */
 @Immutable
-internal class CrewInk(
+class CrewInk(
     val canvas: Color,
     /** 패널 면(아래쪽) · 위쪽 */
     val card: Color,
@@ -187,29 +187,29 @@ private val LightCrewInk = CrewInk(
 )
 
 @Composable
-internal fun crewInk(): CrewInk = if (StepUpColors.dark) DarkCrewInk else LightCrewInk
+fun crewInk(): CrewInk = if (StepUpColors.dark) DarkCrewInk else LightCrewInk
 
-internal val CrewGutter = 20.dp
+val CrewGutter = 20.dp
 
 /** 이름 이미지 바탕 네 가지(시안 30) — 글자는 옅은 초록빛 흰색. 크루가 고른 고유 색이라 앱 색으로 바꾸지 않는다 */
-internal val CrewNamedColors = listOf(Color(0xFF263D47), Color(0xFF403343), Color(0xFF233C58), Color(0xFF383E32))
+val CrewNamedColors = listOf(Color(0xFF263D47), Color(0xFF403343), Color(0xFF233C58), Color(0xFF383E32))
 private val CrewNamedText = Color(0xFFE9EEE6)
 
 /** 크루장 동그라미 — 크루 바탕보다 조금 밝은 톤(시안의 크루장 색과 같은 관계) */
-internal val CrewLeaderColors = listOf(Color(0xFF34505B), Color(0xFF4B3D4E), Color(0xFF2E4A6A), Color(0xFF474D3F))
+val CrewLeaderColors = listOf(Color(0xFF34505B), Color(0xFF4B3D4E), Color(0xFF2E4A6A), Color(0xFF474D3F))
 
 /** 사람 동그라미 — 이름마다 정해진 차분한 색(시안 명단의 갈색 · 파랑 · 초록 · 보라 · 붉은 톤) */
 private val CrewPersonColors = listOf(
     Color(0xFF5A3A30), Color(0xFF1F4A7A), Color(0xFF2F5A47), Color(0xFF453A78), Color(0xFF6A3343), Color(0xFF1F5C66),
 )
 
-internal fun crewPersonFace(name: String): Color =
+fun crewPersonFace(name: String): Color =
     CrewPersonColors[com.stepup.android.domain.javaFloorMod(com.stepup.android.domain.javaHash(name.trim()), CrewPersonColors.size)]
 
 // ── 패널 ─────────────────────────────────────────────────────
 
 /** 패널 면 — 남색 그라데이션 · 얇은 파란 둘레(카드 · 정보 칸 · 목표 칸) */
-internal fun Modifier.crewPanel(ink: CrewInk, radius: Dp = 16.dp, selected: Boolean = false): Modifier {
+fun Modifier.crewPanel(ink: CrewInk, radius: Dp = 16.dp, selected: Boolean = false): Modifier {
     val shape = RoundedCornerShape(radius)
     return this.clip(shape)
         .background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
@@ -223,7 +223,7 @@ internal fun Modifier.crewPanel(ink: CrewInk, radius: Dp = 16.dp, selected: Bool
  * 불러오는 동안에도 이름 이미지를 먼저 보인다(가짜 크루 정보를 먼저 보이지 않는다).
  */
 @Composable
-internal fun CrewImage(card: CrewCard, size: Dp, radius: Dp, modifier: Modifier = Modifier, textSize: TextUnit? = null) {
+fun CrewImage(card: CrewCard, size: Dp, radius: Dp, modifier: Modifier = Modifier, textSize: TextUnit? = null) {
     var bitmap by remember(card.id) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(card.id, card.imageVer, card.hasImage) {
         bitmap = if (!card.hasImage) null else runCatching {
@@ -235,7 +235,7 @@ internal fun CrewImage(card: CrewCard, size: Dp, radius: Dp, modifier: Modifier 
 
 /** 초안 · 미리보기의 이미지 — 고른 사진 또는 이름 이미지 */
 @Composable
-internal fun CrewImageFace(
+fun CrewImageFace(
     name: String,
     bg: Int,
     photo: ImageBitmap?,
@@ -284,7 +284,7 @@ private fun CrewNameText(name: String, size: Dp, textSize: TextUnit?) {
 
 /** 초안 사진 파일을 읽는다 */
 @Composable
-internal fun rememberDraftPhoto(path: String?): ImageBitmap? {
+fun rememberDraftPhoto(path: String?): ImageBitmap? {
     var bitmap by remember(path) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(path) {
         bitmap = path?.let { p ->
@@ -300,7 +300,7 @@ internal fun rememberDraftPhoto(path: String?): ImageBitmap? {
 
 /** 레벨 칩 — 평문 "Lv.7", 저장된 레벨이 없으면 "새 크루"(청록 테두리) */
 @Composable
-internal fun CrewLevelChip(level: Int?, modifier: Modifier = Modifier) {
+fun CrewLevelChip(level: Int?, modifier: Modifier = Modifier) {
     val ink = crewInk()
     val shape = RoundedCornerShape(8.dp)
     Box(
@@ -321,7 +321,7 @@ internal fun CrewLevelChip(level: Int?, modifier: Modifier = Modifier) {
 
 /** 사람 둘 그림 + "24 / 30명" (정원이 없으면 "24명") */
 @Composable
-internal fun CrewMembersLabel(members: Int, capacity: Int?, color: Color, modifier: Modifier = Modifier) {
+fun CrewMembersLabel(members: Int, capacity: Int?, color: Color, modifier: Modifier = Modifier) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         PeopleIcon(color, Modifier.size(18.dp))
         Text(
@@ -333,7 +333,7 @@ internal fun CrewMembersLabel(members: Int, capacity: Int?, color: Color, modifi
 
 /** 시안의 사람 둘 그림(선) */
 @Composable
-internal fun PeopleIcon(color: Color, modifier: Modifier) {
+fun PeopleIcon(color: Color, modifier: Modifier) {
     Canvas(modifier) {
         val s = size.width / 24f
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * s * 1.5f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
@@ -352,18 +352,18 @@ internal fun PeopleIcon(color: Color, modifier: Modifier) {
 
 /** 한 사람의 첫 글자 동그라미 */
 @Composable
-internal fun CrewAvatar(name: String, size: Dp, face: Color, textColor: Color, modifier: Modifier = Modifier) {
+fun CrewAvatar(name: String, size: Dp, face: Color, textColor: Color, modifier: Modifier = Modifier) {
     Box(modifier.size(size).clip(CircleShape).background(face), contentAlignment = Alignment.Center) {
         Text(CrewRules.initial(name), color = textColor, fontSize = (size.value * 0.36f).sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
 /** 크루장 동그라미 색 — 크루 바탕과 같은 결 */
-internal fun leaderFace(card: CrewCard): Color = CrewLeaderColors[com.stepup.android.domain.javaFloorMod(card.bg, CrewLeaderColors.size)]
+fun leaderFace(card: CrewCard): Color = CrewLeaderColors[com.stepup.android.domain.javaFloorMod(card.bg, CrewLeaderColors.size)]
 
 /** 이번 주 목표 한 줄 — "이번 주 126 / 160km ━━━━━ 79%". 막대 길이는 실제 비율, 100% 를 넘으면 막대만 끝까지 */
 @Composable
-internal fun CrewWeeklyLine(progress: CrewGoalProgress, modifier: Modifier = Modifier) {
+fun CrewWeeklyLine(progress: CrewGoalProgress, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
@@ -381,7 +381,7 @@ internal fun CrewWeeklyLine(progress: CrewGoalProgress, modifier: Modifier = Mod
 
 /** 가는 진행 막대 — 100% 까지만 채운다 */
 @Composable
-internal fun CrewBar(fraction: Float, modifier: Modifier) {
+fun CrewBar(fraction: Float, modifier: Modifier) {
     val ink = crewInk()
     Canvas(modifier) {
         val r = CornerRadius(size.height / 2, size.height / 2)
@@ -393,14 +393,14 @@ internal fun CrewBar(fraction: Float, modifier: Modifier) {
 
 // ── 버튼 ─────────────────────────────────────────────────────
 
-internal enum class CrewButtonKind { PRIMARY, SECONDARY, DANGER, DISABLED }
+enum class CrewButtonKind { PRIMARY, SECONDARY, DANGER, DISABLED }
 
 /**
  * 큰 버튼 — 통합안 버튼(주 = 블루 알약 + 원 화살표, 보조 = 회색 알약). 삭제성 행동(내보내기 · 나가기 · 해산 · 초안 지우기)은
  * 회색 알약 + 빨간 글자. 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
  */
 @Composable
-internal fun CrewButton(
+fun CrewButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -451,7 +451,7 @@ private fun CrewDangerButton(text: String, onClick: () -> Unit, modifier: Modifi
 
 /** 글자만 있는 작은 행동 — 시트의 "취소" · 결과의 "크루 채팅 열기"(청록) */
 @Composable
-internal fun CrewTextAction(
+fun CrewTextAction(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -473,7 +473,7 @@ internal fun CrewTextAction(
 
 /** 작은 테두리 버튼 — 카드의 "크루 보기"(청록 테두리 · 흰 글자, 누르는 곳 48dp) */
 @Composable
-internal fun CrewSmallButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CrewSmallButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Box(
         modifier.heightIn(min = 48.dp).feedbackClickable(role = Role.Button, onClick = onClick).padding(vertical = 4.dp),
@@ -496,7 +496,7 @@ internal fun CrewSmallButton(text: String, onClick: () -> Unit, modifier: Modifi
  * [enabled] 가 거짓이고 고른 상태면 누르지 않는 표시 칸(러닝 스타일 · 신청 문구)이다.
  */
 @Composable
-internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val c = com.stepup.android.ui.components.StepUpUi.colors
     val shape = RoundedCornerShape(9.dp)
     Box(
@@ -518,7 +518,7 @@ internal fun CrewChoice(text: String, selected: Boolean, onClick: () -> Unit, mo
 
 /** 한 줄에 고르는 칸 여러 개 — 회색 트랙 하나에 폭을 나눈다(세그먼트) */
 @Composable
-internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
+fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
     val c = com.stepup.android.ui.components.StepUpUi.colors
     Row(
         Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(11.dp)).background(c.card)
@@ -531,7 +531,7 @@ internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
 
 /** 크루 화면 머리 — 왼쪽 뒤로(가는 꺾쇠) · 가운데 제목 · 오른쪽 더보기(•••) 하나 */
 @Composable
-internal fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, onMore: (() -> Unit)? = null) {
+fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, onMore: (() -> Unit)? = null) {
     val ink = crewInk()
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp),
@@ -560,7 +560,7 @@ internal fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = 
 
 /** 설정 줄 — 이름, 오른쪽 값(청록), 꺾쇠, 아래 파란 선 */
 @Composable
-internal fun CrewRow(
+fun CrewRow(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -594,7 +594,7 @@ internal fun CrewRow(
 
 /** 더보기 · 관리 시트의 한 줄 — 테두리 있는 칸, 앞에 그림(있으면) · 이름 · 꺾쇠. 삭제성 행동은 코랄 글자 */
 @Composable
-internal fun CrewMenuRow(
+fun CrewMenuRow(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -627,7 +627,7 @@ internal fun CrewMenuRow(
 
 /** 사람 한 줄 — 동그라미 · 이름(· 크루장 표시) · 역할 줄 · 파란 꺾쇠 */
 @Composable
-internal fun CrewPersonRow(
+fun CrewPersonRow(
     name: String,
     sub: String,
     onClick: () -> Unit,
@@ -667,7 +667,7 @@ internal fun CrewPersonRow(
 
 /** 이름 옆 작은 파란 표시 — "크루장" */
 @Composable
-internal fun CrewBadge(text: String, modifier: Modifier = Modifier) {
+fun CrewBadge(text: String, modifier: Modifier = Modifier) {
     Text(
         text, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1,
         modifier = modifier.clip(RoundedCornerShape(50)).background(Color(0xFF0754FF)).padding(horizontal = 9.dp, vertical = 2.dp),
@@ -676,7 +676,7 @@ internal fun CrewBadge(text: String, modifier: Modifier = Modifier) {
 
 /** 크루 머리 띠 — 이미지 · 이름 · "공덕 · 크루장 준호"(신청 · 관리 · 목표 화면 위) */
 @Composable
-internal fun CrewIdentityStrip(card: CrewCard, modifier: Modifier = Modifier, sub: String? = null, boxed: Boolean = true) {
+fun CrewIdentityStrip(card: CrewCard, modifier: Modifier = Modifier, sub: String? = null, boxed: Boolean = true) {
     val ink = crewInk()
     Row(
         modifier.fillMaxWidth()
@@ -693,14 +693,14 @@ internal fun CrewIdentityStrip(card: CrewCard, modifier: Modifier = Modifier, su
 }
 
 @Composable
-internal fun crewAreaLeader(card: CrewCard): String {
+fun crewAreaLeader(card: CrewCard): String {
     val leader = stringResource(Res.string.crew_leader_named, card.leaderName)
     return listOf(card.area.takeIf { it.isNotBlank() }, leader).filterNotNull().joinToString(" · ")
 }
 
 /** 큰 제목 · 설명(목록 · 명단 · 만들기 화면 위) */
 @Composable
-internal fun CrewHeading(title: String, modifier: Modifier = Modifier, sub: String? = null, titleTag: String? = null, eyebrow: String? = null) {
+fun CrewHeading(title: String, modifier: Modifier = Modifier, sub: String? = null, titleTag: String? = null, eyebrow: String? = null) {
     val ink = crewInk()
     Column(modifier.fillMaxWidth()) {
         if (eyebrow != null) {
@@ -719,7 +719,7 @@ internal fun CrewHeading(title: String, modifier: Modifier = Modifier, sub: Stri
 }
 
 /** 굵은 제목 글자 — 시안의 큰 한국어 제목 */
-internal fun crewTitleStyle(color: Color, size: TextUnit): TextStyle = TextStyle(
+fun crewTitleStyle(color: Color, size: TextUnit): TextStyle = TextStyle(
     fontFamily = StepUpFonts.sans, fontWeight = FontWeight.ExtraBold, fontSize = size, lineHeight = 1.3.em,
     letterSpacing = (-0.02).em, color = color,
 )
@@ -730,7 +730,7 @@ internal fun crewTitleStyle(color: Color, size: TextUnit): TextStyle = TextStyle
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CrewSheet(
+fun CrewSheet(
     title: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -799,7 +799,7 @@ internal fun CrewSheet(
 
 /** 시트 · 화면 안의 짧은 오류 줄 — 코랄 느낌표 · 글(색만으로 알리지 않게 그림을 함께) */
 @Composable
-internal fun CrewErrorLine(text: String, modifier: Modifier = Modifier, boxed: Boolean = false) {
+fun CrewErrorLine(text: String, modifier: Modifier = Modifier, boxed: Boolean = false) {
     val ink = crewInk()
     val shape = RoundedCornerShape(12.dp)
     Row(
@@ -822,7 +822,7 @@ internal fun CrewErrorLine(text: String, modifier: Modifier = Modifier, boxed: B
  * 실패하면 같은 시트 안에 오류를 보이고 그대로 다시 누를 수 있다.
  */
 @Composable
-internal fun CrewConfirmSheet(
+fun CrewConfirmSheet(
     title: String,
     body: String,
     confirm: String,
@@ -856,7 +856,7 @@ internal fun CrewConfirmSheet(
 
 /** 결과 화면의 동그라미 — 남색 원 · 청록 체크(또는 안내) · 은은한 빛 */
 @Composable
-internal fun CrewResultArt(info: Boolean = false, modifier: Modifier = Modifier) {
+fun CrewResultArt(info: Boolean = false, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Box(
         modifier.size(112.dp).drawBehind {
@@ -880,7 +880,7 @@ internal fun CrewResultArt(info: Boolean = false, modifier: Modifier = Modifier)
  * [info] 면 미승인처럼 왼쪽 정렬 큰 제목(그림 없음)으로 보인다.
  */
 @Composable
-internal fun CrewResultPage(
+fun CrewResultPage(
     title: String,
     body: String,
     button: String,
@@ -940,7 +940,7 @@ internal fun CrewResultPage(
 
 /** 가운데 안내(빈 목록 · 실패 · 볼 수 없음) — 그림 · 제목 · 설명 · 버튼들 */
 @Composable
-internal fun CrewEmptyState(
+fun CrewEmptyState(
     icon: @Composable () -> Unit,
     title: String,
     body: String,
@@ -970,7 +970,7 @@ internal fun CrewEmptyState(
 
 /** 빈 화면 그림 — 옅은 파랑 선 그림(원 없이). [circled] 면 파란 원 안에(검색 결과 없음) */
 @Composable
-internal fun CrewStateIcon(icon: ImageVector, modifier: Modifier = Modifier, circled: Boolean = false) {
+fun CrewStateIcon(icon: ImageVector, modifier: Modifier = Modifier, circled: Boolean = false) {
     val ink = crewInk()
     val tint = if (StepUpColors.dark) Color(0xFFBFD6FF) else ink.link
     if (circled) {
@@ -985,20 +985,20 @@ internal fun CrewStateIcon(icon: ImageVector, modifier: Modifier = Modifier, cir
 
 /** 불러오는 중의 빈 모양 — 가짜 크루 정보를 먼저 보이지 않는다 */
 @Composable
-internal fun CrewSkeletonBox(modifier: Modifier, radius: Dp = 10.dp) {
+fun CrewSkeletonBox(modifier: Modifier, radius: Dp = 10.dp) {
     val ink = crewInk()
     Box(modifier.clip(RoundedCornerShape(radius)).background(ink.skeleton))
 }
 
 /** 입력칸 이름 · 칸 · 도움말(또는 오류) */
 @Composable
-internal fun CrewFieldLabel(text: String, modifier: Modifier = Modifier) {
+fun CrewFieldLabel(text: String, modifier: Modifier = Modifier) {
     Text(text, style = com.stepup.android.ui.components.StepUpUi.type.rowTitle.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
         color = com.stepup.android.ui.components.StepUpUi.colors.label, modifier = modifier)
 }
 
 @Composable
-internal fun CrewHelp(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
+fun CrewHelp(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
     val c = com.stepup.android.ui.components.StepUpUi.colors
     Text(
         text, style = com.stepup.android.ui.components.StepUpUi.type.caption, color = if (error) c.live else c.secondaryLabel,
@@ -1008,7 +1008,7 @@ internal fun CrewHelp(text: String, error: Boolean = false, modifier: Modifier =
 
 /** 입력칸 — 남색 칸 · 파란 테두리(쓰는 중이면 밝게, 오류면 코랄) */
 @Composable
-internal fun CrewTextField(
+fun CrewTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -1054,7 +1054,7 @@ internal fun CrewTextField(
 
 /** 입력처럼 보이는 고르기 줄(활동 지역 · 정기 모임) */
 @Composable
-internal fun CrewPickerField(text: String, placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun CrewPickerField(text: String, placeholder: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val c = com.stepup.android.ui.components.StepUpUi.colors
     val shape = RoundedCornerShape(14.dp)
     Row(
@@ -1073,7 +1073,7 @@ internal fun CrewPickerField(text: String, placeholder: String, onClick: () -> U
 
 /** 화면 바탕 — 남색, 위가 조금 밝고 오른쪽 위에서 파란 빛이 번진다(러닝 리메이크와 같은 바닥) */
 @Composable
-internal fun CrewPage(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun CrewPage(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Box(modifier.fillMaxSize()) {
         RunBackdrop(Modifier.matchParentSize())
         Column(Modifier.fillMaxSize(), content = content)
@@ -1082,7 +1082,7 @@ internal fun CrewPage(modifier: Modifier = Modifier, content: @Composable Column
 
 /** 아래 고정 버튼 자리 — 위 한 줄 설명(오류면 코랄 느낌표) · 버튼. 시스템 아래 영역 위에 선다 */
 @Composable
-internal fun CrewBottomBar(caption: String? = null, captionError: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+fun CrewBottomBar(caption: String? = null, captionError: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     val ink = crewInk()
     Column(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = CrewGutter).padding(top = 8.dp, bottom = 14.dp),
@@ -1105,12 +1105,12 @@ internal fun CrewBottomBar(caption: String? = null, captionError: Boolean = fals
 
 /** 화면이 너비를 모를 때 쓰는 비율(작은 화면) */
 @Composable
-internal fun rememberCompact(content: @Composable (Boolean) -> Unit) {
+fun rememberCompact(content: @Composable (Boolean) -> Unit) {
     BoxWithConstraints { content(maxWidth < 360.dp) }
 }
 
 /** 비트맵이 없을 때의 편의 */
-internal fun ImageBitmap?.orImage(): ImageBitmap? = this
+fun ImageBitmap?.orImage(): ImageBitmap? = this
 
 /** 글자 스타일 — 러닝 리메이크와 같은 글꼴 · 줄 간격 */
-internal fun crewText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal): TextStyle = runTextStyle(size, color, weight)
+fun crewText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal): TextStyle = runTextStyle(size, color, weight)

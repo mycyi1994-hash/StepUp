@@ -83,7 +83,7 @@ import com.stepup.android.ui.theme.StepUpFonts
 
 /** 두 영역의 색 — 어두운 테마는 시안 토큰, 밝은 테마는 같은 관계의 밝은 값 */
 @Immutable
-internal class BlueInk(
+class BlueInk(
     val canvas: Color,
     val canvasTop: Color,
     val card: Color,
@@ -150,21 +150,21 @@ private val LightBlueInk = BlueInk(
 )
 
 @Composable
-internal fun blueInk(): BlueInk = if (StepUpColors.dark) DarkBlueInk else LightBlueInk
+fun blueInk(): BlueInk = if (StepUpColors.dark) DarkBlueInk else LightBlueInk
 
 /** 화면 좌우(시안 20dp) */
-internal val BlueGutter = 20.dp
+val BlueGutter = 20.dp
 
 private val SurfaceShape = RoundedCornerShape(16.dp)
 
-internal fun blueText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f): TextStyle =
+fun blueText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f): TextStyle =
     TextStyle(fontFamily = StepUpFonts.sans, fontSize = size, color = color, fontWeight = weight, lineHeight = size * height)
 
 // ── 바닥 · 머리 ────────────────────────────────────────────────
 
 /** 화면 바닥 — 남색, 위가 아주 조금 밝다 */
 @Composable
-internal fun BluePage(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun BluePage(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val ink = blueInk()
     Column(
         modifier.fillMaxSize().background(Brush.verticalGradient(0f to ink.canvasTop, 0.35f to ink.canvas, 1f to ink.canvas)),
@@ -177,7 +177,7 @@ internal fun BluePage(modifier: Modifier = Modifier, content: @Composable Column
  * [subtitle] 은 제목 아래 작은 줄(혼자 있는 새 크루의 "크루원 1명").
  */
 @Composable
-internal fun BlueTopBar(
+fun BlueTopBar(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -211,13 +211,13 @@ internal fun BlueTopBar(
 
 /** 뒤로 — 가는 꺾쇠 하나(48dp 누르는 곳) */
 @Composable
-internal fun BlueBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun BlueBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     com.stepup.android.ui.components.RunBackButton(onBack, modifier, tint = blueInk().text)
 }
 
 /** ••• (더보기) */
 @Composable
-internal fun BlueMoreButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BlueMoreButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val ink = blueInk()
     val label = stringResource(Res.string.chat_more)
     Box(
@@ -234,14 +234,14 @@ internal fun BlueMoreButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
 
 // ── 버튼 ────────────────────────────────────────────────────────
 
-internal enum class BlueKind { PRIMARY, SECONDARY, DANGER, DISABLED }
+enum class BlueKind { PRIMARY, SECONDARY, DANGER, DISABLED }
 
 /**
  * 버튼 — 통합안 버튼(주 = 블루 알약 54 + 원 화살표, 보조 = 회색 알약, 위험 = 회색 알약 + 빨간 글자, 막힘 = 흐린 회색).
  * 처리 중이면 도는 표시와 함께 다시 누를 수 없다.
  */
 @Composable
-internal fun BlueButton(
+fun BlueButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -263,7 +263,7 @@ internal fun BlueButton(
 
 /** 아래 고정 버튼 자리 — 시스템 아래 영역 위에 선다 */
 @Composable
-internal fun BlueBottomBar(caption: String? = null, content: @Composable ColumnScope.() -> Unit) {
+fun BlueBottomBar(caption: String? = null, content: @Composable ColumnScope.() -> Unit) {
     val ink = blueInk()
     Column(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = BlueGutter).padding(top = 8.dp, bottom = 16.dp),
@@ -280,7 +280,7 @@ internal fun BlueBottomBar(caption: String? = null, content: @Composable ColumnS
 
 /** 테두리 면(16dp) — 남색 면 · 파란 둘레. [selected] 면 둘레가 밝다 */
 @Composable
-internal fun BlueSurface(
+fun BlueSurface(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     selected: Boolean = false,
@@ -299,13 +299,13 @@ internal fun BlueSurface(
 }
 
 @Composable
-internal fun BlueDivider(modifier: Modifier = Modifier) {
+fun BlueDivider(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(1.dp).background(blueInk().divider))
 }
 
 /** 설정 줄 — 이름, 오른쪽 값(청록), 꺾쇠, 아래 선 */
 @Composable
-internal fun BlueRow(
+fun BlueRow(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -351,7 +351,7 @@ internal fun BlueRow(
 
 /** 사람 한 줄 — 동그라미 · 이름 · 역할 줄 · 꺾쇠 */
 @Composable
-internal fun BluePersonRow(name: String, sub: String, onClick: () -> Unit, modifier: Modifier = Modifier, subColor: Color? = null, owner: Boolean = false) {
+fun BluePersonRow(name: String, sub: String, onClick: () -> Unit, modifier: Modifier = Modifier, subColor: Color? = null, owner: Boolean = false) {
     val ink = blueInk()
     Row(
         modifier.fillMaxWidth().heightIn(min = 76.dp).feedbackClickable(onClick = onClick),
@@ -374,13 +374,13 @@ internal fun BluePersonRow(name: String, sub: String, onClick: () -> Unit, modif
 
 /** 불러오는 중의 빈 모양 — 가짜 크루 정보를 먼저 보이지 않는다 */
 @Composable
-internal fun BlueSkeleton(modifier: Modifier, radius: Dp = 10.dp) {
+fun BlueSkeleton(modifier: Modifier, radius: Dp = 10.dp) {
     Box(modifier.clip(RoundedCornerShape(radius)).background(blueInk().skeleton))
 }
 
 /** 레벨 칩 — 저장된 레벨이 없으면 "새 크루" */
 @Composable
-internal fun BlueLevelChip(level: Int?, modifier: Modifier = Modifier, large: Boolean = false) {
+fun BlueLevelChip(level: Int?, modifier: Modifier = Modifier, large: Boolean = false) {
     val ink = blueInk()
     val shape = RoundedCornerShape(10.dp)
     Box(
@@ -397,7 +397,7 @@ internal fun BlueLevelChip(level: Int?, modifier: Modifier = Modifier, large: Bo
 
 /** 진행 막대 — 어두운 길에 청록 채움(100% 까지만 채운다. 숫자는 자르지 않는다) */
 @Composable
-internal fun BlueBar(fraction: Float, modifier: Modifier) {
+fun BlueBar(fraction: Float, modifier: Modifier) {
     val ink = blueInk()
     Canvas(modifier) {
         val r = CornerRadius(size.height / 2, size.height / 2)
@@ -410,13 +410,13 @@ internal fun BlueBar(fraction: Float, modifier: Modifier) {
 // ── 입력 ────────────────────────────────────────────────────────
 
 @Composable
-internal fun BlueFieldLabel(text: String, modifier: Modifier = Modifier) {
+fun BlueFieldLabel(text: String, modifier: Modifier = Modifier) {
     Text(text, style = blueText(15.sp, blueInk().text, FontWeight.Bold), modifier = modifier)
 }
 
 /** 입력칸 — 남색 면 · 파란 둘레(모서리 14 · 52dp 이상). [maxChars] 를 넘는 글은 받지 않는다 */
 @Composable
-internal fun BlueTextField(
+fun BlueTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -452,7 +452,7 @@ internal fun BlueTextField(
 
 /** 입력처럼 보이는 고르기 줄(모임 연결) — 앞 아이콘(있으면) · 글 · 아래 꺾쇠 */
 @Composable
-internal fun BluePickerField(
+fun BluePickerField(
     text: String,
     placeholder: String,
     onClick: () -> Unit,
@@ -482,7 +482,7 @@ internal fun BluePickerField(
 
 /** 지우기 X(입력값만 지운다) — 검색칸 오른쪽 */
 @Composable
-internal fun BlueClearButton(label: String, onClear: () -> Unit, modifier: Modifier = Modifier) {
+fun BlueClearButton(label: String, onClear: () -> Unit, modifier: Modifier = Modifier) {
     val ink = blueInk()
     Box(
         modifier.size(44.dp).clip(CircleShape).feedbackClickable(onClick = onClear).semantics { contentDescription = label },
@@ -498,7 +498,7 @@ internal fun BlueClearButton(label: String, onClear: () -> Unit, modifier: Modif
 
 /** 가는 청록 고리 안의 아이콘(접수 · 종료 · 다시 불러오기) */
 @Composable
-internal fun BlueStateIcon(icon: ImageVector, modifier: Modifier = Modifier, ring: Boolean = true) {
+fun BlueStateIcon(icon: ImageVector, modifier: Modifier = Modifier, ring: Boolean = true) {
     val ink = blueInk()
     Box(
         modifier.size(68.dp).then(if (ring) Modifier.border(2.dp, ink.info, CircleShape) else Modifier),
@@ -508,7 +508,7 @@ internal fun BlueStateIcon(icon: ImageVector, modifier: Modifier = Modifier, rin
 
 /** 가운데 안내(빈 목록 · 실패 · 볼 수 없음) — 그림 · 제목 · 설명 · 버튼들 */
 @Composable
-internal fun BlueEmptyState(
+fun BlueEmptyState(
     icon: @Composable () -> Unit,
     title: String,
     body: String,
@@ -532,7 +532,7 @@ internal fun BlueEmptyState(
  * 확인 · 안내 시트는 가운데. 바깥 · 뒤로 · X 는 바꾸기 전으로 돌아간다(처리 중에는 닫히지 않는다).
  */
 @Composable
-internal fun BlueSheet(
+fun BlueSheet(
     title: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -557,7 +557,7 @@ internal fun BlueSheet(
 
 /** 시트 본문 — 가운데 시트는 가운데로 */
 @Composable
-internal fun BlueSheetBody(text: String, modifier: Modifier = Modifier, centered: Boolean = true, color: Color? = null) {
+fun BlueSheetBody(text: String, modifier: Modifier = Modifier, centered: Boolean = true, color: Color? = null) {
     val ink = blueInk()
     Text(
         text, style = blueText(16.sp, color ?: ink.text.copy(alpha = 0.92f), FontWeight.Medium, 1.55f),
@@ -567,7 +567,7 @@ internal fun BlueSheetBody(text: String, modifier: Modifier = Modifier, centered
 
 /** 확인 시트 — 가운데 제목 · 설명 · [취소 · 행동]. 실패하면 같은 시트에 오류 */
 @Composable
-internal fun BlueConfirmSheet(
+fun BlueConfirmSheet(
     title: String,
     body: String,
     confirm: String,
@@ -603,7 +603,7 @@ internal fun BlueConfirmSheet(
 
 /** 하나를 고르는 줄(테두리 면) — 고르면 파란 둘레 · 청록 체크(알림 받기 · 신고 사유) */
 @Composable
-internal fun BlueChoiceRow(
+fun BlueChoiceRow(
     title: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -640,7 +640,7 @@ internal fun BlueChoiceRow(
 
 /** 결과 화면(접수 · 알림) — 고리 아이콘 · 제목 · 설명 · 바로 아래 버튼 하나 */
 @Composable
-internal fun BlueResultPage(
+fun BlueResultPage(
     title: String,
     body: String,
     button: String,
@@ -672,13 +672,13 @@ internal fun BlueResultPage(
 
 /** 세로 선 — 수치 사이 */
 @Composable
-internal fun BlueVerticalLine(modifier: Modifier = Modifier) {
+fun BlueVerticalLine(modifier: Modifier = Modifier) {
     Box(modifier.width(1.dp).fillMaxHeight().background(blueInk().divider))
 }
 
 /** 원 안의 체크(테두리만) — 고리 결과용 선 그림 */
 @Composable
-internal fun BlueRing(modifier: Modifier = Modifier) {
+fun BlueRing(modifier: Modifier = Modifier) {
     val ink = blueInk()
     Canvas(modifier) { drawCircle(ink.info, style = Stroke(2.dp.toPx())) }
 }

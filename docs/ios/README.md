@@ -85,8 +85,15 @@
   잠금 화면 러닝 현황(`LockRunPanel`)은 안드로이드 전용이라 app 에 남는다(iOS 는 라이브 액티비티 — 따로 정할 일).
 - **옮기는 도구**: `tools/port_ui_to_cmp.py`(R → Res · java.time · String.format · Toast · Intent 일부 · Context 빼기 …), `tools/prune_imports.py`,
   `tools/extract_kotlin_functions.py` · `tools/drop_kotlin_functions.py`.
-- **남은 일**: `:sharedUi` 에 `androidTarget()` 을 더해 안드로이드가 같은 화면(`MainScaffold`)을 쓰고 app 의 같은 파일을 지운다 —
-  안드로이드 쪽 이음새(actual: 권한 창 · 그림 공유 · 사진첩 · 지갑 앱 · RasterCache · 위치 미리 잡기 · 러닝 서비스 → `RunSessionControl`)를 채우고 테스트 APK 로 확인.
+- **안드로이드도 같은 화면(C8, 2026-11-03)**: `:sharedUi` 에 `androidTarget()` — 안드로이드 앱이 `implementation(project(":sharedUi"))` 로 같은 화면을 쓰고,
+  app 의 같은 파일 242개를 지웠다. 안드로이드 actual 은 `sharedUi/src/androidMain`(외부 인텐트 · 권한 창 · 사진 · 카메라 · 지도 타일 · 그림 공유 · 사진첩 · 지갑 앱 ·
+  위치(`LocationEngine` · `LocationWarmup` · `rememberCurrentLocation` 을 옮겼다) · 언어 · 알림 허용). 앱 쪽 이음새는 `app/.../core/AndroidGlue.kt` ·
+  `service/AndroidRunSession.kt` · `ServiceLocator.connectAppServices()`(검사가 저장소를 바꾸면 다시 잇는다).
+  - Compose Multiplatform 은 **1.11.1**(+ `org.jetbrains.androidx.lifecycle` 2.10.0) — 1.12 는 안드로이드에서 androidx Compose 1.12 를 끌어와 AGP 9.1 · compileSdk 37 을 요구한다.
+  - 앱 APK: 화면 그림 · 글꼴 · 장소 사진은 Compose 리소스(assets/composeResources) 한 벌 — 앱 `src/main/assets` 는 담지 않고(`sourceSets.main.assets` 비움),
+    res 는 엄격하게 줄인다(`res/raw/keep.xml`, release · qa). qa APK 크기는 옮기기 전과 같다(약 56MB).
+  - 공용 화면의 `internal` 은 모두 public 으로 — 안드로이드 검사(app/src/test · androidTest)가 다른 모듈이 된 화면 부품을 부른다.
+- **남은 일**: 테스트 APK 로 안드로이드 화면 · 러닝 · 로그인을 확인(Experience QA 에뮬레이터 검사 포함), 탭 넘김이 끊기면 `RasterCache`(안드로이드)에 미리 풀기를 더한다.
 
 ## Mac 에서 돌리기
 

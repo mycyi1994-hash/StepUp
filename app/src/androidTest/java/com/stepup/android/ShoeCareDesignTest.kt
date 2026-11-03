@@ -165,7 +165,7 @@ class ShoeCareDesignTest {
     }
 
     private companion object {
-        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        val SEOUL: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.of("Asia/Seoul")
 
         fun server(eff: Int, comfort: Int, durability: Double = 100.0, maxLevel: Int = 15, perPoint: Double = 1.5625, cost: Double = 625.0) =
             ServerStats(

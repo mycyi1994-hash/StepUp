@@ -145,7 +145,7 @@ private fun FaqRow(question: String, answer: String, open: Boolean, onToggle: ()
  * 메일 앱이 없으면 주소 복사로 잇는다. 복사는 클립보드에 실제로 들어간 뒤에만 2.5초 알린다(시트와 버튼은 그대로).
  */
 @Composable
-internal fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
+fun ContactSheet(onDismiss: () -> Unit, startFailed: Boolean = false) {
     val t = runTone()
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     val address = stringResource(Res.string.support_email)

@@ -467,6 +467,6 @@ fun CrewRemoveSheet(viewModel: CrewScreenViewModel, userId: String, name: String
 
 /** 정사각형 틀(사진 자르기 · 크게 보기) */
 @Composable
-internal fun CrewSquare(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun CrewSquare(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Box(modifier.fillMaxWidth().aspectRatio(1f)) { content() }
 }
