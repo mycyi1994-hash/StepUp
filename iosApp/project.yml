@@ -8,6 +8,11 @@ options:
   developmentLanguage: ko
   deploymentTarget:
     iOS: "16.0"
+# 구글 로그인 iOS SDK(Swift 패키지) — Apple 로그인은 시스템(AuthenticationServices)
+packages:
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
 configFiles:
   Debug: Configuration/Config.xcconfig
   Release: Configuration/Config.xcconfig
@@ -17,6 +22,13 @@ targets:
     platform: iOS
     sources:
       - path: StepUp
+    dependencies:
+      - package: GoogleSignIn
+    # Apple 로그인(심사 4.8 — 구글 로그인을 두면 함께 있어야 한다). 실기기 · TestFlight 는 App ID 에 같은 기능을 켠다
+    entitlements:
+      path: StepUp/StepUp.entitlements
+      properties:
+        com.apple.developer.applesignin: [Default]
     settings:
       base:
         PRODUCT_NAME: StepUp

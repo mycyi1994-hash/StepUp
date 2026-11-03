@@ -5,6 +5,7 @@ import { indexEvents, expireOps, reconcile, keepPaused } from './indexer.js'
 import { sneakerMetadata } from './meta.js'
 import { JOBS_CRON, runJobs } from './jobs.js'
 import { registerWaitlist } from './waitlist.js'
+import { revokeApple } from './apple.js'
 
 /**
  * StepUp 어테스터 v2 — 서버가 허락한 체인 작업만 서명하고, 가스비를 대신 내 보낸다.
@@ -138,6 +139,14 @@ export default {
       const meta = url.pathname.match(/^\/v([23])\/meta\/([^/]+)$/)
       if (meta && request.method === 'GET') {
         return metadataResponse(request, env, ctx, url, meta[2], meta[1])
+      }
+
+      // Apple 로그인 토큰 철회(iOS 계정 삭제 — src/apple.js). 체인 설정과 상관없이, 요청 수 제한은 같게
+      if (url.pathname === '/v1/apple/revoke' && request.method === 'POST') {
+        if (await rateLimited(request, env)) {
+          return json(request, env, { ok: false, error: '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요' }, 429)
+        }
+        return json(request, env, await revokeApple(request, env))
       }
 
       if (request.method === 'POST' && !configured(env)) {

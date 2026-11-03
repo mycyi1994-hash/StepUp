@@ -1,14 +1,39 @@
 import SwiftUI
 import StepUpKit
+#if canImport(GoogleSignIn)
+import GoogleSignIn
+#endif
 
 // iOS 앱의 입구 — 화면은 모두 Kotlin(Compose Multiplatform, :sharedUi)이 그린다. 여기에는 iOS 에만 있는 일
 // (위치 · 걸음 · 백그라운드 러닝 · Live Activity · 푸시 · 로그인)이 붙는다 — docs/ios/README.md.
 @main
 struct StepUpApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        UploadTask.register()
+        // 새로 깐 첫 실행이면 지난 설치의 키체인 로그인을 지운다(키체인은 앱을 지워도 남는다)
+        IosAuth.shared.onLaunch()
+        IosAuth.shared.ui = SignInUi()
+    }
+
     var body: some Scene {
         WindowGroup {
             ComposeRoot()
                 .ignoresSafeArea()
+                .onChange(of: scenePhase) { phase in
+                    switch phase {
+                    // 앞에 올 때 한 차례 올리고, 뒤로 갈 때 다음 차례를 맡긴다
+                    case .active: IosUploads.shared.run { _ in }
+                    case .background: UploadTask.schedule()
+                    default: break
+                    }
+                }
+                .onOpenURL { url in
+                    #if canImport(GoogleSignIn)
+                    _ = GIDSignIn.sharedInstance.handle(url)
+                    #endif
+                }
         }
     }
 }

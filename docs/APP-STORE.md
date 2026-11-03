@@ -26,9 +26,9 @@
 | Mac · 테스트용 아이폰 | — | iOS 빌드는 macOS 에서만 된다(CI 는 GitHub 의 macOS 러너 — `.github/workflows/ios.yml`). GPS · 화면 꺼진 러닝 · 잠금 화면은 실제 아이폰으로 밖에서 뛰어 봐야 한다 |
 | Team ID 알려 주기 | Apple Developer › Membership details | 10자리. `Config.xcconfig` 의 `TEAM_ID` 와 초대 링크용 `web/.well-known/apple-app-site-association` 에 들어간다 |
 | App ID 등록 | Certificates, Identifiers & Profiles › Identifiers | 위 번들 ID 로. 기능: **Sign in with Apple** · **Push Notifications** · **Associated Domains** |
-| **Apple 로그인** 키 | Identifiers › Services ID 하나 + Keys › Sign in with Apple 키(.p8) | Supabase › Authentication › Providers › Apple 에 Services ID · Team ID · Key ID · .p8 를 넣는다. 같은 .p8 는 계정 삭제 때 Apple 토큰을 끊는 데도 쓴다(서버 비밀 — 앱에 넣지 않는다) |
+| **Apple 로그인** 키 | Identifiers › Services ID 하나 + Keys › Sign in with Apple 키(.p8) | Supabase › Authentication › Providers › Apple 을 켜고 **Client IDs 에 앱 번들 ID** 를 넣는다(iOS 앱은 id_token 으로 로그인한다 — 대상이 번들 ID). 같은 .p8 는 계정 삭제 때 Apple 토큰을 끊는 데 쓴다 — 어테스터 워커 Secret `APPLE_TEAM_ID` · `APPLE_KEY_ID` · `APPLE_PRIVATE_KEY`(.p8 내용)로 넣는다(`attester/src/apple.js`, 앱에 넣지 않는다). 번들 ID 를 바꾸면 `attester/wrangler.toml` 의 `APPLE_CLIENT_ID` 도 |
 | 푸시 키(APNs .p8) | Keys › Apple Push Notifications service | Firebase 콘솔 › 프로젝트 설정 › iOS 앱 추가(`GoogleService-Info.plist`) › Cloud Messaging 에 올린다. 서버의 `push-send`(FCM)는 그대로 쓴다 |
-| 구글 로그인 iOS 클라이언트 | Google Cloud › API 및 서비스 › 사용자 인증 정보 › OAuth 클라이언트 ID(iOS) | 번들 ID 로 만든다. Supabase › Providers › Google › **Authorized Client IDs** 에 iOS 클라이언트 ID 를 더한다(안 하면 iOS 의 id_token 을 거절한다) |
+| 구글 로그인 iOS 클라이언트 | Google Cloud › API 및 서비스 › 사용자 인증 정보 › OAuth 클라이언트 ID(iOS) | 번들 ID 로 만든다. 클라이언트 ID 와 거꾸로 쓴 값을 `iosApp/Configuration/Config.xcconfig` 의 `GOOGLE_IOS_CLIENT_ID` · `GOOGLE_IOS_URL_SCHEME` 에 넣는다(비밀 아님). Supabase › Providers › Google › **Authorized Client IDs** 에 iOS 클라이언트 ID 를 더한다(안 하면 iOS 의 id_token 을 거절한다) |
 | MapTiler 키 | MapTiler › Account › Keys | 키에 앱 제한을 걸어 두었으면 iOS 번들 ID 를 더한다 |
 | App Store Connect 앱 만들기 | appstoreconnect.apple.com › 앱 › + | 이름 · 기본 언어(한국어) · 번들 ID · SKU(예: `stepup-ios`) |
 | 연락 · 지원 주소 | — | `stepupofficial@stepupcrew.com` · https://stepupcrew.com (PLAY-STORE.md 와 같다) |
@@ -89,7 +89,7 @@ AI 코칭(`coaching_enabled=false`)을 켜기 전에 이 표를 먼저 고친다
 | 지침 | 우리 앱 | 할 일 |
 |---|---|---|
 | **4.8 로그인 서비스** | 구글 로그인만 있다 | **Apple 로그인**을 같은 자리에 넣는다(이름 · 이메일만, 이메일 숨기기 가능). 안드로이드에도 넣을지는 따로 정한다 |
-| **5.1.1(v) 계정 삭제** | 앱 안 + 웹에 있다 | Apple 로그인 계정은 지울 때 Apple 토큰도 끊는다(Sign in with Apple REST API `revoke`) — 서버 일 |
+| **5.1.1(v) 계정 삭제** | 앱 안 + 웹에 있다 | Apple 로그인 계정은 지울 때 Apple 토큰도 끊는다 — 앱이 Apple 로그인 창을 한 번 더 받아 code 를 워커 `/v1/apple/revoke` 로 보내고, 워커가 Apple `auth/token` → `auth/revoke`(2026-11-03, `IosAuth.deleteAccount`). 워커 Secret 셋이 없으면 철회 없이 지운다 |
 | 3.1.1 앱 내 구입 · 뽑기 | 유료 결제 · 유료 뽑기 없음, 확률 표 앱 안에 있음 | 유료로 파는 것이 생기면 애플 인앱 결제만 쓴다 |
 | 3.1.5 암호화폐 | iOS 는 스토어 판처럼 체인 기능을 뺀다(`WEB3 = false` 와 같게) | 지갑 주소 연결은 위 결정 |
 | 5.1.2 데이터 사용 · 공유 | 활동 기록(가명)을 공개 체인에 올린다 | 위 결정 — 고지 · 동의 |

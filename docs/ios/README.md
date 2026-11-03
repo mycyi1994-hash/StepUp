@@ -27,6 +27,32 @@
 - 다른 모듈의 `val` 은 스마트 캐스트가 안 된다 — 앱 화면에서 null 을 본 뒤 쓰는 곳은 `!!` 나 지역 값으로.
 - 검사: 규칙 검사 22개는 `shared/src/commonTest`(kotlin.test — JVM · iOS 시뮬레이터 둘 다에서 돈다). 서버 응답 · 화면을 함께 보는 검사(`CrewHomeTest` · `StoryRunsTest` …)는 `app/src/test` 에 남았다.
 
+## 데이터 (3단계)
+
+- **서버 호출**(2026-11-03): `data/remote` 의 API 22개(`StepUpServer` · `SupabaseAuth` · `SessionHolder` · `CrewApi` · `EconomyApi` …)와 강화 서버 약속 `data/repo/ForgeServer` 를
+  `shared/commonMain` 으로. 패키지는 그대로다. HTTP 는 `HttpPoster` 약속 하나로 — 기본값 `defaultHttpPoster()` 가 안드로이드는 예전 `UrlConnectionPoster`
+  (`shared/jvmMain`, `HttpURLConnection` 그대로 — 동작 같음), iOS 는 `KtorPoster`(Ktor 3.6 Darwin = NSURLSession, `iosMain` 에만 — 안드로이드는 Ktor 를 받지 않는다).
+  서버 시각 글자는 `Iso.kt`(`isoOffsetMillis` · `toIsoInstant`, `IsoJvmTest` 가 java.time 과 맞대어 본다).
+  앱에 남은 것: 구글 로그인(`GoogleSignIn` — Credential Manager), 러닝 증명 올리기(`AttesterClient`), 장소 찾기(`PlaceSearchApi` — 앱 설정의 MapTiler 키).
+
+- **로그인**(2026-11-03): 구글 · Apple 모두 Supabase id_token 로그인(`SupabaseAuth.signInWithGoogle` · `signInWithApple`), 일회용 값은 공용 `AuthNonce`
+  (안드로이드 예전 방식 그대로 — 32바이트 16진수 · SHA-256). iOS 로그인 창만 Swift(`iosApp/StepUp/SignInUi.swift` — Apple AuthenticationServices,
+  구글 GoogleSignIn SDK 8 · Swift 패키지)이고 나머지는 Kotlin `IosAuth`(세션은 키체인 `KeychainSessionStore` — 이 기기에만, 새로 깐 첫 실행에 지운다).
+  Apple 계정을 지울 때는 Apple 토큰을 먼저 철회한다(워커 `/v1/apple/revoke` — `attester/src/apple.js`). 설정할 것은 [../APP-STORE.md](../APP-STORE.md) "0. 먼저 해 둘 것".
+
+- **폰 DB**(2026-11-03): Room KMP 모듈 `:sharedData`(안드로이드 라이브러리 + iOS). 표 · DAO · `AppDatabase`(판 19)는 commonMain 하나.
+  안드로이드는 예전과 똑같이 연다 — `Room.databaseBuilder(context, AppDatabase::class.java, "strideup.db")` · SupportSQLite · 옛 판 길 `AppMigrations`
+  (androidMain, 예전 companion 의 MIGRATION_6_7 … 18_19 글자 그대로). 표 모양 기록은 `sharedData/schemas`(예전 `app/schemas`).
+  iOS 는 `buildIosDatabase()` — 문서 폴더 strideup.db · 번들 SQLite · 판 19 에서 시작(옮길 옛 DB 가 없다). 판을 올리면 iOS 길도 연결(SQLiteConnection)로 더한다.
+  iOS Room 의 KSP 는 Mac 에서만 돈다 — 검사는 CI 의 `:sharedData:iosSimulatorArm64Test`(IosDatabaseTest).
+
+- **설정**(2026-11-03): `UserPrefs`(DataStore Preferences)와 `CrewDraftCodec` 을 `:sharedData` 로 — DataStore 두 개를 받는다.
+  안드로이드는 `app/.../data/prefs/AndroidUserPrefs.kt` 의 `UserPrefs(context)` 가 예전 파일 그대로(`strideup_prefs` · `stepup_auth`, `preferencesDataStore` 대리자)를 넣는다 —
+  부르는 곳 · 파일 · 백업 규칙이 그대로다. iOS 는 `createIosUserPrefs()`(문서 폴더의 같은 이름 파일, 로그인 세션은 키체인).
+- **러닝 올리기**(2026-11-03): 규칙(과속 신고 먼저 · 10개씩 이어서 · 막혔으면 끝 · 실패면 다시)은 공용 `UploadPass`(`:sharedData`, `UploadPassTest`) —
+  안드로이드 `SessionUploadWorker` 가 그대로 쓰고, iOS 는 `BGProcessingTask`(`iosApp/StepUp/UploadTask.swift`, 네트워크 필요) · 앱이 앞에 올 때
+  `IosUploads.run` 이 같은 것을 돈다. 대기열 처리 `ClaimRepository` 도 `:sharedData` 로 옮겼다. iOS 의 올릴 곳은 화면 · 저장소를 붙일 때 `IosUploads.connect`.
+
 ## Mac 에서 돌리기
 
 ```bash
@@ -57,7 +83,7 @@ iOS 시뮬레이터 검사는 Mac 에서 `./gradlew :shared:iosSimulatorArm64Tes
 | 0. 뼈대 (끝남, 2026-11-02) | 모듈 셋 · Xcode 앱 · 로고 화면 · 아이콘 · CI · 공용 규칙 둘 | 규칙 둘이 `shared/` 로 이사(동작 같음) |
 | 1. Kotlin 올리기 (끝남, #152) | 2.0.21 → **2.3.21** · KSP **2.3.6**(KSP2) · Room **2.8.5** · Compose Multiplatform **1.12.2**. `android { kotlinOptions }` → `kotlin { compilerOptions }`. CI 의 Xcode 를 26 으로 | 예 — 테스트 APK 로 한 바퀴 확인 |
 | 2. 규칙 옮기기 (끝남, 2026-11-03) | `domain/` 44개 · `domain/coaching/` 을 `shared/` 로. `java.time` · `java.util` 은 kotlinx-datetime 등으로. `check-coaching-twin.py` 경로를 함께 고친다 | 예(동작 같음) |
-| 3. 데이터 | 서버 호출(`data/remote` — 지금 `HttpURLConnection`)을 Ktor 로, 폰 DB 를 Room KMP 로, 설정을 DataStore KMP 로. 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
+| **3. 데이터** (진행 중) | 서버 호출 · 로그인 · 폰 DB · 설정 · 올리기 — 아래 "데이터 (3단계)". 안드로이드의 `strideup.db` · `strideup_prefs` 이름은 그대로 둔다 | 예 |
 | 4. 화면 | `ui/` 를 `sharedUi/` 로 화면 묶음씩(테마 · 부품 → 로그인 · 접속 코드 → 홈 · 러닝 → 함께 뛰기 → 신발 → 내 정보). 글자(`res/values*` 4개 언어) · 글꼴 · 그림은 `composeResources/` 로 — `check-strings.py` · `check-copy.py` 도 새 자리를 본다 | 예 — 안드로이드 앱이 `sharedUi` 의 화면을 쓴다 |
 | 5. iOS 전용 | 아래 표 | 아니요 |
 | 6. TestFlight | 서명 · 올리기 CI, 내부 → 외부 테스터 | 아니요 |

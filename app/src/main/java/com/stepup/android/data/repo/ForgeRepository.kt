@@ -26,14 +26,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
-/** 서버의 강화 함수(0054, 규칙 forge-v2) — EconomyApi 가 구현한다. 검사에서는 흉내 낸 서버를 넣는다 */
-interface ForgeServer {
-    suspend fun forgeMaterials(target: Long): ServerResult<String>
-    suspend fun forgeQuote(target: Long, materials: List<Long>): ServerResult<String>
-    suspend fun forgeStart(key: String, target: Long, materials: List<Long>, quoteVersion: String): ServerResult<String>
-    suspend fun forgeResult(key: String): ServerResult<String>
-}
-
 /** 보낸 요청의 저장 자리 — 앱을 다시 켜도 같은 요청 키로 결과만 묻는다 */
 interface ForgePendingStore {
     suspend fun load(): ForgePending?

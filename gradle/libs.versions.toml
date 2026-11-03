@@ -1,4 +1,6 @@
 [versions]
+# iOS 의 HTTP(Darwin 엔진 — NSURLSession). 안드로이드는 HttpURLConnection 그대로라 Ktor 를 받지 않는다(2026-11-03)
+ktor = "3.6.0"
 agp = "8.10.1"
 # Kotlin 2.3 — iOS 앱을 App Store 에 내려면 Xcode 26 으로 빌드해야 하고, Kotlin/Native 는 2.2.20 부터 Xcode 26 을 안다(2026-11-02).
 # KSP 는 2.3 부터 Kotlin 판과 따로 번호를 매긴다(KSP2).
@@ -12,6 +14,8 @@ lifecycle = "2.8.7"
 navigationCompose = "2.8.5"
 # 2.7 부터 KSP2 · Kotlin Multiplatform(iOS)을 지원한다. 폰 DB(strideup.db) 판 · 스키마는 그대로
 room = "2.8.5"
+# Room KMP 의 iOS SQLite(번들) — room-runtime 2.8.5 가 쓰는 sqlite 판과 같게
+sqlite = "2.6.2"
 datastore = "1.1.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
@@ -33,6 +37,8 @@ androidxTestRunner = "1.6.2"
 androidxTestRules = "1.6.1"
 
 [libraries]
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
@@ -54,9 +60,12 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-sqlite-bundled = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "serialization" }
@@ -78,6 +87,8 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+androidx-room = { id = "androidx.room", version.ref = "room" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

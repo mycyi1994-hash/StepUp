@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stepup.android.data.local.AppDatabase
+import com.stepup.android.data.local.AppMigrations
 import com.stepup.android.data.local.WalkSessionEntity
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -32,7 +33,7 @@ class DatabaseMigrationTest {
             raw.version = 13
         }
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(*AppDatabase.MIGRATIONS).build()
+            .addMigrations(*AppMigrations.MIGRATIONS).build()
         try {
             val sql = db.openHelper.writableDatabase // Triggers complete Room schema validation.
             sql.query("SELECT recordingOwner, uploadState, claimSignature, claimSessionHash, claimAmount, pointsEarned FROM walk_sessions WHERE id=17").use {
@@ -71,7 +72,7 @@ class DatabaseMigrationTest {
             raw.version = 12
         }
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(*AppDatabase.MIGRATIONS).build()
+            .addMigrations(*AppMigrations.MIGRATIONS).build()
         try {
             val row = db.walkSessionDao().pendingUploads(10, "legacy").single()
             assertEquals(17L, row.id)
@@ -88,7 +89,7 @@ class DatabaseMigrationTest {
         val name = "recording-owner-test.db"
         context.deleteDatabase(name)
         fun open() = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(*AppDatabase.MIGRATIONS).build()
+            .addMigrations(*AppMigrations.MIGRATIONS).build()
         var db = open()
         try {
             listOf("legacy", "guest", "account:A", "account:B").forEachIndexed { index, owner ->
@@ -114,7 +115,7 @@ class DatabaseMigrationTest {
         val name = "record-delete-owner-test.db"
         context.deleteDatabase(name)
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(*AppDatabase.MIGRATIONS).build()
+            .addMigrations(*AppMigrations.MIGRATIONS).build()
         try {
             val dao = db.walkSessionDao()
             fun pending(id: Long, owner: String) = WalkSessionEntity(
@@ -146,7 +147,7 @@ class DatabaseMigrationTest {
             db.version = 6
         }
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(*AppDatabase.MIGRATIONS).build()
+            .addMigrations(*AppMigrations.MIGRATIONS).build()
         try {
             val sql = db.openHelper.writableDatabase // Room validates the complete new schema.
             sql.query("SELECT steps FROM daily_steps WHERE epochDay=20000").use {
@@ -179,7 +180,7 @@ class DatabaseMigrationTest {
             db.version = 99
         }
         val db = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(*AppDatabase.MIGRATIONS).build()
+            .addMigrations(*AppMigrations.MIGRATIONS).build()
         try {
             try { db.openHelper.writableDatabase; fail("Unsupported schema must not be reset") }
             catch (_: IllegalStateException) { /* expected: no destructive fallback */ }

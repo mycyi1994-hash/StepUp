@@ -3,7 +3,7 @@
 ## 최신 — iOS 앱: Kotlin Multiplatform 뼈대 (2026-11-02)
 
 사용자 "다음은 애플 차례" → "KMP로 가자". [docs/ios/README.md](docs/ios/README.md)(구조 · 만드는 순서 · 안드로이드 ↔ iOS 대응) · [docs/APP-STORE.md](docs/APP-STORE.md)(App Store Connect 칸 · 사용자가 준비할 것).
-- `shared/`(공용 규칙, jvm + iOS — 패키지는 그대로 `com.stepup.android.domain`, 안드로이드 앱이 `implementation(project(":shared"))`) · `sharedUi/`(iOS 화면, Compose Multiplatform → 틀 `StepUpKit`) ·
+- `shared/`(공용 규칙 · 서버 호출 `data/remote`, jvm + iOS — 패키지는 그대로, 안드로이드 앱이 `implementation(project(":shared"))`) · `sharedData/`(폰 DB Room KMP — 표 · DAO · `AppDatabase`, 안드로이드 옛 판 길 `AppMigrations`, 스키마 `sharedData/schemas`) · `sharedUi/`(iOS 화면, Compose Multiplatform → 틀 `StepUpKit`) ·
   `iosApp/`(SwiftUI 입구, `project.yml` 을 XcodeGen 으로 — `.xcodeproj` 는 저장소에 없다). 규칙(`domain/` · `domain/coaching/`)은 모두 `shared/` 에 있다(2단계, 2026-11-03 — 날짜는 kotlinx-datetime, 검사는 `shared/src/commonTest`), 화면은 로고 하나.
   공용 규칙에서는 JVM 함수 대신 `Platform.kt`(`epochMillis` · `roundHalfUp2` · `formatFixed` · `exactHalfUp` · `javaRound` …)와 `Dates.kt`(`KST` · `localDate` · `todayIn`)를 쓴다 —
   안드로이드 값이 비트까지 같아야 한다(`PlatformJvmTest` 가 iOS 구현을 JVM 원본과 맞대어 본다). 앱 화면의 java.time 글자는 `core/DateCompat.kt` 로 잇는다.
