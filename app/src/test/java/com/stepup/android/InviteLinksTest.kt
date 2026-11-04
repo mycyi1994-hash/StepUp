@@ -90,4 +90,20 @@ class InviteLinksTest {
         assertNull(InviteLinks.crewIdOfPush("room/$id/123"))
         assertNull(InviteLinks.crewIdOfPush("post/42"))
     }
+
+    @Test
+    fun `번개 링크는 우리 주소의 f 와 글 번호만 받는다`() {
+        assertEquals("https://stepupcrew.com/f/42", InviteLinks.flashLink(42))
+        assertEquals(42L, InviteLinks.flashIdOf(InviteLinks.flashLink(42)))
+        assertEquals(42L, InviteLinks.flashIdOf("https://www.stepupcrew.com/f/42/"))
+        assertNull(InviteLinks.flashIdOf("http://stepupcrew.com/f/42"))
+        assertNull(InviteLinks.flashIdOf("https://evil.example/f/42"))
+        assertNull(InviteLinks.flashIdOf("https://stepupcrew.com/f/0"))
+        assertNull(InviteLinks.flashIdOf("https://stepupcrew.com/f/abc"))
+        assertNull(InviteLinks.flashIdOf("https://stepupcrew.com/f/42/x"))
+        assertNull(InviteLinks.flashIdOf("https://stepupcrew.com/c/42"))
+        assertNull(InviteLinks.flashIdOf(null))
+        // 크루 링크 읽기는 번개 링크를 크루로 읽지 않는다
+        assertNull(InviteLinks.crewIdOf(InviteLinks.flashLink(42)))
+    }
 }

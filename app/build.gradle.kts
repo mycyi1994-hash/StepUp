@@ -48,7 +48,7 @@ val buildCommitTime = (findProperty("stepupCommitTime") as String?)?.toLongOrNul
 val buildCommit = gitOutput("rev-parse", "--short=7", "HEAD") ?: ""
 
 // 스토어 빌드(release)의 versionCode — 출시할 때 손으로 올린다
-val releaseVersionCode = 25
+val releaseVersionCode = 26
 
 // 앱 안 Room 데이터베이스의 판(AppDatabase 의 @Database(version = …)). 테스트 · 개발 빌드의 versionCode 에 담는다(아래 androidComponents)
 val roomSchemaVersion: Int = Regex("""(?m)^\s*version\s*=\s*(\d+)\s*,?\s*$""")
@@ -66,7 +66,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = releaseVersionCode
-        versionName = "1.17.0"
+        versionName = "1.18.0"
 
         // 러닝 증명을 받을 서버 주소. 배포 전에는 비어 있고, 비어 있으면 앱은
         // 업로드를 시도하지 않고 세션을 대기열에 쌓아 둔다.

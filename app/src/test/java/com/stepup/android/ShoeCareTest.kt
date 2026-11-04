@@ -128,6 +128,39 @@ class ShoeCareTest {
         assertEquals(0, BigDecimal("50").compareTo(done.quote.cost))
     }
 
+    @Test fun `아직 올라가지 않은 러닝이 있으면 알리고 올리며, 동기화 뒤 서버 값으로 견적을 다시 본다 — 수리는 막지 않는다`() {
+        val backend = FakeBackend(server(durability = 92.0), balance = 83.07)
+        backend.unsent = true
+        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
+        store.openRepair(ID)
+        assertTrue(store.unsentRuns.value)
+        assertEquals(1, backend.sends)
+        // 금액은 폰이 미리 빼서 꾸미지 않는다 — 지금 사본 그대로(92 → 12.5 SUP), 수리도 할 수 있다
+        val first = store.repair.value[ID] as RepairPhase.Confirm
+        assertEquals(0, BigDecimal("12.5").compareTo(first.quote.cost))
+        assertFalse(first.changed)
+        // 러닝이 올라가 서버가 닳게 하고 동기화가 사본을 맞췄다 — 바뀐 금액을 다시 확인받는다(RP10)
+        backend.shoe = server(durability = 68.0)
+        backend.unsent = false
+        backend.syncs.value = 1L
+        val requoted = store.repair.value[ID] as RepairPhase.Confirm
+        assertTrue(requoted.changed)
+        assertEquals(0, BigDecimal("50").compareTo(requoted.quote.cost))
+        assertFalse(store.unsentRuns.value)
+        // 그 뒤 동기화는 더 보지 않는다
+        backend.shoe = server(durability = 50.0)
+        backend.syncs.value = 2L
+        assertEquals(0, BigDecimal("50").compareTo((store.repair.value[ID] as RepairPhase.Confirm).quote.cost))
+    }
+
+    @Test fun `올라가지 않은 러닝이 없으면 안내도 올리기도 없다`() {
+        val backend = FakeBackend(server(durability = 68.0), balance = 83.07)
+        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
+        store.openRepair(ID)
+        assertFalse(store.unsentRuns.value)
+        assertEquals(0, backend.sends)
+    }
+
     @Test fun `견적이 바뀌었으면 보내지 않고 새 견적을 다시 확인받는다(RP10)`() {
         val backend = FakeBackend(server(durability = 68.0), balance = 83.07)
         val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
@@ -271,6 +304,12 @@ class ShoeCareTest {
         var refreshes = 0
         var repairs = 0
         var onRepair: () -> EconomyOutcome = { EconomyOutcome.Ok }
+        var unsent = false
+        var sends = 0
+        val syncs = kotlinx.coroutines.flow.MutableStateFlow(0L)
+        override suspend fun unsentRuns(): Boolean = unsent
+        override fun sendRuns() { sends++ }
+        override val synced: kotlinx.coroutines.flow.Flow<Long> get() = syncs
         override val serverEconomy: Boolean = true
         override suspend fun refresh(): EconomyOutcome = refreshOutcome.also { refreshes++ }
         override suspend fun shoe(id: Long): Sneaker? = shoe?.takeIf { it.id == id }

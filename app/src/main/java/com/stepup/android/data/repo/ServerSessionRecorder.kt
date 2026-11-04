@@ -35,6 +35,7 @@ class ServerSessionRecorder(
             partySize = session.partySize,
             faction = session.faction,
             mockLocation = session.mockLocation,
+            sneakerId = session.sneakerServerId,
         )
         // 서버가 이 러닝까지 반영해 돌려준 잔고 — 원장 동기화가 늦어도 결과 화면이 옛 잔고를 보이지 않게
         if (result is ServerResult.Ok) RecordedBalances.put(session.startedAt, owner, result.value.balance)

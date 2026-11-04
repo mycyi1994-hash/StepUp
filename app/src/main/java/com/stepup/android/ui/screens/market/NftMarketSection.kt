@@ -35,6 +35,7 @@ import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.GlowCard
 import com.stepup.android.ui.components.SectionHeader
 import com.stepup.android.ui.components.SneakerFrame
+import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
@@ -99,7 +100,7 @@ fun LazyListScope.nftMarketSection(
         return
     }
     if (section == 1) {
-        myMarketSection(board.mine, onCancelListing, onCancelBid)
+        myMarketSection(board.mine, board.ownShoes, onCancelListing, onCancelBid)
         return
     }
 
@@ -144,6 +145,7 @@ fun LazyListScope.nftMarketSection(
 /** 내 거래 — 팔려고 내놓은 것 · 걸어 둔 입찰 · 사고판 기록 */
 private fun LazyListScope.myMarketSection(
     mine: com.stepup.android.data.repo.MyMarket?,
+    ownShoes: Map<Long, com.stepup.android.domain.Sneaker>,
     onCancelListing: (Long) -> Unit,
     onCancelBid: (Long) -> Unit,
 ) {
@@ -156,7 +158,7 @@ private fun LazyListScope.myMarketSection(
             Icons.Filled.ReceiptLong) }
     } else {
         item { SectionHeader(title = stringResource(R.string.market_my_listings)) }
-        items(listed.size) { index -> MyListingRow(listed[index], onCancelListing) }
+        items(listed.size) { index -> MyListingRow(listed[index], ownShoes[listed[index].id], onCancelListing) }
     }
 
     if (bids.isEmpty()) {
@@ -190,12 +192,23 @@ private fun MarketEmptyState(title: Int, message: Int, icon: ImageVector) {
     }
 }
 
+/**
+ * 신발 한 줄 요약. [own] 은 폰에 있는 내 신발(내가 내놓은 매물) — 있으면 신발 탭과 똑같이(도감 모델 그림 · 이름),
+ * 없으면 줄 값으로 같은 규칙에 따라 그린다(모델이 정해지지 않은 줄은 등급만).
+ */
 @Composable
-private fun HoldingSummary(faction: String, rarity: String, variant: Int, meta: String, level: Int = 1) {
+private fun HoldingSummary(
+    faction: String, rarity: String, variant: Int, meta: String, level: Int = 1,
+    own: com.stepup.android.domain.Sneaker? = null,
+) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        SneakerFrame(previewSneaker(faction, rarity, variant, level), modifier = Modifier.size(72.dp), corner = 14.dp)
+        if (own != null) {
+            SneakerFrame(own, modifier = Modifier.size(72.dp), corner = 14.dp)
+        } else {
+            MarketShoeThumb(faction, rarity, variant, modifier = Modifier.size(72.dp), level = level)
+        }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(modelName(faction, rarity, variant), style = MaterialTheme.typography.titleMedium, color = Snow)
+            Text(own?.shoeName() ?: modelName(faction, rarity, variant), style = MaterialTheme.typography.titleMedium, color = Snow)
             Text(meta, style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
     }
@@ -208,9 +221,9 @@ private fun HoldingAmount(value: Double?, color: androidx.compose.ui.graphics.Co
 }
 
 @Composable
-private fun MyListingRow(row: MySneakerRow, onCancel: (Long) -> Unit) {
+private fun MyListingRow(row: MySneakerRow, own: com.stepup.android.domain.Sneaker?, onCancel: (Long) -> Unit) {
     GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
-        HoldingSummary(row.faction, row.rarity, row.variant, stringResource(R.string.market_level, row.level) + " · #${row.mintNumber}", row.level)
+        HoldingSummary(row.faction, row.rarity, row.variant, stringResource(R.string.market_level, row.level) + " · #${row.mintNumber}", row.level, own)
         HoldingAmount(row.listingPrice)
         row.listingId?.let { id ->
             GhostButton(stringResource(R.string.market_cancel_listing), onClick = { onCancel(id) }, modifier = Modifier.fillMaxWidth())

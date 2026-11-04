@@ -131,6 +131,8 @@ class UserPrefs(
         val ACCOUNT_LIFETIME_KM = doublePreferencesKey("account_lifetime_km")
         val FREE_DRAWS_LEFT = intPreferencesKey("free_draws_left")
         val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
+        /** 서버 draw_grants 에서 쓴 뽑기 기회의 합(무료 · 보너스 · 러닝) — 업적 "신발 N회 뽑기"(2026-11-04) */
+        val DRAW_GRANTS_USED = intPreferencesKey("draw_grants_used")
         val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
         /** 폰의 서버 경제 사본(잔고 · 신발 · 부스터 · 받은 도전)이 어느 계정 것인가 */
         val ECONOMY_OWNER = stringPreferencesKey("economy_owner")
@@ -1041,13 +1043,18 @@ class UserPrefs(
     // 에너지 · 뽑기 횟수는 서버가 정한다. 폰은 마지막으로 받아 온 값을 보여 줄 뿐이다.
 
     /** @param today 서버의 오늘(my_economy.game_day, 한국 시간) */
-    suspend fun setServerEconomy(today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int) {
+    suspend fun setServerEconomy(
+        today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int,
+        /** 서버가 적은 쓴 뽑기 기회의 합. null 이면 그대로 둔다 */
+        drawGrantsUsed: Int? = null,
+    ) {
         store.edit {
             it[Keys.ENERGY] = energyLeft.coerceAtLeast(0.0)
             it[Keys.ENERGY_DAY] = today
             it[Keys.SERVER_ENERGY_MAX] = energyMax
             it[Keys.FREE_DRAWS_LEFT] = freeDraws.coerceAtLeast(0)
             it[Keys.BONUS_DRAWS_LEFT] = bonusDraws.coerceAtLeast(0)
+            if (drawGrantsUsed != null) it[Keys.DRAW_GRANTS_USED] = drawGrantsUsed.coerceAtLeast(0)
         }
     }
 
@@ -1058,6 +1065,7 @@ class UserPrefs(
             it.remove(Keys.ACCOUNT_LIFETIME_KM)
             it.remove(Keys.FREE_DRAWS_LEFT)
             it.remove(Keys.BONUS_DRAWS_LEFT)
+            it.remove(Keys.DRAW_GRANTS_USED)
             it.remove(Keys.ENERGY)
             it.remove(Keys.ENERGY_DAY)
         }
@@ -1072,6 +1080,12 @@ class UserPrefs(
 
     /** 남은 무료 뽑기 (서버 draw_grants FREE) */
     val freeDrawsLeft: Flow<Int> = store.data.map { it[Keys.FREE_DRAWS_LEFT] ?: 0 }
+
+    /**
+     * 서버가 적은 쓴 뽑기 기회의 합(draw_grants used — 무료 · 보너스 · 러닝). 서버가 뽑기를 처리할 때만 오른다.
+     * 매일 무료 몫(draw_daily)은 앱이 읽을 수 없어 여기 없다 — 업적은 뽑아 받은 신발 수와 함께 본다([com.stepup.android.domain.AchievementBook.drawCount]).
+     */
+    val drawGrantsUsed: Flow<Int> = store.data.map { it[Keys.DRAW_GRANTS_USED] ?: 0 }
 
     /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
     val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }

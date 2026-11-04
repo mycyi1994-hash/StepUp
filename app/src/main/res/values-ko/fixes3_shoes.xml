@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 고침(2026-11-04): 거래소 v3 신발 · 아직 안 올라간 러닝의 수리 안내 · 뽑기 업적 -->
+<resources>
+    <string name="market_model_any">%1$s 신발</string>
+    <string name="market_model_mixed">이 등급은 모델이 여러 가지예요. 매물마다 모델이 달라요.</string>
+    <string name="care_repair_unsent_runs">아직 올라가지 않은 러닝이 있어요 · 올라간 뒤 수리 금액이 바뀔 수 있어요</string>
+    <string name="ach_goal_draw_all">신발 %1$s회 뽑기</string>
+</resources>

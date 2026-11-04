@@ -30,6 +30,8 @@ class StepUpApp : Application() {
         // 푸시 주소를 서버에 적어 둔다. 로그인 전이면 서버가 받지 않고, 로그인하면
         // 로그인 화면이 다시 부른다. 네트워크를 쓰므로 첫 화면을 기다리게 하지 않는다.
         PushService.createChannel(this)
+        // 크루 러닝이 출발했는데 앱이 뒤에 있으면 알린다 — 뒤에서는 러닝 서비스를 켤 수 없어, 눌러 앱을 열면 출발 2분 안에 켠다
+        runCatching { com.stepup.android.service.CrewStartAlert.attach(this, ServiceLocator.crewRepository) }
         ServiceLocator.pushRegistrar.syncInBackground()
         // 잔고 · 신발 · 에너지는 서버가 정본이다 — 켤 때마다 한 번 맞춘다
         ServiceLocator.refreshEconomyInBackground()

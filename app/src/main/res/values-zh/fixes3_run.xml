@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 기록 상세 — 적립 0 · 줄어든 까닭(서버 0089 verdict_reason, 2026-11-04) -->
+<resources>
+    <string name="run_reason_zero">获得 0 · %1$s</string>
+    <string name="run_reason_none">这次跑步没有获得奖励</string>
+    <string name="run_reason_mock">检测到虚假位置</string>
+    <string name="run_reason_banned">在超速停止后的10分钟内开始</string>
+    <string name="run_reason_cadence">步频超出了人类范围</string>
+    <string name="run_reason_speed">移动速度超出了人类范围</string>
+    <string name="run_reason_track_time">路线时间与跑步时间不符</string>
+    <string name="run_reason_duplicate_route">这条路线已上传过</string>
+    <string name="run_reason_overlap">与另一次跑步时间重叠</string>
+    <string name="run_reason_no_steps">没有步数的移动距离</string>
+    <string name="run_reason_steps_over_gps">步数多于移动距离，已按较少计算</string>
+    <string name="run_reason_overspeed_stop">持续超速，跑步已停止</string>
+    <string name="run_reason_crew_done">今天的跑团跑步已完成</string>
+    <string name="run_reason_daily_steps">已达到每日步数上限</string>
+    <string name="run_reason_held">近期无效跑步较多，奖励暂缓</string>
+    <string name="run_reason_crew_empty">跑团体力已用完</string>
+    <string name="run_reason_crew_after">跑团跑步结束后的记录未计入</string>
+    <string name="run_reason_worn_after">鞋子耐久耗尽后的步数未计入</string>
+    <string name="run_reason_energy">能量已用完</string>
+    <string name="run_reason_worn">鞋子耐久已耗尽</string>
+    <string name="run_reason_daily_sup">已达到每日奖励上限</string>
+    <string name="run_reason_no_gps_cap">已达到无路线跑步的每日上限</string>
+    <string name="run_reason_upload_cap">已达到今日可上传上限</string>
+    <string name="run_reason_too_old">这次跑步已超过7天</string>
+</resources>

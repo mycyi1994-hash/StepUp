@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoe fixes (2026-11-04): market v3 shoes, repair note for runs not yet uploaded, draw achievement -->
+<resources>
+    <string name="market_model_any">%1$s shoe</string>
+    <string name="market_model_mixed">Shoes in this grade come in several models. The model differs by listing.</string>
+    <string name="care_repair_unsent_runs">Some runs haven\'t been uploaded yet · the repair cost may change once they are</string>
+    <string name="ach_goal_draw_all">Draw shoes %1$s times</string>
+</resources>

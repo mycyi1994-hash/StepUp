@@ -361,10 +361,11 @@ internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, 
     }
 }
 
-/** 친구 부르기 · 공유 — 제목 · 시각 · 장소를 글로(앱 밖 공유 창) */
+/** 친구 부르기 · 공유 — 제목 · 시각 · 장소를 글로, 아래 줄에 그 번개 링크(`/f/<글 번호>` — 앱이 있으면 그 번개가 열린다) */
 private fun shareFlash(context: android.content.Context, post: Post) {
     val where = if (post.remote) context.getString(R.string.d26_room_remote_line) else post.place.ifBlank { "—" }
-    val text = context.getString(R.string.flash_share_text, post.title, meetClock(post.meetAt), where)
+    val text = context.getString(R.string.flash_share_text, post.title, meetClock(post.meetAt), where) +
+        "\n" + com.stepup.android.core.InviteLinks.flashLink(post.id)
     runCatching {
         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

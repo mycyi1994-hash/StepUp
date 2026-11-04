@@ -25,10 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.Faction
+import com.stepup.android.domain.MarketShoeLook
 import com.stepup.android.domain.Rarity
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.components.SneakerFrame
+import com.stepup.android.ui.components.SneakerGradeStage
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.variantNameRes
 import com.stepup.android.ui.theme.Alert
@@ -51,28 +53,43 @@ fun formatSup(value: Double): String = "%,d".format(value.toLong())
 /**
  * 시세판에 쓰려고 만든 겉모습용 스니커즈.
  *
- * 남의 신발이라 폰에는 없다. 그림을 그리는 데 필요한 것은 속성·등급·변형
- * 셋뿐이므로 나머지는 기본값으로 채운다 — 화면에 나오지 않는 값들이다.
+ * 남의 신발이라 폰에는 없다. 신발 탭과 같은 규칙으로 속성 · 등급 · 변형 · 레벨에서 만든다([MarketShoeLook.preview]) —
+ * 속성 "NONE"(0066 뒤 신발)도 신발 탭처럼 그린다.
  */
 fun previewSneaker(faction: String, rarity: String, variant: Int, level: Int = 1): Sneaker =
-    Sneaker(
-        id = 0,
-        faction = Faction.entries.firstOrNull { it.id == faction } ?: Faction.FIRE,
-        rarity = Rarity.of(rarity),
-        variant = variant,
-        level = level,
-        mintNumber = 0,
-        luck = 1.0,
-        comfort = 1.0,
-        durability = 100,
-        equipped = false,
-        acquiredAt = 0,
-    )
+    MarketShoeLook.preview(faction, rarity, variant, level)
 
+/**
+ * 줄의 이름. 매물마다 모델이 다를 수 있는 줄(0066 뒤 신발의 레어 이상 — [MarketShoeLook.pinsDesign])은 예전 불 모델 이름을
+ * 붙이지 않고 "레어 신발"처럼 등급만 적는다. 나머지는 신발 탭과 같은 도감 이름이다.
+ */
 @Composable
 fun modelName(faction: String, rarity: String, variant: Int): String {
-    val f = Faction.entries.firstOrNull { it.id == faction } ?: Faction.FIRE
-    return stringResource(variantNameRes(f, Rarity.of(rarity), variant))
+    if (!MarketShoeLook.pinsDesign(faction, rarity)) {
+        return stringResource(R.string.market_model_any, Rarity.of(rarity).tier.label())
+    }
+    return stringResource(variantNameRes(Faction.of(faction), Rarity.of(rarity), variant))
+}
+
+/**
+ * 줄의 신발 그림. 모델이 정해진 줄은 신발 탭과 같은 그림, 매물마다 모델이 다를 수 있는 줄은 그 등급 틀만(다른 신발 그림을 대신 넣지 않는다).
+ */
+@Composable
+fun MarketShoeThumb(
+    faction: String,
+    rarity: String,
+    variant: Int,
+    modifier: Modifier = Modifier,
+    level: Int = 1,
+) {
+    val preview = previewSneaker(faction, rarity, variant, level)
+    if (MarketShoeLook.pinsDesign(faction, rarity)) {
+        SneakerFrame(preview, modifier = modifier, corner = 14.dp)
+    } else {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            SneakerGradeStage(preview, Modifier.fillMaxWidth(), showShoe = false)
+        }
+    }
 }
 
 /** 값 한 칸 — 이름과 숫자. 없으면 "—" 로 둔다. 0 으로 적으면 거짓말이다. */
@@ -187,7 +204,7 @@ fun QuoteRowCard(
     Column(modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CarbonHigh).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             val preview = previewSneaker(faction, rarity, variant)
-            SneakerFrame(preview, modifier = Modifier.size(80.dp), corner = 14.dp)
+            MarketShoeThumb(faction, rarity, variant, modifier = Modifier.size(80.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 따로 한 줄로 쓰지 않는다
                 com.stepup.android.ui.components.ShoeNameWithBadge(

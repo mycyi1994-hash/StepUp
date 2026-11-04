@@ -4,13 +4,21 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.EconomyOutcome
 import com.stepup.android.data.repo.toEconomyOutcome
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.sync.SessionUploadWorker
+import com.stepup.android.ui.screens.walk.PENDING_WEAR_SCAN
+import com.stepup.android.ui.screens.walk.pendingShoeWearOf
 import com.stepup.android.ui.experience.ExperienceEvents
 import com.stepup.android.ui.experience.FeedbackCue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -28,6 +36,18 @@ interface ShoeCareBackend {
     suspend fun shoe(id: Long): Sneaker?
     suspend fun balance(): Double?
     suspend fun repair(id: Long): EconomyOutcome
+
+    /**
+     * 이 계정에 서버가 아직 신발 닳음을 반영하지 않은 러닝이 있는가 — 출발 전 점검과 같은 판단([pendingShoeWearOf]).
+     * 있으면 서버가 그 러닝을 받은 뒤 수리 금액이 바뀐다(금액은 서버가 정한다 — 폰이 미리 빼서 견적을 꾸미지 않는다).
+     */
+    suspend fun unsentRuns(): Boolean = false
+
+    /** 올리지 못한 러닝을 올리도록 올리기 일꾼을 깨운다 */
+    fun sendRuns() {}
+
+    /** 동기화가 끝날 때마다 바뀌는 값 — 러닝이 올라가 서버가 닳게 한 뒤의 동기화를 보고 견적을 다시 본다 */
+    val synced: Flow<Long> get() = emptyFlow()
 }
 
 private object AppShoeCareBackend : ShoeCareBackend {
@@ -37,6 +57,13 @@ private object AppShoeCareBackend : ShoeCareBackend {
     override suspend fun shoe(id: Long): Sneaker? = ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == id }
     override suspend fun balance(): Double? = ServiceLocator.rewardRepository.balance.first()
     override suspend fun repair(id: Long): EconomyOutcome = ServiceLocator.sneakerRepository.repairOnServer(id)
+    override suspend fun unsentRuns(): Boolean {
+        // 러닝 줄을 읽기만 한다(고치지 않는다) — 러닝 화면의 남은 닳음 계산 그대로
+        val rows = ServiceLocator.stepRepository.recentSessions(PENDING_WEAR_SCAN).first()
+        return pendingShoeWearOf(rows, ServiceLocator.economySync.syncedFrom.value, System.currentTimeMillis()) > 0
+    }
+    override fun sendRuns() = SessionUploadWorker.schedule(ServiceLocator.appContext)
+    override val synced: Flow<Long> get() = ServiceLocator.economySync.syncedFrom
 }
 
 /**
@@ -56,6 +83,14 @@ class ShoeCareStore(
 
     private fun setRepair(id: Long, phase: RepairPhase?) = _repair.update { if (phase == null) it - id else it + (id to phase) }
 
+    /**
+     * 아직 올라가지 않은 러닝이 있는가(수리 시트를 열 때 본다) — 시트가 "올라간 뒤 수리 금액이 바뀔 수 있어요" 한 줄을 보인다.
+     * 수리는 그대로 할 수 있다. 금액은 늘 서버 사본으로만 매긴다.
+     */
+    private val _unsentRuns = MutableStateFlow(false)
+    val unsentRuns: StateFlow<Boolean> = _unsentRuns.asStateFlow()
+    private var unsentWatch: Job? = null
+
     /** 대상 신발에 결과가 안 정해진 수리가 있는가 — 착용 · 강화 · 수리 · 판매를 막는다(강화 미확인은 상세가 따로 본다) */
     fun busy(id: Long): Boolean = _repair.value[id]?.pending == true
 
@@ -66,7 +101,58 @@ class ShoeCareStore(
         val current = _repair.value[id]
         if (current?.pending == true || current is RepairPhase.Loading) return
         setRepair(id, RepairPhase.Loading)
-        scope.launch { setRepair(id, quoteRepair(id)) }
+        scope.launch {
+            val quoted = quoteRepair(id)
+            setRepair(id, quoted)
+            // 금액을 보이는 장면에서만 — 로그인 · 읽기 실패 · 막힌 신발이면 볼 금액이 없다
+            if (quoted is RepairPhase.Confirm || quoted is RepairPhase.Insufficient || quoted is RepairPhase.NotNeeded) {
+                watchUnsentRuns(id)
+            }
+        }
+    }
+
+    /**
+     * 견적을 낸 뒤(그 동기화가 끝난 뒤) 아직 올라가지 않은 러닝이 있으면 알리고 올리기 일꾼을 깨운다. 러닝이 올라가 서버가 닳게 하면
+     * 뒤이은 동기화(ClaimRepository.onSigned)가 폰 사본을 맞춘다 — 그때마다 견적을 다시 본다. 다 올라갔거나 시트를 닫으면 그만 본다.
+     */
+    private suspend fun watchUnsentRuns(id: Long) {
+        unsentWatch?.cancel()
+        val unsent = safeCheck { backend.unsentRuns() }
+        _unsentRuns.value = unsent
+        if (!unsent) return
+        backend.sendRuns()
+        unsentWatch = scope.launch {
+            backend.synced.distinctUntilChanged().drop(1).collect {
+                if (_repair.value[id] == null) {
+                    _unsentRuns.value = false
+                    unsentWatch?.cancel()
+                    return@collect
+                }
+                requote(id)
+                val still = safeCheck { backend.unsentRuns() }
+                _unsentRuns.value = still
+                if (!still) unsentWatch?.cancel()
+            }
+        }
+    }
+
+    /**
+     * 동기화된 사본으로 견적만 다시 본다(서버에 보내지 않는다). 사용자가 금액을 보고 있는 장면(확인 · 잔액 부족 · 가득)만 바꾼다 —
+     * 보내는 중 · 결과 미확인은 그대로. 금액이 바뀌었으면 "금액이 바뀌었어요"(RP10)로 다시 확인받는다.
+     */
+    private suspend fun requote(id: Long) {
+        val shown = _repair.value[id]
+        if (shown !is RepairPhase.Confirm && shown !is RepairPhase.Insufficient && shown !is RepairPhase.NotNeeded) return
+        val now = repairGate(backend.shoe(id), backend.balance(), backend.serverEconomy)
+        // 그사이 사용자가 수리를 보냈으면 건드리지 않는다
+        if (_repair.value[id] !== shown) return
+        val before = when (shown) {
+            is RepairPhase.Confirm -> shown.quote
+            is RepairPhase.Insufficient -> shown.quote
+            else -> null
+        }
+        val next = if (now is RepairPhase.Confirm && before != null && !now.quote.sameAs(before)) now.copy(changed = true) else now
+        setRepair(id, next)
     }
 
     private suspend fun quoteRepair(id: Long): RepairPhase {
@@ -164,6 +250,19 @@ class ShoeCareStore(
     fun closeRepair(id: Long) {
         if (_repair.value[id]?.pending == true) return
         setRepair(id, null)
+        if (_repair.value.isEmpty()) {
+            unsentWatch?.cancel()
+            _unsentRuns.value = false
+        }
+    }
+
+    /** 읽기 실패는 "없음"으로 — 안내 한 줄을 못 보일 뿐 수리는 그대로 */
+    private suspend fun safeCheck(block: suspend () -> Boolean): Boolean = try {
+        block()
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        false
     }
 
     private suspend fun safe(block: suspend () -> EconomyOutcome): EconomyOutcome = try {

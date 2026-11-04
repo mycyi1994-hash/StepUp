@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 기록 상세 — 적립 0 · 줄어든 까닭(서버 0089 verdict_reason, 2026-11-04) -->
+<resources>
+    <string name="run_reason_zero">獲得 0 · %1$s</string>
+    <string name="run_reason_none">このランは獲得になりませんでした</string>
+    <string name="run_reason_mock">偽の位置情報が検出されました</string>
+    <string name="run_reason_banned">速度超過で停止した後の10分以内に開始しました</string>
+    <string name="run_reason_cadence">歩数のペースが人の範囲を超えました</string>
+    <string name="run_reason_speed">移動速度が人の範囲を超えました</string>
+    <string name="run_reason_track_time">ルートの時刻がランの時間と合いません</string>
+    <string name="run_reason_duplicate_route">すでに送ったルートです</string>
+    <string name="run_reason_overlap">別のランと時間が重なっています</string>
+    <string name="run_reason_no_steps">歩かずに移動した距離です</string>
+    <string name="run_reason_steps_over_gps">歩数が移動距離より多いため少なく数えました</string>
+    <string name="run_reason_overspeed_stop">速度超過が続いたためランが止まりました</string>
+    <string name="run_reason_crew_done">今日のクルーランはもう済んでいます</string>
+    <string name="run_reason_daily_steps">1日の歩数上限に達しました</string>
+    <string name="run_reason_held">最近無効なランが多いため保留しました</string>
+    <string name="run_reason_crew_empty">クルーの体力を使い切りました</string>
+    <string name="run_reason_crew_after">クルーラン終了後の記録は除きました</string>
+    <string name="run_reason_worn_after">シューズの耐久度が尽きた後の歩数は除きました</string>
+    <string name="run_reason_energy">エネルギーを使い切りました</string>
+    <string name="run_reason_worn">シューズの耐久度が尽きました</string>
+    <string name="run_reason_daily_sup">1日の獲得上限に達しました</string>
+    <string name="run_reason_no_gps_cap">ルートなしランの1日上限に達しました</string>
+    <string name="run_reason_upload_cap">1日に送れる上限に達しました</string>
+    <string name="run_reason_too_old">7日以上前のランです</string>
+</resources>

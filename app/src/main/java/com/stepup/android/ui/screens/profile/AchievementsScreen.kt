@@ -96,7 +96,7 @@ import kotlinx.coroutines.flow.stateIn
 
 /**
  * 업적 100종 — 실데이터로 잠금 해제를 판정한다.
- * 걸음·거리·세션은 기록 테이블, 민팅·강화·파티·이벤트는 SUP 원장,
+ * 걸음·거리·세션은 기록 테이블, 뽑기는 원장 · 서버 뽑기 기회 · 신발, 강화·파티·이벤트는 SUP 원장,
  * 도감·레벨은 스니커즈 인벤토리, 글 수는 커뮤니티에서 온다.
  */
 class AchievementsViewModel(
@@ -138,14 +138,24 @@ class AchievementsViewModel(
         )
     }
 
+    /**
+     * 뽑기 수의 재료 — 서버가 처리한 뽑기만(AchievementBook.drawCount). 지금 뽑기는 모두 무료라 SUP 를 낸 뽑기만 세면 늘 0 이었다(2026-11-04).
+     * 원장의 유료 뽑기(SPEND_DRAW) · 서버 draw_grants 에서 쓴 기회 · 거래소에서 산 횟수(즉시 구매 TRADE_BUY + 구매 입찰 ESCROW_LOCK —
+     * 입찰이 체결되면 따로 줄이 남지 않아 건 입찰을 모두 산 것으로 친다). 폰에서만 하던 예전 민팅(SPEND_MINT)은 서버 뽑기가 아니라 세지 않는다.
+     */
+    private val draws = combine(
+        rewardDao.observeCountByType("SPEND_DRAW"),
+        prefs.drawGrantsUsed,
+        rewardDao.observeCountByTypes(listOf(RewardType.TRADE_BUY, RewardType.ESCROW_LOCK)),
+    ) { paid, grantsUsed, purchases -> Triple(paid, grantsUsed, purchases) }
+
     private val economy = combine(
-        // 서버 경제의 유료 뽑기는 SPEND_DRAW 로 적힌다(예전 폰 경제는 SPEND_MINT)
-        rewardDao.observeCountByTypes(listOf(RewardType.SPEND_MINT, "SPEND_DRAW")),
+        draws,
         rewardDao.observeCountByType(RewardType.SPEND_UPGRADE),
         rewardDao.observeCountByType(RewardType.EARN_PARTY),
         rewardDao.observeCountByType(RewardType.EARN_EVENT),
-    ) { mints, upgrades, partyRuns, eventClaims ->
-        listOf(mints, upgrades, partyRuns, eventClaims)
+    ) { d, upgrades, partyRuns, eventClaims ->
+        EconomyCounts(d.first, d.second, d.third, upgrades, partyRuns, eventClaims)
     }
 
     private val social = combine(
@@ -162,11 +172,16 @@ class AchievementsViewModel(
         social,
     ) { act, eco, (inventory, crewCount, postCount) ->
         act.copy(
-            mints = eco[0],
+            mints = AchievementBook.drawCount(
+                paidDraws = eco.paidDraws,
+                grantsUsed = eco.grantsUsed,
+                drawnShoes = inventory.count { shoe -> shoe.server?.origin?.let { it in AchievementBook.DRAW_ORIGINS } == true },
+                purchases = eco.purchases,
+            ),
             // 강화(0054)는 재료 신발을 태우고 원장에 줄을 남기지 않는다 — 이 수는 예전 SUP 강화만 센다(앱에 강화 이력이 없다)
-            upgrades = eco[1],
-            partyRuns = eco[2],
-            eventClaims = eco[3],
+            upgrades = eco.upgrades,
+            partyRuns = eco.partyRuns,
+            eventClaims = eco.eventClaims,
             collectionSlots = inventory.map { it.slotKey }.toSet().size,
             crews = crewCount,
             posts = postCount,
@@ -209,6 +224,16 @@ class AchievementsViewModel(
         }
     }
 }
+
+/** 원장 · 경제 사본에서 센 수 — 업적 판정 재료 */
+private data class EconomyCounts(
+    val paidDraws: Int,
+    val grantsUsed: Int,
+    val purchases: Int,
+    val upgrades: Int,
+    val partyRuns: Int,
+    val eventClaims: Int,
+)
 
 @Composable
 fun AchievementsScreen(
@@ -313,8 +338,8 @@ private fun AchievementCategory.label(): String = stringResource(
         AchievementCategory.SESSIONS -> R.string.ach_cat_sessions
         AchievementCategory.STREAK -> R.string.ach_cat_streak
         AchievementCategory.SUP -> R.string.ach_cat_sup
-        // 스토어 판(WEB3 = false)은 민팅 말 대신 뽑기 — 세는 것은 SUP 로 낸 뽑기(SPEND_DRAW · 예전 SPEND_MINT)다
-        AchievementCategory.MINT -> if (com.stepup.android.BuildConfig.WEB3) R.string.ach_cat_mint else R.string.ach_cat_draw_store
+        // 두 판 모두 뽑기(2026-11-04) — 세는 것은 서버가 처리한 모든 뽑기(무료 · 상급)다
+        AchievementCategory.MINT -> R.string.ach_cat_draw_store
         AchievementCategory.COLLECTION -> R.string.ach_cat_collection
         AchievementCategory.UPGRADE -> R.string.ach_cat_upgrade
         AchievementCategory.PARTY -> R.string.ach_cat_party
@@ -335,8 +360,7 @@ private fun Achievement.goalText(): String {
         AchievementCategory.SESSIONS -> stringResource(R.string.ach_goal_sessions, n)
         AchievementCategory.STREAK -> stringResource(R.string.ach_goal_streak, n)
         AchievementCategory.SUP -> stringResource(R.string.ach_goal_sup, n)
-        AchievementCategory.MINT ->
-            stringResource(if (com.stepup.android.BuildConfig.WEB3) R.string.ach_goal_mint else R.string.ach_goal_draw_store, n)
+        AchievementCategory.MINT -> stringResource(R.string.ach_goal_draw_all, n)
         AchievementCategory.COLLECTION -> stringResource(R.string.ach_goal_collection, n)
         AchievementCategory.UPGRADE -> stringResource(R.string.ach_goal_upgrade, n)
         AchievementCategory.PARTY -> stringResource(R.string.ach_goal_party, n)

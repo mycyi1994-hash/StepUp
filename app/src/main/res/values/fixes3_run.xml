@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 기록 상세 — 적립 0 · 줄어든 까닭(서버 0089 verdict_reason, 2026-11-04) -->
+<resources>
+    <string name="run_reason_zero">Earned 0 · %1$s</string>
+    <string name="run_reason_none">This run didn\'t earn anything</string>
+    <string name="run_reason_mock">Fake location detected</string>
+    <string name="run_reason_banned">Started during the 10-minute break after an overspeed stop</string>
+    <string name="run_reason_cadence">Step rate was outside the human range</string>
+    <string name="run_reason_speed">Movement speed was outside the human range</string>
+    <string name="run_reason_track_time">Route times didn\'t match the run time</string>
+    <string name="run_reason_duplicate_route">This route was already uploaded</string>
+    <string name="run_reason_overlap">Overlaps another run</string>
+    <string name="run_reason_no_steps">Distance moved without steps</string>
+    <string name="run_reason_steps_over_gps">More steps than the route distance — counted fewer</string>
+    <string name="run_reason_overspeed_stop">Run stopped for sustained overspeed</string>
+    <string name="run_reason_crew_done">You already did today\'s crew run</string>
+    <string name="run_reason_daily_steps">Reached the daily step limit</string>
+    <string name="run_reason_held">On hold — too many invalid runs recently</string>
+    <string name="run_reason_crew_empty">Crew stamina ran out</string>
+    <string name="run_reason_crew_after">Records after the crew run ended weren\'t counted</string>
+    <string name="run_reason_worn_after">Steps after the shoes wore out weren\'t counted</string>
+    <string name="run_reason_energy">Out of energy</string>
+    <string name="run_reason_worn">Shoes are worn out</string>
+    <string name="run_reason_daily_sup">Reached the daily earning limit</string>
+    <string name="run_reason_no_gps_cap">Reached the daily limit for runs without a route</string>
+    <string name="run_reason_upload_cap">Reached today\'s upload limit</string>
+    <string name="run_reason_too_old">The run is more than 7 days old</string>
+</resources>

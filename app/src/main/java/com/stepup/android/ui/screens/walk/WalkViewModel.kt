@@ -270,7 +270,7 @@ class WalkViewModel(
 }
 
 /** [WalkViewModel.pendingShoeWear] 가 훑는 최근 러닝 수 */
-private const val PENDING_WEAR_SCAN = 20
+internal const val PENDING_WEAR_SCAN = 20
 
 /** 서버가 7일 지난 러닝은 받지 않는다 — 그보다 오래된 줄은 올라가지 않아 닳지도 않는다 */
 private const val PENDING_WEAR_WINDOW_MS = 7L * 24 * 60 * 60 * 1000

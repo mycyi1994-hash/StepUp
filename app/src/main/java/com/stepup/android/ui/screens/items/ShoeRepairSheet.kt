@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -71,13 +72,15 @@ fun ShoeRepairSheet(
     onReload: () -> Unit,
     onSignIn: (() -> Unit)?,
     onClose: () -> Unit,
+    /** 아직 올라가지 않은 러닝이 있다 — 금액 아래 한 줄로 알린다(수리는 그대로 할 수 있다) */
+    unsentRuns: Boolean = ShoeCareStore.shared.unsentRuns.collectAsState().value,
 ) {
     RunSheet(onDismiss = onClose, modifier = Modifier.testTag("repair-sheet"), closeTag = "repair-close") {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag(phase.sceneTag()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            RepairBody(shoe, phase, onConfirm, onRecheck, onReload, onSignIn, onClose)
+            RepairBody(shoe, phase, onConfirm, onRecheck, onReload, onSignIn, onClose, unsentRuns)
         }
     }
 }
@@ -91,8 +94,16 @@ private fun ColumnScope.RepairBody(
     onReload: () -> Unit,
     onSignIn: (() -> Unit)?,
     onClose: () -> Unit,
+    unsentRuns: Boolean,
 ) {
     val t = runTone()
+    // 금액을 보이는 장면의 한 줄 — 서버가 그 러닝을 받으면 닳은 만큼 금액이 바뀐다. 금액은 지금 서버 값 그대로 둔다
+    val unsentNote: @Composable () -> Unit = {
+        if (unsentRuns) {
+            Text(stringResource(R.string.care_repair_unsent_runs), style = runTextStyle(14.sp, t.cyan, FontWeight.SemiBold),
+                modifier = Modifier.testTag("repair-unsent-runs").semantics { liveRegion = LiveRegionMode.Polite })
+        }
+    }
     val title = stringResource(R.string.care_repair_title)
     val subtitle = shoe.nameAndNumber()
     // 마지막으로 확인한 남은 · 최대 내구도(1 = 10m) — 견적이 없는 장면(읽는 중 · 실패 · 가득 · 완료)에 보인다
@@ -117,6 +128,7 @@ private fun ColumnScope.RepairBody(
             }
             RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
             Text(stringResource(R.string.care_repair_full), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            unsentNote()
             RunDivider()
             CareAmountLine(stringResource(R.string.care_balance), sup(phase.balance), "repair-balance")
             CareAmountLine(stringResource(R.string.care_after_repair), sup(balanceAfter(phase.balance, phase.quote.cost)), "repair-after")
@@ -133,6 +145,7 @@ private fun ColumnScope.RepairBody(
             CareSheetTitle(title, subtitle)
             RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
             Text(stringResource(R.string.care_repair_full), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            unsentNote()
             RunDivider()
             CareAmountLine(stringResource(R.string.care_balance), sup(phase.balance), "repair-balance")
             Text(
@@ -152,6 +165,7 @@ private fun ColumnScope.RepairBody(
             Spacer(Modifier.height(4.dp))
             RunSheetText(stringResource(R.string.care_repair_not_needed_title), body = null,
                 note = stringResource(R.string.care_repair_not_needed_body))
+            unsentNote()
             RunButton(stringResource(R.string.common_close), onClose, modifier = Modifier.testTag("repair-dismiss"))
         }
         is RepairPhase.Blocked -> {

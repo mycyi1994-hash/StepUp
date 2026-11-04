@@ -22,7 +22,7 @@ function inlineHashes(file) {
 
 // 인라인 스크립트를 고치고 해시를 안 바꾸면 홈페이지 스크립트가 멈춘다 — 여기서 먼저 잡는다
 test('every inline script on CSP pages is allowed by its hash', () => {
-  for (const [file, paths] of [['index.html', ['/', '/index.html']], ['invite.html', ['/c/*', '/invite*']]]) {
+  for (const [file, paths] of [['index.html', ['/', '/index.html']], ['invite.html', ['/c/*', '/f/*', '/invite*']]]) {
     for (const path of paths) {
       const csp = cspFor(path);
       for (const hash of inlineHashes(file)) assert.ok(csp.includes(hash), `${path} 의 CSP 에 ${file} 인라인 스크립트 해시 ${hash}`);
