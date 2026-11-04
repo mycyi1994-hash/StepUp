@@ -133,9 +133,10 @@ fun ShoeCard(
                     modifier = Modifier.matchParentSize().blur(5.dp))
             }
             Box(
-                Modifier.matchParentSize().background(
-                    if (dark) Brush.verticalGradient(0f to Color(0x14080E1E), .55f to Color(0x2E080E1E), 1f to Color(0x8C080E1E))
-                    else Brush.verticalGradient(0f to Color(0x57FFFFFF), .5f to Color(0x24FFFFFF), 1f to Color(0x99E8F0FF)),
+                // 여러 색 그라디언트는 두 색 띠로(VerticalStops.kt — 기기 검사 에뮬레이터가 죽던 자리)
+                Modifier.matchParentSize().verticalStops(
+                    *if (dark) arrayOf(0f to Color(0x14080E1E), .55f to Color(0x2E080E1E), 1f to Color(0x8C080E1E))
+                    else arrayOf(0f to Color(0x57FFFFFF), .5f to Color(0x24FFFFFF), 1f to Color(0x99E8F0FF)),
                 ),
             )
             // 유리 광택: 손가락 쪽 둥근 빛 + 위 반사 + 사선 띠

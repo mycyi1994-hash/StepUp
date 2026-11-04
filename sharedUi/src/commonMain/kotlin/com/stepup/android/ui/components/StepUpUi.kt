@@ -888,12 +888,11 @@ fun PhotoCard(
         if (photo != null) {
             Image(photo, null, contentScale = ContentScale.Crop, colorFilter = colorFilter, modifier = Modifier.matchParentSize())
         }
+        // 여러 색 그라디언트는 두 색 띠로(VerticalStops.kt — 기기 검사 에뮬레이터가 죽던 자리)
         Box(
-            Modifier.matchParentSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),
-                    1f to Color.Black.copy(alpha = .78f),
-                ),
+            Modifier.matchParentSize().verticalStops(
+                0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),
+                1f to Color.Black.copy(alpha = .78f),
             ),
         )
         content()
