@@ -276,27 +276,34 @@ class StepUpServer(
     ): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
 
-        val token = when (val t = sessions.accessToken()) {
-            is TokenResult.Ok -> {
-                // Check the identity attached to this exact token, not an earlier store read.
-                if (expectedUserId != null && (expectedUserId.isBlank() || t.userId != expectedUserId)) {
-                    return ServerResult.SignInRequired("이 러닝을 시작한 계정으로 로그인해 주세요")
+        // 401 이면 출입증을 갱신해 한 번만 바로 다시 보낸다 — PostgREST 는 출입증을 먼저 보고 거절하므로(함수를 돌리기 전)
+        // 다시 보내도 두 번 되지 않는다. 다시 보내지 않으면 화면이 "연결이 끊겼어요"를 보이고 다음 차례까지 기다렸다.
+        var answered: HttpResponse? = null
+        for (attempt in 0 until 2) {
+            val token = when (val t = sessions.accessToken()) {
+                is TokenResult.Ok -> {
+                    // Check the identity attached to this exact token, not an earlier store read.
+                    if (expectedUserId != null && (expectedUserId.isBlank() || t.userId != expectedUserId)) {
+                        return ServerResult.SignInRequired("이 러닝을 시작한 계정으로 로그인해 주세요")
+                    }
+                    t.accessToken
                 }
-                t.accessToken
+                is TokenResult.Unavailable -> return ServerResult.Retry(t.reason)
+                is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
             }
-            is TokenResult.Unavailable -> return ServerResult.Retry(t.reason)
-            is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
+            val got = call(token)
+            if (got.status != 401) {
+                answered = got
+                break
+            }
+            // 출입증이 방금 만료됐을 수 있다(시계 차이 · 세션 폐기) — 만료로 적어 다음 출입증은 갱신해서 받는다
+            sessions.markExpired(token)
         }
-
-        val response = call(token)
+        // 갱신한 출입증도 401 — 다음 차례에 다시
+        val response = answered ?: return ServerResult.Retry("인증이 만료되었습니다")
         return when {
             response.status in 200..299 -> ServerResult.Ok(response.body)
             response.status == 0 -> ServerResult.Retry(response.body)
-            // 출입증이 방금 만료됐을 수 있다. 다음 차례에 갱신해서 다시 시도한다.
-            response.status == 401 -> {
-                sessions.markExpired(token)
-                ServerResult.Retry("인증이 만료되었습니다")
-            }
             // 429 는 요청이 몰린 것, 5xx 는 서버 문제 — 둘 다 나중에 다시.
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")

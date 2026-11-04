@@ -444,12 +444,13 @@ fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -
                 when (result) {
                     is ServerResult.Ok -> onCreated(result.value)
                     is ServerResult.Retry -> problem = CreateProblem.Network
-                    is ServerResult.Rejected -> problem = when {
-                        result.reason.contains("crew_run_done_today") -> CreateProblem.DoneToday
-                        result.reason.contains("room_options_invalid") -> CreateProblem.Options
+                    is ServerResult.Rejected -> problem = when (RoomCreateRefusal.of(result.reason)) {
+                        RoomCreateRefusal.DONE_TODAY -> CreateProblem.DoneToday
+                        RoomCreateRefusal.OPTIONS -> CreateProblem.Options
                         else -> CreateProblem.Rejected(result.reason)
                     }
-                    is ServerResult.SignInRequired -> problem = CreateProblem.Rejected(result.reason)
+                    // 서버 문장은 한국어라 보이지 않는다 — 로그인 안내로
+                    is ServerResult.SignInRequired -> problem = CreateProblem.Rejected("로그인이 필요합니다")
                 }
             }
         },
@@ -681,10 +682,24 @@ internal fun CrewRoomCreateContent(
             CreateProblem.DoneToday -> CrewError(stringResource(R.string.crew5_create_failed_done), tag = "crew-create-done-today")
             CreateProblem.Network -> CrewError(stringResource(R.string.crew5_create_failed_network), tag = "crew-create-network")
             CreateProblem.Options -> CrewError(stringResource(R.string.d26_create_invalid), tag = "crew-create-options")
-            is CreateProblem.Rejected -> CrewError(stringResource(R.string.crew5_create_failed, problem.reason), tag = "crew-create-failed")
+            // 서버 문장(한국어 · 영어 코드)은 그대로 띄우지 않는다 — 아는 까닭은 번역된 문구, 모르면 "열지 못했어요"만
+            is CreateProblem.Rejected -> CrewError(stringResource(roomCreateRefusalRes(problem.reason)), tag = "crew-create-failed")
         }
         Spacer(Modifier.height(12.dp))
     }
+}
+
+/** 대기실 만들기 거절 → 이 화면 언어의 안내 */
+@androidx.annotation.StringRes
+private fun roomCreateRefusalRes(reason: String): Int = when (RoomCreateRefusal.of(reason)) {
+    RoomCreateRefusal.DONE_TODAY -> R.string.crew5_create_failed_done
+    RoomCreateRefusal.OPTIONS -> R.string.d26_create_invalid
+    RoomCreateRefusal.NOT_MEMBER -> R.string.fx4_room_create_not_member
+    RoomCreateRefusal.NAME_INVALID -> R.string.fx4_room_create_name_invalid
+    RoomCreateRefusal.COURSE_INVALID -> R.string.fx4_room_create_course_invalid
+    RoomCreateRefusal.ROOM_CLOSED -> R.string.fx4_room_create_closed
+    RoomCreateRefusal.SIGN_IN -> R.string.fx4_room_create_sign_in
+    RoomCreateRefusal.OTHER -> R.string.fx4_room_create_failed
 }
 
 /** 출발 시각 칸 — 오늘이면 시각만, 내일 · 그 뒤면 날을 붙인다 */

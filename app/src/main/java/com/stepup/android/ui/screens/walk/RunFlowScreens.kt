@@ -162,35 +162,44 @@ internal fun RunStartMenuContent(
                 modifier = Modifier.testTag("run-menu-crew"),
             )
             // 러닝 챌린지 · 추천 코스 · 다이어트 · 코칭은 아직 열지 않는다(2026-10-27 사용자 "크루 · 혼자 러닝 빼면 비활성화 ·
-            // 준비 중 · 자물쇠") — 누르면 곧 열린다는 안내만. 다시 열려면 RunMenuLocks 의 값을 끈다
+            // 준비 중 · 자물쇠") — 누르면 곧 열린다는 안내만. 다시 열려면 RunMenuLocks 의 값을 끈다.
+            // 스토어 판(WEB3 꺼짐)은 잠긴 카드 · 줄을 아예 두지 않는다(2026-11-04 — 심사 · 사용자에게 쓸 수 없는 자리를 보이지 않게).
+            // 테스트 APK(qa) · debug 는 예전처럼 흐린 자물쇠로 보인다
+            val showLocked = RunMenuLocks.showsLocked(store = !com.stepup.android.BuildConfig.WEB3)
             val locked = { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() }
             val soonBadge = stringResource(R.string.runflow_soon)
-            RunModeCard(
-                stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
-                Icons.Filled.EmojiEvents, if (RunMenuLocks.CHALLENGE) locked else onGoals,
-                enabled = !RunMenuLocks.CHALLENGE, locked = RunMenuLocks.CHALLENGE,
-                badge = soonBadge.takeIf { RunMenuLocks.CHALLENGE }, modifier = Modifier.testTag("run-menu-goals"),
-            )
+            if (RunMenuLocks.shows(RunMenuLocks.CHALLENGE, showLocked)) {
+                RunModeCard(
+                    stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
+                    Icons.Filled.EmojiEvents, if (RunMenuLocks.CHALLENGE) locked else onGoals,
+                    enabled = !RunMenuLocks.CHALLENGE, locked = RunMenuLocks.CHALLENGE,
+                    badge = soonBadge.takeIf { RunMenuLocks.CHALLENGE }, modifier = Modifier.testTag("run-menu-goals"),
+                )
+            }
             val courseOpen = onCourse != null && !RunMenuLocks.COURSE
-            RunModeCard(
-                stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
-                Icons.Filled.Route, onCourse.takeIf { courseOpen } ?: locked,
-                enabled = courseOpen, locked = !courseOpen, badge = soonBadge.takeIf { !courseOpen },
-                modifier = Modifier.testTag("run-menu-course"),
-            )
+            if (RunMenuLocks.shows(!courseOpen, showLocked)) {
+                RunModeCard(
+                    stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
+                    Icons.Filled.Route, onCourse.takeIf { courseOpen } ?: locked,
+                    enabled = courseOpen, locked = !courseOpen, badge = soonBadge.takeIf { !courseOpen },
+                    modifier = Modifier.testTag("run-menu-course"),
+                )
+            }
             val dietOpen = onDiet != null && !RunMenuLocks.DIET
-            RunModeCard(
-                stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),
-                ImageVector.vectorResource(R.drawable.ic_tab_shoes),
-                onDiet.takeIf { dietOpen } ?: locked,
-                enabled = dietOpen, locked = !dietOpen, badge = soonBadge.takeIf { !dietOpen },
-                modifier = Modifier.testTag("run-menu-diet"),
-            )
+            if (RunMenuLocks.shows(!dietOpen, showLocked)) {
+                RunModeCard(
+                    stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),
+                    ImageVector.vectorResource(R.drawable.ic_tab_shoes),
+                    onDiet.takeIf { dietOpen } ?: locked,
+                    enabled = dietOpen, locked = !dietOpen, badge = soonBadge.takeIf { !dietOpen },
+                    modifier = Modifier.testTag("run-menu-diet"),
+                )
+            }
             Spacer(Modifier.height(4.dp))
             RunDivider()
             Spacer(Modifier.height(4.dp))
             RunLinkRow(stringResource(R.string.run_menu_records), onRecords, Modifier.testTag("run-menu-records"))
-            if (onCoaching != null) {
+            if (onCoaching != null && RunMenuLocks.shows(RunMenuLocks.COACHING, showLocked)) {
                 RunLinkRow(
                     stringResource(R.string.coach_menu_entry), if (RunMenuLocks.COACHING) locked else onCoaching,
                     Modifier.testTag("run-menu-coaching"), trailing = soonBadge.takeIf { RunMenuLocks.COACHING },
@@ -210,6 +219,12 @@ internal object RunMenuLocks {
     const val COURSE = true
     const val DIET = true
     const val COACHING = true
+
+    /** 잠긴 자리를 흐린 자물쇠로 보일지 — 스토어 판은 숨기고, 테스트 · 개발 판은 보인다 */
+    fun showsLocked(store: Boolean): Boolean = !store
+
+    /** 이 자리를 그릴지 — 열린 자리는 늘, 잠긴 자리는 [showsLocked] 일 때만 */
+    fun shows(locked: Boolean, showLocked: Boolean): Boolean = !locked || showLocked
 }
 
 /** 러닝 챌린지(시안 U02) — 10분 · 1km · 3km 같은 크기의 카드. 카드를 누르면 그 도전이 바로 시작된다(안에 버튼을 또 두지 않는다) */

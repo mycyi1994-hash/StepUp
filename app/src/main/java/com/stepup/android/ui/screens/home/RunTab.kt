@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -83,7 +84,12 @@ import kotlinx.coroutines.withContext
  */
 
 /** 출발 전 위치 — 러닝 탭이 미리 잡아 둔 위치(LocationWarmup)로 본다 */
-enum class GpsReadiness { READY, WAITING, NO_PERMISSION }
+enum class GpsReadiness {
+    READY, WAITING, NO_PERMISSION,
+
+    /** 기기 위치 기능이 꺼져 있다 — 켜기 전에는 위치가 오지 않으니 "확인 중"으로 두지 않는다 */
+    LOCATION_OFF,
+}
 
 /** 사람 없는 배경 사진 15장(2026-10-26 전달본 02-backgrounds-15) — assets/run_photos */
 object RunPhotos {
@@ -172,6 +178,7 @@ internal fun GpsLine(state: GpsReadiness, modifier: Modifier = Modifier) {
                     GpsReadiness.READY -> R.string.d26_gps_ready
                     GpsReadiness.WAITING -> R.string.d26_gps_waiting
                     GpsReadiness.NO_PERMISSION -> R.string.d26_gps_permission
+                    GpsReadiness.LOCATION_OFF -> R.string.home_gps_location_off
                 },
             ),
             style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
@@ -292,21 +299,35 @@ internal fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showC
     Box(Modifier.fillMaxWidth().height(1.dp).background(c.separator))
 }
 
-/** 러닝 탭이 화면에 있는 동안 미리 잡은 위치로 GPS 준비를 본다(2초마다) */
+/**
+ * 러닝 탭이 화면에 있는 동안 미리 잡은 위치로 GPS 준비를 본다(2초마다 — 화면이 다시 보이면 곧바로 다시 본다).
+ * 기기 위치 기능이 꺼져 있으면 위치가 영영 오지 않으니 그렇게 쓴다(예전엔 "확인 중"에 머물렀다).
+ */
 @Composable
 internal fun rememberGpsReadiness(): GpsReadiness {
     val context = LocalContext.current
-    val state by produceState(initialValue = GpsReadiness.WAITING) {
-        while (true) {
-            val fine = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED
-            value = when {
-                !fine -> GpsReadiness.NO_PERMISSION
-                com.stepup.android.core.LocationWarmup.fresh(10_000)?.let { !it.hasAccuracy() || it.accuracy <= 50f } == true -> GpsReadiness.READY
-                else -> GpsReadiness.WAITING
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    val state by produceState(initialValue = GpsReadiness.WAITING, lifecycle) {
+        // 화면이 보이는 동안만 본다 — 설정에서 위치를 켜고 돌아오면 그 자리에서 다시 읽는다
+        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                val fine = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+                value = when {
+                    !fine -> GpsReadiness.NO_PERMISSION
+                    !locationEnabled(context) -> GpsReadiness.LOCATION_OFF
+                    com.stepup.android.core.LocationWarmup.fresh(10_000)?.let { !it.hasAccuracy() || it.accuracy <= 50f } == true -> GpsReadiness.READY
+                    else -> GpsReadiness.WAITING
+                }
+                kotlinx.coroutines.delay(2_000)
             }
-            kotlinx.coroutines.delay(2_000)
         }
     }
     return state
+}
+
+/** 기기 위치 기능이 켜져 있는가 — 못 읽으면 켜진 것으로 본다(없는 문제를 알리지 않게) */
+private fun locationEnabled(context: android.content.Context): Boolean {
+    val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as? android.location.LocationManager ?: return true
+    return runCatching { androidx.core.location.LocationManagerCompat.isLocationEnabled(lm) }.getOrDefault(true)
 }

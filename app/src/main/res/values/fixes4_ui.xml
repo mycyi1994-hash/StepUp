@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 화면 글자 · 언어 고침 4차: 게시판 · 대기실 만들기 거절 문구(BoardRefusal · RoomCreateRefusal), 대회 날짜 꼴, 시 · 도 이름 -->
+<resources>
+    <string name="fx4_request_failed">Couldn\'t process your request. Please try again in a moment.</string>
+    <string name="fx4_board_post_too_often">You\'re posting too often. Please wait a moment and try again.</string>
+    <string name="fx4_board_comment_too_often">You\'re commenting too often. Please wait a moment and try again.</string>
+    <string name="fx4_board_not_my_post_delete">You can only delete your own posts.</string>
+    <string name="fx4_board_not_my_post_edit">You can only edit your own posts.</string>
+    <string name="fx4_board_not_my_comment">You can only delete your own comments.</string>
+    <string name="fx4_board_flash_full">This run is already full.</string>
+    <string name="fx4_board_flash_full_n">This run is already full (%1$d people).</string>
+    <string name="fx4_board_flash_past">This meetup has already passed.</string>
+    <string name="fx4_board_flash_needs_time">A flash run needs a meetup time in the future.</string>
+    <string name="fx4_board_not_crew_member">Only crew members can do this.</string>
+    <string name="fx4_board_post_gone">This post is no longer available.</string>
+    <string name="fx4_board_block_self">You can\'t block yourself.</string>
+    <string name="fx4_board_invalid">Please check what you entered and try again.</string>
+    <string name="fx4_board_too_long">Your text is too long.</string>
+    <string name="fx4_board_empty">Please write something first.</string>
+    <string name="fx4_room_create_not_member">Only crew members can open a lobby.</string>
+    <string name="fx4_room_create_name_invalid">Run names must be 1–30 characters.</string>
+    <string name="fx4_room_create_course_invalid">Please check the course name, distance and route.</string>
+    <string name="fx4_room_create_closed">This lobby is closed.</string>
+    <string name="fx4_room_create_sign_in">Please sign in to open a lobby.</string>
+    <string name="fx4_room_create_failed">Couldn\'t open the lobby. Please try again.</string>
+    <string name="fx4_feed_day_pattern">EEE, MMM d</string>
+    <string name="fx4_region_seoul">Seoul</string>
+    <string name="fx4_region_busan">Busan</string>
+    <string name="fx4_region_daegu">Daegu</string>
+    <string name="fx4_region_incheon">Incheon</string>
+    <string name="fx4_region_gwangju">Gwangju</string>
+    <string name="fx4_region_daejeon">Daejeon</string>
+    <string name="fx4_region_ulsan">Ulsan</string>
+    <string name="fx4_region_sejong">Sejong</string>
+    <string name="fx4_region_gyeonggi">Gyeonggi</string>
+    <string name="fx4_region_gangwon">Gangwon</string>
+    <string name="fx4_region_chungbuk">Chungbuk</string>
+    <string name="fx4_region_chungnam">Chungnam</string>
+    <string name="fx4_region_jeonbuk">Jeonbuk</string>
+    <string name="fx4_region_jeonnam">Jeonnam</string>
+    <string name="fx4_region_gyeongbuk">Gyeongbuk</string>
+    <string name="fx4_region_gyeongnam">Gyeongnam</string>
+    <string name="fx4_region_jeju">Jeju</string>
+</resources>

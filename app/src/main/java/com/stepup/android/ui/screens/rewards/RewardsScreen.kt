@@ -557,7 +557,8 @@ private fun EntrySheet(entry: RewardEntity, zone: ZoneId, onClose: () -> Unit) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
         DetailLine(stringResource(R.string.wl_detail_kind), stringResource(kindLabel(entry.amount)), bold = true)
         DetailLine(stringResource(R.string.wl_detail_time), full)
-        if (entry.description.isNotBlank()) {
+        // 메모는 서버 원장 · 폰이 한국어로만 적어 둔 글 — 다른 언어 화면에서는 숨긴다(위 제목이 번역된 이름이다)
+        if (entry.description.isNotBlank() && com.stepup.android.ui.components.showsKoreanOnlyText()) {
             Text(stringResource(R.string.wl_detail_note), color = p.secondary, fontSize = 15.sp)
             Text(entry.description, color = p.text, fontSize = 16.sp, lineHeight = 1.45.em, modifier = Modifier.testTag("wl-entry-note"))
         }

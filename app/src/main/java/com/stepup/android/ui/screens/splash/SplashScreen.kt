@@ -64,7 +64,8 @@ fun SplashScreen(onReady: () -> Unit) {
         val prepared = try {
             withTimeoutOrNull(14_000) {
                 ServiceLocator.userPrefs.ensureRunnerUid()
-                ServiceLocator.sneakerRepository.ensureStarter()
+                // 서버 경제 판은 신발을 서버에서만 받는다 — 폰이 만든 첫 신발을 끼워 넣지 않는다(동기화 전 가짜 신발)
+                if (!ServiceLocator.serverEconomyOn) ServiceLocator.sneakerRepository.ensureStarter()
                 ServiceLocator.boostRepository.recoverEnergyPurchases()
                 ServiceLocator.boostRepository.purgeExpired()
                 ServiceLocator.crewRepository.clearLegacy()

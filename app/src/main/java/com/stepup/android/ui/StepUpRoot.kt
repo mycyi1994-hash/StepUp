@@ -369,6 +369,8 @@ fun StepUpRoot() {
         }
         sessionChecked = true
     }
+    // 출입증 갱신이 거절되면(죽은 refresh token) 로그인 화면으로 — 달리는 중이면 끝난 뒤
+    SessionExpiryWatch()
 
     // 접속 코드 문(0079) — 로그인 · 계정이 바뀔 때와 앱으로 돌아올 때마다 다시 묻는다. 막힌 사람은 코드 입력 화면만 본다
     val accessContext = androidx.compose.ui.platform.LocalContext.current

@@ -275,6 +275,11 @@ object ServiceLocator {
     val serverEconomyOn: Boolean
         get() = ::economyApi.isInitialized && economyApi.isConfigured
 
+    /** 경제 사본을 확인된 값으로 보여도 되는가(첫 동기화 전 · 끊김) — 서버 경제가 아니거나 아직 준비 전이면 늘 READY */
+    fun economyLoad(): kotlinx.coroutines.flow.Flow<com.stepup.android.data.repo.EconomyLoad> =
+        if (serverEconomyOn && ::economySync.isInitialized) economySync.load
+        else kotlinx.coroutines.flow.flowOf(com.stepup.android.data.repo.EconomyLoad.READY)
+
     private val economyScope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
     )

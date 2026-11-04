@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 화면 글자 · 언어 고침 4차: 게시판 · 대기실 만들기 거절 문구(BoardRefusal · RoomCreateRefusal), 대회 날짜 꼴, 시 · 도 이름 -->
+<resources>
+    <string name="fx4_request_failed">요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.</string>
+    <string name="fx4_board_post_too_often">글을 너무 자주 쓰고 있어요. 잠시 뒤에 다시 써 주세요.</string>
+    <string name="fx4_board_comment_too_often">댓글을 너무 자주 쓰고 있어요. 잠시 뒤에 다시 써 주세요.</string>
+    <string name="fx4_board_not_my_post_delete">내가 쓴 글만 지울 수 있어요.</string>
+    <string name="fx4_board_not_my_post_edit">내가 쓴 글만 고칠 수 있어요.</string>
+    <string name="fx4_board_not_my_comment">내가 쓴 댓글만 지울 수 있어요.</string>
+    <string name="fx4_board_flash_full">정원이 찼어요.</string>
+    <string name="fx4_board_flash_full_n">정원이 찼어요 (%1$d명).</string>
+    <string name="fx4_board_flash_past">이미 지난 모임이에요.</string>
+    <string name="fx4_board_flash_needs_time">번개러닝은 앞으로의 모임 시각이 있어야 해요.</string>
+    <string name="fx4_board_not_crew_member">크루원만 할 수 있어요.</string>
+    <string name="fx4_board_post_gone">글을 찾을 수 없어요.</string>
+    <string name="fx4_board_block_self">나 자신은 차단할 수 없어요.</string>
+    <string name="fx4_board_invalid">입력한 내용을 확인해 주세요.</string>
+    <string name="fx4_board_too_long">글이 너무 길어요.</string>
+    <string name="fx4_board_empty">내용을 적어 주세요.</string>
+    <string name="fx4_room_create_not_member">크루원만 대기실을 열 수 있어요.</string>
+    <string name="fx4_room_create_name_invalid">러닝 이름은 1~30자예요.</string>
+    <string name="fx4_room_create_course_invalid">코스 이름 · 거리 · 경로를 확인해 주세요.</string>
+    <string name="fx4_room_create_closed">닫힌 대기실이에요.</string>
+    <string name="fx4_room_create_sign_in">로그인하면 대기실을 열 수 있어요.</string>
+    <string name="fx4_room_create_failed">대기실을 열지 못했어요. 다시 시도해 주세요.</string>
+    <string name="fx4_feed_day_pattern">M월 d일 (E)</string>
+    <string name="fx4_region_seoul">서울</string>
+    <string name="fx4_region_busan">부산</string>
+    <string name="fx4_region_daegu">대구</string>
+    <string name="fx4_region_incheon">인천</string>
+    <string name="fx4_region_gwangju">광주</string>
+    <string name="fx4_region_daejeon">대전</string>
+    <string name="fx4_region_ulsan">울산</string>
+    <string name="fx4_region_sejong">세종</string>
+    <string name="fx4_region_gyeonggi">경기</string>
+    <string name="fx4_region_gangwon">강원</string>
+    <string name="fx4_region_chungbuk">충북</string>
+    <string name="fx4_region_chungnam">충남</string>
+    <string name="fx4_region_jeonbuk">전북</string>
+    <string name="fx4_region_jeonnam">전남</string>
+    <string name="fx4_region_gyeongbuk">경북</string>
+    <string name="fx4_region_gyeongnam">경남</string>
+    <string name="fx4_region_jeju">제주</string>
+</resources>

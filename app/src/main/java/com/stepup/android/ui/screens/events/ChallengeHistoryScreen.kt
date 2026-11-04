@@ -82,6 +82,8 @@ fun ChallengeHistoryScreen(onBack: () -> Unit, onOpenChallenges: () -> Unit) {
 @Composable
 private fun HistoryRow(row: RewardEntity) {
     val date = Instant.ofEpochMilli(row.timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+    // 설명은 서버 원장 · 폰이 한국어로만 적어 둔 글 — 다른 언어 화면에서는 날짜만(제목이 번역된 이름이다)
+    val note = row.description.takeIf { it.isNotBlank() && com.stepup.android.ui.components.showsKoreanOnlyText() }
     Column {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("challenge-history-row"),
@@ -94,7 +96,7 @@ private fun HistoryRow(row: RewardEntity) {
                     color = Snow, style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
-                    "${date.year}.${date.monthValue}.${date.dayOfMonth}" + if (row.description.isNotBlank()) " · ${row.description}" else "",
+                    "${date.year}.${date.monthValue}.${date.dayOfMonth}" + if (note != null) " · $note" else "",
                     color = Slate, style = MaterialTheme.typography.bodySmall, maxLines = 1,
                 )
             }

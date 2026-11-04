@@ -101,6 +101,7 @@ fun StoryDetailScreen(
     val offline by viewModel.offline.collectAsStateWithLifecycle()
     val notice by viewModel.notice.collectAsStateWithLifecycle()
     val comments by viewModel.comments.collectAsStateWithLifecycle()
+    val commentsLoad by viewModel.commentsLoad.collectAsStateWithLifecycle()
     val sheet by viewModel.sheet.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -219,7 +220,25 @@ fun StoryDetailScreen(
                     val commentTotal = if (comments.isEmpty()) current.commentCount else comments.size
                     Text(stringResource(R.string.story_comment_count, commentTotal), style = runTextStyle(20.sp, t.text, FontWeight.ExtraBold),
                         modifier = Modifier.testTag("story-comment-count"))
-                    if (commentTotal == 0) {
+                    if (comments.isEmpty() && commentsLoad == com.stepup.android.data.repo.CommentsLoad.LOADING) {
+                        // 받는 중 — "아직 댓글이 없어요"로 보이지 않게
+                        Box(Modifier.fillMaxWidth().padding(vertical = 40.dp).testTag("story-comments-loading"), contentAlignment = Alignment.Center) {
+                            androidx.compose.material3.CircularProgressIndicator(Modifier.size(26.dp), color = t.label, strokeWidth = 2.5.dp)
+                        }
+                    } else if (comments.isEmpty() && commentsLoad == com.stepup.android.data.repo.CommentsLoad.FAILED) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(vertical = 28.dp).testTag("story-comments-failed"),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                stringResource(R.string.fx4_comments_failed), style = runTextStyle(16.sp, t.label, FontWeight.Medium),
+                                textAlign = TextAlign.Center,
+                            )
+                            androidx.compose.material3.TextButton(onClick = viewModel::retryComments, modifier = Modifier.testTag("story-comments-retry")) {
+                                Text(stringResource(R.string.fx4_retry), style = runTextStyle(16.sp, t.text, FontWeight.Bold))
+                            }
+                        }
+                    } else if (commentTotal == 0) {
                         Text(
                             stringResource(R.string.story_blue_comment_empty), style = runTextStyle(16.sp, t.label, FontWeight.Medium),
                             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp),

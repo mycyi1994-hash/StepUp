@@ -422,11 +422,28 @@ class CommunityRepository(
     /** 글마다 받아 온 댓글 */
     private val _comments = MutableStateFlow<Map<Long, List<Comment>>>(emptyMap())
 
+    /** 글마다 댓글을 받는 중 · 받지 못함(한 번이라도 받은 글은 [_comments] 에 있어 받은 목록을 그대로 보인다) */
+    private val _commentLoads = MutableStateFlow<Map<Long, CommentsLoad>>(emptyMap())
+
     /** 한 글의 댓글을 부모–답글 묶음으로. 보기 시작하면 서버에서 새로 받는다. */
     fun commentThreads(postId: Long): Flow<List<CommentThread>> =
         _comments
             .map { it[postId].orEmpty().toThreads() }
             .onStart { scope.launch { loadComments(postId) } }
+
+    /**
+     * 한 글의 댓글 상태 — 아직 받지 못한 글은 받는 중 · 받지 못함이다. "아직 댓글이 없어요"는 받아 온 목록이 빌 때만.
+     * 받는 일은 [commentThreads] 가 시작한다(이것은 보기만).
+     */
+    fun commentsLoad(postId: Long): Flow<CommentsLoad> =
+        combine(_comments, _commentLoads) { comments, loads ->
+            if (comments.containsKey(postId)) CommentsLoad.READY else loads[postId] ?: CommentsLoad.LOADING
+        }
+
+    /** 받지 못한 댓글을 다시 받는다(댓글 창 · 이야기 상세의 "다시 불러오기") */
+    fun retryComments(postId: Long) {
+        scope.launch { loadComments(postId) }
+    }
 
     /** 번개 참가자 명단. 서버에 닿지 못하면 null — 빈 명단과 섞지 않는다. */
     suspend fun roster(postId: Long): List<FlashMember>? =
@@ -436,14 +453,24 @@ class CommunityRepository(
 
     /** @return 서버에서 받아 왔으면 true */
     suspend fun loadComments(postId: Long): Boolean {
-        val result = api.comments(postId)
+        _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.LOADING)
+        val result = try {
+            api.comments(postId)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.FAILED)
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
         if (result is ServerResult.Ok) {
             val list = result.value.map { it.toDomain() }
             _comments.value = _comments.value + (postId to list)
+            _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.READY)
             // 글 카드의 댓글 수가 방금 받은 목록과 어긋나지 않게 맞춘다.
             updatePost(postId) { it.copy(commentCount = list.size) }
             return true
         }
+        _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.FAILED)
         return false
     }
 

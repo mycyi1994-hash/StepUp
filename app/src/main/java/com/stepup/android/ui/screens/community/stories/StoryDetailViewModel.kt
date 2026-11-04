@@ -87,6 +87,12 @@ class StoryDetailViewModel(
         .map { threads -> threads.flatMap { listOf(it.comment) + it.replies } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** 댓글을 받는 중 · 받지 못함 — 받기 전에 "아직 댓글이 없어요"로 보이지 않게 */
+    val commentsLoad: StateFlow<com.stepup.android.data.repo.CommentsLoad> = repository.commentsLoad(postId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.stepup.android.data.repo.CommentsLoad.LOADING)
+
+    fun retryComments() = repository.retryComments(postId)
+
     private val _sheet = MutableStateFlow(StoryDetailSheet.NONE)
     val sheet: StateFlow<StoryDetailSheet> = _sheet
 

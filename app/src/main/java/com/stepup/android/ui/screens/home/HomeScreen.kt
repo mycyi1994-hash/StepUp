@@ -115,7 +115,7 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val earned by viewModel.todayEarned.collectAsStateWithLifecycle()
     val week by viewModel.weekRuns.collectAsStateWithLifecycle()
-    val starts by viewModel.runStarts.collectAsStateWithLifecycle()
+    val goalBonus by viewModel.goalBonusToday.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var hasPermission by remember {
@@ -129,6 +129,8 @@ fun HomeScreen(
         if (hasPermission) viewModel.onPermissionGranted()
     }
     LifecycleResumeEffect(Unit) {
+        // 밤새 뒤에 있다 돌아왔으면 어제 걸음이 남지 않게 날짜부터 다시 본다
+        viewModel.refreshDay()
         val granted = StepPermissions.hasActivityRecognition(context)
         if (granted) permissionDenied = false
         if (granted != hasPermission) {
@@ -170,7 +172,7 @@ fun HomeScreen(
             TodayActivity(
                 steps = state.todaySteps, goal = state.goal, loaded = state.loaded, hasPermission = hasPermission,
                 km = if (state.loaded) RewardEconomyKm(state.todaySteps) else null,
-                runSec = runSec, earned = earned, pending = pending > 0,
+                runSec = runSec, earned = earned, pending = pending > 0, goalBonus = goalBonus == true,
                 onRequestPermission = { requestActivity() },
             )
             Column(
@@ -366,6 +368,8 @@ internal fun TodayActivity(
     earned: Double?,
     pending: Boolean,
     onRequestPermission: () -> Unit,
+    /** 오늘 목표 보너스가 원장에 적혔는가 — 서버는 하루 걸음이 아니라 확인된 러닝 걸음으로 준다 */
+    goalBonus: Boolean = false,
 ) {
     val t = com.stepup.android.ui.components.runTone()
     Column(Modifier.fillMaxWidth().testTag("home-activity")) {
@@ -397,7 +401,9 @@ internal fun TodayActivity(
             Text(
                 when {
                     !loaded -> ""
-                    steps >= goal -> stringResource(R.string.home_activity_done)
+                    // 고리는 하루 걸음으로 차지만 보너스는 러닝 걸음으로만 나온다 — 받은 것이 원장에 있을 때만 받았다고 쓴다
+                    steps >= goal && goalBonus -> stringResource(R.string.home_goal_done_bonus)
+                    steps >= goal -> stringResource(R.string.home_goal_done_run_steps)
                     else -> stringResource(R.string.home_activity_left, "%,d".format(goal - steps))
                 },
                 color = t.label, fontSize = 13.sp, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),

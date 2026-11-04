@@ -16,8 +16,11 @@ import com.stepup.android.data.remote.TokenResult
 import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -77,7 +80,15 @@ class EconomySync(
     private val _syncedFrom = MutableStateFlow(0L)
     val syncedFrom: StateFlow<Long> = _syncedFrom
 
-    suspend fun refresh(): ServerResult<Unit> = lock.withLock {
+    /** 여러 곳에서 잇달아 불러도 동기화는 하나씩 — 도는 동안 부른 사람들은 다음 한 번을 함께 기다린다([CoalescedRun]) */
+    private val runs = CoalescedRun<ServerResult<Unit>>(lock)
+
+    /** 신발 탭 · 지갑이 빈 사본을 확정처럼 보이지 않게 — [EconomyLoad] */
+    val load: Flow<EconomyLoad> = combine(_syncedFrom, _state, runs.running) { from, st, running ->
+        economyLoadOf(api.isConfigured, from, st, running)
+    }.distinctUntilChanged()
+
+    suspend fun refresh(): ServerResult<Unit> = runs.run {
         val startedAt = now()
         val result = refreshLocked()
         if (result is ServerResult.Ok) _syncedFrom.value = startedAt
@@ -242,6 +253,8 @@ class EconomySync(
         }
         prefs.clearServerEconomy()
         bootstrapped = null
+        // 앞 계정의 동기화 시각을 새 계정에 물려주지 않는다 — 새 계정은 첫 동기화 전까지 "불러오는 중"
+        _syncedFrom.value = 0L
     }
 
     /**

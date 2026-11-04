@@ -275,19 +275,35 @@ fun BetaCodesScreen(onBack: () -> Unit) {
     val type = StepUpUi.type
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf(AccessGate.state.value) }
+    // 이번에 서버에서 내 상태를 받았는가 — 폰에 적어 둔 상태에는 "만들 수 있는가"가 없다(끊긴 채로 "만들 수 없어요"라고 하지 않게)
+    var statusKnown by remember { mutableStateOf(false) }
     var codes by remember { mutableStateOf<List<AccessCodeRow>?>(null) }
     var failed by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<Int?>(null) }
     suspend fun reload() {
-        status = AccessGate.refresh(context)
-        when (val r = ServiceLocator.accessApi.myCodes()) {
-            is ServerResult.Ok -> { codes = r.value; failed = false }
-            else -> failed = codes == null
+        loading = true
+        try {
+            status = AccessGate.refresh(context)
+            statusKnown = !AccessGate.failed.value
+            when (val r = ServiceLocator.accessApi.myCodes()) {
+                is ServerResult.Ok -> { codes = r.value; failed = false }
+                else -> failed = codes == null
+            }
+        } finally {
+            loading = false
         }
     }
     LaunchedEffect(Unit) { reload() }
     val left = status?.let { (it.dailyLimit - it.issuedToday).coerceAtLeast(0) } ?: 0
+    val view = betaCodesView(loading, statusKnown, status?.canIssue == true)
+    val retry: () -> Unit = {
+        if (!loading && !busy) {
+            message = null
+            scope.launch { reload() }
+        }
+    }
     Column(Modifier.fillMaxSize().background(c.background).testTag("beta-codes")) {
         SecondaryHeader(
             onBack = onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.beta_codes_title),
@@ -298,16 +314,36 @@ fun BetaCodesScreen(onBack: () -> Unit) {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = StepUpDesign.Gutter, vertical = 8.dp),
         ) {
             item(key = "intro") {
-                Text(
-                    if (status?.canIssue == true) stringResource(R.string.beta_codes_left, left, status?.dailyLimit ?: 0)
-                    else stringResource(R.string.beta_codes_not_allowed),
-                    style = type.body, color = c.secondaryLabel, modifier = Modifier.padding(bottom = 14.dp).testTag("beta-codes-left"),
-                )
+                when (view) {
+                    BetaCodesView.LOADING -> Unit
+                    else -> Text(
+                        when (view) {
+                            BetaCodesView.ALLOWED -> stringResource(R.string.beta_codes_left, left, status?.dailyLimit ?: 0)
+                            BetaCodesView.OFFLINE -> stringResource(R.string.fx4_beta_codes_offline)
+                            else -> stringResource(R.string.beta_codes_not_allowed)
+                        },
+                        style = type.body, color = c.secondaryLabel, modifier = Modifier.padding(bottom = 14.dp).testTag("beta-codes-left"),
+                    )
+                }
                 message?.let { Text(stringResource(it), style = type.caption, color = c.live, modifier = Modifier.padding(bottom = 10.dp)) }
             }
             when {
+                // 처음 불러오는 중 — 빈 목록 · 실패로 보이지 않게
+                codes == null && loading -> item(key = "loading") {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 32.dp).testTag("beta-codes-loading"), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.CircularProgressIndicator(Modifier.size(28.dp), color = c.secondaryLabel, strokeWidth = 2.5.dp)
+                    }
+                }
                 failed -> item(key = "failed") {
-                    Text(stringResource(R.string.beta_codes_failed), style = type.body, color = c.secondaryLabel)
+                    Column(Modifier.testTag("beta-codes-failed")) {
+                        Text(stringResource(R.string.beta_codes_failed), style = type.body, color = c.secondaryLabel)
+                        // 아래 주 버튼이 이미 "다시 시도"면 같은 버튼을 두 번 두지 않는다
+                        if (view != BetaCodesView.OFFLINE) {
+                            androidx.compose.material3.TextButton(onClick = retry, modifier = Modifier.testTag("beta-codes-retry")) {
+                                Text(stringResource(R.string.fx4_retry), style = type.body)
+                            }
+                        }
+                    }
                 }
                 codes?.isEmpty() == true -> item(key = "empty") {
                     Text(stringResource(R.string.beta_codes_empty), style = type.body, color = c.secondaryLabel)
@@ -315,31 +351,63 @@ fun BetaCodesScreen(onBack: () -> Unit) {
                 else -> items(codes.orEmpty(), key = { it.code }) { row -> BetaCodeRow(row, context) }
             }
         }
+        if (view == BetaCodesView.OFFLINE) {
+            // 내 상태를 받지 못했다 — "만들 수 없어요"로 막지 않고 다시 묻는다
+            PrimaryButton(
+                text = stringResource(R.string.fx4_retry),
+                state = if (loading) ButtonState.Loading else ButtonState.Idle,
+                onClick = retry,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter, vertical = 16.dp).testTag("beta-codes-make"),
+            )
+            return@Column
+        }
         PrimaryButton(
             text = stringResource(R.string.beta_codes_make),
             state = when {
-                busy -> ButtonState.Loading
-                status?.canIssue != true || left <= 0 -> ButtonState.Disabled
+                busy || view == BetaCodesView.LOADING -> ButtonState.Loading
+                view != BetaCodesView.ALLOWED || left <= 0 -> ButtonState.Disabled
                 else -> ButtonState.Idle
             },
             onClick = {
-                if (busy) return@PrimaryButton
+                if (busy || loading) return@PrimaryButton
                 busy = true
                 message = null
                 scope.launch {
-                    when (val r = ServiceLocator.accessApi.issue()) {
-                        is ServerResult.Ok -> if (r.value.code == null) {
-                            message = if (r.value.error == "daily_limit") R.string.beta_codes_limit else R.string.beta_codes_not_allowed
+                    try {
+                        when (val r = ServiceLocator.accessApi.issue()) {
+                            is ServerResult.Ok -> if (r.value.code == null) {
+                                message = if (r.value.error == "daily_limit") R.string.beta_codes_limit else R.string.beta_codes_not_allowed
+                            }
+                            else -> message = R.string.access_error_network
                         }
-                        else -> message = R.string.access_error_network
+                        reload()
+                    } finally {
+                        busy = false
                     }
-                    reload()
-                    busy = false
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter, vertical = 16.dp).testTag("beta-codes-make"),
         )
     }
+}
+
+/** 베타 초대 코드 화면의 윗글 · 주 버튼 — 불러오는 중 · 만들 수 있음 · 만들 수 없음(서버 답) · 끊김(답을 못 받음) */
+internal enum class BetaCodesView { LOADING, ALLOWED, NOT_ALLOWED, OFFLINE }
+
+internal fun betaCodesView(loading: Boolean, statusKnown: Boolean, canIssue: Boolean): BetaCodesView = when {
+    statusKnown -> if (canIssue) BetaCodesView.ALLOWED else BetaCodesView.NOT_ALLOWED
+    loading -> BetaCodesView.LOADING
+    else -> BetaCodesView.OFFLINE
+}
+
+/**
+ * 서버 시각(PostgREST "2026-11-03T07:30:06.12+00:00")을 날짜 글로. Instant.parse 는 안드로이드 13 이하에서 "+00:00" 을
+ * 못 읽어 날짜가 비었다 — 시차가 붙은 글은 OffsetDateTime 으로 읽는다. 못 읽으면 null.
+ */
+internal fun betaCodeDay(iso: String?, zone: ZoneId, format: DateTimeFormatter): String? = iso?.let { text ->
+    runCatching { java.time.OffsetDateTime.parse(text).atZoneSameInstant(zone).format(format) }
+        .recoverCatching { Instant.parse(text).atZone(zone).format(format) }
+        .getOrNull()
 }
 
 @Composable
@@ -348,7 +416,7 @@ private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
     val type = StepUpUi.type
     val open = row.status == "OPEN"
     val day = DateTimeFormatter.ofPattern(stringResource(R.string.beta_codes_date))
-    fun fmt(iso: String?) = iso?.let { runCatching { Instant.parse(it).atZone(ZoneId.systemDefault()).format(day) }.getOrNull() }
+    fun fmt(iso: String?) = betaCodeDay(iso, ZoneId.systemDefault(), day)
     val statusText = when (row.status) {
         "USED" -> stringResource(R.string.beta_code_used, fmt(row.usedAt) ?: "")
         "EXPIRED" -> stringResource(R.string.beta_code_expired)

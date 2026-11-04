@@ -45,6 +45,13 @@ class StepTracker(
     private val _todaySteps = MutableStateFlow(0)
     val todaySteps: StateFlow<Int> = _todaySteps
 
+    /**
+     * [todaySteps] 와 같은 값에 그 값이 속한 날을 붙인 것.
+     * 자정을 넘겨도 새 걸음이 오기 전까지 [todaySteps] 는 어제 값이다 — 날짜를 보고 걸러야 한다.
+     */
+    private val _todayReading = MutableStateFlow(DayReading(LocalDate.now().toEpochDay(), 0))
+    val todayReading: StateFlow<DayReading> = _todayReading
+
     /** 디버그 시뮬레이션으로 더한 걸음 (센서 미지원 환경용) */
     private var simulatedSteps = 0
 
@@ -89,6 +96,7 @@ class StepTracker(
         hasReading = true
         simulatedSteps += count.coerceAtLeast(0)
         _todaySteps.value = _todaySteps.value + count.coerceAtLeast(0)
+        _todayReading.value = DayReading(LocalDate.now().toEpochDay(), _todaySteps.value)
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -103,6 +111,7 @@ class StepTracker(
         val (savedDay, savedBaseline) = prefs.baseline()
         val boot = bootCount()
         val savedBoot = prefs.baselineBoot()
+        val rebooted = StepBaseline.rebooted(boot, savedBoot)
         val baseline = when {
             savedDay != today -> {
                 // 날짜가 바뀐 경우. 여기서 기준점을 그냥 지금 누적값으로 잡으면
@@ -113,9 +122,12 @@ class StepTracker(
                 // 그 차이를 오늘로 넘겨준다. 다만 두 가지로 묶는다.
                 //  - 어제 측정한 경우에만 넘긴다. 며칠 만에 열었다면 그 사이
                 //    걸음이 전부 오늘로 쏟아지므로 그냥 새로 센다.
-                //  - [CARRY_OVER_CAP]으로 막는다. 넘어오는 몫에는 어제 저녁
+                //  - [StepBaseline.CARRY_OVER_CAP]으로 막는다. 넘어오는 몫에는 어제 저녁
                 //    걸음이 섞여 있어, 하루치를 넘게 얹어줄 이유가 없다.
-                val carried = carryOver(savedDay, savedBaseline, today, cumulative)
+                // 밤사이 재부팅했으면 이 갈래가 재부팅 갈래보다 먼저 오므로 여기서 함께 본다 —
+                // 부팅 뒤 누적값은 모두 마지막 측정 뒤 걸음이다(StepBaseline.carryOver).
+                val yesterdaySteps = if (savedDay == today - 1) todayPersistedSteps(savedDay) else 0
+                val carried = StepBaseline.carryOver(savedDay, savedBaseline, today, cumulative, yesterdaySteps, rebooted)
                 val newBaseline = cumulative - carried
                 prefs.setBaseline(today, newBaseline, boot)
                 newBaseline
@@ -128,7 +140,7 @@ class StepTracker(
             // 쌓인 누적값이 금방 기준점을 넘는다. 그래서 부팅 횟수를 함께 적어 두고,
             // 바뀌었으면 재부팅으로 본다(확실한 신호만 쓴다 — 저장된 걸음과 비교하면
             // 자정·시간대 변경 때 재부팅으로 오인해 걸음이 부풀어 오른다).
-            (boot >= 0 && savedBoot >= 0 && boot != savedBoot) || cumulative < savedBaseline -> {
+            rebooted || cumulative < savedBaseline -> {
                 val preBoot = todayPersistedSteps(today).coerceAtLeast(0)
                 // 부팅 뒤 누적값은 0부터 다시 쌓인 것이다 — 부팅 뒤 걸음까지 그대로 센다.
                 val newBaseline = -preBoot.toLong()
@@ -143,29 +155,7 @@ class StepTracker(
         }
         val sensorSteps = (cumulative - baseline).toInt().coerceAtLeast(0)
         _todaySteps.value = sensorSteps + simulatedSteps
+        _todayReading.value = DayReading(today, sensorSteps + simulatedSteps)
         hasReading = true
-    }
-
-    /**
-     * 날짜가 바뀔 때 오늘로 넘겨줄 걸음 수.
-     *
-     * 어제 마지막으로 본 누적값은 `어제 기준점 + 어제 저장된 걸음`으로 되살릴 수
-     * 있다. 지금 누적값에서 그걸 빼면 "마지막 측정 이후 걸은 수"가 나온다.
-     */
-    private suspend fun carryOver(
-        savedDay: Long,
-        savedBaseline: Long,
-        today: Long,
-        cumulative: Long,
-    ): Long {
-        if (savedDay != today - 1 || savedBaseline < 0) return 0L
-        val lastSeen = savedBaseline + todayPersistedSteps(savedDay).coerceAtLeast(0)
-        if (cumulative < lastSeen) return 0L
-        return (cumulative - lastSeen).coerceAtMost(CARRY_OVER_CAP)
-    }
-
-    private companion object {
-        /** 자정을 넘겨 넘겨받을 수 있는 걸음 상한 — 활동적인 하루치 */
-        const val CARRY_OVER_CAP = 12_000L
     }
 }
