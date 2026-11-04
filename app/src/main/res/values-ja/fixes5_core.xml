@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="run_reason_crew_no_signal">クルーランの信号が届かず、付与されませんでした</string>
+    <string name="run_reason_crew_signal_gap">クルーランの信号が途切れていた間の歩数は付与されませんでした</string>
+    <string name="crew_result_timeout">接続が2分以上途切れたため、それまでの分だけクルー報酬に含めました。</string>
+</resources>

@@ -27,6 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
 import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.ReportReason
+import com.stepup.android.data.repo.BoardRefusal
+import com.stepup.android.data.repo.boardRefusalCapacity
 import com.stepup.android.ui.components.GhostButton
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Alert
@@ -42,8 +44,9 @@ fun BoardNoticeToast(viewModel: CommunityViewModel) {
     val context = LocalContext.current
     val text = when (val shown = notice) {
         null -> null
-        // 서버가 거절한 이유(정원 마감 · 도배 제한 등)는 그대로 — "연결하지 못했어요"로 뭉뚱그리지 않는다
-        is BoardNotice.Rejected -> shown.reason
+        // 서버가 거절한 이유(정원 마감 · 도배 제한 등)는 "연결하지 못했어요"로 뭉뚱그리지 않는다. 서버 문장은 한국어라
+        // 아는 까닭은 번역된 문구로 옮기고, 모르는 까닭은 일반 안내로(영어 · 일본어 · 중국어 화면에 한국어가 뜨지 않게)
+        is BoardNotice.Rejected -> boardRefusalText(shown.reason)
         else -> stringResource(shown.messageRes())
     }
     LaunchedEffect(notice) {
@@ -54,10 +57,39 @@ fun BoardNoticeToast(viewModel: CommunityViewModel) {
     }
 }
 
+/** 서버가 거절한 문장 → 이 화면 언어의 안내 */
+@Composable
+private fun boardRefusalText(reason: String): String = when (val kind = BoardRefusal.of(reason)) {
+    BoardRefusal.FLASH_FULL -> boardRefusalCapacity(reason)
+        ?.let { stringResource(R.string.fx4_board_flash_full_n, it) }
+        ?: stringResource(R.string.fx4_board_flash_full)
+    else -> stringResource(kind.messageRes())
+}
+
+@androidx.annotation.StringRes
+internal fun BoardRefusal.messageRes(): Int = when (this) {
+    BoardRefusal.POST_TOO_OFTEN -> R.string.fx4_board_post_too_often
+    BoardRefusal.COMMENT_TOO_OFTEN -> R.string.fx4_board_comment_too_often
+    BoardRefusal.NOT_MY_POST_DELETE -> R.string.fx4_board_not_my_post_delete
+    BoardRefusal.NOT_MY_POST_EDIT -> R.string.fx4_board_not_my_post_edit
+    BoardRefusal.NOT_MY_COMMENT -> R.string.fx4_board_not_my_comment
+    BoardRefusal.FLASH_FULL -> R.string.fx4_board_flash_full
+    BoardRefusal.FLASH_PAST -> R.string.fx4_board_flash_past
+    BoardRefusal.FLASH_NEEDS_TIME -> R.string.fx4_board_flash_needs_time
+    BoardRefusal.NOT_CREW_MEMBER -> R.string.fx4_board_not_crew_member
+    BoardRefusal.POST_GONE -> R.string.fx4_board_post_gone
+    BoardRefusal.BLOCK_SELF -> R.string.fx4_board_block_self
+    BoardRefusal.INVALID_INPUT -> R.string.fx4_board_invalid
+    BoardRefusal.TOO_LONG -> R.string.fx4_board_too_long
+    BoardRefusal.EMPTY -> R.string.fx4_board_empty
+    BoardRefusal.SIGN_IN -> R.string.board_sign_in_needed
+    BoardRefusal.OTHER -> R.string.fx4_request_failed
+}
+
 private fun BoardNotice.messageRes(): Int = when (this) {
     BoardNotice.Reported -> R.string.board_notice_reported
     BoardNotice.Blocked -> R.string.board_notice_blocked
-    // 닿지 못했거나 결과를 모른다. 거절은 [BoardNoticeToast] 가 서버의 이유를 그대로 보인다
+    // 닿지 못했거나 결과를 모른다. 거절은 [BoardNoticeToast] 가 서버의 이유를 [BoardRefusal] 로 옮겨 보인다
     BoardNotice.Failed, is BoardNotice.Rejected -> R.string.crew_notice_failed
     BoardNotice.SignIn -> R.string.board_sign_in_needed
 }

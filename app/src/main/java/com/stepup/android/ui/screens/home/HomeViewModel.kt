@@ -19,11 +19,11 @@ import com.stepup.android.domain.RunnerProgress
 import com.stepup.android.domain.Sneaker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -46,13 +46,23 @@ class HomeViewModel(
      *
      * 기준 시각을 화면을 만들 때 한 번만 정하면, 앱을 켜 둔 채 자정을 넘겼을 때
      * "오늘 번 SUP"에 어제 것이 섞이고 월요일에도 지난주가 "이번 주"로 남는다.
+     * 화면으로 돌아올 때도([refreshDay]) 바로 다시 본다 — 밤새 뒤에 있다 열면 1분까지 어제로 남았다.
      */
-    private val today: Flow<LocalDate> = flow {
-        while (true) {
-            emit(LocalDate.now())
-            delay(60_000)
-        }
-    }.distinctUntilChanged()
+    private val resumeTicks = MutableStateFlow(0)
+    private val today: Flow<LocalDate> = combine(
+        flow {
+            while (true) {
+                emit(Unit)
+                delay(60_000)
+            }
+        },
+        resumeTicks,
+    ) { _, _ -> LocalDate.now() }.distinctUntilChanged()
+
+    /** 화면이 다시 보일 때 — 날짜가 바뀌었는지 바로 본다 */
+    fun refreshDay() {
+        resumeTicks.value = resumeTicks.value + 1
+    }
 
     private fun startOf(day: LocalDate): Long = day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
@@ -76,12 +86,14 @@ class HomeViewModel(
             .map<com.stepup.android.data.local.RunTotals, com.stepup.android.data.local.RunTotals?> { it }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** 최근 러닝 30개의 시작 자리(최근 것부터) — 홈 사진 카드의 "자주 달리는 곳". 경로가 없는 러닝은 뺀다 */
-    val runStarts: StateFlow<List<Pair<Double, Double>>> = stepRepository.recentSessions(30)
-        .map { sessions -> sessions.mapNotNull { s -> com.stepup.android.domain.RunTrack.first(s.track)?.let { it.lat to it.lng } } }
-        .distinctUntilChanged()
-        .flowOn(kotlinx.coroutines.Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    /**
+     * 오늘 목표 보너스를 받았는가(원장에 오늘 BONUS_GOAL 이 있는가). 읽기 전에는 null.
+     * 서버는 확인된 러닝 걸음으로만 목표 보너스를 준다(0068 `goal_claim_day`) — 하루 걸음이 목표를 넘었다고 받은 것이 아니다.
+     */
+    val goalBonusToday: StateFlow<Boolean?> = today
+        .flatMapLatest { rewardRepository.sumOfTypeSince(com.stepup.android.data.local.RewardType.BONUS_GOAL, startOf(it)) }
+        .map<Double, Boolean?> { it > 0.0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** 이번 주 번 SUP(원장 기준). 읽기 전에는 null */
     val weekEarned: StateFlow<Double?> = today.flatMapLatest { rewardRepository.earnedSince(startOfWeek(it)) }
@@ -172,7 +184,8 @@ class HomeViewModel(
 
     val uiState: StateFlow<UiState> = combine(
         combine(
-            stepRepository.todaySteps,
+            // 자정을 넘겨 아직 새 걸음이 없으면 센서 값은 어제 것이다 — 오늘이 아니면 0
+            combine(stepRepository.todayReading, today) { reading, day -> reading.stepsOn(day.toEpochDay()) },
             stepRepository.dailyGoal,
             stepRepository.energy,
         ) { steps, goal, energy -> Triple(steps, goal, energy) },

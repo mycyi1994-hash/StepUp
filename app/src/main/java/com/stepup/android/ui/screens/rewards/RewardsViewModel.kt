@@ -11,7 +11,9 @@ import com.stepup.android.data.local.RewardEntity
 import com.stepup.android.data.local.RewardTotals
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.TokenResult
+import com.stepup.android.data.repo.EconomyLoad
 import com.stepup.android.data.repo.RewardRepository
+import com.stepup.android.data.repo.emptyCopyLoad
 import com.stepup.android.domain.DrawStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,6 +37,16 @@ sealed interface TotalsLoad {
     data object Loading : TotalsLoad
     data class Ready(val totals: RewardTotals) : TotalsLoad
     data object Failed : TotalsLoad
+}
+
+/** 원장 사본의 누계와 동기화 상태 — 비어 있는데(모두 0) 아직 서버와 맞추지 못했으면 0 이 아니라 읽는 중 · 읽지 못함 */
+fun totalsLoadOf(totals: RewardTotals, economy: EconomyLoad): TotalsLoad {
+    val empty = totals.balance == 0.0 && totals.earned == 0.0 && totals.spent == 0.0
+    return when (emptyCopyLoad(empty, economy)) {
+        EconomyLoad.READY -> TotalsLoad.Ready(totals)
+        EconomyLoad.LOADING -> TotalsLoad.Loading
+        EconomyLoad.UNREACHABLE -> TotalsLoad.Failed
+    }
 }
 
 /** 이용 내역 — 한 쪽씩 늘린다 */
@@ -83,7 +95,9 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
     private val attempt = MutableStateFlow(0)
 
     val totals: StateFlow<TotalsLoad> = attempt.flatMapLatest {
-        rewardRepository.totals.map<RewardTotals, TotalsLoad> { TotalsLoad.Ready(it) }.catch { emit(TotalsLoad.Failed) }
+        // 서버 경제면 첫 동기화 전의 빈 원장은 "0 SUP"가 아니다 — 불러오는 중 · 끊김이면 다시 불러오기
+        combine(rewardRepository.totals, ServiceLocator.economyLoad()) { totals, economy -> totalsLoadOf(totals, economy) }
+            .catch { emit(TotalsLoad.Failed) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TotalsLoad.Loading)
 
     private val _filter = MutableStateFlow(LedgerFilter.ALL)
@@ -122,6 +136,10 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
     private val _drawStatus = MutableStateFlow<DrawStatus?>(null)
     val drawStatus: StateFlow<DrawStatus?> = _drawStatus.asStateFlow()
 
+    /** 연결된 지갑 주소(서버 my_wallet) — 못 읽었거나 연결 전이면 null(주소 줄을 두지 않는다) */
+    private val _walletAddress = MutableStateFlow<String?>(null)
+    val walletAddress: StateFlow<String?> = _walletAddress.asStateFlow()
+
     init {
         ServiceLocator.refreshEconomyInBackground()
     }
@@ -142,9 +160,10 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
         historyAttempt.value++
     }
 
-    /** 전체를 다시(10) */
+    /** 전체를 다시(10) — 서버 경제면 서버 값도 한 번 맞춘다 */
     fun reload() {
         attempt.value++
+        ServiceLocator.refreshEconomyInBackground()
         refreshWeb3()
     }
 
@@ -163,6 +182,7 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
                     when (val status = ServiceLocator.economyApi.drawStatus()) {
                         is ServerResult.Ok -> {
                             _drawStatus.value = status.value
+                            if (status.value.walletLinked) refreshWalletAddress() else _walletAddress.value = null
                             if (status.value.walletLinked) Web3State.Linked else Web3State.NotLinked
                         }
                         else -> Web3State.Unknown
@@ -172,6 +192,16 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
                 throw cancelled
             } catch (_: Exception) {
                 Web3State.Unknown
+            }
+        }
+    }
+
+    /** 연결된 주소를 읽는다 — 연결됨 시트가 보인다. 못 읽으면 앞서 읽은 주소를 그대로 둔다(없으면 줄을 두지 않는다) */
+    private fun refreshWalletAddress() {
+        viewModelScope.launch {
+            val reply = runCatching { ServiceLocator.economyApi.myWalletAddress() }.getOrNull()
+            if (reply is ServerResult.Ok) {
+                _walletAddress.value = reply.value.takeIf { com.stepup.android.domain.WalletAddress.looksValid(it) }
             }
         }
     }

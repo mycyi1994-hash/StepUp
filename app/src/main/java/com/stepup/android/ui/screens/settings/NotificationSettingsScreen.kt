@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -79,6 +80,7 @@ data class NotificationSettingsUi(
 
 /**
  * 알림 설정 — 기존 네 가지(push · goalReminder · partyInvite · eventNews). 바꾸면 바로 저장한다.
+ * push 는 "모든 알림"(나머지 셋의 마스터 스위치), eventNews 는 "번개러닝 소식"(번개러닝 모집 푸시)으로 보인다.
  *
  * 1) 휴대폰(DataStore)에 저장되면 "이 휴대폰에 저장했어요" 2) 기존 PushRegistrar 로 서버에 반영한다 — 반영을 확인하지
  * 못하면 "휴대폰에는 저장했어요" 안내를 두고 다시 반영할 수 있다(서버 성공으로 보이지 않는다) 3) 휴대폰에 저장하지 못하면
@@ -213,7 +215,12 @@ fun NotificationSettingsContent(
                         else -> item { BlueNote(stringResource(R.string.set_notif_intro), intro = true) }
                     }
                     item {
-                        // 네 가지는 따로 고른다(푸시가 나머지의 마스터 스위치가 아니다). 이 휴대폰에 저장하는 동안만 잠시 막는다
+                        // "모든 알림"(push)은 나머지 셋의 마스터 스위치다 — 서버(push_allowed, 0017)는 어떤 종류든 push 를 먼저 보고,
+                        // 저녁 목표 알림(GoalReminderWorker)도 push 가 꺼져 있으면 울리지 않는다. 꺼져 있으면 아래 셋은 흐리게 두고 누를 수 없다
+                        // (저장된 값은 그대로 — 다시 켜면 예전 고름이 돌아온다). "번개러닝 소식"(eventNews)은 번개러닝 모집 푸시(CREW_FLASH)만 정한다.
+                        // 이 휴대폰에 저장하는 동안만 잠시 모두 막는다
+                        val others = !ui.saving && prefs.push
+                        val dim = if (prefs.push) Modifier else Modifier.alpha(DISABLED_ALPHA)
                         BlueGroup {
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_push), stringResource(R.string.set_notif_push_desc),
@@ -221,15 +228,15 @@ fun NotificationSettingsContent(
                             )
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_goal), stringResource(R.string.set_notif_goal_desc),
-                                prefs.goalReminder, { onChange(prefs.copy(goalReminder = it)) }, Modifier.testTag("notif-goal"), !ui.saving,
+                                prefs.goalReminder, { onChange(prefs.copy(goalReminder = it)) }, dim.testTag("notif-goal"), others,
                             )
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_invite), stringResource(R.string.set_notif_invite_desc),
-                                prefs.partyInvite, { onChange(prefs.copy(partyInvite = it)) }, Modifier.testTag("notif-invite"), !ui.saving,
+                                prefs.partyInvite, { onChange(prefs.copy(partyInvite = it)) }, dim.testTag("notif-invite"), others,
                             )
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_event), stringResource(R.string.set_notif_event_desc),
-                                prefs.eventNews, { onChange(prefs.copy(eventNews = it)) }, Modifier.testTag("notif-event"), !ui.saving,
+                                prefs.eventNews, { onChange(prefs.copy(eventNews = it)) }, dim.testTag("notif-event"), others,
                             )
                         }
                     }
@@ -251,6 +258,9 @@ fun NotificationSettingsContent(
         BlueToast(ui.toast, Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp, vertical = 16.dp))
     }
 }
+
+/** "모든 알림"이 꺼졌을 때 아래 줄을 흐리게 */
+private const val DISABLED_ALPHA = 0.5f
 
 /** 처리 중 한 줄 — 도는 표시 하나와 글(가짜 백분율 없음) */
 @Composable

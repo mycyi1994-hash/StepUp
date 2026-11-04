@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="run_reason_crew_no_signal">크루 러닝 신호가 없어 적립되지 않았어요</string>
+    <string name="run_reason_crew_signal_gap">크루 러닝 신호가 끊긴 동안의 걸음은 적립되지 않았어요</string>
+    <string name="crew_result_timeout">연결이 2분 넘게 끊겨 그때까지만 크루 보상에 넣었어요.</string>
+</resources>

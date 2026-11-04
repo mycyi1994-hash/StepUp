@@ -5,7 +5,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -17,13 +16,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -34,7 +35,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -99,6 +99,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -696,8 +697,11 @@ fun StepUpSpinner(modifier: Modifier = Modifier, color: Color = StepUpUi.colors.
 // ── 전환 ─────────────────────────────────────────────────────────────
 
 /**
- * 세그먼트 — 회색 트랙(높이 34 · 모서리 11) + 떠 있는 선택 칸(모서리 9 · 그림자). 선택 칸이 스프링으로 미끄러진다.
+ * 세그먼트 — 회색 트랙(최소 높이 44 · 모서리 11) + 떠 있는 선택 칸(모서리 9). 선택 칸이 스프링으로 미끄러진다.
  * [tags] 를 주면 칸마다 testTag 를 단다(검사가 칸을 집는다).
+ *
+ * 큰 글자 설정에서 칸이 커지면 선택 칸도 같은 높이로 그린다 — 칸 줄의 잰 크기에 맞춰 그 뒤에 그린다(고정 높이로 위에 붙이지 않는다).
+ * 글자는 한 줄 — 넘치면 조금(85%까지) 줄이고, 그래도 넘치면 말줄임.
  */
 @Composable
 fun StepUpTabs(
@@ -706,31 +710,39 @@ fun StepUpTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     tags: List<String>? = null,
-    height: Dp = 34.dp,
+    height: Dp = 44.dp,
 ) {
     val c = StepUpUi.colors
     val type = StepUpUi.type
     val feedback = LocalFeedback.current
-    BoxWithConstraints(
+    val count = items.size.coerceAtLeast(1)
+    val position by animateFloatAsState(
+        selected.coerceIn(0, count - 1).toFloat(),
+        spring(dampingRatio = .8f, stiffness = Spring.StiffnessMediumLow), label = "segThumb",
+    )
+    val thumb = c.segmentThumb
+    val segmentSize = type.segment.fontSize
+    Box(
         // 2026-10-26: 트랙은 카드 면 + 가는 선, 고른 칸은 진한 판(화이트 남색 · 블랙 흰색)
         modifier.heightIn(min = height).clip(RoundedCornerShape(11.dp)).background(c.card)
             .border(1.dp, c.separator, RoundedCornerShape(11.dp)).padding(3.dp),
     ) {
-        val count = items.size.coerceAtLeast(1)
-        val w = maxWidth / count
-        val x by animateDpAsState(
-            w * selected.coerceIn(0, count - 1),
-            spring(dampingRatio = .8f, stiffness = Spring.StiffnessMediumLow), label = "segThumb",
-        )
-        Box(
-            Modifier.offset(x = x).width(w).height(height - 6.dp)
-                .clip(RoundedCornerShape(9.dp)).background(c.segmentThumb),
-        )
-        Row(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min)
+                .drawBehind {
+                    // 칸 줄이 잰 높이 그대로 — 큰 글자로 칸이 자라도 선택 칸이 함께 자란다
+                    val cell = size.width / count
+                    val left = if (layoutDirection == LayoutDirection.Rtl) size.width - cell * (position + 1) else cell * position
+                    drawRoundRect(
+                        thumb, topLeft = Offset(left, 0f), size = androidx.compose.ui.geometry.Size(cell, size.height),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(9.dp.toPx()),
+                    )
+                },
+        ) {
             items.forEachIndexed { i, t ->
                 val on = i == selected
                 Box(
-                    Modifier.weight(1f).heightIn(min = height - 6.dp)
+                    Modifier.weight(1f).fillMaxHeight().heightIn(min = height - 6.dp)
                         .clip(RoundedCornerShape(9.dp))
                         .clickable(role = Role.Tab) { if (!on) { feedback?.play(FeedbackCue.Select); onSelect(i) } }
                         .semantics { this.selected = on }
@@ -738,9 +750,18 @@ fun StepUpTabs(
                         .padding(horizontal = 4.dp, vertical = 5.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        t, style = type.segment.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold),
-                        color = if (on) c.segmentOn else c.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                    androidx.compose.foundation.text.BasicText(
+                        t,
+                        style = type.segment.copy(
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                            color = if (on) c.segmentOn else c.secondaryLabel, textAlign = TextAlign.Center,
+                        ),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        autoSize = if (segmentSize.isSp) {
+                            androidx.compose.foundation.text.TextAutoSize.StepBased(
+                                minFontSize = segmentSize * .85f, maxFontSize = segmentSize, stepSize = .5.sp,
+                            )
+                        } else null,
                     )
                 }
             }
@@ -762,11 +783,16 @@ fun TextTabs(
 ) {
     val c = StepUpUi.colors
     val feedback = LocalFeedback.current
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
+    // 큰 글자 · 긴 번역으로 줄이 넘치면 옆으로 민다(잘리거나 겹치지 않게). 칸은 누르기 쉬운 크기(48dp) 이상
+    Row(
+        modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
         items.forEachIndexed { i, t ->
             val on = i == selected
             Box(
                 Modifier
+                    .minimumInteractiveComponentSize()
                     .heightIn(min = 40.dp)
                     .clickable(role = Role.Tab) { if (!on) { feedback?.play(FeedbackCue.Select); onSelect(i) } }
                     .semantics { this.selected = on }
@@ -777,8 +803,8 @@ fun TextTabs(
                     t,
                     style = StepUpUi.type.segment.copy(fontSize = 15.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold, letterSpacing = (-0.03).em),
                     color = if (on) c.label else c.secondaryLabel,
-                    maxLines = 1,
-                    modifier = Modifier.drawBehind {
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 240.dp).drawBehind {
                         if (on) drawRect(c.accentText, topLeft = Offset(0f, size.height + 2.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width, 2.dp.toPx()))
                     },
                 )

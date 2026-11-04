@@ -41,7 +41,7 @@ fun newsFilterCount(f: NewsFilter): Int = listOf(
 fun eventFilterParts(f: EventFilter): List<String> = buildList {
     if (f.eventType != RunningFeedApi.ALL) add(stringResource(eventTypeRes(f.eventType)))
     if (f.distance != RunningFeedApi.ALL) add(stringResource(distanceRes(f.distance)))
-    if (f.region != RunningFeedApi.ALL) add(f.region)
+    if (f.region != RunningFeedApi.ALL) add(regionLabel(f.region))
     if (f.status != RunningFeedApi.ALL) add(stringResource(statusRes(f.status)))
 }
 
@@ -122,9 +122,8 @@ fun EventFilterSheet(
             ChoiceGrid(
                 values = RunningFeedViewModel.REGIONS,
                 isSelected = { it == draft.region },
-                label = {
-                    if (it == RunningFeedApi.ALL) stringResource(R.string.feed_region_all) else it
-                },
+                // 값은 서버 열쇠(한국어 시 · 도) 그대로, 보이는 글만 화면 언어로
+                label = { regionLabel(it) },
                 onSelect = { draft = draft.copy(region = it) },
             )
         }

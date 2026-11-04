@@ -979,6 +979,7 @@ fun RunScreen(
                         add(stringResource(R.string.crew_result_personal))
                         if (outcome.poolEmpty) add(stringResource(R.string.crew_result_pool_empty))
                         if (outcome.terminal == com.stepup.android.domain.CrewTerminal.LAST_PARTICIPANT_END) add(stringResource(R.string.crew_result_alone))
+                        if (outcome.terminal == com.stepup.android.domain.CrewTerminal.TIMEOUT) add(stringResource(R.string.crew_result_timeout))
                         when {
                             outcome.invalid || !outcome.xpApplied -> add(stringResource(R.string.crew_result_level_void))
                             (outcome.xpM ?: 0.0) > 0 -> add(stringResource(R.string.crew_result_level, "%.2f".format((outcome.xpM ?: 0.0) / 1000.0)))
@@ -2566,13 +2567,14 @@ private fun SaveCourseDialog(
                 valueSize = 32.sp,
             )
             Spacer(Modifier.height(12.dp))
+            // 서버가 60자까지만 받는다 — 칸에서 먼저 멈춘다(CourseText)
             com.stepup.android.ui.components.RunTextField(
-                name, { name = it }, label = stringResource(R.string.run_course_field_name),
+                name, { name = com.stepup.android.domain.CourseText.clip(it) }, label = stringResource(R.string.run_course_field_name),
                 clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "course-save-name",
             )
             Spacer(Modifier.height(10.dp))
             com.stepup.android.ui.components.RunTextField(
-                area, { area = it }, label = stringResource(R.string.run_course_field_area),
+                area, { area = com.stepup.android.domain.CourseText.clip(it) }, label = stringResource(R.string.run_course_field_area),
                 clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "course-save-area",
             )
             Spacer(Modifier.height(12.dp))

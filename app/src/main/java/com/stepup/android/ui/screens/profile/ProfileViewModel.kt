@@ -92,6 +92,8 @@ class ProfileViewModel(
         val lifetimeSteps: Long = 0,
         /** 이 계정이 지금까지 달린 거리(서버 profiles.lifetime_km) — 폰 걸음이 아니라 계정을 따른다(2026-10-28) */
         val accountKm: Double = 0.0,
+        /** 서버 누적 거리를 받은 적이 있는가 — 없으면 [accountKm] 0 은 "모름"이다 */
+        val accountKmKnown: Boolean = false,
         val monthSteps: Long = 0,
         val ownedSneakers: Int = 0,
         val runnerUid: String = "",
@@ -102,8 +104,6 @@ class ProfileViewModel(
         val equipped: Sneaker? = null,
         val week: List<DailyStepsEntity> = emptyList(),
         val totalDurationSec: Long = 0,
-        val longestSessionSec: Long = 0,
-        val avgPaceSecPerKm: Int = 0,
         /** 실제 값이 도착했는가 — 도착 전에는 잔액을 0 으로 보이지 않는다 */
         val loaded: Boolean = false,
     ) {
@@ -138,10 +138,8 @@ class ProfileViewModel(
             stepRepository.observeWeek(),
             prefs.accountLifetimeKm,
         ) { owned, week, km -> Triple(owned, week, km) },
-        combine(
-            stepRepository.observeTotalDurationSec(),
-            stepRepository.recentSessions(30),
-        ) { totalSec, sessions -> totalSec to sessions },
+        // 최근 러닝 30개(경로 포함)를 읽던 자리 — 그 값을 쓰던 카드가 화면에서 빠져 총 시간만 읽는다
+        stepRepository.observeTotalDurationSec(),
         combine(
             prefs.runnerUid,
             prefs.nickname,
@@ -149,10 +147,7 @@ class ProfileViewModel(
             prefs.avatarRev,
             sneakerRepository.equipped,
         ) { uid, nick, avatar, rev, equipped -> Ident(uid, nick, avatar, rev, equipped) },
-    ) { (goal, level, balance), (streak, lifetime, month), (owned, week, accountKm), (totalSec, sessions), ident ->
-        // 최근 세션 기반 요약 — 세션 기록이 없으면 0으로 두고 화면에서 "—" 처리
-        val sessionSec = sessions.sumOf { it.durationSec }
-        val sessionKm = sessions.sumOf { it.distanceMeters } / 1000.0
+    ) { (goal, level, balance), (streak, lifetime, month), (owned, week, accountKm), totalSec, ident ->
         UiState(
             goal = goal,
             sneakerLevel = ident.equipped?.level ?: level,
@@ -160,6 +155,7 @@ class ProfileViewModel(
             streak = streak,
             lifetimeSteps = lifetime,
             accountKm = accountKm ?: 0.0,
+            accountKmKnown = accountKm != null,
             monthSteps = month,
             ownedSneakers = owned,
             runnerUid = ident.uid,
@@ -169,8 +165,6 @@ class ProfileViewModel(
             equipped = ident.equipped,
             week = week,
             totalDurationSec = totalSec,
-            longestSessionSec = sessions.maxOfOrNull { it.durationSec } ?: 0L,
-            avgPaceSecPerKm = if (sessionKm > 0.01) (sessionSec / sessionKm).toInt() else 0,
             loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState())

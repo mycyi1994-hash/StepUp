@@ -1,6 +1,8 @@
 package com.stepup.android.ui.screens.items
 
+import com.stepup.android.data.repo.EconomyLoad
 import com.stepup.android.data.repo.EconomyOutcome
+import com.stepup.android.data.repo.emptyCopyLoad
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.Sneaker
 import java.util.Locale
@@ -17,6 +19,13 @@ sealed interface OwnedLoad {
     data object Loading : OwnedLoad
     data object Failed : OwnedLoad
     data class Ready(val shoes: List<Sneaker>) : OwnedLoad
+}
+
+/** 폰의 신발 사본과 동기화 상태 — 비어 있는데 아직 서버와 맞추지 못했으면 빈 목록이 아니라 읽는 중 · 읽지 못함 */
+fun ownedLoadOf(shoes: List<Sneaker>, economy: EconomyLoad): OwnedLoad = when (emptyCopyLoad(shoes.isEmpty(), economy)) {
+    EconomyLoad.READY -> OwnedLoad.Ready(shoes)
+    EconomyLoad.LOADING -> OwnedLoad.Loading
+    EconomyLoad.UNREACHABLE -> OwnedLoad.Failed
 }
 
 /** 상세 한 화면 — 13 조회 중 · 14 조회 실패 · 15 없는 신발 · 신발(02 · 03 · 08 · 17) */

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 출시 전 점검 4차 — 홈 걸음 · 목표 · 위치 줄 -->
+<resources>
+    <string name="home_goal_done_bonus">目標達成 · ボーナスを受け取りました</string>
+    <string name="home_goal_done_run_steps">目標歩数を達成 · ボーナスはランニングの歩数で受け取れます</string>
+    <string name="home_gps_location_off">位置情報がオフになっています</string>
+</resources>

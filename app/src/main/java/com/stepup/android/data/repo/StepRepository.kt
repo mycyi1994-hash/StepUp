@@ -39,6 +39,9 @@ class StepRepository(
     private val trackingStarted = AtomicBoolean(false)
 
     val todaySteps: StateFlow<Int> = tracker.todaySteps
+
+    /** 오늘 걸음에 그 값이 속한 날을 붙인 것 — 자정을 넘겨 아직 새 걸음이 없으면 날이 어제다 */
+    val todayReading: StateFlow<com.stepup.android.sensor.DayReading> = tracker.todayReading
     val dailyGoal: Flow<Int> = prefs.dailyGoal
 
     /**
@@ -104,10 +107,10 @@ class StepRepository(
         tracker.start()
         if (!trackingStarted.compareAndSet(false, true)) return
         scope.launch {
-            tracker.todaySteps.collect { steps ->
+            tracker.todayReading.collect { reading ->
                 // 한 번의 저장 · 서버 오류로 걸음 집계가 멈추거나 앱이 꺼지지 않게 — 다음 걸음에서 다시 한다
                 try {
-                    onSteps(steps)
+                    onSteps(reading.day, reading.steps)
                 } catch (cancelled: kotlinx.coroutines.CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
@@ -150,14 +153,24 @@ class StepRepository(
     /** 에뮬레이터 데모용 걸음 시뮬레이션 */
     fun simulateSteps(count: Int) = tracker.simulateSteps(count)
 
-    private suspend fun onSteps(steps: Int) {
+    /**
+     * [day] 는 걸음 값이 속한 날(센서가 센 날)이다. 여기서 날짜를 다시 읽으면 자정 무렵
+     * 늦게 도착한 어제 합계가 오늘 줄에 적히고, 어제 걸음으로 오늘 목표 · 연속 일수가 채워졌다.
+     */
+    private suspend fun onSteps(day: Long, steps: Int) {
         val today = LocalDate.now().toEpochDay()
-        // 프로세스 재시작 직후 StateFlow 초기값(0)이 이미 저장된 오늘 기록을
+        // 날짜보다 미래 값(시계를 되돌림)은 어느 줄에도 적지 않는다
+        if (day > today) return
+        // 프로세스 재시작 직후 StateFlow 초기값(0)이 이미 저장된 기록을
         // 덮어쓰지 않도록, 저장값보다 작은 값은 무시한다.
-        val stored = stepDao.byDay(today)?.steps ?: 0
+        val row = stepDao.byDay(day)
+        val stored = row?.steps ?: 0
         if (steps < stored) return
-        val goal = prefs.dailyGoal.first()
-        stepDao.upsert(DailyStepsEntity(today, steps, goal, System.currentTimeMillis()))
+        // 지난 날 줄은 그날 목표를 그대로 둔다
+        val goal = if (day != today && row != null) row.goal else prefs.dailyGoal.first()
+        stepDao.upsert(DailyStepsEntity(day, steps, goal, System.currentTimeMillis()))
+        // 지난 날 값은 그날 줄만 고친다 — 목표 · 연속 일수 · 백그라운드 적립은 오늘 값으로만
+        if (day != today) return
 
         val lastMet = prefs.lastGoalMetDay()
         if (steps >= goal && lastMet != today) {

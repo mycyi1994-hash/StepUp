@@ -58,3 +58,20 @@ data class WalletLinkRequest(val user: String, val nonce: String) {
         }
     }
 }
+
+/** 연결된 지갑 주소(서버 my_wallet — 0x 로 시작하는 40자리 16진수) */
+object WalletAddress {
+    /**
+     * 화면에 보일 짧은 꼴 — "0x1234…abcd"(앞 6자 · 뒤 4자). 이미 짧거나 비었으면 그대로.
+     * 복사는 늘 원래 주소 전체로 한다.
+     */
+    fun short(address: String): String {
+        val raw = address.trim()
+        return if (raw.length <= 12) raw else raw.take(6) + "…" + raw.takeLast(4)
+    }
+
+    /** 서버가 준 값이 주소 꼴인가 — 아니면 화면에 두지 않는다 */
+    fun looksValid(address: String?): Boolean = address != null && ADDRESS.matches(address.trim())
+
+    private val ADDRESS = Regex("0x[0-9a-fA-F]{40}")
+}

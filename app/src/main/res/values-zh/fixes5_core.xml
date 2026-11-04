@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="run_reason_crew_no_signal">未收到跑团跑步信号，未发放</string>
+    <string name="run_reason_crew_signal_gap">跑团跑步信号中断期间的步数未计入</string>
+    <string name="crew_result_timeout">连接中断超过2分钟，跑团奖励只计算到中断时。</string>
+</resources>

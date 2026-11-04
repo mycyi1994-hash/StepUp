@@ -37,6 +37,10 @@ object AppLocale {
         tag = normalize(saved)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             applyToProcess(context, tag)
+        } else {
+            // Android 13+ 는 시스템이 기억하는 앱별 언어가 정본이다 — 화면 없이 켜진 실행(푸시 · 일꾼)도 그 언어로 서버에 알리게
+            // 화면(MainActivity)을 기다리지 않고 여기서 맞춘다
+            runCatching { syncFromSystem(context) }
         }
     }
 

@@ -276,36 +276,46 @@ class StepUpServer(
     ): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
 
-        val token = when (val t = sessions.accessToken()) {
-            is TokenResult.Ok -> {
-                // Check the identity attached to this exact token, not an earlier store read.
-                if (expectedUserId != null && (expectedUserId.isBlank() || t.userId != expectedUserId)) {
-                    return ServerResult.SignInRequired("이 러닝을 시작한 계정으로 로그인해 주세요")
+        // 401 이면 출입증을 갱신해 한 번만 바로 다시 보낸다 — PostgREST 는 출입증을 먼저 보고 거절하므로(함수를 돌리기 전)
+        // 다시 보내도 두 번 되지 않는다. 다시 보내지 않으면 화면이 "연결이 끊겼어요"를 보이고 다음 차례까지 기다렸다.
+        var answered: HttpResponse? = null
+        for (attempt in 0 until 2) {
+            val token = when (val t = sessions.accessToken()) {
+                is TokenResult.Ok -> {
+                    // Check the identity attached to this exact token, not an earlier store read.
+                    if (expectedUserId != null && (expectedUserId.isBlank() || t.userId != expectedUserId)) {
+                        return ServerResult.SignInRequired("이 러닝을 시작한 계정으로 로그인해 주세요")
+                    }
+                    t.accessToken
                 }
-                t.accessToken
+                is TokenResult.Unavailable -> return ServerResult.Retry(t.reason)
+                is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
             }
-            is TokenResult.Unavailable -> return ServerResult.Retry(t.reason)
-            is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
+            val got = call(token)
+            if (got.status != 401) {
+                answered = got
+                break
+            }
+            // 출입증이 방금 만료됐을 수 있다(시계 차이 · 세션 폐기) — 만료로 적어 다음 출입증은 갱신해서 받는다
+            sessions.markExpired(token)
         }
-
-        val response = call(token)
+        // 갱신한 출입증도 401 — 다음 차례에 다시
+        val response = answered ?: return ServerResult.Retry("인증이 만료되었습니다")
         return when {
             response.status in 200..299 -> ServerResult.Ok(response.body)
             response.status == 0 -> ServerResult.Retry(response.body)
-            // 출입증이 방금 만료됐을 수 있다. 다음 차례에 갱신해서 다시 시도한다.
-            response.status == 401 -> {
-                sessions.markExpired(token)
-                ServerResult.Retry("인증이 만료되었습니다")
-            }
             // 429 는 요청이 몰린 것, 5xx 는 서버 문제 — 둘 다 나중에 다시.
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")
             else -> {
-                // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다)
-                if (response.status == 403 && response.body.contains("access_required")) {
+                // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다).
+                // 까닭은 정한 값([ACCESS_REQUIRED])으로 — 받는 쪽(러닝 올리기)이 다시 보내도 같은 거절과 가른다
+                if (response.isAccessRequired()) {
                     runCatching { onAccessRequired?.invoke() }
+                    ServerResult.Rejected(ACCESS_REQUIRED)
+                } else {
+                    ServerResult.Rejected(response.postgrestMessage())
                 }
-                ServerResult.Rejected(response.postgrestMessage())
             }
         }
     }
@@ -344,6 +354,18 @@ class StepUpServer(
         return http.get(url, anonHeaders()).toResult()
     }
 }
+
+/** 접속 코드 문(0079 access_gate)이 막은 요청의 거절 까닭 — [ServerResult.Rejected.reason] 이 이 값이다 */
+const val ACCESS_REQUIRED = "access_required"
+
+/** 접속 코드 문(0079 `public.access_gate`)이 막은 답인가 — 403 access_required */
+internal fun HttpResponse.isAccessRequired(): Boolean = status == 403 && body.contains(ACCESS_REQUIRED)
+
+/**
+ * 접속 코드 문에 막힌 거절인가 — 영구 거절이 아니다. 코드를 넣으면(AccessGate.afterGranted) 같은 요청이 받아진다.
+ * 러닝 올리기는 이 거절로 러닝을 버리지 않는다(2026-11-04 점검).
+ */
+fun ServerResult<*>.isAccessRequired(): Boolean = this is ServerResult.Rejected && reason == ACCESS_REQUIRED
 
 /** 서버 응답(JSON 글자)을 화면이 쓰는 값으로. 못 읽으면 나중에 다시 한다. */
 internal fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): ServerResult<T> =

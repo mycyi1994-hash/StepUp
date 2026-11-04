@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 첫 동기화 · 댓글 · 베타 코드 — 불러오는 중 · 끊김을 빈 목록으로 보이지 않게(2026-11-04) -->
+<resources>
+    <string name="fx4_comments_title_plain">コメント</string>
+    <string name="fx4_comments_failed">コメントを読み込めませんでした。</string>
+    <string name="fx4_retry">再試行</string>
+    <string name="fx4_beta_codes_offline">接続が切れたため、コードを確認できませんでした。</string>
+</resources>

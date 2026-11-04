@@ -12,10 +12,10 @@ object RunVerdictReason {
     enum class Kind {
         MOCK, BANNED, CADENCE, SPEED, TRACK_TIME, DUPLICATE_ROUTE, OVERLAP, NO_STEPS, STEPS_OVER_GPS,
         OVERSPEED_STOP, CREW_DONE, DAILY_STEPS, HELD, CREW_EMPTY, CREW_AFTER, WORN_AFTER, ENERGY, WORN,
-        DAILY_SUP, NO_GPS_CAP, UPLOAD_CAP, TOO_OLD,
+        DAILY_SUP, NO_GPS_CAP, UPLOAD_CAP, TOO_OLD, CREW_NO_SIGNAL, CREW_SIGNAL_GAP,
     }
 
-    /** 서버 글(supabase/migrations 0071 · 0089 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
+    /** 서버 글(supabase/migrations 0071 · 0089 · 0090 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
     private val KNOWN: Map<String, Kind> = mapOf(
         "가짜 위치가 감지되었습니다" to Kind.MOCK,
         "과속으로 멈춘 뒤 러닝 금지 시간에 시작한 러닝입니다" to Kind.BANNED,
@@ -38,6 +38,9 @@ object RunVerdictReason {
         "하루 적립 금액 상한에 걸렸습니다" to Kind.DAILY_SUP,
         "경로 없는 러닝의 하루 상한에 걸렸습니다" to Kind.NO_GPS_CAP,
         "하루에 올릴 수 있는 적립 상한에 걸렸습니다" to Kind.UPLOAD_CAP,
+        // 0090 — 크루 보상은 서버가 신호(crew_run_beat)로 본 시간만큼만
+        "크루 러닝 신호가 없어 적립하지 않았습니다" to Kind.CREW_NO_SIGNAL,
+        "크루 러닝 신호가 끊긴 동안의 걸음은 적립하지 않았습니다" to Kind.CREW_SIGNAL_GAP,
         // 거절(REJECTED) — 서버가 받지 않은 러닝의 까닭(uploadError)
         "너무 오래된 러닝입니다" to Kind.TOO_OLD,
     )

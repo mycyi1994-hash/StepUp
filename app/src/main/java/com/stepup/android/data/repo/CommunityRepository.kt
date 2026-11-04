@@ -149,6 +149,22 @@ class CommunityRepository(
     /** 알림이 가리키는 글을 지금 볼 수 있는가 — 서버가 없다고 답한 것과 닿지 못한 것을 구분한다 */
     suspend fun postVisible(postId: Long): ServerResult<Boolean> = api.postVisible(postId)
 
+    /**
+     * 글 하나를 받아 목록에 더한다 — 댓글 알림(`post/<id>`, 0088)이 목록(최근 200개)에 없는 오래된 글을 열 때.
+     * true 면 이제 [posts] 에 있다(좋아요 · 댓글 · 삭제가 그대로 된다) · false 면 서버가 없다고 했다(지워짐 · 볼 수 없음) ·
+     * null 이면 닿지 못했다. 목록을 다시 받으면 최근 글만 남는다 — 상세 화면은 마지막 모습을 들고 있다.
+     */
+    suspend fun loadPost(id: Long): Boolean? {
+        val result = api.post(id)
+        if (result !is ServerResult.Ok) return null
+        val post = result.value.firstOrNull { it.id == id }?.toDomain() ?: return false
+        refreshLock.withLock {
+            val now = _posts.value
+            if (now.none { it.id == id }) _posts.value = (now + post).sortedByDescending { it.createdAt }
+        }
+        return true
+    }
+
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
 
     /** 내가 볼 수 있는 글 전부 — 전체 게시판과 내가 들어간 크루의 게시판 */
@@ -422,11 +438,28 @@ class CommunityRepository(
     /** 글마다 받아 온 댓글 */
     private val _comments = MutableStateFlow<Map<Long, List<Comment>>>(emptyMap())
 
+    /** 글마다 댓글을 받는 중 · 받지 못함(한 번이라도 받은 글은 [_comments] 에 있어 받은 목록을 그대로 보인다) */
+    private val _commentLoads = MutableStateFlow<Map<Long, CommentsLoad>>(emptyMap())
+
     /** 한 글의 댓글을 부모–답글 묶음으로. 보기 시작하면 서버에서 새로 받는다. */
     fun commentThreads(postId: Long): Flow<List<CommentThread>> =
         _comments
             .map { it[postId].orEmpty().toThreads() }
             .onStart { scope.launch { loadComments(postId) } }
+
+    /**
+     * 한 글의 댓글 상태 — 아직 받지 못한 글은 받는 중 · 받지 못함이다. "아직 댓글이 없어요"는 받아 온 목록이 빌 때만.
+     * 받는 일은 [commentThreads] 가 시작한다(이것은 보기만).
+     */
+    fun commentsLoad(postId: Long): Flow<CommentsLoad> =
+        combine(_comments, _commentLoads) { comments, loads ->
+            if (comments.containsKey(postId)) CommentsLoad.READY else loads[postId] ?: CommentsLoad.LOADING
+        }
+
+    /** 받지 못한 댓글을 다시 받는다(댓글 창 · 이야기 상세의 "다시 불러오기") */
+    fun retryComments(postId: Long) {
+        scope.launch { loadComments(postId) }
+    }
 
     /** 번개 참가자 명단. 서버에 닿지 못하면 null — 빈 명단과 섞지 않는다. */
     suspend fun roster(postId: Long): List<FlashMember>? =
@@ -436,14 +469,24 @@ class CommunityRepository(
 
     /** @return 서버에서 받아 왔으면 true */
     suspend fun loadComments(postId: Long): Boolean {
-        val result = api.comments(postId)
+        _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.LOADING)
+        val result = try {
+            api.comments(postId)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.FAILED)
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
         if (result is ServerResult.Ok) {
             val list = result.value.map { it.toDomain() }
             _comments.value = _comments.value + (postId to list)
+            _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.READY)
             // 글 카드의 댓글 수가 방금 받은 목록과 어긋나지 않게 맞춘다.
             updatePost(postId) { it.copy(commentCount = list.size) }
             return true
         }
+        _commentLoads.value = _commentLoads.value + (postId to CommentsLoad.FAILED)
         return false
     }
 

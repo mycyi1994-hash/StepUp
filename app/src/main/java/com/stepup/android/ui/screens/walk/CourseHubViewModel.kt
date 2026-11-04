@@ -153,13 +153,30 @@ class CourseHubViewModel(
         viewModelScope.launch { courseRepository.cancelRecording() }
     }
 
+    private val _shareFailedAfterSave = MutableStateFlow(false)
+
+    /** 코스는 저장했는데 바란 공유는 하지 못했다 — 화면이 한 번 알리고 비운다 */
+    val shareFailedAfterSave: StateFlow<Boolean> = _shareFailedAfterSave
+
+    fun consumeShareFailedAfterSave() {
+        _shareFailedAfterSave.value = false
+    }
+
     fun create(name: String, area: String, track: List<GeoPoint>, shared: Boolean) {
         viewModelScope.launch {
-            val id = courseRepository.create(name, area, track, shared)
-            if (id != null) {
-                courseRepository.select(id)
+            val created = courseRepository.create(name, area, track, shared)
+            if (created == null) {
+                ExperienceEvents.emit(FeedbackCue.Error)
+                return@launch
+            }
+            courseRepository.select(created.id)
+            // 공유를 바랐는데 못 올렸으면 성공 소리 대신 알린다(코스는 저장됐고 공유는 꺼짐 — 코스를 눌러 다시 공유한다)
+            if (created.shareFailure == null) {
                 ExperienceEvents.emit(FeedbackCue.Success)
-            } else ExperienceEvents.emit(FeedbackCue.Error)
+            } else {
+                _shareFailedAfterSave.value = true
+                ExperienceEvents.emit(FeedbackCue.Error)
+            }
         }
     }
 

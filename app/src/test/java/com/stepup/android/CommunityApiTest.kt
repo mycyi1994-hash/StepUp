@@ -275,6 +275,19 @@ class CommunityApiTest {
     }
 
     @Test
+    fun `댓글 알림이 연 오래된 글은 그 글 하나만 받는다`() = runBlocking {
+        // 목록은 최근 200개뿐이다 — 거기 없는 글을 "지워진 글"로 보이지 않게(0088 post/<id>)
+        val http = FakeHttp(HttpResponse(200, feed))
+        val got = api(http).post(7)
+        assertTrue(http.lastUrl, http.lastUrl.endsWith("/post_feed?select=*&id=eq.7"))
+        assertEquals(7L, (got as ServerResult.Ok).value.single().toDomain().id)
+
+        // 지워졌거나 볼 수 없는 글은 빈 목록 — 닿지 못한 것(Retry)과 가른다
+        assertEquals(ServerResult.Ok(emptyList<com.stepup.android.data.remote.PostRow>()), api(FakeHttp(HttpResponse(200, "[]"))).post(7))
+        assertTrue(api(FakeHttp(HttpResponse(0, "통신 실패"))).post(7) is ServerResult.Retry)
+    }
+
+    @Test
     fun `서버가 거절한 이유와 닿지 못한 것을 가른다`() {
         val rejected = ServerResult.Rejected("글을 너무 자주 쓰고 있습니다. 잠시 뒤에 다시 써 주세요").asBoardFailure()
         assertTrue(rejected.rejected)

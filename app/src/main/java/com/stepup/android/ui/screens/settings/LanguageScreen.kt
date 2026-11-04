@@ -51,7 +51,10 @@ fun LanguageScreen(onBack: () -> Unit = {}) {
             selected = tag
             // 화면이 곧 재생성되므로 저장은 화면 수명과 무관한 스코프에서 한다
             CoroutineScope(Dispatchers.IO).launch { ServiceLocator.userPrefs.setLanguage(tag) }
-            if (AppLocale.change(context, tag)) activity?.recreate()
+            val recreate = AppLocale.change(context, tag)
+            // 푸시 글도 새 언어로 — 화면이 다시 만들어질 때 같은 언어면 다시 보내지 않는다
+            ServiceLocator.pushRegistrar.syncIfLanguageChanged()
+            if (recreate) activity?.recreate()
         }
     }
 }

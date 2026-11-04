@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.PartyPhase
+import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.service.StartGroup
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.ui.StepPermissions
@@ -38,6 +39,8 @@ fun PartyRunStartHost(onLobby: Boolean, onRunStarted: () -> Unit) {
     val repo = ServiceLocator.crewRepository
     val party by repo.party.collectAsStateWithLifecycle()
     val goRun by rememberUpdatedState(onRunStarted)
+    // 권한 창에서 돌아왔을 때 대기실을 보고 있는가 — 아래 출발과 같은 울타리(다른 화면에서 새 대기실을 열지 않는다)
+    val lobbyOnTop by rememberUpdatedState(onLobby)
     val needPrecise = stringResource(R.string.run_gps_need_precise)
 
     // 출발한 러닝에 이 방(크루 · 번개)과 이름을 적어 둔다 — 결과 · 공유 · 되살린 러닝이 같은 모임으로 보이게(정산과 무관)
@@ -58,8 +61,11 @@ fun PartyRunStartHost(onLobby: Boolean, onRunStarted: () -> Unit) {
                 // 위치 없이는 출발하지 않는다 — 준비한 뒤 권한을 거둔 경우. 왜 출발하지 않는지 알린다
                 !StepPermissions.hasPreciseLocation(context) ->
                     android.widget.Toast.makeText(context, needPrecise, android.widget.Toast.LENGTH_LONG).show()
-                // 권한 창에 오래 머물렀다 — 출발한 지 오래된 방의 러닝을 늦게 켜지 않는다(아래 출발과 같은 판단)
-                !repo.startIsFresh() -> repo.missedStart()
+                // 권한 창에 오래 머물렀다 — 출발한 지 오래된 방의 러닝을 늦게 켜지 않는다(아래 출발과 같은 판단).
+                // 새 대기실은 대기실을 보고 있을 때만 연다(아래 출발과 같은 울타리). 아니면 표시를 거둬 대기실로 오면 아래가 연다
+                !repo.startIsFresh() -> repo.party.value.partyId?.let { id ->
+                    if (lobbyOnTop) repo.missedStart() else PartyRunStart.unmark(id)
+                }
                 else -> startRun()
             }
         }
@@ -99,8 +105,7 @@ fun PartyRunStartHost(onLobby: Boolean, onRunStarted: () -> Unit) {
     }
 
     // 준비를 마치고 출발을 기다리는 동안 화면을 켜 둔다 — 화면이 꺼지면 출발 때 이 폰의 러닝을 켤 수 없다
-    val waiting = party.partyId != null && party.myReady &&
-        (party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.COUNTDOWN)
+    val waiting = waitingForPartyStart(party)
     val view = LocalView.current
     DisposableEffect(view, waiting) {
         if (waiting) view.keepScreenOn = true
@@ -108,12 +113,28 @@ fun PartyRunStartHost(onLobby: Boolean, onRunStarted: () -> Unit) {
     }
 }
 
+/**
+ * 준비를 마치고 출발을 기다리는 중인가 — 이때만 화면을 켜 둔다.
+ * 방에서 내보내졌거나 · 로그인이 풀렸거나 · 방이 닫혔거나 · 찼거나 · 이미 출발했으면(CrewRepository 가 묻기를 멈추고
+ * 단계 · 명단은 그대로 둔다) 기다리는 것이 아니다 — 예전엔 그대로 화면을 켜 두었다(2026-11-04 점검).
+ * 연결 끊김(NETWORK · 저절로 다시 묻는다)과 방금 누른 것의 거절(FAILED · 방에는 그대로 있다)은 기다리는 중이다.
+ */
+internal fun waitingForPartyStart(party: com.stepup.android.data.repo.PartyState): Boolean =
+    party.partyId != null && party.myReady && !party.roomClosed &&
+        (party.problem == null || party.problem == PartyProblem.NETWORK || party.problem == PartyProblem.FAILED) &&
+        (party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.COUNTDOWN)
+
 /** 이미 러닝을 켠(러닝 화면으로 옮긴) 방 — 앱이 살아 있는 동안 */
 private object PartyRunStart {
     @Volatile private var last: Long? = null
     fun handled(partyId: Long): Boolean = last == partyId
     fun mark(partyId: Long) {
         last = partyId
+    }
+
+    /** 러닝을 켜지 않고 물러났다 — 다시 이 방을 볼 수 있게 표시를 거둔다 */
+    fun unmark(partyId: Long) {
+        if (last == partyId) last = null
     }
 }
 

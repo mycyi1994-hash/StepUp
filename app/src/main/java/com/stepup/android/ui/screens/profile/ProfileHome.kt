@@ -183,6 +183,16 @@ internal fun ProfileAvatar(state: ProfileViewModel.UiState, size: androidx.compo
     }
 }
 
+/**
+ * 내 정보 큰 거리 숫자 — 계정 누적 거리(서버 `profiles.lifetime_km`, 레벨이 쓰는 값)를 알고 이 폰의 러닝 합보다 크면 그 값,
+ * 아니면 이 폰의 합. 다른 폰에서 달렸거나 다시 깔았으면 폰 합이 작아 레벨과 거리가 어긋났다.
+ */
+internal fun shownDistanceKm(localKm: Double?, accountKm: Double?): Double? = when {
+    accountKm == null -> localKm
+    localKm == null || accountKm > localKm -> accountKm
+    else -> localKm
+}
+
 /** 다음 기록 — 누적 거리보다 큰 다음 이정표(km). 실제 누적 거리에서만 정한다 */
 internal fun nextMilestoneKm(km: Double): Int {
     val steps = listOf(10, 25, 50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000)
@@ -210,7 +220,8 @@ private fun RecordBlock(records: RunRecordState, state: ProfileViewModel.UiState
             return@Column
         }
         val ready = records as? RunRecordState.Ready
-        DistanceFrame(ready?.meters?.div(1000))
+        // 큰 숫자 · 다음 기록 막대는 레벨과 같은 계정 거리(서버)로 — 이 폰에 남은 러닝만 더하면 레벨과 어긋난다
+        DistanceFrame(shownDistanceKm(ready?.meters?.div(1000), if (state.accountKmKnown) state.accountKm else null))
         Spacer(Modifier.height(18.dp))
         StatRow(
             listOf(

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 출시 전 점검 5차: 설정 › 약관 및 정책 · 신체 정보 지우기 확인 · 스토어 판 뽑기 안내 · 지갑 주소 · 코스 공유 실패 -->
+<resources>
+    <string name="fx5_legal_row">条款与政策</string>
+    <string name="fx5_legal_terms">服务条款</string>
+    <string name="fx5_legal_privacy">隐私政策</string>
+    <string name="fx5_legal_note">将在浏览器中打开。</string>
+    <string name="fx5_legal_open_failed">无法打开浏览器，请重试。</string>
+    <string name="fx5_body_clear_title">要删除全部身体信息吗？</string>
+    <string name="fx5_body_clear_body">将从这部手机删除身高、体重和目标体重。删除后无法恢复。</string>
+    <string name="set_faq_a_draw_store">首次注册可获得10次免费抽取，每天还有3次免费抽取机会。</string>
+    <string name="fx5_wallet_address_label">已关联地址</string>
+    <string name="fx5_wallet_address_copy">复制钱包地址</string>
+    <string name="fx5_wallet_address_copied">已复制钱包地址。</string>
+    <string name="fx5_wallet_change_support">如需更换或解除钱包，请联系客服。</string>
+    <string name="fx5_course_share_failed">路线已保存，但未能分享。点按该路线即可再次分享。</string>
+</resources>

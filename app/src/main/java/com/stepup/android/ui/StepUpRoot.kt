@@ -369,6 +369,14 @@ fun StepUpRoot() {
         }
         sessionChecked = true
     }
+    // 출입증 갱신이 거절되면(죽은 refresh token) 로그인 화면으로 — 달리는 중이면 끝난 뒤
+    SessionExpiryWatch()
+    // 첫 설정을 묻지 않는 판이면 로그인한 뒤 본 것으로 적어 둔다(나중에 다이어트를 열어도 기존 사용자를 다시 붙잡지 않게)
+    LaunchedEffect(loginMethod, setupSeen) {
+        if (!com.stepup.android.ui.screens.setup.BodySetup.askedHere && setupSeen == false && loginMethod?.isNotEmpty() == true) {
+            runCatching { ServiceLocator.userPrefs.setS2SetupSeen() }
+        }
+    }
 
     // 접속 코드 문(0079) — 로그인 · 계정이 바뀔 때와 앱으로 돌아올 때마다 다시 묻는다. 막힌 사람은 코드 입력 화면만 본다
     val accessContext = androidx.compose.ui.platform.LocalContext.current
@@ -404,8 +412,9 @@ fun StepUpRoot() {
             loginMethod!!.isEmpty() -> 1
             accessWaiting -> 5
             blocked -> 4
-            // S2 첫 설정은 새로 온 사람(가이드를 아직 안 본 사람)에게만 — 기존 사용자를 다시 붙잡지 않는다
-            guideSeen == false && setupSeen == false -> 3
+            // S2 첫 설정은 새로 온 사람(가이드를 아직 안 본 사람)에게만 — 기존 사용자를 다시 붙잡지 않는다.
+            // 스토어 판에서 다이어트가 잠겨 있으면 묻지 않는다(몸 정보 · 모드를 쓰는 곳이 없다 — BodySetup, 아래에서 본 것으로 적는다)
+            guideSeen == false && setupSeen == false && com.stepup.android.ui.screens.setup.BodySetup.askedHere -> 3
             else -> 2
         }
         // 앱 진입은 불투명도 180ms(시작·로그인·첫 사용 v1) — 동작 줄이기에서는 바로 바뀐다
@@ -493,7 +502,11 @@ private fun MainScaffoldContent(
     // WEB3 지갑 고르기(2026-10-18) — 앱의 "지갑 연결" 버튼은 모두 이 창을 연다(MetaMask · OKX · Rabby, GIWA 준비 중)
     var walletPicker by rememberSaveable { mutableStateOf(false) }
     // 스토어 판(WEB3 = false)에는 지갑 연결이 없다 — 여는 버튼도 숨기지만, 혹시 남은 길이 있어도 창을 열지 않는다
-    if (walletPicker && com.stepup.android.BuildConfig.WALLET_LINK) com.stepup.android.ui.screens.rewards.WalletConnectSheet(onDismiss = { walletPicker = false })
+    if (walletPicker && com.stepup.android.BuildConfig.WALLET_LINK) com.stepup.android.ui.screens.rewards.WalletConnectSheet(
+        onDismiss = { walletPicker = false },
+        // 붙은 것을 확인하면 연결 상태를 보이는 화면(연결된 계정 · 지갑)이 바로 다시 읽는다
+        onLinked = { com.stepup.android.ui.screens.rewards.WalletLinkSignal.linked() },
+    )
 
     pendingRun?.takeIf { currentOwner != null }?.let { checkpoint ->
         if (StepPermissions.hasActivityRecognition(context)) {

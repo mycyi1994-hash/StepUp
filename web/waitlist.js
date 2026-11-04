@@ -1,5 +1,5 @@
-import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261102-ts2';
-import { t, lang, onLangChange } from './i18n.js?v=20261102-ts2';
+import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261104-wl';
+import { t, lang, onLangChange } from './i18n.js?v=20261104-wl';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
@@ -433,7 +433,13 @@ registerForm.addEventListener('submit', async event => {
         result = await callWaitlist('waitlist_register', body);
       }
     } else result = await callWaitlist('waitlist_register', body);
-    if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
+    // 이미 등록된 이메일(서버 0091 — {ok, already}) — 영수증은 처음 등록한 창에만 있다. 다시 등록해 남의 등록을 가로채지
+    // 못하게 서버는 새 영수증을 주지 않는다. 공유 단계로 넘어가지 않고 그대로 알린다.
+    if (!result.receipt) {
+      feedback(registerFeedback, t('err.alreadyJoined'));
+      return;
+    }
+    if (!/^[0-9a-f]{64}$/.test(result.receipt)) throw new Error('Missing registration receipt');
     saveReceipt(result.receipt, email);
     setMyCode(result.referral_code);
     renderClaims([]);

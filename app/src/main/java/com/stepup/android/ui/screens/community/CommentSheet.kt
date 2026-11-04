@@ -31,6 +31,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import com.stepup.android.data.repo.CommentsLoad
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -104,6 +106,8 @@ fun CommentSheetHost(viewModel: CommunityViewModel) {
     val post = posts.firstOrNull { it.id == id } ?: return
     val stream = remember(id) { viewModel.commentThreads(id) }
     val threads by stream.collectAsStateWithLifecycle(emptyList())
+    val loadFlow = remember(id) { viewModel.commentsLoad(id) }
+    val load by loadFlow.collectAsStateWithLifecycle(CommentsLoad.LOADING)
     // 쓰는 말은 서버가 받아 준 뒤에만 비운다 — 실패하면 그대로 남아 다시 보낼 수 있다
     val input = remember(id) { CommentInput() }
 
@@ -117,6 +121,8 @@ fun CommentSheetHost(viewModel: CommunityViewModel) {
         onDismiss = viewModel::closeComments,
         sending = sending,
         input = input,
+        load = load,
+        onRetry = { viewModel.retryComments(id) },
     )
 }
 
@@ -157,6 +163,9 @@ fun CommentSheet(
     sending: Boolean = false,
     /** 쓰는 말 · 답글 대상 — 띄운 쪽이 서버가 받아 준 뒤에만 비운다 */
     input: CommentInput = remember { CommentInput() },
+    /** 댓글을 받는 중 · 받지 못함이면 "아직 댓글이 없어요" 대신 그것을 보인다 */
+    load: CommentsLoad = CommentsLoad.READY,
+    onRetry: () -> Unit = {},
 ) {
     val total = threads.sumOf { it.size }
     val listState = rememberLazyListState()
@@ -222,7 +231,9 @@ fun CommentSheet(
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
-                        text = stringResource(R.string.comments_title, total),
+                        // 받기 전에는 "댓글 0"이라고 하지 않는다
+                        text = if (load == CommentsLoad.READY) stringResource(R.string.comments_title, total)
+                        else stringResource(R.string.fx4_comments_title_plain),
                         style = MaterialTheme.typography.titleSmall,
                         color = Snow,
                     )
@@ -243,7 +254,9 @@ fun CommentSheet(
 
                 Spacer(Modifier.size(10.dp))
 
-                if (threads.isEmpty()) {
+                if (threads.isEmpty() && load != CommentsLoad.READY) {
+                    CommentLoadState(load, onRetry, Modifier.fillMaxWidth().weight(1f))
+                } else if (threads.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -430,6 +443,30 @@ private fun CommentRow(
                     Text(stringResource(if (comment.mine) R.string.post_delete else R.string.report_title), color = Silver)
                 }
             }
+        }
+    }
+}
+
+/** 댓글을 받는 중 · 받지 못함(다시 불러오기) — 받기 전 · 실패를 "아직 댓글이 없어요"로 보이지 않게 */
+@Composable
+private fun CommentLoadState(load: CommentsLoad, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        if (load == CommentsLoad.FAILED) {
+            Column(
+                Modifier.padding(24.dp).testTag("comments-failed"),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    stringResource(R.string.fx4_comments_failed), style = MaterialTheme.typography.bodyLarge,
+                    color = Silver, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                TextButton(onClick = onRetry, modifier = Modifier.testTag("comments-retry")) {
+                    Text(stringResource(R.string.fx4_retry), color = Volt, style = MaterialTheme.typography.titleSmall)
+                }
+            }
+        } else {
+            CircularProgressIndicator(Modifier.size(28.dp).testTag("comments-loading"), color = Silver, strokeWidth = 2.5.dp)
         }
     }
 }

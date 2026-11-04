@@ -64,7 +64,6 @@ import java.time.format.DateTimeFormatter
  * 한 것이다.
  */
 
-private val DAY = DateTimeFormatter.ofPattern("M월 d일 (E)")
 private val DAY_SHORT = DateTimeFormatter.ofPattern("M.d")
 
 /** 접수 상태를 확인한 지 이만큼 지나면 확정으로 말하지 않는다. */
@@ -76,9 +75,17 @@ fun parseDay(iso: String?): LocalDate? =
 fun parseMoment(iso: String?): OffsetDateTime? =
     iso?.let { runCatching { OffsetDateTime.parse(it) }.getOrNull() }
 
+/** 대회 날짜 — 언어마다 고른 꼴(요일 포함)로, 요일 이름도 그 언어로 */
 @Composable
-fun dayLabel(iso: String?): String =
-    parseDay(iso)?.format(DAY) ?: stringResource(R.string.feed_date_unknown)
+fun dayLabel(iso: String?): String {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val pattern = stringResource(R.string.fx4_feed_day_pattern)
+    return parseDay(iso)?.format(DateTimeFormatter.ofPattern(pattern, locale)) ?: stringResource(R.string.feed_date_unknown)
+}
+
+/** 월요일부터 일요일까지 요일 한 글자 — 화면 언어로(월 · Mo · 月 · 一) */
+fun weekdayInitials(locale: java.util.Locale): List<String> =
+    java.time.DayOfWeek.values().map { it.getDisplayName(java.time.format.TextStyle.NARROW, locale) }
 
 /**
  * 접수 상태를 사람 말로.
@@ -118,6 +125,35 @@ fun distanceRes(key: String): Int = when (key) {
     RunningFeedApi.ALL -> R.string.feed_filter_all
     else -> R.string.feed_distance_unknown
 }
+
+/**
+ * 시 · 도 — 값은 서버가 아는 한국어 열쇠(서울 · 부산 …) 그대로 두고, 보이는 글만 화면 언어로. 모르는 값이면 null(그대로 적는다).
+ */
+@StringRes
+fun regionRes(key: String): Int? = when (key) {
+    "서울" -> R.string.fx4_region_seoul
+    "부산" -> R.string.fx4_region_busan
+    "대구" -> R.string.fx4_region_daegu
+    "인천" -> R.string.fx4_region_incheon
+    "광주" -> R.string.fx4_region_gwangju
+    "대전" -> R.string.fx4_region_daejeon
+    "울산" -> R.string.fx4_region_ulsan
+    "세종" -> R.string.fx4_region_sejong
+    "경기" -> R.string.fx4_region_gyeonggi
+    "강원" -> R.string.fx4_region_gangwon
+    "충북" -> R.string.fx4_region_chungbuk
+    "충남" -> R.string.fx4_region_chungnam
+    "전북" -> R.string.fx4_region_jeonbuk
+    "전남" -> R.string.fx4_region_jeonnam
+    "경북" -> R.string.fx4_region_gyeongbuk
+    "경남" -> R.string.fx4_region_gyeongnam
+    "제주" -> R.string.fx4_region_jeju
+    RunningFeedApi.ALL -> R.string.feed_region_all
+    else -> null
+}
+
+@Composable
+fun regionLabel(key: String): String = regionRes(key)?.let { stringResource(it) } ?: key
 
 @StringRes
 fun eventTypeRes(key: String): Int = when (key) {
@@ -297,7 +333,7 @@ fun EventCard(row: EventRow, onOpen: () -> Unit, onToggleSave: () -> Unit, modif
             Text(row.title, style = MaterialTheme.typography.titleLarge, color = Snow, modifier = Modifier.weight(1f).quietClickable(onOpen))
             FeedSaveButton(row.saved, onToggleSave)
         }
-        Text(listOf(row.region, row.venue).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { stringResource(R.string.feed_place_unknown) }, style = MaterialTheme.typography.bodyMedium, color = Silver)
+        Text(listOf(regionLabel(row.region), row.venue).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { stringResource(R.string.feed_place_unknown) }, style = MaterialTheme.typography.bodyMedium, color = Silver)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             row.disciplineNames.forEach { FeedTag(it) }
         }
@@ -412,7 +448,7 @@ fun EventCalendar(
         val weeks = (cells + 6) / 7
 
         Row(Modifier.fillMaxWidth()) {
-            for (name in listOf("월", "화", "수", "목", "금", "토", "일")) {
+            for (name in weekdayInitials(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])) {
                 Text(
                     text = name,
                     modifier = Modifier.weight(1f),

@@ -1,5 +1,8 @@
 package com.stepup.android.data.remote
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -46,6 +49,17 @@ class SessionHolder(
      */
     private var refreshFailure: Pair<Long, String>? = null
 
+    /**
+     * 서버가 거절한 refresh token — 다시 로그인할 때까지 이것으로 /token 을 두드리지 않는다. 기억하지 않으면 2 ~ 5초마다 묻는
+     * 화면까지 모든 요청이 죽은 토큰을 다시 보냈다. 저장된 세션은 지우지 않는다(로그인하면 덮어써진다). 잠금 안에서만 읽고 쓴다.
+     */
+    private var rejectedRefresh: String? = null
+
+    private val _signInRequired = MutableStateFlow(false)
+
+    /** 출입증 갱신이 거절됐다 — 다시 로그인해야 한다. 루트가 보고 로그인 화면으로 보낸다(새로 로그인하면 false) */
+    val signInRequired: StateFlow<Boolean> = _signInRequired.asStateFlow()
+
     /** 쓸 수 있는 출입증. 만료가 가까우면 갱신한다. */
     /**
      * @param minValiditySeconds 토큰이 적어도 이만큼은 살아 있어야 한다. 웹 지갑처럼 토큰을 넘겨
@@ -59,6 +73,11 @@ class SessionHolder(
             return@withLock TokenResult.Ok(current.accessToken, current.user?.id)
         }
 
+        // 이미 거절된 토큰이다 — 다시 로그인할 때까지 다시 보내지 않는다
+        if (rejectedRefresh != null && rejectedRefresh == current.refreshToken) {
+            return@withLock TokenResult.SignInRequired("다시 로그인해 주세요")
+        }
+
         // 방금 연결 문제로 갱신하지 못했다 — 잠깐은 다시 두드리지 않는다
         refreshFailure?.let { (at, reason) ->
             if (monotonicMs() - at in 0 until REFRESH_PAUSE_MS) return@withLock TokenResult.Unavailable(reason)
@@ -67,6 +86,8 @@ class SessionHolder(
         when (val refreshed = auth.refresh(current.refreshToken)) {
             is AuthResult.Ok -> {
                 refreshFailure = null
+                rejectedRefresh = null
+                _signInRequired.value = false
                 // 갱신 응답에 user 가 빠져 오는 경우가 있다. 이전 값을 잃지 않게 이어 붙인다.
                 val merged = refreshed.session.copy(
                     user = refreshed.session.user ?: current.user,
@@ -78,7 +99,12 @@ class SessionHolder(
             // 자격이 만료됐다. 다시 로그인하게 한다. 저장된 세션은 지우지
             // 않는다 — 네트워크가 잠깐 이상해 400 이 온 경우까지 지워 버리면
             // 멀쩡한 세션을 잃는다. 로그인에 성공하면 어차피 덮어써진다.
-            is AuthResult.Rejected -> TokenResult.SignInRequired(refreshed.reason)
+            // 거절된 토큰은 기억해 두고 다시 보내지 않는다 — 루트가 로그인 화면으로 보낸다
+            is AuthResult.Rejected -> {
+                rejectedRefresh = current.refreshToken
+                _signInRequired.value = true
+                TokenResult.SignInRequired(refreshed.reason)
+            }
 
             is AuthResult.Retry -> {
                 refreshFailure = monotonicMs() to refreshed.reason
@@ -93,6 +119,8 @@ class SessionHolder(
             is AuthResult.Ok -> {
                 val session = result.session
                 refreshFailure = null
+                rejectedRefresh = null
+                _signInRequired.value = false
                 store.save(session)
                 TokenResult.Ok(session.accessToken, session.user?.id)
             }
@@ -134,9 +162,22 @@ class SessionHolder(
     /** 로그인한 적이 있는가. 첫 화면을 로그인으로 띄울지 정하는 근거다. */
     suspend fun isSignedIn(): Boolean = store.load() != null
 
+    /**
+     * 스스로 나갔다(로그아웃 · 계정 삭제 · 다른 계정) — 그 정리 중에 거절된 갱신이 남긴 "다시 로그인" 표시와 기억을 지운다.
+     * 계정을 지운 뒤 푸시 떼기가 죽은 토큰으로 갱신을 두드리면 표시가 켜져 로그인 화면이 "다시 로그인해 주세요"를 보였다.
+     * 저장된 세션은 건드리지 않는다.
+     */
+    suspend fun forgetRefusal() = mutex.withLock {
+        refreshFailure = null
+        rejectedRefresh = null
+        _signInRequired.value = false
+    }
+
     /** 로그아웃. 저장된 세션을 지운다. */
     suspend fun signOut() = mutex.withLock {
         refreshFailure = null
+        rejectedRefresh = null
+        _signInRequired.value = false
         store.clear()
     }
 

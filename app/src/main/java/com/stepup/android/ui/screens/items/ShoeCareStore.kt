@@ -43,6 +43,12 @@ interface ShoeCareBackend {
      */
     suspend fun unsentRuns(): Boolean = false
 
+    /**
+     * 이 신발(소유 id)을 닳게 할, 서버가 아직 반영하지 않은 러닝이 있는가 — 출발 때 신발을 적은 러닝은 그 신발일 때만,
+     * 적지 않은 러닝은 신은 신발일 때만, 크루 러닝은 세지 않는다([pendingShoeWearOf]). 다른 신발을 고칠 때 "올라간 뒤 바뀔 수 있어요"를 보이지 않게.
+     */
+    suspend fun unsentRuns(id: Long): Boolean = unsentRuns()
+
     /** 올리지 못한 러닝을 올리도록 올리기 일꾼을 깨운다 */
     fun sendRuns() {}
 
@@ -57,10 +63,17 @@ private object AppShoeCareBackend : ShoeCareBackend {
     override suspend fun shoe(id: Long): Sneaker? = ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == id }
     override suspend fun balance(): Double? = ServiceLocator.rewardRepository.balance.first()
     override suspend fun repair(id: Long): EconomyOutcome = ServiceLocator.sneakerRepository.repairOnServer(id)
-    override suspend fun unsentRuns(): Boolean {
-        // 러닝 줄을 읽기만 한다(고치지 않는다) — 러닝 화면의 남은 닳음 계산 그대로
+    override suspend fun unsentRuns(id: Long): Boolean {
+        // 러닝 줄을 읽기만 한다(고치지 않는다) — 러닝 화면의 남은 닳음 계산 그대로(이 신발의 러닝만)
+        val shoe = ServiceLocator.database.sneakerDao().byId(id) ?: return false
         val rows = ServiceLocator.stepRepository.recentSessions(PENDING_WEAR_SCAN).first()
-        return pendingShoeWearOf(rows, ServiceLocator.economySync.syncedFrom.value, System.currentTimeMillis()) > 0
+        return pendingShoeWearOf(
+            rows,
+            ServiceLocator.economySync.syncedFrom.value,
+            System.currentTimeMillis(),
+            shoeServerId = shoe.serverId,
+            shoeEquipped = shoe.equipped,
+        ) > 0
     }
     override fun sendRuns() = SessionUploadWorker.schedule(ServiceLocator.appContext)
     override val synced: Flow<Long> get() = ServiceLocator.economySync.syncedFrom
@@ -117,7 +130,7 @@ class ShoeCareStore(
      */
     private suspend fun watchUnsentRuns(id: Long) {
         unsentWatch?.cancel()
-        val unsent = safeCheck { backend.unsentRuns() }
+        val unsent = safeCheck { backend.unsentRuns(id) }
         _unsentRuns.value = unsent
         if (!unsent) return
         backend.sendRuns()
@@ -129,7 +142,7 @@ class ShoeCareStore(
                     return@collect
                 }
                 requote(id)
-                val still = safeCheck { backend.unsentRuns() }
+                val still = safeCheck { backend.unsentRuns(id) }
                 _unsentRuns.value = still
                 if (!still) unsentWatch?.cancel()
             }

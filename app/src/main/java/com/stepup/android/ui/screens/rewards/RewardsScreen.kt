@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -108,13 +109,20 @@ fun WalletScreen(
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val web3 by viewModel.web3.collectAsStateWithLifecycle()
     val status by viewModel.drawStatus.collectAsStateWithLifecycle()
+    val walletAddress by viewModel.walletAddress.collectAsStateWithLifecycle()
     // 웹 지갑 페이지에서 연결하고 돌아오면 바로 바뀌게 — 화면에 돌아올 때마다 연결 상태를 다시 읽는다
     LifecycleResumeEffect(Unit) {
         viewModel.refreshWeb3()
         onPauseOrDispose { }
     }
+    // 지갑 고르기 창의 "연결 확인"으로 붙은 것을 본 때도(화면에 돌아오는 일이 없다) 바로 다시 읽는다
+    val linkedSignal by WalletLinkSignal.count.collectAsStateWithLifecycle()
+    val signalAtOpen = remember { linkedSignal }
+    LaunchedEffect(linkedSignal) {
+        if (linkedSignal != signalAtOpen) viewModel.refreshWeb3()
+    }
     WalletContent(
-        totals = totals, history = history, filter = filter, web3 = web3, status = status,
+        totals = totals, history = history, filter = filter, web3 = web3, status = status, walletAddress = walletAddress,
         onBack = onBack, onFilter = viewModel::setFilter, onLoadMore = viewModel::loadMore,
         onReloadHistory = viewModel::reloadHistory, onReload = viewModel::reload, onRetryWeb3 = viewModel::refreshWeb3,
         onOpenDraw = onOpenDraw, onOpenWalletPage = onOpenWalletPage, onConnectWallet = onConnectWallet, onOpenChain = onOpenChain,
@@ -128,6 +136,8 @@ fun WalletContent(
     filter: LedgerFilter,
     web3: Web3State,
     status: DrawStatus? = null,
+    /** 연결된 지갑 주소 — 지갑 주소 연결만 하는 판(스토어)의 연결됨 시트가 짧게 보이고 누르면 복사한다. 모르면 null */
+    walletAddress: String? = null,
     onBack: () -> Unit = {},
     onFilter: (LedgerFilter) -> Unit = {},
     onLoadMore: () -> Unit = {},
@@ -236,7 +246,7 @@ fun WalletContent(
     opened?.let { entry -> EntrySheet(entry, zone, onClose = { opened = null }) }
     when (sheet) {
         WalletSheet.Info -> InfoSheet(showDraw = web3Enabled, onClose = { sheet = WalletSheet.None })
-        WalletSheet.Linked -> if (linkOnly) LinkedPlainSheet(onClose = { sheet = WalletSheet.None }) else LinkedSheet(
+        WalletSheet.Linked -> if (linkOnly) LinkedPlainSheet(walletAddress, onClose = { sheet = WalletSheet.None }) else LinkedSheet(
             onOpenDraw = {
                 sheet = WalletSheet.None
                 onOpenDraw()
@@ -557,7 +567,8 @@ private fun EntrySheet(entry: RewardEntity, zone: ZoneId, onClose: () -> Unit) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
         DetailLine(stringResource(R.string.wl_detail_kind), stringResource(kindLabel(entry.amount)), bold = true)
         DetailLine(stringResource(R.string.wl_detail_time), full)
-        if (entry.description.isNotBlank()) {
+        // 메모는 서버 원장 · 폰이 한국어로만 적어 둔 글 — 다른 언어 화면에서는 숨긴다(위 제목이 번역된 이름이다)
+        if (entry.description.isNotBlank() && com.stepup.android.ui.components.showsKoreanOnlyText()) {
             Text(stringResource(R.string.wl_detail_note), color = p.secondary, fontSize = 15.sp)
             Text(entry.description, color = p.text, fontSize = 16.sp, lineHeight = 1.45.em, modifier = Modifier.testTag("wl-entry-note"))
         }
@@ -624,10 +635,22 @@ private fun LinkedSheet(onOpenDraw: () -> Unit, onOpenWalletPage: () -> Unit, on
     }
 }
 
-/** 연결됨 — 지갑 주소 연결만 하는 판(스토어). 뽑기 · 지갑 페이지(출금) 길 없이 연결됐다는 것만 */
+/**
+ * 연결됨 — 지갑 주소 연결만 하는 판(스토어). 뽑기 · 지갑 페이지(출금) 길 없이 연결됐다는 것과 연결된 주소(짧게, 누르면 전체 복사).
+ * 이 판에는 지갑을 바꾸거나 떼는 페이지가 없다 — 고객센터 문의로 잇는다(메일 작성 창 · 주소 복사, 설정의 문의와 같다).
+ */
 @Composable
-private fun LinkedPlainSheet(onClose: () -> Unit) {
+private fun LinkedPlainSheet(address: String?, onClose: () -> Unit) {
     val p = settingsPalette()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var contactOpen by rememberSaveable { mutableStateOf(false) }
+    var copied by remember { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) {
+            kotlinx.coroutines.delay(2_500)
+            copied = false
+        }
+    }
     SettingsSheet(
         title = stringResource(R.string.wl_linked_title), onDismiss = onClose, modifier = Modifier.testTag("wl-linked-sheet"),
         actions = { SettingsPrimaryButton(stringResource(R.string.common_close), onClose, Modifier.fillMaxWidth()) },
@@ -640,7 +663,48 @@ private fun LinkedPlainSheet(onClose: () -> Unit) {
             Text(stringResource(R.string.wl_linked_head), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
         Text(stringResource(R.string.wl_linked_plain_body), color = p.secondary, fontSize = 15.sp)
+        // 연결된 주소 — 서버에서 읽은 것만(못 읽었으면 줄을 두지 않는다). 짧게 보이고, 누르면 전체 주소를 복사한다
+        if (address != null) {
+            val copyLabel = stringResource(R.string.fx5_wallet_address_copy)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .feedbackClickable(role = Role.Button, onClick = { if (copyText(context, address)) copied = true })
+                    .semantics(mergeDescendants = true) { contentDescription = copyLabel }
+                    .testTag("wl-linked-address"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.fx5_wallet_address_label), color = p.secondary, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Text(com.stepup.android.domain.WalletAddress.short(address), color = p.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            }
+            if (copied) {
+                Text(
+                    stringResource(R.string.fx5_wallet_address_copied), color = p.accent, fontSize = 14.sp,
+                    modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
+                        .testTag("wl-linked-address-copied"),
+                )
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(p.divider))
+        Text(stringResource(R.string.fx5_wallet_change_support), color = p.secondary, fontSize = 15.sp, lineHeight = 1.5.em)
+        Box(
+            Modifier.heightIn(min = 48.dp).feedbackClickable(role = Role.Button, onClick = { contactOpen = true }).testTag("wl-linked-contact"),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text(stringResource(R.string.set_contact_mail), color = p.accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
     }
+    if (contactOpen) com.stepup.android.ui.screens.settings.ContactSheet(onDismiss = { contactOpen = false })
+}
+
+/** 클립보드에 넣는다 — 실제로 들어갔을 때만 true */
+private fun copyText(context: android.content.Context, text: String): Boolean = try {
+    val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+    if (clipboard == null) false else {
+        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("StepUp", text))
+        true
+    }
+} catch (_: Exception) {
+    false
 }
 
 /** 연결 혜택(뽑기 전달본 06 재사용) — 숫자는 서버가 준 것만. 못 읽었으면 그 줄을 빼고 보인다 */

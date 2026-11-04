@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 화면 글자 · 언어 고침 4차: 게시판 · 대기실 만들기 거절 문구(BoardRefusal · RoomCreateRefusal), 대회 날짜 꼴, 시 · 도 이름 -->
+<resources>
+    <string name="fx4_request_failed">无法处理请求。请稍后再试。</string>
+    <string name="fx4_board_post_too_often">发帖过于频繁。请稍后再发。</string>
+    <string name="fx4_board_comment_too_often">评论过于频繁。请稍后再写。</string>
+    <string name="fx4_board_not_my_post_delete">只能删除自己的帖子。</string>
+    <string name="fx4_board_not_my_post_edit">只能编辑自己的帖子。</string>
+    <string name="fx4_board_not_my_comment">只能删除自己的评论。</string>
+    <string name="fx4_board_flash_full">名额已满。</string>
+    <string name="fx4_board_flash_full_n">名额已满（%1$d人）。</string>
+    <string name="fx4_board_flash_past">这次聚会已经过去了。</string>
+    <string name="fx4_board_flash_needs_time">闪跑需要设定未来的集合时间。</string>
+    <string name="fx4_board_not_crew_member">只有团队成员可以操作。</string>
+    <string name="fx4_board_post_gone">找不到这条帖子。</string>
+    <string name="fx4_board_block_self">不能屏蔽自己。</string>
+    <string name="fx4_board_invalid">请检查输入的内容。</string>
+    <string name="fx4_board_too_long">内容太长了。</string>
+    <string name="fx4_board_empty">请填写内容。</string>
+    <string name="fx4_room_create_not_member">只有团队成员可以开设等候室。</string>
+    <string name="fx4_room_create_name_invalid">跑步名称为1~30个字符。</string>
+    <string name="fx4_room_create_course_invalid">请检查路线名称、距离和路径。</string>
+    <string name="fx4_room_create_closed">等候室已关闭。</string>
+    <string name="fx4_room_create_sign_in">登录后即可开设等候室。</string>
+    <string name="fx4_room_create_failed">无法开设等候室。请再试一次。</string>
+    <string name="fx4_feed_day_pattern">M月d日 (E)</string>
+    <string name="fx4_region_seoul">首尔</string>
+    <string name="fx4_region_busan">釜山</string>
+    <string name="fx4_region_daegu">大邱</string>
+    <string name="fx4_region_incheon">仁川</string>
+    <string name="fx4_region_gwangju">光州</string>
+    <string name="fx4_region_daejeon">大田</string>
+    <string name="fx4_region_ulsan">蔚山</string>
+    <string name="fx4_region_sejong">世宗</string>
+    <string name="fx4_region_gyeonggi">京畿</string>
+    <string name="fx4_region_gangwon">江原</string>
+    <string name="fx4_region_chungbuk">忠北</string>
+    <string name="fx4_region_chungnam">忠南</string>
+    <string name="fx4_region_jeonbuk">全北</string>
+    <string name="fx4_region_jeonnam">全南</string>
+    <string name="fx4_region_gyeongbuk">庆北</string>
+    <string name="fx4_region_gyeongnam">庆南</string>
+    <string name="fx4_region_jeju">济州</string>
+</resources>

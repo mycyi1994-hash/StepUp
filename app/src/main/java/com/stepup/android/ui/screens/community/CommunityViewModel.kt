@@ -322,6 +322,12 @@ class CommunityViewModel(
     fun commentThreads(postId: Long): Flow<List<CommentThread>> =
         communityRepository.commentThreads(postId)
 
+    /** 댓글을 받는 중 · 받지 못함 · 받음 — 받기 전에 "아직 댓글이 없어요"로 보이지 않게 */
+    fun commentsLoad(postId: Long): Flow<com.stepup.android.data.repo.CommentsLoad> =
+        communityRepository.commentsLoad(postId)
+
+    fun retryComments(postId: Long) = communityRepository.retryComments(postId)
+
     /** 번개 참가자 명단. 받는 중이거나 받지 못했으면 null 이 흐른다. */
     fun flashRoster(postId: Long): Flow<List<FlashMember>?> = flow {
         emit(null)

@@ -1,5 +1,30 @@
 # StepUp — 작업 메모
 
+## 최신 — 4차 점검: 서버 보안 · 경제 악용 막기 · 약관 링크 (2026-11-04, 서버 0090 · 0091)
+
+- **크루 보상(0090)**: 서버가 신호(`crew_run_beat`)로 본 시간만큼만 — 걸음 ≤ (active_sec − empty_sec + 60) × 4, 신호 0 이면 0. 신호가 `crew_beat_timeout_sec`(120) 넘게
+  끊기면 서버가 끝낸다(`terminal_reason 'TIMEOUT'`, 앱 `CrewTerminal.TIMEOUT`). 크루도 개인과 같은 하루 상한(걸음 48k · SUP 600 · 올리기)에 든다(`crew_counts_in_daily_cap`),
+  경로 없는 크루 러닝은 60 상한. 인원 보너스 'ALL' 은 그대로. 경로 크기(`track_max_bytes` · `track_max_points`) · 시간당 올리기(`record_session_hourly_cap` 60, 429).
+- IMPORT 신발은 일반 · 내구도 0, `p_sneaker` · 크루 체력에 못 쓴다. 에너지는 실제로 신은(p_sneaker) 신발 레벨로. 대기실 출석 기준 25초(`party_presence_sec`).
+- **출금 · 상급 뽑기는 서버에서 꺼짐**(`chain_withdraw_enabled` · `premium_draw_enabled` = false — 법률 검토 전). 테스트 판 상급 뽑기도 멈춘다. 켜면 출금 최소 50 · 하루 3번.
+- 테스트 가스(드립)는 가입 3일 · GPS 러닝 1번 뒤 · 하루 전체 50(`attester_drip_claim`).
+- **개인정보(0091)**: 로그인 안 한 요청(anon)은 profiles · 크루 · 거래 · 글 표와 뷰, leaderboard 를 못 읽는다. 새 가입자 이름은 '러너'(구글 실명 안 씀),
+  이름은 직접 고쳐도 같은 규칙(`profiles_name_guard`). 대기 명단 같은 이메일 다시 등록은 영수증을 새로 주지 않는다(`already`). 신고는 3일 · 러닝 1번 넘은 계정만 숨김에 센다.
+  크루 채팅 분당 20 · 사진 시간당 30 · 하루 100(`chat_rate_limited`). 운영 Supabase 는 직접 부른 요청에 IP 머리글을 넘기지 않는다 — 대기 명단 IP 횟수 제한은 워커(Turnstile) 경로에서만 된다.
+- 앱: 설정 › 약관 및 정책(`LegalLinks` — en/ja/zh 는 #en), 알림 "모든 알림" · "번개러닝 소식", 스토어 판은 첫 신체 설정 건너뜀(`BodySetup`), `adjustResize`, 푸시 언어는 보이는 언어,
+  거짓 로그아웃 막기(`refreshTokenDead` — Supabase JSON 오류 코드만), 접속 코드 403 러닝은 FAILED(다시 올림).
+
+## 최신 — 3차 점검 13건 수정 (2026-11-04)
+
+- 걸음: 재부팅 · 자정 넘김 이월 규칙은 `sensor/StepBaseline.kt`(테스트 가능), 트래커는 날짜와 함께(`todayReading`) — 다른 날 값은 그날 줄에만, 목표 · 연속 · 보너스 청구는 오늘 값만.
+  홈 "목표 달성"은 오늘 BONUS_GOAL 원장 줄이 있을 때만 "보너스를 받았어요", 아니면 "보너스는 러닝 걸음으로". 위치 꺼짐은 따로 알린다.
+- 내 정보 거리는 서버 누적 거리가 더 크면 그것(`shownDistanceKm`), 분석 3개월 카드는 90일 · 무효 제외.
+- 첫 동기화 전에는 신발 · 지갑을 빈 값/0 으로 보이지 않는다(`EconomyLoad` — 불러오는 중 / 연결 끊김 + 다시). 서버 경제면 폰 시작 신발을 만들지 않는다.
+  동기화는 겹쳐 부르면 다음 한 번을 함께 기다린다(`CoalescedRun`). 거절된 새로 고침 토큰은 다시 보내지 않고 로그인으로(`SessionExpiryWatch`, 달리는 중이면 끝난 뒤), 401 은 한 번 다시 보낸다.
+- 댓글 · 베타 코드 화면은 불러오는 중 · 실패 + 다시 시도(베타 코드 날짜는 `OffsetDateTime`).
+- 서버가 쓴 한국어 오류는 글(`BoardRefusal`) · 대기실 만들기(`RoomCreateRefusal`)에서 4개 언어로, 지갑 내역 메모는 한국어 화면에서만. 뉴스 날짜 · 요일 · 지역은 언어별.
+- `StepUpTabs` 기본 높이 44dp · 큰 글씨에서 강조가 칸을 따라간다. 스토어 판 러닝 메뉴는 잠긴 카드를 숨긴다(테스트 판은 그대로 자물쇠).
+
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 
 - 신발: 러닝 시작 때 신은 신발 id 를 적어(`WalkSessionState.startSneakerId` · 폰 DB 판 20 `sneakerServerId` · 체크포인트 판 5) `record_session(p_sneaker)` 로 보낸다 —

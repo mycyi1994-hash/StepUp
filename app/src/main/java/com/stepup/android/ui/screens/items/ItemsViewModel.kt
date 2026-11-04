@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -98,8 +99,10 @@ class ItemsViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val owned: StateFlow<OwnedLoad> = ownedReloads
         .flatMapLatest {
-            sneakerRepository.inventory
-                .map<List<Sneaker>, OwnedLoad> { OwnedLoad.Ready(it) }
+            // 서버 경제면 첫 동기화 전의 빈 목록은 "신발 없음"이 아니다 — 불러오는 중 · 끊김이면 다시 불러오기
+            combine(sneakerRepository.inventory, ServiceLocator.economyLoad()) { shoes, economy ->
+                ownedLoadOf(shoes, economy)
+            }
                 .onStart { emit(OwnedLoad.Loading) }
                 .catch { error ->
                     if (error is CancellationException) throw error

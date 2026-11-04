@@ -20,7 +20,7 @@ function req(body, auth = 'Bearer t') {
   })
 }
 
-function fakeDeps({ payload, rpcCalls = [], submitted = [], firstWallet = null } = {}) {
+function fakeDeps({ payload, rpcCalls = [], submitted = [], firstWallet = null, dripOk = true, sendFails = false } = {}) {
   const signer = privateKeyToAccount(generatePrivateKey())
   const attester = privateKeyToAccount(generatePrivateKey())
   return {
@@ -35,6 +35,7 @@ function fakeDeps({ payload, rpcCalls = [], submitted = [], firstWallet = null }
       rpcCalls.push([fn, args])
       if (fn === 'attester_op_payload') return payload ? [payload] : []
       if (fn === 'attester_wallet_link') return firstWallet
+      if (fn === 'attester_drip_claim') return dripOk
       return null
     },
     clients: () => ({
@@ -51,6 +52,7 @@ function fakeDeps({ payload, rpcCalls = [], submitted = [], firstWallet = null }
       relayer: {
         account: { address: '0x' + '3'.repeat(40) },
         sendTransaction: async (x) => {
+          if (sendFails) throw new Error('rpc down')
           submitted.push(x)
           return '0x' + 'cd'.repeat(32)
         },
@@ -200,6 +202,49 @@ test('지갑 연결: 가스비는 계정의 첫 지갑에만 보낸다', async (
   const again = await link(false)
   assert.equal(again.sent, 0)
   assert.equal(again.out.drip, null)
+})
+
+test('지갑 연결: 가스비는 서버가 허락할 때만 — 거절이면 보내지 않고 연결은 그대로 (0090)', async () => {
+  const dripEnv = { DRIP_WEI: '200000000000000' }
+  const wallet = privateKeyToAccount(generatePrivateKey())
+  const nonce = 'c'.repeat(32)
+  const signature = await wallet.signMessage({ message: walletLinkMessage(USER.id, nonce) })
+  const deps = fakeDeps({ firstWallet: true, dripOk: false })
+  const out = await linkWallet(req({ address: wallet.address, nonce, signature }), dripEnv, deps)
+  assert.equal(out.ok, true)
+  assert.equal(out.drip, null)
+  assert.equal(deps.submitted.length, 0)
+  assert.deepEqual(deps.rpcCalls[1], ['attester_drip_claim', { p_user: USER.id, p_address: wallet.address }])
+  assert.ok(!deps.rpcCalls.some(([fn]) => fn === 'attester_drip_release'))
+})
+
+test('지갑 연결: 허락받고 보내지 못하면 허락을 되돌린다 — 연결은 성공 (0090)', async () => {
+  const dripEnv = { DRIP_WEI: '200000000000000' }
+  const wallet = privateKeyToAccount(generatePrivateKey())
+  const nonce = 'd'.repeat(32)
+  const signature = await wallet.signMessage({ message: walletLinkMessage(USER.id, nonce) })
+  const deps = fakeDeps({ firstWallet: true, sendFails: true })
+  const out = await linkWallet(req({ address: wallet.address, nonce, signature }), dripEnv, deps)
+  assert.equal(out.ok, true)
+  assert.equal(out.drip, null)
+  assert.deepEqual(deps.rpcCalls.map(([fn]) => fn), ['attester_wallet_link', 'attester_drip_claim', 'attester_drip_release'])
+})
+
+test('지갑 연결: 이미 가스가 있는 지갑에는 허락도 묻지 않는다 (0090)', async () => {
+  const dripEnv = { DRIP_WEI: '200000000000000' }
+  const wallet = privateKeyToAccount(generatePrivateKey())
+  const nonce = 'e'.repeat(32)
+  const signature = await wallet.signMessage({ message: walletLinkMessage(USER.id, nonce) })
+  const deps = fakeDeps({ firstWallet: true })
+  const clients = deps.clients
+  deps.clients = (e) => {
+    const c = clients(e)
+    c.publicClient.getBalance = async () => 10n ** 18n
+    return c
+  }
+  const out = await linkWallet(req({ address: wallet.address, nonce, signature }), dripEnv, deps)
+  assert.equal(out.drip, null)
+  assert.deepEqual(deps.rpcCalls.map(([fn]) => fn), ['attester_wallet_link'])
 })
 
 test('만료: 한 작업이 실패해도 뒤의 작업은 계속 되돌린다', async () => {

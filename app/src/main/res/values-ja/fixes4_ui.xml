@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 화면 글자 · 언어 고침 4차: 게시판 · 대기실 만들기 거절 문구(BoardRefusal · RoomCreateRefusal), 대회 날짜 꼴, 시 · 도 이름 -->
+<resources>
+    <string name="fx4_request_failed">リクエストを処理できませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="fx4_board_post_too_often">投稿が多すぎます。しばらくしてからもう一度投稿してください。</string>
+    <string name="fx4_board_comment_too_often">コメントが多すぎます。しばらくしてからもう一度書いてください。</string>
+    <string name="fx4_board_not_my_post_delete">自分の投稿だけ削除できます。</string>
+    <string name="fx4_board_not_my_post_edit">自分の投稿だけ編集できます。</string>
+    <string name="fx4_board_not_my_comment">自分のコメントだけ削除できます。</string>
+    <string name="fx4_board_flash_full">定員に達しました。</string>
+    <string name="fx4_board_flash_full_n">定員に達しました（%1$d人）。</string>
+    <string name="fx4_board_flash_past">すでに終わった集まりです。</string>
+    <string name="fx4_board_flash_needs_time">フラッシュランには今後の集合時刻が必要です。</string>
+    <string name="fx4_board_not_crew_member">クルーメンバーだけができます。</string>
+    <string name="fx4_board_post_gone">投稿が見つかりません。</string>
+    <string name="fx4_board_block_self">自分自身はブロックできません。</string>
+    <string name="fx4_board_invalid">入力内容を確認してください。</string>
+    <string name="fx4_board_too_long">テキストが長すぎます。</string>
+    <string name="fx4_board_empty">内容を入力してください。</string>
+    <string name="fx4_room_create_not_member">クルーメンバーだけが待機室を開けます。</string>
+    <string name="fx4_room_create_name_invalid">ラン名は1〜30文字です。</string>
+    <string name="fx4_room_create_course_invalid">コース名・距離・ルートを確認してください。</string>
+    <string name="fx4_room_create_closed">閉じた待機室です。</string>
+    <string name="fx4_room_create_sign_in">ログインすると待機室を開けます。</string>
+    <string name="fx4_room_create_failed">待機室を開けませんでした。もう一度お試しください。</string>
+    <string name="fx4_feed_day_pattern">M月d日(E)</string>
+    <string name="fx4_region_seoul">ソウル</string>
+    <string name="fx4_region_busan">釜山</string>
+    <string name="fx4_region_daegu">大邱</string>
+    <string name="fx4_region_incheon">仁川</string>
+    <string name="fx4_region_gwangju">光州</string>
+    <string name="fx4_region_daejeon">大田</string>
+    <string name="fx4_region_ulsan">蔚山</string>
+    <string name="fx4_region_sejong">世宗</string>
+    <string name="fx4_region_gyeonggi">京畿</string>
+    <string name="fx4_region_gangwon">江原</string>
+    <string name="fx4_region_chungbuk">忠北</string>
+    <string name="fx4_region_chungnam">忠南</string>
+    <string name="fx4_region_jeonbuk">全北</string>
+    <string name="fx4_region_jeonnam">全南</string>
+    <string name="fx4_region_gyeongbuk">慶北</string>
+    <string name="fx4_region_gyeongnam">慶南</string>
+    <string name="fx4_region_jeju">済州</string>
+</resources>

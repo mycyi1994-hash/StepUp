@@ -68,8 +68,6 @@ import com.stepup.android.ui.theme.BrandLogoRole
 import com.stepup.android.ui.theme.StepUpSans
 import kotlinx.coroutines.launch
 
-/** 약관 · 개인정보처리방침 — 기존 주소 그대로. 문서 내용은 앱이 새로 쓰거나 요약하지 않는다 */
-
 /**
  * 첫 진입 로그인.
  *
@@ -123,6 +121,8 @@ fun LoginScreen(onDone: () -> Unit) {
                                 ServiceLocator.refreshEconomyInBackground()
                                 // 로그인 전에 끝나 대기열에 남은 러닝을 올린다
                                 runCatching { SessionUploadWorker.schedule(activity) }
+                                // 저녁 목표 알림 — 로그아웃 때 멈췄으면 다시 건다(이미 걸려 있으면 그대로)
+                                runCatching { com.stepup.android.push.GoalReminderWorker.schedule(activity) }
                                 onDone()
                             }
                             // 서버가 거절했으면 07(대개 설정 문제 — 클라이언트 ID 가 서버에 등록되지 않은 경우가 가장 흔하다),
@@ -152,7 +152,8 @@ fun LoginScreen(onDone: () -> Unit) {
 
 /**
  * 로그인 화면(파란 톤 v4 ONB01 · ONB05~09) — 로고 → 큰 제목 → 한 줄 → 아치 강변 → 버튼 위 안내 칸 → Google 버튼.
- * 아래 동의 문구 · 약관 링크는 뺐다(2026-10-29 사용자 — 이용약관 · 개인정보처리방침은 내 정보 › 설정 › 약관 및 정책).
+ * 아래 동의 문구 · 약관 링크는 뺐다(2026-10-29 사용자 — 이용약관 · 개인정보처리방침은 내 정보 › 설정 › 약관 및 정책,
+ * [com.stepup.android.ui.screens.settings.LegalLinks]).
  * 안내 칸은 가장 긴 문구(제목 + 두 줄) 높이를 늘 잡아 두어, 상태가 바뀌어도 Google 버튼 자리가 움직이지 않는다.
  * 한 스크롤 면이라 큰 글씨 · 작은 화면에서도 버튼까지 닿는다(사진부터 줄인다).
  * 상태만 넣어 그릴 수 있다(시안 검사). 실제 상태는 [LoginScreen] 의 로그인 결과에서만 온다.

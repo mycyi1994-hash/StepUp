@@ -197,7 +197,8 @@ fun AnalyticsScreen(
 
             item { SectionHeader(title = stringResource(R.string.analytics_run_stats)) }
 
-            item { RunStatsCard(sessions = allSessions) }
+            // 3개월 탭이므로 그 90일 안 · 무효 아닌 러닝만 센다(예전엔 최근 200개 전부, 무효까지 거리에 더했다)
+            item { RunStatsCard(sessions = remember(allSessions) { quarterRuns(allSessions) }) }
         }
     }
 }
@@ -908,6 +909,20 @@ private fun MonthlyBreakdownCard(days: List<DailyStepsEntity>) {
             }
         }
     }
+}
+
+/**
+ * 3개월 탭의 러닝 통계 재료 — 지난 [days]일(오늘 포함, 기기 시간대 0시부터 — 걸음 기록 `observeDays` 와 같은 창) 안에
+ * 시작했고 서버가 무효로 보지 않은 러닝. 무효 러닝은 내 기록 합계에서도 뺀다(기록 통계와 같은 바탕).
+ */
+internal fun quarterRuns(
+    sessions: List<WalkSessionEntity>,
+    today: LocalDate = LocalDate.now(),
+    zone: ZoneId = ZoneId.systemDefault(),
+    days: Int = AnalyticsViewModel.QUARTER_DAYS,
+): List<WalkSessionEntity> {
+    val from = today.minusDays((days - 1).coerceAtLeast(0).toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
+    return sessions.filter { it.verdict != "VOID" && it.startedAt >= from }
 }
 
 /** 러닝 세션 통계 — 걸음 기록과 달리 "뛴 것"만 센다 */

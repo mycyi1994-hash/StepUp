@@ -5,6 +5,7 @@ import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionRecorded
+import com.stepup.android.data.remote.isAccessRequired
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -130,8 +131,27 @@ class ClaimRepository(
                     followUp(confirmed)
                 }
 
-                // 폰 시계가 앞서 있어 "종료 시각이 미래" 로 거절됐으면 시간이 지나면 받아진다 — 다시 시도할 목록에 둔다
-                is ServerResult.Rejected -> if ("종료 시각이 미래" in result.reason) {
+                // 접속 코드 문(0079)에 막혔다 — 러닝이 틀린 것이 아니다. 버리지 않고(FAILED — 다시 올릴 목록) 여기서 멈춘다:
+                // 문이 닫힌 동안은 뒤의 러닝도 모두 같은 답이다. 코드를 넣으면 AccessGate.afterGranted 가 올리기를 다시 건다
+                is ServerResult.Rejected -> if (result.isAccessRequired()) {
+                    sessionDao.update(
+                        session.copy(
+                            uploadState = UploadState.FAILED.name,
+                            uploadAttemptedAt = now(),
+                            uploadAttempts = session.uploadAttempts + 1,
+                            uploadError = result.reason,
+                        ),
+                    )
+                    failed++
+                    if (signed > 0) runCatching { onSigned(signedStarts) }
+                    return UploadRun(
+                        signed = signed,
+                        rejected = rejected,
+                        failed = failed,
+                        blockedBy = result.reason,
+                    )
+                } else if ("종료 시각이 미래" in result.reason) {
+                    // 폰 시계가 앞서 있어 "종료 시각이 미래" 로 거절됐으면 시간이 지나면 받아진다 — 다시 시도할 목록에 둔다
                     sessionDao.update(
                         session.copy(
                             uploadState = UploadState.FAILED.name,
