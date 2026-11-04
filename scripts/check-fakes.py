@@ -87,7 +87,7 @@ def body_of(src, start):
 
 # 인터페이스마다 "구현해야 하는" 멤버 이름
 required = {}
-for path in kotlin_files("app/src/main/java"):
+for path in kotlin_files("app/src/main/java", "shared/src"):
     src = open(path, encoding="utf-8").read()
     for m in re.finditer(r'^\s*(?:@\w+\s*\n\s*)*(?:\w+\s+)*interface\s+(\w+)', src, re.M):
         body = body_of(src, m.end())
@@ -102,7 +102,7 @@ for path in kotlin_files("app/src/main/java"):
             required.setdefault(m.group(1), set()).update(names)
 
 problems = []
-for path in kotlin_files("app/src/test/java", "app/src/androidTest/java"):
+for path in kotlin_files("app/src/test/java", "app/src/androidTest/java", "shared/src/androidUnitTest", "shared/src/commonTest"):
     if not os.path.exists(path):
         continue
     src = open(path, encoding="utf-8").read()

@@ -86,7 +86,7 @@ class ShoeUpgradeViewModel(
                         phase = when {
                             s.phase is UpgradePhase.Unknown || s.phase is UpgradePhase.Running ||
                                 s.phase is UpgradePhase.Succeeded || s.phase is UpgradePhase.Failed -> s.phase
-                            load.target.block != null -> UpgradePhase.Blocked(load.target.block)
+                            load.target.block != null -> UpgradePhase.Blocked(load.target.block!!)
                             else -> UpgradePhase.Editing
                         },
                     )

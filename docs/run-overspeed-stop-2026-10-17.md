@@ -44,7 +44,7 @@
 
 ## 앱
 
-- 규칙: [`domain/RunOverspeed.kt`](../app/src/main/java/com/stepup/android/domain/RunOverspeed.kt) — `STOP_MS 30초` · `GAP_MS 10초` · `BAN_MS 10분`.
+- 규칙: [`domain/RunOverspeed.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RunOverspeed.kt) — `STOP_MS 30초` · `GAP_MS 10초` · `BAN_MS 10분`.
 - 서비스: [`WalkSessionService`](../app/src/main/java/com/stepup/android/service/WalkSessionService.kt)
   - `WalkSessionState.overspeed`(화면 표시용, 저장본에 남기지 않는다) — 과속 구간마다 이어 세고, 사람 속도 구간이면 거둔다. 1초 타이머가 10초 넘게 끊긴 것을 거둔다.
   - `stopForOverspeed` — 금지 시간과 서버 신고를 먼저 폰에 적고(`UserPrefs.raiseRunBanUntil` · `addPendingOverspeedStop`) 평소처럼 저장한다.

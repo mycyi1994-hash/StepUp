@@ -15,12 +15,22 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-KT = ROOT / "app/src/main/java/com/stepup/android/domain"
+# 규칙 코드는 shared 모듈에 있다(2026-11-04) — commonMain(두 앱 공용) 이나 androidMain(아직 java.time 을 쓰는 것) 어디든 찾는다
+SHARED = ROOT / "shared/src"
+
+
+def domain_file(rel):
+    hits = sorted(SHARED.glob(f"*/kotlin/com/stepup/android/domain/{rel}"))
+    if len(hits) != 1:
+        sys.exit(f"check-coaching-twin: domain/{rel} 를 shared/src 에서 하나로 찾지 못했습니다: {hits}")
+    return hits[0].read_text(encoding="utf-8")
+
+
 SQL = (ROOT / "supabase/migrations/0060_coaching.sql").read_text(encoding="utf-8")
-splits = (KT / "coaching/CoachingSplits.kt").read_text(encoding="utf-8")
-plans = (KT / "coaching/CoachingPlans.kt").read_text(encoding="utf-8")
-ai = (KT / "coaching/CoachingAi.kt").read_text(encoding="utf-8")
-economy = (KT / "RewardEconomy.kt").read_text(encoding="utf-8")
+splits = domain_file("coaching/CoachingSplits.kt")
+plans = domain_file("coaching/CoachingPlans.kt")
+ai = domain_file("coaching/CoachingAi.kt")
+economy = domain_file("RewardEconomy.kt")
 
 errors = []
 

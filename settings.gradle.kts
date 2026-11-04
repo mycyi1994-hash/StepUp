@@ -22,3 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "StepUp"
 include(":app")
+// 안드로이드 · 아이폰이 함께 쓰는 코드(Kotlin Multiplatform) — docs/ios-plan-2026-11-04.md
+include(":shared")

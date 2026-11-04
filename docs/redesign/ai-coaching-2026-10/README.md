@@ -28,7 +28,7 @@
 
 ## 2단계 — AI 없는 기본 계산
 
-`app/src/main/java/com/stepup/android/domain/coaching/` — 구간(`CoachingSplits`) · 주간 띠와 합계(`CoachingWeeks`) ·
+`shared/src/commonMain/kotlin/com/stepup/android/domain/coaching/` — 구간(`CoachingSplits`) · 주간 띠와 합계(`CoachingWeeks`) ·
 목표와 훈련 템플릿 · 주간 계획(`CoachingPlans`) · 글자와 그래프 축(`CoachingFormat`). 지시서 13절의 수용 숫자를 테스트가 그대로 쓴다
 (3.24km · 24:18 → 7'30"/km · 구간 432 · 446 · 472초 · 남은 0.24km 108초 · 첫 구간 대비 +40초 · 9km · 1:08:24 → 456초/km).
 규칙 값(`quality-v1`)과 템플릿(`templates-v1-draft`)은 서버 0060 와 같아야 해서 `scripts/check-coaching-twin.py` 가 맞대어 본다

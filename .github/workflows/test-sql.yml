@@ -21,7 +21,8 @@ on:
       - "scripts/feed-collect.py"
       - "scripts/check-coaching-twin.py"
       - "coach-worker/**"
-      - "app/src/main/java/com/stepup/android/domain/coaching/**"
+      - "shared/src/*/kotlin/com/stepup/android/domain/coaching/**"
+      - "shared/src/*/kotlin/com/stepup/android/domain/RewardEconomy.kt"
       - ".github/workflows/test-sql.yml"
   pull_request:
   workflow_dispatch:
