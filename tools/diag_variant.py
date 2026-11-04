@@ -20,6 +20,20 @@ VARIANTS = {
     "shoesNoTilt": [(SHOE, "                rotationX = t.rx.value; rotationY = t.ry.value; scaleX = t.s.value; scaleY = t.s.value\n                cameraDistance = 12f * density.density",
                      "                scaleX = t.s.value; scaleY = t.s.value")],
 }
+G_OLD = '        Box(\n            Modifier.matchParentSize().background(\n                Brush.verticalGradient(\n                    0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),\n                    1f to Color.Black.copy(alpha = .78f),\n                ),\n            ),\n        )'
+def grad(body):
+    return [(CARD, G_OLD, body)]
+VARIANTS.update({
+    "fixFinite": grad("        Box(Modifier.matchParentSize().drawWithCache {\n"
+        "            val b = Brush.verticalGradient(0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),\n"
+        "                1f to Color.Black.copy(alpha = .78f), startY = 0f, endY = size.height)\n"
+        "            onDrawBehind { drawRect(b) }\n        })") + [(CARD, "import androidx.compose.ui.graphics.graphicsLayer\n", "import androidx.compose.ui.graphics.graphicsLayer\nimport androidx.compose.ui.draw.drawWithCache\n")],
+    "fixEven": grad("        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .28f), Color.Transparent, Color.Black.copy(alpha = .05f), Color.Black.copy(alpha = .78f)))))"),
+    "fixTwo": grad("        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .05f), Color.Black.copy(alpha = .78f)))))"),
+    "fixNoTransparent": grad("        Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = .28f), .3f to Color.Black.copy(alpha = .001f), .5f to Color.Black.copy(alpha = .05f), 1f to Color.Black.copy(alpha = .78f))))"),
+    "fixLayer": grad(G_OLD.replace("Modifier.matchParentSize().background(", "Modifier.matchParentSize().graphicsLayer().background(")),
+    "shoesNoGradient": [(SHOE, "            Box(\n                Modifier.matchParentSize().background(\n                    if (dark) Brush.verticalGradient", "            if (false) Box(\n                Modifier.matchParentSize().background(\n                    if (dark) Brush.verticalGradient")],
+})
 name = sys.argv[1]
 for path, old, new in VARIANTS[name]:
     s = open(path, encoding="utf-8").read()

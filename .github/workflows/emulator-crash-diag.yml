@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [base, crewNoPoster, crewNoPhoto, crewNoGradient, crewNoTransition, shoesBase, shoesNoBlur, shoesNoTilt]
+        variant: [fixFinite, fixEven, fixTwo, fixNoTransparent, fixLayer, shoesNoGradient]
     env:
       DIAG_TEST: ${{ startsWith(matrix.variant, 'shoes') && 'com.stepup.android.MyShoesDesignTest' || 'com.stepup.android.CrewCardsDesignTest#listDetailAndJoin' }}
     steps:
