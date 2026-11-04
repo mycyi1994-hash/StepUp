@@ -96,7 +96,7 @@ ensure_emulator() {
   echo "$(date -u +%FT%TZ) before $phase: emulator gone — restarting" >> screen-gallery/emulator-restarts.txt
   local emulator_bin="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}/emulator/emulator"
   # shellcheck disable=SC2086
-  nohup "$emulator_bin" -avd test ${STEPUP_EMULATOR_OPTIONS:--no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none} \
+  nohup "$emulator_bin" -avd test ${STEPUP_EMULATOR_OPTIONS:--no-window -no-snapshot -noaudio -no-boot-anim -gpu guest -feature -Vulkan -camera-back none} \
     -memory 4096 -cores 4 > "screen-gallery/emulator-restart-$phase.txt" 2>&1 &
   timeout 300s adb wait-for-device || true
   for _ in $(seq 1 60); do
