@@ -68,6 +68,9 @@ jobs:
           # (효과음 26개를 읽는 중). 손님 커널 기록(-show-kernel)을 남겨 멎는 까닭을 보고, CPU 를 러너만큼(4) 준다(기본 2).
           # 2026-11-04 — 남은 죽음은 그리기가 무거운 크루 명함 화면(사진 · 그라디언트 · 흐림)에 몰렸고, 손님 로그는 아무 오류 없이 끊긴다:
           # 러너 쪽 SwiftShader Vulkan 그리기(gfxstream)가 죽는 것으로 본다. 손님 Vulkan 을 끄고(-feature -Vulkan) 앱 그리기를 GL(skiagl)로 한다.
+          # 2026-11-04 — 사라짐의 까닭은 러너 쪽 에뮬레이터 프로세스의 Segmentation fault(core dumped)였다(run 41757185883 job 로그 —
+          # 앱 · 손님 · 메모리 탓이 아니다). 37.2.13 그리기(gfxstream)가 죽으므로 37 이전 판(빌드 12414864)으로 묶는다.
+          emulator-build: 12414864
           cores: 4
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none -show-kernel
           script: STEPUP_EMULATOR_OPTIONS="-no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none -show-kernel" bash tools/run_device_qa.sh
