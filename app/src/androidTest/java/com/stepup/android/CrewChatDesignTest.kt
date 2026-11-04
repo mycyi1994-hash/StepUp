@@ -73,13 +73,13 @@ class CrewChatDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -233,7 +233,7 @@ class CrewChatDesignTest {
             tapTag("chat-attach")
             awaitTag("chat-attach-sheet")
             shot("25-attachment")
-            ChatPhotoPickerForTest.answer = Uri.fromFile(asset("crew/afterwork.png", "chat-pick.png"))
+            ChatPhotoPickerForTest.answer = (asset("crew/afterwork.png", "chat-pick.png")).path
             tapTag("chat-attach-pick")
             awaitTag("chat-photo-preview")
             typeInto("chat-photo-caption", "크루 사진 이걸로 어때요?")

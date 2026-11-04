@@ -270,7 +270,7 @@ class ChromeNavigationTest {
             // 러닝 홈(시안 HOME · E01) — 오늘의 활동은 걸음 칸을 누르면 여는 시트 안에
             compose.onNodeWithTag("home-steps").performClick()
             compose.waitForIdle()
-            compose.onNodeWithText(compose.activity.getString(R.string.home_activity_title)).assertIsDisplayed()
+            compose.assertDisplayedOrExplain(androidx.compose.ui.test.hasText(compose.activity.getString(R.string.home_activity_title)), "home activity sheet title")
             pressBack()
             compose.waitForIdle()
             compose.onNodeWithTag("home-start-run").assertIsDisplayed()

@@ -149,7 +149,7 @@ private fun CrewNewCrewHead(crew: CrewCard) {
 
 /** "새 크루 · 1 / 20명" — 레벨이 없으면 새 크루 */
 @Composable
-internal fun crewLevelMembers(crew: CrewCard): String {
+fun crewLevelMembers(crew: CrewCard): String {
     val level = crew.level?.let { stringResource(Res.string.crew_level_value, it) } ?: stringResource(Res.string.crew_level_new)
     val members = if (crew.capacity != null) stringResource(Res.string.crew_members_of, crew.memberCount, crew.capacity!!)
     else stringResource(Res.string.crew_members_only, crew.memberCount)
@@ -568,7 +568,7 @@ private fun CrewPolicySheet(open: Boolean, busy: Boolean, error: String?, onAppl
 
 /** 크루장이 크루를 떠나거나 넘긴 뒤 비어 있는 자리(안내 한 줄) */
 @Composable
-internal fun CrewPlainNote(text: String) {
+fun CrewPlainNote(text: String) {
     val ink = crewInk()
     Text(text, color = ink.secondary, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp))
 }

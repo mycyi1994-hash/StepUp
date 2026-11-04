@@ -29,6 +29,8 @@ def normalize(text: str) -> str:
     if text is None:
         return text
     text = text.replace("\\@", "@").replace("\\?", "?")
+    # 안드로이드 글자 탈출 \' \" — Compose 리소스는 \n · \u 만 풀고 이 둘은 그대로 둔다("That\'s" 로 보이던 것)
+    text = text.replace("\\'", "'").replace('\\"', '"')
     if re.search(r"%(?!\d+\$)(?!%)[sd]", text) and not re.search(r"%\d+\$[sd]", text):
         n = 0
 
@@ -38,6 +40,10 @@ def normalize(text: str) -> str:
             return f"%{n}${m.group(1)}"
 
         text = re.sub(r"%(?!%)([sd])", number, text)
+    # 안드로이드는 인자가 있는 글자에서 %% 를 % 하나로 낸다(String.format). Compose 리소스는 자리(%1$s)만 바꾸고 %% 를 그대로 둔다 —
+    # 인자가 있는 글자의 %% 는 % 로 바꿔 둔다("63%%" 가 되지 않게). 인자 없는 글자는 안드로이드도 %% 를 그대로 보이므로 손대지 않는다
+    if re.search(r"%\d+\$[sdf]", text):
+        text = text.replace("%%", "%")
     return text
 
 

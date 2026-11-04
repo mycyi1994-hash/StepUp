@@ -182,7 +182,7 @@ private fun languageValue(): String = when (AppLocale.tag) {
 }
 
 @Composable
-internal fun themeValue(mode: ThemeMode): String = stringResource(
+fun themeValue(mode: ThemeMode): String = stringResource(
     when (mode) {
         ThemeMode.SYSTEM -> Res.string.set_follow_device
         ThemeMode.DARK -> Res.string.set_theme_dark

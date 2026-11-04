@@ -91,6 +91,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 신발 강화 — 파란 톤 v4 강화 전달본(docs/redesign/blue-v4-2026-10/01-packages/stepup-upgrade-blue-claude-v19)의 UP01 ~ UP15 · UP18.
@@ -241,7 +242,7 @@ fun ShoeUpgradeContent(state: ShoeUpgradeState, actions: UpgradeActions) {
 // ── UP01 · UP03 · UP08 본문 ──────────────────────────────────────
 
 /** 선택에 따른 성공률 — 0 ~ 2개는 미리보기(서버가 준 기본 · 보정의 합), 3개는 서버 견적이 있으면 그 값 */
-internal fun upgradeRate(state: ShoeUpgradeState): Int? {
+fun upgradeRate(state: ShoeUpgradeState): Int? {
     val info = state.info ?: return null
     state.quote?.takeIf { it.materialIds.sorted() == state.selection.applied.sorted() }?.let { return it.ratePermille }
     return ShoeForge.ratePermille(info.basePermille, state.applied.map { it.bonusPermille })
@@ -522,7 +523,7 @@ private val SlotShape = RoundedCornerShape(14.dp)
 private fun slotSurface(selected: Boolean = false): Modifier {
     val t = runTone()
     return Modifier.clip(SlotShape)
-        .background(Brush.verticalGradient(listOf(if (t.dark) Color(0xFF0E3268) else t.panelTop, t.panel)), SlotShape)
+        .background(StopBrush.verticalGradient(listOf(if (t.dark) Color(0xFF0E3268) else t.panelTop, t.panel)), SlotShape)
         .border(if (selected) 1.5.dp else 1.dp, if (selected) t.cyan else t.panelEdge, SlotShape)
 }
 

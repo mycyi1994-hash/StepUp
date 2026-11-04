@@ -57,7 +57,7 @@ import com.stepup.android.ui.experience.feedbackClickable
  * 저장된 레벨이 없으면 "새 크루"(아직 크루 러닝이 없다 — 레벨은 크루 러닝 누적 거리로 서버가 올린다, 0069). 주간 참여 · 거리는 별개 현황.
  */
 @Composable
-internal fun CrewLevelSheet(card: CrewCard, onDismiss: () -> Unit) {
+fun CrewLevelSheet(card: CrewCard, onDismiss: () -> Unit) {
     val ink = crewInk()
     var attempt by rememberSaveable { mutableIntStateOf(0) }
     var state by remember(card.id) { mutableStateOf<CrewLoad<CrewLevelInfo>>(CrewLoad.Loading) }
@@ -131,7 +131,7 @@ internal fun CrewLevelSheet(card: CrewCard, onDismiss: () -> Unit) {
 
 /** 제목 없는 시트의 오른쪽 위 닫기 */
 @Composable
-internal fun CrewSheetClose(onClose: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun CrewSheetClose(onClose: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val ink = crewInk()
     Box(
         modifier.size(48.dp).clip(CircleShape)
@@ -144,7 +144,7 @@ internal fun CrewSheetClose(onClose: () -> Unit, modifier: Modifier = Modifier, 
 }
 
 /** 더보기 줄 하나 — [icon] 이 있으면 앞에 선 그림 */
-internal data class CrewMenuItem(
+data class CrewMenuItem(
     val label: String,
     val tag: String,
     val warn: Boolean = false,
@@ -154,7 +154,7 @@ internal data class CrewMenuItem(
 
 /** 73 방문자용 · 60 멤버용 더보기 · 75 멤버 관리 — 테두리 있는 칸들(나가기 · 내보내기는 코랄 글자) */
 @Composable
-internal fun CrewMenuSheet(title: String, items: List<CrewMenuItem>, onDismiss: () -> Unit, tag: String) {
+fun CrewMenuSheet(title: String, items: List<CrewMenuItem>, onDismiss: () -> Unit, tag: String) {
     CrewSheet(title, onDismiss, Modifier.testTag(tag)) {
         Spacer(Modifier.height(16.dp))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -167,7 +167,7 @@ internal fun CrewMenuSheet(title: String, items: List<CrewMenuItem>, onDismiss: 
 }
 
 /** 신고 사유 — 기존 신고함의 분류로 보낸다(부적절한 모집 내용은 기타 + 메모) */
-internal enum class CrewReportReason(val code: String, val note: String) {
+enum class CrewReportReason(val code: String, val note: String) {
     SPAM("SPAM", ""),
     CONTENT("OTHER", "RECRUIT_CONTENT"),
     ABUSE("ABUSE", ""),
@@ -179,7 +179,7 @@ internal enum class CrewReportReason(val code: String, val note: String) {
  * 서버가 받은 뒤에만 [onSent](65).
  */
 @Composable
-internal fun CrewReportSheet(
+fun CrewReportSheet(
     busy: Boolean,
     failed: Boolean,
     onSend: (reason: String, note: String) -> Unit,
@@ -237,7 +237,7 @@ internal fun CrewReportSheet(
 
 /** 하나만 고르는 줄 — 왼쪽 동그라미(고르면 청록 체크) · 이름 · 오른쪽 "선택됨" */
 @Composable
-internal fun CrewRadioRow(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun CrewRadioRow(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val ink = crewInk()
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).crewPanel(ink, 12.dp, selected = selected)
@@ -261,7 +261,7 @@ internal fun CrewRadioRow(text: String, selected: Boolean, onClick: () -> Unit, 
 
 /** 24 신청 중 모집 상태 변경 — 신청은 끝나지 않았고 쓴 한마디는 남긴다. 지금 상태를 다시 읽는다 */
 @Composable
-internal fun CrewUnavailableSheet(onShow: () -> Unit, onDismiss: () -> Unit) {
+fun CrewUnavailableSheet(onShow: () -> Unit, onDismiss: () -> Unit) {
     val ink = crewInk()
     CrewSheet(stringResource(Res.string.crew_unavailable_title), onDismiss, Modifier.testTag("crew-unavailable")) {
         Spacer(Modifier.height(12.dp))
@@ -273,7 +273,7 @@ internal fun CrewUnavailableSheet(onShow: () -> Unit, onDismiss: () -> Unit) {
 
 /** 관리 작업 실패(80) — 서버가 성공하기 전 상태를 확정하지 않는다. "다시 확인"은 크루 · 신청을 다시 읽는다 */
 @Composable
-internal fun CrewActionErrorSheet(onRecheck: () -> Unit, onDismiss: () -> Unit, body: String? = null) {
+fun CrewActionErrorSheet(onRecheck: () -> Unit, onDismiss: () -> Unit, body: String? = null) {
     val ink = crewInk()
     CrewSheet(stringResource(Res.string.crew_action_error_title), onDismiss, Modifier.testTag("crew-action-error")) {
         Spacer(Modifier.height(12.dp))
@@ -285,7 +285,7 @@ internal fun CrewActionErrorSheet(onRecheck: () -> Unit, onDismiss: () -> Unit, 
 
 /** 한 번 쓰는 설명 문단(시트 본문) */
 @Composable
-internal fun CrewSheetBody(text: String, modifier: Modifier = Modifier) {
+fun CrewSheetBody(text: String, modifier: Modifier = Modifier) {
     val ink = crewInk()
     Column(modifier.padding(top = 12.dp)) { Text(text, color = ink.text, fontSize = 16.sp, lineHeight = 25.sp) }
 }

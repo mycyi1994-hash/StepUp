@@ -332,7 +332,7 @@ sealed interface RecordLookup {
 }
 
 /** 썸네일용으로 점을 줄인다 — 모양은 그대로(간격을 고르게 건너뛴다), 첫 점 · 마지막 점은 남긴다 */
-internal fun thin(points: List<GeoPoint>, max: Int = 160): List<GeoPoint> {
+fun thin(points: List<GeoPoint>, max: Int = 160): List<GeoPoint> {
     if (points.size <= max) return points
     val step = points.size.toDouble() / max
     return (0 until max).map { points[(it * step).toInt()] } + points.last()

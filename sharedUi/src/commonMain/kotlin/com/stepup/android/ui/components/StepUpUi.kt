@@ -890,7 +890,7 @@ fun PhotoCard(
         }
         Box(
             Modifier.matchParentSize().background(
-                Brush.verticalGradient(
+                StopBrush.verticalGradient(
                     0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),
                     1f to Color.Black.copy(alpha = .78f),
                 ),
@@ -934,7 +934,7 @@ fun WeekCard(
         modifier.size(168.dp, 196.dp).pressable(onClick = onClick).clip(RoundedCornerShape(18.dp)).background(Color(0xFF111111)),
     ) {
         if (photo != null) Image(photo, null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
-        Box(Modifier.matchParentSize().background(Brush.verticalGradient(.35f to Color.Transparent, 1f to Color.Black.copy(alpha = .78f))))
+        Box(Modifier.matchParentSize().background(StopBrush.verticalGradient(.35f to Color.Transparent, 1f to Color.Black.copy(alpha = .78f))))
         Text(
             badge,
             style = StepUpUi.type.smallButton.copy(fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic),
@@ -1390,6 +1390,6 @@ fun StatusBarSpacer() {
 
 /** 세로 꽉 찬 칸 안 가운데 정렬 — 미리보기용 보조 */
 @Composable
-internal fun FillCenter(content: @Composable BoxScope.() -> Unit) {
+fun FillCenter(content: @Composable BoxScope.() -> Unit) {
     Box(Modifier.fillMaxHeight().fillMaxWidth(), contentAlignment = Alignment.Center, content = content)
 }

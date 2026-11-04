@@ -15,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.AppTheme
 import com.stepup.android.core.InviteLinks
+import com.stepup.android.core.handle
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.ui.StepPermissions
 import com.stepup.android.ui.StepUpRoot
@@ -62,13 +63,13 @@ class MainActivity : ComponentActivity() {
 
     /** 선택한 언어로 리소스를 읽도록 액티비티 컨텍스트를 감싼다 (API 33 미만) */
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(AppLocale.wrap(newBase))
+        super.attachBaseContext(com.stepup.android.core.AndroidLocale.wrap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Android 13+에서는 OS가 앱 언어를 기억하므로 그 값을 정본으로 삼는다.
-        AppLocale.syncFromSystem(this)
+        com.stepup.android.core.AndroidLocale.syncFromSystem(this)
         // 창 바닥을 테마 색으로 먼저 칠한다. themes.xml 의 값은 하나뿐이라,
         // 어둡게 쓰는 사람은 Compose 가 첫 프레임을 그리기 전까지 흰 화면을
         // 한 번 보게 된다.
@@ -84,7 +85,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) InviteLinks.handle(intent)
 
         // 이미 권한이 있으면 바로 추적 시작 (첫 요청은 StepUpRoot에서 처리)
-        if (StepPermissions.hasActivityRecognition(this)) {
+        if (StepPermissions.hasActivityRecognition()) {
             ServiceLocator.stepRepository.startTracking()
         }
         setContent {

@@ -2,7 +2,7 @@ package com.stepup.android
 
 import com.stepup.android.data.prefs.NotifyPrefs
 import com.stepup.android.push.NotificationPreferenceSync
-import com.stepup.android.push.NotificationSyncState
+import com.stepup.android.core.NotificationSyncState
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart

@@ -112,6 +112,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 자유러닝 시작 플로(2026-10-17 전달본 — docs/redesign/free-run-start-2026-10-17).
@@ -122,12 +123,12 @@ import kotlinx.coroutines.launch
  * 시간 · 거리 · 위치 · 일시정지 · 종료 · 신발 · 보상은 기존 러닝 서비스 그대로다 — 여기서는 시작 순간만 정한다.
  */
 
-internal val StartNavy = Color(0xFF061B30)
+val StartNavy = Color(0xFF061B30)
 private val StartAccent = Color(0xFF1450FF)
 private val StartArcTip = Color(0xFF72A6FF)
 private val StartRevealLead = Color(0xFF5287FF)
 private val StartTrack = Color(0x21A9C2E4)
-internal val StartGlow = Color(0x1F1450FF)
+val StartGlow = Color(0x1F1450FF)
 
 private val CheckBackdrop = Color(0xBA020B16)
 private val CheckFace = Color(0xFF102940)
@@ -158,7 +159,7 @@ private val CheckButtonShape = RoundedCornerShape(15.dp)
  * 신발은 1초 꾹 눌러야 골라진다(누르는 동안 줄이 차오르고 살짝 작아진다 — 스치듯 눌러 바뀌지 않게).
  */
 @Composable
-internal fun FreeRunShoeCheck(
+fun FreeRunShoeCheck(
     shoe: Sneaker?,
     shoes: List<Sneaker>,
     wearing: Boolean,
@@ -177,7 +178,7 @@ internal fun FreeRunShoeCheck(
 
 /** [FreeRunShoeCheck] 의 화면(뒷면 + 가운데 카드) — 시안 검사가 창 없이 그린다 */
 @Composable
-internal fun FreeRunShoeCheckContent(
+fun FreeRunShoeCheckContent(
     shoe: Sneaker?,
     onStart: () -> Unit,
     onCancel: () -> Unit,
@@ -302,7 +303,7 @@ private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
                 val ry = size.height * 0.10f
                 val c = Offset(size.width / 2f, size.height * 0.91f)
                 scale(rx / ry, 1f, pivot = c) {
-                    drawCircle(Brush.radialGradient(listOf(CheckFloor, Color.Transparent), center = c, radius = ry), radius = ry, center = c)
+                    drawCircle(StopBrush.radialGradient(listOf(CheckFloor, Color.Transparent), center = c, radius = ry), radius = ry, center = c)
                 }
             }
             .testTag("run-shoe-check-art"),
@@ -551,7 +552,7 @@ private fun Modifier.bleed(by: Dp): Modifier = layout { measurable, constraints 
  * - 3-2-1 동안 위치를 미리 찾고(러닝 서비스가 이어 받는다) 지금 자리의 지도 타일을 받아 둔다 — 어느 것도 기다리지 않는다.
  */
 @Composable
-internal fun FreeRunStartSequence(
+fun FreeRunStartSequence(
     sessionActive: Boolean,
     startRefusals: Int,
     onStartSession: () -> Boolean,
@@ -640,7 +641,7 @@ internal fun FreeRunStartSequence(
  * 펼침은 이 판 위에 선행 파랑 · 강조 파랑 원을 키우고, 마지막 원만큼 판에 구멍을 내 아래의 러닝 화면(이미 기록 중)을 드러낸다.
  */
 @Composable
-internal fun FreeRunStartStage(
+fun FreeRunStartStage(
     clock: () -> Long,
     revealSince: () -> Long?,
     reduced: Boolean,
@@ -697,7 +698,7 @@ internal fun FreeRunStartStage(
             val ry = size.height * 0.46f
             scale(rx / ry, 1f, pivot = c) {
                 drawCircle(
-                    Brush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = ry),
+                    StopBrush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = ry),
                     radius = ry, center = c,
                 )
             }
@@ -718,7 +719,7 @@ internal fun FreeRunStartStage(
                 drawCircle(StartTrack, radius = outer - 2.dp.toPx(), style = Stroke(2.dp.toPx()))
                 // 모션 감소면 도는 원호를 그리지 않는다(시안과 같다)
                 if (!reduced) {
-                    val sweep = Brush.sweepGradient(
+                    val sweep = StopBrush.sweepGradient(
                         0f to Color.Transparent,
                         240f / 360f to Color.Transparent,
                         250f / 360f to StartAccent.copy(alpha = 0x22 / 255f),
@@ -784,7 +785,7 @@ internal fun FreeRunStartStage(
  * 펼칠 지도의 타일을 미리 받는다 — 러닝 화면 지도(지금 자리 한가운데, 따라가기 줌)와 같은 계획. 끝나기를 기다리는 곳은 없다.
  * 받은 타일은 지도 캐시(메모리 · 디스크)에 남고, 펼친 지도가 그대로 쓴다. 못 받은 칸은 지도가 늘 하던 대로 다시 받는다.
  */
-internal suspend fun prefetchRunMapTiles(here: GeoPoint, widthPx: Int, heightPx: Int, density: Float) {
+suspend fun prefetchRunMapTiles(here: GeoPoint, widthPx: Int, heightPx: Int, density: Float) {
     if (widthPx <= 0 || heightPx <= 0) return
     val plan = TilePlan.of(listOf(here), widthPx, heightPx, density, zooms = MapTiles.FOLLOW_ZOOMS)
     val wanted = buildList {

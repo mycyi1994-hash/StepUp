@@ -455,7 +455,7 @@ private fun CrewDetailFailed(onBack: () -> Unit, onRetry: () -> Unit) {
 
 /** 66 크루 접근 불가 — 해산 · 비공개 · 권한 변경(원인을 모르면 해산으로 단정하지 않는 문구) */
 @Composable
-internal fun CrewMissingPage(onBack: () -> Unit, onList: () -> Unit) {
+fun CrewMissingPage(onBack: () -> Unit, onList: () -> Unit) {
     val ink = crewInk()
     CrewPage(Modifier.testTag("crew-missing")) {
         CrewTopBar(stringResource(Res.string.crew_title), onBack)
@@ -476,7 +476,7 @@ internal fun CrewMissingPage(onBack: () -> Unit, onList: () -> Unit) {
 
 /** 실패의 까닭을 한 줄로 — 칸 오류가 아니면 일반 문구 */
 @Composable
-internal fun crewProblemText(problem: CrewProblem): String = stringResource(
+fun crewProblemText(problem: CrewProblem): String = stringResource(
     when (problem) {
         CrewProblem.NETWORK -> Res.string.crew_problem_network
         CrewProblem.SIGN_IN -> Res.string.crew_problem_signin

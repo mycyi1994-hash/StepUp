@@ -71,7 +71,45 @@ pull_captures() {
   done
   return 1
 }
+# 위 두 줄로도 이미 떠 있는 "응답 없음" 창은 남는다 — 2026-11-02 PR #152 · #142 에서 런처(nexuslauncher)의 ANR 창이
+# 초점을 쥔 채(mCurrentFocus=… Application Not Responding: …) 검사가 돌아 키보드 · 뒤로 가기 검사 6개가 앱과 무관하게 깨졌다.
+# 묶음마다 시작 전에 초점을 보고, ANR 창이면 그 앱을 멈춰 창을 거둔다(런처는 홈으로 다시 뜬다). 거둔 기록은 남긴다.
+dismiss_anr_focus() {
+  local phase="$1" focus pkg
+  for _ in 1 2 3; do
+    focus=$(timeout 10s adb shell dumpsys window 2>/dev/null | grep -m1 'mCurrentFocus=' | tr -d '\r') || true
+    [[ "$focus" == *"Application Not Responding: "* ]] || return 0
+    pkg=${focus##*Application Not Responding: }
+    pkg=${pkg%%\}*}
+    printf '%s %s: %s 을(를) 멈춰 ANR 창을 거둔다\n' "$(date -u +%H:%M:%S)" "$phase" "$pkg" >> screen-gallery/anr-dismissed.txt
+    timeout 10s adb shell am force-stop "$pkg" || true
+    sleep 3
+  done
+}
 # Leave time for partial screenshots/reports to upload before the workflow's 30-minute cap.
+# 에뮬레이터가 앞 묶음에서 통째로 사라졌으면(2026-10-26 부터 — PR #155 의 기록) 같은 설정으로 다시 띄운다.
+# 남은 묶음을 그대로 돌리려는 것이다 — 사라진 묶음의 실패는 그대로 실패로 남는다(phase-results · status).
+# 다시 띄운 때는 screen-gallery/emulator-restarts.txt 에 남긴다.
+ensure_emulator() {
+  local phase="$1"
+  if timeout 10s adb get-state 2>/dev/null | grep -q device; then return 0; fi
+  echo "$(date -u +%FT%TZ) before $phase: emulator gone — restarting" >> screen-gallery/emulator-restarts.txt
+  local emulator_bin="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}/emulator/emulator"
+  # shellcheck disable=SC2086
+  nohup "$emulator_bin" -avd test ${STEPUP_EMULATOR_OPTIONS:--no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none} \
+    -memory 4096 -cores 4 > "screen-gallery/emulator-restart-$phase.txt" 2>&1 &
+  timeout 300s adb wait-for-device || true
+  for _ in $(seq 1 60); do
+    [[ "$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]] && break
+    sleep 5
+  done
+  timeout 10s adb shell settings put global window_animation_scale 0 || true
+  timeout 10s adb shell settings put global transition_animation_scale 0 || true
+  timeout 10s adb shell settings put global animator_duration_scale 0 || true
+  timeout 10s adb shell settings put system system_locales ko-KR || true
+  timeout 10s adb shell setprop debug.hwui.renderer skiagl || true
+  echo "$(date -u +%FT%TZ) before $phase: boot_completed=$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" >> screen-gallery/emulator-restarts.txt
+}
 run_instrumentation() {
   local phase="$1" classes="$2" gallery_part="${3:-}" result=0
   local -a runner_args=("-Pandroid.testInstrumentationRunnerArguments.class=$classes")
@@ -80,11 +118,25 @@ run_instrumentation() {
   fi
   # 부팅 직후 런처가 "응답 없음" 창을 띄우면 그 창이 초점을 가져가 키보드 · 뒤로 가기 검사가
   # 앱과 무관하게 깨진다(2026-09-26 PR #31). 시스템 오류 창을 숨기고, 떠 있는 창은 닫고 시작한다.
+  ensure_emulator "$phase"
   timeout 10s adb shell settings put global hide_error_dialogs 1 || true
   timeout 10s adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
+  dismiss_anr_focus "$phase"
   timeout --signal=TERM --kill-after=20s 9m ./gradlew :app:connectedDebugAndroidTest \
     "${runner_args[@]}" \
     -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || result=$?
+  # 묶음 도중 에뮬레이터가 통째로 사라졌으면(검사 실패가 아니라 기기가 없어진 것 — "Expected N tests, received 0") 다시 띄워
+  # 그 묶음을 한 번만 더 돌린다(2026-11-03). 에뮬레이터가 살아 있는 실패는 다시 돌리지 않는다 — 진짜 실패를 가리지 않게.
+  if (( result != 0 )) && ! timeout 10s adb get-state 2>/dev/null | grep -q device; then
+    printf '%s exit=%s (emulator gone — retrying once)\n' "$phase" "$result" >> screen-gallery/phase-results.txt
+    ensure_emulator "$phase-retry"
+    timeout 10s adb shell settings put global hide_error_dialogs 1 || true
+    dismiss_anr_focus "$phase"
+    result=0
+    timeout --signal=TERM --kill-after=20s 9m ./gradlew :app:connectedDebugAndroidTest \
+      "${runner_args[@]}" \
+      -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace || result=$?
+  fi
   printf '%s exit=%s\n' "$phase" "$result" >> screen-gallery/phase-results.txt
   if (( result != 0 )); then
     status=$result
@@ -308,7 +360,7 @@ if [[ "$suite" == "mystery" ]]; then
 fi
 if [[ "$suite" == "all" || "$suite" == "interaction" ]]; then
 mkdir -p screen-gallery/chrome-reports screen-gallery/chrome-results screen-gallery/chrome
-run_instrumentation interaction "com.stepup.android.RunSaveRecoveryTest,com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ShareCardRenderTest,com.stepup.android.RunStartFlowTest,com.stepup.android.S2SetupTest,com.stepup.android.InviteScreenTest,com.stepup.android.RunLocationStateTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.AvatarPhotoStoreTest,com.stepup.android.WalletLedgerTest,com.stepup.android.RouteMapFitTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.CourseQueuePersistenceTest,com.stepup.android.RunCheckpointPersistenceTest,com.stepup.android.RunCrashRecoveryTest,com.stepup.android.RunSettlementPersistenceTest,com.stepup.android.DatabaseMigrationTest"
+run_instrumentation interaction "com.stepup.android.StopBrushTest,com.stepup.android.RunSaveRecoveryTest,com.stepup.android.ChromeNavigationTest,com.stepup.android.EquipmentPersistenceTest,com.stepup.android.RunTotalsTest,com.stepup.android.LoginPresentationTest,com.stepup.android.EventClaimPersistenceTest,com.stepup.android.CrewFormTest,com.stepup.android.ShareCardRenderTest,com.stepup.android.RunStartFlowTest,com.stepup.android.S2SetupTest,com.stepup.android.InviteScreenTest,com.stepup.android.RunLocationStateTest,com.stepup.android.ItemFilterInteractionTest,com.stepup.android.NotificationPersistenceTest,com.stepup.android.NotificationNavigationTest,com.stepup.android.AvatarPhotoStoreTest,com.stepup.android.WalletLedgerTest,com.stepup.android.RouteMapFitTest,com.stepup.android.EnergyPurchaseTest,com.stepup.android.CourseQueuePersistenceTest,com.stepup.android.RunCheckpointPersistenceTest,com.stepup.android.RunCrashRecoveryTest,com.stepup.android.RunSettlementPersistenceTest,com.stepup.android.DatabaseMigrationTest"
 cp -R app/build/reports/androidTests/. screen-gallery/chrome-reports/ || true
 cp -R app/build/outputs/androidTest-results/. screen-gallery/chrome-results/ || true
 pull_captures /sdcard/Android/data/com.stepup.android/files/chrome-checks/. screen-gallery/chrome/ || status=1

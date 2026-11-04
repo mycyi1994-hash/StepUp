@@ -28,13 +28,14 @@ import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.ui.components.AvatarEmojis
 import com.stepup.android.ui.components.avatarEmoji
 import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * 파란 톤 프로필 사진 원 — 갤러리 사진 · 기본 이미지(기존 16개 이모지, 번호 그대로) · 사진 파일이 없을 때의 사람 윤곽.
  * 사람 윤곽은 파일이 없을 때만의 대체 모양이다 — 저장된 기본 이미지나 사진을 덮지 않는다.
  */
 @Composable
-internal fun BlueAvatar(
+fun BlueAvatar(
     avatarId: Int,
     photo: ImageBitmap?,
     size: Dp,
@@ -46,7 +47,7 @@ internal fun BlueAvatar(
     val face = if (t.dark) listOf(Color(0xFF1B4278), Color(0xFF0A2246)) else listOf(Color(0xFFE6EFFF), Color(0xFFCADCFB))
     Box(
         modifier.size(size).clip(CircleShape)
-            .background(Brush.linearGradient(face), CircleShape)
+            .background(StopBrush.linearGradient(face), CircleShape)
             .border(2.dp, ring ?: t.cyan.copy(alpha = 0.9f), CircleShape)
             .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier),
         contentAlignment = Alignment.Center,

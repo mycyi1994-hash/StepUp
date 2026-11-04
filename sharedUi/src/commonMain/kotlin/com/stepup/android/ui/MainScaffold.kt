@@ -152,7 +152,7 @@ private val bottomTabs get() = AppChromePolicy.tabs
  * 소식을 보고 있으면 러닝 탭에 불이 들어와 있어야 "지금 러닝 안에 있다"가
  * 읽힌다. 불이 꺼지면 사용자는 길을 잃은 것처럼 느낀다.
  */
-internal fun parentTabOf(route: String?): Screen? = AppChromePolicy.destination(route)?.parent
+fun parentTabOf(route: String?): Screen? = AppChromePolicy.destination(route)?.parent
 
 
 

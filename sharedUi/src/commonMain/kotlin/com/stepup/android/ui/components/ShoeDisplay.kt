@@ -337,7 +337,7 @@ private fun DrawScope.drawPlinth(c: PlinthColors) {
     // 조명 — 무대 상자 위(앞의 글자 뒤)까지 번진다. 원형 그라데이션을 거의 원인 타원에 그린다
     val air = Offset(x(187f), y(233f))
     drawOval(
-        brush = Brush.radialGradient(0f to c.air0, 0.65f to c.air65, 1f to Color.Transparent, center = air, radius = 205f * s),
+        brush = StopBrush.radialGradient(0f to c.air0, 0.65f to c.air65, 1f to Color.Transparent, center = air, radius = 205f * s),
         topLeft = Offset(air.x - 205f * s, air.y - 196f * s),
         size = Size(410f * s, 392f * s),
     )
@@ -351,10 +351,10 @@ private fun DrawScope.drawPlinth(c: PlinthColors) {
         cubicTo(x(378f), y(414f), x(12f), y(414f), x(12f), y(340f))
         close()
     }
-    drawPath(front, Brush.verticalGradient(listOf(c.front0, c.front1), startY = y(276f), endY = y(396f)))
+    drawPath(front, StopBrush.verticalGradient(listOf(c.front0, c.front1), startY = y(276f), endY = y(396f)))
     // 윗면
     drawOval(
-        brush = Brush.linearGradient(
+        brush = StopBrush.linearGradient(
             0f to c.top0, 0.47f to c.top47, 1f to c.top1,
             start = Offset(x(12f), y(274f)), end = Offset(x(378f), y(384f)),
         ),
@@ -368,7 +368,7 @@ private fun DrawScope.drawPlinth(c: PlinthColors) {
     }
     drawPath(
         edge,
-        Brush.horizontalGradient(
+        StopBrush.horizontalGradient(
             0f to c.edge.copy(alpha = 0f), 0.36f to c.edge, 1f to c.edge.copy(alpha = 0f),
             startX = x(13f), endX = x(377f),
         ),
@@ -381,7 +381,7 @@ private fun DrawScope.drawEllipseShadow(center: Offset, rx: Float, ry: Float, co
     if (rx <= 0f || ry <= 0f) return
     withTransform({ scale(1f, ry / rx, pivot = center) }) {
         drawCircle(
-            brush = Brush.radialGradient(0f to color.copy(alpha = 0.9f), 1f to color.copy(alpha = 0f), center = center, radius = rx),
+            brush = StopBrush.radialGradient(0f to color.copy(alpha = 0.9f), 1f to color.copy(alpha = 0f), center = center, radius = rx),
             radius = rx,
             center = center,
             alpha = alpha.coerceIn(0f, 1f),

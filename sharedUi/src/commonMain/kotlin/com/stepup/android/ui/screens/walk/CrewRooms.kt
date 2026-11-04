@@ -98,7 +98,7 @@ import kotlinx.coroutines.launch
  */
 
 /** 열린 대기실 목록의 상태 */
-internal sealed interface RoomsUi {
+sealed interface RoomsUi {
     data object Loading : RoomsUi
     data class Failed(val signIn: Boolean) : RoomsUi
     data class Ready(val rooms: CrewRooms) : RoomsUi
@@ -147,7 +147,7 @@ fun CrewRoomsScreen(
 }
 
 @Composable
-internal fun CrewRoomsContent(
+fun CrewRoomsContent(
     ui: RoomsUi,
     crewName: String,
     onBack: () -> Unit,
@@ -213,7 +213,7 @@ internal fun CrewRoomsContent(
 
 /** 큰 제목 + 한 줄(시안 31sp / 37sp · 보조 12sp) — 앱 바탕 위 글자 색 */
 @Composable
-internal fun CrewBigTitle(title: String, sub: String?, modifier: Modifier = Modifier) {
+fun CrewBigTitle(title: String, sub: String?, modifier: Modifier = Modifier) {
     val c = crewColors()
     Column(modifier.fillMaxWidth()) {
         Text(
@@ -231,7 +231,7 @@ internal fun CrewBigTitle(title: String, sub: String?, modifier: Modifier = Modi
 
 /** 가운데 상태(빈 목록 · 실패) — 아이콘 · 제목 · 설명 */
 @Composable
-internal fun CrewCenterState(
+fun CrewCenterState(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     body: String?,
@@ -256,11 +256,11 @@ internal fun CrewCenterState(
 }
 
 /** 방을 연 시각(이 폰의 시각) — "19:30" */
-internal fun roomTime(ms: Long): String =
+fun roomTime(ms: Long): String =
     if (ms <= 0L) "" else com.stepup.android.domain.PatternFormatter("HH:mm", androidx.compose.ui.text.intl.Locale.current.language).format(kotlin.time.Instant.fromEpochMilliseconds(ms).toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()))
 
 /** 거리 "5" · "5.2" — 소수 한 자리(0 이면 뗀다) */
-internal fun courseKm(km: Double): String =
+fun courseKm(km: Double): String =
     if (km % 1.0 < 0.05 || km % 1.0 > 0.95) "${com.stepup.android.domain.formatFixed((km).toDouble(), 0)}" else "${com.stepup.android.domain.formatFixed((km).toDouble(), 1)}"
 
 /** 방 카드(02) — 듀얼 레일 틀 · 이름 · 인원 칩 · 코스 · 지도 · 진행자. 가득 찬 방은 누르지 않는다(내 방이면 들어간다) */
@@ -322,7 +322,7 @@ private fun RoomCard(room: CrewRoom, crewName: String, onOpen: () -> Unit) {
 
 /** 코스 지도 — 실제 지도(밝은 거리 지도, 크루 러닝과 같다) 위 경로 · 출발 점. 경로를 아직 받지 못했으면 안내만 */
 @Composable
-internal fun CrewCourseMap(points: List<GeoPoint>, modifier: Modifier = Modifier, interactive: Boolean = false) {
+fun CrewCourseMap(points: List<GeoPoint>, modifier: Modifier = Modifier, interactive: Boolean = false) {
     val shape = RoundedCornerShape(15.dp)
     Box(modifier.clip(shape).background(LobbyInk.Map, shape)) {
         if (points.size >= 2) {
@@ -349,7 +349,7 @@ private val RoomCourseSaver = Saver<RoomCourse?, List<String>>(
 )
 
 /** 러닝 만들기의 실패 — 입력 · 고른 코스는 그대로 둔다 */
-internal sealed interface CreateProblem {
+sealed interface CreateProblem {
     data object DoneToday : CreateProblem
     data object Network : CreateProblem
     /** 출발 시각 · 정원 · 만나는 곳을 서버가 받지 않았다(0074 room_options_invalid) */
@@ -358,10 +358,10 @@ internal sealed interface CreateProblem {
 }
 
 /** 함께 달릴 코스 칸(2026-10-26 시안) — 직접 설정(코스를 고른다) · 자유 러닝(코스 없이 각자) */
-internal enum class CourseChoice { SET, FREE }
+enum class CourseChoice { SET, FREE }
 
 /** 출발 시각 기본값 — 지금부터 15분 넘게 남은 가장 가까운 30분(19:00 · 19:30) */
-internal fun defaultPlanAt(nowMs: Long = com.stepup.android.domain.epochMillis()): Long {
+fun defaultPlanAt(nowMs: Long = com.stepup.android.domain.epochMillis()): Long {
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
     // java.time 과 같은 셈 — 초는 버리고, 정각 · 30분이 아니면 다음 30분(그 시각 넘으면 다음 정각)
     val base = kotlin.time.Instant.fromEpochMilliseconds(nowMs + 15 * 60_000L).toLocalDateTime(zone)
@@ -377,7 +377,7 @@ internal fun defaultPlanAt(nowMs: Long = com.stepup.android.domain.epochMillis()
 }
 
 /** 고른 시 · 분을 다음 그 시각으로 — 10분 넘게 지났으면 내일(서버는 지금 − 10분 ~ 14일만 받는다) */
-internal fun planAtFor(hour: Int, minute: Int, nowMs: Long = com.stepup.android.domain.epochMillis()): Long {
+fun planAtFor(hour: Int, minute: Int, nowMs: Long = com.stepup.android.domain.epochMillis()): Long {
     val zone = kotlinx.datetime.TimeZone.currentSystemDefault()
     val now = kotlin.time.Instant.fromEpochMilliseconds(nowMs).toLocalDateTime(zone)
     var at = kotlinx.datetime.LocalDateTime(now.date, kotlinx.datetime.LocalTime(hour, minute))
@@ -462,7 +462,7 @@ fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -
 }
 
 @Composable
-internal fun CrewRoomCreateContent(
+fun CrewRoomCreateContent(
     crewName: String,
     name: String,
     onName: (String) -> Unit,
@@ -735,7 +735,7 @@ private fun CreateRow(label: String, value: String, sub: String?) {
  * 빈 목록과 불러오기 실패를 따로 보인다. 그리던 코스는 목록으로 돌아와도 남는다(이 화면을 떠나면 버린다).
  */
 @Composable
-internal fun CrewCoursePicker(current: RoomCourse?, onBack: () -> Unit, onPick: (RoomCourse) -> Unit) {
+fun CrewCoursePicker(current: RoomCourse?, onBack: () -> Unit, onPick: (RoomCourse) -> Unit) {
     val courseRepo = AppServices.courseRepository
     val mine by courseRepo.courses.collectAsStateWithLifecycle(initialValue = emptyList())
     val board by courseRepo.board.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -781,7 +781,7 @@ internal fun CrewCoursePicker(current: RoomCourse?, onBack: () -> Unit, onPick: 
 }
 
 @Composable
-internal fun CrewCoursePickerContent(
+fun CrewCoursePickerContent(
     current: RoomCourse?,
     mine: List<RunCourse>,
     shared: List<RunCourse>,
@@ -882,7 +882,7 @@ private fun CourseRow(course: RunCourse, current: RoomCourse?, onOpen: (RunCours
  * 대기실의 코스 보기(25) · 바뀐 코스(08)도 이 모습이다 — 그때는 [onPick] 이 없고 확인만 있다.
  */
 @Composable
-internal fun CrewCourseDetailSheet(
+fun CrewCourseDetailSheet(
     course: RoomCourse,
     area: String?,
     onPick: (() -> Unit)?,

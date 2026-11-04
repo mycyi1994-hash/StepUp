@@ -746,7 +746,7 @@ private fun VaultFilters(counts: List<TierCount>, selected: ShoeTier?, onFilter:
                 Box(
                     Modifier.widthIn(min = cell - 1.dp).heightIn(min = 40.dp).clip(shape)
                         .then(if (chosen) Modifier.background(
-                            androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), shape,
+                            com.stepup.android.ui.components.StopBrush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), shape,
                         ).border(1.dp, Color(0xFF4D8BFF), shape) else Modifier)
                         .feedbackClickable(role = Role.Tab, onClick = { onFilter(entry.tier) })
                         .semantics {
@@ -794,7 +794,7 @@ private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
     ) {
         Box(
             Modifier.fillMaxWidth().aspectRatio(GradeArtRatio).clip(shape)
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(runTone().panelTop, runTone().panel)), shape)
+                .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(runTone().panelTop, runTone().panel)), shape)
                 .border(
                     if (selected) 2.dp else 1.dp,
                     when {

@@ -453,7 +453,7 @@ private fun FlashRunWindow(
                     .height(26.dp)
                     .align(Alignment.BottomCenter)
                     .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                        com.stepup.android.ui.components.StopBrush.verticalGradient(
                             listOf(
                                 androidx.compose.ui.graphics.Color.Transparent,
                                 Night.copy(alpha = 0.85f),

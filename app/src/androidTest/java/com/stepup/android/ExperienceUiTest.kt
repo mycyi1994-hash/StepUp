@@ -425,7 +425,7 @@ class ExperienceUiTest {
         clearAnyRunCheckpointForTest()
         compose.setContent { StepUpTheme { ExperienceProvider { MainScaffold(startTour = true) } } }
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("first-guide-sheet").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(compose.activity.getString(R.string.onb_guide_title)).assertIsDisplayed()
+        compose.assertDisplayedOrExplain(androidx.compose.ui.test.hasText(compose.activity.getString(R.string.onb_guide_title)), "first guide title")
         for (route in listOf("home", "customize", "profile")) compose.onNodeWithTag("guide-row-$route").assertExists()
         // 안내 줄은 설명이다 — 누를 곳이 아니다
         compose.onNodeWithTag("guide-row-customize").assertHasNoClickAction()

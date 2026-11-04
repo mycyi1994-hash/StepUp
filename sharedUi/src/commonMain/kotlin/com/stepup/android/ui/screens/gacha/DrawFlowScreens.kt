@@ -62,7 +62,7 @@ import com.stepup.android.ui.theme.StepUpDesign
 
 /** DRAW10 — 서버가 결과를 확인할 때까지. 버튼이 없다(다시 누를 수 없다). 뒤로 → 요청을 둔 채 메인(DRAW26) */
 @Composable
-internal fun DrawRequestScreen(kind: DrawKind, onBack: () -> Unit) {
+fun DrawRequestScreen(kind: DrawKind, onBack: () -> Unit) {
     val t = runTone()
     val feedback = LocalFeedback.current
     LaunchedEffect(kind) { feedback?.play(FeedbackCue.DrawCharge) }
@@ -88,7 +88,7 @@ internal fun DrawRequestScreen(kind: DrawKind, onBack: () -> Unit) {
 
 /** DRAW11 — 결과를 받은 뒤에만. 약 2초(동작 줄이기면 0.2초), 건너뛰기 · 뒤로는 같은 확정 결과로 */
 @Composable
-internal fun DrawOpeningScreen(result: DrawnShoe, onFinish: () -> Unit, frozenAt: Float? = null) {
+fun DrawOpeningScreen(result: DrawnShoe, onFinish: () -> Unit, frozenAt: Float? = null) {
     val t = runTone()
     val feedback = LocalFeedback.current
     LaunchedEffect(result.shoe.id) { feedback?.play(FeedbackCue.DrawBoxOpen) }
@@ -130,7 +130,7 @@ internal fun DrawOpeningScreen(result: DrawnShoe, onFinish: () -> Unit, frozenAt
  * — 마지막 기회였거나 수를 아직 모르면 "뽑기 화면으로".
  */
 @Composable
-internal fun DrawResultScreen(
+fun DrawResultScreen(
     result: DrawnShoe,
     canDrawAgain: Boolean,
     onOpenShoes: () -> Unit,
@@ -224,7 +224,7 @@ internal fun DrawResultScreen(
  * 읽는 동안은 버튼을 누를 수 없고, 다 읽었는데도 모르면 다시 누를 수 있다. "뽑기 화면으로" · 뒤로 → 요청을 둔 채 메인(DRAW26).
  */
 @Composable
-internal fun DrawCheckScreen(checking: DrawFlow.Checking, onCheck: () -> Unit, onBack: () -> Unit) {
+fun DrawCheckScreen(checking: DrawFlow.Checking, onCheck: () -> Unit, onBack: () -> Unit) {
     val t = runTone()
     val unknown = checking.tried && !checking.busy
     Column(Modifier.fillMaxSize().testTag("draw-checking")) {

@@ -70,6 +70,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 신발 상세 · 수리 · 강화(파란 톤 v4) 공통 부품. 색은 러닝 리메이크의 runTone() 을 그대로 쓴다(밝은 테마 포함).
@@ -249,7 +250,7 @@ fun CareStatePanel(
     Column(modifier.fillMaxWidth().padding(top = 96.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(120.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.matchParentSize()) {
-                drawCircle(Brush.radialGradient(listOf(t.cobalt.copy(alpha = if (t.dark) 0.45f else 0.18f), Color.Transparent)))
+                drawCircle(StopBrush.radialGradient(listOf(t.cobalt.copy(alpha = if (t.dark) 0.45f else 0.18f), Color.Transparent)))
             }
             Icon(icon, contentDescription = null, tint = t.cyan, modifier = Modifier.size(64.dp))
         }

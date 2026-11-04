@@ -60,6 +60,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.theme.BrandLogoRole
 import com.stepup.android.ui.theme.StepUpFonts
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 /** 약관 · 개인정보처리방침 — 기존 주소 그대로. 문서 내용은 앱이 새로 쓰거나 요약하지 않는다 */
 
@@ -199,7 +200,7 @@ private fun LoginArch(image: org.jetbrains.compose.resources.DrawableResource, m
         modifier.clip(shape).background(t.inset)
             .border(
                 1.5.dp,
-                Brush.verticalGradient(0f to t.cobalt, 0.7f to t.cobalt.copy(alpha = 0.5f), 1f to Color.Transparent),
+                StopBrush.verticalGradient(0f to t.cobalt, 0.7f to t.cobalt.copy(alpha = 0.5f), 1f to Color.Transparent),
                 shape,
             ),
     ) {
@@ -209,7 +210,7 @@ private fun LoginArch(image: org.jetbrains.compose.resources.DrawableResource, m
         )
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(0f to Color.Transparent, 0.72f to t.screen.copy(alpha = 0.10f), 1f to t.screenBottom),
+                StopBrush.verticalGradient(0f to Color.Transparent, 0.72f to t.screen.copy(alpha = 0.10f), 1f to t.screenBottom),
             ),
         )
     }

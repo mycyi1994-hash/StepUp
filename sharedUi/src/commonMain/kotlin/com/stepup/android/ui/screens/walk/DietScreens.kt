@@ -86,11 +86,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stepup.android.ui.components.StopBrush
 
 /** 몸 정보 입력칸 하나의 확인 결과 — 비었으면 EMPTY, 범위를 벗어나면 RANGE */
-internal enum class BodyInputError { EMPTY, RANGE }
+enum class BodyInputError { EMPTY, RANGE }
 
-internal object DietInput {
+object DietInput {
     fun heightError(text: String): BodyInputError? {
         val cm = text.toIntOrNull() ?: return if (text.isBlank()) BodyInputError.EMPTY else BodyInputError.RANGE
         return if (cm in BodyMath.MIN_HEIGHT..BodyMath.MAX_HEIGHT) null else BodyInputError.RANGE
@@ -258,7 +259,7 @@ fun DietInputScreen(
 
 /** U05 · D01 · D02 · D06 — 상태 없이 그리는 입력 화면 */
 @Composable
-internal fun DietInputContent(
+fun DietInputContent(
     editing: Boolean,
     height: String,
     weight: String,
@@ -383,7 +384,7 @@ private fun BodyField(
     }
     val placeholder = stringResource(Res.string.run_diet_field_empty)
     Column(
-        modifier.clip(shape).background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
+        modifier.clip(shape).background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
             .border(if (focused || error) 2.dp else 1.dp, edge, shape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusRequester.requestFocus() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -424,7 +425,7 @@ private fun BodyField(
 
 /** D04 — 러닝 방법을 준비하고 있어요(몸 정보를 저장하는 동안) */
 @Composable
-internal fun DietPreparingContent(onBack: () -> Unit) {
+fun DietPreparingContent(onBack: () -> Unit) {
     val t = runTone()
     RunPage(
         onBack = onBack,
@@ -468,7 +469,7 @@ internal fun DietPreparingContent(onBack: () -> Unit) {
 
 /** D05 — 러닝 방법을 불러오지 못했어요. 입력한 내용은 그대로 */
 @Composable
-internal fun DietFailedContent(onRetry: () -> Unit, onCheck: () -> Unit) {
+fun DietFailedContent(onRetry: () -> Unit, onCheck: () -> Unit) {
     val t = runTone()
     RunPage(
         onBack = onCheck,
@@ -496,7 +497,7 @@ internal fun DietFailedContent(onRetry: () -> Unit, onCheck: () -> Unit) {
 }
 
 @Composable
-internal fun experienceTitle(experience: RunExperience): String = stringResource(when (experience) {
+fun experienceTitle(experience: RunExperience): String = stringResource(when (experience) {
     RunExperience.FIRST -> Res.string.diet_exp_first
     RunExperience.SOMETIMES -> Res.string.diet_exp_sometimes
     RunExperience.STEADY -> Res.string.diet_exp_steady
@@ -504,7 +505,7 @@ internal fun experienceTitle(experience: RunExperience): String = stringResource
 
 /** 분 단위 — "3분" */
 @Composable
-internal fun minutesText(sec: Long): String = stringResource(Res.string.diet_minutes, (sec / 60).toInt())
+fun minutesText(sec: Long): String = stringResource(Res.string.diet_minutes, (sec / 60).toInt())
 
 /** 러닝 방법 추천(시안 U06) — 고른 경험의 고정 루틴을 보여 주고 시작한다 */
 @Composable
@@ -519,7 +520,7 @@ fun DietPlanScreen(
 }
 
 @Composable
-internal fun DietPlanContent(
+fun DietPlanContent(
     experience: RunExperience,
     onBack: () -> Unit,
     onEdit: () -> Unit,

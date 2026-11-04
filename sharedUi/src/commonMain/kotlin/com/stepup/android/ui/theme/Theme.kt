@@ -107,10 +107,19 @@ fun StepUpTheme(mode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> U
     val palette = if (mode.isDark(isSystemInDarkTheme())) DarkPalette else LightPalette
     applyPalette(palette)
     applyFonts()
-    MaterialTheme(
-        colorScheme = schemeOf(palette),
-        typography = stepUpTypography(),
-        shapes = StepUpShapes,
-        content = content,
-    )
+    ProvidePlatformResources {
+        MaterialTheme(
+            colorScheme = schemeOf(palette),
+            typography = stepUpTypography(),
+            shapes = StepUpShapes,
+            content = content,
+        )
+    }
 }
+
+/**
+ * 화면 글자 · 그림(Compose 리소스)이 고를 언어 · 밤낮 · 밀도 — 기기마다. 안드로이드는 화면의 설정(LocalConfiguration)을 따른다
+ * (예전 안드로이드 stringResource 와 같다 — 앱 언어 · 검사가 넣은 언어). iOS 는 기본값 그대로.
+ */
+@Composable
+expect fun ProvidePlatformResources(content: @Composable () -> Unit)

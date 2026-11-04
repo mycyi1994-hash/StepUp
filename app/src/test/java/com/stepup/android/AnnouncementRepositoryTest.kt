@@ -143,14 +143,14 @@ class AnnouncementRepositoryTest {
     }
 
     @Test fun `알림 날짜 묶음은 사용자 시간대의 날짜로 가른다`() {
-        val seoul = ZoneId.of("Asia/Seoul")
-        val now = ZonedDateTime.of(2026, 9, 28, 0, 30, 0, 0, seoul).toInstant().toEpochMilli()
-        fun at(day: Int, hour: Int) = ZonedDateTime.of(2026, 9, day, hour, 0, 0, 0, seoul).toInstant().toEpochMilli()
+        val seoul = kotlinx.datetime.TimeZone.of("Asia/Seoul")
+        val now = ZonedDateTime.of(2026, 9, 28, 0, 30, 0, 0, java.time.ZoneId.of(seoul.id)).toInstant().toEpochMilli()
+        fun at(day: Int, hour: Int) = ZonedDateTime.of(2026, 9, day, hour, 0, 0, 0, java.time.ZoneId.of(seoul.id)).toInstant().toEpochMilli()
         assertEquals(DayGroup.Today, dayGroup(at(28, 0), now, seoul))
         assertEquals(DayGroup.Yesterday, dayGroup(at(27, 23), now, seoul))
         assertEquals(DayGroup.Earlier, dayGroup(at(26, 23), now, seoul))
         // 같은 순간도 UTC 로는 아직 27일이다 — 시간대를 바꾸면 묶음이 달라진다
-        assertEquals(DayGroup.Today, dayGroup(at(27, 23), now, ZoneId.of("UTC")))
+        assertEquals(DayGroup.Today, dayGroup(at(27, 23), now, kotlinx.datetime.TimeZone.UTC))
         // 시계가 조금 앞선 알림도 오늘
         assertEquals(DayGroup.Today, dayGroup(now + 60_000, now, seoul))
     }

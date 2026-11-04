@@ -65,6 +65,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpFonts
 import kotlin.math.roundToLong
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 내 러닝 기록(러닝 전체 리메이크 2026-10-02 · 시안 H01–H16)의 공통 조각 — 남색 러닝 바닥 · 머리(뒤로 · 로고) ·
@@ -75,7 +76,7 @@ import kotlin.math.roundToLong
  * 기록 화면 틀 — 남색 바닥 · 머리(뒤로 · 공식 로고 · 오른쪽 행동 하나). 상태 막대 · 하단 탭 자리는 앱 틀이 이미 비웠다.
  */
 @Composable
-internal fun RecordsFrame(
+fun RecordsFrame(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
@@ -92,7 +93,7 @@ internal fun RecordsFrame(
 
 /** 제목 줄 오른쪽 글자 이동 — "통계 >". 누르는 곳은 48dp 이상 */
 @Composable
-internal fun HeaderLink(text: String, tag: String, onClick: () -> Unit) {
+fun HeaderLink(text: String, tag: String, onClick: () -> Unit) {
     val t = runTone()
     Row(
         Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
@@ -107,7 +108,7 @@ internal fun HeaderLink(text: String, tag: String, onClick: () -> Unit) {
 
 /** 큰 굵은 제목(기울이지 않음) — "내 러닝 기록" · "러닝 통계" · "지난 러닝" */
 @Composable
-internal fun RecordTitle(text: String, modifier: Modifier = Modifier) {
+fun RecordTitle(text: String, modifier: Modifier = Modifier) {
     val t = runTone()
     Text(
         text,
@@ -120,14 +121,14 @@ internal fun RecordTitle(text: String, modifier: Modifier = Modifier) {
 }
 
 /** 거리(km) 한 자리 소수 — 1,284.5(합계 · 막대) */
-internal fun km(meters: Double): String = "${com.stepup.android.domain.formatGrouped((meters / 1000.0).toDouble(), 1)}"
+fun km(meters: Double): String = "${com.stepup.android.domain.formatGrouped((meters / 1000.0).toDouble(), 1)}"
 
 /** 러닝 한 번의 거리(km) 두 자리 소수 — 2.40(목록 줄 · 상세 · 경로, 러닝 결과와 같은 자리수) */
-internal fun km2(meters: Double): String = "${com.stepup.android.domain.formatGrouped((meters / 1000.0).toDouble(), 2)}"
+fun km2(meters: Double): String = "${com.stepup.android.domain.formatGrouped((meters / 1000.0).toDouble(), 2)}"
 
 /** 운동 시간 — 1시간 43분 · 22분 24초 · 45초 */
 @Composable
-internal fun durationText(seconds: Long): String {
+fun durationText(seconds: Long): String {
     val s = seconds.coerceAtLeast(0)
     return when {
         s >= 3600 -> stringResource(Res.string.rec_hours_minutes, (s / 3600).toInt(), ((s % 3600) / 60).toInt())
@@ -137,49 +138,49 @@ internal fun durationText(seconds: Long): String {
 }
 
 /** 시계 모양 시간 — 22:24(분:초) · 1:05:12(시:분:초) */
-internal fun clockText(seconds: Long): String {
+fun clockText(seconds: Long): String {
     val s = seconds.coerceAtLeast(0)
     return if (s >= 3600) "${s / 3600}:${com.stepup.android.domain.zeroPad(((s % 3600) / 60).toLong(), 2)}:${com.stepup.android.domain.zeroPad((s % 60).toLong(), 2)}"
     else "${s / 60}:${com.stepup.android.domain.zeroPad((s % 60).toLong(), 2)}"
 }
 
 /** 페이스(초/km) — 7'00" /km. 목록 줄처럼 좁은 곳은 [compact] 로 7'00"/km */
-internal fun paceText(secondsPerKm: Double?, compact: Boolean = false): String? {
+fun paceText(secondsPerKm: Double?, compact: Boolean = false): String? {
     val total = secondsPerKm?.takeIf { it.isFinite() && it > 0 }?.roundToLong() ?: return null
     return "${total / 60}'${com.stepup.android.domain.zeroPad((total % 60).toLong(), 2)}\"${if (compact) "" else " "}/km"
 }
 
 /** 한 러닝의 페이스 — 시간이 있고 거리가 50m(RunPace.MIN_METERS, 러닝 중 · 결과와 같다) 이상일 때만 */
-internal fun runPace(seconds: Long, meters: Double, compact: Boolean = false): String? =
+fun runPace(seconds: Long, meters: Double, compact: Boolean = false): String? =
     paceText(com.stepup.android.domain.RunPace.secPerKm(seconds, meters), compact)
 
 /** 페이스 숫자만 — 8'20"(단위 "/km" 는 작은 글자로 따로). 몇 m 로 나눈 65'37" 같은 값은 보이지 않는다(RunPace) */
-internal fun paceValue(seconds: Long, meters: Double): String? {
+fun paceValue(seconds: Long, meters: Double): String? {
     val total = com.stepup.android.domain.RunPace.secPerKm(seconds, meters)
         ?.takeIf { it.isFinite() && it > 0 }?.roundToLong() ?: return null
     return "${total / 60}'${com.stepup.android.domain.zeroPad((total % 60).toLong(), 2)}\""
 }
 
 /** 평균 속도(km/h) 한 자리 — 페이스와 같은 조건(RunPace)일 때만 */
-internal fun speedText(seconds: Long, meters: Double): String? =
+fun speedText(seconds: Long, meters: Double): String? =
     com.stepup.android.domain.RunPace.kmh(seconds, meters)?.let { "${com.stepup.android.domain.formatFixed((it).toDouble(), 1)}" }
 
 @Composable
-internal fun rememberFormatter(pattern: org.jetbrains.compose.resources.StringResource): com.stepup.android.domain.PatternFormatter {
+fun rememberFormatter(pattern: org.jetbrains.compose.resources.StringResource): com.stepup.android.domain.PatternFormatter {
     val text = stringResource(pattern)
     val locale = androidx.compose.ui.text.intl.Locale.current
     return remember(text, locale) { com.stepup.android.domain.PatternFormatter(text, (locale).language) }
 }
 
 /** 빈 · 못 읽음 그림 — 첫 기록 전(문서 위 러너) · 기간 빔(위치 핀) · 못 읽음(신호 + 느낌표) · 찾을 수 없음 */
-internal enum class RecordArt { Empty, Period, Offline, Missing }
+enum class RecordArt { Empty, Period, Offline, Missing }
 
 /**
  * 빈 기록 · 못 읽음(H07 · H08 · H10) — 그림 · 큰 제목 · 한두 줄 · 아래 버튼(주 하나 + 돌아가기).
  * [scroll] 이면 남은 자리를 채워 글은 가운데, 버튼은 아래에 두고 큰 글씨면 넘긴다. 아니면(통계 안) 그 자리에 차례로.
  */
 @Composable
-internal fun RecordsState(
+fun RecordsState(
     title: String,
     body: String,
     modifier: Modifier = Modifier,
@@ -271,7 +272,7 @@ private fun RecordSheetArt() {
     Box(
         Modifier.size(width = 168.dp, height = 210.dp).drawBehind {
             drawCircle(
-                Brush.radialGradient(
+                StopBrush.radialGradient(
                     0f to t.cobalt.copy(alpha = if (t.dark) 0.30f else 0.14f), 1f to Color.Transparent,
                     center = center, radius = size.minDimension * 0.75f,
                 ),
@@ -338,7 +339,7 @@ private fun PinArt() {
 
 /** 작은 막대 그림 — 통계가 없는 축 가운데(H15) */
 @Composable
-internal fun BarsGlyph(modifier: Modifier = Modifier) {
+fun BarsGlyph(modifier: Modifier = Modifier) {
     val t = runTone()
     Canvas(modifier.size(34.dp)) {
         val w = size.width

@@ -75,6 +75,7 @@ import com.stepup.android.ui.screens.community.crew.CrewImage
 import com.stepup.android.ui.screens.community.crew.CrewMembersLabel
 import com.stepup.android.ui.screens.community.crew.CrewMissingPage
 import com.stepup.android.ui.screens.community.crew.crewProblemText
+import com.stepup.android.ui.components.StopBrush
 
 /** 홈에서 나가는 곳 — 뒤로는 실제로 들어온 길로 */
 class CrewHomeActions(
@@ -300,7 +301,7 @@ private fun Masthead(crew: CrewCard, home: CrewHomeSummary, actions: CrewHomeAct
     val shape = RoundedCornerShape(20.dp)
     Row(
         Modifier.fillMaxWidth().height(IntrinsicSize.Min).clip(shape)
-            .background(Brush.linearGradient(listOf(ink.cardTop, ink.card)), shape).border(1.5.dp, ink.edgeStrong, shape)
+            .background(StopBrush.linearGradient(listOf(ink.cardTop, ink.card)), shape).border(1.5.dp, ink.edgeStrong, shape)
             .homeClickable(onClick = actions.onIntro)
             .padding(start = 22.dp, end = 16.dp, top = 20.dp, bottom = 12.dp).testTag("home-masthead"),
     ) {
@@ -417,7 +418,7 @@ private fun NextRunCard(meeting: CrewMeeting, modifier: Modifier, onClick: () ->
     val ink = blueInk()
     val shape = RoundedCornerShape(20.dp)
     Column(
-        modifier.heightIn(min = 152.dp).clip(shape).background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+        modifier.heightIn(min = 152.dp).clip(shape).background(StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
             .border(1.5.dp, ink.edgeStrong, shape).homeClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 18.dp).testTag("home-next"),
     ) {

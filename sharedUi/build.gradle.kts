@@ -1,7 +1,8 @@
 // iOS 앱 화면(Compose Multiplatform) — docs/ios/README.md. Xcode 앱(iosApp/)은 이 모듈이 만드는 StepUpKit 틀 하나만 붙인다.
-// 지금은 iOS 대상만 둔다. 안드로이드 화면을 이리 옮길 때 androidTarget() 을 더한다(그 전까지 안드로이드 앱 화면은 :app 그대로).
+// 안드로이드 앱(:app)도 같은 화면을 쓴다(androidTarget — 2026-11-03 C8). 기기 일은 androidMain · iosMain 의 actual.
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.compose.multiplatform)
     // 장소 목록(spots.json) 읽기
@@ -9,6 +10,9 @@ plugins {
 }
 
 kotlin {
+    androidTarget {
+        compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
+    }
     listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
             baseName = "StepUpKit"
@@ -19,6 +23,14 @@ kotlin {
     }
 
     sourceSets {
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.browser)
+            // 위치(구글 위치 서비스 — 러닝 · 지도의 지금 자리)
+            implementation(libs.play.services.location)
+            implementation(libs.kotlinx.coroutines.android)
+        }
         iosMain.dependencies {
             // 지도 타일 받기(TileFetch.ios.kt)
             implementation(libs.ktor.client.core)
@@ -33,13 +45,25 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.materialIconsExtended)
             implementation(compose.ui)
-            implementation(compose.components.resources)
+            api(compose.components.resources)
             // 화면 상태(ViewModel) · 수명 주기 — 안드로이드와 같은 androidx.lifecycle(멀티플랫폼 판, CMP 가 끌어오는 판)
-            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-            implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
             // 화면 길(안드로이드와 같은 navigation-compose 의 멀티플랫폼 판) — 안드로이드 NavGraph 를 그대로 옮긴다
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
         }
+    }
+}
+
+android {
+    namespace = "com.stepup.ui"
+    // Compose 리소스 다리(Java — ui/theme/ComposeResourcesBridge.java)
+    sourceSets.getByName("main").java.srcDirs("src/androidMain/java")
+    compileSdk = 36
+    defaultConfig { minSdk = 26 }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

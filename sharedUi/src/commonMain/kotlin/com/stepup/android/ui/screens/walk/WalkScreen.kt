@@ -125,6 +125,7 @@ import com.stepup.android.ui.components.RunNoticeKind
 import com.stepup.android.ui.components.RunStat
 import com.stepup.android.ui.components.runTone
 import androidx.compose.material.icons.filled.Groups
+import com.stepup.android.ui.components.StopBrush
 
 /** 랩 스냅샷(누적)을 구간값으로 변환한 것 */
 private data class LapSegment(
@@ -2206,7 +2207,7 @@ private fun PaceChart(paces: List<Long>, modifier: Modifier = Modifier) {
             lineTo(inset, size.height)
             close()
         }
-        drawPath(fill, Brush.verticalGradient(listOf(Volt.copy(alpha = 0.22f), Color.Transparent)))
+        drawPath(fill, StopBrush.verticalGradient(listOf(Volt.copy(alpha = 0.22f), Color.Transparent)))
         drawPath(line, Volt, style = Stroke(width = 2.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
         drawCircle(Volt, radius = 3.5f, center = pointAt(valid.size - 1))
     }
@@ -3024,7 +3025,7 @@ private fun FinishStat(label: String, value: String, unit: String, modifier: Mod
  * 거리는 각 폰이 잰 화면용 값이다(적립과 무관).
  */
 @Composable
-internal fun TogetherRanking(members: List<com.stepup.android.data.repo.PartyMember>, myKm: Double) {
+fun TogetherRanking(members: List<com.stepup.android.data.repo.PartyMember>, myKm: Double) {
     val rows = members.map { m -> Triple(m, if (m.isMe) myKm else m.km, m.isMe) }
         .sortedWith(compareByDescending<Triple<com.stepup.android.data.repo.PartyMember, Double?, Boolean>> { it.second != null }
             .thenByDescending { it.second ?: 0.0 })

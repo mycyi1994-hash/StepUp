@@ -29,4 +29,4 @@ object AppLocale {
 }
 
 /** 기기에 언어를 적용한다 — 다시 켜야 바뀌면 true */
-internal expect fun applyAppLanguage(tag: String): Boolean
+expect fun applyAppLanguage(tag: String): Boolean

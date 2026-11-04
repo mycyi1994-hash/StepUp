@@ -1,11 +1,14 @@
 package com.stepup.android
 
+import com.stepup.android.core.handle
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -73,13 +76,13 @@ class CrewCardsDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -304,7 +307,7 @@ class CrewCardsDesignTest {
             closeKeyboard()
             shot("72-region-empty")
             // 위치 권한이 없을 때만 71(묻기)이 뜬다 — CI 는 이 묶음 전에 권한을 거둔다
-            if (!com.stepup.android.ui.StepPermissions.hasLocation(compose.activity)) {
+            if (!com.stepup.android.ui.StepPermissions.hasLocation()) {
                 tapTag("crew-region-here")
                 awaitTag("crew-location-sheet")
                 shot("71-location-permission")
@@ -364,13 +367,13 @@ class CrewCardsDesignTest {
             shot("69-photo-permission")
             tapTag("crew-sheet-close")
             CrewPhotoPickerForTest.unavailable = false
-            CrewPhotoPickerForTest.answer = Uri.fromFile(File(compose.activity.cacheDir, "not-an-image.jpg").apply { writeText("not an image") })
+            CrewPhotoPickerForTest.answer = (File(compose.activity.cacheDir, "not-an-image.jpg").apply { writeText("not an image") }).path
             tapTag("crew-draft-image")
             tapTag("crew-image-photos")
             awaitTag("crew-photo-broken")
             shot("29-image-error")
             tapTag("crew-sheet-close")
-            CrewPhotoPickerForTest.answer = Uri.fromFile(asset("crew/afterwork.png", "crew-pick.png"))
+            CrewPhotoPickerForTest.answer = (asset("crew/afterwork.png", "crew-pick.png")).path
             tapTag("crew-draft-image")
             tapTag("crew-image-photos")
             awaitTag("crew-crop-frame")
@@ -621,7 +624,13 @@ class CrewCardsDesignTest {
             shot("59-transfer-confirm")
             tapTag("crew-transfer-confirm-yes")
             awaitTag("crew-detail")
-            awaitText("크루장 민수")
+            // 크루장은 상세의 "크루장" 줄 값으로 보인다(10-25 통합안 — 예전 "크루장 민수" 한 줄 대신). 넘긴 뒤 그 줄이 새 크루장이다
+            val end = android.os.SystemClock.uptimeMillis() + 20_000
+            while (compose.onAllNodes(hasTestTag("crew-detail-leader") and hasText("민수", substring = true)).fetchSemanticsNodes().isEmpty()) {
+                if (android.os.SystemClock.uptimeMillis() > end) throw AssertionError("leader row did not show 민수 after transfer")
+                compose.waitForIdle()
+                Thread.sleep(40)
+            }
             shot("86-after-transfer")
         }
     }

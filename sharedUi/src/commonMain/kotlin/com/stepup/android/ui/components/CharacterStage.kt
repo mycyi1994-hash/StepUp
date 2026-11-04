@@ -210,7 +210,7 @@ private fun DrawScope.drawSkyline(building: Color, window: Color) {
         val width = size.width * w
         val top = baseY - size.height * h
         drawRect(
-            brush = Brush.verticalGradient(
+            brush = StopBrush.verticalGradient(
                 0f to building.copy(alpha = 0.95f),
                 1f to building.copy(alpha = 0.0f),
                 startY = top,
@@ -242,7 +242,7 @@ private fun DrawScope.drawBackGlow(glow: Color, cyan: Color) {
     val center = Offset(size.width / 2f, size.height * 0.52f)
     val radius = maxOf(size.minDimension * 0.62f, 1f)
     drawCircle(
-        brush = Brush.radialGradient(
+        brush = StopBrush.radialGradient(
             0f to glow.copy(alpha = 0.34f),
             0.45f to glow.copy(alpha = 0.12f),
             1f to Color.Transparent,
@@ -253,7 +253,7 @@ private fun DrawScope.drawBackGlow(glow: Color, cyan: Color) {
         center = center,
     )
     drawCircle(
-        brush = Brush.radialGradient(
+        brush = StopBrush.radialGradient(
             0f to cyan.copy(alpha = 0.10f),
             1f to Color.Transparent,
             center = center,
@@ -272,7 +272,7 @@ private fun DrawScope.drawFloor(glow: Color, cyan: Color, phase: Float) {
     val shadowW = ringW * (0.56f + (1f - phase) * 0.04f)
     val shadowH = ringH * 0.48f
     drawOval(
-        brush = Brush.radialGradient(
+        brush = StopBrush.radialGradient(
             0f to Color.Black.copy(alpha = 0.76f - phase * 0.06f),
             1f to Color.Transparent,
             center = Offset(size.width / 2f, cy),

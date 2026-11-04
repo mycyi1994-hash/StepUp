@@ -64,18 +64,18 @@ class ScreenGalleryTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
             // Apply before the Activity exists: Dialog windows must receive the
             // same application locale as their parent, not a Compose-only override.
             instrumentation.runOnMainSync {
-                com.stepup.android.core.AppLocale.change(context, "ko")
+                com.stepup.android.core.AppLocale.change("ko")
             }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             instrumentation.runOnMainSync {
-                com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous)
+                com.stepup.android.core.AppLocale.change(previous)
             }
         }
     }
@@ -166,7 +166,7 @@ class ScreenGalleryTest {
         runBlocking { ServiceLocator.avatarRepository.setGender(AvatarGender.FEMALE) }
         ready(AvatarGender.FEMALE)
         for (outfit in com.stepup.android.domain.Outfits.STUDIO) {
-            val label = compose.activity.getString(com.stepup.android.ui.components.outfitNameRes(outfit))
+            val label = com.stepup.android.ui.components.stringNow(com.stepup.android.ui.components.outfitNameRes(outfit))
             compose.onNodeWithContentDescription(label, substring = true).performScrollTo().performClick()
             compose.onNodeWithTag("wardrobe-equip").performClick()
             ready(AvatarGender.FEMALE, outfit.id)

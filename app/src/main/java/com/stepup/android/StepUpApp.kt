@@ -13,20 +13,22 @@ class StepUpApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // 공용 화면(sharedUi)이 쓰는 앱 컨텍스트 — 다른 무엇보다 먼저
+        com.stepup.android.core.AndroidHost.init(this)
         ServiceLocator.init(this)
         // 첫 화면이 그려지기 전에 언어를 확정해야 리소스가 한 번에 맞는 언어로 읽힌다.
         // DataStore 한 건 읽기라 시작 시간에 미치는 영향은 미미하다.
         // 저장소를 못 읽더라도 언어 하나 때문에 앱이 죽으면 안 되므로 기기 설정으로 넘어간다.
         val saved = runCatching { runBlocking { ServiceLocator.userPrefs.languageNow() } }
             .getOrDefault(AppLocale.SYSTEM)
-        AppLocale.bootstrap(this, saved)
+        com.stepup.android.core.AndroidLocale.bootstrap(this, saved)
         // 테마도 같은 이유로 첫 프레임 전에 확정한다. 나중에 정하면 어둡게
         // 쓰는 사람이 앱을 켤 때마다 흰 화면이 한 번 번쩍인다.
         val theme = runCatching { runBlocking { ServiceLocator.userPrefs.themeModeNow() } }
             .getOrDefault("")
         AppTheme.bootstrap(theme)
         // 접속 코드 문(0079) — 마지막으로 받은 상태로 첫 화면을 정한다(연결 없이 켜도 들어온 사람을 다시 막지 않게)
-        com.stepup.android.core.AccessGate.load(this)
+        com.stepup.android.core.AndroidAccess.load(this)
         // 푸시 주소를 서버에 적어 둔다. 로그인 전이면 서버가 받지 않고, 로그인하면
         // 로그인 화면이 다시 부른다. 네트워크를 쓰므로 첫 화면을 기다리게 하지 않는다.
         PushService.createChannel(this)

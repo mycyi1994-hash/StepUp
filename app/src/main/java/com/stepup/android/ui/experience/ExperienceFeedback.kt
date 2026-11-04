@@ -15,30 +15,59 @@ import android.view.View
 import androidx.annotation.RawRes
 import com.stepup.android.R
 
-enum class FeedbackCue(@RawRes val sound: Int, val gain: Float = .55f) {
-    Tap(R.raw.ui_tap, .28f), Select(R.raw.ui_select, .35f),
-    Back(R.raw.ui_back, .32f), Toggle(R.raw.ui_toggle, .34f),
-    SheetOpen(R.raw.ui_sheet_open, .30f), SheetClose(R.raw.ui_sheet_close, .28f),
-    BackgroundSwitch(R.raw.ui_background_switch, .34f), Equip(R.raw.item_equip, .40f),
-    Success(R.raw.action_success), Error(R.raw.action_error, .40f),
-    Reward(R.raw.reward_claim, .62f),
-    Countdown(R.raw.run_countdown), Start(R.raw.run_start), Resume(R.raw.run_resume),
-    Pause(R.raw.run_pause), Lap(R.raw.run_lap), Finish(R.raw.run_finish),
-    DrawEnter(R.raw.draw_enter, .36f), DrawCharge(R.raw.draw_charge),
-    DrawBoxOpen(R.raw.draw_box_open), DrawCommon(R.raw.draw_reveal_common),
-    DrawRare(R.raw.draw_reveal_rare), DrawEpic(R.raw.draw_reveal_epic),
-    DrawLegendary(R.raw.draw_reveal_legendary), DrawCancel(R.raw.draw_cancel),
-    DrawFail(R.raw.draw_fail),
+/** 효과음 파일 · 크기 — 공용 이름([FeedbackCue])마다 안드로이드 소리(res/raw) */
+internal val FeedbackCue.sound: Int @RawRes get() = when (this) {
+    FeedbackCue.Tap -> R.raw.ui_tap
+    FeedbackCue.Select -> R.raw.ui_select
+    FeedbackCue.Back -> R.raw.ui_back
+    FeedbackCue.Toggle -> R.raw.ui_toggle
+    FeedbackCue.SheetOpen -> R.raw.ui_sheet_open
+    FeedbackCue.SheetClose -> R.raw.ui_sheet_close
+    FeedbackCue.BackgroundSwitch -> R.raw.ui_background_switch
+    FeedbackCue.Equip -> R.raw.item_equip
+    FeedbackCue.Success -> R.raw.action_success
+    FeedbackCue.Error -> R.raw.action_error
+    FeedbackCue.Reward -> R.raw.reward_claim
+    FeedbackCue.Countdown -> R.raw.run_countdown
+    FeedbackCue.Start -> R.raw.run_start
+    FeedbackCue.Resume -> R.raw.run_resume
+    FeedbackCue.Pause -> R.raw.run_pause
+    FeedbackCue.Lap -> R.raw.run_lap
+    FeedbackCue.Finish -> R.raw.run_finish
+    FeedbackCue.DrawEnter -> R.raw.draw_enter
+    FeedbackCue.DrawCharge -> R.raw.draw_charge
+    FeedbackCue.DrawBoxOpen -> R.raw.draw_box_open
+    FeedbackCue.DrawCommon -> R.raw.draw_reveal_common
+    FeedbackCue.DrawRare -> R.raw.draw_reveal_rare
+    FeedbackCue.DrawEpic -> R.raw.draw_reveal_epic
+    FeedbackCue.DrawLegendary -> R.raw.draw_reveal_legendary
+    FeedbackCue.DrawCancel -> R.raw.draw_cancel
+    FeedbackCue.DrawFail -> R.raw.draw_fail
 }
 
-enum class AmbientScene(@RawRes val sound: Int) {
-    Night(R.raw.ambience_night_river),
-    Dawn(R.raw.ambience_dawn_river),
-    Wardrobe(R.raw.ambience_wardrobe_terrace),
+internal val FeedbackCue.gain: Float get() = when (this) {
+    FeedbackCue.Tap -> .28f
+    FeedbackCue.Select -> .35f
+    FeedbackCue.Back -> .32f
+    FeedbackCue.Toggle -> .34f
+    FeedbackCue.SheetOpen -> .30f
+    FeedbackCue.SheetClose -> .28f
+    FeedbackCue.BackgroundSwitch -> .34f
+    FeedbackCue.Equip -> .40f
+    FeedbackCue.Error -> .40f
+    FeedbackCue.Reward -> .62f
+    FeedbackCue.DrawEnter -> .36f
+    else -> .55f
+}
+
+internal val AmbientScene.sound: Int @RawRes get() = when (this) {
+    AmbientScene.Night -> R.raw.ambience_night_river
+    AmbientScene.Dawn -> R.raw.ambience_dawn_river
+    AmbientScene.Wardrobe -> R.raw.ambience_wardrobe_terrace
 }
 
 /** Activity-owned short sounds. Never starts music, changes volume, or requests audio focus. */
-class ExperienceFeedback(context: Context, private val view: View) : AutoCloseable {
+class ExperienceFeedback(context: Context, private val view: View) : AutoCloseable, ExperiencePlayer {
     private val app = context.applicationContext
     private val audio = app.getSystemService(AudioManager::class.java)
     private val notifications = app.getSystemService(NotificationManager::class.java)
@@ -86,7 +115,7 @@ class ExperienceFeedback(context: Context, private val view: View) : AutoCloseab
         audio.registerAudioPlaybackCallback(playbackObserver, Handler(Looper.getMainLooper()))
     }
 
-    fun setAmbientScene(scene: AmbientScene?) {
+    override fun setAmbientScene(scene: AmbientScene?) {
         if (ambientScene == scene) return
         ambientScene = scene
         refreshAmbient()
@@ -133,7 +162,7 @@ class ExperienceFeedback(context: Context, private val view: View) : AutoCloseab
         ambientPlayer = null
     }
 
-    fun play(cue: FeedbackCue) {
+    override fun play(cue: FeedbackCue) {
         if (closed || !foreground) return
         val now = SystemClock.uptimeMillis()
         val elapsed = now - lastCueAt

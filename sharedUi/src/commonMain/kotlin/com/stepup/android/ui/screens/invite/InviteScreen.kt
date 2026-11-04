@@ -140,7 +140,7 @@ class InviteViewModel(private val api: InviteApi?) : ViewModel() {
 }
 
 /** 적립액을 SUP 표기로 — 0 이하이면 보상이 정해지지 않은 것이라 null */
-internal fun rewardLabel(reward: Double): String? = when {
+fun rewardLabel(reward: Double): String? = when {
     reward <= 0 || !reward.isFinite() -> null
     reward % 1.0 == 0.0 -> com.stepup.android.ui.components.formatSupDown(reward, 0)
     else -> com.stepup.android.ui.components.formatSupDown(reward, 2)
@@ -214,7 +214,7 @@ fun InviteScreen(onBack: () -> Unit, viewModel: InviteViewModel = viewModel(fact
 }
 
 @Composable
-internal fun InviteContent(
+fun InviteContent(
     status: InviteStatusRow,
     invitees: List<InviteeRow>,
     modifier: Modifier = Modifier,

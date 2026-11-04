@@ -470,7 +470,7 @@ private fun CrewRestoredLine(onRevert: () -> Unit) {
 
 /** 초안의 대표 이미지 — 고른 사진, 이름 이미지, 또는 크루의 지금 이미지(이름은 고치는 중인 것으로) */
 @Composable
-internal fun CrewDraftImage(
+fun CrewDraftImage(
     draft: CrewDraft,
     size: Dp,
     radius: Dp,

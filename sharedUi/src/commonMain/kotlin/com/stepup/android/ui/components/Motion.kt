@@ -128,7 +128,7 @@ fun Modifier.sheen(
         if (active > 0f && active < 1f) {
             val band = size.width * bandFraction
             val x = size.width * (-.5f + 2f * active)
-            drawRect(Brush.linearGradient(listOf(Color.Transparent, color.copy(alpha = alpha), Color.Transparent),
+            drawRect(StopBrush.linearGradient(listOf(Color.Transparent, color.copy(alpha = alpha), Color.Transparent),
                 Offset(x - band, 0f), Offset(x + band, size.height)))
         }
     }

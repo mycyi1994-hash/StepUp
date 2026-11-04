@@ -31,7 +31,7 @@ firebaseBom = "33.7.0"
 googleServices = "4.4.2"
 junit = "4.13.2"
 # iOS 앱 화면(Compose Multiplatform — docs/ios/README.md). Kotlin 2.2.20 으로 만들어진 판이라 위 Kotlin 에서 읽힌다
-composeMultiplatform = "1.12.2"
+composeMultiplatform = "1.11.1"
 androidxTestJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 androidxTestRules = "1.6.1"

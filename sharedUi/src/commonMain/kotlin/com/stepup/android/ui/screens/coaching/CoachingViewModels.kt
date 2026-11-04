@@ -88,7 +88,7 @@ sealed interface CoachAccount {
 
 val CoachAccount.snapshot: CoachServerSnapshot? get() = (this as? CoachAccount.Ready)?.snapshot
 
-internal fun CoachLoad<CoachServerSnapshot>.toAccount(): CoachAccount = when (this) {
+fun CoachLoad<CoachServerSnapshot>.toAccount(): CoachAccount = when (this) {
     is CoachLoad.Ready -> CoachAccount.Ready(value)
     is CoachLoad.Failed -> CoachAccount.Failed
     CoachLoad.Offline -> CoachAccount.Offline
@@ -100,7 +100,7 @@ internal fun CoachLoad<CoachServerSnapshot>.toAccount(): CoachAccount = when (th
  * 지금 계정의 코칭 상태 — 마지막으로 이 계정에 대해 읽은 결과 위에, 다른 화면(동의 · 목표)이 새로 읽은 서버 상태를 겹친다.
  * 다른 계정에 대해 읽은 결과는 쓰지 않는다.
  */
-internal fun accountOf(owner: String?, loaded: Pair<String, CoachAccount>?, latest: Map<String, CoachServerSnapshot>): CoachAccount {
+fun accountOf(owner: String?, loaded: Pair<String, CoachAccount>?, latest: Map<String, CoachServerSnapshot>): CoachAccount {
     if (owner == null) return CoachAccount.Loading
     if (RecordingOwner.userId(owner) == null) return CoachAccount.SignIn
     val known = latest[owner]
@@ -113,7 +113,7 @@ internal fun accountOf(owner: String?, loaded: Pair<String, CoachAccount>?, late
 }
 
 /** 서버의 답을 화면의 AI 칸으로 — 못 받은 답은 저장된 사본(있으면) 아니면 실패 · 연결 없음으로 */
-internal fun aiOf(
+fun aiOf(
     load: CoachLoad<CoachStatus>,
     cached: CachedCoach?,
     accountRecord: Boolean,
@@ -138,7 +138,7 @@ data class TodayWorkout(val template: WorkoutTemplate, val source: TodaySource, 
  * 오늘 카드의 훈련. 사용자가 적용한 이번 주 계획에 오늘이 있으면 그것, 아니면 AI 가 허용 목록에서 고른 추천(오래되지 않은 것),
  * 아니면 고른 시간의 기본 훈련. 목표를 정하지 않았으면 null — 없는 훈련을 만들어 보이지 않는다.
  */
-internal fun todayWorkout(snapshot: CoachServerSnapshot?, today: LocalDate, rec: CoachAi): TodayWorkout? {
+fun todayWorkout(snapshot: CoachServerSnapshot?, today: LocalDate, rec: CoachAi): TodayWorkout? {
     val planned = snapshot?.plans?.firstOrNull { it.weekStart == mondayOf(today) }
         ?.days?.firstOrNull { it.first == today }?.second?.let { CoachingTemplates.byId(it) }
     if (planned != null) return TodayWorkout(planned, TodaySource.PLAN, null, false)
@@ -155,13 +155,13 @@ internal fun todayWorkout(snapshot: CoachServerSnapshot?, today: LocalDate, rec:
 }
 
 /** 고른 목표(세 칸이 모두 있을 때만) */
-internal fun CoachServerSnapshot.chosenPrefs(): CoachPrefs? =
+fun CoachServerSnapshot.chosenPrefs(): CoachPrefs? =
     prefs?.let { CoachPrefs.of(CoachGoal.of(it.goal), it.runsPerWeek, it.minutes) }
 
 /** 저장 · 적용의 단계 — 성공은 서버가 받았다고 답한 뒤에만 */
 enum class SaveState { Idle, Saving, Saved, Conflict, Failed, Offline }
 
-internal fun CoachLoad<*>.failure(): SaveState = if (this == CoachLoad.Offline) SaveState.Offline else SaveState.Failed
+fun CoachLoad<*>.failure(): SaveState = if (this == CoachLoad.Offline) SaveState.Offline else SaveState.Failed
 
 /** 코칭 화면들이 함께 하는 일 — 지금 계정 · 서버 코칭 상태를 읽어 둔다 */
 abstract class CoachingBaseViewModel(protected val repo: CoachingRepository) : ViewModel() {
@@ -679,12 +679,12 @@ class CoachingSetupViewModel(
 }
 
 /** 동의 문구에 이름을 쓸 수 있는 공급자 — 정해지지 않았으면(none) 동의를 받지 않는다 */
-internal fun providerKnown(provider: String): Boolean = provider == "anthropic" || provider == "mock"
+fun providerKnown(provider: String): Boolean = provider == "anthropic" || provider == "mock"
 
 /**
  * 화면에 보일 AI 칸 — 운영자가 코칭을 꺼 두었거나(coaching_enabled=false) 공급자가 정해지지 않았으면 동의를 받을 수 없다
  * (동의 화면은 "준비 중"). 그동안 "동의 필요" · "AI 추천 받기" 같은 칸을 숨긴다 — 서버는 동의를 먼저 보아(no_consent) 꺼진 것을
  * 알리지 않으므로 화면이 가린다. 전에 받아 둔 결과(Ready)는 그대로 보인다. 서버 상태를 모르면(아직 · 오프라인) 그대로 둔다.
  */
-internal fun shownAi(ai: CoachAi, snapshot: CoachServerSnapshot?): CoachAi =
+fun shownAi(ai: CoachAi, snapshot: CoachServerSnapshot?): CoachAi =
     if (snapshot != null && !(snapshot.enabled && providerKnown(snapshot.provider)) && ai !is CoachAi.Ready) CoachAi.Hidden else ai

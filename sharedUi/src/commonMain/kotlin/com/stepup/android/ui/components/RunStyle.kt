@@ -729,7 +729,7 @@ fun RunMeter(
                 if (f > 0f) {
                     val w = (size.width * f).coerceAtLeast(size.height)
                     drawRoundRect(
-                        if (colors.size > 1) Brush.horizontalGradient(colors, endX = w.coerceAtLeast(1f)) else Brush.horizontalGradient(listOf(colors[0], colors[0])),
+                        if (colors.size > 1) StopBrush.horizontalGradient(colors, endX = w.coerceAtLeast(1f)) else StopBrush.horizontalGradient(listOf(colors[0], colors[0])),
                         size = Size(w, size.height), cornerRadius = r,
                     )
                 }

@@ -365,7 +365,7 @@ private fun PedestalLight(modifier: Modifier) {
         val cy = 302f * sy
         val glow = 176f * sx
         drawOval(
-            androidx.compose.ui.graphics.Brush.radialGradient(
+            com.stepup.android.ui.components.StopBrush.radialGradient(
                 listOf(Color(0xFF2B6DFF).copy(alpha = 0.55f), Color(0xFF0754FF).copy(alpha = 0.18f), Color.Transparent),
                 center = androidx.compose.ui.geometry.Offset(cx, cy), radius = glow,
             ),

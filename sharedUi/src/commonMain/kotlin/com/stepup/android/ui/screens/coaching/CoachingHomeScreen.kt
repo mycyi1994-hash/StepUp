@@ -105,6 +105,7 @@ import com.stepup.android.ui.screens.records.rememberFormatter
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import com.stepup.android.ui.components.StopBrush
 
 /** 코칭의 세 탭 — 오늘(01 · 08) · 분석(03 · 07 · 09–12) · 변화(04) */
 enum class CoachTab(val key: String) {
@@ -306,7 +307,7 @@ private fun TodayCard(workout: TodayWorkout, onOpen: () -> Unit) {
     )
     Column(
         Modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(t.glow, t.panel)), shape)
+            .background(StopBrush.verticalGradient(listOf(t.glow, t.panel)), shape)
             .border(1.dp, t.panelEdge, shape)
             .feedbackClickable(onClick = onOpen)
             .testTag("coach-today-card"),
@@ -1133,14 +1134,14 @@ private fun LoadingLine(text: String) {
 }
 
 @Composable
-internal fun CoachLoading() {
+fun CoachLoading() {
     Box(Modifier.fillMaxWidth().padding(vertical = 48.dp).testTag("coach-loading"), contentAlignment = Alignment.Center) {
         RunSpinner(Modifier.size(32.dp))
     }
 }
 
 @Composable
-internal fun CoachLoadFailed() {
+fun CoachLoadFailed() {
     val t = runTone()
     Text(
         stringResource(Res.string.coach_load_failed), style = runTextStyle(16.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,

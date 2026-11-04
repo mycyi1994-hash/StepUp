@@ -65,7 +65,7 @@ import com.stepup.android.ui.theme.StepUpFonts
  * 큰 글씨에서는 내용만 넘기고 버튼은 시트 아래에 붙어 있다.
  */
 @Composable
-internal fun NotifSheet(
+fun NotifSheet(
     kicker: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -97,7 +97,7 @@ internal fun NotifSheet(
 
 /** 시트의 큰 글 — 알림 본문 · 크루 이름 · 확인 질문 */
 @Composable
-internal fun SheetHeadline(text: String, modifier: Modifier = Modifier, big: Boolean = false) {
+fun SheetHeadline(text: String, modifier: Modifier = Modifier, big: Boolean = false) {
     val t = runTone()
     Text(
         text,
@@ -111,25 +111,25 @@ internal fun SheetHeadline(text: String, modifier: Modifier = Modifier, big: Boo
 
 /** 시트의 굵은 한 줄 — "크루에서 초대가 왔어요." */
 @Composable
-internal fun SheetLead(text: String, modifier: Modifier = Modifier) {
+fun SheetLead(text: String, modifier: Modifier = Modifier) {
     Text(text, style = runTextStyle(20.sp, runTone().text, FontWeight.Bold, 1.4f), modifier = modifier)
 }
 
 /** 시트의 보조 설명 — 옅은 파랑 */
 @Composable
-internal fun SheetNote(text: String, modifier: Modifier = Modifier) {
+fun SheetNote(text: String, modifier: Modifier = Modifier) {
     Text(text, style = runTextStyle(17.sp, runTone().label, FontWeight.Medium, 1.5f), modifier = modifier)
 }
 
 /** 시트 안 가로선 */
 @Composable
-internal fun SheetRule() {
+fun SheetRule() {
     BlueRule(Modifier.padding(vertical = 6.dp), strong = true)
 }
 
 /** 서버가 확인한 결과 한 칸 — 가입 완료(26) · 가입 신청(06) · 응답한 초대 · 수락 표시. 파란 테두리 칸, 청록 선 그림 */
 @Composable
-internal fun StatusBox(icon: ImageVector, title: String, body: String, tag: String) {
+fun StatusBox(icon: ImageVector, title: String, body: String, tag: String) {
     val t = runTone()
     val shape = RoundedCornerShape(18.dp)
     Row(
@@ -150,7 +150,7 @@ internal fun StatusBox(icon: ImageVector, title: String, body: String, tag: Stri
 
 /** 처리되지 않았거나 모를 때 — 테두리 칸 안의 정보 그림 · 굵은 한 줄 · 설명. 초대는 그대로 남아 있다 */
 @Composable
-internal fun ProblemBox(title: String, body: String?, tag: String) {
+fun ProblemBox(title: String, body: String?, tag: String) {
     val t = runTone()
     val shape = RoundedCornerShape(16.dp)
     Row(
@@ -170,7 +170,7 @@ internal fun ProblemBox(title: String, body: String?, tag: String) {
 
 /** "크루 보기 >" · "대기실 보기 >" — 테두리 칸 전체가 누르는 곳. 보기만 한다(수락이 아니다) */
 @Composable
-internal fun LinkRow(label: String, tag: String, onClick: () -> Unit) {
+fun LinkRow(label: String, tag: String, onClick: () -> Unit) {
     val t = runTone()
     val shape = RoundedCornerShape(16.dp)
     Row(
@@ -186,7 +186,7 @@ internal fun LinkRow(label: String, tag: String, onClick: () -> Unit) {
 
 /** 보조(왼쪽 · 테두리) · 주(오른쪽 · 흰 면) 버튼 한 쌍. 처리 중이면 둘 다 막고 주 버튼이 돈다 */
 @Composable
-internal fun ButtonPair(
+fun ButtonPair(
     secondary: String,
     onSecondary: () -> Unit,
     primary: String,
@@ -206,7 +206,7 @@ internal fun ButtonPair(
  * 꼬리표는 예전 설정 알림과 같은 "settings-toast"(검사가 같은 이름으로 찾는다).
  */
 @Composable
-internal fun BlueToast(message: String?, modifier: Modifier = Modifier, success: Boolean = true) {
+fun BlueToast(message: String?, modifier: Modifier = Modifier, success: Boolean = true) {
     val t = runTone()
     val motion = LocalMotion.current
     AnimatedVisibility(
@@ -232,7 +232,7 @@ internal fun BlueToast(message: String?, modifier: Modifier = Modifier, success:
 
 /** 비었을 때 · 못 읽었을 때 — 가운데 선 그림 · 굵은 제목 · 설명 · (버튼 하나). 큰 글씨면 넘긴다 */
 @Composable
-internal fun PaneState(
+fun PaneState(
     icon: ImageVector,
     title: String,
     body: String,
@@ -265,7 +265,7 @@ internal fun PaneState(
 
 /** 불러오는 자리 칸 — 남색 면에 둥근 막대 */
 @Composable
-internal fun SkeletonBar(widthFraction: Float, height: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+fun SkeletonBar(widthFraction: Float, height: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
     val t = runTone()
     Box(modifier.fillMaxWidth(widthFraction).height(height).clip(RoundedCornerShape(height / 2.6f)).background(t.panelEdge.copy(alpha = 0.5f)))
 }

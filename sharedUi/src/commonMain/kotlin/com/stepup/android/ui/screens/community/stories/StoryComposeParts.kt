@@ -93,6 +93,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 러닝 이야기 글쓰기(코스 글쓰기 WRITE01~20 · 커뮤니티 기본 CM12~21, 2026-10-03 파란 톤)의 조각 — 기록 칸 · 장소 ·
@@ -103,7 +104,7 @@ import kotlinx.datetime.LocalDate
 
 /** 글쓰기의 색 — [runTone] 에서 끌어낸다(밝은 테마도 같은 자리에 밝은 값) */
 @Immutable
-internal class ComposeInk(
+class ComposeInk(
     val text: Color,
     val secondary: Color,
     val accent: Color,
@@ -118,7 +119,7 @@ internal class ComposeInk(
 )
 
 @Composable
-internal fun composeInk(): ComposeInk {
+fun composeInk(): ComposeInk {
     val t = runTone()
     return remember(t) {
         ComposeInk(
@@ -130,7 +131,7 @@ internal fun composeInk(): ComposeInk {
     }
 }
 
-internal val ComposeGutter = 20.dp
+val ComposeGutter = 20.dp
 
 // ── 글자 ─────────────────────────────────────────────────────────
 
@@ -236,7 +237,7 @@ fun rememberStoryWords(): StoryWords {
  * [icon] 이 있으면 글자 앞(내 주변 · 최근 장소 · 직접 검색).
  */
 @Composable
-internal fun ComposeChip(
+fun ComposeChip(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -249,7 +250,7 @@ internal fun ComposeChip(
     val shape = RoundedCornerShape(14.dp)
     Row(
         modifier.heightIn(min = minHeight).clip(shape)
-            .background(if (selected) Brush.horizontalGradient(listOf(ink.selected, Color(0xFF1F66FF))) else Brush.verticalGradient(listOf(ink.surface, ink.surface)), shape)
+            .background(if (selected) StopBrush.horizontalGradient(listOf(ink.selected, Color(0xFF1F66FF))) else StopBrush.verticalGradient(listOf(ink.surface, ink.surface)), shape)
             .border(if (selected) 1.5.dp else 1.dp, if (selected) ink.selectedEdge else ink.edge, shape)
             .feedbackClickable(enabled = enabled, role = Role.Button, cue = FeedbackCue.Select, onClick = onClick)
             .semantics { this.selected = selected }
@@ -328,7 +329,7 @@ private fun recordCardModifier(modifier: Modifier): Modifier {
     val t = runTone()
     val shape = RoundedCornerShape(18.dp)
     return modifier.fillMaxWidth().clip(shape)
-        .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
+        .background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
         .border(1.5.dp, t.cobalt.copy(alpha = if (t.dark) 0.85f else 0.6f), shape)
 }
 
@@ -603,7 +604,7 @@ private fun ProblemCard(
 
 /** 코스 그림 — 저장된 좌표를 실제 남색 지도 위에. 좌표가 둘 미만이면 부르지 않는다(가짜 코스를 그리지 않는다) */
 @Composable
-internal fun StoryRouteThumb(route: List<GeoPoint>, modifier: Modifier, seed: Int, radius: Dp) {
+fun StoryRouteThumb(route: List<GeoPoint>, modifier: Modifier, seed: Int, radius: Dp) {
     val ink = composeInk()
     Box(modifier.clip(RoundedCornerShape(radius)).background(ink.skeleton).border(1.dp, ink.edge, RoundedCornerShape(radius))) {
         if (route.size >= 2) StoryMapTone { LiveRouteMap(route, Modifier.matchParentSize(), seed = seed, routeColor = runTone().cyan) }
@@ -614,7 +615,7 @@ internal fun StoryRouteThumb(route: List<GeoPoint>, modifier: Modifier, seed: In
 
 /** 장소 버튼 하나의 이름과 아이콘 */
 @Composable
-internal fun placeSourceLabel(source: StoryPlaceSource): Pair<String, ImageVector> = when (source) {
+fun placeSourceLabel(source: StoryPlaceSource): Pair<String, ImageVector> = when (source) {
     StoryPlaceSource.COURSE -> stringResource(Res.string.story_place_src_course) to Icons.Outlined.Route
     StoryPlaceSource.NEARBY -> stringResource(Res.string.story_place_src_nearby) to Icons.Outlined.GpsFixed
     StoryPlaceSource.RECENT -> stringResource(Res.string.story_place_src_recent) to Icons.Outlined.Schedule
@@ -712,7 +713,7 @@ fun StoryBodyBox(text: String, onChange: (String) -> Unit, enabled: Boolean, lar
     val shape = RoundedCornerShape(16.dp)
     Box(
         Modifier.fillMaxWidth().heightIn(min = if (large) 120.dp else 150.dp).clip(shape)
-            .background(Brush.verticalGradient(listOf(ink.surface, ink.surface.copy(alpha = 0.92f))), shape)
+            .background(StopBrush.verticalGradient(listOf(ink.surface, ink.surface.copy(alpha = 0.92f))), shape)
             .border(1.dp, ink.edge, shape)
             .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 14.dp),
     ) {

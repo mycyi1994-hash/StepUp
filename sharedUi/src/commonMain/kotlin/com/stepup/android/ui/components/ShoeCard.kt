@@ -134,8 +134,8 @@ fun ShoeCard(
             }
             Box(
                 Modifier.matchParentSize().background(
-                    if (dark) Brush.verticalGradient(0f to Color(0x14080E1E), .55f to Color(0x2E080E1E), 1f to Color(0x8C080E1E))
-                    else Brush.verticalGradient(0f to Color(0x57FFFFFF), .5f to Color(0x24FFFFFF), 1f to Color(0x99E8F0FF)),
+                    if (dark) StopBrush.verticalGradient(0f to Color(0x14080E1E), .55f to Color(0x2E080E1E), 1f to Color(0x8C080E1E))
+                    else StopBrush.verticalGradient(0f to Color(0x57FFFFFF), .5f to Color(0x24FFFFFF), 1f to Color(0x99E8F0FF)),
                 ),
             )
             // 유리 광택: 손가락 쪽 둥근 빛 + 위 반사 + 사선 띠
@@ -143,11 +143,11 @@ fun ShoeCard(
                 Modifier.matchParentSize().drawWithContent {
                     drawContent()
                     val c = Offset(size.width * t.gx.value, size.height * t.gy.value)
-                    drawRect(Brush.radialGradient(listOf(Color.White.copy(alpha = .30f), Color.Transparent), center = c, radius = size.maxDimension * .58f))
-                    drawRect(Brush.verticalGradient(0f to Color.White.copy(alpha = .16f), .4f to Color.Transparent))
+                    drawRect(StopBrush.radialGradient(listOf(Color.White.copy(alpha = .30f), Color.Transparent), center = c, radius = size.maxDimension * .58f))
+                    drawRect(StopBrush.verticalGradient(0f to Color.White.copy(alpha = .16f), .4f to Color.Transparent))
                     val shift = (t.gx.value - .5f) * size.width * 1.4f
                     drawRect(
-                        Brush.linearGradient(
+                        StopBrush.linearGradient(
                             0f to Color.Transparent, .47f to Color.White.copy(alpha = .28f), .52f to Color.White.copy(alpha = .05f), .57f to Color.Transparent,
                             start = Offset(shift - size.width * .3f, 0f), end = Offset(shift + size.width * .3f, size.height),
                         ),

@@ -70,13 +70,13 @@ class StoryComposeStatesTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -279,7 +279,7 @@ class StoryComposeStatesTest {
 
         // ── 07 현재 위치를 쓸 수 없는 사람 — 권한 없이도 검색 · 지도에서 장소 선택 ────────
         tapTag("story-src-NEARBY")
-        if (StepPermissions.hasLocation(context)) {
+        if (StepPermissions.hasLocation()) {
             notes += "07: location permission was granted on this device — 내 주변 opened the quick place sheet; captured it instead"
             awaitTag("story-place-quick")
             shot("07-location-unavailable")

@@ -6,8 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
-enum class NotificationSyncState { Idle, Sending, Synced, Pending }
+import com.stepup.android.core.NotificationSyncState
 
 /** Serialize delivery, reading persisted choices only when their request can start. */
 internal class NotificationPreferenceSync(

@@ -628,7 +628,7 @@ private fun ListSkeleton(icons: Boolean, label: String, modifier: Modifier = Mod
 /** 오늘 · 어제 · 이전 — 사용자 시간대의 날짜로 가른다 */
 enum class DayGroup { Today, Yesterday, Earlier }
 
-internal fun dayGroup(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZone): DayGroup {
+fun dayGroup(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZone): DayGroup {
     val day = kotlin.time.Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(zone).date
     val today = kotlin.time.Instant.fromEpochMilliseconds(now).toLocalDateTime(zone).date
     return when {
@@ -640,7 +640,7 @@ internal fun dayGroup(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZon
 
 /** 오늘은 "12분 전", 어제 · 이전은 날짜("9월 27일", 올해가 아니면 연도까지) */
 @Composable
-internal fun timeLabel(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZone): String {
+fun timeLabel(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZone): String {
     if (dayGroup(timestamp, now, zone) == DayGroup.Today) return relativeTime(timestamp, now)
     val date = kotlin.time.Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(zone)
     val sameYear = date.year == kotlin.time.Instant.fromEpochMilliseconds(now).toLocalDateTime(zone).year
@@ -648,7 +648,7 @@ internal fun timeLabel(timestamp: Long, now: Long, zone: kotlinx.datetime.TimeZo
 }
 
 @Composable
-internal fun rememberPattern(pattern: org.jetbrains.compose.resources.StringResource): com.stepup.android.domain.PatternFormatter {
+fun rememberPattern(pattern: org.jetbrains.compose.resources.StringResource): com.stepup.android.domain.PatternFormatter {
     val text = stringResource(pattern)
     val locale = androidx.compose.ui.text.intl.Locale.current
     return remember(text, locale) { com.stepup.android.domain.PatternFormatter(text, (locale).language) }
@@ -683,7 +683,7 @@ private fun rememberNow(): Long {
     return maxOf(ticking.value, resumedAt)
 }
 
-internal fun iconFor(type: String): ImageVector = when (type) {
+fun iconFor(type: String): ImageVector = when (type) {
     NotificationType.REWARD_EARNED -> Icons.Outlined.Toll
     NotificationType.GOAL_REACHED -> Icons.Outlined.EmojiEvents
     NotificationType.SNEAKER_MINTED -> StepUpIcons.Shoe
@@ -711,12 +711,12 @@ private fun sneakerLabel(slotKey: String): String {
 }
 
 /** 금액을 보이는 적립 알림인가 — 서버 경제에서 폰이 계산하던 때의 기록은 금액 없이 보인다 */
-internal fun showsAmount(entity: NotificationEntity): Boolean =
+fun showsAmount(entity: NotificationEntity): Boolean =
     entity.type == NotificationType.EVENT_CLAIMED || !AppServices.serverEconomyOn
 
 /** 저장된 인자를 표시 시점 로케일로 조립한다. */
 @Composable
-internal fun messageFor(entity: NotificationEntity): String {
+fun messageFor(entity: NotificationEntity): String {
     val amount = "${com.stepup.android.domain.formatGrouped((entity.argAmount).toDouble(), 2)}"
     // 서버 경제에서는 아래 네 가지 알림을 더 만들지 않는다 — 남은 것은 폰이 계산하던 때의 기록이라
     // 서버가 인정한 금액이 아니다. 금액 없이 무슨 일이었는지만 보인다(NOT25). 시트도 같은 [showsAmount] 를 쓴다.

@@ -48,7 +48,7 @@ fun RunningPathCard(
         Box(Modifier.matchParentSize().offset(y = 5.dp).clip(shape).background(RunningPathColors.shadow))
         Box(
             Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape)
-                .background(Brush.linearGradient(listOf(RunningPathColors.cardFrom, RunningPathColors.cardTo),
+                .background(StopBrush.linearGradient(listOf(RunningPathColors.cardFrom, RunningPathColors.cardTo),
                     start = Offset(0f, Float.POSITIVE_INFINITY), end = Offset(Float.POSITIVE_INFINITY, 0f))),
         ) {
             Canvas(Modifier.matchParentSize()) { art.draw(this, textEnd.toPx()) }
@@ -87,7 +87,7 @@ private class RunningPathArt {
     private val route: Path = path(ROUTE)
     private val topLine: Path = path("M49 193.5H199")
 
-    private val routeBrush = Brush.linearGradient(
+    private val routeBrush = StopBrush.linearGradient(
         0f to Color(0xFF5475A7), 0.55f to Color(0xFF8CB6FF), 1f to Color(0xFFD9E7FF),
         // 경로의 왼쪽 아래 → 오른쪽 위(시안의 objectBoundingBox 0,1 → 1,0)
         start = Offset(256f, 329f), end = Offset(333f, 232f),

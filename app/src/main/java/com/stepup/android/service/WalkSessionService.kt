@@ -66,17 +66,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 
-/**
- * 이 좌표가 모의 위치(개발자 옵션의 "모의 위치 앱", 가짜 GPS 앱)에서 왔는가.
- * API 31 부터는 `isMock`, 그 전에는 `isFromMockProvider` 가 같은 표시다.
- */
-internal fun isMockLocation(location: Location): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        location.isMock
-    } else {
-        @Suppress("DEPRECATION")
-        location.isFromMockProvider
-    }
 
 
 /**
@@ -852,8 +841,10 @@ class WalkSessionService : Service() {
                 activeMs += delta
                 val seconds = activeMs / 1000
                 val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)
-                // 오래 서 있음 — 걸음 · 경로 점이 30초 넘게 그대로면 알린다(2026-10-17). 저장 중이면 알리지 않는다
-                val stillNow = RunStill.isStill(current.saveStatus == RunSaveStatus.IDLE, now - lastMoveElapsed)
+                // 오래 서 있음 — 걸음 · 경로 점이 30초 넘게 그대로면 알린다(2026-10-17). 저장 중이면 알리지 않는다.
+                // 위치를 못 잡는 동안(지하철 · 지하)은 서 있는지 모르니 알리지 않는다(2026-11-04)
+                val stillNow = RunStill.isStill(current.saveStatus == RunSaveStatus.IDLE, now - lastMoveElapsed,
+                    sinceFixMs = if (fixAt > 0) now - fixAt else null)
                 _state.update {
                     if (!it.isActive || it.isPaused) it
                     else it.copy(

@@ -111,7 +111,7 @@ fun GarmentArt(outfit: Outfit, modifier: Modifier = Modifier) {
             }
             drawPath(
                 body,
-                Brush.verticalGradient(0f to top, 1f to shade, startY = 20f * s, endY = 90f * s),
+                StopBrush.verticalGradient(0f to top, 1f to shade, startY = 20f * s, endY = 90f * s),
             )
             // 가장자리 파란 조명 — 캐릭터 그림과 같은 결
             drawPath(body, trim.copy(alpha = 0.45f), style = Stroke(width = 1.2f * s))

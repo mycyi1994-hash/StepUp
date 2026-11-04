@@ -88,9 +88,9 @@ object TogetherFocus {
 }
 
 /** 함께 뛰기 목록의 크루 대기실 한 줄 — 어느 크루의 방인가 */
-internal data class CrewRunEntry(val crewId: String, val crewName: String, val room: CrewRoom)
+data class CrewRunEntry(val crewId: String, val crewName: String, val room: CrewRoom)
 
-internal object TogetherList {
+object TogetherList {
     /** 내 크루들의 열린 방 — 내 방 먼저, 그다음 최근에 연 방(크루를 섞어서). [crews] 는 (id, 이름) */
     fun crewRuns(crews: List<Pair<String, String>>, rooms: Map<String, CrewRooms>): List<CrewRunEntry> = crews
         .flatMap { (id, name) -> rooms[id]?.let { CrewRoomRules.ordered(it.rooms) }.orEmpty().map { CrewRunEntry(id, name, it) } }
@@ -106,7 +106,7 @@ internal object TogetherList {
 private const val ROOMS_REFRESH_MS = 10_000L
 
 @Composable
-internal fun TogetherRoomsSegment(
+fun TogetherRoomsSegment(
     viewModel: CommunityViewModel,
     onOpenFlash: (Long) -> Unit,
     onOpenRoom: (crewId: String, partyId: Long) -> Unit,

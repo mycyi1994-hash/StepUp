@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  리소스 줄이기(release · qa)를 엄격하게 — 화면 그림 · 글꼴은 공용 Compose 리소스(assets/composeResources)로 담기므로,
+  공용 코드의 글자 속 그림 이름(예: home_bg_01)을 보고 앱 res 의 같은 그림을 남기지 않게 한다(2026-11-03 C8).
+  앱 코드는 이름으로 리소스를 찾지 않는다(getIdentifier 없음) — R. 로 부르거나 매니페스트 · XML 이 부르는 것만 남는다.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:shrinkMode="strict" />

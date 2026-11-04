@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import com.stepup.ui.res.*
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.TrackPoint
 import com.stepup.android.domain.haversineMeters
@@ -330,13 +331,13 @@ class FreeRunUiTest {
     @Test
     fun `공유 글에는 보상이 든 글을 쓰지 않는다`() {
         for (km in listOf(0.0, 1.56)) {
-            assertNotEquals("${km}km", R.string.finish_share_text, freeShareTextRes(km))
+            assertNotEquals("${km}km", com.stepup.ui.res.Res.string.finish_share_text, freeShareTextRes(km))
         }
     }
 
     @Test
     fun `공유 글은 거리를 알면 거리 · 시간, 모르면 시간만`() {
-        assertEquals(R.string.run_free_share_time, freeShareTextRes(0.0))
-        assertEquals(R.string.finish_share_activity, freeShareTextRes(1.56))
+        assertEquals(com.stepup.ui.res.Res.string.run_free_share_time, freeShareTextRes(0.0))
+        assertEquals(com.stepup.ui.res.Res.string.finish_share_activity, freeShareTextRes(1.56))
     }
 }

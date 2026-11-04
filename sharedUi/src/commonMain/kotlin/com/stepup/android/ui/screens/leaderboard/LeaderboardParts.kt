@@ -56,7 +56,7 @@ import com.stepup.android.ui.theme.StepUpFonts
  * 세 화면 모두 딥 네이비 한 벌이다(앱 테마와 상관없이 시안 색).
  */
 
-internal object Lb {
+object Lb {
     val Navy = Color(0xFF061B30)
     val Blue = Color(0xFF1450FF)
     val White = Color.White
@@ -74,11 +74,11 @@ internal object Lb {
     val Gutter = 20.dp
 }
 
-internal fun lbText(size: TextUnit, color: Color = Lb.White, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f, spacing: TextUnit = (-0.01).em) =
+fun lbText(size: TextUnit, color: Color = Lb.White, weight: FontWeight = FontWeight.Normal, height: Float = 1.4f, spacing: TextUnit = (-0.01).em) =
     TextStyle(fontFamily = StepUpFonts.sans, fontWeight = weight, fontSize = size, color = color, lineHeight = height.em, letterSpacing = spacing)
 
 /** 숫자 — 앱 숫자 서체(StepUpFonts.numbers — 콘덴스드)로. [italic] 이면 기울인다(시안의 큰 순위 숫자) */
-internal fun lbNumber(size: TextUnit, color: Color = Lb.White, weight: FontWeight = FontWeight.Bold, italic: Boolean = false, spacing: TextUnit = (-0.02).em) =
+fun lbNumber(size: TextUnit, color: Color = Lb.White, weight: FontWeight = FontWeight.Bold, italic: Boolean = false, spacing: TextUnit = (-0.02).em) =
     TextStyle(
         fontFamily = StepUpFonts.numbers, fontWeight = weight, fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
         fontSize = size, color = color, lineHeight = 1.em, letterSpacing = spacing, fontFeatureSettings = "tnum",
@@ -86,7 +86,7 @@ internal fun lbNumber(size: TextUnit, color: Color = Lb.White, weight: FontWeigh
 
 /** 동그란(사람) · 둥근 네모(크루) 머리글자 칸 */
 @Composable
-internal fun LbAvatar(mark: String, modifier: Modifier = Modifier, size: Dp = 36.dp, crew: Boolean = false, face: Color? = null) {
+fun LbAvatar(mark: String, modifier: Modifier = Modifier, size: Dp = 36.dp, crew: Boolean = false, face: Color? = null) {
     val shape: Shape = if (crew) RoundedCornerShape(size * 0.3f) else CircleShape
     Box(
         modifier.size(size).clip(shape).background(face ?: if (crew) Lb.CrewAvatar else Lb.Avatar, shape),
@@ -105,7 +105,7 @@ internal fun LbAvatar(mark: String, modifier: Modifier = Modifier, size: Dp = 36
 
 /** 값 + 단위 — km 는 소수 한 자리, 포인트는 정수 */
 @Composable
-internal fun LbValue(
+fun LbValue(
     entry: LeaderEntry,
     points: Boolean,
     modifier: Modifier = Modifier,
@@ -137,7 +137,7 @@ internal fun LbValue(
  * [sheet] 는 시트 안(내 줄만 안쪽 9).
  */
 @Composable
-internal fun LbRow(
+fun LbRow(
     entry: LeaderEntry,
     points: Boolean,
     modifier: Modifier = Modifier,
@@ -200,13 +200,13 @@ internal fun LbRow(
 }
 
 /** 줄 아래 가는 선 */
-internal fun Modifier.lbDivider(color: Color): Modifier = drawBehind {
+fun Modifier.lbDivider(color: Color): Modifier = drawBehind {
     val y = size.height - 0.5.dp.toPx()
     drawLine(color, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
 }
 
 /** 좌우로 [x] 씩 넓힌다(시안의 margin: 0 -x) — 면만 바깥으로 나가고 안의 글은 같은 줄에 선다 */
-internal fun Modifier.lbBleed(x: Dp): Modifier = layout { measurable, constraints ->
+fun Modifier.lbBleed(x: Dp): Modifier = layout { measurable, constraints ->
     val extra = x.roundToPx() * 2
     if (!constraints.hasBoundedWidth) {
         val placeable = measurable.measure(constraints)
@@ -219,7 +219,7 @@ internal fun Modifier.lbBleed(x: Dp): Modifier = layout { measurable, constraint
 
 /** 목록 머리 — 왼쪽 굵은 이름 · 오른쪽 기준 */
 @Composable
-internal fun LbListHead(title: String, criterion: String, modifier: Modifier = Modifier) {
+fun LbListHead(title: String, criterion: String, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth().heightIn(min = 18.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, style = lbText(13.sp, Lb.White, FontWeight.SemiBold), modifier = Modifier.weight(1f), maxLines = 1,
             overflow = TextOverflow.Ellipsis)
@@ -232,7 +232,7 @@ internal fun LbListHead(title: String, criterion: String, modifier: Modifier = M
  * "이번 주 첫 순위", 아니면 아무것도 그리지 않는다(숫자를 만들지 않는다).
  */
 @Composable
-internal fun LbMove(rise: Int?, modifier: Modifier = Modifier, color: Color = Lb.Rise, size: TextUnit = 11.sp, newWhenUnknown: Boolean = false) {
+fun LbMove(rise: Int?, modifier: Modifier = Modifier, color: Color = Lb.Rise, size: TextUnit = 11.sp, newWhenUnknown: Boolean = false) {
     val text = when {
         rise == null && newWhenUnknown -> stringResource(Res.string.lb_move_new)
         rise == null -> return
@@ -251,7 +251,7 @@ internal fun LbMove(rise: Int?, modifier: Modifier = Modifier, color: Color = Lb
 
 /** 글자 탭(밑줄) — 시안의 내 주변 순위 | 상위 러너 · 전체 러너 | 우리 크루 */
 @Composable
-internal fun LbUnderlineTabs(
+fun LbUnderlineTabs(
     labels: List<String>,
     selected: Int,
     onSelect: (Int) -> Unit,
@@ -286,7 +286,7 @@ internal fun LbUnderlineTabs(
 
 /** 아래 고정 내 줄의 면(파란 남색 · 둥근 16) — 누르면 상세 */
 @Composable
-internal fun LbFooterSurface(
+fun LbFooterSurface(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     face: Color = Lb.MyBar,
@@ -307,13 +307,13 @@ internal fun LbFooterSurface(
 
 /** 상세 시트 안의 작은 안내 */
 @Composable
-internal fun LbSheetNote(text: String, modifier: Modifier = Modifier) {
+fun LbSheetNote(text: String, modifier: Modifier = Modifier) {
     Text(text, style = lbText(12.sp, Lb.Muted), modifier = modifier.padding(top = 4.dp, bottom = 14.dp))
 }
 
 /** 상태 칸 — 비었음 · 순위 없음 · 못 가져옴 · 준비 중 */
 @Composable
-internal fun LbStateBox(
+fun LbStateBox(
     title: String,
     body: String?,
     modifier: Modifier = Modifier,

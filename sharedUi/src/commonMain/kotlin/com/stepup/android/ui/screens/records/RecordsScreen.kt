@@ -92,6 +92,7 @@ import com.stepup.android.ui.theme.StepUpFonts
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.TimeZone
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * 내 러닝 기록(시안 H01 · H02 · H03 · H07 · H08 · H09 · H10) — 내 정보의 "내 러닝 기록 보기" · 러닝 결과의 "기록".
@@ -244,7 +245,7 @@ private fun PeriodPill(label: String, onClick: () -> Unit, modifier: Modifier = 
     ) {
         Row(
             Modifier.clip(shape)
-                .background(Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), shape)
+                .background(StopBrush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF2A73FF))), shape)
                 .border(1.dp, Color(0xFF4D8BFF), shape)
                 .padding(start = 16.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -505,8 +506,8 @@ private fun PeriodChoice(label: String, selected: Boolean, tag: String, onSelect
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape)
             .background(
-                if (selected) Brush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF1F66FF)))
-                else Brush.verticalGradient(listOf(t.panelTop, t.panel)),
+                if (selected) StopBrush.horizontalGradient(listOf(Color(0xFF0754FF), Color(0xFF1F66FF)))
+                else StopBrush.verticalGradient(listOf(t.panelTop, t.panel)),
                 shape,
             )
             .border(1.dp, if (selected) Color(0xFF4D8BFF) else t.panelEdge, shape)
@@ -533,4 +534,4 @@ private fun PeriodChoice(label: String, selected: Boolean, tag: String, onSelect
 
 /** 남색 러닝 바닥의 고른 면 — 통계 막대 말풍선 등에 쓴다 */
 @Composable
-internal fun selectedFace(): Color = if (runTone().dark) Color(0xFF16305A) else Color(0xFFE6EEFC)
+fun selectedFace(): Color = if (runTone().dark) Color(0xFF16305A) else Color(0xFFE6EEFC)

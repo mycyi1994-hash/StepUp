@@ -1,4 +1,5 @@
 package com.stepup.android.core
+import androidx.compose.ui.graphics.asImageBitmap
 import com.stepup.android.data.repo.startBeats
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -87,6 +88,7 @@ object ServiceLocator {
     @androidx.annotation.VisibleForTesting
     fun useCrewCardsForTest(repository: com.stepup.android.data.repo.CrewCardRepository<com.stepup.android.data.repo.CrewImageStore>) {
         crewCards = repository
+        connectAppServices()
     }
 
     /** 크루 채팅 — 크루마다 크루원 전용 방 하나(2026-09-29) */
@@ -97,6 +99,7 @@ object ServiceLocator {
     @androidx.annotation.VisibleForTesting
     fun useCrewChatForTest(repository: com.stepup.android.data.repo.AndroidCrewChat) {
         crewChat = repository
+        connectAppServices()
     }
 
     /** 내 크루 홈(확정 4번) — 홈 · 모임 · 참석 · 주간 기록 · 러닝 기록(2026-09-29) */
@@ -107,6 +110,7 @@ object ServiceLocator {
     @androidx.annotation.VisibleForTesting
     fun useCrewHomeForTest(repository: com.stepup.android.data.repo.CrewHomeRepository) {
         crewHome = repository
+        connectAppServices()
     }
 
     /** 크루 러닝 3판(서버 0070) — 오늘 크루 러닝 · 방의 크루 체력 · 결과 */
@@ -117,6 +121,7 @@ object ServiceLocator {
     @androidx.annotation.VisibleForTesting
     fun useCrewRunForTest(repository: com.stepup.android.data.repo.CrewRunRepository) {
         crewRun = repository
+        connectAppServices()
     }
     /** 동네 이야기의 장소 찾기(MapTiler · 기기 지오코더) */
     lateinit var placeSearch: com.stepup.android.data.repo.PlaceSearch
@@ -133,6 +138,7 @@ object ServiceLocator {
     fun useCommunityForTest(repository: CommunityRepository, places: com.stepup.android.data.repo.PlaceSearch) {
         communityRepository = repository
         placeSearch = places
+        connectAppServices()
     }
 
     private var drawSourceForTest: com.stepup.android.ui.screens.gacha.DrawSource? = null
@@ -145,6 +151,7 @@ object ServiceLocator {
     @androidx.annotation.VisibleForTesting
     fun useDrawForTest(source: com.stepup.android.ui.screens.gacha.DrawSource?) {
         drawSourceForTest = source
+        connectAppServices()
     }
     lateinit var courseRepository: CourseRepository
         private set
@@ -257,6 +264,7 @@ object ServiceLocator {
     @androidx.annotation.VisibleForTesting
     fun useLeaderboardsForTest(source: com.stepup.android.data.repo.LeaderboardSource) {
         leaderboards = source
+        connectAppServices()
     }
 
     /** 지금 누구로 로그인해 있는지. 화면이 로그인 상태를 물을 때 쓴다. */
@@ -309,6 +317,84 @@ object ServiceLocator {
     /** 땅따먹기 — 지도에 보이는 칸과 크루 순위 */
     lateinit var territoryApi: TerritoryApi
         private set
+
+    /**
+     * 공용 화면(sharedUi)이 쓰는 저장소 · 기기 일을 잇는다(2026-11-03 C8 — iOS IosApp.connectServices 와 같은 자리).
+     * 검사가 저장소를 바꾸면(use…ForTest) 다시 부른다.
+     */
+    fun connectAppServices() {
+        // 빌드 판 값 — 공용 화면은 BuildConfig 대신 AppBuild 를 본다(WEB3 · 지갑 주소 연결 · 시험 도구 · 판 이름)
+        AppBuild.WEB3 = com.stepup.android.BuildConfig.WEB3
+        AppBuild.WALLET_LINK = com.stepup.android.BuildConfig.WALLET_LINK
+        AppBuild.WALLET_LINK_URL = com.stepup.android.BuildConfig.WALLET_LINK_URL
+        AppBuild.WALLET_URL = com.stepup.android.BuildConfig.WALLET_URL
+        AppBuild.TEST_TOOLS = com.stepup.android.BuildConfig.TEST_TOOLS
+        AppBuild.VERSION_NAME = com.stepup.android.BuildConfig.VERSION_NAME
+        // 지도 타일 — 예전 MapTiles 와 같은 키 · 앱 이름 · 디스크 캐시(cacheDir/tiles)
+        com.stepup.android.ui.components.MapTiles.mapTilerKey = com.stepup.android.BuildConfig.MAPTILER_KEY.trim()
+        com.stepup.android.ui.components.MapTiles.userAgent =
+            "StepUp/${com.stepup.android.BuildConfig.VERSION_NAME} (Android; +https://stepupcrew.com)"
+        com.stepup.android.ui.components.MapTiles.disk =
+            com.stepup.android.ui.components.AndroidTileDisk(java.io.File(appContext.cacheDir, "tiles"))
+        val s = AppServices
+        s.userPrefs = userPrefs
+        s.rewardRepository = rewardRepository
+        s.sneakerRepository = sneakerRepository
+        s.boostRepository = boostRepository
+        s.economySync = economySync
+        s.stepRepository = stepRepository
+        s.avatarRepository = avatarRepository
+        s.notificationRepository = notificationRepository
+        s.database = database
+        s.crewRepository = crewRepository
+        s.crewCards = crewCards
+        s.crewChat = crewChat
+        s.crewImage = { id, ver -> crewCards.images.bitmap(id, ver)?.asImageBitmap() }
+        s.crewHome = crewHome
+        s.crewRun = crewRun
+        s.communityRepository = communityRepository
+        s.coachingRepository = coachingRepository
+        s.runRecordsRepository = runRecordsRepository
+        s.placeSearch = placeSearch
+        s.rankingRepository = rankingRepository
+        s.leaderboards = leaderboards
+        s.courseRepository = courseRepository
+        s.eventRepository = eventRepository
+        s.marketRepository = marketRepository
+        s.runningFeedRepository = runningFeedRepository
+        s.announcementRepository = announcementRepository
+        s.profileEditor = profileEditor
+        s.forgeRepository = forgeRepository
+        s.recordingOwnerFlow = ::recordingOwnerFlow
+        s.sessionHolder = sessionHolder
+        s.server = server
+        s.economyApi = economyApi
+        s.territoryApi = territoryApi
+        s.inviteApi = inviteApi
+        s.accessApi = accessApi
+        s.pushRegistrar = pushRegistrar
+        s.serverEconomyOn = serverEconomyOn
+        s.drawSource = ::drawSource
+        s.drawMemory = com.stepup.android.ui.screens.gacha.PrefsDrawMemory(appContext)
+        s.run = com.stepup.android.service.AndroidRunSession
+        s.runActive = { com.stepup.android.service.AndroidRunSession.active }
+        s.onReturnToSignIn = {
+            // 달리던 러닝은 먼저 끝낸다(기록은 남긴다)
+            if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                com.stepup.android.service.WalkSessionService.stop(appContext)
+            }
+        }
+        s.onForgetAccount = {
+            // 달리는 중이면 먼저 끝낸다 — 로그인 화면에는 러닝을 멈출 곳이 없다
+            if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                com.stepup.android.service.WalkSessionService.stop(appContext)
+            }
+            // 쓰다 둔 크루 만들기 초안의 사진 파일 · 이 폰에 들고 있던 크루 채팅 대화 · 받은 사진 · 접속 권한 사본도 지운다
+            runCatching { java.io.File(appContext.filesDir, "crew_drafts").deleteRecursively() }
+            runCatching { crewChat.clearAll() }
+            AndroidAccess.forget(appContext)
+        }
+    }
 
     fun init(context: Context) {
         if (this::database.isInitialized) return
@@ -579,5 +665,6 @@ object ServiceLocator {
             dao = database.newsDao(),
             prefs = userPrefs,
         )
+        connectAppServices()
     }
 }

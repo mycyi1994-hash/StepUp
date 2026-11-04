@@ -333,7 +333,7 @@ fun BlueChoiceRow(
     val c = blueListColors()
     Row(
         modifier.fillMaxWidth()
-            .background(if (selected) Brush.horizontalGradient(listOf(c.selectedFace, c.selectedFace.copy(alpha = 0.85f))) else Brush.linearGradient(listOf(c.face, c.face)))
+            .background(if (selected) StopBrush.horizontalGradient(listOf(c.selectedFace, c.selectedFace.copy(alpha = 0.85f))) else StopBrush.linearGradient(listOf(c.face, c.face)))
             .then(if (selected) Modifier.border(1.5.dp, c.selectedEdge) else Modifier)
             .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
             .heightIn(min = if (description != null) 80.dp else 62.dp)
@@ -551,7 +551,7 @@ fun BlueSheet(
             val shape = RoundedCornerShape(topStart = RunSpec.SheetRadius, topEnd = RunSpec.SheetRadius)
             Column(
                 modifier.widthIn(max = 600.dp).fillMaxWidth().heightIn(max = maxHeight - 24.dp)
-                    .clip(shape).background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
+                    .clip(shape).background(StopBrush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
                     .border(1.5.dp, t.secondaryEdge.copy(alpha = if (t.dark) 0.9f else 0.6f), shape)
                     .pointerInput(Unit) { detectTapGestures { } }
                     .navigationBarsPadding().testTag("settings-sheet"),

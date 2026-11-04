@@ -340,11 +340,11 @@ class CrewScreenViewModel(
 }
 
 /** 신청 결과 — 화면이 다음으로 갈 곳 */
-internal fun CrewOpState.applied(): CrewApplied? = payload as? CrewApplied
+fun CrewOpState.applied(): CrewApplied? = payload as? CrewApplied
 
-internal fun CrewOpState.decision(): CrewDecision? = payload as? CrewDecision
+fun CrewOpState.decision(): CrewDecision? = payload as? CrewDecision
 
-internal fun CrewOpState.cancelStatus(): CrewApplicationStatus? = payload as? CrewApplicationStatus
+fun CrewOpState.cancelStatus(): CrewApplicationStatus? = payload as? CrewApplicationStatus
 
 // ─────────────────────────────────────────────────────────────
 // 만들기 · 수정 초안(25 · 26 · 31 · 33 · 34 · 41 · 42 · 43)

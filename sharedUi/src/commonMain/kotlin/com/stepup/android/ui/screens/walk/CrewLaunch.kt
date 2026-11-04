@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 출발 연출(2026-10-24 핸드오프 장면 35 · 36, 04_DESIGN_BACKGROUND 7절) — 자유 러닝의 승인된 3 · 2 · 1 · 0 → StepUP! → 가운데 펼침
@@ -77,7 +78,7 @@ object CrewLaunch {
 }
 
 /** 연출 시계(ms, 숫자 3 이 보인 때부터) — 서버 출발 시각이 펼침 시작(REVEAL_AT)이 되게. 음수면 아직 3 전 */
-internal fun crewLaunchClock(startsAtLocal: Long, nowMs: Long): Long = FreeRunStartMotion.REVEAL_AT - (startsAtLocal - nowMs)
+fun crewLaunchClock(startsAtLocal: Long, nowMs: Long): Long = FreeRunStartMotion.REVEAL_AT - (startsAtLocal - nowMs)
 
 /** 앱 맨 위 겹 — 크루 출발이 정해진 동안만 */
 @Composable
@@ -142,7 +143,7 @@ private fun CrewLaunchSequence(launch: CrewLaunch.Launch) {
 
 /** 출발 신호를 맞추는 중(35) — 숫자 3 전. 카운트다운과 같은 바탕(남색 · 가운데 빛)에 짧은 글 · 도는 표시 */
 @Composable
-internal fun CrewStartingStage(modifier: Modifier = Modifier) {
+fun CrewStartingStage(modifier: Modifier = Modifier) {
     Box(
         modifier.fillMaxSize()
             .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
@@ -153,7 +154,7 @@ internal fun CrewStartingStage(modifier: Modifier = Modifier) {
             drawRect(StartNavy)
             val c = Offset(size.width / 2f, size.height * 0.48f)
             val r = size.height * 0.46f
-            drawCircle(Brush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = r), radius = r, center = c)
+            drawCircle(StopBrush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = r), radius = r, center = c)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 32.dp)) {
             RunSpinner(Modifier.size(36.dp))

@@ -45,7 +45,7 @@ class ShoeCareTest {
     // ── 금액 ────────────────────────────────────────────────────
 
     @Test fun `비용은 소수 4자리까지 그대로 — 12_5 를 13 으로 올리지 않는다`() {
-        assertEquals("12.5", formatSupExact(BigDecimal("12.5000")))
+        assertEquals("12.5", formatSupExact(com.stepup.android.domain.Decimal.of(12.5, 4)))
         assertEquals("50", formatSupExact(50.0))
         assertEquals("1,234.5678", formatSupExact(1234.5678))
         assertEquals("0.625", formatSupExact(0.625))
@@ -55,13 +55,13 @@ class ShoeCareTest {
 
     @Test fun `내구도 1점은 10m — 일반 Lv1 의 1km(100점) 수리는 예전처럼 1_05 SUP, 1점 값은 소수 8자리까지 쓴다`() {
         val q = requireNotNull(repairQuoteOf(absolute(now = 730, max = 1_230, perUnit = 0.0105)))
-        assertEquals(0, BigDecimal("500").compareTo(q.points))
-        assertEquals(0, BigDecimal("5.25").compareTo(q.cost))
+        assertEquals(0, BigDecimal("500").compareTo(q.points.big()))
+        assertEquals(0, BigDecimal("5.25").compareTo(q.cost.big()))
         assertEquals(730 to 1_230, q.durabilityNow to q.durabilityMax)
-        assertEquals(0, BigDecimal("1.05").compareTo(BigDecimal("100").multiply(q.perPoint)))
+        assertEquals(0, BigDecimal("1.05").compareTo(BigDecimal("100").multiply(q.perPoint.big())))
         // 레전더리 Lv7 — 1점 0.0165375. 4자리(0.0165)로 자르면 서버 차감액(14.3876)과 어긋난다
         val legendary = requireNotNull(repairQuoteOf(absolute(now = 2_000, max = 2_870, perUnit = 0.0165375)))
-        assertEquals(0, BigDecimal("14.3876").compareTo(legendary.cost))
+        assertEquals(0, BigDecimal("14.3876").compareTo(legendary.cost.big()))
         // 가득이면 고칠 것이 없다
         assertTrue(repairGate(absolute(now = 1_230, max = 1_230, perUnit = 0.0105), 50.0, true) is RepairPhase.NotNeeded)
         assertTrue(repairGate(absolute(now = 1_220, max = 1_230, perUnit = 0.0105), 50.0, true) is RepairPhase.Confirm)
@@ -69,24 +69,24 @@ class ShoeCareTest {
 
     @Test fun `레어 Lv5 68 에서 100 은 50 SUP, 92 에서 100 은 12_5 SUP`() {
         val q68 = requireNotNull(repairQuoteOf(server(durability = 68.0)))
-        assertEquals(0, BigDecimal("32").compareTo(q68.points))
-        assertEquals(0, BigDecimal("50").compareTo(q68.cost))
+        assertEquals(0, BigDecimal("32").compareTo(q68.points.big()))
+        assertEquals(0, BigDecimal("50").compareTo(q68.cost.big()))
         val q92 = requireNotNull(repairQuoteOf(server(durability = 92.0)))
-        assertEquals(0, BigDecimal("12.5").compareTo(q92.cost))
+        assertEquals(0, BigDecimal("12.5").compareTo(q92.cost.big()))
         assertEquals(70.57, balanceAfter(83.07, q92.cost), 1e-9)
         assertEquals(33.07, balanceAfter(83.07, q68.cost), 1e-9)
     }
 
     @Test fun `99_6 은 표시용 99 가 아니라 원래 값으로 계산한다`() {
         val quote = requireNotNull(repairQuoteOf(server(durability = 99.6)))
-        assertEquals(0, BigDecimal("0.4").compareTo(quote.points))
-        assertEquals(0, BigDecimal("0.625").compareTo(quote.cost))
+        assertEquals(0, BigDecimal("0.4").compareTo(quote.points.big()))
+        assertEquals(0, BigDecimal("0.625").compareTo(quote.cost.big()))
     }
 
     @Test fun `잔액 20 에 비용 50 이면 30 SUP 부족, 잔액이 넉넉하면 0`() {
         val quote = requireNotNull(repairQuoteOf(server(durability = 68.0)))
-        assertEquals(0, BigDecimal("30").compareTo(repairShortfall(quote, 20.0)))
-        assertEquals(0, BigDecimal.ZERO.compareTo(repairShortfall(quote, 83.07)))
+        assertEquals(0, BigDecimal("30").compareTo(repairShortfall(quote, 20.0).big()))
+        assertEquals(0, BigDecimal.ZERO.compareTo(repairShortfall(quote, 83.07).big()))
     }
 
     @Test fun `보내기 전 판정 — 가득 · 부족 · 판매 중 · 체인 · 로그인 · 없는 신발 · 확인`() {
@@ -125,7 +125,7 @@ class ShoeCareTest {
         assertEquals(1, backend.repairs)
         val done = store.repair.value[ID] as RepairPhase.Done
         assertEquals(33.07, done.balance, 1e-9)
-        assertEquals(0, BigDecimal("50").compareTo(done.quote.cost))
+        assertEquals(0, BigDecimal("50").compareTo(done.quote.cost.big()))
     }
 
     @Test fun `견적이 바뀌었으면 보내지 않고 새 견적을 다시 확인받는다(RP10)`() {
@@ -137,7 +137,7 @@ class ShoeCareTest {
         assertEquals(0, backend.repairs)
         val changed = store.repair.value[ID] as RepairPhase.Confirm
         assertTrue(changed.changed)
-        assertEquals(0, BigDecimal("12.5").compareTo(changed.quote.cost))
+        assertEquals(0, BigDecimal("12.5").compareTo(changed.quote.cost.big()))
     }
 
     @Test fun `응답을 못 받으면 결과 미확인 — 결과 확인은 읽기만 하고 수리를 다시 보내지 않는다`() {
@@ -318,3 +318,7 @@ class ShoeCareTest {
         )
     }
 }
+
+
+/** 공용 Decimal → java BigDecimal(같은 십진 표기) — 예전 검사 값과 맞대어 본다 */
+private fun com.stepup.android.domain.Decimal.big(): BigDecimal = BigDecimal(toPlainString())

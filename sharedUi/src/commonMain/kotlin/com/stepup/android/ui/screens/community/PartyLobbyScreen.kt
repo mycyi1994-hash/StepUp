@@ -646,7 +646,7 @@ private fun FlashTitleRow(name: String, mark: String) {
         val shape = RoundedCornerShape(56.dp * 0.28f)
         Box(
             Modifier.size(56.dp).clip(shape)
-                .background(androidx.compose.ui.graphics.Brush.linearGradient(
+                .background(com.stepup.android.ui.components.StopBrush.linearGradient(
                     listOf(androidx.compose.ui.graphics.Color(0xFF1D6BFF), androidx.compose.ui.graphics.Color(0xFF0A3FC0)),
                 )),
             contentAlignment = Alignment.Center,

@@ -14,13 +14,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.stepup.android.core.ServiceLocator
 
-data class MotionPreferences(val reduced: Boolean = false, val active: Boolean = true) {
-    val decorative: Boolean get() = !reduced && active
-    fun duration(millis: Int): Int = if (reduced) 0 else millis
-}
-
-val LocalMotion = staticCompositionLocalOf { MotionPreferences() }
-val LocalFeedback = staticCompositionLocalOf<ExperienceFeedback?> { null }
+/* 모션 · 소리 값(MotionPreferences · LocalMotion · LocalFeedback)은 공용(sharedUi ui/experience) — 여기서는 안드로이드 소리 · 진동을 넣는다 */
 
 @Composable
 fun ExperienceProvider(content: @Composable () -> Unit) {

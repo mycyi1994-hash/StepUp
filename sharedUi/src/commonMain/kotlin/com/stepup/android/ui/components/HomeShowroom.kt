@@ -73,7 +73,7 @@ fun HomeShowroomBackdrop(photo: HomePhoto, modifier: Modifier = Modifier) {
             val wh = windowHeight.toPx()
             // 위는 머리 글자가 읽히게 어둡게, 창 아래쪽은 바닥 남색으로
             drawRect(
-                Brush.verticalGradient(
+                StopBrush.verticalGradient(
                     0f to t.screen.copy(alpha = if (t.dark) 0.86f else 0.9f),
                     0.24f to t.screen.copy(alpha = if (t.dark) 0.30f else 0.55f),
                     0.70f to t.screen.copy(alpha = if (t.dark) 0.18f else 0.5f),
@@ -85,7 +85,7 @@ fun HomeShowroomBackdrop(photo: HomePhoto, modifier: Modifier = Modifier) {
             drawWindowFrames(wh, t)
             // 양옆을 눌러 가운데(신발)로 눈이 가게
             drawRect(
-                Brush.horizontalGradient(
+                StopBrush.horizontalGradient(
                     0f to t.screen.copy(alpha = 0.55f), 0.18f to Color.Transparent,
                     0.82f to Color.Transparent, 1f to t.screen.copy(alpha = 0.55f),
                 ),
@@ -107,7 +107,7 @@ private fun DrawScope.drawWindowFrames(windowHeight: Float, t: RunTone) {
         val pillar = Size(w * width, windowHeight * 0.92f)
         drawRect(frame.copy(alpha = 0.9f), topLeft = Offset(left, 0f), size = pillar)
         drawRect(
-            Brush.horizontalGradient(listOf(shine.copy(alpha = 0.0f), shine.copy(alpha = 0.55f), shine.copy(alpha = 0f)),
+            StopBrush.horizontalGradient(listOf(shine.copy(alpha = 0.0f), shine.copy(alpha = 0.55f), shine.copy(alpha = 0f)),
                 startX = left, endX = left + pillar.width),
             topLeft = Offset(left, beam), size = Size(pillar.width, pillar.height - beam),
         )
@@ -150,7 +150,7 @@ fun ShowroomStage(shoe: Sneaker?, modifier: Modifier = Modifier) {
                     val top = bottom - dh
                     // 받침 위 접촉 그림자
                     drawOval(
-                        Brush.radialGradient(
+                        StopBrush.radialGradient(
                             listOf(Color.Black.copy(alpha = if (t.dark) 0.55f else 0.22f), Color.Transparent),
                             center = Offset(size.width / 2f, bottom - dh * 0.02f), radius = dw * 0.5f,
                         ),
@@ -201,13 +201,13 @@ private const val CeilingFlashMs = 1_400
 private const val CeilingCycleMs = 6_000
 
 /** 한 바퀴 안의 시각([ms], 0 ~ 6,000)을 번쩍임 진행(0 ~ 1)으로 — 끝 1.4초만, 나머지는 0 */
-internal fun ceilingFlashOf(ms: Float): Float {
+fun ceilingFlashOf(ms: Float): Float {
     val start = (CeilingCycleMs - CeilingFlashMs).toFloat()
     return if (ms < start) 0f else ((ms - start) / CeilingFlashMs).coerceIn(0f, 1f)
 }
 
 /** 번쩍임 세기(0 ~ 1) — 진행 [p] 의 앞쪽에서 두 번 깜빡인다 */
-internal fun ceilingFlicker(p: Float): Float = when {
+fun ceilingFlicker(p: Float): Float = when {
     p <= 0f || p >= 1f -> 0f
     p < 0.10f -> kotlin.math.sin(p / 0.10f * kotlin.math.PI.toFloat())
     p < 0.16f -> 0f
@@ -216,7 +216,7 @@ internal fun ceilingFlicker(p: Float): Float = when {
 }
 
 /** 막대를 훑는 빛의 위치(0 ~ 1)와 세기 — 깜빡임 뒤(0.30 ~ 1.0)에 왼쪽에서 오른쪽으로 */
-internal fun ceilingSweep(p: Float): Pair<Float, Float> {
+fun ceilingSweep(p: Float): Pair<Float, Float> {
     if (p < 0.30f || p >= 1f) return 0f to 0f
     val q = (p - 0.30f) / 0.70f
     return q to kotlin.math.sin(q * kotlin.math.PI.toFloat())
@@ -240,7 +240,7 @@ private fun DrawScope.drawCeilingLight(t: RunTone, flash: Float = 0f) {
     }
     drawPath(
         cone,
-        Brush.verticalGradient(
+        StopBrush.verticalGradient(
             listOf(Color(0xFF9CC8FF).copy(alpha = ((if (t.dark) 0.20f else 0.18f) + 0.16f * flicker).coerceAtMost(1f)), Color.Transparent),
             startY = barTop, endY = size.height * 0.86f,
         ),
@@ -269,12 +269,12 @@ private fun DrawScope.drawCeilingLight(t: RunTone, flash: Float = 0f) {
         val y = barTop + housing * 0.8f
         val reach = 46.dp.toPx()
         drawCircle(
-            Brush.radialGradient(listOf(Color.White.copy(alpha = 0.9f * power), Color(0xFF8EC5FF).copy(alpha = 0.35f * power), Color.Transparent),
+            StopBrush.radialGradient(listOf(Color.White.copy(alpha = 0.9f * power), Color(0xFF8EC5FF).copy(alpha = 0.35f * power), Color.Transparent),
                 center = Offset(x, y), radius = reach),
             radius = reach, center = Offset(x, y),
         )
         drawLine(
-            Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = power), Color.Transparent),
+            StopBrush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = power), Color.Transparent),
                 startX = x - reach, endX = x + reach),
             Offset((x - reach).coerceAtLeast(barLeft + 6.dp.toPx()), y), Offset((x + reach).coerceAtMost(barRight - 6.dp.toPx()), y),
             strokeWidth = 4.5.dp.toPx(),
@@ -286,7 +286,7 @@ private fun DrawScope.drawCeilingLight(t: RunTone, flash: Float = 0f) {
 private fun DrawScope.drawFloor(pedestalTop: Float, t: RunTone) {
     val floorTop = pedestalTop - size.height * 0.10f
     drawRect(
-        Brush.verticalGradient(
+        StopBrush.verticalGradient(
             listOf(
                 (if (t.dark) Color(0xFF0B2850) else Color(0xFFDCE7FA)).copy(alpha = 0.92f),
                 if (t.dark) Color(0xFF041631) else Color(0xFFEFF4FD),
@@ -298,7 +298,7 @@ private fun DrawScope.drawFloor(pedestalTop: Float, t: RunTone) {
     // 바닥과 창이 만나는 선의 푸른 빛
     glowLine(Offset(0f, floorTop), Offset(size.width, floorTop), t.cobalt, 2.dp.toPx(), 10.dp.toPx(), 0.55f)
     drawOval(
-        Brush.radialGradient(
+        StopBrush.radialGradient(
             listOf(t.cobalt.copy(alpha = if (t.dark) 0.45f else 0.2f), Color.Transparent),
             center = Offset(size.width / 2f, size.height * 0.98f), radius = size.width * 0.6f,
         ),
@@ -325,7 +325,7 @@ private fun DrawScope.drawPedestal(center: Offset, width: Float, topH: Float, de
     }
     // 받침 아래 바닥으로 퍼지는 빛
     drawOval(
-        Brush.radialGradient(
+        StopBrush.radialGradient(
             listOf(t.cobalt.copy(alpha = if (t.dark) 0.6f else 0.25f), Color.Transparent),
             center = Offset(center.x, bottom + depth), radius = width * 0.6f,
         ),
@@ -334,7 +334,7 @@ private fun DrawScope.drawPedestal(center: Offset, width: Float, topH: Float, de
     // 앞면 — 어두운 남색, 위 모서리에 파란 빛줄
     drawPath(
         front,
-        Brush.verticalGradient(
+        StopBrush.verticalGradient(
             listOf(if (t.dark) Color(0xFF0A2C5E) else Color(0xFFB7CBEF), if (t.dark) Color(0xFF041431) else Color(0xFF9DB6E4)),
             startY = mid, endY = bottom + depth,
         ),
@@ -342,7 +342,7 @@ private fun DrawScope.drawPedestal(center: Offset, width: Float, topH: Float, de
     // 윗면 — 뒤가 밝고 앞이 깊은 반들한 남색, 앞쪽에 빛 띠
     drawPath(
         face,
-        Brush.verticalGradient(
+        StopBrush.verticalGradient(
             listOf(
                 if (t.dark) Color(0xFF223F6E) else Color(0xFFFFFFFF),
                 if (t.dark) Color(0xFF10284D) else Color(0xFFE9F0FC),
@@ -353,7 +353,7 @@ private fun DrawScope.drawPedestal(center: Offset, width: Float, topH: Float, de
     )
     drawPath(
         face,
-        Brush.radialGradient(
+        StopBrush.radialGradient(
             listOf(Color(0xFF9CCBFF).copy(alpha = if (t.dark) 0.22f else 0.3f), Color.Transparent),
             center = Offset(center.x, top + topH * 0.35f), radius = width * 0.45f,
         ),
@@ -386,7 +386,7 @@ private fun DrawScope.glowLine(start: Offset, end: Offset, color: Color, width: 
     val half = width * 1.1f + blur * 1.5f
     val y = (start.y + end.y) / 2f
     drawRect(
-        Brush.verticalGradient(
+        StopBrush.verticalGradient(
             0f to Color.Transparent, 0.5f to color.copy(alpha = alpha * 0.55f), 1f to Color.Transparent,
             startY = y - half, endY = y + half,
         ),

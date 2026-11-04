@@ -270,7 +270,7 @@ class StoriesViewModel(
  * 장소를 골랐으면 범위와 상관없이 그 장소의 글이다 — 범위 밖 장소를 지도에서 골랐다고 빈 목록이 되지 않게.
  * 핀은 목록과 같은 글에서 센다(빈 목록인데 핀에 글이 있다고 하지 않는다).
  */
-internal fun buildStoryList(
+fun buildStoryList(
     posts: List<Post>,
     hidden: Set<Long>,
     from: StoryOrigin?,
@@ -298,8 +298,8 @@ internal fun buildStoryList(
 }
 
 /** 동네 이야기에 들어가는 글 — 전체 게시판의 번개가 아닌 글 중 숨기지 않은 것 */
-internal fun Post.isVisibleStory(hidden: Set<Long>): Boolean = !isFlash && crewId.isEmpty() && id !in hidden
+fun Post.isVisibleStory(hidden: Set<Long>): Boolean = !isFlash && crewId.isEmpty() && id !in hidden
 
 /** 방금 올린 글의 장소가 들어오는 가장 좁은 범위 — 지금 범위보다 좁히지 않는다. 3km 밖이면 null */
-internal fun rangeToReveal(awayMeters: Double, current: StoryRange): StoryRange? =
+fun rangeToReveal(awayMeters: Double, current: StoryRange): StoryRange? =
     StoryRange.entries.firstOrNull { it.meters >= current.meters && awayMeters <= it.meters }

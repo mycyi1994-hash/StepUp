@@ -58,12 +58,24 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          # Screen Gallery Capture 와 같은 에뮬레이터 설정 — 리디자인 테스트가 이 설정에서 검증됐다
           ram-size: 4096M
           heap-size: 512M
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
-          script: bash tools/run_device_qa.sh
+          # 그리기는 swiftshader_indirect(에뮬레이터 실행기의 기본값). 예전 -gpu swiftshader 로는 2026-10-26 부터
+          # 에뮬레이터가 통째로 사라졌다 — 홈 화면(사진 · 날씨 · 빛)을 그리는 중 기기 로그가 멎고 60초 뒤 에뮬레이터가 끝났다
+          # (메모리 · OOM 없음, 에뮬레이터 37.2.12 · 37.2.13 둘 다, 러너 이미지 두 판 다 — run 40289576900 · 41458949927).
+          # 2026-11-03 swiftshader_indirect 로 첫 묶음(78개)은 통과했지만 다음 묶음 신발 미리보기에서 다시 멎었다 — 둘 다 검사 시작 1초 안
+          # (효과음 26개를 읽는 중). 손님 커널 기록(-show-kernel)을 남겨 멎는 까닭을 보고, CPU 를 러너만큼(4) 준다(기본 2).
+          # 2026-11-04 — 남은 죽음은 그리기가 무거운 크루 명함 화면(사진 · 그라디언트 · 흐림)에 몰렸고, 손님 로그는 아무 오류 없이 끊긴다:
+          # 러너 쪽 SwiftShader Vulkan 그리기(gfxstream)가 죽는 것으로 본다. 손님 Vulkan 을 끄고(-feature -Vulkan) 앱 그리기를 GL(skiagl)로 한다.
+          # 2026-11-04 까닭을 찾았다 — 러너 쪽 에뮬레이터 프로세스의 Segmentation fault(core dumped). core dump 로 보면 SwiftShader 래스터라이저가
+          # 범위 밖을 읽었고, 사진 카드 · 신발 카드의 여러 색(3색 이상) 세로 그라디언트를 그릴 때만 났다(37.2.13 · 35.2.10 둘 다, -gpu guest 는 더 많이).
+          # 같은 자리를 두 색으로 바꾼 판은 끝까지 살았고, 다른 화면의 여러 색 그라디언트도 확률적으로 같은 죽음을 냈다(run 41783162417).
+          # 그래서 공용 화면의 그라디언트는 모두 StopBrush 로 그린다 — 에뮬레이터에서만 여러 색 그라디언트를 CPU 로 미리 그린 그림으로 대신한다
+          # (sharedUi components/StopBrush.kt · tools/check_gradients.py, 실제 폰 · iOS 는 그대로). 에뮬레이터 판은 묶지 않는다.
+          cores: 4
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none -show-kernel
+          script: STEPUP_EMULATOR_OPTIONS="-no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none -show-kernel" bash tools/run_device_qa.sh
       # 에뮬레이터가 아무 말 없이 통째로 사라지면(PR #86 Experience QA 38545387775 · 38555432814) 까닭을 남긴다 —
       # 러너 커널이 메모리 부족으로 프로세스를 끝냈는지(OOM), 그때 메모리를 많이 쓰던 프로세스
       - name: Host memory diagnostics

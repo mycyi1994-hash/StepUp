@@ -87,6 +87,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.home.crewRunRuleLines
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 대기실 — 3번 듀얼 레일(2026-10-24 핸드오프 장면 10 ~ 34 · 68 ~ 70, 04_DESIGN_BACKGROUND).
@@ -100,11 +101,11 @@ import com.stepup.android.ui.theme.StepUpFonts
  */
 
 /** 그리드에 두는 칸 — 3 × 2. 더 많으면 다섯 사람과 "+N"(전체 명단) */
-internal const val CREW_GRID_MAX = 6
+const val CREW_GRID_MAX = 6
 
 /** 크루 대기실 — 상태 없이 그린다. 권한 · 중복 시작 막기는 서버와 저장소가 한다 */
 @Composable
-internal fun CrewLobbyContent(
+fun CrewLobbyContent(
     party: PartyState,
     title: String,
     resultPoints: Double?,
@@ -229,7 +230,8 @@ internal fun CrewLobbyContent(
                 )
                 // 달리는 방식 · 출발 예정 시각 · 만나는 곳(원격이면 각자의 위치) · 정원 — 방을 만들 때 정한 값(0074, 안내일 뿐)
                 LobbyPlanLine(party)
-                Spacer(Modifier.height(12.dp))
+                // 위 계획 줄(2026-10-26)이 생긴 만큼 아래 간격을 줄여 390 × 844 에서 내 신발 카드가 버튼 칸 위에 다 보이게(시안 10 · 12 · 23)
+                Spacer(Modifier.height(8.dp))
                 LobbyNotices(party, doneToday, crewToday, room, shoeFailed, courseFailed, onReconnect)
                 if (loading) {
                     LobbyLoading()
@@ -240,7 +242,7 @@ internal fun CrewLobbyContent(
                         onCall = onNotify,
                     )
                     // 간격은 버튼 아래 글자 한 줄(준비 취소 · 크루원 부르기)이 있어도 390 × 844 에서 내 신발 카드가 다 보이게(시안 10 · 12 · 23)
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(8.dp))
                     Overview(
                         party, crewToday, room,
                         onStamina = { sheet = LobbySheet.Stamina },
@@ -248,7 +250,7 @@ internal fun CrewLobbyContent(
                         onCourse = openCourse,
                         canSetCourse = party.isHost && lobby,
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     ShoeFrame(room, shoes, onChange = { sheet = LobbySheet.Shoes }, enabled = lobby && room != null)
                     Spacer(Modifier.height(18.dp))
                 }
@@ -376,16 +378,16 @@ internal fun CrewLobbyContent(
 }
 
 /** 대기실 위 시트 — 하나만 */
-internal enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Levels, Shoes, Course, Leave, Start }
+enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Levels, Shoes, Course, Leave, Start }
 
 /** 진행자 메뉴(⋯) */
-internal enum class LobbyMenu { Roster, Course, Call, Rules, Leave }
+enum class LobbyMenu { Roster, Course, Call, Rules, Leave }
 
 /** 대기실 대신 보이는 한 화면 — 불러오기 실패(69) · 나옴(70) · 닫힘 · 찼음 · 출발함 · 출발을 놓침 · 로그인 */
-internal enum class LobbyTerminal { FAILED, REMOVED, CLOSED, FULL, STARTED, MISSED, SIGN_IN }
+enum class LobbyTerminal { FAILED, REMOVED, CLOSED, FULL, STARTED, MISSED, SIGN_IN }
 
 /** 이 상태면 방 화면 대신 한 화면 — 방에 들어가기 전의 연결 실패 · 다시 들어갈 수 없는 까닭 */
-internal fun lobbyTerminal(party: PartyState): LobbyTerminal? = when (party.problem) {
+fun lobbyTerminal(party: PartyState): LobbyTerminal? = when (party.problem) {
     PartyProblem.SIGN_IN -> LobbyTerminal.SIGN_IN
     PartyProblem.REMOVED -> LobbyTerminal.REMOVED
     PartyProblem.CLOSED -> LobbyTerminal.CLOSED
@@ -655,7 +657,7 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean) {
         Box(Modifier.size(52.dp)) {
             Box(
                 Modifier.size(52.dp).clip(CircleShape)
-                    .background(if (member.isHost) Brush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else Brush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
+                    .background(if (member.isHost) StopBrush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else StopBrush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
                     .border(1.5.dp, LobbyInk.AvatarRing, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -825,7 +827,7 @@ private fun Metric(
 }
 
 /** 공용 체력 숫자 — 소수 한 자리(0 이면 뗀다) · 천 단위 쉼표. 남은 양을 올려 보이지 않게 버린다 */
-internal fun poolNumber(value: Double): String {
+fun poolNumber(value: Double): String {
     val plain = CrewRunMath.amount(value)
     val whole = plain.substringBefore('.')
     val grouped = whole.reversed().chunked(3).joinToString(",").reversed()
@@ -937,7 +939,7 @@ private fun LobbyTextButton(label: String, onClick: () -> Unit, tag: String) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun LobbySheetFrame(
+fun LobbySheetFrame(
     title: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1024,7 +1026,7 @@ private fun RosterSheet(
                 ) {
                     Box(
                         Modifier.size(34.dp).clip(CircleShape)
-                            .background(if (member.isHost) Brush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else Brush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
+                            .background(if (member.isHost) StopBrush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else StopBrush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
                             .border(1.5.dp, LobbyInk.AvatarRing, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) { Text(initialsOf(member.name).take(1), style = navyText(15.sp, Color(0xFFF3F8FF), FontWeight.Bold)) }

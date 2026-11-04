@@ -263,7 +263,7 @@ fun CrewListTab(
  * [onStep] 은 다음 시트("" 이면 닫기 · [SHEET_DRAFT_DISCARD]), [onCreate] 는 만들기(이어 쓰면 true).
  */
 @Composable
-internal fun CrewStartSheets(draft: CrewDraft?, discard: Boolean, onStep: (String) -> Unit, onCreate: (Boolean) -> Unit) {
+fun CrewStartSheets(draft: CrewDraft?, discard: Boolean, onStep: (String) -> Unit, onCreate: (Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
     val saved = draft ?: return onStep("")
     if (!discard) {
@@ -310,8 +310,8 @@ internal fun CrewStartSheets(draft: CrewDraft?, discard: Boolean, onStep: (Strin
 private const val SHEET_REGION = "region"
 private const val SHEET_SORT = "sort"
 private const val SHEET_LEVEL = "level:"
-internal const val SHEET_DRAFT_RESUME = "resume"
-internal const val SHEET_DRAFT_DISCARD = "discard"
+const val SHEET_DRAFT_RESUME = "resume"
+const val SHEET_DRAFT_DISCARD = "discard"
 
 /** 지역 · 정렬 줄 — "📍 도화동 주변 ⌄"  "가까운 순 ⌄" (목록 위 고정) */
 @Composable
@@ -349,7 +349,7 @@ private fun CrewFilterRow(place: String?, ranged: Boolean, sort: CrewSort, onReg
 }
 
 @Composable
-internal fun sortLabel(sort: CrewSort): String = when (sort) {
+fun sortLabel(sort: CrewSort): String = when (sort) {
     CrewSort.NEAR -> stringResource(Res.string.crew_sort_near)
     CrewSort.RECENT -> stringResource(Res.string.crew_sort_recent)
     CrewSort.ACTIVE -> stringResource(Res.string.crew_sort_active)
@@ -360,7 +360,7 @@ internal fun sortLabel(sort: CrewSort): String = when (sort) {
  * 카드와 "크루 보기"는 상세로, 이미지 · 레벨 · 인원 · 크루장 · 목표는 각자의 화면으로 간다(카드 전체 이동과 겹치지 않는다).
  */
 @Composable
-internal fun CrewProfileCard(
+fun CrewProfileCard(
     card: CrewCard,
     words: CrewWords,
     onOpen: () -> Unit,
@@ -613,7 +613,7 @@ private fun CrewResumeDraftSheet(draft: CrewDraft, onResume: () -> Unit, onNew: 
 
 /** 초안 한 줄 — 이미지 · 이름 · 설명(39 · 78) */
 @Composable
-internal fun CrewDraftStrip(draft: CrewDraft, sub: String, title: String? = null) {
+fun CrewDraftStrip(draft: CrewDraft, sub: String, title: String? = null) {
     val ink = crewInk()
     Row(
         Modifier.fillMaxWidth().crewPanel(ink, 16.dp).padding(14.dp),

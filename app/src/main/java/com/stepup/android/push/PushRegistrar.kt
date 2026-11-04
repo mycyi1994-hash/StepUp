@@ -24,13 +24,13 @@ class PushRegistrar(
     private val api: PushApi,
     private val locale: suspend () -> String,
     private val preferences: suspend () -> NotifyPrefs,
-) {
+) : com.stepup.android.core.PushPreferences {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val preferenceDelivery = NotificationPreferenceSync(preferences) { prefs ->
         api.setPrefs(prefs.push, prefs.goalReminder, prefs.partyInvite, prefs.eventNews) is ServerResult.Ok
     }
-    val preferenceSync = preferenceDelivery.state
+    override val preferenceSync = preferenceDelivery.state
 
     /** 화면이 닫혀도 끝까지 가게 앱 수명의 코루틴에서 적는다. */
     fun syncInBackground(token: String? = null) {
@@ -42,7 +42,7 @@ class PushRegistrar(
     }
 
     /** 알림 설정을 서버에 올린다. 로그인 전이면 조용히 넘어간다 — 다음에 켤 때 다시 올린다. */
-    fun syncPrefsInBackground() {
+    override fun syncPrefsInBackground() {
         scope.launch { preferenceDelivery.sync() }
     }
 

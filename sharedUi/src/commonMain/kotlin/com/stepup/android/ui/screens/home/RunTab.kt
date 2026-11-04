@@ -58,6 +58,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 러닝 탭 — 2026-10-26 전체 시안 `run`. 혼자 달리기만 둔다: 오늘 걸음(고리) · 사람 없는 배경 사진(15장 중 하나) · GPS 준비 ·
@@ -94,7 +95,7 @@ object RunPhotos {
 
 /** 큰 제목(시안 "러닝" · "크루 러닝") */
 @Composable
-internal fun RunTabTitle(text: String, modifier: Modifier = Modifier) {
+fun RunTabTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text, style = StepUpUi.type.largeTitle.copy(fontSize = 30.sp, letterSpacing = (-0.03).em), color = StepUpUi.colors.label,
         modifier = modifier.semantics { heading() }.testTag("run-tab-title"),
@@ -103,7 +104,7 @@ internal fun RunTabTitle(text: String, modifier: Modifier = Modifier) {
 
 /** 오늘 걸음 — 왼쪽 "오늘 걸음" · 큰 숫자 · "/ 목표 걸음", 오른쪽 목표까지 고리(발자국). 누르면 오늘의 활동(E01) */
 @Composable
-internal fun StepsRing(fraction: Float, modifier: Modifier = Modifier) {
+fun StepsRing(fraction: Float, modifier: Modifier = Modifier) {
     val c = StepUpUi.colors
     Box(modifier.size(76.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
@@ -122,7 +123,7 @@ internal fun StepsRing(fraction: Float, modifier: Modifier = Modifier) {
 
 /** 배경 사진 카드(361 × 178) — 사람 없는 15장 중 하나, 왼쪽 아래 "나만의 속도로 / 오늘의 러닝을 시작해 볼까요?" */
 @Composable
-internal fun RunPhotoCard(photoIndex: Int, modifier: Modifier = Modifier) {
+fun RunPhotoCard(photoIndex: Int, modifier: Modifier = Modifier) {
     val name = RunPhotos.names[photoIndex.mod(RunPhotos.names.size)]
     val bitmap by produceState<ImageBitmap?>(initialValue = null, name) {
         value = withContext(Dispatchers.IO) { RunPhotos.decode(name) }
@@ -134,7 +135,7 @@ internal fun RunPhotoCard(photoIndex: Int, modifier: Modifier = Modifier) {
         }
         Box(
             Modifier.fillMaxSize().background(
-                Brush.horizontalGradient(0f to Color.Black.copy(alpha = .55f), .7f to Color.Black.copy(alpha = .05f), 1f to Color.Transparent),
+                StopBrush.horizontalGradient(0f to Color.Black.copy(alpha = .55f), .7f to Color.Black.copy(alpha = .05f), 1f to Color.Transparent),
             ),
         )
         Column(Modifier.align(Alignment.CenterStart).padding(start = 20.dp, end = 20.dp, top = 24.dp)) {
@@ -150,7 +151,7 @@ internal fun RunPhotoCard(photoIndex: Int, modifier: Modifier = Modifier) {
 
 /** GPS 준비 줄 — 초록 점 · "GPS 준비 완료"(미리 잡은 위치가 10초 안 · 50m 안). 권한이 없으면 그렇게 쓴다 */
 @Composable
-internal fun GpsLine(state: GpsReadiness, modifier: Modifier = Modifier) {
+fun GpsLine(state: GpsReadiness, modifier: Modifier = Modifier) {
     val c = StepUpUi.colors
     Row(modifier.testTag("run-gps-${state.name.lowercase()}"), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(if (state == GpsReadiness.READY) Color(0xFF3CC08A) else c.tertiaryLabel))
@@ -170,7 +171,7 @@ internal fun GpsLine(state: GpsReadiness, modifier: Modifier = Modifier) {
 
 /** 목록 상태 칸 — 아이콘 · 제목 · 설명 · 다시 시도(함께 뛰기 목록이 쓴다) */
 @Composable
-internal fun RoomsState(
+fun RoomsState(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     body: String?,
@@ -198,7 +199,7 @@ internal fun RoomsState(
 
 /** 시각 — 오늘 · 내일이면 "오늘 19:00", 그 뒤면 "10/27 19:00" */
 @Composable
-internal fun whenText(ms: Long): String {
+fun whenText(ms: Long): String {
     val zone = TimeZone.currentSystemDefault()
     val at = kotlin.time.Instant.fromEpochMilliseconds(ms).toLocalDateTime(zone)
     val hm = com.stepup.android.domain.PatternFormatter("HH:mm", androidx.compose.ui.text.intl.Locale.current.language).format(at)
@@ -215,7 +216,7 @@ internal fun whenText(ms: Long): String {
  * 함께 뛰기 목록은 여러 크루의 방을 한 줄로 늘어놓으니 [showCrew] 면 상태 줄 끝에 크루 이름을 붙인다.
  */
 @Composable
-internal fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showCrew: Boolean = false) {
+fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showCrew: Boolean = false) {
     val c = StepUpUi.colors
     val canOpen = room.mine || !room.full
     Column(Modifier.fillMaxWidth().padding(vertical = 18.dp).testTag("crew-room-${room.id}")) {
@@ -283,7 +284,7 @@ internal fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showC
 
 /** 러닝 탭이 화면에 있는 동안 미리 잡은 위치로 GPS 준비를 본다(2초마다) */
 @Composable
-internal fun rememberGpsReadiness(): GpsReadiness {
+fun rememberGpsReadiness(): GpsReadiness {
     val state by produceState(initialValue = GpsReadiness.WAITING) {
         while (true) {
             // 안드로이드: 정확한 위치 권한 · 미리 잡은 위치(10초 안 · 50m 안). 공용: 정확한 위치 권한이 있으면 바로 준비(iOS 는 러닝이 켜질 때 잡는다)

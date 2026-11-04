@@ -115,7 +115,7 @@ fun SneakerArt(
             val glowW = f.u(1.00f)
             val glowH = f.u(0.11f)
             drawOval(
-                brush = Brush.radialGradient(
+                brush = StopBrush.radialGradient(
                     colors = listOf(accent.copy(alpha = sneaker.rarity.auraAlpha()), Color.Transparent),
                     center = Offset(f.x(0.5f), glowY),
                     radius = glowW / 2f,
@@ -166,7 +166,7 @@ fun SneakerArt(
         }
         drawPath(
             midsole,
-            brush = Brush.verticalGradient(
+            brush = StopBrush.verticalGradient(
                 colors = listOf(sole, Color(0xFF0B0D0F)),
                 startY = f.y(mt),
                 endY = f.y(0.556f),
@@ -186,7 +186,7 @@ fun SneakerArt(
             val tl = Offset(f.x(x0), f.y(winTop))
             if (showGlow) {
                 drawOval(
-                    brush = Brush.radialGradient(
+                    brush = StopBrush.radialGradient(
                         colors = listOf(accent.copy(alpha = 0.62f), Color.Transparent),
                         center = Offset(tl.x + w / 2f, tl.y + h / 2f),
                         radius = w * 1.25f,
@@ -196,7 +196,7 @@ fun SneakerArt(
                 )
             }
             drawRoundRect(
-                brush = Brush.verticalGradient(listOf(accentSoft, accent)),
+                brush = StopBrush.verticalGradient(listOf(accentSoft, accent)),
                 topLeft = tl,
                 size = Size(w, h),
                 cornerRadius = CornerRadius(f.u(0.018f)),
@@ -218,7 +218,7 @@ fun SneakerArt(
         }
         drawPath(
             upperPath,
-            brush = Brush.linearGradient(
+            brush = StopBrush.linearGradient(
                 colors = listOf(upper, upperShade),
                 start = f.p(0.2f, ct),
                 end = f.p(0.9f, mt),
@@ -226,7 +226,7 @@ fun SneakerArt(
         )
         drawPath(
             upperPath,
-            brush = Brush.verticalGradient(
+            brush = StopBrush.verticalGradient(
                 colors = listOf(Color.White.copy(alpha = 0.07f), Color.Transparent),
                 startY = f.y(ct),
                 endY = f.y(mt - 0.05f),
@@ -328,7 +328,7 @@ fun SneakerArt(
             val cx = f.x(-0.2f) + (f.x(1.2f) - f.x(-0.2f)) * shimmer
             drawPath(
                 upperPath,
-                brush = Brush.linearGradient(
+                brush = StopBrush.linearGradient(
                     colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.22f), Color.Transparent),
                     start = Offset(cx - band, 0f),
                     end = Offset(cx + band, size.height),
@@ -610,7 +610,7 @@ private fun DrawScope.drawStripe(
                 cubicTo(f, 0.530f, mid + 0.036f, 0.340f, mid + 0.100f, 0.185f, mt + 0.008f)
                 close()
             }
-            drawPath(p, brush = Brush.horizontalGradient(listOf(accent, accentSoft)))
+            drawPath(p, brush = StopBrush.horizontalGradient(listOf(accent, accentSoft)))
         }
         StripeStyle.BLADE -> {
             val p = Path().apply {
@@ -620,7 +620,7 @@ private fun DrawScope.drawStripe(
                 lineTo(f, 0.268f, mt + 0.038f)
                 close()
             }
-            drawPath(p, brush = Brush.horizontalGradient(listOf(accentSoft, accent)))
+            drawPath(p, brush = StopBrush.horizontalGradient(listOf(accentSoft, accent)))
         }
         StripeStyle.CHEVRON -> {
             for (i in 0 until 3) {
@@ -657,7 +657,7 @@ private fun DrawScope.drawStripe(
             }
             drawPath(
                 p,
-                brush = Brush.horizontalGradient(listOf(accent, accentSoft)),
+                brush = StopBrush.horizontalGradient(listOf(accent, accentSoft)),
                 style = Stroke(width = f.u(0.022f), cap = StrokeCap.Round),
             )
         }
@@ -670,7 +670,7 @@ private fun DrawScope.drawStripe(
                 cubicTo(f, 0.550f, mid + 0.014f, 0.370f, mid + 0.066f, 0.200f, mt + 0.022f)
                 close()
             }
-            drawPath(a, brush = Brush.horizontalGradient(listOf(accentDeep, accent)))
+            drawPath(a, brush = StopBrush.horizontalGradient(listOf(accentDeep, accent)))
             val b = Path().apply {
                 moveTo(f, 0.230f, mt + 0.010f)
                 cubicTo(f, 0.400f, mid + 0.086f, 0.560f, mid + 0.040f, 0.720f, mid - 0.010f)
@@ -678,7 +678,7 @@ private fun DrawScope.drawStripe(
                 cubicTo(f, 0.570f, mid + 0.074f, 0.410f, mid + 0.120f, 0.240f, mt + 0.042f)
                 close()
             }
-            drawPath(b, brush = Brush.horizontalGradient(listOf(accent, accentSoft)))
+            drawPath(b, brush = StopBrush.horizontalGradient(listOf(accent, accentSoft)))
         }
     }
 }

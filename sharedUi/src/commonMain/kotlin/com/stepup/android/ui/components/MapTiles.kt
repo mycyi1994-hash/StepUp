@@ -28,9 +28,12 @@ object MapTiles {
     const val MIN_ZOOM = 3
     const val MAX_ZOOM = 18
 
-    /** 앱이 넣는다(iOS IosApp) */
+    /** 앱이 넣는다(안드로이드 ServiceLocator · iOS IosApp) */
     var mapTilerKey: String = ""
     var userAgent: String = "StepUp (+https://stepupcrew.com)"
+
+    /** 받은 타일을 남기는 곳(기기마다 — 안드로이드 cacheDir/tiles · iOS Caches/tiles). 없으면 메모리만 */
+    var disk: TileDisk? = null
 
     private val source get() = if (mapTilerKey.isNotEmpty()) "maptiler" else "osm"
 
@@ -71,6 +74,19 @@ object MapTiles {
                 failed.remove(k)
             }
         }
+        val path = "$source/$zoom/${x}_$y.png"
+        // 디스크에 남은 타일 — 끊긴 동안에도 지나간 곳의 지도가 그려진다
+        disk?.let { d ->
+            val saved = runCatching { d.read(path) }.getOrNull()
+            val image = saved?.let { runCatching { it.decodeToImageBitmap() }.getOrNull() }
+            if (image != null) {
+                lock.withLock {
+                    memory[k] = image
+                    while (memory.size > MEMORY_TILES) memory.remove(memory.keys.first())
+                }
+                return image
+            }
+        }
         val url = if (mapTilerKey.isNotEmpty()) "https://api.maptiler.com/maps/streets-v2/256/$zoom/$x/$y.png?key=$mapTilerKey"
         else "https://tile.openstreetmap.org/$zoom/$x/$y.png"
         val fetched = runCatching { fetchTileBytes(url, userAgent) }.getOrNull()
@@ -80,6 +96,7 @@ object MapTiles {
             return null
         }
         val image = runCatching { bytes.decodeToImageBitmap() }.getOrNull()
+        if (image != null) runCatching { disk?.write(path, bytes) }
         lock.withLock {
             if (image == null) { failed[k] = PERMANENT; return null }
             memory[k] = image
@@ -156,3 +173,10 @@ class FetchedTile(val bytes: ByteArray?, val permanent: Boolean)
 
 /** 타일 그림 바이트를 받는다(6초 제한, 앱을 알리는 User-Agent) — 기기마다 */
 expect suspend fun fetchTileBytes(url: String, userAgent: String): FetchedTile
+
+
+/** 타일 디스크 캐시 — [path] 는 "<출처>/<줌>/<x>_<y>.png" */
+interface TileDisk {
+    fun read(path: String): ByteArray?
+    fun write(path: String, bytes: ByteArray)
+}

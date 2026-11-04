@@ -78,11 +78,11 @@ import kotlinx.datetime.TimeZone
  */
 
 @Composable
-internal fun homeLocale(): androidx.compose.ui.text.intl.Locale = androidx.compose.ui.text.intl.Locale.current
+fun homeLocale(): androidx.compose.ui.text.intl.Locale = androidx.compose.ui.text.intl.Locale.current
 
 /** "9월 29일" — 언어별 짧은 날짜 */
 @Composable
-internal fun homeDate(day: LocalDate): String {
+fun homeDate(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
         day.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "MMMd"), androidx.compose.ui.text.intl.Locale.current.language)
@@ -91,7 +91,7 @@ internal fun homeDate(day: LocalDate): String {
 
 /** "9월 29일 화요일" */
 @Composable
-internal fun homeDateWeekday(day: LocalDate): String {
+fun homeDateWeekday(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
         day.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "MMMMdEEEE"), androidx.compose.ui.text.intl.Locale.current.language)
@@ -100,7 +100,7 @@ internal fun homeDateWeekday(day: LocalDate): String {
 
 /** "9.28" — 주간 기록 제목 */
 @Composable
-internal fun homeShortDate(day: LocalDate): String {
+fun homeShortDate(day: LocalDate): String {
     val locale = homeLocale()
     return remember(day, locale) {
         day.formatPattern(com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "Md"), androidx.compose.ui.text.intl.Locale.current.language)
@@ -108,14 +108,14 @@ internal fun homeShortDate(day: LocalDate): String {
     }
 }
 
-internal fun localDay(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): LocalDate = (millis).localDate(zone)
+fun localDay(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): LocalDate = (millis).localDate(zone)
 
-internal fun homeClock(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
+fun homeClock(millis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
     kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone).time.formatPattern("HH:mm", androidx.compose.ui.text.intl.Locale.current.language)
 
 /** 모임 날짜 — 오늘 · 내일 · "9월 30일" */
 @Composable
-internal fun meetingDayLabel(meetAt: Long): String = when (CrewHomeRules.whenOf(meetAt, com.stepup.android.domain.epochMillis(), TimeZone.currentSystemDefault())) {
+fun meetingDayLabel(meetAt: Long): String = when (CrewHomeRules.whenOf(meetAt, com.stepup.android.domain.epochMillis(), TimeZone.currentSystemDefault())) {
     CrewHomeRules.When.TODAY -> stringResource(Res.string.crewhome_today)
     CrewHomeRules.When.TOMORROW -> stringResource(Res.string.crewhome_tomorrow)
     CrewHomeRules.When.LATER -> homeDate(localDay(meetAt))
@@ -123,7 +123,7 @@ internal fun meetingDayLabel(meetAt: Long): String = when (CrewHomeRules.whenOf(
 
 /** 기록 날짜 — 오늘 · 어제 · "9월 27일" */
 @Composable
-internal fun recordDayLabel(millis: Long): String {
+fun recordDayLabel(millis: Long): String {
     val day = localDay(millis)
     val today = todayIn()
     return when (day) {
@@ -135,7 +135,7 @@ internal fun recordDayLabel(millis: Long): String {
 
 /** "33분 36초" · 한 시간 넘으면 "1시간 2분" */
 @Composable
-internal fun durationLong(seconds: Int): String {
+fun durationLong(seconds: Int): String {
     val s = seconds.coerceAtLeast(0)
     return if (s >= 3600) stringResource(Res.string.crewhome_duration_hour, s / 3600, s % 3600 / 60)
     else stringResource(Res.string.crewhome_duration_min, s / 60, s % 60)
@@ -143,7 +143,7 @@ internal fun durationLong(seconds: Int): String {
 
 /** 요일 이름(월 … 일) — 앱 언어로 */
 @Composable
-internal fun weekdayLabels(): List<String> {
+fun weekdayLabels(): List<String> {
     val locale = homeLocale()
     return remember(locale) {
         kotlinx.datetime.DayOfWeek.entries.map { com.stepup.android.domain.DatePattern.dayName(it, if (locale.language == "en") com.stepup.android.domain.DateNameStyle.SHORT else com.stepup.android.domain.DateNameStyle.NARROW, locale.language) }
@@ -151,28 +151,28 @@ internal fun weekdayLabels(): List<String> {
 }
 
 /** 한국어 받침 — "퇴근런이" / "공덕크루가" 를 고른다(다른 언어는 두 문구가 같다) */
-internal fun endsWithConsonant(word: String): Boolean {
+fun endsWithConsonant(word: String): Boolean {
     val last = word.trim().lastOrNull() ?: return true
     return if (last in '가'..'힣') (last.code - 0xAC00) % 28 != 0 else true
 }
 
-internal fun km(value: Double): String = CrewRules.km(value)
+fun km(value: Double): String = CrewRules.km(value)
 
 /** 작은 푸른 소제목(시안의 "다음 러닝" · "퇴근런") */
 @Composable
-internal fun HomeLabel(text: String, modifier: Modifier = Modifier) {
+fun HomeLabel(text: String, modifier: Modifier = Modifier) {
     val ink = blueInk()
     Text(text, style = blueText(15.sp, ink.info, FontWeight.Bold), modifier = modifier)
 }
 
 @Composable
-internal fun HomeDivider(modifier: Modifier = Modifier) {
+fun HomeDivider(modifier: Modifier = Modifier) {
     BlueDivider(modifier)
 }
 
 /** 얼굴 셋 겹치기 — 진행자(크루장이면 따뜻한 색) 먼저 */
 @Composable
-internal fun FaceStack(faces: List<MeetingFace>, hostId: String, hostOwner: Boolean, modifier: Modifier = Modifier) {
+fun FaceStack(faces: List<MeetingFace>, hostId: String, hostOwner: Boolean, modifier: Modifier = Modifier) {
     val ink = blueInk()
     Row(modifier) {
         faces.take(3).forEachIndexed { index, face ->
@@ -186,7 +186,7 @@ internal fun FaceStack(faces: List<MeetingFace>, hostId: String, hostOwner: Bool
 
 /** 요일별 거리 막대(월 → 일) — 값이 있는 날은 숫자와 막대, 오지 않은 날은 "—"(0km 와 다르다) */
 @Composable
-internal fun WeekBars(days: List<Double?>, today: Int?, modifier: Modifier = Modifier, height: Dp = 132.dp, onDay: ((Int) -> Unit)? = null) {
+fun WeekBars(days: List<Double?>, today: Int?, modifier: Modifier = Modifier, height: Dp = 132.dp, onDay: ((Int) -> Unit)? = null) {
     val ink = blueInk()
     val labels = weekdayLabels()
     val bars = CrewHomeRules.bars(days)
@@ -231,12 +231,12 @@ private fun weekBarPast(): Color = if (com.stepup.android.ui.theme.StepUpColors.
 
 /** 누르는 곳 — 앱의 공통 누름(소리 · 떨림 설정을 따른다) */
 @Composable
-internal fun Modifier.homeClickable(enabled: Boolean = true, onClick: () -> Unit): Modifier =
+fun Modifier.homeClickable(enabled: Boolean = true, onClick: () -> Unit): Modifier =
     this.clip(RoundedCornerShape(10.dp)).feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
 
 /** 모임 장소 지도 — 실제 지도 타일 위에 모이는 곳 표시와 이름. 좌표가 없으면 그리지 않는다 */
 @Composable
-internal fun MeetingMap(point: GeoPoint, label: String, modifier: Modifier = Modifier, spanMeters: Int = 260) {
+fun MeetingMap(point: GeoPoint, label: String, modifier: Modifier = Modifier, spanMeters: Int = 260) {
     val measurer = rememberTextMeasurer()
     val style = TextStyle(color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
     val dot = Color(0xFF0754FF)
@@ -262,7 +262,7 @@ internal fun MeetingMap(point: GeoPoint, label: String, modifier: Modifier = Mod
 
 /** 러닝 코스 지도 — 서버가 처음과 끝 300m 를 뗀 코스(두 끝을 잇거나 원래 좌표를 되살리지 않는다) */
 @Composable
-internal fun RunRouteMap(route: List<GeoPoint>, modifier: Modifier = Modifier) {
+fun RunRouteMap(route: List<GeoPoint>, modifier: Modifier = Modifier) {
     RunMapFrame(modifier.testTag("home-run-map")) {
         LiveRouteMap(points = route, seed = 5)
     }
@@ -270,7 +270,7 @@ internal fun RunRouteMap(route: List<GeoPoint>, modifier: Modifier = Modifier) {
 
 /** 처음 읽는 동안의 자리 — 이전 크루 · 다른 모임의 값을 먼저 보이지 않는다 */
 @Composable
-internal fun HomeSkeleton(modifier: Modifier = Modifier) {
+fun HomeSkeleton(modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().padding(horizontal = BlueGutter).testTag("home-loading")) {
         Spacer(Modifier.height(20.dp))
         BlueSkeleton(Modifier.fillMaxWidth().height(258.dp), 24.dp)
@@ -286,7 +286,7 @@ internal fun HomeSkeleton(modifier: Modifier = Modifier) {
 
 /** 한 줄 값 — 이름 왼쪽, 값 오른쪽, 아래 선(01 · 05 · 06) */
 @Composable
-internal fun HomeValueRow(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
+fun HomeValueRow(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
     val ink = blueInk()
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().heightIn(min = 62.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -305,13 +305,13 @@ internal fun HomeValueRow(label: String, value: String, modifier: Modifier = Mod
 
 /** 동그라미 점(작은 원) — 요일 막대가 비었을 때 등 */
 @Composable
-internal fun HomeDot(color: Color, modifier: Modifier = Modifier) {
+fun HomeDot(color: Color, modifier: Modifier = Modifier) {
     Canvas(modifier.size(6.dp)) { drawCircle(color) }
 }
 
 /** 말풍선 선 그림(크루 채팅 카드의 오른쪽 아래) */
 @Composable
-internal fun ChatBubbleIcon(color: Color, modifier: Modifier = Modifier) {
+fun ChatBubbleIcon(color: Color, modifier: Modifier = Modifier) {
     Canvas(modifier.size(24.dp)) {
         val s = size.width / 24f
         val stroke = Stroke(width = 1.7f * s, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
@@ -331,7 +331,7 @@ internal fun ChatBubbleIcon(color: Color, modifier: Modifier = Modifier) {
 
 /** 이름 찾기 칸 — 돋보기 · 입력(모서리 14 · 52dp) */
 @Composable
-internal fun HomeSearchField(
+fun HomeSearchField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
@@ -343,7 +343,7 @@ internal fun HomeSearchField(
     val shape = RoundedCornerShape(16.dp)
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+            .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
             .border(1.dp, if (value.isEmpty()) ink.edge else ink.edgeStrong, shape)
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -377,7 +377,7 @@ internal fun HomeSearchField(
 
 /** 공개 값만 읽는 홈 화면(소개 · 레벨 · 크루원)의 가입 확인 — 보일 때마다 확인하고, 접근이 사라졌으면 접근 종료로 */
 @Composable
-internal fun HomeAccessGuard(viewModel: CrewHomeAccessViewModel, onEnded: () -> Unit) {
+fun HomeAccessGuard(viewModel: CrewHomeAccessViewModel, onEnded: () -> Unit) {
     val ended by viewModel.ended.collectAsStateWithLifecycle()
     LifecycleResumeEffect(viewModel) {
         viewModel.check()

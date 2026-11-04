@@ -71,7 +71,7 @@ import com.stepup.android.ui.theme.StepUpFonts
 // ── 색 ─────────────────────────────────────────────────────────────
 
 @Immutable
-internal class CrewColors(
+class CrewColors(
     val screen: Color,
     val card: Color,
     val inset: Color,
@@ -144,13 +144,13 @@ private val CrewLight = CrewColors(
 )
 
 @Composable
-internal fun crewColors(): CrewColors = if (StepUpColors.dark) CrewDark else CrewLight
+fun crewColors(): CrewColors = if (StepUpColors.dark) CrewDark else CrewLight
 
 /**
  * 크루 달리기의 지도 색 — 밝은 실제 지도(2026-10-16 크루 전달본: 어두운 덧칠로 길 · 공원 · 경로를 가리지 않는다). 러닝 화면과 같은
  * 밝은 거리 지도다(2026-10-17). 예전 값(필터 없음)은 어두운 테마에서 앱 테마의 어두운 지도 색이 되어 밝지 않았다.
  */
-internal val CrewBrightMap = BrightMapTone
+val CrewBrightMap = BrightMapTone
 
 // ── 머리 · 배지 ────────────────────────────────────────────────────
 
@@ -159,7 +159,7 @@ internal val CrewBrightMap = BrightMapTone
  * [trailing] 은 배지 앞에 두는 화면의 행동 하나(결과의 ⋯). 앱의 머리 · 아래 탭을 따로 만들지 않는다.
  */
 @Composable
-internal fun CrewHeader(
+fun CrewHeader(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
@@ -215,7 +215,7 @@ internal fun CrewHeader(
 
 /** 정확히 "크루 달리기" — 파란 알약 · 사람들 아이콘. 누르는 것이 아니다(버튼처럼 보이지 않게 그림자 · 테가 없다) */
 @Composable
-internal fun CrewBadge(modifier: Modifier = Modifier) {
+fun CrewBadge(modifier: Modifier = Modifier) {
     val c = crewColors()
     Row(
         modifier.clip(RoundedCornerShape(18.dp)).background(c.badge).padding(horizontal = 11.dp, vertical = 7.dp)
@@ -232,7 +232,7 @@ internal fun CrewBadge(modifier: Modifier = Modifier) {
 
 /** 이니셜 원 — 나는 "나"와 파란 테, 다른 사람은 이름 머리글자와 옅은 테. 바탕은 사람마다 정해진 남색 하나 */
 @Composable
-internal fun CrewAvatar(name: String, id: String, me: Boolean, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+fun CrewAvatar(name: String, id: String, me: Boolean, modifier: Modifier = Modifier, size: Dp = 40.dp) {
     val c = crewColors()
     val face = if (me) c.avatarMeFace else c.avatarFaces[com.stepup.android.domain.javaFloorMod(id.hashCode(), c.avatarFaces.size)]
     val text = if (me) stringResource(Res.string.run_cr_me_only) else initialsOf(name)
@@ -248,7 +248,7 @@ internal fun CrewAvatar(name: String, id: String, me: Boolean, modifier: Modifie
 }
 
 /** 명단 순서 — 진행자, 나, 나머지(서버 순서). 진행자가 나면 나 한 번 */
-internal fun crewOrder(members: List<PartyMember>): List<PartyMember> =
+fun crewOrder(members: List<PartyMember>): List<PartyMember> =
     members.sortedWith(compareByDescending<PartyMember> { it.isHost }.thenByDescending { it.isMe })
 
 /**
@@ -256,7 +256,7 @@ internal fun crewOrder(members: List<PartyMember>): List<PartyMember> =
  * 줄 전체가 버튼이다 — 누르면 함께 달리는 사람(CR10). 위치를 공유하지 않는 사람도 줄에는 있다(지도에는 없다).
  */
 @Composable
-internal fun CrewRoster(members: List<PartyMember>, onOpen: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
+fun CrewRoster(members: List<PartyMember>, onOpen: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
     val c = crewColors()
     val ordered = crewOrder(members)
     val spoken = stringResource(Res.string.run_together_row, members.size)
@@ -301,7 +301,7 @@ internal fun CrewRoster(members: List<PartyMember>, onOpen: () -> Unit, modifier
 
 /** 명단 한 줄 — 이니셜 · 이름 · 보조 글(진행자 · 크루원 · 내 러닝) · 오른쪽 상태 */
 @Composable
-internal fun CrewPersonRow(
+fun CrewPersonRow(
     member: PartyMember,
     meta: String,
     modifier: Modifier = Modifier,
@@ -326,7 +326,7 @@ internal fun CrewPersonRow(
 
 /** 준비 완료(초록 체크) · 준비 전(흐린 글) */
 @Composable
-internal fun CrewReadyMark(ready: Boolean, modifier: Modifier = Modifier) {
+fun CrewReadyMark(ready: Boolean, modifier: Modifier = Modifier) {
     val c = crewColors()
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         if (ready) {
@@ -346,7 +346,7 @@ internal fun CrewReadyMark(ready: Boolean, modifier: Modifier = Modifier) {
  * 준비 표시 점 — 준비한 사람 수만큼 채운다(사람 수가 많으면 두지 않는다 — 글이 같은 수를 말한다). 화면 낭독은 글만 읽는다.
  */
 @Composable
-internal fun CrewReadyDots(ready: Int, total: Int, modifier: Modifier = Modifier) {
+fun CrewReadyDots(ready: Int, total: Int, modifier: Modifier = Modifier) {
     val c = crewColors()
     Row(modifier.testTag("party-ready-dots").clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         repeat(total) { i ->
@@ -361,7 +361,7 @@ internal fun CrewReadyDots(ready: Int, total: Int, modifier: Modifier = Modifier
  * 파티 응답에 사진 주소가 없어 이니셜로 그린다(예시 인물 사진을 넣지 않는다).
  */
 @Composable
-internal fun CrewGridCell(member: PartyMember, avatar: Dp, modifier: Modifier = Modifier) {
+fun CrewGridCell(member: PartyMember, avatar: Dp, modifier: Modifier = Modifier) {
     val c = crewColors()
     val status = stringResource(if (member.ready) Res.string.run_cr_ready else Res.string.run_cr_not_ready)
     val line = if (member.isHost) stringResource(Res.string.run_cr_host) + " · " + status else status
@@ -410,7 +410,7 @@ internal fun CrewGridCell(member: PartyMember, avatar: Dp, modifier: Modifier = 
 
 /** "+N" 칸 — 그리드에 다 들어가지 않은 사람 수. 누르면 전체 명단 */
 @Composable
-internal fun CrewMoreCell(rest: Int, avatar: Dp, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CrewMoreCell(rest: Int, avatar: Dp, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = crewColors()
     val label = stringResource(Res.string.run_crew_roster_all)
     Column(
@@ -435,7 +435,7 @@ internal fun CrewMoreCell(rest: Int, avatar: Dp, onClick: () -> Unit, modifier: 
 
 /** 테 두른 카드 — 명단 · 기록 · 미리보기 */
 @Composable
-internal fun CrewCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+fun CrewCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
     val c = crewColors()
     val shape = RoundedCornerShape(16.dp)
     Column(
@@ -446,13 +446,13 @@ internal fun CrewCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, conten
 
 /** 카드 안 줄 사이 가는 선 */
 @Composable
-internal fun CrewLine(modifier: Modifier = Modifier) {
+fun CrewLine(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(1.dp).background(crewColors().line))
 }
 
 /** 안내 줄 — 아이콘 + 짧은 글(혼자 대기 · 연결되면 · 다른 참가자). 바뀌면 화면 낭독이 읽는다 */
 @Composable
-internal fun CrewNote(text: String, modifier: Modifier = Modifier, icon: ImageVector = Icons.Outlined.PeopleAlt, tag: String? = null) {
+fun CrewNote(text: String, modifier: Modifier = Modifier, icon: ImageVector = Icons.Outlined.PeopleAlt, tag: String? = null) {
     val c = crewColors()
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.notice).padding(horizontal = 14.dp, vertical = 12.dp)
@@ -468,7 +468,7 @@ internal fun CrewNote(text: String, modifier: Modifier = Modifier, icon: ImageVe
 
 /** 실패 · 막힘 한 줄 — 붉은 면 · 경고 아이콘(색만으로 알리지 않는다). 바뀌면 화면 낭독이 읽는다 */
 @Composable
-internal fun CrewError(text: String, modifier: Modifier = Modifier, tag: String? = null) {
+fun CrewError(text: String, modifier: Modifier = Modifier, tag: String? = null) {
     val t = com.stepup.android.ui.components.runTone()
     val shape = RoundedCornerShape(12.dp)
     Row(
@@ -486,7 +486,7 @@ internal fun CrewError(text: String, modifier: Modifier = Modifier, tag: String?
 
 /** 화면 폭 한 줄 띠 — 일시정지 · 연결 끊김 · 방 닫힘(지도 바로 위, 시안 CR11 · CR18) */
 @Composable
-internal fun CrewBand(text: String, icon: ImageVector, tag: String, modifier: Modifier = Modifier) {
+fun CrewBand(text: String, icon: ImageVector, tag: String, modifier: Modifier = Modifier) {
     val c = crewColors()
     Row(
         modifier.fillMaxWidth().heightIn(min = 44.dp).background(c.band).padding(horizontal = 18.dp, vertical = 8.dp)
@@ -501,7 +501,7 @@ internal fun CrewBand(text: String, icon: ImageVector, tag: String, modifier: Mo
 
 /** 켜고 끄는 줄 — 이름 · 한 줄 설명 · 스위치(위치 공유 · 경로 포함) */
 @Composable
-internal fun CrewToggleRow(
+fun CrewToggleRow(
     title: String,
     body: String?,
     checked: Boolean,
@@ -527,7 +527,7 @@ internal fun CrewToggleRow(
 }
 
 @Composable
-internal fun CrewSwitch(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun CrewSwitch(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val c = crewColors()
     Switch(
         checked = checked, onCheckedChange = onChange, enabled = enabled, modifier = modifier,
@@ -542,7 +542,7 @@ internal fun CrewSwitch(checked: Boolean, onChange: (Boolean) -> Unit, modifier:
 
 /** 글자 행동(크루에게 알리기 › · 다시 연결하기) — 누르는 자리는 48dp */
 @Composable
-internal fun CrewTextAction(
+fun CrewTextAction(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -567,7 +567,7 @@ internal fun CrewTextAction(
 
 /** 시트 맨 위 — 왼쪽 큰 제목(닫기 자리를 비운다) · 한두 줄 설명 */
 @Composable
-internal fun CrewSheetTitle(title: String, body: String? = null, modifier: Modifier = Modifier) {
+fun CrewSheetTitle(title: String, body: String? = null, modifier: Modifier = Modifier) {
     val c = crewColors()
     Column(modifier.fillMaxWidth().padding(end = 44.dp)) {
         Text(
@@ -587,7 +587,7 @@ internal fun CrewSheetTitle(title: String, body: String? = null, modifier: Modif
 
 /** 큰 수 한 칸 — 이름 위, 수 + 작은 단위(시안의 거리 · 시간 · 페이스). [center] 는 칸 가운데(달리는 중 기록 카드) */
 @Composable
-internal fun androidx.compose.foundation.layout.RowScope.CrewStat(
+fun androidx.compose.foundation.layout.RowScope.CrewStat(
     label: String,
     value: String,
     unit: String?,
@@ -609,7 +609,7 @@ internal fun androidx.compose.foundation.layout.RowScope.CrewStat(
 
 /** 크루 표시 — 파란 둥근 네모 안에 크루 이니셜(크루가 정한 글자) */
 @Composable
-internal fun CrewMark(text: String, size: Dp) {
+fun CrewMark(text: String, size: Dp) {
     val c = crewColors()
     val shape = RoundedCornerShape(size * 0.28f)
     Box(Modifier.size(size).clip(shape).background(c.badge), contentAlignment = Alignment.Center) {

@@ -41,7 +41,11 @@ class RunEngineTest {
         // 경로가 없으면 걸음 거리(안드로이드 RewardEconomy.distanceMeters)
         assertEquals(com.stepup.android.domain.RewardEconomy.distanceMeters(1000) / 1000, s.liveKm)
         assertEquals(com.stepup.android.domain.RewardEconomy.distanceMeters(1000), e.creditedMeters())
-        // 걸음이 멈춘 지 30초가 넘으면 서 있음
+        // 위치를 한 번도 못 잡았으면 걸음이 멈춰도 서 있다고 하지 않는다(지하철 · 지하 — 2026-11-04 RunStill)
+        assertTrue(!e.state(t0 + 40_000).still)
+        // 위치가 잡히는 채로 걸음 · 경로가 30초 넘게 그대로면 서 있음
+        e.fix(37.5000, 126.9500, 5f, t0 + 1_000)
+        e.fix(37.5000, 126.9500, 5f, t0 + 39_000)
         assertTrue(e.state(t0 + 40_000).still)
     }
 

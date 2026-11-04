@@ -421,7 +421,7 @@ private fun CourseHero(course: RunCourse, selected: Boolean, onOpen: () -> Unit,
             LiveRouteMap(points = course.points, modifier = Modifier.fillMaxSize(), routeColor = FreeRunRoute)
         }
         Box(Modifier.fillMaxWidth().fillMaxHeight(.52f).align(Alignment.BottomCenter)
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .62f)))))
+            .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .62f)))))
         Box(
             Modifier.fillMaxSize().feedbackClickable(role = Role.RadioButton, onClick = onOpen)
                 .semantics { this.selected = selected }.testTag("course-pick-${course.id}"),
@@ -524,7 +524,7 @@ private fun runSwitchColors() = runTone().let { t ->
 
 /** K17 — 아직 공유된 코스가 없어요. 내 코스를 올리는 것이 이 자리의 큰 행동 */
 @Composable
-internal fun BoardEmpty(onUpload: () -> Unit) {
+fun BoardEmpty(onUpload: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         RunEmptyState(
             Icons.Outlined.Map, stringResource(Res.string.run_course_board_empty_title),
@@ -539,7 +539,7 @@ internal fun BoardEmpty(onUpload: () -> Unit) {
 
 /** K18 — 코스를 불러오지 못했어요. 저장한 내 코스는 볼 수 있다 */
 @Composable
-internal fun BoardFailed(signIn: Boolean, onRetry: () -> Unit, onMine: () -> Unit) {
+fun BoardFailed(signIn: Boolean, onRetry: () -> Unit, onMine: () -> Unit) {
     val t = runTone()
     Column(Modifier.fillMaxWidth().padding(top = 12.dp).testTag("courses-board-failed"), horizontalAlignment = Alignment.CenterHorizontally) {
         RunEmptyState(

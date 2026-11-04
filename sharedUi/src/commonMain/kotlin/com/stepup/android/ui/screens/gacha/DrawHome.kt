@@ -69,7 +69,7 @@ import com.stepup.android.ui.theme.StepUpDesign
  * 상급 요청의 결과 확인 — 예전에는 상급 탭을 고르던 자리).
  */
 @Composable
-internal fun DrawHome(
+fun DrawHome(
     /** 아래에 비울 자리 — 짧은 알림(DRAW18)이 보이는 동안 */
     bottomInset: Dp,
     status: DrawStatus?,
@@ -299,7 +299,7 @@ private fun DrawMainButton(card: DrawHomeCard, status: DrawStatus?, actions: Dra
 
 /** DRAW18 러닝 반영 · 다시 연결 — 서버 값이 바뀐 것을 확인했을 때만 잠깐. 하단 탭 위 12dp, 버튼을 가리지 않는다 */
 @Composable
-internal fun DrawToast(text: String?, modifier: Modifier = Modifier) {
+fun DrawToast(text: String?, modifier: Modifier = Modifier) {
     if (text == null) return
     val t = runTone()
     val shape = RoundedCornerShape(14.dp)

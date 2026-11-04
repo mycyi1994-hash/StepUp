@@ -149,13 +149,19 @@ fun LiveRouteMap(
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val around = others.map { it.first }
     val lead = head?.takeIf { live && points.isNotEmpty() }
+    // 지금 자리가 경로 끝에서 멀어졌으면(지하철 · 지하 · 신호가 끊겼다 이어짐) 걸어온 경로도 함께 넣는다 — 지금 자리만 가까이 따라가면
+    // 경로가 화면 밖으로 밀려 "잠금 화면을 다녀오니 루트가 다 없어졌다"(2026-11-04 사용자)처럼 보였다. 경로 점은 그대로 남아 있었다.
+    val apart = follow && lead != null && routeLeftBehind(points, lead)
     StepUpMap(
-        focus = if (follow && points.isNotEmpty()) followFrame(lead ?: points.last(), around) else points + listOfNotNull(lead) + around + course,
+        focus = if (follow && points.isNotEmpty()) followFrame(lead ?: points.last(), around + if (apart) routeSample(points) else emptyList())
+            else points + listOfNotNull(lead) + around + course,
         modifier = modifier,
         seed = seed,
         interactive = interactive,
         controlLabels = controlLabels,
-        zooms = if (follow) MapTiles.FOLLOW_ZOOMS else MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
+        // 경로가 뒤에 남았으면 그만큼 멀리까지 — 가까이(FOLLOW_ZOOMS)만 허용하면 몇 km 떨어진 경로가 들어오지 않는다
+        zooms = if (follow && apart) MapTiles.MIN_ZOOM..MapTiles.FOLLOW_ZOOMS.last
+            else if (follow) MapTiles.FOLLOW_ZOOMS else MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
         anchorY = if (follow) followAt else 0.5f,
         // 지금 자리를 따라가는 지도는 30% 더 가까이(2026-10-17 사용자 "초반에 내 자리 지도가 너무 뒤로 가 있다")
         magnify = if (follow) MapTiles.FOLLOW_MAGNIFY else 1f,
@@ -198,11 +204,22 @@ fun LiveRouteMap(
     }
 }
 
+/** 지금 자리([here])가 경로 끝에서 [com.stepup.android.domain.LIVE_HEAD_MAX_M] 보다 멀다 — 따라가는 지도가 경로도 함께 담는다 */
+fun routeLeftBehind(route: List<GeoPoint>, here: GeoPoint): Boolean =
+    route.isNotEmpty() && com.stepup.android.domain.haversineMeters(route.last(), here) > com.stepup.android.domain.LIVE_HEAD_MAX_M
+
+/** 틀에 넣을 경로 점 — 긴 경로도 [limit] 개 안으로 고르게 추리고 처음 · 끝은 꼭 넣는다 */
+fun routeSample(route: List<GeoPoint>, limit: Int = 64): List<GeoPoint> {
+    if (route.size <= limit) return route
+    val step = (route.size - 1).toDouble() / (limit - 1)
+    return List(limit) { route[(it * step).toInt().coerceAtMost(route.size - 1)] }.dropLast(1) + route.last()
+}
+
 /**
  * 지금 자리를 한가운데 두는 틀 — 곁에 둘 점([around])마다 지금 자리 건너편에 거울 점을 하나씩 더한다.
  * 지도는 틀의 가운데를 화면 가운데 두므로 지금 자리가 늘 가운데 오고, 곁의 점도 함께 들어온다.
  */
-internal fun followFrame(here: GeoPoint, around: List<GeoPoint>): List<GeoPoint> =
+fun followFrame(here: GeoPoint, around: List<GeoPoint>): List<GeoPoint> =
     listOf(here) + around.flatMap { listOf(it, mirror(it, here)) }
 
 /**
@@ -222,7 +239,7 @@ private fun mirror(point: GeoPoint, center: GeoPoint): GeoPoint {
  * [seenTop]..[seenBottom] 에서 위 · 아래가 바닥색에 녹아드는 띠를 빼고([clearTop]..[clearBottom] 만) 그 가운데에 둔다.
  * 스크롤할 때마다 지도가 흔들리지 않게 0.05 단위로 끊는다.
  */
-internal fun followAnchor(seenTop: Float, seenBottom: Float, clearTop: Float, clearBottom: Float): Float {
+fun followAnchor(seenTop: Float, seenBottom: Float, clearTop: Float, clearBottom: Float): Float {
     val top = seenTop.coerceIn(0f, 1f)
     val bottom = seenBottom.coerceIn(0f, 1f)
     val lo = maxOf(top, clearTop)
@@ -298,7 +315,7 @@ private fun DrawScope.drawRoute(
         )
         drawPath(
             path,
-            brush = Brush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
+            brush = StopBrush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
             style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }

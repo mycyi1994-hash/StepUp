@@ -79,6 +79,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 신발 뽑기 파란 톤(2026-10-03 통합 전달본 v4 · stepup-draw-blue-claude-v19) 공통 조각 — 남색 패널 · 상자 무대(조명 · 받침) ·
@@ -87,16 +88,16 @@ import com.stepup.android.ui.theme.StepUpFonts
  */
 
 /** 제목 글꼴 — 굵고 기울인 짧은 제목(신발 뽑기 · 무료 뽑기 · 안내창 제목). 긴 본문은 정자로 둔다 */
-internal fun drawTitleStyle(size: TextUnit, color: Color): TextStyle = TextStyle(
+fun drawTitleStyle(size: TextUnit, color: Color): TextStyle = TextStyle(
     fontFamily = StepUpFonts.sans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
     fontSize = size, lineHeight = 1.2.em, letterSpacing = (-0.02).em, color = color,
 )
 
 /** 남은 수 · "확인 중" — 시안의 시안색(#48D9FA) 큰 기울인 글자. 위가 밝다(어두운 테마) */
 @Composable
-internal fun drawCountBrush(): Brush {
+fun drawCountBrush(): Brush {
     val t = runTone()
-    return if (t.dark) Brush.verticalGradient(listOf(Color(0xFFB8F1FF), t.cyan)) else Brush.verticalGradient(listOf(t.cobalt, t.cyan))
+    return if (t.dark) StopBrush.verticalGradient(listOf(Color(0xFFB8F1FF), t.cyan)) else StopBrush.verticalGradient(listOf(t.cobalt, t.cyan))
 }
 
 /** 패널 모양 — 위 두 모서리를 깎고(시안의 조명 틀) 아래는 둥근 판 */
@@ -123,14 +124,14 @@ private val PanelRadius = 16.dp
  * ([DrawBoxStage] 가 그린다). 누르는 곳이 아니다 — 행동은 안의 버튼 · 글자 링크만.
  */
 @Composable
-internal fun DrawPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun DrawPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val t = runTone()
     val shape = remember { DrawPanelShape(PanelCut, PanelRadius) }
     val light = if (t.dark) Color(0xFF7FD8FF) else t.cobalt
     Column(
         modifier.fillMaxWidth()
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)))
+            .background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)))
             .drawWithContent {
                 drawContent()
                 drawPath(panelPath(size, PanelCut.toPx(), PanelRadius.toPx()), t.panelEdge, style = Stroke(width = 1.5.dp.toPx()))
@@ -150,7 +151,7 @@ internal fun DrawPanel(modifier: Modifier = Modifier, content: @Composable Colum
  * 빛은 이 칸 안에만 그린다 — 글자 위로 광원이 겹치지 않는다.
  */
 @Composable
-internal fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Boolean = false, maxBoxWidth: Dp = 260.dp) {
+fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Boolean = false, maxBoxWidth: Dp = 260.dp) {
     val t = runTone()
     BoxWithConstraints(modifier, contentAlignment = Alignment.BottomCenter) {
         Canvas(Modifier.matchParentSize()) {
@@ -162,7 +163,7 @@ internal fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Bo
             }
             drawPath(
                 beam,
-                Brush.verticalGradient(
+                StopBrush.verticalGradient(
                     listOf(t.cobalt.copy(alpha = if (dim) 0.10f else if (t.dark) 0.34f else 0.16f), Color.Transparent),
                     startY = 0f, endY = h * 0.86f,
                 ),
@@ -173,7 +174,7 @@ internal fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Bo
             val rh = h * 0.08f
             drawOval(Color.Black.copy(alpha = if (t.dark) 0.35f else 0.12f), Offset(w / 2 - rw, cy - rh + h * 0.03f), Size(rw * 2, rh * 2))
             drawOval(
-                Brush.radialGradient(
+                StopBrush.radialGradient(
                     listOf((if (t.dark) Color(0xFF0B3A86) else Color(0xFFD3E2FF)), (if (t.dark) Color(0xFF06204A) else Color(0xFFEAF1FF))),
                     center = Offset(w / 2, cy), radius = rw,
                 ),
@@ -208,7 +209,7 @@ internal fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Bo
 
 /** 모르는 수 — 짧은 줄 하나("—"). 0 으로 보이지 않는다 */
 @Composable
-internal fun DrawUnknownValue(tag: String, modifier: Modifier = Modifier) {
+fun DrawUnknownValue(tag: String, modifier: Modifier = Modifier) {
     val t = runTone()
     Box(
         modifier.heightIn(min = 40.dp).widthIn(min = 80.dp).clip(RoundedCornerShape(12.dp)).background(t.chipFace)
@@ -220,7 +221,7 @@ internal fun DrawUnknownValue(tag: String, modifier: Modifier = Modifier) {
 }
 
 /** 모르는 수 — 0 으로 보이지 않는다 */
-internal const val DASH = "—"
+const val DASH = "—"
 
 // ── 안내창 ───────────────────────────────────────────────────────
 
@@ -230,7 +231,7 @@ internal const val DASH = "—"
  * 늘 보인다. ✕ · 바깥 · 뒤로는 [onDismiss](창만 닫는다 — 기회를 쓰지 않는다).
  */
 @Composable
-internal fun DrawSheetFrame(
+fun DrawSheetFrame(
     title: String?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -255,7 +256,7 @@ internal fun DrawSheetFrame(
             val shape = RoundedCornerShape(topStart = RunSpec.SheetRadius, topEnd = RunSpec.SheetRadius)
             Column(
                 modifier.widthIn(max = 600.dp).fillMaxWidth().statusBarsPadding().heightIn(max = maxHeight - 24.dp)
-                    .clip(shape).background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)))
+                    .clip(shape).background(StopBrush.verticalGradient(listOf(t.sheetTop, t.sheet)))
                     .border(1.dp, t.sheetEdge, shape)
                     .pointerInput(Unit) { detectTapGestures { } }
                     .navigationBarsPadding(),
@@ -316,7 +317,7 @@ internal fun DrawSheetFrame(
  * 오른쪽 한 행동(건너뛰기) 또는 같은 폭의 빈자리. 시안에서 화살표가 빠진 장면도 기존 복귀 동작은 그대로 둔다.
  */
 @Composable
-internal fun DrawFlowBar(
+fun DrawFlowBar(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -339,7 +340,7 @@ internal fun DrawFlowBar(
 
 /** 흐름 화면의 큰 제목(가운데, 기울인 굵은 글자) · 한 줄 설명 */
 @Composable
-internal fun DrawFlowHeadline(title: String, body: String?, modifier: Modifier = Modifier) {
+fun DrawFlowHeadline(title: String, body: String?, modifier: Modifier = Modifier) {
     val t = runTone()
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(

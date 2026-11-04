@@ -67,7 +67,7 @@ import com.stepup.android.ui.guide.guideTarget
  * 못 읽으면 실패 안내와 다시 시도(0 으로 보이지 않는다).
  */
 @Composable
-internal fun ProfileHome(
+fun ProfileHome(
     state: ProfileViewModel.UiState,
     records: RunRecordState,
     onRetryRecords: () -> Unit,
@@ -162,7 +162,7 @@ private fun ProfileRow(state: ProfileViewModel.UiState, onEditProfile: () -> Uni
  * (HANDOFF me: 기본 사람 아이콘 · 이니셜 금지).
  */
 @Composable
-internal fun ProfileAvatar(state: ProfileViewModel.UiState, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+fun ProfileAvatar(state: ProfileViewModel.UiState, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
     val c = StepUpUi.colors
     val photo = rememberCustomAvatar(state.avatarRev)
     Box(
@@ -181,7 +181,7 @@ internal fun ProfileAvatar(state: ProfileViewModel.UiState, size: androidx.compo
 }
 
 /** 다음 기록 — 누적 거리보다 큰 다음 이정표(km). 실제 누적 거리에서만 정한다 */
-internal fun nextMilestoneKm(km: Double): Int {
+fun nextMilestoneKm(km: Double): Int {
     val steps = listOf(10, 25, 50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000)
     return steps.firstOrNull { it > km } ?: ((km / 1000).toInt() + 1) * 1000
 }

@@ -1,7 +1,10 @@
 package com.stepup.android
 
 import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Rule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.ui.components.RunShareCard
@@ -21,7 +24,25 @@ import java.io.File
  */
 @RunWith(AndroidJUnit4::class)
 class ShareCardRenderTest {
+    @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    /** 그리는 재료(글꼴 · 워드마크)는 화면 안에서 읽는다 — 빈 화면 하나로 받아 둔다 */
+    private val kit: RunShareCard.Kit by lazy {
+        var got: RunShareCard.Kit? = null
+        compose.setContent { got = RunShareCard.rememberKit() }
+        compose.waitUntil(10_000) { got != null }
+        requireNotNull(got)
+    }
+
+    private fun render(
+        km: Double, elapsed: String, pace: String, track: List<GeoPoint>, labels: RunShareCard.Labels,
+        date: String? = null, style: RunShareCard.Style = RunShareCard.Style.Classic, distance: String? = null,
+    ): Bitmap {
+        var card: Bitmap? = null
+        compose.runOnIdle { card = RunShareCard.render(kit, km, elapsed, pace, track, labels, date, style, distance).asAndroidBitmap() }
+        return requireNotNull(card)
+    }
     private val labels get() = RunShareCard.Labels(
         distance = context.getString(R.string.share_card_distance),
         time = context.getString(R.string.share_card_time),
@@ -49,7 +70,7 @@ class ShareCardRenderTest {
     }
 
     @Test fun rendersCardWithRoute() {
-        val card = RunShareCard.render(context, km = 5.02, elapsed = "31:08", pace = "6'12\"", track = track, labels = labels,
+        val card = render(km = 5.02, elapsed = "31:08", pace = "6'12\"", track = track, labels = labels,
             date = "2026.10.03 (토)")
         assertEquals(RunShareCard.WIDTH, card.width)
         assertEquals(RunShareCard.HEIGHT, card.height)
@@ -58,7 +79,7 @@ class ShareCardRenderTest {
     }
 
     @Test fun routeOffLeavesNoRouteOrPlaces() {
-        val card = RunShareCard.render(context, km = 5.02, elapsed = "31:08", pace = "6'12\"", track = emptyList(), labels = labels,
+        val card = render(km = 5.02, elapsed = "31:08", pace = "6'12\"", track = emptyList(), labels = labels,
             date = "2026.10.03 (토)")
         assertEquals(RunShareCard.WIDTH, card.width)
         assertEquals(RunShareCard.HEIGHT_NO_ROUTE, card.height)
@@ -91,7 +112,7 @@ class ShareCardRenderTest {
     )
 
     @Test fun freeStyleRendersGreenRouteWithoutFooter() {
-        val card = RunShareCard.render(context, km = 3.24, elapsed = "21:40", pace = "6′41″", track = track, labels = freeLabels,
+        val card = render(km = 3.24, elapsed = "21:40", pace = "6′41″", track = track, labels = freeLabels,
             date = "2026.10.14", style = RunShareCard.Style.Free, distance = "3.24")
         assertEquals(RunShareCard.WIDTH, card.width)
         assertEquals(RunShareCard.HEIGHT, card.height)
@@ -101,7 +122,7 @@ class ShareCardRenderTest {
 
     @Test fun freeStyleWithoutRouteKeepsPortraitAndNoGreen() {
         // 경로를 빼도 자유 러닝 그림은 세로(4:5) 그대로 — 위치가 없던 러닝처럼 거리도 "—"
-        val card = RunShareCard.render(context, km = 0.0, elapsed = "21:40", pace = "—", track = emptyList(), labels = freeLabels,
+        val card = render(km = 0.0, elapsed = "21:40", pace = "—", track = emptyList(), labels = freeLabels,
             date = "2026.10.14", style = RunShareCard.Style.Free, distance = "—")
         assertEquals(RunShareCard.WIDTH, card.width)
         assertEquals(RunShareCard.HEIGHT, card.height)

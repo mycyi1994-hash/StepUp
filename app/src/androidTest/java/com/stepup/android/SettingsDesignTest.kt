@@ -29,7 +29,7 @@ import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.prefs.ExperiencePreferences
 import com.stepup.android.data.prefs.NotifyPrefs
-import com.stepup.android.push.NotificationSyncState
+import com.stepup.android.core.NotificationSyncState
 import com.stepup.android.ui.MainScaffold
 import com.stepup.android.ui.Screen
 import com.stepup.android.ui.components.S2Stage
@@ -70,13 +70,13 @@ class SettingsDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()

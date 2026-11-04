@@ -61,6 +61,7 @@ import com.stepup.android.ui.screens.community.crew.CrewImage
 import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 /** 대화에서 나가는 곳 */
 class ChatRoomActions(
@@ -194,7 +195,7 @@ fun ChatRoomScreen(viewModel: ChatRoomViewModel, actions: ChatRoomActions) {
     val solo = meta != null && meta.memberCount <= 1 && ui.messages.none { it.kind != ChatKind.SYSTEM }
 
     Column(
-        Modifier.fillMaxSize().background(Brush.verticalGradient(0f to ink.canvasTop, 0.35f to ink.canvas, 1f to ink.canvas)).imePadding()
+        Modifier.fillMaxSize().background(StopBrush.verticalGradient(0f to ink.canvasTop, 0.35f to ink.canvas, 1f to ink.canvas)).imePadding()
             .testTag(if (meta?.owner == true) "chat-room-owner" else "chat-room"),
     ) {
         if (solo) {
@@ -514,7 +515,7 @@ private fun ChatRoomSheets(
 }
 
 @Composable
-internal fun chatConfirmErrorText(error: ChatConfirmError): String = stringResource(
+fun chatConfirmErrorText(error: ChatConfirmError): String = stringResource(
     when (error) {
         ChatConfirmError.FAILED -> Res.string.chat_action_error
         ChatConfirmError.GONE -> Res.string.chat_action_gone
@@ -523,7 +524,7 @@ internal fun chatConfirmErrorText(error: ChatConfirmError): String = stringResou
 
 /** 메뉴 시트 — 제목과 줄들 */
 @Composable
-internal fun ChatMenuSheet(title: String, tag: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
+fun ChatMenuSheet(title: String, tag: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
     BlueSheet(title, onDismiss, Modifier.testTag(tag)) {
         ChatSheetTopLine()
         content()

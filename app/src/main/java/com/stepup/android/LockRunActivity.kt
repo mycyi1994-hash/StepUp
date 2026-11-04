@@ -30,7 +30,7 @@ import com.stepup.android.ui.theme.StepUpTheme
 class LockRunActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(AppLocale.wrap(newBase))
+        super.attachBaseContext(com.stepup.android.core.AndroidLocale.wrap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

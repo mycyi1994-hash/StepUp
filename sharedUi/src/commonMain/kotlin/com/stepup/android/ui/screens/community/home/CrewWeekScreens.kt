@@ -69,15 +69,15 @@ import kotlinx.datetime.LocalDate
 
 /** "9.28 – 10.4" */
 @Composable
-internal fun weekRangeShort(start: LocalDate): String = stringResource(Res.string.crewhome_week_range, homeShortDate(start), homeShortDate(start.plusDaysKx(6)))
+fun weekRangeShort(start: LocalDate): String = stringResource(Res.string.crewhome_week_range, homeShortDate(start), homeShortDate(start.plusDaysKx(6)))
 
 /** "9월 28일 – 10월 4일" */
 @Composable
-internal fun weekRangeLong(start: LocalDate): String = stringResource(Res.string.crewhome_week_range, homeDate(start), homeDate(start.plusDaysKx(6)))
+fun weekRangeLong(start: LocalDate): String = stringResource(Res.string.crewhome_week_range, homeDate(start), homeDate(start.plusDaysKx(6)))
 
 /** 이번 주 · 지난주 · "9월 14일 주" */
 @Composable
-internal fun weekName(start: LocalDate, weeks: List<LocalDate>): String = when (weeks.indexOf(start)) {
+fun weekName(start: LocalDate, weeks: List<LocalDate>): String = when (weeks.indexOf(start)) {
     0 -> stringResource(Res.string.crewhome_week_this)
     1 -> stringResource(Res.string.crewhome_week_last)
     else -> stringResource(Res.string.crewhome_week_of_date, homeDate(start))
@@ -85,7 +85,7 @@ internal fun weekName(start: LocalDate, weeks: List<LocalDate>): String = when (
 
 /** 16 주간 선택 — 이번 주 · 지난주 · 2주 전. 고른 주를 기록 목록 · 개인 기록까지 넘긴다 */
 @Composable
-internal fun WeekSelectSheet(weeks: List<LocalDate>, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+fun WeekSelectSheet(weeks: List<LocalDate>, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
     BlueSheet(stringResource(Res.string.crewhome_week_select), onDismiss, Modifier.testTag("home-week-select")) {
         Spacer(Modifier.height(8.dp))
         weeks.forEachIndexed { index, start ->
@@ -409,7 +409,7 @@ private fun RunsHead(scope: CrewRunsScope, week: CrewWeek?, name: String, onSele
         val scopeShape = RoundedCornerShape(16.dp)
         Row(
             Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(scopeShape)
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(ink.cardTop, ink.card)), scopeShape)
+                .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), scopeShape)
                 .border(1.5.dp, ink.edgeStrong, scopeShape)
                 .homeClickable(onClick = onSelect).padding(horizontal = 20.dp, vertical = 14.dp).testTag("home-runs-scope"),
             verticalAlignment = Alignment.CenterVertically,

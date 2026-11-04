@@ -97,7 +97,7 @@ import kotlinx.datetime.LocalDate
 
 /** 채팅에만 있는 색 — 어두운 테마는 시안 값, 밝은 테마는 같은 관계의 밝은 값 */
 @Immutable
-internal class ChatInk(
+class ChatInk(
     val incoming: Color,
     val incomingText: Color,
     val outgoing: Color,
@@ -151,16 +151,16 @@ private val LightChatInk = ChatInk(
 )
 
 @Composable
-internal fun chatInk(): ChatInk = if (StepUpColors.dark) DarkChatInk else LightChatInk
+fun chatInk(): ChatInk = if (StepUpColors.dark) DarkChatInk else LightChatInk
 
 /** 대화 화면의 좌우 */
-internal val ChatGutter = 16.dp
+val ChatGutter = 16.dp
 
 // ── 머리 ─────────────────────────────────────────────────────
 
 /** 02 · 03 머리 — 뒤로(공통 머리) · 크루 이미지 · 이름 · "크루원 25명"(지금 크루원 수) · 더보기(04 · 05) */
 @Composable
-internal fun ChatRoomHeader(card: CrewCard?, memberCount: Int?, onBack: () -> Unit, onInfo: (() -> Unit)?) {
+fun ChatRoomHeader(card: CrewCard?, memberCount: Int?, onBack: () -> Unit, onInfo: (() -> Unit)?) {
     val ink = blueInk()
     Row(
         Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
@@ -208,7 +208,7 @@ internal fun ChatRoomHeader(card: CrewCard?, memberCount: Int?, onBack: () -> Un
  * 일어나지 않게 두 곳을 나란히 둔다.
  */
 @Composable
-internal fun ChatPinnedNotice(title: String, owner: Boolean, onOpen: () -> Unit, onManage: () -> Unit, modifier: Modifier = Modifier) {
+fun ChatPinnedNotice(title: String, owner: Boolean, onOpen: () -> Unit, onManage: () -> Unit, modifier: Modifier = Modifier) {
     val ink = blueInk()
     val chat = chatInk()
     val shape = RoundedCornerShape(16.dp)
@@ -264,7 +264,7 @@ private fun MegaphoneIcon(color: Color, modifier: Modifier) {
 
 /** 20 다시 연결하는 중 — 쓰던 글은 남아 있다 */
 @Composable
-internal fun ChatReconnectBanner(modifier: Modifier = Modifier) {
+fun ChatReconnectBanner(modifier: Modifier = Modifier) {
     val ink = blueInk()
     val chat = chatInk()
     val shape = RoundedCornerShape(16.dp)
@@ -285,7 +285,7 @@ internal fun ChatReconnectBanner(modifier: Modifier = Modifier) {
 
 /** 21 새 메시지 N개 — 누르면 맨 아래(최신)로. 읽던 위치를 자동으로 밀지 않는다 */
 @Composable
-internal fun ChatNewMessagesButton(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ChatNewMessagesButton(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val ink = blueInk()
     val chat = chatInk()
     val shape = RoundedCornerShape(20.dp)
@@ -307,7 +307,7 @@ internal fun ChatNewMessagesButton(count: Int, onClick: () -> Unit, modifier: Mo
 
 /** 크루장 라벨(40×19) */
 @Composable
-internal fun ChatOwnerBadge(modifier: Modifier = Modifier) {
+fun ChatOwnerBadge(modifier: Modifier = Modifier) {
     val chat = chatInk()
     Box(
         modifier.heightIn(min = 22.dp).widthIn(min = 44.dp).clip(RoundedCornerShape(6.dp)).background(chat.badge)
@@ -320,7 +320,7 @@ internal fun ChatOwnerBadge(modifier: Modifier = Modifier) {
 
 /** 목록의 미확인 수(21) — 100 이상은 99+ */
 @Composable
-internal fun ChatUnreadBadge(count: Int, modifier: Modifier = Modifier) {
+fun ChatUnreadBadge(count: Int, modifier: Modifier = Modifier) {
     val chat = chatInk()
     Box(
         modifier.heightIn(min = 26.dp).widthIn(min = 26.dp).clip(RoundedCornerShape(13.dp)).background(chat.unread)
@@ -333,16 +333,16 @@ internal fun ChatUnreadBadge(count: Int, modifier: Modifier = Modifier) {
 
 /** 보일 작성자 이름 — 계정을 지운 사람은 "탈퇴한 사용자"(서버는 글을 남기고 작성자만 비운다, 0058), 이름을 모르면 "알 수 없음" */
 @Composable
-internal fun chatAuthorName(name: String?, deleted: Boolean): String =
+fun chatAuthorName(name: String?, deleted: Boolean): String =
     if (deleted) stringResource(Res.string.chat_author_deleted)
     else name?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.chat_unknown_name)
 
 /** 첫 글자 동그라미에 쓸 이름 — 탈퇴한 사용자는 이름이 없다("?") */
-internal fun chatFaceName(name: String?, deleted: Boolean): String? = if (deleted) null else name
+fun chatFaceName(name: String?, deleted: Boolean): String? = if (deleted) null else name
 
 /** 말풍선 옆 첫 글자 동그라미 — 지금의 크루장은 따뜻한 색 */
 @Composable
-internal fun ChatFace(name: String?, owner: Boolean, size: Dp, modifier: Modifier = Modifier) {
+fun ChatFace(name: String?, owner: Boolean, size: Dp, modifier: Modifier = Modifier) {
     val chat = chatInk()
     Box(
         modifier.size(size).clip(CircleShape).background(if (owner) chat.ownerFace else chat.memberFace),
@@ -359,7 +359,7 @@ internal fun ChatFace(name: String?, owner: Boolean, size: Dp, modifier: Modifie
 
 /** 날짜 줄 — "9월 28일 월요일" */
 @Composable
-internal fun ChatDayLine(day: LocalDate) {
+fun ChatDayLine(day: LocalDate) {
     val ink = blueInk()
     val pattern = stringResource(Res.string.chat_day_pattern)
     val text = remember(day, pattern) { runCatching { day.formatPattern(pattern, androidx.compose.ui.text.intl.Locale.current.language) }.getOrDefault(day.toString()) }
@@ -371,7 +371,7 @@ internal fun ChatDayLine(day: LocalDate) {
 
 /** 알림 줄 — 새 공지(정보색) · 크루를 떠남(보조색) */
 @Composable
-internal fun ChatSystemLine(message: ChatMessage) {
+fun ChatSystemLine(message: ChatMessage) {
     val ink = blueInk()
     val name = message.eventName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.chat_unknown_name)
     val (text, color) = when (message.event) {
@@ -386,18 +386,18 @@ internal fun ChatSystemLine(message: ChatMessage) {
 }
 
 /** 보낸 시각 "19:05" */
-internal fun chatTime(millis: Long, zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): String =
+fun chatTime(millis: Long, zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): String =
     kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone).time.formatPattern("HH:mm", androidx.compose.ui.text.intl.Locale.current.language)
 
 /** "9월 28일 · 19:05" 모양의 날짜 — 언어별 짧은 날짜 */
-internal fun chatDate(millis: Long, locale: Locale = Locale.current, zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): String {
+fun chatDate(millis: Long, locale: Locale = Locale.current, zone: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.currentSystemDefault()): String {
     val pattern = com.stepup.android.core.bestDatePattern(androidx.compose.ui.text.intl.Locale.current.language, "MMMd")
     return kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(zone).formatPattern(pattern, androidx.compose.ui.text.intl.Locale.current.language)
 }
 
 /** 말풍선의 글 — 지웠으면 "삭제된 메시지예요.", 숨겼으면 "크루장이 숨긴 메시지예요."(내용은 서버가 보내지 않는다) */
 @Composable
-internal fun chatBodyText(message: ChatMessage): String? = when (message.state) {
+fun chatBodyText(message: ChatMessage): String? = when (message.state) {
     ChatState.DELETED -> stringResource(Res.string.chat_deleted)
     ChatState.HIDDEN -> stringResource(Res.string.chat_hidden)
     ChatState.VISIBLE -> message.body?.takeIf { it.isNotBlank() }
@@ -405,7 +405,7 @@ internal fun chatBodyText(message: ChatMessage): String? = when (message.state) 
 
 /** 답장 원문 한 줄 — 지웠거나 숨겼으면 그 상태만 */
 @Composable
-internal fun chatReplyText(reply: ChatReply): String = when {
+fun chatReplyText(reply: ChatReply): String = when {
     reply.state == ChatState.DELETED -> stringResource(Res.string.chat_deleted)
     reply.state == ChatState.HIDDEN -> stringResource(Res.string.chat_hidden)
     reply.kind == ChatKind.IMAGE && reply.body.isNullOrBlank() -> stringResource(Res.string.chat_photo)
@@ -418,7 +418,7 @@ internal fun chatReplyText(reply: ChatReply): String = when {
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun ChatBubbleRow(
+fun ChatBubbleRow(
     crewId: String,
     message: ChatMessage,
     mine: Boolean,
@@ -667,7 +667,7 @@ private fun FailedAction(icon: androidx.compose.ui.graphics.vector.ImageVector, 
  * 공백만 있거나 연결이 끊겼으면 보내기 · 사진이 꺼진다. 쓰던 글은 끊겨도 계속 고칠 수 있다.
  */
 @Composable
-internal fun ChatComposer(
+fun ChatComposer(
     text: String,
     onText: (String) -> Unit,
     /** 글을 쓸 수 있다(대화를 못 불러왔으면 36 처럼 막는다) */
@@ -780,7 +780,7 @@ internal fun ChatComposer(
 
 /** 시트 안의 메뉴 한 줄(메시지 메뉴 · 사진 보내기 · 모임 고르기) — 이름, 오른쪽 "선택됨", 꺾쇠, 아래 선 */
 @Composable
-internal fun ChatSheetRow(title: String, onClick: () -> Unit, tag: String, warn: Boolean = false, selected: Boolean = false, enabled: Boolean = true) {
+fun ChatSheetRow(title: String, onClick: () -> Unit, tag: String, warn: Boolean = false, selected: Boolean = false, enabled: Boolean = true) {
     val ink = blueInk()
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -801,17 +801,17 @@ internal fun ChatSheetRow(title: String, onClick: () -> Unit, tag: String, warn:
 
 /** 시트 메뉴의 첫 선 — 제목과 줄 사이 */
 @Composable
-internal fun ChatSheetTopLine() {
+fun ChatSheetTopLine() {
     Spacer(Modifier.height(14.dp))
     BlueDivider()
 }
 
 /** 크루의 방 정보를 크루 명함형 부품 모양으로 */
-internal fun ChatRoomMeta?.cardOr(card: CrewCard?): CrewCard? = this?.card ?: card
+fun ChatRoomMeta?.cardOr(card: CrewCard?): CrewCard? = this?.card ?: card
 
 /** 불러오기 실패(36)의 가운데 — 다시 불러오기 */
 @Composable
-internal fun ChatRetryState(title: String, body: String, button: String, onRetry: () -> Unit, modifier: Modifier = Modifier, tag: String) {
+fun ChatRetryState(title: String, body: String, button: String, onRetry: () -> Unit, modifier: Modifier = Modifier, tag: String) {
     val ink = blueInk()
     Column(modifier.fillMaxWidth().padding(horizontal = BlueGutter).testTag(tag), horizontalAlignment = Alignment.CenterHorizontally) {
         BlueStateIcon(Icons.Filled.Refresh, ring = false)
@@ -825,6 +825,6 @@ internal fun ChatRetryState(title: String, body: String, button: String, onRetry
 }
 
 /** 복사 — 고른 메시지 내용만 */
-internal fun copyChatText(clipboard: androidx.compose.ui.platform.ClipboardManager, text: String) {
+fun copyChatText(clipboard: androidx.compose.ui.platform.ClipboardManager, text: String) {
     runCatching { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)) }
 }

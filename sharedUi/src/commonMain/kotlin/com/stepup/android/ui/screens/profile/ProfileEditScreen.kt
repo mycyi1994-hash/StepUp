@@ -403,7 +403,7 @@ private val EditGutter = 24.dp
 
 /** PRO13 — 저장된 이름 · 사진을 읽는 중. 자리만(이름 · 숫자를 꾸미지 않는다) · 도는 표시 하나 · 뒤로는 그대로 */
 @Composable
-internal fun ProfileEditLoading(onBack: () -> Unit) {
+fun ProfileEditLoading(onBack: () -> Unit) {
     val t = runTone()
     val c = blueListColors()
     Column(Modifier.fillMaxSize().testTag("pe-loading")) {
@@ -531,7 +531,7 @@ private fun EditErrorCard(title: String, body: String, action: String? = null, o
 
 /** 사진 변경 메뉴(PRO03) — 앨범 · 기본 이미지 · 닫기만. 고르면 바로 저장된다는 것을 먼저 알린다 */
 @Composable
-internal fun PhotoActionsSheet(onAlbum: () -> Unit, onDefaults: () -> Unit, onDismiss: () -> Unit) {
+fun PhotoActionsSheet(onAlbum: () -> Unit, onDefaults: () -> Unit, onDismiss: () -> Unit) {
     val t = runTone()
     BlueSheet(
         title = stringResource(Res.string.pe_photo_sheet_title), onDismiss = onDismiss, modifier = Modifier.testTag("pe-photo-sheet"),
@@ -570,7 +570,7 @@ private fun SheetRow(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
  * 못 하면 시트 안에서 알린다(선택 표시는 저장된 것 그대로).
  */
 @Composable
-internal fun DefaultImageSheet(
+fun DefaultImageSheet(
     current: Int,
     saving: Boolean,
     failed: Boolean,
@@ -663,7 +663,7 @@ internal fun DefaultImageSheet(
 
 /** 수정 중 나가기(PRO09) — 저장하지 않은 닉네임만 버린다. 이번에 사진을 실제로 바꿨을 때만 "이미 바꾼 사진은 유지돼요" */
 @Composable
-internal fun LeaveSheet(photoChanged: Boolean, onKeep: () -> Unit, onDiscard: () -> Unit) {
+fun LeaveSheet(photoChanged: Boolean, onKeep: () -> Unit, onDiscard: () -> Unit) {
     val t = runTone()
     BlueSheet(
         title = stringResource(Res.string.pe_leave_title), onDismiss = onKeep, modifier = Modifier.testTag("pe-leave-sheet"),

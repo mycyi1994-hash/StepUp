@@ -54,6 +54,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import com.stepup.android.ui.components.StopBrush
 
 // 러닝 시작 전 권한 안내는 RunPermissionFlow.kt(시작·로그인·첫 사용 v1 시안 13~19)로 옮겼다 — 예전 한 장짜리 안내(S2 시안 23)를 대신한다.
 
@@ -64,7 +65,7 @@ import kotlinx.coroutines.flow.first
  * 위치를 찾기 시작해 러닝이 이어 받는다. 위치를 모르면 지도를 그리지 않는다.
  */
 @Composable
-internal fun RunCountdown(
+fun RunCountdown(
     courseName: String?,
     locationAllowed: Boolean,
     onGo: () -> Unit,
@@ -127,7 +128,7 @@ internal fun RunCountdown(
  * 지금 자리를 알면 뒤에 실제 지도를 어둡게 깐다(모르면 지도를 꾸미지 않는다).
  */
 @Composable
-internal fun RunCountdownStage(
+fun RunCountdownStage(
     title: String,
     subtitle: String?,
     kicker: String,
@@ -149,7 +150,7 @@ internal fun RunCountdownStage(
             )
             Box(
                 Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
+                    StopBrush.verticalGradient(
                         0f to t.screen.copy(alpha = 0.92f), 0.22f to t.screen.copy(alpha = 0.55f),
                         0.7f to t.screen.copy(alpha = 0.55f), 1f to t.screen.copy(alpha = 0.95f),
                     ),
@@ -201,7 +202,7 @@ internal fun RunCountdownStage(
  * 위치가 없으니 지도는 그리지 않는다.
  */
 @Composable
-internal fun RunLocationOffContent(
+fun RunLocationOffContent(
     title: String,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,

@@ -107,7 +107,7 @@ private val DarkSettings = SettingsPalette(
     divider = Color(0x17FFFFFF), surface = Color(0xFF0E1424), sheet = Color(0xFF0E1424),
     toast = Color(0xFF26304A), toastText = Color.White,
     switchOn = Color(0xFF2F6BFF), switchOff = Color(0xFF222A3D), cancel = Color(0xFF202736),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    primaryFace = StopBrush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
     dangerFace = Color(0xFF2A1219), dangerText = Color(0xFFFF453A), danger = Color(0xFFFF453A),
     skeleton = Color(0xFF151C2D),
 )
@@ -117,7 +117,7 @@ private val LightSettings = SettingsPalette(
     divider = Color(0x293C3C43), surface = Color.White, sheet = Color.White,
     toast = Color(0xFF1C1C1E), toastText = Color.White,
     switchOn = Color(0xFF1F5EFF), switchOff = Color(0xFFE3E3E8), cancel = Color(0xFFE3E3E8),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    primaryFace = StopBrush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
     dangerFace = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30), danger = Color(0xFFFF3B30),
     skeleton = Color(0xFFE9E9EE),
 )
@@ -348,7 +348,7 @@ fun SettingsPrimaryButton(
 @Composable
 fun SettingsSecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val p = settingsPalette()
-    SettingsButtonFace(text, onClick, modifier, enabled, false, Brush.verticalGradient(listOf(p.cancel, p.cancel)), p.text)
+    SettingsButtonFace(text, onClick, modifier, enabled, false, StopBrush.verticalGradient(listOf(p.cancel, p.cancel)), p.text)
 }
 
 /** 되돌릴 수 없는 일 — "기록 지우기" · "계정 삭제" */
@@ -362,7 +362,7 @@ fun SettingsDangerButton(
 ) {
     val p = settingsPalette()
     SettingsButtonFace(text, onClick, modifier, enabled && !loading, loading,
-        Brush.verticalGradient(listOf(p.dangerFace, p.dangerFace)), p.dangerText)
+        StopBrush.verticalGradient(listOf(p.dangerFace, p.dangerFace)), p.dangerText)
 }
 
 @Composable

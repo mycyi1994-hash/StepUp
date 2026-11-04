@@ -83,13 +83,13 @@ class ShoeDetailDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -448,10 +448,10 @@ class ShoeDetailDesignTest {
 
     private fun string(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
 
-    private fun modelName(model: Int): String = compose.activity.getString(requireNotNull(shoeModelNameRes(model)))
+    private fun modelName(model: Int): String = com.stepup.android.ui.components.stringNow(requireNotNull(shoeModelNameRes(model)))
 
     /** 예시 착용 신발(예전 52종 — 바람 일반 0)의 현지화 이름 */
-    private fun legacyName(): String = fullSneakerLabel(compose.activity, Faction.WIND, Rarity.COMMON, 0)
+    private fun legacyName(): String = kotlinx.coroutines.runBlocking { fullSneakerLabel(Faction.WIND, Rarity.COMMON, 0) }
 
     /** 이름 줄(이름 · 배지 · 번호 한 덩어리)의 글에 [part] 가 있다 — 배지 · 번호 자리의 대체 글까지 */
     private fun assertNameHas(part: String) {
@@ -593,9 +593,9 @@ class ShoeDetailDesignTest {
     }
 
     private companion object {
-        val SEOUL: ZoneId = ZoneId.of("Asia/Seoul")
+        val SEOUL: kotlinx.datetime.TimeZone = kotlinx.datetime.TimeZone.of("Asia/Seoul")
 
-        fun at(y: Int, m: Int, d: Int): Long = LocalDateTime.of(y, m, d, 9, 30).atZone(SEOUL).toInstant().toEpochMilli()
+        fun at(y: Int, m: Int, d: Int): Long = LocalDateTime.of(y, m, d, 9, 30).atZone(java.time.ZoneId.of(SEOUL.id)).toInstant().toEpochMilli()
 
         fun server(efficiencyBps: Int, comfortBps: Int, durability: Double = 100.0, maxLevel: Int = 15) = ServerStats(
             origin = "DRAW", efficiencyBps = efficiencyBps, comfortBps = comfortBps, durabilityPts = durability, maxLevel = maxLevel,

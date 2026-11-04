@@ -79,13 +79,13 @@ class CrewHomeDesignTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -136,10 +136,10 @@ class CrewHomeDesignTest {
             pressBack()
             pressBack()
 
-            // 03 레벨 — 승급 기준은 준비 중(계산하지 않는다)
+            // 03 레벨 — 승급 기준을 받지 못했다(계산하지 않는다). 글자는 2026-10-26 화면 글자 정리(#129)에서 바뀌었다
             tapTag("home-level")
             awaitTag("home-level-page")
-            awaitText("승급 기준 준비 중")
+            awaitText("승급 기준을 불러오지 못했어요")
             awaitText("126km")
             shot("03-level")
             pressBack()

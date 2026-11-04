@@ -81,6 +81,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.relativeTime
 import com.stepup.android.ui.theme.StepUpFonts
 import kotlinx.coroutines.delay
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * 글 상세(CM08 · CM44 · WRITE13) — 글쓴이 → 제목 · 본문 → 달린 기록(붙였으면, 읽기 전용 공유 요약) → 공개 장소 카드 →
@@ -378,7 +379,7 @@ private fun StoryPlaceCard(place: StoryPlace, distance: String, compact: Boolean
     val shape = RoundedCornerShape(16.dp)
     Row(
         Modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape).border(1.dp, t.panelEdge, shape)
+            .background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)), shape).border(1.dp, t.panelEdge, shape)
             .feedbackClickable(role = Role.Button, onClick = onClick).padding(12.dp)
             .testTag("story-place-card"),
         verticalAlignment = Alignment.CenterVertically,
@@ -413,7 +414,7 @@ private fun StoryRunCard(run: StoryRun) {
     val shape = RoundedCornerShape(16.dp)
     Row(
         Modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
+            .background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
             .border(1.5.dp, t.cobalt.copy(alpha = 0.8f), shape).padding(12.dp)
             .testTag("story-run-card"),
         verticalAlignment = Alignment.CenterVertically,

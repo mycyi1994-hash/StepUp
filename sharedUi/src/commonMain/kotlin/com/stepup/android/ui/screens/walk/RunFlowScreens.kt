@@ -124,7 +124,7 @@ fun RunStartMenuScreen(
 
 /** 러닝 시작 화면 — 상태 없이 그린다(시안 검사가 권한 안내를 이 위에 얹어 찍는다) */
 @Composable
-internal fun RunStartMenuContent(
+fun RunStartMenuContent(
     onBack: () -> Unit,
     onFreeRun: () -> Unit,
     onGoals: () -> Unit,
@@ -203,7 +203,7 @@ internal fun RunStartMenuContent(
 }
 
 /** 러닝 시작 메뉴에서 아직 열지 않은 곳(2026-10-27) — 혼자 러닝 · 크루만 연다. false 로 바꾸면 다시 열린다 */
-internal object RunMenuLocks {
+object RunMenuLocks {
     const val CHALLENGE = true
     const val COURSE = true
     const val DIET = true

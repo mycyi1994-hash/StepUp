@@ -72,7 +72,7 @@ fun S2Stage(modifier: Modifier = Modifier) {
                 val center = Offset(size.width, 0f)
                 val radius = size.width * 1.15f
                 drawRect(
-                    Brush.radialGradient(
+                    StopBrush.radialGradient(
                         0f to Color(0xFF09203F),
                         0.53f to Color(0xFF060C18),
                         1f to Color.Transparent,
@@ -102,7 +102,7 @@ fun S2Scenery(photo: HomePhoto, modifier: Modifier = Modifier) {
         )
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
+                StopBrush.verticalGradient(
                     0f to Night.copy(alpha = 0.82f),
                     0.3f to Night.copy(alpha = 0.45f),
                     0.55f to Night.copy(alpha = 0.40f),
@@ -196,7 +196,7 @@ fun S2Arch(
             .then(
                 if (image == null) {
                     Modifier
-                        .background(Brush.linearGradient(listOf(StepUpColors.carbon, Night)))
+                        .background(StopBrush.linearGradient(listOf(StepUpColors.carbon, Night)))
                         .border(1.dp, line, shape)
                 } else Modifier.background(StepUpColors.carbon),
             ),
@@ -208,7 +208,7 @@ fun S2Arch(
                 contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(),
             )
             // 아래로 바닥색에 녹아든다
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
+            Box(Modifier.fillMaxSize().background(StopBrush.verticalGradient(
                 0f to Color.Transparent, 0.69f to Color.Transparent, 1f to Night,
             )))
         }

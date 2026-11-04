@@ -41,7 +41,7 @@ import com.stepup.android.ui.screens.walk.navyText
 
 /** 규칙 줄(제목 · 설명) — 신발 각자 · 분당 소모 · 0 이면 적립만 멈춤 · 하루 한 번 · 500m 2분 확인 · 자정 초기화 · 보상 · 방 인원 */
 @Composable
-internal fun crewRunRuleLines(rules: CrewRunRules): List<Pair<String, String>> = listOf(
+fun crewRunRuleLines(rules: CrewRunRules): List<Pair<String, String>> = listOf(
     stringResource(Res.string.crew_run_rule_shoes_t) to stringResource(Res.string.crew_run_rule_shoes_b),
     stringResource(Res.string.crew_run_rule_drain_t, CrewRunMath.amount(rules.drainPerMin)) to stringResource(Res.string.crew_run_rule_drain_b),
     stringResource(Res.string.crew_run_rule_empty_t) to stringResource(Res.string.crew_run_rule_empty_b),
@@ -58,7 +58,7 @@ internal fun crewRunRuleLines(rules: CrewRunRules): List<Pair<String, String>> =
  * 서버가 준 표 그대로 읽는다.
  */
 @Composable
-internal fun crewHeadcountRows(rules: CrewRunRules): List<Pair<String, String>> {
+fun crewHeadcountRows(rules: CrewRunRules): List<Pair<String, String>> {
     val steps = rules.headcount.filter { it.n >= 2 }.sortedBy { it.n }
     val rows = mutableListOf<Pair<String, String>>()
     var i = 0
@@ -92,7 +92,7 @@ internal fun crewHeadcountRows(rules: CrewRunRules): List<Pair<String, String>> 
  * 0/0(새 하루)과 0/816(다 씀)은 다르게 적는다 — 어느 쪽도 출발을 막지 않는다. 남색 카드는 핸드오프의 크루 러닝 색이다.
  */
 @Composable
-internal fun CrewRunTodayBlock(today: CrewRunToday, onClick: () -> Unit) {
+fun CrewRunTodayBlock(today: CrewRunToday, onClick: () -> Unit) {
     val pool = today.pool
     val mine = today.mine
     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp).testTag("home-crew-run")) {
@@ -152,7 +152,7 @@ internal fun CrewRunTodayBlock(today: CrewRunToday, onClick: () -> Unit) {
 
 /** 크루 레벨 업 — 서버가 적은 마지막 레벨 업을 한 번 보인다(앞뒤 체력 · 보상 효과) */
 @Composable
-internal fun CrewLevelUpSheet(event: com.stepup.android.domain.CrewLevelEvent, onDismiss: () -> Unit, onOpen: () -> Unit) {
+fun CrewLevelUpSheet(event: com.stepup.android.domain.CrewLevelEvent, onDismiss: () -> Unit, onOpen: () -> Unit) {
     NavySheet(stringResource(Res.string.crew_run_level_up_title), onDismiss, Modifier.testTag("home-crew-level-up")) {
         Text("Lv.${event.level}", style = navyText(44.sp, CrewNavy.Text, FontWeight.ExtraBold, 1.1f))
         Spacer(Modifier.height(8.dp))
@@ -170,7 +170,7 @@ internal fun CrewLevelUpSheet(event: com.stepup.android.domain.CrewLevelEvent, o
 
 /** 크루 러닝 규칙 — 규칙 줄, 인원 보너스 표, 크루 레벨로 */
 @Composable
-internal fun CrewRunRulesSheet(rules: CrewRunRules, onDismiss: () -> Unit, onLevel: () -> Unit) {
+fun CrewRunRulesSheet(rules: CrewRunRules, onDismiss: () -> Unit, onLevel: () -> Unit) {
     val ink = blueInk()
     BlueSheet(stringResource(Res.string.crew_run_sheet_title), onDismiss, Modifier.testTag("home-crew-run-sheet")) {
         Column(Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState()).padding(horizontal = 4.dp)) {

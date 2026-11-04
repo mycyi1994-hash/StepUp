@@ -70,13 +70,13 @@ class CommunityStoriesTest {
         override fun before() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             val context = instrumentation.targetContext
-            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            com.stepup.android.core.AndroidLocale.syncFromSystem(context)
             previous = com.stepup.android.core.AppLocale.tag
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change("ko") }
         }
         override fun after() {
             val instrumentation = InstrumentationRegistry.getInstrumentation()
-            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(previous) }
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
@@ -157,7 +157,7 @@ class CommunityStoriesTest {
         awaitTag("stories-tab")
         if (compose.onAllNodesWithTag("stories-location-prompt").fetchSemanticsNodes().isNotEmpty()) {
             shot("26-permission")
-            if (StepPermissions.hasLocation(context)) notes += "26-permission: location was granted — the prompt shows the locating state"
+            if (StepPermissions.hasLocation()) notes += "26-permission: location was granted — the prompt shows the locating state"
             tapTag("stories-choose-region")
         } else {
             notes += "26-permission: location already known — opened 내 주변 from the area label instead"
@@ -174,7 +174,8 @@ class CommunityStoriesTest {
 
         // ── 01 목록 · 02 펼침 ─────────────────────────────────────────
         awaitTag("story-row-301")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
         // UI 최종 통합안(2026-10-25) — 큰 제목 대신 목록 위 "여의도동 · 지역에서 1km" 한 줄(누르면 지역 바꾸기)
         compose.onNode(hasTestTag("stories-area") and hasText("여의도동", substring = true)).assertIsDisplayed()
         // 1km 밖(샛강, 약 1.05km)과 번개 글은 목록에 없다 — 끝(장소 없는 이전 글)까지 내려가 확인한다
@@ -187,17 +188,14 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-thumb-301").assertHasClickAction()
         shot("01-list", settle = 1_800)
 
-        // ── 17 범위 — 고르다 닫으면 그대로, "이 범위로 보기"를 눌러야 바뀐다 ───────────
-        tapTag("stories-range")
-        awaitTag("story-range-apply")
-        tapTag("story-range-M500")
+        // ── 17 범위 — UI 최종 통합안(2026-10-25)부터 목록 위 글자 탭(500m · 1km · 3km …)을 누르면 바로 바뀐다(예전 범위 시트 · "이 범위로 보기" 없음)
+        // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
+        tapTag("stories-range-m500")
         shot("17-radius")
-        tapTag("story-sheet-close")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
-        tapTag("stories-range")
-        tapTag("story-range-KM3")
-        tapTag("story-range-apply")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "500m"), substring = true)).assertIsDisplayed()
+        tapTag("stories-range-km3")
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "3km"), substring = true)).assertIsDisplayed()
         // 목록 → 상세 → 뒤로: 스크롤 위치와 범위가 그대로다
         openRow(305)
         awaitTag("story-detail")
@@ -206,7 +204,7 @@ class CommunityStoriesTest {
         compose.onNodeWithTag("story-row-305").assertIsDisplayed()
         // 범위 줄은 목록 맨 위(지역 · 작은 지도)와 함께 올라간다 — 맨 위로 돌아가 그대로인지 본다
         compose.onNodeWithTag("stories-list").performScrollToIndex(0)
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "3km"), substring = true)).assertIsDisplayed()
         shot("17-radius-applied-3km", settle = 1_500)
 
         // ── 14 · 15 · 16 지도 → 장소 → 같은 화면 아래 목록이 그 장소로 걸러진다(CM05 · CM06) ─────────
@@ -392,10 +390,9 @@ class CommunityStoriesTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-toast").fetchSemanticsNodes().isEmpty() }
 
         // 범위를 기본(1km)으로 돌린다 — 빈 목록에 "더 넓은 범위에서 보기"가 보이게
-        tapTag("stories-range")
-        tapTag("story-range-KM1")
-        tapTag("story-range-apply")
-        compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
+        tapTag("stories-range-km1")
+        // 범위 글자는 목록 위 한 줄("여의도동 · 선택한 지역에서 1km 이내")의 일부다 — 같은 글자가 숨은 지도 화면에도 있어 그 줄에서 찾는다
+        compose.onNode(hasTestTag("stories-area") and hasText(context.getString(R.string.story_range_from_region, "1km"), substring = true)).assertIsDisplayed()
 
         // ── 28 빈 목록 · 29 불러오는 중 · 30 연결 오류 ──────────────────────
         ServiceLocator.communityRepository.showForTest(emptyList())

@@ -210,7 +210,7 @@ private fun meetClock(meetAt: Long): String =
 
 /** 사진 포스터(시안 393 × 420) — 모이는 곳 사진 · 날씨 효과 · 아래로 어둡게, 위 유리 원 버튼, 아래 LIVE · 시각 · 제목 */
 @Composable
-internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, onMore: () -> Unit) {
+fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, onMore: () -> Unit) {
     val photo = rememberPlacePhoto(post.place, post.lat, post.lng, seed = "flash-${post.id}")
     val status = when {
         post.isClosed -> stringResource(Res.string.flash_closed_badge)
@@ -249,7 +249,7 @@ internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, on
 
 /** 달릴 거리 · 나와의 거리 · 참여(바뀌면 살짝 튄다) */
 @Composable
-internal fun FlashStats(post: Post, here: GeoPoint?) {
+fun FlashStats(post: Post, here: GeoPoint?) {
     val away = post.awayKmFrom(here)
     Box(Modifier.popOnChange(post.joinedCount)) {
         StatRow(
@@ -271,7 +271,7 @@ internal fun FlashStats(post: Post, here: GeoPoint?) {
  * 대기실 안내 → 길찾기 · 파티 채팅 · 캘린더에 넣기 → 친구 부르기 | 확인.
  */
 @Composable
-internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, onChat: () -> Unit) {
+fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, onChat: () -> Unit) {
     val c = StepUpUi.colors
     val photo = rememberPlacePhoto(post.place, post.lat, post.lng, seed = "flash-${post.id}")
     com.stepup.android.ui.components.SystemBackHandler(onBack = onClose)
