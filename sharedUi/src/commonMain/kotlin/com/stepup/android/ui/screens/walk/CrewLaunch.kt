@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 출발 연출(2026-10-24 핸드오프 장면 35 · 36, 04_DESIGN_BACKGROUND 7절) — 자유 러닝의 승인된 3 · 2 · 1 · 0 → StepUP! → 가운데 펼침
@@ -153,7 +154,7 @@ fun CrewStartingStage(modifier: Modifier = Modifier) {
             drawRect(StartNavy)
             val c = Offset(size.width / 2f, size.height * 0.48f)
             val r = size.height * 0.46f
-            drawCircle(Brush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = r), radius = r, center = c)
+            drawCircle(StopBrush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = r), radius = r, center = c)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 32.dp)) {
             RunSpinner(Modifier.size(36.dp))

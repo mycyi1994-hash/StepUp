@@ -93,6 +93,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 러닝 이야기 글쓰기(코스 글쓰기 WRITE01~20 · 커뮤니티 기본 CM12~21, 2026-10-03 파란 톤)의 조각 — 기록 칸 · 장소 ·
@@ -249,7 +250,7 @@ fun ComposeChip(
     val shape = RoundedCornerShape(14.dp)
     Row(
         modifier.heightIn(min = minHeight).clip(shape)
-            .background(if (selected) Brush.horizontalGradient(listOf(ink.selected, Color(0xFF1F66FF))) else Brush.verticalGradient(listOf(ink.surface, ink.surface)), shape)
+            .background(if (selected) StopBrush.horizontalGradient(listOf(ink.selected, Color(0xFF1F66FF))) else StopBrush.verticalGradient(listOf(ink.surface, ink.surface)), shape)
             .border(if (selected) 1.5.dp else 1.dp, if (selected) ink.selectedEdge else ink.edge, shape)
             .feedbackClickable(enabled = enabled, role = Role.Button, cue = FeedbackCue.Select, onClick = onClick)
             .semantics { this.selected = selected }
@@ -328,7 +329,7 @@ private fun recordCardModifier(modifier: Modifier): Modifier {
     val t = runTone()
     val shape = RoundedCornerShape(18.dp)
     return modifier.fillMaxWidth().clip(shape)
-        .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
+        .background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
         .border(1.5.dp, t.cobalt.copy(alpha = if (t.dark) 0.85f else 0.6f), shape)
 }
 
@@ -712,7 +713,7 @@ fun StoryBodyBox(text: String, onChange: (String) -> Unit, enabled: Boolean, lar
     val shape = RoundedCornerShape(16.dp)
     Box(
         Modifier.fillMaxWidth().heightIn(min = if (large) 120.dp else 150.dp).clip(shape)
-            .background(Brush.verticalGradient(listOf(ink.surface, ink.surface.copy(alpha = 0.92f))), shape)
+            .background(StopBrush.verticalGradient(listOf(ink.surface, ink.surface.copy(alpha = 0.92f))), shape)
             .border(1.dp, ink.edge, shape)
             .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 14.dp),
     ) {

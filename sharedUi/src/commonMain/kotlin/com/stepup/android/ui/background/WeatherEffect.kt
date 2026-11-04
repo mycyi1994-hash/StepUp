@@ -18,6 +18,7 @@ import com.stepup.android.ui.experience.LocalMotion
 import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 날씨 효과 레이어 — 사진 위에 얹는 비 · 눈 · 미세먼지(맑음 = 효과 없음). UI 최종 통합안(2026-10-25 compose/WeatherEffect.kt).
@@ -96,7 +97,7 @@ private fun rgba(r: Int, g: Int, b: Int, a: Float) = Color(r, g, b, (a.coerceIn(
 private fun DrawScope.drawRain(t: Float) {
     val s = unit(); val w = size.width; val h = size.height
     drawRect(rgba(8, 14, 28, .16f))
-    drawRect(Brush.verticalGradient(0f to rgba(170, 180, 200, .12f), 1f to Color.Transparent, startY = 0f, endY = h * .5f))
+    drawRect(StopBrush.verticalGradient(0f to rgba(170, 180, 200, .12f), 1f to Color.Transparent, startY = 0f, endY = h * .5f))
     for (i in 0 until count(230)) {
         val z = rnd(i, 1); val len = (10 + z * 28) * s; val span = h + len + 40 * s
         val sp = (1.3f + z * 1.1f) * h
@@ -117,7 +118,7 @@ private fun DrawScope.drawSnow(t: Float) {
         val x = rnd(i, 2) * w + sin(t * (.5f + z * .7f) + i) * (5 + z * 10) * s
         val al = .45f + z * .5f
         if (r > 2.2f * s) {
-            drawCircle(Brush.radialGradient(listOf(rgba(255, 255, 255, al), Color.Transparent), center = Offset(x, y), radius = r * 1.6f), r * 1.6f, Offset(x, y))
+            drawCircle(StopBrush.radialGradient(listOf(rgba(255, 255, 255, al), Color.Transparent), center = Offset(x, y), radius = r * 1.6f), r * 1.6f, Offset(x, y))
         } else {
             drawCircle(rgba(255, 255, 255, al), r, Offset(x, y))
         }
@@ -127,11 +128,11 @@ private fun DrawScope.drawSnow(t: Float) {
 /** 미세먼지: 누런 회색 연무(먼 곳 = 위쪽이 더 진함) + 천천히 흘러가는 뿌연 덩어리 + 아주 작은 먼지 알갱이 */
 private fun DrawScope.drawDust(t: Float) {
     val s = unit(); val w = size.width; val h = size.height
-    drawRect(Brush.verticalGradient(0f to rgba(196, 182, 152, .46f), .55f to rgba(184, 172, 146, .30f), 1f to rgba(170, 160, 138, .20f)))
+    drawRect(StopBrush.verticalGradient(0f to rgba(196, 182, 152, .46f), .55f to rgba(184, 172, 146, .30f), 1f to rgba(170, 160, 138, .20f)))
     for (i in 0 until 7) {
         val rr = (110 + rnd(i, 4) * 120) * s; val span = w + 2 * rr
         val x = ((rnd(i, 6) * span + t * (6 + rnd(i, 5) * 10) * s) % span) - rr; val y = rnd(i, 7) * h * .8f
-        drawCircle(Brush.radialGradient(listOf(rgba(206, 192, 160, .10f + rnd(i, 8) * .08f), Color.Transparent), center = Offset(x, y), radius = rr), rr, Offset(x, y))
+        drawCircle(StopBrush.radialGradient(listOf(rgba(206, 192, 160, .10f + rnd(i, 8) * .08f), Color.Transparent), center = Offset(x, y), radius = rr), rr, Offset(x, y))
     }
     for (i in 0 until count(90)) {
         val z = rnd(i, 1); val r = (.5f + z * .8f) * s; val span = w + 10 * s

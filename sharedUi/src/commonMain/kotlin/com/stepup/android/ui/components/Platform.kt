@@ -46,7 +46,7 @@ fun rotatedSweepBrush(
     degrees: Float,
 ): androidx.compose.ui.graphics.Brush {
     val shift = (((degrees / 360f) % 1f) + 1f) % 1f
-    if (shift == 0f) return androidx.compose.ui.graphics.Brush.sweepGradient(*stops.zip(colors).toTypedArray(), center = center)
+    if (shift == 0f) return com.stepup.android.ui.components.StopBrush.sweepGradient(*stops.zip(colors).toTypedArray(), center = center)
     // 원래 자리 1 - shift 에서 한 바퀴를 넘는다 — 그 자리의 색
     val cut = 1f - shift
     var i = stops.indexOfFirst { it >= cut }.coerceAtLeast(1)
@@ -57,7 +57,7 @@ fun rotatedSweepBrush(
     stops.forEachIndexed { k, p -> if (p >= cut) moved += (p - cut) to colors[k] }
     stops.forEachIndexed { k, p -> if (p < cut) moved += (p + shift) to colors[k] }
     moved += 1f to atCut
-    return androidx.compose.ui.graphics.Brush.sweepGradient(*moved.sortedBy { it.first }.toTypedArray(), center = center)
+    return com.stepup.android.ui.components.StopBrush.sweepGradient(*moved.sortedBy { it.first }.toTypedArray(), center = center)
 }
 
 /** 화면이 늘 어두워서 상태바 · 내비바 아이콘을 밝게 — 떠나면 되돌린다(iOS 는 상태바 글자색을 앱이 정해 두어 할 일 없음) */

@@ -16,10 +16,10 @@ import com.stepup.android.ui.theme.Volt
 /** Shared surface for utility screens and commerce; artwork and controls remain independent. */
 @Composable
 fun CommerceBackdrop(modifier: Modifier = Modifier) {
-    Box(modifier.background(Brush.verticalGradient(listOf(CarbonHigh, Night, Night)))) {
+    Box(modifier.background(StopBrush.verticalGradient(listOf(CarbonHigh, Night, Night)))) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
-                brush = Brush.radialGradient(
+                brush = StopBrush.radialGradient(
                     listOf(Volt.copy(alpha = 0.15f), Color.Transparent),
                     center = Offset(size.width * 0.82f, size.height * 0.12f),
                     radius = size.width * 1.1f,

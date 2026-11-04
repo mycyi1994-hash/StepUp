@@ -343,7 +343,7 @@ fun HomeSearchField(
     val shape = RoundedCornerShape(16.dp)
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+            .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
             .border(1.dp, if (value.isEmpty()) ink.edge else ink.edgeStrong, shape)
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

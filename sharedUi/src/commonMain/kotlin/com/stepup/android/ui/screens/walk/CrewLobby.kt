@@ -87,6 +87,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.home.crewRunRuleLines
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 대기실 — 3번 듀얼 레일(2026-10-24 핸드오프 장면 10 ~ 34 · 68 ~ 70, 04_DESIGN_BACKGROUND).
@@ -656,7 +657,7 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean) {
         Box(Modifier.size(52.dp)) {
             Box(
                 Modifier.size(52.dp).clip(CircleShape)
-                    .background(if (member.isHost) Brush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else Brush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
+                    .background(if (member.isHost) StopBrush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else StopBrush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
                     .border(1.5.dp, LobbyInk.AvatarRing, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -1025,7 +1026,7 @@ private fun RosterSheet(
                 ) {
                     Box(
                         Modifier.size(34.dp).clip(CircleShape)
-                            .background(if (member.isHost) Brush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else Brush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
+                            .background(if (member.isHost) StopBrush.linearGradient(listOf(LobbyInk.HostTop, LobbyInk.HostBottom)) else StopBrush.linearGradient(listOf(LobbyInk.Avatar, LobbyInk.Avatar)))
                             .border(1.5.dp, LobbyInk.AvatarRing, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) { Text(initialsOf(member.name).take(1), style = navyText(15.sp, Color(0xFFF3F8FF), FontWeight.Bold)) }

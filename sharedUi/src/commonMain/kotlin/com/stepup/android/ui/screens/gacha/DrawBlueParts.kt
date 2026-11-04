@@ -79,6 +79,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 신발 뽑기 파란 톤(2026-10-03 통합 전달본 v4 · stepup-draw-blue-claude-v19) 공통 조각 — 남색 패널 · 상자 무대(조명 · 받침) ·
@@ -96,7 +97,7 @@ fun drawTitleStyle(size: TextUnit, color: Color): TextStyle = TextStyle(
 @Composable
 fun drawCountBrush(): Brush {
     val t = runTone()
-    return if (t.dark) Brush.verticalGradient(listOf(Color(0xFFB8F1FF), t.cyan)) else Brush.verticalGradient(listOf(t.cobalt, t.cyan))
+    return if (t.dark) StopBrush.verticalGradient(listOf(Color(0xFFB8F1FF), t.cyan)) else StopBrush.verticalGradient(listOf(t.cobalt, t.cyan))
 }
 
 /** 패널 모양 — 위 두 모서리를 깎고(시안의 조명 틀) 아래는 둥근 판 */
@@ -130,7 +131,7 @@ fun DrawPanel(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
     Column(
         modifier.fillMaxWidth()
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(t.panelTop, t.panel)))
+            .background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)))
             .drawWithContent {
                 drawContent()
                 drawPath(panelPath(size, PanelCut.toPx(), PanelRadius.toPx()), t.panelEdge, style = Stroke(width = 1.5.dp.toPx()))
@@ -162,7 +163,7 @@ fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Boolean = f
             }
             drawPath(
                 beam,
-                Brush.verticalGradient(
+                StopBrush.verticalGradient(
                     listOf(t.cobalt.copy(alpha = if (dim) 0.10f else if (t.dark) 0.34f else 0.16f), Color.Transparent),
                     startY = 0f, endY = h * 0.86f,
                 ),
@@ -173,7 +174,7 @@ fun DrawBoxStage(kind: DrawKind, modifier: Modifier = Modifier, dim: Boolean = f
             val rh = h * 0.08f
             drawOval(Color.Black.copy(alpha = if (t.dark) 0.35f else 0.12f), Offset(w / 2 - rw, cy - rh + h * 0.03f), Size(rw * 2, rh * 2))
             drawOval(
-                Brush.radialGradient(
+                StopBrush.radialGradient(
                     listOf((if (t.dark) Color(0xFF0B3A86) else Color(0xFFD3E2FF)), (if (t.dark) Color(0xFF06204A) else Color(0xFFEAF1FF))),
                     center = Offset(w / 2, cy), radius = rw,
                 ),
@@ -255,7 +256,7 @@ fun DrawSheetFrame(
             val shape = RoundedCornerShape(topStart = RunSpec.SheetRadius, topEnd = RunSpec.SheetRadius)
             Column(
                 modifier.widthIn(max = 600.dp).fillMaxWidth().statusBarsPadding().heightIn(max = maxHeight - 24.dp)
-                    .clip(shape).background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)))
+                    .clip(shape).background(StopBrush.verticalGradient(listOf(t.sheetTop, t.sheet)))
                     .border(1.dp, t.sheetEdge, shape)
                     .pointerInput(Unit) { detectTapGestures { } }
                     .navigationBarsPadding(),

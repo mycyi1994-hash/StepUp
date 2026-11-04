@@ -54,7 +54,7 @@ fun CourseTrackMap(
         )
         drawPath(
             path,
-            brush = Brush.linearGradient(listOf(Volt.copy(alpha = 0.85f), Volt)),
+            brush = StopBrush.linearGradient(listOf(Volt.copy(alpha = 0.85f), Volt)),
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
 

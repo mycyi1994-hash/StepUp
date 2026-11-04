@@ -60,6 +60,7 @@ import com.stepup.android.domain.ChatKind
 import com.stepup.android.domain.ChatMessage
 import com.stepup.android.domain.ChatRoomMeta
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * 22 대화 검색 · 23 결과 없음 — 이 방에서 지금 볼 수 있는 메시지만(지웠거나 숨긴 것 · 참여 전 방은 서버가 빼고 준다).
@@ -83,7 +84,7 @@ fun ChatSearchScreen(viewModel: ChatSearchViewModel, onBack: () -> Unit, onOpen:
         val fieldShape = RoundedCornerShape(16.dp)
         Row(
             Modifier.padding(horizontal = BlueGutter).padding(top = 10.dp).fillMaxWidth().heightIn(min = 56.dp)
-                .clip(fieldShape).background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), fieldShape)
+                .clip(fieldShape).background(StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), fieldShape)
                 .border(1.5.dp, ink.edgeStrong, fieldShape).padding(start = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

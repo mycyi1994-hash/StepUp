@@ -70,7 +70,9 @@ jobs:
           # 러너 쪽 SwiftShader Vulkan 그리기(gfxstream)가 죽는 것으로 본다. 손님 Vulkan 을 끄고(-feature -Vulkan) 앱 그리기를 GL(skiagl)로 한다.
           # 2026-11-04 까닭을 찾았다 — 러너 쪽 에뮬레이터 프로세스의 Segmentation fault(core dumped). core dump 로 보면 SwiftShader 래스터라이저가
           # 범위 밖을 읽었고, 사진 카드 · 신발 카드의 여러 색(3색 이상) 세로 그라디언트를 그릴 때만 났다(37.2.13 · 35.2.10 둘 다, -gpu guest 는 더 많이).
-          # 그 두 자리를 두 색 띠로 나눠 그린다(sharedUi components/VerticalStops.kt — 보이는 색은 같다). 에뮬레이터 판은 묶지 않는다.
+          # 같은 자리를 두 색으로 바꾼 판은 끝까지 살았고, 다른 화면의 여러 색 그라디언트도 확률적으로 같은 죽음을 냈다(run 41783162417).
+          # 그래서 공용 화면의 그라디언트는 모두 StopBrush 로 그린다 — 에뮬레이터에서만 여러 색 그라디언트를 CPU 로 미리 그린 그림으로 대신한다
+          # (sharedUi components/StopBrush.kt · tools/check_gradients.py, 실제 폰 · iOS 는 그대로). 에뮬레이터 판은 묶지 않는다.
           cores: 4
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none -show-kernel
           script: STEPUP_EMULATOR_OPTIONS="-no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none -show-kernel" bash tools/run_device_qa.sh

@@ -86,6 +86,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stepup.android.ui.components.StopBrush
 
 /** 몸 정보 입력칸 하나의 확인 결과 — 비었으면 EMPTY, 범위를 벗어나면 RANGE */
 enum class BodyInputError { EMPTY, RANGE }
@@ -383,7 +384,7 @@ private fun BodyField(
     }
     val placeholder = stringResource(Res.string.run_diet_field_empty)
     Column(
-        modifier.clip(shape).background(Brush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
+        modifier.clip(shape).background(StopBrush.verticalGradient(listOf(t.panelTop, t.panel)), shape)
             .border(if (focused || error) 2.dp else 1.dp, edge, shape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusRequester.requestFocus() }
             .padding(horizontal = 16.dp, vertical = 12.dp),

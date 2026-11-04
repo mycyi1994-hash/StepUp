@@ -82,6 +82,7 @@ import com.stepup.android.ui.theme.Slate
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.Volt
 import kotlinx.datetime.LocalDate
+import com.stepup.android.ui.components.StopBrush
 
 @Composable
 fun ProfileScreen(
@@ -419,7 +420,7 @@ private fun RowScope.DistanceCard(state: ProfileViewModel.UiState, onOpenAnalyti
         ) {
             val r = size.minDimension / 2f * 0.58f
             drawCircle(
-                brush = Brush.radialGradient(
+                brush = StopBrush.radialGradient(
                     colors = listOf(
                         Volt.copy(alpha = 0.95f),
                         Volt.copy(alpha = 0.30f),

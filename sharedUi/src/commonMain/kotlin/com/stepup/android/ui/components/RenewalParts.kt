@@ -120,10 +120,10 @@ private fun SupCoin(modifier: Modifier = Modifier) {
     Box(
         modifier
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(Color(0xFFEAF3FF), Color(0xFF9EC4FF))))
+            .background(StopBrush.linearGradient(listOf(Color(0xFFEAF3FF), Color(0xFF9EC4FF))))
             .padding(2.5.dp)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(Color(0xFF2F7BFF), Color(0xFF0A49DA)))),
+            .background(StopBrush.linearGradient(listOf(Color(0xFF2F7BFF), Color(0xFF0A49DA)))),
         contentAlignment = Alignment.Center,
     ) {
         Text("S", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black,

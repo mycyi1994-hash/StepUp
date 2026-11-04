@@ -91,6 +91,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpDesign
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 신발 강화 — 파란 톤 v4 강화 전달본(docs/redesign/blue-v4-2026-10/01-packages/stepup-upgrade-blue-claude-v19)의 UP01 ~ UP15 · UP18.
@@ -522,7 +523,7 @@ private val SlotShape = RoundedCornerShape(14.dp)
 private fun slotSurface(selected: Boolean = false): Modifier {
     val t = runTone()
     return Modifier.clip(SlotShape)
-        .background(Brush.verticalGradient(listOf(if (t.dark) Color(0xFF0E3268) else t.panelTop, t.panel)), SlotShape)
+        .background(StopBrush.verticalGradient(listOf(if (t.dark) Color(0xFF0E3268) else t.panelTop, t.panel)), SlotShape)
         .border(if (selected) 1.5.dp else 1.dp, if (selected) t.cyan else t.panelEdge, SlotShape)
 }
 

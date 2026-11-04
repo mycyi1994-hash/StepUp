@@ -69,6 +69,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 채팅 · 내 크루 홈 파란 톤(2026-10-03 통합 전달본 v4 — stepup-crew-chat/home-blue-claude-v19) 공통 부품.
@@ -133,7 +134,7 @@ private val DarkBlueInk = BlueInk(
     choiceOnText = Color.White, level = Color(0xFF202736), levelText = Color(0xFF6E9BFF), track = Color(0xFF222A3D),
     bar = Color(0xFF2F6BFF), avatar = Color(0xFF202736), avatarText = Color(0xFF969CAA), secondaryButton = Color(0xFF202736),
     disabled = Color(0xFF141A27), disabledText = Color(0xFF5D6371), danger = Color(0xFF2A1219), dangerText = Color(0xFFFF453A),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    primaryFace = StopBrush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
     primaryBase = Color.Transparent, skeleton = Color(0xFF151C2D), handle = Color(0x4DE2E8F5), scrim = Color(0x8C000000),
 )
 
@@ -145,7 +146,7 @@ private val LightBlueInk = BlueInk(
     choiceOnText = Color.White, level = Color(0xFFE3E3E8), levelText = Color(0xFF1F5EFF), track = Color(0xFFE3E3E8),
     bar = Color(0xFF1F5EFF), avatar = Color(0xFFE3E3E8), avatarText = Color(0xFF848489), secondaryButton = Color(0xFFE3E3E8),
     disabled = Color(0xFFE8E8ED), disabledText = Color(0xFFA9A9AE), danger = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    primaryFace = StopBrush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
     primaryBase = Color.Transparent, skeleton = Color(0xFFE9E9EE), handle = Color(0x4D3C3C43), scrim = Color(0x40000000),
 )
 
@@ -167,7 +168,7 @@ fun blueText(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Norma
 fun BluePage(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val ink = blueInk()
     Column(
-        modifier.fillMaxSize().background(Brush.verticalGradient(0f to ink.canvasTop, 0.35f to ink.canvas, 1f to ink.canvas)),
+        modifier.fillMaxSize().background(StopBrush.verticalGradient(0f to ink.canvasTop, 0.35f to ink.canvas, 1f to ink.canvas)),
         content = content,
     )
 }
@@ -291,7 +292,7 @@ fun BlueSurface(
     val shape = RoundedCornerShape(radius)
     Column(
         modifier.clip(shape)
-            .background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+            .background(StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
             .border(if (selected) 1.5.dp else 1.dp, if (selected) ink.edgeStrong else ink.edge, shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier),
         content = content,
@@ -439,7 +440,7 @@ fun BlueTextField(
         decorationBox = { inner ->
             Box(
                 Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape)
-                    .background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape).border(1.dp, ink.edge, shape)
+                    .background(StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape).border(1.dp, ink.edge, shape)
                     .padding(horizontal = 18.dp, vertical = 14.dp),
                 contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
             ) {
@@ -464,7 +465,7 @@ fun BluePickerField(
     val shape = RoundedCornerShape(14.dp)
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
-            .background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape).border(1.dp, ink.edgeStrong.copy(alpha = 0.8f), shape)
+            .background(StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape).border(1.dp, ink.edgeStrong.copy(alpha = 0.8f), shape)
             .feedbackClickable(enabled = enabled, onClick = onClick).padding(horizontal = 18.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

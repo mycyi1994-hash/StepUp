@@ -298,7 +298,7 @@ private fun DrawScope.drawRoute(
         )
         drawPath(
             path,
-            brush = Brush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
+            brush = StopBrush.linearGradient(listOf(color.copy(alpha = 0.85f), color)),
             style = Stroke(width = 3.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }

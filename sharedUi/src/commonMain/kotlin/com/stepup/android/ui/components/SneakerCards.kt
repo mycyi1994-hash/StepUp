@@ -329,7 +329,7 @@ fun StatBar(
                         .height(6.dp)
                         .clip(RoundedCornerShape(50))
                         .background(
-                            Brush.horizontalGradient(listOf(accent.copy(alpha = 0.7f), accent)),
+                            StopBrush.horizontalGradient(listOf(accent.copy(alpha = 0.7f), accent)),
                         ),
                 )
             }

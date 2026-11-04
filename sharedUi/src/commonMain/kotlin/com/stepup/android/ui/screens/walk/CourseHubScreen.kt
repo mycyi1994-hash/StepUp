@@ -421,7 +421,7 @@ private fun CourseHero(course: RunCourse, selected: Boolean, onOpen: () -> Unit,
             LiveRouteMap(points = course.points, modifier = Modifier.fillMaxSize(), routeColor = FreeRunRoute)
         }
         Box(Modifier.fillMaxWidth().fillMaxHeight(.52f).align(Alignment.BottomCenter)
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .62f)))))
+            .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .62f)))))
         Box(
             Modifier.fillMaxSize().feedbackClickable(role = Role.RadioButton, onClick = onOpen)
                 .semantics { this.selected = selected }.testTag("course-pick-${course.id}"),

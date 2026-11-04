@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import com.stepup.android.ui.theme.ThemeMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 private data class ThemeOption(val mode: ThemeMode, val label: org.jetbrains.compose.resources.StringResource, val note: org.jetbrains.compose.resources.StringResource)
 
@@ -148,7 +149,7 @@ private fun ThemePreview(distanceMeters: Double?) {
                 cubicTo(size.width * 0.7f, size.height * 0.68f, size.width * 0.72f, size.height * 0.45f, size.width * 0.78f, size.height * 0.3f)
                 cubicTo(size.width * 0.82f, size.height * 0.2f, size.width * 0.9f, size.height * 0.2f, size.width * 0.95f, size.height * 0.08f)
             }
-            drawPath(path, Brush.horizontalGradient(listOf(t.cobalt, t.cyan)), style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round))
+            drawPath(path, StopBrush.horizontalGradient(listOf(t.cobalt, t.cyan)), style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round))
             drawCircle(t.cyan, radius = 5.dp.toPx(), center = Offset(size.width * 0.04f, size.height * 0.92f))
             drawCircle(t.cyan, radius = 6.dp.toPx(), center = Offset(size.width * 0.95f, size.height * 0.08f), style = Stroke(2.5.dp.toPx()))
         }

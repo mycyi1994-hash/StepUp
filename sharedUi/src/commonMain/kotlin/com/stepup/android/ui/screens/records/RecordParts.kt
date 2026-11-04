@@ -65,6 +65,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpFonts
 import kotlin.math.roundToLong
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 내 러닝 기록(러닝 전체 리메이크 2026-10-02 · 시안 H01–H16)의 공통 조각 — 남색 러닝 바닥 · 머리(뒤로 · 로고) ·
@@ -271,7 +272,7 @@ private fun RecordSheetArt() {
     Box(
         Modifier.size(width = 168.dp, height = 210.dp).drawBehind {
             drawCircle(
-                Brush.radialGradient(
+                StopBrush.radialGradient(
                     0f to t.cobalt.copy(alpha = if (t.dark) 0.30f else 0.14f), 1f to Color.Transparent,
                     center = center, radius = size.minDimension * 0.75f,
                 ),

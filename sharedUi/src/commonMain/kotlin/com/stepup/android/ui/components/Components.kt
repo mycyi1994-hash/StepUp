@@ -107,7 +107,7 @@ fun NightCanvas(modifier: Modifier = Modifier) {
             val glow = Offset(size.width * 0.85f, size.height * 0.02f)
             val radius = size.minDimension * 0.8f
             drawCircle(
-                brush = Brush.radialGradient(
+                brush = StopBrush.radialGradient(
                     colors = listOf(Volt.copy(alpha = 0.05f), Color.Transparent),
                     center = glow,
                     radius = radius,
@@ -184,7 +184,7 @@ fun VerticalHairline(height: Dp = 40.dp, modifier: Modifier = Modifier) {
             .width(1.dp)
             .height(height)
             .background(
-                Brush.verticalGradient(
+                StopBrush.verticalGradient(
                     listOf(Color.Transparent, Snow.copy(alpha = 0.12f), Color.Transparent),
                 ),
             ),
@@ -345,7 +345,7 @@ fun HexEmblem(modifier: Modifier = Modifier, size: Dp = 42.dp, glow: Boolean = t
         val r = min(this.size.width, this.size.height) / 2f * 0.92f
         if (glow) {
             drawCircle(
-                brush = Brush.radialGradient(
+                brush = StopBrush.radialGradient(
                     colors = listOf(Volt.copy(alpha = 0.25f), Color.Transparent),
                     center = Offset(cx, cy),
                     radius = r * 1.4f,
@@ -575,7 +575,7 @@ fun BarMeter(
     color: Color? = null,
 ) {
     val filled = animatedFloat(fraction.coerceIn(0f, 1f))
-    val fill = color?.let { Brush.horizontalGradient(listOf(it.copy(alpha = 0.65f), it)) } ?: VoltPlate
+    val fill = color?.let { StopBrush.horizontalGradient(listOf(it.copy(alpha = 0.65f), it)) } ?: VoltPlate
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -847,7 +847,7 @@ fun CircleControl(
             .then(
                 if (filled) {
                     Modifier.background(
-                        if (enabled) VoltPlate else Brush.horizontalGradient(listOf(CarbonHigh, CarbonHigh)),
+                        if (enabled) VoltPlate else StopBrush.horizontalGradient(listOf(CarbonHigh, CarbonHigh)),
                         CircleShape,
                     )
                 } else {

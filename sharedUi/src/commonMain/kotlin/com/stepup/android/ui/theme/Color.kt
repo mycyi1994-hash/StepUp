@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.SolidColor
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * StepUp 팔레트 — 밝은 바탕과 어두운 바탕 두 벌.
@@ -104,7 +105,7 @@ class StepUpPalette(
     val mapShadeScale: Float = 1f,
 ) {
     /** 진행 링 — 한 바퀴 돌며 강조색의 밝기가 굽이친다 */
-    val voltSweep: Brush = Brush.sweepGradient(
+    val voltSweep: Brush = StopBrush.sweepGradient(
         0.00f to voltDeep,
         0.30f to volt,
         0.62f to voltSoft,
@@ -115,19 +116,19 @@ class StepUpPalette(
     val voltPlate: Brush = SolidColor(volt)
 
     /** 강조 텍스트 채움 */
-    val voltInk: Brush = Brush.verticalGradient(listOf(voltSoft, volt))
+    val voltInk: Brush = StopBrush.verticalGradient(listOf(voltSoft, volt))
 
     /** 세로 강조 — 차트 바 */
-    val voltVertical: Brush = Brush.verticalGradient(listOf(voltSoft, volt))
+    val voltVertical: Brush = StopBrush.verticalGradient(listOf(voltSoft, volt))
 
     /** 카드 표면 — 위가 미세하게 밝다 */
-    val cardFill: Brush = Brush.verticalGradient(listOf(cardTop, cardBottom))
+    val cardFill: Brush = StopBrush.verticalGradient(listOf(cardTop, cardBottom))
 
     /** 앱 배경 */
-    val backdrop: Brush = Brush.verticalGradient(listOf(backdropTop, backdropBottom))
+    val backdrop: Brush = StopBrush.verticalGradient(listOf(backdropTop, backdropBottom))
 
     /** 양끝이 사라지는 헤어라인 */
-    val hairlineFade: Brush = Brush.horizontalGradient(
+    val hairlineFade: Brush = StopBrush.horizontalGradient(
         listOf(Color.Transparent, snow.copy(alpha = if (dark) 0.14f else 0.08f), Color.Transparent),
     )
 

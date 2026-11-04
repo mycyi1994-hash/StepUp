@@ -293,7 +293,7 @@ fun OnboardingArch(image: org.jetbrains.compose.resources.DrawableResource, modi
         Box(Modifier.fillMaxSize().background(Color(0x38071224)))
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(0f to ground.copy(alpha = 0.32f), 0.53f to ground.copy(alpha = 0.12f), 1f to ground),
+                StopBrush.verticalGradient(0f to ground.copy(alpha = 0.32f), 0.53f to ground.copy(alpha = 0.12f), 1f to ground),
             ),
         )
     }

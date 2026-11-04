@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 리더보드 배경(2026-10-17 전달본 motion-spec.json) — 네이비 위 고정된 러닝 트랙 세 줄을 따라 푸른 빛이 흐른다.
@@ -145,7 +146,7 @@ fun LeaderboardBackdrop(
             val glowSize = 430f * unit
             val glowRadius = glowSize / 2f * 1.4142135f
             val glowCenter = Offset(glowSize / 2f, glowSize / 2f)
-            val glowBrush = Brush.radialGradient(
+            val glowBrush = StopBrush.radialGradient(
                 0f to Color(0x661450FF), 0.43f to Color(0x221450FF), 0.71f to Color.Transparent,
                 center = glowCenter, radius = glowRadius,
             )
@@ -168,7 +169,7 @@ fun LeaderboardBackdrop(
                 }
             }
             val stroke = Stroke(2f * unit)
-            val mask = Brush.verticalGradient(*LeaderboardMotion.VerticalMask)
+            val mask = StopBrush.verticalGradient(*LeaderboardMotion.VerticalMask)
             val layer = Paint().apply { alpha = s.intensity }
             onDrawBehind {
                 drawRect(LeaderboardMotion.Navy)
@@ -212,7 +213,7 @@ private class LaneLight {
 
 /** 크루 1위 빛 띠의 붓 — 폭 90 띠의 가로 그라디언트(한 번 만들어 둔다) */
 fun championSheenBrush(bandWidthPx: Float): Brush =
-    Brush.horizontalGradient(listOf(Color.Transparent, Color(0x44C1D7FF), Color.Transparent), startX = 0f, endX = bandWidthPx)
+    StopBrush.horizontalGradient(listOf(Color.Transparent, Color(0x44C1D7FF), Color.Transparent), startX = 0f, endX = bandWidthPx)
 
 /** 크루 1위 영역의 빛 띠 — 폭 90 · 높이 420 띠가 −22° 기울어 10초에 한 번 지난다(카드 안에서만, 글자 아래). 모션 감소면 그리지 않는다 */
 fun DrawScope.drawChampionSheen(clockMs: Long, band: Brush) {

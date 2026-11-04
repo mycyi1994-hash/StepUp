@@ -97,6 +97,7 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 화면(둘러보기 · 가입 · 만들기 · 운영)이 함께 쓰는 부품 — 2026-10 파란 톤 전달본(v19 크루 95장).
@@ -167,7 +168,7 @@ private val DarkCrewInk = CrewInk(
     avatar = Color(0xFF202736), avatarText = Color(0xFF969CAA), secondaryButton = Color(0xFF202736),
     disabled = Color(0xFF141A27), disabledText = Color(0xFF5D6371),
     danger = Color(0xFF2A1219), dangerText = Color(0xFFFF453A), dangerBase = Color(0xFFFF453A),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
+    primaryFace = StopBrush.verticalGradient(listOf(Color(0xFF2F6BFF), Color(0xFF2F6BFF))), primaryText = Color.White,
     skeleton = Color(0xFF151C2D), handle = Color(0x4DE2E8F5), scrim = Color(0x8C000000),
 )
 
@@ -182,7 +183,7 @@ private val LightCrewInk = CrewInk(
     avatar = Color(0xFFE3E3E8), avatarText = Color(0xFF848489), secondaryButton = Color(0xFFE3E3E8),
     disabled = Color(0xFFE8E8ED), disabledText = Color(0xFFA9A9AE),
     danger = Color(0xFFFFECEB), dangerText = Color(0xFFFF3B30), dangerBase = Color(0xFFFF3B30),
-    primaryFace = Brush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
+    primaryFace = StopBrush.verticalGradient(listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF))), primaryText = Color.White,
     skeleton = Color(0xFFE9E9EE), handle = Color(0x4D3C3C43), scrim = Color(0x40000000),
 )
 
@@ -212,7 +213,7 @@ fun crewPersonFace(name: String): Color =
 fun Modifier.crewPanel(ink: CrewInk, radius: Dp = 16.dp, selected: Boolean = false): Modifier {
     val shape = RoundedCornerShape(radius)
     return this.clip(shape)
-        .background(Brush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
+        .background(StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), shape)
         .border(if (selected) 1.5.dp else 1.dp, if (selected) ink.info else ink.edge, shape)
 }
 
@@ -758,7 +759,7 @@ fun CrewSheet(
     ) {
         Box(
             Modifier.fillMaxWidth().clip(shape)
-                .background(Brush.verticalGradient(listOf(ink.sheetTop, ink.sheet)), shape)
+                .background(StopBrush.verticalGradient(listOf(ink.sheetTop, ink.sheet)), shape)
                 .border(1.dp, ink.sheetEdge, shape),
         ) {
             Column(
@@ -861,7 +862,7 @@ fun CrewResultArt(info: Boolean = false, modifier: Modifier = Modifier) {
     Box(
         modifier.size(112.dp).drawBehind {
             drawCircle(
-                Brush.radialGradient(
+                StopBrush.radialGradient(
                     0f to ink.info.copy(alpha = if (StepUpColors.dark) 0.22f else 0.12f), 1f to Color.Transparent,
                     center = center, radius = size.minDimension * 0.6f,
                 ),

@@ -73,6 +73,7 @@ import com.stepup.android.ui.screens.items.durabilityPercent
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 러닝 중 · 러닝 완료 — 2026-09-29 전달본(design/run-journey-2026-09-29 의 01 러닝 중 · 03 러닝 후).
@@ -347,7 +348,7 @@ fun RunBar(fraction: Float, modifier: Modifier) {
     Box(modifier.clip(shape).background(p.track, shape)) {
         Box(
             Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().clip(shape)
-                .background(Brush.horizontalGradient(p.bar), shape),
+                .background(StopBrush.horizontalGradient(p.bar), shape),
         )
     }
 }
@@ -462,7 +463,7 @@ fun RunPrimaryButton(
     val shape = RoundedCornerShape(18.dp)
     Row(
         modifier.heightIn(min = height).clip(shape)
-            .background(if (enabled) Brush.horizontalGradient(p.primary) else Brush.horizontalGradient(listOf(p.primaryOff, p.primaryOff)), shape)
+            .background(if (enabled) StopBrush.horizontalGradient(p.primary) else StopBrush.horizontalGradient(listOf(p.primaryOff, p.primaryOff)), shape)
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

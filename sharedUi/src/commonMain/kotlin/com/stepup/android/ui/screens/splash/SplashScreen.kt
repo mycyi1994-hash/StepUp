@@ -43,6 +43,7 @@ import com.stepup.android.ui.theme.BrandLogoRole
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
+import com.stepup.android.ui.components.StopBrush
 
 /** 앱 준비 중(시안 03) · 준비하지 못함(시안 04) */
 enum class LaunchStage { Loading, Error }
@@ -116,8 +117,8 @@ fun LaunchScene(stage: LaunchStage, onRetry: () -> Unit = {}) {
         }
         Box(
             Modifier.fillMaxSize().background(
-                if (dark) Brush.verticalGradient(0f to Color.Black.copy(alpha = .08f), .55f to Color.Black.copy(alpha = .18f), 1f to ground.copy(alpha = .78f))
-                else Brush.verticalGradient(0f to Color.White.copy(alpha = .08f), .24f to Color.White.copy(alpha = .22f), .40f to Color.White.copy(alpha = .9f), .46f to Color.White, 1f to Color.White),
+                if (dark) StopBrush.verticalGradient(0f to Color.Black.copy(alpha = .08f), .55f to Color.Black.copy(alpha = .18f), 1f to ground.copy(alpha = .78f))
+                else StopBrush.verticalGradient(0f to Color.White.copy(alpha = .08f), .24f to Color.White.copy(alpha = .22f), .40f to Color.White.copy(alpha = .9f), .46f to Color.White, 1f to Color.White),
             ),
         )
         Column(

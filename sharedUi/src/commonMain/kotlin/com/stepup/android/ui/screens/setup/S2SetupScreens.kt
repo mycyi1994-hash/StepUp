@@ -87,6 +87,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 private const val DEFAULT_HEIGHT = 165
 private const val DEFAULT_WEIGHT = 60.0
@@ -687,8 +688,8 @@ private fun ModeCard(mode: RunMode, body: org.jetbrains.compose.resources.String
     Row(
         Modifier.fillMaxWidth().clip(shape)
             .background(
-                if (picked) Brush.verticalGradient(listOf(if (t.dark) Color(0xFF0A3B80) else Color(0xFFE3EDFF), t.panel))
-                else Brush.verticalGradient(listOf(t.panelTop, t.panel)),
+                if (picked) StopBrush.verticalGradient(listOf(if (t.dark) Color(0xFF0A3B80) else Color(0xFFE3EDFF), t.panel))
+                else StopBrush.verticalGradient(listOf(t.panelTop, t.panel)),
                 shape,
             )
             .border(if (picked) 2.dp else 1.dp, if (picked) Color(0xFF2B6DFF) else t.panelEdge, shape)

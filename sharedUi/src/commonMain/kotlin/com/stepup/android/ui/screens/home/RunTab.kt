@@ -58,6 +58,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 러닝 탭 — 2026-10-26 전체 시안 `run`. 혼자 달리기만 둔다: 오늘 걸음(고리) · 사람 없는 배경 사진(15장 중 하나) · GPS 준비 ·
@@ -134,7 +135,7 @@ fun RunPhotoCard(photoIndex: Int, modifier: Modifier = Modifier) {
         }
         Box(
             Modifier.fillMaxSize().background(
-                Brush.horizontalGradient(0f to Color.Black.copy(alpha = .55f), .7f to Color.Black.copy(alpha = .05f), 1f to Color.Transparent),
+                StopBrush.horizontalGradient(0f to Color.Black.copy(alpha = .55f), .7f to Color.Black.copy(alpha = .05f), 1f to Color.Transparent),
             ),
         )
         Column(Modifier.align(Alignment.CenterStart).padding(start = 20.dp, end = 20.dp, top = 24.dp)) {

@@ -64,6 +64,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 러닝 3번 듀얼 레일(2026-10-24 핸드오프 04_DESIGN_BACKGROUND · design-tokens.json).
@@ -144,7 +145,7 @@ fun cssLinearGradient(degrees: Float, size: Size, vararg stops: Pair<Float, Colo
     val dy = -cos(rad).toFloat()
     val half = (abs(size.width * dx) + abs(size.height * dy)) / 2f
     val center = Offset(size.width / 2f, size.height / 2f)
-    return Brush.linearGradient(
+    return StopBrush.linearGradient(
         *stops,
         start = Offset(center.x - dx * half, center.y - dy * half),
         end = Offset(center.x + dx * half, center.y + dy * half),
@@ -394,7 +395,7 @@ fun LobbyTunnelBackdrop(
                 Modifier.fillMaxSize().drawWithCache {
                     val stripW = 180.dp.toPx()
                     val stripH = 1250.dp.toPx()
-                    val strip = Brush.horizontalGradient(
+                    val strip = StopBrush.horizontalGradient(
                         0f to Color.Transparent, 0.42f to Color(0x5562CFFF), 0.52f to Color(0x66E5F8FF), 0.68f to Color.Transparent,
                         startX = 0f, endX = stripW,
                     )
@@ -403,7 +404,7 @@ fun LobbyTunnelBackdrop(
                     val glowH = 410.dp.toPx()
                     val glowCenter = Offset(size.width / 2f, 175.dp.toPx() + glowH / 2f)
                     val glowRadius = glowW / 2f * 1.4142135f
-                    val glow = Brush.radialGradient(
+                    val glow = StopBrush.radialGradient(
                         0f to Color(0x551C8EFF), 0.65f to Color.Transparent, center = glowCenter, radius = glowRadius,
                     )
                     onDrawBehind {
@@ -435,15 +436,15 @@ fun LobbyTunnelBackdrop(
         // 덮개 — 위 · 아래를 조금, 제목이 오는 왼쪽 위를 더 어둡게(글이 읽히게). 시트 아래면 전체를 짙게
         Spacer(
             Modifier.fillMaxSize().drawWithCache {
-                val vertical = Brush.verticalGradient(
+                val vertical = StopBrush.verticalGradient(
                     0f to Color(0x44031427), (175.dp.toPx() / size.height).coerceIn(0f, 1f) to Color.Transparent,
                     (440.dp.toPx() / size.height).coerceIn(0f, 1f) to Color.Transparent, 1f to Color(0x44031427),
                 )
-                val title = Brush.radialGradient(
+                val title = StopBrush.radialGradient(
                     0f to Color(0x99031427), 1f to Color.Transparent,
                     center = Offset(size.width * 0.05f, 126.dp.toPx()), radius = 290.dp.toPx(),
                 )
-                val body = Brush.radialGradient(
+                val body = StopBrush.radialGradient(
                     0f to Color(0xCC031427), 1f to Color.Transparent,
                     center = Offset(size.width * 0.09f, size.height * 0.65f), radius = 235.dp.toPx(),
                 )

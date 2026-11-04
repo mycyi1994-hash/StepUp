@@ -888,11 +888,12 @@ fun PhotoCard(
         if (photo != null) {
             Image(photo, null, contentScale = ContentScale.Crop, colorFilter = colorFilter, modifier = Modifier.matchParentSize())
         }
-        // 여러 색 그라디언트는 두 색 띠로(VerticalStops.kt — 기기 검사 에뮬레이터가 죽던 자리)
         Box(
-            Modifier.matchParentSize().verticalStops(
-                0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),
-                1f to Color.Black.copy(alpha = .78f),
+            Modifier.matchParentSize().background(
+                StopBrush.verticalGradient(
+                    0f to Color.Black.copy(alpha = .28f), .3f to Color.Transparent, .5f to Color.Black.copy(alpha = .05f),
+                    1f to Color.Black.copy(alpha = .78f),
+                ),
             ),
         )
         content()
@@ -933,7 +934,7 @@ fun WeekCard(
         modifier.size(168.dp, 196.dp).pressable(onClick = onClick).clip(RoundedCornerShape(18.dp)).background(Color(0xFF111111)),
     ) {
         if (photo != null) Image(photo, null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
-        Box(Modifier.matchParentSize().background(Brush.verticalGradient(.35f to Color.Transparent, 1f to Color.Black.copy(alpha = .78f))))
+        Box(Modifier.matchParentSize().background(StopBrush.verticalGradient(.35f to Color.Transparent, 1f to Color.Black.copy(alpha = .78f))))
         Text(
             badge,
             style = StepUpUi.type.smallButton.copy(fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic),

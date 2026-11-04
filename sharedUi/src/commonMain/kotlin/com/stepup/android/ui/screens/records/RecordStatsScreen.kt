@@ -85,6 +85,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.TimeZone
 import kotlin.math.ceil
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * 러닝 통계(시안 H04 · H05 · H06 · H15) — 목록의 "통계". 고른 달의 월간으로 시작하고 주간 · 월간을 오간다.
@@ -456,8 +457,8 @@ private fun BoxScope.Bar(bar: RunBar, top: Double, chartHeight: androidx.compose
     Box(
         Modifier.align(Alignment.BottomCenter).width(if (weekly) 26.dp else 34.dp).height(barHeight).clip(shape)
             .background(
-                if (on) Brush.verticalGradient(listOf(Color(0xFF7EE8FF), Color(0xFF29BFF0)))
-                else Brush.verticalGradient(listOf(Color(0xFF2E7BFF), Color(0xFF0754FF))),
+                if (on) StopBrush.verticalGradient(listOf(Color(0xFF7EE8FF), Color(0xFF29BFF0)))
+                else StopBrush.verticalGradient(listOf(Color(0xFF2E7BFF), Color(0xFF0754FF))),
             ),
     )
     Column(

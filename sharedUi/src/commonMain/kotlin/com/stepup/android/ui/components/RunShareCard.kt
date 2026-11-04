@@ -121,9 +121,9 @@ object RunShareCard {
         return paint(WIDTH, height) {
             val pen = Pen(kit, this)
             // 남색 바탕 — 위가 조금 밝고 오른쪽 위에서 파란 빛이 번진다
-            drawRect(Brush.verticalGradient(listOf(Color(TOP), Color(BOTTOM)), 0f, height.toFloat()))
+            drawRect(StopBrush.verticalGradient(listOf(Color(TOP), Color(BOTTOM)), 0f, height.toFloat()))
             drawRect(
-                Brush.radialGradient(
+                StopBrush.radialGradient(
                     listOf(Color(0x660B3A86), Color(0x000B3A86)), center = Offset(WIDTH * 0.92f, 0f), radius = WIDTH * 0.9f,
                 ),
             )
@@ -239,7 +239,7 @@ object RunShareCard {
         val pen = Pen(kit, this)
         val band = 290f
         val bandTop = HEIGHT - band
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF0A2C52), FREE_NAVY), 0f, bandTop), size = Size(WIDTH.toFloat(), bandTop))
+        drawRect(StopBrush.verticalGradient(listOf(Color(0xFF0A2C52), FREE_NAVY), 0f, bandTop), size = Size(WIDTH.toFloat(), bandTop))
 
         if (track.size >= 2) drawFreeRoute(track, Rect(140f, 240f, WIDTH - 140f, bandTop - 110f))
 

@@ -112,6 +112,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 자유러닝 시작 플로(2026-10-17 전달본 — docs/redesign/free-run-start-2026-10-17).
@@ -302,7 +303,7 @@ private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
                 val ry = size.height * 0.10f
                 val c = Offset(size.width / 2f, size.height * 0.91f)
                 scale(rx / ry, 1f, pivot = c) {
-                    drawCircle(Brush.radialGradient(listOf(CheckFloor, Color.Transparent), center = c, radius = ry), radius = ry, center = c)
+                    drawCircle(StopBrush.radialGradient(listOf(CheckFloor, Color.Transparent), center = c, radius = ry), radius = ry, center = c)
                 }
             }
             .testTag("run-shoe-check-art"),
@@ -697,7 +698,7 @@ fun FreeRunStartStage(
             val ry = size.height * 0.46f
             scale(rx / ry, 1f, pivot = c) {
                 drawCircle(
-                    Brush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = ry),
+                    StopBrush.radialGradient(0f to StartGlow, 0.8f to StartGlow.copy(alpha = 0f), center = c, radius = ry),
                     radius = ry, center = c,
                 )
             }
@@ -718,7 +719,7 @@ fun FreeRunStartStage(
                 drawCircle(StartTrack, radius = outer - 2.dp.toPx(), style = Stroke(2.dp.toPx()))
                 // 모션 감소면 도는 원호를 그리지 않는다(시안과 같다)
                 if (!reduced) {
-                    val sweep = Brush.sweepGradient(
+                    val sweep = StopBrush.sweepGradient(
                         0f to Color.Transparent,
                         240f / 360f to Color.Transparent,
                         250f / 360f to StartAccent.copy(alpha = 0x22 / 255f),

@@ -48,6 +48,7 @@ import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.SneakerVisual
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.LocalMotion
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 신발 뽑기 한 벌 — 2026-10-03 파란 톤 통합 전달본 v4(stepup-draw-blue-claude-v19)부터 색 · 버튼 · 바닥은 러닝 리메이크의 남색 부품
@@ -302,7 +303,7 @@ private fun ArtLayer(
 private fun DrawScope.drawStageGlow(unit: Float, dark: Boolean) {
     val glowCenter = Offset(195f * unit, 250f * unit)
     drawCircle(
-        Brush.radialGradient(listOf(Color(0x800754FF), Color(0x2048D9FA), Color.Transparent), glowCenter, 170f * unit),
+        StopBrush.radialGradient(listOf(Color(0x800754FF), Color(0x2048D9FA), Color.Transparent), glowCenter, 170f * unit),
         170f * unit, glowCenter,
     )
     softEllipse(Offset(195f * unit, 372f * unit), 300f * unit, 44f * unit, if (dark) 0.5f else 0.25f)
@@ -313,7 +314,7 @@ private fun DrawScope.softEllipse(center: Offset, width: Float, height: Float, a
     if (alpha <= 0f || width <= 0f || height <= 0f) return
     withTransform({ scale(1f, height / width, pivot = center) }) {
         drawCircle(
-            Brush.radialGradient(listOf(Color.Black.copy(alpha = alpha.coerceIn(0f, 1f)), Color.Transparent), center, width / 2f),
+            StopBrush.radialGradient(listOf(Color.Black.copy(alpha = alpha.coerceIn(0f, 1f)), Color.Transparent), center, width / 2f),
             width / 2f, center,
         )
     }

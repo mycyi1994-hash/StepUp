@@ -74,6 +74,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.community.relativeTime
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 러닝 이야기(커뮤니티 기본 CM01~44 · 코스 글쓰기 WRITE01~20, 2026-10-03 파란 톤 전달본)의 공통 조각.
@@ -364,7 +365,7 @@ fun StoryCourseThumb(route: List<GeoPoint>, km: String, seed: Int, modifier: Mod
         if (route.size >= 2) StoryMapTone { LiveRouteMap(route, Modifier.fillMaxSize(), seed = seed) }
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(0.45f to Color.Transparent, 1f to t.screen.copy(alpha = 0.85f)),
+                StopBrush.verticalGradient(0.45f to Color.Transparent, 1f to t.screen.copy(alpha = 0.85f)),
             ),
         )
         Column(Modifier.align(Alignment.BottomStart).padding(start = 10.dp, bottom = 8.dp, end = 8.dp)) {
@@ -535,7 +536,7 @@ fun StoryToast(
     val t = runTone()
     val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().clip(shape).background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)))
+        modifier.fillMaxWidth().clip(shape).background(StopBrush.verticalGradient(listOf(t.sheetTop, t.sheet)))
             .border(1.dp, if (error) t.errorEdge else t.panelEdge, shape)
             .padding(start = 14.dp, end = 4.dp).heightIn(min = 52.dp)
             .testTag("story-toast"),

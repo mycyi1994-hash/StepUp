@@ -83,6 +83,7 @@ import com.stepup.android.domain.RunPermissionStep
 import com.stepup.android.ui.StepPermissions
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.stepup.android.ui.components.StopBrush
 
 /**
  * 러닝 권한 안내(시작·로그인·첫 사용 v1 시안 13~19) — 한 번 고른 러닝 하나에 붙는다.
@@ -470,7 +471,7 @@ private fun MinimalPermissionCard(
         Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
             Column(
                 Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(shape)
-                    .background(Brush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
+                    .background(StopBrush.verticalGradient(listOf(t.sheetTop, t.sheet)), shape)
                     .border(1.dp, t.panelEdge, shape)
                     .padding(horizontal = 20.dp, vertical = 24.dp)
                     .testTag("perm-sheet-${spec.tag}"),
@@ -620,7 +621,7 @@ private fun NotificationArt() {
     Box(Modifier.size(width = 320.dp, height = 250.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(width = 200.dp, height = 250.dp)) {
             drawCircle(
-                Brush.radialGradient(listOf(t.cobalt.copy(alpha = 0.32f), Color.Transparent), radius = this.size.width * 0.85f),
+                StopBrush.radialGradient(listOf(t.cobalt.copy(alpha = 0.32f), Color.Transparent), radius = this.size.width * 0.85f),
                 radius = this.size.width * 0.85f,
             )
             val radius = androidx.compose.ui.geometry.CornerRadius(30.dp.toPx())

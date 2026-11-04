@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.stepup.ui.res.*
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpFonts
+import com.stepup.android.ui.components.StopBrush
 
 /*
  * 크루 러닝 흐름의 남색 부품(2026-10-22 크루 러닝 핸드오프 05_ANDROID_DESIGN · design-tokens.json).
@@ -138,7 +139,7 @@ fun NavyCard(
     val shape = RoundedCornerShape(18.dp)
     Column(
         modifier.fillMaxWidth().clip(shape)
-            .background(Brush.verticalGradient(listOf(CrewNavy.CardTop, CrewNavy.Card)), shape)
+            .background(StopBrush.verticalGradient(listOf(CrewNavy.CardTop, CrewNavy.Card)), shape)
             .border(if (selected) 2.dp else 1.dp, if (selected) CrewNavy.Cyan else if (strong) CrewNavy.Edge else CrewNavy.Line, shape)
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .padding(padding),

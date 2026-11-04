@@ -76,12 +76,12 @@ fun TierDurabilityBar(
                 }
                 // 채움
                 drawRoundRect(
-                    Brush.horizontalGradient(style.fill, startX = 0f, endX = w.coerceAtLeast(1f)),
+                    StopBrush.horizontalGradient(style.fill, startX = 0f, endX = w.coerceAtLeast(1f)),
                     topLeft = Offset(0f, top), size = Size(w, barH), cornerRadius = r,
                 )
                 // 윗면 광택
                 drawRoundRect(
-                    Brush.verticalGradient(
+                    StopBrush.verticalGradient(
                         listOf(Color.White.copy(alpha = 0.42f), Color.White.copy(alpha = 0.0f)),
                         startY = top, endY = top + barH * 0.6f,
                     ),
@@ -105,7 +105,7 @@ fun TierDurabilityBar(
                     val x = -band + (w + band * 2) * sweep
                     clipRect(0f, top, w, top + barH) {
                         drawRect(
-                            Brush.horizontalGradient(
+                            StopBrush.horizontalGradient(
                                 listOf(Color.Transparent, Color.White.copy(alpha = 0.55f), Color.Transparent),
                                 startX = x - band / 2f, endX = x + band / 2f,
                             ),
@@ -117,7 +117,7 @@ fun TierDurabilityBar(
                 if (style.glow != null) {
                     val end = Offset(w - barH / 2f, top + barH / 2f)
                     drawCircle(
-                        Brush.radialGradient(listOf(Color.White.copy(alpha = 0.95f), style.glow.copy(alpha = 0.6f), Color.Transparent),
+                        StopBrush.radialGradient(listOf(Color.White.copy(alpha = 0.95f), style.glow.copy(alpha = 0.6f), Color.Transparent),
                             center = end, radius = barH * 1.1f),
                         radius = barH * 1.1f, center = end,
                     )

@@ -56,6 +56,10 @@ jobs:
       - name: Check shared design contract
         run: python3 tools/check_design_contract.py
 
+      # 공용 화면의 그라디언트는 StopBrush 로 — 기기 검사 에뮬레이터(SwiftShader)가 여러 색 그라디언트에서 죽었다(2026-11-04)
+      - name: Check gradients use StopBrush
+        run: python3 tools/check_gradients.py
+
       # AI 코칭의 규칙 값 · 템플릿 · 계획 요일 · 근거 id 가 앱(Kotlin)과 서버(0060 SQL)에서 같은가
       - name: Check coaching twin (app = server)
         run: python3 scripts/check-coaching-twin.py

@@ -409,7 +409,7 @@ private fun RunsHead(scope: CrewRunsScope, week: CrewWeek?, name: String, onSele
         val scopeShape = RoundedCornerShape(16.dp)
         Row(
             Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(scopeShape)
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(ink.cardTop, ink.card)), scopeShape)
+                .background(com.stepup.android.ui.components.StopBrush.verticalGradient(listOf(ink.cardTop, ink.card)), scopeShape)
                 .border(1.5.dp, ink.edgeStrong, scopeShape)
                 .homeClickable(onClick = onSelect).padding(horizontal = 20.dp, vertical = 14.dp).testTag("home-runs-scope"),
             verticalAlignment = Alignment.CenterVertically,

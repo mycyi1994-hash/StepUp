@@ -18,6 +18,8 @@
   화면 글자 · 그림은 Compose 리소스(`Res.*`, 원본은 그대로 `app/src/main/res` · `assets`) — 앱 APK 는 assets 를 두 벌 넣지 않고 res 는 엄격하게 줄인다(`res/raw/keep.xml`).
   **Compose Multiplatform 1.11.1 · lifecycle 2.10.0**(JetBrains 판) — 1.12 는 androidx Compose 1.12(AGP 9.1 · compileSdk 37 필요)라 안드로이드가 못 쓴다. AGP 9 로 올리기 전까지 1.11.
   자세한 것은 docs/ios/README.md "화면".
+  **그라디언트는 `StopBrush.*Gradient`**(2026-11-04) — 기기 검사 에뮬레이터(SwiftShader)가 여러 색 그라디언트에서 통째로 죽었다. 에뮬레이터에서만 미리 그린 그림으로,
+  실제 폰 · iOS 는 Brush 그대로. `Brush.*Gradient(` 는 `tools/check_gradients.py` 가 막는다(docs/ios/README.md "기기 검사 에뮬레이터").
 - 계정은 조직(법인)으로 신청했다(2026-11-02, 애플 확인 대기). 사용자 결정 전: 번들 ID(임시 `com.stepupcrew.stepup`) · iOS 의 지갑 주소 연결 · 공개 체인 기록 동의 · 베타는 TestFlight 로.
 
 ## 최신 — 보안 네 겹: 사람 확인 · CSP · 보안 감시 · Dependabot (2026-11-02, 서버 0083)
