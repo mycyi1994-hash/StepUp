@@ -96,7 +96,7 @@ ensure_emulator() {
   echo "$(date -u +%FT%TZ) before $phase: emulator gone — restarting" >> screen-gallery/emulator-restarts.txt
   local emulator_bin="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}/emulator/emulator"
   # shellcheck disable=SC2086
-  nohup "$emulator_bin" -avd test ${STEPUP_EMULATOR_OPTIONS:--no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none} \
+  nohup "$emulator_bin" -avd test ${STEPUP_EMULATOR_OPTIONS:--no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -feature -Vulkan -camera-back none} \
     -memory 4096 -cores 4 > "screen-gallery/emulator-restart-$phase.txt" 2>&1 &
   timeout 300s adb wait-for-device || true
   for _ in $(seq 1 60); do
@@ -107,6 +107,7 @@ ensure_emulator() {
   timeout 10s adb shell settings put global transition_animation_scale 0 || true
   timeout 10s adb shell settings put global animator_duration_scale 0 || true
   timeout 10s adb shell settings put system system_locales ko-KR || true
+  timeout 10s adb shell setprop debug.hwui.renderer skiagl || true
   echo "$(date -u +%FT%TZ) before $phase: boot_completed=$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" >> screen-gallery/emulator-restarts.txt
 }
 run_instrumentation() {

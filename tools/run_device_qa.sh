@@ -10,6 +10,8 @@
 # 전체 다국어 화면 모음 · 큰 글자 전체는 Screen Gallery Capture 워크플로에서 돈다.
 set -uo pipefail
 adb shell settings put system system_locales ko-KR || true
+# 앱 그리기를 GL 로(Vulkan 은 러너의 SwiftShader 에서 에뮬레이터째 죽는다 — experience-qa.yml 2026-11-04). 새로 띄운 앱부터 적용된다
+adb shell setprop debug.hwui.renderer skiagl || true
 status=0
 bash tools/run_screen_gallery.sh interaction || status=1
 bash tools/run_screen_gallery.sh permissions || status=1
