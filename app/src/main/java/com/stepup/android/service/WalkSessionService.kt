@@ -841,8 +841,10 @@ class WalkSessionService : Service() {
                 activeMs += delta
                 val seconds = activeMs / 1000
                 val fixAt = maxOf(lastFixElapsed, lastKnownFixElapsed)
-                // 오래 서 있음 — 걸음 · 경로 점이 30초 넘게 그대로면 알린다(2026-10-17). 저장 중이면 알리지 않는다
-                val stillNow = RunStill.isStill(current.saveStatus == RunSaveStatus.IDLE, now - lastMoveElapsed)
+                // 오래 서 있음 — 걸음 · 경로 점이 30초 넘게 그대로면 알린다(2026-10-17). 저장 중이면 알리지 않는다.
+                // 위치를 못 잡는 동안(지하철 · 지하)은 서 있는지 모르니 알리지 않는다(2026-11-04)
+                val stillNow = RunStill.isStill(current.saveStatus == RunSaveStatus.IDLE, now - lastMoveElapsed,
+                    sinceFixMs = if (fixAt > 0) now - fixAt else null)
                 _state.update {
                     if (!it.isActive || it.isPaused) it
                     else it.copy(
