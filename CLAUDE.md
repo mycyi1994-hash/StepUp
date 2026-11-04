@@ -1,5 +1,10 @@
 # StepUp — 작업 메모
 
+## 최신 — 아이폰 앱 계획 (2026-11-04, 아직 시작 전)
+
+[docs/ios-plan-2026-11-04.md](docs/ios-plan-2026-11-04.md) — 사용자 "앱스토어(애플) 제출 파일이 자꾸 오류" → 저장소에 아이폰 앱이 없다 → "계획 짜줘".
+추천은 Kotlin Multiplatform + Compose Multiplatform(`domain/` 은 안드로이드 import 0 — 그대로 공용). 방식 · 개발자 계정 · 첫 판 범위 · 번들 ID 는 사용자 결정 전.
+
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 
 - 신발: 러닝 시작 때 신은 신발 id 를 적어(`WalkSessionState.startSneakerId` · 폰 DB 판 20 `sneakerServerId` · 체크포인트 판 5) `record_session(p_sneaker)` 로 보낸다 —
