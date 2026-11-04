@@ -11,8 +11,8 @@ logcat_pid=$!
 ps -o pid,args -C qemu-system-x86_64 -C qemu-system-x86_64-headless > $out/emulator-process.txt 2>&1 || true
 cat /proc/$(pgrep -f qemu-system | head -1)/limits > $out/emulator-limits.txt 2>&1 || true
 result=0
-timeout 9m ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.stepup.android.CrewCardsDesignTest#listDetailAndJoin \
+timeout 12m ./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=${DIAG_TEST:-com.stepup.android.CrewCardsDesignTest#listDetailAndJoin} \
   --stacktrace > $out/gradle.txt 2>&1 || result=$?
 echo "result=$result" | tee $out/result.txt
 adb get-state > $out/emulator-state.txt 2>&1 || echo "emulator gone" >> $out/emulator-state.txt
