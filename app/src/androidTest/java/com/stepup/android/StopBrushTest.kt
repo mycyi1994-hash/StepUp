@@ -82,7 +82,9 @@ class StopBrushTest {
             if (skipNear != null && hypot(x - skipNear.first.x, y - skipNear.first.y) < skipNear.second) continue
             val p = want[x, y]
             val q = got[x, y]
-            val diff = maxOf(abs(p.red - q.red), abs(p.green - q.green), abs(p.blue - q.blue), abs(p.alpha - q.alpha)).times(255).toInt()
+            // 보이는 값(투명도를 곱한 색)으로 — 거의 투명한 픽셀의 RGB 는 뜻이 없다(투명 검정 · 투명에 가까운 흰색이 255 차이로 나왔다)
+            val diff = maxOf(abs(p.red * p.alpha - q.red * q.alpha), abs(p.green * p.alpha - q.green * q.alpha),
+                abs(p.blue * p.alpha - q.blue * q.alpha), abs(p.alpha - q.alpha)).times(255).toInt()
             worst = maxOf(worst, diff); sum += diff; count++
         }
         val mean = sum.toDouble() / count
