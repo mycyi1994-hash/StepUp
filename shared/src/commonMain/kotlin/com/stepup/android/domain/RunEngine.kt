@@ -106,7 +106,9 @@ class RunEngine(private val startedAtMs: Long) {
             startedAt = startedAtMs, paused = paused, elapsedSec = elapsed, steps = steps,
             gpsKm = gpsKm, liveKm = km, track = track.toList(), here = here, hereAt = hereAt, hereAccurate = hereAccurate,
             paceSecPerKm = RunPace.secPerKm(elapsed, km * 1000),
-            still = RunStill.isStill(recording = !paused, sinceMoveMs = nowMs - lastMoveMs),
+            // 위치를 못 잡는 동안(지하철 · 지하)은 서 있는지 모른다 — 알리지 않는다(2026-11-04, RunStill)
+            still = RunStill.isStill(recording = !paused, sinceMoveMs = nowMs - lastMoveMs,
+                sinceFixMs = if (goodHereAt > 0) nowMs - goodHereAt else null),
         )
     }
 

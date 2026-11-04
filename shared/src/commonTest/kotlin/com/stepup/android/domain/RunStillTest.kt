@@ -19,7 +19,7 @@ class RunStillTest {
         assertFalse(RunStill.isStill(recording = false, sinceMoveMs = 5 * 60_000, sinceFixMs = 1_000))
     }
 
-    @Test fun `위치를 못 잡는 동안(지하철 · 지하)은 알리지 않는다`() {
+    @Test fun `위치를 못 잡는 동안 — 지하철 · 지하 — 알리지 않는다`() {
         // 2026-11-04 사용자 "지하철 타고 가는데 30초 정지가 왜 나오냐" — 걸음이 없어도 어디인지 모르면 서 있다고 하지 않는다
         assertFalse(RunStill.isStill(recording = true, sinceMoveMs = 5 * 60_000, sinceFixMs = 30_000))
         assertFalse(RunStill.isStill(recording = true, sinceMoveMs = 5 * 60_000, sinceFixMs = 10 * 60_000))

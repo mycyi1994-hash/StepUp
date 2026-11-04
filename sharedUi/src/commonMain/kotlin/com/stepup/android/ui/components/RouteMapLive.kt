@@ -205,11 +205,11 @@ fun LiveRouteMap(
 }
 
 /** 지금 자리([here])가 경로 끝에서 [com.stepup.android.domain.LIVE_HEAD_MAX_M] 보다 멀다 — 따라가는 지도가 경로도 함께 담는다 */
-internal fun routeLeftBehind(route: List<GeoPoint>, here: GeoPoint): Boolean =
+fun routeLeftBehind(route: List<GeoPoint>, here: GeoPoint): Boolean =
     route.isNotEmpty() && com.stepup.android.domain.haversineMeters(route.last(), here) > com.stepup.android.domain.LIVE_HEAD_MAX_M
 
 /** 틀에 넣을 경로 점 — 긴 경로도 [limit] 개 안으로 고르게 추리고 처음 · 끝은 꼭 넣는다 */
-internal fun routeSample(route: List<GeoPoint>, limit: Int = 64): List<GeoPoint> {
+fun routeSample(route: List<GeoPoint>, limit: Int = 64): List<GeoPoint> {
     if (route.size <= limit) return route
     val step = (route.size - 1).toDouble() / (limit - 1)
     return List(limit) { route[(it * step).toInt().coerceAtMost(route.size - 1)] }.dropLast(1) + route.last()
