@@ -67,9 +67,12 @@ async function finishLink(env, deps, userId, body) {
   // 못하게). 테스트넷에서만 켠다(DRIP_WEI).
   // 가스비 보내기가 실패해도 지갑 연결은 이미 끝났다 — 오류로 돌려주지 않는다.
   // 꺼내기 가스비를 낼 몫(DRIP_WEI × 20)은 남겨 둔다 — 새 계정을 많이 만들어 비우지 못하게.
+  // 서버가 허락해야 보낸다(attester_drip_claim, 0090) — 가입 3일 · 경로 있는 러닝 1번 이상 · 사람마다 한 번 · 하루 전체 상한.
+  // 허락받고 보내지 못했으면 되돌린다(attester_drip_release) — 하루 상한을 헛되이 쓰지 않게.
   let drip = null
   const dripWei = BigInt(env.DRIP_WEI ?? '0')
   if (dripWei > 0n && first === true) {
+    let claimed = false
     try {
       const c = deps.clients(env)
       const [balance, reserve] = await Promise.all([
@@ -77,10 +80,18 @@ async function finishLink(env, deps, userId, body) {
         c.publicClient.getBalance({ address: c.relayer.account.address }),
       ])
       if (balance < dripWei && reserve > dripWei * 20n) {
-        drip = await c.relayer.sendTransaction({ to: address, value: dripWei })
+        claimed = (await deps.rpc(env, 'attester_drip_claim', { p_user: userId, p_address: address })) === true
+        if (claimed) drip = await c.relayer.sendTransaction({ to: address, value: dripWei })
       }
     } catch (e) {
       console.error('drip failed', e?.message)
+      if (claimed && !drip) {
+        try {
+          await deps.rpc(env, 'attester_drip_release', { p_user: userId })
+        } catch (err) {
+          console.error('drip release failed', err?.message)
+        }
+      }
     }
   }
   return { ok: true, address: address.toLowerCase(), drip }

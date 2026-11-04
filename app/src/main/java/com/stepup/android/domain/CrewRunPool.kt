@@ -157,7 +157,8 @@ enum class CrewRunState { RUNNING, PAUSED, ENDED;
 }
 
 /** 러닝이 끝난 까닭 — 내가 끝냄 · 다른 사람이 모두 끝내 마지막으로 자동 종료 · 러닝을 올려 끝남 */
-enum class CrewTerminal { USER_END, LAST_PARTICIPANT_END, RECORDED;
+/** TIMEOUT — 앱 신호가 2분 넘게 끊겨 서버가 끝냈다(0090, 그때까지만 크루 보상) */
+enum class CrewTerminal { USER_END, LAST_PARTICIPANT_END, RECORDED, TIMEOUT;
     companion object { fun of(v: String?): CrewTerminal? = entries.firstOrNull { it.name == v } }
 }
 

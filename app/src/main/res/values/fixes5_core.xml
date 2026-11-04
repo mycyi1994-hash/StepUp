@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="run_reason_crew_no_signal">Not credited — no crew run signal was received</string>
+    <string name="run_reason_crew_signal_gap">Steps while the crew run signal was lost weren\'t credited</string>
+    <string name="crew_result_timeout">The connection dropped for over 2 minutes, so the crew reward counts only up to then.</string>
+</resources>

@@ -1,5 +1,19 @@
 # StepUp — 작업 메모
 
+## 최신 — 4차 점검: 서버 보안 · 경제 악용 막기 · 약관 링크 (2026-11-04, 서버 0090 · 0091)
+
+- **크루 보상(0090)**: 서버가 신호(`crew_run_beat`)로 본 시간만큼만 — 걸음 ≤ (active_sec − empty_sec + 60) × 4, 신호 0 이면 0. 신호가 `crew_beat_timeout_sec`(120) 넘게
+  끊기면 서버가 끝낸다(`terminal_reason 'TIMEOUT'`, 앱 `CrewTerminal.TIMEOUT`). 크루도 개인과 같은 하루 상한(걸음 48k · SUP 600 · 올리기)에 든다(`crew_counts_in_daily_cap`),
+  경로 없는 크루 러닝은 60 상한. 인원 보너스 'ALL' 은 그대로. 경로 크기(`track_max_bytes` · `track_max_points`) · 시간당 올리기(`record_session_hourly_cap` 60, 429).
+- IMPORT 신발은 일반 · 내구도 0, `p_sneaker` · 크루 체력에 못 쓴다. 에너지는 실제로 신은(p_sneaker) 신발 레벨로. 대기실 출석 기준 25초(`party_presence_sec`).
+- **출금 · 상급 뽑기는 서버에서 꺼짐**(`chain_withdraw_enabled` · `premium_draw_enabled` = false — 법률 검토 전). 테스트 판 상급 뽑기도 멈춘다. 켜면 출금 최소 50 · 하루 3번.
+- 테스트 가스(드립)는 가입 3일 · GPS 러닝 1번 뒤 · 하루 전체 50(`attester_drip_claim`).
+- **개인정보(0091)**: 로그인 안 한 요청(anon)은 profiles · 크루 · 거래 · 글 표와 뷰, leaderboard 를 못 읽는다. 새 가입자 이름은 '러너'(구글 실명 안 씀),
+  이름은 직접 고쳐도 같은 규칙(`profiles_name_guard`). 대기 명단 같은 이메일 다시 등록은 영수증을 새로 주지 않는다(`already`). 신고는 3일 · 러닝 1번 넘은 계정만 숨김에 센다.
+  크루 채팅 분당 20 · 사진 시간당 30 · 하루 100(`chat_rate_limited`). 운영 Supabase 는 직접 부른 요청에 IP 머리글을 넘기지 않는다 — 대기 명단 IP 횟수 제한은 워커(Turnstile) 경로에서만 된다.
+- 앱: 설정 › 약관 및 정책(`LegalLinks` — en/ja/zh 는 #en), 알림 "모든 알림" · "번개러닝 소식", 스토어 판은 첫 신체 설정 건너뜀(`BodySetup`), `adjustResize`, 푸시 언어는 보이는 언어,
+  거짓 로그아웃 막기(`refreshTokenDead` — Supabase JSON 오류 코드만), 접속 코드 403 러닝은 FAILED(다시 올림).
+
 ## 최신 — 3차 점검 13건 수정 (2026-11-04)
 
 - 걸음: 재부팅 · 자정 넘김 이월 규칙은 `sensor/StepBaseline.kt`(테스트 가능), 트래커는 날짜와 함께(`todayReading`) — 다른 날 값은 그날 줄에만, 목표 · 연속 · 보너스 청구는 오늘 값만.

@@ -979,6 +979,7 @@ fun RunScreen(
                         add(stringResource(R.string.crew_result_personal))
                         if (outcome.poolEmpty) add(stringResource(R.string.crew_result_pool_empty))
                         if (outcome.terminal == com.stepup.android.domain.CrewTerminal.LAST_PARTICIPANT_END) add(stringResource(R.string.crew_result_alone))
+                        if (outcome.terminal == com.stepup.android.domain.CrewTerminal.TIMEOUT) add(stringResource(R.string.crew_result_timeout))
                         when {
                             outcome.invalid || !outcome.xpApplied -> add(stringResource(R.string.crew_result_level_void))
                             (outcome.xpM ?: 0.0) > 0 -> add(stringResource(R.string.crew_result_level, "%.2f".format((outcome.xpM ?: 0.0) / 1000.0)))
