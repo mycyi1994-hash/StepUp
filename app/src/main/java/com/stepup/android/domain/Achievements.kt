@@ -31,7 +31,7 @@ enum class AchievementCategory(
     /** 누적 적립 SUP */
     SUP("SUP", listOf(50.0, 200.0, 500.0, 1e3, 2.5e3, 5e3, 1e4, 2e4, 3.5e4, 6e4)),
 
-    /** 민팅 횟수 */
+    /** 뽑기 횟수 — 서버가 처리한 이 계정의 뽑기(예전 이름 MINT 는 저장된 최고값 열쇠라 그대로 둔다) */
     MINT("MINT", listOf(1.0, 2.0, 3.0, 5.0, 8.0, 12.0, 20.0, 30.0)),
 
     /** 도감 슬롯 수집 (총 52) */
@@ -63,6 +63,7 @@ data class AchievementMetrics(
     val sessions: Int = 0,
     val streak: Int = 0,
     val supEarned: Double = 0.0,
+    /** 뽑기 횟수([AchievementBook.drawCount]) */
     val mints: Int = 0,
     val collectionSlots: Int = 0,
     val upgrades: Int = 0,
@@ -174,6 +175,22 @@ object AchievementBook {
             val value = metrics.valueOf(category)
             if (value.isFinite() && value > (best[category.id] ?: 0.0)) category.id to value else null
         }.toMap()
+
+    /** 뽑기로 받은 신발의 출처(서버 market_sneakers.origin) */
+    val DRAW_ORIGINS: Set<String> = setOf("FREE_DRAW", "BONUS_DRAW", "PAID_DRAW")
+
+    /**
+     * 업적 "신발 N회 뽑기"의 수 — 서버가 처리한 이 계정의 뽑기(무료 · 상급 · 예전 유료)만, 셀 수 있는 것 중 큰 쪽(2026-11-04).
+     * 지금 뽑기는 모두 무료라 예전처럼 SUP 를 낸 뽑기(원장 SPEND_DRAW)만 세면 늘 0 이었다.
+     *
+     * - [paidDraws] + [grantsUsed]: 원장의 유료 뽑기 줄 수 + 서버 draw_grants 에서 쓴 기회 수. 매일 무료 몫(draw_daily)은 앱이 읽지 못해 빠진다.
+     * - [drawnShoes] − [purchases]: 지금 가진 뽑기 출신 신발 수에서 거래소에서 산 횟수를 뺀 것 — 산 신발도 출처가 뽑기라 빼야 내 뽑기만 남는다.
+     *   팔거나 강화 재료로 태운 신발은 빠지지만, 업적은 계정별 최고값으로 열어 한 번 센 수는 줄지 않는다.
+     *
+     * 둘 다 실제 뽑기 수보다 크지 않다 — 그래서 큰 쪽을 쓴다.
+     */
+    fun drawCount(paidDraws: Int, grantsUsed: Int, drawnShoes: Int, purchases: Int): Int =
+        maxOf(paidDraws.coerceAtLeast(0) + grantsUsed.coerceAtLeast(0), drawnShoes - purchases.coerceAtLeast(0), 0)
 
     /** 두 최고값을 합친다 — 카테고리마다 큰 쪽 */
     fun mergeBest(now: Map<String, Double>, values: Map<String, Double>): Map<String, Double> {

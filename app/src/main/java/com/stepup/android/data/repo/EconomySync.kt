@@ -169,6 +169,8 @@ class EconomySync(
             energyMax = economy.energyMax,
             freeDraws = left("FREE"),
             bonusDraws = left("BONUS"),
+            // 업적 "신발 N회 뽑기" — 서버가 처리한 뽑기만 오르는 값
+            drawGrantsUsed = grants.sumOf { it.used.coerceAtLeast(0) },
         )
         return ServerResult.Ok(Unit)
     }

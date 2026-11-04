@@ -1,5 +1,15 @@
 # StepUp — 작업 메모
 
+## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
+
+- 신발: 러닝 시작 때 신은 신발 id 를 적어(`WalkSessionState.startSneakerId` · 폰 DB 판 20 `sneakerServerId` · 체크포인트 판 5) `record_session(p_sneaker)` 로 보낸다 —
+  서버는 내 것 · 쓸 수 있는 신발이면 그 신발로 닳게 하고 아니면 예전처럼 신은 신발(0089, 옛 앱 호출 그대로). 서버에 0089 가 없으면 앱은 p_sneaker 없이 한 번 더 보낸다.
+- 0 SUP 까닭: `record_session` 이 `verdict_reason` 도 돌려주고 러닝 기록 상세에 한 줄(`domain/RunVerdictReason.kt`, 서버 문구와 정확히 맞대어 본다 — 서버 문구를 바꾸면 함께).
+- 크루 러닝: 앱이 뒤에 있을 때 출발하면 "크루 러닝이 출발했어요" 알림(`service/CrewStartAlert.kt`, 채널 `crew_start`) — 눌러 2분 안에 오면 출발.
+- 번개 공유 링크 `stepupcrew.com/f/<id>`(App Links · web/_redirects → invite.html). 거래소의 v3 신발은 모델이 정해지지 않은 줄이면 등급만(`MarketShoeLook`).
+- 수리 창: 아직 안 올라간 러닝이 있으면 한 줄 알리고 올린 뒤 다시 견적. 뽑기 업적은 서버가 확인한 모든 뽑기.
+- 스토어 versionCode 26 · versionName 1.18.0.
+
 ## 최신 — 출시 전 점검 2차 13건 (2026-11-03, 서버 0087 · 0088)
 
 - 크루 러닝 출발은 대기실 화면이 아니라 늘 떠 있는 `PartyRunStartHost`(StepUpRoot)가 한다 — 채팅을 보고 있어도 출발, 준비한 동안 화면 켜 둠.

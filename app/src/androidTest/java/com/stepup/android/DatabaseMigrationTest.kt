@@ -49,6 +49,12 @@ class DatabaseMigrationTest {
                 assertTrue(it.moveToFirst())
                 assertEquals("", it.getString(0))
             }
+            // 판 20 — 옛 러닝은 출발 신발 · 판정 까닭을 모른다: 0 · 빈 글자(서버가 예전처럼 · 기록 상세는 까닭을 짓지 않는다)
+            sql.query("SELECT sneakerServerId, verdictReason FROM walk_sessions WHERE id=17").use {
+                assertTrue(it.moveToFirst())
+                assertEquals(0L, it.getLong(0))
+                assertEquals("", it.getString(1))
+            }
             assertEquals(62.82, db.rewardDao().balanceNow(), 0.001)
             assertEquals("pending-purchase", db.energyPurchaseDao().pending().single().id)
             assertNull(db.runSettlementDao().find("account:runner-a", 1000))

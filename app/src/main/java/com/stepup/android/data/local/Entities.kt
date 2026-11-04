@@ -106,6 +106,18 @@ data class WalkSessionEntity(
      */
     @ColumnInfo(defaultValue = "''")
     val laps: String = "",
+    /**
+     * 출발 때 신은 신발의 서버 번호(market_sneakers.id) — 서버가 이 러닝을 그 신발로 닳게 한다(0089 p_sneaker).
+     * 0 이면 모른다(판 20 전의 러닝 · 폰에만 있던 신발) — 서버가 예전처럼 올릴 때 신은 신발을 쓴다.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val sneakerServerId: Long = 0,
+    /**
+     * 서버가 적은 판정 까닭(record_session verdict_reason, 0089) — 적립이 0 이거나 줄어든 까닭을 기록 상세가 보인다.
+     * 서버가 답한 그대로이고 폰이 짓지 않는다. 판 20 전에 확인받은 러닝 · 까닭이 없는 러닝은 빈 글자다.
+     */
+    @ColumnInfo(defaultValue = "''")
+    val verdictReason: String = "",
 )
 
 /**

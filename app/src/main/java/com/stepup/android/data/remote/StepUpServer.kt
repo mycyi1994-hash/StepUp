@@ -25,6 +25,10 @@ data class SessionRecorded(
     @SerialName("points_awarded") val pointsAwarded: Double,
     /** 이 세션까지 반영한 잔고 */
     val balance: Double,
+    /**
+     * 판정 까닭(0089) — 적립이 0 이거나 줄어든 까닭. 서버 글 그대로(여러 개면 " · " 로 이어진다). 예전 서버는 보내지 않는다 — 빈 글자.
+     */
+    @SerialName("verdict_reason") val verdictReason: String? = null,
 )
 
 @Serializable
@@ -121,8 +125,10 @@ class StepUpServer(
         faction: String,
         expectedUserId: String,
         mockLocation: Boolean = false,
+        /** 출발 때 신은 신발의 서버 번호 — 0 이면 보내지 않는다(서버가 올릴 때 신은 신발을 쓴다) */
+        sneakerId: Long = 0,
     ): ServerResult<SessionRecorded> {
-        val body = jsonBody {
+        fun body(withSneaker: Boolean) = jsonBody {
             put("p_started_at", startedAtMillis.toIsoInstant())
             put("p_ended_at", endedAtMillis.toIsoInstant())
             put("p_steps", steps)
@@ -132,18 +138,27 @@ class StepUpServer(
             put("p_party_size", partySize)
             put("p_faction", faction)
             put("p_mock_location", mockLocation)
+            // 출발 때 신은 신발(0089) — 사실만 알린다. 내 신발인지 · 닳는 양 · 적립은 서버가 정한다
+            if (withSneaker) put("p_sneaker", sneakerId)
         }
 
-        return authed(expectedUserId) { token ->
+        suspend fun send(withSneaker: Boolean) = authed(expectedUserId) { token ->
             http.post(
                 url = "$restUrl/rpc/record_session",
-                body = body,
+                body = body(withSneaker),
                 headers = headers(token),
             )
         }.mapBody { text ->
             // 이 함수는 표를 돌려주므로 배열로 온다. 행이 없으면 뭔가 잘못된 것이다.
             serverJson.decodeFromString<List<SessionRecorded>>(text).firstOrNull()
         }
+
+        val first = send(withSneaker = sneakerId > 0)
+        // 서버에 0089 가 아직 없으면(PGRST202 — p_sneaker 를 받는 함수가 없다) 신발 번호 없이 다시 보낸다.
+        // 거절(REJECTED)로 두면 이 러닝은 다시 올라가지 않는다
+        val missing = first is ServerResult.Rejected &&
+            ("Could not find the function" in first.reason || "PGRST202" in first.reason)
+        return if (sneakerId > 0 && missing) send(withSneaker = false) else first
     }
 
     /**

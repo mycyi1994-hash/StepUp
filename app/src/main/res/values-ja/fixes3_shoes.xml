@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- シューズ修正(2026-11-04) -->
+<resources>
+    <string name="market_model_any">%1$sシューズ</string>
+    <string name="market_model_mixed">このグレードには複数のモデルがあります。出品ごとにモデルが異なります。</string>
+    <string name="care_repair_unsent_runs">まだアップロードされていないランがあります · アップロード後に修理金額が変わることがあります</string>
+    <string name="ach_goal_draw_all">シューズを%1$s回抽選</string>
+</resources>

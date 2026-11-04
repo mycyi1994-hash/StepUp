@@ -273,6 +273,11 @@ data class WalkSessionState(
      * 이 시간을 넘긴 뒤의 걸음은 서버가 적립하지 않는다. 서버 신발이 아니거나 아직 못 읽었으면 null. 저장본에 남기지 않는다(되살리면 다시 읽는다)
      */
     val shoeLifeSec: Long? = null,
+    /**
+     * 출발 때 신은 신발의 서버 번호(market_sneakers.id) — 폰에만 있던 신발 · 신발 없음 · 아직 못 읽음이면 0.
+     * 올릴 때 서버에 사실로만 알린다(p_sneaker) — 내 신발이 맞는지 · 얼마나 닳고 얼마를 주는지는 서버가 정한다. 저장본에 남긴다(판 5)
+     */
+    val startSneakerId: Long = 0,
     /** 방금 끝난 러닝에서 신발 내구도를 다 썼다 — 결과 화면이 "그 뒤 걸음은 보상에 들지 않았어요"를 알린다 */
     val lastShoeWornOut: Boolean = false,
     /**
@@ -507,8 +512,8 @@ class WalkSessionService : Service() {
      * 신은 신발로 보상을 받으며 달릴 수 있는 시간(초) — 남은 내구도 × 12초(서버 0066 수명 자르기). 다 닳았으면 0.
      * 서버 신발이 아니면(폰에만 있던 예전 신발 · 신발 없음) null — 알 수 없다.
      */
-    private suspend fun equippedShoeLifeSec(): Long? {
-        val server = ServiceLocator.database.sneakerDao().equippedNow()?.toDomain()?.server ?: return null
+    private fun equippedShoeLifeSec(equipped: com.stepup.android.data.local.SneakerEntity?): Long? {
+        val server = equipped?.toDomain()?.server ?: return null
         return when {
             server.hasDurabilityMax -> server.durabilityNow.coerceAtLeast(0).toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT
             server.durabilityPts <= 0.0 -> 0L
@@ -1012,10 +1017,20 @@ class WalkSessionService : Service() {
         // 신은 신발로 보상을 받으며 달릴 수 있는 시간 — 다 쓰면 화면 · 알림이 알린다(2026-10-19). 되살린 러닝도 다시 읽는다
         val runStartedAt = _state.value.startedAt
         scope.launch {
-            val life = runCatching { equippedShoeLifeSec() }.getOrNull()
-            // 크루 러닝이면 개인 신발은 닳지 않는다 — 신발 다 씀 안내를 걸지 않는다
+            val equipped = runCatching { ServiceLocator.database.sneakerDao().equippedNow() }.getOrNull()
+            val life = runCatching { equippedShoeLifeSec(equipped) }.getOrNull()
             _state.update {
-                if (it.isActive && it.startedAt == runStartedAt && it.group != RunGroup.CREW) it.copy(shoeLifeSec = life) else it
+                if (!it.isActive || it.startedAt != runStartedAt) {
+                    it
+                } else {
+                    it.copy(
+                        // 크루 러닝이면 개인 신발은 닳지 않는다 — 신발 다 씀 안내를 걸지 않는다
+                        shoeLifeSec = if (it.group != RunGroup.CREW) life else it.shoeLifeSec,
+                        // 출발 때 신은 신발(서버 번호) — 올릴 때 서버에 알려 그 신발로 닳고 적립되게(서버 0089 p_sneaker).
+                        // 되살린 러닝은 저장본에 남은 번호를 그대로 쓴다(그사이 신발을 바꿨어도 출발 때 신발로)
+                        startSneakerId = if (it.startSneakerId > 0) it.startSneakerId else equipped?.serverId ?: 0L,
+                    )
+                }
             }
         }
 
@@ -1259,6 +1274,8 @@ class WalkSessionService : Service() {
                     faction = equippedFaction?.id.orEmpty(),
                     crewId = partyCrewId,
                     mockLocation = session.mockLocation,
+                    // 출발 때 신은 신발 — 서버가 올릴 때 신은 신발이 아니라 이 신발로 닳게 한다(0089). 내 신발인지는 서버가 본다
+                    sneakerServerId = session.startSneakerId,
                     // AI 코칭의 1km 구간 — 랩은 위 거리와 같은 기준(RunDistance)이라 거리가 남는(인정) 러닝만. 무효 러닝은 거리가 0 이라 비운다
                     laps = if (creditedSteps > 0) {
                         com.stepup.android.domain.coaching.LapCodec.encode(

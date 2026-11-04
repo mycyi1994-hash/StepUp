@@ -61,6 +61,19 @@ object InviteLinks {
     /** 이 크루로 초대하는 링크 */
     fun crewLink(crewId: String): String = "https://$HOST/c/$crewId"
 
+    /** 이 번개러닝으로 부르는 링크 — 앱이 있으면 그 번개 글이 열린다(App Links `/f/`), 없으면 같은 초대 페이지가 설치를 안내한다 */
+    fun flashLink(postId: Long): String = "https://$HOST/f/$postId"
+
+    /** 링크에서 번개 글 번호를 꺼낸다. 우리 주소의 `/f/<번호>` 가 아니면 null — [crewIdOf] 와 같은 까닭 */
+    fun flashIdOf(url: String?): Long? {
+        val uri = runCatching { java.net.URI(url ?: return null) }.getOrNull() ?: return null
+        if (uri.scheme != "https") return null
+        if (uri.host != HOST && uri.host != "www.$HOST") return null
+        val parts = uri.path.orEmpty().trim('/').split('/')
+        if (parts.size != 2 || parts[0] != "f") return null
+        return idOf(parts[1])
+    }
+
     /**
      * 링크에서 크루 id 를 꺼낸다. 우리 주소의 `/c/<uuid>` 가 아니면 null.
      *
@@ -115,10 +128,12 @@ object InviteLinks {
         }
     }
 
-    /** 앱을 연 인텐트를 본다. 초대 링크나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을, 글 · 번개 · 대기실 알림이면 그 자리를 연다. */
+    /** 앱을 연 인텐트를 본다. 초대 링크(크루 · 번개)나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을, 글 · 번개 · 대기실 알림이면 그 자리를 연다. */
     fun handle(intent: Intent?) {
         intent ?: return
         val target = pushTargetOf(intent.getStringExtra(PushService.EXTRA_LINK)) ?: pushTargetOf(intent.getStringExtra("link"))
+            // 번개러닝 공유 링크(https://stepupcrew.com/f/<번호>) — 번개 알림과 같은 자리로
+            ?: flashIdOf(intent.dataString)?.let { PushTarget.Flash(it) }
         if (target != null) {
             _pendingPush.value = target
             return

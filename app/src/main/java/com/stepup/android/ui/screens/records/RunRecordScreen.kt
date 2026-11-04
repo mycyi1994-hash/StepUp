@@ -35,6 +35,7 @@ import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.domain.GeoPoint
+import com.stepup.android.domain.RunVerdictReason
 import com.stepup.android.domain.localDate
 import com.stepup.android.ui.components.LiveRouteMap
 import com.stepup.android.ui.components.RunButton
@@ -153,6 +154,7 @@ fun RunRecordContent(
                         style = runTextStyle(14.sp, t.label, FontWeight.Medium),
                         modifier = Modifier.padding(top = 2.dp).testTag("run-date"),
                     )
+                    RewardReasonLine(s)
                     when (delete) {
                         DeleteState.Failed -> RunNotice(
                             stringResource(R.string.run_rec_delete_failed_title), Modifier.padding(top = 12.dp),
@@ -192,6 +194,52 @@ fun RunRecordContent(
     if (session != null && (delete == DeleteState.Confirm || delete == DeleteState.Deleting)) {
         DeleteSheet(session, deleting = delete == DeleteState.Deleting, onCancel = onCloseDelete, onDelete = onConfirmDelete, zone = zone)
     }
+}
+
+/**
+ * 적립 0 · 줄어든 까닭 한 줄 — 서버가 답한 러닝(확인 · 거절)만, 서버가 적은 까닭 그대로(서버 0089 verdict_reason).
+ * 모르는 까닭은 짓지 않는다 — 적립 0 이면 "적립되지 않았어요"만, 적립된 러닝이면 줄을 두지 않는다.
+ */
+@Composable
+private fun RewardReasonLine(session: WalkSessionEntity) {
+    val t = runTone()
+    val note = RunVerdictReason.note(session.uploadState, session.pointsEarned, session.verdictReason, session.uploadError) ?: return
+    val reasons = note.kinds.map { stringResource(reasonText(it)) }.joinToString(" · ")
+    val text = when {
+        reasons.isEmpty() -> stringResource(R.string.run_reason_none)
+        note.zero -> stringResource(R.string.run_reason_zero, reasons)
+        else -> reasons
+    }
+    androidx.compose.material3.Text(
+        text,
+        style = runTextStyle(14.sp, t.label, FontWeight.Medium),
+        modifier = Modifier.padding(top = 6.dp).testTag("run-reward-reason"),
+    )
+}
+
+private fun reasonText(kind: RunVerdictReason.Kind): Int = when (kind) {
+    RunVerdictReason.Kind.MOCK -> R.string.run_reason_mock
+    RunVerdictReason.Kind.BANNED -> R.string.run_reason_banned
+    RunVerdictReason.Kind.CADENCE -> R.string.run_reason_cadence
+    RunVerdictReason.Kind.SPEED -> R.string.run_reason_speed
+    RunVerdictReason.Kind.TRACK_TIME -> R.string.run_reason_track_time
+    RunVerdictReason.Kind.DUPLICATE_ROUTE -> R.string.run_reason_duplicate_route
+    RunVerdictReason.Kind.OVERLAP -> R.string.run_reason_overlap
+    RunVerdictReason.Kind.NO_STEPS -> R.string.run_reason_no_steps
+    RunVerdictReason.Kind.STEPS_OVER_GPS -> R.string.run_reason_steps_over_gps
+    RunVerdictReason.Kind.OVERSPEED_STOP -> R.string.run_reason_overspeed_stop
+    RunVerdictReason.Kind.CREW_DONE -> R.string.run_reason_crew_done
+    RunVerdictReason.Kind.DAILY_STEPS -> R.string.run_reason_daily_steps
+    RunVerdictReason.Kind.HELD -> R.string.run_reason_held
+    RunVerdictReason.Kind.CREW_EMPTY -> R.string.run_reason_crew_empty
+    RunVerdictReason.Kind.CREW_AFTER -> R.string.run_reason_crew_after
+    RunVerdictReason.Kind.WORN_AFTER -> R.string.run_reason_worn_after
+    RunVerdictReason.Kind.ENERGY -> R.string.run_reason_energy
+    RunVerdictReason.Kind.WORN -> R.string.run_reason_worn
+    RunVerdictReason.Kind.DAILY_SUP -> R.string.run_reason_daily_sup
+    RunVerdictReason.Kind.NO_GPS_CAP -> R.string.run_reason_no_gps_cap
+    RunVerdictReason.Kind.UPLOAD_CAP -> R.string.run_reason_upload_cap
+    RunVerdictReason.Kind.TOO_OLD -> R.string.run_reason_too_old
 }
 
 @Composable

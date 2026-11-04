@@ -10132,6 +10132,88 @@ begin
     '번개 글의 댓글 푸시는 그 번개를 연다(0088)');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0089 러닝은 출발 때 신은 신발로 · 판정 까닭을 돌려준다 (2026-11-04)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 출발 신발 · 판정 까닭(0089) ─────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                       where n.nspname = 'public' and p.proname = 'record_session'),
+    'record_session 은 하나뿐이다 — 예전 9칸 함수가 남아 호출이 모호해지지 않는다(0089)');
+  perform pg_temp.ok(has_function_privilege('authenticated',
+      'public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)', 'execute')
+    and not has_function_privilege('anon',
+      'public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)', 'execute'),
+    '새 record_session 도 로그인한 사람만 부른다(0089)');
+end $$;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('89000000-0000-0000-0000-000000000001', 'shoe89@test', '{"full_name":"출발신발"}'),
+  ('89000000-0000-0000-0000-000000000002', 'other89@test', '{"full_name":"남의신발"}');
+insert into fix (k, v) select 'a89', economy.draw_create('89000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'b89', economy.draw_create('89000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'x89', economy.draw_create('89000000-0000-0000-0000-000000000002', 'PAID_DRAW', 'FINISH')::text;
+set role authenticated;
+call pg_temp.login('89000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_a bigint := pg_temp.fx('a89')::bigint;
+  v_b bigint := pg_temp.fx('b89')::bigint;
+  v_x bigint := pg_temp.fx('x89')::bigint;
+  v_a0 int; v_b0 int;
+  r record;
+  r2 record;
+  v_start timestamptz := now() - interval '20 hours';
+begin
+  perform public.sneaker_equip(v_a);
+  select durability_now into v_a0 from public.my_sneakers() where id = v_a;
+  select durability_now into v_b0 from public.my_sneakers() where id = v_b;
+
+  -- B 를 신고 달렸고 올리기 전에 A 로 바꿨다 — B 가 닳는다(10분 = 50)
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00001), 0, 1, '', false, v_b);
+  perform pg_temp.ok(r.verdict <> 'VOID'
+                     and (select durability_now from public.my_sneakers() where id = v_b) = v_b0 - 50
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0,
+    '출발 때 신은 신발(p_sneaker)로 닳는다 — 올릴 때 신은 신발은 그대로(0089)');
+  perform pg_temp.ok((select sneaker_id from public.walk_sessions where user_id = auth.uid() and started_at = v_start) = v_b,
+    '러닝 기록에도 출발 때 신은 신발이 적힌다(0089)');
+
+  -- 남의 신발 번호면 예전처럼 지금 신은 신발(A)
+  v_start := now() - interval '17 hours';
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00002), 0, 1, '', false, v_x);
+  perform pg_temp.ok(r.verdict <> 'VOID'
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0 - 50
+                     and (select sneaker_id from public.walk_sessions where user_id = auth.uid() and started_at = v_start) = v_a,
+    '내 신발이 아닌 번호는 쓰지 않는다 — 지금 신은 신발로(0089)');
+
+  -- 예전 앱(p_sneaker 없이 9칸) — 그대로 지금 신은 신발
+  v_start := now() - interval '14 hours';
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00003), 0, 1, '', false);
+  perform pg_temp.ok(r.verdict <> 'VOID'
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0 - 100,
+    '예전 앱의 호출(신발 번호 없이)도 받는다 — 지금 신은 신발로(0089)');
+  perform pg_temp.ok(r.verdict_reason is not null, '판정 까닭 칸이 온다(까닭이 없으면 빈 글자)');
+
+  -- 무효 러닝의 까닭을 돌려주고, 같은 러닝을 다시 올리면 같은 까닭을 돌려준다
+  v_start := now() - interval '11 hours';
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00004), 0, 1, '', true, v_b);
+  perform pg_temp.ok(r.verdict = 'VOID' and r.verdict_reason = '가짜 위치가 감지되었습니다'
+                     and (select durability_now from public.my_sneakers() where id = v_b) = v_b0 - 50,
+    '무효 러닝은 까닭을 돌려주고 출발 신발도 닳지 않는다(0089)');
+  select * into r2 from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00004), 0, 1, '', true, v_b);
+  perform pg_temp.ok(r2.session_id = r.session_id and r2.verdict_reason = r.verdict_reason,
+    '다시 올린 러닝은 처음 까닭 그대로(0089)');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

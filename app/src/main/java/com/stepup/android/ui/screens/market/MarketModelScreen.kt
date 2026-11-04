@@ -50,6 +50,8 @@ import com.stepup.android.ui.components.VoltButton
 import com.stepup.android.ui.components.quietClickable
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
+import com.stepup.android.data.repo.toDomain
+import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.Snow
 import com.stepup.android.ui.theme.VoltText
 
@@ -125,7 +127,21 @@ fun MarketModelScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(16.dp))
-                com.stepup.android.ui.components.S2ShoeStage(preview, Modifier.fillMaxWidth(0.86f))
+                if (com.stepup.android.domain.MarketShoeLook.pinsDesign(faction, rarity)) {
+                    com.stepup.android.ui.components.S2ShoeStage(preview, Modifier.fillMaxWidth(0.86f))
+                } else {
+                    // 매물마다 모델이 다를 수 있다 — 다른 신발 그림을 대신 넣지 않고 등급 틀과 한 줄 안내만
+                    com.stepup.android.ui.components.SneakerGradeStage(preview, Modifier.fillMaxWidth(0.86f), showShoe = false)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.market_model_mixed),
+                        fontSize = 14.sp,
+                        color = Slate,
+                        lineHeight = 20.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
 
@@ -362,7 +378,9 @@ private fun AskDialog(
         NumberField(stringResource(R.string.market_price_label), price) { price = it.filter(Char::isDigit).take(9) }
         sneakers.forEach { sneaker ->
             PreferenceChoice(
-                title = stringResource(R.string.market_level, sneaker.level) + " · #${sneaker.mintNumber}",
+                // 같은 줄이라도 모델이 다를 수 있어(0066 뒤 신발) 신발 탭과 같은 이름을 앞에 둔다 — 어느 켤레를 파는지 알아보게
+                title = sneaker.toDomain().shoeName() + " · " +
+                    stringResource(R.string.market_level, sneaker.level) + " · #${sneaker.mintNumber}",
                 description = stringResource(R.string.market_durability, sneaker.durability),
                 selected = picked?.id == sneaker.id, onClick = { picked = sneaker },
             )

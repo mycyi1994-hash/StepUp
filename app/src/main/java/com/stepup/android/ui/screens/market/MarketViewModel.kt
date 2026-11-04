@@ -16,6 +16,7 @@ import com.stepup.android.data.repo.MarketRefusal
 import com.stepup.android.data.repo.marketRefusalKm
 import com.stepup.android.data.repo.MarketRepository
 import com.stepup.android.data.repo.ModelBook
+import com.stepup.android.data.repo.toDomain
 import com.stepup.android.data.repo.MyMarket
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -56,6 +57,11 @@ data class MarketBoard(
     val mine: MyMarket? = null,
     /** 거래에 쓸 수 있는 SUP — 서버 원장의 합 */
     val tradable: Double = 0.0,
+    /**
+     * 내 신발(거래소 번호 → 폰 사본) — 내가 내놓은 매물을 신발 탭과 같은 그림 · 이름(도감 모델)으로 보이려고.
+     * 거래소 줄에는 모델 번호가 없어 내 신발이 아니면 모른다(MarketShoeLook).
+     */
+    val ownShoes: Map<Long, com.stepup.android.domain.Sneaker> = emptyMap(),
 )
 
 /** 마켓 안 NFT 탭 */
@@ -98,12 +104,16 @@ class MarketViewModel(private val repo: MarketRepository) : ViewModel() {
                             return@launch
                         }
                         val tradable = balanceResult.value
+                        val ownShoes = repo.inventory().first()
+                            .filter { it.serverId != 0L }
+                            .associate { it.serverId to it.toDomain() }
                         currentCoroutineContext().ensureActive()
                         board.value = MarketBoard(
                             loading = false,
                             quotes = quotes.value,
                             mine = mine,
                             tradable = tradable,
+                            ownShoes = ownShoes,
                         )
                     }
                     else -> {

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러닝 기록 상세 — 적립 0 · 줄어든 까닭(서버 0089 verdict_reason, 2026-11-04) -->
+<resources>
+    <string name="run_reason_zero">적립 0 · %1$s</string>
+    <string name="run_reason_none">이번 러닝은 적립되지 않았어요</string>
+    <string name="run_reason_mock">가짜 위치가 감지됐어요</string>
+    <string name="run_reason_banned">과속 멈춤 뒤 10분 안에 시작했어요</string>
+    <string name="run_reason_cadence">걸음 속도가 사람 범위를 벗어났어요</string>
+    <string name="run_reason_speed">이동 속도가 사람 범위를 벗어났어요</string>
+    <string name="run_reason_track_time">경로 시각이 러닝 시간과 맞지 않아요</string>
+    <string name="run_reason_duplicate_route">이미 올린 경로예요</string>
+    <string name="run_reason_overlap">다른 러닝과 시간이 겹쳐요</string>
+    <string name="run_reason_no_steps">걸음 없이 이동한 거리예요</string>
+    <string name="run_reason_steps_over_gps">걸음 수가 이동 거리보다 많아 줄여 셌어요</string>
+    <string name="run_reason_overspeed_stop">과속이 이어져 러닝이 멈췄어요</string>
+    <string name="run_reason_crew_done">오늘 크루 러닝은 이미 했어요</string>
+    <string name="run_reason_daily_steps">하루 걸음 상한에 닿았어요</string>
+    <string name="run_reason_held">최근 무효 러닝이 많아 적립을 보류했어요</string>
+    <string name="run_reason_crew_empty">크루 체력을 다 썼어요</string>
+    <string name="run_reason_crew_after">크루 러닝이 끝난 뒤 기록은 빠졌어요</string>
+    <string name="run_reason_worn_after">신발 내구도가 다 닳은 뒤 걸음은 빠졌어요</string>
+    <string name="run_reason_energy">에너지를 다 썼어요</string>
+    <string name="run_reason_worn">신발 내구도가 다 닳았어요</string>
+    <string name="run_reason_daily_sup">하루 적립 상한에 닿았어요</string>
+    <string name="run_reason_no_gps_cap">경로 없는 러닝의 하루 상한에 닿았어요</string>
+    <string name="run_reason_upload_cap">하루에 올릴 수 있는 상한에 닿았어요</string>
+    <string name="run_reason_too_old">7일이 지난 러닝이에요</string>
+</resources>

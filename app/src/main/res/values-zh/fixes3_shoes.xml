@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 跑鞋修正(2026-11-04) -->
+<resources>
+    <string name="market_model_any">%1$s跑鞋</string>
+    <string name="market_model_mixed">该等级有多种款式，每个挂单的款式可能不同。</string>
+    <string name="care_repair_unsent_runs">还有未上传的跑步记录 · 上传后维修费用可能会变化</string>
+    <string name="ach_goal_draw_all">抽取跑鞋 %1$s 次</string>
+</resources>

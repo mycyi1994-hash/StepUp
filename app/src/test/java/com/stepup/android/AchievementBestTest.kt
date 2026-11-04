@@ -103,4 +103,33 @@ class AchievementBestTest {
         assertEquals(emptyMap<String, Double>(), AchievementBook.decodeBest(""))
         assertEquals(mapOf("CREW" to 2.0), AchievementBook.decodeBest("STEPS=abc;=3;CREW=2.0;LEVEL;POST=-1"))
     }
+
+    @Test
+    fun `뽑기 업적은 무료 뽑기도 센다 — 쓴 기회와 뽑아 받은 신발 중 큰 쪽, 산 신발은 뺀다`() {
+        // 유료 뽑기가 없어도(모두 무료) 쓴 기회 · 받은 신발로 오른다 — 예전엔 SUP 를 낸 뽑기만 세어 늘 0 이었다
+        assertEquals(4, AchievementBook.drawCount(paidDraws = 0, grantsUsed = 4, drawnShoes = 0, purchases = 0))
+        // 매일 무료 몫(앱이 못 읽는다)으로 뽑은 신발은 가진 신발로 센다
+        assertEquals(7, AchievementBook.drawCount(paidDraws = 0, grantsUsed = 2, drawnShoes = 7, purchases = 0))
+        // 거래소에서 산 신발도 출처가 뽑기다 — 산 횟수만큼 빼서 내 뽑기만
+        assertEquals(5, AchievementBook.drawCount(paidDraws = 0, grantsUsed = 0, drawnShoes = 7, purchases = 2))
+        // 예전 유료 뽑기와 쓴 기회는 겹치지 않아 더한다
+        assertEquals(6, AchievementBook.drawCount(paidDraws = 2, grantsUsed = 4, drawnShoes = 3, purchases = 0))
+        // 음수로 내려가지 않는다
+        assertEquals(0, AchievementBook.drawCount(paidDraws = 0, grantsUsed = 0, drawnShoes = 1, purchases = 3))
+    }
+
+    @Test
+    fun `뽑기 수가 줄어도(신발을 팔거나 태움) 계정별 최고값으로 열린 채다`() {
+        val trusted = AchievementBook.trusted(economyMine = true, crewsLoaded = false, postsLoaded = false)
+        val first = AchievementMetrics(mints = AchievementBook.drawCount(0, 0, drawnShoes = 5, purchases = 0))
+        val raised = AchievementBook.raised(first, emptyMap(), trusted)
+        assertEquals(5.0, raised["MINT"]!!, 0.0)
+        // 강화 재료로 태워 가진 뽑기 신발이 줄었다
+        val later = AchievementMetrics(mints = AchievementBook.drawCount(0, 0, drawnShoes = 1, purchases = 0))
+        val book = AchievementBook.build(later, AchievementBook.mergeBest(emptyMap(), raised))
+        assertEquals(listOf(true, true, true, true, false), tiers(book, AchievementCategory.MINT).take(5).map { it.unlocked })
+        // 다른 계정의 사본이면 최고값으로 적지 않는다
+        val other = AchievementBook.trusted(economyMine = false, crewsLoaded = false, postsLoaded = false)
+        assertTrue(AchievementBook.raised(first, emptyMap(), other).isEmpty())
+    }
 }

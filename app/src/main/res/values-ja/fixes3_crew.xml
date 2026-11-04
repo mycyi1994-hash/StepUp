@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 앱이 뒤에 있을 때 크루 러닝 출발 알림(CrewStartAlert) -->
+<resources>
+    <string name="notification_channel_crew_start">クルーランの出発</string>
+    <string name="crew_start_alert_title">クルーランがスタートしました</string>
+    <string name="crew_start_alert_body">タップして一緒に走る</string>
+</resources>
