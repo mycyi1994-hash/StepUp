@@ -10,6 +10,7 @@ import com.stepup.android.data.remote.CourseRankRow
 import com.stepup.android.data.remote.CourseRow
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.CourseRewards
+import com.stepup.android.domain.CourseText
 import com.stepup.android.domain.DemoCourses
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
@@ -147,16 +148,16 @@ class CourseRepository(
 
     suspend fun cancelRecording() = prefs.setCourseRecording(false)
 
-    /** 녹화한 트랙을 코스로 저장하고 녹화를 끝낸다. @return 새 코스 id (트랙이 짧으면 null) */
+    /** 녹화한 트랙을 코스로 저장하고 녹화를 끝낸다. @return 새 코스와 공유 결과 (트랙이 짧으면 null) */
     suspend fun saveRecorded(
         name: String,
         area: String,
         track: List<GeoPoint>,
         shared: Boolean,
-    ): Long? {
-        val id = create(name, area, track, shared)
+    ): CourseCreated? {
+        val created = create(name, area, track, shared)
         prefs.setCourseRecording(false)
-        return id
+        return created
     }
 
     suspend fun clearSelection() = prefs.setSelectedCourse(-1L)
@@ -169,23 +170,24 @@ class CourseRepository(
 
     /**
      * 방금 달린 GPS 트랙을 코스로 등록한다. [shared] 면 서버에도 올린다 —
-     * 올리지 못하면 폰에만 남고 공유는 꺼진다.
+     * 올리지 못하면 폰에만 남고 공유는 꺼진다. 그때는 [CourseCreated.shareFailure] 로 알린다(성공 소리를 내지 않게).
      *
-     * @return 새 코스 id (트랙이 짧으면 null)
+     * @return 새 코스와 공유 결과 (트랙이 짧으면 null)
      */
     suspend fun create(
         name: String,
         area: String,
         track: List<GeoPoint>,
         shared: Boolean,
-    ): Long? {
+    ): CourseCreated? {
         val slim = track.simplify()
         val km = slim.trackDistanceKm()
         if (slim.size < 2 || km < 0.2) return null
         val id = dao.insert(
             CourseEntity(
-                name = name.trim().ifEmpty { "Course" },
-                area = area.trim(),
+                // 서버(course_share)도 60자까지만 받는다 — 폰과 게시판의 이름이 같게
+                name = CourseText.clip(name.trim()).ifEmpty { "Course" },
+                area = CourseText.clip(area.trim()),
                 distanceKm = km,
                 // 고도 센서가 없으므로 데모 추정치 — 1km당 완만한 8m
                 elevationM = (km * 8).toInt(),
@@ -199,8 +201,8 @@ class CourseRepository(
                 createdAt = System.currentTimeMillis(),
             )
         )
-        if (shared) setShared(id, true)
-        return id
+        val shareFailure = if (shared) setShared(id, true) as? BoardResult.Failed else null
+        return CourseCreated(id, shareFailure)
     }
 
     /**
@@ -389,3 +391,9 @@ fun CourseEntity.toDomain(): RunCourse = RunCourse(
     runCount = runCount,
     createdAt = createdAt,
 )
+
+/**
+ * 코스 만들기 결과 — 코스는 폰에 저장됐다. 공유를 바랐는데 올리지 못했으면 [shareFailure](코스는 공유 꺼짐으로 남는다)
+ * — 화면이 성공 소리 대신 알린다.
+ */
+data class CourseCreated(val id: Long, val shareFailure: BoardResult.Failed? = null)

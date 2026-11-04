@@ -53,11 +53,26 @@ import kotlinx.coroutines.launch
 enum class WalletPickPhase { Pick, Busy, Opened, Copied, Checking, NotYet, Linked, SignIn, Offline, NeedsMfa, Failed }
 
 /**
+ * 지갑이 붙은 것을 서버에서 확인했다는 신호 — 지갑 고르기 창(StepUpRoot)이 올리고, 연결 상태를 보이는 화면(연결된 계정 · 지갑)이
+ * 보고 다시 읽는다. "연결 확인"을 눌러 붙은 것을 본 때는 화면에 돌아오는 일(다시 읽기)이 없어 예전엔 "연결하기"가 남아 있었다.
+ */
+object WalletLinkSignal {
+    private val _count = kotlinx.coroutines.flow.MutableStateFlow(0)
+
+    /** 확인한 횟수 — 값이 바뀌면 다시 읽는다 */
+    val count: kotlinx.coroutines.flow.StateFlow<Int> = _count
+
+    fun linked() {
+        _count.value = _count.value + 1
+    }
+}
+
+/**
  * WEB3 지갑 연결(2026-10-18) — GIWA Wallet(맨 위, 준비 중) · MetaMask · OKX Wallet · Rabby Wallet.
  *
  * 지갑을 고르면 서버에서 10분짜리 일회용 확인 번호를 받아 연결 페이지를 그 지갑 앱 안의 브라우저로 연다(서명 한 번).
  * 앱으로 돌아오면 서버에 연결 여부를 다시 물어 붙은 것을 본 뒤에만 "연결했어요"라고 한다.
- * 이미 붙은 지갑을 바꾸는 것(2단계 인증)은 웹 지갑 페이지에서 한다.
+ * 이미 붙은 지갑을 바꾸는 것(2단계 인증)은 웹 지갑 페이지에서 한다 — 그 페이지가 없는 스토어 판(WEB3 = false)은 고객센터 문의로 안내한다.
  */
 @Composable
 fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
@@ -65,6 +80,7 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var phase by rememberSaveable { mutableStateOf(WalletPickPhase.Pick) }
     var picked by rememberSaveable { mutableStateOf<WalletApp?>(null) }
+    var contactOpen by rememberSaveable { mutableStateOf(false) }
 
     fun check() {
         phase = WalletPickPhase.Checking
@@ -152,22 +168,30 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
                 RunButton(stringResource(R.string.wc_done), onDismiss, Modifier.fillMaxWidth().testTag("wallet-connect-done"))
             }
             else -> {
+                // 스토어 판에는 웹 지갑 페이지(2단계 인증 · 지갑 바꾸기)가 없다 — 이미 붙은 지갑은 고객센터에서 바꾸거나 해제한다
+                val viaSupport = phase == WalletPickPhase.NeedsMfa && !BuildConfig.WEB3
                 RunSheetText(
                     stringResource(R.string.wc_error_title),
                     body = stringResource(
                         when (phase) {
                             WalletPickPhase.SignIn -> R.string.wc_error_sign_in
                             WalletPickPhase.Offline -> R.string.wc_error_offline
-                            WalletPickPhase.NeedsMfa -> R.string.wc_error_mfa
+                            WalletPickPhase.NeedsMfa -> if (viaSupport) R.string.fx5_wallet_change_support else R.string.wc_error_mfa
                             else -> R.string.wc_error_failed
                         },
                     ),
                 )
                 Spacer(Modifier.height(16.dp))
                 RunButton(stringResource(R.string.wc_back), { phase = WalletPickPhase.Pick }, Modifier.fillMaxWidth())
+                if (viaSupport) {
+                    Spacer(Modifier.height(10.dp))
+                    RunButton(stringResource(R.string.set_contact_mail), { contactOpen = true },
+                        Modifier.fillMaxWidth().testTag("wallet-connect-contact"), kind = RunButtonKind.Secondary)
+                }
             }
         }
     }
+    if (contactOpen) com.stepup.android.ui.screens.settings.ContactSheet(onDismiss = { contactOpen = false })
 }
 
 @Composable

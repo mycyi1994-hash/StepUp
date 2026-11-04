@@ -27,14 +27,14 @@
     <string name="set_save_failed_body">Your previous setting was kept. Please try again.</string>
     <string name="set_saves_right_away">Changes are saved right away.</string>
     <string name="set_notif_intro">Choose the notifications you want.</string>
-    <string name="set_notif_push">Push notifications</string>
-    <string name="set_notif_push_desc">Run summaries and earnings</string>
+    <string name="set_notif_push">All notifications</string>
+    <string name="set_notif_push_desc">Turn off to stop all the notifications below too</string>
     <string name="set_notif_goal">Goal reminders</string>
     <string name="set_notif_goal_desc">When your daily goal is still open</string>
     <string name="set_notif_invite">Run invites</string>
     <string name="set_notif_invite_desc">Crew and run-together invites</string>
-    <string name="set_notif_event">Event news</string>
-    <string name="set_notif_event_desc">New events</string>
+    <string name="set_notif_event">Flash run news</string>
+    <string name="set_notif_event_desc">When a crew or open flash run is recruiting</string>
     <string name="set_notif_blocked">Notifications are off on this phone</string>
     <string name="set_notif_blocked_body">To get the notifications below, allow them in your phone settings.</string>
     <string name="set_open_phone_settings">Open phone settings</string>
@@ -85,7 +85,6 @@
     <string name="set_wallet_linked">Connected</string>
     <string name="set_wallet_connect">Connect</string>
     <string name="set_wallet_unknown">Couldn\'t check</string>
-    <string name="set_external_note">We\'ll let you know when more connections are ready.</string>
     <string name="set_delete_account">Delete account</string>
     <string name="set_logout">Sign out</string>
     <string name="set_logout_title">Sign out?</string>

@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
 import java.time.ZoneId
-import java.time.LocalDate
 import java.time.Instant
 import kotlinx.coroutines.flow.combine
 import com.stepup.android.data.local.RewardType
@@ -17,7 +16,13 @@ import com.stepup.android.data.repo.EventDef
 import com.stepup.android.data.repo.EventRepository
 import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.StepRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -38,6 +43,14 @@ data class DailyChallenge(
     val done: Boolean get() = goal in 1..steps
 }
 
+/** 한국 날짜의 하루 — 서버 economy.game_day 와 같은 경계(자정, KST) */
+internal object KstDay {
+    private val KST: ZoneId = ZoneId.of("Asia/Seoul")
+
+    /** [now] 가 든 한국 날짜의 0시(밀리초) */
+    fun start(now: Instant): Long = now.atZone(KST).toLocalDate().atStartOfDay(KST).toInstant().toEpochMilli()
+}
+
 /** 수령 시도 결과 (일회성) */
 sealed interface ClaimResult {
     data class Success(val amount: Double) : ClaimResult
@@ -47,6 +60,7 @@ sealed interface ClaimResult {
     data object Failed : ClaimResult
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EventsViewModel(
     stepRepository: StepRepository,
     rewardRepository: RewardRepository,
@@ -72,15 +86,32 @@ class EventsViewModel(
         .map<Set<String>, Set<String>?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** 오늘(한국 시각)의 시작 — 서버의 목표 보너스 하루와 같게 */
-    private val startOfToday: Long =
-        LocalDate.now(ZoneId.of("Asia/Seoul")).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli()
-
     /**
      * 오늘 서버가 확인한 러닝 걸음. 목표 보너스는 이 걸음으로만 나온다 — 폰 만보기 걸음으로 100% 를 보이고
      * "보너스 적립 중"이라고 하면, 서버는 끝내 주지 않는다. 못 받으면 null(폰 걸음을 보이되 확정으로 치지 않는다).
      */
     private val _verifiedToday = MutableStateFlow<Long?>(null)
+
+    /**
+     * 오늘(한국 시각)의 시작 — 서버의 목표 보너스 하루와 같게. 화면을 연 채 자정을 넘기면 새 날로 바뀐다(1분마다 본다).
+     * 날이 바뀌면 서버가 잰 어제 걸음을 오늘 것으로 보이지 않게 비우고 진행값을 다시 받는다. 보는 화면이 없으면 멈추고(WhileSubscribed)
+     * 돌아오면 바로 다시 본다 — 마지막으로 보인 날을 이 화면 모델에 두어, 뒤에 있는 동안 자정을 넘겼어도 안다.
+     */
+    private var shownDay: Long? = null
+
+    private val startOfToday: Flow<Long> = flow {
+        while (true) {
+            val start = KstDay.start(Instant.now())
+            val before = shownDay
+            if (before != null && before != start) {
+                _verifiedToday.value = null
+                refreshProgress()
+            }
+            shownDay = start
+            emit(start)
+            delay(DAY_CHECK_MS)
+        }
+    }.distinctUntilChanged()
 
     /**
      * 오늘의 도전 — 하루 걸음 목표.
@@ -92,7 +123,7 @@ class EventsViewModel(
     val daily: StateFlow<DailyChallenge?> = combine(
         stepRepository.todaySteps,
         stepRepository.dailyGoal,
-        rewardRepository.sumOfTypeSince(RewardType.BONUS_GOAL, startOfToday),
+        startOfToday.flatMapLatest { rewardRepository.sumOfTypeSince(RewardType.BONUS_GOAL, it) },
         _verifiedToday,
     ) { phoneSteps, goal, paid, verified ->
         if (com.stepup.android.core.ServiceLocator.serverEconomyOn) {
@@ -167,6 +198,9 @@ class EventsViewModel(
     companion object {
         /** 나이트 러너가 세는 시작 시각 — 저녁 8시 */
         const val NIGHT_FROM_HOUR = 20
+
+        /** 날이 바뀌었는지 보는 간격 */
+        private const val DAY_CHECK_MS = 60_000L
 
         val Factory = viewModelFactory {
             initializer {

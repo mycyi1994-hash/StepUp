@@ -34,6 +34,10 @@ class PushRegistrar(
     }
     val preferenceSync = preferenceDelivery.state
 
+    /** 이 실행에서 마지막으로 서버에 보낸 푸시 글 언어 — 아직 안 보냈으면 null */
+    @Volatile
+    private var sentLanguage: String? = null
+
     /** 화면이 닫혀도 끝까지 가게 앱 수명의 코루틴에서 적는다. */
     fun syncInBackground(token: String? = null) {
         scope.launch {
@@ -50,9 +54,25 @@ class PushRegistrar(
 
     suspend fun sync(token: String? = null): Boolean {
         val current = token ?: fetchToken() ?: return false
-        val lang = runCatching { locale() }.getOrDefault("").ifBlank { Locale.getDefault().language }
+        val lang = currentLanguage()
+        // 보내기 전에 적는다 — 못 보냈으면 인터넷이 돌아올 때(NetworkWatch) · 다시 켤 때 다시 보낸다
+        sentLanguage = lang
         return api.register(current, lang) is ServerResult.Ok
     }
+
+    /**
+     * 화면 언어가 바뀌었으면 푸시 글 언어를 서버에 다시 알린다 — 앱 안에서 언어를 고른 뒤, 시스템의 앱별 언어 · 기기 언어가 바뀌어
+     * 화면이 다시 만들어질 때(MainActivity). 이 실행에서 아직 한 번도 보내지 않았으면 넘어간다(앱을 켤 때 보내는 일이 맡는다).
+     */
+    fun syncIfLanguageChanged() {
+        scope.launch {
+            val before = sentLanguage ?: return@launch
+            if (currentLanguage() != before) runCatching { sync() }
+        }
+    }
+
+    private suspend fun currentLanguage(): String =
+        runCatching { locale() }.getOrDefault("").ifBlank { Locale.getDefault().language }
 
     /**
      * 로그아웃 — 로그인 표시를 지우기 전에 부른다. 이 폰의 푸시 주소를 서버의 이 계정에서 떼고, 주소도 버린다

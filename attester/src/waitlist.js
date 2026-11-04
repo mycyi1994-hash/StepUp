@@ -6,7 +6,8 @@ import { HttpError } from './supabase.js'
  *   POST /v1/waitlist/register  { email, consent, trap, ref, token }
  *
  * 토큰은 Cloudflare 에 물어 확인한다(비밀 TURNSTILE_SECRET — 워커 비밀값, 저장소에 넣지 않는다).
- * 확인되면 attester_waitlist_register 를 부르고, 서버의 답({ok, receipt, referral_code} 또는 {ok:false, message})을 그대로 돌려준다.
+ * 확인되면 attester_waitlist_register 를 부르고, 서버의 답({ok, receipt, referral_code} · 이미 있는 이메일이면 {ok, already}(0091) ·
+ * 또는 {ok:false, message})을 그대로 돌려준다.
  * 같은 곳 횟수는 서버가 부른 사람의 IP(cf-connecting-ip)로 센다.
  */
 

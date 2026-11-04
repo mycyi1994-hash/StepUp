@@ -308,11 +308,14 @@ class StepUpServer(
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")
             else -> {
-                // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다)
-                if (response.status == 403 && response.body.contains("access_required")) {
+                // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다).
+                // 까닭은 정한 값([ACCESS_REQUIRED])으로 — 받는 쪽(러닝 올리기)이 다시 보내도 같은 거절과 가른다
+                if (response.isAccessRequired()) {
                     runCatching { onAccessRequired?.invoke() }
+                    ServerResult.Rejected(ACCESS_REQUIRED)
+                } else {
+                    ServerResult.Rejected(response.postgrestMessage())
                 }
-                ServerResult.Rejected(response.postgrestMessage())
             }
         }
     }
@@ -351,6 +354,18 @@ class StepUpServer(
         return http.get(url, anonHeaders()).toResult()
     }
 }
+
+/** 접속 코드 문(0079 access_gate)이 막은 요청의 거절 까닭 — [ServerResult.Rejected.reason] 이 이 값이다 */
+const val ACCESS_REQUIRED = "access_required"
+
+/** 접속 코드 문(0079 `public.access_gate`)이 막은 답인가 — 403 access_required */
+internal fun HttpResponse.isAccessRequired(): Boolean = status == 403 && body.contains(ACCESS_REQUIRED)
+
+/**
+ * 접속 코드 문에 막힌 거절인가 — 영구 거절이 아니다. 코드를 넣으면(AccessGate.afterGranted) 같은 요청이 받아진다.
+ * 러닝 올리기는 이 거절로 러닝을 버리지 않는다(2026-11-04 점검).
+ */
+fun ServerResult<*>.isAccessRequired(): Boolean = this is ServerResult.Rejected && reason == ACCESS_REQUIRED
 
 /** 서버 응답(JSON 글자)을 화면이 쓰는 값으로. 못 읽으면 나중에 다시 한다. */
 internal fun <T> ServerResult<String>.mapBody(transform: (String) -> T?): ServerResult<T> =

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 출시 전 점검 5차: 설정 › 약관 및 정책 · 신체 정보 지우기 확인 · 스토어 판 뽑기 안내 · 지갑 주소 · 코스 공유 실패 -->
+<resources>
+    <string name="fx5_legal_row">Terms &amp; policies</string>
+    <string name="fx5_legal_terms">Terms of Service</string>
+    <string name="fx5_legal_privacy">Privacy Policy</string>
+    <string name="fx5_legal_note">Opens in your browser.</string>
+    <string name="fx5_legal_open_failed">Couldn\'t open a browser. Please try again.</string>
+    <string name="fx5_body_clear_title">Delete your body info?</string>
+    <string name="fx5_body_clear_body">Your height, weight and goal weight will be deleted from this phone. This can\'t be undone.</string>
+    <string name="set_faq_a_draw_store">New members get 10 free draws, plus 3 free draws every day.</string>
+    <string name="fx5_wallet_address_label">Linked address</string>
+    <string name="fx5_wallet_address_copy">Copy wallet address</string>
+    <string name="fx5_wallet_address_copied">Wallet address copied.</string>
+    <string name="fx5_wallet_change_support">To change or unlink your wallet, please contact support.</string>
+    <string name="fx5_course_share_failed">Course saved, but it couldn\'t be shared. Tap the course to share it again.</string>
+</resources>

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +36,6 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.ui.components.BlueGroup
 import com.stepup.android.ui.components.BlueGroupLabel
 import com.stepup.android.ui.components.BlueNavRow
-import com.stepup.android.ui.components.BlueNote
 import com.stepup.android.ui.components.BluePage
 import com.stepup.android.ui.components.BlueSheet
 import com.stepup.android.ui.components.BlueSheetDivider
@@ -92,6 +92,12 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
                 else -> WalletLink.Unknown
             }
         }
+    }
+    // 지갑 고르기 창이 연결을 확인하면 바로 다시 읽는다 — "연결 확인"으로 붙은 것을 본 때는 화면에 돌아오는 일이 없다
+    val walletLinkedSignal by com.stepup.android.ui.screens.rewards.WalletLinkSignal.count.collectAsState()
+    val signalAtOpen = remember { walletLinkedSignal }
+    LaunchedEffect(walletLinkedSignal) {
+        if (walletLinkedSignal != signalAtOpen) reads++
     }
     var step by remember { mutableStateOf(DeleteStep.Closed) }
     var contactOpen by remember { mutableStateOf(false) }
@@ -217,10 +223,10 @@ fun ConnectedAccountsContent(
                         Modifier.testTag("connected-wallet"), strong = wallet == WalletLink.Linked,
                     )
                 }
-                // 건강 앱 연결은 아직 없다 — 쓸 수 없는 줄("준비 중")을 두지 않는다(2026-10-26)
+                // 건강 앱 연결은 아직 없다 — 쓸 수 없는 줄("준비 중")을 두지 않는다(2026-10-26).
+                // "연결 기능이 준비되면 안내해요" 한 줄도 뺐다(2026-11-04 — 약속처럼 읽힌다)
             }
         }
-        item { BlueNote(stringResource(R.string.set_external_note), Modifier.padding(top = 2.dp)) }
         // 로그인이 확인된 사람에게만 — 확인 중이거나 로그인 전이면 숨긴다
         if (signedIn == true) {
             item {
@@ -368,8 +374,15 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     ServiceLocator.userPrefs.setRunExperience(null)
     // 접속 코드 권한 사본도 지운다 — 다음 계정이 앞 계정의 권한을 들고 있지 않게
     com.stepup.android.core.AccessGate.forget(context)
+    // 알림 설정도 처음 값(모두 켬)으로 — 다음 계정이 앞 계정이 끈 알림을 물려받아 서버에 올리지 않게.
+    // 저녁 목표 알림 일도 멈춘다(로그인하면 다시 건다)
+    runCatching { ServiceLocator.userPrefs.setNotifyPrefs(com.stepup.android.data.prefs.NotifyPrefs()) }
+    com.stepup.android.push.GoalReminderWorker.cancel(context)
     // 이 폰의 로그인도 지운다 — 첫 화면(로그인)으로 돌아간다
     ServiceLocator.userPrefs.setLoginMethod("")
+    // 스스로 나갔다 — 정리 중(계정을 지운 뒤 푸시 떼기 등) 거절된 갱신이 켠 "다시 로그인해 주세요"를 거둔다
+    ServiceLocator.sessionHolder.forgetRefusal()
+    ServiceLocator.userPrefs.setSignInAgain(false)
 }
 
 private fun hasNetwork(context: Context): Boolean {

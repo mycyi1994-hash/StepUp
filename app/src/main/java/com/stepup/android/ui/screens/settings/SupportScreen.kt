@@ -62,13 +62,14 @@ import kotlinx.coroutines.delay
 /**
  * 자주 묻는 질문 — 질문 · 답변 문자열 쌍(docs/redesign/settings-v1 의 FAQ 답변안). 적립률 · 출금 조건 · 확률을 새로
  * 약속하지 않는다. 뽑기는 무료 정책(0042) 그대로다.
+ * 스토어 판([web3] = false)에는 상급 뽑기 · 지갑 선물이 없다 — 뽑기 답에서 지갑 문단을 뺀 글을 쓴다.
  */
-private val faqEntries = listOf(
+internal fun faqEntries(web3: Boolean = com.stepup.android.BuildConfig.WEB3): List<Pair<Int, Int>> = listOf(
     R.string.set_faq_q_earn to R.string.set_faq_a_earn,
     R.string.set_faq_q_stopped to R.string.set_faq_a_stopped,
     R.string.set_faq_q_grade to R.string.set_faq_a_grade,
     R.string.set_faq_q_withdraw to R.string.set_faq_a_withdraw,
-    R.string.set_faq_q_draw to R.string.set_faq_a_draw,
+    R.string.set_faq_q_draw to if (web3) R.string.set_faq_a_draw else R.string.set_faq_a_draw_store,
 )
 
 /**
@@ -102,7 +103,7 @@ fun SupportContent(
             BlueGroupLabel(stringResource(R.string.set_faq))
             // 질문은 하나만 펼친다
             BlueGroup {
-                faqEntries.forEachIndexed { index, (question, answer) ->
+                faqEntries().forEachIndexed { index, (question, answer) ->
                     FaqRow(stringResource(question), stringResource(answer), expanded == index, { onToggle(index) },
                         Modifier.testTag("faq-$index"))
                 }

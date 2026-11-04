@@ -214,14 +214,16 @@ class WalkViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /**
-     * 이 계정의 러닝 가운데 서버가 아직 확인하지 않았거나, 확인했어도 그 뒤 동기화가 아직 없는 러닝이 신발을 닳게 할 양(내구도 점) —
-     * 출발 전 점검이 신은 신발에서 빼서 보인다(화면에만 — 서버에 보내지 않는다). 러닝 줄에는 신은 신발이 남지 않아 지금 신은 신발에서 뺀다.
+     * 이 계정의 러닝 가운데 서버가 아직 확인하지 않았거나, 확인했어도 그 뒤 동기화가 아직 없는 러닝이 **지금 신은 신발**을 닳게 할 양
+     * (내구도 점) — 출발 전 점검이 신은 신발에서 빼서 보인다(화면에만 — 서버에 보내지 않는다). 출발 때 신발을 적은 러닝(판 20)은
+     * 그 신발일 때만, 적지 않은 러닝은 예전처럼 지금 신은 신발로 센다. 크루 러닝은 개인 신발을 닳게 하지 않아 세지 않는다.
      */
     val pendingShoeWear: StateFlow<Int> = combine(
         stepRepository.recentSessions(PENDING_WEAR_SCAN),
         ServiceLocator.economySync.syncedFrom,
-    ) { rows, syncedFrom ->
-        pendingShoeWearOf(rows, syncedFrom, System.currentTimeMillis())
+        ServiceLocator.database.sneakerDao().observeEquipped().map { it?.serverId ?: 0L },
+    ) { rows, syncedFrom, shoeServerId ->
+        pendingShoeWearOf(rows, syncedFrom, System.currentTimeMillis(), shoeServerId = shoeServerId)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     /**
@@ -288,14 +290,25 @@ internal fun shoeWearSettled(row: com.stepup.android.data.local.WalkSessionEntit
     }
 
 /**
- * 아직 사본에 들지 않은 러닝들의 닳음 합(러닝마다 [com.stepup.android.ui.screens.items.durabilityWear] — 서버가 러닝마다 뺀다).
+ * 아직 사본에 들지 않은 러닝들이 이 신발([shoeServerId] · 지금 신었는가 [shoeEquipped])을 닳게 할 양의 합
+ * (러닝마다 [com.stepup.android.ui.screens.items.durabilityWear] — 서버가 러닝마다 뺀다).
+ * - 이 신발의 러닝만: 크루 러닝은 개인 신발을 닳게 하지 않아 빼고, 출발 때 신발을 적은 러닝(sneakerServerId > 0, 0089)은
+ *   그 신발일 때만, 적지 않은 러닝(0 — 판 20 전 · 폰에만 있던 신발)은 예전처럼 지금 신은 신발일 때만 센다.
  * - 확인 전(PENDING · FAILED): 올라갈 러닝만 — 시간이 있고, 가짜 위치(서버가 무효로 본다)가 아니고, 7일 안이고, 계정이 있는 줄.
  * - 확인됨(SIGNED): 이 앱이 켜진 뒤 동기화가 한 번이라도 성공했고([syncedFrom] > 0) 그 동기화가 확인보다 앞설 때만. 앱을 막 켜
  *   동기화 전이면 사본이 이미 그 닳음을 담았을 수 있다 — 두 번 빼지 않게 세지 않는다.
  */
-internal fun pendingShoeWearOf(rows: List<com.stepup.android.data.local.WalkSessionEntity>, syncedFrom: Long, now: Long): Int =
+internal fun pendingShoeWearOf(
+    rows: List<com.stepup.android.data.local.WalkSessionEntity>,
+    syncedFrom: Long,
+    now: Long,
+    shoeServerId: Long,
+    shoeEquipped: Boolean = true,
+): Int =
     rows.sumOf { row ->
-        val unsettled = when (row.uploadState) {
+        val thisShoe = row.crewId.isBlank() &&
+            (if (row.sneakerServerId > 0) row.sneakerServerId == shoeServerId else shoeEquipped)
+        val unsettled = thisShoe && when (row.uploadState) {
             com.stepup.android.data.local.UploadState.PENDING.name,
             com.stepup.android.data.local.UploadState.FAILED.name ->
                 row.recordingOwner != com.stepup.android.domain.RecordingOwner.LEGACY && !row.mockLocation &&

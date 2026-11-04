@@ -58,15 +58,27 @@ class StoryDetailViewModel(
         loadIfNeeded()
     }
 
-    /** 목록을 아직 못 받았으면(알림 · 다시 뜬 프로세스) 받는다 */
+    /**
+     * 목록을 아직 못 받았으면(알림 · 다시 뜬 프로세스) 받는다. 받은 목록(최근 200개)에도 없으면 그 글 하나만 다시 물어 본다 —
+     * 댓글 알림은 오래된 글도 연다(0088 `post/<id>`). 예전엔 최근 글에 없다는 것만으로 "지워진 글"을 보였다.
+     */
     fun loadIfNeeded() {
         if (repository.posts.value.any { it.id == postId }) return
         _offline.value = false
         viewModelScope.launch {
             val state = repository.refresh()
-            val found = repository.posts.value.any { it.id == postId }
-            _missing.value = !found && state == BoardSyncState.Ready
-            _offline.value = !found && state != BoardSyncState.Ready
+            var found = repository.posts.value.any { it.id == postId }
+            // 서버가 이 글이 없다고 답했는가(지워짐 · 볼 수 없음) — 닿지 못했으면 "없는 글"로 단정하지 않는다
+            var gone = false
+            if (!found && state == BoardSyncState.Ready) {
+                when (repository.loadPost(postId)) {
+                    true -> found = true
+                    false -> gone = true
+                    null -> Unit
+                }
+            }
+            _missing.value = !found && gone
+            _offline.value = !found && !gone
         }
     }
 

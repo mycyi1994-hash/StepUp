@@ -125,6 +125,18 @@ class CommunityApi(private val server: StepUpServer) {
             )
         }.mapBody { serverJson.decodeFromString<List<PostIdRow>>(it).isNotEmpty() }
 
+    /**
+     * 글 하나 — 목록(최근 [posts] 200개)에 없는 오래된 글을 댓글 알림(`post/<id>`, 0088)이 열 때 받는다.
+     * 지워졌거나 볼 수 없으면 서버(RLS)가 빈 목록을 준다 — 빈 목록이면 없는 글이다.
+     */
+    suspend fun post(postId: Long): ServerResult<List<PostRow>> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/post_feed?select=*&id=eq.$postId",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<PostRow>>(it) }
+
     /** 한 글의 댓글. 먼저 단 것이 위. */
     suspend fun comments(postId: Long): ServerResult<List<CommentRow>> =
         server.authed { token ->

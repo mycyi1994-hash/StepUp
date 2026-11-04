@@ -345,6 +345,39 @@ class ClaimUploadTest {
     }
 
     @Test
+    fun `접속 코드 문에 막히면 러닝을 버리지 않고 멈춘다`() = runBlocking {
+        // 403 access_required(0079) — 러닝이 틀린 것이 아니다. 코드를 넣으면 같은 러닝이 받아진다(2026-11-04 점검).
+        // 예전엔 영구 거절(REJECTED)로 적어 그 러닝을 다시 올리지 않았다
+        val dao = FakeDao((1L..3L).map { session(it, startedAt = 1_000_000_000_000L + it) })
+        val recorder = FakeRecorder { ServerResult.Rejected(com.stepup.android.data.remote.ACCESS_REQUIRED) }
+        val run = repo(dao, recorder).uploadPending()
+
+        assertEquals(0, run.rejected)
+        assertEquals(1, run.failed)
+        assertEquals("문이 닫힌 동안은 뒤의 러닝도 같은 답이다 — 한 번만 묻는다", 1, recorder.seen.size)
+        assertNotNull("일꾼은 물러난다 — 코드를 넣으면 AccessGate 가 다시 건다", run.blockedBy)
+        assertEquals(UploadState.FAILED.name, dao.rows.getValue(1L).uploadState)
+        assertEquals(UploadState.PENDING.name, dao.rows.getValue(2L).uploadState)
+        assertEquals(3, dao.pendingUploads(10).size)
+
+        // 문이 열린 뒤 — 모두 올라간다
+        val after = repo(dao, FakeRecorder { okAnswer(it) }).uploadPending()
+        assertEquals(3, after.signed)
+    }
+
+    @Test
+    fun `접속 코드 문에 막히기 전에 확인받은 러닝은 넘긴다`() = runBlocking {
+        val dao = FakeDao((1L..2L).map { session(it, startedAt = 1_000_000_000_000L + it) })
+        val recorder = FakeRecorder { if (it.id == 1L) okAnswer(it) else ServerResult.Rejected(com.stepup.android.data.remote.ACCESS_REQUIRED) }
+        val signedStarts = mutableListOf<Long>()
+        val run = ClaimRepository(dao, recorder, now = { 42L }, onSigned = { signedStarts += it }).uploadPending()
+
+        assertEquals(1, run.signed)
+        assertEquals(listOf(1_000_000_000_001L), signedStarts)
+        assertEquals(UploadState.FAILED.name, dao.rows.getValue(2L).uploadState)
+    }
+
+    @Test
     fun `이미 서명받은 세션은 다시 보내지 않는다`() = runBlocking {
         val dao = FakeDao(listOf(session(1, state = UploadState.SIGNED)))
         val recorder = FakeRecorder { okAnswer(it) }

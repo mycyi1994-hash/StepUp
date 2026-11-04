@@ -342,7 +342,9 @@ object ServiceLocator {
         Analytics.init(app)
         pushRegistrar = PushRegistrar(
             PushApi(server),
-            locale = { userPrefs.languageNow() },
+            // 화면이 실제로 보이는 언어(저장한 앱 안 선택이 아니라 — 안드로이드 13 이상은 시스템 앱별 언어가 정본이고,
+            // 기기 설정을 따르면 기기 언어, 앱에 없는 언어면 영어)
+            locale = { ShownLanguage.of(AppLocale.tag, java.util.Locale.getDefault().language) },
             preferences = { userPrefs.notifyPrefs.first() },
         )
         territoryApi = TerritoryApi(server)

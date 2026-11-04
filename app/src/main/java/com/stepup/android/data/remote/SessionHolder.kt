@@ -162,6 +162,17 @@ class SessionHolder(
     /** 로그인한 적이 있는가. 첫 화면을 로그인으로 띄울지 정하는 근거다. */
     suspend fun isSignedIn(): Boolean = store.load() != null
 
+    /**
+     * 스스로 나갔다(로그아웃 · 계정 삭제 · 다른 계정) — 그 정리 중에 거절된 갱신이 남긴 "다시 로그인" 표시와 기억을 지운다.
+     * 계정을 지운 뒤 푸시 떼기가 죽은 토큰으로 갱신을 두드리면 표시가 켜져 로그인 화면이 "다시 로그인해 주세요"를 보였다.
+     * 저장된 세션은 건드리지 않는다.
+     */
+    suspend fun forgetRefusal() = mutex.withLock {
+        refreshFailure = null
+        rejectedRefresh = null
+        _signInRequired.value = false
+    }
+
     /** 로그아웃. 저장된 세션을 지운다. */
     suspend fun signOut() = mutex.withLock {
         refreshFailure = null

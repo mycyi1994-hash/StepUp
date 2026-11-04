@@ -31,8 +31,8 @@ import kotlinx.coroutines.flow.first
  * 목표 알림 — 저녁에 오늘 걸음이 목표에 못 미치면 한 번 알려 준다.
  *
  * 서버가 보내는 푸시가 아니다. 걸음은 폰이 제일 잘 알고, 알림 하나를 위해
- * 걸음을 서버에 계속 올릴 이유가 없다. 알림 설정의 "목표 알림"과 "푸시 알림"이
- * 둘 다 켜져 있을 때만 울린다.
+ * 걸음을 서버에 계속 올릴 이유가 없다. 알림 설정의 "모든 알림"과 "목표 알림"이
+ * 둘 다 켜져 있고 로그인해 있을 때만 울린다.
  */
 class GoalReminderWorker(
     context: Context,
@@ -68,6 +68,8 @@ class GoalReminderWorker(
         val prefs = ServiceLocator.userPrefs
         val notify = prefs.notifyPrefs.first()
         if (!notify.push || !notify.goalReminder) return Result.success()
+        // 로그아웃한 폰에는 울리지 않는다 — 앱을 다시 켜면 일이 다시 걸리지만, 로그인 전에는 알릴 목표가 없다
+        if (prefs.loginMethod.first().isEmpty()) return Result.success()
 
         // 하루 한 번 도는 일이지만 기기가 잠들어 있으면 늦게 깬다. 밤늦게 울리지 않게.
         val hour = LocalTime.now().hour
@@ -111,6 +113,15 @@ class GoalReminderWorker(
                 .build()
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+        }
+
+        /**
+         * 로그아웃 · 계정 삭제 — 매일 저녁 일을 멈추고 이미 떠 있는 목표 알림도 거둔다.
+         * 로그인하면 [schedule] 로 다시 건다(앱을 켤 때도 다시 건다).
+         */
+        fun cancel(context: Context) {
+            runCatching { WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME) }
+            runCatching { NotificationManagerCompat.from(context).cancel(WORK_NAME.hashCode()) }
         }
 
         fun createChannel(context: Context) {

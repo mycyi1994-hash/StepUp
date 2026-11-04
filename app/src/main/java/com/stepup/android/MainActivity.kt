@@ -69,6 +69,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Android 13+에서는 OS가 앱 언어를 기억하므로 그 값을 정본으로 삼는다.
         AppLocale.syncFromSystem(this)
+        // 언어가 바뀌어 화면이 다시 만들어졌으면(시스템의 앱별 언어 · 기기 언어 · 앱 안에서 고름) 푸시 글 언어도 서버에 다시 알린다
+        ServiceLocator.pushRegistrar.syncIfLanguageChanged()
         // 창 바닥을 테마 색으로 먼저 칠한다. themes.xml 의 값은 하나뿐이라,
         // 어둡게 쓰는 사람은 Compose 가 첫 프레임을 그리기 전까지 흰 화면을
         // 한 번 보게 된다.

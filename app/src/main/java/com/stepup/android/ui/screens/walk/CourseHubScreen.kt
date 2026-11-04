@@ -191,6 +191,15 @@ fun CourseHubScreen(
             viewModel.consumeProblem()
         }
     }
+    // 코스는 저장했는데 바란 공유는 못 했다 — 성공처럼 지나가지 않게 알린다
+    val shareFailedAfterSave by viewModel.shareFailedAfterSave.collectAsStateWithLifecycle()
+    val shareFailedText = stringResource(R.string.fx5_course_share_failed)
+    LaunchedEffect(shareFailedAfterSave) {
+        if (shareFailedAfterSave) {
+            Toast.makeText(context, shareFailedText, Toast.LENGTH_LONG).show()
+            viewModel.consumeShareFailedAfterSave()
+        }
+    }
     val openRanking = { course: RunCourse ->
         rankingCourseId = course.id
         viewModel.openRanking(course)
@@ -704,9 +713,10 @@ private fun CourseMaker(
                 LiveRouteMap(points = lastTrack, modifier = Modifier.fillMaxSize(), routeColor = t.cyan)
             }
             Text(stringResource(R.string.course_make_last, "%.2f".format(km)), style = runTextStyle(14.sp, t.cyan, FontWeight.Bold))
-            RunTextField(name, { name = it }, label = stringResource(R.string.run_course_field_name),
+            // 서버가 60자까지만 받는다 — 칸에서 먼저 멈춘다(CourseText)
+            RunTextField(name, { name = com.stepup.android.domain.CourseText.clip(it) }, label = stringResource(R.string.run_course_field_name),
                 clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "course-maker-name")
-            RunTextField(area, { area = it }, label = stringResource(R.string.run_course_field_area),
+            RunTextField(area, { area = com.stepup.android.domain.CourseText.clip(it) }, label = stringResource(R.string.run_course_field_area),
                 clearLabel = stringResource(R.string.run_course_clear_text), fieldTag = "course-maker-area")
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {

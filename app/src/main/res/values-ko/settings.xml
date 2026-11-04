@@ -25,14 +25,14 @@
     <string name="set_save_failed_body">이전 설정을 유지했어요. 다시 눌러주세요.</string>
     <string name="set_saves_right_away">바꾸면 바로 저장돼요.</string>
     <string name="set_notif_intro">받고 싶은 알림을 골라주세요.</string>
-    <string name="set_notif_push">푸시 알림</string>
-    <string name="set_notif_push_desc">러닝 요약과 적립 소식</string>
+    <string name="set_notif_push">모든 알림</string>
+    <string name="set_notif_push_desc">끄면 아래 알림도 모두 오지 않아요</string>
     <string name="set_notif_goal">목표 알림</string>
     <string name="set_notif_goal_desc">하루 목표가 남았을 때 알려주기</string>
     <string name="set_notif_invite">러닝 초대</string>
     <string name="set_notif_invite_desc">크루·함께 뛰기 초대</string>
-    <string name="set_notif_event">이벤트 소식</string>
-    <string name="set_notif_event_desc">새로운 이벤트 안내</string>
+    <string name="set_notif_event">번개러닝 소식</string>
+    <string name="set_notif_event_desc">크루 · 누구나 번개러닝 모집 알림</string>
     <string name="set_notif_blocked">휴대폰에서 알림이 꺼져 있어요</string>
     <string name="set_notif_blocked_body">아래에서 고른 알림을 받으려면 휴대폰 설정에서 허용해 주세요.</string>
     <string name="set_open_phone_settings">휴대폰 설정 열기</string>
@@ -83,7 +83,6 @@
     <string name="set_wallet_linked">연결됨</string>
     <string name="set_wallet_connect">연결하기</string>
     <string name="set_wallet_unknown">확인하지 못함</string>
-    <string name="set_external_note">사용 가능한 연결 기능이 준비되면 안내해요.</string>
     <string name="set_delete_account">계정 삭제</string>
     <string name="set_logout">로그아웃</string>
     <string name="set_logout_title">로그아웃할까요?</string>

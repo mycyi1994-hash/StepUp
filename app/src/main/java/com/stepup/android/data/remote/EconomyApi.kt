@@ -92,6 +92,13 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun walletLinkChallenge(): ServerResult<String> =
         rpc("wallet_link_challenge", "{}") { runCatching { serverJson.decodeFromString<String>(it) }.getOrNull() }
 
+    /**
+     * 이 계정에 연결된 지갑 주소(0025 my_wallet) — 연결 전이면 빈 문자열. 지갑 화면의 "연결됨" 시트가 짧게 보이고 누르면 복사한다.
+     * 주소 말고 다른 칸(꺼내기 한도 등)은 읽지 않는다.
+     */
+    suspend fun myWalletAddress(): ServerResult<String> =
+        rpc("my_wallet", "{}") { serverJson.decodeFromString<List<MyWalletRow>>(it).firstOrNull()?.address?.trim().orEmpty() }
+
     /** 뽑기 화면의 현황(0042) — 오늘 무료 · 가입 선물 · 지갑 선물 · 러닝으로 받은 상급 · 모은 거리 */
     suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> =
         rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
@@ -286,6 +293,10 @@ data class ServerSneakerRow(
     /** 내구도 1(10m) 고치는 값 — [repairCostPerPoint] 는 예전 앱이 읽는 1% 값 */
     @SerialName("repair_cost_per_unit") val repairCostPerUnit: Double = 0.0,
 )
+
+/** my_wallet(0025) 한 줄 — 앱은 주소만 읽는다 */
+@Serializable
+data class MyWalletRow(val address: String? = null)
 
 @Serializable
 data class ChainSettingsRow(

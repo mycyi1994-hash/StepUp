@@ -25,14 +25,14 @@
     <string name="set_save_failed_body">已保留之前的设置。请再试一次。</string>
     <string name="set_saves_right_away">更改后会立即保存。</string>
     <string name="set_notif_intro">请选择想接收的通知。</string>
-    <string name="set_notif_push">推送通知</string>
-    <string name="set_notif_push_desc">跑步总结和获得消息</string>
+    <string name="set_notif_push">所有通知</string>
+    <string name="set_notif_push_desc">关闭后，下方的通知也都不会收到</string>
     <string name="set_notif_goal">目标提醒</string>
     <string name="set_notif_goal_desc">每日目标未完成时提醒</string>
     <string name="set_notif_invite">跑步邀请</string>
     <string name="set_notif_invite_desc">跑团与一起跑邀请</string>
-    <string name="set_notif_event">活动消息</string>
-    <string name="set_notif_event_desc">新活动通知</string>
+    <string name="set_notif_event">闪电跑消息</string>
+    <string name="set_notif_event_desc">跑团及公开闪电跑的招募通知</string>
     <string name="set_notif_blocked">手机已关闭通知</string>
     <string name="set_notif_blocked_body">要接收下面选择的通知，请在手机设置中允许。</string>
     <string name="set_open_phone_settings">打开手机设置</string>
@@ -83,7 +83,6 @@
     <string name="set_wallet_linked">已连接</string>
     <string name="set_wallet_connect">去连接</string>
     <string name="set_wallet_unknown">无法确认</string>
-    <string name="set_external_note">可用的连接功能准备好后会通知你。</string>
     <string name="set_delete_account">删除账号</string>
     <string name="set_logout">退出登录</string>
     <string name="set_logout_title">要退出登录吗？</string>

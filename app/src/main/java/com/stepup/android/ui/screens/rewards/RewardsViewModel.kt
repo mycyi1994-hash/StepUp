@@ -136,6 +136,10 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
     private val _drawStatus = MutableStateFlow<DrawStatus?>(null)
     val drawStatus: StateFlow<DrawStatus?> = _drawStatus.asStateFlow()
 
+    /** 연결된 지갑 주소(서버 my_wallet) — 못 읽었거나 연결 전이면 null(주소 줄을 두지 않는다) */
+    private val _walletAddress = MutableStateFlow<String?>(null)
+    val walletAddress: StateFlow<String?> = _walletAddress.asStateFlow()
+
     init {
         ServiceLocator.refreshEconomyInBackground()
     }
@@ -178,6 +182,7 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
                     when (val status = ServiceLocator.economyApi.drawStatus()) {
                         is ServerResult.Ok -> {
                             _drawStatus.value = status.value
+                            if (status.value.walletLinked) refreshWalletAddress() else _walletAddress.value = null
                             if (status.value.walletLinked) Web3State.Linked else Web3State.NotLinked
                         }
                         else -> Web3State.Unknown
@@ -187,6 +192,16 @@ class RewardsViewModel(private val rewardRepository: RewardRepository) : ViewMod
                 throw cancelled
             } catch (_: Exception) {
                 Web3State.Unknown
+            }
+        }
+    }
+
+    /** 연결된 주소를 읽는다 — 연결됨 시트가 보인다. 못 읽으면 앞서 읽은 주소를 그대로 둔다(없으면 줄을 두지 않는다) */
+    private fun refreshWalletAddress() {
+        viewModelScope.launch {
+            val reply = runCatching { ServiceLocator.economyApi.myWalletAddress() }.getOrNull()
+            if (reply is ServerResult.Ok) {
+                _walletAddress.value = reply.value.takeIf { com.stepup.android.domain.WalletAddress.looksValid(it) }
             }
         }
     }

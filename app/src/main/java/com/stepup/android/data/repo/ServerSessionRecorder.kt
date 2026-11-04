@@ -5,6 +5,7 @@ import com.stepup.android.data.remote.CourseApi
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionRecorded
 import com.stepup.android.data.remote.StepUpServer
+import com.stepup.android.data.remote.isAccessRequired
 
 /**
  * 저장된 세션 한 줄을 서버 호출로 옮긴다.
@@ -57,6 +58,8 @@ class ServerSessionRecorder(
             when (val tagged = server.tagSessionCrew(session.startedAt, session.crewId, owner)) {
                 is ServerResult.SignInRequired -> return tagged
                 is ServerResult.Retry -> return tagged
+                // 접속 코드 문에 막혔다 — 거절이 아니다. 문이 열리면 다시 낸다
+                is ServerResult.Rejected -> if (tagged.isAccessRequired()) return ServerResult.Retry(tagged.reason) else Unit
                 else -> Unit
             }
         }
@@ -68,7 +71,9 @@ class ServerSessionRecorder(
                     is ServerResult.Ok -> acknowledgeCourseRun(session.startedAt)
                     is ServerResult.SignInRequired -> return submitted
                     is ServerResult.Retry -> return submitted
-                    is ServerResult.Rejected -> Unit // Preserve the course entry for recovery.
+                    // Preserve the course entry for recovery. 접속 코드 문에 막혔으면 다음 차례에 다시 낸다
+                    is ServerResult.Rejected ->
+                        if (submitted.isAccessRequired()) return ServerResult.Retry(submitted.reason) else Unit
                 }
             }
         }

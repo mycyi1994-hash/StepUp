@@ -91,6 +91,7 @@ fun SettingsHomeScreen(
     val demo by ServiceLocator.avatarRepository.demoMode.collectAsStateWithLifecycle(initialValue = false)
     val scope = rememberCoroutineScope()
     var goalOpen by rememberSaveable { mutableStateOf(false) }
+    var legalOpen by rememberSaveable { mutableStateOf(false) }
 
     BluePage(title = stringResource(R.string.profile_tab_settings), onBack = onBack) {
         item {
@@ -145,13 +146,19 @@ fun SettingsHomeScreen(
                 if (access?.canIssue == true) {
                     BlueNavRow(stringResource(R.string.beta_codes_title), onClick = onOpenBetaCodes, modifier = Modifier.testTag("settings-beta-codes"))
                 }
-                BlueNavRow(stringResource(R.string.settings_body), onClick = onOpenBody, modifier = Modifier.testTag("settings-body"))
-                BlueNavRow(stringResource(R.string.settings_mode), onClick = onOpenMode, modifier = Modifier.testTag("settings-mode"))
+                // 신체 정보 · 모드는 다이어트 러닝만 쓴다 — 스토어 판에서 다이어트가 잠겨 있으면 숨긴다(테스트 · 개발 판은 그대로, BodySetup)
+                if (com.stepup.android.ui.screens.setup.BodySetup.askedHere) {
+                    BlueNavRow(stringResource(R.string.settings_body), onClick = onOpenBody, modifier = Modifier.testTag("settings-body"))
+                    BlueNavRow(stringResource(R.string.settings_mode), onClick = onOpenMode, modifier = Modifier.testTag("settings-mode"))
+                }
             }
         }
         item {
             BlueGroupLabel(stringResource(R.string.set_group_about))
             BlueGroup {
+                // 이용약관 · 개인정보처리방침(Play 정책 — 앱 안에서 늘 열 수 있어야 한다. 로그인 화면의 링크는 2026-10-29 에 뺐다)
+                BlueNavRow(stringResource(R.string.fx5_legal_row), onClick = { legalOpen = true },
+                    modifier = Modifier.testTag("settings-legal"))
                 // 데모 모드 — 서버 없이 화면을 둘러보는 모드. 새로 켜는 줄은 두지 않는다(2026-10-26 사용자 "데모 같은 말 다 빼") —
                 // 예전에 켜 둔 사람만 끌 수 있게 켜져 있을 때만 보인다
                 if (demo) {
@@ -173,6 +180,42 @@ fun SettingsHomeScreen(
 
     if (goalOpen) {
         DailyGoalSheet(onDismiss = { goalOpen = false })
+    }
+    if (legalOpen) {
+        LegalSheet(onDismiss = { legalOpen = false })
+    }
+}
+
+/**
+ * 약관 및 정책 — 이용약관 · 개인정보처리방침 두 줄. 누르면 홈페이지 문서를 브라우저(커스텀 탭)로 연다([LegalLinks] —
+ * 한국어 화면이 아니면 영어 본문). 여는 것 자체가 실패했을 때만 알린다(브라우저 안의 결과는 짐작하지 않는다).
+ */
+@Composable
+internal fun LegalSheet(onDismiss: () -> Unit) {
+    val t = runTone()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val shown = com.stepup.android.core.ShownLanguage.of(
+        AppLocale.tag, androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language,
+    )
+    var failed by remember { mutableStateOf(false) }
+    fun open(url: String) {
+        failed = !com.stepup.android.core.ExternalIntents.tryOpenUrl(context, url)
+    }
+    BlueSheet(
+        title = stringResource(R.string.fx5_legal_row), onDismiss = onDismiss,
+        modifier = Modifier.testTag("legal-sheet"), compactTitle = true,
+    ) {
+        BlueGroup {
+            BlueNavRow(stringResource(R.string.fx5_legal_terms), onClick = { open(LegalLinks.terms(shown)) },
+                modifier = Modifier.testTag("legal-terms"))
+            BlueNavRow(stringResource(R.string.fx5_legal_privacy), onClick = { open(LegalLinks.privacy(shown)) },
+                modifier = Modifier.testTag("legal-privacy"))
+        }
+        Text(
+            stringResource(if (failed) R.string.fx5_legal_open_failed else R.string.fx5_legal_note),
+            style = runTextStyle(15.sp, if (failed) t.dangerText else t.label, if (failed) FontWeight.SemiBold else FontWeight.Medium),
+            modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }.testTag("legal-note"),
+        )
     }
 }
 

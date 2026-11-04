@@ -178,6 +178,14 @@ end $$;
 -- 신발 체인 기록(금고 발행 · 꺼내기 · 지갑 보너스 발행)은 운영에서 멈춰 있다(0066 shoe_chain_enabled = false).
 -- 그 길의 규칙은 그대로 남아 있으므로 켜고 검사한다 — 멈춘 동안의 막힘은 0066 절이 끄고 본다
 update public.economy_settings set value = 'true'::jsonb where key = 'shoe_chain_enabled';
+-- SUP 체인 꺼내기 · 상급 뽑기도 운영 기본은 꺼짐(0090). 규칙은 그대로라 켜고 검사한다 — 꺼진 동안의 막힘은 0090 절이 끄고 본다.
+-- 한 시간 올리기 횟수(0090, 기본 60)는 검사 계정 하나가 수백 번 올리므로 넉넉히 — 0090 절이 낮춰 본다
+update public.economy_settings set value = 'true'::jsonb where key in ('chain_withdraw_enabled', 'premium_draw_enabled');
+update public.economy_settings set value = '100000'::jsonb where key = 'record_session_hourly_cap';
+-- 신고 숨김(0091)은 가입 3일 넘고 러닝한 계정의 신고만 센다. 아래 검사들은 방금 만든 계정으로 숨김을 보므로 끄고,
+-- 0091 절이 다시 켜고 본다
+update public.economy_settings set value = '0'::jsonb where key = 'report_reporter_min_days';
+update public.economy_settings set value = 'false'::jsonb where key = 'report_reporter_needs_run';
 
 \echo ''
 \echo '── 준비 ─────────────────────────────────────────────────────────'
@@ -195,8 +203,28 @@ begin
     '가입하면 프로필이 자동으로 생긴다');
   perform pg_temp.ok(
     (select display_name from public.profiles
-      where id = '11111111-1111-1111-1111-111111111111') = 'Ara Kim',
-    '구글이 준 이름이 프로필에 들어간다');
+      where id = '11111111-1111-1111-1111-111111111111') = '러너',
+    '구글이 준 이름(실명)은 가져오지 않는다 — 새 가입자는 기본 이름 러너(0091)');
+end $$;
+
+-- 아래 검사들은 사람을 이름으로 가린다. 검사 데이터베이스에서만 — 가입할 때 넣은 이름을 프로필 이름으로 옮겨 두는 검사용 트리거
+-- (실제 가입은 위처럼 '러너'. 0091 절이 이 트리거를 떼고 다시 본다)
+create schema if not exists test_fixture;
+create or replace function test_fixture.name_from_meta() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.profiles set display_name = new.raw_user_meta_data ->> 'full_name'
+   where id = new.id and coalesce(new.raw_user_meta_data ->> 'full_name', '') <> '';
+  return new;
+end $$;
+drop trigger if exists zz_test_fixture_name on auth.users;
+create trigger zz_test_fixture_name after insert on auth.users
+  for each row execute function test_fixture.name_from_meta();
+update public.profiles p set display_name = u.raw_user_meta_data ->> 'full_name'
+  from auth.users u where u.id = p.id and coalesce(u.raw_user_meta_data ->> 'full_name', '') <> '';
+do $$ begin
+  perform pg_temp.ok((select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111') = 'Ara Kim',
+    '검사용 이름을 넣었다');
 end $$;
 
 -- 모든 세션 시각을 "어제 10시"에서 잰다.
@@ -732,9 +760,10 @@ language sql security definer as $$ select economy.market_import_cap() $$;
 
 -- 거래는 서버가 만든 신발만 된다(0023 — 폰이 정한 등급·레벨로 SUP 를 받아 가지 못하게).
 -- 여기서는 폰에서 올린 신발을 서버 신발로 바꿔 거래 규칙을 검사한다.
-create or replace function pg_temp.server_shoe(p_id bigint) returns bigint
+-- 폰에서 올린 신발은 늘 일반으로 올라온다(0090) — 거래 검사에 쓸 등급은 여기서 정한다(기본 레어)
+create or replace function pg_temp.server_shoe(p_id bigint, p_rarity text default 'RARE') returns bigint
 language sql security definer as $$
-  update public.market_sneakers set origin = 'PAID_DRAW' where id = p_id returning id
+  update public.market_sneakers set origin = 'PAID_DRAW', rarity = p_rarity where id = p_id returning id
 $$;
 
 -- 살 돈을 쥐여 준다. 실제로는 뛰어야 생기지만 여기서는 원장에 바로 적는다.
@@ -973,7 +1002,7 @@ call pg_temp.login('33333333-3333-3333-3333-333333333333');
 do $$
 declare v_sn bigint; v_listing bigint;
 begin
-  v_sn := pg_temp.server_shoe(public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100));
+  v_sn := pg_temp.server_shoe(public.market_import(9, 'WIND', 'EPIC', 2, 12, 1, 1, 100), 'EPIC');
   v_listing := public.market_list(v_sn, 700);
   perform pg_temp.ok(v_listing is not null, '매물이 먼저 선다');
   insert into fix values ('sn_wind', v_sn::text);
@@ -8210,7 +8239,8 @@ begin
   insert into fix (k, v) values ('t71', v_at::text);
   update public.parties set starts_at = v_at, status = 'RUNNING' where id = pg_temp.fx('p71')::bigint;
   update public.party_runs set starts_at = v_at where party_id = pg_temp.fx('p71')::bigint;
-  update economy.crew_runs set started_at = v_at, last_beat_at = v_at + interval '1 minute' where party_id = pg_temp.fx('p71')::bigint;
+  -- 지금까지 5초마다 소식을 보내 왔다(0090 — 2분 넘게 소식이 없는 참여는 서버가 끝낸다)
+  update economy.crew_runs set started_at = v_at, last_beat_at = now() where party_id = pg_temp.fx('p71')::bigint;
   update economy.crew_day_pools set settled_at = v_at where crew_id = '71000000-0000-0000-0000-0000000000cc';
 end $$;
 
@@ -8279,8 +8309,13 @@ begin
 end $$;
 call pg_temp.login('71000000-0000-0000-0000-000000000001');
 -- a 의 러닝 — 출발 5초 뒤부터 10분 1,500걸음. 하루 금액 상한을 5 로 낮춰도 크루 보상은 막지 않는다(T20)
+-- — 0090 부터 크루 러닝도 하루 상한에 함께 센다(기본). 여기서는 설정을 꺼 예전 규칙(T20)을 보고, 함께 세는 것은 0090 절이 본다.
+-- 서버가 센 a 의 달린 초는 10분(5초마다 소식 — 0090 크루 보상은 서버가 본 달린 초까지)
 reset role;
 update public.economy_settings set value = '5' where key = 'daily_earn_cap';
+update public.economy_settings set value = 'false'::jsonb where key = 'crew_counts_in_daily_cap';
+update economy.crew_runs set active_sec = 600
+ where user_id = '71000000-0000-0000-0000-000000000001' and party_id = pg_temp.fx('p71')::bigint;
 set role authenticated;
 call pg_temp.login('71000000-0000-0000-0000-000000000001');
 do $$
@@ -8300,6 +8335,7 @@ begin
 end $$;
 reset role;
 update public.economy_settings set value = '600' where key = 'daily_earn_cap';
+update public.economy_settings set value = 'true'::jsonb where key = 'crew_counts_in_daily_cap';
 select set_config('request.jwt.claims', '', false);
 
 do $$
@@ -8408,7 +8444,8 @@ end $$;
 
 -- 서버가 끝낸 참여(리뷰 고침) — 마지막 한 사람으로 끝난 d 가 폰이 끊긴 채 계속 달린 기록을 올리면, 끝난 때 + 60초 뒤의 기록은
 -- 크루 보상 · 경험치에서 뺀다(서버는 그 뒤로 d 의 공용 체력을 세지 않았다)
-update economy.crew_runs set ended_at = pg_temp.fx('t71')::timestamptz + interval '5 minutes'
+-- (서버가 센 d 의 달린 초는 끝날 때까지 5분 — 0090)
+update economy.crew_runs set ended_at = pg_temp.fx('t71')::timestamptz + interval '5 minutes', active_sec = 300
  where user_id = '71000000-0000-0000-0000-000000000004' and party_id = pg_temp.fx('p71')::bigint;
 set role authenticated;
 call pg_temp.login('71000000-0000-0000-0000-000000000004');
@@ -10017,8 +10054,8 @@ do $$ begin
        from public.push_outbox where user_id = '87000000-0000-0000-0000-000000000002'),
     '크루 러닝 대기실이 열리면 크루원에게 푸시 — 누르면 그 대기실(room/<크루>/<방>)');
 end $$;
--- 셋째는 화면이 꺼져 20초째 대기실에 묻지 않았다
-update public.party_members set last_seen = now() - interval '20 seconds'
+-- 셋째는 화면이 꺼져 30초째 대기실에 묻지 않았다(0090 부터 25초까지는 자리에 있다고 본다 — 0090 절)
+update public.party_members set last_seen = now() - interval '30 seconds'
  where party_id = pg_temp.fx('p87')::bigint and user_id = '87000000-0000-0000-0000-000000000003';
 -- 진행자 자신의 last_seen 이 오래돼도 누른 사람은 출발한다
 update public.party_members set last_seen = now() - interval '1 minute'
@@ -10033,7 +10070,7 @@ begin
   perform pg_temp.ok(
     (select array_agg(c.user_id::text order by c.user_id) from economy.crew_runs c where c.party_id = pg_temp.fx('p87')::bigint)
     = array['87000000-0000-0000-0000-000000000001', '87000000-0000-0000-0000-000000000002', '87000000-0000-0000-0000-000000000004'],
-    '15초 넘게 묻지 않은 준비 인원은 출발 명단에 없다 — 진행자 · 자리에 있던 둘만 출발');
+    '25초 넘게 묻지 않은 준비 인원은 출발 명단에 없다 — 진행자 · 자리에 있던 둘만 출발(0087 · 0090)');
   perform pg_temp.ok(
     not exists (select 1 from economy.crew_runs c where c.user_id = '87000000-0000-0000-0000-000000000003' and c.day = v_day)
     and not exists (select 1 from public.party_members m where m.party_id = pg_temp.fx('p87')::bigint
@@ -10066,7 +10103,7 @@ do $$ begin
     (select count(*) = 1 from public.push_outbox where user_id = '87000000-0000-0000-0000-000000000002' and kind = 'PARTY_OPEN'),
     '같은 크루의 대기실이 30분 안에 또 열려도 푸시는 다시 가지 않는다');
 end $$;
-update public.party_members set last_seen = now() - interval '20 seconds'
+update public.party_members set last_seen = now() - interval '30 seconds'
  where party_id = pg_temp.fx('p87b')::bigint and user_id = '87000000-0000-0000-0000-000000000005';
 set role authenticated;
 call pg_temp.login('87000000-0000-0000-0000-000000000003');
@@ -10213,6 +10250,272 @@ begin
     '다시 올린 러닝은 처음 까닭 그대로(0089)');
 end $$;
 reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0091 — 데이터 노출 · 남용 막기 (2026-11-04)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 데이터 노출 · 남용(0091) ─────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.headers', '', false);
+
+-- 1. 로그인 안 한 요청(anon)은 사람 · 크루 · 거래 · 글 표 · 뷰를 읽지 못한다(로그인하면 그대로)
+do $$
+declare t text; v_missing text[] := '{}'; v_lost text[] := '{}';
+begin
+  foreach t in array array['profiles', 'crew_members', 'crews', 'crew_images', 'crew_applications', 'flash_participants',
+                           'market_listings', 'market_bids', 'market_trades', 'posts', 'comments', 'post_likes', 'courses',
+                           'course_likes', 'post_feed', 'comment_feed', 'crew_feed', 'course_feed', 'flash_roster',
+                           'market_quotes', 'market_asks', 'market_bid_book'] loop
+    if has_table_privilege('anon', 'public.' || t, 'SELECT') then v_missing := v_missing || t; end if;
+    if not has_table_privilege('authenticated', 'public.' || t, 'SELECT') then v_lost := v_lost || t; end if;
+  end loop;
+  perform pg_temp.ok(cardinality(v_missing) = 0, format('로그인 안 한 요청은 사람 · 크루 · 거래 · 글을 읽지 못한다(남은 것 %s)', v_missing));
+  perform pg_temp.ok(cardinality(v_lost) = 0, format('로그인한 앱은 그대로 읽는다(빠진 것 %s)', v_lost));
+  perform pg_temp.ok(has_table_privilege('anon', 'public.announcements', 'SELECT')
+                     and has_table_privilege('anon', 'public.news_items', 'SELECT')
+                     and has_table_privilege('anon', 'public.running_sources_public', 'SELECT')
+                     and has_table_privilege('anon', 'public.sneaker_models', 'SELECT'),
+    '로그인 전 화면이 읽는 공지 · 소식 · 출처 · 신발 도감은 그대로 열려 있다');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.leaderboard(text, int, text)', 'execute')
+                     and has_function_privilege('authenticated', 'public.leaderboard(text, int, text)', 'execute'),
+    '옛 순위표(이름 · 속도 · 적립)는 로그인한 사람만 부른다');
+end $$;
+set role anon;
+call pg_temp.must_fail($q$ select display_name from public.profiles $q$, '로그인 없이 프로필 이름(구글 실명)을 내려받지 못한다');
+call pg_temp.must_fail($q$ select user_id from public.crew_members $q$, '로그인 없이 크루 명단을 읽지 못한다');
+call pg_temp.must_fail($q$ select buyer_id, seller_id from public.market_trades $q$, '로그인 없이 거래 기록을 읽지 못한다');
+call pg_temp.must_fail($q$ select buyer_id from public.market_bids $q$, '로그인 없이 입찰을 읽지 못한다');
+call pg_temp.must_fail($q$ select user_id from public.flash_participants $q$, '로그인 없이 번개 참가자를 읽지 못한다');
+call pg_temp.must_fail($q$ select run_route, lat, lng from public.posts $q$, '로그인 없이 공개 글의 경로 · 좌표를 읽지 못한다');
+call pg_temp.must_fail($q$ select track from public.courses $q$, '로그인 없이 공유 코스 경로를 읽지 못한다');
+reset role;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin
+  perform pg_temp.ok((select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111') = 'Ara Kim',
+    '로그인하면 다른 사람의 프로필 이름은 그대로 보인다');
+end $$;
+reset role;
+call pg_temp.login(null);
+
+-- 2. 새 가입자는 구글 이름 대신 '러너' — 이미 있는 이름은 그대로(검사용 이름 트리거를 잠시 뗀다)
+alter table auth.users disable trigger zz_test_fixture_name;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('91000000-0000-0000-0000-0000000000f1', 'new91@test', '{"full_name":"홍길동 Real Name", "name":"홍길동"}');
+alter table auth.users enable trigger zz_test_fixture_name;
+do $$ begin
+  perform pg_temp.ok((select display_name from public.profiles where id = '91000000-0000-0000-0000-0000000000f1') = '러너',
+    '새 가입자의 이름은 구글 이름이 아니라 러너다');
+  perform pg_temp.ok((select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111') = 'Ara Kim',
+    '이미 있는 사람의 이름은 건드리지 않는다');
+end $$;
+
+-- 3. 이름을 PATCH 로 바꿔도 profile_name_set 과 같은 규칙 · 이름을 안 바꾸는 갱신은 예전 긴 이름이어도 된다
+alter table public.profiles disable trigger profiles_name_guard;
+update public.profiles set display_name = '아주아주아주아주아주아주긴구글실명입니다 Long Google Name'
+ where id = '91000000-0000-0000-0000-0000000000f1';
+alter table public.profiles enable trigger profiles_name_guard;
+set role authenticated;
+call pg_temp.login('91000000-0000-0000-0000-0000000000f1');
+do $$ begin
+  update public.profiles set daily_goal = 9000 where id = auth.uid();
+  perform pg_temp.ok((select daily_goal = 9000 and display_name = '아주아주아주아주아주아주긴구글실명입니다 Long Google Name'
+                        from public.profiles where id = auth.uid()),
+    '이름을 안 바꾸는 갱신은 16자 넘는 예전 이름이어도 되고 이름은 그대로다');
+  update public.profiles set display_name = E'  ‮가나다라마바사아자차\t카타파하가나다라마바사  ' where id = auth.uid();
+  perform pg_temp.ok((select display_name from public.profiles where id = auth.uid()) = '가나다라마바사아자차카타파하가나',
+    '직접 고친 이름도 제어 · 방향 문자를 빼고 16자로 다듬는다');
+  update public.profiles set display_name = E' \n ' where id = auth.uid();
+  perform pg_temp.ok((select display_name from public.profiles where id = auth.uid()) = '러너', '직접 비운 이름은 러너');
+  perform pg_temp.ok(public.profile_name_set('abcdefghijklmno pqr') = 'abcdefghijklmno', 'profile_name_set 은 자른 끝 공백도 뗀다');
+  perform pg_temp.ok((select display_name from public.profiles where id = auth.uid()) = 'abcdefghijklmno',
+    'profile_name_set 이 돌려준 이름 = 저장된 이름(같은 규칙)');
+end $$;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin
+  update public.profiles set display_name = '가로채기' where id = '91000000-0000-0000-0000-0000000000f1';
+  perform pg_temp.ok((select display_name from public.profiles where id = '91000000-0000-0000-0000-0000000000f1') = 'abcdefghijklmno',
+    '남의 이름은 여전히 못 바꾼다');
+end $$;
+reset role;
+call pg_temp.login(null);
+delete from auth.users where id = '91000000-0000-0000-0000-0000000000f1';
+
+-- 4. 대기 명단 — 있는 이메일로 다시 등록해도 영수증을 새로 주지 않는다 · API 로 왔는데 IP 를 모르면 받지 않는다
+set role anon;
+insert into fix (k, v) select 'wl91-receipt', public.waitlist_register('Takeover.Victim@gmail.com', true, '')->>'receipt';
+do $$
+declare v jsonb; v_hash text;
+begin
+  perform pg_temp.ok(pg_temp.fx('wl91-receipt') ~ '^[0-9a-f]{64}$', '처음 등록하면 영수증을 받는다');
+  v := public.waitlist_register('takeover.victim@gmail.com', true, '');
+  perform pg_temp.ok((v ->> 'ok')::boolean and (v ->> 'already')::boolean and not (v ? 'receipt') and not (v ? 'referral_code'),
+    format('같은 이메일로 다시 등록하면 영수증 · 추천 코드 없이 already 만(%s)', v));
+  perform pg_temp.ok(public.waitlist_status(pg_temp.fx('wl91-receipt')) ? 'referral_code',
+    '처음 등록한 사람의 영수증은 그대로 쓰인다 — 남이 다시 등록해 가로채지 못한다');
+  perform pg_temp.ok((public.waitlist_register('Trap91@gmail.com', true, 'bot') ->> 'ok')::boolean
+                     and not (public.waitlist_register('Trap91@gmail.com', true, 'bot') ? 'receipt'), '함정 칸은 그대로 조용히 ok');
+end $$;
+select set_config('request.headers', '{"user-agent": "curl/8"}', false);
+do $$
+declare v jsonb;
+begin
+  v := public.waitlist_register('noip91@gmail.com', true, '');
+  perform pg_temp.ok((v ->> 'ok')::boolean,
+    format('부른 곳(IP)을 몰라도 등록은 받는다 — 운영 Supabase 는 IP 머리글을 넘기지 않는다(%s)', v));
+end $$;
+select set_config('request.headers', '{"cf-connecting-ip": "192.0.2.91"}', false);
+do $$ begin
+  perform pg_temp.ok(length(public.waitlist_register('withip91@gmail.com', true, '') ->> 'receipt') = 64, 'IP 가 있으면 받는다');
+end $$;
+select set_config('request.headers', '', false);
+reset role;
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.waitlist_entries where email = 'noip91@gmail.com'), 'IP 를 몰라도 받은 등록은 남는다');
+  perform pg_temp.ok((select status = 'registered' from public.waitlist_entries where email = 'takeover.victim@gmail.com'),
+    '다시 등록해도 등록 상태는 그대로');
+end $$;
+set role stepup_attester;
+select set_config('request.jwt.claims', '{"role":"stepup_attester"}', false);
+do $$
+declare v jsonb;
+begin
+  v := public.attester_waitlist_register('takeover.victim@gmail.com', true, '', '', '198.51.100.91');
+  perform pg_temp.ok((v ->> 'already')::boolean and not (v ? 'receipt'), '워커로 와도 있는 이메일에는 영수증을 주지 않는다');
+  v := public.attester_waitlist_register('worker91@gmail.com', true, '', '', '');
+  perform pg_temp.ok(v ->> 'message' = 'unknown waitlist client', '워커가 IP 를 넘기지 않으면 받지 않는다');
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+delete from public.waitlist_entries where email in ('takeover.victim@gmail.com', 'withip91@gmail.com', 'noip91@gmail.com');
+delete from economy.waitlist_attempts;
+
+-- 5. 신고 숨김 — 가입 3일 넘고 무효 아닌 러닝이 있는 계정의 신고만 센다(신고는 모두 쌓인다)
+update public.economy_settings set value = '3'::jsonb where key = 'report_reporter_min_days';
+update public.economy_settings set value = 'true'::jsonb where key = 'report_reporter_needs_run';
+insert into auth.users (id, email) values
+  ('91000000-0000-0000-0000-00000000000a', 'author91@test'),
+  ('91000000-0000-0000-0000-000000000001', 'rep91-1@test'), ('91000000-0000-0000-0000-000000000002', 'rep91-2@test'),
+  ('91000000-0000-0000-0000-000000000003', 'rep91-3@test'), ('91000000-0000-0000-0000-000000000004', 'rep91-4@test'),
+  ('91000000-0000-0000-0000-000000000005', 'rep91-5@test');
+with p as (
+  insert into public.posts (author_id, category, title, body)
+  values ('91000000-0000-0000-0000-00000000000a', 'FREE', '0091 신고받을 글', '...') returning id)
+insert into fix (k, v) select 'post91', id::text from p;
+insert into public.content_reports (reporter_id, target_type, target_id, reason)
+select ('91000000-0000-0000-0000-00000000000' || i)::uuid, 'POST', pg_temp.fx('post91'), 'SPAM' from generate_series(1, 5) i;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.content_reports where target_type = 'POST' and target_id = pg_temp.fx('post91')) = 5
+                     and not public.is_hidden('POST', pg_temp.fx('post91')),
+    '방금 만든 계정 다섯의 신고는 쌓이지만 글을 숨기지 않는다');
+end $$;
+update auth.users set created_at = now() - interval '10 days'
+ where id::text like '91000000-0000-0000-0000-00000000000_' and id <> '91000000-0000-0000-0000-00000000000a';
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+select ('91000000-0000-0000-0000-00000000000' || i)::uuid, now() - interval '5 days', now() - interval '5 days' + interval '20 minutes',
+       1200, 2000, 1500, case when i = 5 then 'VOID' else 'CLEAN' end
+  from generate_series(1, 5) i;
+do $$ begin
+  perform pg_temp.ok(not public.is_hidden('POST', pg_temp.fx('post91')),
+    '무효 러닝만 있는 계정의 신고는 세지 않는다 — 4건이라 보인다');
+end $$;
+insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, distance_meters, verdict)
+values ('91000000-0000-0000-0000-000000000005', now() - interval '4 days', now() - interval '4 days' + interval '20 minutes',
+        1200, 2000, 1500, 'FLAGGED');
+do $$ begin
+  perform pg_temp.ok(public.is_hidden('POST', pg_temp.fx('post91')), '가입 3일 넘고 러닝한 계정 다섯이 신고하면 숨긴다');
+end $$;
+set role authenticated;
+call pg_temp.login('22222222-2222-2222-2222-222222222222');
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.post_feed where id = pg_temp.fx('post91')::bigint) = 0, '숨긴 글은 게시판에서 빠진다');
+end $$;
+reset role;
+call pg_temp.login(null);
+-- 계정 나이는 신고한 때로 센다 — 신고하기 하루 전에 만든 계정은 지금 3일이 지나도 세지 않는다
+update public.content_reports set created_at = now() - interval '7 days'
+ where reporter_id = '91000000-0000-0000-0000-000000000001' and target_id = pg_temp.fx('post91');
+update auth.users set created_at = now() - interval '8 days' where id = '91000000-0000-0000-0000-000000000001';
+do $$ begin
+  perform pg_temp.ok(not public.is_hidden('POST', pg_temp.fx('post91')),
+    '신고한 때 가입 3일이 안 된 계정의 신고는 나중에도 세지 않는다');
+end $$;
+update public.economy_settings set value = '0'::jsonb where key = 'report_reporter_min_days';
+do $$ begin
+  perform pg_temp.ok(public.is_hidden('POST', pg_temp.fx('post91')), '설정으로 계정 나이 조건을 끌 수 있다');
+end $$;
+delete from public.posts where id = pg_temp.fx('post91')::bigint;
+delete from public.content_reports where target_type = 'POST' and target_id = pg_temp.fx('post91');
+delete from auth.users where id::text like '91000000-0000-0000-0000-00000000000_';
+-- 위 검사들처럼 다시 끈다(뒤에 붙는 검사가 방금 만든 계정으로 숨김을 볼 수 있게)
+update public.economy_settings set value = '0'::jsonb where key = 'report_reporter_min_days';
+update public.economy_settings set value = 'false'::jsonb where key = 'report_reporter_needs_run';
+
+-- 6. 크루 채팅 — 사람마다 1분 메시지 · 사진 횟수 제한(같은 요청 키로 다시 보내는 것은 세지 않는다)
+insert into auth.users (id, email) values
+  ('91000000-0000-0000-0000-0000000000c1', 'chat91-owner@test'), ('91000000-0000-0000-0000-0000000000c2', 'chat91-member@test');
+insert into public.crews (id, owner_id, name) values ('91000000-0000-0000-0000-0000000000cc', '91000000-0000-0000-0000-0000000000c1', '채팅 횟수');
+insert into public.crew_members (crew_id, user_id, role)
+values ('91000000-0000-0000-0000-0000000000cc', '91000000-0000-0000-0000-0000000000c2', 'MEMBER');
+update public.economy_settings set value = '5'::jsonb where key = 'chat_messages_per_min';
+update public.economy_settings set value = '2'::jsonb where key = 'chat_images_per_hour';
+set role authenticated;
+call pg_temp.login('91000000-0000-0000-0000-0000000000c1');
+do $$
+declare i int; r jsonb;
+begin
+  for i in 1..5 loop
+    perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', ('c9100000-0000-0000-0000-00000000000' || i)::uuid, format('메시지 %s', i));
+  end loop;
+  r := public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-000000000003', '다른 글');
+  perform pg_temp.ok(r ->> 'body' = '메시지 3',
+    '이미 받은 메시지를 같은 요청 키로 다시 보내면 횟수에 걸리지 않고 처음 메시지를 돌려준다');
+end $$;
+do $$
+declare v_err text; v_hint text;
+begin
+  begin
+    perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-000000000006', '여섯째');
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_hint = pg_exception_hint;
+  end;
+  perform pg_temp.ok(v_err = 'chat_rate_limited' and v_hint = 'messages',
+    format('1분 한도를 넘으면 chat_rate_limited(messages) — %s/%s', v_err, v_hint));
+end $$;
+call pg_temp.login('91000000-0000-0000-0000-0000000000c2');
+do $$ begin
+  perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-0000000000a1', '다른 사람은 따로 센다');
+  perform pg_temp.ok(true, '다른 크루원은 따로 센다');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) from public.crew_chat_messages where author_id = '91000000-0000-0000-0000-0000000000c1') = 5,
+    '한도에 걸린 메시지는 남지 않는다');
+end $$;
+update public.economy_settings set value = '20'::jsonb where key = 'chat_messages_per_min';
+set role authenticated;
+call pg_temp.login('91000000-0000-0000-0000-0000000000c2');
+do $$
+declare v_err text; v_hint text;
+begin
+  perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-0000000000b1', '', null, '/9j/AAAAAAAAAAAAAAAA');
+  perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-0000000000b2', '둘째', null, '/9j/BBBBBBBBBBBBBBBB');
+  begin
+    perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-0000000000b3', '', null, '/9j/CCCCCCCCCCCCCCCC');
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_hint = pg_exception_hint;
+  end;
+  perform pg_temp.ok(v_err = 'chat_rate_limited' and v_hint = 'images', format('사진 1시간 한도를 넘으면 chat_rate_limited(images) — %s/%s', v_err, v_hint));
+  perform public.crew_chat_send('91000000-0000-0000-0000-0000000000cc', 'c9100000-0000-0000-0000-0000000000b4', '글은 그대로 보낸다');
+  perform pg_temp.ok(true, '사진 한도에 걸려도 글은 보낸다');
+end $$;
+reset role;
+call pg_temp.login(null);
+update public.economy_settings set value = '30'::jsonb where key = 'chat_images_per_hour';
+delete from public.crews where id = '91000000-0000-0000-0000-0000000000cc';
+delete from auth.users where id in ('91000000-0000-0000-0000-0000000000c1', '91000000-0000-0000-0000-0000000000c2');
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

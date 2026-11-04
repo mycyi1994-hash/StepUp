@@ -70,9 +70,13 @@ import com.stepup.android.domain.BodyMath
 import com.stepup.android.domain.BodyProfile
 import com.stepup.android.domain.RunMode
 import com.stepup.android.ui.components.RunBackdrop
+import com.stepup.android.ui.components.RunButton
+import com.stepup.android.ui.components.RunButtonKind
 import com.stepup.android.ui.components.RunCard
 import com.stepup.android.ui.components.RunNotice
 import com.stepup.android.ui.components.RunNoticeKind
+import com.stepup.android.ui.components.RunSheet
+import com.stepup.android.ui.components.RunSheetText
 import com.stepup.android.ui.components.RunSpinner
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
@@ -265,6 +269,8 @@ fun BodySettingsScreen(onBack: () -> Unit) {
     var step by rememberSaveable { mutableIntStateOf(0) }
     var saving by remember { mutableStateOf(false) }
     var saveFailed by remember { mutableStateOf(false) }
+    // 모두 지우기는 한 번 묻는다 — 되돌릴 수 없다
+    var confirmClear by rememberSaveable { mutableStateOf(false) }
     val loaded = (load as? BodyLoad.Ready)?.profile
     val draft = remember(loaded == null, loaded == BodyProfile()) { loaded?.let { BodyDraft(it) } }
     fun persist(next: BodyProfile) {
@@ -301,7 +307,7 @@ fun BodySettingsScreen(onBack: () -> Unit) {
                             step = 1
                         },
                         endLabel = if (loaded != BodyProfile()) stringResource(R.string.settings_body_clear) else null,
-                        onEnd = { persist(BodyProfile()) },
+                        onEnd = { if (!saving) confirmClear = true },
                         busy = saving, failed = saveFailed,
                     )
                     else -> {
@@ -315,6 +321,23 @@ fun BodySettingsScreen(onBack: () -> Unit) {
                         )
                     }
                 }
+            }
+        }
+    }
+    if (confirmClear) {
+        RunSheet(onDismiss = { confirmClear = false }, modifier = Modifier.testTag("settings-body-clear-sheet")) {
+            RunSheetText(stringResource(R.string.fx5_body_clear_title), body = stringResource(R.string.fx5_body_clear_body))
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                RunButton(stringResource(R.string.set_cancel), { confirmClear = false }, Modifier.weight(1f), kind = RunButtonKind.Secondary)
+                RunButton(
+                    stringResource(R.string.settings_body_clear),
+                    {
+                        confirmClear = false
+                        persist(BodyProfile())
+                    },
+                    Modifier.weight(1f).testTag("settings-body-clear-confirm"), kind = RunButtonKind.Danger,
+                )
             }
         }
     }

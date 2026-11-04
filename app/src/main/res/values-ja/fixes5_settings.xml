@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 출시 전 점검 5차: 설정 › 약관 및 정책 · 신체 정보 지우기 확인 · 스토어 판 뽑기 안내 · 지갑 주소 · 코스 공유 실패 -->
+<resources>
+    <string name="fx5_legal_row">規約とポリシー</string>
+    <string name="fx5_legal_terms">利用規約</string>
+    <string name="fx5_legal_privacy">プライバシーポリシー</string>
+    <string name="fx5_legal_note">ブラウザで開きます。</string>
+    <string name="fx5_legal_open_failed">ブラウザを開けませんでした。もう一度お試しください。</string>
+    <string name="fx5_body_clear_title">身体情報をすべて削除しますか？</string>
+    <string name="fx5_body_clear_body">身長・体重・目標体重をこのスマホから削除します。元に戻せません。</string>
+    <string name="set_faq_a_draw_store">初めて登録すると無料ガチャ10回がもらえ、毎日3回の無料ガチャが届きます。</string>
+    <string name="fx5_wallet_address_label">連携中のアドレス</string>
+    <string name="fx5_wallet_address_copy">ウォレットアドレスをコピー</string>
+    <string name="fx5_wallet_address_copied">ウォレットアドレスをコピーしました。</string>
+    <string name="fx5_wallet_change_support">ウォレットの変更や連携解除は、サポートまでお問い合わせください。</string>
+    <string name="fx5_course_share_failed">コースは保存しましたが、共有できませんでした。コースをタップすると、もう一度共有できます。</string>
+</resources>

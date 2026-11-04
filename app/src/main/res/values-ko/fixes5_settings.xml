@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-04 출시 전 점검 5차: 설정 › 약관 및 정책 · 신체 정보 지우기 확인 · 스토어 판 뽑기 안내 · 지갑 주소 · 코스 공유 실패 -->
+<resources>
+    <string name="fx5_legal_row">약관 및 정책</string>
+    <string name="fx5_legal_terms">이용약관</string>
+    <string name="fx5_legal_privacy">개인정보처리방침</string>
+    <string name="fx5_legal_note">브라우저에서 열려요.</string>
+    <string name="fx5_legal_open_failed">브라우저를 열지 못했어요. 다시 시도해 주세요.</string>
+    <string name="fx5_body_clear_title">신체 정보를 모두 지울까요?</string>
+    <string name="fx5_body_clear_body">키 · 몸무게 · 목표 몸무게를 이 휴대폰에서 지워요. 되돌릴 수 없어요.</string>
+    <string name="set_faq_a_draw_store">처음 가입하면 무료 뽑기 10회를 받고, 매일 무료 뽑기 기회 3회가 주어져요.</string>
+    <string name="fx5_wallet_address_label">연결된 주소</string>
+    <string name="fx5_wallet_address_copy">지갑 주소 복사</string>
+    <string name="fx5_wallet_address_copied">지갑 주소를 복사했어요.</string>
+    <string name="fx5_wallet_change_support">지갑을 바꾸거나 해제하려면 고객센터로 문의해 주세요.</string>
+    <string name="fx5_course_share_failed">코스는 저장했지만 공유하지 못했어요. 코스를 눌러 다시 공유할 수 있어요.</string>
+</resources>

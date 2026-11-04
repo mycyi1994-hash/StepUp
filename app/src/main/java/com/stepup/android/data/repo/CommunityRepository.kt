@@ -149,6 +149,22 @@ class CommunityRepository(
     /** 알림이 가리키는 글을 지금 볼 수 있는가 — 서버가 없다고 답한 것과 닿지 못한 것을 구분한다 */
     suspend fun postVisible(postId: Long): ServerResult<Boolean> = api.postVisible(postId)
 
+    /**
+     * 글 하나를 받아 목록에 더한다 — 댓글 알림(`post/<id>`, 0088)이 목록(최근 200개)에 없는 오래된 글을 열 때.
+     * true 면 이제 [posts] 에 있다(좋아요 · 댓글 · 삭제가 그대로 된다) · false 면 서버가 없다고 했다(지워짐 · 볼 수 없음) ·
+     * null 이면 닿지 못했다. 목록을 다시 받으면 최근 글만 남는다 — 상세 화면은 마지막 모습을 들고 있다.
+     */
+    suspend fun loadPost(id: Long): Boolean? {
+        val result = api.post(id)
+        if (result !is ServerResult.Ok) return null
+        val post = result.value.firstOrNull { it.id == id }?.toDomain() ?: return false
+        refreshLock.withLock {
+            val now = _posts.value
+            if (now.none { it.id == id }) _posts.value = (now + post).sortedByDescending { it.createdAt }
+        }
+        return true
+    }
+
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
 
     /** 내가 볼 수 있는 글 전부 — 전체 게시판과 내가 들어간 크루의 게시판 */

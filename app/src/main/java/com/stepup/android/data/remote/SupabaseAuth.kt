@@ -79,11 +79,18 @@ class SupabaseAuth(
 
     private val authUrl get() = "${baseUrl.trimEnd('/')}/auth/v1"
 
-    /** 만료된 출입증을 새로 받는다. */
+    /**
+     * 만료된 출입증을 새로 받는다.
+     *
+     * 거절([AuthResult.Rejected] — 다시 로그인)은 Supabase 가 "이 refresh token 은 죽었다"고 분명히 말할 때만이다
+     * ([refreshTokenDead]). 그 밖의 4xx(공유기 · 프록시 · 와이파이 로그인 쪽지, 403 · 404 · 407 · 408, 모르는 오류 코드)는
+     * 잠깐의 문제로 보고 나중에 다시 한다 — 예전엔 429 를 뺀 모든 4xx 를 죽은 토큰으로 보아 멀쩡한 사람을 로그아웃시켰다.
+     */
     suspend fun refresh(refreshToken: String): AuthResult =
         post(
             "$authUrl/token?grant_type=refresh_token",
             """{"refresh_token":${refreshToken.asJsonString()}}""",
+            refreshing = true,
         )
 
     /**
@@ -105,7 +112,7 @@ class SupabaseAuth(
         return post("$authUrl/token?grant_type=id_token", body)
     }
 
-    private suspend fun post(url: String, body: String): AuthResult {
+    private suspend fun post(url: String, body: String, refreshing: Boolean = false): AuthResult {
         if (!isConfigured) return AuthResult.Retry("서버 주소가 설정되지 않았습니다")
 
         val response = http.post(
@@ -125,12 +132,17 @@ class SupabaseAuth(
                 AuthResult.Ok(session.withExpiryFilled(now()))
             }
 
+            response.status == 0 -> AuthResult.Retry(response.body)
+
+            // 출입증 갱신 — 죽은 토큰이라고 분명할 때만 거절. 나머지는 나중에 다시(쉬는 시간은 SessionHolder 가 둔다)
+            refreshing ->
+                if (refreshTokenDead(response.status, response.body)) AuthResult.Rejected(response.errorMessage())
+                else AuthResult.Retry("서버 오류 (${response.status})")
+
             // 400 은 대개 설정 문제다 — 익명 로그인이 꺼져 있거나 토큰이 틀렸다.
             // 401·403 은 키가 틀렸다. 어느 쪽도 재시도로 풀리지 않는다.
             response.status in 400..499 && response.status != 429 ->
                 AuthResult.Rejected(response.errorMessage())
-
-            response.status == 0 -> AuthResult.Retry(response.body)
 
             else -> AuthResult.Retry("서버 오류 (${response.status})")
         }
@@ -159,6 +171,38 @@ internal fun AuthSession.withExpiryFilled(nowSeconds: Long): AuthSession =
 /** JSON 문자열 리터럴로 감싼다 — 토큰에 따옴표나 역슬래시가 들어가도 깨지지 않게. */
 internal fun String.asJsonString(): String =
     Json.encodeToString(String.serializer(), this)
+
+/** Supabase Auth 가 "이 refresh token 으로는 더 갱신할 수 없다"고 말하는 오류 코드 */
+private val DEAD_REFRESH_CODES = setOf(
+    "refresh_token_not_found",
+    "refresh_token_already_used",
+    "session_not_found",
+    "session_expired",
+)
+
+/**
+ * 출입증 갱신이 거절된 까닭이 **죽은 refresh token** 인가 — 그때만 다시 로그인하게 한다.
+ *
+ * 400 · 401 이고, 본문이 Supabase Auth 의 JSON 오류이고, 그 오류가 죽은 토큰을 가리킬 때만 그렇다:
+ *  - 오류 코드(`error_code` · 새 판의 글자 `code` · 예전 OAuth 판의 `error`)가 [DEAD_REFRESH_CODES] 중 하나
+ *  - `invalid_grant` 이거나 코드가 없는데 글(`msg` · `message` · `error_description`)이 "Invalid Refresh Token"
+ *
+ * 그 밖은 모두 잠깐의 문제다 — JSON 이 아닌 본문(공유기 · 프록시 · 와이파이 로그인 쪽지), 403 · 404 · 407 · 408 · 5xx,
+ * 모르는 오류 코드. 이것들로 로그아웃시키면 연결이 돌아와도 이유 없이 로그인 화면을 다시 본다.
+ */
+internal fun refreshTokenDead(status: Int, body: String): Boolean {
+    if (status != 400 && status != 401) return false
+    val obj = runCatching { Json.parseToJsonElement(body) }.getOrNull() as? JsonObject ?: return false
+    // 숫자(예전 판의 "code":400 은 HTTP 상태다)는 오류 코드로 읽지 않는다
+    fun text(key: String): String? =
+        (obj[key] as? JsonPrimitive)?.takeIf { it.isString }?.content?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
+    val code = text("error_code") ?: text("code") ?: text("error")
+    val message = listOf("msg", "message", "error_description").firstNotNullOfOrNull(::text).orEmpty()
+    return when {
+        code == null || code == "invalid_grant" -> "invalid refresh token" in message
+        else -> code in DEAD_REFRESH_CODES
+    }
+}
 
 private fun HttpResponse.errorMessage(): String {
     // Supabase 는 실패 이유를 본문에 담아 보낸다. 흘리면 "왜 안 되는지 모르는" 상태가 된다.
