@@ -22,6 +22,10 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /delete-account*
   Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+# 11.11 워킹데이 이벤트(2026-11-05, 원본 iinging747/stepup-walkingday) — 인라인 스크립트 없음, 인라인 스타일 · data 글꼴,
+# 합계 함수를 켜면(assets/config.js url) Supabase 를 읽는다.
+/11events*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 # 안드로이드가 앱 링크를 확인할 때 읽는 파일. JSON 으로, 다른 곳으로 넘기지 않고 준다.
 /.well-known/assetlinks.json
