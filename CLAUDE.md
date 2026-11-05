@@ -1,5 +1,11 @@
 # StepUp — 작업 메모
 
+## 최신 — 11.11 워킹데이 이벤트 페이지 (2026-11-05)
+
+`web/11events/`(원본 iinging747/stepup-walkingday — 정적, 날짜별 화면 자동) → `stepupcrew.com/11events/`. CSP 는 `_headers` 의 `/11events*`(인라인 스크립트 없음).
+설정은 `web/11events/assets/config.js` — `total`(운영자가 매일 21시 전 합계, 비우면 "집계 준비 중") · `proof`(걸음 인증 양식 주소 — 넣으면 11/7 ~ 11/12 주 버튼이 "걸음 인증하기").
+사용자 결정: 걸음 인증은 아무 걸음 앱 캡처나. 양식 주소는 아직 없다(11/7 전 필요). QR · UTM 저장은 지금 그대로.
+
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 
 - 신발: 러닝 시작 때 신은 신발 id 를 적어(`WalkSessionState.startSneakerId` · 폰 DB 판 20 `sneakerServerId` · 체크포인트 판 5) `record_session(p_sneaker)` 로 보낸다 —
