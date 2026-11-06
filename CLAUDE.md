@@ -1,5 +1,11 @@
 # StepUp — 작업 메모
 
+## 최신 — 신발 상세: 번호 옆 붉은 수리하기 · ⋯ 없음 (2026-11-07)
+
+[docs/redesign/shoe-repair-button-2026-11-07/README.md](docs/redesign/shoe-repair-button-2026-11-07/README.md) — 사용자 선택 1안. 이름 · 등급 · No. 번호 바로 오른쪽 `🔨 수리하기`
+(`ShoeNameWithBadge(action = ShoeNameAction)`, 태그 `shoe-repair-open`) → 기존 수리 시트를 열기만(확정은 시트 안). 머리 `⋯` · 관리 시트 · 본문 수리 줄은 지웠고
+판매 · 기록 · 스탯 포인트는 본문 신발 관리에 그대로. 한 줄에 안 들어가면 수리하기만 이름 아래 줄로. 캡처는 Screen Gallery `scope = shoe-detail`.
+
 ## 최신 — 11.11 워킹데이 이벤트 페이지 (2026-11-05)
 
 `web/11events/`(원본 iinging747/stepup-walkingday — 정적, 날짜별 화면 자동) → `stepupcrew.com/11events/`. CSP 는 `_headers` 의 `/11events*`(인라인 스크립트 없음).

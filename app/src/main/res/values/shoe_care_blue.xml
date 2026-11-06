@@ -10,7 +10,6 @@
     <string name="care_check_result">Check result</string>
     <string name="care_manage_title">Manage shoe</string>
     <string name="care_repair">Repair</string>
-    <string name="care_durability_now">Durability %1$s</string>
     <string name="care_sell">Sell</string>
     <string name="care_sell_equipped">You can\'t sell a pair you\'re wearing</string>
     <string name="care_busy_note">Available once the current result is confirmed</string>

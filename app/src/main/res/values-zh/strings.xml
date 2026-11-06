@@ -239,7 +239,6 @@
     <string name="sneaker_energy_saving">能量节省</string>
     <string name="sneaker_durability">耐久度</string>
     <string name="sneaker_about">关于这枚 NFT</string>
-    <string name="sneaker_about_body" formatted="false">每双鞋都属于六个等级之一(普通 · 稀有 · 史诗 · 传说 · Redline · Finish)。等级越高跑得越久、赚得越多，21 级起升级点数大幅增加。</string>
     <string name="rarity_common">普通</string>
     <string name="rarity_rare">稀有</string>
     <string name="rarity_epic">史诗</string>

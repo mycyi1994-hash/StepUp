@@ -28,7 +28,6 @@
     <string name="sdv_wear">穿这双鞋</string>
     <string name="sdv_wear_busy">正在更换…</string>
     <string name="sdv_worn_toast">已换上%1$s。</string>
-    <string name="sdv_more">更多操作</string>
     <!-- 상세 능력치 칸(카툰 입체형) — 항목 · 값 · 막대 끝 -->
     <string name="sdv_bar_cd">%1$s %2$s。上限 %3$s</string>
 

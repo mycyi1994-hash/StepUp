@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Info
@@ -67,7 +66,6 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.ForgePending
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
-import com.stepup.android.ui.components.DarkIconButton
 import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.GradeArtRatio
 import com.stepup.android.ui.components.RunButton
@@ -79,6 +77,7 @@ import com.stepup.android.ui.components.SettingsSecondaryButton
 import com.stepup.android.ui.components.ShoeArtFull
 import com.stepup.android.ui.components.ShoeArtLoad
 import com.stepup.android.ui.components.ShoeGradeBadge
+import com.stepup.android.ui.components.ShoeNameAction
 import com.stepup.android.ui.components.ShoeNameWithBadge
 import com.stepup.android.ui.components.ShoeStage
 import com.stepup.android.ui.components.ShoeStageMessageAlignment
@@ -105,10 +104,13 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Sell
-import androidx.compose.material.icons.outlined.Build
 
-/** 상세 위에 뜨는 시트 — 신발 관리(SD13 · SD14) · 신발 기록(SD15 ~ SD17). 수리 시트는 따로(한 번에 하나) */
-private enum class DetailSheet { None, Manage, Record }
+/** 상세 위에 뜨는 시트 — 신발 기록(SD15 ~ SD17). 수리 · 스탯 포인트 시트는 따로(한 번에 하나) */
+private enum class DetailSheet { None, Record }
+
+/** 이름 줄 번호 옆 수리 버튼(2026-11-07 사용자 선택 1안 — 붉은 채움 · 흰 글자 · 망치) */
+private val RepairPill = androidx.compose.ui.graphics.Color(0xFFD92F45)
+private const val RepairIcon = "🔨"
 
 /**
  * 상세가 보이는 수리 · 강화의 결과 미확정(SD18 · SD19) — 이때는 착용 · 수리 · 판매를 막는다.
@@ -124,10 +126,11 @@ fun ForgePending?.holds(id: Long): Boolean = this != null && (targetId == id || 
 /**
  * 신발 상세(파란 톤 v4 — docs/redesign/blue-v4-2026-10, 상세 · 수리 30 · 강화 17).
  *
- * 본문: 등급 무대 → 이름 · 등급 배지 · No. 번호 → 레벨 · 효율 · 착화감 · 내구도 네 독립 줄 → 아래 "강화하기"(파란 면) + "이 신발 신기"(흰 면).
+ * 본문: 등급 무대 → 이름 · 등급 배지 · No. 번호 · 붉은 "🔨 수리하기" → 레벨 · 효율 · 착화감 · 내구도 네 독립 줄 → 신발 관리(포인트 · 판매 · 기록)
+ * → 아래 "강화하기"(파란 면) + "이 신발 신기"(흰 면). 머리 오른쪽 ⋯ 은 없다(2026-11-07 사용자 선택 1안).
  * 강화하기는 독립 강화 화면([ShoeUpgradeScreen] — 재료 신발 3개 · 확률, 0054 forge_*)으로 간다([onUpgrade]).
  * 결과를 모르는 강화 요청이 이 신발을 붙잡고 있으면 그 자리가 "강화 결과 확인"이 되고, 같은 화면이 같은 요청의 결과만 묻는다.
- * ⋯ 관리는 수리하기 · 판매하기 · 신발 기록을 연다. 수리는 관리에서 여는 하단 시트([ShoeRepairSheet])이고 지금 서버 계약 그대로
+ * 번호 옆 수리하기는 하단 수리 시트([ShoeRepairSheet])를 열기만 한다(견적 조회) — 수리는 시트의 확인 버튼에서 지금 서버 계약 그대로
  * [ShoeCareStore] 가 보낸다. 착용은 기존 길 그대로([ItemsViewModel.equip]).
  */
 @Composable
@@ -246,7 +249,7 @@ fun SneakerDetailScreen(
 }
 
 /**
- * 상세 화면 — 상태를 받아 그리기만 한다(테스트가 시안 장면을 바로 넣어 찍는다). [initialSheet] 는 None · Manage · Record.
+ * 상세 화면 — 상태를 받아 그리기만 한다(테스트가 시안 장면을 바로 넣어 찍는다). [initialSheet] 는 None · Record.
  * [repair] 가 있으면 수리 시트를 그 장면으로 띄운다.
  */
 @Composable
@@ -330,17 +333,10 @@ fun ShoeDetailContent(
         )
     }
 
+    // 머리 오른쪽은 빈 자리(⋯ 없음) — 공용 머리가 뒤로 버튼만큼 비워 제목을 가운데에 둔다
     DetailPage(
         title = stringResource(R.string.sdv_title),
         onBack = onBack,
-        trailing = {
-            if (ready != null) {
-                DarkIconButton(Icons.Filled.MoreHoriz, stringResource(R.string.sdv_more), onClick = { sheet = DetailSheet.Manage },
-                    modifier = Modifier.testTag("shoe-more"))
-            } else {
-                Spacer(Modifier.size(StepUpDesign.TouchTarget))
-            }
-        },
         bottomBar = when {
             state == ShoeDetailState.Loading -> checkingBar
             shoe != null -> wearBar
@@ -390,25 +386,6 @@ fun ShoeDetailContent(
     if (shoe != null) {
         when (sheet) {
             DetailSheet.Record -> RecordSheet(shoe, zone, onClose = { sheet = DetailSheet.None })
-            DetailSheet.Manage -> ManageSheet(
-                shoe = shoe,
-                busy = care.busy,
-                onClose = { sheet = DetailSheet.None },
-                onRepair = {
-                    // 한 번에 시트는 하나 — 관리를 닫고 수리 시트를 연다
-                    sheet = DetailSheet.None
-                    onOpenRepair()
-                },
-                onSell = {
-                    sheet = DetailSheet.None
-                    onSell(shoe)
-                },
-                onOpenRecord = { sheet = DetailSheet.Record },
-                onPoints = {
-                    sheet = DetailSheet.None
-                    pointsActions.onOpen()
-                },
-            )
             DetailSheet.None -> Unit
         }
         if (points != null && sheet == DetailSheet.None && repair == null) {
@@ -462,7 +439,7 @@ private fun DetailBody(
     val shoe = state.shoe
     val art by rememberShoeArt(shoe, ShoeArtFull, artAttempt)
     val failed = art == ShoeArtLoad.Failed
-    // 무대는 남는 높이만큼 — 이름 · 네 줄 · 아래 신발 관리의 첫 줄(수리하기)까지 첫 화면에 들도록. 그래도 모자라면 목록이 넘어간다
+    // 무대는 남는 높이만큼 — 이름 · 네 줄 · 아래 신발 관리의 첫 줄까지 첫 화면에 들도록. 그래도 모자라면 목록이 넘어간다
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val stageMaxHeight = (screenHeight - 610.dp).coerceAtLeast(170.dp)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -479,7 +456,8 @@ private fun DetailBody(
             }
         }
         Spacer(Modifier.height(16.dp))
-        // 이름 → 등급 배지 → No. 번호 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다. 착용 여부로 배지를 바꾸지 않는다
+        // 이름 → 등급 배지 → No. 번호 → 수리하기 한 줄. 이름이 길면 두 줄까지, 배지 · 번호 · 수리하기는 함께 남는다
+        // (한 줄 폭에 다 안 들어가면 수리하기만 이름 바로 아래로). 착용 여부로 배지를 바꾸지 않는다
         ShoeNameWithBadge(
             name = shoe.shoeName(), tier = shoe.tier,
             style = androidx.compose.ui.text.TextStyle(
@@ -490,6 +468,12 @@ private fun DetailBody(
             suffix = formatShoeNumber(shoe.mintNumber),
             suffixStyle = androidx.compose.ui.text.TextStyle(
                 color = t.label, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum",
+            ),
+            // 번호 바로 오른쪽 수리하기(2026-11-07 사용자 선택 1안) — 이 신발의 수리 시트를 열기만 한다(견적 조회). 결과를 모르는 수리 · 강화가
+            // 있으면 흐리게 막고, 위 "결과 확인" 안내가 같은 시트를 연다
+            action = ShoeNameAction(
+                label = stringResource(R.string.care_repair), onClick = onShowRepair, fill = RepairPill,
+                tag = "shoe-repair-open", enabled = !care.busy, icon = RepairIcon,
             ),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
         )
@@ -519,15 +503,18 @@ private fun DetailBody(
             Spacer(Modifier.height(8.dp))
         }
         ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
-        // 신발 관리 — 수리 · 포인트 · 판매 · 기록을 ⋯ 안에만 두지 않고 화면에 바로(사용자 "수리하는 곳을 찾을 수가 없었음")
+        // 신발 관리 — 포인트 · 판매 · 기록을 화면에 바로(사용자 "수리하는 곳을 찾을 수가 없었음"). 수리는 이름 줄 번호 옆 버튼이 연다
         Spacer(Modifier.height(18.dp))
-        CareActions(shoe, busy = care.busy, onRepair = onShowRepair, onPoints = onOpenPoints, onSell = onSell, onRecord = onOpenRecord)
+        CareActions(shoe, busy = care.busy, onPoints = onOpenPoints, onSell = onSell, onRecord = onOpenRecord)
     }
 }
 
-/** 신발 관리 묶음 — 수리하기(남은 내구도) · 스탯 포인트(있을 때) · 판매하기 · 신발 기록. 관리 시트(⋯)와 같은 조건 · 설명 */
+/**
+ * 신발 관리 묶음 — 스탯 포인트(있을 때) · 판매하기 · 신발 기록. 일반 수리 줄은 두지 않는다 — 이름 줄 번호 옆 수리하기가 같은 시트를 연다
+ * (2026-11-07 사용자 선택 1안, 같은 진입점을 되풀이하지 않는다)
+ */
 @Composable
-private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPoints: () -> Unit, onSell: () -> Unit, onRecord: () -> Unit) {
+private fun CareActions(shoe: Sneaker, busy: Boolean, onPoints: () -> Unit, onSell: () -> Unit, onRecord: () -> Unit) {
     val t = runTone()
     val entry = pointsEntryOf(shoe)
     val available = pointsAvailable(shoe)
@@ -537,13 +524,7 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPo
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp).semantics { heading() },
         )
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(t.panel)) {
-            CareActionRow(
-                Icons.Outlined.Build, stringResource(R.string.care_repair),
-                if (busy) stringResource(R.string.care_busy_note) else stringResource(R.string.care_durability_now, formatDurability(shoe)),
-                enabled = !busy, onClick = onRepair, tag = "shoe-care-repair",
-            )
             if (entry != PointsEntry.None) {
-                CareDivider()
                 CareActionRow(
                     Icons.Outlined.Tune, stringResource(R.string.points_title),
                     when {
@@ -556,8 +537,8 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPo
                     enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
                     onClick = onPoints, tag = "shoe-care-points",
                 )
+                CareDivider()
             }
-            CareDivider()
             CareActionRow(
                 Icons.Outlined.Sell, stringResource(R.string.care_sell),
                 when {
@@ -743,74 +724,6 @@ private fun ChainRegistrationRow(shoe: Sneaker) {
     )
     if (chain == ChainMark.None) {
         Text(stringResource(R.string.sdv_chain_none_note), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.45f))
-    }
-}
-
-/**
- * SD13 · SD14 신발 관리 — 수리하기 · 판매하기 · 신발 기록. 착용 중이면 판매만 까닭과 함께 막는다(자동으로 벗기지 않는다).
- * 강화는 본문 아래 직접 버튼이 있어 여기 두지 않는다. 결과가 안 정해진 수리 · 강화가 있으면 수리 · 판매를 막는다.
- */
-@Composable
-private fun ManageSheet(
-    shoe: Sneaker,
-    busy: Boolean,
-    onClose: () -> Unit,
-    onRepair: () -> Unit,
-    onSell: () -> Unit,
-    onOpenRecord: () -> Unit,
-    onPoints: () -> Unit,
-) {
-    val t = runTone()
-    RunSheet(onDismiss = onClose, modifier = Modifier.testTag("shoe-manage-sheet")) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            CareSheetTitle(stringResource(R.string.care_manage_title), shoe.nameAndNumber())
-            Spacer(Modifier.height(2.dp))
-            CareMenuRow(
-                title = stringResource(R.string.care_repair),
-                description = if (busy) stringResource(R.string.care_busy_note)
-                else stringResource(R.string.care_durability_now, formatDurability(shoe)),
-                enabled = !busy,
-                onClick = onRepair,
-                tag = "shoe-manage-repair",
-            )
-            CareMenuRow(
-                title = stringResource(R.string.care_sell),
-                description = when {
-                    shoe.equipped -> stringResource(R.string.care_sell_equipped)
-                    busy -> stringResource(R.string.care_busy_note)
-                    else -> null
-                },
-                enabled = !shoe.equipped && !busy,
-                onClick = onSell,
-                tag = "shoe-manage-sell",
-            )
-            // 스탯 포인트(0059) — 포인트가 있는 신발만. 남은 포인트 · 다시 나누기 · 다 나눔을 설명으로
-            val entry = pointsEntryOf(shoe)
-            if (entry != PointsEntry.None) {
-                val available = pointsAvailable(shoe)
-                CareMenuRow(
-                    title = stringResource(R.string.points_title),
-                    description = when {
-                        busy -> stringResource(R.string.care_busy_note)
-                        !available -> careBlockText(
-                            if (shoe.server?.status != "OWNED") CareBlock.LISTED else CareBlock.ON_CHAIN,
-                        )
-                        entry is PointsEntry.Free -> stringResource(R.string.points_manage_free, entry.free)
-                        entry == PointsEntry.Respec -> stringResource(R.string.points_manage_respec)
-                        else -> stringResource(R.string.points_manage_done)
-                    },
-                    enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
-                    onClick = onPoints,
-                    tag = "shoe-manage-points",
-                )
-            }
-            CareMenuRow(stringResource(R.string.care_record), null, enabled = true, onClick = onOpenRecord, tag = "shoe-row-info")
-            // 이 NFT 정보(이전 상세의 설명) — 네 속성 이야기라 예전 52종에만
-            if (shoe.modelId == null) {
-                Text(stringResource(R.string.sneaker_about_body), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.45f),
-                    modifier = Modifier.padding(top = 4.dp))
-            }
-        }
     }
 }
 

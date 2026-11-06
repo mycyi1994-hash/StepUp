@@ -71,7 +71,7 @@ import org.junit.Test
  * 신발 탭 첫 화면은 신발 화면 확정안(2026-09-28)의 내 신발이다 — 켤레마다 한 칸, 관리(⋯)로 상세에 들어간다(상세 보기 글 링크 없음).
  *
  * [wearFlowInTheApp] 은 앱 셸 안에서 실제로 걷는다: 신발 탭 → 칸 고르기(착용 그대로) → 같은 모델 두 켤레(각자 한 칸) → 관리(⋯) →
- * 능력치 자세히 · 능력치 설명(시스템 뒤로 가기는 능력치로) → 신발 정보(체인 줄) → ⋯ 이 신발 관리(옮긴 강화 · 수리 · 판매) →
+ * 상세(머리 ⋯ 없음 · 번호 옆 붉은 수리하기) → 신발 기록(본문 신발 관리, 체인 줄) → 번호 옆 수리하기로 기존 수리 시트(열기만) →
  * 이 신발 신기 → 저장된 착용이 바뀐 뒤 완료 알림 → 뒤로(목록의 체크가 같은 id 로). 새 도감(70종) 신발 세 켤레를 넣고,
  * 끝나면 지우고 원래 신던 신발을 다시 신긴다.
  * [detailScenes] 는 시안 장면의 상태를 화면에 바로 넣어 찍는다(조회 중 · 실패 · 없는 신발 · 그림 실패 · 착용 없음 · 빈 목록 · 실패 시트,
@@ -145,25 +145,34 @@ class ShoeDetailDesignTest {
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
             shot("02-in-app-detail")
 
-            // 파란 톤 v4 SD15 — 신발 기록(⋯ 관리 안): 신발 번호 · 획득일 · 체인 등록(이 기기에서 넣은 신발이라 등록 없음)
-            tap("shoe-more")
-            awaitTag("shoe-manage-sheet")
-            tap("shoe-row-info")
+            // 머리 오른쪽 ⋯ 은 없다 — 수리는 번호 바로 오른쪽 붉은 수리하기(2026-11-07 사용자 선택 1안), 본문 수리 줄도 없다
+            compose.onAllNodesWithTag("shoe-more", useUnmergedTree = true).assertCountEquals(0)
+            compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
+            compose.onNode(hasTestTag("shoe-repair-open") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertExists()
+            compose.onNodeWithTag("shoe-repair-open").assertIsEnabled().assertTextEquals(string(R.string.care_repair))
+
+            // 파란 톤 v4 SD15 — 신발 기록(본문 신발 관리): 신발 번호 · 획득일 · 체인 등록(이 기기에서 넣은 신발이라 등록 없음)
+            tap("shoe-care-record")
             awaitTag("shoe-info-sheet")
             compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.care_chain_none))
             shot("06-in-app-info")
             tap("shoe-info-ok")
             awaitGone("shoe-info-sheet")
+            // 판매하기도 본문에 그대로(신지 않은 켤레라 누를 수 있다)
+            compose.onNodeWithTag("shoe-care-sell").assertIsEnabled()
 
-            // SD13 — ⋯ 신발 관리: 수리하기 · 판매하기 · 신발 기록(강화는 본문 아래 직접 버튼). 보기만 하고 닫는다
-            tap("shoe-more")
-            awaitTag("shoe-manage-sheet")
-            awaitTag("shoe-manage-repair")
-            compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
-            compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
-            shot("19-in-app-manage")
+            // 번호 옆 수리하기 → 고른 켤레(소유 id)의 기존 수리 시트. 여는 것만으로 수리하지 않는다(내구도 · 착용 그대로). 닫으면 상세로
+            val durabilityBefore = runBlocking { dao.byId(seeded.single)?.durability }
+            compose.onNodeWithTag("shoe-name").performScrollTo()
+            tap("shoe-repair-open")
+            awaitTag("repair-sheet")
+            shot("19-in-app-repair-open")
+            assertEquals(durabilityBefore, runBlocking { dao.byId(seeded.single)?.durability })
             back()
-            awaitGone("shoe-manage-sheet")
+            awaitGone("repair-sheet")
+            awaitTag("shoe-repair-open")
+            assertEquals(durabilityBefore, runBlocking { dao.byId(seeded.single)?.durability })
             assertEquals(original, runBlocking { dao.equippedNow()?.id })
 
             // 09 → 10 — 이 신발 신기: 기존 착용 길(equipExclusively)로 저장되고, 저장된 착용이 바뀐 뒤에만 완료 알림
@@ -249,8 +258,12 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
-        // 신발 관리는 ⋯ 안에만 있지 않다 — 본문 아래 수리하기 · 판매하기 · 신발 기록이 바로 보인다(사용자 "수리하는 곳을 찾을 수가 없었음")
-        compose.onNodeWithTag("shoe-care-repair", useUnmergedTree = true).assertExists().assertHasClickAction()
+        // 수리는 번호 바로 오른쪽 붉은 수리하기(2026-11-07 사용자 선택 1안) — 머리 ⋯ · 본문 수리 줄은 없다.
+        // 판매하기 · 신발 기록은 본문 신발 관리에 그대로(사용자 "수리하는 곳을 찾을 수가 없었음")
+        compose.onNode(hasTestTag("shoe-repair-open") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+            .assertExists().assertHasClickAction()
+        compose.onAllNodesWithTag("shoe-more", useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
         compose.onNodeWithTag("shoe-care-sell", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("shoe-care-record", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
@@ -258,7 +271,7 @@ class ShoeDetailDesignTest {
         assertCell("comfort", "7.5%")
         assertCell("durability", "100 / 100")
         assertCell("level", "1 / 15")
-        // 설명 문구 · 예전 두 칸 · 본문 링크가 없다(능력치 자세히 · 신발 정보는 ⋯ 안)
+        // 설명 문구 · 예전 두 칸 · 본문 링크가 없다(신발 정보는 본문 신발 관리의 신발 기록)
         compose.onAllNodesWithTag("shoe-key-bonus").assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-row-stats").assertCountEquals(0)
         compose.onAllNodesWithText(string(R.string.sdv_stat_bonus), substring = true).assertCountEquals(0)
@@ -355,23 +368,26 @@ class ShoeDetailDesignTest {
         show("s18b-tab-loading", "shoe-tab-loading", tab(OwnedLoad.Loading, null))
         compose.onAllNodesWithTag("shoe-tab-empty").assertCountEquals(0)
         show("s18c-tab-failed", "shoe-tab-failed", tab(OwnedLoad.Failed, null))
-        // ⋯ — 옮긴 기존 행동. 신고 있으면 판매는 까닭과 함께 누를 수 없다
-        show("s19-manage", "shoe-manage-sheet", detail(ready(WORN), sheet = "Manage"))
-        compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
-        compose.onNodeWithTag("shoe-manage-repair").assertIsEnabled()
-        compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
-        compose.onNodeWithTag("shoe-row-info").assertHasClickAction()
+        // 본문 신발 관리 — 판매 · 기록(⋯ 관리 시트는 없앴다). 신고 있으면 판매는 까닭과 함께 누를 수 없다. 수리는 번호 옆 하나뿐
+        show("s19-care-actions", "shoe-care-actions", detail(ready(WORN)))
+        scrollAndShot("s19b-care-actions-scrolled", "shoe-care-actions")
+        compose.onNodeWithTag("shoe-care-sell").assertIsNotEnabled()
+        compose.onNodeWithTag("shoe-care-record").assertHasClickAction()
+        compose.onNodeWithTag("shoe-repair-open").assertIsEnabled()
+        compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
 
         // 40 ~ 46 — 신발마다 다른 최대 내구도 · 레벨업 스탯 포인트(서버 0059). 값은 이 테스트 화면에만 있는 예시다
         val withPoints = all + POINTS + RESPEC
         show("s40-points-notice", "shoe-points-notice", detail(ready(POINTS, withPoints)))
         assertCell("durability", "1,180 / 1,330")
         compose.onNodeWithTag("shoe-points-notice").assertExists()
-        // 다시 나누기만 남은 신발은 알림 없이 ⋯ 안에만
+        // 다시 나누기만 남은 신발은 알림 없이 본문 신발 관리 줄에만
         show("s40b-points-respec-detail", "shoe-art", detail(ready(RESPEC, withPoints)))
         compose.onAllNodesWithTag("shoe-points-notice").assertCountEquals(0)
-        show("s41-manage-points", "shoe-manage-sheet", detail(ready(POINTS, withPoints), sheet = "Manage"))
-        compose.onNodeWithTag("shoe-manage-points").assertIsEnabled()
+        compose.onNodeWithTag("shoe-care-points").assertIsEnabled()
+        show("s41-care-points", "shoe-care-points", detail(ready(POINTS, withPoints)))
+        scrollAndShot("s41b-care-points-scrolled", "shoe-care-actions")
+        compose.onNodeWithTag("shoe-care-points").assertIsEnabled()
         val basis = requireNotNull(pointsBasisOf(POINTS))
         val editing = startPoints(basis).add(PointStat.EFFICIENCY).add(PointStat.DURABILITY)
         show("s42-points-editing", "points-editing", detail(ready(POINTS, withPoints), points = editing))
@@ -403,7 +419,8 @@ class ShoeDetailDesignTest {
         compose.runOnIdle { light = true }
         show("s30-light-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
         show("s30b-light-detail", "shoe-art", detail(ready(PAIR_A)))
-        show("s30c-light-manage", "shoe-manage-sheet", detail(ready(WORN), sheet = "Manage"))
+        show("s30c-light-care-actions", "shoe-care-actions", detail(ready(WORN)))
+        scrollAndShot("s30e-light-care-actions-scrolled", "shoe-care-actions")
         show("s30d-light-points", "points-editing", detail(ready(POINTS, all + POINTS), points = editing))
         compose.runOnIdle { light = false; large = true }
         show("s31-large-font-detail", "shoe-art", detail(ready(SPIKE)))
@@ -447,6 +464,12 @@ class ShoeDetailDesignTest {
     }
 
     private fun string(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
+
+    /** 목록을 [tag] 까지 내려 한 장 더 — 본문 아래 신발 관리처럼 첫 화면 밖의 줄 */
+    private fun scrollAndShot(name: String, tag: String) {
+        compose.onNodeWithTag(tag, useUnmergedTree = true).performScrollTo()
+        shot(name)
+    }
 
     private fun modelName(model: Int): String = compose.activity.getString(requireNotNull(shoeModelNameRes(model)))
 

@@ -29,7 +29,6 @@
     <string name="sdv_wear">Wear this pair</string>
     <string name="sdv_wear_busy">Switching shoes…</string>
     <string name="sdv_worn_toast">You\'re now wearing %1$s.</string>
-    <string name="sdv_more">More for this pair</string>
     <!-- 상세 능력치 칸(카툰 입체형) — 항목 · 값 · 막대 끝 -->
     <string name="sdv_bar_cd">%1$s %2$s. Full bar is %3$s.</string>
 

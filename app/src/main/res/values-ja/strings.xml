@@ -240,7 +240,6 @@
     <string name="sneaker_energy_saving">エナジー節約</string>
     <string name="sneaker_durability">耐久度</string>
     <string name="sneaker_about">このNFTについて</string>
-    <string name="sneaker_about_body" formatted="false">すべてのシューズは6つの等級(コモン・レア・エピック・レジェンダリー・レッドライン・フィニッシュ)のいずれか。上の等級ほど長く走れて多く稼げ、21レベルからはレベルアップのポイントが大きく増えます。</string>
     <string name="rarity_common">コモン</string>
     <string name="rarity_rare">レア</string>
     <string name="rarity_epic">エピック</string>

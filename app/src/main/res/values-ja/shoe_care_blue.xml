@@ -10,7 +10,6 @@
     <string name="care_check_result">結果を確認</string>
     <string name="care_manage_title">シューズ管理</string>
     <string name="care_repair">修理する</string>
-    <string name="care_durability_now">耐久度 %1$s</string>
     <string name="care_sell">販売する</string>
     <string name="care_sell_equipped">着用中は販売できません</string>
     <string name="care_busy_note">結果を確認してから使えます</string>

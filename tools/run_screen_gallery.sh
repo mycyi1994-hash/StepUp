@@ -3,7 +3,7 @@ set -uo pipefail
 status=0
 suite="${1:-all}"
 case "$suite" in
-  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary|records|explore|community) ;;
+  all|interaction|gallery|large-font|permissions|wardrobe|mystery|redesign|secondary|records|explore|community|shoe-detail) ;;
   *) echo "Unknown capture suite: $suite" >&2; exit 2 ;;
 esac
 original_font_scale=""
@@ -31,7 +31,7 @@ monitor_pid=$!
 mkdir -p screen-gallery/partial-captures
 (
   while true; do
-    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey coaching leaderboard; do
+    for capture_dir in chrome-checks login-checks form-checks screen-gallery experience-qa community-stories story-compose profile-running-path shoe-draw shoe-grade settings-v1 notifications-v1 running-records profile-edit-v1 wallet-v1 chain-activity shoe-catalog shoe-detail-v1 shoe-care-blue shoe-upgrade onboarding-v1 shoe-draw-v3 my-shoes crew-cards crew-chat crew-home run-journey coaching leaderboard; do
       destination="screen-gallery/partial-captures/$capture_dir"
       mkdir -p "$destination"
       timeout 10s adb pull "/sdcard/Android/data/com.stepup.android/files/$capture_dir/." "$destination/" || true
@@ -297,6 +297,18 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/leaderboard-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/leaderboard-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/leaderboard/. screen-gallery/leaderboard/ || status=1
+fi
+# 신발 상세 번호 옆 수리하기(2026-11-07) — 상세 · 수리 장면만 짧게(손으로 돌리는 묶음). 검사 함수마다 나눠 한 곳이 멈춰도 나머지 장면은 남게,
+# 30분 안에 끝나도록 새 버튼 장면부터
+if [[ "$suite" == "shoe-detail" ]]; then
+  for test in ShoeCareDesignTest#repairButton ShoeDetailDesignTest#wearFlowInTheApp ShoeCareDesignTest#careScenes ShoeDetailDesignTest#detailScenes; do
+    part="${test//#/-}"
+    run_instrumentation "$part" "com.stepup.android.$test"
+    mkdir -p "screen-gallery/shoe-detail-results/$part"
+    cp -R app/build/outputs/androidTest-results/. "screen-gallery/shoe-detail-results/$part/" || true
+    pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-care-blue/. screen-gallery/shoe-care-blue/ || true
+    pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-detail-v1/. screen-gallery/shoe-detail-v1/ || true
+  done
 fi
 if [[ "$suite" == "wardrobe" ]]; then
   run_instrumentation wardrobe "com.stepup.android.ScreenGalleryTest#wardrobeDesign"
