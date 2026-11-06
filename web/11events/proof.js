@@ -6,7 +6,7 @@
   var KEY = CFG.key || '';
   var DAY0 = 20764; // 2026-11-07(KST)
   var START = Date.parse('2026-11-07T00:00:00+09:00');
-  var CLOSE = Date.parse('2026-11-13T00:00:00+09:00');
+  var CLOSE = Date.parse('2026-11-11T15:00:00+09:00');
   var MAX_CHARS = 580000;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -40,7 +40,7 @@
   var state = $('state');
   function closed() { return Date.now() < START || Date.now() >= CLOSE; }
   if (Date.now() < START) { state.hidden = false; state.textContent = '인증은 11/7(토) 0시부터 받아요. 지금은 사전 등록만 할 수 있어요.'; submit.disabled = true; }
-  else if (Date.now() >= CLOSE) { state.hidden = false; state.textContent = '인증이 마감됐어요(11/12 23:59). 발표는 11/16(월)이에요.'; submit.disabled = true; }
+  else if (Date.now() >= CLOSE) { state.hidden = false; state.textContent = '인증이 마감됐어요(11/11 15:00). 발표는 11/11(수) 18시예요.'; submit.disabled = true; }
 
   // 고친 칸의 안내는 바로 지운다
   [['email', 'emailErr'], ['steps', 'stepsErr'], ['consent', 'consentErr']].forEach(function (p) {
@@ -92,7 +92,7 @@
   function say(text, err, html) { msg.className = 'msg' + (err ? ' err' : ''); if (html) msg.innerHTML = text; else msg.textContent = text; }
 
   var REASONS = {
-    closed: '지금은 인증을 받지 않아요. 기간은 11/7 0시 ~ 11/12 23:59예요.',
+    closed: '지금은 인증을 받지 않아요. 기간은 11/7 0시 ~ 11/11 15:00예요.',
     busy: '잠시 뒤 다시 시도해 주세요.',
     consent: '동의에 체크해 주세요.',
     email: '이메일 주소를 다시 확인해 주세요.',
