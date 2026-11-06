@@ -109,6 +109,36 @@ class MyShoesDesignTest {
 
     private var viewport by mutableStateOf(Viewport(360, 800))
 
+    /** Additional native destinations requested for the complete Shoes gallery. No form is submitted. */
+    @Test fun renameAndLinkedDestinations() {
+        val seeded = seed()
+        var route by mutableStateOf(Screen.Customize.route)
+        try {
+            edgeToEdge()
+            viewport = Viewport(390, 844)
+            compose.setContent {
+                DeviceFrame { key(route) { MainScaffold(initialTab = Screen.Customize, initialRoute = route) } }
+            }
+            awaitTag("shoe-hero")
+            compose.onNodeWithTag("shoe-rename").performClick()
+            awaitTag("shoe-rename-sheet")
+            shot("08-rename", whole = true)
+            compose.onNodeWithTag("shoe-rename-field").performTextReplacement("나의 러닝 슈즈")
+            shot("09-rename-editing", whole = true)
+            back()
+            compose.runOnIdle { route = com.stepup.android.ui.Routes.RUNNER_MARKET }
+            compose.waitForIdle()
+            Thread.sleep(3_000)
+            shot("10-linked-market", whole = true)
+            compose.runOnIdle { route = com.stepup.android.ui.Routes.marketModel("WIND", "RARE", 0) }
+            compose.waitForIdle()
+            Thread.sleep(3_000)
+            shot("11-linked-model-market", whole = true)
+        } finally {
+            restore(seeded)
+        }
+    }
+
     @Test fun inTheAppAtDeviceSizes() {
         val seeded = seed()
         val dao = ServiceLocator.database.sneakerDao()

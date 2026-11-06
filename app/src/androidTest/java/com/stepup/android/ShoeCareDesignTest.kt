@@ -53,7 +53,21 @@ import org.junit.Test
  * 강화 화면(UP01 ~ UP15 · UP18 — 재료 신발 3개 · 확률, 0054 forge)은 ShoeUpgradeDesignTest 가 찍는다.
  */
 class ShoeCareDesignTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule(order = 0) val appLanguage = object : org.junit.rules.ExternalResource() {
+        private var previous = ""
+        override fun before() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val context = instrumentation.targetContext
+            com.stepup.android.core.AppLocale.syncFromSystem(context)
+            previous = com.stepup.android.core.AppLocale.tag
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(context, "ko") }
+        }
+        override fun after() {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.runOnMainSync { com.stepup.android.core.AppLocale.change(instrumentation.targetContext, previous) }
+        }
+    }
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<ComponentActivity>()
 
     private val directory get() = File(compose.activity.getExternalFilesDir(null), "shoe-care-blue").apply { mkdirs() }
     private var scene by mutableStateOf<@Composable () -> Unit>({})
