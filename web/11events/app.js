@@ -21,7 +21,7 @@
   function setText(arr, s) { if (arr[0].textContent !== s) arr[0].textContent = s; }
 
   /* ── 상태 ── */
-  var total = 0, cur = 0, vel = 0, pour = 0, phaseOverride = null, t0 = performance.now(), om = 3.0, tNow = 0;
+  var introV = 0, introT0 = 0, introSaid = false, total = 0, cur = 0, vel = 0, pour = 0, phaseOverride = null, t0 = performance.now(), om = 3.0, tNow = 0;
   var rev = [0, 0, 0];
   var RESULT = Date.UTC(2026, 10, 11, 9, 0), BEFORE_FILL = T1 * .5;
   function phase() { if (phaseOverride) return phaseOverride; var n = Date.now(); return n < START ? 'before' : n < CLOSE ? 'live' : n < RESULT ? 'count' : 'result'; }
@@ -32,7 +32,7 @@
   /* 합계 → 초콜릿 위치. 숫자 칸 위에서 멈췄다가 222만에 칸 전체를 한 번에 덮는다. 글자 칸 기준으로 layout에서 채움 */
   var FK = [[0, 160], [T2, 860]], revAt = [T1 * .27, T1 * .54, T1], fy = 160, covOn = false;
   function frontBase(s) { for (var i = 1; i < FK.length; i++) if (s < FK[i][0]) { var a = FK[i - 1], b = FK[i]; return a[1] + (b[1] - a[1]) * Math.max(0, s - a[0]) / (b[0] - a[0]); } return FK[FK.length - 1][1]; }
-  function wob(x, t, U) { U = U || S.U; return U * (.026 * Math.sin(x / (U * .47) + 1.3 + t * .05) + .012 * Math.sin(x / (U * .19) + .4 - t * .037) + .006 * Math.sin(x / (U * .083) + 2.1 + t * .03)); }
+  function wob(x, t, U) { U = U || S.U; return U * (.026 * Math.sin(x / (U * .47) + 1.3 + t * .012) + .012 * Math.sin(x / (U * .19) + .4 - t * .009) + .006 * Math.sin(x / (U * .083) + 2.1 + t * .007)); }
   function sheetY(x, t, base) { var u = (x - S.W / 2) / (S.W / 2); return (base === undefined ? fy : base) + S.bowE * (1 - u * u) + S.wkE * wob(x, t); }
   var D8 = [[.045, .07, .046], [.165, .24, .040], [.30, .05, .052], [.395, .13, .044], [.545, .37, .036], [.655, .055, .05], [.785, .19, .040], [.93, .09, .044]];
   var D14 = [[.03, .10, .042], [.085, .17, .034], [.16, .05, .046], [.215, .22, .030], [.29, .07, .044], [.365, .13, .036], [.43, .045, .048], [.50, .24, .032], [.575, .07, .044], [.63, .42, .030], [.71, .06, .046], [.79, .30, .032], [.86, .10, .042], [.95, .19, .036]];
@@ -53,9 +53,9 @@
     updateDrops(lim);
   }
   /* 방울 주기 6.5~10초: 0~.8 동안 늘어나고 .8에서 떨어진 뒤 다시 짧아짐 */
-  function dripCycle(i, t) { var T = 6.5 + (i * 1.37) % 3.5, ph = (t / T + i * .371) % 1, g; if (ph < .8) { var a = ph / .8; g = 1 + .42 * a * a; } else { var r = (ph - .8) / .2; g = 1 + .42 * Math.pow(1 - r, 3); } return { g: g, dt: (ph >= .8 ? ph - .8 : ph + .2) * T }; }
+  function dripCycle(i, t) { return null; /* 11/7: 늘었다 줄었다 하는 흘러내림은 징그러워 멈춤 */ var T = 6.5 + (i * 1.37) % 3.5, ph = (t / T + i * .371) % 1, g; if (ph < .8) { var a = ph / .8; g = 1 + .42 * a * a; } else { var r = (ph - .8) / .2; g = 1 + .42 * Math.pow(1 - r, 3); } return { g: g, dt: (ph >= .8 ? ph - .8 : ph + .2) * T }; }
   /* 떨어진 방울은 가속하며 내려가다 숫자 칸 위에서 사라짐 */
-  function updateDrops(lim) { PU.fill(0); var act = []; for (var i = 0; i < drips.length; i++) { var d = drips[i]; if (!(d.dt >= 0) || d.dt > 2.4) continue; var y = d.relY + S.U * (.06 * d.dt + 1.05 * d.dt * d.dt), r = d.re * .78, fade = clamp((lim - y) / (S.U * .1), 0, 1) * clamp(d.dt / .12, 0, 1); if (fade <= .01) continue; act.push([d.x, y, r * (.55 + .45 * fade), fade, d.dt]); }
+  function updateDrops(lim) { PU.fill(0); return; /* 11/7: 떨어지는 방울 없음 */ var act = []; for (var i = 0; i < drips.length; i++) { var d = drips[i]; if (!(d.dt >= 0) || d.dt > 2.4) continue; var y = d.relY + S.U * (.06 * d.dt + 1.05 * d.dt * d.dt), r = d.re * .78, fade = clamp((lim - y) / (S.U * .1), 0, 1) * clamp(d.dt / .12, 0, 1); if (fade <= .01) continue; act.push([d.x, y, r * (.55 + .45 * fade), fade, d.dt]); }
     act.sort(function (a, b) { return a[4] - b[4]; }); for (var k = 0; k < Math.min(6, act.length); k++) PU.set(act[k].slice(0, 4), k * 4); }
   function frontY(x, t) {
     var y = sheetY(x, t), sk = 0, i, d, dx;
@@ -70,12 +70,12 @@
   var FS = [
     '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
     'varying vec2 vP;uniform vec2 uR;uniform float uWave,uT,uU,uF,uBow,uBead,uTop,uPx,uPlate,uDr,uExpo,uBisK,uBU,uTopOp,uWK,uCalmY,uCalmK,uChK,uTopY,uGhost;uniform vec2 uOff;uniform vec4 uD[14];uniform vec4 uP[6];uniform vec4 uRelR,uC0,uC1,uC2;uniform float uSa;uniform vec3 uRev,uAlbD,uAlbW,uFlat,uSc;uniform sampler2D uB,uRel;',
-    'float wob(float x){float U=uU;return U*(.026*sin(x/(U*.47)+1.3+uT*.05)+.012*sin(x/(U*.19)+.4-uT*.037)+.006*sin(x/(U*.083)+2.1+uT*.03));}',
-    'float wobD(float x){float U=uU;return .0553*cos(x/(U*.47)+1.3+uT*.05)+.0632*cos(x/(U*.19)+.4-uT*.037)+.0723*cos(x/(U*.083)+2.1+uT*.03);}',
+    'float wob(float x){float U=uU;return U*(.026*sin(x/(U*.47)+1.3+uT*.012)+.012*sin(x/(U*.19)+.4-uT*.009)+.006*sin(x/(U*.083)+2.1+uT*.007));}',
+    'float wobD(float x){float U=uU;return .0553*cos(x/(U*.47)+1.3+uT*.012)+.0632*cos(x/(U*.19)+.4-uT*.009)+.0723*cos(x/(U*.083)+2.1+uT*.007);}',
     'float inR(vec2 p,vec4 c){return step(c.x,p.x)*step(p.x,c.z)*step(c.y,p.y)*step(p.y,c.w);}',
     'float gs(float x,float c,float w){x=(x-c)/w;return exp(-x*x);}',
     /* 녹은 표면 높이: 흐름 방향(세로)으로 늘어진 넓은 물결 + 드문 주름 + 턱 뒤 둔덕 + 턱과 나란한 잔물결 */
-    'float surf(vec2 p){vec2 q=p/uU;vec2 a=vec2(q.x*1.9,q.y*1.35-uT*.065);a+=.42*vec2(sin(a.y*1.7+.8+.6*sin(a.x*.9)),sin(a.x*1.3-.6+uT*.05));',
+    'float surf(vec2 p){vec2 q=p/uU;vec2 a=vec2(q.x*1.9,q.y*1.35-uT*.008);a+=.42*vec2(sin(a.y*1.7+.8+.6*sin(a.x*.9)),sin(a.x*1.3-.6+uT*.006));',
     'float w1=sin(a.x*1.25+.8*sin(a.y*1.1));float w2=sin(a.x*2.6+1.4*sin(a.y*.8+w1)+1.7);float w3=sin(a.x*4.7+a.y*1.1+2.1*w1);return .50*w1+.17*w2+.05*sqrt(w3*w3+.02);}',
     'void main(){vec2 p=vP;float hw=.5*uR.x,u=(p.x-hw)/hw,Rb=uBead,c=7.;',
     'float sk=0.,skx=0.;for(int j=0;j<14;j++){vec4 D=uD[j];if(D.w<=0.)continue;float L0=D.z-D.y-Rb*1.15;float A0=min(L0*.85,D.w*1.75);float W0=D.w*2.2;float xx=(p.x-D.x)/W0;if(abs(xx)<3.){float g0=exp(-xx*xx);sk+=A0*g0;skx+=A0*g0*(-2.*xx/W0);}}',
@@ -239,11 +239,18 @@
       var rate = Math.min(1, Math.abs(vel) / T2 * 3.4); pour += (rate - pour) * Math.min(1, real * (rate > pour ? 7 : .9));
       renderNumber(cur);
     }
-    var ft = frontBase(cur), fyMoving = Math.abs(ft - fy) > .2; if (fyMoving) { fy += (ft - fy) * Math.min(1, real * 8); } else fy = ft; renderInk();
+    var introOn = introT0 > 0;
+    if (introOn) {
+      /* 살짝만: 천천히 차올랐다(2.6초) 부드럽게 가라앉음(2.4초). 글자를 덮지 않는 높이까지만 */
+      var e = (now - introT0) / 1000, sm = function (x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+      introV = T1 * .14 * (e < 2.6 ? sm(e / 2.6) : 1 - sm((e - 2.6) / 2.4));
+      if (e >= 5) { introV = 0; introT0 = 0; }
+    }
+    var ft = frontBase(Math.max(cur, introV)), fyMoving = Math.abs(ft - fy) > .2 || introOn; if (fyMoving) { fy += (ft - fy) * Math.min(1, real * 8); } else fy = ft; renderInk();
     revTargets(); var revMoving = false;
     for (var q = 0; q < 3; q++) { if (Math.abs(revT[q] - rev[q]) > .003) { rev[q] += (revT[q] - rev[q]) * Math.min(1, real * 3.2); revMoving = true; } else rev[q] = revT[q]; }
     if (!heroOn) return;
-    var busy = moving || revMoving || fyMoving, gap = busy ? 0 : 33;
+    var busy = moving || revMoving || fyMoving || introOn, gap = busy ? 0 : 33;
     if (now - lastDraw < gap) return;
     if (G && !lowered0 && lastDraw) sample(now - lastDraw, busy);
     lastDraw = now; drawHero(now);
@@ -481,9 +488,31 @@
   else { if (phase() === 'before') total = BEFORE_FILL; else if (typeof CFG.total === 'number') total = CFG.total; else if (!CFG.url) total = BEFORE_FILL; renderState(); readTotal(); if (CFG.url) { setInterval(readTotal, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) readTotal(); }); } }
   if (REDUCED) { snap(performance.now()); } else {
     raf = requestAnimationFrame(frame);
+    if (!PREVIEW && phase() === 'live') setTimeout(function () { introT0 = performance.now(); }, 1200);
     /* 화면 갱신이 멈춘 환경(썸네일·숨은 탭)에서도 숫자와 초콜릿은 맞게 */
-    setInterval(function () { var n = performance.now(); if (n - lastStep > 900 && (cur !== total || rev[0] !== revT[0] || rev[1] !== revT[1] || rev[2] !== revT[2])) snap(n); }, 700);
+    setInterval(function () { var n = performance.now(); if (!introT0 && n - lastStep > 900 && (cur !== total || rev[0] !== revT[0] || rev[1] !== revT[1] || rev[2] !== revT[2])) snap(n); }, 700);
   }
   setInterval(renderState, 30000); /* 날짜가 넘어가면 상태도 넘어감 */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (Math.abs(elCount[0].offsetHeight - S.cH) > 1) { lastW = 0; layout(); } else renderState(); plates.forEach(function (p) { if (p.done) renderPlate(p); }); });
+
+  /* ── SNS 공유 창: 문구·이미지·영상 + X·스레드 바로 올리기, 인스타는 문구 복사 후 열기 ── */
+  (function () {
+    var d = $('shareDlg'), o = $('shareOpen'); if (!d || !o) return;
+    var url = 'https://stepupcrew.com/11events/?utm_source=sns&utm_medium=share';
+    var tx = '걷다 보면 빼빼로 🍫\n11/7~11/11 StepUp 11.11 워킹데이 참여 중\n하루 11,111걸음 걸으면 응모권 · 경품 111명\n\n#스텝업 #스텝업챌린지 #StepUp #StepUpChallenge\n' + url;
+    $('shareTx').textContent = tx;
+    $('shX').href = 'https://x.com/intent/post?text=' + encodeURIComponent(tx);
+    $('shT').href = 'https://www.threads.net/intent/post?text=' + encodeURIComponent(tx);
+    var fb = $('shareFb');
+    function copy(msg) {
+      var fail = function () { fb.textContent = '복사가 막혔어요. 위 문구를 길게 눌러 복사해 주세요'; };
+      try { if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { fb.textContent = msg; }, fail); else fail(); } catch (e) { fail(); }
+    }
+    function close() { if (d.close) d.close(); else d.removeAttribute('open'); }
+    o.addEventListener('click', function () { fb.textContent = ''; if (d.showModal) d.showModal(); else d.setAttribute('open', ''); });
+    $('shareX').addEventListener('click', close); $('shareClose').addEventListener('click', close);
+    d.addEventListener('click', function (e) { if (e.target === d) close(); });
+    $('shareCopy').addEventListener('click', function () { copy('문구를 복사했어요'); });
+    $('shI').addEventListener('click', function () { copy('문구를 복사했어요. 인스타그램에서 이미지와 함께 붙여 넣어 주세요'); });
+  })();
 })();
