@@ -91,9 +91,9 @@
     var list = $('list');
     list.innerHTML = '<p class="empty">불러오는 중…</p>';
     rpc('walkingday_review_entries', { p_token: token }).then(function (rows) {
-      var head = ['순위', '이메일', '응모권', '친구 초대', '승인 일수', '최고 걸음', '11,111 달성', '11/11 달성', '초대한 사람', '등록'];
+      var head = ['순위', '이메일', '응모권', '친구 초대', '달성 일수', '최고 걸음', '11,111 달성', '11/11 달성', '초대한 사람', '등록'];
       var csv = [head.join(',')];
-      var html = '<div class="bar"><span class="status">초대 많은 순 → 응모권 많은 순. 초대 순위 경품은 위에서 11명(친구가 11,111걸음 승인을 받은 수).</span>' +
+      var html = '<div class="bar"><span class="status">초대 많은 순 → 응모권 많은 순. 초대 순위 경품은 위에서 11명(친구가 11,111걸음 승인을 받은 수). 달성 일수 = 11,111걸음 이상 승인된 날 — 5일 개근이면 응모권이 이미 1.5배(올림)로 들어가 있어요.</span>' +
         '<button class="btn" type="button" id="csv">CSV 내려받기</button></div><div class="tablewrap"><table><thead><tr>' +
         head.map(function (h, i) { return '<th' + (i === 2 || i === 3 || i === 4 || i === 5 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
       rows.forEach(function (r, i) {
