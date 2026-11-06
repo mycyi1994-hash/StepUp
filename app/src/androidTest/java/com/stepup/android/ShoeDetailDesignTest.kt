@@ -98,6 +98,22 @@ class ShoeDetailDesignTest {
     private var originalEquipped: Long? = null
 
     /** 앱 셸 안 — 신발 탭에서 고르고, 상세에서 시트를 열어 보고, 신고, 돌아온다 */
+    @Test fun careActionsInApp() {
+        val seeded = seed()
+        try {
+            edgeToEdge()
+            compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                MainScaffold(initialTab = Screen.Customize, initialRoute = com.stepup.android.ui.Routes.sneaker(seeded.single))
+            } } }
+            awaitTag("shoe-care-repair")
+            compose.onNodeWithTag("shoe-care-record").performScrollTo()
+            shot("02b-in-app-care-actions")
+            compose.onNodeWithTag("shoe-care-record").performClick()
+            awaitTag("shoe-info-sheet")
+            shot("06b-in-app-record-from-body")
+        } finally { restore(seeded) }
+    }
+
     @Test fun wearFlowInTheApp() {
         val seeded = seed()
         val dao = ServiceLocator.database.sneakerDao()

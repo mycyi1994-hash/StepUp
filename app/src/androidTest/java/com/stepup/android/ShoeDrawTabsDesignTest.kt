@@ -305,6 +305,29 @@ class ShoeDrawTabsDesignTest {
         }
     }
 
+    /** Capture-only state coverage; leaves the separate navigation regression test unchanged. */
+    @Test fun signedOutAndLoadFailureScenes() {
+        prepare()
+        edgeToEdge()
+        compose.setContent {
+            StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
+                Box(Modifier.fillMaxSize()) {
+                    DrawBackdrop(Modifier.fillMaxSize())
+                    Box(Modifier.fillMaxSize().systemBarsPadding()) { scene() }
+                }
+            } }
+        }
+        show("d22-native-signed-out", "draw-free-action") {
+            MysteryBoxScreen(state = DrawScreenState.SignedOut, actions = DrawActions(onSignIn = {}))
+        }
+        show("d21-native-load-failed", "draw-sheet-load-failed") {
+            MysteryBoxScreen(state = DrawScreenState.Failed, notice = DrawNotice.LoadFailed)
+        }
+        show("d21b-native-load-failed-closed", "draw-free-unknown") {
+            MysteryBoxScreen(state = DrawScreenState.Failed)
+        }
+    }
+
     @Test fun signedOutThenLoadFailedInTheApp() {
         prepare()
         val server = FakeDrawSource(DrawSamples.shoe())
