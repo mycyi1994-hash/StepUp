@@ -10214,6 +10214,61 @@ begin
 end $$;
 reset role;
 
+-- ── 11.11 워킹데이(0090) — 걸음 인증 제출 · 검토 · 합계 · 응모권 ──
+insert into fix (k, v) select 'wd-key', economy.walkingday_reviewer_new('검사');
+update public.economy_settings set value = '"2020-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_from';
+set role anon;
+do $$
+declare
+  v_img text := 'data:image/jpeg;base64,' || repeat('QUJD', 40);
+  v_today int := ((now() at time zone 'Asia/Seoul')::date - date '1970-01-01')::int;
+  r jsonb;
+begin
+  perform pg_temp.ok(public.walkingday_proof_submit('nobody@runnermail.com', 20764, 12000, v_img, true)->>'code' = 'not_registered',
+    '사전 등록하지 않은 이메일은 받지 않는다');
+  perform pg_temp.ok(public.walkingday_proof_submit('friend@runnermail.com', 20764, 12000, v_img, false)->>'code' = 'consent',
+    '동의 없이는 받지 않는다');
+  perform pg_temp.ok(public.walkingday_proof_submit('friend@runnermail.com', 20764, 12000, 'data:text/html;base64,PHNjcmlwdD4=' || repeat('A', 100), true)->>'code' = 'image',
+    '그림이 아닌 글은 받지 않는다');
+  perform pg_temp.ok(public.walkingday_proof_submit('friend@runnermail.com', 20769, 12000, v_img, true)->>'code' = 'day',
+    '기간 밖 날짜는 받지 않는다');
+  r := public.walkingday_proof_submit('friend@runnermail.com', 20764, 12000, v_img, true);
+  if v_today >= 20764 then
+    perform pg_temp.ok((r->>'ok')::boolean, '기간 안 날짜는 받는다');
+  else
+    perform pg_temp.ok(r->>'code' = 'day', '아직 오지 않은 날은 받지 않는다');
+  end if;
+  call pg_temp.must_fail('select * from economy.walkingday_proofs', '공개 역할은 제출 기록을 읽지 못한다');
+  call pg_temp.must_fail('select public.walkingday_review_list(''wrong-key'')', '검토 키가 틀리면 목록을 못 본다');
+end $$;
+reset role;
+-- 날짜 검사를 넘어 검토 · 응모권을 보려고 줄을 직접 넣는다(친구는 Referrer 의 추천으로 등록했다)
+insert into economy.walkingday_proofs (entry_id, epoch_day, steps, image)
+select id, 20768, 9000, 'data:image/jpeg;base64,' || repeat('QUJD', 40) from public.waitlist_entries where email = 'friend@runnermail.com'
+on conflict (entry_id, epoch_day) do nothing;
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('wd-key');
+  v_id bigint;
+  v_entries jsonb;
+  v_friend jsonb;
+  v_ref jsonb;
+begin
+  select (x->>'id')::bigint into v_id from jsonb_array_elements(public.walkingday_review_list(v_key)) x where (x->>'day')::int = 20768;
+  perform pg_temp.ok(v_id is not null, '검토 목록에 제출이 보인다');
+  perform pg_temp.ok((select total from public.walkingday_total()) = 0, '승인 전에는 합계에 넣지 않는다');
+  perform pg_temp.ok((public.walkingday_review_set(v_key, v_id, 'approved', 11500)->>'ok')::boolean, '승인하며 걸음 수를 고친다');
+  perform pg_temp.ok((select total from public.walkingday_total()) = 11500, '승인된 걸음이 공개 합계에 들어간다');
+  v_entries := public.walkingday_review_entries(v_key);
+  select x into v_friend from jsonb_array_elements(v_entries) x where x->>'email' = 'friend@runnermail.com';
+  select x into v_ref from jsonb_array_elements(v_entries) x where x->>'email' = 'referrer@runnermail.com';
+  perform pg_temp.ok((v_friend->>'tickets')::int = 9, '11/11 달성 친구: 등록 1 + 인증 3 + 당일 3 + 초대받음 2');
+  perform pg_temp.ok((v_ref->>'tickets')::int = 3 and (v_ref->>'friends')::int = 1, '초대한 사람: 등록 1 + 친구 1명 2');
+  perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'approved')::int >= 1, '검토 요약');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
