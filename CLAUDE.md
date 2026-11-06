@@ -7,6 +7,13 @@
 (사전 등록 이메일만), 승인 `/11events/review`(검토 키 — 해시만 서버에), 합계는 승인된 걸음의 합을 페이지가 읽는다(`walkingday_total`), 응모권은 검토 페이지 명단 탭.
 QR · UTM 저장은 지금 그대로(사용자 "일단 ok").
 
+## 최신 — 스토어 판 미리 보기도 스스로 업데이트 (2026-11-06)
+
+사용자 "스토어판 미리보기로 준 거 같은데 · 자동 업데이트가 안 뜬다" → "미리보기에도 오토 업데이트". 빌드 종류 `storePreview` 가 `src/selfUpdate` 를 쓰고
+(`SELF_UPDATE = true` · `SELF_UPDATE_FILE = "StepUp-store-preview"`), `StepUp-store-preview.json` 을 묻고 `StepUp-store-preview.apk` 를 받는다 — 테스트 판으로 바뀌지 않는다.
+설치 권한 · 받는 쪽은 `app/src/storePreview/AndroidManifest.xml`(지갑 앱 찾기는 없다). publish 가 미리 보기 json 도 올린다.
+**release(AAB · 심사 중인 판)는 그대로** — 스스로 업데이트 · 설치 권한 없음. 예전 미리 보기를 깐 사람은 이 판을 한 번 손으로 깔아야 그 뒤 알림이 뜬다.
+
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 
 - 신발: 러닝 시작 때 신은 신발 id 를 적어(`WalkSessionState.startSneakerId` · 폰 DB 판 20 `sneakerServerId` · 체크포인트 판 5) `record_session(p_sneaker)` 로 보낸다 —
@@ -479,7 +486,7 @@ X 주소 변형 · 끝 마침표 이메일은 보내기 전에 맞춘다, 법적
 - Build APK → `test-apk` 사전 배포에 `StepUp-test.apk`(최적화 빌드 `qa` — R8 · 디버그 불가. debug 를 올리면 화면 전체가 끊긴다.
   서명은 main 의 publish 작업이 테스트 전용 키로 다시 한다 — 작업 브랜치 아티팩트는 debug 키) — **main 에 들어간 것만** 올라간다.
   작업 브랜치의 APK 는 그 실행의 Actions 아티팩트에서 받는다. 사용자가 받을 앱은 main 에 합쳐야 바뀐다.
-- 같은 test-apk 사전 배포에 `StepUp-store-preview.apk`(2026-10-27) — 스토어 판(release) 설정 그대로(지갑 · 체인 없음, 자가 업데이트 · 시험 도구 없음)에
+- 같은 test-apk 사전 배포에 `StepUp-store-preview.apk`(2026-10-27) — 스토어 판(release) 설정 그대로(지갑 · 체인 없음, 시험 도구 없음 — 자가 업데이트는 2026-11-06 부터 있다, 위 절)에
   서명 · versionCode 만 테스트 APK 와 같아(빌드 종류 `storePreview`) 깔린 테스트 앱 위에 덮어 깔고 되돌린다. 구글 제출용은 이것이 아니라 Release AAB.
 - Experience QA → 에뮬레이터 캡처를 `qa-captures` 사전 배포의 `qa-review.zip` 에.
 - 로컬에서 되는 검사: `python3 scripts/check-strings.py`,

@@ -244,6 +244,11 @@ jobs:
           VERSION_CODE=$(grep -oP "^package: .*? versionCode='\K[0-9]+" <<<"$BADGING")
           printf '{"commitTime":%s,"commit":"%s","version":"%s","versionCode":%s}\n' "$COMMIT_TIME" "$SHORT" "$VERSION" "$VERSION_CODE" > StepUp-test.json
           cat StepUp-test.json
+          # 스토어 판 미리 보기도 스스로 업데이트한다(2026-11-06) — 미리 보기 앱은 이 파일을 묻고 StepUp-store-preview.apk 를 받는다
+          PREVIEW_BADGING=$("$(dirname "$APKSIGNER")/aapt2" dump badging StepUp-store-preview.apk)
+          PREVIEW_VERSION_CODE=$(grep -oP "^package: .*? versionCode='\K[0-9]+" <<<"$PREVIEW_BADGING")
+          printf '{"commitTime":%s,"commit":"%s","version":"%s","versionCode":%s}\n' "$COMMIT_TIME" "$SHORT" "$VERSION" "$PREVIEW_VERSION_CODE" > StepUp-store-preview.json
+          cat StepUp-store-preview.json
 
           # 서명 지문은 공개 값이다. 구글 클라우드에 등록한 값과 맞는지
           # 받는 사람이 바로 대조할 수 있게 적어 둔다 — 여기가 어긋나면
@@ -281,7 +286,8 @@ jobs:
 
           ## 스토어 판 미리 보기
 
-          \`StepUp-store-preview.apk\` 는 구글 플레이에 낼 판과 같은 설정입니다(지갑 · 체인 기능 없음, 업데이트 알림 · 시험 도구 없음).
+          \`StepUp-store-preview.apk\` 는 구글 플레이에 낼 판과 같은 설정입니다(지갑 · 체인 기능 없음, 시험 도구 없음).
+          다른 점은 하나 — 새 판이 올라오면 앱이 알려 줍니다(미리 보기 판으로만 업데이트됩니다, 2026-11-06 부터).
           깔린 테스트 앱 위에 그대로 덮어 깔리고(기록 · 로그인 그대로), 위의 \`StepUp-test.apk\` 를 다시 깔면 테스트 판으로 돌아갑니다.
           구글 제출용 파일은 이것이 아니라 Actions › Release AAB 의 AAB 입니다.
           EOF
@@ -293,7 +299,7 @@ jobs:
           if gh release view test-apk >/dev/null 2>&1; then
             gh release delete test-apk --yes
           fi
-          gh release create test-apk StepUp-test.apk StepUp-test.json StepUp-store-preview.apk \
+          gh release create test-apk StepUp-test.apk StepUp-test.json StepUp-store-preview.apk StepUp-store-preview.json \
             --prerelease \
             --title "테스트 APK — ${VERSION} (${SHORT})" \
             --notes-file notes.md
