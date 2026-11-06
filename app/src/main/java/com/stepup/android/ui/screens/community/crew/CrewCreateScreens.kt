@@ -151,7 +151,7 @@ private fun CrewOwnedRow(crew: CrewCard, onClick: () -> Unit) {
         Column(Modifier.weight(1f).padding(start = 18.dp)) {
             Text(crew.name, style = crewTitleStyle(ink.text, 23.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
-            val members = if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity!!)
+            val members = if (crew.capacity != null) stringResource(R.string.crew_members_of, crew.memberCount, crew.capacity)
             else stringResource(R.string.crew_members_only, crew.memberCount)
             val status = stringResource(if (crew.recruiting) R.string.crew_recruit_open else R.string.crew_recruit_paused)
             Text("$members · $status", color = ink.text.copy(alpha = 0.86f), fontSize = 16.sp, maxLines = 1)
@@ -756,7 +756,7 @@ private fun CrewPreview(draft: CrewDraft, words: CrewWords) {
                     CrewLevelChip(card.level)
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        if (card.capacity != null) stringResource(R.string.crew_members_of, card.memberCount, card.capacity!!)
+                        if (card.capacity != null) stringResource(R.string.crew_members_of, card.memberCount, card.capacity)
                         else stringResource(R.string.crew_members_only, card.memberCount),
                         color = ink.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
                     )

@@ -1,13 +1,9 @@
 # StepUp — 작업 메모
 
-## 최신 — 아이폰 앱: KMP 시작 · 규칙 코드는 shared 모듈 (2026-11-04)
+## 최신 — 아이폰 앱 계획 (2026-11-04, 아직 시작 전)
 
-[docs/ios-plan-2026-11-04.md](docs/ios-plan-2026-11-04.md) — 사용자 "앱스토어(애플) 제출 파일이 자꾸 오류" → 저장소에 아이폰 앱이 없다 → "계획 짜줘" → "추천대로 KMP로 시작해".
-- **규칙 코드(domain)는 이제 `shared/src/commonMain/kotlin/com/stepup/android/domain/`**(두 앱 공용, 패키지 그대로). 날짜에 `java.time` 을 쓰는 13 파일은
-  아직 `shared/src/androidMain/…`(다음에 kotlinx-datetime 으로). 공용 코드에는 Java 함수를 쓰지 않는다 — `formatRoot` · `nowMillis` · `exactHalfUp` 같은
-  `Platform.kt` 함수를 쓴다(안드로이드는 예전 Java 그대로, 아이폰은 `JavaFormat.kt` — Java 와 같은지는 `PlatformTwinTest`).
-- 다른 모듈의 값은 smart cast 가 안 된다 — 앱에서 domain 의 nullable 값을 확인한 뒤 쓸 때는 지역 변수나 `!!`.
-- 아이폰 컴파일은 Mac 에서만(`ios-shared.yml`, 리눅스는 건너뜀). 개발자 계정 · 첫 판 범위 · 번들 ID 는 사용자 결정 전.
+[docs/ios-plan-2026-11-04.md](docs/ios-plan-2026-11-04.md) — 사용자 "앱스토어(애플) 제출 파일이 자꾸 오류" → 저장소에 아이폰 앱이 없다 → "계획 짜줘".
+추천은 Kotlin Multiplatform + Compose Multiplatform(`domain/` 은 안드로이드 import 0 — 그대로 공용). 방식 · 개발자 계정 · 첫 판 범위 · 번들 ID 는 사용자 결정 전.
 
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 

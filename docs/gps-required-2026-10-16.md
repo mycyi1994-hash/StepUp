@@ -46,7 +46,7 @@
 
 ### 권한
 
-[`domain/Onboarding.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/Onboarding.kt) `RunPermissionRules.next`
+[`domain/Onboarding.kt`](../app/src/main/java/com/stepup/android/domain/Onboarding.kt) `RunPermissionRules.next`
 
 - 위치 권한은 꼭 필요하고, **정확한 위치**여야 한다. 대략적인 위치는 1~3km 단위로 뭉개져 경로를 그릴 수 없다.
   - 위치 권한이 없으면 매번 시스템 창부터 띄운다(16).

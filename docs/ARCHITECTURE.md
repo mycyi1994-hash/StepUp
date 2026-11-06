@@ -73,7 +73,7 @@ belongs on chain where it cannot.
 | DI | Manual — one `object ServiceLocator`, wired in `Application.onCreate` | [`core/ServiceLocator.kt`](../app/src/main/java/com/stepup/android/core/ServiceLocator.kt) |
 | Persistence | Room 2.6.1 via KSP — `strideup.db`, **schema v6, 12 entities, 12 DAOs** | [`data/local/`](../app/src/main/java/com/stepup/android/data/local/) |
 | Settings | DataStore (`UserPrefs`) — step baselines, energy and streak, locale, daily goal, selected course | `data/prefs/UserPrefs.kt` |
-| Domain | Pure Kotlin objects, no Android imports, unit-tested | [`domain/`](../shared/src/commonMain/kotlin/com/stepup/android/domain/) |
+| Domain | Pure Kotlin objects, no Android imports, unit-tested | [`domain/`](../app/src/main/java/com/stepup/android/domain/) |
 | i18n | 665 strings × ko / en / zh / ja + `localeConfig` in-app override | `res/values*/strings.xml` |
 
 **Why manual DI.** One `object` with a dozen `lateinit` fields replaces Hilt's
@@ -140,7 +140,7 @@ kilometre plus a manual lap button.
 
 ## 4. Run integrity — proving it was a run
 
-[`domain/RunIntegrity.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RunIntegrity.kt).
+[`domain/RunIntegrity.kt`](../app/src/main/java/com/stepup/android/domain/RunIntegrity.kt).
 A step sensor cannot tell a runner from a phone rattling in a car, so GPS
 segment speed is judged alongside it. Two layers plus one independent axis:
 
@@ -160,7 +160,7 @@ covered by unit tests that run in CI.
 
 ## 5. Reward economy
 
-[`domain/RewardEconomy.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RewardEconomy.kt)
+[`domain/RewardEconomy.kt`](../app/src/main/java/com/stepup/android/domain/RewardEconomy.kt)
 — pure functions, no Android, unit-tested.
 
 ```
@@ -446,7 +446,7 @@ StepUp은 세 개의 층으로 나뉘고, **그 나눔 자체가 설계**입니�
 | DI | 수동 — `object ServiceLocator` 하나를 `Application.onCreate`에서 초기화 | [`core/ServiceLocator.kt`](../app/src/main/java/com/stepup/android/core/ServiceLocator.kt) |
 | 저장소 | Room 2.6.1 (KSP) — `strideup.db`, **스키마 v6, 엔티티 12개, DAO 12개** | [`data/local/`](../app/src/main/java/com/stepup/android/data/local/) |
 | 설정 | DataStore(`UserPrefs`) — 걸음 기준점, 에너지·스트릭, 언어, 일일 목표, 선택한 코스 | `data/prefs/UserPrefs.kt` |
-| 도메인 | 순수 Kotlin, 안드로이드 의존 없음, 단위 테스트 대상 | [`domain/`](../shared/src/commonMain/kotlin/com/stepup/android/domain/) |
+| 도메인 | 순수 Kotlin, 안드로이드 의존 없음, 단위 테스트 대상 | [`domain/`](../app/src/main/java/com/stepup/android/domain/) |
 | 다국어 | 문자열 665개 × ko / en / zh / ja + `localeConfig` 앱 내 언어 변경 | `res/values*/strings.xml` |
 
 **왜 수동 DI인가.** `lateinit` 필드 열몇 개짜리 `object` 하나가 Hilt의 애너테이션
@@ -510,7 +510,7 @@ StepUp은 세 개의 층으로 나뉘고, **그 나눔 자체가 설계**입니�
 
 ## 4. 러닝 판정 — "정말 뛰었는가"
 
-[`domain/RunIntegrity.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RunIntegrity.kt).
+[`domain/RunIntegrity.kt`](../app/src/main/java/com/stepup/android/domain/RunIntegrity.kt).
 걸음 센서만으로는 달리는 사람과 차 안에서 흔들리는 폰을 구분할 수 없으므로 GPS
 구간 속도를 함께 봅니다. 두 층 + 독립된 한 축입니다.
 
@@ -530,7 +530,7 @@ StepUp은 세 개의 층으로 나뉘고, **그 나눔 자체가 설계**입니�
 
 ## 5. 리워드 이코노미
 
-[`domain/RewardEconomy.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RewardEconomy.kt)
+[`domain/RewardEconomy.kt`](../app/src/main/java/com/stepup/android/domain/RewardEconomy.kt)
 — 순수 함수, 안드로이드 의존 없음, 단위 테스트 대상.
 
 ```

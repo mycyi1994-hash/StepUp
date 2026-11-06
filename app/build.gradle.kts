@@ -287,8 +287,6 @@ ksp {
 }
 
 dependencies {
-    // 규칙 코드(domain) — 아이폰 앱과 같은 한 벌(shared 모듈)
-    implementation(project(":shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)

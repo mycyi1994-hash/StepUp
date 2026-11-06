@@ -258,7 +258,7 @@ internal fun RoomRow(room: CrewRoom, crewName: String, onOpen: () -> Unit, showC
         )
         val third = when {
             room.mode == RoomMode.REMOTE -> stringResource(R.string.d26_room_remote_line)
-            room.meetPlace != null -> stringResource(R.string.d26_room_meet, room.meetPlace!!)
+            room.meetPlace != null -> stringResource(R.string.d26_room_meet, room.meetPlace)
             course != null -> "${course.name} · ${com.stepup.android.ui.screens.walk.courseKm(course.km)}km"
             else -> stringResource(R.string.d26_room_host, room.hostName)
         }

@@ -23,7 +23,7 @@
 
 ## 코드
 
-- 규칙: [`domain/RunStill.kt`](../shared/src/commonMain/kotlin/com/stepup/android/domain/RunStill.kt) — `STILL_MS = 30,000`, `isStill(recording, sinceMoveMs)`.
+- 규칙: [`domain/RunStill.kt`](../app/src/main/java/com/stepup/android/domain/RunStill.kt) — `STILL_MS = 30,000`, `isStill(recording, sinceMoveMs)`.
 - 서비스: [`WalkSessionService`](../app/src/main/java/com/stepup/android/service/WalkSessionService.kt)
   - `lastMoveElapsed`: 걸음이 늘 때 · 경로 점이 생길 때 · 시작 · 다시 시작할 때 고친다.
   - 1초 타이머가 `WalkSessionState.still` 을 정한다. 바뀔 때 알림 글을 다시 쓴다.

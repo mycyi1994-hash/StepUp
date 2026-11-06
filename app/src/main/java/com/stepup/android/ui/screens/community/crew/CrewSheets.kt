@@ -99,7 +99,7 @@ internal fun CrewLevelSheet(card: CrewCard, onDismiss: () -> Unit) {
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            if (info.level != null) stringResource(R.string.crew_level_value, info.level!!) else stringResource(R.string.crew_level_new),
+                            if (info.level != null) stringResource(R.string.crew_level_value, info.level) else stringResource(R.string.crew_level_new),
                             color = ink.text, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.testTag("crew-level-value"),
                         )
                     }
