@@ -5,7 +5,7 @@
   var CFG = window.WALKINGDAY || {};
   var PREVIEW = location.hash === '#preview' || CFG.preview === true;
   var T1 = 1111111, T2 = 2222222, EXAMPLE = 642180;
-  var START = Date.UTC(2026, 10, 6, 15, 0), CLOSE = Date.UTC(2026, 10, 12, 15, 0); // 11/7 00:00 KST, 11/12 23:59 KST 마감
+  var START = Date.UTC(2026, 10, 6, 15, 0), CLOSE = Date.UTC(2026, 10, 11, 6, 0); // 11/7 00:00 KST 시작, 11/11 15:00 KST 마감
   var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var A = 'assets/';
   var $ = function (id) { return document.getElementById(id); };
@@ -23,7 +23,7 @@
   /* ── 상태 ── */
   var total = 0, cur = 0, vel = 0, pour = 0, phaseOverride = null, t0 = performance.now(), om = 3.0, tNow = 0;
   var rev = [0, 0, 0];
-  var RESULT = Date.UTC(2026, 10, 15, 15, 0), BEFORE_FILL = T1 * .5;
+  var RESULT = Date.UTC(2026, 10, 11, 9, 0), BEFORE_FILL = T1 * .5;
   function phase() { if (phaseOverride) return phaseOverride; var n = Date.now(); return n < START ? 'before' : n < CLOSE ? 'live' : n < RESULT ? 'count' : 'result'; }
 
   /* ── 장면 치수 ── */
@@ -46,9 +46,17 @@
     for (var i = 0; i < drips.length; i++) {
       var d = drips[i], b = sheetY(d.x, t), L = Math.min(d.len * lk * (1 + .85 * pour), S.dripCap + Math.max(0, fy - S.yA) * 3) + S.U * .006 * Math.sin(t * .23 + d.ph), room = lim - b, re = Math.min(d.r, Math.max(.6, room * .55));
       if (cellsReady) for (var q = 0; q < 3; q++) { var c = cells[q]; if (d.x > c[0] - d.r && d.x < c[2] + d.r) { var r0 = rev[q], up = Math.max(S.U * .02, c[1] - 6 - re * 1.12 - b); L = L * r0 + Math.min(L, up) * (1 - r0); re *= .7 + .3 * r0; } }
+      var cyc = REDUCED ? null : dripCycle(i, t); if (cyc) L *= cyc.g;
       d.re = re; d.y1 = b + Math.min(L, Math.max(0, room - re * 1.12)); d.y0 = b - S.bead * 1.15;
+      if (cyc) { d.dt = cyc.dt; d.relY = b + Math.min(L / cyc.g * 1.42, Math.max(0, room - re * 1.12)) + re * .9; } else d.dt = -1;
     }
+    updateDrops(lim);
   }
+  /* 방울 주기 6.5~10초: 0~.8 동안 늘어나고 .8에서 떨어진 뒤 다시 짧아짐 */
+  function dripCycle(i, t) { var T = 6.5 + (i * 1.37) % 3.5, ph = (t / T + i * .371) % 1, g; if (ph < .8) { var a = ph / .8; g = 1 + .42 * a * a; } else { var r = (ph - .8) / .2; g = 1 + .42 * Math.pow(1 - r, 3); } return { g: g, dt: (ph >= .8 ? ph - .8 : ph + .2) * T }; }
+  /* 떨어진 방울은 가속하며 내려가다 숫자 칸 위에서 사라짐 */
+  function updateDrops(lim) { PU.fill(0); var act = []; for (var i = 0; i < drips.length; i++) { var d = drips[i]; if (!(d.dt >= 0) || d.dt > 2.4) continue; var y = d.relY + S.U * (.06 * d.dt + 1.05 * d.dt * d.dt), r = d.re * .78, fade = clamp((lim - y) / (S.U * .1), 0, 1) * clamp(d.dt / .12, 0, 1); if (fade <= .01) continue; act.push([d.x, y, r * (.55 + .45 * fade), fade, d.dt]); }
+    act.sort(function (a, b) { return a[4] - b[4]; }); for (var k = 0; k < Math.min(6, act.length); k++) PU.set(act[k].slice(0, 4), k * 4); }
   function frontY(x, t) {
     var y = sheetY(x, t), sk = 0, i, d, dx;
     for (i = 0; i < drips.length; i++) { d = drips[i]; dx = (x - d.x) / (d.re * 2.2); if (dx > -3 && dx < 3) { var L0 = d.y1 - d.y0 - S.bead * 1.15; sk += Math.min(L0 * .85, d.re * 1.75) * Math.exp(-dx * dx); } }
@@ -61,13 +69,13 @@
   var VS = 'attribute vec2 a;uniform vec2 uR;varying vec2 vP;void main(){vP=vec2(a.x*.5+.5,.5-a.y*.5)*uR;gl_Position=vec4(a,0.,1.);}';
   var FS = [
     '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
-    'varying vec2 vP;uniform vec2 uR;uniform float uWave,uT,uU,uF,uBow,uBead,uTop,uPx,uPlate,uDr,uExpo,uBisK,uBU,uTopOp,uWK,uCalmY,uCalmK,uChK,uTopY,uGhost;uniform vec2 uOff;uniform vec4 uD[14];uniform vec4 uRelR,uC0,uC1,uC2;uniform float uSa;uniform vec3 uRev,uAlbD,uAlbW,uFlat,uSc;uniform sampler2D uB,uRel;',
+    'varying vec2 vP;uniform vec2 uR;uniform float uWave,uT,uU,uF,uBow,uBead,uTop,uPx,uPlate,uDr,uExpo,uBisK,uBU,uTopOp,uWK,uCalmY,uCalmK,uChK,uTopY,uGhost;uniform vec2 uOff;uniform vec4 uD[14];uniform vec4 uP[6];uniform vec4 uRelR,uC0,uC1,uC2;uniform float uSa;uniform vec3 uRev,uAlbD,uAlbW,uFlat,uSc;uniform sampler2D uB,uRel;',
     'float wob(float x){float U=uU;return U*(.026*sin(x/(U*.47)+1.3+uT*.05)+.012*sin(x/(U*.19)+.4-uT*.037)+.006*sin(x/(U*.083)+2.1+uT*.03));}',
     'float wobD(float x){float U=uU;return .0553*cos(x/(U*.47)+1.3+uT*.05)+.0632*cos(x/(U*.19)+.4-uT*.037)+.0723*cos(x/(U*.083)+2.1+uT*.03);}',
     'float inR(vec2 p,vec4 c){return step(c.x,p.x)*step(p.x,c.z)*step(c.y,p.y)*step(p.y,c.w);}',
     'float gs(float x,float c,float w){x=(x-c)/w;return exp(-x*x);}',
     /* 녹은 표면 높이: 흐름 방향(세로)으로 늘어진 넓은 물결 + 드문 주름 + 턱 뒤 둔덕 + 턱과 나란한 잔물결 */
-    'float surf(vec2 p){vec2 q=p/uU;vec2 a=vec2(q.x*1.9,q.y*1.35-uT*.012);a+=.42*vec2(sin(a.y*1.7+.8+.6*sin(a.x*.9)),sin(a.x*1.3-.6+uT*.015));',
+    'float surf(vec2 p){vec2 q=p/uU;vec2 a=vec2(q.x*1.9,q.y*1.35-uT*.065);a+=.42*vec2(sin(a.y*1.7+.8+.6*sin(a.x*.9)),sin(a.x*1.3-.6+uT*.05));',
     'float w1=sin(a.x*1.25+.8*sin(a.y*1.1));float w2=sin(a.x*2.6+1.4*sin(a.y*.8+w1)+1.7);float w3=sin(a.x*4.7+a.y*1.1+2.1*w1);return .50*w1+.17*w2+.05*sqrt(w3*w3+.02);}',
     'void main(){vec2 p=vP;float hw=.5*uR.x,u=(p.x-hw)/hw,Rb=uBead,c=7.;',
     'float sk=0.,skx=0.;for(int j=0;j<14;j++){vec4 D=uD[j];if(D.w<=0.)continue;float L0=D.z-D.y-Rb*1.15;float A0=min(L0*.85,D.w*1.75);float W0=D.w*2.2;float xx=(p.x-D.x)/W0;if(abs(xx)<3.){float g0=exp(-xx*xx);sk+=A0*g0;skx+=A0*g0*(-2.*xx/W0);}}',
@@ -76,6 +84,7 @@
     'float e0=exp(c*Fs);float E=e0+1e-9;vec2 G0=e0*dFs*gd;vec2 G=G0*(Rb*.92);',
     'vec2 so=vec2(uU*.010,uU*.034);float ds=d+so.y;float Fz;if(ds>=Rb){Fz=1.;}else if(ds>0.){float k2=1.-ds/Rb;Fz=1.-k2*k2;}else{Fz=max(2.*ds/Rb,-3.);}float E2=exp(c*Fz)+1e-9;',
     'for(int i=0;i<14;i++){vec4 D=uD[i];if(D.w<=0.)continue;float ky=clamp((p.y-D.y)/(D.z-D.y),0.,1.);float t0=clamp(ky/.34,0.,1.),t3=clamp((ky-.60)/.40,0.,1.);float r=D.w*(1.28-.46*t0*t0*(3.-2.*t0)+.30*t3*t3*(3.-2.*t3));float rp=D.w*(.30*6.*t3*(1.-t3)/.40-.46*6.*t0*(1.-t0)/.34)/(D.z-D.y);vec2 pa=vec2(p.x-D.x,p.y-mix(D.y,D.z,ky));float ir=1./(r*r);float q0=dot(pa,pa)*ir;if(q0<3.6){float w=exp(c*(1.-q0))*(1.-smoothstep(Rb*.1,Rb*1.3,d));E+=w;vec2 gg=w*(-2.*pa*ir);gg.y+=w*2.*q0/r*rp;G0+=gg;G+=gg*r;}vec2 ps=pa-so;float q2=dot(ps,ps)*ir;if(q2<5.){E2+=exp(c*(1.-q2));}}',
+    'for(int k=0;k<6;k++){vec4 P=uP[k];if(P.z<=0.)continue;vec2 pa=vec2(p.x-P.x,(p.y-P.y)*.8);float ir=1./(P.z*P.z);float q0=dot(pa,pa)*ir;if(q0<3.6){float w=exp(c*(1.-q0))*P.w;E+=w;vec2 gg=w*(-2.*pa*ir);G0+=gg;G+=gg*P.z;}vec2 ps=pa-so;float q2=dot(ps,ps)*ir;if(q2<5.){E2+=exp(c*(1.-q2))*P.w;}}',
     'float S=log(E)/c;vec2 gS=G0/E;vec2 gA=G/E;float S2=log(E2)/c;',
     'if(uTop>-9000.){float ft=uTop+wob(p.x*1.31+77.)*1.1;float dt=p.y-ft;float Ft,dF;if(dt>=Rb){Ft=1.;dF=0.;}else if(dt>0.){float k3=1.-dt/Rb;Ft=1.-k3*k3;dF=2.*k3/Rb;}else{Ft=max(2.*dt/Rb,-3.);dF=2./Rb;}float a0=exp(-c*S),b0=exp(-c*Ft);float ab=a0+b0;S=-log(ab)/c;vec2 gt=dF*vec2(-wobD(p.x*1.31+77.)*1.44,1.);gS=(a0*gS+b0*gt)/ab;gA=(a0*gA+b0*gt*(Rb*.92))/ab;S2=min(S2,Ft-1.6);}',
     /* 비스킷 */
@@ -122,7 +131,7 @@
     'if(uPlate>.5){if(uTopOp>.5&&p.y<uR.y*.5){vec3 o=mix(bis*(1.-.34*cont),ch,cov)+gr*.012;gl_FragColor=vec4(o,1.);}else{float sa=smoothstep(-1.15,.1,S2)*uSa*(1.-cov);vec3 sc=uSc;vec3 o=(ch+gr*.012)*cov+sc*sa;gl_FragColor=vec4(o,cov+sa);}}',
     'else{vec3 o=mix(bisS,ch,cov)+gr*.012;gl_FragColor=vec4(o,1.);}}'
   ].join('\n');
-  var UN = ['uSa', 'uSc', 'uAlbD', 'uAlbW', 'uFlat', 'uWK', 'uCalmY', 'uCalmK', 'uChK', 'uTopY', 'uGhost', 'uWave', 'uOff', 'uBU', 'uTopOp', 'uR', 'uT', 'uU', 'uF', 'uBow', 'uBead', 'uTop', 'uPx', 'uPlate', 'uDr', 'uExpo', 'uBisK', 'uD', 'uRelR', 'uC0', 'uC1', 'uC2', 'uRev', 'uB', 'uRel'];
+  var UN = ['uP', 'uSa', 'uSc', 'uAlbD', 'uAlbW', 'uFlat', 'uWK', 'uCalmY', 'uCalmK', 'uChK', 'uTopY', 'uGhost', 'uWave', 'uOff', 'uBU', 'uTopOp', 'uR', 'uT', 'uU', 'uF', 'uBow', 'uBead', 'uTop', 'uPx', 'uPlate', 'uDr', 'uExpo', 'uBisK', 'uD', 'uRelR', 'uC0', 'uC1', 'uC2', 'uRev', 'uB', 'uRel'];
   function mkGL(canvas, attr) {
     var gl = canvas.getContext('webgl', attr) || canvas.getContext('experimental-webgl', attr); if (!gl) return null;
     function sh(type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; } return s; }
@@ -182,11 +191,11 @@
 
   /* ── 첫 화면 그리기 ── */
   var AC0 = new Float32Array(4), AC1 = new Float32Array(4), AC2 = new Float32Array(4), AREV = new Float32Array(3);
-  var cv = $('gl'), G = null, ctx2 = null, tile = new Image(), scale = 1, DU = new Float32Array(56), lastDraw = 0, heroOn = true, fps = [], lowered = 0;
+  var cv = $('gl'), G = null, ctx2 = null, tile = new Image(), scale = 1, DU = new Float32Array(56), PU = new Float32Array(24), P0 = new Float32Array(24), lastDraw = 0, heroOn = true, fps = [], lowered = 0;
   var TONE = { dark: [[.030, .0095, .0040], [.15, .052, .017], [.165, .075, .035]], milk: [[.225, .125, .066], [.31, .178, .094], [.36, .238, .148]], cream: [[1.75, 1.26, .84], [1.55, 1.08, .68], [.70, .64, .50]] };
   function applyScene(g, o) {
     var gl = g.gl, u = g.u, tn = TONE[o.tone || 'dark']; gl.uniform3fv(u.uAlbD, tn[0]); gl.uniform3fv(u.uAlbW, tn[1]); gl.uniform3fv(u.uFlat, tn[2]); var dk = (o.tone || 'dark') === 'dark'; gl.uniform1f(u.uSa, dk ? .62 : .72); gl.uniform3fv(u.uSc, dk ? [.20, .09, .035] : [.12, .05, .018]); gl.uniform2f(u.uR, o.W, o.H); gl.uniform1f(u.uT, o.t); gl.uniform1f(u.uU, o.U); gl.uniform1f(u.uF, o.f); gl.uniform1f(u.uBow, o.bow); gl.uniform1f(u.uBead, o.bead); gl.uniform1f(u.uTop, o.top); gl.uniform1f(u.uPx, o.px); gl.uniform1f(u.uPlate, o.plate); gl.uniform1f(u.uDr, o.dr); gl.uniform1f(u.uExpo, o.expo); gl.uniform1f(u.uBisK, o.bk); gl.uniform1f(u.uWave, o.wave === undefined ? 1 : o.wave); gl.uniform2f(u.uOff, o.ox || 0, o.oy || 0); gl.uniform1f(u.uBU, o.bu || o.U); gl.uniform1f(u.uTopOp, o.topOp || 0); gl.uniform1f(u.uWK, o.wk === undefined ? 1 : o.wk); gl.uniform1f(u.uCalmY, o.calmY === undefined ? -1e4 : o.calmY); gl.uniform1f(u.uCalmK, o.calmk || 0); gl.uniform1f(u.uChK, o.chk || 0); gl.uniform1f(u.uTopY, o.topY === undefined ? -1e4 : o.topY); gl.uniform1f(u.uGhost, o.ghost || 0);
-    gl.uniform4fv(u.uD, o.D); gl.uniform4fv(u.uC0, o.c0); gl.uniform4fv(u.uC1, o.c1); gl.uniform4fv(u.uC2, o.c2); gl.uniform3fv(u.uRev, o.rev);
+    gl.uniform4fv(u.uD, o.D); gl.uniform4fv(u.uP, o.P || P0); gl.uniform4fv(u.uC0, o.c0); gl.uniform4fv(u.uC1, o.c1); gl.uniform4fv(u.uC2, o.c2); gl.uniform3fv(u.uRev, o.rev);
   }
   function drawHero(now) {
     var t = REDUCED ? 8 : (now - t0) / 1000; tNow = t; updateDrips(t);
@@ -194,7 +203,7 @@
     for (var i = 0; i < 14; i++) { var d = drips[i], o = i * 4; if (d) { DU[o] = d.x; DU[o + 1] = d.y0; DU[o + 2] = d.y1; DU[o + 3] = d.re; } else { DU[o + 3] = 0; } }
     AC0.set(cellsR[0]); AC1.set(cellsR[1]); AC2.set(cellsR[2]); AREV.set(rev);
     var gl = G.gl; gl.viewport(0, 0, cv.width, cv.height);
-    applyScene(G, { wk: S.wkE, calmY: S.calmY, calmk: 1, chk: 1, topY: S.topY, ghost: 1, W: S.W, H: S.H, t: t, U: S.U, f: fy, bow: S.bowE, bead: S.bead, top: -1e4, px: 1 / scale, plate: 0, dr: t * .55, expo: S.wide ? 1.06 : 1.18, bk: 1 / (S.wide ? 780 : 620), bu: S.U, D: DU, c0: AC0, c1: AC1, c2: AC2, rev: AREV });
+    applyScene(G, { wk: S.wkE, calmY: S.calmY, calmk: 1, chk: 1, topY: S.topY, ghost: 1, W: S.W, H: S.H, t: t, U: S.U, f: fy, bow: S.bowE, bead: S.bead, top: -1e4, px: 1 / scale, plate: 0, dr: t * .55, expo: S.wide ? 1.06 : 1.18, bk: 1 / (S.wide ? 780 : 620), bu: S.U, D: DU, P: PU, c0: AC0, c1: AC1, c2: AC2, rev: AREV });
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   function draw2D(t) {
@@ -275,8 +284,8 @@
     if (p === 'before') { var dn = 'D-' + daysLeft(); setStr(dn, NUMLEN); both(elNum, function (e) { e.setAttribute('aria-label', dn); }); msg = '11/7(토) 시작 · 사전 등록하면 응모권 1장'; }
     else {
       renderNumber(cur); both(elNum, function (e) { e.setAttribute('aria-label', fmt(v) + ' 걸음'); });
-      if (p === 'count') msg = '11/16(월) 결과 발표';
-      else if (p === 'result') msg = '당첨자 발표 11/16(월)';
+      if (p === 'count') msg = '11/11(수) 18시 당첨 발표';
+      else if (p === 'result') msg = '당첨자 발표 완료 · 빼빼로 기프티콘 11/11 전달';
       else if (v >= T2) msg = '222만 걸음 달성, 막대 완성';
       else if (v >= T1) msg = '111만 걸음 달성 · 222만까지 ' + fmt(T2 - v) + ' 남음';
       else msg = '111만 걸음까지 ' + fmt(T1 - v) + ' 남음';
@@ -305,7 +314,7 @@
   var lastW = 0, lastH = 0, glyphs = null;
   function layout() {
     var W = hero.clientWidth, H = hero.clientHeight, sameW = W === lastW; if (sameW && H === lastH) { numLen = 0; renderState(); return; } lastW = W; lastH = H;
-    S.W = W; S.H = H; S.wide = W >= 900; S.U = Math.min(W, H * .62); S.bead = S.U * (S.wide ? .068 : .082); S.bow = S.U * (S.wide ? .07 : .03); S.wk = S.wide ? 1 : .7;
+    S.W = W; S.H = H; S.wide = false; S.U = Math.min(W, H * .62); S.bead = S.U * (S.wide ? .068 : .082); S.bow = S.U * (S.wide ? .07 : .03); S.wk = S.wide ? 1 : .7;
     numLen = 0; renderState();
     var heroTop = hero.getBoundingClientRect().top, hr = head.getBoundingClientRect(), hb = hr.bottom - heroTop, cr0 = elCount[0].getBoundingClientRect(), cTop = cr0.top - heroTop, cBot = cr0.bottom - heroTop;
     buildDrips(); var gx = parseFloat(getComputedStyle(head).left) || 16, gap = Math.max(13, S.U * .034), wm = .044 * S.U * S.wk, lim = cTop - 6, slack = Math.max(8, H * .018);
@@ -313,12 +322,12 @@
     /* 글자 칸: 숫자 칸 위 남은 높이 안에. 111만에서 셋 다 덮이도록 아래 끝을 초콜릿 위치에 맞춘다 */
     var ar = [822 / 841, 822 / 841, 832 / 814], bot = S.yA - slack - wm - 3 + S.bow * .1;
     if (!S.wide) {
-      var top = hb + 10, all = Math.max(60, bot - top), cwA = (W - gx * 2 - gap * 2) / 3, chA = cwA / ar[0], stag = S.U * .035, gap2 = Math.max(gap, wm * 2 + S.bow + 5), availH = (all - gap2 - stag) / 2, cwB = Math.min((W - gx * 2 - gap) / 2, availH * ar[0]);
+      var bx = hr.left - hero.getBoundingClientRect().left, bw = hr.width, top = hb + 10, all = Math.max(60, bot - top), cwA = (bw - gap * 2) / 3, chA = cwA / ar[0], stag = S.U * .035, gap2 = Math.max(gap, wm * 2 + S.bow + 5), availH = (all - gap2 - stag) / 2, cwB = Math.min((bw - gap) / 2, availH * ar[0]);
       if (chA > all) { chA = all; cwA = chA * ar[0]; }
       /* 빼빼로는 한 줄. 제목 바로 아래에 두어 초콜릿이 내려올 자리를 남김 */
       S.two = false;
       var chr = cwA / ar[2], rowH = Math.max(chA, chr), rowTop = top + Math.min(S.U * .012, Math.max(0, all - rowH) * .2), rowBot = rowTop + rowH;
-      cells[0] = [gx, rowBot - chA, gx + cwA, rowBot]; cells[1] = [gx + cwA + gap, rowBot - chA, gx + cwA * 2 + gap, rowBot]; cells[2] = [gx + (cwA + gap) * 2, rowBot - chr, gx + (cwA + gap) * 2 + cwA, rowBot];
+      cells[0] = [bx, rowBot - chA, bx + cwA, rowBot]; cells[1] = [bx + cwA + gap, rowBot - chA, bx + cwA * 2 + gap, rowBot]; cells[2] = [bx + (cwA + gap) * 2, rowBot - chr, bx + (cwA + gap) * 2 + cwA, rowBot];
     } else {
       S.two = false; var x0 = hr.right + S.U * .07, right = W - gx, top2 = Math.max(hr.top - heroTop - S.U * .06, 12), all2 = bot - top2, cw2 = Math.min((right - x0 - gap * 2) / 3, all2 * .62 * ar[0]), ch2 = cw2 / ar[0], step2 = Math.min(ch2 * .5, (all2 - ch2) / 2), xr = right - cw2 * 3 - gap * 2, chr2 = cw2 / ar[2];
       cells[0] = [xr, bot - step2 * 2 - ch2, xr + cw2, bot - step2 * 2]; cells[1] = [xr + cw2 + gap, bot - step2 - ch2, xr + cw2 * 2 + gap, bot - step2]; cells[2] = [right - cw2, bot - chr2, right, bot];
@@ -354,7 +363,7 @@
     var g = plateGL(); if (!g) return Promise.resolve();
     var r = pl.cv.getBoundingClientRect(), W = r.width, H = r.height; if (W < 10 || H < 10) return Promise.resolve();
     var ps = Math.min(devicePixelRatio || 1, 2); if (W * H * ps * ps > 3.8e6) ps = Math.sqrt(3.8e6 / (W * H)); ps = Math.max(1, ps);
-    var U = Math.min(W, 880), jobs = [], items = [], isEnd = pl.key === 'end';
+    var U = Math.min(W, 520), jobs = [], items = [], isEnd = pl.key === 'end';
     if (isEnd) {
       var seal = $('seal').getBoundingClientRect(), gx = parseFloat(getComputedStyle(pl.sec.querySelector('.in')).paddingLeft) || 16, gw = 92, gl0 = (W - gw * 3 - U * .02) / 2, ty = seal.top - r.top + 14;
       jobs.push(loadImg(A + 'x_bPp.webp').then(function (im) { items.push({ img: im, x: gl0, y: ty, w: gw, h: gw * 841 / 822 }, { img: im, x: gl0 + gw + U * .01, y: ty, w: gw, h: gw * 841 / 822 }); }));
@@ -401,8 +410,10 @@
     if (keep.length) ctas.forEach(function (a) { var u = new URL(a.href); keep.forEach(function (p) { u.searchParams.set(p[0], p[1]); }); a.href = u.toString(); });
   } catch (e) { /* 기본 주소 유지 */ }
 
-  /* 11/7~11/12 걸음 인증 양식이 정해지면(config.js의 proof) 주 버튼이 인증으로 바뀜 */
+  /* 11/7~11/11 15시 걸음 인증 양식이 정해지면(config.js의 proof) 주 버튼이 인증으로 바뀜 */
   if (CFG.proof && phase() === 'live') ctas.forEach(function (a) { a.href = CFG.proof; if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = '걸음 인증하기'; });
+  /* 마감 뒤에는 응모권 문구를 빼고 사전 등록만 안내 */
+  if (phase() === 'count' || phase() === 'result') ctas.forEach(function (a) { if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = 'StepUp 사전 등록하기'; });
 
   /* ── 하단 고정 버튼: 폰에서 첫 화면 버튼이 나가면 표시, 끝 부분 버튼이 보이면 숨김 ── */
   (function () {
@@ -412,6 +423,17 @@
     addEventListener('scroll', apply, { passive: true }); addEventListener('resize', apply);
     setTimeout(function () { st.classList.add('ready'); apply(); }, 400);
   })();
+
+  /* ── 영상: 눌러야 재생(소리 있음), 데이터는 누른 뒤에만 받는다. 화면에서 벗어나면 멈춤 ── */
+  (function () {
+    var v = $('filmV'), b = $('filmP'); if (!v || !b) return;
+    b.addEventListener('click', function () { b.hidden = true; v.controls = true; var p = v.play(); if (p && p.catch) p.catch(function () { b.hidden = false; v.controls = false; }); });
+    v.addEventListener('ended', function () { v.controls = false; b.hidden = false; try { v.currentTime = 0; v.load(); } catch (e) { /* 그대로 */ } });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { if (!es[0].isIntersecting && !v.paused) v.pause(); }, { threshold: .15 }).observe(v);
+  })();
+
+  /* ── 해시태그 복사 ── */
+  (function () { var b = $('tagcopy'), t = $('tags'); if (!b || !t) return; b.addEventListener('click', function () { var txt = t.textContent, done = function () { b.textContent = '복사됨'; setTimeout(function () { b.textContent = '해시태그 복사'; }, 1600); }; if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, function () { var r = document.createRange(); r.selectNodeContents(t); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }); }); })();
 
   /* ── 복사 ── */
   $('copy').addEventListener('click', function () {
