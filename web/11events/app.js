@@ -31,7 +31,8 @@
   var drips = [], cellsR = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], cells = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], cellsReady = false, relRect = [0, 0, 1, 1];
   /* 합계 → 초콜릿 위치. 숫자 칸 위에서 멈췄다가 222만에 칸 전체를 한 번에 덮는다. 글자 칸 기준으로 layout에서 채움 */
   var FK = [[0, 160], [T2, 860]], revAt = [T1 * .27, T1 * .54, T1], fy = 160, covOn = false;
-  function frontBase(s) { for (var i = 1; i < FK.length; i++) if (s < FK[i][0]) { var a = FK[i - 1], b = FK[i]; return a[1] + (b[1] - a[1]) * Math.max(0, s - a[0]) / (b[0] - a[0]); } return FK[FK.length - 1][1]; }
+  /* 11/7: 첫 화면은 걸음 수와 상관없이 초콜릿이 덮고 크림색 빼빼로가 올라온 모습(111만 상태) 이상으로 */ function frontBase(s) { return frontBase0(Math.max(s, S.pc ? T2 - 1 : T1)); }
+  function frontBase0(s) { for (var i = 1; i < FK.length; i++) if (s < FK[i][0]) { var a = FK[i - 1], b = FK[i]; return a[1] + (b[1] - a[1]) * Math.max(0, s - a[0]) / (b[0] - a[0]); } return FK[FK.length - 1][1]; }
   function wob(x, t, U) { U = U || S.U; return U * (.026 * Math.sin(x / (U * .47) + 1.3 + t * .012) + .012 * Math.sin(x / (U * .19) + .4 - t * .009) + .006 * Math.sin(x / (U * .083) + 2.1 + t * .007)); }
   function sheetY(x, t, base) { var u = (x - S.W / 2) / (S.W / 2); return (base === undefined ? fy : base) + S.bowE * (1 - u * u) + S.wkE * wob(x, t); }
   var D8 = [[.045, .07, .046], [.165, .24, .040], [.30, .05, .052], [.395, .13, .044], [.545, .37, .036], [.655, .055, .05], [.785, .19, .040], [.93, .09, .044]];
@@ -222,7 +223,7 @@
 
   /* ── 움직임 ── */
   var lastStep = 0, raf = 0;
-  function revTargets() { for (var q = 0; q < 3; q++) revT[q] = cur >= revAt[q] ? 1 : 0; }
+  function revTargets() { for (var q = 0; q < 3; q++) revT[q] = Math.max(cur, T1) >= revAt[q] ? 1 : 0; }
   /* 숫자 칸 색은 칸 가운데를 지날 때 통째로 바뀐다 */
   function renderInk() { var on = fy > S.covY; if (on !== covOn) { covOn = on; hero.classList.toggle('cov', on); } }
   var revT = [0, 0, 0];
@@ -323,9 +324,12 @@
     var W = hero.clientWidth, H = hero.clientHeight, sameW = W === lastW; if (sameW && H === lastH) { numLen = 0; renderState(); return; } lastW = W; lastH = H;
     S.W = W; S.H = H; S.wide = false; S.U = Math.min(W, H * .62); S.bead = S.U * (S.wide ? .068 : .082); S.bow = S.U * (S.wide ? .07 : .03); S.wk = S.wide ? 1 : .7;
     numLen = 0; renderState();
+    /* PC(1024~): 오른쪽 카드에 숫자·버튼·고지를 함께 담고, 초콜릿은 첫 화면 전체를 덮음 */
+    S.pc = W >= 1024; var hc0 = hero.querySelector('.cta'), lg0 = hero.querySelector('.legal');
+    if (S.pc && hc0.parentNode !== elCount[0]) { elCount[0].appendChild(hc0); elCount[0].appendChild(lg0); } else if (!S.pc && hc0.parentNode === elCount[0]) { hero.appendChild(lg0); hero.appendChild(hc0); }
     var heroTop = hero.getBoundingClientRect().top, hr = head.getBoundingClientRect(), hb = hr.bottom - heroTop, cr0 = elCount[0].getBoundingClientRect(), cTop = cr0.top - heroTop, cBot = cr0.bottom - heroTop;
-    buildDrips(); var gx = parseFloat(getComputedStyle(head).left) || 16, gap = Math.max(13, S.U * .034), wm = .044 * S.U * S.wk, lim = cTop - 6, slack = Math.max(8, H * .018);
-    S.lim = lim; S.yA = lim - S.bow - wm; S.covY = (cTop + cBot) * .5; S.calmY = cTop - 2; S.topY = hb; S.cH = cBot - cTop;
+    buildDrips(); var gx = parseFloat(getComputedStyle(head).left) || 16, gap = Math.max(13, S.U * .034), wm = .044 * S.U * S.wk, lim = S.pc ? H - 30 : cTop - 6, slack = Math.max(8, H * .018);
+    S.lim = lim; S.yA = lim - S.bow - wm; S.covY = S.pc ? 1e9 : (cTop + cBot) * .5; S.calmY = S.pc ? H : cTop - 2; S.topY = hb; S.cH = cBot - cTop;
     /* 글자 칸: 숫자 칸 위 남은 높이 안에. 111만에서 셋 다 덮이도록 아래 끝을 초콜릿 위치에 맞춘다 */
     var ar = [822 / 841, 822 / 841, 832 / 814], bot = S.yA - slack - wm - 3 + S.bow * .1;
     if (!S.wide) {
@@ -384,7 +388,7 @@
       buildRelief(g, items, rect, Math.max(.9, sc), (big || 60) * .017, (big || 60) * .042);
       var bead = U * .062, D = new Float32Array(56), over = parseFloat(getComputedStyle(pl.sec).getPropertyValue('--drip')) || 0, front = over ? H - over - bead * .4 : H + 900, t = pl.t;
       if (over) {
-        var tb = D8; for (var i = 0; i < tb.length; i++) { var ti = (i + pl.t) % tb.length, dx = (pl.tone === 'dark' ? 1 - tb[i][0] : tb[i][0]) * W, L = Math.min(tb[ti][1] * U * 1.1, over * .62), base = front + U * (.026 * Math.sin(dx / (U * .47) + 1.3 + t * .05) + .012 * Math.sin(dx / (U * .19) + .4 - t * .037) + .006 * Math.sin(dx / (U * .083) + 2.1 + t * .03)); D[i * 4] = dx; D[i * 4 + 1] = base - bead * 1.15; D[i * 4 + 2] = base + L; D[i * 4 + 3] = tb[i][2] * U; }
+        var tb = D8; for (var i = 0; i < tb.length; i++) { var ti = (i + pl.t) % tb.length, dx = (pl.tone === 'dark' ? 1 - tb[i][0] : tb[i][0]) * W, L = Math.min(tb[ti][1] * U * 1.1, over * .5) /* 11/7: 그림자까지 판 안에 들어오게 */, base = front + U * (.026 * Math.sin(dx / (U * .47) + 1.3 + t * .05) + .012 * Math.sin(dx / (U * .19) + .4 - t * .037) + .006 * Math.sin(dx / (U * .083) + 2.1 + t * .03)); D[i * 4] = dx; D[i * 4 + 1] = base - bead * 1.15; D[i * 4 + 2] = base + L; D[i * 4 + 3] = tb[i][2] * U; }
       }
       var cream = pl.tone === 'cream';
       applyScene(g, { tone: pl.tone, calmk: 1, chk: cream ? .78 : pl.tone === 'milk' ? .86 : isEnd ? .66 : .78, ghost: isEnd ? 1 : 0, W: W, H: H, t: t, U: U, f: front, bow: 0, bead: bead, top: pl.top ? 46 : -1e4, topOp: pl.top ? 1 : 0, ox: 0, oy: S.H, bu: S.U, px: 1 / ps, plate: 1, wave: cream ? .55 : .38, dr: pl.t * .13, expo: .96, bk: 1 / 620, D: D, c0: new Float32Array([0, 0, W, H]), c1: new Float32Array([0, 0, 0, 0]), c2: new Float32Array([0, 0, 0, 0]), rev: new Float32Array([1, 0, 0]) });
@@ -488,7 +492,7 @@
   else { if (phase() === 'before') total = BEFORE_FILL; else if (typeof CFG.total === 'number') total = CFG.total; else if (!CFG.url) total = BEFORE_FILL; renderState(); readTotal(); if (CFG.url) { setInterval(readTotal, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) readTotal(); }); } }
   if (REDUCED) { snap(performance.now()); } else {
     raf = requestAnimationFrame(frame);
-    if (!PREVIEW && phase() === 'live') setTimeout(function () { introT0 = performance.now(); }, 1200);
+    
     /* 화면 갱신이 멈춘 환경(썸네일·숨은 탭)에서도 숫자와 초콜릿은 맞게 */
     setInterval(function () { var n = performance.now(); if (!introT0 && n - lastStep > 900 && (cur !== total || rev[0] !== revT[0] || rev[1] !== revT[1] || rev[2] !== revT[2])) snap(n); }, 700);
   }
