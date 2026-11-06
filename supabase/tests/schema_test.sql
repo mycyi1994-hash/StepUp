@@ -10268,6 +10268,36 @@ begin
   perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'approved')::int >= 1, '검토 요약');
 end $$;
 reset role;
+-- 5일 개근(0092): 나머지 네 날도 11,111걸음 이상 승인되면 응모권 합계 × 1.5(올림). 하루라도 모자라면 그대로
+insert into economy.walkingday_proofs (entry_id, epoch_day, steps, status, reviewed_at, reviewed_by)
+select w.id, d, case when d = 20767 then 11000 else 12000 end, 'approved', now(), '검사'
+from public.waitlist_entries w cross join generate_series(20764, 20767) d
+where w.email = 'friend@runnermail.com'
+on conflict (entry_id, epoch_day) do update
+  set steps = excluded.steps, status = 'approved', reviewed_at = now(), reviewed_by = '검사';
+set role anon;
+do $$
+declare v_friend jsonb; v_ref jsonb;
+begin
+  select x into v_friend from jsonb_array_elements(public.walkingday_review_entries(pg_temp.fx('wd-key'))) x where x->>'email' = 'friend@runnermail.com';
+  perform pg_temp.ok((v_friend->>'approved_days')::int = 4 and (v_friend->>'tickets')::int = 9,
+    '11,111걸음이 모자란 날은 달성 일수에 넣지 않는다 — 4일이면 개근 아님(0092)');
+end $$;
+reset role;
+update economy.walkingday_proofs p set steps = 12000
+  from public.waitlist_entries w where w.id = p.entry_id and w.email = 'friend@runnermail.com' and p.epoch_day = 20767;
+set role anon;
+do $$
+declare v_entries jsonb; v_friend jsonb; v_ref jsonb;
+begin
+  v_entries := public.walkingday_review_entries(pg_temp.fx('wd-key'));
+  select x into v_friend from jsonb_array_elements(v_entries) x where x->>'email' = 'friend@runnermail.com';
+  select x into v_ref from jsonb_array_elements(v_entries) x where x->>'email' = 'referrer@runnermail.com';
+  perform pg_temp.ok((v_friend->>'approved_days')::int = 5 and (v_friend->>'tickets')::int = 14,
+    '5일 개근: 9장 × 1.5 = 13.5 → 14장(0092)');
+  perform pg_temp.ok((v_ref->>'tickets')::int = 3, '개근은 본인 응모권만 — 초대한 사람은 그대로(0092)');
+end $$;
+reset role;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
