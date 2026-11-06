@@ -2,6 +2,7 @@ name: Native Shoes Capture
 on:
   push:
     branches: [codex/shoes-capture-20261107]
+    paths: ['app/src/androidTest/**', 'tools/capture_shoes_native.sh']
   workflow_dispatch:
 permissions:
   contents: read

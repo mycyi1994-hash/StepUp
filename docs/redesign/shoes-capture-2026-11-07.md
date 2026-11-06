@@ -15,5 +15,10 @@ Capture workflow builds once, then runs each group on a fresh API 35 emulator.
 Artifacts include original PNGs, revision hashes, instrumentation and Android logs.
 No production account, transaction, release upload or application UI is changed.
 
-Validation: pending cloud build and per-group capture results. Failed assertions
-remain failures; any partial captures must be labelled separately from test results.
+Validation: run 42247814249 built the app/test APKs and passed resources/copy/design
+checks. MyShoes, detail flow/states, repair, upgrade, draw scenes/sizes passed.
+Linked destinations and the first two draw-flow methods passed. Two final methods
+stalled after earlier methods in their emulator sessions: catalog shoe selection
+and signed-out/load-failed draw. Their partial job failures are preserved. A recovery
+workflow reuses the identical APK artifacts and runs each remaining method on its
+own fresh emulator; no app or test source changes are required.
