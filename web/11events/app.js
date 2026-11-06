@@ -31,9 +31,9 @@
   var drips = [], cellsR = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], cells = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], cellsReady = false, relRect = [0, 0, 1, 1];
   /* 합계 → 초콜릿 위치. 숫자 칸 위에서 멈췄다가 222만에 칸 전체를 한 번에 덮는다. 글자 칸 기준으로 layout에서 채움 */
   var FK = [[0, 160], [T2, 860]], revAt = [T1 * .27, T1 * .54, T1], fy = 160, covOn = false;
-  /* 11/7: 첫 화면은 걸음 수와 상관없이 초콜릿이 덮고 크림색 빼빼로가 올라온 모습(111만 상태) 이상으로 */ function frontBase(s) { return frontBase0(Math.max(s, S.pc ? T2 - 1 : T1)); }
+  /* 11/7: 첫 화면은 걸음 수와 상관없이 초콜릿이 덮고 크림색 빼빼로가 올라온 모습(111만 상태) 이상으로 */ function frontBase(s) { return frontBase0(Math.max(s, T1)); }
   function frontBase0(s) { for (var i = 1; i < FK.length; i++) if (s < FK[i][0]) { var a = FK[i - 1], b = FK[i]; return a[1] + (b[1] - a[1]) * Math.max(0, s - a[0]) / (b[0] - a[0]); } return FK[FK.length - 1][1]; }
-  function wob(x, t, U) { U = U || S.U; return U * (.026 * Math.sin(x / (U * .47) + 1.3 + t * .012) + .012 * Math.sin(x / (U * .19) + .4 - t * .009) + .006 * Math.sin(x / (U * .083) + 2.1 + t * .007)); }
+  function wob(x, t, U) { U = U || S.U; return U * (.026 * Math.sin(x / (U * .47) + 1.3 + t * .05) + .012 * Math.sin(x / (U * .19) + .4 - t * .037) + .006 * Math.sin(x / (U * .083) + 2.1 + t * .03)); }
   function sheetY(x, t, base) { var u = (x - S.W / 2) / (S.W / 2); return (base === undefined ? fy : base) + S.bowE * (1 - u * u) + S.wkE * wob(x, t); }
   var D8 = [[.045, .07, .046], [.165, .24, .040], [.30, .05, .052], [.395, .13, .044], [.545, .37, .036], [.655, .055, .05], [.785, .19, .040], [.93, .09, .044]];
   var D14 = [[.03, .10, .042], [.085, .17, .034], [.16, .05, .046], [.215, .22, .030], [.29, .07, .044], [.365, .13, .036], [.43, .045, .048], [.50, .24, .032], [.575, .07, .044], [.63, .42, .030], [.71, .06, .046], [.79, .30, .032], [.86, .10, .042], [.95, .19, .036]];
@@ -54,7 +54,7 @@
     updateDrops(lim);
   }
   /* 방울 주기 6.5~10초: 0~.8 동안 늘어나고 .8에서 떨어진 뒤 다시 짧아짐 */
-  function dripCycle(i, t) { return null; /* 11/7: 늘었다 줄었다 하는 흘러내림은 징그러워 멈춤 */ var T = 6.5 + (i * 1.37) % 3.5, ph = (t / T + i * .371) % 1, g; if (ph < .8) { var a = ph / .8; g = 1 + .42 * a * a; } else { var r = (ph - .8) / .2; g = 1 + .42 * Math.pow(1 - r, 3); } return { g: g, dt: (ph >= .8 ? ph - .8 : ph + .2) * T }; }
+  function dripCycle(i, t) { /* 11/7: 은은하게만 늘었다 줄었다 */ var T = 9 + (i * 1.37) % 4, ph = (t / T + i * .371) % 1, g; if (ph < .8) { var a = ph / .8; g = 1 + .16 * a * a; } else { var r = (ph - .8) / .2; g = 1 + .16 * Math.pow(1 - r, 3); } return { g: g, dt: (ph >= .8 ? ph - .8 : ph + .2) * T }; }
   /* 떨어진 방울은 가속하며 내려가다 숫자 칸 위에서 사라짐 */
   function updateDrops(lim) { PU.fill(0); return; /* 11/7: 떨어지는 방울 없음 */ var act = []; for (var i = 0; i < drips.length; i++) { var d = drips[i]; if (!(d.dt >= 0) || d.dt > 2.4) continue; var y = d.relY + S.U * (.06 * d.dt + 1.05 * d.dt * d.dt), r = d.re * .78, fade = clamp((lim - y) / (S.U * .1), 0, 1) * clamp(d.dt / .12, 0, 1); if (fade <= .01) continue; act.push([d.x, y, r * (.55 + .45 * fade), fade, d.dt]); }
     act.sort(function (a, b) { return a[4] - b[4]; }); for (var k = 0; k < Math.min(6, act.length); k++) PU.set(act[k].slice(0, 4), k * 4); }
@@ -71,12 +71,12 @@
   var FS = [
     '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
     'varying vec2 vP;uniform vec2 uR;uniform float uWave,uT,uU,uF,uBow,uBead,uTop,uPx,uPlate,uDr,uExpo,uBisK,uBU,uTopOp,uWK,uCalmY,uCalmK,uChK,uTopY,uGhost;uniform vec2 uOff;uniform vec4 uD[14];uniform vec4 uP[6];uniform vec4 uRelR,uC0,uC1,uC2;uniform float uSa;uniform vec3 uRev,uAlbD,uAlbW,uFlat,uSc;uniform sampler2D uB,uRel;',
-    'float wob(float x){float U=uU;return U*(.026*sin(x/(U*.47)+1.3+uT*.012)+.012*sin(x/(U*.19)+.4-uT*.009)+.006*sin(x/(U*.083)+2.1+uT*.007));}',
-    'float wobD(float x){float U=uU;return .0553*cos(x/(U*.47)+1.3+uT*.012)+.0632*cos(x/(U*.19)+.4-uT*.009)+.0723*cos(x/(U*.083)+2.1+uT*.007);}',
+    'float wob(float x){float U=uU;return U*(.026*sin(x/(U*.47)+1.3+uT*.05)+.012*sin(x/(U*.19)+.4-uT*.037)+.006*sin(x/(U*.083)+2.1+uT*.03));}',
+    'float wobD(float x){float U=uU;return .0553*cos(x/(U*.47)+1.3+uT*.05)+.0632*cos(x/(U*.19)+.4-uT*.037)+.0723*cos(x/(U*.083)+2.1+uT*.03);}',
     'float inR(vec2 p,vec4 c){return step(c.x,p.x)*step(p.x,c.z)*step(c.y,p.y)*step(p.y,c.w);}',
     'float gs(float x,float c,float w){x=(x-c)/w;return exp(-x*x);}',
     /* 녹은 표면 높이: 흐름 방향(세로)으로 늘어진 넓은 물결 + 드문 주름 + 턱 뒤 둔덕 + 턱과 나란한 잔물결 */
-    'float surf(vec2 p){vec2 q=p/uU;vec2 a=vec2(q.x*1.9,q.y*1.35-uT*.008);a+=.42*vec2(sin(a.y*1.7+.8+.6*sin(a.x*.9)),sin(a.x*1.3-.6+uT*.006));',
+    'float surf(vec2 p){vec2 q=p/uU;vec2 a=vec2(q.x*1.9,q.y*1.35-uT*.034);a+=.42*vec2(sin(a.y*1.7+.8+.6*sin(a.x*.9)),sin(a.x*1.3-.6+uT*.03));',
     'float w1=sin(a.x*1.25+.8*sin(a.y*1.1));float w2=sin(a.x*2.6+1.4*sin(a.y*.8+w1)+1.7);float w3=sin(a.x*4.7+a.y*1.1+2.1*w1);return .50*w1+.17*w2+.05*sqrt(w3*w3+.02);}',
     'void main(){vec2 p=vP;float hw=.5*uR.x,u=(p.x-hw)/hw,Rb=uBead,c=7.;',
     'float sk=0.,skx=0.;for(int j=0;j<14;j++){vec4 D=uD[j];if(D.w<=0.)continue;float L0=D.z-D.y-Rb*1.15;float A0=min(L0*.85,D.w*1.75);float W0=D.w*2.2;float xx=(p.x-D.x)/W0;if(abs(xx)<3.){float g0=exp(-xx*xx);sk+=A0*g0;skx+=A0*g0*(-2.*xx/W0);}}',
@@ -94,7 +94,7 @@
     'bis*=(1.-.20*u*u)*(1.03-.10*u)*(1.-.06*sin(pb.y/(uBU*.37)+2.*sin(pb.x/(uBU*.6))));',
     /* 글자 자리 비스킷은 구멍 무늬를 눌러 잔잔하게 */
     'float cz=smoothstep(uCalmY-uU*.12,uCalmY,p.y)*uCalmK;vec3 bisC=vec3(.93,.80,.60)*(1.+.10*(dot(t1,vec3(.33))-.62));bis=mix(bis,bisC,cz);',
-    'float sh=smoothstep(-2.5,.25,S2)*(1.-.6*cz*(1.-uPlate));float cont=smoothstep(-.7,.0,S);vec3 bisS=bis*mix(vec3(1.),vec3(.36,.22,.13),sh*.86);bisS*=1.-.42*cont;',
+    'float sh=smoothstep(mix(-2.5,-1.0,uPlate),.25,S2)*(1.-.6*cz*(1.-uPlate));float cont=smoothstep(-.7,.0,S);vec3 bisS=bis*mix(vec3(1.),vec3(.36,.22,.13),sh*mix(.86,.34,uPlate));bisS*=1.-.42*cont;',
     /* 양각 */
     'vec2 ruv=(p-uRelR.xy)/(uRelR.zw-uRelR.xy);vec4 rl=texture2D(uRel,ruv);float rv0=uRev.x*inR(p,uC0)+uRev.y*inR(p,uC1)+uRev.z*inR(p,uC2);float rv=rv0*smoothstep(.72,1.,S);',
     'vec2 sR=(rl.rg-.50196)*2.5*rv;float rH=rl.b*1.28-.28;float rTop=clamp(rH,0.,1.)*rv,rTr=clamp(-rH/.28,0.,1.)*rv;',
@@ -102,7 +102,7 @@
     'float cAny=max(max(inR(p,uC0),inR(p,uC1)),inR(p,uC2));float gh=smoothstep(.02,.28,rH)*cAny*uGhost;bisS=mix(bisS,vec3(.26,.135,.06),gh*.9);',
     /* 표면 기울기 */
     'float e=1.5;float h0=surf(p),hx=surf(p+vec2(e,0.)),hy=surf(p+vec2(0.,e));vec2 sW=vec2(hx-h0,hy-h0)/e*uU*.1;sW*=uWave;float dd=max(d,0.);float crE=exp(-dd/(Rb*1.7));float riE=exp(-dd/(Rb*5.));float riP=dd/(Rb*1.2)+1.4*sin(p.x/(uU*.33));sW+=gd*uU*.1*(-.30/(Rb*1.7)*crE+.12*riE*(cos(riP)/(Rb*1.2)-sin(riP)/(Rb*5.)))*smoothstep(0.,Rb*.55,d);float wm=smoothstep(.0,.9,S)*(1.-.72*rTop);',
-    'float Sc=clamp(S,.018,1.3);float Hh=sqrt(Sc);vec2 sL=gA*.5/Hh;vec2 sC=vec2(-u*.27,0.);vec2 mic=vec2(t1.r-t2.g,t2.r-t1.g)*.012;',
+    'float Sc=clamp(S,mix(.018,.075,uPlate),1.3);float Hh=sqrt(Sc);vec2 sL=gA*mix(.5,.3,uPlate)/Hh;vec2 sC=vec2(-u*.27,0.);vec2 mic=vec2(t1.r-t2.g,t2.r-t1.g)*.012;',
     'vec2 s=sC+sW*wm+sL+sR+mic;vec3 n=normalize(vec3(-s,1.));vec3 V=normalize(vec3((.5*uR-p)/(uR.y*1.7),1.));vec3 Rf=reflect(-V,n);vec2 q=Rf.xy/(abs(Rf.z)+.45);',
     /* 스튜디오 조명: 큰 소프트박스, 오른쪽 띠, 위쪽 띠, 턱을 잡는 낮은 띠, 작은 점광. 천천히 흐른다 */
     'float rg=max(1.-smoothstep(0.,Rb*1.4,d),smoothstep(.03,.33,length(sR)));',
@@ -116,7 +116,7 @@
     'float zf=smoothstep(-.55,.15,Rf.z);float k6=gs(q.y,.17,.09)*zf*prox*smoothstep(0.,Rb*.5,d);',
     'float kw=uPlate>.5?.6:(uR.x/uR.y>1.1?.8:1.);vec3 env=(vec3(1.,.68,.46)*(k1*mix(7.5*kw,8.8,rg)+k2*mix(3.2,3.8,rg)+k3*mix(3.6,6.,rg))+vec3(1.,.90,.80)*(k1c*mix(2.6,3.2,rg)+k4*mix(16.,10.,rg)))*zf+vec3(1.,.80,.62)*k6*1.5;',
     'env+=(vec3(.80,.34,.14)*gs(q.x,cx,.34)*vw*.8+vec3(.36,.15,.07)*smoothstep(1.,-1.,q.y)*.42)*zf;',
-    'env+=vec3(1.,.46,.14)*pow(smoothstep(.45,2.2,q.y),1.2)*1.5*prox;if(uPlate>.5)env*=.22+.78*prox;',
+    'env+=vec3(1.,.46,.14)*pow(smoothstep(.45,2.2,q.y),1.2)*1.5*prox;if(uPlate>.5)env*=.5+.5*prox;',
     /* 재질 */
     'float ndv=max(dot(n,V),0.);float F=min(.045+.955*pow(1.-ndv,5.),.6);vec3 Ld=normalize(vec3(-.55,-.62,.56));float dif=max(dot(n,Ld),0.);float wr=dot(n,Ld)*.5+.5;',
     'vec3 alb=mix(uAlbW,uAlbD,smoothstep(.05,.36,Hh));',
@@ -129,7 +129,7 @@
     /* 합치기: 가장자리는 비스킷 결을 따라 미세하게 들쭉날쭉 */
     'float jit=(dot(t1,vec3(.33))-.62)*.16;float aa=max(length(gS)*uPx,.004);float cov=smoothstep(-aa,aa,S-jit);',
     'float gr=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-.5;',
-    'if(uPlate>.5){if(uTopOp>.5&&p.y<uR.y*.5){vec3 o=mix(bis*(1.-.34*cont),ch,cov)+gr*.012;gl_FragColor=vec4(o,1.);}else{float sa=smoothstep(-1.15,.1,S2)*uSa*(1.-cov);vec3 sc=uSc;vec3 o=(ch+gr*.012)*cov+sc*sa;gl_FragColor=vec4(o,cov+sa);}}',
+    'if(uPlate>.5){if(uTopOp>.5&&p.y<uR.y*.5){vec3 o=mix(bis*(1.-.34*cont),ch,cov)+gr*.012;gl_FragColor=vec4(o,1.);}else{float sa=smoothstep(-.55,.1,S2)*uSa*(1.-cov);vec3 sc=uSc;vec3 o=(ch+gr*.012)*cov+sc*sa;gl_FragColor=vec4(o,cov+sa);}}',
     'else{vec3 o=mix(bisS,ch,cov)+gr*.012;gl_FragColor=vec4(o,1.);}}'
   ].join('\n');
   var UN = ['uP', 'uSa', 'uSc', 'uAlbD', 'uAlbW', 'uFlat', 'uWK', 'uCalmY', 'uCalmK', 'uChK', 'uTopY', 'uGhost', 'uWave', 'uOff', 'uBU', 'uTopOp', 'uR', 'uT', 'uU', 'uF', 'uBow', 'uBead', 'uTop', 'uPx', 'uPlate', 'uDr', 'uExpo', 'uBisK', 'uD', 'uRelR', 'uC0', 'uC1', 'uC2', 'uRev', 'uB', 'uRel'];
@@ -195,7 +195,7 @@
   var cv = $('gl'), G = null, ctx2 = null, tile = new Image(), scale = 1, DU = new Float32Array(56), PU = new Float32Array(24), P0 = new Float32Array(24), lastDraw = 0, heroOn = true, fps = [], lowered = 0;
   var TONE = { dark: [[.030, .0095, .0040], [.15, .052, .017], [.165, .075, .035]], milk: [[.225, .125, .066], [.31, .178, .094], [.36, .238, .148]], cream: [[1.75, 1.26, .84], [1.55, 1.08, .68], [.70, .64, .50]] };
   function applyScene(g, o) {
-    var gl = g.gl, u = g.u, tn = TONE[o.tone || 'dark']; gl.uniform3fv(u.uAlbD, tn[0]); gl.uniform3fv(u.uAlbW, tn[1]); gl.uniform3fv(u.uFlat, tn[2]); var dk = (o.tone || 'dark') === 'dark'; gl.uniform1f(u.uSa, dk ? .62 : .72); gl.uniform3fv(u.uSc, dk ? [.20, .09, .035] : [.12, .05, .018]); gl.uniform2f(u.uR, o.W, o.H); gl.uniform1f(u.uT, o.t); gl.uniform1f(u.uU, o.U); gl.uniform1f(u.uF, o.f); gl.uniform1f(u.uBow, o.bow); gl.uniform1f(u.uBead, o.bead); gl.uniform1f(u.uTop, o.top); gl.uniform1f(u.uPx, o.px); gl.uniform1f(u.uPlate, o.plate); gl.uniform1f(u.uDr, o.dr); gl.uniform1f(u.uExpo, o.expo); gl.uniform1f(u.uBisK, o.bk); gl.uniform1f(u.uWave, o.wave === undefined ? 1 : o.wave); gl.uniform2f(u.uOff, o.ox || 0, o.oy || 0); gl.uniform1f(u.uBU, o.bu || o.U); gl.uniform1f(u.uTopOp, o.topOp || 0); gl.uniform1f(u.uWK, o.wk === undefined ? 1 : o.wk); gl.uniform1f(u.uCalmY, o.calmY === undefined ? -1e4 : o.calmY); gl.uniform1f(u.uCalmK, o.calmk || 0); gl.uniform1f(u.uChK, o.chk || 0); gl.uniform1f(u.uTopY, o.topY === undefined ? -1e4 : o.topY); gl.uniform1f(u.uGhost, o.ghost || 0);
+    var gl = g.gl, u = g.u, tn = TONE[o.tone || 'dark']; gl.uniform3fv(u.uAlbD, tn[0]); gl.uniform3fv(u.uAlbW, tn[1]); gl.uniform3fv(u.uFlat, tn[2]); var dk = (o.tone || 'dark') === 'dark'; gl.uniform1f(u.uSa, dk ? .30 : .26) /* 11/7: 흘러내림 그림자 옅게 */; gl.uniform3fv(u.uSc, dk ? [.20, .09, .035] : [.12, .05, .018]); gl.uniform2f(u.uR, o.W, o.H); gl.uniform1f(u.uT, o.t); gl.uniform1f(u.uU, o.U); gl.uniform1f(u.uF, o.f); gl.uniform1f(u.uBow, o.bow); gl.uniform1f(u.uBead, o.bead); gl.uniform1f(u.uTop, o.top); gl.uniform1f(u.uPx, o.px); gl.uniform1f(u.uPlate, o.plate); gl.uniform1f(u.uDr, o.dr); gl.uniform1f(u.uExpo, o.expo); gl.uniform1f(u.uBisK, o.bk); gl.uniform1f(u.uWave, o.wave === undefined ? 1 : o.wave); gl.uniform2f(u.uOff, o.ox || 0, o.oy || 0); gl.uniform1f(u.uBU, o.bu || o.U); gl.uniform1f(u.uTopOp, o.topOp || 0); gl.uniform1f(u.uWK, o.wk === undefined ? 1 : o.wk); gl.uniform1f(u.uCalmY, o.calmY === undefined ? -1e4 : o.calmY); gl.uniform1f(u.uCalmK, o.calmk || 0); gl.uniform1f(u.uChK, o.chk || 0); gl.uniform1f(u.uTopY, o.topY === undefined ? -1e4 : o.topY); gl.uniform1f(u.uGhost, o.ghost || 0);
     gl.uniform4fv(u.uD, o.D); gl.uniform4fv(u.uP, o.P || P0); gl.uniform4fv(u.uC0, o.c0); gl.uniform4fv(u.uC1, o.c1); gl.uniform4fv(u.uC2, o.c2); gl.uniform3fv(u.uRev, o.rev);
   }
   function drawHero(now) {
@@ -204,7 +204,7 @@
     for (var i = 0; i < 14; i++) { var d = drips[i], o = i * 4; if (d) { DU[o] = d.x; DU[o + 1] = d.y0; DU[o + 2] = d.y1; DU[o + 3] = d.re; } else { DU[o + 3] = 0; } }
     AC0.set(cellsR[0]); AC1.set(cellsR[1]); AC2.set(cellsR[2]); AREV.set(rev);
     var gl = G.gl; gl.viewport(0, 0, cv.width, cv.height);
-    applyScene(G, { wk: S.wkE, calmY: S.calmY, calmk: 1, chk: 1, topY: S.topY, ghost: 1, W: S.W, H: S.H, t: t, U: S.U, f: fy, bow: S.bowE, bead: S.bead, top: -1e4, px: 1 / scale, plate: 0, dr: t * .55, expo: S.wide ? 1.06 : 1.18, bk: 1 / (S.wide ? 780 : 620), bu: S.U, D: DU, P: PU, c0: AC0, c1: AC1, c2: AC2, rev: AREV });
+    applyScene(G, { wk: S.wkE, wave: .4, calmY: S.calmY, calmk: 0, chk: 1, topY: S.topY, ghost: 1, W: S.W, H: S.H, t: t, U: S.U, f: fy, bow: S.bowE, bead: S.bead, top: -1e4, px: 1 / scale, plate: 0, dr: t * .55, expo: S.wide ? 1.06 : 1.18, bk: 1 / (S.wide ? 780 : 620), bu: S.U, D: DU, P: PU, c0: AC0, c1: AC1, c2: AC2, rev: AREV });
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   function draw2D(t) {
@@ -391,7 +391,7 @@
         var tb = D8; for (var i = 0; i < tb.length; i++) { var ti = (i + pl.t) % tb.length, dx = (pl.tone === 'dark' ? 1 - tb[i][0] : tb[i][0]) * W, L = Math.min(tb[ti][1] * U * 1.1, over * .5) /* 11/7: 그림자까지 판 안에 들어오게 */, base = front + U * (.026 * Math.sin(dx / (U * .47) + 1.3 + t * .05) + .012 * Math.sin(dx / (U * .19) + .4 - t * .037) + .006 * Math.sin(dx / (U * .083) + 2.1 + t * .03)); D[i * 4] = dx; D[i * 4 + 1] = base - bead * 1.15; D[i * 4 + 2] = base + L; D[i * 4 + 3] = tb[i][2] * U; }
       }
       var cream = pl.tone === 'cream';
-      applyScene(g, { tone: pl.tone, calmk: 1, chk: cream ? .78 : pl.tone === 'milk' ? .86 : isEnd ? .66 : .78, ghost: isEnd ? 1 : 0, W: W, H: H, t: t, U: U, f: front, bow: 0, bead: bead, top: pl.top ? 46 : -1e4, topOp: pl.top ? 1 : 0, ox: 0, oy: S.H, bu: S.U, px: 1 / ps, plate: 1, wave: cream ? .55 : .38, dr: pl.t * .13, expo: .96, bk: 1 / 620, D: D, c0: new Float32Array([0, 0, W, H]), c1: new Float32Array([0, 0, 0, 0]), c2: new Float32Array([0, 0, 0, 0]), rev: new Float32Array([1, 0, 0]) });
+      applyScene(g, { tone: pl.tone, calmk: pl.top ? 0 : 1, chk: cream ? .78 : pl.tone === 'milk' ? .86 : isEnd ? .66 : .78, ghost: isEnd ? 1 : 0, W: W, H: H, t: t, U: U, f: front, bow: 0, bead: bead, top: pl.top ? 46 : -1e4, topOp: pl.top ? 1 : 0, ox: 0, oy: S.H, bu: S.U, px: 1 / ps, plate: 1, wave: cream ? .55 : .38, dr: pl.t * .13, expo: .96, bk: 1 / 620, D: D, c0: new Float32Array([0, 0, W, H]), c1: new Float32Array([0, 0, 0, 0]), c2: new Float32Array([0, 0, 0, 0]), rev: new Float32Array([1, 0, 0]) });
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       pl.cv.width = off.width; pl.cv.height = off.height; pl.cv.getContext('2d').drawImage(off, 0, 0); pl.done = W;
     }).catch(function (e) { console.warn(e); });
