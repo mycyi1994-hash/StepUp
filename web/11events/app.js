@@ -102,7 +102,7 @@
     'float cAny=max(max(inR(p,uC0),inR(p,uC1)),inR(p,uC2));float gh=smoothstep(.02,.28,rH)*cAny*uGhost;bisS=mix(bisS,vec3(.26,.135,.06),gh*.9);',
     /* 표면 기울기 */
     'float e=1.5;float h0=surf(p),hx=surf(p+vec2(e,0.)),hy=surf(p+vec2(0.,e));vec2 sW=vec2(hx-h0,hy-h0)/e*uU*.1;sW*=uWave;float dd=max(d,0.);float crE=exp(-dd/(Rb*1.7));float riE=exp(-dd/(Rb*5.));float riP=dd/(Rb*1.2)+1.4*sin(p.x/(uU*.33));sW+=gd*uU*.1*(-.30/(Rb*1.7)*crE+.12*riE*(cos(riP)/(Rb*1.2)-sin(riP)/(Rb*5.)))*smoothstep(0.,Rb*.55,d);float wm=smoothstep(.0,.9,S)*(1.-.72*rTop);',
-    'float Sc=clamp(S,.018,1.3);float Hh=sqrt(Sc);vec2 sL=gA*.5/Hh;vec2 sC=vec2(-u*.27,0.);vec2 mic=vec2(t1.r-t2.g,t2.r-t1.g)*.012;',
+    'float Sc=clamp(S,mix(.018,.075,uPlate),1.3);float Hh=sqrt(Sc);vec2 sL=gA*mix(.5,.3,uPlate)/Hh;vec2 sC=vec2(-u*.27,0.);vec2 mic=vec2(t1.r-t2.g,t2.r-t1.g)*.012;',
     'vec2 s=sC+sW*wm+sL+sR+mic;vec3 n=normalize(vec3(-s,1.));vec3 V=normalize(vec3((.5*uR-p)/(uR.y*1.7),1.));vec3 Rf=reflect(-V,n);vec2 q=Rf.xy/(abs(Rf.z)+.45);',
     /* 스튜디오 조명: 큰 소프트박스, 오른쪽 띠, 위쪽 띠, 턱을 잡는 낮은 띠, 작은 점광. 천천히 흐른다 */
     'float rg=max(1.-smoothstep(0.,Rb*1.4,d),smoothstep(.03,.33,length(sR)));',
@@ -116,7 +116,7 @@
     'float zf=smoothstep(-.55,.15,Rf.z);float k6=gs(q.y,.17,.09)*zf*prox*smoothstep(0.,Rb*.5,d);',
     'float kw=uPlate>.5?.6:(uR.x/uR.y>1.1?.8:1.);vec3 env=(vec3(1.,.68,.46)*(k1*mix(7.5*kw,8.8,rg)+k2*mix(3.2,3.8,rg)+k3*mix(3.6,6.,rg))+vec3(1.,.90,.80)*(k1c*mix(2.6,3.2,rg)+k4*mix(16.,10.,rg)))*zf+vec3(1.,.80,.62)*k6*1.5;',
     'env+=(vec3(.80,.34,.14)*gs(q.x,cx,.34)*vw*.8+vec3(.36,.15,.07)*smoothstep(1.,-1.,q.y)*.42)*zf;',
-    'env+=vec3(1.,.46,.14)*pow(smoothstep(.45,2.2,q.y),1.2)*1.5*prox;if(uPlate>.5)env*=.22+.78*prox;',
+    'env+=vec3(1.,.46,.14)*pow(smoothstep(.45,2.2,q.y),1.2)*1.5*prox;if(uPlate>.5)env*=.5+.5*prox;',
     /* 재질 */
     'float ndv=max(dot(n,V),0.);float F=min(.045+.955*pow(1.-ndv,5.),.6);vec3 Ld=normalize(vec3(-.55,-.62,.56));float dif=max(dot(n,Ld),0.);float wr=dot(n,Ld)*.5+.5;',
     'vec3 alb=mix(uAlbW,uAlbD,smoothstep(.05,.36,Hh));',
