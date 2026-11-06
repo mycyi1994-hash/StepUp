@@ -246,6 +246,11 @@ if [[ "$suite" == "community" ]]; then
   mkdir -p screen-gallery/shoe-detail-results
   cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-detail-results/ || true
   pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-detail-v1/. screen-gallery/shoe-detail-v1/ || status=1
+  # 신발 상세 번호 옆 수리하기(2026-11-07) — 기기 폭 · 360 · 390 · 430dp · 큰 글씨 · 긴 이름 · 밝은 테마, 누르면 시트만 열린다
+  run_instrumentation shoe-repair-button "com.stepup.android.ShoeCareDesignTest#repairButton"
+  mkdir -p screen-gallery/shoe-repair-button-results
+  cp -R app/build/outputs/androidTest-results/. screen-gallery/shoe-repair-button-results/ || true
+  pull_captures /sdcard/Android/data/com.stepup.android/files/shoe-care-blue/. screen-gallery/shoe-care-blue/ || status=1
   # 신발 강화(파란 톤 v4 강화 · 재료 신발 3개, 0054 forge-v2) — UP01 ~ UP15 · UP18 장면 · 일반 신발 강화 · 360dp · 큰 글씨
   run_instrumentation shoe-upgrade "com.stepup.android.ShoeUpgradeDesignTest"
   mkdir -p screen-gallery/shoe-upgrade-results
