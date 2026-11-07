@@ -421,6 +421,14 @@
     if (keep.length) ctas.forEach(function (a) { var u = new URL(a.href); keep.forEach(function (p) { u.searchParams.set(p[0], p[1]); }); a.href = u.toString(); });
   } catch (e) { /* 기본 주소 유지 */ }
 
+  /* ── 방문 통계(GA4 — ga.js 의 wdTrack, 운영 주소에서만): 이벤트 이름 · 자리만, 개인 정보 없음. 인플루언서별 유입(utm)은 GA 가 주소에서 읽는다 ── */
+  function track(name, params) { try { if (window.wdTrack) window.wdTrack(name, params || {}); } catch (e) { /* 통계는 화면을 막지 않는다 */ } }
+  ctas.forEach(function (a) {
+    a.addEventListener('click', function () {
+      track('cta_click', { cta_place: a.id === 'sticky' ? 'sticky' : hero.contains(a) ? 'top' : 'end', cta_kind: /\/11events\/proof/.test(a.href) ? 'proof' : 'join' });
+    });
+  });
+
   /* 11/7~11/11 15시 걸음 인증 양식이 정해지면(config.js의 proof) 주 버튼이 인증으로 바뀜 */
   if (CFG.proof && phase() === 'live') ctas.forEach(function (a) { a.href = CFG.proof; if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = '걸음 인증하기'; });
   /* 마감 뒤에는 응모권 문구를 빼고 사전 등록만 안내 */
@@ -513,10 +521,15 @@
       try { if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { fb.textContent = msg; }, fail); else fail(); } catch (e) { fail(); }
     }
     function close() { if (d.close) d.close(); else d.removeAttribute('open'); }
-    o.addEventListener('click', function () { fb.textContent = ''; if (d.showModal) d.showModal(); else d.setAttribute('open', ''); });
+    o.addEventListener('click', function () { fb.textContent = ''; if (d.showModal) d.showModal(); else d.setAttribute('open', ''); track('share_open'); });
     $('shareX').addEventListener('click', close); $('shareClose').addEventListener('click', close);
     d.addEventListener('click', function (e) { if (e.target === d) close(); });
-    $('shareCopy').addEventListener('click', function () { copy('문구를 복사했어요'); });
-    $('shI').addEventListener('click', function () { copy('문구를 복사했어요. 인스타그램에서 이미지와 함께 붙여 넣어 주세요'); });
+    $('shareCopy').addEventListener('click', function () { copy('문구를 복사했어요'); track('share', { method: 'copy' }); });
+    $('shI').addEventListener('click', function () { copy('문구를 복사했어요. 인스타그램에서 이미지와 함께 붙여 넣어 주세요'); track('share', { method: 'instagram' }); });
+    $('shX').addEventListener('click', function () { track('share', { method: 'x' }); });
+    $('shT').addEventListener('click', function () { track('share', { method: 'threads' }); });
+    [].forEach.call(d.querySelectorAll('a.sdb[download]'), function (a) {
+      a.addEventListener('click', function () { track('share', { method: /\.mp4$/.test(a.getAttribute('href')) ? 'video' : 'image' }); });
+    });
   })();
 })();

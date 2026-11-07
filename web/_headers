@@ -10,6 +10,7 @@
 # 홈페이지(아래 '/' 줄에 함께 — 같은 경로를 두 번 적으면 뒤 것만 쓰인다) · 초대(크루 /c/* · 번개 /f/*) · 약관 — 스크립트는 이 사이트 것과 아래 해시의 인라인 스크립트만(2026-11-02 보안 강화).
 # XSS 가 끼어들어도 다른 곳의 스크립트를 불러오거나 몰래 보내지 못하게. 인라인 <script> 를 고치면 해시를 다시 넣는다
 # (web/test/csp.test.js 가 맞대어 본다). 사람 확인(Turnstile) · 유튜브 · Supabase · 어테스터 워커 · Cloudflare 방문 통계(Pages 가 넣는 beacon)만 밖으로 연다.
+# 홈페이지(/ga.js)와 워킹데이(/11events* — /11events/ga.js)는 Google Analytics 4(2026-11-07 — 인플루언서 utm 측정)도 연다: googletagmanager · google-analytics.
 /c/*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-VsN7ZbpM+OOfrxAm+GM961HzJM+T3Ddtbqot60sQOVQ=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /f/*
@@ -26,7 +27,7 @@
 # 합계 · 인증 제출 · SNS 게시물 제출(0093) · 검토는 Supabase(0090). GA4 는 ga.js(설정 ga 에 측정 ID 를 넣으면 켜짐)라 googletagmanager · google-analytics 를 연다. 설정(assets/config.js)을 고치면 바로 닿게 매번 확인한다. 검토 페이지는 검색에 싣지 않는다.
 /11events*
   Cache-Control: no-cache
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://www.googletagmanager.com; font-src 'self' data:; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self' data:; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 /11events/review*
   X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
@@ -51,10 +52,10 @@
 # 같은 이름으로 갱신되는 홈페이지 파일은 다시 방문할 때 최신 버전을 확인한다.
 /
   Cache-Control: no-cache
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev https://cloudflareinsights.com; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 /index.html
   Cache-Control: no-cache
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev https://cloudflareinsights.com; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-B83lrk5l0NMtojibDWB+cQORA/6lQ1isxYw3337BXLQ=' 'sha256-YB6CGXwnbeXdtBBxAx8daudxpAMv8xpAU58f5v+tlx0=' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self' data:; media-src 'self'; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://stepup-attester.gana003.workers.dev https://cloudflareinsights.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 /styles.css
   Cache-Control: no-cache
 /site.js
