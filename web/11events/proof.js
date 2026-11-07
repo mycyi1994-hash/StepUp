@@ -129,7 +129,7 @@
         if (d && d.ok) {
           try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
           var day = 7 + (+dayEl.value - DAY0);
-          $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 11111 ? '담당자가 확인하면 응모권에 반영돼요.' : '11,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
+          $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 1111 ? '담당자가 확인하면 응모권에 반영돼요.' : '1,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
           form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
           if (window.wdTrack) window.wdTrack('walkingday_proof_submit', { day: day });
         } else {
@@ -148,9 +148,9 @@
 
   /* ── SNS 게시물 링크 제출 — 서버 walkingday_sns_submit(0093) · 친구 초대 링크 walkingday_invite_link(0094). #sns · #invite 로 들어오면 그 칸부터 ── */
   var H = {
-    steps: ['걸음 인증하기', '11/7~11/11 하루 11,111걸음 이상. 아무 걷기 앱 캡처면 돼요.'],
+    steps: ['걸음 인증하기', '11/7~11/11 하루 1,111걸음 이상. 아무 걷기 앱 캡처면 돼요.'],
     sns: ['SNS 게시물 제출', '해시태그 4개 넣어 올린 게시물 링크를 내면 응모권 1장. 걷지 않아도 돼요.'],
-    invite: ['친구 초대', '내 링크로 친구가 등록하고 11,111걸음을 인증하면 둘 다 응모권 2장.']
+    invite: ['친구 초대', '내 링크로 친구가 등록하고 걸음을 인증하면 둘 다 응모권 2장.']
   };
   var PANES = { steps: ['tabSteps', 'stepsPane'], sns: ['tabSns', 'snsPane'], invite: ['tabInv', 'invPane'] };
   function hashMode() { return location.hash === '#sns' ? 'sns' : location.hash === '#invite' ? 'invite' : 'steps'; }
@@ -166,10 +166,10 @@
   window.addEventListener('hashchange', function () { mode(hashMode()); });
   mode(hashMode());
 
-  // 11,111걸음보다 적으면 바로 알림(제출은 막지 않음 — 다 같이 걸은 걸음에는 더해진다)
+  // 1,111걸음보다 적으면 바로 알림(제출은 막지 않음 — 다 같이 걸은 걸음에는 더해진다)
   $('steps').addEventListener('input', function () {
     var n = parseInt(String(this.value).replace(/[^\d]/g, ''), 10);
-    $('stepsLow').hidden = !(n >= 1 && n < 11111);
+    $('stepsLow').hidden = !(n >= 1 && n < 1111);
   });
 
   var snsForm = $('snsForm'), snsSubmit = $('snsSubmit'), snsMsg = $('snsMsg');
@@ -284,7 +284,7 @@
       .catch(function () { sayInv('연결이 끊겼어요. 잠시 뒤 다시 시도해 주세요.', true); })
       .then(function () { invSubmit.disabled = false; invSubmit.textContent = '내 초대 링크 보기'; });
   });
-  var INV_TEXT = '같이 걷고 빼빼로 받자 🍫 11/7~11/11 하루 11,111걸음 이상 인증하면 응모권! 내 링크로 사전 등록하면 우리 둘 다 응모권 2장 더';
+  var INV_TEXT = '같이 걷고 빼빼로 받자 🍫 11/7~11/11 하루 1,111걸음만 걸어도 응모권! 내 링크로 사전 등록하면 우리 둘 다 응모권 2장 더';
   function copyText(t) {
     if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
     return new Promise(function (ok, no) {
