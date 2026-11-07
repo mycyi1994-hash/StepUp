@@ -129,7 +129,7 @@
         if (d && d.ok) {
           try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
           var day = 7 + (+dayEl.value - DAY0);
-          $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. 담당자가 확인하면 응모권에 반영돼요.';
+          $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 11111 ? '담당자가 확인하면 응모권에 반영돼요.' : '11,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
           form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
           if (window.wdTrack) window.wdTrack('walkingday_proof_submit', { day: day });
         } else {
@@ -141,29 +141,36 @@
   });
 
   $('again').addEventListener('click', function () {
-    image = null; $('file').value = ''; $('steps').value = '';
+    image = null; $('file').value = ''; $('steps').value = ''; $('stepsLow').hidden = true;
     var pick = $('pick'); pick.classList.remove('has'); pick.innerHTML = '<span>날짜와 걸음 수가 보이는 화면 캡처 고르기</span>';
     $('done').hidden = true; form.hidden = false; say('');
   });
 
-  /* ── SNS 게시물 링크 제출 — 서버 walkingday_sns_submit(0093). #sns 로 들어오면 이 칸부터 ── */
+  /* ── SNS 게시물 링크 제출 — 서버 walkingday_sns_submit(0093) · 친구 초대 링크 walkingday_invite_link(0094). #sns · #invite 로 들어오면 그 칸부터 ── */
   var H = {
-    steps: ['걸음 인증하기', '11/7~11/11 중 하루 11,111걸음. 아무 걷기 앱 캡처면 돼요.'],
-    sns: ['SNS 게시물 제출', '해시태그 4개 넣어 올린 게시물 링크를 내면 응모권 1장. 걷지 않아도 돼요.']
+    steps: ['걸음 인증하기', '11/7~11/11 하루 11,111걸음 이상. 아무 걷기 앱 캡처면 돼요.'],
+    sns: ['SNS 게시물 제출', '해시태그 4개 넣어 올린 게시물 링크를 내면 응모권 1장. 걷지 않아도 돼요.'],
+    invite: ['친구 초대', '내 링크로 친구가 등록하고 11,111걸음을 인증하면 둘 다 응모권 2장.']
   };
+  var PANES = { steps: ['tabSteps', 'stepsPane'], sns: ['tabSns', 'snsPane'], invite: ['tabInv', 'invPane'] };
+  function hashMode() { return location.hash === '#sns' ? 'sns' : location.hash === '#invite' ? 'invite' : 'steps'; }
   function mode(m, push) {
-    var sns = m === 'sns';
-    $('tabSteps').setAttribute('aria-selected', String(!sns));
-    $('tabSns').setAttribute('aria-selected', String(sns));
-    $('stepsPane').hidden = sns; $('snsPane').hidden = !sns;
+    Object.keys(PANES).forEach(function (k) { $(PANES[k][0]).setAttribute('aria-selected', String(k === m)); $(PANES[k][1]).hidden = k !== m; });
     $('h1').textContent = H[m][0]; $('lede').textContent = H[m][1];
     document.title = H[m][0] + ' · 11.11 워킹데이 | StepUp';
-    if (push) { try { history.replaceState(null, '', sns ? '#sns' : location.pathname + location.search); } catch (e) { /* 없음 */ } }
+    if (push) { try { history.replaceState(null, '', m === 'steps' ? location.pathname + location.search : location.pathname + location.search + '#' + m); } catch (e) { /* 없음 */ } }
   }
   $('tabSteps').addEventListener('click', function () { mode('steps', true); });
   $('tabSns').addEventListener('click', function () { mode('sns', true); });
-  window.addEventListener('hashchange', function () { mode(location.hash === '#sns' ? 'sns' : 'steps'); });
-  mode(location.hash === '#sns' ? 'sns' : 'steps');
+  $('tabInv').addEventListener('click', function () { mode('invite', true); });
+  window.addEventListener('hashchange', function () { mode(hashMode()); });
+  mode(hashMode());
+
+  // 11,111걸음보다 적으면 바로 알림(제출은 막지 않음 — 다 같이 걸은 걸음에는 더해진다)
+  $('steps').addEventListener('input', function () {
+    var n = parseInt(String(this.value).replace(/[^\d]/g, ''), 10);
+    $('stepsLow').hidden = !(n >= 1 && n < 11111);
+  });
 
   var snsForm = $('snsForm'), snsSubmit = $('snsSubmit'), snsMsg = $('snsMsg');
   if (closed()) snsSubmit.disabled = true;
@@ -237,4 +244,63 @@
     $('snsUrl').value = ''; $('snsAcct').value = ''; syncAcct();
     $('snsDone').hidden = true; snsForm.hidden = false; saySns('');
   });
+
+  /* ── 친구 초대: 사전 등록한 이메일 → 내 코드 · 초대 현황(0094). 링크는 이벤트 페이지로(이벤트 페이지가 ref 를 사전 등록 링크에 넘긴다) ── */
+  var invForm = $('invForm'), invSubmit = $('invSubmit'), invMsg = $('invMsg'), invUrl = '';
+  try { var savedI = localStorage.getItem('wd_email'); if (savedI) $('invEmail').value = savedI; } catch (e) { /* 없음 */ }
+  $('invEmail').addEventListener('input', function () { setErr('invEmailErr', ''); });
+  function sayInv(html, err) { invMsg.className = 'msg' + (err ? ' err' : ''); invMsg.innerHTML = html; }
+  var INV_REASONS = {
+    busy: '잠시 뒤 다시 시도해 주세요.',
+    email: '이메일 주소를 다시 확인해 주세요.',
+    not_registered: '사전 등록한 이메일이 아니에요. <a href="' + $('invJoin').getAttribute('href') + '">먼저 사전 등록</a>하면 바로 내 링크가 나와요.'
+  };
+  invForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    setErr('invEmailErr', ''); sayInv('');
+    var email = $('invEmail').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('invEmailErr', '사전 등록한 이메일을 적어 주세요.'); return; }
+    invSubmit.disabled = true; invSubmit.textContent = '찾는 중…';
+    fetch(URL_BASE + '/rest/v1/rpc/walkingday_invite_link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: KEY },
+      body: JSON.stringify({ p_email: email, p_trap: $('invTrap').value }),
+      cache: 'no-store'
+    }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
+      .then(function (d) {
+        if (d && d.ok && d.code) {
+          try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
+          invUrl = 'https://stepupcrew.com/11events/?ref=' + encodeURIComponent(d.code) + '&utm_source=invite&utm_medium=web&utm_campaign=2611-11111steps';
+          $('invLink').textContent = invUrl;
+          $('invN').textContent = (+d.invited || 0).toLocaleString('ko-KR');
+          $('invOk').textContent = (+d.counted || 0).toLocaleString('ko-KR');
+          $('invFb').textContent = '';
+          invForm.hidden = true; $('invDone').hidden = false;
+          if (window.wdTrack) window.wdTrack('walkingday_invite_link', {});
+        } else {
+          sayInv(INV_REASONS[d && d.code] || '찾지 못했어요. 잠시 뒤 다시 시도해 주세요.', true);
+        }
+      })
+      .catch(function () { sayInv('연결이 끊겼어요. 잠시 뒤 다시 시도해 주세요.', true); })
+      .then(function () { invSubmit.disabled = false; invSubmit.textContent = '내 초대 링크 보기'; });
+  });
+  var INV_TEXT = '같이 걷고 빼빼로 받자 🍫 11/7~11/11 하루 11,111걸음 이상 인증하면 응모권! 내 링크로 사전 등록하면 우리 둘 다 응모권 2장 더';
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+    return new Promise(function (ok, no) {
+      var a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.position = 'fixed'; a.style.opacity = '0';
+      document.body.appendChild(a); a.select();
+      try { document.execCommand('copy') ? ok() : no(new Error('copy')); } catch (e) { no(e); } finally { a.remove(); }
+    });
+  }
+  $('invCopy').addEventListener('click', function () {
+    copyText(invUrl).then(function () { $('invFb').className = 'msg'; $('invFb').textContent = '링크를 복사했어요. 친구에게 보내 주세요.'; },
+      function () { $('invFb').className = 'msg err'; $('invFb').textContent = '복사가 안 돼요. 위 링크를 길게 눌러 복사해 주세요.'; });
+  });
+  $('invShare').addEventListener('click', function () {
+    if (navigator.share) { navigator.share({ title: '11.11 StepUp 워킹데이', text: INV_TEXT, url: invUrl }).catch(function () { /* 닫음 */ }); return; }
+    copyText(INV_TEXT + '\n' + invUrl).then(function () { $('invFb').className = 'msg'; $('invFb').textContent = '초대 문구와 링크를 복사했어요. 카톡 · 텔레그램에 붙여 넣어 주세요.'; },
+      function () { $('invFb').className = 'msg err'; $('invFb').textContent = '복사가 안 돼요. 위 링크를 길게 눌러 복사해 주세요.'; });
+  });
+  $('invOther').addEventListener('click', function () { $('invDone').hidden = true; invForm.hidden = false; sayInv(''); });
 })();

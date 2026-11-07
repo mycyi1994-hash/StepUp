@@ -10251,15 +10251,20 @@ do $$
 declare
   v_key text := pg_temp.fx('wd-key');
   v_id bigint;
+  v_before bigint;
   v_entries jsonb;
   v_friend jsonb;
   v_ref jsonb;
 begin
   select (x->>'id')::bigint into v_id from jsonb_array_elements(public.walkingday_review_list(v_key)) x where (x->>'day')::int = 20768;
   perform pg_temp.ok(v_id is not null, '검토 목록에 제출이 보인다');
-  perform pg_temp.ok((select total from public.walkingday_total()) = 0, '승인 전에는 합계에 넣지 않는다');
+  v_before := (select total from public.walkingday_total());
+  perform pg_temp.ok(v_before >= 9000, '제출한 걸음(대기)도 바로 공개 합계에 들어간다(0095)');
   perform pg_temp.ok((public.walkingday_review_set(v_key, v_id, 'approved', 11500)->>'ok')::boolean, '승인하며 걸음 수를 고친다');
-  perform pg_temp.ok((select total from public.walkingday_total()) = 11500, '승인된 걸음이 공개 합계에 들어간다');
+  perform pg_temp.ok((select total from public.walkingday_total()) = v_before + 2500, '승인하며 고친 걸음 수가 공개 합계에 그대로 들어간다');
+  perform public.walkingday_review_set(v_key, v_id, 'rejected');
+  perform pg_temp.ok((select total from public.walkingday_total()) = v_before - 9000, '거절된 걸음은 공개 합계에서 빠진다(0095)');
+  perform public.walkingday_review_set(v_key, v_id, 'approved', 11500);
   v_entries := public.walkingday_review_entries(v_key);
   select x into v_friend from jsonb_array_elements(v_entries) x where x->>'email' = 'friend@runnermail.com';
   select x into v_ref from jsonb_array_elements(v_entries) x where x->>'email' = 'referrer@runnermail.com';
@@ -10338,6 +10343,19 @@ begin
                      and v_roster->0->>'email' = 'sns@runnermail.com', 'SNS 명단: 승인된 것만 계정마다 묶는다');
   perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'sns_approved')::int = 1 and (public.walkingday_review_summary(v_key)->>'sns_pending')::int = 2,
     'SNS: 검토 요약에 대기 · 승인 수');
+end $$;
+reset role;
+
+-- ── 11.11 워킹데이 내 초대 링크(0094) — 코드 · 초대 수 · 인정 수 ──
+set role anon;
+do $$
+declare r jsonb;
+begin
+  r := public.walkingday_invite_link('Referrer@runnermail.com');
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'code' = pg_temp.fx('waitlist-ref') and (r->>'invited')::int = 1 and (r->>'counted')::int = 1,
+    '내 초대 링크: 코드 · 내 링크로 등록한 친구 1 · 11,111걸음 승인된 친구 1(0094)');
+  perform pg_temp.ok(public.walkingday_invite_link('nobody@runnermail.com')->>'code' = 'not_registered', '내 초대 링크: 사전 등록 안 한 이메일');
+  perform pg_temp.ok(public.walkingday_invite_link('bad')->>'code' = 'email', '내 초대 링크: 틀린 이메일');
 end $$;
 reset role;
 
