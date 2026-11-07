@@ -840,6 +840,7 @@ fun RunLinkRow(
     val shape = RoundedCornerShape(RunSpec.CardRadius)
     Row(
         modifier.fillMaxWidth().heightIn(min = 54.dp).clip(shape).background(t.panel, shape)
+            .stepUpRim(shape, RimKind.Surface, enabled = !locked)
             .feedbackClickable(onClick = onClick)
             .padding(start = 16.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -882,6 +883,7 @@ fun RunMapFrame(
             Box(
                 Modifier.align(Alignment.TopEnd).padding(8.dp).size(40.dp).clip(CircleShape)
                     .background(t.panel.copy(alpha = 0.9f))
+                    .stepUpRim(CircleShape, RimKind.Control)
                     .feedbackClickable(onClick = onExpand)
                     .semantics { contentDescription = label }
                     .testTag("run-map-expand"),
@@ -1212,7 +1214,8 @@ fun RunChoiceRow(
     Row(
         modifier.fillMaxWidth().heightIn(min = if (compact) 52.dp else 68.dp).clip(shape)
             .background(t.panel, shape)
-            .border(2.dp, if (selected) t.cobalt else Color.Transparent, shape)
+            // 고르면 2dp 블루, 안 고르면 흰 테두리(두 겹 두지 않는다)
+            .then(if (selected) Modifier.border(2.dp, t.cobalt, shape) else Modifier.stepUpRim(shape, RimKind.Surface))
             .feedbackClickable(role = Role.RadioButton, cue = FeedbackCue.Select, onClick = onSelect)
             .semantics { this.selected = selected }
             .padding(horizontal = 16.dp, vertical = if (compact) 8.dp else 12.dp),
@@ -1334,7 +1337,7 @@ fun RunTextField(
     val shape = RoundedCornerShape(StepUpUi.FieldRadius)
     Row(
         modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(t.panel, shape)
-            .border(2.dp, if (focused) t.cobalt else Color.Transparent, shape)
+            .then(if (focused) Modifier.border(2.dp, t.cobalt, shape) else Modifier.stepUpRim(shape, RimKind.Surface))
             .padding(start = 16.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

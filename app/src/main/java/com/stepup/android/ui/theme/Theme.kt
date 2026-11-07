@@ -64,7 +64,7 @@ private fun schemeOf(p: StepUpPalette) = if (p.dark) {
         error = p.alert,
         onError = p.onVolt,
         outline = p.edge,
-        outlineVariant = p.edge,
+        outlineVariant = p.hairline, // 구분선 — 흰 테두리(edge)와 따로 예전 값
         scrim = p.night,
     )
 } else {
@@ -91,7 +91,7 @@ private fun schemeOf(p: StepUpPalette) = if (p.dark) {
         error = p.alert,
         onError = p.onVolt,
         outline = p.edge,
-        outlineVariant = p.edge,
+        outlineVariant = p.hairline, // 구분선 — 흰 테두리(edge)와 따로 예전 값
         scrim = p.snow,
     )
 }

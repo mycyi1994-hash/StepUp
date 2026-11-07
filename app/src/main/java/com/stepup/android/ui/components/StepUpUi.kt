@@ -1211,7 +1211,8 @@ fun NumberStepper(
 ) {
     val c = StepUpUi.colors
     Row(
-        modifier.widthIn(min = 170.dp).height(44.dp).clip(RoundedCornerShape(12.dp)).background(c.fill),
+        modifier.widthIn(min = 170.dp).height(44.dp).clip(RoundedCornerShape(12.dp)).background(c.fill)
+            .stepUpRim(RoundedCornerShape(12.dp), RimKind.Control, enabled = minusEnabled || plusEnabled),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StepperKey("−", minusEnabled, onMinus, minusDescription, tag?.let { "$it-minus" })
@@ -1378,7 +1379,8 @@ fun RoundControl(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(size).clip(CircleShape).background(if (primary) c.primary else c.fill),
+            Modifier.size(size).clip(CircleShape).background(if (primary) c.primary else c.fill)
+                .stepUpRim(CircleShape, if (primary) RimKind.Primary else RimKind.Control, enabled = enabled),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = if (!enabled) c.onDisabled else if (primary) Color.White else c.label,
