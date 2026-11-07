@@ -5,7 +5,9 @@
 `web/11events/`(원본 iinging747/stepup-walkingday — 정적, 날짜별 화면 자동) → `stepupcrew.com/11events/`. CSP 는 `_headers` 의 `/11events*`(인라인 스크립트 없음).
 운영은 [docs/walkingday-2026-11-05.md](docs/walkingday-2026-11-05.md) — 서버 0090. 걸음 인증은 아무 걸음 앱 캡처(사용자 결정) — 제출 `/11events/proof`
 (사전 등록 이메일만), 승인 `/11events/review`(검토 키 — 해시만 서버에), 합계는 제출된 걸음(대기 + 승인, 거절은 빠짐 — 0095)의 합을 페이지가 15초마다 읽는다(`walkingday_total`, 응모권은 승인 기준), 응모권은 검토 페이지 명단 탭.
-QR · UTM 저장은 지금 그대로(사용자 "일단 ok"). SNS 게시물은 링크로 받는다(0093, `/11events/proof#sns` → 검토 SNS 탭 → 추첨기 SNS 명단 CSV). GA4 는 `assets/config.js` 의 `ga` 측정 ID. 내 초대 링크는 `/11events/proof#invite`(0094 `walkingday_invite_link`), `?ref=` 로 온 사람은 주 버튼이 사전 등록 그대로.
+QR · UTM 저장은 지금 그대로(사용자 "일단 ok"). SNS 게시물은 링크로 받는다(0093, `/11events/proof#sns` → 검토 SNS 탭 → 추첨기 SNS 명단 CSV). 내 초대 링크는 `/11events/proof#invite`(0094 `walkingday_invite_link`), `?ref=` 로 온 사람은 주 버튼이 사전 등록 그대로.
+GA4(2026-11-07, 속성 'StepUp 웹' `G-3D42E2KKG1` — 앱 Firebase 속성과 따로): 워킹데이 페이지는 `11events/ga.js`(측정 ID 는 `assets/config.js` 의 `ga`), 홈페이지는 `web/ga.js` —
+같은 ID · 운영 주소에서만 · 광고 기능 끔(`csp.test.js` 가 맞대어 본다). 이벤트 · 인플루언서 utm 규칙은 운영 문서 "2026-11-07 GA4". 개인 정보는 GA 로 보내지 않는다.
 
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 

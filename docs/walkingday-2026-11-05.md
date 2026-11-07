@@ -45,7 +45,7 @@ select economy.walkingday_purge_images();
 ## 남은 것(사용자 몫)
 
 - 실제 폰 · QR 스캔 확인, 「빼빼로」 표기 상표 검토, 기부처 확정.
-- QR · UTM 채널별 등록 수는 저장하지 않는다(사용자 "일단 ok").
+- QR · UTM 채널별 등록 수는 서버에 저장하지 않는다(사용자 "일단 ok") — 채널 · 인플루언서별 성과는 아래 GA4 로 본다.
 
 ## 2026-11-06 회의 반영 (서버 0091)
 
@@ -61,7 +61,33 @@ select economy.walkingday_purge_images();
 - 서버 `walkingday_sns_submit`: 기간 · 동의 · 이메일(사전 등록 안 해도 받음) · 링크 형식 · 같은 게시물 한 번 · 한 이메일 하루 3개 · 전체 15개(거절은 안 셈). 같은 곳(IP) 제한은 걸음 인증과 함께 센다.
 - 검토 페이지 탭 SNS 대기 · 승인 · 거절: 링크를 열어 해시태그 4개 · 전체 공개 · 11/7 이후 게시를 확인하고 승인. 계정 아이디를 고칠 수 있다.
 - SNS 명단(추첨기) 탭: 승인된 게시물을 이메일 · 채널 · 계정마다 묶어 추첨기 `SNS_명단_양식.csv` 와 같은 머리줄로 내려받는다.
-- 메인 공유 창에 「올렸으면 게시물 링크 제출하기」. GA4: `assets/config.js` 의 `ga` 에 측정 ID 를 넣으면 `ga.js` 가 켜진다(CSP 열어 둠). 이벤트 `walkingday_proof_submit` · `walkingday_sns_submit`, utm 은 GA4 가 주소에서 읽는다.
+- 메인 공유 창에 「올렸으면 게시물 링크 제출하기」. GA4 는 아래 절.
+
+## 2026-11-07 GA4 · 인플루언서 UTM
+
+사용자 "ga4 붙여서 utm 으로 각 인플루언서마다 측정". 속성 'StepUp 웹'(측정 ID `G-3D42E2KKG1`) — 앱의 Firebase 속성(`stepup-16d6e`)과 따로다.
+
+- 코드: 워킹데이 페이지(`/11events/` · `/11events/proof`)는 `11events/ga.js` — 측정 ID 는 `assets/config.js` 의 `ga`(비우면 꺼짐), 이벤트는 `window.wdTrack`.
+  홈페이지(`/` — 사전 등록)는 `web/ga.js`. 둘은 같은 ID · 운영 주소(stepupcrew.com)에서만 · Google 신호 · 광고 맞춤 끔(`web/test/csp.test.js` 가 맞대어 본다).
+  검토 페이지 · 초대 · 약관은 GA 를 부르지 않는다. CSP 는 `web/_headers` 의 `/` · `/index.html` · `/11events*`.
+- 이벤트(개인 정보 없음 — 이메일 · 걸음 수 · 추천 코드 · 게시물 주소는 안 보낸다):
+
+| 이벤트 | 어디서 | 값 |
+|---|---|---|
+| `sign_up` | 홈 사전 등록 성공(`waitlist.js`) | `method=waitlist` · `invited=yes/no` |
+| `walkingday_proof_submit` | 걸음 인증 제출 성공(`11events/proof.js`) | `day` |
+| `walkingday_sns_submit` | SNS 게시물 링크 제출 성공(`11events/proof.js`) | `channel` |
+| `cta_click` | 이벤트 페이지 주 버튼(`11events/app.js`) | `cta_place=top/end/sticky` · `cta_kind=join/proof` |
+| `share_open` · `share` | SNS 공유 창 | `method=x/threads/instagram/copy/image/video` |
+
+- 이벤트 기간(11/7 ~ 11/11 15시) 주 버튼은 인증 페이지로 간다 — 인플루언서 성과는 `sign_up` · `walkingday_proof_submit` · `walkingday_sns_submit` 을 함께 본다.
+  GA 세션은 같은 도메인이라 페이지를 옮겨도 처음 들어온 utm 으로 묶인다.
+- 링크 규칙: `https://stepupcrew.com/11events/?utm_source=<인플루언서, 영문 소문자 · 밑줄>&utm_medium=influencer&utm_campaign=2611-11111steps&utm_content=<story/reel/bio/feed/yt_desc/qr>`.
+  셋(source · medium · campaign)은 꼭 — 빠지면 이벤트 페이지 버튼의 기본값(walkingday / web)이 섞인다. 참가자 공유 링크는 `sns / share` 로 잡힌다.
+- 보기: 보고서 › 획득 › 트래픽 획득(세션 소스/매체, 매체 = influencer, 주요 이벤트) 또는 탐색 › 자유 형식(세션 소스 × 세션 수동 광고 콘텐츠).
+  위 세 성과 이벤트는 GA 관리 › 이벤트에서 주요 이벤트로 표시한다(처음 들어온 뒤). `invited` · `day` · `channel` 을 보고서에서 보려면 맞춤 측정기준으로 등록한다.
+- GA 숫자는 광고 차단 · 쿠키 거부 · 다른 기기에서 등록한 사람을 놓친다 — 비교용이다. 인플루언서 정산 근거가 필요하면 utm 을 서버에 남기는 일을 따로 한다.
+- 개인정보처리방침(`web/privacy.html`, 시행일 2026-11-07)에 홈페이지 방문 통계 · `_ga` 쿠키 · 거부 방법 · 14개월 보관을 적었다 — GA 데이터 보관을 14개월보다 길게 하지 않는다.
 
 ## 내 초대 링크 · 11,111걸음 이상 안내 (2026-11-07, 서버 0094)
 
