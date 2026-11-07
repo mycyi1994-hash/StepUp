@@ -212,7 +212,7 @@ class DesignReferenceTest {
                 capture(name)
                 if (s == Scene.POST_COMPOSE) {
                     // 번개러닝 — 만나는 곳 칸과 [−][값][+] 줄(달릴 거리 · 출발까지 · 정원). 제목 · 장소가 비면 올리기는 눌리지 않는다
-                    compose.onNodeWithTag("post-cat-flash").performClick()
+                    // 크루 밖 글쓰기는 분류 탭 없이 번개러닝으로 열린다(2026-11-07)
                     compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("post-capacity-value"))
                     compose.onNodeWithTag("post-capacity-value", useUnmergedTree = true).assertIsDisplayed()
                     compose.onNodeWithTag("post-submit").assertIsDisplayed().assertIsNotEnabled()

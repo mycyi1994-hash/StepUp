@@ -2,6 +2,7 @@
 <!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
 <resources>
     <string name="tg_create">グループランを作る</string>
+    <string name="tg_story_write">ストーリーを書く</string>
     <string name="tg_pick_title">誰と走りますか？</string>
     <string name="tg_pick_crew">%sのメンバーと</string>
     <string name="tg_pick_crew_body">クルーラン · 共有スタミナ · クルー報酬</string>

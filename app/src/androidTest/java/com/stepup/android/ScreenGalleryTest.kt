@@ -300,9 +300,10 @@ class ScreenGalleryTest {
         val variations = listOf(
             // 상세 기록은 "오늘의 걸음" 칸을 눌러 연다(러닝 홈 2026-09-29 전달본 02 — 거리 · 운동 시간 줄은 뺐다)
             Triple(0, "home-details", listOf(R.string.home_today_label)),
-            Triple(2, "community-crews", listOf(R.string.crew_recruit_tab)),
-            Triple(2, "community-stories", listOf(R.string.community_stories)),
-            Triple(2, "community-meetups", listOf(R.string.crew_recruit_tab, R.string.crew_list_meetups, R.string.community_other_meetups)),
+            // 함께 뛰기 세그먼트(2026-11-07 순서 모집 중 · 이야기 · 크루) — 크루 목록 끝의 "번개 모임" 줄은 뺐다
+            Triple(2, "community-crews", listOf(R.string.ui_seg_crews)),
+            Triple(2, "community-stories", listOf(R.string.ui_seg_stories)),
+            Triple(2, "community-meetups", listOf(R.string.ui_seg_meetups)),
             Triple(4, "challenge-weekly", listOf(R.string.challenge_tag_weekly)),
             Triple(4, "challenge-night", listOf(R.string.event_night_quest)),
             Triple(3, "items-store", listOf(R.string.market_tab_store)),
@@ -319,8 +320,7 @@ class ScreenGalleryTest {
             // 리더보드(2026-10-17) — 크루 · 개인 · 포인트 판(이 화면의 첫 판은 크루)
             Triple(17, "ranking-personal", listOf(R.string.lb_board_personal)),
             Triple(17, "ranking-points", listOf(R.string.lb_board_points)),
-            Triple(19, "compose-free", listOf(R.string.post_cat_free)),
-            Triple(19, "compose-tip", listOf(R.string.post_cat_tip)),
+            // 19 는 크루 밖 글쓰기 — 2026-11-07 부터 번개러닝만(자유 · 꿀팁 분류 탭은 크루 게시판 글쓰기에만 있다)
             Triple(27, "news-health", listOf(R.string.news_tab_health)),
             Triple(28, "customize-shoes", listOf(R.string.customize_tab_shoes)),
             Triple(28, "customize-options", listOf(R.string.common_more)),

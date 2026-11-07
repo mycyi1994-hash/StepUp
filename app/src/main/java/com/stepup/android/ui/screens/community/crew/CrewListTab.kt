@@ -48,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,6 +62,7 @@ import com.stepup.android.data.repo.CrewSyncState
 import com.stepup.android.domain.CrewApplicationStatus
 import com.stepup.android.domain.CrewCard
 import com.stepup.android.domain.CrewDraft
+import com.stepup.android.domain.CrewRole
 import com.stepup.android.domain.CrewRules
 import com.stepup.android.domain.CrewSort
 import com.stepup.android.ui.components.RunButton
@@ -68,13 +70,18 @@ import com.stepup.android.ui.components.RunChoiceRow
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.components.returnToSignIn
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.guide.GuideTour
+import com.stepup.android.ui.guide.guideTarget
 import android.widget.Toast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 목록에서 나가는 곳 — 명함 안의 누르는 곳은 각자의 화면으로 간다(카드 전체의 상세 이동과 겹치지 않는다) */
+/**
+ * 목록에서 나가는 곳. 명함은 누르는 곳이 하나(카드 전체 → 크루 상세, 2026-11-07) — 사진 · 멤버 · 크루장 · 목표 화면은
+ * 크루 상세 안에서 연다(여기 값은 다른 화면이 같은 길을 쓰도록 그대로 둔다).
+ */
 class CrewListActions(
     val onOpenCrew: (String) -> Unit,
     val onOpenImage: (String) -> Unit,
@@ -92,15 +99,15 @@ class CrewListActions(
 /**
  * 크루 모집 — 확정 2번 크루 명함 목록(01). 지역 · 범위(02) · 정렬(04)은 적용해야 바뀌고, 불러오는 중(06) · 빈 목록(05) ·
  * 실패(07)를 나눈다. 다시 불러와도 고른 지역과 정렬은 그대로다. 목록 위치는 상세에 다녀와도 남는다.
+ *
+ * 2026-11-07: 맨 위 "내 크루"(가입 · 운영 중인 크루) 묶음, 그 아래 "크루 찾기"(내 크루는 다시 넣지 않는다).
+ * 목록 끝의 "번개 모임 · 같이 달리기 보기" 줄은 뺐다 — 같은 탭의 첫 세그먼트(모집 중)가 그 자리다.
  */
 @Composable
 fun CrewListTab(
     actions: CrewListActions,
-    /** 번개 모임 · 내 크루(예전 "함께 뛰기") — 크루 모집 목록 끝 안쪽으로 옮겼다 */
-    onOpenMeetups: () -> Unit,
     viewModel: CrewListViewModel = viewModel(factory = CrewListViewModel.Factory),
 ) {
-    val ink = crewInk()
     val words = rememberCrewWords()
     val visible by viewModel.visible.collectAsStateWithLifecycle()
     val all by viewModel.cards.collectAsStateWithLifecycle()
@@ -226,33 +233,32 @@ fun CrewListTab(
                             )
                         }
                     }
-                    else -> items(visible, key = { it.id }) { card ->
-                        CrewProfileCard(
-                            card = card,
-                            words = words,
-                            onOpen = { actions.onOpenCrew(card.id) },
-                            onImage = { actions.onOpenImage(card.id) },
-                            onLevel = { sheet = SHEET_LEVEL + card.id },
-                            onMembers = { actions.onOpenMembers(card.id) },
-                            onLeader = { actions.onOpenLeader(card.id, card.leaderId) },
-                            onGoal = { actions.onOpenGoal(card.id) },
-                        )
-                    }
-                }
-                // 95 목록 끝 — 기존 번개 모임 · 같이 달리기
-                item(key = "meetups") {
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 60.dp).crewPanel(ink, 16.dp)
-                            .feedbackClickable(role = Role.Button, onClick = onOpenMeetups)
-                            .padding(horizontal = 18.dp, vertical = 12.dp)
-                            .testTag("crew-list-meetups"),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            stringResource(R.string.crew_list_meetups), color = ink.text, fontSize = 17.sp, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Icon(Icons.Filled.ChevronRight, null, tint = ink.text, modifier = Modifier.size(22.dp))
+                    else -> {
+                        // 내 크루(가입 · 운영) — 지역 범위와 상관없이 늘 보인다(CrewRules.visible). 크루 찾기 목록에는 다시 넣지 않는다
+                        val mine = visible.filter { it.role == CrewRole.OWNER || it.role == CrewRole.MEMBER }
+                        val others = visible.filterNot { it.role == CrewRole.OWNER || it.role == CrewRole.MEMBER }
+                        if (mine.isNotEmpty()) {
+                            item(key = "mine-title") {
+                                CrewGroupTitle(stringResource(R.string.community_my_crews), Modifier.testTag("crew-list-mine"))
+                            }
+                            items(mine, key = { it.id }) { card ->
+                                CrewProfileCard(card = card, words = words, onOpen = { actions.onOpenCrew(card.id) })
+                            }
+                            item(key = "find-title") {
+                                CrewGroupTitle(stringResource(R.string.d26_find_crew), Modifier.padding(top = 10.dp).testTag("crew-list-find"))
+                            }
+                            if (others.isEmpty()) {
+                                item(key = "find-empty") {
+                                    Text(
+                                        stringResource(if (search.isNotBlank()) R.string.fx_crew_search_empty_title else R.string.crew_list_empty_title),
+                                        color = crewInk().secondary, fontSize = 15.sp, modifier = Modifier.testTag("crew-list-find-empty"),
+                                    )
+                                }
+                            }
+                        }
+                        items(others, key = { it.id }) { card ->
+                            CrewProfileCard(card = card, words = words, onOpen = { actions.onOpenCrew(card.id) })
+                        }
                     }
                 }
             }
@@ -262,7 +268,7 @@ fun CrewListTab(
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = CrewGutter).padding(bottom = 12.dp)) {
                     RunButton(
                         stringResource(R.string.crew_recruit_button), recruit,
-                        Modifier.testTag("crew-recruit"), icon = Icons.Filled.Add,
+                        Modifier.testTag("crew-recruit").guideTarget(GuideTour.Targets.COMMUNITY_WRITE), icon = Icons.Filled.Add,
                     )
                 }
             }
@@ -279,10 +285,6 @@ fun CrewListTab(
             onDismiss = { sheet = "" },
         )
         sheet == SHEET_SORT -> CrewSortSheet(sort, manualRegion, onApply = { viewModel.applySort(it); sheet = "" }, onDismiss = { sheet = "" })
-        sheet.startsWith(SHEET_LEVEL) -> {
-            val card = all.firstOrNull { it.id == sheet.removePrefix(SHEET_LEVEL) }
-            if (card != null) CrewLevelSheet(card, onDismiss = { sheet = "" }) else sheet = ""
-        }
         sheet == SHEET_DRAFT_RESUME || sheet == SHEET_DRAFT_DISCARD ->
             CrewStartSheets(draft, discard = sheet == SHEET_DRAFT_DISCARD, onStep = { sheet = it }, onCreate = actions.onCreate)
     }
@@ -339,7 +341,6 @@ internal fun CrewStartSheets(draft: CrewDraft?, discard: Boolean, onStep: (Strin
 
 private const val SHEET_REGION = "region"
 private const val SHEET_SORT = "sort"
-private const val SHEET_LEVEL = "level:"
 internal const val SHEET_DRAFT_RESUME = "resume"
 internal const val SHEET_DRAFT_DISCARD = "discard"
 
@@ -404,29 +405,25 @@ internal fun sortLabel(sort: CrewSort): String = when (sort) {
 
 /**
  * 크루 명함(확정 2번) — 대표 이미지와 이름 → 레벨 · 인원/정원 → 한 줄 소개 → 성격 · 지역 · 일정 · 거리 → 크루장 → 주간 목표.
- * 카드와 "크루 보기"는 상세로, 이미지 · 레벨 · 인원 · 크루장 · 목표는 각자의 화면으로 간다(카드 전체 이동과 겹치지 않는다).
+ * 누르는 곳은 카드 하나(→ 크루 상세, 2026-11-07). 사진 · 레벨 · 인원 · 크루장 · 목표는 글자로만 보이고, 각자의 화면은 크루 상세 안에서 연다.
+ * 크루장은 첫 글자 동그라미 없이 이름만.
  */
 @Composable
 internal fun CrewProfileCard(
     card: CrewCard,
     words: CrewWords,
     onOpen: () -> Unit,
-    onImage: () -> Unit,
-    onLevel: () -> Unit,
-    onMembers: () -> Unit,
-    onLeader: () -> Unit,
-    onGoal: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val ink = crewInk()
     Column(
         modifier.fillMaxWidth().crewPanel(ink, 18.dp)
             .feedbackClickable(role = Role.Button, onClick = onOpen)
-            .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 12.dp)
+            .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 16.dp)
             .testTag("crew-card-${card.id}"),
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            Box(Modifier.size(78.dp).clip(RoundedCornerShape(14.dp)).feedbackClickable(role = Role.Image, onClick = onImage).testTag("crew-card-image")) {
+            Box(Modifier.size(78.dp).clip(RoundedCornerShape(14.dp)).testTag("crew-card-image")) {
                 CrewImage(card, 78.dp, 14.dp)
             }
             Column(Modifier.weight(1f).padding(start = 16.dp)) {
@@ -434,18 +431,10 @@ internal fun CrewProfileCard(
                     card.name, style = crewTitleStyle(ink.text, 25.sp),
                     maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("crew-card-name"),
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = onLevel)
-                            .testTag("crew-card-level"),
-                        contentAlignment = Alignment.CenterStart,
-                    ) { CrewLevelChip(card.level) }
+                Row(Modifier.heightIn(min = 36.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CrewLevelChip(card.level, Modifier.testTag("crew-card-level"))
                     Spacer(Modifier.weight(1f))
-                    Box(
-                        Modifier.heightIn(min = 48.dp).widthIn(min = 96.dp).clip(RoundedCornerShape(8.dp))
-                            .feedbackClickable(role = Role.Button, onClick = onMembers).testTag("crew-card-members"),
-                        contentAlignment = Alignment.CenterEnd,
-                    ) { CrewMembersLabel(card.memberCount, card.capacity, ink.text) }
+                    CrewMembersLabel(card.memberCount, card.capacity, ink.text, Modifier.testTag("crew-card-members"))
                 }
             }
         }
@@ -463,30 +452,28 @@ internal fun CrewProfileCard(
             Spacer(Modifier.height(4.dp))
             Text(info, color = ink.secondary, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        Spacer(Modifier.height(4.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onLeader).testTag("crew-card-leader"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CrewAvatar(card.leaderName, 34.dp, leaderFace(card), ink.text)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    stringResource(R.string.crew_leader_named, card.leaderName), color = ink.text, fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
-            CrewSmallButton(stringResource(R.string.crew_view), onOpen, Modifier.padding(start = 8.dp).testTag("crew-card-open"))
+        if (card.leaderName.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.crew_leader_named, card.leaderName), color = ink.text, fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("crew-card-leader"),
+            )
         }
         CrewRules.progress(card)?.let { progress ->
-            Box(
-                Modifier.fillMaxWidth().heightIn(min = 40.dp).clip(RoundedCornerShape(8.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onGoal).testTag("crew-card-goal"),
-                contentAlignment = Alignment.CenterStart,
-            ) { CrewWeeklyLine(progress) }
+            Spacer(Modifier.height(10.dp))
+            CrewWeeklyLine(progress, Modifier.testTag("crew-card-goal"))
         }
     }
+}
+
+/** 목록 안 묶음 제목 — "내 크루" · "크루 찾기" */
+@Composable
+private fun CrewGroupTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text, style = crewTitleStyle(crewInk().text, 20.sp),
+        modifier = modifier.fillMaxWidth().padding(top = 4.dp).semantics { heading() },
+    )
 }
 
 /** 불러오는 중 — 명함 자리만(인원 · 레벨을 채우지 않는다, 누를 수 없다) */

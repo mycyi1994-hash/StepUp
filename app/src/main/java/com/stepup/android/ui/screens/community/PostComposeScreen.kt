@@ -57,6 +57,7 @@ import java.util.UUID
  * 숫자는 조절 버튼으로만 바꿔 범위를 벗어나지 않는다(거리 0.5 ~ 50km · 출발 5분 ~ 24시간 · 정원 2 ~ 200명, 서버 규칙 그대로).
  * 번개러닝은 달리는 방식(같이 뛰기 · 원격 뛰기, 0076)을 고른다 — 원격 뛰기는 만나는 곳 없이 같은 시각에 각자의 자리에서.
  * 함께 뛰기 탭의 "함께 뛰기 만들기 → 누구나"로 오면 번개러닝으로 열린다([startFlash]).
+ * 크루 없이([crewId] 비어 있음) 열리면 분류 탭 없이 번개러닝만 쓴다(2026-11-07) — 자유 · 꿀팁은 크루 게시판(CrewBoardScreen)에서.
  */
 @Composable
 fun PostComposeScreen(
@@ -66,7 +67,9 @@ fun PostComposeScreen(
     onBack: () -> Unit = {},
     viewModel: CommunityViewModel = viewModel(factory = CommunityViewModel.Factory),
 ) {
-    var category by rememberSaveable { mutableStateOf(if (startFlash) PostCategory.FLASH.id else PostCategory.FREE.id) }
+    // 크루 밖(전체 게시판)에서는 번개러닝만 쓴다(2026-11-07) — 자유 · 꿀팁 글은 크루 게시판에서. 분류 탭은 크루 글쓰기에만
+    val inCrew = crewId.isNotBlank()
+    var category by rememberSaveable { mutableStateOf(if (startFlash || !inCrew) PostCategory.FLASH.id else PostCategory.FREE.id) }
     var remote by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
     var body by rememberSaveable { mutableStateOf("") }
@@ -81,7 +84,7 @@ fun PostComposeScreen(
     val pick by rememberSaveable { mutableIntStateOf(kotlin.random.Random.nextInt(FLASH_TITLE_TEMPLATES)) }
     val template = templates[pick % templates.size]
 
-    val selected = PostCategory.of(category)
+    val selected = if (inCrew) PostCategory.of(category) else PostCategory.FLASH
     val flash = selected == PostCategory.FLASH
     androidx.compose.runtime.LaunchedEffect(flash) {
         if (flash && title.isBlank()) title = template
@@ -103,12 +106,14 @@ fun PostComposeScreen(
             Text(stringResource(if (flash) R.string.d26_flash_header else R.string.post_write), style = StepUpUi.type.navTitle, color = c.label,
                 modifier = Modifier.align(Alignment.Center).semantics { heading() })
         }
-        val categories = PostCategory.entries
-        StepUpTabs(
-            categories.map { it.label() }, categories.indexOf(selected), { category = categories[it].id },
-            Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 6.dp),
-            tags = categories.map { "post-cat-${it.id.lowercase(Locale.ROOT)}" },
-        )
+        if (inCrew) {
+            val categories = PostCategory.entries
+            StepUpTabs(
+                categories.map { it.label() }, categories.indexOf(selected), { category = categories[it].id },
+                Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 6.dp),
+                tags = categories.map { "post-cat-${it.id.lowercase(Locale.ROOT)}" },
+            )
+        }
         Column(
             Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(top = 14.dp).testTag("form-content"),
             verticalArrangement = Arrangement.spacedBy(10.dp),

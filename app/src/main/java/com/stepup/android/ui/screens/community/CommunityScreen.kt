@@ -104,6 +104,7 @@ fun CommunityScreen(
     onOpenCrew: (String) -> Unit = {},
     /** 크루 만들기 — resume 이면 이 폰에 남겨 둔 만들기 초안을 이어 쓴다 */
     onCreateCrew: (resume: Boolean) -> Unit = {},
+    /** 예전 머리 연필 · 모두 보기 글쓰기(자유 글) — 2026-11-07 부터 크루 밖에서는 번개러닝만 쓰므로 이 화면은 부르지 않는다(크루 게시판이 따로 쓴다) */
     onWritePost: (String) -> Unit = {},
     onOpenFlash: (Long) -> Unit = {},
     onOpenMap: () -> Unit = {},
@@ -125,14 +126,16 @@ fun CommunityScreen(
         viewModel(factory = com.stepup.android.ui.screens.community.stories.StoriesViewModel.Factory),
 ) {
     val tab by viewModel.tab.collectAsStateWithLifecycle()
-    // UI 최종 통합안(2026-10-25) — 큰 제목 "함께 뛰기" + 세그먼트 셋(번개러닝 · 크루 · 이야기). 크루 채팅은 머리의 말풍선 원 버튼으로
+    // UI 최종 통합안(2026-10-25) — 큰 제목 "함께 뛰기" + 세그먼트 셋(모집 중 · 이야기 · 크루 — 2026-11-07 순서). 크루 채팅은 머리의 말풍선 원 버튼으로
     // 옮겼다(예전 세 번째 글자 탭). 번개 모임(예전 "함께 뛰기" · 크루 모집 목록 끝 안쪽)은 첫 세그먼트로 나왔다.
     var segment by rememberSaveable { mutableStateOf(SEGMENT_MEETUPS) }
     // 채팅을 닫으면 돌아갈 세그먼트
     var lastSegment by rememberSaveable { mutableStateOf(SEGMENT_MEETUPS) }
     var allMeetups by rememberSaveable { mutableStateOf(false) }
-    // 이야기에서 머리 연필을 누른 횟수 — 이야기 목록이 쓰다 만 글(이어 쓰기)을 먼저 묻고 글쓰기를 연다
-    var storyWrite by rememberSaveable { mutableStateOf(0) }
+    // 크루 채팅 원 버튼은 가입한 크루가 있을 때만 — 크루 목록(내 크루)과 크루 명함(역할)을 함께 본다
+    val joinedCrews by viewModel.crews.collectAsStateWithLifecycle()
+    val crewCards by ServiceLocator.crewCards.cards.collectAsStateWithLifecycle()
+    val hasCrew = joinedCrews.any { it.joined || it.owned } || crewCards.any { it.joined || it.owned }
     LaunchedEffect(GuideTour.active) {
         if (GuideTour.active) { viewModel.selectTab(CommunityTab.BOARD); segment = SEGMENT_MEETUPS; allMeetups = false }
     }
@@ -171,10 +174,11 @@ fun CommunityScreen(
             else -> segment = lastSegment
         }
     }
+    // 순서는 모집 중 · 이야기 · 크루(2026-11-07) — 크루 찾기 · 모집은 덜 쓰니 셋째, 내 크루 대기실은 모집 중 맨 위에 있다
     val segments = listOf(
         stringResource(R.string.ui_seg_meetups),
-        stringResource(R.string.ui_seg_crews),
         stringResource(R.string.ui_seg_stories),
+        stringResource(R.string.ui_seg_crews),
     )
     val openChat = { if (segment != SEGMENT_CHAT) lastSegment = segment; segment = SEGMENT_CHAT }
 
@@ -198,24 +202,31 @@ fun CommunityScreen(
                 title = stringResource(R.string.ui_seg_meetups),
                 onBack = { allMeetups = false },
                 backDescription = stringResource(R.string.cd_back),
-            )
+            ) {
+                // 번개 · 코스 지도 — 목록 위 지도 카드 대신 함께 뛰기 머리와 같은 지도 원 버튼
+                com.stepup.android.ui.components.CircleIconButton(
+                    Icons.Filled.Map, stringResource(R.string.community_map_title),
+                    onClick = onOpenMap,
+                    modifier = Modifier.testTag("community-map"),
+                )
+            }
             segment == SEGMENT_CHAT -> com.stepup.android.ui.components.NavHeader(
                 title = stringResource(R.string.chat_tab),
                 onBack = { segment = lastSegment },
                 backDescription = stringResource(R.string.cd_back),
             )
             else -> {
+                // 글쓰기 연필은 뺐다 — 쓰기는 세그먼트마다 아래 주 버튼 하나
                 TogetherTopBar(
                     onMap = { if (segment == SEGMENT_STORIES) onOpenStoryMap(null) else onOpenMap() },
-                    onChat = openChat,
-                    onWrite = { if (segment == SEGMENT_STORIES) storyWrite++ else onWritePost("") },
+                    onChat = if (hasCrew) openChat else null,
                 )
                 TogetherTitle()
                 com.stepup.android.ui.components.StepUpTabs(
                     items = segments,
                     selected = segment.coerceIn(0, 2),
                     onSelect = { segment = it },
-                    tags = listOf("community-tab-meetups", "community-tab-crews", "community-tab-stories"),
+                    tags = listOf("community-tab-meetups", "community-tab-stories", "community-tab-crews"),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 4.dp)
                         .guideTarget(GuideTour.Targets.COMMUNITY_SEGMENTS),
                 )
@@ -236,9 +247,9 @@ fun CommunityScreen(
                 // 러닝 이야기가 따로 있으므로 여기는 "다른 모임 보기"(번개만)다
                 onlyFlash = true,
                 onOpenRanking = onOpenRanking,
-                onWritePost = { onWritePost("") },
+                // 번개만 모은 목록이라 아래 글쓰기도 번개러닝 모집 글(함께 뛰기 만들기 › 누구나와 같은 길). 자유 · 꿀팁은 크루 게시판에서
+                onWritePost = onCreateFlash,
                 onOpenFlash = onOpenFlash,
-                onOpenMap = onOpenMap,
             )
             // 모집 중(2026-10-26) — 내 크루들의 대기실과 번개러닝을 한 목록에, 아래 "함께 뛰기 만들기" 하나
             segment == SEGMENT_MEETUPS -> TogetherRoomsSegment(
@@ -255,7 +266,6 @@ fun CommunityScreen(
                     onOpenCrew = {}, onOpenImage = {}, onOpenMembers = {}, onOpenLeader = { _, _ -> }, onOpenGoal = {},
                     onOpenResult = { _, _ -> }, onRecruitEntry = {}, onCreate = {}, onOpenRegion = {},
                 ),
-                onOpenMeetups = { segment = SEGMENT_MEETUPS; allMeetups = false },
             )
             segment == SEGMENT_CHAT -> com.stepup.android.ui.screens.community.chat.ChatListTab(
                 com.stepup.android.ui.screens.community.chat.ChatListActions(
@@ -271,7 +281,6 @@ fun CommunityScreen(
                 onWrite = onWriteStory,
                 onOpenLocation = onOpenStoryLocation,
                 onOpenRegion = onOpenStoryRegion,
-                writeRequest = storyWrite,
             )
         }
     }
@@ -288,32 +297,24 @@ private fun BoardTab(
     onOpenRanking: () -> Unit,
     onWritePost: () -> Unit,
     onOpenFlash: (Long) -> Unit,
-    onOpenMap: () -> Unit,
 ) {
     val posts by viewModel.boardPosts.collectAsStateWithLifecycle()
     val boardSync by viewModel.boardSync.collectAsStateWithLifecycle()
 
-    // 시안대로 한 줄 피드 — 번개러닝도 일반 글도 최신 순으로 섞어 보여 준다.
-    // 검색 · 분류 칩 · 랭킹 카드는 두지 않는다(랭킹은 내 정보 › 설정).
-    // 번개 카드의 "몇 km"는 내 자리에서 잰다. 모르면 함께 달릴 거리를 적는다.
-    val here = rememberCurrentLocation()
+    // 한 줄 목록 — 최신 순. 번개는 모집 중 칸과 같은 줄([FlashRow]) — 참가는 번개 상세 화면에서만 한다(줄 안 참가 버튼 없음).
+    // 지도는 머리의 지도 원 버튼이 맡는다(목록 위 지도 카드는 뺐다, 2026-11-07).
     val visible = remember(posts, onlyFlash) {
         posts.filter { it.isFlash == onlyFlash }.sortedByDescending { it.createdAt }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(13.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 16.dp),
         ) {
-            // 지도 — 번개·코스를 내 주변에서, 그리고 땅따먹기. 목록 맨 위 한 줄이라
-            // 글쓰기(주 행동)와 겹치지 않는다.
-            item { MapEntryCard(onClick = onOpenMap) }
-
             // 글은 서버에만 있다. 로그인·연결 문제로 비었으면 "아직 글이 없어요"와 섞지 않는다.
             if (boardSync != BoardSyncState.Ready) {
-                item { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) }
+                item { Box(Modifier.padding(vertical = 8.dp)) { BoardSyncCard(boardSync, onRetry = viewModel::refreshBoard) } }
             } else if (visible.isEmpty()) {
                 item {
                     com.stepup.android.ui.components.StatePanel(
@@ -325,24 +326,17 @@ private fun BoardTab(
 
             items(visible, key = { it.id }) { post ->
                 if (post.isFlash) {
-                    FlashRunCard(
-                        post = post,
-                        onJoin = { viewModel.toggleJoinFlash(post.id) },
-                        onLike = { viewModel.toggleLike(post.id) },
-                        onComment = { viewModel.openComments(post.id) },
-                        onDelete = { viewModel.deletePost(post.id) },
-                        onOpen = { onOpenFlash(post.id) },
-                        onReport = { viewModel.askReport(post) },
-                        here = here,
-                    )
+                    Box { FlashRow(post, onOpen = { onOpenFlash(post.id) }) }
                 } else {
-                    TextPostCard(
-                        post = post,
-                        onLike = { viewModel.toggleLike(post.id) },
-                        onComment = { viewModel.openComments(post.id) },
-                        onDelete = { viewModel.deletePost(post.id) },
-                        onReport = { viewModel.askReport(post) },
-                    )
+                    Box(Modifier.padding(vertical = 6.dp)) {
+                        TextPostCard(
+                            post = post,
+                            onLike = { viewModel.toggleLike(post.id) },
+                            onComment = { viewModel.openComments(post.id) },
+                            onDelete = { viewModel.deletePost(post.id) },
+                            onReport = { viewModel.askReport(post) },
+                        )
+                    }
                 }
             }
         }
@@ -354,8 +348,7 @@ private fun BoardTab(
             showArrow = false,
             onClick = onWritePost,
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(start = 20.dp, end = 20.dp, bottom = 14.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 14.dp)
                 .guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
         )
     }
@@ -827,41 +820,10 @@ private fun SearchField(
     }
 }
 
-/** 게시판 맨 위 한 줄 — 지도로 들어가는 입구 */
-@Composable
-private fun MapEntryCard(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(CarbonHigh)
-            .quietClickable(onClick)
-            .padding(horizontal = 16.dp, vertical = 13.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(Icons.Filled.Map, contentDescription = null, tint = Volt, modifier = Modifier.size(22.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.community_map_title),
-                color = Snow,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-            )
-            Text(
-                text = stringResource(R.string.community_map_sub),
-                color = Silver,
-                fontSize = 14.sp,
-            )
-        }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Silver)
-    }
-}
-
-/** 함께 뛰기 세그먼트 — 번개러닝 / 크루 / 이야기, 크루 채팅(머리 말풍선 버튼으로 여는 안쪽 화면) */
+/** 함께 뛰기 세그먼트 — 모집 중 / 이야기 / 크루(2026-11-07 순서), 크루 채팅(머리 말풍선 버튼으로 여는 안쪽 화면) */
 private const val SEGMENT_MEETUPS = 0
-private const val SEGMENT_CREWS = 1
-private const val SEGMENT_STORIES = 2
+private const val SEGMENT_STORIES = 1
+private const val SEGMENT_CREWS = 2
 private const val SEGMENT_CHAT = 3
 
 /**

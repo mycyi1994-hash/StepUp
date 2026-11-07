@@ -160,11 +160,12 @@ class CommunityStoriesTest {
             if (StepPermissions.hasLocation(context)) notes += "26-permission: location was granted — the prompt shows the locating state"
             tapTag("stories-choose-region")
         } else {
-            notes += "26-permission: location already known — opened 내 주변 from the area label instead"
+            // 2026-11-07 — 목록 위 지역 줄은 범위 시트를 연다. 시트 안 "지역 변경 >"이 지역 고르기로 간다
+            notes += "26-permission: location already known — opened the range sheet from the area label instead"
             tapTag("stories-area")
-            awaitTag("story-location")
-            shot("26-permission-location-screen")
-            tapTag("stories-choose-region")
+            awaitTag("story-range-region")
+            shot("26-permission-range-sheet")
+            tapTag("story-range-region")
         }
         awaitTag("story-region")
         compose.onNodeWithTag("story-region-search").performTextInput("여의도")
@@ -188,13 +189,13 @@ class CommunityStoriesTest {
         shot("01-list", settle = 1_800)
 
         // ── 17 범위 — 고르다 닫으면 그대로, "이 범위로 보기"를 눌러야 바뀐다 ───────────
-        tapTag("stories-range")
+        tapTag("stories-area") // 지역 줄이 범위 시트를 연다(2026-11-07)
         awaitTag("story-range-apply")
         tapTag("story-range-M500")
         shot("17-radius")
         tapTag("story-sheet-close")
         compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()
-        tapTag("stories-range")
+        tapTag("stories-area") // 지역 줄이 범위 시트를 연다(2026-11-07)
         tapTag("story-range-KM3")
         tapTag("story-range-apply")
         compose.onNodeWithText(context.getString(R.string.story_range_from_region, "3km")).assertIsDisplayed()
@@ -210,7 +211,7 @@ class CommunityStoriesTest {
         shot("17-radius-applied-3km", settle = 1_500)
 
         // ── 14 · 15 · 16 지도 → 장소 → 같은 화면 아래 목록이 그 장소로 걸러진다(CM05 · CM06) ─────────
-        tapTag("stories-open-map")
+        tapTag("community-map") // 이야기 칸의 지도는 머리 지도 원 버튼(2026-11-07 — 목록 위 "지도 보기" 링크는 뺐다)
         awaitTag("story-map")
         shot("14-map-overview", settle = 2_000)
         compose.onNodeWithTag("story-map-list").performScrollToNode(hasTestTag("story-thumb-302"))
@@ -392,7 +393,7 @@ class CommunityStoriesTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("story-toast").fetchSemanticsNodes().isEmpty() }
 
         // 범위를 기본(1km)으로 돌린다 — 빈 목록에 "더 넓은 범위에서 보기"가 보이게
-        tapTag("stories-range")
+        tapTag("stories-area") // 지역 줄이 범위 시트를 연다(2026-11-07)
         tapTag("story-range-KM1")
         tapTag("story-range-apply")
         compose.onNodeWithText(context.getString(R.string.story_range_from_region, "1km")).assertIsDisplayed()

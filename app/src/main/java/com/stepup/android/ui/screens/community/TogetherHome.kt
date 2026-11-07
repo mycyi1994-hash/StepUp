@@ -73,26 +73,26 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 /*
- * 함께 뛰기(UI 최종 통합안 2026-10-25 — 02_함께뛰기 · 06_이야기) — 큰 제목 + 세그먼트 셋(모집 중 · 크루 · 이야기).
+ * 함께 뛰기(UI 최종 통합안 2026-10-25 — 02_함께뛰기 · 06_이야기) — 큰 제목 + 세그먼트 셋(모집 중 · 이야기 · 크루 — 2026-11-07 순서).
  * 첫 칸 "모집 중"은 크루 러닝 대기실 · 번개러닝을 한 목록에 둔다(2026-10-26, `TogetherRooms.kt` — 예전 번개 사진 포스터를 대신한다).
  * 여기는 머리 · 제목과 크루 칸 · 시트가 함께 쓰는 부품이다.
  */
 
-/** 머리 줄 — 오른쪽 원 버튼 셋(지도 · 크루 채팅 · 글쓰기). 글쓰기는 파란 연필 */
+/**
+ * 머리 줄 — 오른쪽 원 버튼(지도 · 크루 채팅). 크루 채팅은 가입한 크루가 있을 때만([onChat] 이 null 이면 숨긴다).
+ * 글쓰기는 머리에 두지 않는다(2026-11-07) — 세그먼트마다 아래 주 버튼 하나(함께 뛰기 만들기 · 이야기 쓰기 · 크루 모집하기)가 맡는다.
+ */
 @Composable
-internal fun TogetherTopBar(onMap: () -> Unit, onChat: () -> Unit, onWrite: () -> Unit, modifier: Modifier = Modifier) {
+internal fun TogetherTopBar(onMap: () -> Unit, onChat: (() -> Unit)?, modifier: Modifier = Modifier) {
     Row(
         modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CircleIconButton(Icons.Outlined.Map, stringResource(R.string.community_map_title), onMap, modifier = Modifier.testTag("community-map"))
-        CircleIconButton(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.ui_open_chat), onChat, modifier = Modifier.testTag("community-tab-chat"))
-        CircleIconButton(
-            Icons.Outlined.Edit, stringResource(R.string.post_write), onWrite,
-            tint = StepUpUi.colors.accentText,
-            modifier = Modifier.testTag("community-write").guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
-        )
+        if (onChat != null) {
+            CircleIconButton(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.ui_open_chat), onChat, modifier = Modifier.testTag("community-tab-chat"))
+        }
     }
 }
 
