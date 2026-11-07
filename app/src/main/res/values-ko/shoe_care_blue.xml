@@ -10,7 +10,6 @@
     <string name="care_check_result">결과 확인</string>
     <string name="care_manage_title">신발 관리</string>
     <string name="care_repair">수리하기</string>
-    <string name="care_durability_now">내구도 %1$s</string>
     <string name="care_sell">판매하기</string>
     <string name="care_sell_equipped">착용 중에는 판매할 수 없어요</string>
     <string name="care_busy_note">결과를 확인한 뒤 사용할 수 있어요</string>

@@ -28,7 +28,6 @@
     <string name="sdv_wear">このシューズを履く</string>
     <string name="sdv_wear_busy">履き替え中…</string>
     <string name="sdv_worn_toast">%1$sを履きました。</string>
-    <string name="sdv_more">このシューズのその他</string>
     <!-- 상세 능력치 칸(카툰 입체형) — 항목 · 값 · 막대 끝 -->
     <string name="sdv_bar_cd">%1$s %2$s。バーの上限 %3$s</string>
 

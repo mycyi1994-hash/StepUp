@@ -239,7 +239,6 @@
     <string name="sneaker_energy_saving">에너지 절감</string>
     <string name="sneaker_durability">내구도</string>
     <string name="sneaker_about">이 NFT 정보</string>
-    <string name="sneaker_about_body" formatted="false">모든 신발은 여섯 등급(일반 · 레어 · 에픽 · 레전더리 · 레드라인 · 피니시) 중 하나예요. 등급이 높을수록 더 오래 달리고 더 많이 벌며, 21레벨부터는 레벨업 포인트가 크게 늘어요.</string>
     <string name="rarity_common">일반</string>
     <string name="rarity_rare">레어</string>
     <string name="rarity_epic">에픽</string>

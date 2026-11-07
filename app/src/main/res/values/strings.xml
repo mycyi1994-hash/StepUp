@@ -241,7 +241,6 @@
     <string name="sneaker_energy_saving">Energy saving</string>
     <string name="sneaker_durability">Durability</string>
     <string name="sneaker_about">About this NFT</string>
-    <string name="sneaker_about_body" formatted="false">Every pair has one of six rarity tiers — Common, Rare, Epic, Legendary, Redline, Finish. Higher tiers run longer, earn more and get many more stat points from level 21 up.</string>
     <string name="rarity_common">COMMON</string>
     <string name="rarity_rare">RARE</string>
     <string name="rarity_epic">EPIC</string>

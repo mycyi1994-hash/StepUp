@@ -29,7 +29,6 @@
     <string name="sdv_wear_busy">신발 바꾸는 중…</string>
     <!-- %1$s 에는 목적격 조사가 붙은 이름이 온다("새벽 강변을") -->
     <string name="sdv_worn_toast">%1$s 신었어요.</string>
-    <string name="sdv_more">이 신발 더 보기</string>
     <!-- 상세 능력치 칸(카툰 입체형) — 항목 · 값 · 막대 끝 -->
     <string name="sdv_bar_cd">%1$s %2$s. 막대 끝 %3$s</string>
 

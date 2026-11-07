@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -32,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -68,7 +65,6 @@ import com.stepup.android.ui.components.SneakerGradeStage
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.LocalFeedback
-import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpSans
 
 /*
@@ -169,32 +165,6 @@ fun CareSheetTitle(title: String, subtitle: String?, modifier: Modifier = Modifi
 /** 시트 · 상세의 "이름 · No. 0007" */
 @Composable
 fun Sneaker.nameAndNumber(): String = shoeName() + " · " + formatShoeNumber(mintNumber)
-
-/** 관리 시트의 한 줄 — 둥근 파란 칸, 제목 · 설명 · 오른쪽 화살표. 누를 수 없으면 흐리게, 까닭은 설명으로 */
-@Composable
-fun CareMenuRow(title: String, description: String?, enabled: Boolean, onClick: () -> Unit, tag: String) {
-    val t = runTone()
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(shape)
-            .background(if (t.dark) Color(0xFF0E3268) else t.panel, shape)
-            .border(1.dp, if (enabled) t.panelEdge else t.divider, shape)
-            .feedbackClickable(enabled = enabled, onClick = onClick)
-            .testTag(tag)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .alpha(if (enabled) 1f else 0.55f),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = runTextStyle(17.sp, t.text, FontWeight.Bold, 1.3f))
-            if (description != null) Text(description, style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.35f))
-        }
-        if (enabled) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = t.text,
-                modifier = Modifier.size(24.dp))
-        }
-    }
-}
 
 /** 정보 한 줄 — 이름 왼쪽, 값 오른쪽(필요하면 줄을 바꾼다). [valueContent] 가 있으면 글 대신(등급 배지) */
 @Composable

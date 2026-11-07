@@ -1,5 +1,12 @@
 # Redesign progress
 
+## 2026-11-07 — shoe detail: red repair button next to the number · no ⋯
+
+- User choice (variant 1, [shoe-repair-button-2026-11-07](shoe-repair-button-2026-11-07/README.md)): the shoe detail name row gets a red "🔨 수리하기" pill right after `No. ####` (`ShoeNameWithBadge(action = ShoeNameAction)`, tag `shoe-repair-open`). It only opens the existing repair sheet (`onOpenRepair` → `ShoeCareStore.openRepair`); repairs are still sent only from the sheet's confirm button. Disabled while a repair/upgrade result is unknown (the "check result" notice still opens the sheet).
+- Removed: header `⋯` (`shoe-more`), the manage sheet (`ManageSheet`, `CareMenuRow`), the body repair row (`shoe-care-repair`) and three orphaned strings. Points · sell · record stay in the body care list. Bottom upgrade/wear buttons unchanged.
+- If badge + number + pill do not fit one line (very large text, narrow width) the pill drops directly under the name instead of being clipped.
+- Evidence: device tests rewritten for the new path (`ShoeDetailDesignTest`, `ShoeCareDesignTest#careScenes`) and a new `ShoeCareDesignTest#repairButton` (device width, 360/390/430 dp, 1.3×/2.0× text, 20-char name, light theme, open → no confirm, blocked state). Captures via Screen Gallery `scope = shoe-detail`.
+
 ## 2026-10-18 — lock-screen run notification · free-run start "!" removed
 
 - Report: [../run-lock-screen-2026-10-18.md](../run-lock-screen-2026-10-18.md). `service/RunNotification.kt`: Android 16+ standard notification with the Live Updates request (status chip + pinned on the lock screen); below 16, a navy colorized custom notification (logo, running chronometer, distance, pace — `layout/notification_run*.xml`). New silent `run_live` channel (public on the lock screen), pause/resume action only, updates throttled to 3 s (pause/still immediately).

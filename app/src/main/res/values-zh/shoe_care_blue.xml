@@ -10,7 +10,6 @@
     <string name="care_check_result">查看结果</string>
     <string name="care_manage_title">鞋子管理</string>
     <string name="care_repair">修理</string>
-    <string name="care_durability_now">耐久度 %1$s</string>
     <string name="care_sell">出售</string>
     <string name="care_sell_equipped">穿着中无法出售</string>
     <string name="care_busy_note">确认结果后即可使用</string>

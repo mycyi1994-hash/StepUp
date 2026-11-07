@@ -1,10 +1,15 @@
 package com.stepup.android.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,12 +17,14 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.res.stringResource
@@ -35,10 +42,12 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.ShoeTier
+import com.stepup.android.ui.experience.feedbackClickable
 import kotlin.math.roundToInt
 
 /*
@@ -134,9 +143,71 @@ private fun Modifier.badgeLayout(): Modifier = layout { measurable, constraints 
 }
 
 /**
+ * 이름 줄 끝의 작은 행동 하나 — 배지 · 번호 바로 오른쪽에 채운 둥근 알약(신발 상세의 "🔨 수리하기", 2026-11-07 사용자 선택 1안).
+ * [icon] 은 글자 앞 장식(그림 글자)이라 읽기 도구는 [label] 만 한 번 읽는다. [enabled] 가 거짓이면 흐리게, 눌러도 아무 일이 없다.
+ */
+class ShoeNameAction(
+    val label: String,
+    val onClick: () -> Unit,
+    /** 알약 채움 */
+    val fill: Color,
+    val tag: String,
+    val enabled: Boolean = true,
+    val icon: String? = null,
+    /** 알약 글자 */
+    val ink: Color = Color.White,
+)
+
+/**
+ * 알약 크기 — 보이는 높이 28dp(글자가 커지면 글자 + 위아래 5dp), 글자 13sp, 양옆 10dp, 장식과 글자 사이 4dp.
+ * 눌리는 곳은 보이는 알약보다 넓다 — 작은 누름 칸은 Compose 가 최소 누름 크기(48dp)까지 넓혀 받는다(이름 · 번호는 누르는 곳이 아니다).
+ */
+private val ActionHeight = 28.dp
+private val ActionInset = 5.dp
+private val ActionSidePadding = 10.dp
+private val ActionIconGap = 4.dp
+private val ActionLabelSize = 13.sp
+
+/** 번호(번호가 없으면 배지)와 알약 사이 */
+private val ActionGap = 8.dp
+
+/** 한 줄에 다 안 들어가 이름 아래 줄로 내려갈 때 이름과 알약 사이 */
+private val ActionDropGap = 6.dp
+
+/** 잰 폭과 그린 폭이 조금 다를 때(그림 글자 · 글꼴 대체) 끝 글자가 잘리지 않게 */
+private val ActionSlack = 2.dp
+
+private fun actionLabelStyle(action: ShoeNameAction) =
+    TextStyle(color = action.ink, fontSize = ActionLabelSize, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
+
+/** 알약 하나 — 크기는 부르는 쪽이 같은 계산으로 잰 값([ShoeNameWithBadge]) */
+@Composable
+private fun ShoeNameActionPill(action: ShoeNameAction, style: TextStyle, modifier: Modifier) {
+    Box(
+        modifier
+            .alpha(if (action.enabled) 1f else .5f)
+            // 누름(작아짐 · 어둡게)이 붉은 면까지 함께 — 면은 누름 안쪽에서 그린다
+            .feedbackClickable(enabled = action.enabled, role = Role.Button, onClick = action.onClick)
+            .drawBehind { drawRoundRect(action.fill, cornerRadius = CornerRadius(size.height / 2f)) }
+            .testTag(action.tag),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(Modifier.wrapContentSize(unbounded = true), verticalAlignment = Alignment.CenterVertically) {
+            if (action.icon != null) {
+                Text(action.icon, style = style, maxLines = 1, softWrap = false, modifier = Modifier.clearAndSetSemantics { })
+                Spacer(Modifier.width(ActionIconGap))
+            }
+            Text(action.label, style = style, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+/**
  * 이름 + 끝의 배지 — 배지는 이름의 **마지막 줄 끝**에 같은 줄로 붙는다(따로 한 줄을 차지하지 않는다).
  * 이름은 [maxLines] 줄까지. 넘치면 이름을 줄여 "…"를 붙이고 배지는 그대로 둔다 — 배지가 잘려 사라지지 않게.
  * [suffix] 가 있으면(신발 상세의 "No. 0007") 배지 바로 오른쪽에 붙여 배지와 한 덩어리로 둔다 — 번호만 다음 줄로 떨어지지 않는다.
+ * [action] 이 있으면(신발 상세의 수리하기) 번호 바로 오른쪽에 알약을 붙여 같은 덩어리로 둔다. 덩어리가 한 줄 폭에 다 들어가지 않으면
+ * (아주 큰 글씨 · 좁은 화면) 알약만 이름 바로 아래 줄로 내린다 — 줄여 숨기거나 화면 밖으로 밀지 않는다. 없으면 예전 그대로다.
  */
 @Composable
 fun ShoeNameWithBadge(
@@ -148,6 +219,7 @@ fun ShoeNameWithBadge(
     textAlign: TextAlign = TextAlign.Start,
     suffix: String? = null,
     suffixStyle: TextStyle = TextStyle.Default,
+    action: ShoeNameAction? = null,
 ) {
     val density = LocalDensity.current
     val colors = remember(tier) { tierColors(tier) }
@@ -157,6 +229,7 @@ fun ShoeNameWithBadge(
     val base = LocalTextStyle.current
     val nameStyle = remember(base, style, textAlign) { base.merge(style).copy(textAlign = textAlign) }
     val labelStyle = remember(base, colors) { base.merge(badgeLabelStyle(colors)) }
+    val actionStyle = action?.let { base.merge(actionLabelStyle(it)) }
     BoxWithConstraints(modifier) {
         val labelSize = remember(label, labelStyle, density) { measurer.measure(label, labelStyle).size }
         val tailStyle = remember(base, suffixStyle) { base.merge(suffixStyle) }
@@ -172,15 +245,30 @@ fun ShoeNameWithBadge(
                 (labelSize.width + badgeSidePx(height) * 2).toDp() to height.toDp()
             }
         }
+        // 알약 — 글자 · 장식을 재서 높이 · 폭을 정한다(글자가 커지면 함께 커진다)
+        val actionSize = remember(action?.label, action?.icon, actionStyle, density) {
+            if (action == null || actionStyle == null) null else with(density) {
+                val text = measurer.measure(action.label, actionStyle, softWrap = false).size
+                val icon = action.icon?.let { measurer.measure(it, actionStyle, softWrap = false).size }
+                val height = maxOf(ActionHeight.roundToPx(), maxOf(text.height, icon?.height ?: 0) + ActionInset.roundToPx() * 2)
+                val width = text.width + (icon?.let { it.width + ActionIconGap.roundToPx() } ?: 0) +
+                    ActionSidePadding.roundToPx() * 2 + ActionSlack.roundToPx()
+                DpSize(width.toDp(), height.toDp())
+            }
+        }
+        val widthPx = constraints.maxWidth
+        val blockWidth = badgeWidth + BadgeGap + if (suffix != null) SuffixGap + suffixWidth else 0.dp
+        // 배지 · 번호 · 알약 한 덩어리가 한 줄 폭에 들어가면 번호 바로 오른쪽, 아니면 이름 아래 줄로
+        val actionInline = actionSize != null &&
+            (widthPx == Constraints.Infinity || with(density) { (blockWidth + ActionGap + actionSize.width).roundToPx() } <= widthPx)
         val placeholder = with(density) {
             Placeholder(
-                width = (badgeWidth + BadgeGap + if (suffix != null) SuffixGap + suffixWidth else 0.dp).toSp(),
-                height = maxOf(badgeHeight, suffixHeight).toSp(),
+                width = (blockWidth + if (actionInline && actionSize != null) ActionGap + actionSize.width else 0.dp).toSp(),
+                height = maxOf(badgeHeight, suffixHeight, if (actionInline && actionSize != null) actionSize.height else 0.dp).toSp(),
                 placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter,
             )
         }
-        val widthPx = constraints.maxWidth
-        // 대체 글 — 배지 자리가 읽히는 말(" 레어", 번호가 있으면 " 레어 No. 0007")
+        // 대체 글 — 배지 자리가 읽히는 말(" 레어", 번호가 있으면 " 레어 No. 0007"). 알약은 따로 읽히는 버튼이라 넣지 않는다
         val alt = if (suffix != null) "$label $suffix" else label
         val text = remember(name, alt, nameStyle, widthPx, placeholder, maxLines) {
             fittedName(name, alt, widthPx) { candidate ->
@@ -189,24 +277,40 @@ fun ShoeNameWithBadge(
                     .hasVisualOverflow
             }
         }
-        Text(
-            text = text,
-            style = nameStyle,
-            maxLines = maxLines,
-            overflow = TextOverflow.Clip,
-            inlineContent = mapOf(
-                BadgeInlineId to InlineTextContent(placeholder) {
-                    Row(Modifier.padding(start = BadgeGap), verticalAlignment = Alignment.CenterVertically) {
-                        // 글의 대체 글(" 레어")이 등급을 이미 읽어 준다
-                        ShoeGradeBadge(tier, Modifier.size(width = badgeWidth, height = badgeHeight), decorative = true)
-                        if (suffix != null) {
-                            Text(suffix, style = tailStyle, maxLines = 1, softWrap = false,
-                                modifier = Modifier.padding(start = SuffixGap).clearAndSetSemantics { testTag = "shoe-name-suffix" })
+        val nameText = @Composable {
+            Text(
+                text = text,
+                style = nameStyle,
+                maxLines = maxLines,
+                overflow = TextOverflow.Clip,
+                inlineContent = mapOf(
+                    BadgeInlineId to InlineTextContent(placeholder) {
+                        Row(Modifier.padding(start = BadgeGap), verticalAlignment = Alignment.CenterVertically) {
+                            // 글의 대체 글(" 레어")이 등급을 이미 읽어 준다
+                            ShoeGradeBadge(tier, Modifier.size(width = badgeWidth, height = badgeHeight), decorative = true)
+                            if (suffix != null) {
+                                Text(suffix, style = tailStyle, maxLines = 1, softWrap = false,
+                                    modifier = Modifier.padding(start = SuffixGap).clearAndSetSemantics { testTag = "shoe-name-suffix" })
+                            }
+                            if (actionInline && action != null && actionStyle != null && actionSize != null) {
+                                ShoeNameActionPill(action, actionStyle, Modifier.padding(start = ActionGap).size(actionSize))
+                            }
                         }
-                    }
-                },
-            ),
-        )
+                    },
+                ),
+            )
+        }
+        if (!actionInline && action != null && actionStyle != null && actionSize != null) {
+            Column(
+                horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(ActionDropGap),
+            ) {
+                nameText()
+                ShoeNameActionPill(action, actionStyle, Modifier.size(actionSize))
+            }
+        } else {
+            nameText()
+        }
     }
 }
 

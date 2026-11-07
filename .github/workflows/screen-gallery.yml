@@ -6,7 +6,7 @@ on:
       scope:
         description: Capture the character-free redesign or the full regression gallery
         type: choice
-        options: [redesign, secondary, records, explore, wardrobe, mystery, gallery, interaction, all]
+        options: [redesign, secondary, records, explore, wardrobe, mystery, gallery, interaction, shoe-detail, all]
         default: redesign
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         api-level: [34, 35]
-        suite: ${{ fromJSON(github.event.inputs.scope == 'all' && '["interaction", "gallery", "large-font", "permissions"]' || github.event.inputs.scope == 'interaction' && '["interaction"]' || github.event.inputs.scope == 'gallery' && '["gallery"]' || github.event.inputs.scope == 'mystery' && '["mystery"]' || github.event.inputs.scope == 'wardrobe' && '["wardrobe"]' || github.event.inputs.scope == 'secondary' && '["secondary"]' || github.event.inputs.scope == 'records' && '["records"]' || github.event.inputs.scope == 'explore' && '["explore"]' || '["redesign"]') }}
+        suite: ${{ fromJSON(github.event.inputs.scope == 'all' && '["interaction", "gallery", "large-font", "permissions"]' || github.event.inputs.scope == 'interaction' && '["interaction"]' || github.event.inputs.scope == 'gallery' && '["gallery"]' || github.event.inputs.scope == 'mystery' && '["mystery"]' || github.event.inputs.scope == 'wardrobe' && '["wardrobe"]' || github.event.inputs.scope == 'secondary' && '["secondary"]' || github.event.inputs.scope == 'records' && '["records"]' || github.event.inputs.scope == 'explore' && '["explore"]' || github.event.inputs.scope == 'shoe-detail' && '["shoe-detail"]' || '["redesign"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -47,7 +47,7 @@ jobs:
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader -camera-back none
           script: |
             adb shell settings put system system_locales ko-KR
-            if [ "${{ matrix.suite }}" = "wardrobe" ] || [ "${{ matrix.suite }}" = "gallery" ]; then adb shell wm size 1080x2400; fi
+            if [ "${{ matrix.suite }}" = "wardrobe" ] || [ "${{ matrix.suite }}" = "gallery" ] || [ "${{ matrix.suite }}" = "shoe-detail" ]; then adb shell wm size 1080x2400; fi
             bash tools/run_screen_gallery.sh ${{ matrix.suite }}
       - uses: actions/upload-artifact@v4
         if: always()
