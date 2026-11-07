@@ -10341,6 +10341,19 @@ begin
 end $$;
 reset role;
 
+-- ── 11.11 워킹데이 내 초대 링크(0094) — 코드 · 초대 수 · 인정 수 ──
+set role anon;
+do $$
+declare r jsonb;
+begin
+  r := public.walkingday_invite_link('Referrer@runnermail.com');
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'code' = pg_temp.fx('waitlist-ref') and (r->>'invited')::int = 1 and (r->>'counted')::int = 1,
+    '내 초대 링크: 코드 · 내 링크로 등록한 친구 1 · 11,111걸음 승인된 친구 1(0094)');
+  perform pg_temp.ok(public.walkingday_invite_link('nobody@runnermail.com')->>'code' = 'not_registered', '내 초대 링크: 사전 등록 안 한 이메일');
+  perform pg_temp.ok(public.walkingday_invite_link('bad')->>'code' = 'email', '내 초대 링크: 틀린 이메일');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

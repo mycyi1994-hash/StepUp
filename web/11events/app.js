@@ -422,7 +422,12 @@
   } catch (e) { /* 기본 주소 유지 */ }
 
   /* 11/7~11/11 15시 걸음 인증 양식이 정해지면(config.js의 proof) 주 버튼이 인증으로 바뀜 */
-  if (CFG.proof && phase() === 'live') ctas.forEach(function (a) { a.href = CFG.proof; if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = '걸음 인증하기'; });
+  /* 11/7: 친구 초대 링크(?ref=)로 온 사람은 아직 등록 전이라 사전 등록 버튼을 그대로 둔다(ref 가 등록까지 가야 초대가 센다). 인증 버튼에도 utm 을 넘긴다 */
+  var invited = false; try { invited = !!new URLSearchParams(location.search).get('ref'); } catch (e) { /* 없음 */ }
+  if (CFG.proof && phase() === 'live' && !invited) ctas.forEach(function (a) {
+    try { var u = new URL(CFG.proof, location.href), q = new URLSearchParams(location.search); q.forEach(function (v, k) { if (v && /^utm_/i.test(k)) u.searchParams.set(k, v); }); a.href = u.pathname + u.search; } catch (e) { a.href = CFG.proof; }
+    if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = '걸음 인증하기';
+  });
   /* 마감 뒤에는 응모권 문구를 빼고 사전 등록만 안내 */
   if (phase() === 'count' || phase() === 'result') ctas.forEach(function (a) { if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = 'StepUp 사전 등록하기'; });
 
