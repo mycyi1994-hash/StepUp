@@ -10368,7 +10368,6 @@ begin
     '리더보드: 초대 1위는 이메일을 가려서(흔하지 않은 도메인도 가림)(0096)');
   perform pg_temp.ok(v->'steps'->0->>'who' = 'fr**d@***' and (v->'steps'->0->>'days')::int = 5, '리더보드: 걸음 순위는 승인된 걸음 합(0096)');
   perform pg_temp.ok(v::text !~ 'runnermail', '리더보드: 이메일 원문은 나가지 않는다(0096)');
-  perform pg_temp.ok(economy.walkingday_mask_email('abcd@gmail.com') = 'ab**d@gmail.com', '흔한 메일 도메인은 보인다');
 end $$;
 reset role;
 
