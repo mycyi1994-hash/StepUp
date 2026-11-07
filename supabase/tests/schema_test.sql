@@ -10359,6 +10359,19 @@ begin
 end $$;
 reset role;
 
+-- ── 11.11 워킹데이 공개 리더보드(0096) — 가린 이메일만 ──
+set role anon;
+do $$
+declare v jsonb := public.walkingday_leaderboard();
+begin
+  perform pg_temp.ok(v->'invite'->0->>'who' = 're**r@***' and (v->'invite'->0->>'friends')::int = 1 and (v->'invite'->0->>'rank')::int = 1,
+    '리더보드: 초대 1위는 이메일을 가려서(흔하지 않은 도메인도 가림)(0096)');
+  perform pg_temp.ok(v->'steps'->0->>'who' = 'fr**d@***' and (v->'steps'->0->>'days')::int = 5, '리더보드: 걸음 순위는 승인된 걸음 합(0096)');
+  perform pg_temp.ok(v::text !~ 'runnermail', '리더보드: 이메일 원문은 나가지 않는다(0096)');
+  perform pg_temp.ok(economy.walkingday_mask_email('abcd@gmail.com') = 'ab**d@gmail.com', '흔한 메일 도메인은 보인다');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
