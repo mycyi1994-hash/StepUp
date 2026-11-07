@@ -436,6 +436,8 @@ registerForm.addEventListener('submit', async event => {
     if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
     saveReceipt(result.receipt, email);
     setMyCode(result.referral_code);
+    // 방문 통계(GA4 — ./ga.js, 운영 주소에서만): 사전 등록 완료 = 인플루언서 utm 별 성과의 기준. 이메일 · 추천 코드는 보내지 않는다
+    try { window.gtag?.('event', 'sign_up', { method: 'waitlist', invited: invitedBy ? 'yes' : 'no' }); } catch { /* 통계는 등록을 막지 않는다 */ }
     renderClaims([]);
     showStage('share');
     renderEntry();
