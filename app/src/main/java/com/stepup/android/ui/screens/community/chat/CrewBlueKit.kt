@@ -131,7 +131,8 @@ internal class BlueInk(
 private val DarkBlueInk = BlueInk(
     canvas = Color(0xFF070B14), canvasTop = Color(0xFF070B14), card = Color(0xFF0E1424), cardTop = Color(0xFF0E1424),
     sheet = Color(0xFF0E1424), text = Color.White, secondary = Color(0xFF969CAA), info = Color(0xFF6E9BFF),
-    divider = Color(0x17FFFFFF), edge = Color(0x17FFFFFF), edgeStrong = Color(0xFF2F6BFF), tabMark = Color(0xFF6E9BFF),
+    // edge: 흰 테두리(2026-11-07, 예전 0x17FFFFFF)
+    divider = Color(0x17FFFFFF), edge = Color(0x24FFFFFF), edgeStrong = Color(0xFF2F6BFF), tabMark = Color(0xFF6E9BFF),
     warn = Color(0xFFFF453A), choice = Color(0xFF0E1424), choiceText = Color(0xFF969CAA), choiceOn = Color(0xFF2F6BFF),
     choiceOnText = Color.White, level = Color(0xFF202736), levelText = Color(0xFF6E9BFF), track = Color(0xFF222A3D),
     bar = Color(0xFF2F6BFF), avatar = Color(0xFF202736), avatarText = Color(0xFF969CAA), secondaryButton = Color(0xFF202736),

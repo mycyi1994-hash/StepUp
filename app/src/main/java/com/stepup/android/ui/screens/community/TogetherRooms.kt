@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.community
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -325,7 +328,7 @@ private fun TogetherPickSheet(
         com.stepup.android.ui.components.RunSheetText(stringResource(R.string.tg_pick_title))
         Spacer(Modifier.height(16.dp))
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card).stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface),
             verticalArrangement = Arrangement.Top,
         ) {
             crews.forEach { (id, name) ->

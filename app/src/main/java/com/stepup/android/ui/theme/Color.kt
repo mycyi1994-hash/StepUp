@@ -32,8 +32,10 @@ class StepUpPalette(
     val carbon: Color,
     /** 카드 안의 한 단계 위 — 칩·입력칸·보조 블록 */
     val carbonHigh: Color,
-    /** 헤어라인 */
+    /** 카드 · 버튼 둘레 선(2026-11-07 흰 테두리 — 다크는 흰 18%) */
     val edge: Color,
+    /** 구분선 — 둘레 선이 밝아진 뒤에도 칸 사이 선은 예전 굵기감 그대로 */
+    val hairline: Color,
     /** 주 강조 */
     val volt: Color,
     /** 강조 음영 — 그라데이션의 어두운 끝 */
@@ -147,6 +149,7 @@ val LightPalette = StepUpPalette(
     carbonHigh = Color(0xFFE9E9EE),
     // separator rgba(60,60,67,.16)
     edge = Color(0x293C3C43),
+    hairline = Color(0x293C3C43),
     volt = Color(0xFF1F5EFF),
     voltDeep = Color(0xFF1A4FE0),
     voltSoft = Color(0xFF5B8CFF),
@@ -192,8 +195,9 @@ val DarkPalette = StepUpPalette(
     carbon = Color(0xFF101216),
     // fill rgba(130,150,190,.20) 을 카드 위에 얹은 값 — 보조 버튼 · 입력칸 · 세그먼트 트랙
     carbonHigh = Color(0xFF1E2128),
-    // separator rgba(255,255,255,.09)
-    edge = Color(0xFF292E37),
+    // 흰 테두리(2026-11-07 「흰색 덧 붙히기」) — 예전 불투명 회색 #292E37 대신 흰 18%. 구분선은 [hairline] 이 예전 값을 지킨다
+    edge = Color(0x2EFFFFFF),
+    hairline = Color(0xFF292E37),
     volt = Color(0xFF3D74FA),
     voltDeep = Color(0xFF3A6AE6),
     // 막 위 패널 테두리 · 스포트라이트 — 시안 #6E9BFF 를 55% 로 얹으면 막과 2.9:1 이라 한 단계 밝게(3:1, PaletteContrastTest)
@@ -249,6 +253,7 @@ val Night: Color get() = active.value.night
 val Carbon: Color get() = active.value.carbon
 val CarbonHigh: Color get() = active.value.carbonHigh
 val Edge: Color get() = active.value.edge
+val Hairline: Color get() = active.value.hairline
 val Volt: Color get() = active.value.volt
 val VoltDeep: Color get() = active.value.voltDeep
 val VoltSoft: Color get() = active.value.voltSoft

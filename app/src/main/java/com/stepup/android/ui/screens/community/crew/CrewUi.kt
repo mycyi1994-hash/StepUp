@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import com.stepup.android.ui.components.ButtonState
 import com.stepup.android.ui.components.DangerButton
 import com.stepup.android.ui.components.SecondaryBusyButton
@@ -524,7 +527,7 @@ internal fun CrewChoiceRow(content: @Composable RowScope.() -> Unit) {
     val c = com.stepup.android.ui.components.StepUpUi.colors
     Row(
         Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(11.dp)).background(c.card)
-            .border(1.dp, c.separator, RoundedCornerShape(11.dp)).padding(1.dp),
+            .stepUpRim(RoundedCornerShape(11.dp), RimKind.Surface).padding(1.dp),
         verticalAlignment = Alignment.CenterVertically, content = content,
     )
 }
@@ -1036,7 +1039,7 @@ internal fun CrewTextField(
         decorationBox = { inner ->
             Row(
                 Modifier.fillMaxWidth().heightIn(min = minHeight).clip(shape).background(c.card, shape)
-                    .then(if (focused || error) Modifier.border(2.dp, if (error) c.live else c.primary, shape) else Modifier)
+                    .then(if (focused || error) Modifier.border(2.dp, if (error) c.live else c.primary, shape) else Modifier.stepUpRim(shape, RimKind.Surface))
                     .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
             ) {
@@ -1060,7 +1063,7 @@ internal fun CrewPickerField(text: String, placeholder: String, onClick: () -> U
     val c = com.stepup.android.ui.components.StepUpUi.colors
     val shape = RoundedCornerShape(14.dp)
     Row(
-        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(c.card, shape)
+        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(c.card, shape).stepUpRim(shape, RimKind.Surface, enabled = enabled)
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

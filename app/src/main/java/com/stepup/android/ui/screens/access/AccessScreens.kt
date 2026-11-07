@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.access
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -364,6 +367,7 @@ private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
     val share = stringResource(R.string.beta_code_share_text, row.code, appLink)
     Row(
         Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(16.dp)).background(c.card)
+            .stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface)
             .heightIn(min = 64.dp).padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp).testTag("beta-code-${row.code}"),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.map
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
@@ -197,6 +200,7 @@ fun MapScreen(
         Box(
             Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp).padding(bottom = 10.dp)
                 .heightIn(max = 380.dp).clip(RoundedCornerShape(24.dp)).background(c.card)
+                .stepUpRim(RoundedCornerShape(24.dp), RimKind.Surface)
                 .verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
         ) {
             Column {

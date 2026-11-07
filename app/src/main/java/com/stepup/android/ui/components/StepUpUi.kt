@@ -63,17 +63,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -165,6 +170,16 @@ class StepUpUiColors(
     val handle: Color,
     /** 사진 위 유리 원 버튼 */
     val glass: Color,
+    /**
+     * 흰 테두리(2026-11-07 클라이언트 피드백 「흰색 덧 붙히기」) — [stepUpRim] 이 [RimKind] 로 고른다.
+     * 카드 · 묶음 목록(rim) · 회색 버튼(rimControl) · 파란 주 버튼(rimPrimary) · 사진(rimPhoto) · 사진 위 유리 버튼(rimGlass).
+     * 라이트는 흰 카드 위 흰 선이 안 보여 카드 테두리만 옅은 남색이다.
+     */
+    val rim: Color,
+    val rimControl: Color,
+    val rimPrimary: Color,
+    val rimPhoto: Color,
+    val rimGlass: Color,
     val dark: Boolean,
 )
 
@@ -179,7 +194,9 @@ val DarkBlueUi = StepUpUiColors(
     live = Color(0xFFFF8B9A), success = Color(0xFF32D74B),
     tabBar = Color(0xF208090B), mapBackground = Color(0xFF0A0B0D), errorFill = Color(0x29FF8B9A),
     photoArrowCircle = Color(0xFF000000), sheetScrim = Color(0x8C000000), handle = Color(0x4DF6F7FA),
-    glass = Color(0x2EFFFFFF), dark = true,
+    glass = Color(0x2EFFFFFF),
+    rim = Color(0x24FFFFFF), rimControl = Color(0x2EFFFFFF), rimPrimary = Color(0x59FFFFFF), rimPhoto = Color(0xD9FFFFFF),
+    rimGlass = Color(0x80FFFFFF), dark = true,
 )
 
 /** 화이트(2026-10-26 디자인 자료) — 바닥 #F4F5FA · 글자 #10192C · 보조 #606A7B · 블루 #2458E9 · 선택 칸 #10192C */
@@ -193,7 +210,9 @@ val WhiteBlueUi = StepUpUiColors(
     live = Color(0xFFB12A3E), success = Color(0xFF1E8E3E),
     tabBar = Color(0xF2FAFBFF), mapBackground = Color(0xFFECEEF1), errorFill = Color(0x1AB12A3E),
     photoArrowCircle = Color.Black, sheetScrim = Color(0x40000000), handle = Color(0x4D3C3C43),
-    glass = Color(0x2EFFFFFF), dark = false,
+    glass = Color(0x2EFFFFFF),
+    rim = Color(0x1A10192C), rimControl = Color.White, rimPrimary = Color(0x99FFFFFF), rimPhoto = Color(0xE6FFFFFF),
+    rimGlass = Color(0x80FFFFFF), dark = false,
 )
 
 // ── 글자 단계(tokens.json type) ─────────────────────────────────────
@@ -282,6 +301,67 @@ object StepUpUi {
     val FieldRadius = 14.dp
     val ThumbRadius = 12.dp
     val SheetRadius = 28.dp
+
+    /** 흰 테두리 굵기 — 카드 · 회색 버튼 · 유리 버튼 1, 파란 주 버튼 · 사진 1.5 */
+    val RimWidth = 1.dp
+    val PhotoRimWidth = 1.5.dp
+
+    /** 흰 테두리 한 번에 켜고 끄기(클라이언트 전후 비교용) — false 면 [stepUpRim] 이 아무것도 그리지 않는다 */
+    val RimOn = true
+}
+
+// ── 흰 테두리 ────────────────────────────────────────────────────────
+
+/** 테두리 종류 — 색 · 굵기 · 라이트에서 안쪽으로 들일지가 정해진다 */
+enum class RimKind {
+    /** 카드 · 묶음 목록 · 입력칸 */
+    Surface,
+    /** 회색 알약 · 원 버튼 · 작은 버튼 */
+    Control,
+    /** 파란 주 버튼 */
+    Primary,
+    /** 사진 카드 · 사진 썸네일 */
+    Photo,
+    /** 사진 위 유리 원 버튼 */
+    Glass,
+}
+
+/**
+ * 흰 테두리(2026-11-07 「흰색 덧 붙히기」) — 앱 전체 카드 · 버튼 · 사진의 둘레는 이것 하나로 그린다.
+ * clip · background 바로 뒤에 붙인다. 내용 뒤에 그리므로 사진 위에도 보인다. 이미 다른 테두리가 있으면 덧대지 말고 바꾼다.
+ *
+ * [enabled] = false(비활성 버튼)면 그리지 않는다 — 테두리가 있으면 눌리는 것처럼 보인다. [darkOnly] 면 라이트에서 생략.
+ * 라이트의 파란 주 버튼 · 사진은 흰 선이 밝은 바닥과 섞여 작아 보이지 않게 안쪽으로 들여 그린다(주 버튼 2 · 사진 1.5).
+ */
+fun Modifier.stepUpRim(shape: Shape, kind: RimKind, enabled: Boolean = true, darkOnly: Boolean = false): Modifier {
+    if (!StepUpUi.RimOn || !enabled) return this
+    val c = StepUpUi.colors
+    if (darkOnly && !c.dark) return this
+    val color = when (kind) {
+        RimKind.Surface -> c.rim
+        RimKind.Control -> c.rimControl
+        RimKind.Primary -> c.rimPrimary
+        RimKind.Photo -> c.rimPhoto
+        RimKind.Glass -> c.rimGlass
+    }
+    val width = if (kind == RimKind.Primary || kind == RimKind.Photo) StepUpUi.PhotoRimWidth else StepUpUi.RimWidth
+    val inset = when {
+        c.dark -> 0.dp
+        kind == RimKind.Primary -> 2.dp
+        kind == RimKind.Photo -> 1.5.dp
+        else -> 0.dp
+    }
+    if (inset == 0.dp) return this.border(width, color, shape)
+    return this.drawWithCache {
+        val w = width.toPx()
+        val off = inset.toPx() + w / 2f
+        val inner = Size((size.width - off * 2f).coerceAtLeast(0f), (size.height - off * 2f).coerceAtLeast(0f))
+        val outline = shape.createOutline(inner, layoutDirection, this)
+        onDrawWithContent {
+            drawContent()
+            translate(off, off) { drawOutline(outline, color, style = Stroke(w)) }
+        }
+    }
 }
 
 // ── 누름 ─────────────────────────────────────────────────────────────
@@ -413,6 +493,16 @@ fun PrimaryButton(
             .pressable(enabled = clickable, cue = cue, onClick = onClick)
             .clip(CircleShape)
             .background(bg)
+            // 흰 테두리 — 파란(사진 위 흰) 주 버튼, 완료 · 대기(회색)는 회색 버튼 테두리, 비활성은 없음
+            .stepUpRim(
+                CircleShape,
+                kind = when {
+                    !asPrimary -> RimKind.Control
+                    onPhoto -> RimKind.Photo
+                    else -> RimKind.Primary
+                },
+                enabled = shown != ButtonState.Disabled,
+            )
             // 로딩은 스피너만 보이지만 글("저장 중…")은 읽기 도구 · 검사에 그대로 남긴다
             .semantics { if (shown == ButtonState.Loading) { contentDescription = text; this.text = androidx.compose.ui.text.AnnotatedString(text) } }
             .padding(start = if (withArrow) 24.dp else 20.dp, end = if (withArrow) 7.dp else 20.dp),
@@ -487,6 +577,7 @@ fun SecondaryButton(
             .pressable(enabled = enabled, cue = cue, onClick = onClick)
             .clip(CircleShape)
             .background(if (!enabled) c.fillSecondary else if (onPhoto) c.glass else c.fill)
+            .stepUpRim(CircleShape, if (onPhoto) RimKind.Glass else RimKind.Control, enabled = enabled)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -519,6 +610,7 @@ fun DangerButton(
             .pressable(enabled = enabled && !busy, cue = cue, onClick = onClick)
             .clip(CircleShape)
             .background(if (enabled) c.fill else c.fillSecondary)
+            .stepUpRim(CircleShape, RimKind.Control, enabled = enabled)
             .semantics { if (busy) contentDescription = text }
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center,
@@ -551,6 +643,7 @@ fun SecondaryBusyButton(
     if (busy) {
         Box(
             modifier.heightIn(min = StepUpUi.ButtonHeight).clip(CircleShape).background(StepUpUi.colors.fill)
+                .stepUpRim(CircleShape, RimKind.Control)
                 // 도는 동안은 누를 수 없다 — 화면 낭독도 "사용 안 함"으로 읽고, 글("저장 중…")은 읽기 도구 · 검사에 남긴다(주 버튼 로딩과 같게)
                 .semantics { contentDescription = text; this.text = androidx.compose.ui.text.AnnotatedString(text); role = Role.Button; disabled() },
             contentAlignment = Alignment.Center,
@@ -585,6 +678,7 @@ fun SmallButton(
                 .pressable(enabled = kind != ButtonState.Disabled && kind != ButtonState.Loading, onClick = onClick)
                 .clip(CircleShape)
                 .background(bg)
+                .stepUpRim(CircleShape, RimKind.Control, enabled = kind != ButtonState.Disabled)
                 .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -624,7 +718,7 @@ fun BackButton(
 }
 
 /**
- * 원 버튼 — 머리의 뒤로 · 지도 · 글쓰기(36), 옆 공유(54). 회색 채움 원, [onPhoto] 면 유리 원(흰 15% + 위 빛 한 줄).
+ * 원 버튼 — 머리의 뒤로 · 지도 · 글쓰기(36), 옆 공유(54). 회색 채움 원, [onPhoto] 면 유리 원(흰 15% + 흰 테두리).
  * 보이는 크기가 작아도 터치 영역은 48.
  */
 @Composable
@@ -653,11 +747,8 @@ fun CircleIconButton(
                 .size(size)
                 .clip(CircleShape)
                 .background(if (onPhoto) c.glass else c.fill)
-                .then(
-                    if (onPhoto) Modifier.drawBehind {
-                        drawArc(Color.White.copy(alpha = .5f), 200f, 140f, false, style = Stroke(.5.dp.toPx()))
-                    } else Modifier,
-                ),
+                // 흰 테두리 원 전체(예전 사진 위 윗부분 빛 한 줄을 대신한다)
+                .stepUpRim(CircleShape, if (onPhoto) RimKind.Glass else RimKind.Control, enabled = enabled),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -714,7 +805,7 @@ fun StepUpTabs(
     BoxWithConstraints(
         // 2026-10-26: 트랙은 카드 면 + 가는 선, 고른 칸은 진한 판(화이트 남색 · 블랙 흰색)
         modifier.heightIn(min = height).clip(RoundedCornerShape(11.dp)).background(c.card)
-            .border(1.dp, c.separator, RoundedCornerShape(11.dp)).padding(3.dp),
+            .border(StepUpUi.RimWidth, if (StepUpUi.RimOn) c.rim else c.separator, RoundedCornerShape(11.dp)).padding(3.dp),
     ) {
         val count = items.size.coerceAtLeast(1)
         val w = maxWidth / count
@@ -878,7 +969,11 @@ fun PhotoCard(
     colorFilter: ColorFilter? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    Box(modifier.fillMaxWidth().heightIn(min = height).clip(RoundedCornerShape(radius)).background(Color(0xFF111111))) {
+    Box(
+        modifier.fillMaxWidth().heightIn(min = height).clip(RoundedCornerShape(radius)).background(Color(0xFF111111))
+            // 화면 꽉 찬 사진(모서리 0)에는 테두리를 두지 않는다
+            .stepUpRim(RoundedCornerShape(radius), RimKind.Photo, enabled = radius > 0.dp),
+    ) {
         if (photo != null) {
             Image(photo, null, contentScale = ContentScale.Crop, colorFilter = colorFilter, modifier = Modifier.matchParentSize())
         }
@@ -925,7 +1020,8 @@ fun WeekCard(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier.size(168.dp, 196.dp).pressable(onClick = onClick).clip(RoundedCornerShape(18.dp)).background(Color(0xFF111111)),
+        modifier.size(168.dp, 196.dp).pressable(onClick = onClick).clip(RoundedCornerShape(18.dp)).background(Color(0xFF111111))
+            .stepUpRim(RoundedCornerShape(18.dp), RimKind.Photo),
     ) {
         if (photo != null) Image(photo, null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(.35f to Color.Transparent, 1f to Color.Black.copy(alpha = .78f))))
@@ -951,7 +1047,11 @@ fun WeekCard(
 /** 장소 사진 썸네일 52 · 모서리 12(이니셜 육각형 · 아이콘 타일 대신) */
 @Composable
 fun PlaceThumb(photo: Painter?, modifier: Modifier = Modifier, size: Dp = 52.dp) {
-    Box(modifier.size(size).clip(RoundedCornerShape(StepUpUi.ThumbRadius)).background(StepUpUi.colors.fill)) {
+    // 흰 테두리는 다크만 — 라이트는 목록 줄 안에서 선이 너무 많아진다
+    Box(
+        modifier.size(size).clip(RoundedCornerShape(StepUpUi.ThumbRadius)).background(StepUpUi.colors.fill)
+            .stepUpRim(RoundedCornerShape(StepUpUi.ThumbRadius), RimKind.Surface, darkOnly = true),
+    ) {
         if (photo != null) Image(photo, null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
     }
 }
@@ -962,7 +1062,10 @@ fun PlaceThumb(photo: Painter?, modifier: Modifier = Modifier, size: Dp = 52.dp)
 @Composable
 fun GroupedList(modifier: Modifier = Modifier, rows: List<@Composable () -> Unit>) {
     val c = StepUpUi.colors
-    Column(modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).clip(RoundedCornerShape(StepUpUi.GroupedRadius)).background(c.card)) {
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).clip(RoundedCornerShape(StepUpUi.GroupedRadius)).background(c.card)
+            .stepUpRim(RoundedCornerShape(StepUpUi.GroupedRadius), RimKind.Surface),
+    ) {
         rows.forEachIndexed { i, row ->
             if (i > 0) Box(Modifier.padding(start = 16.dp).fillMaxWidth().height(.5.dp).background(c.separator))
             row()
@@ -1076,7 +1179,11 @@ fun FieldFrame(
     }
     Column(
         modifier.fillMaxWidth().clip(RoundedCornerShape(StepUpUi.FieldRadius)).background(c.card)
-            .border(2.dp, ring, RoundedCornerShape(StepUpUi.FieldRadius))
+            // 평소에는 흰 테두리, 고르거나 틀리면 2dp 색 테두리로 바꾼다(두 겹 두지 않는다)
+            .then(
+                if (ring == Color.Transparent) Modifier.stepUpRim(RoundedCornerShape(StepUpUi.FieldRadius), RimKind.Surface)
+                else Modifier.border(2.dp, ring, RoundedCornerShape(StepUpUi.FieldRadius)),
+            )
             .padding(horizontal = 16.dp, vertical = 11.dp),
     ) {
         Text(
@@ -1336,7 +1443,8 @@ fun SheetSurface(modifier: Modifier = Modifier, content: @Composable ColumnScope
     Column(
         modifier.fillMaxWidth()
             .clip(RoundedCornerShape(topStart = StepUpUi.SheetRadius, topEnd = StepUpUi.SheetRadius))
-            .background(if (StepUpUi.colors.dark) StepUpUi.colors.card else Color.White),
+            .background(if (StepUpUi.colors.dark) StepUpUi.colors.card else Color.White)
+            .stepUpRim(RoundedCornerShape(topStart = StepUpUi.SheetRadius, topEnd = StepUpUi.SheetRadius), RimKind.Surface, darkOnly = true),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         SheetHandle()

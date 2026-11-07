@@ -57,6 +57,7 @@ import com.stepup.android.ui.theme.CarbonHigh
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.Cyan
 import com.stepup.android.ui.theme.Edge
+import com.stepup.android.ui.theme.Hairline
 import com.stepup.android.ui.theme.OnVolt
 import com.stepup.android.ui.theme.Silver
 import com.stepup.android.ui.theme.Slate
@@ -532,7 +533,7 @@ fun TwoWaySwitch(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Edge.copy(alpha = 0.6f)))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline.copy(alpha = 0.6f)))
     }
 }
 
