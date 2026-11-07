@@ -17,6 +17,7 @@ header h1{font-size:18px;margin:0}
 .stats b{color:var(--cream);font-variant-numeric:tabular-nums}
 main{max-width:1100px;margin:0 auto;padding:16px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.auto{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--cream);border-left:4px solid var(--blue);color:var(--ink);font-size:13px;line-height:1.5}
 .tabs button{height:40px;padding:0 14px;border-radius:10px;border:2px solid var(--line);background:var(--cream);font:inherit;font-weight:700;color:var(--ink);cursor:pointer}
 .tabs button[aria-selected=true]{background:var(--choc);border-color:var(--choc);color:var(--cream)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
@@ -58,6 +59,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
     <button class="btn" type="submit">열기</button>
   </form>
   <section id="app" hidden>
+    <p class="auto" id="auto" hidden>자동 승인 켜짐 · 들어오는 걸음 인증 · SNS 게시물은 바로 「승인」돼요(확인자 「자동」). 「승인」 · 「SNS 승인」 탭에서 이상한 것만 거절하세요. 한 번 거절 · 대기로 돌린 날은 다시 내도 「대기」로 와요.</p>
     <div class="tabs" role="tablist">
       <button type="button" role="tab" data-tab="pending" aria-selected="true">대기</button>
       <button type="button" role="tab" data-tab="approved" aria-selected="false">승인</button>
@@ -73,6 +75,6 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 </main>
 <div class="zoom" id="zoom" hidden><img alt="캡처 크게 보기"></div>
 <script src="/11events/assets/config.js"></script>
-<script src="/11events/review.js?v=1107b"></script>
+<script src="/11events/review.js?v=1107c"></script>
 </body>
 </html>

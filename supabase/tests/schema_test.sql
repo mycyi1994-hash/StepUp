@@ -10216,6 +10216,8 @@ reset role;
 
 -- ── 11.11 워킹데이(0090) — 걸음 인증 제출 · 검토 · 합계 · 응모권 ──
 insert into fix (k, v) select 'wd-key', economy.walkingday_reviewer_new('검사');
+-- 대기 → 검토 흐름을 보려고 자동 승인(0099)은 끄고 시작한다. 자동 승인은 맨 끝에서 따로 본다
+update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_auto_approve';
 update public.economy_settings set value = '"2020-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_from';
 set role anon;
 do $$
@@ -10368,6 +10370,54 @@ begin
     '리더보드: 초대 1위는 이메일을 가려서(흔하지 않은 도메인도 가림)(0096)');
   perform pg_temp.ok(v->'steps'->0->>'who' = 'fr**d@***' and (v->'steps'->0->>'days')::int = 5, '리더보드: 걸음 순위는 승인된 걸음 합(0096)');
   perform pg_temp.ok(v::text !~ 'runnermail', '리더보드: 이메일 원문은 나가지 않는다(0096)');
+end $$;
+reset role;
+
+-- ── 11.11 워킹데이 자동 승인(0099) — 내자마자 승인 · 고쳐 내기 · 거절 뒤엔 대기 · 담당자 승인은 잠금 ──
+update public.economy_settings set value = 'true'::jsonb where key = 'walkingday_auto_approve';
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('wd-key');
+  v_img text := 'data:image/jpeg;base64,' || repeat('QUJD', 40);
+  v_today int := ((now() at time zone 'Asia/Seoul')::date - date '1970-01-01')::int;
+  r jsonb;
+  v_id bigint;
+begin
+  if v_today >= 20764 then
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 3000, v_img, true);
+    perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'approved', '자동 승인: 걸음 인증은 내자마자 승인(0099)');
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 4000, v_img, true);
+    perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'approved', '자동 승인된 날은 다시 내서 고칠 수 있다(0099)');
+    select (x->>'id')::bigint into v_id from jsonb_array_elements(public.walkingday_review_list(v_key, 'approved')) x
+     where x->>'email' = 'referrer@runnermail.com' and (x->>'day')::int = 20764 and (x->>'steps')::int = 4000 and x->>'reviewed_by' = '자동';
+    perform pg_temp.ok(v_id is not null, '자동 승인된 제출은 검수 페이지 승인 목록에 확인자 「자동」으로 보인다(0099)');
+    perform pg_temp.ok((public.walkingday_review_set(v_key, v_id, 'rejected')->>'ok')::boolean, '담당자는 자동 승인을 거절할 수 있다(0099)');
+    perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'auto')::boolean, '검토 요약에 자동 승인 켜짐이 보인다(0099)');
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 5000, v_img, true);
+    perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'pending', '거절된 날을 다시 내면 자동 승인 없이 대기(0099)');
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 5100, v_img, true);
+    perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'pending', '거절된 날은 또 다시 내도 대기 — 자동 승인을 되찾지 못한다(0099)');
+    perform public.walkingday_review_set(v_key, v_id, 'pending');
+    perform pg_temp.ok((select x->>'status' from jsonb_array_elements(public.walkingday_review_list(v_key, 'pending')) x where (x->>'id')::bigint = v_id) = 'pending',
+      '담당자가 대기로 되돌린 줄은 자동 승인되지 않는다(0099)');
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 5200, v_img, true);
+    perform pg_temp.ok(r->>'status' = 'pending', '담당자가 대기로 돌린 날을 다시 내도 대기(0099)');
+    perform public.walkingday_review_set(v_key, v_id, 'approved');
+    perform pg_temp.ok(public.walkingday_proof_submit('referrer@runnermail.com', 20764, 6000, v_img, true)->>'code' = 'approved',
+      '담당자가 직접 승인한 날은 다시 낼 수 없다(0099)');
+  end if;
+  r := public.walkingday_sns_submit('sns2@runnermail.com', 'https://x.com/run_two/status/555555555', '', true);
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'approved', '자동 승인: SNS 게시물도 내자마자 승인(0099)');
+end $$;
+reset role;
+update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_auto_approve';
+set role anon;
+do $$
+declare r jsonb;
+begin
+  r := public.walkingday_sns_submit('sns2@runnermail.com', 'https://x.com/run_two/status/666666666', '', true);
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'pending', '자동 승인을 끄면 다시 대기로 받는다(0099)');
 end $$;
 reset role;
 
