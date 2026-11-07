@@ -10393,11 +10393,16 @@ begin
      where x->>'email' = 'referrer@runnermail.com' and (x->>'day')::int = 20764 and (x->>'steps')::int = 4000 and x->>'reviewed_by' = '자동';
     perform pg_temp.ok(v_id is not null, '자동 승인된 제출은 검수 페이지 승인 목록에 확인자 「자동」으로 보인다(0099)');
     perform pg_temp.ok((public.walkingday_review_set(v_key, v_id, 'rejected')->>'ok')::boolean, '담당자는 자동 승인을 거절할 수 있다(0099)');
+    perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'auto')::boolean, '검토 요약에 자동 승인 켜짐이 보인다(0099)');
     r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 5000, v_img, true);
     perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'pending', '거절된 날을 다시 내면 자동 승인 없이 대기(0099)');
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 5100, v_img, true);
+    perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'pending', '거절된 날은 또 다시 내도 대기 — 자동 승인을 되찾지 못한다(0099)');
     perform public.walkingday_review_set(v_key, v_id, 'pending');
     perform pg_temp.ok((select x->>'status' from jsonb_array_elements(public.walkingday_review_list(v_key, 'pending')) x where (x->>'id')::bigint = v_id) = 'pending',
       '담당자가 대기로 되돌린 줄은 자동 승인되지 않는다(0099)');
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 5200, v_img, true);
+    perform pg_temp.ok(r->>'status' = 'pending', '담당자가 대기로 돌린 날을 다시 내도 대기(0099)');
     perform public.walkingday_review_set(v_key, v_id, 'approved');
     perform pg_temp.ok(public.walkingday_proof_submit('referrer@runnermail.com', 20764, 6000, v_img, true)->>'code' = 'approved',
       '담당자가 직접 승인한 날은 다시 낼 수 없다(0099)');

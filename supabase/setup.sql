@@ -31645,11 +31645,12 @@ grant execute on function public.walkingday_leaderboard() to anon, authenticated
 --  사용자 "검수페이지에 자동으로 승인되게해줘" — 걸음 인증 · SNS 게시물을 내는 즉시 '승인'으로 둔다(확인자 '자동').
 --  그래서 응모권 · 친구 초대 순위(0096, 승인된 친구 수)가 담당자 확인을 기다리지 않고 바로 반영된다.
 --  · 담당자는 검수 페이지 '승인' 탭에서 이상한 제출을 거절할 수 있다(거절은 응모권 · 순위에서 빠진다).
---  · 담당자가 거절한 날을 다시 내면 자동 승인하지 않고 '대기'로 둔다 — 담당자가 다시 본다.
---  · 담당자가 '대기로 되돌리기' 한 줄도 그대로 대기(제출 시각이 바뀔 때만 자동 승인).
+--  · 담당자가 한 번이라도 손댄 날(거절 · 대기로)은 몇 번을 다시 내도 자동 승인하지 않고 '대기' — 담당자가 다시 본다(held).
 --  · 자동 승인된 날은 다시 내서 고칠 수 있다(담당자가 직접 승인한 날만 'approved' 로 막는다).
 --  · 끄기: update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_auto_approve';
 --  · 이미 들어와 '대기'인 제출도 이 마이그레이션에서 한 번 승인한다.
+--  · 다시 낸 제출은 제출 시각을 clock_timestamp() 로 — 한 트랜잭션 안에서 두 번 내도 '다시 냄'으로 보인다.
+--  · 검토 요약에 auto(자동 승인 켜짐 여부) — 검수 페이지 안내 띠가 따른다.
 --  · 제출 함수 반환에 실제 상태(status)를 담는다(SNS 는 새로 추가) — 인증 페이지가 '바로 반영' / '확인 뒤 반영' 을 고른다.
 -- ════════════════════════════════════════════════════════════════════
 insert into public.economy_settings (key, value) values ('walkingday_auto_approve', 'true'::jsonb)
@@ -31662,13 +31663,23 @@ as $$
 $$;
 revoke all on function economy.walkingday_auto_approve() from public;
 
--- 새 제출(INSERT) · 다시 낸 제출(제출 시각이 바뀐 UPDATE, 앞 상태가 거절이 아님)만 '대기' → '승인'
+-- held: 담당자가 한 번이라도 상태를 바꾼 줄(승인 · 거절 · 대기로). 다시 내도 지워지지 않아 그 날은 끝까지 담당자가 본다
+-- (거절 → 다시 내기 → 또 다시 내기로 자동 승인을 되찾는 길을 막는다)
+alter table economy.walkingday_proofs add column if not exists held boolean not null default false;
+alter table economy.walkingday_sns add column if not exists held boolean not null default false;
+
+-- 새 제출(INSERT) · 다시 낸 제출(제출 시각이 바뀐 UPDATE)만, 담당자가 손대지 않은 줄이면 '대기' → '승인'
+-- 담당자 손길 = 제출 시각은 그대로인데 상태가 바뀐 UPDATE(검토 함수 · 직접 고침), 단 자동 승인 자신은 빼고
 create or replace function economy.walkingday_auto_approve_row() returns trigger
 language plpgsql security definer set search_path = ''
 as $$
 begin
-  if new.status = 'pending' and economy.walkingday_auto_approve()
-     and (tg_op = 'INSERT' or (new.submitted_at is distinct from old.submitted_at and old.status <> 'rejected')) then
+  if tg_op = 'UPDATE' and new.submitted_at is not distinct from old.submitted_at
+     and new.status is distinct from old.status and new.reviewed_by is distinct from '자동' then
+    new.held := true;
+  end if;
+  if new.status = 'pending' and not new.held and economy.walkingday_auto_approve()
+     and (tg_op = 'INSERT' or new.submitted_at is distinct from old.submitted_at) then
     new.status := 'approved';
     new.reviewed_at := now();
     new.reviewed_by := '자동';
@@ -31685,11 +31696,17 @@ drop trigger if exists walkingday_sns_auto_approve on economy.walkingday_sns;
 create trigger walkingday_sns_auto_approve before insert or update on economy.walkingday_sns
   for each row execute function economy.walkingday_auto_approve_row();
 
--- 이미 들어와 기다리던 제출도 승인(설정이 켜져 있을 때만)
-update economy.walkingday_proofs set status = 'approved', reviewed_at = now(), reviewed_by = '자동'
- where status = 'pending' and economy.walkingday_auto_approve();
-update economy.walkingday_sns set status = 'approved', reviewed_at = now(), reviewed_by = '자동'
- where status = 'pending' and economy.walkingday_auto_approve();
+-- 이미 들어와 기다리던 제출도 승인(설정이 켜져 있을 때만). setup.sql 은 배포마다 통째로 다시 올라가므로
+-- 표식(walkingday_auto_backfill_0099)을 남겨 딱 한 번만 — 그 뒤 담당자가 '대기'로 둔 줄을 다음 배포가 승인하지 않게
+do $$
+begin
+  if economy.walkingday_auto_approve()
+     and not exists (select 1 from public.economy_settings where key = 'walkingday_auto_backfill_0099') then
+    update economy.walkingday_proofs set status = 'approved', reviewed_at = now(), reviewed_by = '자동' where status = 'pending';
+    update economy.walkingday_sns set status = 'approved', reviewed_at = now(), reviewed_by = '자동' where status = 'pending';
+    insert into public.economy_settings (key, value) values ('walkingday_auto_backfill_0099', to_jsonb(now()::text));
+  end if;
+end $$;
 
 -- 제출 함수: 0090 · 0093 그대로 + 위 주석의 바뀐 점
 create or replace function public.walkingday_proof_submit(p_email text, p_day int, p_steps int, p_image text,
@@ -31752,7 +31769,7 @@ begin
   values (v_entry, p_day, p_steps, p_image, v_client)
   on conflict (entry_id, epoch_day) do update
     set steps = excluded.steps, image = excluded.image, client = excluded.client, status = 'pending',
-        note = null, submitted_at = now(), reviewed_at = null, reviewed_by = null
+        note = null, submitted_at = clock_timestamp(), reviewed_at = null, reviewed_by = null
   returning status into v_status;
   return jsonb_build_object('ok', true, 'day', p_day, 'status', v_status);
 end;
@@ -31832,6 +31849,28 @@ end;
 $$;
 revoke all on function public.walkingday_sns_submit(text, text, text, boolean, text) from public;
 grant execute on function public.walkingday_sns_submit(text, text, text, boolean, text) to anon, authenticated;
+
+-- 검토 요약: 0093 그대로 + auto(자동 승인 켜짐 여부)
+create or replace function public.walkingday_review_summary(p_token text) returns jsonb
+language plpgsql stable security definer set search_path = ''
+as $$
+begin
+  perform economy.walkingday_reviewer(p_token);
+  return (select jsonb_build_object(
+    'pending', count(*) filter (where status = 'pending'),
+    'approved', count(*) filter (where status = 'approved'),
+    'rejected', count(*) filter (where status = 'rejected'),
+    'total', coalesce(sum(steps) filter (where status = 'approved'), 0),
+    'people', count(distinct entry_id) filter (where status = 'approved'),
+    'registered', (select count(*) from public.waitlist_entries where status = 'registered'),
+    'sns_pending', (select count(*) from economy.walkingday_sns where status = 'pending'),
+    'sns_approved', (select count(*) from economy.walkingday_sns where status = 'approved'),
+    'auto', economy.walkingday_auto_approve())
+    from economy.walkingday_proofs);
+end;
+$$;
+revoke all on function public.walkingday_review_summary(text) from public;
+grant execute on function public.walkingday_review_summary(text) to anon, authenticated;
 
 commit;
 

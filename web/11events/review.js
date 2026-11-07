@@ -27,6 +27,7 @@
 
   function summary() {
     return rpc('walkingday_review_summary', { p_token: token }).then(function (s) {
+      $('auto').hidden = s.auto !== true;
       $('stats').innerHTML = '대기 <b>' + num(s.pending) + '</b> · 승인 <b>' + num(s.approved) + '</b> · 거절 <b>' + num(s.rejected) +
         '</b> · 합계 <b>' + num(s.total) + '</b>걸음 · 인증 <b>' + num(s.people) + '</b>명 · 사전 등록 <b>' + num(s.registered) + '</b>명' +
         (s.sns_pending != null ? ' · SNS 대기 <b>' + num(s.sns_pending) + '</b> · SNS 승인 <b>' + num(s.sns_approved) + '</b>' : '');
