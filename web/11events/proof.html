@@ -128,14 +128,14 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
     <button class="btn" id="submit" type="submit">인증 제출하기</button>
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
     <ul class="rules">
-      <li>인증은 매일 할 수 있어요. 같은 날을 다시 내면 승인 전까지 새것으로 바뀌어요.</li>
-      <li>담당자가 캡처를 확인한 뒤 승인돼요. 합성 · 중복 캡처는 제외해요.</li>
+      <li>인증은 매일 할 수 있어요. 같은 날을 다시 내면 새것으로 바뀌어요.</li>
+      <li>내면 바로 응모권에 반영돼요. 합성 · 중복 캡처는 나중에 확인해서 빼요.</li>
       <li>다중 계정은 전체 제외. 마감 11/11(수) 15:00, 발표 11/11(수) 18:00.</li>
     </ul>
   </form>
   <div class="card done" id="done" hidden>
     <h2>제출했어요</h2>
-    <p id="doneText">확인되면 응모권에 반영돼요.</p>
+    <p id="doneText">응모권에 반영됐어요.</p>
     <button class="btn" id="again" type="button">다른 날 인증하기</button>
     <a class="btn ghost" href="/11events/">이벤트 안내로</a>
   </div>
@@ -177,13 +177,13 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
     <p class="msg" id="snsMsg" role="status" aria-live="polite"></p>
     <ul class="rules">
       <li>게시물 1개에 응모권 1장 · 하루 3장 · 한 사람 15장까지. 걷지 않아도 돼요.</li>
-      <li>담당자가 게시물을 열어 해시태그 · 전체 공개를 확인한 뒤 승인돼요. 같은 게시물은 한 번만.</li>
+      <li>내면 바로 응모권에 반영돼요. 해시태그 · 전체 공개가 아니면 나중에 확인해서 빼요. 같은 게시물은 한 번만.</li>
       <li>마감 11/11(수) 15:00, 발표 11/11(수) 18:00.</li>
     </ul>
   </form>
   <div class="card done" id="snsDone" hidden>
     <h2>제출했어요</h2>
-    <p id="snsDoneText">확인되면 응모권에 반영돼요.</p>
+    <p id="snsDoneText">응모권에 반영됐어요.</p>
     <button class="btn" id="snsAgain" type="button">게시물 하나 더 내기</button>
     <a class="btn ghost" href="/11events/">이벤트 안내로</a>
   </div>
@@ -194,7 +194,7 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <span class="t">이렇게 인정돼요</span>
       <ul class="check">
         <li>친구가 내 링크로 들어와 사전 등록</li>
-        <li>그 친구가 하루라도 1,111걸음 이상 인증 → 승인</li>
+        <li>그 친구가 하루라도 1,111걸음 이상 인증</li>
         <li>나도 2장 · 친구도 2장. 친구가 많을수록 초대 순위가 올라가요</li>
       </ul>
     </div>
@@ -220,13 +220,13 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <div><b id="invN">0</b><span>내 링크로 등록한 친구</span></div>
       <div><b id="invOk">0</b><span>걸음 인증된 친구</span></div>
     </div>
-    <p class="hint">인증된 친구 수가 응모권과 초대 순위에 들어가요. 승인은 담당자 확인 뒤라 조금 늦게 반영될 수 있어요.</p>
+    <p class="hint">인증된 친구 수가 응모권과 초대 순위에 들어가요. 친구가 인증하면 바로 반영돼요.</p>
     <button class="btn ghost" id="invOther" type="button" style="margin-top:12px">다른 이메일로 보기</button>
   </div>
   </div>
 </main>
 <script src="/11events/assets/config.js?v=1107d"></script>
 <script src="/11events/ga.js?v=1107d"></script>
-<script src="/11events/proof.js?v=1107e"></script>
+<script src="/11events/proof.js?v=1107f"></script>
 </body>
 </html>

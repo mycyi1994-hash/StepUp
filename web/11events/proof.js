@@ -100,7 +100,7 @@
     day: '걸은 날을 다시 골라 주세요. 오늘 이후 날짜는 고를 수 없어요.',
     steps: '걸음 수를 숫자로 적어 주세요.',
     image: '캡처를 다시 골라 주세요.',
-    approved: '이 날은 이미 승인됐어요. 다른 날을 골라 주세요.'
+    approved: '이 날은 담당자가 이미 확인했어요. 다른 날을 골라 주세요.'
   };
 
   form.addEventListener('submit', function (e) {
@@ -129,7 +129,7 @@
         if (d && d.ok) {
           try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
           var day = 7 + (+dayEl.value - DAY0);
-          $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 1111 ? '담당자가 확인하면 응모권에 반영돼요.' : '1,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
+          $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 1111 ? (d.status === 'approved' ? '응모권에 바로 반영됐어요.' : '담당자가 확인하면 응모권에 반영돼요.') : '1,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
           form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
           if (window.wdTrack) window.wdTrack('walkingday_proof_submit', { day: day });
         } else {
@@ -229,7 +229,7 @@
       .then(function (d) {
         if (d && d.ok) {
           try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
-          $('snsDoneText').textContent = (d.channel ? CHN[d.channel] + ' @' + d.account + ' · ' : '') + (d.today ? '오늘 ' + d.today + '/3개. ' : '') + '담당자가 확인하면 응모권에 반영돼요.';
+          $('snsDoneText').textContent = (d.channel ? CHN[d.channel] + ' @' + d.account + ' · ' : '') + (d.today ? '오늘 ' + d.today + '/3개. ' : '') + (d.status === 'approved' ? '응모권에 바로 반영됐어요.' : '담당자가 확인하면 응모권에 반영돼요.');
           snsForm.hidden = true; $('snsDone').hidden = false; window.scrollTo(0, 0);
           if (window.wdTrack) window.wdTrack('walkingday_sns_submit', { channel: d.channel || '' });
         } else {
