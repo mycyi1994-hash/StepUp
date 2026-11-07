@@ -33,7 +33,7 @@ test('every inline script on CSP pages is allowed by its hash', () => {
   }
   // 워킹데이 페이지는 인라인 스크립트가 없다 — 생기면 여기서 걸린다
   assert.deepEqual(inlineHashes('11events/index.html'), []);
-  assert.match(cspFor('/11events*'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
+  assert.match(cspFor('/11events*'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com https:\/\/www\.googletagmanager\.com;/);
   for (const path of ['/privacy*', '/terms*', '/delete-account*']) assert.match(cspFor(path), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
 });
 

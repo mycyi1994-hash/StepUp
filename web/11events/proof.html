@@ -55,17 +55,31 @@ input:focus{border-color:var(--milk)}
 .done .btn+.btn{margin-top:10px}
 .notice{background:var(--choc);color:var(--cream);border-radius:14px;padding:14px 16px;margin-bottom:14px;font-weight:600}
 .trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#EAD5B4;border-radius:14px;padding:4px;margin:0 0 14px}
+.seg button{height:46px;border:0;border-radius:11px;background:none;font:inherit;font-size:16px;font-weight:700;color:var(--milk);cursor:pointer}
+.seg button[aria-selected=true]{background:var(--choc);color:var(--cream)}
+.seg button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:16px;padding:0 14px;outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.chips span{font-size:13px;font-weight:700;background:#fff;border:1.5px solid #E2CBA6;border-radius:999px;padding:3px 10px}
+.check{margin:0;padding-left:18px;font-size:14px}
+.check li{margin:3px 0}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <header>
   <div class="top"><a href="/11events/" id="back">← 이벤트 안내</a><img src="/11events/assets/logo.webp" alt="StepUp"></div>
-  <h1>걸음 인증하기</h1>
-  <p>11/7~11/11 중 하루 11,111걸음. 아무 걷기 앱 캡처면 돼요.</p>
+  <h1 id="h1">걸음 인증하기</h1>
+  <p id="lede">11/7~11/11 중 하루 11,111걸음. 아무 걷기 앱 캡처면 돼요.</p>
 </header>
 <main>
+  <div class="seg" role="tablist" aria-label="제출 종류">
+    <button type="button" role="tab" id="tabSteps" aria-selected="true" aria-controls="stepsPane">걸음 인증</button>
+    <button type="button" role="tab" id="tabSns" aria-selected="false" aria-controls="snsPane">SNS 게시물</button>
+  </div>
   <div class="notice" id="state" hidden></div>
+  <div id="stepsPane">
   <form id="form" novalidate>
     <div class="card">
       <label class="t" for="email">사전 등록한 이메일</label>
@@ -112,8 +126,58 @@ input:focus{border-color:var(--milk)}
     <button class="btn" id="again" type="button">다른 날 인증하기</button>
     <a class="btn ghost" href="/11events/">이벤트 안내로</a>
   </div>
+  </div>
+  <div id="snsPane" hidden>
+  <form id="snsForm" novalidate>
+    <div class="card">
+      <span class="t">올리기 전에 확인</span>
+      <ul class="check">
+        <li>X · 인스타 · 스레드에 해시태그 4개 모두</li>
+        <li>계정은 전체 공개</li>
+      </ul>
+      <div class="chips"><span>#스텝업</span><span>#스텝업챌린지</span><span>#StepUp</span><span>#StepUpChallenge</span></div>
+    </div>
+    <div class="card">
+      <label class="t" for="snsEmail">이메일</label>
+      <input id="snsEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+      <p class="err-f" id="snsEmailErr"></p>
+      <p class="hint">당첨 안내를 받을 이메일. 사전 등록한 이메일이면 걸음 응모권과 합쳐져요.</p>
+    </div>
+    <div class="card">
+      <label class="t" for="snsUrl">게시물 링크</label>
+      <input id="snsUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://x.com/…/status/…" required>
+      <p class="err-f" id="snsUrlErr"></p>
+      <p class="hint">게시물의 공유 → 링크 복사로 받은 주소를 붙여 넣어 주세요.</p>
+    </div>
+    <div class="card" id="acctCard" hidden>
+      <label class="t" for="snsAcct">내 계정 아이디</label>
+      <input id="snsAcct" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="stepup_runner">
+      <p class="err-f" id="snsAcctErr"></p>
+      <p class="hint">이 링크에는 아이디가 없어서 따로 적어 주세요(@ 없이).</p>
+    </div>
+    <div class="card">
+      <label class="consent"><input id="snsConsent" type="checkbox"><span>게시물 확인과 당첨 안내를 위해 이메일 · 게시물 링크 · 계정 아이디를 받는 데 동의합니다. 발표 뒤 30일 안에 지웁니다.</span></label>
+      <p class="err-f" id="snsConsentErr"></p>
+    </div>
+    <div class="trap" aria-hidden="true"><label>Website <input id="snsTrap" type="text" tabindex="-1" autocomplete="off"></label></div>
+    <button class="btn" id="snsSubmit" type="submit">게시물 제출하기</button>
+    <p class="msg" id="snsMsg" role="status" aria-live="polite"></p>
+    <ul class="rules">
+      <li>게시물 1개에 응모권 1장 · 하루 3장 · 한 사람 15장까지. 걷지 않아도 돼요.</li>
+      <li>담당자가 게시물을 열어 해시태그 · 전체 공개를 확인한 뒤 승인돼요. 같은 게시물은 한 번만.</li>
+      <li>마감 11/11(수) 15:00, 발표 11/11(수) 18:00.</li>
+    </ul>
+  </form>
+  <div class="card done" id="snsDone" hidden>
+    <h2>제출했어요</h2>
+    <p id="snsDoneText">확인되면 응모권에 반영돼요.</p>
+    <button class="btn" id="snsAgain" type="button">게시물 하나 더 내기</button>
+    <a class="btn ghost" href="/11events/">이벤트 안내로</a>
+  </div>
+  </div>
 </main>
-<script src="/11events/assets/config.js"></script>
-<script src="/11events/proof.js"></script>
+<script src="/11events/assets/config.js?v=1107b"></script>
+<script src="/11events/ga.js?v=1107b"></script>
+<script src="/11events/proof.js?v=1107b"></script>
 </body>
 </html>
