@@ -278,7 +278,9 @@ class ScreenGalleryTest {
                 compose.onNodeWithTag("analytics-week-details").assertDoesNotExist()
             }
             if (index == 20) {
-                compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                // 주 버튼 — 신고 있는 신발이 닳았으면 수리하기(detail-primary-repair, 2026-11-07)라 둘 중 하나
+                val primary = hasTestTag("detail-primary-action") or hasTestTag("detail-primary-repair")
+                compose.onNode(primary).assertIsDisplayed()
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
                 check(before.any { it.id == sneakerId })
                 // 신발 강화(재료 신발 3개 · 확률, 0054) — 상세 아래 "강화하기"가 독립 강화 화면을 연다. 여는 것만으로 보유 신발은 바뀌지 않는다
@@ -293,8 +295,8 @@ class ScreenGalleryTest {
                 org.junit.Assert.assertEquals(before, runBlocking { ServiceLocator.sneakerRepository.inventory.first() })
                 androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                     .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
-                compose.waitUntil(10_000) { compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isNotEmpty() }
-                compose.onNodeWithTag("detail-primary-action").assertIsDisplayed()
+                compose.waitUntil(10_000) { compose.onAllNodes(primary).fetchSemanticsNodes().isNotEmpty() }
+                compose.onNode(primary).assertIsDisplayed()
             }
         }
         val variations = listOf(

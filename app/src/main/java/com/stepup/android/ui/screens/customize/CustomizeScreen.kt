@@ -123,6 +123,7 @@ import com.stepup.android.ui.screens.items.ShoeRepairSheet
 import com.stepup.android.ui.screens.items.ShoeStatePanel
 import com.stepup.android.ui.screens.items.formatPercent
 import com.stepup.android.ui.screens.items.formatDurability
+import com.stepup.android.ui.screens.items.holds
 import com.stepup.android.ui.screens.items.itemSortRes
 import com.stepup.android.ui.screens.items.repairUrgent
 import com.stepup.android.ui.screens.items.repairable
@@ -289,6 +290,11 @@ private fun MyShoesReady(
     val scope = rememberCoroutineScope()
     // 수리 시트를 연 켤레(소유 id) — 신발 상세를 거치지 않고 이 화면에서 바로(출발 전 점검 · 러닝 결과의 수리와 같은 길)
     var repairId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // 결과를 아직 모르는 강화 요청 — 이 신발이 대상 · 재료면 수리를 막는다(신발 상세의 내구도 칸 수리하기와 같은 조건)
+    val forgePending by remember {
+        runCatching { com.stepup.android.core.ServiceLocator.forgeRepository.pendingFlow }
+            .getOrElse { kotlinx.coroutines.flow.flowOf(null) }
+    }.collectAsStateWithLifecycle(initialValue = null)
     val row = remember(shoes) { ownedRow(shoes) }
     val selected = resolvePair(row, selectedId) ?: return
     // 카드에 보이는 켤레 — 새로 고른 켤레의 그림을 먼저 읽은 뒤 이름 · 능력치와 함께 바꾼다(글만 앞서 바뀌지 않게)
@@ -344,7 +350,7 @@ private fun MyShoesReady(
         // 보조(수리하기) + 주(상세 보기) — 2026-11-07 "신발 수리하는거 버튼 앞으로": 보관함은 위 글자 탭에 이미 있어 이 자리를 수리가 쓴다.
         // 다 찬 신발이면 흐리게, 곧 닳으면(출발 전 점검과 같은 기준) 파란 글자 · 테두리로 앞세운다. 주 버튼은 상세 보기 하나 그대로
         BottomActionBar {
-            val canRepair = repairable(shown)
+            val canRepair = repairable(shown) && !forgePending.holds(shown.id)
             val urgent = canRepair && repairUrgent(shown)
             val accent = StepUpUi.colors.accentText
             SecondaryButton(

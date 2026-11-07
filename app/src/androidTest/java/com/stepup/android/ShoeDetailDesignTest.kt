@@ -563,6 +563,8 @@ class ShoeDetailDesignTest {
                 id = 0, rarity = requireNotNull(ShoeCatalog.of(model)).rarity.id, variant = 0, level = level,
                 mintNumber = dao.maxMintNumber() + 1, equipped = false, acquiredAt = now, serverId = 0, origin = "",
                 modelId = model, tokenId = 0,
+                // 내구도는 가득 — 신은 신발이 닳았으면 주 버튼이 수리하기(detail-primary-repair)로 바뀌어 아래 착용 흐름이 기기 상태에 따라 달라진다
+                durability = 100, durabilityPts = 100.0, durabilityNow = base.durabilityMax,
             ),
         )
         Seeded(single = add(1107, 1), pairA = add(1201, 1), pairB = add(1201, 2))
