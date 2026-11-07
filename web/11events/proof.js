@@ -131,6 +131,7 @@
           var day = 7 + (+dayEl.value - DAY0);
           $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. 담당자가 확인하면 응모권에 반영돼요.';
           form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
+          if (window.wdTrack) window.wdTrack('walkingday_proof_submit', { day: day });
         } else {
           say(REASONS[d && d.code] || '보내지 못했어요. 잠시 뒤 다시 시도해 주세요.', true, true);
         }
@@ -143,5 +144,97 @@
     image = null; $('file').value = ''; $('steps').value = '';
     var pick = $('pick'); pick.classList.remove('has'); pick.innerHTML = '<span>날짜와 걸음 수가 보이는 화면 캡처 고르기</span>';
     $('done').hidden = true; form.hidden = false; say('');
+  });
+
+  /* ── SNS 게시물 링크 제출 — 서버 walkingday_sns_submit(0093). #sns 로 들어오면 이 칸부터 ── */
+  var H = {
+    steps: ['걸음 인증하기', '11/7~11/11 중 하루 11,111걸음. 아무 걷기 앱 캡처면 돼요.'],
+    sns: ['SNS 게시물 제출', '해시태그 4개 넣어 올린 게시물 링크를 내면 응모권 1장. 걷지 않아도 돼요.']
+  };
+  function mode(m, push) {
+    var sns = m === 'sns';
+    $('tabSteps').setAttribute('aria-selected', String(!sns));
+    $('tabSns').setAttribute('aria-selected', String(sns));
+    $('stepsPane').hidden = sns; $('snsPane').hidden = !sns;
+    $('h1').textContent = H[m][0]; $('lede').textContent = H[m][1];
+    document.title = H[m][0] + ' · 11.11 워킹데이 | StepUp';
+    if (push) { try { history.replaceState(null, '', sns ? '#sns' : location.pathname + location.search); } catch (e) { /* 없음 */ } }
+  }
+  $('tabSteps').addEventListener('click', function () { mode('steps', true); });
+  $('tabSns').addEventListener('click', function () { mode('sns', true); });
+  window.addEventListener('hashchange', function () { mode(location.hash === '#sns' ? 'sns' : 'steps'); });
+  mode(location.hash === '#sns' ? 'sns' : 'steps');
+
+  var snsForm = $('snsForm'), snsSubmit = $('snsSubmit'), snsMsg = $('snsMsg');
+  if (closed()) snsSubmit.disabled = true;
+  try { var savedS = localStorage.getItem('wd_email'); if (savedS) $('snsEmail').value = savedS; } catch (e) { /* 없음 */ }
+
+  // 링크 → 채널. 계정 아이디가 링크에 없으면(인스타 · x.com/i/status) 아이디 칸을 연다 — 서버 economy.walkingday_sns_parse 와 같은 규칙
+  function linkInfo(v) {
+    v = String(v || '').trim().replace(/[?#].*$/, '').replace(/\/+$/, '');
+    if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
+    var m = v.match(/^https?:\/\/(?:www\.|mobile\.|m\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status\/\d{5,25}(?:\/(?:photo|video)\/\d+)?$/i);
+    if (m && m[1].toLowerCase() !== 'i') return { ch: 'x', acct: true };
+    if (/^https?:\/\/(?:www\.|mobile\.|m\.)?(?:x|twitter)\.com\/i\/(?:web\/)?status\/\d{5,25}(?:\/(?:photo|video)\/\d+)?$/i.test(v)) return { ch: 'x', acct: false };
+    if (/^https?:\/\/(?:www\.|m\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}\/)?(?:p|reel|reels|tv)\/[A-Za-z0-9_-]{5,64}$/i.test(v)) return { ch: 'instagram', acct: false };
+    if (/^https?:\/\/(?:www\.)?threads\.(?:net|com)\/@[A-Za-z0-9._]{1,30}\/post\/[A-Za-z0-9_-]{5,64}(?:\/media)?$/i.test(v)) return { ch: 'threads', acct: true };
+    return null;
+  }
+  function cleanAcct(v) { return String(v || '').trim().replace(/^(https?:\/\/)?(www\.)?(instagram\.com|threads\.(net|com)|x\.com)\//i, '').replace(/^@|\/+$/g, '').toLowerCase(); }
+  function syncAcct() { var i = linkInfo($('snsUrl').value); $('acctCard').hidden = !(i && !i.acct); }
+  $('snsUrl').addEventListener('input', function () { setErr('snsUrlErr', ''); syncAcct(); });
+  [['snsEmail', 'snsEmailErr'], ['snsAcct', 'snsAcctErr'], ['snsConsent', 'snsConsentErr']].forEach(function (p) {
+    $(p[0]).addEventListener(p[0] === 'snsConsent' ? 'change' : 'input', function () { setErr(p[1], ''); });
+  });
+  function saySns(text, err) { snsMsg.className = 'msg' + (err ? ' err' : ''); snsMsg.textContent = text; }
+
+  var SNS_REASONS = {
+    closed: '지금은 제출을 받지 않아요. 기간은 11/7 0시 ~ 11/11 15:00예요.',
+    busy: '잠시 뒤 다시 시도해 주세요.',
+    consent: '동의에 체크해 주세요.',
+    email: '이메일 주소를 다시 확인해 주세요.',
+    url: 'X · 인스타 · 스레드 게시물 링크가 아니에요. 게시물의 공유 → 링크 복사로 받은 주소를 넣어 주세요.',
+    account: '계정 아이디를 영문 · 숫자 · 밑줄 · 점으로 적어 주세요.',
+    duplicate: '이미 제출된 게시물이에요. 새 게시물을 올려 주세요.',
+    day_limit: '오늘은 3개를 다 냈어요. 내일 다시 낼 수 있어요.',
+    limit: '한 사람 15개를 다 냈어요.'
+  };
+  var CHN = { x: 'X', instagram: '인스타', threads: '스레드' };
+
+  snsForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    ['snsEmailErr', 'snsUrlErr', 'snsAcctErr', 'snsConsentErr'].forEach(function (id) { setErr(id, ''); });
+    saySns('');
+    var email = $('snsEmail').value.trim().toLowerCase(), url = $('snsUrl').value.trim(), info = linkInfo(url), acct = cleanAcct($('snsAcct').value), bad = false;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('snsEmailErr', '이메일을 적어 주세요.'); bad = true; }
+    if (!info) { setErr('snsUrlErr', 'X · 인스타 · 스레드 게시물 링크를 붙여 넣어 주세요.'); bad = true; }
+    else if (!info.acct && !/^[a-z0-9._]{1,30}$/.test(acct)) { setErr('snsAcctErr', '계정 아이디를 적어 주세요.'); bad = true; }
+    if (!$('snsConsent').checked) { setErr('snsConsentErr', '동의에 체크해 주세요.'); bad = true; }
+    if (bad) return;
+
+    snsSubmit.disabled = true; snsSubmit.textContent = '보내는 중…';
+    fetch(URL_BASE + '/rest/v1/rpc/walkingday_sns_submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: KEY },
+      body: JSON.stringify({ p_email: email, p_url: url, p_account: info.acct ? '' : acct, p_consent: true, p_trap: $('snsTrap').value }),
+      cache: 'no-store'
+    }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
+      .then(function (d) {
+        if (d && d.ok) {
+          try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
+          $('snsDoneText').textContent = (d.channel ? CHN[d.channel] + ' @' + d.account + ' · ' : '') + (d.today ? '오늘 ' + d.today + '/3개. ' : '') + '담당자가 확인하면 응모권에 반영돼요.';
+          snsForm.hidden = true; $('snsDone').hidden = false; window.scrollTo(0, 0);
+          if (window.wdTrack) window.wdTrack('walkingday_sns_submit', { channel: d.channel || '' });
+        } else {
+          saySns(SNS_REASONS[d && d.code] || '보내지 못했어요. 잠시 뒤 다시 시도해 주세요.', true);
+        }
+      })
+      .catch(function () { saySns('연결이 끊겼어요. 잠시 뒤 다시 시도해 주세요.', true); })
+      .then(function () { snsSubmit.disabled = closed(); snsSubmit.textContent = '게시물 제출하기'; });
+  });
+
+  $('snsAgain').addEventListener('click', function () {
+    $('snsUrl').value = ''; $('snsAcct').value = ''; syncAcct();
+    $('snsDone').hidden = true; snsForm.hidden = false; saySns('');
   });
 })();

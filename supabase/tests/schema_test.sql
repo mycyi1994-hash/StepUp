@@ -10299,6 +10299,48 @@ begin
 end $$;
 reset role;
 
+-- ── 11.11 워킹데이 SNS 게시물 링크(0093) — 제출 · 하루 3개 · 같은 게시물 한 번 · 검토 · 명단 ──
+update public.economy_settings set value = '"2099-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_until';
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('wd-key');
+  r jsonb;
+  v_id bigint;
+  v_roster jsonb;
+begin
+  perform pg_temp.ok(public.walkingday_sns_submit('sns@runnermail.com', 'https://x.com/stepup/status/123456789', '', false)->>'code' = 'consent',
+    'SNS: 동의 없이는 받지 않는다');
+  perform pg_temp.ok(public.walkingday_sns_submit('sns@runnermail.com', 'https://example.com/post/1', '', true)->>'code' = 'url',
+    'SNS: X · 인스타 · 스레드 게시물 주소가 아니면 받지 않는다');
+  perform pg_temp.ok(public.walkingday_sns_submit('sns@runnermail.com', 'https://www.instagram.com/p/AbCdE123/', '', true)->>'code' = 'account',
+    'SNS: 인스타는 계정 아이디가 있어야 한다');
+  r := public.walkingday_sns_submit('SNS@runnermail.com', 'https://x.com/StepUp_Run/status/123456789?s=20', '', true);
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'channel' = 'x' and r->>'account' = 'stepup_run' and (r->>'today')::int = 1,
+    'SNS: X 링크에서 계정을 읽는다(사전 등록 안 한 이메일도 받는다)');
+  perform pg_temp.ok(public.walkingday_sns_submit('other@runnermail.com', 'https://twitter.com/stepup_run/status/123456789', '', true)->>'code' = 'duplicate',
+    'SNS: 같은 게시물은 다른 이메일로도 한 번만');
+  r := public.walkingday_sns_submit('sns@runnermail.com', 'instagram.com/reel/AbCdE123?igsh=x', '@My.Insta', true);
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'account' = 'my.insta', 'SNS: 인스타 릴스 · 아이디는 @ 를 떼고 소문자');
+  r := public.walkingday_sns_submit('sns@runnermail.com', 'https://www.threads.net/@Run.Er/post/C1a2B3c4D', '', true);
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'account' = 'run.er' and (r->>'today')::int = 3, 'SNS: 스레드 · 오늘 세 번째');
+  perform pg_temp.ok(public.walkingday_sns_submit('sns@runnermail.com', 'https://x.com/stepup_run/status/987654321', '', true)->>'code' = 'day_limit',
+    'SNS: 한 이메일 하루 3개까지');
+  call pg_temp.must_fail('select * from economy.walkingday_sns', '공개 역할은 SNS 제출 기록을 읽지 못한다');
+  call pg_temp.must_fail('select public.walkingday_sns_list(''wrong-key'')', '검토 키가 틀리면 SNS 목록을 못 본다');
+
+  select (x->>'id')::bigint into v_id from jsonb_array_elements(public.walkingday_sns_list(v_key)) x where x->>'channel' = 'instagram';
+  perform pg_temp.ok(v_id is not null, 'SNS: 검토 목록에 보인다');
+  perform pg_temp.ok((public.walkingday_sns_set(v_key, v_id, 'approved', null, 'my_insta')->>'ok')::boolean, 'SNS: 승인하며 계정 아이디를 고친다');
+  perform pg_temp.ok(public.walkingday_sns_set(v_key, v_id, 'approved', null, '이상한 아이디')->>'code' = 'account', 'SNS: 틀린 아이디로는 못 고친다');
+  v_roster := public.walkingday_sns_roster(v_key);
+  perform pg_temp.ok(jsonb_array_length(v_roster) = 1 and v_roster->0->>'account' = 'my_insta' and (v_roster->0->>'posts')::int = 1
+                     and v_roster->0->>'email' = 'sns@runnermail.com', 'SNS 명단: 승인된 것만 계정마다 묶는다');
+  perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'sns_approved')::int = 1 and (public.walkingday_review_summary(v_key)->>'sns_pending')::int = 2,
+    'SNS: 검토 요약에 대기 · 승인 수');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

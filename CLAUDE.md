@@ -5,7 +5,7 @@
 `web/11events/`(원본 iinging747/stepup-walkingday — 정적, 날짜별 화면 자동) → `stepupcrew.com/11events/`. CSP 는 `_headers` 의 `/11events*`(인라인 스크립트 없음).
 운영은 [docs/walkingday-2026-11-05.md](docs/walkingday-2026-11-05.md) — 서버 0090. 걸음 인증은 아무 걸음 앱 캡처(사용자 결정) — 제출 `/11events/proof`
 (사전 등록 이메일만), 승인 `/11events/review`(검토 키 — 해시만 서버에), 합계는 승인된 걸음의 합을 페이지가 읽는다(`walkingday_total`), 응모권은 검토 페이지 명단 탭.
-QR · UTM 저장은 지금 그대로(사용자 "일단 ok").
+QR · UTM 저장은 지금 그대로(사용자 "일단 ok"). SNS 게시물은 링크로 받는다(0093, `/11events/proof#sns` → 검토 SNS 탭 → 추첨기 SNS 명단 CSV). GA4 는 `assets/config.js` 의 `ga` 측정 ID.
 
 ## 최신 — 남은 앱 문제 수정 · 스토어 판 26 (2026-11-04, 서버 0089)
 
