@@ -537,4 +537,36 @@
       a.addEventListener('click', function () { track('share', { method: /\.mp4$/.test(a.getAttribute('href')) ? 'video' : 'image' }); });
     });
   })();
+
+  /* ── 지금 순위(0096 walkingday_leaderboard): 초대 · 걸음, 이메일은 서버가 가려서 준다. 60초마다 · 돌아오면 바로 ── */
+  (function () {
+    var box = $('lb'), list = $('lbList'), note = $('lbNote'); if (!box || !list || !CFG.url || phase() === 'before') return;
+    var data = null, tab = 'invite';
+    var PRIZE = function (r) { return r === 1 ? '요가매트' : r <= 4 ? '폼롤러' : r <= 11 ? '운동양말' : ''; };
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function draw() {
+      if (!data) return;
+      var rows = data[tab] || [];
+      [].forEach.call(box.querySelectorAll('[data-lb]'), function (b) { b.setAttribute('aria-selected', String(b.dataset.lb === tab)); });
+      if (!rows.length) {
+        list.innerHTML = '<li class="lbe">' + (tab === 'invite' ? '아직 순위가 없어요. 친구가 11,111걸음을 인증하면 올라가요.' : '아직 승인된 걸음이 없어요.') + '</li>';
+      } else {
+        list.innerHTML = rows.map(function (r, i) {
+          var v = tab === 'invite' ? r.friends + '명' : (+r.steps).toLocaleString('ko-KR') + '<small>걸음</small>';
+          var sub = tab === 'invite' ? (PRIZE(i + 1) ? '<i>' + PRIZE(i + 1) + '</i>' : '') : '<i>' + r.days + '일</i>';
+          return '<li' + (r.rank <= 3 ? ' class="rkt"' : '') + '><span class="rk">' + r.rank + '</span><span class="who">' + esc(r.who) + sub + '</span><b>' + v + '</b></li>';
+        }).join('');
+      }
+      note.textContent = tab === 'invite' ? '11,111걸음 인증된 친구 수 · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '승인된 걸음 합계 · 경품과는 상관없어요';
+    }
+    function read() {
+      fetch(CFG.url + '/rest/v1/rpc/walkingday_leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key }, body: '{}', cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
+        .then(function (d) { if (d && d.invite) { data = d; box.hidden = false; draw(); } })
+        .catch(function () { /* 못 읽으면 칸을 숨긴 채로 */ });
+    }
+    [].forEach.call(box.querySelectorAll('[data-lb]'), function (b) { b.addEventListener('click', function () { tab = b.dataset.lb; draw(); }); });
+    read(); setInterval(read, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) read(); });
+  })();
 })();
