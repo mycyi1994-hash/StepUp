@@ -53,8 +53,11 @@ Google Play 는 2026-01-28 부터 **한국에서 암호화폐 거래소 · 소�
 ## 스토어 판을 폰에서 미리 보기 (2026-10-27)
 
 test-apk 사전 배포의 `StepUp-store-preview.apk` — 빌드 종류 `storePreview` 는 release 와 같은 코드 · 설정(`WEB3 = false` · R8 · 리소스 줄이기,
-자가 업데이트 · 시험 도구 없음)이고 서명 · versionCode 만 테스트 APK 와 같다. 깔린 테스트 앱 위에 덮어 깔려 기록 · 로그인이 그대로이고,
+시험 도구 없음)이고 서명 · versionCode 만 테스트 APK 와 같다. 깔린 테스트 앱 위에 덮어 깔려 기록 · 로그인이 그대로이고,
 `StepUp-test.apk` 를 다시 깔면 테스트 판으로 돌아간다. 제출 파일은 아니다 — 제출은 아래 Release AAB.
+2026-11-06 부터 미리 보기에도 스스로 업데이트가 있다(사용자 "스토어판 미리보기에도 오토 업데이트" — 미리 보기로 나눠 준 사람들에게 새 판 알림이 안 떴다).
+미리 보기는 `StepUp-store-preview.json` 을 묻고 `StepUp-store-preview.apk` 를 받는다(테스트 판으로 바뀌지 않는다). 설치 권한은 `app/src/storePreview` 매니페스트.
+**release(AAB)에는 스스로 업데이트도 설치 권한도 없다** — 그대로다.
 
 ## 1. 앱 만들기
 

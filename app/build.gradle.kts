@@ -122,8 +122,10 @@ android {
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         buildConfigField("long", "BUILD_COMMIT_TIME", "${buildCommitTime}L")
         buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
-        // 테스트 APK(debug) 에서만 새 버전을 스스로 받아 설치 화면을 연다. 스토어 빌드에는 없다.
+        // 테스트 APK(debug · qa) · 스토어 판 미리 보기만 새 버전을 스스로 받아 설치 화면을 연다. 스토어 빌드(release)에는 없다.
         buildConfigField("boolean", "SELF_UPDATE", "false")
+        // 스스로 업데이트가 묻고 받는 test-apk 릴리스의 파일 이름(.json · .apk) — 미리 보기는 미리 보기 판만 받는다
+        buildConfigField("String", "SELF_UPDATE_FILE", "\"StepUp-test\"")
         // 러닝 화면의 "걸음 흉내" 같은 시험용 버튼 — debug · qa 에서만 켠다.
         buildConfigField("boolean", "TEST_TOOLS", "false")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -204,14 +206,18 @@ android {
             buildConfigField("String", "WALLET_URL", "\"$walletUrl\"")
         }
         // 스토어 판 미리 보기(2026-10-27 사용자 "스토어판을 실제로 보고 싶어") — release 와 같은 코드 · 설정
-        // (블록체인 기능 없음 · 자가 업데이트 없음 · 시험 도구 없음 · R8 · 리소스 줄이기)에 서명 · versionCode 만 테스트 APK 와 같다.
+        // (블록체인 기능 없음 · 시험 도구 없음 · R8 · 리소스 줄이기)에 서명 · versionCode 만 테스트 APK 와 같다.
         // 그래서 깔린 테스트 앱 위에 그대로 덮어 깔리고(이 폰의 기록 · 로그인 그대로), 테스트 APK 를 다시 깔면 돌아간다.
-        // 구글 제출용은 이것이 아니라 Release AAB 다(docs/PLAY-STORE.md).
+        // 다른 점 하나: 스스로 업데이트가 있다(2026-11-06 사용자 "스토어판 미리보기에도 오토 업데이트" — 미리 보기로 나눠 준 사람들에게
+        // 새 판 알림이 안 떴다). 받는 파일은 StepUp-store-preview.apk 라 테스트 판으로 바뀌지 않는다. 설치 권한은 src/storePreview 매니페스트.
+        // 구글 제출용은 이것이 아니라 Release AAB 다(docs/PLAY-STORE.md) — release 에는 스스로 업데이트가 없다.
         create("storePreview") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             isDebuggable = false
             matchingFallbacks += listOf("release")
+            buildConfigField("boolean", "SELF_UPDATE", "true")
+            buildConfigField("String", "SELF_UPDATE_FILE", "\"StepUp-store-preview\"")
         }
     }
     sourceSets {
@@ -222,7 +228,7 @@ android {
         getByName("debug") { java.srcDir("src/selfUpdate/java") }
         getByName("qa") { java.srcDir("src/selfUpdate/java") }
         getByName("release") { java.srcDir("src/noSelfUpdate/java") }
-        getByName("storePreview") { java.srcDir("src/noSelfUpdate/java") }
+        getByName("storePreview") { java.srcDir("src/selfUpdate/java") }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
