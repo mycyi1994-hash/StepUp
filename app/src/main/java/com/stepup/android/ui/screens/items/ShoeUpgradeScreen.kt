@@ -520,12 +520,16 @@ private fun Headline(title: String, body: String?) {
 
 private val SlotShape = RoundedCornerShape(14.dp)
 
+/**
+ * 재료 슬롯 면 — 위가 조금 밝은 패널 · 둥근 모서리 · 테두리. 아이템칸([ShoeItemSlots])도 같은 면을 쓴다.
+ * [edge] 가 아니면 테두리를 그리지 않는다(아이템칸은 점선 테두리를 따로 그린다).
+ */
 @Composable
-private fun slotSurface(selected: Boolean = false): Modifier {
+internal fun slotSurface(selected: Boolean = false, edge: Boolean = true): Modifier {
     val t = runTone()
-    return Modifier.clip(SlotShape)
+    val face = Modifier.clip(SlotShape)
         .background(Brush.verticalGradient(listOf(if (t.dark) Color(0xFF0E3268) else t.panelTop, t.panel)), SlotShape)
-        .border(if (selected) 1.5.dp else 1.dp, if (selected) t.cyan else t.panelEdge, SlotShape)
+    return if (!edge) face else face.border(if (selected) 1.5.dp else 1.dp, if (selected) t.cyan else t.panelEdge, SlotShape)
 }
 
 /** 같은 폭의 슬롯 셋 — 비면 + 신발 추가(어느 빈 슬롯이든 같은 선택창), 차면 그림 · 등급 · Lv · No. · 보정, 오른쪽 위 X */

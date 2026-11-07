@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 상세의 아이템칸(2026-11-07 "아이템칸이 생긴다는 가정하에 디자인") — 잠긴 자리만. 아이템 · 개수 · 해금 조건은 서버 계약 뒤에 -->
+<resources>
+    <string name="item_slots_title">아이템칸</string>
+    <string name="item_slots_soon">곧 열려요</string>
+    <string name="item_slots_body">아이템이 생기면 이 신발에 끼워 쓸 수 있어요.</string>
+    <string name="item_slot_locked_cd">아이템칸 %1$d, 아직 잠겨 있어요</string>
+    <string name="item_slots_toast">아이템칸은 아직 쓸 수 없어요. 열리면 여기서 바로 쓸 수 있어요.</string>
+</resources>
