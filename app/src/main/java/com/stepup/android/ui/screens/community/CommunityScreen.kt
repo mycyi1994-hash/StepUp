@@ -26,7 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ChevronRight
@@ -205,7 +205,7 @@ fun CommunityScreen(
             ) {
                 // 번개 · 코스 지도 — 목록 위 지도 카드 대신 함께 뛰기 머리와 같은 지도 원 버튼
                 com.stepup.android.ui.components.CircleIconButton(
-                    Icons.Filled.Map, stringResource(R.string.community_map_title),
+                    Icons.Outlined.Map, stringResource(R.string.community_map_title),
                     onClick = onOpenMap,
                     modifier = Modifier.testTag("community-map"),
                 )
@@ -341,10 +341,10 @@ private fun BoardTab(
             }
         }
 
-        // 글쓰기 — 화면의 주 행동 하나. 시안대로 아래에 넓게.
+        // 주 행동 하나 — 번개러닝 모집 글(크루 밖 글쓰기는 번개러닝만, 2026-11-07). 이름도 여는 화면 제목과 같게
         PrimaryCta(
-            text = stringResource(R.string.post_write),
-            icon = Icons.Filled.Edit,
+            text = stringResource(R.string.d26_flash_header),
+            icon = Icons.Filled.Add,
             showArrow = false,
             onClick = onWritePost,
             modifier = Modifier
