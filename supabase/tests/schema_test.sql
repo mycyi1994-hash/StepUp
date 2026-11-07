@@ -10273,9 +10273,9 @@ begin
   perform pg_temp.ok((public.walkingday_review_summary(v_key)->>'approved')::int >= 1, '검토 요약');
 end $$;
 reset role;
--- 5일 개근(0092): 나머지 네 날도 11,111걸음 이상 승인되면 응모권 합계 × 1.5(올림). 하루라도 모자라면 그대로
+-- 5일 개근(0092): 나머지 네 날도 기준(0097 부터 1,111)걸음 이상 승인되면 응모권 합계 × 1.5(올림). 하루라도 모자라면 그대로
 insert into economy.walkingday_proofs (entry_id, epoch_day, steps, status, reviewed_at, reviewed_by)
-select w.id, d, case when d = 20767 then 11000 else 12000 end, 'approved', now(), '검사'
+select w.id, d, case when d = 20767 then 1000 else 12000 end, 'approved', now(), '검사'
 from public.waitlist_entries w cross join generate_series(20764, 20767) d
 where w.email = 'friend@runnermail.com'
 on conflict (entry_id, epoch_day) do update
@@ -10286,7 +10286,7 @@ declare v_friend jsonb; v_ref jsonb;
 begin
   select x into v_friend from jsonb_array_elements(public.walkingday_review_entries(pg_temp.fx('wd-key'))) x where x->>'email' = 'friend@runnermail.com';
   perform pg_temp.ok((v_friend->>'approved_days')::int = 4 and (v_friend->>'tickets')::int = 9,
-    '11,111걸음이 모자란 날은 달성 일수에 넣지 않는다 — 4일이면 개근 아님(0092)');
+    '기준 걸음(1,111)이 모자란 날은 달성 일수에 넣지 않는다 — 4일이면 개근 아님(0092)');
 end $$;
 reset role;
 update economy.walkingday_proofs p set steps = 12000
