@@ -554,9 +554,11 @@
         list.innerHTML = rows.map(function (r, i) {
           var v = tab === 'invite' ? r.friends + '명' : (+r.steps).toLocaleString('ko-KR') + '<small>걸음</small>';
           var sub = tab === 'invite' ? (PRIZE(i + 1) ? '<i>' + PRIZE(i + 1) + '</i>' : '') : '<i>' + r.days + '일</i>';
-          return '<li' + (r.rank <= 3 ? ' class="rkt"' : '') + '><span class="rk">' + r.rank + '</span><span class="who">' + esc(r.who) + sub + '</span><b>' + v + '</b></li>';
+          return '<li' + (r.rank <= 3 ? ' class="r' + r.rank + '"' : '') + '><span class="rk">' + r.rank + '</span><span class="who"><span>' + esc(r.who) + '</span>' + sub + '</span><b>' + v + '</b></li>';
         }).join('');
       }
+      var sub = $('lbSub');
+      if (sub) { sub.className = 'lbs' + (tab === 'invite' ? '' : ' no'); sub.textContent = tab === 'invite' ? '🎁 경품은 이 초대 순위로 줘요 · 1위 요가매트 · 2~4위 폼롤러 · 5~11위 운동양말' : '참고용 순위예요 · 걸음 순위로는 경품이 없어요(경품은 초대 순위 · 응모권 추첨)'; }
       note.textContent = tab === 'invite' ? '걸음 인증된 친구 수 · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '제출한 걸음 합계(확인 전 포함, 거절되면 빠짐) · 경품과는 상관없어요';
     }
     function read() {
