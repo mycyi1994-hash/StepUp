@@ -14,6 +14,7 @@ export const STRINGS = {
     'sound.off': '소리 끄기',
     'header.join': '사전 등록',
     'header.joined': '등록 완료 ✓',
+    'event.chip': '워킹데이 진행 중 · 걸으면 빼빼로',
     'lang.switch': 'EN',
     'lang.switchLabel': 'Read this page in English',
     'dots.label': '화면 이동',
@@ -188,6 +189,7 @@ export const STRINGS = {
     // 머리 줄은 폰(375px)에 한 줄로 들어가야 한다 — 바로 아래 띠와 화면마다의 버튼이 "Join the waitlist"라고 풀어 말한다
     'header.join': 'Join',
     'header.joined': 'Joined ✓',
+    'event.chip': 'Walking Day is live · walk & win',
     'lang.switch': '한국어',
     'lang.switchLabel': '한국어로 보기',
     'dots.label': 'Sections',
