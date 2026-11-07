@@ -542,8 +542,14 @@ class CrewChatDesignTest {
             )
         }
         compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Community) } } }
-        awaitTag("community-tab-chat")
-        tapTag("community-tab-chat")
+        awaitTag("community-tab-meetups")
+        // 함께 뛰기 머리의 크루 채팅 원 버튼은 가입한 크루가 있을 때만 보인다(2026-11-07). 이 검사의 흉내 서버는 크루 목록(crew_feed)을
+        // 주지 않으므로, 채팅 화면이 돌아올 때 쓰는 같은 길(ChatListFocus)로 채팅 목록을 연다
+        if (compose.onAllNodesWithTag("community-tab-chat", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+            tapTag("community-tab-chat")
+        } else {
+            compose.runOnIdle { com.stepup.android.ui.screens.community.chat.ChatListFocus.requested = true }
+        }
         awaitTag("chat-list")
     }
 

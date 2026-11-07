@@ -105,7 +105,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Sell
-import androidx.compose.material.icons.outlined.Build
 
 /** 상세 위에 뜨는 시트 — 신발 관리(SD13 · SD14) · 신발 기록(SD15 ~ SD17). 수리 시트는 따로(한 번에 하나) */
 private enum class DetailSheet { None, Manage, Record }
@@ -117,6 +116,12 @@ private enum class DetailSheet { None, Manage, Record }
 data class ShoeCareStatus(val upgradePending: Boolean = false, val repairPending: Boolean = false) {
     val busy: Boolean get() = upgradePending || repairPending
 }
+
+/**
+ * 신고 있는 신발이 닳았고 결과 미확인인 강화 · 수리가 없으면 — 상세의 주 버튼이 "지금 신고 있어요"(누를 수 없음) 대신 수리하기다.
+ * 신고 있다는 표시는 이름 아래 한 줄이 맡는다.
+ */
+internal fun repairInPrimary(shoe: Sneaker, care: ShoeCareStatus): Boolean = shoe.equipped && repairable(shoe) && !care.busy
 
 /** 저장된 미확인 강화 요청이 이 신발(대상 · 재료)을 붙잡고 있는가 */
 fun ForgePending?.holds(id: Long): Boolean = this != null && (targetId == id || id in materialIds)
@@ -310,6 +315,9 @@ fun ShoeDetailContent(
     }
     val wearBar: @Composable ColumnScope.() -> Unit = {
         val worn = shoe?.equipped == true
+        // 신고 있는 신발이 닳았으면 비어 있던 주 버튼 자리("지금 신고 있어요", 누를 수 없음)를 수리하기가 쓴다(2026-11-07 "신발 수리하는거 버튼 앞으로").
+        // 신고 있다는 표시는 이름 아래 한 줄로 남는다(DetailBody)
+        val repairPrimary = shoe != null && repairInPrimary(shoe, care) && !equipping
         WornToast(toast, Modifier.fillMaxWidth().padding(bottom = 10.dp))
         if (toast == null && !worn && wearing == null && !equipping) {
             Text(stringResource(R.string.care_first_hint), style = runTextStyle(14.sp, runTone().label, androidx.compose.ui.text.font.FontWeight.Medium),
@@ -321,12 +329,14 @@ fun ShoeDetailContent(
             onUpgrade = onEnhance,
             wearLabel = when {
                 equipping -> stringResource(R.string.sdv_wear_busy)
+                repairPrimary -> stringResource(R.string.care_repair)
                 worn -> stringResource(R.string.sdv_status_wearing)
                 else -> stringResource(R.string.sdv_wear)
             },
-            wearEnabled = !equipping && !worn && !care.busy,
+            wearEnabled = repairPrimary || (!equipping && !worn && !care.busy),
             wearBusy = equipping,
-            onWear = onWear,
+            onWear = if (repairPrimary) onOpenRepair else onWear,
+            wearTag = if (repairPrimary) "detail-primary-repair" else "detail-primary-action",
         )
     }
 
@@ -462,7 +472,9 @@ private fun DetailBody(
     val shoe = state.shoe
     val art by rememberShoeArt(shoe, ShoeArtFull, artAttempt)
     val failed = art == ShoeArtLoad.Failed
-    // 무대는 남는 높이만큼 — 이름 · 네 줄 · 아래 신발 관리의 첫 줄(수리하기)까지 첫 화면에 들도록. 그래도 모자라면 목록이 넘어간다
+    // 무대는 남는 높이만큼 — 이름 · 네 줄과 내구도 칸의 수리하기까지 첫 화면에 들도록(2026-11-07 수리는 신발 관리 첫 줄에서
+    // 내구도 칸으로 옮겼다 — 칸이 약 50 커지고 관리 첫 줄 약 104 가 빠져 같은 값이면 수리하기가 예전보다 위에 든다).
+    // 아이템칸 · 나머지 신발 관리는 그 아래로 넘어간다. 그래도 모자라면 목록이 넘어간다
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val stageMaxHeight = (screenHeight - 610.dp).coerceAtLeast(170.dp)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -493,6 +505,13 @@ private fun DetailBody(
             ),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
         )
+        // 신고 있는 신발의 주 버튼이 수리하기가 되면 "지금 신고 있어요"는 여기 한 줄로(배지 아닌 보조 글자)
+        if (repairInPrimary(shoe, care)) {
+            Text(
+                stringResource(R.string.sdv_status_wearing), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp).testTag("shoe-detail-wearing"),
+            )
+        }
         Spacer(Modifier.height(12.dp))
         // SD18 · SD19 — 결과가 안 정해진 강화 · 수리. 아래 값은 마지막으로 확인한 값이다
         if (care.upgradePending) {
@@ -518,16 +537,29 @@ private fun DetailBody(
             )
             Spacer(Modifier.height(8.dp))
         }
-        ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
-        // 신발 관리 — 수리 · 포인트 · 판매 · 기록을 ⋯ 안에만 두지 않고 화면에 바로(사용자 "수리하는 곳을 찾을 수가 없었음")
+        // 수리는 내구도 칸 바로 아래(사용자 "수리하는 곳을 찾을 수가 없었음" → 2026-11-07 "신발 수리하는거 버튼 앞으로").
+        // ⋯ 관리 시트의 수리하기는 그대로 둔다
+        ShoeStatCells(
+            shoe, Modifier.testTag("shoe-stat-cells"),
+            onRepair = onShowRepair,
+            repairEnabled = !care.busy && repairable(shoe),
+            repairEmphasis = repairUrgent(shoe),
+        )
+        // 아이템칸 — 아이템이 생긴다는 가정의 자리만(잠김). 아이템 · 개수를 지어내지 않는다
         Spacer(Modifier.height(18.dp))
-        CareActions(shoe, busy = care.busy, onRepair = onShowRepair, onPoints = onOpenPoints, onSell = onSell, onRecord = onOpenRecord)
+        ShoeItemSlots()
+        // 신발 관리 — 포인트 · 판매 · 기록을 ⋯ 안에만 두지 않고 화면에 바로
+        Spacer(Modifier.height(18.dp))
+        CareActions(shoe, busy = care.busy, onPoints = onOpenPoints, onSell = onSell, onRecord = onOpenRecord)
     }
 }
 
-/** 신발 관리 묶음 — 수리하기(남은 내구도) · 스탯 포인트(있을 때) · 판매하기 · 신발 기록. 관리 시트(⋯)와 같은 조건 · 설명 */
+/**
+ * 신발 관리 묶음 — 스탯 포인트(있을 때) · 판매하기 · 신발 기록. 관리 시트(⋯)와 같은 조건 · 설명.
+ * 수리하기는 2026-11-07 부터 내구도 칸에 붙어 있다(여기서는 뺐다 — ⋯ 시트에는 남는다).
+ */
 @Composable
-private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPoints: () -> Unit, onSell: () -> Unit, onRecord: () -> Unit) {
+private fun CareActions(shoe: Sneaker, busy: Boolean, onPoints: () -> Unit, onSell: () -> Unit, onRecord: () -> Unit) {
     val t = runTone()
     val entry = pointsEntryOf(shoe)
     val available = pointsAvailable(shoe)
@@ -537,13 +569,7 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPo
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp).semantics { heading() },
         )
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(t.panel)) {
-            CareActionRow(
-                Icons.Outlined.Build, stringResource(R.string.care_repair),
-                if (busy) stringResource(R.string.care_busy_note) else stringResource(R.string.care_durability_now, formatDurability(shoe)),
-                enabled = !busy, onClick = onRepair, tag = "shoe-care-repair",
-            )
             if (entry != PointsEntry.None) {
-                CareDivider()
                 CareActionRow(
                     Icons.Outlined.Tune, stringResource(R.string.points_title),
                     when {
@@ -556,8 +582,8 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onRepair: () -> Unit, onPo
                     enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
                     onClick = onPoints, tag = "shoe-care-points",
                 )
+                CareDivider()
             }
-            CareDivider()
             CareActionRow(
                 Icons.Outlined.Sell, stringResource(R.string.care_sell),
                 when {
@@ -613,6 +639,8 @@ private fun DetailButtons(
     wearEnabled: Boolean,
     wearBusy: Boolean,
     onWear: () -> Unit,
+    /** 주 버튼의 테스트 이름 — 신고 있는 신발이 닳아 수리하기가 주 버튼이면 detail-primary-repair */
+    wearTag: String = "detail-primary-action",
 ) {
     val fontScale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -621,7 +649,7 @@ private fun DetailButtons(
             CareBlueButton(upgradeLabel, onUpgrade, m.testTag("shoe-upgrade-open"), enabled = upgradeEnabled)
         }
         val wear = @Composable { m: Modifier ->
-            RunButton(wearLabel, onWear, m.testTag("detail-primary-action"), enabled = wearEnabled, busy = wearBusy)
+            RunButton(wearLabel, onWear, m.testTag(wearTag), enabled = wearEnabled, busy = wearBusy)
         }
         if (stacked) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

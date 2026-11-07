@@ -100,8 +100,6 @@ fun StoriesTab(
     onWrite: (resume: Boolean) -> Unit,
     onOpenLocation: () -> Unit,
     onOpenRegion: () -> Unit,
-    /** 함께 뛰기 머리의 연필을 누를 때마다 1씩 오른다 — 쓰다 만 글이 있으면 이어 쓰기부터 묻는다(아래 큰 글쓰기 버튼 대신) */
-    writeRequest: Int = 0,
 ) {
     val context = LocalContext.current
     var allowed by remember { mutableStateOf(StepPermissions.hasLocation(context)) }
@@ -132,11 +130,8 @@ fun StoriesTab(
         StoryComposeSeed.place = viewModel.suggestedPlace()
         onWrite(false)
     }
+    // 아래 "이야기 쓰기"(이 칸의 주 버튼) — 쓰다 만 글이 있으면 이어 쓰기부터 묻는다
     val startWriting = { if (draft != null) showResume = true else writeNew() }
-    var handledWrite by rememberSaveable { mutableStateOf(writeRequest) }
-    LaunchedEffect(writeRequest) {
-        if (writeRequest != handledWrite) { handledWrite = writeRequest; startWriting() }
-    }
 
     // 권한 요청 — 거절 · 다시 묻지 않음이어도 "지역 직접 선택"으로 이어 갈 수 있다. 거절된 뒤에는 다시 묻지 않고 설정으로
     var denied by rememberSaveable { mutableStateOf(false) }
@@ -163,7 +158,6 @@ fun StoriesTab(
                 onClearFilter = { viewModel.filterPlace(null) },
                 onOpenRange = { showRange = true },
                 onSetRange = viewModel::setRange,
-                onOpenLocation = onOpenLocation,
                 onRetry = viewModel::refresh,
                 onWrite = startWriting,
                 onWiden = { nextRange(range)?.let(viewModel::setRange) },
@@ -284,7 +278,7 @@ private fun StoryHeadCard(modifier: Modifier = Modifier, content: @Composable ()
     val shape = RoundedCornerShape(18.dp)
     Box(
         modifier.fillMaxWidth().height(150.dp).clip(shape).background(t.inset)
-            .border(1.dp, if (t.dark) t.cyan.copy(alpha = 0.45f) else t.panelEdge, shape),
+            .border(1.dp, t.panelEdge, shape),
         contentAlignment = Alignment.Center,
     ) { content() }
 }
@@ -339,7 +333,6 @@ private fun StoryListBody(
     onClearFilter: () -> Unit,
     onOpenRange: () -> Unit,
     onSetRange: (StoryRange) -> Unit,
-    onOpenLocation: () -> Unit,
     onRetry: () -> Unit,
     onWrite: () -> Unit,
     onWiden: () -> Unit,
@@ -375,7 +368,7 @@ private fun StoryListBody(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             ) {
                 item(key = "head") {
-                    StoryListHead(origin, range, filter, onOpenLocation = onOpenLocation, onOpenMap = { onOpenMap(filter) }, onSetRange = onSetRange)
+                    StoryListHead(origin, range, onOpenRange = onOpenRange, onSetRange = onSetRange)
                 }
                 if (filter != null) item(key = "section") { StorySectionTitle(filter, list.nearby.size, onClearFilter) }
                 // 이미 보이는 글이 있는데 새로 받기만 실패했다 — 글은 두고 따로 알린다(CM35)
@@ -452,13 +445,14 @@ private fun StoryListBody(
             failed -> StoryBottomAction {
                 StoryButton(stringResource(R.string.story_card_reload), onRetry, Modifier.testTag("stories-retry"), italic = true)
             }
-            empty && !loading -> StoryBottomAction {
+            // 이 칸의 주 행동 하나 — 글이 있어도 늘 아래에(2026-11-07, 예전 머리 연필 대신). 빈 목록이면 "첫 이야기 남기기"
+            else -> StoryBottomAction {
                 StoryButton(
-                    stringResource(R.string.story_blue_first_post), onWrite, Modifier.testTag("stories-first-post"),
+                    stringResource(if (empty && !loading) R.string.story_blue_first_post else R.string.tg_story_write), onWrite,
+                    Modifier.testTag("community-write").guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
                     icon = Icons.Filled.Add, italic = true,
                 )
             }
-            else -> Unit
         }
     }
 }
@@ -771,16 +765,14 @@ private fun Modifier.groupedRow(index: Int, count: Int): Modifier {
 }
 
 /**
- * 이야기 목록 위(UI 최종 통합안 06_이야기) — 왼쪽 "도화동 주변"(누르면 지역 바꾸기) · 오른쪽 "지도 보기", 아래 범위 글자 탭(500m · 1km · 3km).
- * 알약 칩 줄 · 큰 제목 · 작은 지도 칸 없이. 지역 · 범위를 고르는 일은 예전과 같다.
+ * 이야기 목록 위(UI 최종 통합안 06_이야기) — "도화동 · 내 주변 1km ⌄"(누르면 범위 시트 — 시트 안에 "지역 변경 >"), 아래 범위 글자 탭(500m · 1km · 3km).
+ * 알약 칩 줄 · 큰 제목 · 작은 지도 칸 없이. 지도는 함께 뛰기 머리의 지도 원 버튼 하나가 맡는다(2026-11-07 — "지도 보기" 글자 링크는 뺐다).
  */
 @Composable
 private fun StoryListHead(
     origin: StoryOrigin,
     range: StoryRange,
-    filter: StoryPlace?,
-    onOpenLocation: () -> Unit,
-    onOpenMap: () -> Unit,
+    onOpenRange: () -> Unit,
     onSetRange: (StoryRange) -> Unit,
 ) {
     val t = runTone()
@@ -788,7 +780,7 @@ private fun StoryListHead(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Row(
                 Modifier.weight(1f, fill = false).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onOpenLocation).padding(horizontal = 4.dp)
+                    .feedbackClickable(role = Role.Button, onClick = onOpenRange).padding(horizontal = 4.dp)
                     .testTag("stories-area"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -801,8 +793,6 @@ private fun StoryListHead(
                 )
                 Icon(Icons.Filled.KeyboardArrowDown, null, tint = t.label, modifier = Modifier.size(18.dp))
             }
-            Spacer(Modifier.weight(1f))
-            StoryLink(stringResource(R.string.story_show_map), onOpenMap, Modifier.testTag("stories-open-map"), trailing = null)
         }
         com.stepup.android.ui.components.TextTabs(
             items = StoryRange.entries.map { rangeLabel(it) },

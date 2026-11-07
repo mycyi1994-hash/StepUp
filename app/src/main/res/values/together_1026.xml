@@ -2,6 +2,8 @@
 <!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
 <resources>
     <string name="tg_create">Start a group run</string>
+    <!-- 이야기 칸 아래 주 버튼(2026-11-07 — 머리 연필 대신) -->
+    <string name="tg_story_write">Write a story</string>
     <string name="tg_pick_title">Who will you run with?</string>
     <string name="tg_pick_crew">With %s</string>
     <string name="tg_pick_crew_body">Crew run · shared stamina · crew rewards</string>

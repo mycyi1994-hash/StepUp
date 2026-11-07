@@ -2,6 +2,7 @@
 <!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
 <resources>
     <string name="tg_create">发起一起跑</string>
+    <string name="tg_story_write">写跑步故事</string>
     <string name="tg_pick_title">和谁一起跑？</string>
     <string name="tg_pick_crew">与%s的成员</string>
     <string name="tg_pick_crew_body">跑团跑 · 共享体力 · 跑团奖励</string>

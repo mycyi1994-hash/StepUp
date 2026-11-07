@@ -2,6 +2,7 @@ package com.stepup.android.ui.screens.items
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -11,8 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +25,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -32,6 +39,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -43,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.ui.experience.feedbackClickable
 
 /*
  * 신발 상세의 능력치 네 칸 — 카툰 입체형(2026-09-30 사용자 확정안 1번, docs/redesign/shoe-detail-cartoon-2026-09-30).
@@ -97,9 +106,19 @@ private val ValueStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Med
 /**
  * 레벨 · 효율 · 착화감 · 내구도 네 칸. 이름 열 · 값 열 폭은 네 줄 중 가장 긴 글에 맞춰 같게 둔다 —
  * 값이 긴 줄(내구도)만 막대가 짧아지지 않고 네 막대의 시작 · 끝이 같다. 글자를 키우면 열과 칸 높이가 함께 커진다.
+ *
+ * [onRepair] 가 있으면 내구도 칸 아래 줄 오른쪽에 "수리하기"를 붙인다(2026-11-07 "신발 수리하는거 버튼 앞으로" —
+ * 남은 내구도를 보는 바로 그 자리에서 수리 시트로). 막대 줄은 그대로라 네 막대의 시작 · 끝이 같다.
+ * [repairEnabled] 가 아니면 흐리게(결과 미확인 · 다 찬 내구도), [repairEmphasis] 면 파란 면으로 앞세운다([repairUrgent]).
  */
 @Composable
-fun ShoeStatCells(shoe: Sneaker, modifier: Modifier = Modifier) {
+fun ShoeStatCells(
+    shoe: Sneaker,
+    modifier: Modifier = Modifier,
+    onRepair: (() -> Unit)? = null,
+    repairEnabled: Boolean = true,
+    repairEmphasis: Boolean = false,
+) {
     val rows = remember(shoe) { detailStatRows(shoe) }
     val labels = rows.map { statTitle(it.stat) }
     val measurer = rememberTextMeasurer()
@@ -113,6 +132,7 @@ fun ShoeStatCells(shoe: Sneaker, modifier: Modifier = Modifier) {
         }
         maxOf(LabelMin, widest(labels, labelStyle)) to maxOf(ValueMin, widest(rows.map { it.value }, valueStyle))
     }
+    val repair = onRepair?.let { StatRepair(it, enabled = repairEnabled, emphasis = repairEmphasis) }
     BoxWithConstraints(modifier.fillMaxWidth()) {
         // 아주 큰 글씨 · 좁은 화면에서 두 열이 칸을 다 먹으면(막대가 BarMin 보다 짧아지면) 그때만 막대를 글 아래 줄로 내린다
         val stacked = maxWidth - CellPadding * 2 - ColumnGap * 2 - labelWidth - valueWidth < BarMin
@@ -124,11 +144,15 @@ fun ShoeStatCells(shoe: Sneaker, modifier: Modifier = Modifier) {
                     stacked = stacked,
                     description = stringResource(R.string.sdv_bar_cd, labels[index], row.value, row.end),
                     tag = "shoe-cell-" + row.stat.name.lowercase(),
+                    repair = if (row.stat == DetailStat.DURABILITY) repair else null,
                 )
             }
         }
     }
 }
+
+/** 내구도 칸의 수리하기 — 누르면 할 일 · 누를 수 있는지 · 앞세울지 */
+private class StatRepair(val onClick: () -> Unit, val enabled: Boolean, val emphasis: Boolean)
 
 @Composable
 private fun statTitle(stat: DetailStat): String = stringResource(
@@ -153,11 +177,41 @@ private fun StatCell(
     description: String,
     tag: String,
     stacked: Boolean,
+    /** 칸 아래 줄 오른쪽에 붙는 수리하기(내구도 칸) — 막대 줄은 건드리지 않는다 */
+    repair: StatRepair? = null,
 ) {
     val cell = Modifier.fillMaxWidth().heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
         .semantics(mergeDescendants = true) { contentDescription = description }
         .testTag(tag)
         .padding(horizontal = CellPadding, vertical = 6.dp)
+    if (repair != null) {
+        Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (stacked) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, style = labelStyle, color = CartoonColors.Text, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(ColumnGap))
+                    Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
+                        modifier = Modifier.testTag("$tag-value"))
+                }
+                CartoonStatBar(fraction, fill, Modifier.fillMaxWidth().height(30.dp).testTag("$tag-bar"))
+            } else {
+                // 다른 칸의 한 줄과 같은 높이(54 − 위아래 6) · 같은 열 폭 — 막대 시작 · 끝이 맞는다
+                Row(Modifier.fillMaxWidth().heightIn(min = 42.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, style = labelStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
+                        modifier = Modifier.width(labelWidth))
+                    Spacer(Modifier.width(ColumnGap))
+                    CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
+                    Spacer(Modifier.width(ColumnGap))
+                    Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
+                        modifier = Modifier.width(valueWidth).testTag("$tag-value"))
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                DurabilityRepairButton(repair.onClick, enabled = repair.enabled, emphasis = repair.emphasis)
+            }
+        }
+        return
+    }
     if (stacked) {
         Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,6 +232,32 @@ private fun StatCell(
         Spacer(Modifier.width(ColumnGap))
         Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
             modifier = Modifier.width(valueWidth).testTag("$tag-value"))
+    }
+}
+
+/**
+ * 내구도 칸의 "수리하기" — 칸 안의 작은 버튼(높이 44 이상). 평소에는 흰 테두리만, 급하면([repairUrgent]) 파란 면 · 밝은 테두리.
+ * 색 배지가 아니라 누르는 버튼이다. 못 누르면 흐리게.
+ */
+@Composable
+private fun DurabilityRepairButton(onClick: () -> Unit, enabled: Boolean, emphasis: Boolean) {
+    val shape = RoundedCornerShape(10.dp)
+    val strong = emphasis && enabled
+    Row(
+        Modifier.alpha(if (enabled) 1f else 0.5f)
+            .heightIn(min = 44.dp)
+            .clip(shape)
+            .background(if (strong) CartoonColors.Frame else Color.Transparent, shape)
+            .border(1.dp, if (strong) CartoonColors.FrameTop else CartoonColors.Text.copy(alpha = 0.28f), shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .testTag("shoe-durability-repair")
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Build, contentDescription = null, tint = CartoonColors.Text, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(R.string.care_repair), style = LocalTextStyle.current.merge(TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)),
+            color = CartoonColors.Text, maxLines = 1)
     }
 }
 

@@ -320,7 +320,9 @@ class ExperienceUiTest {
         // 신고 있는 켤레와 같은 모델의 다른 켤레 — 목록에서 따로 한 칸(소유 id)
         val candidateId = runBlocking {
             dao.insert(original.copy(id = 0, mintNumber = dao.maxMintNumber() + 1,
-                equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0))
+                equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0,
+                // 내구도는 가득 — 신은 신발이 닳았으면 상세 주 버튼이 수리하기(detail-primary-repair)로 바뀐다(2026-11-07)
+                durability = 100, durabilityPts = 100.0, durabilityNow = original.durabilityMax))
         }
         var detailId by mutableStateOf<Long?>(null)
         try {

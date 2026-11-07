@@ -76,7 +76,8 @@ class CrewFormTest {
             compose.onNodeWithContentDescription(description).performTextReplacement(value)
         }
         // 번개러닝(UI 최종 통합안 compose_flash) — 같이 뛰기는 만나는 곳을 채워야 올릴 수 있고, 숫자는 [−][값][+] 로만 바뀌어 범위를 벗어나지 않는다
-        compose.onNodeWithTag("post-cat-flash").performClick()
+        // 크루 밖 글쓰기는 번개러닝만(2026-11-07) — 분류 탭 없이 번개러닝으로 열린다
+        compose.onAllNodesWithTag("post-cat-flash").assertCountEquals(0)
         compose.onNodeWithTag("post-submit").assertIsNotEnabled()
         // 제목은 기본 제목으로 채워져 있다(2026-10-26) — 원격 뛰기는 만나는 곳도 없으니 아무것도 치지 않고 올릴 수 있다
         compose.onNodeWithTag("post-mode-remote").performClick()
@@ -104,9 +105,10 @@ class CrewFormTest {
             ServiceLocator.userPrefs.setReducedMotion(true)
             ServiceLocator.userPrefs.setGuideSeen()
         }
+        // 본문이 있는 자유 글은 크루 게시판 글쓰기에만 있다(2026-11-07 — 크루 밖은 번개러닝만). 올리지는 않는다
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) {
-                ExperienceProvider { MainScaffold(initialRoute = Routes.postCompose("")) }
+                ExperienceProvider { MainScaffold(initialRoute = Routes.postCompose("crew-form-test")) }
             }
         }
         val title = compose.onNodeWithContentDescription(compose.activity.getString(R.string.post_field_title))
