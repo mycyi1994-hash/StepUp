@@ -494,7 +494,7 @@
   layout();
   if (window.IntersectionObserver) new IntersectionObserver(function (es) { heroOn = es[0].isIntersecting; }).observe(hero);
   if (startup) { setTimeout(startup, REDUCED ? 0 : 500); }
-  else { if (phase() === 'before') total = BEFORE_FILL; else if (typeof CFG.total === 'number') total = CFG.total; else if (!CFG.url) total = BEFORE_FILL; renderState(); readTotal(); if (CFG.url) { setInterval(readTotal, 60000); document.addEventListener('visibilitychange', function () { if (!document.hidden) readTotal(); }); } }
+  else { if (phase() === 'before') total = BEFORE_FILL; else if (typeof CFG.total === 'number') total = CFG.total; else if (!CFG.url) total = BEFORE_FILL; renderState(); readTotal(); if (CFG.url) { setInterval(readTotal, 15000); document.addEventListener('visibilitychange', function () { if (!document.hidden) readTotal(); }); window.addEventListener('pageshow', function (e) { if (e.persisted) readTotal(); }); } }
   if (REDUCED) { snap(performance.now()); } else {
     raf = requestAnimationFrame(frame);
     
