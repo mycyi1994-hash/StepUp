@@ -333,7 +333,7 @@ fun S2Stats(items: List<Pair<String, String>>, modifier: Modifier = Modifier, va
                 S2Number(value, valueSize, Modifier.padding(top = 4.dp))
             }
             if (index < items.lastIndex) {
-                Box(Modifier.size(width = 1.dp, height = 40.dp).background(StepUpColors.edge))
+                Box(Modifier.size(width = 1.dp, height = 40.dp).background(StepUpColors.hairline))
             }
         }
     }

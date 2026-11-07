@@ -1859,7 +1859,12 @@ private fun VoltNavBar(navController: NavHostController, currentRoute: String?) 
             .fillMaxWidth()
             .background(ui.tabBar),
     ) {
-        Box(Modifier.fillMaxWidth().height(0.5.dp).background(ui.separator))
+        // 흰 테두리(2026-11-07) — 다크는 위 선을 흰 12% · 1dp 로(라이트는 예전 0.5dp 구분선 그대로)
+        val rimTop = ui.dark && com.stepup.android.ui.components.StepUpUi.RimOn
+        Box(
+            Modifier.fillMaxWidth().height(if (rimTop) 1.dp else 0.5.dp)
+                .background(if (rimTop) Color(0x1FFFFFFF) else ui.separator),
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()

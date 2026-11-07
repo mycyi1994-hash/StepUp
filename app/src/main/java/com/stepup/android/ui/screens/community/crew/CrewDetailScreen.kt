@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -212,7 +215,7 @@ private fun CrewDetailContent(
             card.unseenResult?.let { result ->
                 Row(
                     Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().heightIn(min = 52.dp)
-                        .clip(RoundedCornerShape(16.dp)).background(c.card)
+                        .clip(RoundedCornerShape(16.dp)).background(c.card).stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface)
                         .feedbackClickable(role = Role.Button) { card.myApplicationId?.let(actions.onOpenResult) }
                         .padding(horizontal = 16.dp, vertical = 10.dp).testTag("crew-detail-result"),
                     verticalAlignment = Alignment.CenterVertically,
@@ -259,6 +262,7 @@ private fun CrewDetailContent(
             CrewRules.progress(card)?.let { progress ->
                 Column(
                     Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card)
+                        .stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface)
                         .feedbackClickable(role = Role.Button, onClick = actions.onOpenGoal)
                         .padding(horizontal = 18.dp, vertical = 18.dp).testTag("crew-detail-goal"),
                 ) {

@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.community
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +66,8 @@ import com.stepup.android.ui.components.PrimaryButton
 import com.stepup.android.ui.components.StepUpSpinner
 import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.pressable
+import com.stepup.android.ui.guide.GuideTour
+import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.screens.home.RoomRow
 import com.stepup.android.ui.screens.home.RoomsState
 import com.stepup.android.ui.screens.home.whenText
@@ -224,7 +229,11 @@ internal fun TogetherRoomsSegment(
         }
         // 이 칸의 주 행동 하나 — 누구와 달릴지 고르고 만든다
         Box(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 8.dp, bottom = 12.dp)) {
-            PrimaryButton(stringResource(R.string.tg_create), onClick = { picking = true }, modifier = Modifier.fillMaxWidth().testTag("together-create"))
+            PrimaryButton(
+                stringResource(R.string.tg_create), onClick = { picking = true },
+                modifier = Modifier.fillMaxWidth().testTag("together-create")
+                    .guideTarget(GuideTour.Targets.COMMUNITY_WRITE),
+            )
         }
     }
 
@@ -258,9 +267,12 @@ private fun NoCrewRow(onFindCrews: () -> Unit) {
     )
 }
 
-/** 번개 한 줄 — 크루 방 줄과 같은 모양: 번개 · 방식, 제목, 시각 · 거리, 만나는 곳(원격이면 각자의 위치), 인원, "자세히" */
+/**
+ * 번개 한 줄 — 크루 방 줄과 같은 모양: 번개 · 방식, 제목, 시각 · 거리, 만나는 곳(원격이면 각자의 위치), 인원, "자세히".
+ * "모두 보기"(번개만 모은 목록)도 이 줄을 쓴다 — 참가는 번개 상세 화면에서만 한다.
+ */
 @Composable
-private fun FlashRow(post: Post, onOpen: () -> Unit) {
+internal fun FlashRow(post: Post, onOpen: () -> Unit) {
     val c = StepUpUi.colors
     val modeText = stringResource(if (post.remote) R.string.d26_mode_remote else R.string.d26_mode_together)
     Column(Modifier.fillMaxWidth().padding(vertical = 18.dp).testTag("together-flash-${post.id}")) {
@@ -325,7 +337,7 @@ private fun TogetherPickSheet(
         com.stepup.android.ui.components.RunSheetText(stringResource(R.string.tg_pick_title))
         Spacer(Modifier.height(16.dp))
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card).stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface),
             verticalArrangement = Arrangement.Top,
         ) {
             crews.forEach { (id, name) ->

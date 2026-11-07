@@ -123,18 +123,16 @@ class CrewCardsDesignTest {
             shot("04-sort")
             tapTag("crew-sheet-close")
 
-            // 카드 안의 레벨 — 카드 전체(상세)로 가지 않고 레벨 안내만
-            tapIn("crew-card-afterwork", "crew-card-level")
+            // 08 상세(방문자) — 명함은 누르는 곳이 카드 하나(2026-11-07)
+            tapCard("crew-card-afterwork")
+            awaitTag("crew-detail")
+            awaitTag("crew-detail-primary")
+            // 레벨 안내는 크루 상세의 레벨 칸에서(명함 안의 레벨 누르기는 뺐다)
+            tapTag("crew-detail-level")
             awaitTag("crew-level-sheet")
             awaitText("이번 주에는 9명이 126km를 달렸어요.")
             shot("11-level")
             tapTag("crew-sheet-close")
-            assertTrue(compose.onAllNodesWithTag("crew-detail").fetchSemanticsNodes().isEmpty())
-
-            // 08 상세(방문자)
-            tapIn("crew-card-afterwork", "crew-card-open")
-            awaitTag("crew-detail")
-            awaitTag("crew-detail-primary")
             shot("08-detail", settle = 1_200)
             scrollShot("08-detail-bottom")
 
@@ -253,12 +251,14 @@ class CrewCardsDesignTest {
             pressBack()
             pressBack()
 
-            // 68 레벨을 확인할 수 없음
+            // 68 레벨을 확인할 수 없음 — 크루 상세의 레벨 칸에서
             server.levelFails = true
-            tapIn("crew-card-sunrise", "crew-card-level")
+            openCrew("sunrise")
+            tapTag("crew-detail-level")
             awaitTag("crew-level-error")
             shot("68-level-unavailable")
             tapTag("crew-sheet-close")
+            pressBack()
             server.levelFails = false
 
             // 67 불러오는 중 · 66 볼 수 없는 크루 — 목록에 없는 크루를 초대 링크로 연다
@@ -465,7 +465,7 @@ class CrewCardsDesignTest {
         guard {
             // 가입한 크루(크루장 포함)는 목록에서 내 크루 홈(확정 4번, #62)으로 열린다 — 크루 관리는 홈 더보기 안
             awaitTag("crew-list")
-            tapIn("crew-card-afterwork", "crew-card-open")
+            tapCard("crew-card-afterwork")
             awaitTag("home-masthead")
             shot("76-owner-home")
             tapTag("crew-more")
@@ -705,17 +705,17 @@ class CrewCardsDesignTest {
 
     private fun openCrew(id: String) {
         awaitTag("crew-list")
-        tapIn("crew-card-$id", "crew-card-open")
+        tapCard("crew-card-$id")
         awaitTag("crew-detail")
         awaitTag("crew-detail-primary")
     }
 
-    /** 카드 안의 누르는 곳 — 목록에서 그 카드까지 굴린 뒤 누른다 */
-    private fun tapIn(card: String, inner: String) {
+    /** 명함 하나 — 목록에서 그 카드까지 굴린 뒤 카드를 누른다(명함은 누르는 곳이 카드 하나, 2026-11-07) */
+    private fun tapCard(card: String) {
         awaitTag("crew-list-scroll")
         runCatching { compose.onNodeWithTag("crew-list-scroll").performScrollToNode(hasTestTag(card)) }
         awaitTag(card)
-        compose.onNode(hasTestTag(inner) and hasAnyAncestor(hasTestTag(card)), useUnmergedTree = true).performClick()
+        compose.onNodeWithTag(card, useUnmergedTree = true).performClick()
         compose.waitForIdle()
     }
 

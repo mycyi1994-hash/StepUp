@@ -2,6 +2,7 @@
 <!-- 2026-10-26 함께 뛰기 한 탭: 크루 러닝 · 번개러닝 목록 · 만들기 -->
 <resources>
     <string name="tg_create">함께 뛰기 만들기</string>
+    <string name="tg_story_write">이야기 쓰기</string>
     <string name="tg_pick_title">누구와 달릴까요?</string>
     <string name="tg_pick_crew">%s 크루원과</string>
     <string name="tg_pick_crew_body">크루 러닝 · 공용 체력 · 크루 보상</string>

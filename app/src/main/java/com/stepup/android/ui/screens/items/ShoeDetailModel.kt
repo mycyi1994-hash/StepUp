@@ -111,6 +111,17 @@ fun durabilityEarnMinutes(shoe: Sneaker): Int? {
 const val LOW_DURABILITY_WARN_MIN = 10
 
 /**
+ * 수리를 앞에 내세울 때 — 다 닳았거나 보상을 받으며 달릴 시간이 [LOW_DURABILITY_WARN_MIN] 분보다 짧다.
+ * 출발 전 점검(FreeRunStart 의 경고 줄)과 같은 기준이다. 신발 탭 · 상세의 수리 버튼 강조가 이것 하나를 쓴다.
+ */
+fun repairUrgent(shoe: Sneaker): Boolean =
+    (shoe.server?.durabilityFactor ?: 1.0) <= 0.0 ||
+        (durabilityEarnMinutes(shoe) ?: Int.MAX_VALUE) < LOW_DURABILITY_WARN_MIN
+
+/** 수리할 곳이 있다 — 남은 내구도가 최대보다 적다(수리 시트가 견적을 낼 수 있는 신발) */
+fun repairable(shoe: Sneaker): Boolean = durabilityLeft(shoe) < durabilityMax(shoe)
+
+/**
  * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼([durabilityWear])을 미리 뺀다. 정산 때 서버가 같은 규칙으로 뺀다.
  * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 [durabilityPercent] 그대로다 — 폰에서 닳는 양을 비율로 셀 수 없다.
  */

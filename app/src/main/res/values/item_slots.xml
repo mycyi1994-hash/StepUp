@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 신발 상세의 아이템칸(2026-11-07 "아이템칸이 생긴다는 가정하에 디자인") — 잠긴 자리만. 아이템 · 개수 · 해금 조건은 서버 계약 뒤에 -->
+<resources>
+    <string name="item_slots_title">Item slots</string>
+    <string name="item_slots_soon">Opens later</string>
+    <string name="item_slots_body">Once items arrive, you can fit them to this shoe.</string>
+    <string name="item_slot_locked_cd">Item slot %1$d, locked</string>
+    <string name="item_slots_toast">Item slots aren\'t open yet. You\'ll use them right here once they open.</string>
+</resources>

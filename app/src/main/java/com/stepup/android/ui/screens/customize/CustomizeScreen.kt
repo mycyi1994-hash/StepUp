@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -115,14 +117,21 @@ import com.stepup.android.ui.guide.guideTarget
 import com.stepup.android.ui.screens.items.ItemSort
 import com.stepup.android.ui.screens.items.ItemsViewModel
 import com.stepup.android.ui.screens.items.OwnedLoad
+import com.stepup.android.ui.screens.items.RepairPhase
+import com.stepup.android.ui.screens.items.ShoeCareStore
+import com.stepup.android.ui.screens.items.ShoeRepairSheet
 import com.stepup.android.ui.screens.items.ShoeStatePanel
 import com.stepup.android.ui.screens.items.formatPercent
 import com.stepup.android.ui.screens.items.formatDurability
+import com.stepup.android.ui.screens.items.holds
 import com.stepup.android.ui.screens.items.itemSortRes
+import com.stepup.android.ui.screens.items.repairUrgent
+import com.stepup.android.ui.screens.items.repairable
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpColors
 import com.stepup.android.ui.theme.StepUpDesign
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 /**
  * 신발 탭(신발 화면 확정안 2026-09-28 — docs/redesign/shoes-ui-2026-09-28, 시안 01 내 신발 · 02 신발 보관함).
@@ -229,8 +238,11 @@ fun MyShoesContent(
     onReload: () -> Unit,
     modifier: Modifier = Modifier,
     initialBasis: Boolean = false,
-    /** 아래 보조 버튼 — 신발 보관함 탭으로 */
-    onOpenVault: () -> Unit = {},
+    /**
+     * 신발 보관함 탭으로 — 2026-11-07 부터 아래 보조 버튼은 수리하기다(사용자 "신발 수리하는거 버튼 앞으로").
+     * 보관함은 위 글자 탭(내 신발 · 신발 보관함)으로 그대로 간다. 부르는 쪽이 넘기던 값은 받아 두기만 한다
+     */
+    @Suppress("UNUSED_PARAMETER") onOpenVault: () -> Unit = {},
 ) {
     when {
         load == OwnedLoad.Loading -> MyShoesLoading(modifier)
@@ -255,7 +267,7 @@ fun MyShoesContent(
                 top = 56.dp,
             )
         }
-        load is OwnedLoad.Ready -> MyShoesReady(load.shoes, selectedId, onSelect, onOpenSneaker, onOpenVault, modifier, initialBasis)
+        load is OwnedLoad.Ready -> MyShoesReady(load.shoes, selectedId, onSelect, onOpenSneaker, modifier, initialBasis)
     }
 }
 
@@ -271,11 +283,18 @@ private fun MyShoesReady(
     selectedId: Long?,
     onSelect: (Long) -> Unit,
     onOpenSneaker: (Long) -> Unit,
-    onOpenVault: () -> Unit,
     modifier: Modifier,
     initialBasis: Boolean,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // 수리 시트를 연 켤레(소유 id) — 신발 상세를 거치지 않고 이 화면에서 바로(출발 전 점검 · 러닝 결과의 수리와 같은 길)
+    var repairId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // 결과를 아직 모르는 강화 요청 — 이 신발이 대상 · 재료면 수리를 막는다(신발 상세의 내구도 칸 수리하기와 같은 조건)
+    val forgePending by remember {
+        runCatching { com.stepup.android.core.ServiceLocator.forgeRepository.pendingFlow }
+            .getOrElse { kotlinx.coroutines.flow.flowOf(null) }
+    }.collectAsStateWithLifecycle(initialValue = null)
     val row = remember(shoes) { ownedRow(shoes) }
     val selected = resolvePair(row, selectedId) ?: return
     // 카드에 보이는 켤레 — 새로 고른 켤레의 그림을 먼저 읽은 뒤 이름 · 능력치와 함께 바꾼다(글만 앞서 바뀌지 않게)
@@ -328,11 +347,24 @@ private fun MyShoesReady(
             }
         }
         }
-        // 보조(신발 보관함) + 주(상세 보기) — 시안 shoes 아래 두 버튼
+        // 보조(수리하기) + 주(상세 보기) — 2026-11-07 "신발 수리하는거 버튼 앞으로": 보관함은 위 글자 탭에 이미 있어 이 자리를 수리가 쓴다.
+        // 다 찬 신발이면 흐리게, 곧 닳으면(출발 전 점검과 같은 기준) 파란 글자 · 테두리로 앞세운다. 주 버튼은 상세 보기 하나 그대로
         BottomActionBar {
+            val canRepair = repairable(shown) && !forgePending.holds(shown.id)
+            val urgent = canRepair && repairUrgent(shown)
+            val accent = StepUpUi.colors.accentText
             SecondaryButton(
-                stringResource(R.string.shoes_vault_short), onClick = onOpenVault, icon = StepUpIcons.Layers,
-                modifier = Modifier.weight(.38f).testTag("shoe-to-vault"),
+                stringResource(R.string.care_repair),
+                onClick = {
+                    repairId = shown.id
+                    ShoeCareStore.shared.openRepair(shown.id)
+                },
+                icon = Icons.Outlined.Build,
+                enabled = canRepair,
+                color = if (urgent) accent else null,
+                modifier = Modifier.weight(.38f)
+                    .then(if (urgent) Modifier.border(1.dp, accent, CircleShape) else Modifier)
+                    .testTag("shoe-repair-quick"),
             )
             PrimaryButton(
                 stringResource(R.string.shoes_open_detail), onClick = { onOpenSneaker(selected.id) },
@@ -342,6 +374,37 @@ private fun MyShoesReady(
     }
     if (basisOpen) StatBasisSheet(onClose = { basisOpen = false })
     if (renaming) com.stepup.android.ui.screens.items.ShoeRenameSheet(shown, onDone = { renaming = false })
+    // 수리 시트 — 신발 상세 · 출발 전 점검과 같은 수리 길([ShoeCareStore]): 최신 내구도 · 비용 · 잔고를 읽고, 확인을 눌렀을 때만 서버에 한 번 보낸다
+    repairId?.let { id ->
+        val store = ShoeCareStore.shared
+        val repairs by store.repair.collectAsStateWithLifecycle()
+        val repairShoe = shoes.firstOrNull { it.id == id }
+        // 화면이 다시 만들어졌는데(프로세스 재시작) 열려 있던 수리 시트의 상태가 없으면 — 조회부터 다시(읽기만)
+        LaunchedEffect(id) {
+            if (store.repair.value[id] == null) store.openRepair(id)
+        }
+        val closeRepair: () -> Unit = {
+            repairId = null
+            store.closeRepair(id)
+        }
+        if (repairShoe != null) {
+            ShoeRepairSheet(
+                shoe = repairShoe,
+                phase = repairs[id] ?: RepairPhase.Loading,
+                onConfirm = { store.confirmRepair(id) },
+                onRecheck = { store.recheckRepair(id) },
+                onReload = { store.reloadRepair(id) },
+                // 로그인 화면으로 — 돌아온 뒤 저절로 수리하지 않는다. 서버 설정이 없는 빌드는 로그인할 수 없다(버튼 없음)
+                onSignIn = if (!com.stepup.android.core.ServiceLocator.serverEconomyOn) null else ({
+                    scope.launch { runCatching { com.stepup.android.ui.components.returnToSignIn(context) } }
+                }),
+                onClose = closeRepair,
+            )
+        } else {
+            // 신발이 목록에서 사라졌다(판매 · 강화 재료) — 닫는다
+            LaunchedEffect(Unit) { closeRepair() }
+        }
+    }
 }
 
 /**

@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -439,7 +442,7 @@ internal fun CrewCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, conten
     val c = crewColors()
     val shape = RoundedCornerShape(16.dp)
     Column(
-        modifier.fillMaxWidth().clip(shape).background(c.card, shape).border(1.dp, c.line, shape).padding(horizontal = padding, vertical = 6.dp),
+        modifier.fillMaxWidth().clip(shape).background(c.card, shape).stepUpRim(shape, RimKind.Surface).padding(horizontal = padding, vertical = 6.dp),
         content = content,
     )
 }

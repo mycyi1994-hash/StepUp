@@ -303,10 +303,8 @@ fun TextPostCard(
     onReport: (() -> Unit)? = null,
 ) {
     GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
+        // 글쓴이 사진은 글 목록이 받지 않는다 — 이니셜 동그라미 대신 아바타 없이 이름 · 시각만(2026-11-07)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.size(38.dp).background(Volt.copy(alpha = .12f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(post.author.take(1).uppercase(), color = Volt, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(post.author, style = MaterialTheme.typography.titleSmall, color = Snow, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(relativeTime(post.createdAt), style = MaterialTheme.typography.bodySmall, color = Silver)

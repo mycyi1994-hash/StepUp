@@ -210,7 +210,7 @@ val NavyRunTone = RunTone(
     dark = true,
     screenTop = Color(0xFF070B14), screen = Color(0xFF070B14), screenBottom = Color(0xFF070B14),
     glow = Color.Transparent,
-    panelTop = Color(0xFF0E1424), panel = Color(0xFF0E1424), panelEdge = Color(0x17FFFFFF),
+    panelTop = Color(0xFF0E1424), panel = Color(0xFF0E1424), panelEdge = Color(0x24FFFFFF), // 흰 테두리(2026-11-07) — 예전 0x17FFFFFF
     inset = Color(0xFF151C2D),
     text = Color.White, label = Color(0xFF969CAA), muted = Color(0xFF6E7586),
     cobalt = Color(0xFF2F6BFF), cobaltText = Color(0xFF6E9BFF), cyan = Color(0xFF6E9BFF),
@@ -235,7 +235,7 @@ val LightRunTone = RunTone(
     dark = false,
     screenTop = Color(0xFFF2F2F7), screen = Color(0xFFF2F2F7), screenBottom = Color(0xFFF2F2F7),
     glow = Color.Transparent,
-    panelTop = Color.White, panel = Color.White, panelEdge = Color(0x293C3C43),
+    panelTop = Color.White, panel = Color.White, panelEdge = Color(0x1A10192C), // 흰 테두리(2026-11-07) — 흰 카드 위는 옅은 남색
     inset = Color(0xFFEFEFF4),
     text = Color.Black, label = Color(0xFF848489), muted = Color(0xFF9C9CA2),
     cobalt = Color(0xFF1F5EFF), cobaltText = Color(0xFF1F5EFF), cyan = Color(0xFF1F5EFF),
@@ -747,7 +747,7 @@ fun RunMeter(
 
 // ── 패널 ───────────────────────────────────────────────────────────
 
-/** 카드 — 묶음 면(다크 #0E1424 · 라이트 흰색), 모서리 16, 테두리 없음. [selected] 면 2dp 블루 테두리 */
+/** 카드 — 묶음 면(다크 #0E1424 · 라이트 흰색), 모서리 16, 흰 테두리(2026-11-07 — [stepUpRim]). [selected] 면 흰 테두리 대신 2dp 블루 테두리 */
 @Composable
 fun RunCard(
     modifier: Modifier = Modifier,
@@ -762,7 +762,7 @@ fun RunCard(
     Column(
         modifier.fillMaxWidth().clip(shape)
             .background(t.panel, shape)
-            .then(if (selected) Modifier.border(2.dp, t.cobalt, shape) else Modifier)
+            .then(if (selected) Modifier.border(2.dp, t.cobalt, shape) else Modifier.stepUpRim(shape, RimKind.Surface))
             .then(if (onClick != null) Modifier.feedbackClickable(onClick = onClick) else Modifier)
             .then(if (tag != null) Modifier.testTag(tag) else Modifier)
             .padding(padding),
@@ -773,7 +773,8 @@ fun RunCard(
 
 /**
  * 러닝 방법 카드(시안 U01 · U02) — 같은 크기의 가로 줄. 왼쪽 이름 · 작은 설명, 오른쪽 그림 · ">".
- * 카드 전체가 하나의 버튼이다(카드 안에 버튼을 또 두지 않는다). 번지는 빛 · 테두리 없이 묶음 면만.
+ * 카드 전체가 하나의 버튼이다(카드 안에 버튼을 또 두지 않는다). 번지는 빛 없이 묶음 면 + 흰 테두리
+ * (2026-11-07 클라이언트 피드백 「흰색 덧 붙히기」 — 10/25 통합안의 "테두리 없이"를 대신한다). 잠근 · 꺼진 카드는 테두리 없음.
  */
 @Composable
 fun RunModeCard(
@@ -795,6 +796,7 @@ fun RunModeCard(
         modifier.fillMaxWidth().heightIn(min = minHeight)
             .clip(shape)
             .background(t.panel, shape)
+            .stepUpRim(shape, RimKind.Surface, enabled = enabled && !locked)
             .feedbackClickable(enabled = enabled || locked, onClick = onClick)
             .padding(start = 18.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -838,6 +840,7 @@ fun RunLinkRow(
     val shape = RoundedCornerShape(RunSpec.CardRadius)
     Row(
         modifier.fillMaxWidth().heightIn(min = 54.dp).clip(shape).background(t.panel, shape)
+            .stepUpRim(shape, RimKind.Surface, enabled = !locked)
             .feedbackClickable(onClick = onClick)
             .padding(start = 16.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -880,6 +883,7 @@ fun RunMapFrame(
             Box(
                 Modifier.align(Alignment.TopEnd).padding(8.dp).size(40.dp).clip(CircleShape)
                     .background(t.panel.copy(alpha = 0.9f))
+                    .stepUpRim(CircleShape, RimKind.Control)
                     .feedbackClickable(onClick = onExpand)
                     .semantics { contentDescription = label }
                     .testTag("run-map-expand"),
@@ -1210,7 +1214,8 @@ fun RunChoiceRow(
     Row(
         modifier.fillMaxWidth().heightIn(min = if (compact) 52.dp else 68.dp).clip(shape)
             .background(t.panel, shape)
-            .border(2.dp, if (selected) t.cobalt else Color.Transparent, shape)
+            // 고르면 2dp 블루, 안 고르면 흰 테두리(두 겹 두지 않는다)
+            .then(if (selected) Modifier.border(2.dp, t.cobalt, shape) else Modifier.stepUpRim(shape, RimKind.Surface))
             .feedbackClickable(role = Role.RadioButton, cue = FeedbackCue.Select, onClick = onSelect)
             .semantics { this.selected = selected }
             .padding(horizontal = 16.dp, vertical = if (compact) 8.dp else 12.dp),
@@ -1332,7 +1337,7 @@ fun RunTextField(
     val shape = RoundedCornerShape(StepUpUi.FieldRadius)
     Row(
         modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(t.panel, shape)
-            .border(2.dp, if (focused) t.cobalt else Color.Transparent, shape)
+            .then(if (focused) Modifier.border(2.dp, t.cobalt, shape) else Modifier.stepUpRim(shape, RimKind.Surface))
             .padding(start = 16.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

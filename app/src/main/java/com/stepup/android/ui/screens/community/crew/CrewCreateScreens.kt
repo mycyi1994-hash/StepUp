@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.community.crew
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
@@ -514,7 +517,8 @@ private fun CrewIdentityForm(draft: CrewDraft, card: CrewCard?, problem: CrewPro
     // 대표 사진 줄(UI 최종 통합안 create) — 카드 면 · 사진 60 · 이름 · 설명 · 작은 "바꾸기"
     val c = com.stepup.android.ui.components.StepUpUi.colors
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card).stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).feedbackClickable(role = Role.Button, onClick = onImage).testTag("crew-draft-image")) {

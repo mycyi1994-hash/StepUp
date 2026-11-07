@@ -1,5 +1,8 @@
 package com.stepup.android.ui.screens.walk
 
+import com.stepup.android.ui.components.RimKind
+import com.stepup.android.ui.components.stepUpRim
+
 import com.stepup.android.ui.components.pressable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.semantics.role
@@ -523,7 +526,8 @@ private fun FreeRunMapLive(
                         Spacer(Modifier.width(8.dp))
                     }
                     Column(
-                        Modifier.clip(RoundedCornerShape(16.dp)).background(c.card.copy(alpha = .94f)).padding(horizontal = 14.dp, vertical = 8.dp),
+                        Modifier.clip(RoundedCornerShape(16.dp)).background(c.card.copy(alpha = .94f))
+                            .stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface).padding(horizontal = 14.dp, vertical = 8.dp),
                     ) {
                         Text(
                             title, style = StepUpUi.type.rowTitle.copy(fontWeight = FontWeight.ExtraBold), color = c.label, maxLines = 1,
@@ -591,7 +595,8 @@ private fun FreeRunMapLive(
 private fun MapChip(text: String, dot: Color, tag: String) {
     val c = StepUpUi.colors
     Row(
-        Modifier.clip(RoundedCornerShape(50)).background(c.card.copy(alpha = .94f)).padding(horizontal = 12.dp, vertical = 8.dp)
+        Modifier.clip(RoundedCornerShape(50)).background(c.card.copy(alpha = .94f)).stepUpRim(RoundedCornerShape(50), RimKind.Surface)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }.testTag(tag),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -629,7 +634,8 @@ private fun LivePill(icon: ImageVector, label: String, primary: Boolean, onClick
     val c = StepUpUi.colors
     Column(
         modifier.heightIn(min = 64.dp).pressable(onClick = onClick).clip(LiveActionShape)
-            .background(if (primary) c.primary else c.card).then(if (primary) Modifier else Modifier.border(1.dp, c.separator, LiveActionShape))
+            .background(if (primary) c.primary else c.card)
+            .stepUpRim(LiveActionShape, if (primary) RimKind.Primary else RimKind.Surface)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -654,7 +660,7 @@ private fun HoldEndPill(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: 
     Box(
         modifier.heightIn(min = 64.dp)
             .graphicsLayer { val k = 1f - 0.04f * progress.value; scaleX = k; scaleY = k }
-            .clip(shape).background(c.card).border(1.dp, c.separator, shape)
+            .clip(shape).background(c.card).stepUpRim(shape, RimKind.Surface)
             .semantics {
                 role = androidx.compose.ui.semantics.Role.Button
                 contentDescription = label
@@ -788,7 +794,10 @@ internal fun liveTop(
     overspeedLeft: Int = 0,
 ): (@Composable () -> Unit)? = if (band == FreeBand.None || band == FreeBand.Paused) null else {
     {
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(StepUpUi.colors.card.copy(alpha = .94f)).padding(vertical = 4.dp)) {
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(StepUpUi.colors.card.copy(alpha = .94f))
+                .stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface).padding(vertical = 4.dp),
+        ) {
             LiveStatus(band, noLocation, gpsOk = false, place = null, onBandTap = onBandTap, onBandAction = onBandAction, overspeedLeft = overspeedLeft)
         }
     }
