@@ -516,7 +516,7 @@
   (function () {
     var d = $('shareDlg'), o = $('shareOpen'); if (!d || !o) return;
     var url = 'https://stepupcrew.com/11events/?utm_source=sns&utm_medium=share';
-    var tx = '걷다 보면 빼빼로 🍫\n11/7~11/11 StepUp 11.11 워킹데이 참여 중\n하루 11,111걸음 걸으면 응모권 · 경품 111명\n\n#스텝업 #스텝업챌린지 #StepUp #StepUpChallenge\n' + url;
+    var tx = '걷다 보면 빼빼로 🍫\n11/7~11/11 StepUp 11.11 워킹데이 참여 중\n하루 1,111걸음만 걸어도 응모권 · 경품 111명\n\n#스텝업 #스텝업챌린지 #StepUp #StepUpChallenge\n' + url;
     $('shareTx').textContent = tx;
     $('shX').href = 'https://x.com/intent/post?text=' + encodeURIComponent(tx);
     $('shT').href = 'https://www.threads.net/intent/post?text=' + encodeURIComponent(tx);
@@ -549,7 +549,7 @@
       var rows = data[tab] || [];
       [].forEach.call(box.querySelectorAll('[data-lb]'), function (b) { b.setAttribute('aria-selected', String(b.dataset.lb === tab)); });
       if (!rows.length) {
-        list.innerHTML = '<li class="lbe">' + (tab === 'invite' ? '아직 순위가 없어요. 친구가 11,111걸음을 인증하면 올라가요.' : '아직 승인된 걸음이 없어요.') + '</li>';
+        list.innerHTML = '<li class="lbe">' + (tab === 'invite' ? '아직 순위가 없어요. 친구가 걸음을 인증하면 올라가요.' : '아직 승인된 걸음이 없어요.') + '</li>';
       } else {
         list.innerHTML = rows.map(function (r, i) {
           var v = tab === 'invite' ? r.friends + '명' : (+r.steps).toLocaleString('ko-KR') + '<small>걸음</small>';
@@ -557,7 +557,7 @@
           return '<li' + (r.rank <= 3 ? ' class="rkt"' : '') + '><span class="rk">' + r.rank + '</span><span class="who">' + esc(r.who) + sub + '</span><b>' + v + '</b></li>';
         }).join('');
       }
-      note.textContent = tab === 'invite' ? '11,111걸음 인증된 친구 수 · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '승인된 걸음 합계 · 경품과는 상관없어요';
+      note.textContent = tab === 'invite' ? '걸음 인증된 친구 수 · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '승인된 걸음 합계 · 경품과는 상관없어요';
     }
     function read() {
       fetch(CFG.url + '/rest/v1/rpc/walkingday_leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key }, body: '{}', cache: 'no-store' })
