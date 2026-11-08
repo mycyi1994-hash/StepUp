@@ -256,6 +256,16 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #fff;
 .lbt button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(58,26,9,.18)}
 .lbs{margin:-2px 0 10px;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:700;line-height:1.45;background:#FFF3D6;color:#7A4A00}
 .lbs.no{background:#F3EADB;color:#8A6446}
+.lbgo{margin-top:12px;padding:14px;border-radius:14px;background:#2A1206;color:#F8EBD3;text-align:center}
+.lbgo[hidden]{display:none}
+.lbgo p{margin:0 0 10px;font-size:14px;line-height:1.45;word-break:keep-all}
+.lbgo b{display:block;color:#FFD76E;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.lbgo .sharebtn{display:flex;align-items:center;justify-content:center;text-decoration:none;width:100%}
+.refbar{position:fixed;left:0;right:0;top:0;z-index:60;padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px;background:#FFD76E;color:#2A1206;font-size:14px;font-weight:800;line-height:1.35;text-align:center;word-break:keep-all;pointer-events:none}
+.setw{flex-direction:column;gap:8px}.hasref{padding-top:38px}
+.setph{gap:0;align-items:flex-end}
+.setph img+img{margin-left:-14px}
+.setl{font-weight:700!important;color:var(--red)!important;white-space:nowrap}
 .lbl{list-style:none;margin:0;padding:0}
 .lbl li{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;padding:11px 10px;border-radius:12px;font-size:15px}
 .lbl li+li{box-shadow:0 -1px 0 #F0E4D0}
@@ -455,6 +465,7 @@ body{letter-spacing:-.035em}
       <div class="lbh"><b>지금 순위</b><div class="lbt" role="tablist" aria-label="순위 종류"><button type="button" role="tab" data-lb="invite" aria-selected="true">초대 순위</button><button type="button" role="tab" data-lb="steps" aria-selected="false">걸음 순위</button></div></div>
       <p class="lbs" id="lbSub"></p>
       <ol class="lbl" id="lbList" aria-live="polite"></ol>
+      <div class="lbgo" id="lbGo" hidden><p><b id="lbGoA"></b><span id="lbGoB"></span></p><a class="sharebtn" href="/11events/proof?utm_source=walkingday&amp;utm_medium=web&amp;utm_campaign=2611-11111steps&amp;utm_content=rank_invite#invite">내 초대 링크 받기</a></div>
       <p class="lbn" id="lbNote"></p>
     </div>
     <div class="film" id="film"><video id="filmV" src="assets/wd_main.mp4" poster="assets/wd_main_poster.jpg" width="720" height="1280" playsinline preload="none" aria-label="11.11 워킹데이 영상 24초"></video><button class="play" id="filmP" type="button" aria-label="영상 재생, 소리 있음"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5v17l14-8.5z" fill="#fff"/></svg></i>소리 켜고 보기</button></div>
@@ -513,7 +524,7 @@ body{letter-spacing:-.035em}
     </div></div>
     <div class="pgi"><img src="assets/de_h2.webp" width="166" height="33" class="grp" alt="친구 초대 순위 11명">
     <div class="pzs pz2">
-      <figure class="tile w"><div class="ph"><img src="assets/prize_mat.webp" alt="" width="125" height="100" style="height:100px" loading="lazy"></div><div class="tx"><span class="g n" style="--m:url(assets/x_de_c1.webp);width:51.0px;height:36.6px" role="img" aria-label="1명"></span><h3>요가매트 세트</h3><p>초대 1위</p></div></figure>
+      <figure class="tile w setw"><div class="ph setph"><img src="assets/prize_mat.webp" alt="" style="height:86px" loading="lazy"><img src="assets/prize_socks.webp" alt="" style="height:54px" loading="lazy"><img src="assets/dn_pepero.webp" alt="" style="height:78px" loading="lazy"></div><div class="tx"><span class="g n" style="--m:url(assets/x_de_c1.webp);width:51.0px;height:36.6px" role="img" aria-label="1명"></span><h3>요가매트 세트</h3><p class="setl">매트 + 운동양말 + 빼빼로</p><p>초대 1위</p></div></figure>
       <figure class="tile"><div class="ph" style="--sw:58%"><img src="assets/c_roller.webp" alt="" width="59" height="144" style="height:144px" loading="lazy"></div><span class="g n" style="--m:url(assets/x_de_c3.webp);width:59.2px;height:37.5px" role="img" aria-label="3명"></span><h3>폼롤러</h3><p>초대 2~4위</p></figure>
       <figure class="tile"><div class="ph" style="--sw:88%"><img src="assets/prize_socks.webp" alt="" width="136" height="111" style="height:111px" loading="lazy"></div><span class="g n" style="--m:url(assets/x_de_c7.webp);width:56.5px;height:36.6px" role="img" aria-label="7명"></span><h3>운동양말</h3><p>초대 5~11위</p></figure>
     </div></div>
@@ -605,5 +616,5 @@ body{letter-spacing:-.035em}
 </div>
 <script src="assets/config.js?v=4ae9d2df1d"></script>
 <script src="ga.js?v=b2f9da6f83"></script>
-<script src="app.js?v=66d8d84679"></script>
+<script src="app.js?v=1109a"></script>
 </body></html>

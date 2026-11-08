@@ -74,6 +74,12 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
 .stat div{background:#fff;border-radius:12px;padding:10px 12px;text-align:center}
 .stat b{display:block;font-size:26px;line-height:1.2}
 .stat span{font-size:13px;color:var(--milk)}
+.invp ul{margin:0;padding:0;list-style:none}
+.invp li{display:flex;gap:12px;padding:8px 0;border-top:1px solid rgba(36,16,6,.1);font-size:15px;font-weight:700}
+.invp li b{flex:none;width:58px}
+.invp small{display:block;font-size:13px;font-weight:500;color:var(--milk)}
+.invp .race{margin:8px 0 0;padding:10px 12px;border-radius:10px;background:#2A1206;color:#FFD76E;font-size:14px;font-weight:800;text-align:center;word-break:keep-all}
+.invp .race[hidden]{display:none}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -190,6 +196,15 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
   </div>
   </div>
   <div id="invPane" hidden>
+  <div class="card invp">
+    <span class="t">초대 순위 경품 11명</span>
+    <ul>
+      <li><b>1위</b><span>요가매트 세트<small>매트 + 운동양말 + 빼빼로</small></span></li>
+      <li><b>2~4위</b><span>폼롤러</span></li>
+      <li><b>5~11위</b><span>운동양말</span></li>
+    </ul>
+    <p class="race" data-race hidden></p>
+  </div>
   <form id="invForm" novalidate>
     <div class="card">
       <span class="t">이렇게 인정돼요</span>
@@ -213,7 +228,7 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
     <span class="t">내 초대 링크</span>
     <p class="link" id="invLink"></p>
     <div class="row2">
-      <button class="btn" id="invCopy" type="button">링크 복사</button>
+      <button class="btn" id="invCopy" type="button">문구랑 링크 복사</button>
       <button class="btn ghost" id="invShare" type="button">공유하기</button>
     </div>
     <p class="msg" id="invFb" role="status" aria-live="polite"></p>
@@ -228,6 +243,6 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
 </main>
 <script src="/11events/assets/config.js?v=1107d"></script>
 <script src="/11events/ga.js?v=1107d"></script>
-<script src="/11events/proof.js?v=1108a"></script>
+<script src="/11events/proof.js?v=1109a"></script>
 </body>
 </html>

@@ -432,6 +432,10 @@
   /* 11/7~11/11 15시 걸음 인증 양식이 정해지면(config.js의 proof) 주 버튼이 인증으로 바뀜 */
   /* 11/7: 친구 초대 링크(?ref=)로 온 사람은 아직 등록 전이라 사전 등록 버튼을 그대로 둔다(ref 가 등록까지 가야 초대가 센다). 인증 버튼에도 utm 을 넘긴다 */
   var invited = false; try { invited = !!new URLSearchParams(location.search).get('ref'); } catch (e) { /* 없음 */ }
+  if (invited && phase() === 'live') {
+    var refBar = document.createElement('p'); refBar.className = 'refbar'; refBar.textContent = '친구가 초대했어요 · 등록하고 1,111걸음 인증하면 둘 다 응모권 +2장';
+    document.body.appendChild(refBar); document.body.classList.add('hasref');
+  }
   if (CFG.proof && phase() === 'live' && !invited) ctas.forEach(function (a) {
     try { var u = new URL(CFG.proof, location.href), q = new URLSearchParams(location.search); q.forEach(function (v, k) { if (v && /^utm_/i.test(k)) u.searchParams.set(k, v); }); a.href = u.pathname + u.search; } catch (e) { a.href = CFG.proof; }
     if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = '걸음 인증하기';
@@ -542,7 +546,7 @@
   (function () {
     var box = $('lb'), list = $('lbList'), note = $('lbNote'); if (!box || !list || !CFG.url || phase() === 'before') return;
     var data = null, tab = 'invite';
-    var PRIZE = function (r) { return r === 1 ? '요가매트' : r <= 4 ? '폼롤러' : r <= 11 ? '운동양말' : ''; };
+    var PRIZE = function (r) { return r === 1 ? '요가매트 세트' : r <= 4 ? '폼롤러' : r <= 11 ? '운동양말' : ''; };
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function draw() {
       if (!data) return;
@@ -558,7 +562,16 @@
         }).join('');
       }
       var sub = $('lbSub');
-      if (sub) { sub.className = 'lbs' + (tab === 'invite' ? '' : ' no'); sub.textContent = tab === 'invite' ? '🎁 경품은 이 초대 순위로 줘요 · 1위 요가매트 · 2~4위 폼롤러 · 5~11위 운동양말' : '참고용 순위예요 · 걸음 순위로는 경품이 없어요(경품은 초대 순위 · 응모권 추첨)'; }
+      if (sub) { sub.className = 'lbs' + (tab === 'invite' ? '' : ' no'); sub.textContent = tab === 'invite' ? '🎁 경품은 이 초대 순위로 줘요 · 1위 요가매트 세트(매트 + 운동양말 + 빼빼로) · 2~4위 폼롤러 · 5~11위 운동양말' : '참고용 순위예요 · 걸음 순위로는 경품이 없어요(경품은 초대 순위 · 응모권 추첨)'; }
+      /* 초대 탭: 실제 순위로 「몇 명이면 몇 위」 — 받는 동안(live)만 */
+      var go = $('lbGo');
+      if (go) {
+        go.hidden = tab !== 'invite' || phase() !== 'live';
+        var top = rows.length ? rows[0].friends : 0;
+        $('lbGoA').textContent = top ? '인증한 친구 ' + (top + 1) + '명이면 지금 1위' : '인증한 친구 1명이면 지금 1위';
+        var left = 11 - rows.length;
+        $('lbGoB').textContent = left > 0 ? '경품 자리 ' + left + '개 비었어요 · 친구 1명만 인증해도 순위 안 · 마감 11/11(수) 15:00' : '11위까지 경품 · 지금 11위 친구 ' + rows[10].friends + '명 · 마감 11/11(수) 15:00';
+      }
       note.textContent = tab === 'invite' ? '걸음 인증된 친구 수 · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '제출한 걸음 합계(확인 전 포함, 거절되면 빠짐) · 경품과는 상관없어요';
     }
     function read() {
