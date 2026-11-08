@@ -162,6 +162,18 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .waitlist-done .waitlist-kicker{color:#087f5b}
 .waitlist-done-email{margin:0;color:#191f28;font-size:17px;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
 .waitlist-done-next{margin:0;color:#4e5968;font-size:15px;line-height:1.6;word-break:keep-all}
+.waitlist-done-next[hidden]{display:none}
+.waitlist-event{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding:18px;border-radius:16px;background:#2A1206;color:#F8EBD3}
+.waitlist-event[hidden]{display:none}
+.waitlist-event-tag{align-self:flex-start;margin:0;padding:3px 10px;border-radius:999px;background:#FFD76E;color:#2A1206;font-size:12px;font-weight:800}
+.waitlist-event h3{margin:0;color:#fff;font-size:20px;font-weight:800;line-height:1.35;letter-spacing:-.02em;word-break:keep-all;text-wrap:balance}
+.waitlist-event ul{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.waitlist-event li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #F8EBD326;font-size:15px;line-height:1.4;word-break:keep-all}
+.waitlist-event li b{flex:none;color:#FFD76E;font-weight:800}
+.waitlist-event-go,.waitlist-event-sub{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:13px;font-size:16px;font-weight:800;text-decoration:none}
+.waitlist-event-go{background:#FFD76E;color:#2A1206}
+.waitlist-event-sub{border:1px solid #F8EBD366;color:#F8EBD3}
+.waitlist-event-end{margin:0;color:#F8EBD3b3;font-size:13px;text-align:center}
 .waitlist-optional{display:flex;flex-direction:column;gap:16px}
 .waitlist-optional-title{margin:6px 0 0;font-size:20px;letter-spacing:-.04em;word-break:keep-all}
 .waitlist-ref-note{margin:8px 0 0;color:#8b95a1;font-size:13px;line-height:1.55;word-break:keep-all}

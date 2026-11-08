@@ -27,7 +27,7 @@
 <meta name="twitter:image:alt" content="오늘의 한 걸음, 함께라서 더 멀리. StepUp 사전 등록">
 <link rel="icon" href="./assets/img/app-icon-192.webp" type="image/webp">
 <link rel="apple-touch-icon" href="./assets/img/apple-touch-icon.png">
-<link rel="stylesheet" href="./styles.css?v=20261107-ev">
+<link rel="stylesheet" href="./styles.css?v=20261108-cta">
 <script>
 // 영어로 볼 사람에게 한국어가 먼저 번쩍이지 않게 — i18n.js 가 글자를 바꿀 때까지(늦어도 4초) 감춘다. 고르는 규칙은 i18n.js 와 같다.
 (function () {
@@ -62,11 +62,11 @@
   }, true);
 })();
 </script>
-<link rel="modulepreload" href="./i18n.js?v=20261107-ev">
+<link rel="modulepreload" href="./i18n.js?v=20261108-cta">
 <link rel="modulepreload" href="./waitlist-core.mjs?v=20261107-ev">
-<script type="module" src="./site.js?v=20261107-ev"></script>
+<script type="module" src="./site.js?v=20261108-cta"></script>
 <script async src="./ga.js?v=20261107-ga"></script>
-<script type="module" src="./waitlist.js?v=20261108-em"></script>
+<script type="module" src="./waitlist.js?v=20261108-cta"></script>
 <noscript><style>html,body{height:auto;overflow:auto}.root{position:static}.track{position:static;transform:none}.loader,.dots,.hint{display:none}.root [class]{opacity:1!important}</style></noscript>
 </head>
 <body>
@@ -337,6 +337,18 @@
       <h2 id="waitlist-share-title" tabindex="-1" data-i18n="done.title">사전 등록을 마쳤어요</h2>
       <p class="waitlist-done-email"></p>
       <p class="waitlist-done-next" data-i18n="done.next">더 할 일은 없어요. 아래 공유는 선택이에요.</p>
+      <!-- 11.11 워킹데이 기간에만(waitlist.js renderEntry) — 등록하고 그냥 나가지 않게 걸음 인증 · 친구 초대로 잇는다 -->
+      <div class="waitlist-event" hidden>
+        <p class="waitlist-event-tag" data-i18n="done.evTag">11.11 워킹데이 진행 중</p>
+        <h3 data-i18n="done.evTitle">응모권 1장 받았어요. 걸으면 더 받아요</h3>
+        <ul>
+          <li><span data-i18n="done.evSteps">하루 1,111걸음 캡처 올리기</span><b data-i18n="done.evStepsN">+3장</b></li>
+          <li><span data-i18n="done.evInvite">친구 초대 · 친구도 걸음 인증하면</span><b data-i18n="done.evInviteN">둘 다 +2장</b></li>
+        </ul>
+        <a class="waitlist-event-go" href="/11events/proof?utm_source=home&amp;utm_medium=web&amp;utm_campaign=2611-11111steps&amp;utm_content=signup_done" data-i18n="done.evGo">걸음 인증하기</a>
+        <a class="waitlist-event-sub" href="/11events/proof?utm_source=home&amp;utm_medium=web&amp;utm_campaign=2611-11111steps&amp;utm_content=signup_done#invite" data-i18n="done.evInviteGo">친구 초대 링크 받기</a>
+        <p class="waitlist-event-end" data-i18n="done.evEnd">마감 11/11(수) 15:00 · 경품 111명</p>
+      </div>
     </div>
     <div class="waitlist-optional">
     <h3 class="waitlist-optional-title" data-i18n="share.title">선택 · 공유하고 보너스 더 받기</h3>
