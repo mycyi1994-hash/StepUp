@@ -297,6 +297,7 @@
           $('invOk').textContent = (+d.counted || 0).toLocaleString('ko-KR');
           $('invFb').textContent = '';
           invForm.hidden = true; $('invDone').hidden = false;
+          invRankRead(+d.counted || 0);
           if (window.wdTrack) window.wdTrack('walkingday_invite_link', {});
         } else {
           sayInv(INV_REASONS[d && d.code] || '찾지 못했어요. 잠시 뒤 다시 시도해 주세요.', true);
@@ -316,6 +317,25 @@
       el.textContent = '인증한 친구 ' + (top + 1) + '명이면 지금 1위 · 마감 11/11(수) 15:00'; el.hidden = false;
     })
     .catch(function () { /* 못 읽으면 줄을 숨긴 채로 */ });
+  /* 내 자리까지 남은 친구 수 — 공개 순위(0096)와 조회 때 받은 내 인증 친구 수로 조회 때 한 번만 센다(walkingday_invite_link 는 횟수 제한이 있어 되풀이하지 않는다) */
+  function invRankText(c, rows) {
+    var P = '요가매트 세트', top = rows.length ? +rows[0].friends : 0, full = rows.length >= 11, cut = full ? +rows[10].friends : 0;
+    if (c > 0 && (c > top || (c === top && !(rows[1] && +rows[1].friends === top)))) return '지금 초대 1위예요. ' + P + ' 자리를 지켜 주세요';
+    if (c > 0 && c === top) return '1위와 동점이에요. 친구 1명 더면 ' + P + ' 단독 1위';
+    if (full && c > 0 && c === cut) return '경품 순위 끝자리와 동점이에요. 친구 1명 더면 경품 순위 안';
+    var toTop = top - c + 1, toIn = full ? (c > cut ? 0 : cut - c + 1) : (c > 0 ? 0 : 1);
+    if (toIn >= toTop) return '친구 ' + toTop + '명 더면 ' + P;
+    return (toIn > 0 ? '친구 ' + toIn + '명 더면 경품 순위 · ' : '지금 경품 순위 안이에요 · ') + toTop + '명 더면 ' + P;
+  }
+  function invRankRead(c) {
+    var el = $('invRank');
+    el.hidden = true;
+    if (Date.now() >= CLOSE) return;
+    fetch(URL_BASE + '/rest/v1/rpc/walkingday_leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: '{}', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
+      .then(function (d) { if (d && d.invite) { el.textContent = invRankText(c, d.invite); el.hidden = false; } })
+      .catch(function () { /* 못 읽으면 줄을 두지 않는다 */ });
+  }
   function copyText(t) {
     if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
     return new Promise(function (ok, no) {
@@ -333,5 +353,5 @@
     copyText(INV_TEXT + '\n' + invUrl).then(function () { $('invFb').className = 'msg'; $('invFb').textContent = '초대 문구와 링크를 복사했어요. 카톡 · 텔레그램에 붙여 넣어 주세요.'; },
       function () { $('invFb').className = 'msg err'; $('invFb').textContent = '복사가 안 돼요. 위 링크를 길게 눌러 복사해 주세요.'; });
   });
-  $('invOther').addEventListener('click', function () { $('invDone').hidden = true; invForm.hidden = false; sayInv(''); });
+  $('invOther').addEventListener('click', function () { $('invDone').hidden = true; $('invRank').hidden = true; invForm.hidden = false; sayInv(''); });
 })();

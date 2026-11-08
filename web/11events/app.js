@@ -542,25 +542,35 @@
     });
   })();
 
-  /* ── 지금 순위(0096 walkingday_leaderboard): 초대 · 걸음, 이메일은 서버가 가려서 준다. 60초마다 · 돌아오면 바로 ── */
+  /* ── 지금 순위(0096 walkingday_leaderboard): 초대 · 걸음, 이메일은 서버가 가려서 준다. 기간 중 10초마다(화면을 보고 있을 때만) · 돌아오면 바로 ── */
   (function () {
     var box = $('lb'), list = $('lbList'), note = $('lbNote'); if (!box || !list || !CFG.url || phase() === 'before') return;
-    var data = null, tab = 'invite';
+    var data = null, tab = 'invite', sig = '', busy = false, up = {}, shown = '';
     var PRIZE = function (r) { return r === 1 ? '요가매트 세트' : r <= 4 ? '폼롤러' : r <= 11 ? '운동양말' : ''; };
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function val(k, r) { return k === 'invite' ? +r.friends : +r.steps; }
+    /* 보고 있는 칸에서 새로 들어왔거나 숫자가 늘어난 줄만 한 번 반짝 */
+    function mark(prev, next) {
+      var old = {};
+      (prev[tab] || []).forEach(function (r) { old[r.who] = val(tab, r); });
+      (next[tab] || []).forEach(function (r) { if (old[r.who] === undefined || val(tab, r) > old[r.who]) up[tab + '|' + r.who] = 1; });
+    }
     function draw() {
       if (!data) return;
-      var rows = data[tab] || [];
+      var rows = data[tab] || [], pre = tab + '|', html;
       [].forEach.call(box.querySelectorAll('[data-lb]'), function (b) { b.setAttribute('aria-selected', String(b.dataset.lb === tab)); });
       if (!rows.length) {
-        list.innerHTML = '<li class="lbe">' + (tab === 'invite' ? '아직 순위가 없어요. 친구가 걸음을 인증하면 올라가요.' : '아직 제출된 걸음이 없어요. 첫 1위가 돼 보세요.') + '</li>';
+        html = '<li class="lbe">' + (tab === 'invite' ? '아직 순위가 없어요. 친구가 걸음을 인증하면 올라가요.' : '아직 제출된 걸음이 없어요. 첫 1위가 돼 보세요.') + '</li>';
       } else {
-        list.innerHTML = rows.map(function (r, i) {
+        html = rows.map(function (r, i) {
           var v = tab === 'invite' ? r.friends + '명' : (+r.steps).toLocaleString('ko-KR') + '<small>걸음</small>';
           var sub = tab === 'invite' ? (PRIZE(i + 1) ? '<i>' + PRIZE(i + 1) + '</i>' : '') : '<i>' + r.days + '일</i>';
-          return '<li' + (r.rank <= 3 ? ' class="r' + r.rank + '"' : '') + '><span class="rk">' + r.rank + '</span><span class="who"><span>' + esc(r.who) + '</span>' + sub + '</span><b>' + v + '</b></li>';
+          var cls = (r.rank <= 3 ? 'r' + r.rank : '') + (up[pre + r.who] ? ' up' : '');
+          delete up[pre + r.who];
+          return '<li' + (cls ? ' class="' + cls.trim() + '"' : '') + '><span class="rk">' + r.rank + '</span><span class="who"><span>' + esc(r.who) + '</span>' + sub + '</span><b>' + v + '</b></li>';
         }).join('');
       }
+      if (html !== shown) { list.innerHTML = html; shown = html; } /* 보고 있는 칸이 그대로면 건드리지 않는다 */
       var sub = $('lbSub');
       if (sub) { sub.className = 'lbs' + (tab === 'invite' ? '' : ' no'); sub.textContent = tab === 'invite' ? '🎁 경품은 이 초대 순위로 줘요 · 1위 요가매트 세트(매트 + 운동양말 + 빼빼로) · 2~4위 폼롤러 · 5~11위 운동양말' : '참고용 순위예요 · 걸음 순위로는 경품이 없어요(경품은 초대 순위 · 응모권 추첨)'; }
       /* 초대 탭: 실제 순위로 「몇 명이면 몇 위」 — 받는 동안(live)만 */
@@ -572,16 +582,29 @@
         var left = 11 - rows.length;
         $('lbGoB').textContent = left > 0 ? '경품 자리 ' + left + '개 비었어요 · 친구 1명만 인증해도 순위 안 · 마감 11/11(수) 15:00' : '11위까지 경품 · 지금 11위 친구 ' + rows[10].friends + '명 · 마감 11/11(수) 15:00';
       }
-      note.textContent = tab === 'invite' ? '걸음 인증된 친구 수 · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '제출한 걸음 합계(확인 전 포함, 거절되면 빠짐) · 경품과는 상관없어요';
+      var auto = phase() === 'live' ? ' · 10초마다 자동 반영' : '';
+      note.textContent = tab === 'invite' ? '걸음 인증된 친구 수' + auto + ' · 같으면 응모권 많은 순 · 발표 때 최종 확정' : '제출한 걸음 합계(거절되면 빠짐)' + auto + ' · 경품과는 상관없어요';
     }
     function read() {
-      fetch(CFG.url + '/rest/v1/rpc/walkingday_leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key }, body: '{}', cache: 'no-store' })
+      if (busy) return; busy = true;
+      var ctl = window.AbortController ? new AbortController() : null, cut = ctl && setTimeout(function () { ctl.abort(); }, 8000);
+      fetch(CFG.url + '/rest/v1/rpc/walkingday_leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key }, body: '{}', cache: 'no-store', signal: ctl ? ctl.signal : undefined })
         .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
-        .then(function (d) { if (d && d.invite) { data = d; box.hidden = false; draw(); } })
-        .catch(function () { /* 못 읽으면 칸을 숨긴 채로 */ });
+        .then(function (d) {
+          if (!d || !d.invite) return;
+          var s = JSON.stringify([phase() === 'live', d.invite, d.steps]);
+          if (s === sig) return;
+          if (data) mark(data, d);
+          sig = s; data = d; box.hidden = false; draw();
+        })
+        .catch(function () { /* 못 읽으면 지금 칸 그대로 */ })
+        .then(function () { busy = false; if (cut) clearTimeout(cut); });
     }
-    [].forEach.call(box.querySelectorAll('[data-lb]'), function (b) { b.addEventListener('click', function () { tab = b.dataset.lb; draw(); }); });
-    read(); setInterval(read, 60000);
+    [].forEach.call(box.querySelectorAll('[data-lb]'), function (b) { b.addEventListener('click', function () { tab = b.dataset.lb; up = {}; draw(); }); });
+    var n = 0;
+    read();
+    setInterval(function () { n++; if (document.hidden || (phase() !== 'live' && n % 6)) return; read(); }, 10000); /* 마감 뒤에는 60초마다 */
     document.addEventListener('visibilitychange', function () { if (!document.hidden) read(); });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) read(); });
   })();
 })();

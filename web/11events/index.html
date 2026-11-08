@@ -282,6 +282,9 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #fff;
 .lbl b{font-variant-numeric:tabular-nums;font-size:16px;font-weight:800;color:#2A1206}
 .lbl li.r1 b{color:#BE2316}
 .lbl b small{font-size:11px;font-weight:700;margin-left:2px;color:#8A6446}
+.lbl li.up{animation:lbUp 1.6s ease-out}
+@keyframes lbUp{0%,35%{background:#FFE08A}}
+@media(prefers-reduced-motion:reduce){.lbl li.up{animation:none}}
 .lbl .lbe{display:block;text-align:center;color:#8A6446;padding:22px 6px;font-weight:600;line-height:1.5}
 .lbn{margin:10px 4px 0;font-size:12px;color:#9A7A5E}
 /* 지금 순위는 첫 화면 바로 아래(인증 칸 맨 위) — PC 2단에서는 두 칸을 가로질러 */
@@ -499,7 +502,7 @@ body{letter-spacing:-.035em}
       <li class="tkw"><div class="tkt"><div class="tm"><i></i><b>사전 등록</b></div><div class="ts"><span class="g " style="--m:url(assets/x_de_a4.webp);width:58.8px;height:27.2px" role="img" aria-label="1장"></span></div></div></li>
       <li class="tkw"><div class="tkt"><div class="tm"><p style="margin:0 0 2px">하루라도 1,111걸음 이상</p><b>걸음 인증</b></div><div class="ts"><span class="g " style="--m:url(assets/x_de_a3.webp);width:65.4px;height:28.0px" role="img" aria-label="3장 추가"></span></div></div></li>
       <li class="tkw big"><div class="tkt"><div class="tm"><b>11/11 15시 전 달성</b><span class="x2">인증 응모권 2배</span></div><div class="ts"><span class="g " style="--m:url(assets/x_de_a3.webp);width:74.8px;height:32.0px" role="img" aria-label="3장 추가"></span></div></div></li>
-      <li class="tkw"><div class="tkt"><div class="tm"><b>친구 초대</b><p>친구도 걸음 인증하면</p></div><div class="ts"><span class="g " style="--m:url(assets/x_de_both.webp);width:41.9px;height:17.5px" role="img" aria-label="둘 다"></span><span class="g " style="--m:url(assets/x_de_a2.webp);width:64.1px;height:27.7px" role="img" aria-label="2장 추가"></span></div></div></li>
+      <li class="tkw"><div class="tkt"><div class="tm"><b>친구 초대</b><p>친구 인증마다 · 제한 없음</p></div><div class="ts"><span class="g " style="--m:url(assets/x_de_both.webp);width:41.9px;height:17.5px" role="img" aria-label="둘 다"></span><span class="g " style="--m:url(assets/x_de_a2.webp);width:64.1px;height:27.7px" role="img" aria-label="2장 추가"></span></div></div></li>
       <li class="tkw perf"><div class="tkt"><div class="tm"><b>5일 개근</b><p>5일 모두 인증하면</p></div><div class="ts"><span class="g " style="--m:url(assets/x_de_all.webp);width:80px;height:15px" role="img" aria-label="응모권 전부"></span><span class="g " style="--m:url(assets/x_de_x15b.webp);width:63px;height:27.2px" role="img" aria-label="1.5배"></span></div></div></li>
     </ul>
     
@@ -616,5 +619,5 @@ body{letter-spacing:-.035em}
 </div>
 <script src="assets/config.js?v=4ae9d2df1d"></script>
 <script src="ga.js?v=b2f9da6f83"></script>
-<script src="app.js?v=1109a"></script>
+<script src="app.js?v=1109c"></script>
 </body></html>
