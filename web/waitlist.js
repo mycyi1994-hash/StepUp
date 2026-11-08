@@ -1,5 +1,5 @@
 import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261107-ev';
-import { t, lang, onLangChange } from './i18n.js?v=20261107-ev';
+import { t, lang, onLangChange } from './i18n.js?v=20261108-cta';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
@@ -223,6 +223,10 @@ function renderEntry() {
   $('.pill-join').textContent = t(joined ? 'header.joined' : 'header.join');
   for (const cta of document.querySelectorAll('.cta[data-waitlist-open]')) cta.textContent = t(joined ? 'cta.joined' : 'cta.join');
   $('.waitlist-done-email').textContent = registeredEmail ? t('done.email', { email: registeredEmail }) : '';
+  // 워킹데이 마감(11/11 15:00 KST) 전에는 「더 할 일 없어요」 대신 걸음 인증 · 친구 초대 카드
+  const walkingDay = Date.now() < Date.parse('2026-11-11T15:00:00+09:00');
+  $('.waitlist-event').hidden = !walkingDay;
+  $('.waitlist-done-next').hidden = walkingDay;
 }
 
 async function restoreClaims() {
