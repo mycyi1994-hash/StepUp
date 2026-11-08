@@ -48,7 +48,30 @@
   });
   days.addEventListener('change', function () { setErr('dayErr', ''); });
 
-  try { var saved = localStorage.getItem('wd_email'); if (saved) $('email').value = saved; } catch (e) { /* 없음 */ }
+  /* 이메일 한 번만(11/8 「인증할 때마다 등록한 이메일 또 쓰는 게 불편」): 이 기기에 남은 이메일로 세 탭을 채운다.
+     wd_email = 인증 · SNS · 초대 링크를 낸 이메일, 또는 홈페이지에서 사전 등록한 이메일(waitlist.js).
+     stepup.waitlist.email = 같은 탭에서 방금 사전 등록하고 넘어온 경우(sessionStorage) */
+  var EMAIL_IDS = ['email', 'snsEmail', 'invEmail'];
+  function savedEmail() {
+    var v = '';
+    try { v = localStorage.getItem('wd_email') || ''; } catch (e) { /* 없음 */ }
+    if (!v) { try { v = sessionStorage.getItem('stepup.waitlist.email') || ''; } catch (e) { /* 없음 */ } }
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : '';
+  }
+  function rememberEmail(v) {
+    try { localStorage.setItem('wd_email', v); } catch (e) { /* 없음 */ }
+    EMAIL_IDS.forEach(function (id) { var el = $(id); if (el && !el.value.trim()) el.value = v; });
+  }
+  // 한 탭에 적은 이메일은 비어 있는 다른 탭에도 그대로
+  EMAIL_IDS.forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      var v = this.value.trim().toLowerCase();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) EMAIL_IDS.forEach(function (o) { var el = $(o); if (o !== id && !el.value.trim()) el.value = v; });
+    });
+  });
+  var saved = savedEmail();
+  if (saved) EMAIL_IDS.forEach(function (id) { $(id).value = saved; });
+  if (saved) $('emailHint').insertAdjacentText('afterbegin', '지난번 이메일을 불러왔어요. ');
 
   // 캡처 → 긴 변 1600px 안의 JPEG 글(서버 한도 안으로 줄인다)
   function shrink(file) {
@@ -127,7 +150,7 @@
     }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function (d) {
         if (d && d.ok) {
-          try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
+          rememberEmail(email);
           var day = 7 + (+dayEl.value - DAY0);
           $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 1111 ? (d.status === 'approved' ? '응모권에 바로 반영됐어요.' : '담당자가 확인하면 응모권에 반영돼요.') : '1,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
           form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
@@ -174,7 +197,6 @@
 
   var snsForm = $('snsForm'), snsSubmit = $('snsSubmit'), snsMsg = $('snsMsg');
   if (closed()) snsSubmit.disabled = true;
-  try { var savedS = localStorage.getItem('wd_email'); if (savedS) $('snsEmail').value = savedS; } catch (e) { /* 없음 */ }
 
   // 링크 → 채널. 계정 아이디가 링크에 없으면(인스타 · x.com/i/status) 아이디 칸을 연다 — 서버 economy.walkingday_sns_parse 와 같은 규칙
   function linkInfo(v) {
@@ -228,7 +250,7 @@
     }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function (d) {
         if (d && d.ok) {
-          try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
+          rememberEmail(email);
           $('snsDoneText').textContent = (d.channel ? CHN[d.channel] + ' @' + d.account + ' · ' : '') + (d.today ? '오늘 ' + d.today + '/3개. ' : '') + (d.status === 'approved' ? '응모권에 바로 반영됐어요.' : '담당자가 확인하면 응모권에 반영돼요.');
           snsForm.hidden = true; $('snsDone').hidden = false; window.scrollTo(0, 0);
           if (window.wdTrack) window.wdTrack('walkingday_sns_submit', { channel: d.channel || '' });
@@ -247,7 +269,6 @@
 
   /* ── 친구 초대: 사전 등록한 이메일 → 내 코드 · 초대 현황(0094). 링크는 이벤트 페이지로(이벤트 페이지가 ref 를 사전 등록 링크에 넘긴다) ── */
   var invForm = $('invForm'), invSubmit = $('invSubmit'), invMsg = $('invMsg'), invUrl = '';
-  try { var savedI = localStorage.getItem('wd_email'); if (savedI) $('invEmail').value = savedI; } catch (e) { /* 없음 */ }
   $('invEmail').addEventListener('input', function () { setErr('invEmailErr', ''); });
   function sayInv(html, err) { invMsg.className = 'msg' + (err ? ' err' : ''); invMsg.innerHTML = html; }
   var INV_REASONS = {
@@ -269,7 +290,7 @@
     }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function (d) {
         if (d && d.ok && d.code) {
-          try { localStorage.setItem('wd_email', email); } catch (e) { /* 없음 */ }
+          rememberEmail(email);
           invUrl = 'https://stepupcrew.com/11events/?ref=' + encodeURIComponent(d.code) + '&utm_source=invite&utm_medium=web&utm_campaign=2611-11111steps';
           $('invLink').textContent = invUrl;
           $('invN').textContent = (+d.invited || 0).toLocaleString('ko-KR');
