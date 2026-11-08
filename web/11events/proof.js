@@ -305,7 +305,17 @@
       .catch(function () { sayInv('연결이 끊겼어요. 잠시 뒤 다시 시도해 주세요.', true); })
       .then(function () { invSubmit.disabled = false; invSubmit.textContent = '내 초대 링크 보기'; });
   });
-  var INV_TEXT = '같이 걷고 빼빼로 받자 🍫 11/7~11/11 하루 1,111걸음만 걸어도 응모권! 내 링크로 사전 등록하면 우리 둘 다 응모권 2장 더';
+  /* 친구도 걸음 인증까지 해야 둘 다 2장 — 등록만으로는 안 센다 */
+  var INV_TEXT = '같이 걷고 빼빼로 받자 🍫 내 링크로 사전 등록하고 11/11 15시까지 하루 1,111걸음 캡처만 올리면 우리 둘 다 응모권 2장 더!';
+  /* 초대 탭 경품 카드: 실제 순위로 「몇 명이면 1위」 */
+  fetch(URL_BASE + '/rest/v1/rpc/walkingday_leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: '{}', cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.invite || Date.now() >= Date.parse('2026-11-11T15:00:00+09:00')) return;
+      var top = d.invite.length ? d.invite[0].friends : 0, el = document.querySelector('[data-race]');
+      el.textContent = '인증한 친구 ' + (top + 1) + '명이면 지금 1위 · 마감 11/11(수) 15:00'; el.hidden = false;
+    })
+    .catch(function () { /* 못 읽으면 줄을 숨긴 채로 */ });
   function copyText(t) {
     if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
     return new Promise(function (ok, no) {
@@ -315,7 +325,7 @@
     });
   }
   $('invCopy').addEventListener('click', function () {
-    copyText(invUrl).then(function () { $('invFb').className = 'msg'; $('invFb').textContent = '링크를 복사했어요. 친구에게 보내 주세요.'; },
+    copyText(INV_TEXT + '\n' + invUrl).then(function () { $('invFb').className = 'msg'; $('invFb').textContent = '초대 문구와 링크를 복사했어요. 카톡 · 텔레그램에 붙여 넣어 주세요.'; },
       function () { $('invFb').className = 'msg err'; $('invFb').textContent = '복사가 안 돼요. 위 링크를 길게 눌러 복사해 주세요.'; });
   });
   $('invShare').addEventListener('click', function () {
