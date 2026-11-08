@@ -435,6 +435,8 @@ registerForm.addEventListener('submit', async event => {
     } else result = await callWaitlist('waitlist_register', body);
     if (!/^[0-9a-f]{64}$/.test(result.receipt || '')) throw new Error('Missing registration receipt');
     saveReceipt(result.receipt, email);
+    // 워킹데이 인증 페이지(/11events/proof)가 이메일을 다시 묻지 않게 이 기기에 남긴다(11/8)
+    try { localStorage.setItem('wd_email', email); } catch { /* 저장이 막혀 있어도 등록은 된다 */ }
     setMyCode(result.referral_code);
     // 방문 통계(GA4 — ./ga.js, 운영 주소에서만): 사전 등록 완료 = 인플루언서 utm 별 성과의 기준. 이메일 · 추천 코드는 보내지 않는다
     try { window.gtag?.('event', 'sign_up', { method: 'waitlist', invited: invitedBy ? 'yes' : 'no' }); } catch { /* 통계는 등록을 막지 않는다 */ }
