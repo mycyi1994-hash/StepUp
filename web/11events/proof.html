@@ -64,6 +64,8 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
 .chips span{font-size:13px;font-weight:700;background:#fff;border:1.5px solid #E2CBA6;border-radius:999px;padding:3px 10px}
 .check{margin:0;padding-left:18px;font-size:14px}
 .check li{margin:3px 0}
+.invrank{margin:12px 0 0;padding:11px 12px;border-radius:12px;background:#FFF3D6;color:#2A1206;font-size:15px;font-weight:800;line-height:1.4;text-align:center;word-break:keep-all}
+.invrank[hidden]{display:none}
 .warnf{color:var(--red);font-size:14px;font-weight:700;margin:8px 0 0}
 .goal{background:var(--choc);color:var(--cream);border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:15px;font-weight:600}
 .goal b{color:var(--gold)}
@@ -211,7 +213,7 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <ul class="check">
         <li>친구가 내 링크로 들어와 사전 등록</li>
         <li>그 친구가 하루라도 1,111걸음 이상 인증</li>
-        <li>나도 2장 · 친구도 2장. 친구가 많을수록 초대 순위가 올라가요</li>
+        <li>친구 1명마다 나도 2장 · 친구도 2장, 인원 제한 없음</li>
       </ul>
     </div>
     <div class="card">
@@ -236,6 +238,7 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <div><b id="invN">0</b><span>내 링크로 등록한 친구</span></div>
       <div><b id="invOk">0</b><span>걸음 인증된 친구</span></div>
     </div>
+    <p class="invrank" id="invRank" hidden></p>
     <p class="hint">인증된 친구 수가 응모권과 초대 순위에 들어가요. 친구가 인증하면 바로 반영돼요.</p>
     <button class="btn ghost" id="invOther" type="button" style="margin-top:12px">다른 이메일로 보기</button>
   </div>
@@ -243,6 +246,6 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
 </main>
 <script src="/11events/assets/config.js?v=1107d"></script>
 <script src="/11events/ga.js?v=1107d"></script>
-<script src="/11events/proof.js?v=1109a"></script>
+<script src="/11events/proof.js?v=1109c"></script>
 </body>
 </html>
