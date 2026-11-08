@@ -112,13 +112,14 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <p class="err-f" id="stepsErr"></p>
       <p class="warnf" id="stepsLow" hidden>1,111걸음보다 적어요. 이 날은 응모권이 나오지 않아요(다 같이 걸은 걸음에는 더해져요).</p>
       <p class="hint">캡처에 보이는 숫자 그대로 적어 주세요. 1,111걸음 이상이면 응모권이 나와요.</p>
+      <p class="hint">러닝 앱처럼 거리(km)만 나오면 <b>1km = 1,000걸음</b>으로 바꿔 적어 주세요. 예: 3.2km → 3200</p>
     </div>
     <div class="card">
       <span class="t">걸음 캡처</span>
-      <label class="pick" id="pick" for="file"><span id="pickText">날짜와 걸음 수가 보이는 화면 캡처 고르기</span></label>
+      <label class="pick" id="pick" for="file"><span id="pickText">날짜와 걸음 수(또는 거리)가 보이는 화면 캡처 고르기</span></label>
       <input id="file" type="file" accept="image/*">
       <p class="err-f" id="fileErr"></p>
-      <p class="hint">삼성헬스 · 애플 건강 · 캐시워크 등 아무 앱이나 괜찮아요.</p>
+      <p class="hint">삼성헬스 · 애플 건강 · 캐시워크 · 러닝 앱 등 아무 앱이나 괜찮아요.</p>
     </div>
     <div class="card">
       <label class="consent"><input id="consent" type="checkbox"><span>인증 확인과 당첨 안내를 위해 이메일 · 걸음 수 · 캡처를 받는 데 동의합니다. 캡처는 발표 뒤 30일 안에 지웁니다.</span></label>
