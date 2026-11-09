@@ -23,14 +23,14 @@
 
   function today() { return Math.floor((Date.now() + 9 * 3600e3) / 86400e3); }
 
-  // 걸은 날 — 오늘(한국)까지만 고를 수 있다
+  // 걸은 날 — 오늘(한국)만 고를 수 있다. 서버 0101 과 같은 규칙
   var names = ['토', '일', '월', '화', '수'];
   var days = $('days');
   for (var i = 0; i < 5; i++) {
     var d = DAY0 + i, l = document.createElement('label');
     if (i === 4) l.className = 'gold';
     l.innerHTML = '<input type="radio" name="day" value="' + d + '"><span>11/' + (7 + i) + '<small>' + names[i] + (i === 4 ? ' · 2배' : '') + '</small></span>';
-    if (d > today()) l.querySelector('input').disabled = true;
+    if (d !== today()) l.querySelector('input').disabled = true;
     days.appendChild(l);
   }
   var pickDefault = Math.min(Math.max(today(), DAY0), DAY0 + 4);
@@ -147,7 +147,7 @@
     consent: '동의에 체크해 주세요.',
     email: '이메일 주소를 다시 확인해 주세요.',
     not_registered: '사전 등록한 이메일이 아니에요. <a href="' + $('joinLink').getAttribute('href') + '">먼저 사전 등록</a>한 뒤 같은 이메일로 인증해 주세요.',
-    day: '걸은 날을 다시 골라 주세요. 오늘 이후 날짜는 고를 수 없어요.',
+    day: '오늘 날짜로만 낼 수 있어요. 새로고침한 뒤 다시 내 주세요.',
     steps: '걸음 수를 숫자로 적어 주세요.',
     image: '캡처를 다시 골라 주세요.',
     approved: '이 날은 담당자가 이미 확인했어요. 다른 날을 골라 주세요.',
