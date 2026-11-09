@@ -10218,6 +10218,7 @@ reset role;
 insert into fix (k, v) select 'wd-key', economy.walkingday_reviewer_new('검사');
 -- 대기 → 검토 흐름을 보려고 자동 승인(0099)은 끄고 시작한다. 자동 승인은 맨 끝에서 따로 본다
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_auto_approve';
+update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_today_only';
 update public.economy_settings set value = '"2020-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_from';
 -- 전화번호 꼭 받기(0100)는 끄고 시작한다(옛 검사는 번호 없이 낸다). 전화번호는 맨 끝에서 따로 본다
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_require_phone';
@@ -10480,6 +10481,25 @@ begin
   perform pg_temp.ok((select count(*) from economy.walkingday_contacts where email = 'referrer@runnermail.com' and phone = '010-2222-3333') = 1,
     '전화번호: 같은 번호는 한 줄(0100)');
 end $$;
+
+-- 0101 오늘 날짜만
+update public.economy_settings set value = 'true'::jsonb where key = 'walkingday_today_only';
+set role anon;
+do $$
+declare
+  v_img text := 'data:image/jpeg;base64,' || repeat('QUJD', 40);
+  v_today int := ((now() at time zone 'Asia/Seoul')::date - date '1970-01-01')::int;
+  r jsonb;
+begin
+  r := public.walkingday_proof_submit('referrer@runnermail.com', 20764, 12000, v_img, true, '', '01022223333');
+  perform pg_temp.ok(r->>'code' = 'day', '오늘 날짜만: 지난 날짜는 거절한다(0101)');
+  if v_today between 20765 and 20768 then
+    r := public.walkingday_proof_submit('referrer@runnermail.com', v_today, 12000, v_img, true, '', '01022223333');
+    perform pg_temp.ok((r->>'ok')::boolean, '오늘 날짜만: 오늘 날짜는 받는다(0101)');
+  end if;
+end $$;
+reset role;
+update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_today_only';
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
