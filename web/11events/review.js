@@ -60,7 +60,7 @@
     var el = document.createElement('div'); el.className = 'item';
     el.innerHTML =
       (r.image ? '<img alt="걸음 캡처" src="' + esc(r.image) + '">' : '<p class="status">캡처를 지웠어요</p>') +
-      '<div class="meta"><b>' + dayName(r.day) + ' · ' + num(r.steps) + '걸음</b><br>' + esc(r.email) + '<br><span class="status">제출 ' + when(r.submitted_at) +
+      '<div class="meta"><b>' + dayName(r.day) + ' · ' + num(r.steps) + '걸음</b><br>' + esc(r.email) + '<br>' + (r.phone ? '☎ ' + esc(r.phone) : '<span class="status">번호 없음(0100 전 제출)</span>') + '<br><span class="status">제출 ' + when(r.submitted_at) +
       (r.reviewed_by ? ' · ' + esc(r.reviewed_by) : '') + (r.note ? ' · ' + esc(r.note) : '') + '</span></div>' +
       (r.dup_client > 0 ? '<p class="warn">같은 곳(IP)에서 다른 이메일 ' + r.dup_client + '개가 제출했어요 — 다중 계정 확인</p>' : '') +
       '<div class="row"><input type="number" inputmode="numeric" min="1" max="100000" value="' + (+r.steps) + '" aria-label="승인할 걸음 수"></div>' +
@@ -93,15 +93,15 @@
     var list = $('list');
     list.innerHTML = '<p class="empty">불러오는 중…</p>';
     rpc('walkingday_review_entries', { p_token: token }).then(function (rows) {
-      var head = ['순위', '이메일', '응모권', '친구 초대', '달성 일수', '최고 걸음', '1,111 달성', '11/11 달성', '초대한 사람', '등록'];
+      var head = ['순위', '이메일', '전화번호', '응모권', '친구 초대', '달성 일수', '최고 걸음', '1,111 달성', '11/11 달성', '초대한 사람', '등록'];
       var csv = [head.join(',')];
       var html = '<div class="bar"><span class="status">초대 많은 순 → 응모권 많은 순. 초대 순위 경품은 위에서 11명(친구가 1,111걸음 이상 승인을 받은 수). 달성 일수 = 1,111걸음 이상 승인된 날 — 5일 개근이면 응모권이 이미 1.5배(올림)로 들어가 있어요.</span>' +
         '<button class="btn" type="button" id="csv">CSV 내려받기</button></div><div class="tablewrap"><table><thead><tr>' +
-        head.map(function (h, i) { return '<th' + (i === 2 || i === 3 || i === 4 || i === 5 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
+        head.map(function (h, i) { return '<th' + (i >= 3 && i <= 6 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
       rows.forEach(function (r, i) {
-        var cells = [i + 1, r.email, r.tickets, r.friends, r.approved_days, r.best_steps || '', r.goal_met ? 'O' : '', r.goal_on_1111 ? 'O' : '', r.invited_by || '', when(r.registered_at)];
+        var cells = [i + 1, r.email, r.phone || '', r.tickets, r.friends, r.approved_days, r.best_steps || '', r.goal_met ? 'O' : '', r.goal_on_1111 ? 'O' : '', r.invited_by || '', when(r.registered_at)];
         csv.push(cells.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','));
-        html += '<tr>' + cells.map(function (c, j) { return '<td' + (j >= 2 && j <= 5 ? ' class="n"' : '') + '>' + esc(j === 5 && c ? num(c) : c) + '</td>'; }).join('') + '</tr>';
+        html += '<tr>' + cells.map(function (c, j) { return '<td' + (j >= 3 && j <= 6 ? ' class="n"' : '') + '>' + esc(j === 6 && c ? num(c) : c) + '</td>'; }).join('') + '</tr>';
       });
       list.innerHTML = html + '</tbody></table></div>';
       $('csv').onclick = function () {
@@ -155,7 +155,7 @@
     el.innerHTML =
       '<div class="meta"><b>' + esc(CHN[r.channel] || r.channel) + ' · @' + esc(r.account) + '</b><br>' +
       '<a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue);word-break:break-all">' + esc(r.url) + '</a><br>' +
-      esc(r.email) + (r.registered ? ' · 사전 등록' : ' · 사전 등록 안 함') + ' · 승인된 게시물 ' + num(r.approved_posts) + '개<br>' +
+      esc(r.email) + (r.phone ? ' · ☎ ' + esc(r.phone) : ' · 번호 없음') + (r.registered ? ' · 사전 등록' : ' · 사전 등록 안 함') + ' · 승인된 게시물 ' + num(r.approved_posts) + '개<br>' +
       '<span class="status">제출 ' + when(r.submitted_at) + (r.reviewed_by ? ' · ' + esc(r.reviewed_by) : '') + (r.note ? ' · ' + esc(r.note) : '') + '</span></div>' +
       (r.dup_client > 0 ? '<p class="warn">같은 곳(IP)에서 다른 이메일 ' + r.dup_client + '개가 제출했어요 — 다중 계정 확인</p>' : '') +
       '<p class="status">링크를 열어 해시태그 4개(#스텝업 #스텝업챌린지 #StepUp #StepUpChallenge) · 전체 공개 · 11/7 이후 게시인지 확인</p>' +
@@ -187,17 +187,17 @@
     var list = $('list');
     list.innerHTML = '<p class="empty">불러오는 중…</p>';
     rpc('walkingday_sns_roster', { p_token: token }).then(function (rows) {
-      var head = ['채널', '계정', '게시 URL', '이메일', '확인자', '확인 시각', '상태', '인정 게시물 수'];
+      var head = ['채널', '계정', '게시 URL', '이메일', '확인자', '확인 시각', '상태', '인정 게시물 수', '전화번호'];
       var csv = [head.join(',')];
       var html = '<div class="bar"><span class="status">승인된 게시물을 이메일 · 채널 · 계정마다 묶었어요. 이 CSV 를 추첨기 「2. SNS 명단」에 그대로 넣으면 돼요.</span>' +
         '<button class="btn" type="button" id="csv">CSV 내려받기</button></div><div class="tablewrap"><table><thead><tr>' +
         head.map(function (h, i) { return '<th' + (i === 7 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
       rows.forEach(function (r) {
-        var cells = [CHN[r.channel] || r.channel, r.account, r.url, r.email, r.reviewed_by || '', when(r.reviewed_at), '확인됨', r.posts];
+        var cells = [CHN[r.channel] || r.channel, r.account, r.url, r.email, r.reviewed_by || '', when(r.reviewed_at), '확인됨', r.posts, r.phone || ''];
         csv.push(cells.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','));
         html += '<tr>' + cells.map(function (c, j) { return '<td' + (j === 7 ? ' class="n"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>';
       });
-      if (!rows.length) html += '<tr><td colspan="8">아직 승인된 게시물이 없어요.</td></tr>';
+      if (!rows.length) html += '<tr><td colspan="9">아직 승인된 게시물이 없어요.</td></tr>';
       list.innerHTML = html + '</tbody></table></div>';
       $('csv').onclick = function () {
         var blob = new Blob(['﻿' + csv.join('\n')], { type: 'text/csv;charset=utf-8' });

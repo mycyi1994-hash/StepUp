@@ -73,6 +73,33 @@
   if (saved) EMAIL_IDS.forEach(function (id) { $(id).value = saved; });
   if (saved) $('emailHint').insertAdjacentText('afterbegin', '지난번 이메일을 불러왔어요. ');
 
+  /* 휴대폰 번호(11/9 「세 탭 모두 전화번호」 — 서버 0100 walkingday_contacts). 서버 economy.walkingday_phone 과 같은 규칙:
+     010 · 011 · 016 · 017 · 018 · 019 휴대폰만, +82 · 하이픈 · 띄어쓰기는 받고 010-1234-5678 모양으로 맞춘다.
+     이메일처럼 이 기기에 남겨(wd_phone) 세 탭을 채운다 */
+  var PHONE_IDS = ['phone', 'snsPhone', 'invPhone'];
+  function phoneNorm(v) {
+    var d = String(v || '').replace(/[^\d]/g, '');
+    if (/^82/.test(d) && d.length >= 11 && d.length <= 12) d = '0' + d.slice(2);
+    if (/^01[016789]\d{8}$/.test(d)) return d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7);
+    if (/^01[16789]\d{7}$/.test(d)) return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+    return '';
+  }
+  function rememberPhone(v) {
+    try { localStorage.setItem('wd_phone', v); } catch (e) { /* 없음 */ }
+    PHONE_IDS.forEach(function (id) { var el = $(id); if (el && !el.value.trim()) el.value = v; });
+  }
+  PHONE_IDS.forEach(function (id) {
+    $(id).addEventListener('input', function () { setErr(id + 'Err', ''); });
+    $(id).addEventListener('change', function () {
+      var v = phoneNorm(this.value);
+      if (v) { this.value = v; PHONE_IDS.forEach(function (o) { var el = $(o); if (o !== id && !el.value.trim()) el.value = v; }); }
+    });
+  });
+  var savedPhone = '';
+  try { savedPhone = phoneNorm(localStorage.getItem('wd_phone')); } catch (e) { /* 없음 */ }
+  if (savedPhone) PHONE_IDS.forEach(function (id) { $(id).value = savedPhone; });
+  var PHONE_ERR = '휴대폰 번호를 적어 주세요. 예: 010-1234-5678';
+
   // 캡처 → 긴 변 1600px 안의 JPEG 글(서버 한도 안으로 줄인다)
   function shrink(file) {
     return new Promise(function (resolve, reject) {
@@ -123,18 +150,20 @@
     day: '걸은 날을 다시 골라 주세요. 오늘 이후 날짜는 고를 수 없어요.',
     steps: '걸음 수를 숫자로 적어 주세요.',
     image: '캡처를 다시 골라 주세요.',
-    approved: '이 날은 담당자가 이미 확인했어요. 다른 날을 골라 주세요.'
+    approved: '이 날은 담당자가 이미 확인했어요. 다른 날을 골라 주세요.',
+    phone: '휴대폰 번호를 다시 확인해 주세요. 예: 010-1234-5678'
   };
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    ['emailErr', 'dayErr', 'stepsErr', 'fileErr', 'consentErr'].forEach(function (id) { setErr(id, ''); });
+    ['emailErr', 'phoneErr', 'dayErr', 'stepsErr', 'fileErr', 'consentErr'].forEach(function (id) { setErr(id, ''); });
     say('');
-    var email = $('email').value.trim().toLowerCase();
+    var email = $('email').value.trim().toLowerCase(), phone = phoneNorm($('phone').value);
     var dayEl = days.querySelector('input:checked');
     var steps = parseInt(String($('steps').value).replace(/[^\d]/g, ''), 10);
     var bad = false;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('emailErr', '사전 등록한 이메일을 적어 주세요.'); bad = true; }
+    if (!phone) { setErr('phoneErr', PHONE_ERR); bad = true; }
     if (!dayEl) { setErr('dayErr', '걸은 날을 골라 주세요.'); bad = true; }
     if (!(steps >= 1 && steps <= 100000)) { setErr('stepsErr', '걸음 수를 적어 주세요.'); bad = true; }
     if (!image) { setErr('fileErr', '걸음 캡처를 골라 주세요.'); bad = true; }
@@ -145,12 +174,12 @@
     fetch(URL_BASE + '/rest/v1/rpc/walkingday_proof_submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: KEY },
-      body: JSON.stringify({ p_email: email, p_day: +dayEl.value, p_steps: steps, p_image: image, p_consent: true, p_trap: $('trap').value }),
+      body: JSON.stringify({ p_email: email, p_day: +dayEl.value, p_steps: steps, p_image: image, p_consent: true, p_trap: $('trap').value, p_phone: phone }),
       cache: 'no-store'
     }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function (d) {
         if (d && d.ok) {
-          rememberEmail(email);
+          rememberEmail(email); rememberPhone(phone);
           var day = 7 + (+dayEl.value - DAY0);
           $('doneText').textContent = '11/' + day + ' · ' + steps.toLocaleString('ko-KR') + '걸음. ' + (steps >= 1111 ? (d.status === 'approved' ? '응모권에 바로 반영됐어요.' : '담당자가 확인하면 응모권에 반영돼요.') : '1,111걸음보다 적어 응모권은 없지만, 다 같이 걸은 걸음에는 더해져요.');
           form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
@@ -224,6 +253,7 @@
     email: '이메일 주소를 다시 확인해 주세요.',
     url: 'X · 인스타 · 스레드 게시물 링크가 아니에요. 게시물의 공유 → 링크 복사로 받은 주소를 넣어 주세요.',
     account: '계정 아이디를 영문 · 숫자 · 밑줄 · 점으로 적어 주세요.',
+    phone: '휴대폰 번호를 다시 확인해 주세요. 예: 010-1234-5678',
     duplicate: '이미 제출된 게시물이에요. 새 게시물을 올려 주세요.',
     day_limit: '오늘은 3개를 다 냈어요. 내일 다시 낼 수 있어요.',
     limit: '한 사람 15개를 다 냈어요.'
@@ -232,10 +262,11 @@
 
   snsForm.addEventListener('submit', function (e) {
     e.preventDefault();
-    ['snsEmailErr', 'snsUrlErr', 'snsAcctErr', 'snsConsentErr'].forEach(function (id) { setErr(id, ''); });
+    ['snsEmailErr', 'snsPhoneErr', 'snsUrlErr', 'snsAcctErr', 'snsConsentErr'].forEach(function (id) { setErr(id, ''); });
     saySns('');
-    var email = $('snsEmail').value.trim().toLowerCase(), url = $('snsUrl').value.trim(), info = linkInfo(url), acct = cleanAcct($('snsAcct').value), bad = false;
+    var email = $('snsEmail').value.trim().toLowerCase(), url = $('snsUrl').value.trim(), info = linkInfo(url), acct = cleanAcct($('snsAcct').value), phone = phoneNorm($('snsPhone').value), bad = false;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('snsEmailErr', '이메일을 적어 주세요.'); bad = true; }
+    if (!phone) { setErr('snsPhoneErr', PHONE_ERR); bad = true; }
     if (!info) { setErr('snsUrlErr', 'X · 인스타 · 스레드 게시물 링크를 붙여 넣어 주세요.'); bad = true; }
     else if (!info.acct && !/^[a-z0-9._]{1,30}$/.test(acct)) { setErr('snsAcctErr', '계정 아이디를 적어 주세요.'); bad = true; }
     if (!$('snsConsent').checked) { setErr('snsConsentErr', '동의에 체크해 주세요.'); bad = true; }
@@ -245,12 +276,12 @@
     fetch(URL_BASE + '/rest/v1/rpc/walkingday_sns_submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: KEY },
-      body: JSON.stringify({ p_email: email, p_url: url, p_account: info.acct ? '' : acct, p_consent: true, p_trap: $('snsTrap').value }),
+      body: JSON.stringify({ p_email: email, p_url: url, p_account: info.acct ? '' : acct, p_consent: true, p_trap: $('snsTrap').value, p_phone: phone }),
       cache: 'no-store'
     }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function (d) {
         if (d && d.ok) {
-          rememberEmail(email);
+          rememberEmail(email); rememberPhone(phone);
           $('snsDoneText').textContent = (d.channel ? CHN[d.channel] + ' @' + d.account + ' · ' : '') + (d.today ? '오늘 ' + d.today + '/3개. ' : '') + (d.status === 'approved' ? '응모권에 바로 반영됐어요.' : '담당자가 확인하면 응모권에 반영돼요.');
           snsForm.hidden = true; $('snsDone').hidden = false; window.scrollTo(0, 0);
           if (window.wdTrack) window.wdTrack('walkingday_sns_submit', { channel: d.channel || '' });
@@ -270,27 +301,33 @@
   /* ── 친구 초대: 사전 등록한 이메일 → 내 코드 · 초대 현황(0094). 링크는 이벤트 페이지로(이벤트 페이지가 ref 를 사전 등록 링크에 넘긴다) ── */
   var invForm = $('invForm'), invSubmit = $('invSubmit'), invMsg = $('invMsg'), invUrl = '';
   $('invEmail').addEventListener('input', function () { setErr('invEmailErr', ''); });
+  $('invConsent').addEventListener('change', function () { setErr('invConsentErr', ''); });
   function sayInv(html, err) { invMsg.className = 'msg' + (err ? ' err' : ''); invMsg.innerHTML = html; }
   var INV_REASONS = {
     busy: '잠시 뒤 다시 시도해 주세요.',
     email: '이메일 주소를 다시 확인해 주세요.',
+    phone: '휴대폰 번호를 다시 확인해 주세요. 예: 010-1234-5678',
+    consent: '동의에 체크해 주세요.',
     not_registered: '사전 등록한 이메일이 아니에요. <a href="' + $('invJoin').getAttribute('href') + '">먼저 사전 등록</a>하면 바로 내 링크가 나와요.'
   };
   invForm.addEventListener('submit', function (e) {
     e.preventDefault();
-    setErr('invEmailErr', ''); sayInv('');
-    var email = $('invEmail').value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('invEmailErr', '사전 등록한 이메일을 적어 주세요.'); return; }
+    ['invEmailErr', 'invPhoneErr', 'invConsentErr'].forEach(function (id) { setErr(id, ''); }); sayInv('');
+    var email = $('invEmail').value.trim().toLowerCase(), phone = phoneNorm($('invPhone').value), bad = false;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('invEmailErr', '사전 등록한 이메일을 적어 주세요.'); bad = true; }
+    if (!phone) { setErr('invPhoneErr', PHONE_ERR); bad = true; }
+    if (!$('invConsent').checked) { setErr('invConsentErr', '동의에 체크해 주세요.'); bad = true; }
+    if (bad) return;
     invSubmit.disabled = true; invSubmit.textContent = '찾는 중…';
     fetch(URL_BASE + '/rest/v1/rpc/walkingday_invite_link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: KEY },
-      body: JSON.stringify({ p_email: email, p_trap: $('invTrap').value }),
+      body: JSON.stringify({ p_email: email, p_trap: $('invTrap').value, p_phone: phone, p_consent: true }),
       cache: 'no-store'
     }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function (d) {
         if (d && d.ok && d.code) {
-          rememberEmail(email);
+          rememberEmail(email); rememberPhone(phone);
           invUrl = 'https://stepupcrew.com/11events/?ref=' + encodeURIComponent(d.code) + '&utm_source=invite&utm_medium=web&utm_campaign=2611-11111steps';
           $('invLink').textContent = invUrl;
           $('invN').textContent = (+d.invited || 0).toLocaleString('ko-KR');
