@@ -22,7 +22,7 @@ main{max-width:520px;margin:0 auto;padding:20px 16px 48px}
 .card{background:var(--cream);border-radius:16px;padding:18px 16px;margin-bottom:14px;box-shadow:0 1px 0 rgba(36,16,6,.06)}
 label.t,.t{display:block;font-weight:700;font-size:16px;margin:0 0 8px}
 .hint{font-size:13px;color:var(--milk);margin:6px 0 0}
-input[type=email],input[type=number],input[type=text]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:17px;padding:0 14px;outline:none}
+input[type=email],input[type=number],input[type=text],input[type=tel]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:17px;padding:0 14px;outline:none}
 input:focus{border-color:var(--milk)}
 .days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .days label{position:relative}
@@ -108,6 +108,12 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <p class="hint" id="emailHint">사전 등록 전이면 <a id="joinLink" href="/?utm_source=walkingday&amp;utm_medium=web&amp;utm_campaign=2611-11111steps#join">먼저 등록</a>해 주세요.</p>
     </div>
     <div class="card">
+      <label class="t" for="phone">휴대폰 번호</label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-1234-5678" maxlength="20" required>
+      <p class="err-f" id="phoneErr"></p>
+      <p class="hint">당첨되면 경품(기프티콘 · 배송)을 받을 번호예요.</p>
+    </div>
+    <div class="card">
       <span class="t" id="dayLabel">걸은 날</span>
       <div class="days" role="radiogroup" aria-labelledby="dayLabel" id="days"></div>
       <p class="err-f" id="dayErr"></p>
@@ -130,7 +136,7 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <p class="hint">삼성헬스 · 애플 건강 · 캐시워크 · 러닝 앱 등 아무 앱이나 괜찮아요.</p>
     </div>
     <div class="card">
-      <label class="consent"><input id="consent" type="checkbox"><span>인증 확인과 당첨 안내를 위해 이메일 · 걸음 수 · 캡처를 받는 데 동의합니다. 캡처는 발표 뒤 30일 안에 지웁니다.</span></label>
+      <label class="consent"><input id="consent" type="checkbox"><span>인증 확인과 당첨 안내 · 경품 발송을 위해 이메일 · 휴대폰 번호 · 걸음 수 · 캡처를 받는 데 동의합니다. 캡처와 번호는 발표 뒤 30일 안에 지웁니다.</span></label>
       <p class="err-f" id="consentErr"></p>
     </div>
     <div class="trap" aria-hidden="true"><label>Website <input id="trap" type="text" tabindex="-1" autocomplete="off"></label></div>
@@ -166,6 +172,12 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <p class="hint">당첨 안내를 받을 이메일. 사전 등록한 이메일이면 걸음 응모권과 합쳐져요.</p>
     </div>
     <div class="card">
+      <label class="t" for="snsPhone">휴대폰 번호</label>
+      <input id="snsPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-1234-5678" maxlength="20" required>
+      <p class="err-f" id="snsPhoneErr"></p>
+      <p class="hint">당첨되면 경품(기프티콘 · 배송)을 받을 번호예요.</p>
+    </div>
+    <div class="card">
       <label class="t" for="snsUrl">게시물 링크</label>
       <input id="snsUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://x.com/…/status/…" required>
       <p class="err-f" id="snsUrlErr"></p>
@@ -178,7 +190,7 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <p class="hint">이 링크에는 아이디가 없어서 따로 적어 주세요(@ 없이).</p>
     </div>
     <div class="card">
-      <label class="consent"><input id="snsConsent" type="checkbox"><span>게시물 확인과 당첨 안내를 위해 이메일 · 게시물 링크 · 계정 아이디를 받는 데 동의합니다. 발표 뒤 30일 안에 지웁니다.</span></label>
+      <label class="consent"><input id="snsConsent" type="checkbox"><span>게시물 확인과 당첨 안내 · 경품 발송을 위해 이메일 · 휴대폰 번호 · 게시물 링크 · 계정 아이디를 받는 데 동의합니다. 발표 뒤 30일 안에 지웁니다.</span></label>
       <p class="err-f" id="snsConsentErr"></p>
     </div>
     <div class="trap" aria-hidden="true"><label>Website <input id="snsTrap" type="text" tabindex="-1" autocomplete="off"></label></div>
@@ -222,6 +234,16 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
       <p class="err-f" id="invEmailErr"></p>
       <p class="hint">사전 등록 전이면 <a id="invJoin" href="/?utm_source=walkingday&amp;utm_medium=web&amp;utm_campaign=2611-11111steps#join">먼저 등록</a>해 주세요. 등록하면 바로 내 링크가 나와요.</p>
     </div>
+    <div class="card">
+      <label class="t" for="invPhone">휴대폰 번호</label>
+      <input id="invPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-1234-5678" maxlength="20" required>
+      <p class="err-f" id="invPhoneErr"></p>
+      <p class="hint">초대 순위 경품에 당첨되면 받을 번호예요.</p>
+    </div>
+    <div class="card">
+      <label class="consent"><input id="invConsent" type="checkbox"><span>당첨 안내 · 경품 발송을 위해 이메일 · 휴대폰 번호를 받는 데 동의합니다. 번호는 발표 뒤 30일 안에 지웁니다.</span></label>
+      <p class="err-f" id="invConsentErr"></p>
+    </div>
     <div class="trap" aria-hidden="true"><label>Website <input id="invTrap" type="text" tabindex="-1" autocomplete="off"></label></div>
     <button class="btn" id="invSubmit" type="submit">내 초대 링크 보기</button>
     <p class="msg" id="invMsg" role="status" aria-live="polite"></p>
@@ -246,6 +268,6 @@ input[type=url]{width:100%;height:52px;border:2px solid #E2CBA6;border-radius:12
 </main>
 <script src="/11events/assets/config.js?v=1107d"></script>
 <script src="/11events/ga.js?v=1107d"></script>
-<script src="/11events/proof.js?v=1109c"></script>
+<script src="/11events/proof.js?v=1109d"></script>
 </body>
 </html>

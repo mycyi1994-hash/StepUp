@@ -41,6 +41,11 @@ select economy.walkingday_purge_images();
 ```
 
 - 받는 기간은 설정 `walkingday_open_from` · `walkingday_open_until`(페이지 `proof.js` 의 START · CLOSE 도 같은 값).
+- 경품을 다 보낸 뒤(발표 뒤 30일 안) 전화번호도 지운다(0100):
+
+```sql
+truncate economy.walkingday_contacts;
+```
 
 ## 남은 것(사용자 몫)
 
@@ -113,3 +118,19 @@ select economy.walkingday_purge_images();
 
 - 사용자 "초대 이벤트 메일 리더보드 실시간으로 계속 반영". `walkingday_leaderboard` 는 기간 중 10초마다(화면을 보고 있을 때만, 마감 뒤 60초) · 돌아오면 바로 읽는다. 보고 있는 칸이 그대로면 다시 그리지 않고, 늘어난 줄만 한 번 반짝. 0099 자동 승인이라 친구가 인증하면 다음 읽기에 오른다.
 - 인증 페이지 초대 탭: 내 링크를 본 뒤 1위 · 경품 순위까지 남은 친구 수(조회 때 한 번만 계산). 친구 초대 응모권은 인원 제한이 없다(0092 `2 * friends`)고 밝혔다.
+
+## 전화번호 (2026-11-09, 서버 0100)
+
+- 사용자 "탭 3개 전부 전화번호 받아야 해 · supabase 에도 연동". 걸음 인증 · SNS 게시물 · 친구 초대 모두 휴대폰 번호 칸(꼭 넣기). 친구 초대에는 동의 칸을 새로 넣었다.
+- 저장: `economy.walkingday_contacts`(Table Editor › schema `economy`) — 이메일 · 번호(010-1234-5678 모양) · 마지막으로 낸 탭 · 처음 · 마지막 시각.
+  한 이메일에 번호가 여럿이면 덮어쓰지 않고 모두 남긴다(남의 이메일로 번호를 바꿔 경품을 가로채지 못하게). 성공한 제출 · 조회 때만 남는다.
+- 검토 페이지: 인증 · SNS 카드에 ☎ 번호(여럿이면 최근 것부터), 응모권 명단 CSV 셋째 칸, SNS 명단 CSV 맨 끝 칸(추첨기 양식 칸은 그대로).
+  0100 전에 낸 사람은 "번호 없음" — 그 사람이 한 번 더 내거나 초대 링크를 보면 채워진다.
+- 꼭 받기 끄기: `update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_require_phone';`
+- 개인정보처리방침(시행일 2026-11-09)에 워킹데이 이벤트 항목 · 번호는 발표 뒤 30일 안에 삭제를 적었다.
+- 이메일 · 번호가 함께 보이는 명단(SQL Editor):
+
+```sql
+select t.email, economy.walkingday_phones(t.email) as phone, t.tickets, t.approved_days, t.friends
+from economy.walkingday_tickets() t order by t.tickets desc;
+```

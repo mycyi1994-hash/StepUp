@@ -10219,6 +10219,8 @@ insert into fix (k, v) select 'wd-key', economy.walkingday_reviewer_new('검사'
 -- 대기 → 검토 흐름을 보려고 자동 승인(0099)은 끄고 시작한다. 자동 승인은 맨 끝에서 따로 본다
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_auto_approve';
 update public.economy_settings set value = '"2020-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_from';
+-- 전화번호 꼭 받기(0100)는 끄고 시작한다(옛 검사는 번호 없이 낸다). 전화번호는 맨 끝에서 따로 본다
+update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_require_phone';
 set role anon;
 do $$
 declare
@@ -10420,6 +10422,64 @@ begin
   perform pg_temp.ok((r->>'ok')::boolean and r->>'status' = 'pending', '자동 승인을 끄면 다시 대기로 받는다(0099)');
 end $$;
 reset role;
+
+-- ── 11.11 워킹데이 전화번호(0100) — 세 탭 모두 · 모양 맞추기 · 덮어쓰지 않기 · 검토에 보이기 ──
+do $$
+begin
+  perform pg_temp.ok(economy.walkingday_phone('010-1234-5678') = '010-1234-5678' and economy.walkingday_phone('01012345678') = '010-1234-5678'
+                     and economy.walkingday_phone('+82 10 1234 5678') = '010-1234-5678' and economy.walkingday_phone('011.123.4567') = '011-123-4567',
+    '전화번호: 하이픈 · 띄어쓰기 · +82 를 010-1234-5678 모양으로(0100)');
+  perform pg_temp.ok(economy.walkingday_phone('02-123-4567') is null and economy.walkingday_phone('010-123') is null and economy.walkingday_phone('') is null,
+    '전화번호: 휴대폰 번호가 아니면 받지 않는다(0100)');
+end $$;
+update public.economy_settings set value = 'true'::jsonb where key = 'walkingday_require_phone';
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('wd-key');
+  v_img text := 'data:image/jpeg;base64,' || repeat('QUJD', 40);
+  v_today int := ((now() at time zone 'Asia/Seoul')::date - date '1970-01-01')::int;
+  r jsonb;
+  v jsonb;
+begin
+  perform pg_temp.ok(public.walkingday_sns_submit('sns3@runnermail.com', 'https://x.com/run_three/status/777777771', '', true)->>'code' = 'phone',
+    '전화번호: SNS 게시물은 번호 없이 받지 않는다(0100)');
+  perform pg_temp.ok(public.walkingday_sns_submit('sns3@runnermail.com', 'https://x.com/run_three/status/777777771', '', true, '', '12345')->>'code' = 'phone',
+    '전화번호: 틀린 번호는 받지 않는다(0100)');
+  r := public.walkingday_sns_submit('sns3@runnermail.com', 'https://x.com/run_three/status/777777771', '', true, '', '010 1234 5678');
+  perform pg_temp.ok((r->>'ok')::boolean, '전화번호: 번호와 함께 SNS 게시물을 받는다(0100)');
+  r := public.walkingday_sns_submit('sns3@runnermail.com', 'https://x.com/run_three/status/777777772', '', true, '', '010-9999-0000');
+  perform pg_temp.ok((r->>'ok')::boolean, '전화번호: 같은 이메일의 다른 번호도 받는다(0100)');
+
+  perform pg_temp.ok(public.walkingday_invite_link('referrer@runnermail.com')->>'code' = 'phone', '전화번호: 내 초대 링크도 번호 없이는 안 준다(0100)');
+  perform pg_temp.ok(public.walkingday_invite_link('referrer@runnermail.com', '', '010-2222-3333')->>'code' = 'consent',
+    '전화번호: 내 초대 링크는 번호를 받으니 동의도 받는다(0100)');
+  r := public.walkingday_invite_link('referrer@runnermail.com', '', '010-2222-3333', true);
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'code' = pg_temp.fx('waitlist-ref'), '전화번호: 번호 · 동의와 함께면 내 초대 링크(0100)');
+
+  perform pg_temp.ok(public.walkingday_proof_submit('referrer@runnermail.com', 20764, 12000, v_img, true)->>'code' = 'phone',
+    '전화번호: 걸음 인증도 번호 없이 받지 않는다(0100)');
+  if v_today >= 20765 then
+    r := public.walkingday_proof_submit('referrer@runnermail.com', 20765, 12000, v_img, true, '', '01022223333');
+    perform pg_temp.ok((r->>'ok')::boolean, '전화번호: 번호와 함께 걸음 인증을 받는다(0100)');
+  end if;
+
+  call pg_temp.must_fail('select * from economy.walkingday_contacts', '공개 역할은 전화번호를 읽지 못한다');
+  call pg_temp.must_fail('select economy.walkingday_phones(''sns3@runnermail.com'')', '공개 역할은 번호 함수를 부르지 못한다');
+
+  select x into v from jsonb_array_elements(public.walkingday_sns_list(v_key)) x where x->>'email' = 'sns3@runnermail.com' limit 1;
+  perform pg_temp.ok(v->>'phone' = '010-9999-0000, 010-1234-5678', '검토: SNS 카드에 그 이메일의 번호가 모두(최근 것부터)(0100)');
+  select x into v from jsonb_array_elements(public.walkingday_review_entries(v_key)) x where x->>'email' = 'referrer@runnermail.com';
+  perform pg_temp.ok(v->>'phone' = '010-2222-3333' and (v->>'tickets')::int >= 1, '검토: 응모권 명단에 전화번호(0100)');
+end $$;
+reset role;
+do $$
+begin
+  perform pg_temp.ok((select count(*) from economy.walkingday_contacts where email = 'sns3@runnermail.com') = 2,
+    '전화번호: 한 이메일의 번호는 덮어쓰지 않고 둘 다 남는다(0100)');
+  perform pg_temp.ok((select count(*) from economy.walkingday_contacts where email = 'referrer@runnermail.com' and phone = '010-2222-3333') = 1,
+    '전화번호: 같은 번호는 한 줄(0100)');
+end $$;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
