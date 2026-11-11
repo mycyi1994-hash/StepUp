@@ -10220,6 +10220,8 @@ insert into fix (k, v) select 'wd-key', economy.walkingday_reviewer_new('검사'
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_auto_approve';
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_today_only';
 update public.economy_settings set value = '"2020-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_from';
+-- 받는 기간 끝(운영 값 11/11 15:00)이 지나도 검사가 돌게 멀리 미룬다
+update public.economy_settings set value = '"2099-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_until';
 -- 전화번호 꼭 받기(0100)는 끄고 시작한다(옛 검사는 번호 없이 낸다). 전화번호는 맨 끝에서 따로 본다
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_require_phone';
 set role anon;
@@ -10500,6 +10502,50 @@ begin
 end $$;
 reset role;
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_today_only';
+
+-- ── 11.11 워킹데이 당첨자 발표(0102) — 1인 1경품 · 자리 수 · 오타 막기 · 발표 전엔 안 보임 · 가린 이메일만 ──
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('wd-key');
+  r jsonb;
+  v jsonb;
+begin
+  perform pg_temp.ok(public.walkingday_winners() = '{"published": false}'::jsonb, '당첨자: 발표 전에는 명단이 안 나간다(0102)');
+  call pg_temp.must_fail('select public.walkingday_review_winners(''wrong-key'')', '당첨자: 검토 키가 틀리면 명단을 못 본다');
+  call pg_temp.must_fail('select public.walkingday_review_winners_set(''wrong-key'', ''[]''::jsonb)', '당첨자: 검토 키가 틀리면 저장 못 한다');
+  call pg_temp.must_fail('select * from economy.walkingday_winners', '당첨자: 공개 역할은 당첨자 표를 읽지 못한다');
+
+  perform pg_temp.ok(public.walkingday_review_winners_publish(v_key, true)->>'code' = 'empty', '당첨자: 빈 명단은 발표하지 않는다(0102)');
+  r := public.walkingday_review_winners_set(v_key, '[{"email":"nobody@runnermail.com","prize":"pepero"}]');
+  perform pg_temp.ok(r->>'code' = 'unknown' and r->>'email' = 'nobody@runnermail.com', '당첨자: 이벤트에 없던 이메일(오타)은 저장하지 않는다(0102)');
+  r := public.walkingday_review_winners_set(v_key, '[{"email":"friend@runnermail.com","prize":"mat","place":1},{"email":"Friend@runnermail.com ","prize":"pepero"}]');
+  perform pg_temp.ok(r->>'code' = 'duplicate' and r->>'email' = 'friend@runnermail.com', '당첨자: 1인 1경품 — 대소문자 · 공백이 달라도 같은 사람(0102)');
+  r := public.walkingday_review_winners_set(v_key, '[{"email":"friend@runnermail.com","prize":"mat"},{"email":"referrer@runnermail.com","prize":"mat"}]');
+  perform pg_temp.ok(r->>'code' = 'seats' and r->>'prize' = 'mat', '당첨자: 경품 자리 수를 넘으면 저장하지 않는다(0102)');
+  perform pg_temp.ok(public.walkingday_review_winners_set(v_key, '[{"email":"friend@runnermail.com","prize":"car"}]')->>'code' = 'prize',
+    '당첨자: 없는 경품은 받지 않는다(0102)');
+
+  r := public.walkingday_review_winners_set(v_key, '[{"email":"Friend@runnermail.com","prize":"mat","place":1},{"email":"sns@runnermail.com","prize":"pepero"},{"email":"referrer@runnermail.com","prize":"roller","place":2}]');
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'count')::int = 3, '당첨자: 사전 등록 · SNS 제출 이메일로 명단을 저장한다(0102)');
+  perform pg_temp.ok(public.walkingday_winners() = '{"published": false}'::jsonb, '당첨자: 저장만 해서는 페이지에 안 나간다(0102)');
+  v := public.walkingday_review_winners(v_key);
+  perform pg_temp.ok(v->>'published' = 'false' and jsonb_array_length(v->'rows') = 3 and v->'rows'->0->>'prize' = 'mat'
+                     and v->'rows'->0->>'email' = 'friend@runnermail.com', '당첨자: 검토 페이지는 원문 이메일 · 경품 순서로(0102)');
+
+  perform pg_temp.ok((public.walkingday_review_winners_publish(v_key, true)->>'published')::boolean, '당첨자: 페이지에 발표한다(0102)');
+  v := public.walkingday_winners();
+  perform pg_temp.ok((v->>'published')::boolean and v->'prizes'->'mat'->>0 = 'fr**d@***' and v->'prizes'->'roller'->>0 = 're**r@***'
+                     and jsonb_array_length(v->'prizes'->'pepero') = 1, '당첨자: 발표 뒤 경품마다 가린 이메일(0102)');
+  perform pg_temp.ok(v::text !~ 'runnermail' and v::text !~ '010-', '당첨자: 이메일 원문 · 번호는 나가지 않는다(0102)');
+
+  r := public.walkingday_review_winners_set(v_key, '[{"email":"friend@runnermail.com","prize":"mat","place":1}]');
+  perform pg_temp.ok((r->>'ok')::boolean and jsonb_array_length(public.walkingday_winners()->'prizes'->'mat') = 1
+                     and public.walkingday_winners()->'prizes'->'pepero' is null, '당첨자: 발표 뒤에도 명단을 바꾸면 페이지가 따라간다(0102)');
+  perform pg_temp.ok(not (public.walkingday_review_winners_publish(v_key, false)->>'published')::boolean, '당첨자: 발표를 내린다(0102)');
+  perform pg_temp.ok(public.walkingday_winners() = '{"published": false}'::jsonb, '당첨자: 발표를 내리면 다시 안 보인다(0102)');
+end $$;
+reset role;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

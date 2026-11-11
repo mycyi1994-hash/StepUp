@@ -23,7 +23,7 @@
   /* ── 상태 ── */
   var introV = 0, introT0 = 0, introSaid = false, total = 0, cur = 0, vel = 0, pour = 0, phaseOverride = null, t0 = performance.now(), om = 3.0, tNow = 0;
   var rev = [0, 0, 0];
-  var RESULT = Date.UTC(2026, 10, 11, 9, 0), BEFORE_FILL = T1 * .5;
+  var RESULT = Date.UTC(2026, 10, 11, 9, 0), BEFORE_FILL = T1 * .5, winPub = false; /* winPub: 당첨자 명단이 발표됐는지(0102 walkingday_winners) */
   function phase() { if (phaseOverride) return phaseOverride; var n = Date.now(); return n < START ? 'before' : n < CLOSE ? 'live' : n < RESULT ? 'count' : 'result'; }
 
   /* ── 장면 치수 ── */
@@ -292,8 +292,9 @@
     if (p === 'before') { var dn = 'D-' + daysLeft(); setStr(dn, NUMLEN); both(elNum, function (e) { e.setAttribute('aria-label', dn); }); msg = '11/7(토) 시작 · 사전 등록하면 응모권 1장'; }
     else {
       renderNumber(cur); both(elNum, function (e) { e.setAttribute('aria-label', fmt(v) + ' 걸음'); });
-      if (p === 'count') msg = '11/11(수) 18시 당첨 발표';
-      else if (p === 'result') msg = '당첨자 발표 완료 · 빼빼로 기프티콘 11/11 전달';
+      if (winPub && (p === 'count' || p === 'result')) msg = '당첨자 발표 · 바로 아래에서 확인하세요';
+      else if (p === 'count') msg = '11/11(수) 18시 당첨 발표';
+      else if (p === 'result') msg = '당첨자 발표 준비 중 · 곧 이 페이지에 올려요';
       else if (v >= T2) msg = '222만 걸음 달성, 막대 완성';
       else if (v >= T1) msg = '111만 걸음 달성 · 222만까지 ' + fmt(T2 - v) + ' 남음';
       else msg = '111만 걸음까지 ' + fmt(T1 - v) + ' 남음';
@@ -604,6 +605,79 @@
     var n = 0;
     read();
     setInterval(function () { n++; if (document.hidden || (phase() !== 'live' && n % 6)) return; read(); }, 10000); /* 마감 뒤에는 60초마다 */
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) read(); });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) read(); });
+  })();
+
+  /* ── 당첨자 발표(0102 walkingday_winners): 운영자가 검토 페이지에서 「페이지에 발표」를 누르면 가린 이메일로 뜬다.
+     마감(15시) 뒤부터 60초마다(화면을 보고 있을 때만) 읽는다. 「내 이메일로 찾기」는 이 폰에서 같은 규칙으로 가려 맞대어 볼 뿐 서버로 보내지 않는다 ── */
+  (function () {
+    var box = $('win'), list = $('winList'); if (!box || !list || !CFG.url) return;
+    var GROUPS = [
+      { k: 'pepero', name: '빼빼로 기프티콘', who: '응모권 추첨' },
+      { k: 'knee', name: '무릎보호대', who: '걸음 인증자 추첨' },
+      { k: 'mat', name: '요가매트 세트', who: '초대 1위', from: 1 },
+      { k: 'roller', name: '폼롤러', who: '초대 2~4위', from: 2 },
+      { k: 'socks', name: '운동양말', who: '초대 5~11위', from: 5 }
+    ];
+    var FOLD = 30, sig = '', busy = false, open = false, data = null, mine = '';
+    var COMMON = ['gmail.com', 'naver.com', 'daum.net', 'hanmail.net', 'kakao.com', 'nate.com', 'icloud.com', 'me.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'proton.me', 'protonmail.com'];
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    /* 서버 economy.walkingday_mask_email 과 같은 규칙 */
+    function mask(e) {
+      e = String(e || '').trim().toLowerCase(); var at = e.indexOf('@'); if (at < 1) return '';
+      var l = e.slice(0, at), d = e.slice(at + 1);
+      return (l.length <= 3 ? l.charAt(0) + '**' : l.slice(0, 2) + '**' + l.slice(-1)) + '@' + (COMMON.indexOf(d) >= 0 ? d : '***');
+    }
+    function draw() {
+      var P = (data && data.prizes) || {}, html = '';
+      GROUPS.forEach(function (g) {
+        var who = P[g.k] || []; if (!who.length) return;
+        html += '<section class="wng"><h3>' + g.name + '<small>' + g.who + ' · ' + who.length + '명</small></h3>';
+        if (g.from) {
+          html += '<ol class="lbl">' + who.map(function (w, i) {
+            var r = g.from + i;
+            return '<li class="' + (r <= 3 ? 'r' + r : '') + (w === mine ? ' me' : '') + '"><span class="rk">' + r + '</span><span class="who"><span>' + esc(w) + '</span></span><b></b></li>';
+          }).join('') + '</ol>';
+        } else {
+          var show = open || who.length <= FOLD + 5 ? who : who.slice(0, FOLD);
+          html += '<ul class="wnc">' + show.map(function (w) { return '<li' + (w === mine ? ' class="me"' : '') + '>' + esc(w) + '</li>'; }).join('') + '</ul>';
+          if (show.length < who.length) html += '<button class="wnm" type="button" data-more>' + who.length + '명 모두 보기</button>';
+        }
+        html += '</section>';
+      });
+      list.innerHTML = html;
+      var more = list.querySelector('[data-more]'); if (more) more.addEventListener('click', function () { open = true; draw(); });
+    }
+    function find(q) {
+      var r = $('winR'), m = mask(q); mine = m; r.hidden = false;
+      if (!m) { r.className = 'wnr'; r.textContent = '이메일을 정확히 넣어 주세요.'; mine = ''; draw(); return; }
+      var P = (data && data.prizes) || {}, hits = GROUPS.filter(function (g) { return (P[g.k] || []).indexOf(m) >= 0; });
+      if (hits.length) {
+        r.className = 'wnr hit';
+        r.textContent = '🎉 당첨 명단에 ' + m + ' 이(가) 있어요 — ' + hits.map(function (g) { return g.name; }).join(' · ') + '. 가린 모양이 같은 다른 사람일 수도 있어요 · 당첨 연락은 휴대폰 번호로 가요.';
+        if (hits.some(function (g) { return g.k === 'pepero'; })) open = true;
+      } else { r.className = 'wnr'; r.textContent = m + ' 은(는) 이번 당첨 명단에 없어요. 함께 걸어 주셔서 고마워요!'; }
+      draw();
+    }
+    $('winFind').addEventListener('submit', function (e) { e.preventDefault(); find($('winQ').value); });
+    function read() {
+      var p = phase(); if (busy || p === 'before' || p === 'live') return; busy = true;
+      var ctl = window.AbortController ? new AbortController() : null, cut = ctl && setTimeout(function () { ctl.abort(); }, 8000);
+      fetch(CFG.url + '/rest/v1/rpc/walkingday_winners', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key }, body: '{}', cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
+        .then(function (d) {
+          if (!d) return;
+          var s = JSON.stringify(d); if (s === sig) return; sig = s;
+          var was = winPub; winPub = d.published === true; data = d;
+          box.hidden = !winPub; if (winPub) draw();
+          if (was !== winPub) { renderState(); if (winPub) track('winners_view', {}); }
+        })
+        .catch(function () { /* 못 읽으면 지금 그대로 */ })
+        .then(function () { busy = false; if (cut) clearTimeout(cut); });
+    }
+    read();
+    setInterval(function () { if (!document.hidden) read(); }, 60000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) read(); });
     window.addEventListener('pageshow', function (e) { if (e.persisted) read(); });
   })();

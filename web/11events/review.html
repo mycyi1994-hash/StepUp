@@ -46,6 +46,21 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .bar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
 .zoom{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
 .zoom img{max-width:96vw;max-height:96vh}
+.win{display:grid;gap:12px}
+.win ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
+.wf{background:var(--cream);border-radius:14px;padding:12px;display:grid;gap:6px}
+.wf label{font-weight:800;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.wf label span{font-weight:700;color:var(--milk);font-size:13px}
+.wf label span.over{color:var(--red)}
+.wf textarea{width:100%;min-height:76px;border:2px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;resize:vertical}
+.wf.big textarea{min-height:160px}
+.wbar{display:flex;gap:8px;flex-wrap:wrap}
+.wbar .btn{flex:none}
+.btn.sub{background:var(--milk)}
+.pub{padding:10px 12px;border-radius:10px;font-weight:800}
+.pub.on{background:#DCF2E2;color:var(--green)}.pub.off{background:#F3E2C6;color:var(--milk)}
+.wmsg{font-weight:700;font-size:14px;min-height:1.2em}
+.wmsg.bad{color:var(--red)}.wmsg.good{color:var(--green)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -69,12 +84,13 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
       <button type="button" role="tab" data-tab="sns_approved" aria-selected="false">SNS 승인</button>
       <button type="button" role="tab" data-tab="sns_rejected" aria-selected="false">SNS 거절</button>
       <button type="button" role="tab" data-tab="sns_roster" aria-selected="false">SNS 명단(추첨기)</button>
+      <button type="button" role="tab" data-tab="winners" aria-selected="false">당첨자 발표</button>
     </div>
     <div id="list"></div>
   </section>
 </main>
 <div class="zoom" id="zoom" hidden><img alt="캡처 크게 보기"></div>
 <script src="/11events/assets/config.js"></script>
-<script src="/11events/review.js?v=1109"></script>
+<script src="/11events/review.js?v=1111"></script>
 </body>
 </html>

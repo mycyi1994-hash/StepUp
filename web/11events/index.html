@@ -289,6 +289,20 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #fff;
 .lbn{margin:10px 4px 0;font-size:12px;color:#9A7A5E}
 /* 지금 순위는 첫 화면 바로 아래(인증 칸 맨 위) — PC 2단에서는 두 칸을 가로질러 */
 #s1 .rkb{grid-column:1/-1;width:100%;margin:0 auto 28px}
+/* 당첨자 발표(11/11, 0102) — 지금 순위 위. 경품마다 묶음, 빼빼로 95명은 접어 둔다 */
+.wn .lbh b::after{content:none}
+.wng{margin-top:14px}
+.wng h3{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 8px;font-size:16px;font-weight:800;color:var(--ink)}
+.wng h3 small{font-size:12.5px;font-weight:700;color:#8A6446}
+.wnc{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.wnc li{font-size:13.5px;font-weight:600;color:#2A1206;background:#F6EEDF;border-radius:999px;padding:5px 10px;font-variant-numeric:tabular-nums}
+.wnc li.me,.wn .lbl li.me{background:#FFE08A;box-shadow:0 0 0 2px #E9A92C inset}
+.wnm{display:block;margin:10px auto 0;border:0;background:none;font:inherit;font-size:13.5px;font-weight:700;color:#8A6446;text-decoration:underline;cursor:pointer}
+.wnf{display:flex;gap:6px;margin:0 0 4px}
+.wnf input{flex:1;min-width:0;height:42px;border:1.5px solid #E8D7BC;border-radius:12px;padding:0 12px;font:inherit;font-size:15px;color:var(--ink);background:#fff}
+.wnf button{flex:none;height:42px;border:0;border-radius:12px;padding:0 16px;font:inherit;font-size:14.5px;font-weight:800;color:#fff;background:var(--ink);cursor:pointer}
+.wnr{margin:8px 2px 0;padding:10px 12px;border-radius:12px;font-size:14px;font-weight:700;line-height:1.45;background:#F3EADB;color:#5A3A20}
+.wnr.hit{background:#FFF0C4;color:#7A4A00}
 /* ── 11/7 UX ── */
 body{letter-spacing:-.035em}
 /* 제목(격동고딕 구운 글자)에 깊이: 어두운 면은 단단한 그림자, 밝은 면은 흰 테 + 부드러운 그림자 */
@@ -464,6 +478,14 @@ body{letter-spacing:-.035em}
 <section class="sec t-dark" id="s1" aria-label="인증">
   <canvas id="pl1" aria-hidden="true"></canvas>
   <div class="in">
+    <div class="rkb wn" id="win" hidden>
+      <div class="lbh"><b>당첨자 발표</b></div>
+      <p class="lbs">🎉 축하해요! 당첨자에게는 적어 주신 휴대폰 번호로 연락드려요 · 빼빼로 기프티콘은 발표 당일 보내요</p>
+      <form class="wnf" id="winFind" autocomplete="off"><input id="winQ" type="email" inputmode="email" placeholder="내 이메일로 찾기" aria-label="내 이메일로 찾기"><button type="submit">찾기</button></form>
+      <p class="wnr" id="winR" role="status" hidden></p>
+      <div id="winList"></div>
+      <p class="lbn">이메일 일부를 가렸어요 · 1인 1경품 · 다중 계정은 제외했어요</p>
+    </div>
     <div class="rkb" id="lb" hidden>
       <div class="lbh"><b>지금 순위</b><div class="lbt" role="tablist" aria-label="순위 종류"><button type="button" role="tab" data-lb="invite" aria-selected="true">초대 순위</button><button type="button" role="tab" data-lb="steps" aria-selected="false">걸음 순위</button></div></div>
       <p class="lbs" id="lbSub"></p>
@@ -619,5 +641,5 @@ body{letter-spacing:-.035em}
 </div>
 <script src="assets/config.js?v=4ae9d2df1d"></script>
 <script src="ga.js?v=b2f9da6f83"></script>
-<script src="app.js?v=1109c"></script>
+<script src="app.js?v=1111"></script>
 </body></html>

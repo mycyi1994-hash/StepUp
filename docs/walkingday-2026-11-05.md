@@ -134,3 +134,23 @@ truncate economy.walkingday_contacts;
 select t.email, economy.walkingday_phones(t.email) as phone, t.tickets, t.approved_days, t.friends
 from economy.walkingday_tickets() t order by t.tickets desc;
 ```
+
+## 당첨자 발표 (2026-11-11, 서버 0102)
+
+사용자 "11월 11일 이벤트 당첨자 발표해야함". 추첨은 사람이 하고(추첨기), 페이지에 띄우는 것만 서버가 한다.
+
+1. 검토 페이지(`/11events/review`) 「당첨자 발표」 탭 → 「초대 순위로 채우기」: 응모권 명단의 초대 순위 위 11명(친구 수 → 응모권 → 먼저 등록한 순 — 리더보드와 같은 순서)이
+   요가매트 세트 1 · 폼롤러 3 · 운동양말 7 칸에 들어간다. 경품이 갈리는 자리(1|2 · 4|5 · 11|12)에서 친구 수가 같으면 무엇으로 갈랐는지 한 줄로 알린다.
+2. 추첨기에서 **그 11명을 빼고** 빼빼로 95 · 무릎보호대 5를 뽑아 칸에 붙여 넣는다(이메일만 골라 읽는다 — CSV · 표 그대로 붙여도 된다).
+3. 「저장」(`walkingday_review_winners_set` — 통째로 바꾼다) → 「페이지에 발표」(`walkingday_review_winners_publish`). 「저장된 명단 CSV」에 번호가 함께 있다(경품 보내기용).
+- 서버가 막는 것: 한 사람 두 경품(이메일이 기본 키 — 1인 1경품) · 경품 자리 수 넘김 · 이벤트에 들어온 적 없는 이메일(사전 등록 · SNS 제출 · 번호 기록 어디에도 없으면 오타로 본다).
+- 이벤트 페이지: 발표되면 첫 화면 아래(지금 순위 위)에 「당첨자 발표」 카드 — 경품마다 가린 이메일(0096 과 같은 가림, 원문 · 번호는 안 나간다), 빼빼로는 30명까지 보이고 「모두 보기」.
+  「내 이메일로 찾기」는 폰에서 같은 규칙으로 가려 맞대어 볼 뿐 서버로 보내지 않는다. 마감 뒤 60초마다 읽는다. 첫 화면 글은 발표 전 「준비 중」, 발표 뒤 「바로 아래에서 확인」.
+- 발표 뒤에도 고쳐 저장하면 페이지가 따라간다(연락 안 되는 사람 바꾸기). 내리기는 같은 버튼 또는 SQL:
+
+```sql
+update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_winners_published';
+```
+
+- 경품을 다 보낸 뒤(발표 뒤 30일 안) 번호와 함께 당첨자 원문도 지운다: `truncate economy.walkingday_winners;`(지우면 페이지 명단도 빈다 — 먼저 발표를 내린다).
+- 검사: 서버 검사(`supabase/tests/schema_test.sql`)의 워킹데이 절은 받는 기간 끝을 2099 로 미뤄 둔다 — 운영 마감(11/11 15:00)이 지나 예전 검사가 깨지던 것.
