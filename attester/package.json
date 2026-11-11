@@ -11,9 +11,9 @@
     "new-key": "node scripts/new-key.mjs"
   },
   "dependencies": {
-    "viem": "^2.21.0"
+    "viem": "^2.57.16"
   },
   "devDependencies": {
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.158.0"
   }
 }
