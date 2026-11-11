@@ -233,15 +233,18 @@
       var saved = d.rows || [], published = !!d.published;
       var html = '<div class="win"><p class="pub ' + (published ? 'on">지금 이벤트 페이지에 발표돼 있어요(가린 이메일로). 고쳐 저장하면 페이지도 바로 바뀌어요.' : 'off">아직 발표 전이에요. 저장해도 「페이지에 발표」를 누르기 전에는 안 보여요.') + '</p>' +
         '<ol><li>「초대 순위로 채우기」 — 응모권 명단의 초대 순위 위 11명(친구 수 → 응모권 → 먼저 등록한 순, 리더보드와 같은 순서)을 세 칸에 넣어요.</li>' +
-        '<li>추첨기에서 <b>이 11명을 빼고</b> 빼빼로 95명 · 무릎보호대 5명을 뽑아 아래 칸에 붙여 넣어요. 이메일만 골라 읽으니 CSV · 표를 그대로 붙여도 돼요.</li>' +
-        '<li>다중 계정 · 연락 안 되는 사람은 칸에서 지우고 다음 사람을 넣어요. 한 사람은 한 경품만(겹치면 저장이 안 돼요).</li>' +
+        '<li>「빼빼로 · 무릎보호대 추첨하기」 — 초대 순위 11명과 「뺄 사람」 칸을 빼고 <b>무릎보호대 5명(걸음 인증이 승인된 사람, 한 사람 한 번씩)</b> → <b>빼빼로 95명(사이트 응모권 + SNS 응모권, 장 수만큼 확률)</b> 차례로 빈자리만 뽑아요. (다른 추첨기로 뽑았다면 칸에 붙여 넣어도 돼요 — 이메일만 골라 읽어요.)</li>' +
+        '<li>다중 계정 · 연락 안 되는 사람은 그 칸에서 지우고 「뺄 사람」 칸에 넣은 뒤 다시 「추첨하기」 — 지운 자리만 새로 뽑아요. 한 사람은 한 경품만(겹치면 저장이 안 돼요).</li>' +
         '<li>「저장」 → 확인 → 「페이지에 발표」. 이벤트 페이지 맨 위 순위 칸 위에 당첨자 명단이 떠요.</li></ol>' +
-        '<div class="wbar"><button class="btn sub" type="button" id="wFill">초대 순위로 채우기</button></div><p class="status" id="wTie"></p>';
+        '<div class="wbar"><button class="btn sub" type="button" id="wFill">초대 순위로 채우기</button><button class="btn sub" type="button" id="wDraw">빼빼로 · 무릎보호대 추첨하기</button></div>' +
+        '<p class="status" id="wTie"></p><p class="status" id="wDrawNote"></p>';
       PRIZES.forEach(function (z) {
         var mine = saved.filter(function (r) { return r.prize === z.k; }).map(function (r) { return r.email; });
         html += '<div class="wf' + (z.seats > 3 ? ' big' : '') + '"><label for="w_' + z.k + '">' + z.name + ' · ' + z.who + ' <span id="c_' + z.k + '"></span></label>' +
           '<textarea id="w_' + z.k + '" spellcheck="false" placeholder="이메일을 한 줄에 하나씩(붙여 넣기)">' + esc(mine.join('\n')) + '</textarea></div>';
       });
+      html += '<div class="wf"><label for="w_ex">추첨에서 뺄 사람(다중 계정 등) <span>저장되지 않아요 · 추첨할 때만</span></label>' +
+        '<textarea id="w_ex" spellcheck="false" placeholder="이메일을 한 줄에 하나씩"></textarea></div>';
       html += '<p class="wmsg" id="wMsg" role="status"></p><div class="wbar">' +
         '<button class="btn" type="button" id="wSave">저장</button>' +
         '<button class="btn" type="button" id="wPub" style="background:' + (published ? 'var(--red)' : 'var(--green)') + '">' + (published ? '발표 내리기' : '페이지에 발표') + '</button>' +
@@ -267,6 +270,43 @@
       count();
       if (note) { $('wMsg').className = 'wmsg good'; $('wMsg').textContent = note; }
 
+      // 추첨: 빈자리만. 가중치 있는 비복원 추첨(키 = -ln(u) / 장 수, 작은 순) — u 는 crypto 난수
+      function rand01() { var a = new Uint32Array(1); crypto.getRandomValues(a); return (a[0] + 1) / 4294967297; }
+      function pick(pool, n) {
+        if (n <= 0) return [];
+        return pool.map(function (p) { return { e: p.email, k: -Math.log(rand01()) / p.w }; })
+          .sort(function (a, b) { return a.k - b.k; }).slice(0, n).map(function (x) { return x.e; });
+      }
+      $('wDraw').onclick = function () {
+        var m = $('wMsg');
+        var inv = ['mat', 'roller', 'socks'].reduce(function (n, k) { return n + emailsIn($('w_' + k).value).length; }, 0);
+        if (!inv) { m.className = 'wmsg bad'; m.textContent = '먼저 「초대 순위로 채우기」를 눌러 주세요 — 초대 순위 당첨자는 추첨에서 빠져야 해요(1인 1경품).'; return; }
+        busy(true);
+        Promise.all([rpc('walkingday_review_entries', { p_token: token }), rpc('walkingday_sns_roster', { p_token: token })]).then(function (res) {
+          var ent = res[0] || [], sns = res[1] || [], taken = {}, posts = {}, tk = {}, perfect = {}, all = {};
+          PRIZES.forEach(function (z) { emailsIn($('w_' + z.k).value).forEach(function (e) { taken[e] = 1; }); });
+          emailsIn($('w_ex').value).forEach(function (e) { taken[e] = 1; });
+          sns.forEach(function (r) { var e = String(r.email || '').toLowerCase(); if (e) { posts[e] = Math.min(15, (posts[e] || 0) + (+r.posts || 0)); all[e] = 1; } });
+          ent.forEach(function (r) { var e = String(r.email || '').toLowerCase(); tk[e] = +r.tickets || 0; perfect[e] = (+r.approved_days || 0) >= 5; all[e] = 1; });
+          // 무릎보호대: 걸음 인증이 하나라도 승인된 사람, 한 사람 한 번씩
+          var kneePool = ent.filter(function (r) { return r.best_steps != null && !taken[String(r.email).toLowerCase()]; })
+            .map(function (r) { return { email: String(r.email).toLowerCase(), w: 1 }; });
+          var kneeHave = emailsIn($('w_knee').value), kneeNew = pick(kneePool, 5 - kneeHave.length);
+          kneeNew.forEach(function (e) { taken[e] = 1; });
+          $('w_knee').value = kneeHave.concat(kneeNew).join('\n');
+          // 빼빼로: 사이트 응모권(개근 1.5배 이미 들어 있음) + SNS 응모권(개근이면 1.5배 올림)
+          var pepPool = Object.keys(all).filter(function (e) { return !taken[e]; }).map(function (e) {
+            var p = posts[e] || 0; return { email: e, w: (tk[e] || 0) + (perfect[e] ? Math.ceil(p * 1.5) : p) };
+          }).filter(function (p) { return p.w > 0; });
+          var pepHave = emailsIn($('w_pepero').value), pepNew = pick(pepPool, 95 - pepHave.length);
+          $('w_pepero').value = pepHave.concat(pepNew).join('\n');
+          var tickets = pepPool.reduce(function (n, p) { return n + p.w; }, 0);
+          $('wDrawNote').textContent = '추첨 ' + new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) + ' · 무릎보호대: 걸음 인증자 ' + kneePool.length + '명 중 ' + kneeNew.length + '명 새로 · ' +
+            '빼빼로: ' + pepPool.length + '명 · 응모권 ' + tickets.toLocaleString('ko-KR') + '장 중 ' + pepNew.length + '명 새로. 아직 저장 전이에요 — 확인하고 「저장」.';
+          count();
+        }).catch(function (e) { if (e && e.denied) return fail(e); m.className = 'wmsg bad'; m.textContent = '명단을 불러오지 못했어요 — 다시 눌러 주세요.'; })
+          .then(function () { if ($('wDraw')) busy(false); });
+      };
       $('wFill').onclick = function () {
         var b = this; b.disabled = true;
         rpc('walkingday_review_entries', { p_token: token }).then(function (ent) {
@@ -301,7 +341,7 @@
           throw new Error(why);
         });
       }
-      function busy(on) { ['wSave', 'wPub', 'wFill'].forEach(function (id) { $(id).disabled = on; }); }
+      function busy(on) { ['wSave', 'wPub', 'wFill', 'wDraw'].forEach(function (id) { $(id).disabled = on; }); }
       function oops(e) {
         if (e && e.denied) return fail(e);
         var m = $('wMsg'); m.className = 'wmsg bad'; m.textContent = '저장하지 못했어요: ' + ((e && e.message) || '다시 시도해 주세요');
