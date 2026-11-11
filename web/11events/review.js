@@ -38,7 +38,7 @@
     tab = t; after = 0;
     [].forEach.call(document.querySelectorAll('[data-tab]'), function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === t)); });
     $('list').innerHTML = '';
-    if (t === 'entries') entries(); else if (t.indexOf('sns') === 0) snsOpen(t); else more();
+    if (t === 'entries') entries(); else if (t === 'winners') winners(); else if (t.indexOf('sns') === 0) snsOpen(t); else more();
   }
 
   function more() {
@@ -209,5 +209,129 @@
   function snsOpen(t) {
     if (t === 'sns_roster') return snsRoster();
     snsStatus = t === 'sns_approved' ? 'approved' : t === 'sns_rejected' ? 'rejected' : 'pending'; snsAfter = 0; snsMore();
+  }
+
+  /* ── 당첨자 발표(0102): 초대 순위 11명은 채우기 버튼, 빼빼로 · 무릎보호대는 추첨기 결과를 붙여 넣기 → 저장 → 페이지에 발표 ── */
+  var PRIZES = [
+    { k: 'mat', name: '요가매트 세트', who: '초대 1위', seats: 1, from: 1 },
+    { k: 'roller', name: '폼롤러', who: '초대 2~4위', seats: 3, from: 2 },
+    { k: 'socks', name: '운동양말', who: '초대 5~11위', seats: 7, from: 5 },
+    { k: 'pepero', name: '빼빼로 기프티콘', who: '사이트 · SNS 응모권 추첨', seats: 95 },
+    { k: 'knee', name: '무릎보호대', who: '걸음 인증자 추첨', seats: 5 }
+  ];
+  var EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+  function emailsIn(text) {
+    var seen = {}, out = [];
+    (String(text || '').match(EMAIL_RE) || []).forEach(function (e) { e = e.toLowerCase(); if (!seen[e]) { seen[e] = 1; out.push(e); } });
+    return out;
+  }
+  function csvCell(c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }
+  function winners(note) {
+    var list = $('list');
+    list.innerHTML = '<p class="empty">불러오는 중…</p>';
+    return rpc('walkingday_review_winners', { p_token: token }).then(function (d) {
+      var saved = d.rows || [], published = !!d.published;
+      var html = '<div class="win"><p class="pub ' + (published ? 'on">지금 이벤트 페이지에 발표돼 있어요(가린 이메일로). 고쳐 저장하면 페이지도 바로 바뀌어요.' : 'off">아직 발표 전이에요. 저장해도 「페이지에 발표」를 누르기 전에는 안 보여요.') + '</p>' +
+        '<ol><li>「초대 순위로 채우기」 — 응모권 명단의 초대 순위 위 11명(친구 수 → 응모권 → 먼저 등록한 순, 리더보드와 같은 순서)을 세 칸에 넣어요.</li>' +
+        '<li>추첨기에서 <b>이 11명을 빼고</b> 빼빼로 95명 · 무릎보호대 5명을 뽑아 아래 칸에 붙여 넣어요. 이메일만 골라 읽으니 CSV · 표를 그대로 붙여도 돼요.</li>' +
+        '<li>다중 계정 · 연락 안 되는 사람은 칸에서 지우고 다음 사람을 넣어요. 한 사람은 한 경품만(겹치면 저장이 안 돼요).</li>' +
+        '<li>「저장」 → 확인 → 「페이지에 발표」. 이벤트 페이지 맨 위 순위 칸 위에 당첨자 명단이 떠요.</li></ol>' +
+        '<div class="wbar"><button class="btn sub" type="button" id="wFill">초대 순위로 채우기</button></div><p class="status" id="wTie"></p>';
+      PRIZES.forEach(function (z) {
+        var mine = saved.filter(function (r) { return r.prize === z.k; }).map(function (r) { return r.email; });
+        html += '<div class="wf' + (z.seats > 3 ? ' big' : '') + '"><label for="w_' + z.k + '">' + z.name + ' · ' + z.who + ' <span id="c_' + z.k + '"></span></label>' +
+          '<textarea id="w_' + z.k + '" spellcheck="false" placeholder="이메일을 한 줄에 하나씩(붙여 넣기)">' + esc(mine.join('\n')) + '</textarea></div>';
+      });
+      html += '<p class="wmsg" id="wMsg" role="status"></p><div class="wbar">' +
+        '<button class="btn" type="button" id="wSave">저장</button>' +
+        '<button class="btn" type="button" id="wPub" style="background:' + (published ? 'var(--red)' : 'var(--green)') + '">' + (published ? '발표 내리기' : '페이지에 발표') + '</button>' +
+        '<button class="btn sub" type="button" id="wCsv"' + (saved.length ? '' : ' disabled') + '>저장된 명단 CSV(번호 포함)</button></div></div>';
+      list.innerHTML = html;
+
+      function rows() {
+        var out = [];
+        PRIZES.forEach(function (z) { emailsIn($('w_' + z.k).value).forEach(function (e, i) { out.push({ email: e, prize: z.k, place: z.from ? z.from + i : null }); }); });
+        return out;
+      }
+      function count() {
+        var all = rows(), by = {}, dup = {};
+        all.forEach(function (r) { by[r.prize] = (by[r.prize] || 0) + 1; dup[r.email] = (dup[r.email] || 0) + 1; });
+        PRIZES.forEach(function (z) { var n = by[z.k] || 0, c = $('c_' + z.k); c.textContent = n + ' / ' + z.seats + '명'; c.className = n > z.seats ? 'over' : ''; });
+        var twice = Object.keys(dup).filter(function (e) { return dup[e] > 1; });
+        var m = $('wMsg');
+        if (twice.length) { m.className = 'wmsg bad'; m.textContent = '두 경품에 같은 사람: ' + twice.join(', ') + ' — 한 곳에서 지우세요(1인 1경품).'; }
+        else { m.className = 'wmsg'; m.textContent = '모두 ' + all.length + '명'; }
+        return { all: all, twice: twice, by: by };
+      }
+      PRIZES.forEach(function (z) { $('w_' + z.k).addEventListener('input', count); });
+      count();
+      if (note) { $('wMsg').className = 'wmsg good'; $('wMsg').textContent = note; }
+
+      $('wFill').onclick = function () {
+        var b = this; b.disabled = true;
+        rpc('walkingday_review_entries', { p_token: token }).then(function (ent) {
+          var top = ent.filter(function (r) { return r.friends > 0; });
+          ['mat', 'roller', 'socks'].forEach(function (k) {
+            var z = PRIZES.filter(function (x) { return x.k === k; })[0];
+            $('w_' + k).value = top.slice(z.from - 1, z.from - 1 + z.seats).map(function (r) { return r.email; }).join('\n');
+          });
+          // 경품이 갈리는 자리(1|2 · 4|5 · 11|12)에서 친구 수가 같으면 무엇으로 갈랐는지 알린다
+          var ties = [1, 4, 11].map(function (n) {
+            var a = top[n - 1], c = top[n];
+            if (!a || !c || a.friends !== c.friends) return '';
+            return n + '위 · ' + (n + 1) + '위가 친구 ' + a.friends + '명으로 같아요 → ' +
+              (a.tickets !== c.tickets ? '응모권 ' + a.tickets + '장 vs ' + c.tickets + '장으로 갈랐어요' : '응모권도 ' + a.tickets + '장으로 같아 먼저 등록한 사람(' + when(a.registered_at) + ')이 앞이에요') + '.';
+          }).filter(Boolean);
+          $('wTie').textContent = (top.length < 11 ? '친구를 인증시킨 사람이 ' + top.length + '명뿐이라 ' + top.length + '명만 채웠어요. ' : '') + ties.join(' ');
+          count();
+        }).catch(fail).then(function () { b.disabled = false; });
+      };
+
+      function save() {
+        var c = count(), m = $('wMsg');
+        if (c.twice.length) return Promise.reject(new Error('같은 사람이 두 경품에 있어요'));
+        var over = PRIZES.filter(function (z) { return (c.by[z.k] || 0) > z.seats; });
+        if (over.length) return Promise.reject(new Error(over[0].name + ' 자리(' + over[0].seats + '명)를 넘었어요'));
+        return rpc('walkingday_review_winners_set', { p_token: token, p_rows: c.all }).then(function (r) {
+          if (r && r.ok) { m.className = 'wmsg good'; m.textContent = '저장했어요 · ' + r.count + '명'; return r; }
+          var why = !r ? '' : r.code === 'unknown' ? r.email + ' — 이벤트에 들어온 적 없는 이메일이에요(오타?)'
+            : r.code === 'duplicate' ? r.email + ' — 두 경품에 같은 사람(1인 1경품)'
+            : r.code === 'seats' ? '자리 수를 넘었어요(' + r.prize + ' ' + r.seats + '명)'
+            : r.code === 'email' ? r.email + ' — 이메일 모양이 아니에요' : (r.code || '');
+          throw new Error(why);
+        });
+      }
+      function busy(on) { ['wSave', 'wPub', 'wFill'].forEach(function (id) { $(id).disabled = on; }); }
+      function oops(e) {
+        if (e && e.denied) return fail(e);
+        var m = $('wMsg'); m.className = 'wmsg bad'; m.textContent = '저장하지 못했어요: ' + ((e && e.message) || '다시 시도해 주세요');
+      }
+      $('wSave').onclick = function () {
+        busy(true);
+        save().then(function (r) { return winners('저장했어요 · ' + r.count + '명'); }).catch(oops).then(function () { if ($('wSave')) busy(false); });
+      };
+      $('wPub').onclick = function () {
+        if (published) {
+          if (!confirm('이벤트 페이지에서 당첨자 명단을 내릴까요?')) return;
+          busy(true);
+          rpc('walkingday_review_winners_publish', { p_token: token, p_on: false }).then(function () { return winners('발표를 내렸어요'); }).catch(oops).then(function () { if ($('wSave')) busy(false); });
+          return;
+        }
+        var c = count(), short = PRIZES.filter(function (z) { return (c.by[z.k] || 0) < z.seats; })
+          .map(function (z) { return z.name + ' ' + (c.by[z.k] || 0) + '/' + z.seats; });
+        if (!confirm('지금 칸 내용을 저장하고 이벤트 페이지에 발표할까요?\n(이메일은 가려서 보여요 · 번호는 안 나가요)' + (short.length ? '\n\n아직 덜 찬 경품: ' + short.join(', ') : ''))) return;
+        busy(true);
+        save().then(function () { return rpc('walkingday_review_winners_publish', { p_token: token, p_on: true }); })
+          .then(function (r) { if (!r || !r.ok) throw new Error(r && r.code === 'empty' ? '명단이 비어 있어요' : '발표하지 못했어요'); return winners('저장하고 발표했어요 · 이벤트 페이지에서 확인해 보세요'); })
+          .catch(oops).then(function () { if ($('wSave')) busy(false); });
+      };
+      $('wCsv').onclick = function () {
+        var name = {}; PRIZES.forEach(function (z) { name[z.k] = z.name; });
+        var csv = ['경품,순위,이메일,전화번호'].concat(saved.map(function (r) { return [name[r.prize] || r.prize, r.place || '', r.email, r.phone || ''].map(csvCell).join(','); }));
+        var blob = new Blob(['﻿' + csv.join('\n')], { type: 'text/csv;charset=utf-8' });
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'walkingday-winners.csv'; a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      };
+    }).catch(fail);
   }
 })();
