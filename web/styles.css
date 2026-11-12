@@ -72,6 +72,11 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .event-chip span:nth-child(2){overflow:hidden;text-overflow:ellipsis}
 .event-chip-go{flex:none;color:#FFD76E}
 @media(max-width:480px){.event-chip{top:68px;font-size:12px}}
+.game-chip{top:120px;background:#0B1D35eb;border-color:#24D8FF66;color:#DDE6F4}
+.game-chip:hover{background:#13284A}
+.game-chip .event-chip-tag{background:#24D8FF;color:#03060D}
+.game-chip .event-chip-go{color:#24D8FF}
+@media(max-width:480px){.game-chip{top:106px}}
 /* 넓은 화면은 머리 줄 버튼들 앞에 나란히 — 아래 사전 등록 띠에 겹치지 않게 */
 @media(min-width:900px){.event-chip{position:static;margin:0 4px 0 0;width:auto;animation:none;box-shadow:none}}
 .pill-join{border-color:transparent;background:var(--blue);color:#fff;font-weight:800}

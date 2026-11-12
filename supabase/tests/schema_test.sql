@@ -10547,6 +10547,49 @@ begin
 end $$;
 reset role;
 
+-- ── 홈페이지 미니게임 StepUp 레이스(0103) — 시작 번호 · 서버 시간보다 빠른 기록 막기 · 한 번만 · 사람마다 최고 기록 ──
+set role anon;
+do $$
+declare r jsonb;
+begin
+  r := public.race_start();
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'run' is not null, '레이스: 시작 번호를 준다(0103)');
+  insert into fix (k, v) values ('race-run1', r->>'run');
+  perform pg_temp.ok(public.race_finish((r->>'run')::uuid, repeat('a', 32), '러너킹', 60000, array[20000, 20000, 20000])->>'code' = 'time',
+    '레이스: 서버가 본 시간보다 짧은 기록은 받지 않는다(0103)');
+  r := public.race_start(); insert into fix (k, v) values ('race-run2', r->>'run');
+  r := public.race_start(); insert into fix (k, v) values ('race-run3', r->>'run');
+  call pg_temp.must_fail('select * from economy.race_scores', '공개 역할은 레이스 기록 표를 읽지 못한다');
+end $$;
+reset role;
+update economy.race_runs set started_at = now() - interval '5 minutes'
+ where id in (pg_temp.fx('race-run1')::uuid, pg_temp.fx('race-run2')::uuid, pg_temp.fx('race-run3')::uuid);
+set role anon;
+do $$
+declare r jsonb; v jsonb;
+begin
+  perform pg_temp.ok(public.race_finish(pg_temp.fx('race-run1')::uuid, repeat('a', 32), '<b>', 60000, array[20000, 20000, 20000])->>'code' = 'name',
+    '레이스: 이름은 2~12자 한글 · 영문 · 숫자만(0103)');
+  perform pg_temp.ok(public.race_finish(pg_temp.fx('race-run1')::uuid, repeat('a', 32), '러너킹', 30000, array[10000, 10000, 10000])->>'code' = 'time',
+    '레이스: 판별 하한보다 빠른 판은 받지 않는다(0103)');
+  perform pg_temp.ok(public.race_finish(pg_temp.fx('race-run1')::uuid, repeat('a', 32), '러너킹', 70000, array[20000, 20000, 20000])->>'code' = 'time',
+    '레이스: 판별 합이 합계와 다르면 받지 않는다(0103)');
+  r := public.race_finish(pg_temp.fx('race-run1')::uuid, repeat('a', 32), ' 러너  킹 ', 66000, array[23000, 20000, 23000]);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'rank')::int = 1 and (r->>'best_ms')::int = 66000, '레이스: 기록을 받고 내 자리를 돌려준다(0103)');
+  perform pg_temp.ok(public.race_finish(pg_temp.fx('race-run1')::uuid, repeat('a', 32), '러너킹', 66000, array[23000, 20000, 23000])->>'code' = 'used',
+    '레이스: 같은 번호로 두 번 올리지 못한다(0103)');
+  r := public.race_finish(pg_temp.fx('race-run2')::uuid, repeat('a', 32), '러너킹', 80000, array[30000, 25000, 25000]);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'best_ms')::int = 66000 and not (r->>'is_best')::boolean, '레이스: 느린 기록은 내 최고 기록을 바꾸지 않는다(0103)');
+  r := public.race_finish(pg_temp.fx('race-run3')::uuid, repeat('b', 32), 'Speedy', 70000, array[25000, 20000, 25000]);
+  perform pg_temp.ok((r->>'rank')::int = 2, '레이스: 다른 사람은 2위(0103)');
+  v := public.race_board(repeat('b', 32), 50);
+  perform pg_temp.ok((v->>'players')::int = 2 and jsonb_array_length(v->'top') = 2 and v->'top'->0->>'name' = '러너 킹'
+                     and (v->'top'->0->>'ms')::int = 66000 and (v->'top'->1->>'me')::boolean and (v->'me'->>'rank')::int = 2,
+    '레이스: 순위표는 사람마다 최고 기록 하나 · 내 자리 표시(0103)');
+  perform pg_temp.ok(v::text !~ repeat('a', 32) and v::text !~ '"player"', '레이스: 기기 토큰은 순위표에 나가지 않는다(0103)');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
