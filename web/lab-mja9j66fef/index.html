@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0B1A33">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/lab-mja9j66fef/game.css?v=1114">
+<link rel="stylesheet" href="/lab-mja9j66fef/game.css?v=1115">
 </head>
 <body>
 <canvas id="stage" aria-label="게임 화면"></canvas>
@@ -27,7 +27,16 @@
   <p class="who" id="whoLine"></p>
   <button class="btn big" id="dailyBtn" type="button">오늘의 도전</button>
   <div class="row2"><button class="btn ghost" id="practiceBtn" type="button">연습(점수 없음)</button><button class="btn ghost" id="boardBtn" type="button">순위</button></div>
+  <button class="btn ghost" id="lookBtn" type="button">🎨 내 러너 꾸미기</button>
   <p class="how"><span class="pc">이동 <kbd>WASD</kbd>·<kbd>←↑↓→</kbd> · 점프 <kbd>Space</kbd>(공중에서 한 번 더 = 다이브) · 밀치기 <kbd>Shift</kbd></span><span class="mobile">왼쪽을 끌어 이동 · 점프(공중에서 한 번 더 = 다이브) · 밀치기</span></p>
+</section>
+
+<section id="look" class="panel look" hidden>
+  <h2>내 러너 꾸미기</h2>
+  <canvas id="lookCanvas" width="220" height="220" aria-label="내 러너 미리보기"></canvas>
+  <div id="lookRows" class="lkrows"></div>
+  <div class="row2"><button class="btn ghost" id="lookRandom" type="button">🎲 랜덤</button><button class="btn" id="lookSave" type="button">저장</button></div>
+  <button class="link" id="lookBack" type="button">돌아가기</button>
 </section>
 
 <section id="join" class="panel join" hidden>
@@ -99,6 +108,6 @@
 
 <noscript><p class="noscript">이 게임은 자바스크립트가 필요해요.</p></noscript>
 <script src="/lab-mja9j66fef/config.js?v=1113"></script>
-<script type="module" src="/lab-mja9j66fef/game.js?v=1114"></script>
+<script type="module" src="/lab-mja9j66fef/game.js?v=1115"></script>
 </body>
 </html>
