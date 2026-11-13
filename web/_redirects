@@ -10,3 +10,7 @@
 # 바뀌지 않아 S2 이전 앱(e003e08)을 계속 내려주었다(2026-09-26 확인). 같은 주소를 쓰던
 # 링크가 끊기지 않도록 주소는 그대로 두고, CI 가 main 마다 새로 올리는 test-apk 로 보낸다.
 /downloads/StepUp-MVP.apk  https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk/StepUp-test.apk  302
+
+# 미니게임은 공개 전 내부 시험(2026-11-13) — 예전 공개 주소 /game 은 홈으로 돌린다
+/game  /  302
+/game/*  /  302

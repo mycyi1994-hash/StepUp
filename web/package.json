@@ -4,7 +4,7 @@
   "scripts": {
     "build:draw": "esbuild draw-src.js --bundle --minify --format=esm --target=es2020 --outfile=assets/draw.js",
     "build:wallet": "esbuild wallet-src.js --bundle --minify --format=esm --target=es2020 --outfile=assets/wallet.js",
-    "build:game": "esbuild game/game-src.js --bundle --minify --format=esm --target=es2020 --outfile=game/game.js",
+    "build:game": "esbuild lab-mja9j66fef/game-src.js --bundle --minify --format=esm --target=es2020 --outfile=lab-mja9j66fef/game.js",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
