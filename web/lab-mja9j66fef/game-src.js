@@ -421,12 +421,13 @@ function drawWorld(W) {
   // 가운데 기둥(사탕 줄무늬 · StepUP 띠)
   const topY = W.topY + 14;
   { const tex = canvasTex(512, 256, (g, w, h) => { const cols = ['#1166FF', '#FFFFFF', '#24D8FF', '#FFFFFF']; for (let i = 0; i < 20; i++) { g.fillStyle = cols[i % 4]; g.beginPath(); g.moveTo(i * 32 - 64, 0); g.lineTo(i * 32 - 32, 0); g.lineTo(i * 32 - 96, h); g.lineTo(i * 32 - 128, h); g.fill(); } }); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(10, 4);
-    const pil = new THREE.Mesh(new THREE.CylinderGeometry(PILLAR - 0.05, PILLAR + 2, topY + 40, 64, 1, true), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide })); pil.position.y = (topY - 40) / 2; G.add(pil);
+    const pil = new THREE.Mesh(new THREE.CylinderGeometry(PILLAR + 0.02, PILLAR + 0.02, topY + 40, 64, 1, true), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide })); pil.position.y = (topY - 40) / 2; G.add(pil);
     const capTop = new THREE.Mesh(new THREE.CylinderGeometry(PILLAR + 1, PILLAR - 0.05, 2, 64), mat(0xFFD23F)); capTop.position.y = topY + 1; G.add(capTop);
     const logo = textTex('StepUP  ·  StepUP  ·  StepUP  ·  StepUP', '#0B1A33', '#FFFFFF', 2048, 128); logo.wrapS = THREE.RepeatWrapping; logo.repeat.set(2, 1);
-    for (let yb = 12; yb < topY; yb += 18) { const band = new THREE.Mesh(new THREE.CylinderGeometry(PILLAR + 0.15, PILLAR + 0.15, 3, 64, 1, true), new THREE.MeshBasicMaterial({ map: logo })); band.position.y = yb; G.add(band); }
+    for (let yb = 12; yb < topY; yb += 18) { const band = new THREE.Mesh(new THREE.CylinderGeometry(PILLAR + 0.05, PILLAR + 0.05, 3, 64, 1, true), new THREE.MeshBasicMaterial({ map: logo })); band.position.y = yb; G.add(band); }
   }
-  W.solids.push(new Solid({ kind: 'disc', cx: 0, cz: 0, r: PILLAR - 0.4, top: topY, h: topY + 60, pillar: true }));
+  // 몸이 보이는 기둥 겉면에서 멈춘다(보이는 기둥과 같은 굵기)
+  W.solids.push(new Solid({ kind: 'disc', cx: 0, cz: 0, r: PILLAR, top: topY, h: topY + 60, pillar: true }));
   // 깃발 · 풍선 · 바다 · 섬 · 관중석 · 구름
   const cols = [0xFF4F8B, 0xFFD23F, 0x24D8FF, 0x7CFFB2, 0xFF9F1C, 0xA77BFF];
   W.flagMeshes = [];
@@ -706,7 +707,9 @@ function stepBody(b, dt) {
     if (!s.enabled || s === best || !s.near(p.x, p.y, p.z)) continue;
     const top = s.topAt(p.x, p.z);
     if (p.y >= top - 0.02 || p.y + H <= s.bottom()) continue;
-    if (s.pushOut(p) && s.move) {
+    const pushed = s.pushOut(p);
+    if (pushed && s.pillar) slideOffPillar(b);
+    if (pushed && s.move) {
       if (s.move.profile === 'punch' && Math.hypot(s.vx, s.vz) > 3) { const sp2 = Math.hypot(s.vx, s.vz), k2 = Math.min(1, 10 / sp2); hitBody(b, { vx: s.vx * k2, vz: s.vz * k2, vy: 6, stun: 0.45 }); }
       else { v.x += (s.vx - v.x) * 0.35; v.z += (s.vz - v.z) * 0.35; }
     }
@@ -753,8 +756,13 @@ function wallResolve(b) {
   for (const s of S.world.solids) {
     if (!s.enabled || s === b.ground || !s.near(p.x, p.y, p.z)) continue;
     const top = s.topAt(p.x, p.z); if (p.y >= top - 0.02 || p.y + H <= s.bottom()) continue;
-    s.pushOut(p);
+    if (s.pushOut(p) && s.pillar) slideOffPillar(b);
   }
+}
+function slideOffPillar(b) {
+  const p = b.pos, v = b.vel, r = Math.hypot(p.x, p.z); if (r < 1e-3) return;
+  const nx = p.x / r, nz = p.z / r, vn = v.x * nx + v.z * nz;
+  if (vn < 0) { v.x -= nx * vn; v.z -= nz * vn; }
 }
 function pickItem(b, it) {
   it.on = false; it.t = 9;
@@ -1277,7 +1285,9 @@ function updateCamera(dt) {
     const want = Math.atan2(-t[0], -t[1]); let d = want - camYaw; d = Math.atan2(Math.sin(d), Math.cos(d)); camYaw += d * Math.min(1, dt * 5);
     const back = portrait ? 10.5 : 9, up = portrait ? 6.6 : 5.4, f = [-Math.sin(camYaw), -Math.cos(camYaw)];
     const p = me.pos, py = me.deadT > 0 ? trackY(s) : Math.max(p.y, trackY(s) - 8);
-    const wantP = new THREE.Vector3(p.x - f[0] * back + n[0] * 1.5, py + up, p.z - f[1] * back + n[1] * 1.5);
+    // 기둥 쪽(화면 오른쪽)에 붙어 달리면 카메라를 바깥으로 비켜 세워 기둥이 나를 가리지 않게
+    const side = 1.5 + Math.max(0, RT - 3.5 - Math.hypot(p.x, p.z)) * 0.8;
+    const wantP = new THREE.Vector3(p.x - f[0] * back + n[0] * side, py + up, p.z - f[1] * back + n[1] * side);
     const k = 1 - Math.exp(-dt * 7); camPos.lerp(wantP, k); camLook.lerp(new THREE.Vector3(p.x + f[0] * 6, py + 1, p.z + f[1] * 6), k);
   }
   camera.position.copy(camPos); camera.lookAt(camLook);
