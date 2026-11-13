@@ -609,16 +609,16 @@
     window.addEventListener('pageshow', function (e) { if (e.persisted) read(); });
   })();
 
-  /* ── 당첨자 발표(0102 walkingday_winners): 운영자가 검토 페이지에서 「페이지에 발표」를 누르면 가린 이메일로 뜬다.
+  /* ── 당첨자 발표(0102 walkingday_winners — 2026-11-13 순서: 초대 순위 경품 → 무릎보호대 → 빼빼로 맨 아래, 칸 · 글자 크게): 운영자가 검토 페이지에서 「페이지에 발표」를 누르면 가린 이메일로 뜬다.
      마감(15시) 뒤부터 60초마다(화면을 보고 있을 때만) 읽는다. 「내 이메일로 찾기」는 이 폰에서 같은 규칙으로 가려 맞대어 볼 뿐 서버로 보내지 않는다 ── */
   (function () {
     var box = $('win'), list = $('winList'); if (!box || !list || !CFG.url) return;
     var GROUPS = [
-      { k: 'pepero', name: '빼빼로 기프티콘', who: '응모권 추첨' },
-      { k: 'knee', name: '무릎보호대', who: '걸음 인증자 추첨' },
       { k: 'mat', name: '요가매트 세트', who: '초대 1위', from: 1 },
       { k: 'roller', name: '폼롤러', who: '초대 2~4위', from: 2 },
-      { k: 'socks', name: '운동양말', who: '초대 5~11위', from: 5 }
+      { k: 'socks', name: '운동양말', who: '초대 5~11위', from: 5 },
+      { k: 'knee', name: '무릎보호대', who: '걸음 인증자 추첨' },
+      { k: 'pepero', name: '빼빼로 기프티콘', who: '응모권 추첨' }
     ];
     var FOLD = 30, sig = '', busy = false, open = false, data = null, mine = '';
     var COMMON = ['gmail.com', 'naver.com', 'daum.net', 'hanmail.net', 'kakao.com', 'nate.com', 'icloud.com', 'me.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'proton.me', 'protonmail.com'];

@@ -291,13 +291,16 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #fff;
 #s1 .rkb{grid-column:1/-1;width:100%;margin:0 auto 28px}
 /* 당첨자 발표(11/11, 0102) — 지금 순위 위. 경품마다 묶음, 빼빼로 95명은 접어 둔다 */
 .wn .lbh b::after{content:none}
-.wng{margin-top:14px}
-.wng h3{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 8px;font-size:16px;font-weight:800;color:var(--ink)}
-.wng h3 small{font-size:12.5px;font-weight:700;color:#8A6446}
-.wnc{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
-.wnc li{font-size:13.5px;font-weight:600;color:#2A1206;background:#F6EEDF;border-radius:999px;padding:5px 10px;font-variant-numeric:tabular-nums}
+.wng{margin-top:22px}
+.wng h3{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 10px;font-size:19px;font-weight:800;color:var(--ink)}
+.wng h3 small{font-size:14px;font-weight:700;color:#8A6446}
+.wnc{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:8px;list-style:none;margin:0;padding:0}
+.wnc li{font-size:clamp(14px,3.8vw,16px);letter-spacing:-.01em;font-weight:700;color:#2A1206;background:#F6EEDF;border-radius:14px;padding:12px 6px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+.wng .lbl li{padding:15px 12px;font-size:17px;grid-template-columns:38px 1fr auto}
+.wng .lbl .rk{width:34px;height:34px;font-size:15px}
+.wng .lbl .who{font-weight:700}
 .wnc li.me,.wn .lbl li.me{background:#FFE08A;box-shadow:0 0 0 2px #E9A92C inset}
-.wnm{display:block;margin:10px auto 0;border:0;background:none;font:inherit;font-size:13.5px;font-weight:700;color:#8A6446;text-decoration:underline;cursor:pointer}
+.wnm{display:block;margin:14px auto 0;border:0;background:none;font:inherit;font-size:16px;font-weight:700;color:#8A6446;text-decoration:underline;cursor:pointer}
 .wnf{display:flex;gap:6px;margin:0 0 4px}
 .wnf input{flex:1;min-width:0;height:42px;border:1.5px solid #E8D7BC;border-radius:12px;padding:0 12px;font:inherit;font-size:15px;color:var(--ink);background:#fff}
 .wnf button{flex:none;height:42px;border:0;border-radius:12px;padding:0 16px;font:inherit;font-size:14.5px;font-weight:800;color:#fff;background:var(--ink);cursor:pointer}
@@ -641,5 +644,5 @@ body{letter-spacing:-.035em}
 </div>
 <script src="assets/config.js?v=4ae9d2df1d"></script>
 <script src="ga.js?v=b2f9da6f83"></script>
-<script src="app.js?v=1111"></script>
+<script src="app.js?v=1113"></script>
 </body></html>
