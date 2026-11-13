@@ -6,6 +6,11 @@
 저장(`walkingday_review_winners_set` — 1인 1경품 · 자리 수 · 오타 이메일은 서버가 거절) → 「페이지에 발표」. 이벤트 페이지는 지금 순위 위에 가린 이메일 카드(`walkingday_winners`, 발표 전엔 아무것도 안 나간다).
 끝나면 `truncate economy.walkingday_winners`(번호 지울 때 함께).
 
+## 최신 — 미니게임 2판 StepUP 타워 (2026-11-13, 서버 0104) · 공개 전 내부 시험
+
+[docs/game-tower-2026-11-13.md](docs/game-tower-2026-11-13.md) — `web/lab-mja9j66fef/`(아래 레이스를 대신한다, 홈 링크 없음 · noindex). 나선 탑 다섯 구간 · AI 15명(성격 일곱) · 혈압 요소(안쪽으로 떨어지면 아래층부터).
+사전 등록 이메일로 참가, 하루 1판(00시 KST) + SNS 링크마다 1판(하루 3) · 부활 1번 · 8분. 점수는 `tower-rules.js` = 서버 `economy.tower_score`(`web/test/tower.test.js`).
+
 ## 최신 — 홈페이지 미니게임 StepUp 레이스 (2026-11-12, 서버 0103)
 
 [docs/game-race-2026-11-12.md](docs/game-race-2026-11-12.md) — **공개 전 내부 시험**(2026-11-13 사용자 "홈페이지에 공개하면 안 돼, 우리만 테스트"): `web/lab-mja9j66fef/`(홈 링크 없음 · noindex · 예전 `/game` 은 홈으로 302). 공개하기 전에는 홈에 링크를 달지 않는다. 3D 장애물 달리기 예선 → 준결승 → 결승(고스트 사이 통과 자리),

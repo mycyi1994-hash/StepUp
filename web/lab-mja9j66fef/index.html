@@ -3,42 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>StepUp 레이스 · 장애물 달리기 미니게임</title>
-<meta name="description" content="예선 → 준결승 → 결승. 장애물을 넘어 가장 빨리 결승선을 밟고 순위에 이름을 올려 보세요.">
+<title>StepUP 타워 · 정상까지 오르는 미니게임</title>
+<meta name="description" content="빙글빙글 도는 탑을 끝까지 오르세요. 하루 한 판, 떨어지면 부활 한 번. 혈압 주의.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0B1A33">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/lab-mja9j66fef/game.css?v=1112">
+<link rel="stylesheet" href="/lab-mja9j66fef/game.css?v=1113b">
 </head>
 <body>
 <canvas id="stage" aria-label="게임 화면"></canvas>
 
 <section id="title" class="panel title">
-  <a class="home" href="/">← StepUp 홈</a>
+  <a class="home" href="/">← StepUp 홈</a><span class="testbadge">테스트</span>
   <img class="logo" src="/assets/img/stepup-logo.webp" width="916" height="172" alt="StepUp">
-  <h1>StepUp 레이스</h1>
-  <p class="lede">예선 → 준결승 → 결승.<br>장애물을 넘어 결승선을 밟으면 세 판 기록이 순위에 올라요.</p>
-  <ol class="rounds">
-    <li><b>예선</b> 스타트 대시 <span>20명 중 12명 통과</span></li>
-    <li><b>준결승</b> 흔들 다리 <span>12명 중 6명 통과</span></li>
-    <li><b>결승</b> 정상 질주 <span>완주 시간이 기록</span></li>
+  <h1>StepUP 타워</h1>
+  <p class="lede">빙글빙글 도는 탑, 다섯 구간을 지나 정상까지.<br>바깥으로 떨어지면 풍덩, 안쪽으로 떨어지면 아래층부터 다시. <b>혈압 주의 🩸</b></p>
+  <ul class="rules">
+    <li><b>하루 1판</b> 00시마다 새 기회 · 떨어지면 부활 1번</li>
+    <li><b>SNS</b> 챌린지 올리면 한 판 더(하루 3번까지)</li>
+    <li><b>점수</b> 오른 높이 · 통과 구간 · 빨리 · 1등 · AI 밀어 떨어뜨리기</li>
+  </ul>
+  <p class="who" id="whoLine"></p>
+  <button class="btn big" id="dailyBtn" type="button">오늘의 도전</button>
+  <div class="row2"><button class="btn ghost" id="practiceBtn" type="button">연습(점수 없음)</button><button class="btn ghost" id="boardBtn" type="button">순위</button></div>
+  <p class="how"><span class="pc">이동 <kbd>WASD</kbd>·<kbd>←↑↓→</kbd> · 점프 <kbd>Space</kbd>(공중에서 한 번 더 = 다이브) · 밀치기 <kbd>Shift</kbd></span><span class="mobile">왼쪽을 끌어 이동 · 점프(공중에서 한 번 더 = 다이브) · 밀치기</span></p>
+</section>
+
+<section id="join" class="panel join" hidden>
+  <h2>참가하기</h2>
+  <p class="sub">StepUp 사전 등록한 이메일로 참가해요. 하루 기회 · 순위를 이 이메일로 세요.</p>
+  <form id="joinForm" novalidate>
+    <label for="joinEmail">사전 등록한 이메일</label>
+    <input id="joinEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+    <label for="joinName">순위에 보일 닉네임</label>
+    <input id="joinName" maxlength="12" autocomplete="nickname" placeholder="2~12자">
+    <label class="consent"><input id="joinConsent" type="checkbox"><span>게임 기회 · 순위 · 당첨 안내를 위해 이메일 · 닉네임 · 점수를 받는 데 동의합니다.</span></label>
+    <div class="trap" aria-hidden="true"><input id="joinTrap" tabindex="-1" autocomplete="off"></div>
+    <p class="err" id="joinErr"></p>
+    <button class="btn" id="joinBtn" type="submit">참가하기</button>
+  </form>
+  <p class="sub">아직이면 <a href="/?utm_source=game&amp;utm_medium=web#join">사전 등록</a>부터 해 주세요.</p>
+  <button class="link" id="joinBack" type="button">돌아가기</button>
+</section>
+
+<section id="sns" class="panel sns" hidden>
+  <h2>SNS 올리고 한 번 더</h2>
+  <p class="sub" id="snsLeft"></p>
+  <ol class="steps">
+    <li>아래 글을 X · 인스타 · 스레드에 <b>전체 공개</b>로 올려요(해시태그 그대로).</li>
+    <li>올린 게시물의 링크를 붙여 넣으면 바로 한 판이 생겨요.</li>
   </ol>
-  <button class="btn big" id="startBtn" type="button">시작하기</button>
-  <button class="btn ghost" id="boardBtn" type="button">순위 보기</button>
-  <p class="how"><span class="pc">이동 <kbd>WASD</kbd>·<kbd>←↑↓→</kbd> · 점프 <kbd>Space</kbd></span><span class="mobile">왼쪽을 끌어 이동 · 오른쪽 버튼으로 점프</span></p>
+  <pre class="snstext" id="snsText"></pre>
+  <div class="row2"><button class="btn ghost" id="snsCopy" type="button">글 복사</button><a class="btn ghost" id="snsX" target="_blank" rel="noopener noreferrer">X에 올리기</a></div>
+  <a class="btn ghost" id="snsThreads" target="_blank" rel="noopener noreferrer">스레드에 올리기</a>
+  <form id="snsForm" novalidate>
+    <label for="snsUrl">게시물 링크</label>
+    <input id="snsUrl" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://x.com/…/status/…">
+    <div id="acctRow" hidden><label for="snsAcct">내 계정 아이디(@ 없이)</label><input id="snsAcct" autocapitalize="off" spellcheck="false" placeholder="stepup_runner"></div>
+    <label class="consent"><input id="snsConsent" type="checkbox"><span>게시물 확인을 위해 게시물 링크 · 계정 아이디를 받는 데 동의합니다.</span></label>
+    <p class="err" id="snsErr"></p>
+    <button class="btn" id="snsSend" type="submit">링크 내고 한 번 더</button>
+  </form>
+  <p class="sub">해시태그가 없거나 비공개 · 남의 게시물이면 나중에 확인해서 빼요.</p>
+  <button class="link" id="snsBack" type="button">돌아가기</button>
 </section>
 
 <div id="hud" class="hud" hidden>
-  <span class="round" id="hudRound"></span>
-  <span class="time" id="hudTime">0.00</span>
-  <span class="pos"><b id="hudPos"></b><small id="hudSlots"></small></span>
+  <div class="hl"><span id="hudStage"></span><span id="hudLives"></span></div>
+  <div class="hc"><b id="hudScore">0점</b><small id="hudTime"></small></div>
+  <div class="hr"><span id="hudPos"></span></div>
 </div>
+<div id="hudWind" class="wind" hidden>💨 바람!</div>
 <button id="muteBtn" class="mute" type="button" aria-label="소리 끄기">🔊</button>
 <div id="banner" class="banner" hidden aria-live="polite"></div>
 <div id="toast" class="toast" hidden></div>
 
 <div id="controls" class="controls" hidden>
   <div id="stick" class="stick" aria-hidden="true"><div id="knob" class="knob"></div></div>
+  <button id="shoveBtn" class="shove" type="button" aria-label="밀치기">밀치기</button>
   <button id="jumpBtn" class="jump" type="button" aria-label="점프">점프</button>
 </div>
 
@@ -46,14 +88,15 @@
 
 <section id="board" class="panel board" hidden>
   <h2>순위</h2>
-  <p class="sub">세 판(예선 · 준결승 · 결승) 합친 시간 · 한 사람의 최고 기록만</p>
+  <div class="tabs" role="tablist"><button type="button" role="tab" data-board="today" aria-selected="true">오늘</button><button type="button" role="tab" data-board="all" aria-selected="false">역대 최고</button></div>
   <p class="me" id="boardMe"></p>
   <ol class="list" id="boardList"></ol>
+  <p class="sub">오늘 순위는 00시(한국 시간)마다 새로 시작해요 · 한 사람의 최고 점수만</p>
   <button class="btn ghost" id="boardClose" type="button">닫기</button>
 </section>
 
 <noscript><p class="noscript">이 게임은 자바스크립트가 필요해요.</p></noscript>
-<script src="/lab-mja9j66fef/config.js?v=1112"></script>
-<script type="module" src="/lab-mja9j66fef/game.js?v=1112"></script>
+<script src="/lab-mja9j66fef/config.js?v=1113"></script>
+<script type="module" src="/lab-mja9j66fef/game.js?v=1113b"></script>
 </body>
 </html>

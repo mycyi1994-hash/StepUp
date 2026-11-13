@@ -10590,6 +10590,64 @@ begin
 end $$;
 reset role;
 
+-- ── StepUP 타워(0104) — 참가 · 하루 1판 · SNS 로 한 판 더 · 구간 기록 · 점수 · 오늘/역대 순위 ──
+do $$
+begin
+  -- web/lab-mja9j66fef/tower-rules.js 의 towerScore 와 같은 값(node 로 센 값)
+  perform pg_temp.ok(economy.tower_score(2, array[15000, 20000], 40, false, 0, true, 3) = 2748
+                     and economy.tower_score(5, array[15000, 14000, 13000, 13000, 25000], 0, true, 1, false, 2) = 8049
+                     and economy.tower_score(0, '{}', 999, false, 0, false, 0) = 80
+                     and economy.tower_score(5, array[60000, 60000, 60000, 60000, 60000], 0, true, 7, true, 30) = 6345,
+    '타워: 서버 점수 = 게임 점수 규칙(0104)');
+end $$;
+set role anon;
+do $$
+declare r jsonb;
+begin
+  perform pg_temp.ok(public.tower_join('nobody@runnermail.com', '러너')->>'code' = 'not_registered', '타워: 사전 등록 안 한 이메일은 참가 못 함(0104)');
+  perform pg_temp.ok(public.tower_join('friend@runnermail.com', '<b>')->>'code' = 'name', '타워: 닉네임 2~12자 한글 · 영문 · 숫자(0104)');
+  r := public.tower_join('friend@runnermail.com', ' 탑  러너 ');
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'name' = '탑 러너' and (r->>'runs_left')::int = 1 and (r->>'sns_left')::int = 3, '타워: 참가 · 오늘 1판(0104)');
+  r := public.tower_start('friend@runnermail.com');
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'runs_left')::int = 0, '타워: 시작하면 그날 판을 쓴다(0104)');
+  insert into fix (k, v) values ('tower-run1', r->>'run');
+  perform pg_temp.ok(public.tower_start('friend@runnermail.com')->>'code' = 'no_runs', '타워: 하루 1판(0104)');
+  perform pg_temp.ok(public.tower_ping((r->>'run')::uuid, 1, 15000)->>'code' = 'time', '타워: 서버가 본 시간보다 빠른 구간은 거절(0104)');
+  call pg_temp.must_fail('select * from economy.tower_runs', '공개 역할은 타워 기록 표를 읽지 못한다');
+end $$;
+reset role;
+update economy.tower_runs set started_at = now() - interval '2 minutes', last_at = now() - interval '2 minutes' where id = pg_temp.fx('tower-run1')::uuid;
+set role anon;
+do $$
+declare r jsonb; v_run uuid := pg_temp.fx('tower-run1')::uuid;
+begin
+  perform pg_temp.ok(public.tower_ping(v_run, 2, 15000)->>'code' = 'section', '타워: 구간은 차례대로(0104)');
+  perform pg_temp.ok(public.tower_ping(v_run, 1, 5000)->>'code' = 'time', '타워: 하한보다 빠른 구간은 거절(0104)');
+  r := public.tower_ping(v_run, 1, 15000);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'score')::int = 1330, '타워: 구간 통과 · 점수가 남는다(0104)');
+  r := public.tower_end(v_run, 40, false, 3, 1);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'score')::int = 1504 and (r->>'rank_today')::int = 1,
+    '타워: 끝 — 못 끝낸 판은 순위 보너스 없이 서버가 다시 센다(0104)');
+  perform pg_temp.ok(public.tower_end(v_run, 40, false, 3, 1)->>'code' = 'used', '타워: 같은 판 두 번 끝내지 못함(0104)');
+  perform pg_temp.ok(public.tower_sns_submit('friend@runnermail.com', 'https://x.com/tower_run/status/111111111', '', false)->>'code' = 'consent', '타워 SNS: 동의(0104)');
+  perform pg_temp.ok(public.tower_sns_submit('friend@runnermail.com', 'https://example.com/x', '', true)->>'code' = 'url', '타워 SNS: 게시물 링크만(0104)');
+  r := public.tower_sns_submit('friend@runnermail.com', 'https://x.com/tower_run/status/111111111', '', true);
+  perform pg_temp.ok((r->>'runs_left')::int = 1 and (r->>'sns_left')::int = 2, '타워 SNS: 링크 하나에 한 판 더(0104)');
+  perform pg_temp.ok(public.tower_sns_submit('friend@runnermail.com', 'https://twitter.com/tower_run/status/111111111', '', true)->>'code' = 'duplicate', '타워 SNS: 같은 게시물 한 번(0104)');
+  perform public.tower_sns_submit('friend@runnermail.com', 'https://x.com/tower_run/status/222222222', '', true);
+  perform public.tower_sns_submit('friend@runnermail.com', 'https://x.com/tower_run/status/333333333', '', true);
+  perform pg_temp.ok(public.tower_sns_submit('friend@runnermail.com', 'https://x.com/tower_run/status/444444444', '', true)->>'code' = 'day_limit', '타워 SNS: 하루 3번(0104)');
+  perform pg_temp.ok((public.tower_status('friend@runnermail.com')->>'runs_left')::int = 3, '타워: 오늘 남은 판 = 1 + SNS 3 − 시작 1(0104)');
+  perform public.tower_join('referrer@runnermail.com', '두번째');
+  r := public.tower_start('referrer@runnermail.com');
+  perform pg_temp.ok((r->>'ok')::boolean, '타워: 다른 사람 시작(0104)');
+  r := public.tower_board('referrer@runnermail.com');
+  perform pg_temp.ok(jsonb_array_length(r->'today') = 2 and r->'today'->0->>'name' = '탑 러너' and (r->'today'->1->>'me')::boolean
+                     and (r->'me_today'->>'rank')::int = 2 and (r->>'players')::int = 2 and r::text !~ 'runnermail',
+    '타워: 오늘 순위 · 내 자리, 이메일은 안 나간다(0104)');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'
