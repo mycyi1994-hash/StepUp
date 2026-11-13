@@ -35,6 +35,10 @@ test('every inline script on CSP pages is allowed by its hash', () => {
   assert.deepEqual(inlineHashes('11events/index.html'), []);
   assert.match(cspFor('/11events*'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com https:\/\/www\.googletagmanager\.com;/);
   for (const path of ['/privacy*', '/terms*', '/delete-account*']) assert.match(cspFor(path), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
+  // 미니게임(2026-11-12)도 인라인 스크립트 없이 이 사이트 스크립트만 — 순위표 서버(Supabase)에만 보낸다
+  assert.deepEqual(inlineHashes('game/index.html'), []);
+  assert.match(cspFor('/game*'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
+  assert.match(cspFor('/game*'), /connect-src 'self' https:\/\/pupjzcmybuoyhzfwrsdf\.supabase\.co /);
 });
 
 // Cloudflare Pages 는 같은 경로를 두 번 적으면 뒤 것만 쓴다 — 2026-11-02 '/' 의 CSP 가 아래 Cache-Control 줄에 덮였다

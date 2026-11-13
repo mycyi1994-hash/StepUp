@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>StepUp 레이스 · 장애물 달리기 미니게임</title>
+<meta name="description" content="예선 → 준결승 → 결승. 장애물을 넘어 가장 빨리 결승선을 밟고 순위에 이름을 올려 보세요.">
+<meta name="theme-color" content="#0B1A33">
+<meta property="og:title" content="StepUp 레이스 · 장애물 달리기 미니게임">
+<meta property="og:description" content="예선 → 준결승 → 결승. 가장 빨리 결승선을 밟아 순위에 이름을 올려 보세요.">
+<meta property="og:image" content="https://stepupcrew.com/assets/og-image.jpg">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/game/game.css?v=1112">
+</head>
+<body>
+<canvas id="stage" aria-label="게임 화면"></canvas>
+
+<section id="title" class="panel title">
+  <a class="home" href="/">← StepUp 홈</a>
+  <img class="logo" src="/assets/img/stepup-logo.webp" width="916" height="172" alt="StepUp">
+  <h1>StepUp 레이스</h1>
+  <p class="lede">예선 → 준결승 → 결승.<br>장애물을 넘어 결승선을 밟으면 세 판 기록이 순위에 올라요.</p>
+  <ol class="rounds">
+    <li><b>예선</b> 스타트 대시 <span>20명 중 12명 통과</span></li>
+    <li><b>준결승</b> 흔들 다리 <span>12명 중 6명 통과</span></li>
+    <li><b>결승</b> 정상 질주 <span>완주 시간이 기록</span></li>
+  </ol>
+  <button class="btn big" id="startBtn" type="button">시작하기</button>
+  <button class="btn ghost" id="boardBtn" type="button">순위 보기</button>
+  <p class="how"><span class="pc">이동 <kbd>WASD</kbd>·<kbd>←↑↓→</kbd> · 점프 <kbd>Space</kbd></span><span class="mobile">왼쪽을 끌어 이동 · 오른쪽 버튼으로 점프</span></p>
+</section>
+
+<div id="hud" class="hud" hidden>
+  <span class="round" id="hudRound"></span>
+  <span class="time" id="hudTime">0.00</span>
+  <span class="pos"><b id="hudPos"></b><small id="hudSlots"></small></span>
+</div>
+<button id="muteBtn" class="mute" type="button" aria-label="소리 끄기">🔊</button>
+<div id="banner" class="banner" hidden aria-live="polite"></div>
+<div id="toast" class="toast" hidden></div>
+
+<div id="controls" class="controls" hidden>
+  <div id="stick" class="stick" aria-hidden="true"><div id="knob" class="knob"></div></div>
+  <button id="jumpBtn" class="jump" type="button" aria-label="점프">점프</button>
+</div>
+
+<section id="over" class="panel over" hidden aria-live="polite"></section>
+
+<section id="board" class="panel board" hidden>
+  <h2>순위</h2>
+  <p class="sub">세 판(예선 · 준결승 · 결승) 합친 시간 · 한 사람의 최고 기록만</p>
+  <p class="me" id="boardMe"></p>
+  <ol class="list" id="boardList"></ol>
+  <button class="btn ghost" id="boardClose" type="button">닫기</button>
+</section>
+
+<noscript><p class="noscript">이 게임은 자바스크립트가 필요해요.</p></noscript>
+<script src="/game/config.js?v=1112"></script>
+<script type="module" src="/game/game.js?v=1112"></script>
+</body>
+</html>

@@ -6,6 +6,12 @@
 저장(`walkingday_review_winners_set` — 1인 1경품 · 자리 수 · 오타 이메일은 서버가 거절) → 「페이지에 발표」. 이벤트 페이지는 지금 순위 위에 가린 이메일 카드(`walkingday_winners`, 발표 전엔 아무것도 안 나간다).
 끝나면 `truncate economy.walkingday_winners`(번호 지울 때 함께).
 
+## 최신 — 홈페이지 미니게임 StepUp 레이스 (2026-11-12, 서버 0103)
+
+[docs/game-race-2026-11-12.md](docs/game-race-2026-11-12.md) — `stepupcrew.com/game/`(홈 머리 줄 GAME 칩). 3D 장애물 달리기 예선 → 준결승 → 결승(고스트 사이 통과 자리),
+결승 완주 시 세 판 합계가 순위표(`race_start` · `race_finish` · `race_board` — 서버 시각보다 짧은 기록 · 판별 하한 거절, 기기마다 최고 하나).
+원본 `web/game/game-src.js` → `npm run build:game` → `game/game.js`(three.js 묶음, 둘 다 커밋). 난이도는 `ROUNDS[].cut`, `/game/?dev` 로 물리를 화면 없이 돌려 본다.
+
 ## 최신 — 앱 UI 피드백 4건: 흰 테두리 · 함께 뛰기 흐름 · 수리 앞으로 · 아이템칸 (2026-11-07)
 
 [docs/redesign/ui-feedback-2026-11-07.md](docs/redesign/ui-feedback-2026-11-07.md) — 클라이언트 "흰색 덧 붙히기 · 함께 뛰기 다시 플로우짜기(특히 이야기탭) · 신발 수리 버튼 앞으로 · 아이템칸 생긴다는 가정하에 디자인".
