@@ -8,9 +8,9 @@
 
 ## 최신 — 홈페이지 미니게임 StepUp 레이스 (2026-11-12, 서버 0103)
 
-[docs/game-race-2026-11-12.md](docs/game-race-2026-11-12.md) — `stepupcrew.com/game/`(홈 머리 줄 GAME 칩). 3D 장애물 달리기 예선 → 준결승 → 결승(고스트 사이 통과 자리),
+[docs/game-race-2026-11-12.md](docs/game-race-2026-11-12.md) — **공개 전 내부 시험**(2026-11-13 사용자 "홈페이지에 공개하면 안 돼, 우리만 테스트"): `web/lab-mja9j66fef/`(홈 링크 없음 · noindex · 예전 `/game` 은 홈으로 302). 공개하기 전에는 홈에 링크를 달지 않는다. 3D 장애물 달리기 예선 → 준결승 → 결승(고스트 사이 통과 자리),
 결승 완주 시 세 판 합계가 순위표(`race_start` · `race_finish` · `race_board` — 서버 시각보다 짧은 기록 · 판별 하한 거절, 기기마다 최고 하나).
-원본 `web/game/game-src.js` → `npm run build:game` → `game/game.js`(three.js 묶음, 둘 다 커밋). 난이도는 `ROUNDS[].cut`, `/game/?dev` 로 물리를 화면 없이 돌려 본다.
+원본 `web/lab-mja9j66fef/game-src.js` → `npm run build:game` → `lab-mja9j66fef/game.js`(three.js 묶음, 둘 다 커밋). 난이도는 `ROUNDS[].cut`, `/lab-mja9j66fef/?dev` 로 물리를 화면 없이 돌려 본다.
 
 ## 최신 — 앱 UI 피드백 4건: 흰 테두리 · 함께 뛰기 흐름 · 수리 앞으로 · 아이템칸 (2026-11-07)
 

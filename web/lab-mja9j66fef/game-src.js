@@ -1,7 +1,7 @@
 /* StepUp 레이스 — 홈페이지 미니게임(2026-11-12).
    장애물 코스 세 판(예선 · 준결승 · 결승). 앞 두 판은 고스트 러너 사이에서 통과 자리 안에 들어와야 다음 판,
    결승을 완주하면 세 판 기록의 합이 순위표(서버 race_*, supabase/migrations/0103_race.sql)에 오른다.
-   빌드: cd web && npm run build:game  →  game/game.js (three.js 를 함께 묶는다 — CSP 가 이 사이트 스크립트만 받는다) */
+   빌드: cd web && npm run build:game  →  lab-mja9j66fef/game.js(공개 전 내부 시험 — 홈 링크 없음) (three.js 를 함께 묶는다 — CSP 가 이 사이트 스크립트만 받는다) */
 import * as THREE from 'three';
 
 const CFG = window.STEPUP_RACE || {};
