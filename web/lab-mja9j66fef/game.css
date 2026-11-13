@@ -98,3 +98,10 @@ a.btn{text-decoration:none}
 .list li span small{display:block;font-size:12px;color:#5A6E92;font-weight:700}
 .panel{max-height:calc(100% - 24px)}
 .testbadge{position:absolute;right:16px;top:14px;background:#FF4F8B;color:#fff;font-size:12px;font-weight:900;border-radius:8px;padding:3px 8px}
+.fx{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(11,26,51,.82);color:#FFD23F;font-weight:900;font-size:15px;border-radius:12px;padding:5px 12px;z-index:6;white-space:nowrap}
+.wind{top:calc(112px + env(safe-area-inset-top))}
+.banner.count{top:40%}
+.banner.count .num{font-size:150px;animation:pop .55s cubic-bezier(.2,1.4,.4,1)}
+.banner.count .num.go{color:#7CFFB2}
+.banner.count span{font-size:18px}
+.banner.event b{color:#FFD23F}
