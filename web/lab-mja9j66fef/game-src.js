@@ -222,11 +222,11 @@ function trackY(s) {
   for (const [s0, s1, y0, y1] of PROF) { if (s < s0) break; y = s <= s1 ? y0 + (y1 - y0) * (s - s0) / (s1 - s0) : y1; }
   return y;
 }
-function buildCourse() {
+function buildCourse(seed) {
   const W = { solids: [], hazards: [], balls: null, winds: [], secs: [], gates: [], signs: [], group: new THREE.Group(), finishS: 0, flags: [], tilts: [] };
   PROF = [];
   let s = 0, y = 0, theme = 0;
-  const rnd = mulberry(4242);
+  const rnd = mulberry(seed || 4242), ph = () => rnd() * TAU;
   const floor = (len, rise = 0, o = {}) => {
     const r0 = RT + (o.u0 != null ? o.u0 : -HW), r1 = RT + (o.u1 != null ? o.u1 : HW);
     const sd = new Solid({ kind: 'arc', r0, r1, a0: s / RT, a1: (s + len) / RT, y0: y, y1: y + rise, h: o.h || 1.6, theme, belt: o.belt || 0, ice: !!o.ice, door: o.door || null, s0: s, len });
@@ -235,7 +235,7 @@ function buildCourse() {
   const gap = len => { PROF.push([s, s + len, y, y]); s += len; };
   const box = (ds, u, o) => { const q = P(s + ds, u, 0); const sd = new Solid(Object.assign({ cx: q.x, cz: q.z, yaw: q.a, baseYaw: q.a, theme, s0: s + ds, u }, o)); W.solids.push(sd); return sd; };
   const nrm = ds => { const a = (s + ds) / RT; return [Math.cos(a), Math.sin(a)]; };
-  const sweeper = (ds, bars, extra) => { const q = P(s + ds, 0, 0); W.hazards.push(new Sweeper(Object.assign({ x: q.x, z: q.z, base: y, bars, s: s + ds }, extra || {}))); };
+  const sweeper = (ds, bars, extra) => { const q = P(s + ds, 0, 0); bars.forEach(b => { b.phase = ph(); b.spin *= 0.9 + rnd() * 0.25; }); W.hazards.push(new Sweeper(Object.assign({ x: q.x, z: q.z, base: y, bars, s: s + ds }, extra || {}))); };
   const section = name => { W.secs.push({ s, y, name, theme }); W.gates.push({ s, y, k: W.secs.length }); };
 
   // 1 몸풀기 — 2단 막대 · 틈 뛰기
@@ -250,20 +250,20 @@ function buildCourse() {
   theme = 1; section('밀치기');
   floor(8);
   floor(40);
-  [[-32, 0], [-22, 2.2], [-12, 4.1]].forEach(([ds, ph]) => box(ds, 0, { hx: 2.6, hz: 0.7, top: y + 2.3, h: 2.3, move: { dir: nrm(ds), amp: 4.6, period: 2.2, phase: ph }, color: C_PUSH }));
+  [-32, -22, -12].forEach(ds => box(ds, 0, { hx: 2.6, hz: 0.7, top: y + 2.3, h: 2.3, move: { dir: nrm(ds), amp: 4.6, period: 2.0 + rnd() * 0.5, phase: ph() }, color: C_PUSH }));
   floor(10, 3);
   floor(32);
   [[-27, 1], [-21, -1], [-15, 1], [-9, -1]].forEach(([ds, side], i) => {
     const n = nrm(ds), dir = [-n[0] * side, -n[1] * side];
-    box(ds, side * (HW + 1.2), { hx: 3.2, hz: 1.3, top: y + 2.2, h: 2.2, move: { dir, amp: 5.4, period: 2.4, phase: i * 0.27, profile: 'punch' }, color: C_HAZ2, punch: true });
+    box(ds, side * (HW + 1.2), { hx: 3.2, hz: 1.3, top: y + 2.2, h: 2.2, move: { dir, amp: 5.4, period: 2.1 + rnd() * 0.6, phase: rnd(), profile: 'punch' }, color: C_HAZ2, punch: true });
   });
-  box(-2.5, 4.4, { hx: 1.5, hz: 1.5, top: y + 0.15, h: 0.4, mystery: true });
+  box(-2.5, (rnd() < 0.5 ? -1 : 1) * 4.4, { hx: 1.5, hz: 1.5, top: y + 0.15, h: 0.4, mystery: true });
   floor(10, 3);
   // 3 흔들 다리 — 좁은 다리와 망치(안쪽으로 떨어지면 아래층) · 움직이는 발판
   theme = 2; section('흔들 다리');
   floor(8);
   floor(38, 2, { u0: -1.8, u1: 1.8 });
-  [[-30, 0], [-19, 1.6], [-8, 3.3]].forEach(([ds, ph]) => { const q = P(s + ds, 0, 0); W.hazards.push(new Hammer({ x: q.x, z: q.z, py: trackY(s + ds) + 8.3, n: nrm(ds), phase: ph, a: q.a, s: s + ds })); });
+  [-30, -19, -8].forEach(ds => { const q = P(s + ds, 0, 0); W.hazards.push(new Hammer({ x: q.x, z: q.z, py: trackY(s + ds) + 8.3, n: nrm(ds), phase: ph(), period: 2.0 + rnd() * 0.4, a: q.a, s: s + ds })); });
   floor(6, 0, { u0: -5, u1: 5 });
   [4.5, 11, 17.5, 24].forEach((ds, i) => box(ds, 0, { hx: 2.3, hz: 2.3, top: y, h: 1, move: { dir: nrm(ds), amp: 4.4, period: 3.1, phase: i % 2 ? Math.PI : 0 }, color: C_PUSH }));
   gap(28);
@@ -286,17 +286,24 @@ function buildCourse() {
   theme = 4; section('정상');
   floor(6);
   const rampS = s; floor(50, 9);
-  W.balls = new Balls({ sTop: s - 0.5, sEnd: rampS - 2, speed: 11, every: 0.62, seed: 11 });
-  W.winds.push(new Wind({ s0: rampS, s1: s, period: 4.2, dur: 1.3, force: 5 }));
+  W.balls = new Balls({ sTop: s - 0.5, sEnd: rampS - 2, speed: 11, every: 0.62, seed: (rnd() * 1e6) | 0 });
+  W.winds.push(new Wind({ s0: rampS, s1: s, period: 3.6 + rnd() * 1.4, dur: 1.3, force: 5, offset: rnd() * 4 }));
   floor(14, 0, { ice: true });
   sweeper(-7, [{ y0: 0.2, y1: 0.75, spin: 2.0, len: 7.3 }, { y0: 1.05, y1: 1.55, spin: -1.4, len: 7.3, phase: 1.2 }]);
   floor(3, 0.5);
   W.signs.push({ s, y, text: '거의 다 왔어요 😇' });
-  W.door = floor(5, 0.5, { door: { period: 3.0, open: 0.36 } });
+  W.door = floor(5, 0.5, { door: { period: 2.6 + rnd() * 0.8, open: 0.36, phase: rnd() } });
   floor(2, 0.5);
   W.finishS = s + 8; W.finishY = y;
   floor(18, 0, { u0: -8, u1: 8 });
   W.endS = s; W.topY = y;
+  W.items = [];
+  // 넓은 바닥 위에만(틈 · 다리 · 발판 위 허공에 두면 AI 가 쫓아 뛰어내린다)
+  for (const [s0, s1] of [[16, 28], [44, 50], [105, 115], [147, 150], [167, 174], [200, 206], [219, 224], [264, 268], [298, 304], [318, 322], [353, 357], [383, 387], [404, 420], [440, 470], [479, 489]]) {
+    if (rnd() > 0.6) continue;
+    const is = s0 + rnd() * (s1 - s0), iu = (rnd() * 2 - 1) * 3.5;
+    W.items.push({ s: is, u: iu, y: trackY(is), on: true, t: 0 });
+  }
   for (let fs = 6; fs < W.endS - 4; fs += 11) W.flags.push(fs);
   W.spawnS = 4;
   if (DEV) { // 층 사이 높이 · 구간 길이가 규칙(tower-rules.js)과 맞는지
@@ -449,6 +456,15 @@ function drawWorld(W) {
     for (let j = 0; j < n; j++) { const b = new THREE.Mesh(new THREE.SphereGeometry(3 + rnd() * 4, 12, 10), mat(0xffffff)); b.position.set(j * 4, rnd() * 2, rnd() * 2); cl.add(b); }
     const a = rnd() * TAU, r = 110 + rnd() * 120; cl.position.set(Math.cos(a) * r, 10 + rnd() * 60, Math.sin(a) * r); G.add(cl);
   }
+  // 신발 상자(아이템)
+  const boxTex = textTex('?', '#1166FF', '#FFFFFF', 128, 128);
+  W.items.forEach(it => {
+    const q = P(it.s, it.u, it.y), g = new THREE.Group();
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), [0, 1, 2, 3, 4, 5].map(() => new THREE.MeshLambertMaterial({ map: boxTex, emissive: 0x0A2A7A })));
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.18, 0.95), mat(0xFFD23F)); cube.add(rib);
+    const rib2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.95, 0.95), mat(0xFFD23F)); cube.add(rib2);
+    g.add(cube); g.position.set(q.x, it.y + 1.1, q.z); it.mesh = g; G.add(g);
+  });
   // 내 최고 지점 깃발
   const best = new THREE.Group();
   const bp = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.4, 6), mat(0xffffff)); bp.position.y = 1.7; best.add(bp);
@@ -478,9 +494,10 @@ function syncWorld(W, now) {
     b.mesh.position.set(b.x, b.y, b.z); b.mesh.rotation.set(0, -b.a, 0); b.mesh.children[0].rotation.x = b.spin;
   }
   if (W.crown) { W.crown.rotation.y += 0.02; W.crown.position.y = W.topY + 4 + Math.sin(now / 500) * 0.4; }
-  const wind = W.winds[0], gust = wind && wind.active(S.t);
-  W.flagMeshes.forEach((f, i) => { const inWind = wind && f.s >= wind.s0 && f.s <= wind.s1; f.fl.rotation.y = Math.sin(now / (inWind && (gust || wind.warn(S.t)) ? 60 : 300) + i) * (inWind && gust ? 0.9 : 0.35); });
+  const wind = W.winds[0], gust = wind && wind.active(S.ht);
+  W.flagMeshes.forEach((f, i) => { const inWind = wind && f.s >= wind.s0 && f.s <= wind.s1; f.fl.rotation.y = Math.sin(now / (inWind && (gust || wind.warn(S.ht)) ? 60 : 300) + i) * (inWind && gust ? 0.9 : 0.35); });
   W.balloons.forEach(b => { b.position.y = b.userData.y0 + Math.sin(now / 1400 + b.userData.ph) * 1.2; });
+  W.items.forEach((it, i) => { if (!it.mesh) return; it.mesh.visible = it.on; it.mesh.rotation.y = now / 600 + i; it.mesh.position.y = it.y + 1.1 + Math.sin(now / 300 + i) * 0.15; });
   BELTTEX_TICK(now);
 }
 function BELTTEX_TICK() { /* 벨트는 지금 코스에 없다 */ }
@@ -504,6 +521,7 @@ function makeRunner(color, mine) {
   });
   const arms = [];
   [-0.43, 0.43].forEach(x => { const a = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.26, 4, 8), mat(color)); a.position.set(x, 0.86, 0); body.add(a); arms.push(a); });
+  const bub = new THREE.Mesh(new THREE.SphereGeometry(1.0, 18, 14), new THREE.MeshBasicMaterial({ color: 0x7FD8FF, transparent: true, opacity: 0.28, depthWrite: false })); bub.position.y = 0.85; bub.visible = false; g.add(bub); g.userData.bubble = bub;
   if (mine) { const ar = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 4), new THREE.MeshBasicMaterial({ color: 0xFFD23F })); ar.rotation.x = Math.PI; ar.position.y = 2.2; g.add(ar); g.userData.arrow = ar; }
   Object.assign(g.userData, { body, legs, arms, phase: 0 });
   return g;
@@ -526,13 +544,13 @@ function animateRunner(g, speed, air, dt, lean) {
 //  몸(나 · AI)
 // ════════════════════════════════════════════════════════════════════
 const PERSONAS = [
-  { key: 'rush', name: '돌진왕', speed: 1.0, wait: 0, sloppy: 0.35, color: 0xFF4F8B },
+  { key: 'rush', name: '돌진왕', speed: 1.0, wait: 0, sloppy: 0.2, color: 0xFF4F8B },
   { key: 'bully', name: '방해꾼', speed: 0.93, wait: 0.5, sloppy: 0.12, bully: 1, color: 0xE11D48 },
   { key: 'block', name: '길막이', speed: 0.82, wait: 0.6, sloppy: 0.1, block: 1, color: 0xFF9F1C },
   { key: 'copy', name: '따라쟁이', speed: 0.92, wait: 0.5, sloppy: 0.12, copy: 1, color: 0xA77BFF },
   { key: 'shy', name: '겁쟁이', speed: 0.9, wait: 1, sloppy: 0.05, shy: 1, color: 0x14B8A6 },
-  { key: 'goof', name: '엉뚱이', speed: 0.88, wait: 0.4, sloppy: 0.25, goof: 1, color: 0xFFC400 },
-  { key: 'gamble', name: '도박사', speed: 0.97, wait: 0.2, sloppy: 0.3, gamble: 1, color: 0x3DDC84 }
+  { key: 'goof', name: '엉뚱이', speed: 0.9, wait: 0.4, sloppy: 0.15, goof: 1, color: 0xFFC400 },
+  { key: 'gamble', name: '도박사', speed: 0.97, wait: 0.2, sloppy: 0.18, gamble: 1, color: 0x3DDC84 }
 ];
 const ROSTER = ['rush', 'bully', 'block', 'copy', 'shy', 'goof', 'gamble', 'rush', 'bully', 'copy', 'shy', 'goof', 'gamble', 'block', 'rush'];
 
@@ -549,18 +567,29 @@ class Body {
 // ════════════════════════════════════════════════════════════════════
 //  세상 · 한 걸음
 // ════════════════════════════════════════════════════════════════════
-const S = { mode: 'title', world: null, t: 0, acc: 0, playT: 0, bodies: [], me: null, secT0: 0, secMs: [], place: 0, finishers: 0, ko: 0, revived: false, run: null, daily: false, paused: false, shovesOnMe: 0 };
+const ITEMS = [
+  { k: 'boost', name: '부스터 신발', icon: '⚡', sec: 3.2 },
+  { k: 'spring', name: '스프링 신발', icon: '🦘', sec: 0 },
+  { k: 'shield', name: '방패', icon: '🛡️', sec: 6 },
+  { k: 'zap', name: '번개 운동화', icon: '🌩️', sec: 0 }
+];
+const EVENTS = [
+  { k: 'lowg', name: '저중력', icon: '🪐' },
+  { k: 'fast', name: '빨리감기', icon: '⏩' },
+  { k: 'ice', name: '꽁꽁', icon: '🧊' }
+];
+const S = { ev: null, evT: 0, evNext: 40, ht: 0, mode: 'title', world: null, t: 0, acc: 0, playT: 0, bodies: [], me: null, secT0: 0, secMs: [], place: 0, finishers: 0, ko: 0, revived: false, run: null, daily: false, paused: false, shovesOnMe: 0 };
 
 function newWorld() {
   if (S.world) { scene.remove(S.world.group); S.world.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
-  const W = buildCourse(); drawWorld(W); scene.add(W.group); S.world = W; S.t = 0;
+  const W = buildCourse(S.courseSeed); drawWorld(W); scene.add(W.group); S.world = W; S.t = 0; S.ht = 0;
   for (const s of W.solids) { s.update(0, 0); s.save(); }
   for (const h of W.hazards) h.update(0);
   return W;
 }
 function secOf(s) { const W = S.world; let k = 0; for (let i = 0; i < W.secs.length; i++) if (s >= W.secs[i].s) k = i; return k; }
 function hitBody(b, k) {
-  if (!k || b.safe > 0) return;
+  if (!k || b.safe > 0 || b.shieldT > 0) return;
   if (b.onGround) b.airS = b.s;
   b.vel.x = k.vx; b.vel.z = k.vz; b.vel.y = Math.max(b.vel.y, k.vy); b.stun = k.stun; b.safe = 0.35; b.onGround = false; b.ground = null; b.diving = false;
   if (b === S.me) sfx('hit');
@@ -570,21 +599,22 @@ function stepBody(b, dt) {
   const W = S.world, p = b.pos, v = b.vel;
   if (b.ground && b.ground.enabled) b.ground.carry(p);
   let ix = b.ix, iz = b.iz; const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
-  const sp = SPEED * b.speedK, ice = b.onGround && b.ground && b.ground.ice;
+  const sp = SPEED * b.speedK * (b.boostT > 0 ? 1.45 : 1), ice = b.onGround && b.ground && (b.ground.ice || S.ev === 'ice');
   const ctl = b.diving ? 0.08 : b.stun > 0 ? 0.12 : ice ? 0.13 : 1;
   const acc = (b.onGround ? ACC_GROUND : ACC_AIR) * ctl;
   const tx = ix * sp, tz = iz * sp, dvx = tx - v.x, dvz = tz - v.z, dl = Math.hypot(dvx, dvz), lim = acc * dt;
   if (dl > lim) { v.x += dvx / dl * lim; v.z += dvz / dl * lim; } else { v.x = tx; v.z = tz; }
   if (b.onGround && b.ground && b.ground.kind === 'tilt') { const g = b.ground, sl = -Math.sin(g.tilt) * 11 * dt; p.x += Math.cos(g.yaw) * sl; p.z += Math.sin(g.yaw) * sl; }
-  for (const w of W.winds) if (w.active(S.t) && b.s >= w.s0 && b.s <= w.s1) { const a = Math.atan2(p.z, p.x); p.x += Math.cos(a) * w.force * dt; p.z += Math.sin(a) * w.force * dt; }
+  for (const w of W.winds) if (w.active(S.ht) && b.s >= w.s0 && b.s <= w.s1) { const a = Math.atan2(p.z, p.x); p.x += Math.cos(a) * w.force * dt; p.z += Math.sin(a) * w.force * dt; }
   b.coyote = b.onGround ? COYOTE : Math.max(0, b.coyote - dt);
   b.jumpBuf = Math.max(0, b.jumpBuf - dt);
-  if (b.jumpBuf > 0 && b.coyote > 0 && b.stun <= 0) { v.y = JUMP_V; b.coyote = 0; b.jumpBuf = 0; b.onGround = false; b.ground = null; b.diveUsed = false; if (b === S.me) sfx('jump'); }
+  if (b.jumpBuf > 0 && b.coyote > 0 && b.stun <= 0) { v.y = JUMP_V * (b.springN > 0 ? 1.25 : 1); if (b.springN > 0) b.springN--; b.coyote = 0; b.jumpBuf = 0; b.onGround = false; b.ground = null; b.diveUsed = false; if (b === S.me) sfx('jump'); }
   else if (b.jumpBuf > 0 && !b.onGround && !b.diveUsed && b.stun <= 0 && b.coyote <= 0) {
     const f = [-Math.sin(b.yaw), -Math.cos(b.yaw)]; // 다이브: 공중에서 한 번 더 — 보는 쪽으로 몸을 날린다
     v.x = f[0] * (sp + DIVE_V); v.z = f[1] * (sp + DIVE_V); v.y = Math.max(v.y, 3); b.diveUsed = true; b.diving = true; b.jumpBuf = 0; if (b === S.me) sfx('dive');
   }
-  v.y = Math.max(-45, v.y + GRAV * dt);
+  v.y = Math.max(-45, v.y + GRAV * (S.ev === 'lowg' ? 0.5 : 1) * dt);
+  b.boostT = Math.max(0, (b.boostT || 0) - dt); b.shieldT = Math.max(0, (b.shieldT || 0) - dt);
   const prevY = p.y;
   p.x += v.x * dt; p.y += v.y * dt; p.z += v.z * dt;
   b.stun = Math.max(0, b.stun - dt); b.safe = Math.max(0, b.safe - dt); b.shoveCd = Math.max(0, b.shoveCd - dt); b.shoveT = Math.max(0, b.shoveT - dt);
@@ -637,14 +667,34 @@ function bodiesCollide() {
     const a = L[i], b = L[j], dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z;
     if (Math.abs(dx) > 1 || Math.abs(dz) > 1 || Math.abs(a.pos.y - b.pos.y) > H) continue;
     const d = Math.hypot(dx, dz), need = R * 2; if (d >= need || d < 1e-4) continue;
-    let push = (need - d) / 2, nx = dx / d, nz = dz / d;
-    if (!a.isMe && !b.isMe) { const ang = Math.atan2(a.pos.z, a.pos.x), tx = -Math.sin(ang), tz = Math.cos(ang), along = dx * tx + dz * tz || 0.01; nx = tx * Math.sign(along); nz = tz * Math.sign(along); push = (need - Math.abs(along)) / 2; if (push <= 0) continue; }
+    const narrow = x => x.ground && x.ground.kind === 'arc' && x.ground.r1 - x.ground.r0 < 5;
+    if (!a.isMe && !b.isMe && (narrow(a) || narrow(b))) continue;
+    const push = (need - d) / 2, nx = dx / d, nz = dz / d;
     a.pos.x -= nx * push; a.pos.z -= nz * push; b.pos.x += nx * push; b.pos.z += nz * push;
+    wallResolve(a); wallResolve(b);
     const rv = (b.vel.x - a.vel.x) * nx + (b.vel.z - a.vel.z) * nz;
     if (rv < 0) { const k = rv * 0.5; a.vel.x += nx * k; a.vel.z += nz * k; b.vel.x -= nx * k; b.vel.z -= nz * k; }
     if (a.diving && b.safe <= 0) { hitBody(b, { vx: nx * 8, vz: nz * 8, vy: 4, stun: 0.35 }); b.lastShover = a; b.lastShoveAt = S.t; }
     if (b.diving && a.safe <= 0) { hitBody(a, { vx: -nx * 8, vz: -nz * 8, vy: 4, stun: 0.35 }); a.lastShover = b; a.lastShoveAt = S.t; }
   }
+}
+// 몸끼리 밀어낸 뒤 벽 · 기둥 안으로 들어갔으면 다시 밖으로(밀치기 뒤 끼임)
+function wallResolve(b) {
+  const p = b.pos;
+  for (const s of S.world.solids) {
+    if (!s.enabled || s === b.ground || !s.near(p.x, p.y, p.z)) continue;
+    const top = s.topAt(p.x, p.z); if (p.y >= top - 0.02 || p.y + H <= s.bottom()) continue;
+    s.pushOut(p);
+  }
+}
+function pickItem(b, it) {
+  it.on = false; it.t = 9;
+  const I = ITEMS[(Math.random() * ITEMS.length) | 0];
+  if (I.k === 'boost') b.boostT = I.sec;
+  else if (I.k === 'spring') b.springN = 2;
+  else if (I.k === 'shield') b.shieldT = I.sec;
+  else if (I.k === 'zap') for (const o of S.bodies) { if (o === b || o.out || o.deadT > 0 || o.shieldT > 0) continue; if (Math.hypot(o.pos.x - b.pos.x, o.pos.z - b.pos.z) < 9 && Math.abs(o.pos.y - b.pos.y) < 3) { o.stun = Math.max(o.stun, 1.3); o.vel.set(0, 4, 0); o.onGround = false; o.ground = null; } }
+  if (b === S.me) { sfx('item'); flash(`${I.icon} ${I.name}${I.k === 'spring' ? ' · 점프 2번 높이' : I.k === 'zap' ? ' · 주변 AI 기절!' : ` · ${I.sec}초`}`, 1.8); }
 }
 function shove(b) {
   if (b.shoveCd > 0 || b.stun > 0 || b.out || b.deadT > 0) return false;
@@ -652,7 +702,7 @@ function shove(b) {
   const f = [-Math.sin(b.yaw), -Math.cos(b.yaw)];
   let hit = false;
   for (const o of S.bodies) {
-    if (o === b || o.out || o.deadT > 0 || o.finished) continue;
+    if (o === b || o.out || o.deadT > 0 || o.finished || o.shieldT > 0) continue;
     const dx = o.pos.x - b.pos.x, dz = o.pos.z - b.pos.z, d = Math.hypot(dx, dz);
     if (d > SHOVE_RANGE || Math.abs(o.pos.y - b.pos.y) > 1.2 || (dx * f[0] + dz * f[1]) / Math.max(d, 1e-3) < 0.35) continue;
     if (o === S.me && b !== S.me) { if (S.shovesOnMe >= 2 + S.me.sec) continue; S.shovesOnMe++; }
@@ -670,7 +720,7 @@ function aiThink(b, dt) {
   const a = s / RT, t = [-Math.sin(a), Math.cos(a)], n = [Math.cos(a), Math.sin(a)];
   if (b.stun > 0) { b.ix = 0; b.iz = 0; return; }
   b.goofT = Math.max(0, (b.goofT || 0) - dt);
-  if (P0.goof && !b.goofT && rnd() < dt * 0.22) { b.goofT = 0.6 + rnd() * 0.8; b.goofKind = ['stop', 'back', 'hop', 'spin'][rnd() * 4 | 0]; }
+  if (P0.goof && !b.goofT && rnd() < dt * 0.12) { b.goofT = 0.6 + rnd() * 0.8; b.goofKind = ['stop', 'back', 'hop', 'spin'][rnd() * 4 | 0]; }
   if (b.goofT > 0) {
     if (b.goofKind === 'stop') { b.ix = b.iz = 0; return; }
     if (b.goofKind === 'back') { b.ix = -t[0] * 0.6; b.iz = -t[1] * 0.6; return; }
@@ -693,6 +743,7 @@ function aiThink(b, dt) {
   }
   let misaligned = false;
   if (next) { ut = next.u + Math.max(-next.half, Math.min(next.half, ut - next.u)); misaligned = next.ds == null && Math.abs(u - next.u) > next.half + 0.4; if (misaligned) go = Math.max(0.2, 1 - (Math.abs(u - next.u) - next.half) / 2.5); }
+  for (const it of W.items) if (it.on && it.s - s > 1 && it.s - s < 7 && Math.abs(it.y - p.y) < 1.5 && Math.abs(it.u - u) < 3.2) { ut = it.u; break; }
   ut = holeDodge(b, s, u, ut, p);
   for (const sd of W.solids) {
     if (!sd.move || sd.kind !== 'box' || !sd.near(p.x, p.y, p.z) || sd.top <= p.y + 0.7) continue;
@@ -705,23 +756,28 @@ function aiThink(b, dt) {
   }
   for (const h of W.hazards) if (h instanceof Hammer) {
     // 망치가 내 줄을 막 지나 멀어질 때만 건넌다(다가오거나 가까우면 기다림)
-    const ds = relS(h.x, h.z, s), away = Math.sign(h.v) === Math.sign(h.lat - u) || Math.abs(h.lat - u) > 4.5;
-    if (ds > -1.2 && ds < 4.2 && !(away && Math.abs(h.lat - u) > 1.6) && b.patient) go = ds < 0.4 ? 1 : 0;
+    const ds = relS(h.x, h.z, s), rel = Math.abs(h.lat - u), away = Math.sign(h.v) === Math.sign(h.lat - u);
+    const win = away && rel > 1.7 && rel < 4.6; // 막 지나가 멀어지는 중 — 이때 건넌다
+    if (ds > 2.6 && ds < 6) { if (!win) go = Math.min(go, 0.45); }
+    else if (ds >= 1.9 && ds <= 2.6 && !win && b.patient) go = 0; // 망치가 닿는 거리(약 1.6m) 밖에서만 기다리고, 안으로 들어왔으면 그대로 건넌다
   }
   if (W.door && W.door.enabled === false || W.door && W.door.warn) { const ds = W.door.s0 - s; if (ds > 0 && ds < 3.5 && b.patient) go = 0; }
-  for (const w of W.winds) if (s >= w.s0 && s <= w.s1 && (w.active(S.t) || w.warn(S.t))) ut = Math.min(ut, -2.5);
+  for (const w of W.winds) if (s >= w.s0 && s <= w.s1 && (w.active(S.ht) || w.warn(S.ht))) ut = Math.min(ut, -2.5);
   if (W.balls) for (const bl of W.balls.list) { const ds = bl.s - s; if (ds > -1 && ds < 8 && Math.abs(bl.u - ut) < bl.r + 1) ut = bl.u > u ? bl.u - bl.r - 1.3 : bl.u + bl.r + 1.3; }
   const me = S.me;
   if (me && !me.out && me.deadT <= 0 && !me.finished) {
     const dme = Math.hypot(me.pos.x - p.x, me.pos.z - p.z);
     if (P0.bully && dme < 5 && Math.abs(me.pos.y - p.y) < 1.2) {
-      ut = me.u; const ahead = me.s - s;
-      if (ahead > -1 && ahead < 4) { go = 1; if (dme < SHOVE_RANGE - 0.1 && rnd() < dt * 4) { b.yaw = Math.atan2(-(me.pos.x - p.x), -(me.pos.z - p.z)); shove(b); return; } }
+      // 내 바로 뒤에 붙지 않고 옆으로 다가와 민다(뒤에 붙으면 화면에서 나를 가린다)
+      const side = b.side || (b.side = u >= me.u ? 1 : -1); ut = me.u + side * 1.1; const ahead = me.s - s;
+      if (ahead > -1.5 && ahead < 4) { go = ahead > 0.6 ? 1 : 0.7; if (dme < SHOVE_RANGE - 0.1 && Math.abs(ahead) < 1.2 && !(me.ground && me.ground.kind === 'arc' && me.ground.r1 - me.ground.r0 < 5) && rnd() < dt * 3) { b.yaw = Math.atan2(-(me.pos.x - p.x), -(me.pos.z - p.z)); shove(b); b.side = 0; return; } }
     }
-    if (P0.copy && dme < 6 && me.s > s) { ut = me.u; if (!me.onGround && b.onGround && me.vel.y > 5) b.jumpBuf = JUMP_BUF; }
+    if (P0.copy && dme < 6 && me.s > s) { const side = b.side || (b.side = u >= me.u ? 1 : -1); ut = me.u + side * 1.6; if (me.s - s < 2.2) go = Math.min(go, 0.6); if (!me.onGround && b.onGround && me.vel.y > 5) b.jumpBuf = JUMP_BUF; }
+    // 그 밖의 AI 도 내 바로 뒤 1.5m 안에는 들어오지 않는다(카메라를 가리지 않게)
+    else if (!P0.bully && dme < 2.2 && me.s > s && Math.abs(me.u - u) < 1.0) ut = me.u + (u >= me.u ? 1.4 : -1.4);
   }
   if (P0.block && next && next.half < 2) ut = next.u + Math.sin(S.t * 1.7 + b.seed) * 1.0;
-  if (P0.shy) { if (go === 0) b.shyT = 1.0; else if (b.shyT > 0) { b.shyT -= dt; if (b.shyT > 0.4) go = 0; } }
+  if (P0.shy) { if (go === 0) b.shyT = 0.6; else if (b.shyT > 0) { b.shyT -= dt; if (b.shyT > 0.35) go = 0; } }
   ut = Math.max(-HW + 0.8, Math.min(HW - 1.6, ut));
   const lat = Math.max(-1, Math.min(1, (ut - u) * 0.9));
   b.ix = t[0] * go + n[0] * lat; b.iz = t[1] * go + n[1] * lat;
@@ -730,12 +786,17 @@ function aiThink(b, dt) {
     const q = P(s + sl, u + lat * 0.4, 0), q2 = P(s + 0.9, u, 0);
     const gt = groundTop(q.x, q.z, p.y + 0.5), gt2 = groundTop(q2.x, q2.z, p.y + 1.2);
     let jump = gt === -Infinity || gt < p.y - 0.6 || gt2 > p.y + 0.35;
-    for (const h of W.hazards) if (h instanceof Sweeper && Math.abs(h.base - p.y) < 0.8) for (const br of h.bars) {
-      const ex = Math.cos(br.a) * br.len, ez = Math.sin(br.a) * br.len, ap = P(s + 1.3 + (rnd() - 0.5) * P0.sloppy * 1.6, u, 0);
-      const [d] = segDist(ap.x, ap.z, h.x - ex, h.z - ez, h.x + ex, h.z + ez); if (d < 0.75) jump = true;
+    for (const h of W.hazards) if (h instanceof Sweeper && Math.abs(h.base - p.y) < 0.8) {
+      const dx = p.x - h.x, dz = p.z - h.z, dist = Math.hypot(dx, dz), phi = Math.atan2(dz, dx);
+      for (const br of h.bars) {
+        if (dist > br.len + 0.6 || dist < 0.9) continue;
+        const sp2 = Math.abs(br.spin) * (S.ev === 'fast' ? 1.4 : 1), tt = (br.spin > 0 ? mod(phi - br.a, Math.PI) : mod(br.a - phi, Math.PI)) / sp2;
+        const err = (rnd() - 0.5) * P0.sloppy * 0.5;
+        if (tt > 0.17 + err && tt < 0.3 + err) jump = true;
+      }
     }
     if (jump && !(misaligned && (gt === -Infinity || gt < p.y - 0.6))) b.jumpBuf = JUMP_BUF;
-    if (P0.gamble && rnd() < dt * 0.08) b.jumpBuf = JUMP_BUF;
+    if (P0.gamble && rnd() < dt * 0.03) b.jumpBuf = JUMP_BUF;
   }
   b.yaw = Math.atan2(-b.ix, -b.iz);
 }
@@ -757,7 +818,9 @@ function groundTop(x, z, below) {
 // ── 한 판 흐름 ───────────────────────────────────────────────────────
 const runnerMeshes = [];
 function setupRace(seed) {
+  S.courseSeed = seed != null ? seed * 977 + 13 : (Math.random() * 1e9) | 0;
   newWorld();
+  S.ev = null; S.evT = 0; S.evNext = 28 + Math.random() * 14;
   Object.assign(S, { bodies: [], secMs: [], place: 0, finishers: 0, ko: 0, revived: false, playT: 0, secT0: 0, shovesOnMe: 0 });
   for (const m of runnerMeshes) scene.remove(m); runnerMeshes.length = 0;
   const rnd = mulberry(seed != null ? seed : (Date.now() & 0xffffff) ^ 0x5eed);
@@ -768,7 +831,7 @@ function setupRace(seed) {
   slots.forEach((sl, i) => {
     if (i === meSlot) return;
     const P0 = PERSONAS.find(q => q.key === ROSTER[k % ROSTER.length]); k++;
-    const b = new Body({ lives: 3, persona: P0, name: P0.name, rnd: mulberry((rnd() * 1e9) | 0), seed: rnd() * 6, lane: (rnd() * 2 - 1) * 2.5, patient: rnd() < 0.45 + P0.wait * 0.5, speedK: P0.speed * (0.93 + rnd() * 0.09) });
+    const b = new Body({ lives: 3, persona: P0, name: P0.name, rnd: mulberry((rnd() * 1e9) | 0), seed: rnd() * 6, lane: (rnd() * 2 - 1) * 2.5, patient: rnd() < 0.6 + P0.wait * 0.4, speedK: P0.speed * (0.93 + rnd() * 0.09) });
     b.place(sl[0], sl[1]); b.mesh = makeRunner(P0.color, false); b.tag = nameTag(P0.name, '#' + P0.color.toString(16).padStart(6, '0')); b.mesh.add(b.tag);
     S.bodies.push(b);
   });
@@ -792,12 +855,21 @@ function reviveTick(b, dt) {
 function simStep(dt) {
   const W = S.world;
   S.t += dt;
+  // 돌발 이벤트: 30 ~ 50초마다 8초
+  if (S.ev) { S.evT -= dt; if (S.evT <= 0) { S.ev = null; if (S.mode === 'play') flash('이벤트 끝!', 1); } }
+  else if ((S.evNext -= dt) <= 0) { const E = EVENTS[(Math.random() * EVENTS.length) | 0]; S.ev = E.k; S.evT = 8; S.evNext = 30 + Math.random() * 20; if (S.mode === 'play') { banner(`<small>돌발 이벤트</small><b>${E.icon} ${E.name}</b><span>8초</span>`, 'event', 1.8); sfx('event'); } }
+  const hdt = dt * (S.ev === 'fast' ? 1.4 : 1); S.ht += hdt;
   for (const s of W.solids) s.save();
   for (const tl of W.tilts) { let tq = 0; for (const b of S.bodies) if (b.ground === tl && !b.out) { const [lx] = tl.toLocal(b.pos.x, b.pos.z); tq += lx; } const target = Math.max(-0.3, Math.min(0.3, -tq * 0.035)); tl.tilt += (target - tl.tilt) * Math.min(1, dt * 2.2); }
-  for (const s of W.solids) s.update(S.t, dt);
-  for (const h of W.hazards) h.update(S.t);
+  for (const s of W.solids) s.update(S.ht, hdt);
+  for (const h of W.hazards) h.update(S.ht);
   let lead = 0; for (const b of S.bodies) if (!b.out) lead = Math.max(lead, b.s);
-  if (W.balls) W.balls.update(S.t, dt, W, S.me && !S.me.out ? S.me.s : lead);
+  if (W.balls) W.balls.update(S.ht, hdt, W, S.me && !S.me.out ? S.me.s : lead);
+  for (const it of W.items) {
+    if (!it.on) { it.t -= dt; if (it.t <= 0) it.on = true; continue; }
+    const q = it.q || (it.q = P(it.s, it.u, it.y));
+    for (const b of S.bodies) if (!b.out && b.deadT <= 0 && !b.finished && Math.abs(b.pos.x - q.x) < 1.1 && Math.abs(b.pos.z - q.z) < 1.1 && Math.abs(b.pos.y - it.y) < 1.8) { pickItem(b, it); break; }
+  }
   for (const b of S.bodies) {
     if (b.out || b.finished) continue;
     if (b.deadT > 0) { reviveTick(b, dt); continue; }
@@ -846,7 +918,7 @@ let confNext = 0;
 function confetti(at, n) { for (let i = 0; i < n; i++) { const k = confNext++ % CONF; confPos.set([at.x, at.y + 2, at.z], k * 3); confVel[k] = [(Math.random() - 0.5) * 10, 6 + Math.random() * 8, (Math.random() - 0.5) * 10, 2.5]; } }
 function confettiTick(dt) { for (let i = 0; i < CONF; i++) { const v = confVel[i]; if (v[3] <= 0) continue; v[3] -= dt; v[1] -= 14 * dt; confPos[i * 3] += v[0] * dt; confPos[i * 3 + 1] += v[1] * dt; confPos[i * 3 + 2] += v[2] * dt; if (v[3] <= 0) confPos[i * 3 + 1] = -999; } confGeo.attributes.position.needsUpdate = true; }
 
-const ui = { title: $('title'), hud: $('hud'), stage: $('hudStage'), score: $('hudScore'), time: $('hudTime'), pos: $('hudPos'), lives: $('hudLives'), banner: $('banner'), over: $('over'), board: $('board'), toast: $('toast'), controls: $('controls'), join: $('join'), sns: $('sns'), wind: $('hudWind') };
+const ui = { title: $('title'), hud: $('hud'), stage: $('hudStage'), score: $('hudScore'), time: $('hudTime'), pos: $('hudPos'), lives: $('hudLives'), banner: $('banner'), over: $('over'), board: $('board'), toast: $('toast'), controls: $('controls'), join: $('join'), sns: $('sns'), wind: $('hudWind'), fx: $('hudFx') };
 function fmt(ms) { const s = Math.max(0, ms) / 1000, m = Math.floor(s / 60), r = s - m * 60; return (m ? m + ':' + (r < 10 ? '0' : '') : '') + r.toFixed(1); }
 const show = (el, on) => { el.hidden = !on; };
 let toastT = 0, bannerT = 0;
@@ -862,8 +934,12 @@ function updateHud() {
   let ahead = 0; for (const b of S.bodies) if (b !== me && !b.out && (b.finished || b.s > me.s)) ahead++;
   ui.pos.textContent = `${ahead + 1}위 · 남은 ${S.bodies.filter(b => !b.out).length}명`;
   ui.lives.textContent = me.lives >= 2 ? '❤️❤️' : '❤️🤍';
+  const fx = [];
+  if (me.boostT > 0) fx.push('⚡ ' + me.boostT.toFixed(1)); if (me.springN > 0) fx.push('🦘 ×' + me.springN); if (me.shieldT > 0) fx.push('🛡️ ' + me.shieldT.toFixed(1));
+  if (S.ev) { const E = EVENTS.find(q => q.k === S.ev); fx.push(`${E.icon} ${E.name} ${S.evT.toFixed(0)}`); }
+  ui.fx.textContent = fx.join(' · '); ui.fx.hidden = !fx.length;
   const w = W.winds.find(q => me.s >= q.s0 - 6 && me.s <= q.s1);
-  ui.wind.hidden = !(w && (w.active(S.t) || w.warn(S.t)));
+  ui.wind.hidden = !(w && (w.active(S.ht) || w.warn(S.ht)));
   W.bestFlag.visible = me.maxS - me.s > 15;
   if (W.bestFlag.visible) { const q = P(me.maxS, -HW + 1, trackY(me.maxS)); W.bestFlag.position.set(q.x, q.y, q.z); W.bestFlag.rotation.y = -q.a; }
 }
@@ -929,14 +1005,14 @@ async function startDaily() {
 function startPractice() { S.daily = false; S.run = null; beginRun(); }
 function beginRun() {
   unlockAudio(); setupRace();
-  S.mode = 'intro'; S.intro = 3.6;
+  S.mode = 'intro'; S.intro = 5.2;
   [ui.title, ui.over, ui.board, ui.sns, ui.join].forEach(el => show(el, false)); show(ui.hud, true); show(ui.controls, true);
   banner(`<small>${S.daily ? '오늘의 도전' : '연습 · 점수 없음'}</small><b>StepUP 타워</b><span>정상까지 다섯 구간 · 물에 빠지면 부활 1번</span>`, '', 0);
   updateHud();
 }
 async function endRun(finished, why) {
   if (S.mode === 'sim') { S.simEnd = { finished, why }; S.mode = 'simdone'; return; }
-  S.mode = 'over'; show(ui.controls, false); ui.banner.hidden = true; ui.wind.hidden = true;
+  S.mode = 'over'; show(ui.controls, false); ui.banner.hidden = true; ui.wind.hidden = true; ui.fx.hidden = true;
   const me = S.me, k = S.secMs.length, prog = finished ? 0 : progressNow();
   const score = towerScore(k, S.secMs, prog, finished, S.place, S.revived, S.ko);
   sfx(finished ? 'win' : 'out'); if (finished) confetti(me.pos, 220);
@@ -1069,8 +1145,10 @@ function sfx(k) {
   else if (k === 'boing') tone(300, 1100, 0.25, 'triangle', 0.1);
   else if (k === 'fall') { tone(700, 90, 0.7, 'triangle', 0.08); tone(220, 110, 0.5, 'sawtooth', 0.04, 0.3); }
   else if (k === 'splash') { tone(900, 60, 0.6, 'sawtooth', 0.06); tone(200, 40, 0.5, 'square', 0.05, 0.1); }
-  else if (k === 'beep') tone(520, 520, 0.12, 'square', 0.06);
-  else if (k === 'go') tone(880, 880, 0.3, 'square', 0.07);
+  else if (k === 'beep') tone(520, 520, 0.14, 'square', 0.07);
+  else if (k === 'item') { tone(660, 990, 0.1, 'square', 0.06); tone(990, 1320, 0.12, 'triangle', 0.06, 0.08); }
+  else if (k === 'event') { tone(300, 600, 0.2, 'sawtooth', 0.06); tone(600, 300, 0.2, 'sawtooth', 0.06, 0.2); }
+  else if (k === 'go') { tone(880, 880, 0.35, 'square', 0.08); tone(1320, 1320, 0.3, 'triangle', 0.05, 0.05); }
   else if (k === 'win') { tone(523, 523, 0.12, 'triangle', 0.1); tone(659, 659, 0.12, 'triangle', 0.1, 0.12); tone(784, 784, 0.25, 'triangle', 0.1, 0.24); }
   else if (k === 'out') { tone(392, 330, 0.25, 'triangle', 0.1); tone(330, 220, 0.4, 'triangle', 0.1, 0.25); }
 }
@@ -1086,6 +1164,12 @@ function updateCamera(dt) {
     camPos.lerp(want, 1 - Math.exp(-dt * 1.2)); camLook.lerp(new THREE.Vector3(0, 16, 0), 1 - Math.exp(-dt * 1.2));
   } else {
     const s = Math.min(me.s, S.world.endS), a = s / RT, t = [-Math.sin(a), Math.cos(a)], n = [Math.cos(a), Math.sin(a)];
+    if (S.mode === 'intro' && S.intro > 3.2) { // 출발 전: 위에서 탑을 내려다보다 내 뒤로 내려온다
+      const k = Math.min(1, Math.max(0, (5.2 - S.intro) / 2)), e = k * k * (3 - 2 * k), ang = a - 0.9 * (1 - e), r = RT + 70 * (1 - e) + 10;
+      camPos.set(Math.cos(ang) * r, S.world.topY + 30 * (1 - e) + 6, Math.sin(ang) * r);
+      camLook.set(me.pos.x * e, 14 * (1 - e) + me.pos.y * e, me.pos.z * e); camYaw = Math.atan2(-t[0], -t[1]);
+      camera.position.copy(camPos); camera.lookAt(camLook); return;
+    }
     const want = Math.atan2(-t[0], -t[1]); let d = want - camYaw; d = Math.atan2(Math.sin(d), Math.cos(d)); camYaw += d * Math.min(1, dt * 5);
     const back = portrait ? 10.5 : 9, up = portrait ? 6.6 : 5.4, f = [-Math.sin(camYaw), -Math.cos(camYaw)];
     const p = me.pos, py = me.deadT > 0 ? trackY(s) : Math.max(p.y, trackY(s) - 8);
@@ -1104,6 +1188,7 @@ function drawBodies(dt) {
     m.rotation.z = b.stun > 0 ? Math.sin(b.stun * 30) * 0.3 : 0;
     if (b.deadT <= 0) m.visible = !(b.safe > 0.4 && Math.floor(b.safe * 12) % 2);
     animateRunner(m, sp, !b.onGround, dt, b.diving ? 'dive' : b.shoveT > 0 ? 'shove' : '');
+    m.userData.bubble.visible = b.shieldT > 0; m.userData.body.scale.setScalar(b.boostT > 0 ? 1.08 + Math.sin(performance.now() / 60) * 0.04 : 1);
     if (b.tag) { const dd = S.me ? Math.hypot(b.pos.x - S.me.pos.x, b.pos.z - S.me.pos.z) : 99; b.tag.visible = dd > 2.5 && dd < 11 && Math.abs(b.pos.y - S.me.pos.y) < 4; }
   }
   const me = S.me; if (!me) return;
@@ -1120,10 +1205,10 @@ function frame(now) {
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) ui.toast.hidden = true; }
   if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) ui.banner.hidden = true; }
   if (S.mode === 'intro') {
-    const before = Math.ceil(S.intro - 0.6); S.intro -= dt; const after = Math.ceil(S.intro - 0.6);
-    if (S.intro < 3 && after > 0) { banner(`<b class="num">${after}</b>`, 'count', 0); if (before !== after) sfx('beep'); }
+    const before = Math.ceil(S.intro - 0.2); S.intro -= dt; const after = Math.ceil(S.intro - 0.2);
+    if (S.intro < 3.2 && after > 0 && before !== after) { banner(`<b class="num">${after}</b><span>${['', '곧 출발', '조금만', '준비'][after] || ''}</span>`, 'count', 0); sfx('beep'); }
     idleWorld(dt); readInput(); drawBodies(dt);
-    if (S.intro <= 0.6) { S.mode = 'play'; banner('<b class="num">GO!</b>', 'count', 0.7); sfx('go'); S.t = 0; }
+    if (S.intro <= 0.2) { S.mode = 'play'; banner('<b class="num go">GO!</b>', 'count', 0.8); sfx('go'); S.t = 0; }
   } else if (S.mode === 'play') {
     readInput(); S.acc += dt;
     while (S.acc >= DT && S.mode === 'play') { S.acc -= DT; S.playT += DT; simStep(DT); }
