@@ -105,3 +105,10 @@ a.btn{text-decoration:none}
 .banner.count .num.go{color:#7CFFB2}
 .banner.count span{font-size:18px}
 .banner.event b{color:#FFD23F}
+#lookCanvas{position:sticky;top:-22px;z-index:2;display:block;width:150px;height:150px;margin:0 auto 6px;background:radial-gradient(circle at 50% 60%,#DCE9FF,#F4F8FF 70%);border-radius:50%}
+.lkrows{display:grid;gap:5px;text-align:left}
+.lk{display:grid;grid-template-columns:62px 40px 1fr 40px;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:4px 6px}
+.lk span{font-size:13px;font-weight:800;color:#5A6E92}
+.lk button{height:34px;border:0;border-radius:10px;background:#E8EEF9;font:inherit;font-size:20px;font-weight:900;color:var(--ink);cursor:pointer}
+.lk b{text-align:center;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lk b i{display:inline-block;width:26px;height:18px;border-radius:6px;vertical-align:middle;box-shadow:0 0 0 1px #CBD6EA inset}

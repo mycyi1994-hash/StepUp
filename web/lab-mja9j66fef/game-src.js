@@ -502,27 +502,96 @@ function syncWorld(W, now) {
 }
 function BELTTEX_TICK() { /* 벨트는 지금 코스에 없다 */ }
 
-// 러너 모양 — 머리 · 몸 · 머리띠 · 큰 운동화(StepUp 신발)
-function makeRunner(color, mine) {
+// 러너 모양 — 고를 수 있는 것들(내 러너 꾸미기 · AI 는 판마다 랜덤). 앞은 −z(눈 쪽)
+export const LOOK = {
+  skin: { name: '피부', list: ['#FFE0C4', '#F5C79A', '#D9A066', '#A86B3C', '#6E4224'] },
+  hair: { name: '머리', list: ['짧은 머리', '삐죽 머리', '포니테일', '똥머리', '모히칸', '긴 머리', '곱슬', '민머리'] },
+  hairC: { name: '머리색', list: ['#2A1B12', '#6B3E1F', '#E0B04A', '#1B1B1B', '#D9483B', '#7F5AF0', '#F3F3F3', '#2BB3A3', '#FF7EB6'] },
+  hat: { name: '모자', list: ['없음', '야구모자', '비니', '벙거지', '머리띠', '리본', '뿔', '더듬이', '왕관', '헤드폰'] },
+  top: { name: '옷 색', list: ['#1166FF', '#FF4F8B', '#FF9F1C', '#FFD23F', '#3DDC84', '#14B8A6', '#A77BFF', '#E11D48', '#0B1A33', '#FFFFFF', '#7FD8FF', '#8B5E34'] },
+  pattern: { name: '무늬', list: ['민무늬', '줄무늬', '번호표', '번개', '별'] },
+  shorts: { name: '바지', list: ['#0B1A33', '#1B3A6B', '#2A2A2A', '#FFFFFF', '#E11D48', '#3DDC84', '#FFD23F'] },
+  shoe: { name: '신발', list: ['#FFFFFF', '#1166FF', '#FF4F8B', '#FFD23F', '#111111', '#3DDC84', '#FF9F1C'] },
+  acc: { name: '꾸미기', list: ['없음', '안경', '선글라스', '배낭', '목도리', '메달', '날개', '망토'] },
+  size: { name: '체형', list: ['보통', '작고 통통', '크고 날씬'] }
+};
+const LOOK_KEYS = Object.keys(LOOK);
+export const DEFAULT_LOOK = { skin: 0, hair: 0, hairC: 0, hat: 4, top: 0, pattern: 2, shorts: 0, shoe: 0, acc: 0, size: 0 };
+function randomLook(rnd, topHex) {
+  const L = {}; for (const k of LOOK_KEYS) L[k] = (rnd() * LOOK[k].list.length) | 0;
+  if (topHex != null) { const hex = '#' + topHex.toString(16).padStart(6, '0').toUpperCase(), i = LOOK.top.list.findIndex(c => c.toUpperCase() === hex); L.topHex = hex; if (i >= 0) L.top = i; }
+  if (rnd() < 0.35) L.acc = 0; if (rnd() < 0.25) L.hat = 0;
+  return L;
+}
+function lookColor(L, k) { return k === 'top' && L.topHex ? L.topHex : LOOK[k].list[L[k] % LOOK[k].list.length]; }
+function patternTex(kind, base, num) {
+  return canvasTex(128, 64, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h);
+    if (kind === 1) { g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 4; i++) g.fillRect(0, 6 + i * 16, w, 6); }
+    if (kind === 2) { g.fillStyle = '#FFFFFF'; g.fillRect(w / 2 - 22, 12, 44, 34); g.fillStyle = '#0B1A33'; g.font = '900 24px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(num), w / 2, 30); }
+    if (kind === 3) { g.fillStyle = '#FFD23F'; g.beginPath(); g.moveTo(w / 2 + 6, 6); g.lineTo(w / 2 - 12, 34); g.lineTo(w / 2, 34); g.lineTo(w / 2 - 6, 58); g.lineTo(w / 2 + 14, 26); g.lineTo(w / 2 + 2, 26); g.fill(); }
+    if (kind === 4) { g.fillStyle = 'rgba(255,255,255,.9)'; for (const [x, y] of [[20, 16], [64, 34], [104, 14], [40, 50], [92, 52]]) { g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 3 : 7, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.fill(); } }
+  });
+}
+function makeRunner(look, mine, num) {
+  const L = Object.assign({}, DEFAULT_LOOK, look || {});
+  const C = k => lookColor(L, k), skin = mat(C('skin')), hairM = mat(C('hairC')), topC = C('top');
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.36, 6, 14), mat(color)); torso.position.y = 0.82; body.add(torso);
-  const shirt = new THREE.Mesh(new THREE.CylinderGeometry(0.355, 0.355, 0.1, 16), mat(0xffffff)); shirt.position.y = 0.84; body.add(shirt);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 18, 14), mat(0xFFD9B8)); head.position.y = 1.36; body.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.345, 18, 10, 0, TAU, 0, Math.PI * 0.42), mat(mine ? 0x2A1B12 : [0x2A1B12, 0x6B3E1F, 0xE0B04A, 0x1B1B1B][color % 4])); hair.position.y = 1.38; body.add(hair);
-  const band = new THREE.Mesh(new THREE.TorusGeometry(0.335, 0.055, 6, 22), mat(mine ? 0xFFD23F : color)); band.rotation.x = Math.PI / 2; band.position.y = 1.45; body.add(band);
+  const size = L.size % 3, sx = size === 1 ? 1.12 : size === 2 ? 0.92 : 1, sy = size === 1 ? 0.9 : size === 2 ? 1.1 : 1;
+  body.scale.set(sx, sy, sx); body.userData.base = [sx, sy, sx];
+  // 몸 · 무늬
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.36, 6, 16), mat(topC)); torso.position.y = 0.82; body.add(torso);
+  const pat = L.pattern % LOOK.pattern.list.length;
+  if (pat) { const front = new THREE.Mesh(new THREE.CylinderGeometry(0.346, 0.346, 0.42, 20, 1, true, Math.PI * 0.75, Math.PI * 0.5), new THREE.MeshLambertMaterial({ map: patternTex(pat, topC, num || 7), side: THREE.DoubleSide })); front.position.y = 0.84; body.add(front); }
+  const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.33, 0.2, 16), mat(C('shorts'))); shorts.position.y = 0.56; body.add(shorts);
+  // 머리 · 얼굴
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 18, 14), skin); head.position.y = 1.36; body.add(head);
   [-0.11, 0.11].forEach(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), mat(0x0B1A33)); e.position.set(x, 1.38, -0.3); body.add(e); });
-  const legs = [];
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 4, 10, Math.PI), mat(0x7A2E1F)); mouth.position.set(0, 1.27, -0.315); mouth.rotation.z = Math.PI; body.add(mouth);
+  [-0.17, 0.17].forEach(x => { const c = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: 0xFF8FA3, transparent: true, opacity: 0.6 })); c.position.set(x, 1.3, -0.28); body.add(c); });
+  const hs = L.hair % LOOK.hair.list.length, add = (m, x, y, z) => { m.position.set(x, y, z); body.add(m); return m; };
+  if (hs !== 7) add(new THREE.Mesh(new THREE.SphereGeometry(0.345, 18, 10, 0, TAU, 0, Math.PI * (hs === 5 ? 0.55 : 0.42)), hairM), 0, 1.38, 0);
+  if (hs === 1) for (let i = 0; i < 6; i++) { const a = i / 6 * TAU, c = add(new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 6), hairM), Math.cos(a) * 0.17, 1.66, Math.sin(a) * 0.17 + 0.03); c.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5); }
+  if (hs === 2) { add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), hairM), 0, 1.5, 0.33); const t = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.3, 4, 8), hairM), 0, 1.28, 0.4); t.rotation.x = 0.4; }
+  if (hs === 3) add(new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), hairM), 0, 1.74, 0.06);
+  if (hs === 4) add(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.56), hairM), 0, 1.7, 0.02);
+  if (hs === 5) add(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.5, 0.18), hairM), 0, 1.18, 0.22);
+  if (hs === 6) for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), hairM), Math.cos(a) * 0.26, 1.52 + (i % 2) * 0.06, Math.sin(a) * 0.26 + 0.04); }
+  // 모자
+  const hat = L.hat % LOOK.hat.list.length, hatM = mat(topC === '#FFFFFF' ? '#1166FF' : '#FFFFFF'), accent = mat(topC);
+  if (hat === 1) { add(new THREE.Mesh(new THREE.SphereGeometry(0.355, 16, 8, 0, TAU, 0, Math.PI * 0.45), accent), 0, 1.41, 0); add(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.04, 0.3), accent), 0, 1.52, -0.36); }
+  if (hat === 2) { add(new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 10, 0, TAU, 0, Math.PI * 0.5), accent), 0, 1.42, 0); add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), hatM), 0, 1.8, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.1, 18), hatM), 0, 1.44, 0); }
+  if (hat === 3) { add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.33, 0.22, 18), accent), 0, 1.66, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.03, 22), accent), 0, 1.56, 0); }
+  if (hat === 4) { const b = add(new THREE.Mesh(new THREE.TorusGeometry(0.335, 0.055, 6, 22), mine ? mat(0xFFD23F) : accent), 0, 1.45, 0); b.rotation.x = Math.PI / 2; }
+  if (hat === 5) [-1, 1].forEach(sd => { const c = add(new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 8), mat(0xFF4F8B)), sd * 0.12, 1.7, 0.05); c.rotation.z = sd * Math.PI / 2; });
+  if (hat === 6) [-1, 1].forEach(sd => { const c = add(new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.26, 8), mat(0xFFF3D6)), sd * 0.18, 1.72, 0); c.rotation.z = -sd * 0.4; });
+  if (hat === 7) [-1, 1].forEach(sd => { const st = add(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 5), mat(0x0B1A33)), sd * 0.1, 1.8, 0); st.rotation.z = -sd * 0.3; add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), mat(0xFFD23F)), sd * 0.15, 1.96, 0); });
+  if (hat === 8) { add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.12, 6, 1, true), new THREE.MeshLambertMaterial({ color: 0xFFC400, side: THREE.DoubleSide })), 0, 1.74, 0); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 5), mat(0xFFC400)), Math.cos(a) * 0.2, 1.84, Math.sin(a) * 0.2); } }
+  if (hat === 9) { const band = add(new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.03, 6, 20, Math.PI), mat(0x222222)), 0, 1.42, 0); band.rotation.y = Math.PI / 2; [-1, 1].forEach(sd => { const cup = add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 14), accent), sd * 0.35, 1.36, 0); cup.rotation.z = Math.PI / 2; }); }
+  // 꾸미기
+  const acc = L.acc % LOOK.acc.list.length;
+  if (acc === 1) { [-0.11, 0.11].forEach(x => { const r = add(new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.014, 6, 14), mat(0x111111)), x, 1.38, -0.32); }); add(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, 0.015), mat(0x111111)), 0, 1.39, -0.33); }
+  if (acc === 2) add(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.09, 0.05), mat(0x111111)), 0, 1.385, -0.31);
+  if (acc === 3) { add(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.42, 0.18), mat(LOOK.top.list[(L.top + 3) % 12])), 0, 0.9, 0.34); add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.06), mat(0xFFFFFF)), 0, 0.82, 0.44); }
+  if (acc === 4) { const sc = add(new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 8, 18), mat(0xE11D48)), 0, 1.08, 0); sc.rotation.x = Math.PI / 2; add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.32, 0.05), mat(0xE11D48)), 0.12, 0.92, 0.3); }
+  if (acc === 5) { add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 16), mat(0xFFC400)), 0, 0.92, -0.35).rotation.x = Math.PI / 2; add(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 0.02), mat(0x1166FF)), 0, 1.04, -0.33); }
+  if (acc === 6) [-1, 1].forEach(sd => { const w = add(new THREE.Mesh(new THREE.CircleGeometry(0.28, 12), new THREE.MeshLambertMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide })), sd * 0.24, 1.0, 0.32); w.rotation.y = sd * 0.9; w.scale.set(1, 0.6, 1); });
+  if (acc === 7) { const cape = add(new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.7), new THREE.MeshLambertMaterial({ color: LOOK.top.list[(L.top + 7) % 12], side: THREE.DoubleSide })), 0, 0.78, 0.36); cape.rotation.x = 0.18; }
+  // 다리 · 신발(StepUp 운동화) · 팔
+  const shoeC = C('shoe'), soleC = shoeC === '#FFFFFF' ? topC : '#FFFFFF', legs = [];
   [-0.17, 0.17].forEach(x => {
     const leg = new THREE.Group(); leg.position.set(x, 0.5, 0);
-    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.34, 6), mat(0x0B1A33)); shin.position.y = -0.2; leg.add(shin);
-    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.17, 0.5), mat(0xffffff)); shoe.position.set(0, -0.4, -0.08); leg.add(shoe);
-    const sole = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.06, 0.52), mat(color)); sole.position.set(0, -0.49, -0.08); leg.add(sole);
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.34, 6), skin); shin.position.y = -0.2; leg.add(shin);
+    const sock = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.08, 8), mat(0xFFFFFF)); sock.position.y = -0.3; leg.add(sock);
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.17, 0.5), mat(shoeC)); shoe.position.set(0, -0.4, -0.08); leg.add(shoe);
+    const sole = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.06, 0.52), mat(soleC)); sole.position.set(0, -0.49, -0.08); leg.add(sole);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.275, 0.04, 0.24), mat(soleC)); stripe.position.set(0, -0.39, -0.02); leg.add(stripe);
     body.add(leg); legs.push(leg);
   });
   const arms = [];
-  [-0.43, 0.43].forEach(x => { const a = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.26, 4, 8), mat(color)); a.position.set(x, 0.86, 0); body.add(a); arms.push(a); });
+  [-0.43, 0.43].forEach(x => { const a = new THREE.Group(); a.position.set(x, 0.98, 0); const sl = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.1, 4, 8), mat(topC)); sl.position.y = -0.04; a.add(sl); const fa = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.14, 4, 8), skin); fa.position.y = -0.2; a.add(fa); body.add(a); arms.push(a); });
   const bub = new THREE.Mesh(new THREE.SphereGeometry(1.0, 18, 14), new THREE.MeshBasicMaterial({ color: 0x7FD8FF, transparent: true, opacity: 0.28, depthWrite: false })); bub.position.y = 0.85; bub.visible = false; g.add(bub); g.userData.bubble = bub;
-  if (mine) { const ar = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 4), new THREE.MeshBasicMaterial({ color: 0xFFD23F })); ar.rotation.x = Math.PI; ar.position.y = 2.2; g.add(ar); g.userData.arrow = ar; }
+  if (mine) { const ar = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 4), new THREE.MeshBasicMaterial({ color: 0xFFD23F })); ar.rotation.x = Math.PI; ar.position.y = 2.3; g.add(ar); g.userData.arrow = ar; }
   Object.assign(g.userData, { body, legs, arms, phase: 0 });
   return g;
 }
@@ -826,13 +895,13 @@ function setupRace(seed) {
   const rnd = mulberry(seed != null ? seed : (Date.now() & 0xffffff) ^ 0x5eed);
   const slots = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) slots.push([2 + r * 2.4, -4.8 + c * 3.2]);
   const meSlot = 5;
-  S.me = new Body({ name: '나', isMe: true }); S.me.place(slots[meSlot][0], slots[meSlot][1]); S.me.mesh = makeRunner(0x1166FF, true); S.bodies.push(S.me);
+  S.me = new Body({ name: '나', isMe: true }); S.me.place(slots[meSlot][0], slots[meSlot][1]); S.me.mesh = makeRunner(myLook(), true, 1); S.bodies.push(S.me);
   let k = 0;
   slots.forEach((sl, i) => {
     if (i === meSlot) return;
     const P0 = PERSONAS.find(q => q.key === ROSTER[k % ROSTER.length]); k++;
     const b = new Body({ lives: 3, persona: P0, name: P0.name, rnd: mulberry((rnd() * 1e9) | 0), seed: rnd() * 6, lane: (rnd() * 2 - 1) * 2.5, patient: rnd() < 0.6 + P0.wait * 0.4, speedK: P0.speed * (0.93 + rnd() * 0.09) });
-    b.place(sl[0], sl[1]); b.mesh = makeRunner(P0.color, false); b.tag = nameTag(P0.name, '#' + P0.color.toString(16).padStart(6, '0')); b.mesh.add(b.tag);
+    b.place(sl[0], sl[1]); b.mesh = makeRunner(randomLook(b.rnd, P0.color), false, 2 + (rnd() * 98 | 0)); b.tag = nameTag(P0.name, '#' + P0.color.toString(16).padStart(6, '0')); b.mesh.add(b.tag);
     S.bodies.push(b);
   });
   for (const b of S.bodies) { scene.add(b.mesh); runnerMeshes.push(b.mesh); b.maxS = b.s; }
@@ -918,7 +987,7 @@ let confNext = 0;
 function confetti(at, n) { for (let i = 0; i < n; i++) { const k = confNext++ % CONF; confPos.set([at.x, at.y + 2, at.z], k * 3); confVel[k] = [(Math.random() - 0.5) * 10, 6 + Math.random() * 8, (Math.random() - 0.5) * 10, 2.5]; } }
 function confettiTick(dt) { for (let i = 0; i < CONF; i++) { const v = confVel[i]; if (v[3] <= 0) continue; v[3] -= dt; v[1] -= 14 * dt; confPos[i * 3] += v[0] * dt; confPos[i * 3 + 1] += v[1] * dt; confPos[i * 3 + 2] += v[2] * dt; if (v[3] <= 0) confPos[i * 3 + 1] = -999; } confGeo.attributes.position.needsUpdate = true; }
 
-const ui = { title: $('title'), hud: $('hud'), stage: $('hudStage'), score: $('hudScore'), time: $('hudTime'), pos: $('hudPos'), lives: $('hudLives'), banner: $('banner'), over: $('over'), board: $('board'), toast: $('toast'), controls: $('controls'), join: $('join'), sns: $('sns'), wind: $('hudWind'), fx: $('hudFx') };
+const ui = { title: $('title'), hud: $('hud'), stage: $('hudStage'), score: $('hudScore'), time: $('hudTime'), pos: $('hudPos'), lives: $('hudLives'), banner: $('banner'), over: $('over'), board: $('board'), toast: $('toast'), controls: $('controls'), join: $('join'), sns: $('sns'), wind: $('hudWind'), fx: $('hudFx'), look: $('look') };
 function fmt(ms) { const s = Math.max(0, ms) / 1000, m = Math.floor(s / 60), r = s - m * 60; return (m ? m + ':' + (r < 10 ? '0' : '') : '') + r.toFixed(1); }
 const show = (el, on) => { el.hidden = !on; };
 let toastT = 0, bannerT = 0;
@@ -1063,6 +1132,41 @@ $('snsForm').onsubmit = async e => {
 $('snsUrl').addEventListener('input', () => { $('acctRow').hidden = !/instagram\.com|(x|twitter)\.com\/i\//i.test($('snsUrl').value); });
 $('snsBack').onclick = () => { show(ui.sns, false); if (S.mode === 'over') show(ui.over, true); else show(ui.title, true); };
 
+// 내 러너 꾸미기 — 이 기기에 저장(tower_look). AI 는 판마다 랜덤
+function myLook() {
+  let L = null; try { L = JSON.parse(localStorage.getItem('tower_look') || 'null'); } catch (e) { L = null; }
+  const out = Object.assign({}, DEFAULT_LOOK);
+  if (L && typeof L === 'object') for (const k of LOOK_KEYS) if (Number.isInteger(L[k]) && L[k] >= 0 && L[k] < LOOK[k].list.length) out[k] = L[k];
+  return out;
+}
+let lookDraft = null, lookR = null, lookScene = null, lookCam = null, lookMesh = null, lookOn = false;
+function lookRender() {
+  if (!lookR) {
+    lookR = new THREE.WebGLRenderer({ canvas: $('lookCanvas'), antialias: true, alpha: true }); lookR.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); lookR.setSize(220, 220, false); lookR.outputColorSpace = THREE.SRGBColorSpace;
+    lookScene = new THREE.Scene(); lookScene.add(new THREE.HemisphereLight(0xEAF4FF, 0x4A5A7B, 1.9)); const d = new THREE.DirectionalLight(0xffffff, 1.4); d.position.set(2, 4, -3); lookScene.add(d);
+    lookCam = new THREE.PerspectiveCamera(32, 1, 0.1, 50); lookCam.position.set(0, 1.3, -4.4); lookCam.lookAt(0, 0.95, 0);
+  }
+  if (lookMesh) { lookScene.remove(lookMesh); lookMesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  lookMesh = makeRunner(lookDraft, false, 1); lookMesh.userData.bubble.visible = false; lookScene.add(lookMesh);
+}
+function lookRows() {
+  $('lookRows').innerHTML = LOOK_KEYS.map(k => {
+    const v = LOOK[k].list[lookDraft[k]], isC = /^#/.test(v);
+    return `<div class="lk"><span>${LOOK[k].name}</span><button type="button" data-k="${k}" data-d="-1" aria-label="${LOOK[k].name} 이전">‹</button><b>${isC ? `<i style="background:${v}"></i>` : esc(v)}</b><button type="button" data-k="${k}" data-d="1" aria-label="${LOOK[k].name} 다음">›</button></div>`;
+  }).join('');
+  [].forEach.call($('lookRows').querySelectorAll('button'), bt => { bt.onclick = () => { const k = bt.dataset.k, n = LOOK[k].list.length; lookDraft[k] = (lookDraft[k] + +bt.dataset.d + n) % n; lookRows(); lookRender(); }; });
+}
+function openLook() {
+  lookDraft = myLook(); show(ui.title, false); show(ui.look, true); lookOn = true;
+  try { lookRender(); } catch (e) { /* 미리보기 없이 */ }
+  lookRows();
+  (function spin() { if (!lookOn) return; requestAnimationFrame(spin); if (lookMesh) { lookMesh.rotation.y += 0.02; animateRunner(lookMesh, 2, false, 0.016, ''); lookR.render(lookScene, lookCam); } })();
+}
+$('lookBtn').onclick = openLook;
+$('lookRandom').onclick = () => { lookDraft = randomLook(Math.random); delete lookDraft.topHex; lookRows(); lookRender(); };
+$('lookSave').onclick = () => { try { localStorage.setItem('tower_look', JSON.stringify(lookDraft)); } catch (e) { /* 없음 */ } lookOn = false; show(ui.look, false); show(ui.title, true); flash('내 러너를 저장했어요', 1.4); };
+$('lookBack').onclick = () => { lookOn = false; show(ui.look, false); show(ui.title, true); };
+
 // 순위
 let boardTab = 'today', boardData = null;
 async function openBoard() {
@@ -1188,7 +1292,7 @@ function drawBodies(dt) {
     m.rotation.z = b.stun > 0 ? Math.sin(b.stun * 30) * 0.3 : 0;
     if (b.deadT <= 0) m.visible = !(b.safe > 0.4 && Math.floor(b.safe * 12) % 2);
     animateRunner(m, sp, !b.onGround, dt, b.diving ? 'dive' : b.shoveT > 0 ? 'shove' : '');
-    m.userData.bubble.visible = b.shieldT > 0; m.userData.body.scale.setScalar(b.boostT > 0 ? 1.08 + Math.sin(performance.now() / 60) * 0.04 : 1);
+    m.userData.bubble.visible = b.shieldT > 0; { const bs = m.userData.body.userData.base || [1, 1, 1], k = b.boostT > 0 ? 1.08 + Math.sin(performance.now() / 60) * 0.04 : 1; m.userData.body.scale.set(bs[0] * k, bs[1] * k, bs[2] * k); }
     if (b.tag) { const dd = S.me ? Math.hypot(b.pos.x - S.me.pos.x, b.pos.z - S.me.pos.z) : 99; b.tag.visible = dd > 2.5 && dd < 11 && Math.abs(b.pos.y - S.me.pos.y) < 4; }
   }
   const me = S.me; if (!me) return;
