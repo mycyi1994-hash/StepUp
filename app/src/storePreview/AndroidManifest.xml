@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스토어 판 미리 보기(storePreview)에만 들어간다 — 새 버전을 받아 스스로 업데이트하는 데 필요하다(src/selfUpdate 의 core/TestUpdates.kt, 2026-11-06).
+     테스트 APK 매니페스트(src/debug)와 달리 지갑 앱 찾기는 넣지 않는다 — 그 밖의 모습은 스토어 판(release) 그대로다.
+     release 에는 이 권한도 받는 쪽도 없다. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application>
+        <!-- 새 버전이 깔린 직후 -->
+        <receiver
+            android:name="com.stepup.android.core.TestUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
