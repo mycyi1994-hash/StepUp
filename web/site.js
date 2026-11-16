@@ -1,6 +1,6 @@
 // stepupcrew.com 소개 페이지 — 홍보영상과 다섯 가지 러닝 경험.
 // 화면 속 숫자·이름·코스·SUP 는 모두 예시이고, 각 카드에 "화면 예시" 배지가 붙어 있다.
-import { t, lang, setLang, onLangChange } from './i18n.js?v=20261112-game';
+import { t, lang, setLang, onLangChange } from './i18n.js?v=20261116-app';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -178,7 +178,7 @@ function filmError() {
   filmStatus.replaceChildren(t('film.error'));
   const link = document.createElement('a');
   link.className = 'film-retry';
-  link.href = 'https://youtu.be/5dfGSfGdBPo';
+  link.href = 'https://youtu.be/LUJnsoDJ1QA';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = t('film.errorLink');
