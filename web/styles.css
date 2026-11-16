@@ -68,7 +68,7 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 /* 11.11 워킹데이 띠(11/7~11/11) — 머리 줄 바로 아래 가운데, 모든 화면에서 보인다 */
 .event-chip{position:absolute;top:78px;left:0;right:0;margin:0 auto;width:max-content;z-index:19;display:inline-flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:6px 14px 6px 6px;border-radius:999px;background:#2A1206eb;border:1px solid #FFD76E66;color:#F8EBD3;font-size:13px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;box-shadow:0 10px 26px -10px #000c;animation:h-in .8s ease .5s both;transition:background .2s}
 .event-chip:hover{background:#3A1A0A}
-.event-chip-tag{flex:none;padding:3px 9px;border-radius:999px;background:#FFD76E;color:#2A1206;font-weight:800;font-size:12px}
+.event-chip-tag{flex:none;padding:3px 9px;border-radius:999px;background:#3DDC84;color:#04210F;font-weight:800;font-size:12px}
 .event-chip span:nth-child(2){overflow:hidden;text-overflow:ellipsis}
 .event-chip-go{flex:none;color:#FFD76E}
 @media(max-width:480px){.event-chip{top:68px;font-size:12px}}
@@ -556,6 +556,27 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
   .page-film .film-copy h1{font-size:22px}
   .page-film .film-copy p{display:none}
 }
+/* 앱 받기(2026-11-16 안드로이드 출시) — 넓은 화면은 영상 양옆 세로 카드, 900px 아래는 영상 밑 버튼 한 줄.
+   좁은 화면에서 .film-row 는 display:contents 라 영상 칸이 예전처럼 .film-card 의 바로 아래 칸으로 남는다 */
+.waitlist-banner .waitlist-open{display:none}
+.film-row{min-height:0;display:grid;grid-template-columns:minmax(150px,190px) minmax(0,1fr) minmax(150px,190px);gap:16px}
+.dl-side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px 12px;border-radius:16px;background:linear-gradient(180deg,#0f2a5c,#0b1630);border:1px solid #ffffff2e;color:#fff;text-align:center;text-decoration:none;transition:transform .2s,border-color .2s}
+.dl-side:hover{transform:translateY(-3px);border-color:var(--blue)}
+.dl-side:focus-visible,.dl-mobile:focus-visible{outline:3px solid #76b1ff;outline-offset:3px}
+.dl-side .gp-icon{width:52px;height:52px;margin-bottom:8px}
+.dl-kicker{font-size:11px;letter-spacing:.12em;opacity:.7}
+.dl-side strong{font-size:21px;line-height:1.15}
+.dl-cta{margin-top:16px;padding:12px 18px;border-radius:999px;background:#1166ff;font-size:15px;font-weight:800;white-space:nowrap}
+.dl-side:hover .dl-cta{background:#0955d4}
+.dl-mobile{display:none}
+@media(max-width:899px){
+  .film-row{display:contents}
+  .dl-side{display:none}
+  .dl-mobile{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:12px 16px;border-radius:14px;background:#1166ff;color:#fff;font-size:16px;font-weight:800;text-decoration:none}
+  .dl-mobile .gp-icon{width:22px;height:22px;flex:none}
+}
+@media(max-width:899px) and (max-height:500px){.dl-mobile{min-height:40px;padding:8px 14px;font-size:14px}}
+@media(prefers-reduced-motion:reduce){.dl-side:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 
 /* 스크립트가 오기 전에 누른 버튼 — 눌린 것을 보이고, 준비되면 그 행동을 이어서 한다(index.html 머리 스크립트, 2차 QA 느린 3G) */
