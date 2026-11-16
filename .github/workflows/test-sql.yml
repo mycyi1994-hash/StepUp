@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # setup.sql 은 migrations/ 를 이어 붙인 결과물이다. 손으로 고치고
       # 다시 만드는 것을 잊으면, 검사를 통과한 파일과 붙여넣는 파일이 달라진다.
