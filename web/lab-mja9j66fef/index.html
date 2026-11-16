@@ -8,75 +8,78 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0B1A33">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/lab-mja9j66fef/game.css?v=1117">
+<link rel="stylesheet" href="/lab-mja9j66fef/game.css?v=1118">
 </head>
 <body>
 <canvas id="stage" aria-label="게임 화면"></canvas>
 
 <section id="title" class="panel title">
-  <a class="home" href="/">← StepUp 홈</a><span class="testbadge">테스트</span>
+  <a class="home" href="/">← StepUp 홈</a>
+  <button class="lookmini" id="lookBtn" type="button" aria-label="내 러너 꾸미기" title="내 러너 꾸미기">🎨</button>
   <img class="logo" src="/assets/img/stepup-logo.webp" width="916" height="172" alt="StepUp">
   <h1>StepUP 타워</h1>
-  <p class="lede">빙글빙글 도는 탑, 다섯 구간을 지나 정상까지.<br>바깥으로 떨어지면 풍덩, 안쪽으로 떨어지면 아래층부터 다시. <b>혈압 주의 🩸</b></p>
-  <ul class="rules">
-    <li><b>하루 1판</b> 00시마다 새 기회 · 떨어지면 부활 1번</li>
-    <li><b>SNS</b> 챌린지 올리면 한 판 더(하루 3번까지)</li>
-    <li><b>점수</b> 오른 높이 · 통과 구간 · 빨리 · 1등 · AI 밀어 떨어뜨리기</li>
-    <li><b>변수</b> 신발 상자(⚡부스터 · 🦘스프링 · 🛡️방패 · 🌩️번개) · 돌발 이벤트 · 판마다 다른 코스</li>
-    <li><b>장애물</b> 통통 범퍼 · 끈적이 · 가속 발판 · 점프대 · 거꾸로 벨트 · 대포 · AI 가 버린 바나나 🍌</li>
-  </ul>
+  <p class="lede">빙글빙글 탑을 올라 정상까지!</p>
+  <p class="oneline">하루 1판 · SNS 공유하면 +1판 · 부활 1번</p>
   <p class="who" id="whoLine"></p>
   <button class="btn big" id="dailyBtn" type="button">오늘의 도전</button>
-  <div class="row2"><button class="btn ghost" id="practiceBtn" type="button">연습(점수 없음)</button><button class="btn ghost" id="boardBtn" type="button">순위</button></div>
-  <button class="btn ghost" id="lookBtn" type="button">🎨 내 러너 꾸미기</button>
-  <p class="how"><span class="pc">이동 <kbd>WASD</kbd>·<kbd>←↑↓→</kbd> · 점프 <kbd>Space</kbd>(공중에서 한 번 더 = 다이브) · 밀치기 <kbd>Shift</kbd></span><span class="mobile">왼쪽을 끌어 이동 · 점프(공중에서 한 번 더 = 다이브) · 밀치기</span></p>
+  <div class="row2"><button class="btn ghost" id="practiceBtn" type="button">연습</button><button class="btn ghost" id="boardBtn" type="button">순위</button></div>
+  <button class="rulelink" id="rulesBtn" type="button">ⓘ 규칙 보기</button>
+  <p class="how"><span class="pc">이동 <kbd>WASD</kbd> · 점프 <kbd>Space</kbd> · 밀치기 <kbd>Shift</kbd></span></p>
+</section>
+
+<section id="rules" class="panel rules2" hidden>
+  <button class="xbtn" id="rulesBack" type="button" aria-label="닫기">✕</button>
+  <h2>규칙</h2>
+  <dl>
+    <dt>🧗 목표</dt><dd>다섯 구간을 지나 정상까지 · 8분</dd>
+    <dt>💧 떨어지면</dt><dd>바깥은 풍덩(부활 1번) · 안쪽은 아래층부터 다시</dd>
+    <dt>⭐ 점수</dt><dd>높이 · 구간 · 빠르기 · 등수 · AI 밀어 떨어뜨리기</dd>
+    <dt>🎁 상자</dt><dd>⚡부스터 · 🦘스프링 · 🛡️방패 · 🌩️번개</dd>
+    <dt>⚠️ 장애물</dt><dd>범퍼 · 끈적이 · 가속 · 점프대 · 벨트 · 대포 · 🍌</dd>
+    <dt>🎮 조작</dt><dd>이동 · 점프(공중에서 한 번 더 = 다이브) · 밀치기</dd>
+  </dl>
+  <button class="btn" id="rulesOk" type="button">알겠어요</button>
 </section>
 
 <section id="look" class="panel look" hidden>
-  <h2>내 러너 꾸미기</h2>
+  <button class="xbtn" id="lookBack" type="button" aria-label="닫기">✕</button>
+  <h2>내 러너</h2>
   <canvas id="lookCanvas" width="220" height="220" aria-label="내 러너 미리보기"></canvas>
   <div id="lookRows" class="lkrows"></div>
+  <button class="more" id="lookMore" type="button" aria-expanded="false">더 꾸미기 ▾</button>
   <div class="row2"><button class="btn ghost" id="lookRandom" type="button">🎲 랜덤</button><button class="btn" id="lookSave" type="button">저장</button></div>
-  <button class="link" id="lookBack" type="button">돌아가기</button>
 </section>
 
 <section id="join" class="panel join" hidden>
+  <button class="xbtn" id="joinBack" type="button" aria-label="닫기">✕</button>
   <h2>참가하기</h2>
-  <p class="sub">StepUp 사전 등록한 이메일로 참가해요. 하루 기회 · 순위를 이 이메일로 세요.</p>
+  <p class="sub">사전 등록한 이메일로 참가해요</p>
   <form id="joinForm" novalidate>
-    <label for="joinEmail">사전 등록한 이메일</label>
-    <input id="joinEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
-    <label for="joinName">순위에 보일 닉네임</label>
-    <input id="joinName" maxlength="12" autocomplete="nickname" placeholder="2~12자">
-    <label class="consent"><input id="joinConsent" type="checkbox"><span>게임 기회 · 순위 · 당첨 안내를 위해 이메일 · 닉네임 · 점수를 받는 데 동의합니다.</span></label>
+    <input id="joinEmail" type="email" inputmode="email" autocomplete="email" placeholder="이메일" aria-label="사전 등록한 이메일">
+    <input id="joinName" maxlength="12" autocomplete="nickname" placeholder="닉네임 (순위에 보여요)" aria-label="순위에 보일 닉네임">
+    <label class="consent"><input id="joinConsent" type="checkbox"><span>이메일 · 닉네임 · 점수 수집 동의 <details class="why"><summary>보기</summary>게임 기회 · 순위 · 당첨 안내를 위해 이메일 · 닉네임 · 점수를 받아요.</details></span></label>
     <div class="trap" aria-hidden="true"><input id="joinTrap" tabindex="-1" autocomplete="off"></div>
     <p class="err" id="joinErr"></p>
     <button class="btn" id="joinBtn" type="submit">참가하기</button>
   </form>
-  <p class="sub">아직이면 <a href="/?utm_source=game&amp;utm_medium=web#join">사전 등록</a>부터 해 주세요.</p>
-  <button class="link" id="joinBack" type="button">돌아가기</button>
+  <a class="link" href="/?utm_source=game&amp;utm_medium=web#join">아직 사전 등록 안 했어요</a>
 </section>
 
 <section id="sns" class="panel sns" hidden>
-  <h2>SNS 올리고 한 번 더</h2>
+  <button class="xbtn" id="snsBack" type="button" aria-label="닫기">✕</button>
+  <h2>공유하고 한 판 더</h2>
   <p class="sub" id="snsLeft"></p>
-  <ol class="steps">
-    <li>아래 글을 X · 인스타 · 스레드에 <b>전체 공개</b>로 올려요(해시태그 그대로).</li>
-    <li>올린 게시물의 링크를 붙여 넣으면 바로 한 판이 생겨요.</li>
-  </ol>
-  <pre class="snstext" id="snsText"></pre>
-  <div class="row2"><button class="btn ghost" id="snsCopy" type="button">글 복사</button><a class="btn ghost" id="snsX" target="_blank" rel="noopener noreferrer">X에 올리기</a></div>
-  <a class="btn ghost" id="snsThreads" target="_blank" rel="noopener noreferrer">스레드에 올리기</a>
+  <p class="stp"><b>1</b> 전체 공개로 올리기</p>
+  <div class="row3"><a class="btn ghost" id="snsX" target="_blank" rel="noopener noreferrer">X</a><a class="btn ghost" id="snsThreads" target="_blank" rel="noopener noreferrer">스레드</a><button class="btn ghost" id="snsCopy" type="button">글 복사</button></div>
+  <p class="snstext" id="snsText" hidden></p>
   <form id="snsForm" novalidate>
-    <label for="snsUrl">게시물 링크</label>
-    <input id="snsUrl" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://x.com/…/status/…">
-    <div id="acctRow" hidden><label for="snsAcct">내 계정 아이디(@ 없이)</label><input id="snsAcct" autocapitalize="off" spellcheck="false" placeholder="stepup_runner"></div>
-    <label class="consent"><input id="snsConsent" type="checkbox"><span>게시물 확인을 위해 게시물 링크 · 계정 아이디를 받는 데 동의합니다.</span></label>
+    <p class="stp"><b>2</b> 올린 글 링크 붙여 넣기</p>
+    <input id="snsUrl" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://x.com/…" aria-label="게시물 링크">
+    <div id="acctRow" hidden><input id="snsAcct" autocapitalize="off" spellcheck="false" placeholder="내 계정 아이디(@ 없이)" aria-label="내 계정 아이디"></div>
+    <label class="consent"><input id="snsConsent" type="checkbox"><span>링크 · 계정 아이디 수집 동의</span></label>
     <p class="err" id="snsErr"></p>
-    <button class="btn" id="snsSend" type="submit">링크 내고 한 번 더</button>
+    <button class="btn" id="snsSend" type="submit">한 판 받기</button>
   </form>
-  <p class="sub">해시태그가 없거나 비공개 · 남의 게시물이면 나중에 확인해서 빼요.</p>
-  <button class="link" id="snsBack" type="button">돌아가기</button>
 </section>
 
 <div id="hud" class="hud" hidden>
@@ -99,16 +102,16 @@
 <section id="over" class="panel over" hidden aria-live="polite"></section>
 
 <section id="board" class="panel board" hidden>
+  <button class="xbtn" id="boardClose" type="button" aria-label="닫기">✕</button>
   <h2>순위</h2>
-  <div class="tabs" role="tablist"><button type="button" role="tab" data-board="today" aria-selected="true">오늘</button><button type="button" role="tab" data-board="all" aria-selected="false">역대 최고</button></div>
+  <div class="tabs" role="tablist"><button type="button" role="tab" data-board="today" aria-selected="true">오늘</button><button type="button" role="tab" data-board="all" aria-selected="false">역대</button></div>
   <p class="me" id="boardMe"></p>
   <ol class="list" id="boardList"></ol>
-  <p class="sub">오늘 순위는 00시(한국 시간)마다 새로 시작해요 · 한 사람의 최고 점수만</p>
-  <button class="btn ghost" id="boardClose" type="button">닫기</button>
+  <p class="sub tiny">00시에 새로 시작 · 한 사람 최고 점수만</p>
 </section>
 
 <noscript><p class="noscript">이 게임은 자바스크립트가 필요해요.</p></noscript>
 <script src="/lab-mja9j66fef/config.js?v=1113"></script>
-<script type="module" src="/lab-mja9j66fef/game.js?v=1117"></script>
+<script type="module" src="/lab-mja9j66fef/game.js?v=1118"></script>
 </body>
 </html>

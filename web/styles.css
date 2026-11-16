@@ -574,8 +574,8 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 .dl-bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;transition:transform .6s}
 .dl-side:hover{transform:translateY(-4px);border-color:#3d74fa;box-shadow:0 18px 40px -18px #1166ffaa}
 .dl-side:hover .dl-bg{transform:scale(1.06)}
-.dl-icon{width:68px;height:68px;border-radius:18px;margin:auto 0 6px;box-shadow:0 10px 30px -6px #1166ff99,0 0 0 1px #ffffff33}
-.dl-shoe{width:100%;max-width:200px;margin:auto 0 -4px;transform:rotate(-12deg);filter:drop-shadow(0 16px 22px #000a);transition:transform .4s}
+.dl-icon{width:68px;height:68px;flex:none;border-radius:18px;margin:auto 0 6px;box-shadow:0 10px 30px -6px #1166ff99,0 0 0 1px #ffffff33}
+.dl-shoe{width:100%;max-width:200px;height:auto;aspect-ratio:650/506;object-fit:contain;flex:none;margin:auto 0 -4px;transform:rotate(-12deg);filter:drop-shadow(0 16px 22px #000a);transition:transform .4s}
 .dl-side:hover .dl-shoe{transform:rotate(-16deg) translateY(-6px)}
 .dl-kicker{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.16em;color:#7fb2ff}
 .dl-head{font-size:clamp(18px,1.55vw,22px);font-weight:900;line-height:1.25;letter-spacing:-.03em;word-break:keep-all;text-wrap:balance}

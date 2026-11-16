@@ -1366,7 +1366,7 @@ function paintStatus() {
   if (!st) { who.innerHTML = ACC.email ? '' : '<span class="muted">사전 등록한 이메일로 참가해요</span>'; btn.textContent = '오늘의 도전'; return; }
   who.innerHTML = `<b>${esc(st.name)}</b> · 오늘 최고 ${st.best_today != null ? (+st.best_today).toLocaleString('ko-KR') + '점' : '—'} <button class="link" id="switchAcc" type="button">바꾸기</button>`;
   $('switchAcc').onclick = () => openJoin(true);
-  btn.textContent = st.runs_left > 0 ? `오늘의 도전 (${st.runs_left}번 남음)` : 'SNS 올리고 한 번 더 하기';
+  btn.textContent = st.runs_left > 0 ? `오늘의 도전 (${st.runs_left})` : '공유하고 한 판 더';
 }
 async function refreshStatus() {
   if (!ACC.email) { ACC.status = null; paintStatus(); return; }
@@ -1420,19 +1420,19 @@ async function endRun(finished, why) {
   sfx(finished ? 'win' : 'out'); if (finished) { celebrateGate(S.world.finishS, S.world.finishY, 2.2); S.showT = 6; }
   const head = finished ? (S.place === 1 ? '🏆 정상 1등!' : '정상 도착!') : why === 'time' ? '시간 끝!' : '탈락… 🩸';
   ui.over.innerHTML = `<h2>${head}</h2><p class="big">${score.toLocaleString('ko-KR')}점</p>
-    <p class="sub">${finished ? `${S.place}위로 도착` : `STAGE ${Math.min(k + 1, 5)}까지`} · ${fmt(S.playT * 1000)}${S.ko ? ` · 밀어 떨어뜨린 AI ${S.ko}명` : ''}${S.revived ? ' · 부활 사용' : ''}</p>
-    <p class="sub" id="overNote">${S.daily ? '점수를 기록하는 중…' : '연습 판은 점수가 남지 않아요.'}</p>
+    <p class="sub">${finished ? `${S.place}위` : `STAGE ${Math.min(k + 1, 5)}`} · ${fmt(S.playT * 1000)}${S.ko ? ` · AI ${S.ko}명 밀어냄` : ''}</p>
+    <p class="sub" id="overNote">${S.daily ? '기록하는 중…' : '연습 판 · 점수 없음'}</p>
     <button class="btn" id="againDaily">${S.daily ? '다시 도전' : '오늘의 도전'}</button>
-    <div class="row2"><button class="btn ghost" id="againPractice">연습 한 판</button><button class="btn ghost" id="toBoard">순위 보기</button></div>
-    <button class="btn ghost" id="toSns">SNS 올리고 한 번 더</button><button class="link" id="toTitle" type="button">처음으로</button>`;
+    <div class="row2"><button class="btn ghost" id="toBoard">순위</button><button class="btn ghost" id="toSns">공유하고 +1판</button></div>
+    <button class="link" id="toTitle" type="button">처음으로</button>`;
   show(ui.over, true);
   $('againDaily').onclick = () => { show(ui.over, false); startDaily(); };
-  $('againPractice').onclick = startPractice; $('toBoard').onclick = () => openBoard(); $('toTitle').onclick = toTitle; $('toSns').onclick = openSns;
+  $('toBoard').onclick = () => openBoard(); $('toTitle').onclick = toTitle; $('toSns').onclick = openSns;
   if (!S.daily || !S.run) return;
   const run = S.run; S.run = null;
   try {
     const d = await api('tower_end', { p_run: run, p_progress: prog, p_revived: S.revived, p_ko: S.ko, p_place: finished ? S.place : 0 });
-    $('overNote').textContent = d && d.ok ? `기록했어요 · 오늘 ${d.rank_today}위 · 역대 ${d.rank_all}위${d.score !== score ? ` (서버 점수 ${(+d.score).toLocaleString('ko-KR')}점)` : ''}` : '점수를 기록하지 못했어요.';
+    $('overNote').textContent = d && d.ok ? `오늘 ${d.rank_today}위 · 역대 ${d.rank_all}위${d.score !== score ? ` · 기록 ${(+d.score).toLocaleString('ko-KR')}점` : ''}` : '점수를 기록하지 못했어요.';
   } catch (e) { $('overNote').textContent = '연결이 끊겨 마지막으로 통과한 구간까지만 기록됐어요.'; }
   refreshStatus();
 }
@@ -1444,7 +1444,7 @@ const SNS_TEXT = '나는 StepUP 타워 정상까지 갈 수 있을까? 🏃 혈�
 function openSns() {
   [ui.title, ui.over].forEach(el => show(el, false)); show(ui.sns, true);
   $('snsErr').textContent = ''; $('snsUrl').value = ''; $('snsText').textContent = SNS_TEXT;
-  const st = ACC.status; $('snsLeft').textContent = st ? `오늘 SNS로 받을 수 있는 기회 ${st.sns_left}번 남음 · 00시에 다시 3번` : '먼저 사전 등록한 이메일로 참가해 주세요.';
+  const st = ACC.status; $('snsLeft').textContent = st ? `오늘 ${st.sns_left}번 남음` : '먼저 참가하기를 해 주세요.';
 }
 $('snsCopy').onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(SNS_TEXT) : Promise.reject(new Error('x'))).then(() => flash('글을 복사했어요. SNS에 붙여 넣어 올려 주세요.', 2), () => flash('복사가 안 돼요. 글을 길게 눌러 복사해 주세요.', 2)); };
 $('snsX').href = 'https://x.com/intent/post?text=' + encodeURIComponent(SNS_TEXT);
@@ -1460,7 +1460,7 @@ $('snsForm').onsubmit = async e => {
     if (d && d.ok) { if (ACC.status) { ACC.status.runs_left = d.runs_left; ACC.status.sns_left = d.sns_left; } paintStatus(); show(ui.sns, false); show(ui.title, true); S.mode = 'title'; flash('기회 +1! 바로 도전해 보세요.', 2); }
     else err.textContent = CODES[d && d.code] || '확인하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
   } catch (x) { err.textContent = '연결이 끊겼어요. 잠시 뒤 다시 시도해 주세요.'; }
-  btn.disabled = false; btn.textContent = '링크 내고 한 번 더';
+  btn.disabled = false; btn.textContent = '한 판 받기';
 };
 $('snsUrl').addEventListener('input', () => { $('acctRow').hidden = !/instagram\.com|(x|twitter)\.com\/i\//i.test($('snsUrl').value); });
 $('snsBack').onclick = () => { show(ui.sns, false); if (S.mode === 'over') show(ui.over, true); else show(ui.title, true); };
@@ -1482,8 +1482,11 @@ function lookRender() {
   if (lookMesh) { lookScene.remove(lookMesh); lookMesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
   lookMesh = makeRunner(lookDraft, false, 1); lookMesh.userData.bubble.visible = false; lookScene.add(lookMesh);
 }
+const LOOK_MAIN = ['hair', 'hat', 'top', 'acc'];
+let lookAll = false;
 function lookRows() {
-  $('lookRows').innerHTML = LOOK_KEYS.map(k => {
+  $('lookMore').textContent = lookAll ? '접기 ▴' : '더 꾸미기 ▾'; $('lookMore').setAttribute('aria-expanded', String(lookAll));
+  $('lookRows').innerHTML = (lookAll ? LOOK_KEYS : LOOK_MAIN).map(k => {
     const v = LOOK[k].list[lookDraft[k]], isC = /^#/.test(v);
     return `<div class="lk"><span>${LOOK[k].name}</span><button type="button" data-k="${k}" data-d="-1" aria-label="${LOOK[k].name} 이전">‹</button><b>${isC ? `<i style="background:${v}"></i>` : esc(v)}</b><button type="button" data-k="${k}" data-d="1" aria-label="${LOOK[k].name} 다음">›</button></div>`;
   }).join('');
@@ -1496,6 +1499,9 @@ function openLook() {
   (function spin() { if (!lookOn) return; requestAnimationFrame(spin); if (lookMesh) { lookMesh.rotation.y += 0.02; animateRunner(lookMesh, 2, false, 0.016, ''); lookR.render(lookScene, lookCam); } })();
 }
 $('lookBtn').onclick = openLook;
+$('lookMore').onclick = () => { lookAll = !lookAll; lookRows(); };
+$('rulesBtn').onclick = () => { show(ui.title, false); show($('rules'), true); };
+$('rulesBack').onclick = $('rulesOk').onclick = () => { show($('rules'), false); show(ui.title, true); };
 $('lookRandom').onclick = () => { lookDraft = randomLook(Math.random); delete lookDraft.topHex; lookRows(); lookRender(); };
 $('lookSave').onclick = () => { try { localStorage.setItem('tower_look', JSON.stringify(lookDraft)); } catch (e) { /* 없음 */ } lookOn = false; show(ui.look, false); show(ui.title, true); flash('내 러너를 저장했어요', 1.4); };
 $('lookBack').onclick = () => { lookOn = false; show(ui.look, false); show(ui.title, true); };

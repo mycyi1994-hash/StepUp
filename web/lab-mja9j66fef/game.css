@@ -112,3 +112,24 @@ a.btn{text-decoration:none}
 .lk button{height:34px;border:0;border-radius:10px;background:#E8EEF9;font:inherit;font-size:20px;font-weight:900;color:var(--ink);cursor:pointer}
 .lk b{text-align:center;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lk b i{display:inline-block;width:26px;height:18px;border-radius:6px;vertical-align:middle;box-shadow:0 0 0 1px #CBD6EA inset}
+
+/* 2026-11-16 간단하게 — 첫 화면 한 줄 · 닫기는 ✕ · 규칙은 따로 */
+.panel h2{margin:4px 0 6px}
+.xbtn{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:0;background:#E3EAF6;font:inherit;font-size:16px;font-weight:900;color:#2C3E5F;cursor:pointer;z-index:1}
+.xbtn:hover{background:#D3DEF2}
+.title .lede{font-size:17px;margin:6px 0 10px}
+.oneline{display:inline-block;margin:0 0 14px;padding:8px 14px;border-radius:999px;background:#fff;font-weight:800;font-size:14px;color:#2C3E5F}
+.lookmini{position:absolute;top:12px;right:14px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;box-shadow:0 0 0 2px #D3DEF2 inset;font-size:18px;cursor:pointer}
+.rulelink{margin-top:12px;background:none;border:0;font:inherit;color:var(--blue-d);font-weight:800;font-size:14px;cursor:pointer;padding:6px}
+.title .how{opacity:.65}
+@media (hover:none) and (pointer:coarse){.title .how{display:none}}
+.rules2 dl{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;text-align:left;margin:14px 0 16px}
+.rules2 dt{font-weight:800;white-space:nowrap}.rules2 dd{margin:0;font-weight:700;color:#2C3E5F;font-size:14px}
+.join form{display:grid;gap:10px;margin:12px 0 4px}
+.join input[type=email],.join #joinName{height:50px}
+.why{display:inline}.why summary{display:inline;cursor:pointer;text-decoration:underline;color:var(--blue-d)}.why[open]{display:block;margin-top:4px;color:#5A6E92;font-weight:600}
+.stp{text-align:left;font-weight:800;margin:14px 0 8px;color:#2C3E5F}.stp b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;margin-right:6px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.row3 .btn{margin:0;height:48px;font-size:15px}
+.sns form{margin-top:0}.sns #acctRow{margin-top:8px}.sns .consent{margin:10px 0 4px}
+.more{width:100%;background:none;border:0;font:inherit;font-weight:800;color:var(--blue-d);padding:10px 0 2px;cursor:pointer}
+.tiny{font-size:12px!important;opacity:.8}
