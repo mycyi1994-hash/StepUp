@@ -10648,6 +10648,294 @@ begin
 end $$;
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0106 아이템 — 가방 · 운영자 지급 · 러닝 아이템 · 보상 이벤트 (2026-11-17)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 아이템 · 운영자 지급 · 보상 이벤트(0106) ─────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('10600000-0000-0000-0000-000000000001', 'Runner106@Test.com', '{"full_name":"아이템러너"}'),
+  ('10600000-0000-0000-0000-000000000002', 'quiet106@test.com', '{"full_name":"조용한러너"}');
+insert into fix (k, v) select 'shoe106', economy.draw_create('10600000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'ops106', economy.ops_key_new('검사 운영자');
+insert into public.push_tokens (token, user_id) values
+  ('token-106-runner-aaaaaaaaaaaaaaaa', '10600000-0000-0000-0000-000000000001'),
+  ('token-106-quiet-aaaaaaaaaaaaaaaaa', '10600000-0000-0000-0000-000000000002');
+-- 두 번째 사람은 이벤트 소식을 껐다
+insert into public.notify_prefs (user_id, event_news) values ('10600000-0000-0000-0000-000000000002', false)
+on conflict (user_id) do update set event_news = false;
+delete from public.push_outbox;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 5 from economy.item_kinds where enabled), '아이템 종류 다섯(0106)');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'economy.item_batches', 'select')
+                     and not has_table_privilege('anon', 'public.user_items', 'select')
+                     and not has_table_privilege('authenticated', 'public.user_items', 'insert')
+                     and not has_table_privilege('authenticated', 'public.user_items', 'update'),
+    '가방은 읽기만 · 지급 기록은 앱이 못 본다(0106)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.items_me()', 'execute')
+                     and not has_function_privilege('anon', 'public.item_use(text, uuid, bigint)', 'execute')
+                     and not has_function_privilege('anon', 'public.run_items_use(timestamptz, text[])', 'execute')
+                     and not has_function_privilege('authenticated', 'economy.item_add(uuid, text, int)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_key_new(text)', 'execute'),
+    '아이템 함수는 로그인한 사람만 · 넣기와 키 만들기는 서버만(0106)');
+end $$;
+
+-- 운영자: 지급
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('ops106');
+  r jsonb;
+begin
+  call pg_temp.must_fail($q$select public.ops_overview('wrong-key')$q$, '틀린 키로는 운영자 함수를 못 부른다(0106)');
+  r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000a1', 'RUN_BOOSTER', 2, '출시 기념',
+                             array[' runner106@test.com ', 'nobody106@test.com']);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int = 1 and r->'missing' = '["nobody106@test.com"]'::jsonb,
+    '이메일 명단으로 지급 — 대소문자 · 공백 무시, 못 찾은 이메일은 돌려준다(0106)');
+  r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000a1', 'RUN_BOOSTER', 2, '출시 기념',
+                             array['runner106@test.com']);
+  perform pg_temp.ok((r->>'replay')::boolean, '같은 요청 번호의 지급은 다시 주지 않는다(0106)');
+  perform pg_temp.ok(public.ops_item_grant(v_key, gen_random_uuid(), 'NOPE', 1, '사유 있음', array['runner106@test.com'])->>'code' = 'kind'
+                     and public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 100, '사유 있음', array['runner106@test.com'])->>'code' = 'qty'
+                     and public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '', array['runner106@test.com'])->>'code' = 'reason'
+                     and public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '사유 있음', array['nobody106@test.com'])->>'code' = 'no_target',
+    '지급 검사 — 종류 · 개수 · 사유 · 받을 사람(0106)');
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'REWARD_DOUBLE', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_DRINK', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'DURABILITY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  r := public.ops_user_find(v_key, 'runner106');
+  perform pg_temp.ok(jsonb_array_length(r) = 1 and (r->0->'items'->>'RUN_BOOSTER')::int = 2 and r->0->>'name' = '아이템러너',
+    '운영자 사람 찾기 — 이메일 일부 · 가진 아이템(0106)');
+  r := public.ops_overview(v_key);
+  perform pg_temp.ok(r->>'actor' = '검사 운영자' and jsonb_array_length(r->'kinds') = 5 and jsonb_array_length(r->'batches') >= 5,
+    '운영자 한눈에 — 종류 · 최근 지급(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select qty from public.user_items where user_id = '10600000-0000-0000-0000-000000000001' and kind = 'RUN_BOOSTER') = 2,
+    '지급은 한 번만 가방에 들어간다(0106)');
+  perform pg_temp.ok((select count(*) = 1 and bool_and(link = 'items' and args->>'item' = 'RUN_BOOSTER' and args->>'qty' = '2')
+                        from public.push_outbox where kind = 'ITEM_GRANTED'),
+    '지급 푸시는 한 번 · 푸시를 끈 지급은 보내지 않는다(0106)');
+  perform pg_temp.ok((select count(*) >= 5 from public.admin_audit where action = 'ops_item_grant' and detail->>'by' = '검사 운영자'),
+    '지급은 감사 기록에 남는다(0106)');
+end $$;
+
+-- 앱: 가방 · 러닝 아이템
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_shoe bigint := pg_temp.fx('shoe106')::bigint;
+  v_a timestamptz := now() - interval '30 hours';
+  v_b timestamptz := now() - interval '28 hours';
+  r jsonb;
+  s record;
+begin
+  perform public.sneaker_equip(v_shoe);
+  r := public.items_me();
+  perform pg_temp.ok(jsonb_array_length(r->'items') = 5 and r->'event' = 'null'::jsonb
+                     and (select (x->>'qty')::int from jsonb_array_elements(r->'items') x where x->>'kind' = 'RUN_BOOSTER') = 2
+                     and (select x->>'mode' from jsonb_array_elements(r->'items') x where x->>'kind' = 'ENERGY_RESET') = 'NOW',
+    '내 가방 — 종류 · 개수 · 쓰는 때(0106)');
+  perform pg_temp.ok((select count(*) from public.user_items) = 5, '가방은 내 것만 보인다(0106)');
+
+  -- 아이템 없는 러닝(기준)
+  select * into s from public.record_session(v_a, v_a + interval '601 seconds', 900, 601, pg_temp.track(v_a, 600, 0.00001), 0, 1, '', false, v_shoe);
+  insert into fix (k, v) values ('base106', s.points_awarded::text);
+
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['RUN_BOOSTER', 'REWARD_DOUBLE'])$q$, v_b),
+    '같은 종류(적립 배수)는 한 러닝에 함께 못 쓴다(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['DURABILITY_RESET'])$q$, v_b),
+    '바로 쓰는 아이템은 러닝에 못 붙인다(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['RUN_BOOSTER'])$q$, now() - interval '8 days'),
+    '오래된 러닝에는 아이템을 못 붙인다(0106)');
+  r := public.run_items_use(v_b, array['RUN_BOOSTER', 'ENERGY_DRINK']);
+  perform pg_temp.ok((r->>'mult')::numeric = 1.5 and (r->>'energy_factor')::numeric = 0.5 and jsonb_array_length(r->'kinds') = 2,
+    '출발 때 고른 아이템 — 적립 1.5배 · 에너지 절반(0106)');
+  r := public.run_items_use(v_b, array['RUN_BOOSTER', 'ENERGY_DRINK']);
+  perform pg_temp.ok((select qty from public.user_items where kind = 'RUN_BOOSTER') = 1
+                     and (select qty from public.user_items where kind = 'ENERGY_DRINK') = 0,
+    '같은 러닝에 다시 보내도 한 번만 빠진다(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['REWARD_DOUBLE'])$q$, v_b),
+    '이미 적립 배수 아이템을 고른 러닝에 같은 종류를 더하지 못한다(0106)');
+
+  select * into s from public.record_session(v_b, v_b + interval '601 seconds', 900, 601, pg_temp.track(v_b, 600, 0.00002), 0, 1, '', false, v_shoe);
+  perform pg_temp.ok(s.verdict <> 'VOID' and s.points_awarded = round(pg_temp.fx('base106')::numeric * 1.5, 4),
+    '러닝 부스터를 고른 러닝은 적립 1.5배(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['REWARD_DOUBLE'])$q$, v_a),
+    '이미 기록한 러닝에는 아이템을 못 붙인다(0106)');
+end $$;
+reset role;
+do $$
+declare
+  v_user uuid := '10600000-0000-0000-0000-000000000001';
+  v_a public.walk_sessions;
+  v_b public.walk_sessions;
+begin
+  select * into v_a from public.walk_sessions where user_id = v_user and started_at < now() - interval '29 hours';
+  select * into v_b from public.walk_sessions where user_id = v_user and started_at > now() - interval '29 hours';
+  perform pg_temp.ok(v_a.reward_mult = 1 and v_b.reward_mult = 1.5, '적용된 배수가 러닝 기록에 남는다(0106)');
+  perform pg_temp.ok(v_a.energy_used > 0 and v_b.energy_used = round(v_a.energy_used / 2, 4), '에너지 드링크를 고른 러닝은 에너지를 절반만 쓴다(0106)');
+  perform pg_temp.ok((select count(*) = 2 and bool_and(session_id = v_b.id) from economy.item_uses where user_id = v_user and run_started_at = v_b.started_at),
+    '쓴 아이템이 그 러닝에 이어진다(0106)');
+end $$;
+
+-- 보상 이벤트
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('ops106');
+  r jsonb;
+begin
+  perform pg_temp.ok(public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 1, 24)->>'code' = 'mult'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 6, 24)->>'code' = 'mult'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 2, 0)->>'code' = 'hours'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '', 2, 24)->>'code' = 'title'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 2, 24, now() - interval '1 hour')->>'code' = 'past',
+    '보상 이벤트 검사 — 배수 · 기간 · 이름 · 시작 시각(0106)');
+  r := public.ops_event_start(v_key, '10600000-0000-0000-0000-0000000000e1', '주말 2배', 2, 24);
+  perform pg_temp.ok((r->>'ok')::boolean and r->'event'->>'state' = 'LIVE' and (r->'event'->>'mult')::numeric = 2, '보상 이벤트 시작(0106)');
+  insert into fix (k, v) values ('event106', r->'event'->>'id');
+  perform pg_temp.ok((public.ops_event_start(v_key, '10600000-0000-0000-0000-0000000000e1', '주말 2배', 2, 24)->>'replay')::boolean,
+    '같은 요청 번호의 이벤트는 다시 만들지 않는다(0106)');
+  perform pg_temp.ok(public.ops_event_start(v_key, gen_random_uuid(), '겹치는 이벤트', 3, 2, now() + interval '2 hours')->>'code' = 'overlap',
+    '보상 이벤트는 겹치지 않는다(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from public.push_outbox
+                       where kind = 'REWARD_EVENT' and user_id = '10600000-0000-0000-0000-000000000001'
+                         and args->>'mult' = '2' and args->>'hours' = '24' and link = 'run')
+                     and not exists (select 1 from public.push_outbox
+                                      where kind = 'REWARD_EVENT' and user_id = '10600000-0000-0000-0000-000000000002'),
+    '이벤트 시작 푸시 — 이벤트 소식을 끈 사람에게는 보내지 않는다(0106)');
+end $$;
+-- 이벤트가 두 시간 전에 시작한 것으로 돌려 그 사이의 러닝을 올린다
+update economy.reward_events set starts_at = now() - interval '2 hours' where id = pg_temp.fx('event106')::bigint;
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_shoe bigint := pg_temp.fx('shoe106')::bigint;
+  v_c timestamptz := now() - interval '90 minutes';
+  r jsonb;
+  s record;
+begin
+  r := public.items_me();
+  perform pg_temp.ok((r->'event'->>'mult')::numeric = 2 and r->'event'->>'title' = '주말 2배', '앱이 지금 켜진 보상 이벤트를 읽는다(0106)');
+  -- 이벤트(2배) 중에 러닝 부스터(1.5배)를 써도 겹치지 않는다 — 큰 쪽 하나
+  r := public.run_items_use(v_c, array['RUN_BOOSTER']);
+  perform pg_temp.ok((r->>'mult')::numeric = 2, '적립 배수는 겹치지 않는다 — 이벤트 2배와 부스터 1.5배면 2배(0106)');
+  select * into s from public.record_session(v_c, v_c + interval '601 seconds', 900, 601, pg_temp.track(v_c, 600, 0.00003), 0, 1, '', false, v_shoe);
+  perform pg_temp.ok(s.verdict <> 'VOID' and s.points_awarded = round(pg_temp.fx('base106')::numeric * 2, 4),
+    '보상 이벤트 중에 시작한 러닝은 적립 2배(0106)');
+end $$;
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('ops106');
+  r jsonb;
+begin
+  r := public.ops_event_cancel(v_key, pg_temp.fx('event106')::bigint);
+  perform pg_temp.ok((r->>'ok')::boolean and r->'event'->>'state' = 'CANCELLED', '보상 이벤트 취소(0106)');
+  perform pg_temp.ok(public.ops_event_cancel(v_key, pg_temp.fx('event106')::bigint)->>'code' = 'not_found', '끈 이벤트는 다시 못 끈다(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(economy.run_reward_mult('10600000-0000-0000-0000-000000000002', now()) = 1
+                     and economy.run_reward_mult('10600000-0000-0000-0000-000000000002', now() - interval '1 hour') = 2,
+    '취소한 이벤트는 그때부터 꺼진다 — 그 전에 시작한 러닝은 그대로(0106)');
+end $$;
+
+-- 바로 쓰는 아이템
+-- 오늘(한국 날짜) 쓴 에너지가 있게 — 위 러닝들이 자정 앞뒤로 갈려도 검사가 흔들리지 않는다
+insert into public.energy_days (user_id, day, used)
+values ('10600000-0000-0000-0000-000000000001', economy.game_day(now()), 3)
+on conflict (user_id, day) do update set used = public.energy_days.used + 3;
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_shoe bigint := pg_temp.fx('shoe106')::bigint;
+  v_now int; v_max int;
+  r jsonb;
+begin
+  select durability_now, durability_max into v_now, v_max from public.my_sneakers() where id = v_shoe;
+  perform pg_temp.ok(v_now = v_max - 150, '러닝 세 번(10분씩)에 150 닳았다(0106 준비)');
+  call pg_temp.must_fail($q$select public.item_use('RUN_BOOSTER', gen_random_uuid())$q$, '러닝 아이템은 바로 못 쓴다(0106)');
+  r := public.item_use('DURABILITY_RESET', '10600000-0000-0000-0000-0000000000d1');
+  perform pg_temp.ok((r->>'left')::int = 0 and not (r->>'replay')::boolean
+                     and (select durability_now = durability_max from public.my_sneakers() where id = v_shoe),
+    '내구도 초기화권 — 신은 신발 내구도가 가득(0106)');
+  r := public.item_use('DURABILITY_RESET', '10600000-0000-0000-0000-0000000000d1');
+  perform pg_temp.ok((r->>'replay')::boolean and (r->>'left')::int = 0, '같은 요청 번호로 다시 오면 다시 쓰지 않는다(0106)');
+  call pg_temp.must_fail($q$select public.item_use('DURABILITY_RESET', gen_random_uuid())$q$, '없는 아이템은 못 쓴다(0106)');
+  r := public.item_use('ENERGY_RESET', gen_random_uuid());
+  perform pg_temp.ok((r->>'left')::int = 0, '하루 할당량 초기화권을 썼다(0106)');
+end $$;
+reset role;
+do $$
+declare v_user uuid := '10600000-0000-0000-0000-000000000001';
+begin
+  perform pg_temp.ok(economy.energy_left(v_user, economy.game_day(now())) = economy.energy_max(v_user),
+    '하루 할당량 초기화권 — 오늘 에너지가 가득(0106)');
+end $$;
+
+-- 가득 찬 신발 · 안 쓴 에너지에는 아이템이 사라지지 않는다, 지급 되돌리기
+set role anon;
+do $$
+declare v_key text := pg_temp.fx('ops106'); r jsonb;
+begin
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'DURABILITY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000b1', 'ENERGY_DRINK', 3, '되돌릴 지급', array['runner106@test.com'], null, false);
+  insert into fix (k, v) values ('batch106', r->>'batch');
+  r := public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '전체 지급', null, 'ALL', false);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int >= 2, '전체에게 지급(0106)');
+  perform pg_temp.ok(public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '대상 오류', null, 'EVERYONE')->>'code' = 'audience',
+    '모르는 대상은 거절(0106)');
+end $$;
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare r jsonb;
+begin
+  call pg_temp.must_fail($q$select public.item_use('DURABILITY_RESET', gen_random_uuid())$q$, '내구도가 가득한 신발에는 초기화권을 쓰지 않는다(0106)');
+  call pg_temp.must_fail($q$select public.item_use('ENERGY_RESET', gen_random_uuid())$q$, '오늘 쓴 에너지가 없으면 초기화권을 쓰지 않는다(0106)');
+  perform pg_temp.ok((select qty from public.user_items where kind = 'DURABILITY_RESET') = 1
+                     and (select qty from public.user_items where kind = 'ENERGY_RESET') = 1,
+    '못 쓴 아이템은 가방에 그대로(0106)');
+  -- 되돌릴 지급 3개 가운데 하나를 러닝에 쓴다
+  r := public.run_items_use(now() - interval '10 minutes', array['ENERGY_DRINK']);
+  perform pg_temp.ok((select qty from public.user_items where kind = 'ENERGY_DRINK') = 2, '에너지 드링크 하나를 썼다(0106 준비)');
+end $$;
+set role anon;
+do $$
+declare v_key text := pg_temp.fx('ops106'); r jsonb;
+begin
+  r := public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'taken')::int = 2 and (r->>'short')::int = 1,
+    '지급 되돌리기 — 갖고 있는 만큼만 거두고 이미 쓴 것은 센다(0106)');
+  perform pg_temp.ok(public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint)->>'code' = 'revoked', '되돌린 지급은 다시 못 되돌린다(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select qty from public.user_items where user_id = '10600000-0000-0000-0000-000000000001' and kind = 'ENERGY_DRINK') = 0,
+    '되돌린 뒤 가방에서 빠졌다(0106)');
+end $$;
+-- 계정을 지우면 가방 · 받은 기록 · 쓴 기록도 지워진다
+delete from auth.users where id = '10600000-0000-0000-0000-000000000002';
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from public.user_items where user_id = '10600000-0000-0000-0000-000000000002')
+                     and not exists (select 1 from economy.item_grants where user_id = '10600000-0000-0000-0000-000000000002'),
+    '계정을 지우면 가방과 받은 기록도 지워진다(0106)');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

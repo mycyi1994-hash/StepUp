@@ -74,3 +74,21 @@ test('pages that load GA allow Google Analytics in their CSP and share one measu
     assert.match(read(file), /'stepupcrew\.com'/, `${file} 운영 주소에서만`);
   }
 });
+
+// 운영자 페이지(/ops — 아이템 지급 · 보상 이벤트)는 인라인 스크립트 없이 이 사이트 스크립트만, 밖으로는 Supabase 만 연다.
+// 검색에 싣지 않고 방문 통계도 넣지 않는다 — 키가 주소 · 통계로 새지 않게(2026-11-17).
+test('ops page is locked down: self scripts only, no analytics, not indexed', () => {
+  const html = readFileSync(new URL('../ops/index.html', import.meta.url), 'utf8');
+  assert.deepEqual(inlineHashes('ops/index.html'), []);
+  assert.doesNotMatch(html, /ga\.js|googletagmanager|cloudflareinsights/);
+  assert.doesNotMatch(html, /\son[a-z]+=/, '인라인 이벤트 속성 없음');
+  const csp = cspFor('/ops*');
+  assert.match(csp, /script-src 'self';/);
+  assert.match(csp, /connect-src 'self' https:\/\/pupjzcmybuoyhzfwrsdf\.supabase\.co;/);
+  assert.match(csp, /frame-ancestors 'none'/);
+  const at = headers.split('\n').indexOf('/ops*');
+  const block = headers.split('\n').slice(at + 1, at + 5).join('\n');
+  assert.match(block, /X-Robots-Tag: noindex, nofollow/);
+  assert.match(block, /Referrer-Policy: no-referrer/);
+  assert.match(block, /Cache-Control: no-store/);
+});

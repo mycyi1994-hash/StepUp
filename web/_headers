@@ -40,6 +40,14 @@
   Referrer-Policy: no-referrer
   Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
+# 운영자 페이지(2026-11-17, 서버 0106 — 아이템 지급 · 보상 이벤트). 키로만 쓰는 페이지 — 검색에 싣지 않고, 주소가 밖으로 새지 않게,
+# 매번 새로 받는다. 스크립트는 이 사이트 것만(인라인 없음), 연결은 Supabase 만. 방문 통계(GA · Cloudflare beacon)는 넣지 않는다.
+/ops*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://pupjzcmybuoyhzfwrsdf.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+
 # 안드로이드가 앱 링크를 확인할 때 읽는 파일. JSON 으로, 다른 곳으로 넘기지 않고 준다.
 /.well-known/assetlinks.json
   Content-Type: application/json

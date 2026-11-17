@@ -1,5 +1,15 @@
 # StepUp — 작업 메모
 
+## 최신 — 아이템 · 운영자 페이지 · 보상 이벤트 (2026-11-17, 서버 0106)
+
+[docs/items-2026-11-17.md](docs/items-2026-11-17.md) — 사용자 "지급하고 싶을 때 쉽게 · 알람도" · "운영자 페이지 — 24시간 보상 2배도 설정" · "출발 전에 고르기 · 같은 종류는 겹쳐서 못 쓴다".
+- 아이템 다섯: 러닝 부스터(× 1.5) · 보상 2배권 · 에너지 드링크(절반) — 출발 전에 골라 그 러닝 1회, 내구도 초기화권 · 하루 할당량(= 하루 에너지) 초기화권 — 바로.
+  값은 `economy.item_kinds`(배포 없이 바꾼다). 가방 `public.user_items`, 앱 함수 `items_me` · `item_use` · `run_items_use(러닝 시작 시각, 종류들)`.
+- 적립 배수는 겹치지 않는다 — 24시간 부스터 · 보상 이벤트 · 러닝 아이템 가운데 가장 큰 것 하나(`economy.run_reward_mult`, `record_session` 이 읽는다).
+- 운영자 페이지 `web/ops/`(`stepupcrew.com/ops/`, 키 `economy.ops_key_new` — 해시만 서버에): 아이템 지급(이메일 · 최근 7일 · 전체, 푸시 `ITEM_GRANTED`, 되돌리기) ·
+  보상 이벤트(`economy.reward_events` — 그 시간에 시작한 러닝 적립 × N, 푸시 `REWARD_EVENT`). 기록은 `admin_audit`.
+- **앱 화면은 아직 없다**(아이템 탭 · 출발 전 고르기 — 문서 "남은 일"). push-send 는 손으로 다시 올려야 새 푸시가 간다. 아이템 종류를 더하면 서버 표 · 운영자 페이지 · 푸시 문구 · 앱 문구를 함께.
+
 ## 최신 — 홈페이지 안드로이드 앱 출시 (2026-11-16)
 
 사용자 "안드로이드 앱이 나와서 홍보" — 첫 화면 영상은 `LUJnsoDJ1QA`(StepUP Official VIDEO, 표지 `assets/video/stepup-official-poster.jpg`), 영상 양옆에 Google Play 받기 카드
