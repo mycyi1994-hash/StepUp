@@ -7,9 +7,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AppChromePolicyTest {
-    @Test fun `four tabs - running shoes community profile`() {
-        // 2026-10-26 시안 — 뽑기는 신발 탭 안의 글자 탭. 길은 "mystery-box" 그대로
-        assertEquals(listOf("home", "community", "customize", "profile"), AppChromePolicy.tabs.map { it.route })
+    @Test fun `five tabs - running together shoes items profile`() {
+        // 2026-10-26 시안 — 뽑기는 신발 탭 안의 글자 탭. 길은 "mystery-box" 그대로.
+        // 2026-11-17 아이템 탭(가방, 서버 0106)을 신발과 내 정보 사이에 — 길은 "bag"("items" 는 예전 보관함 · 거래소 길)
+        assertEquals(listOf("home", "community", "customize", "bag", "profile"), AppChromePolicy.tabs.map { it.route })
+        val bag = requireNotNull(AppChromePolicy.destination(Routes.BAG))
+        assertEquals(Screen.Bag, bag.parent)
+        assertEquals(AppChromePolicy.Header.Main, bag.header)
+        assertEquals(Screen.Customize, AppChromePolicy.destination(Routes.ITEMS)?.parent)
         assertEquals(Screen.Draw.route, Routes.MYSTERY_BOX)
     }
 

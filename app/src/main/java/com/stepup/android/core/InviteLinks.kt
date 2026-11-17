@@ -51,6 +51,12 @@ object InviteLinks {
 
         /** 크루 대기실이 열렸다는 알림 — 그 방(`room/<크루 id>/<방 번호>`) */
         data class Room(val crewId: String, val partyId: Long) : PushTarget
+
+        /** 운영자가 아이템을 보냈다는 알림 — 아이템 탭(`bag`, 서버 0106) */
+        data object Bag : PushTarget
+
+        /** 보상 이벤트가 시작됐다는 알림 — 러닝 탭(`run`, 서버 0106) */
+        data object RunTab : PushTarget
     }
 
     private val _pendingPush = MutableStateFlow<PushTarget?>(null)
@@ -124,6 +130,8 @@ object InviteLinks {
             parts.size == 2 && parts[0] == "flash" -> idOf(parts[1])?.let { PushTarget.Flash(it) }
             parts.size == 3 && parts[0] == "room" && UUID.matches(parts[1]) ->
                 idOf(parts[2])?.let { PushTarget.Room(parts[1].lowercase(), it) }
+            parts.size == 1 && parts[0] == "bag" -> PushTarget.Bag
+            parts.size == 1 && parts[0] == "run" -> PushTarget.RunTab
             else -> null
         }
     }

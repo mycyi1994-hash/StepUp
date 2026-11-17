@@ -33515,7 +33515,7 @@ begin
     insert into economy.item_grants (batch_id, user_id, kind, qty) values (v_batch.id, v_user, p_kind, p_qty);
     if coalesce(p_push, true) then
       perform public.push_enqueue(v_user, 'ITEM_GRANTED',
-        jsonb_build_object('item', p_kind, 'qty', p_qty::text, 'reason', v_reason), 'items');
+        jsonb_build_object('item', p_kind, 'qty', p_qty::text, 'reason', v_reason), 'bag');
     end if;
   end loop;
 

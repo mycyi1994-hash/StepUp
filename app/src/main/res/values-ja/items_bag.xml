@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 아이템 탭 · 출발 전 아이템 고르기(2026-11-17, 서버 0106) — 네 언어를 함께 고친다 -->
+<resources>
+    <string name="bag_count">%1$d種 · %2$d個所持</string>
+    <string name="bag_event_title">報酬×%1$sイベント中</string>
+    <string name="bag_event_until">%1$sまで · 開始するランすべて</string>
+    <string name="bag_section_run">ラン前に選ぶアイテム</string>
+    <string name="bag_section_run_hint">出発前に選びます</string>
+    <string name="bag_section_now">すぐ使うアイテム</string>
+    <string name="item_name_run_booster">ランブースター</string>
+    <string name="item_name_reward_double">報酬2倍券</string>
+    <string name="item_name_energy_drink">エナジードリンク</string>
+    <string name="item_name_durability_reset">耐久度リセット券</string>
+    <string name="item_name_energy_reset">1日エナジーリセット券</string>
+    <string name="item_effect_reward">獲得×%1$s</string>
+    <string name="item_effect_energy">エナジー%1$d%%だけ使用</string>
+    <string name="item_effect_durability">シューズ耐久度を満タンに</string>
+    <string name="item_effect_energy_reset">今日のエナジーを満タンに</string>
+    <string name="item_qty">×%1$d</string>
+    <string name="bag_run_item_note">ランを始めるときに出発前チェックで選びます</string>
+    <string name="bag_use">使う</string>
+    <string name="bag_use_durability_detail">履いているシューズの耐久度 %1$d%% → 満タン</string>
+    <string name="bag_use_energy_detail">残りエナジー %1$s → 満タン</string>
+    <string name="bag_used">使いました · 残り%1$d個</string>
+    <string name="bag_empty">まだアイテムがありません。イベント報酬で受け取れます</string>
+    <string name="bag_load_failed">アイテムを読み込めませんでした</string>
+    <string name="bag_retry">もう一度</string>
+    <string name="bag_err_full">耐久度はすでに満タンです</string>
+    <string name="bag_err_no_energy">今日はまだエナジーを使っていません</string>
+    <string name="bag_err_no_shoe">シューズを履いていません</string>
+    <string name="bag_err_none">アイテムがありません</string>
+    <string name="bag_err_generic">処理できませんでした。しばらくしてからもう一度お試しください</string>
+    <string name="run_items_title">このランで使うアイテム</string>
+    <string name="run_items_hint">同じ種類は1つだけ</string>
+    <string name="run_items_note">出発すると選んだアイテムを使います</string>
+    <string name="run_items_owned">所持 %1$d</string>
+</resources>

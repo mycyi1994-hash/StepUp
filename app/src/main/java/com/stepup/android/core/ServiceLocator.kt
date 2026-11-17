@@ -244,6 +244,9 @@ object ServiceLocator {
     /** 과속으로 멈춘 러닝의 패널티 신고 — 올리기 일꾼이 러닝보다 먼저 보낸다 */
     lateinit var overspeedReporter: com.stepup.android.data.repo.OverspeedReporter
 
+    /** 아이템(서버 0106) — 가방 · 바로 쓰기 · 출발 때 고른 아이템 */
+    lateinit var itemsRepository: com.stepup.android.data.repo.ItemsRepository
+
     /** 순위표 — 유일하게 남의 기록이 필요한 화면이라 서버가 계산해 준다 */
     lateinit var rankingRepository: RankingRepository
         private set
@@ -389,6 +392,17 @@ object ServiceLocator {
             report = { startedAt, stoppedAt, userId -> server.reportOverspeedStop(startedAt, stoppedAt, userId) },
             configured = { server.isConfigured },
             onReported = { if (serverEconomy) economySync.refresh() },
+        )
+        val itemsApi = com.stepup.android.data.remote.ItemsApi(server)
+        itemsRepository = com.stepup.android.data.repo.ItemsRepository(
+            bagCall = { itemsApi.bag() },
+            useCall = { kind, request, sneaker -> itemsApi.use(kind, request, sneaker) },
+            bindCall = { startedAt, kinds, userId -> itemsApi.bindToRun(startedAt, kinds, userId) },
+            addPending = { row -> userPrefs.addPendingRunItems(row) },
+            readPending = { userPrefs.pendingRunItems() },
+            takePending = { startedAt -> userPrefs.takePendingRunItems(startedAt) },
+            configured = { server.isConfigured },
+            onChanged = { if (serverEconomy) economySync.refresh() },
         )
         rankingRepository = RankingRepository(server)
         leaderboards = com.stepup.android.data.repo.ServerLeaderboardSource(com.stepup.android.data.remote.LeaderboardApi(server))

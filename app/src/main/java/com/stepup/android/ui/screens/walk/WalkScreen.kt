@@ -1430,7 +1430,18 @@ fun RunScreen(
             // 러닝 줄에 신은 신발이 남지 않아 지금 신은 신발에서만 뺀다
             val pendingWear by viewModel.pendingShoeWear.collectAsStateWithLifecycle()
             val checkShoe = equipped?.withPendingWear(pendingWear)
+            // 이번 러닝에 쓸 아이템(0106) — 점검이 열릴 때 가방을 다시 읽고, 지난번에 고르다 만 것은 비운다
+            val itemsRepo = com.stepup.android.core.ServiceLocator.itemsRepository
+            val bag by itemsRepo.bag.collectAsStateWithLifecycle()
+            val pickedItems by itemsRepo.picks.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) {
+                itemsRepo.clearPicks()
+                runCatching { itemsRepo.refresh() }
+            }
             FreeRunShoeCheck(
+                runItems = bag?.runPicks.orEmpty(),
+                pickedItems = pickedItems,
+                onPickItem = itemsRepo::toggle,
                 shoe = checkShoe,
                 shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it },
                 wearing = wearing,
@@ -1452,8 +1463,9 @@ fun RunScreen(
                         }
                     }
                 },
-                // 돌아가기 · 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴)에서 왔으면 그리로
+                // 돌아가기 · 닫기 — 아무것도 시작하지 않는다(고른 아이템도 비운다). 이 러닝을 연 화면(시작 메뉴)에서 왔으면 그리로
                 onCancel = {
+                    itemsRepo.clearPicks()
                     shoeCheck = false
                     if (autoStart) onBack()
                 },

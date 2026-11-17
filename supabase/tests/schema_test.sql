@@ -10718,7 +10718,7 @@ reset role;
 do $$ begin
   perform pg_temp.ok((select qty from public.user_items where user_id = '10600000-0000-0000-0000-000000000001' and kind = 'RUN_BOOSTER') = 2,
     '지급은 한 번만 가방에 들어간다(0106)');
-  perform pg_temp.ok((select count(*) = 1 and bool_and(link = 'items' and args->>'item' = 'RUN_BOOSTER' and args->>'qty' = '2')
+  perform pg_temp.ok((select count(*) = 1 and bool_and(link = 'bag' and args->>'item' = 'RUN_BOOSTER' and args->>'qty' = '2')
                         from public.push_outbox where kind = 'ITEM_GRANTED'),
     '지급 푸시는 한 번 · 푸시를 끈 지급은 보내지 않는다(0106)');
   perform pg_temp.ok((select count(*) >= 5 from public.admin_audit where action = 'ops_item_grant' and detail->>'by' = '검사 운영자'),

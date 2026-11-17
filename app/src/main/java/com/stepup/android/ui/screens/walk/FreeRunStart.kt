@@ -80,6 +80,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -176,6 +177,10 @@ internal fun FreeRunShoeCheck(
     onCancel: () -> Unit,
     /** 다 닳은 신발의 "수리" — 이 신발의 수리 시트를 연다(null 이면 줄을 두지 않는다) */
     onRepair: ((Long) -> Unit)? = null,
+    /** 이번 러닝에 고를 수 있는 아이템(가진 것만, 서버 0106) — 비어 있으면 줄을 두지 않는다 */
+    runItems: List<com.stepup.android.domain.BagItem> = emptyList(),
+    pickedItems: Set<com.stepup.android.domain.ItemKind> = emptySet(),
+    onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
 ) {
     Dialog(
         onDismissRequest = onCancel,
@@ -184,7 +189,10 @@ internal fun FreeRunShoeCheck(
         // 창이 깔아 주는 회색 대신 시안의 뒷면(#020B16 · 73%)을 직접 그린다
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
         SideEffect { window?.setDimAmount(0f) }
-        FreeRunShoeCheckContent(shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair)
+        FreeRunShoeCheckContent(
+            shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair,
+            runItems = runItems, pickedItems = pickedItems, onPickItem = onPickItem,
+        )
     }
 }
 
@@ -199,6 +207,9 @@ internal fun FreeRunShoeCheckContent(
     wearing: Boolean = false,
     onWear: (Long, (Boolean) -> Unit) -> Unit = { _, _ -> },
     onRepair: ((Long) -> Unit)? = null,
+    runItems: List<com.stepup.android.domain.BagItem> = emptyList(),
+    pickedItems: Set<com.stepup.android.domain.ItemKind> = emptySet(),
+    onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
 ) {
     val reduced = LocalMotion.current.reduced
     // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
@@ -268,6 +279,10 @@ internal fun FreeRunShoeCheckContent(
                         CheckShoeFacts(shoe, onRepair = onRepair?.let { repair -> { repair(shoe.id) } }.takeIf { !wearing })
                     } else {
                         CheckNoShoe()
+                    }
+                    // 이번 러닝에 쓸 아이템(0106) — 가진 것만, 같은 묶음(적립 배수 · 에너지)은 하나만. 출발하면 그 러닝에 묶여 빠진다
+                    if (runItems.isNotEmpty()) {
+                        RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing)
                     }
                     // 이 신발로 출발(주 버튼) — 아래 돌아가기 · 신발 교체
                     Box(
@@ -425,6 +440,68 @@ private fun CheckSecondaryButton(text: String, onClick: () -> Unit, tag: String,
  * 다 차면 진동과 함께 그 신발을 신는다(신발 탭과 같은 착용 — 서버가 바뀐 것을 확인한 뒤 점검으로 돌아온다).
  * 짧게 누르면 아무것도 바뀌지 않고 "1초 꾹 눌러 골라요"가 한 번 흔들린다.
  */
+/**
+ * 출발 전 아이템 고르기(2026-11-17 사용자 "출발 전에 고르기 · 같은 종류는 겹쳐서 못 쓴다", 서버 0106).
+ * 작은 칸 셋까지 — 그림 · 이름 · 보유 개수, 고른 칸은 파란 테두리 + 체크. 아래 한 줄에 고른 것의 효과를 모아 보인다.
+ */
+@Composable
+private fun RunItemPicker(
+    items: List<com.stepup.android.domain.BagItem>,
+    picked: Set<com.stepup.android.domain.ItemKind>,
+    onPick: (com.stepup.android.domain.ItemKind) -> Unit,
+    enabled: Boolean,
+) {
+    Column(Modifier.padding(top = 18.dp).fillMaxWidth().testTag("run-items")) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                stringResource(R.string.run_items_title), style = checkText(15.sp, Color.White, FontWeight.Bold),
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            Text(stringResource(R.string.run_items_hint), style = checkText(12.sp, CheckBack, FontWeight.Normal))
+        }
+        Row(Modifier.padding(top = 10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items.take(3).forEach { item ->
+                val on = item.kind in picked
+                val shape = RoundedCornerShape(16.dp)
+                Column(
+                    Modifier.weight(1f).clip(shape)
+                        .background(if (on) Color(0xFF1A2A52) else Color(0xFF0D1426), shape)
+                        .border(if (on) 2.dp else 1.dp, if (on) Color(0xFF6C9BFF) else CheckEdge, shape)
+                        .feedbackClickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.Checkbox) { onPick(item.kind) }
+                        .semantics { selected = on }
+                        .padding(vertical = 8.dp, horizontal = 4.dp)
+                        .testTag("run-item-${item.kind.id}"),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(com.stepup.android.ui.screens.items.itemArt(item.kind)),
+                        contentDescription = null, modifier = Modifier.size(52.dp),
+                    )
+                    Text(
+                        com.stepup.android.ui.screens.items.itemName(item.kind),
+                        style = checkText(11.5.sp, Color.White, FontWeight.SemiBold), maxLines = 2,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    Text(
+                        stringResource(R.string.run_items_owned, item.qty),
+                        style = checkText(11.sp, if (on) Color(0xFFADC8FF) else CheckBack, FontWeight.Normal),
+                    )
+                }
+            }
+        }
+        if (picked.isNotEmpty()) {
+            // map 은 인라인이라 그 안에서 문구(컴포저블)를 읽을 수 있다 — 모은 뒤 잇는다
+            val effects = picked.sortedBy { it.ordinal }.map { kind ->
+                com.stepup.android.ui.screens.items.effectText(kind, items.firstOrNull { it.kind == kind }?.value)
+            }
+            Text(
+                effects.joinToString(" · ") + " — " + stringResource(R.string.run_items_note),
+                style = checkText(12.sp, CheckReadyText, FontWeight.Normal), modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+    }
+}
+
 @Composable
 private fun ShoePickList(
     shoes: List<Sneaker>,

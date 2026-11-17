@@ -112,6 +112,8 @@ class UserPrefs(
         val RUN_BAN_UNTIL = longPreferencesKey("run_ban_until")
         /** 서버에 아직 알리지 않은 과속 정지 — 줄마다 "시작\t멈춤\t기록 주인" */
         val PENDING_OVERSPEED = stringPreferencesKey("pending_overspeed_stops")
+        /** 출발 때 고른 아이템 — 서버에 묶기 전(0106, 보내는 곳: RunItemsReporter) */
+        val PENDING_RUN_ITEMS = stringPreferencesKey("pending_run_items")
         /** 러닝 챌린지(10분 · 1km · 3km) 지난 도전 — GoalAttempt 줄들, 이 폰에만 */
         val GOAL_ATTEMPTS = stringPreferencesKey("goal_attempts")
         val SHOE_NICKNAMES = stringPreferencesKey("shoe_nicknames")
@@ -714,6 +716,27 @@ class UserPrefs(
         store.edit {
             val rows = OverspeedStop.decodeAll(it[Keys.PENDING_OVERSPEED]).filter { row -> row.startedAt != startedAt }
             if (rows.isEmpty()) it.remove(Keys.PENDING_OVERSPEED) else it[Keys.PENDING_OVERSPEED] = OverspeedStop.encodeAll(rows)
+        }
+    }
+
+    /** 출발 때 고른 아이템을 적어 둔다(보내는 곳: RunItemsReporter — 러닝보다 먼저). 같은 러닝은 한 줄 */
+    suspend fun addPendingRunItems(row: RunItemBinding) {
+        store.edit {
+            val rows = RunItemBinding.decodeAll(it[Keys.PENDING_RUN_ITEMS]).associateBy { r -> r.startedAt }.toMutableMap()
+            rows[row.startedAt] = row
+            it[Keys.PENDING_RUN_ITEMS] = RunItemBinding.encodeAll(rows.values.sortedBy { r -> r.startedAt })
+        }
+    }
+
+    /** 아직 서버에 묶지 않은 러닝 아이템 */
+    suspend fun pendingRunItems(): List<RunItemBinding> =
+        RunItemBinding.decodeAll(store.data.first()[Keys.PENDING_RUN_ITEMS])
+
+    /** 서버가 받았다(또는 받을 수 없다고 답했다) — 목록에서 뺀다 */
+    suspend fun takePendingRunItems(startedAt: Long) {
+        store.edit {
+            val rows = RunItemBinding.decodeAll(it[Keys.PENDING_RUN_ITEMS]).filter { r -> r.startedAt != startedAt }
+            if (rows.isEmpty()) it.remove(Keys.PENDING_RUN_ITEMS) else it[Keys.PENDING_RUN_ITEMS] = RunItemBinding.encodeAll(rows)
         }
     }
 
@@ -1398,6 +1421,23 @@ internal object ChatNoticeDraftCodec {
 }
 
 /** 서버에 알릴 과속 정지 한 건 — 러닝 시작 · 멈춘 때(벽시계 ms)와 그 러닝을 기록한 계정 */
+/** 출발 때 고른 아이템(서버 0106 run_items_use) — 러닝 시작 시각 · 기록한 계정 · 종류들 */
+data class RunItemBinding(val startedAt: Long, val owner: String, val kinds: List<String>) {
+    companion object {
+        fun encodeAll(rows: List<RunItemBinding>): String =
+            rows.joinToString("\n") { "${it.startedAt}\t${it.owner}\t${it.kinds.joinToString(",")}" }
+
+        fun decodeAll(raw: String?): List<RunItemBinding> =
+            raw.orEmpty().lineSequence().mapNotNull { line ->
+                val parts = line.split('\t')
+                if (parts.size != 3) return@mapNotNull null
+                val at = parts[0].toLongOrNull() ?: return@mapNotNull null
+                val kinds = parts[2].split(',').filter { it.matches(Regex("[A-Z][A-Z_]{2,30}")) }
+                if (kinds.isEmpty()) null else RunItemBinding(at, parts[1], kinds)
+            }.toList()
+    }
+}
+
 data class OverspeedStop(val startedAt: Long, val stoppedAt: Long, val owner: String) {
     companion object {
         fun encodeAll(rows: List<OverspeedStop>): String =

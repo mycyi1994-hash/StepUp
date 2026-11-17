@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.outlined.Settings
 import com.stepup.android.ui.screens.customize.RunnerMarketScreen
 import com.stepup.android.ui.screens.customize.CustomizeScreen
@@ -150,6 +152,12 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
 
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
+    /**
+     * 아이템 — 가방(러닝 부스터 · 보상 2배권 · 에너지 드링크 · 초기화권 둘, 서버 0106). 길은 "bag" — "items" 는 예전 신발 보관함 ·
+     * 거래소 길이라 그대로 둔다(알림 · 다른 화면이 그 이름으로 간다)
+     */
+    data object Bag : Screen(Routes.BAG, R.string.tab_items, Icons.Outlined.Inventory2)
+
     /** 내 정보 — 프로필 · 기록 · 포인트 · 설정 */
     data object Profile : Screen("profile", R.string.tab_me, Icons.Filled.Person)
 }
@@ -187,6 +195,9 @@ object Routes {
 
     /** 꾸미기 안의 신발 보관함 · 거래소 · 스토어 */
     const val ITEMS = "items"
+
+    /** 하단 아이템 탭 — 가방(0106). 운영자 지급 푸시(ITEM_GRANTED)가 이 길로 연다 */
+    const val BAG = "bag"
     const val MYSTERY_BOX = "mystery-box"
 
     /** 꾸미기 안의 러너 마켓 — 의상 / 신발 */
@@ -555,6 +566,9 @@ private fun MainScaffoldContent(
             is InviteLinks.PushTarget.Post -> navController.navigate(Routes.storyDetail(target.postId)) { launchSingleTop = true }
             is InviteLinks.PushTarget.Flash -> navController.navigate(Routes.flashDetail(target.postId)) { launchSingleTop = true }
             is InviteLinks.PushTarget.Room -> navController.navigate(Routes.room(target.crewId, target.partyId)) { launchSingleTop = true }
+            // 아이템 도착(ITEM_GRANTED) · 보상 이벤트 시작(REWARD_EVENT) — 그 탭으로(0106)
+            InviteLinks.PushTarget.Bag -> navController.switchTab(Screen.Bag)
+            InviteLinks.PushTarget.RunTab -> navController.switchTab(Screen.Run)
         }
         InviteLinks.consumePush()
     }
@@ -1039,6 +1053,9 @@ private fun MainScaffoldContent(
                     },
                     onOpenHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                 )
+            }
+            composable(Screen.Bag.route) {
+                com.stepup.android.ui.screens.items.BagScreen()
             }
             composable(Screen.Profile.route) { entry ->
                 val nicknameSaved by entry.savedStateHandle.getStateFlow(Routes.NICKNAME_SAVED, false).collectAsState()
@@ -1952,6 +1969,8 @@ private fun tabIcon(screen: Screen, selected: Boolean): ImageVector = when (scre
     Screen.Draw -> com.stepup.android.ui.components.StepUpIcons.TabDraw
     Screen.Community -> if (selected) Icons.Filled.Groups else com.stepup.android.ui.components.StepUpIcons.TabCommunity
     Screen.Profile -> com.stepup.android.ui.components.StepUpIcons.TabProfile
+    // 아이템(가방) — 상자 선 아이콘. 고르면 채운 모양
+    Screen.Bag -> if (selected) Icons.Filled.Inventory2 else Icons.Outlined.Inventory2
 }
 
 /** 앱이 죽어 멈춘 러닝 — 이어 달리거나 여기서 끝내고 저장한다. 버리는 선택은 두지 않는다(뛴 기록을 잃지 않게). */

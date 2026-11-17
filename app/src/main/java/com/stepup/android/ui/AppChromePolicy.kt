@@ -15,9 +15,10 @@ object AppChromePolicy {
     /**
      * 하단 탭 넷 — 러닝 / 함께 뛰기 / 신발 / 내 정보. 러닝은 혼자 달리기, 함께 뛰기는 크루 러닝 · 번개러닝 · 크루 · 이야기
      * (2026-10-26 사용자 "한 탭에서 다 해결" — 예전 커뮤니티 탭 자리를 둘째로 옮겼다. 길 이름 "community" 는 그대로).
-     * 뽑기는 신발 탭 안의 글자 탭이다
+     * 뽑기는 신발 탭 안의 글자 탭이다. 2026-11-17 아이템 탭(가방 — 서버 0106)을 신발과 내 정보 사이에 더해 다섯이다
+     * (사용자 "아이템 탭만 추가").
      */
-    val tabs: List<Screen> = listOf(Screen.Run, Screen.Community, Screen.Customize, Screen.Profile)
+    val tabs: List<Screen> = listOf(Screen.Run, Screen.Community, Screen.Customize, Screen.Bag, Screen.Profile)
 
     /**
      * 화면이 잠깐 하단 탭을 걷는 중 — 뽑기 탭의 결과 확인 중 · 상자 열기 · 결과 · 지연 확인(신발 뽑기 디자인 04–08 · 19,
@@ -33,6 +34,7 @@ object AppChromePolicy {
         Destination(Screen.Run.route, Screen.Run, Header.Main),
         Destination(Screen.Community.route, Screen.Community, Header.Main),
         Destination(Screen.Customize.route, Screen.Customize, Header.Main),
+        Destination(Screen.Bag.route, Screen.Bag, Header.Main),
         Destination(Screen.Profile.route, Screen.Profile, Header.Main),
         // 신발 뽑기 — 신발 탭의 뽑기 글자 탭(2026-10-26). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
         Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
