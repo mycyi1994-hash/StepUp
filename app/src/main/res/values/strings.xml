@@ -1014,7 +1014,6 @@ Start running with StepUp.</string>
     <string name="market_quote_note">%1$d on the books · %2$d trades in 24h</string>
     <string name="market_place_bid">Place bid</string>
     <string name="market_place_ask">List for sale</string>
-    <string name="market_nothing_to_sell">You have no pair of this model to sell. The pair you are wearing cannot be sold.</string>
     <string name="market_asks_title">Listings</string>
     <string name="market_asks_empty">No listings yet.</string>
     <string name="market_bids_title">Buy orders</string>

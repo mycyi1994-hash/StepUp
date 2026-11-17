@@ -521,7 +521,7 @@ class ScreenGalleryTest {
             29 -> RunnerMarketScreen()
             30 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.MAP)
             31 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.HISTORY_MAP)
-            32 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.marketModel("FIRE", "COMMON", 1))
+            32 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.marketModel(com.stepup.android.data.remote.ModelKey("FIRE", "COMMON", 1)))
             33 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Loading)
             36 -> PartyLobbyScreen(flashPostId = 101L, onBack = {}, onRunStarted = {})
             37 -> MainScaffold()

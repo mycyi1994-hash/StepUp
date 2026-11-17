@@ -63,6 +63,8 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.domain.SellBlock
+import com.stepup.android.domain.sellBlock
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.domain.ForgePending
 import com.stepup.android.domain.Sneaker
@@ -139,9 +141,11 @@ fun ForgePending?.holds(id: Long): Boolean = this != null && (targetId == id || 
 fun SneakerDetailScreen(
     sneakerId: Long,
     onBack: () -> Unit = {},
-    /** 이 신발을 들고 NFT 마켓플레이스의 판매 등록으로 — 등록은 거기서 확정한다 */
-    onSell: (faction: String, rarity: String, variant: Int, localId: Long) -> Unit =
-        { _, _, _, _ -> },
+    /**
+     * 판매하기 — 이 신발이 거래되는 장(도감 모델이면 그 모델 장, [com.stepup.android.data.remote.ModelKey.of])과 이 신발 번호.
+     * 판매 등록은 거기서 확정한다.
+     */
+    onSell: (key: com.stepup.android.data.remote.ModelKey, localId: Long) -> Unit = { _, _ -> },
     /** SD09 · SD10 "보관함으로" — 앱 셸에서는 신발 탭의 최신 목록으로 */
     onOpenOwned: () -> Unit = onBack,
     /** 강화하기 · 강화 결과 확인 — 독립 강화 화면으로. 강화는 거기서만 한다 */
@@ -229,7 +233,7 @@ fun SneakerDetailScreen(
         onWear = { if (!care.busy) viewModel.equip(sneakerId) },
         onResultShown = viewModel::consumeEquipResult,
         onEnhance = { if (!care.repairPending) onUpgrade(sneakerId) },
-        onSell = { shoe -> onSell(shoe.factionId, shoe.rarity.id, shoe.variant, shoe.id) },
+        onSell = { shoe -> onSell(com.stepup.android.data.remote.ModelKey.of(shoe), shoe.id) },
         care = care,
         repair = if (repairOpen) repairPhase ?: RepairPhase.Loading else null,
         onOpenRepair = {
@@ -586,12 +590,8 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onPoints: () -> Unit, onSe
             }
             CareActionRow(
                 Icons.Outlined.Sell, stringResource(R.string.care_sell),
-                when {
-                    shoe.equipped -> stringResource(R.string.care_sell_equipped)
-                    busy -> stringResource(R.string.care_busy_note)
-                    else -> null
-                },
-                enabled = !shoe.equipped && !busy, onClick = onSell, tag = "shoe-care-sell",
+                if (busy && !shoe.equipped) stringResource(R.string.care_busy_note) else sellRowNote(shoe),
+                enabled = sellRowEnabled(shoe, busy), onClick = onSell, tag = "shoe-care-sell",
             )
             CareDivider()
             CareActionRow(Icons.Outlined.History, stringResource(R.string.care_record), null, enabled = true, onClick = onRecord, tag = "shoe-care-record")
@@ -803,12 +803,8 @@ private fun ManageSheet(
             )
             CareMenuRow(
                 title = stringResource(R.string.care_sell),
-                description = when {
-                    shoe.equipped -> stringResource(R.string.care_sell_equipped)
-                    busy -> stringResource(R.string.care_busy_note)
-                    else -> null
-                },
-                enabled = !shoe.equipped && !busy,
+                description = if (busy && !shoe.equipped) stringResource(R.string.care_busy_note) else sellRowNote(shoe),
+                enabled = sellRowEnabled(shoe, busy),
                 onClick = onSell,
                 tag = "shoe-manage-sell",
             )
@@ -963,6 +959,20 @@ internal fun ShoeStatePanel(
 internal fun Sneaker.shoeName(): String =
     // 내가 붙인 이름(2026-10-17)이 있으면 그것 — 이 폰에만 있다(domain/ShoeNickname)
     com.stepup.android.ui.components.LocalShoeNicknames.current[id] ?: modelShoeName()
+
+/**
+ * 판매하기 줄의 설명 — 팔 수 없으면 까닭(신고 있음 · 첫 신발 · 남은 잠금 거리 …, 2026-11-17). 팔 수 있으면 비운다.
+ * 잠긴 무료 뽑기 신발 · 판매 중인 신발도 거래소 장은 열어 시세를 볼 수 있다([sellRowEnabled]).
+ */
+@Composable
+private fun sellRowNote(shoe: Sneaker): String? =
+    shoe.sellBlock?.let { com.stepup.android.ui.screens.market.sellBlockText(it) }
+
+/** 판매하기 줄을 누를 수 있는가 — 신고 있음 · 첫 신발처럼 그 장에 가도 팔 길이 없는 신발은 막는다 */
+private fun sellRowEnabled(shoe: Sneaker, busy: Boolean): Boolean = !busy && when (shoe.sellBlock) {
+    null, SellBlock.Listed, is SellBlock.Locked, SellBlock.Other -> true
+    SellBlock.Equipped, SellBlock.Starter -> false
+}
 
 /** 내가 붙인 이름을 빼고 읽은 원래 이름(모델 이름) */
 @Composable

@@ -295,13 +295,14 @@ object Routes {
      * 들고 오면 판매 등록 창이 그 켤레를 고른 채로 열린다. 등록은 값을 적고
      * 확정해야 끝난다 — 번호를 들고 왔다고 저절로 올라가지 않는다.
      */
-    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}"
+    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}&model={model}"
 
     fun sneaker(id: Long) = "sneaker/$id"
     fun sneakerUpgrade(id: Long) = "sneaker/$id/upgrade"
 
-    fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
-        "market/$faction/$rarity/$variant?sell=$sell"
+    /** 거래소의 한 장 — 도감 모델이 있으면 모델 번호로(0107, 같은 등급의 다른 모델과 섞이지 않는다) */
+    fun marketModel(key: com.stepup.android.data.remote.ModelKey, sell: Long = 0) =
+        "market/${key.faction}/${key.rarity}/${key.variant}?sell=$sell&model=${key.modelId ?: 0}"
     fun lobby(crewId: String) = "lobby/$crewId"
 
     /** 고른 크루 대기실 */
@@ -885,7 +886,7 @@ private fun MainScaffoldContent(
                     onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
-                    onOpenMarketModel = { faction, rarity, variant -> navController.navigate(Routes.marketModel(faction, rarity, variant)) },
+                    onOpenMarketModel = { key -> navController.navigate(Routes.marketModel(key)) },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDraw = { navController.switchTab(Screen.Draw) },
                 )
@@ -894,9 +895,7 @@ private fun MainScaffoldContent(
                 RunnerMarketScreen(
                     onBack = { navController.popBackStack() },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onOpenModel = { faction, rarity, variant ->
-                        navController.navigate(Routes.marketModel(faction, rarity, variant))
-                    },
+                    onOpenModel = { key -> navController.navigate(Routes.marketModel(key)) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
                 )
             }
@@ -1012,9 +1011,7 @@ private fun MainScaffoldContent(
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                     onOpenDraw = { navController.switchTab(Screen.Draw) },
-                    onOpenMarketModel = { faction, rarity, variant ->
-                        navController.navigate(Routes.marketModel(faction, rarity, variant))
-                    },
+                    onOpenMarketModel = { key -> navController.navigate(Routes.marketModel(key)) },
                 )
             }
             composable(
@@ -1027,12 +1024,17 @@ private fun MainScaffoldContent(
                         type = NavType.LongType
                         defaultValue = 0L
                     },
+                    navArgument("model") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    },
                 ),
             ) { entry ->
                 MarketModelScreen(
                     faction = entry.arguments?.getString("faction").orEmpty(),
                     rarity = entry.arguments?.getString("rarity").orEmpty(),
                     variant = entry.arguments?.getInt("variant") ?: 0,
+                    modelId = entry.arguments?.getInt("model")?.takeIf { it > 0 },
                     sellLocalId = entry.arguments?.getLong("sell") ?: 0L,
                     onBack = { navController.popBackStack() },
                 )
@@ -1555,11 +1557,7 @@ private fun MainScaffoldContent(
                 SneakerDetailScreen(
                     sneakerId = entry.arguments?.getLong("id") ?: 0L,
                     onBack = { navController.popBackStack() },
-                    onSell = { faction, rarity, variant, localId ->
-                        navController.navigate(
-                            Routes.marketModel(faction, rarity, variant, localId),
-                        )
-                    },
+                    onSell = { key, localId -> navController.navigate(Routes.marketModel(key, localId)) },
                     // 보유 신발 상세 v1 — 조회 실패(14) · 없는 신발(15)에서 "보유 신발로 돌아가기": 신발 탭의 최신 목록으로
                     onOpenOwned = {
                         if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 거래소를 도감 모델 단위로 · 팔 수 없는 까닭(2026-11-17, 서버 0107) -->
+<resources>
+    <string name="care_sell_listed">出品中です</string>
+    <string name="care_sell_starter">最初のシューズは売れません</string>
+    <string name="care_sell_locked">このシューズであと %1$s km 走ると売れます</string>
+    <string name="care_sell_locked_unknown">無料ガチャのシューズは、決められた距離を走ると売れます</string>
+    <string name="care_sell_unavailable">このシューズは今は売れません</string>
+    <string name="market_sell_none_owned">このモデルのシューズを持っていません。</string>
+</resources>

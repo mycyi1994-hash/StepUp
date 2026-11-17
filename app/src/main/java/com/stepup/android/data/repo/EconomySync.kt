@@ -321,6 +321,8 @@ class EconomySync(
         pointsDurability = pointsDurability,
         pointsRespec = pointsRespec,
         repairCostPerUnit = repairCostPerUnit,
+        kmRun = kmRun,
+        lockKm = lockKm,
     )
 
     companion object {

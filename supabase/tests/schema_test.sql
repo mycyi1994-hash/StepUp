@@ -10936,6 +10936,127 @@ do $$ begin
     '계정을 지우면 가방과 받은 기록도 지워진다(0106)');
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0107 거래소를 도감 모델 단위로 — 판매하기가 그 모델 장으로 (2026-11-17)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 거래소 모델 단위(0107) ─────────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email) values
+  ('10700000-0000-0000-0000-000000000001', 'seller107@test.com'),
+  ('10700000-0000-0000-0000-000000000002', 'buyer107@test.com');
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('10700000-0000-0000-0000-000000000002', 'EARN_WALK', 5000, '검사용');
+-- 같은 "NONE · 레어 · 3" 줄에 서로 다른 두 모델(타비 1119 · 패커블 1120) — 0066 뒤 신발은 변형이 그림과 상관없다
+create or replace function pg_temp.shoe107(p_model int, p_level int default 1) returns bigint
+language plpgsql security definer as $$
+declare v bigint;
+begin
+  insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin, model_id)
+  values ('10700000-0000-0000-0000-000000000001', 'NONE', 'RARE', 3, p_level, 100, 'PAID_DRAW', p_model)
+  returning id into v;
+  return v;
+end $$;
+insert into fix (k, v) values
+  ('tabi107', pg_temp.shoe107(1119, 3)::text),
+  ('pack107', pg_temp.shoe107(1120, 3)::text),
+  ('tabi107b', pg_temp.shoe107(1119, 1)::text);
+do $$ begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.market_bid_model(int, int, numeric, uuid)', 'execute')
+                     and has_function_privilege('authenticated', 'public.market_bid_model(int, int, numeric, uuid)', 'execute')
+                     and not has_function_privilege('anon', 'public.market_my_bids_v2()', 'execute'),
+    '모델 입찰 · 내 입찰은 로그인한 사람만(0107)');
+  perform pg_temp.ok(has_table_privilege('authenticated', 'public.market_quotes_v2', 'select')
+                     and has_table_privilege('authenticated', 'public.market_asks_v2', 'select')
+                     and has_column_privilege('authenticated', 'public.market_sneakers', 'model_id', 'select')
+                     and not has_column_privilege('authenticated', 'public.market_sneakers', 'owner_id', 'select'),
+    '모델 번호는 열고 주인은 그대로 가린다(0107)');
+end $$;
+
+-- 산 사람이 타비에 모델 입찰 — 아직 매물이 없어 기다린다
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$
+declare v_bid bigint;
+begin
+  call pg_temp.must_fail($q$ select public.market_bid_model(9999, 1, 300) $q$, '없는 모델에는 걸 수 없다(0107)');
+  call pg_temp.must_fail($q$ select public.market_bid_model(1119, 0, 300) $q$, '레벨 조건이 1 아래면 거절(0107)');
+  v_bid := public.market_bid_model(1119, 2, 300);
+  perform pg_temp.ok(v_bid is not null
+                     and (select model_id = 1119 and faction = 'NONE' and rarity = 'RARE' and variant = 0
+                            from public.market_bid_book_v2 where bid_id = v_bid),
+    '모델에 건 입찰 — 등급은 모델이 정한다(0107)');
+  perform pg_temp.ok((select count(*) from public.market_my_bids_v2() where model_id = 1119) = 1, '내 입찰에 모델 번호(0107)');
+  insert into fix (k, v) values ('bid107', v_bid::text);
+end $$;
+
+-- 판 사람: 같은 줄의 다른 모델(패커블)은 타비 입찰에 팔리지 않는다
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$
+declare v_listing bigint;
+begin
+  call pg_temp.must_fail(
+    format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('pack107'), pg_temp.fx('bid107')),
+    '같은 줄이라도 다른 모델은 모델 입찰에 팔 수 없다(0107)');
+  call pg_temp.must_fail(
+    format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('tabi107b'), pg_temp.fx('bid107')),
+    '같은 모델이라도 레벨 조건이 모자라면 못 판다(0107)');
+  v_listing := public.market_list(pg_temp.fx('pack107')::bigint, 200);
+  perform pg_temp.ok(v_listing is not null, '다른 모델을 입찰보다 싸게 내놓아도 타비 입찰에 체결되지 않고 매물로 남는다(0107)');
+  insert into fix (k, v) values ('packlisting107', v_listing::text);
+  -- 타비는 입찰 값 이하로 내놓으면 바로 그 입찰에 팔린다
+  v_listing := public.market_list(pg_temp.fx('tabi107')::bigint, 250);
+  perform pg_temp.ok(v_listing is null, '같은 모델은 걸려 있던 입찰에 바로 팔린다(0107)');
+end $$;
+
+reset role;
+do $$ begin
+  perform pg_temp.ok((select model_id from public.market_trades where sneaker_id = pg_temp.fx('tabi107')::bigint) = 1119
+                     and (select price from public.market_trades where sneaker_id = pg_temp.fx('tabi107')::bigint) = 300,
+    '체결 줄에 모델이 저절로 적힌다 · 값은 입찰 값(0107)');
+  perform pg_temp.ok((select status from public.market_bids where id = pg_temp.fx('bid107')::bigint) = 'FILLED', '모델 입찰은 채워졌다(0107)');
+end $$;
+
+-- 시세판 2판: 같은 줄의 두 모델이 따로 한 줄씩
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$ begin
+  perform pg_temp.ok((select last_price from public.market_quotes_v2 where model_id = 1119) = 300
+                     and (select ask from public.market_quotes_v2 where model_id = 1119) is null
+                     and (select ask from public.market_quotes_v2 where model_id = 1120) = 200
+                     and not exists (select 1 from public.market_quotes_v2 where model_id is null and faction = 'NONE'
+                                       and rarity = 'RARE' and variant = 3),
+    '시세판 2판은 모델마다 한 줄 — 같은 줄의 다른 모델이 섞이지 않는다(0107)');
+  perform pg_temp.ok((select count(*) from public.market_asks_v2 where model_id = 1120) = 1
+                     and (select count(*) from public.market_asks_v2 where model_id = 1119) = 0,
+    '매물 장부도 모델로 고른다(0107)');
+  perform pg_temp.ok((select count(*) from public.market_my_trades_v2() where model_id = 1119 and not sold) = 1, '내 거래에 모델 번호(0107)');
+  -- 패커블 매물 값(200)보다 비싸게 패커블에 걸면 그 매물을 바로 산다
+  perform pg_temp.ok(public.market_bid_model(1120, 1, 220) is null, '매물이 있으면 기다리지 않는다(0107)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status from public.market_listings where id = pg_temp.fx('packlisting107')::bigint) = 'SOLD'
+                     and (select price from public.market_trades where sneaker_id = pg_temp.fx('pack107')::bigint) = 200
+                     and (select owner_id from public.market_sneakers where id = pg_temp.fx('pack107')::bigint)
+                         = '10700000-0000-0000-0000-000000000002',
+    '모델 입찰은 그 모델 매물을 바로 산다 — 값은 매물 값(0107)');
+end $$;
+-- 예전 앱이 거는 입찰(속성 × 등급 × 변형)은 예전 뜻 그대로 — 그 줄의 어느 모델이든
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$ begin
+  insert into fix (k, v) values ('oldbid107', public.market_bid('NONE', 'RARE', 3, 1, 150)::text);
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$ begin
+  perform pg_temp.ok(public.market_sell_now(pg_temp.fx('tabi107b')::bigint, pg_temp.fx('oldbid107')::bigint) is not null,
+    '예전 입찰은 그 줄의 신발이면 어느 모델이든 받는다(0107)');
+end $$;
+reset role;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

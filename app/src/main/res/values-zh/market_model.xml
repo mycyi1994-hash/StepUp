@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 거래소를 도감 모델 단위로 · 팔 수 없는 까닭(2026-11-17, 서버 0107) -->
+<resources>
+    <string name="care_sell_listed">出售中</string>
+    <string name="care_sell_starter">第一双鞋无法出售</string>
+    <string name="care_sell_locked">用这双鞋再跑 %1$s 公里即可出售</string>
+    <string name="care_sell_locked_unknown">免费抽到的鞋需要用它跑满规定距离后才能出售</string>
+    <string name="care_sell_unavailable">这双鞋目前无法出售</string>
+    <string name="market_sell_none_owned">你没有这个款式的鞋。</string>
+</resources>

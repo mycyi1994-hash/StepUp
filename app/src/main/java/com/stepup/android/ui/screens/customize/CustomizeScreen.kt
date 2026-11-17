@@ -151,7 +151,7 @@ import kotlinx.coroutines.launch
 fun CustomizeScreen(
     onBack: () -> Unit = {},
     onOpenDex: () -> Unit = {},
-    onOpenMarketModel: (String, String, Int) -> Unit = { _, _, _ -> },
+    onOpenMarketModel: (com.stepup.android.data.remote.ModelKey) -> Unit = {},
     onChangeBackground: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenMarket: () -> Unit = {},
