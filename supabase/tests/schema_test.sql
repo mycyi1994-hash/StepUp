@@ -11281,6 +11281,9 @@ begin
   j := public.report_overspeed_stop(v_start, v_start + interval '60 seconds', v_x);
   perform pg_temp.ok((j->>'sneaker_id')::bigint = v_b and (select durability_now from public.my_sneakers() where id = v_b) = 5,
     '내 신발이 아닌 번호는 쓰지 않는다 — 지금 신은 신발로(0110)');
+end $$;
+reset role;
+
 -- ═══ 0109 — 크루 · 번개 러닝 버그 고침 ═════════════════════════════════
 reset role;
 insert into auth.users (id, email, raw_user_meta_data) values
