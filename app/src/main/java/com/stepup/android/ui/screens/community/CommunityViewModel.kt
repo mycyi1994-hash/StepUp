@@ -500,6 +500,11 @@ class CommunityViewModel(
         viewModelScope.launch { noticeFailure(communityRepository.toggleLike(postId)) }
     }
 
+    /** 목록에 없는 글(예전 번개 · 알림으로 연 글)을 그 글만 받아 둔다(점검 2026-11-17 #19) */
+    fun ensurePost(postId: Long) {
+        viewModelScope.launch { communityRepository.ensurePost(postId) }
+    }
+
     fun toggleJoinFlash(postId: Long) {
         viewModelScope.launch { noticeFailure(communityRepository.toggleJoinFlash(postId)) }
     }

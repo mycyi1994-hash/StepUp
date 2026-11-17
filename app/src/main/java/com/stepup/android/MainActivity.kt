@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        InviteLinks.handle(intent)
+        InviteLinks.handleOnce(intent)
     }
 
     /** 선택한 언어로 리소스를 읽도록 액티비티 컨텍스트를 감싼다 (API 33 미만) */
@@ -81,7 +81,8 @@ class MainActivity : ComponentActivity() {
         // 초대 링크나 크루 알림으로 들어왔으면 그 크루를 연다(로그인 뒤에).
         // 화면 회전·언어·테마 변경으로 다시 만들어질 때는 같은 intent 가 또 오므로
         // 처음 만들 때만 읽는다 — 안 그러면 이미 본 크루로 매번 다시 끌려간다.
-        if (savedInstanceState == null) InviteLinks.handle(intent)
+        // 최근 앱 목록에서 다시 열면 처음 연 알림 · 링크가 또 실려 오므로 읽지 않는다(InviteLinks.handleOnce)
+        if (savedInstanceState == null) InviteLinks.handleOnce(intent)
 
         // 이미 권한이 있으면 바로 추적 시작 (첫 요청은 StepUpRoot에서 처리)
         if (StepPermissions.hasActivityRecognition(this)) {

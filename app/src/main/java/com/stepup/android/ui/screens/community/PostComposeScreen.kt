@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.domain.PostLimits
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.ui.components.BottomActionBar
 import com.stepup.android.ui.components.ButtonState
@@ -122,13 +123,13 @@ fun PostComposeScreen(
                 Text(crewName, style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel, modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter))
             }
             FormField(
-                stringResource(R.string.post_field_title), title, { title = it },
+                stringResource(R.string.post_field_title), title, { title = PostLimits.cap(it, PostLimits.TITLE) },
                 Modifier.padding(horizontal = StepUpUi.Gutter).testTag("post-title"),
                 placeholder = if (flash) template else stringResource(R.string.post_field_title_hint),
             )
             if (!flash) {
                 FormField(
-                    stringResource(R.string.post_field_body), body, { body = it },
+                    stringResource(R.string.post_field_body), body, { body = PostLimits.cap(it, PostLimits.BODY) },
                     Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_body_hint),
                     minLines = 8, minHeight = 240.dp,
                 )
@@ -152,7 +153,7 @@ fun PostComposeScreen(
                     )
                 } else {
                     FormField(
-                        stringResource(R.string.post_field_place), place, { place = it },
+                        stringResource(R.string.post_field_place), place, { place = PostLimits.cap(it, PostLimits.PLACE) },
                         Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_place_hint),
                     )
                 }
@@ -173,7 +174,7 @@ fun PostComposeScreen(
                     ),
                 )
                 FormField(
-                    stringResource(R.string.d26_flash_note) + " · " + stringResource(R.string.d26_flash_optional), body, { body = it },
+                    stringResource(R.string.d26_flash_note) + " · " + stringResource(R.string.d26_flash_optional), body, { body = PostLimits.cap(it, PostLimits.BODY) },
                     Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.d26_flash_note_hint),
                     minLines = 3, minHeight = 96.dp,
                 )

@@ -11154,6 +11154,23 @@ do $$ begin
 end $$;
 reset role;
 
+-- 0111 — 친구 초대 코드 "찾을 수 없어요"는 22023(4xx — 앱이 까닭을 보인다). P0002 는 PostgREST 가 500 으로 보낸다
+update public.economy_settings set value = 'true'::jsonb where key = 'invite_enabled';
+set role authenticated;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000003');
+do $$
+declare v_state text;
+begin
+  begin
+    perform public.invite_redeem('STEP-ZZZZZZ');
+  exception when others then
+    v_state := sqlstate;
+  end;
+  perform pg_temp.ok(v_state = '22023', format('없는 초대 코드는 22023 으로 거절한다(0111, 받은 값 %s)', coalesce(v_state, '통과')));
+end $$;
+reset role;
+update public.economy_settings set value = 'false'::jsonb where key = 'invite_enabled';
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

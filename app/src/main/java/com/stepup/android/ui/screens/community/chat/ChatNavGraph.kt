@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.stepup.android.domain.CrewDraftMode
+import com.stepup.android.ui.openReplacingSame
 import com.stepup.android.ui.screens.community.crew.CrewRoutes
 import com.stepup.android.ui.screens.community.home.CrewHomeRoutes
 import com.stepup.android.ui.screens.community.home.crewManageMembersRoute
@@ -133,7 +134,8 @@ fun NavHostController.backToRoom(crewId: String) {
 
 /** 크루 채팅 방을 연다(목록 · 크루 화면 · 알림) */
 fun NavHostController.openChatRoom(crewId: String) {
-    navigate(ChatRoutes.room(crewId)) { launchSingleTop = true }
+    // 다른 크루 채팅방이 맨 위면 걷고 연다 — 뷰모델이 처음 받은 크루 id 를 계속 쓰므로(점검 2026-11-17 #6). 같은 방이면 그대로
+    openReplacingSame(ChatRoutes.room(crewId), ChatRoutes.ROOM, mapOf("crewId" to crewId))
 }
 
 private val crewIdArg = navArgument("crewId") { type = NavType.StringType }
