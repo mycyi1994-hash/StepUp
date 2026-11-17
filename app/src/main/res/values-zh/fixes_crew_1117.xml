@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-17 问题排查 — 团队跑 · 闪电跑(#2 出发 · #4 闪电跑时间 · #5 错过出发，服务器 0109) -->
+<resources>
+    <string name="fxc_missed_used_body">你离开等候室期间大家已经出发。今日的团队跑已被占用。</string>
+    <string name="fxc_missed_checking_body">你离开等候室期间大家已经出发。</string>
+    <string name="fxc_need_two">等候室里至少要有 2 名已准备的队员才能一起出发。</string>
+    <string name="fxc_need_two_away">%1$s 没有在看等候室，所以没能出发。回到等候室后就能一起出发。</string>
+    <string name="fxc_away_notice">%1$s 没有在看等候室。现在出发的话，对方不会一起出发。</string>
+    <string name="fxc_away_label">暂时离开</string>
+    <string name="fxc_away_more">%1$s 等 %2$d 人</string>
+    <string name="fxc_flash_time_earliest">最早可在 5 分钟后出发，已为你调整为该时间。</string>
+</resources>

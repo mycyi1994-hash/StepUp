@@ -118,6 +118,19 @@ fun FlashRunDetailScreen(
 
     // "파티 채팅"이 여는 댓글 창은 이 화면 위에 그대로 뜬다
     CommentSheetHost(viewModel)
+    // 번개 취소가 막혔을 때(이미 출발함 등 — 서버 0109) 까닭을 띄우고 기다림을 거둔다. 댓글 창의 안내는 댓글 창이 띄운다
+    val boardNotice by viewModel.boardNotice.collectAsStateWithLifecycle()
+    val failedText = stringResource(R.string.crew_notice_failed)
+    LaunchedEffect(boardNotice, deleting) {
+        val notice = boardNotice ?: return@LaunchedEffect
+        if (!deleting) return@LaunchedEffect
+        val text = (notice as? BoardNotice.Rejected)?.reason ?: failedText
+        android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_SHORT).show()
+        viewModel.consumeBoardNotice()
+        deleting = false
+    }
+    // 이 번개의 대기실이 이미 출발했으면 번개 취소를 두지 않는다 — 지우면 달리는 사람들의 방 · 인원 보너스가 사라진다(#9)
+    val party by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize().background(c.background).testTag("flash-detail")) {
         if (post == null) {
@@ -203,14 +216,14 @@ fun FlashRunDetailScreen(
                 stringResource(if (post.liked) R.string.post_unlike_action else R.string.post_like_action),
                 onClick = { more = false; viewModel.toggleLike(post.id) }, modifier = Modifier.fillMaxWidth(),
             )
-            if (post.mine) {
+            if (post.mine && flashCancelable(post.id, party)) {
                 // 쓴 사람은 참여 취소 대신 번개 취소(글 지우기) — 지우기 전에 한 번 묻는다
                 Spacer(Modifier.height(10.dp))
                 com.stepup.android.ui.components.DangerButton(
                     stringResource(R.string.fx_flash_cancel_host), onClick = { more = false; confirmDelete = true },
                     modifier = Modifier.fillMaxWidth().testTag("flash-cancel-host"),
                 )
-            } else if (post.joined && !post.isClosed) {
+            } else if (!post.mine && post.joined && !post.isClosed) {
                 Spacer(Modifier.height(10.dp))
                 com.stepup.android.ui.components.DangerButton(
                     stringResource(R.string.flash_cancel_join), onClick = { more = false; viewModel.toggleJoinFlash(post.id) },
@@ -410,3 +423,16 @@ private fun FlashMembersDialog(roster: List<FlashMember>?, onDismiss: () -> Unit
         SecondaryButton(stringResource(R.string.common_ok), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
     }
 }
+
+/**
+ * 쓴 사람이 번개를 취소(글 지우기)할 수 있나 — 이 폰이 든 그 번개의 대기실이 출발했으면(카운트다운 · 달리는 중 · 결과) 아니다.
+ * 이 폰이 모르는 출발(대기실에 들지 않았다)은 서버가 거절하고(0109 post_delete, 22023) 까닭을 띄운다.
+ */
+internal fun flashCancelable(postId: Long, party: com.stepup.android.data.repo.PartyState): Boolean =
+    !(party.flashPostId == postId && party.phase in STARTED_PHASES)
+
+private val STARTED_PHASES = setOf(
+    com.stepup.android.data.repo.PartyPhase.COUNTDOWN,
+    com.stepup.android.data.repo.PartyPhase.RUNNING,
+    com.stepup.android.data.repo.PartyPhase.FINISHED,
+)

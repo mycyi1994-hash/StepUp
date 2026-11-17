@@ -523,7 +523,8 @@ class CommunityViewModel(
         crewId: String,
         place: String,
         distanceKm: Double,
-        meetInMinutes: Int,
+        /** 번개러닝의 출발 시각(epoch ms) — 고른 시각 그대로(#4). 번개가 아니면 0 */
+        meetAtMillis: Long,
         capacity: Int,
         lat: Double?,
         lng: Double?,
@@ -542,7 +543,7 @@ class CommunityViewModel(
                 crewId = crewId,
                 place = place,
                 distanceKm = distanceKm,
-                meetInMinutes = meetInMinutes,
+                meetAtMillis = meetAtMillis,
                 capacity = capacity,
                 lat = lat,
                 lng = lng,

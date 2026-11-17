@@ -246,6 +246,13 @@ class PartyApi(
     suspend fun start(partyId: Long): ServerResult<Unit> =
         rpc("party_start", jsonBody { put("p_party", partyId) }) { }
 
+    /**
+     * 출발을 놓쳤다 — 달리지 않은 오늘 크루 러닝을 푼다(0109 crew_run_release). true 면 오늘 크루 러닝이 쓰이지 않았다
+     * (풀었거나 처음부터 없었다), false 면 달린 기록이 있어 그대로다.
+     */
+    suspend fun releaseCrewRun(partyId: Long): ServerResult<Boolean> =
+        rpc("crew_run_release", jsonBody { put("p_party", partyId) }) { body -> body.trim().toBooleanStrictOrNull() }
+
     /** 진행자 — 내가 본 코스 판으로 출발(0072). 그사이 코스가 바뀌었으면 서버가 course_changed 로 거절한다 */
     suspend fun startRev(partyId: Long, courseRev: Int): ServerResult<Unit> = rpc(
         "party_start_rev",

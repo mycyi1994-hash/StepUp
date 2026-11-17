@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-17 不具合点検 — クルー・フラッシュラン(#2 出発 · #4 フラッシュの時刻 · #5 出発に間に合わない、サーバー 0109) -->
+<resources>
+    <string name="fxc_missed_used_body">待機室を離れている間にみんなが出発しました。今日のクルーランはすでに使われています。</string>
+    <string name="fxc_missed_checking_body">待機室を離れている間にみんなが出発しました。</string>
+    <string name="fxc_need_two">待機室にいる準備完了のクルーが2人以上で一緒に出発できます。</string>
+    <string name="fxc_need_two_away">%1$sさんが待機室を見ていないため出発できませんでした。待機室に戻ると一緒に出発できます。</string>
+    <string name="fxc_away_notice">%1$sさんが待機室を見ていません。このまま出発すると一緒に出発しません。</string>
+    <string name="fxc_away_label">離席中</string>
+    <string name="fxc_away_more">%1$sほか%2$d人</string>
+    <string name="fxc_flash_time_earliest">いちばん早い出発は今から5分後です。その時刻に合わせました。</string>
+</resources>
