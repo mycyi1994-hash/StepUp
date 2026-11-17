@@ -2,7 +2,6 @@ package com.stepup.android
 
 import com.stepup.android.data.remote.PartyRoomsRow
 import com.stepup.android.domain.RoomMode
-import com.stepup.android.ui.screens.community.minutesUntil
 import com.stepup.android.ui.screens.profile.nextMilestoneKm
 import com.stepup.android.ui.screens.walk.defaultPlanAt
 import com.stepup.android.ui.screens.walk.planAtFor
@@ -56,15 +55,6 @@ class Design1026Test {
         // 10분 안으로 지난 시각은 오늘 그대로(서버가 받는다)
         val justNow = Instant.ofEpochMilli(planAtFor(19, 55, now.toInstant().toEpochMilli())).atZone(zone)
         assertEquals(25, justNow.dayOfMonth)
-    }
-
-    @Test fun `flash start minutes stay within 5 minutes and 24 hours`() {
-        val now = ZonedDateTime.of(2026, 10, 25, 18, 37, 0, 0, ZoneId.systemDefault())
-        assertEquals(23, minutesUntil(19, 0, now))
-        // 이미 지났으면 다음 날
-        assertEquals(24 * 60 - 37, minutesUntil(18, 0, now))
-        assertTrue(minutesUntil(18, 39, now) >= 5)
-        assertTrue(minutesUntil(18, 37, now) <= 24 * 60)
     }
 
     @Test fun `next record is the next milestone above the total`() {

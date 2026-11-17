@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-17 버그 점검 — 크루 · 번개 러닝(#2 출발 · #4 번개 시각 · #5 출발 놓침, 서버 0109) -->
+<resources>
+    <string name="fxc_missed_used_body">대기실을 떠나 있는 동안 함께 출발했어요. 오늘의 크루 러닝은 이미 쓰였어요.</string>
+    <string name="fxc_missed_checking_body">대기실을 떠나 있는 동안 함께 출발했어요.</string>
+    <string name="fxc_need_two">대기실에 있는 준비 완료 크루원이 2명 이상이어야 함께 출발해요.</string>
+    <string name="fxc_need_two_away">%1$s 님이 대기실을 보고 있지 않아 출발하지 못했어요. 대기실로 돌아오면 함께 출발해요.</string>
+    <string name="fxc_away_notice">%1$s 님이 대기실을 보고 있지 않아요. 이대로 출발하면 함께 출발하지 않아요.</string>
+    <string name="fxc_away_label">자리 비움</string>
+    <string name="fxc_away_more">%1$s 외 %2$d명</string>
+    <string name="fxc_flash_time_earliest">가장 이른 출발은 지금부터 5분 뒤예요. 그 시각으로 맞췄어요.</string>
+</resources>

@@ -386,7 +386,7 @@ begin
 
   -- ── 함께 달리기 · 크루 러닝 (0070 — 걸음 상한 · 신발보다 먼저 정한다) ──
   -- 파티 보너스는 한 파티에서 한 러닝만
-  select pf.party_id, pf.size into v_party_id, v_party from economy.party_for(v_user, p_started_at) pf;
+  select pf.party_id, pf.size into v_party_id, v_party from economy.party_for(v_user, p_started_at, p_ended_at) pf;  -- 0109 #13: 출발 전에 끝난 러닝은 그 방 러닝이 아니다
   if v_party_id is null or exists (select 1 from public.walk_sessions s
                                     where s.user_id = v_user and s.party_id = v_party_id) then
     v_party_id := null;

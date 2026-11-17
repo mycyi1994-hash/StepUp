@@ -11281,6 +11281,213 @@ begin
   j := public.report_overspeed_stop(v_start, v_start + interval '60 seconds', v_x);
   perform pg_temp.ok((j->>'sneaker_id')::bigint = v_b and (select durability_now from public.my_sneakers() where id = v_b) = 5,
     '내 신발이 아닌 번호는 쓰지 않는다 — 지금 신은 신발로(0110)');
+-- ═══ 0109 — 크루 · 번개 러닝 버그 고침 ═════════════════════════════════
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('10900000-0000-0000-0000-000000000001', 'a109@test', '{"full_name":"진행109"}'),
+  ('10900000-0000-0000-0000-000000000002', 'b109@test', '{"full_name":"잠든폰"}'),
+  ('10900000-0000-0000-0000-000000000003', 'c109@test', '{"full_name":"셋109"}');
+insert into public.crews (id, owner_id, name)
+values ('10900000-0000-0000-0000-0000000000cc', '10900000-0000-0000-0000-000000000001', '고침 크루'),
+       ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', '다른 크루');
+insert into public.crew_members (crew_id, user_id, role)
+select '10900000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER'
+  from unnest(array['10900000-0000-0000-0000-000000000001', '10900000-0000-0000-0000-000000000002']) u
+on conflict do nothing;
+insert into public.crew_members (crew_id, user_id, role)
+values ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', 'MEMBER')
+on conflict do nothing;
+update public.profiles set display_name = '잠든폰' where id = '10900000-0000-0000-0000-000000000002';
+
+-- #2 상대 폰이 잠들었다(20초째 묻지 않음) — 거절은 아무것도 바꾸지 않고 까닭(자리에 없는 사람)을 알린다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('p109', public.party_open('10900000-0000-0000-0000-0000000000cc', null)::text);
+  perform public.party_ready(pg_temp.fx('p109')::bigint, true);
+end $$;
+call pg_temp.login('10900000-0000-0000-0000-000000000002');
+do $$ begin perform public.party_open('10900000-0000-0000-0000-0000000000cc', null);
+  perform public.party_ready(pg_temp.fx('p109')::bigint, true); end $$;
+reset role;
+update public.party_members set last_seen = now() - interval '20 seconds'
+ where party_id = pg_temp.fx('p109')::bigint and user_id = '10900000-0000-0000-0000-000000000002';
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$
+declare v_detail text;
+begin
+  begin
+    perform public.party_start(pg_temp.fx('p109')::bigint);
+  exception when others then
+    get stacked diagnostics v_detail = pg_exception_detail;
+    perform pg_temp.ok(sqlstate = '23514' and sqlerrm = 'crew_run_need_two' and v_detail like '%잠든폰%',
+      '혼자 남는 출발은 crew_run_need_two · 자리에 없는 사람 이름과 함께 거절 — ' || sqlstate || ' ' || coalesce(v_detail, '') || '(0109)');
+    return;
+  end;
+  perform pg_temp.ok(false, '자리에 없는 사람을 빼면 혼자인 방은 출발하지 못해야 한다(0109)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select status = 'LOBBY' from public.parties where id = pg_temp.fx('p109')::bigint)
+    and (select count(*) = 2 from public.party_members m where m.party_id = pg_temp.fx('p109')::bigint and m.ready),
+    '거절된 출발은 대기실 · 준비를 바꾸지 않는다 — 돌아온 사람은 그대로 함께 출발한다(0109)');
+end $$;
+
+-- #3 출발 시각을 정한 방은 그 시각 30분 뒤까지 "아무도 안 봄"으로 닫지 않는다 · 6시간 상한도 그 시각부터
+insert into public.parties (crew_id, host_id, plan_at) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', now() + interval '3 hours');
+insert into fix (k, v) select 'plan109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.parties (crew_id, host_id, plan_at) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', now() - interval '40 minutes');
+insert into fix (k, v) select 'past109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.parties (crew_id, host_id, plan_at, created_at) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', now() + interval '1 hour', now() - interval '7 hours');
+insert into fix (k, v) select 'old109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.parties (crew_id, host_id) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003');
+insert into fix (k, v) select 'idle109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.party_members (party_id, user_id, last_seen)
+select x.id, '10900000-0000-0000-0000-000000000003', now() - interval '20 minutes'
+  from public.parties x where x.crew_id = '10900000-0000-0000-0000-0000000000dd'
+on conflict (party_id, user_id) do update set last_seen = excluded.last_seen;
+do $$ begin
+  perform economy.party_close_stale('10900000-0000-0000-0000-0000000000dd');
+  perform pg_temp.ok((select status = 'LOBBY' from public.parties where id = pg_temp.fx('plan109')::bigint),
+    '정한 출발 시각이 남은 대기실은 20분 동안 아무도 안 봐도 열려 있다(0109)');
+  perform pg_temp.ok((select status = 'LOBBY' from public.parties where id = pg_temp.fx('old109')::bigint),
+    '7시간 전에 만들었어도 정한 시각이 남았으면 열려 있다 — 6시간은 정한 시각부터(0109)');
+  perform pg_temp.ok((select status = 'FINISHED' from public.parties where id = pg_temp.fx('past109')::bigint),
+    '정한 시각이 30분 넘게 지났고 아무도 안 보면 닫는다(0109)');
+  perform pg_temp.ok((select status = 'FINISHED' from public.parties where id = pg_temp.fx('idle109')::bigint),
+    '시각을 정하지 않은 방은 예전처럼 10분 아무도 안 보면 닫는다(0109)');
+end $$;
+-- 번개 · 예전 앱의 방 열기(party_open)는 모든 방을 함께 닫는다 — 같은 기준
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_open('10900000-0000-0000-0000-0000000000cc', null); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status = 'LOBBY' from public.parties where id = pg_temp.fx('plan109')::bigint),
+    '다른 크루가 방을 열어도 정한 시각이 남은 대기실은 닫지 않는다(0109)');
+end $$;
+
+-- 돌아왔다 — 함께 출발한다
+update public.party_members set last_seen = now()
+ where party_id = pg_temp.fx('p109')::bigint and user_id = '10900000-0000-0000-0000-000000000002';
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_start(pg_temp.fx('p109')::bigint); end $$;
+reset role;
+-- 기여를 정해 둔다(신발 없는 계정은 0) — 공용 체력 100 = 50 + 50
+update economy.crew_runs set contribution = 50 where party_id = pg_temp.fx('p109')::bigint;
+update economy.crew_day_pools set capacity = 100, contributors = 2
+ where crew_id = '10900000-0000-0000-0000-0000000000cc' and day = economy.game_day(now());
+
+-- #5 출발을 놓친 사람(박동 · 올린 러닝 없음)은 오늘 크루 러닝을 푼다 — 달린 사람은 풀지 않는다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin
+  perform public.crew_run_beat(pg_temp.fx('p109')::bigint, 'RUNNING');
+  perform pg_temp.ok(public.crew_run_release(pg_temp.fx('p109')::bigint) = false,
+    '달린 소식이 있는 사람의 크루 러닝은 풀지 않는다(0109)');
+end $$;
+call pg_temp.login('10900000-0000-0000-0000-000000000002');
+do $$ begin
+  perform pg_temp.ok(public.crew_run_release(pg_temp.fx('p109')::bigint) = true, '출발을 놓친 사람은 크루 러닝을 푼다(0109)');
+  perform pg_temp.ok(public.crew_run_release(pg_temp.fx('p109')::bigint) = true, '다시 불러도 같다(0109)');
+end $$;
+reset role;
+do $$
+declare v_day date := economy.game_day(now());
+begin
+  perform pg_temp.ok(
+    not exists (select 1 from economy.crew_runs c where c.user_id = '10900000-0000-0000-0000-000000000002' and c.day = v_day)
+    and not exists (select 1 from public.party_runs r where r.party_id = pg_temp.fx('p109')::bigint
+                                                      and r.user_id = '10900000-0000-0000-0000-000000000002')
+    and exists (select 1 from economy.crew_runs c where c.user_id = '10900000-0000-0000-0000-000000000001' and c.day = v_day),
+    '푼 사람은 참여 줄 · 출발 명단이 없다 — 달린 사람은 그대로(0109)');
+  perform pg_temp.ok(
+    (select d.capacity = 50 and d.contributors = 1 and d.consumed <= d.capacity from economy.crew_day_pools d
+      where d.crew_id = '10900000-0000-0000-0000-0000000000cc' and d.day = v_day),
+    '공용 체력에서 푼 사람의 기여를 뺀다(0109)');
+end $$;
+-- 푼 사람은 오늘 다른 대기실에서 다시 준비할 수 있다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000002');
+do $$ begin
+  perform public.party_leave(pg_temp.fx('p109')::bigint);
+  insert into fix (k, v) values ('p109b', public.party_open('10900000-0000-0000-0000-0000000000cc', null)::text);
+  perform public.party_ready(pg_temp.fx('p109b')::bigint, true);
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select m.ready from public.party_members m where m.party_id = pg_temp.fx('p109b')::bigint
+                        and m.user_id = '10900000-0000-0000-0000-000000000002'),
+    '크루 러닝을 푼 사람은 오늘 다시 준비할 수 있다(0109)');
+end $$;
+
+-- #9 출발한 번개는 글을 지우지 못한다(방 · 출발 명단이 함께 지워져 달리던 사람의 보너스가 없어졌다)
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000003');
+do $$
+declare v_post bigint; v_lobby bigint;
+begin
+  v_post := public.post_create('FLASH', null, '출발할 번개', '', '반포', 5, now() + interval '1 hour', 4, 37.51, 126.99);
+  insert into fix (k, v) values ('post109', v_post::text);
+  insert into fix (k, v) values ('fp109', public.party_open(null, v_post)::text);
+  perform public.party_ready(pg_temp.fx('fp109')::bigint, true);
+  perform public.party_start(pg_temp.fx('fp109')::bigint);
+  v_lobby := public.post_create('FLASH', null, '대기 번개', '', '반포', 5, now() + interval '1 hour', 4, 37.51, 126.99);
+  perform public.party_open(null, v_lobby);
+  perform public.post_delete(v_lobby);
+  perform pg_temp.ok(not exists (select 1 from public.posts where id = v_lobby), '대기실만 열린 번개는 취소(지우기)된다(0109)');
+end $$;
+do $$ begin
+  begin
+    perform public.post_delete(pg_temp.fx('post109')::bigint);
+  exception when others then
+    perform pg_temp.ok(sqlstate = '22023' and sqlerrm like '%출발한 번개%',
+      '출발한 번개 취소는 앱이 까닭을 읽는 코드(22023)로 거절 — ' || sqlstate || '(0109)');
+    return;
+  end;
+  perform pg_temp.ok(false, '출발한 번개는 지우지 못해야 한다(0109)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.posts where id = pg_temp.fx('post109')::bigint)
+                     and exists (select 1 from public.party_runs where party_id = pg_temp.fx('fp109')::bigint),
+    '거절된 취소는 글 · 출발 명단을 그대로 둔다(0109)');
+end $$;
+
+-- #13 방이 출발하기 전에 끝난 러닝은 그 방의 러닝이 아니다(1분 여유)
+do $$
+declare v_at timestamptz;
+begin
+  select r.starts_at into v_at from public.party_runs r
+   where r.party_id = pg_temp.fx('fp109')::bigint and r.user_id = '10900000-0000-0000-0000-000000000003';
+  insert into fix (k, v) values ('at109', v_at::text);
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '8 minutes',
+                                                               v_at - interval '2 minutes') f) is null,
+    '출발 2분 전에 끝난 혼자 러닝은 방의 러닝으로 셈하지 않는다(0109)');
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at,
+                                                               v_at + interval '20 minutes') f) = pg_temp.fx('fp109')::bigint,
+    '출발 시각에 시작해 뒤에 끝난 러닝은 그 방의 러닝(0109)');
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '8 minutes') f)
+                     = pg_temp.fx('fp109')::bigint,
+    '예전 두 칸 호출은 끝난 시각을 보지 않는다(0109)');
+end $$;
+-- record_session 이 끝난 시각을 넘긴다 — 출발 전에 끝난 러닝은 방 번호 없이 기록된다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000003');
+do $$
+declare v_at timestamptz; v_sid bigint;
+begin
+  v_at := pg_temp.fx('at109')::timestamptz;
+  select s.session_id into v_sid from public.record_session(v_at - interval '9 minutes', v_at - interval '3 minutes', 600, 360) s;
+  perform pg_temp.ok(v_sid is not null and (select w.party_id is null from public.walk_sessions w where w.id = v_sid),
+    '출발 전에 끝난 러닝을 올리면 방의 러닝이 되지 않는다(0109)');
 end $$;
 reset role;
 

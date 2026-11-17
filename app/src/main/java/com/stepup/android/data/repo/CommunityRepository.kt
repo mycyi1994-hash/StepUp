@@ -318,7 +318,7 @@ class CommunityRepository(
     /**
      * 글쓰기.
      *
-     * @param meetInMinutes 번개러닝이 몇 분 뒤에 모이는지
+     * @param meetAtMillis 번개러닝의 출발 시각(epoch ms) — 화면에서 고른 시각 그대로 보낸다(예전에는 "N분 뒤"를 올릴 때 다시 더해 시각이 어긋났다)
      * @param clientKey 글쓰기마다 만든 요청 키 — 결과를 모른 채 다시 올려도 두 편(번개는 모임 둘)이 되지 않는다
      */
     suspend fun write(
@@ -328,7 +328,7 @@ class CommunityRepository(
         crewId: String = "",
         place: String = "",
         distanceKm: Double = 0.0,
-        meetInMinutes: Int = 0,
+        meetAtMillis: Long = 0L,
         capacity: Int = 0,
         lat: Double? = null,
         lng: Double? = null,
@@ -338,8 +338,8 @@ class CommunityRepository(
     ): BoardResult {
         val flash = category == PostCategory.FLASH
         val meetAt = if (flash) {
-            Instant.ofEpochMilli(System.currentTimeMillis() + meetInMinutes.coerceAtLeast(1) * 60_000L)
-                .toString()
+            // 지나 버린 시각은 보내지 않는다(서버가 거절한다) — 화면이 올리기 전에 5분 뒤로 맞춘다
+            Instant.ofEpochMilli(meetAtMillis.coerceAtLeast(System.currentTimeMillis() + 60_000L)).toString()
         } else {
             ""
         }
