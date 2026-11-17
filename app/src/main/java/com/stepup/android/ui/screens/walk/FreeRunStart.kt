@@ -50,6 +50,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
@@ -181,6 +182,8 @@ internal fun FreeRunShoeCheck(
     runItems: List<com.stepup.android.domain.BagItem> = emptyList(),
     pickedItems: Set<com.stepup.android.domain.ItemKind> = emptySet(),
     onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
+    /** 아이템 없이도 이미 켜진 적립 배수(보상 이벤트 · 24시간 부스터) — 이보다 크지 않은 배수 아이템은 고르지 못한다 */
+    coveredRewardMult: Double = 1.0,
 ) {
     Dialog(
         onDismissRequest = onCancel,
@@ -192,6 +195,7 @@ internal fun FreeRunShoeCheck(
         FreeRunShoeCheckContent(
             shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair,
             runItems = runItems, pickedItems = pickedItems, onPickItem = onPickItem,
+            coveredRewardMult = coveredRewardMult,
         )
     }
 }
@@ -210,6 +214,7 @@ internal fun FreeRunShoeCheckContent(
     runItems: List<com.stepup.android.domain.BagItem> = emptyList(),
     pickedItems: Set<com.stepup.android.domain.ItemKind> = emptySet(),
     onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
+    coveredRewardMult: Double = 1.0,
 ) {
     val reduced = LocalMotion.current.reduced
     // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
@@ -282,7 +287,7 @@ internal fun FreeRunShoeCheckContent(
                     }
                     // 이번 러닝에 쓸 아이템(0106) — 가진 것만, 같은 묶음(적립 배수 · 에너지)은 하나만. 출발하면 그 러닝에 묶여 빠진다
                     if (runItems.isNotEmpty()) {
-                        RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing)
+                        RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing, coveredRewardMult = coveredRewardMult)
                     }
                     // 이 신발로 출발(주 버튼) — 아래 돌아가기 · 신발 교체
                     Box(
@@ -450,7 +455,11 @@ private fun RunItemPicker(
     picked: Set<com.stepup.android.domain.ItemKind>,
     onPick: (com.stepup.android.domain.ItemKind) -> Unit,
     enabled: Boolean,
+    coveredRewardMult: Double = 1.0,
 ) {
+    // 이미 켜진 배수(보상 이벤트 · 24시간 부스터)와 같거나 작은 배수 아이템 — 서버는 큰 것 하나만 쓰므로 고르면 아이템만 사라진다
+    fun covered(item: com.stepup.android.domain.BagItem): Boolean =
+        item.kind.group == "REWARD" && coveredRewardMult > 1.0 && (item.value ?: 1.0) <= coveredRewardMult
     Column(Modifier.padding(top = 18.dp).fillMaxWidth().testTag("run-items")) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
@@ -461,13 +470,15 @@ private fun RunItemPicker(
         }
         Row(Modifier.padding(top = 10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items.take(3).forEach { item ->
-                val on = item.kind in picked
+                val blocked = covered(item)
+                val on = item.kind in picked && !blocked
                 val shape = RoundedCornerShape(16.dp)
                 Column(
                     Modifier.weight(1f).clip(shape)
+                        .alpha(if (blocked) 0.42f else 1f)
                         .background(if (on) Color(0xFF1A2A52) else Color(0xFF0D1426), shape)
                         .border(if (on) 2.dp else 1.dp, if (on) Color(0xFF6C9BFF) else CheckEdge, shape)
-                        .feedbackClickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.Checkbox) { onPick(item.kind) }
+                        .feedbackClickable(enabled = enabled && !blocked, role = androidx.compose.ui.semantics.Role.Checkbox) { onPick(item.kind) }
                         .semantics { selected = on }
                         .padding(vertical = 8.dp, horizontal = 4.dp)
                         .testTag("run-item-${item.kind.id}"),
@@ -489,9 +500,17 @@ private fun RunItemPicker(
                 }
             }
         }
-        if (picked.isNotEmpty()) {
+        if (items.take(3).any(::covered)) {
+            Text(
+                stringResource(R.string.run_items_covered, com.stepup.android.ui.screens.items.formatValue(coveredRewardMult)),
+                style = checkText(12.sp, CheckBack, FontWeight.Normal),
+                modifier = Modifier.padding(top = 8.dp).testTag("run-items-covered"),
+            )
+        }
+        val usable = picked.filter { kind -> items.none { it.kind == kind && covered(it) } }
+        if (usable.isNotEmpty()) {
             // map 은 인라인이라 그 안에서 문구(컴포저블)를 읽을 수 있다 — 모은 뒤 잇는다
-            val effects = picked.sortedBy { it.ordinal }.map { kind ->
+            val effects = usable.sortedBy { it.ordinal }.map { kind ->
                 com.stepup.android.ui.screens.items.effectText(kind, items.firstOrNull { it.kind == kind }?.value)
             }
             Text(

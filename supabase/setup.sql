@@ -34357,6 +34357,8 @@ with shoes as (
          coalesce(s.model_id, 0) as model_id,
          s.id, s.status
     from public.market_sneakers s
+   -- 강화 재료로 태운 신발(0054 — 줄은 BURNED 로 남는다)은 "보유"에 세지 않는다
+   where s.status <> 'BURNED'
 ),
 supply as (
   select faction, rarity, variant, model_id,
@@ -34428,6 +34430,74 @@ select m.faction,
 comment on view public.market_quotes_v2 is
   '모델별 시세 한 줄(0107) — 도감 모델이 있는 신발은 모델 하나가 한 줄(속성 NONE · 변형 0), 없으면 속성 × 등급 × 변형.';
 grant select on public.market_quotes_v2 to anon, authenticated;
+
+-- ── 예전 자리(예전 앱) — 칸은 그대로, 줄만 거른다 ──
+-- 모델에 건 입찰은 (NONE, 등급, 변형 0)으로 적힌다. 예전 장부 · 시세판이 그대로 읽으면 예전 앱의 "NONE · 등급 · 0" 장에
+-- 그 등급 모든 모델의 입찰이 섞여 보이고, 눌러도 "모델이 다릅니다"로 거절된다 — 예전 자리는 모델 없는 입찰만 보인다.
+-- 강화 재료로 태운 신발(BURNED)도 "보유"에서 뺀다. 칸 이름 · 차례 · 형은 0007 과 같다(다시 올려도 같은 모양).
+create or replace view public.market_bid_book
+with (security_invoker = true) as
+  select id as bid_id, buyer_id, faction, rarity, variant, min_level, price, created_at
+    from public.market_bids
+   where status = 'OPEN' and model_id is null;
+
+create or replace view public.market_quotes
+with (security_invoker = true) as
+with supply as (
+  select faction, rarity, variant,
+         count(*)::int as supply,
+         count(*) filter (where status = 'LISTED')::int as listed
+    from public.market_sneakers
+   where status <> 'BURNED'
+   group by 1, 2, 3
+),
+asks as (
+  select s.faction, s.rarity, s.variant, min(l.price) as ask
+    from public.market_listings l
+    join public.market_sneakers s on s.id = l.sneaker_id
+   where l.status = 'OPEN' group by 1, 2, 3
+),
+bids as (
+  select faction, rarity, variant, max(price) as bid, count(*)::int as bid_count
+    from public.market_bids where status = 'OPEN' and model_id is null group by 1, 2, 3
+),
+last_trade as (
+  select distinct on (faction, rarity, variant)
+         faction, rarity, variant, price as last_price, traded_at as last_traded_at
+    from public.market_trades
+   order by faction, rarity, variant, traded_at desc
+),
+vol as (
+  select faction, rarity, variant,
+         count(*)::int as trades_24h,
+         coalesce(sum(price), 0)::numeric(20, 4) as volume_24h
+    from public.market_trades
+   where traded_at > now() - interval '24 hours'
+   group by 1, 2, 3
+),
+models as (
+  select faction, rarity, variant from supply
+  union
+  select faction, rarity, variant from bids
+)
+select m.faction,
+       m.rarity,
+       m.variant,
+       coalesce(s.supply, 0) as supply,
+       coalesce(s.listed, 0) as listed,
+       a.ask,
+       b.bid,
+       coalesce(b.bid_count, 0) as bid_count,
+       t.last_price,
+       t.last_traded_at,
+       coalesce(v.trades_24h, 0) as trades_24h,
+       coalesce(v.volume_24h, 0)::numeric(20, 4) as volume_24h
+  from models m
+  left join supply s using (faction, rarity, variant)
+  left join asks a using (faction, rarity, variant)
+  left join bids b using (faction, rarity, variant)
+  left join last_trade t using (faction, rarity, variant)
+  left join vol v using (faction, rarity, variant);
 
 -- ── 판매 등록 — 걸려 있는 입찰이 그 신발에 맞는지에 모델을 더한다 ──
 create or replace function public.market_list(
@@ -34728,7 +34798,9 @@ create or replace function economy.market_trading_guard() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if not economy.market_trading_open() then
-    raise exception '지금은 거래소를 쉬고 있습니다' using errcode = '55000';
+    -- 22023(HTTP 400) — 55000 은 PostgREST 가 500 으로 보내 앱이 "연결이 끊겼어요 · 다시 누르세요"로 읽는다
+    -- (예전 앱은 끝없이 다시 누르게 되고, 새 앱의 멈춤 안내도 닿지 않는다). 0085 의 초대 멈춤과 같은 코드.
+    raise exception '지금은 거래소를 쉬고 있습니다' using errcode = '22023';
   end if;
   return new;
 end $$;

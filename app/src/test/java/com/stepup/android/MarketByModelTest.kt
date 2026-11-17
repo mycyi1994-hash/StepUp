@@ -10,6 +10,7 @@ import com.stepup.android.domain.MarketShoeLook
 import com.stepup.android.domain.SellBlock
 import com.stepup.android.domain.sellBlock
 import com.stepup.android.ui.Routes
+import com.stepup.android.ui.screens.market.sellNowPick
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -87,6 +88,24 @@ class MarketByModelTest {
             luck = 1.0, comfort = 1.0, durability = 100, equipped = false, acquiredAt = 0,
         ).toDomain()
         assertEquals(SellBlock.Other, legacy.sellBlock)
+    }
+
+    @Test fun `즉시 판매는 내가 팔러 온 그 켤레를 판다 — 목록의 첫 켤레가 아니다`() {
+        // 타비 두 켤레: 최근에 얻어 목록 앞에 오는 강화한 켤레(Lv 12)와 팔러 온 켤레(Lv 1)
+        fun pair(id: Long, level: Int) = SneakerEntity(
+            id = id, factionId = "NONE", rarity = "RARE", variant = 3, level = level, mintNumber = 365,
+            luck = 1.0, comfort = 1.0, durability = 100, equipped = false, acquiredAt = 0, serverId = id * 10,
+            origin = "PAID_DRAW", canWithdraw = true, modelId = 1119,
+        )
+        val strong = pair(id = 11, level = 12)
+        val plain = pair(id = 7, level = 1)
+        val mine = listOf(strong, plain)
+        assertEquals(7L, sellNowPick(mine, minLevel = 1, cameFor = 7)?.id)
+        // 팔러 온 켤레가 레벨 조건에 모자라면 조건을 채우는 켤레
+        assertEquals(11L, sellNowPick(mine, minLevel = 5, cameFor = 7)?.id)
+        // 시세판에서 바로 들어왔으면(팔러 온 켤레 없음) 조건을 채우는 것 중 레벨이 가장 낮은 켤레
+        assertEquals(7L, sellNowPick(mine, minLevel = 1, cameFor = 0)?.id)
+        assertNull(sellNowPick(mine, minLevel = 13, cameFor = 7))
     }
 
     @Test fun `거래를 멈춘 동안 앱은 거래 버튼을 막고, 서버 거절은 멈춤 안내로 읽는다(0108)`() {

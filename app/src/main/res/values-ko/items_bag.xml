@@ -34,4 +34,5 @@
     <string name="run_items_hint">같은 종류는 하나만</string>
     <string name="run_items_note">출발하면 고른 아이템을 써요</string>
     <string name="run_items_owned">보유 %1$d</string>
+    <string name="run_items_covered">지금 적립 ×%1$s 가 이미 켜져 있어요. 배수가 같거나 작은 아이템은 써도 늘지 않아 지금은 고를 수 없어요.</string>
 </resources>

@@ -258,7 +258,7 @@ fun MarketModelScreen(
                 val bid = bids[index]
                 // 레벨 조건을 채우는 내 신발이 있어야 팔 수 있다.
                 // 조건이 모자라면 버튼을 꺼 둔다 — 눌렀을 때 거절되는 것보다 낫다.
-                val match = sellable.firstOrNull { it.level >= bid.minLevel }
+                val match = sellNowPick(sellable, bid.minLevel, sellLocalId)
                 BidRowCard(
                     row = bid,
                     canSell = trading && match != null,
@@ -285,6 +285,7 @@ fun MarketModelScreen(
         BidDialog(
             tradable = state.tradable,
             suggested = state.quote?.bid ?: state.quote?.lastPrice,
+            maxLevel = com.stepup.android.domain.Rarity.of(model.rarity).maxLevel,
             onDismiss = { bidding = false },
             onConfirm = { minLevel, price ->
                 bidding = false
@@ -351,6 +352,8 @@ private fun TradeHistoryRow(row: TradeRow) {
 private fun BidDialog(
     tradable: Double,
     suggested: Double?,
+    /** 이 등급 신발이 오를 수 있는 가장 높은 레벨 — 그 위 조건은 서버가 거절한다(채울 신발이 없다) */
+    maxLevel: Int,
     onDismiss: () -> Unit,
     onConfirm: (minLevel: Int, price: Double) -> Unit,
 ) {
@@ -358,7 +361,7 @@ private fun BidDialog(
     var minLevel by remember { mutableStateOf("1") }
     val amount = price.toDoubleOrNull() ?: 0.0
     val level = minLevel.toIntOrNull() ?: 1
-    val canSend = amount >= 1 && amount <= tradable && level in 1..30
+    val canSend = amount >= 1 && amount <= tradable && level in 1..maxLevel
     DialogPanel(
         title = stringResource(R.string.market_place_bid), onDismiss = onDismiss,
         actions = {

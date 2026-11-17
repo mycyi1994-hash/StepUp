@@ -10992,6 +10992,12 @@ begin
                             from public.market_bid_book_v2 where bid_id = v_bid),
     '모델에 건 입찰 — 등급은 모델이 정한다(0107)');
   perform pg_temp.ok((select count(*) from public.market_my_bids_v2() where model_id = 1119) = 1, '내 입찰에 모델 번호(0107)');
+  -- 모델 입찰은 (NONE, 레어, 0)으로 적힌다 — 예전 앱의 그 장에 섞여 보이면 눌러도 "모델이 다릅니다"다
+  perform pg_temp.ok(not exists (select 1 from public.market_bid_book where bid_id = v_bid)
+                     and not exists (select 1 from public.market_quotes
+                                      where faction = 'NONE' and rarity = 'RARE' and variant = 0 and bid is not null)
+                     and (select bid from public.market_quotes_v2 where model_id = 1119) = 300,
+    '모델 입찰은 예전 장부 · 시세판에 섞이지 않고 2판에만 보인다(0107)');
   insert into fix (k, v) values ('bid107', v_bid::text);
 end $$;
 
@@ -11059,6 +11065,18 @@ do $$ begin
     '예전 입찰은 그 줄의 신발이면 어느 모델이든 받는다(0107)');
 end $$;
 reset role;
+-- 강화 재료로 태운 신발(0054 — 줄은 BURNED 로 남는다)은 "보유"에 세지 않는다
+do $$
+declare
+  v_v2 int := (select supply from public.market_quotes_v2 where model_id = 1119);
+  v_v1 int := (select supply from public.market_quotes where faction = 'NONE' and rarity = 'RARE' and variant = 3);
+  v_burned bigint := pg_temp.shoe107(1119, 1);
+begin
+  update public.market_sneakers set owner_id = null, status = 'BURNED' where id = v_burned;
+  perform pg_temp.ok(v_v2 >= 2 and (select supply from public.market_quotes_v2 where model_id = 1119) = v_v2
+                     and (select supply from public.market_quotes where faction = 'NONE' and rarity = 'RARE' and variant = 3) = v_v1,
+    '태운 신발은 보유 수에 세지 않는다 — 2판 · 예전 시세판 모두(0107)');
+end $$;
 
 -- ════════════════════════════════════════════════════════════════════
 --  0108 거래소 거래 멈춤 — 새 매물 · 새 입찰 · 체결을 받지 않고, 거두기는 된다 (2026-11-17)
@@ -11095,6 +11113,14 @@ call pg_temp.must_fail(format($q$ select public.market_buy_now(%s) $q$, pg_temp.
   '멈춘 동안 즉시 구매는 안 된다(0108)');
 call pg_temp.must_fail($q$ select public.market_bid_model(1102, 1, 500) $q$, '멈춘 동안 모델 입찰은 안 된다(0108)');
 call pg_temp.must_fail($q$ select public.market_bid('NONE', 'RARE', 3, 1, 500) $q$, '멈춘 동안 예전 입찰도 안 된다(0108)');
+-- 거절 코드는 22023(HTTP 400) — 55000 은 PostgREST 가 500 으로 보내 앱이 "연결이 끊겼어요 · 다시 누르세요"로 읽는다
+do $$ begin
+  perform public.market_bid_model(1102, 1, 500);
+  perform pg_temp.ok(false, '멈춤 거절이 나와야 한다(0108)');
+exception when others then
+  perform pg_temp.ok(sqlstate = '22023' and sqlerrm like '%거래소를 쉬고%',
+    '멈춤 거절은 앱이 까닭을 읽는 코드로 온다 — ' || sqlstate || '(0108)');
+end $$;
 call pg_temp.login('10700000-0000-0000-0000-000000000001');
 do $$
 declare v_before numeric;

@@ -34,4 +34,5 @@
     <string name="run_items_hint">同じ種類は1つだけ</string>
     <string name="run_items_note">出発すると選んだアイテムを使います</string>
     <string name="run_items_owned">所持 %1$d</string>
+    <string name="run_items_covered">いま獲得 ×%1$s が適用中です。同じかそれ以下の倍率のアイテムは増えないため、いまは選べません。</string>
 </resources>

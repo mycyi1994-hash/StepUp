@@ -13,7 +13,7 @@
     <!-- Tabs -->
     <string name="tab_home">首页</string>
     <string name="tab_community">一起跑</string>
-    <string name="tab_items">装备</string>
+    <string name="tab_items">道具</string>
     <string name="tab_events">活动</string>
     <string name="tab_profile">我的</string>
     <string name="tab_market">市场</string>

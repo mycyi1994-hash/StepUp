@@ -34,4 +34,5 @@
     <string name="run_items_hint">One per type</string>
     <string name="run_items_note">Chosen items are used when you start</string>
     <string name="run_items_owned">Have %1$d</string>
+    <string name="run_items_covered">Earnings ×%1$s is already on. Items with the same or a smaller boost add nothing, so they can\'t be picked now.</string>
 </resources>

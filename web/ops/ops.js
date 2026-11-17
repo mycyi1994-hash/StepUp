@@ -21,8 +21,15 @@
   var $ = function (id) { return document.getElementById(id); };
   var token = '';
   var state = null;        // ops_overview 결과
-  var grantRequest = null; // 같은 지급을 다시 보내도 한 번만 되게 — 내용이 바뀌면 새 번호
+  // 같은 지급 · 같은 이벤트를 다시 보내도 한 번만 되게 — 번호는 보낸 내용에 묶는다({ id, sig }).
+  // 답을 못 받았으면(끊김 · 5xx) 그대로 남겨, 화면을 다시 그리거나 다른 탭을 다녀와도 같은 내용이면 같은 번호로 다시 보낸다.
+  // 내용이 달라지면 새 번호, 서버가 분명히 답하면(됐다 · 안 된다) 비운다.
+  var grantRequest = null;
   var eventRequest = null;
+  function requestFor(pending, parts) {
+    var sig = JSON.stringify(parts);
+    return pending && pending.sig === sig ? pending : { id: uuid(), sig: sig };
+  }
   var busy = false;
 
   function uuid() {
@@ -41,11 +48,13 @@
         if (!r.ok) {
           var e = new Error((d && d.message) || ('http ' + r.status));
           e.denied = /ops key/.test(e.message);
+          // 5xx(게이트웨이 시간 초과 등)는 서버가 이미 처리했을 수 있다 — 끊김처럼 "모름"으로 둔다
+          e.unsure = r.status >= 500;
           throw e;
         }
         return d;
       });
-    }, function () { var e = new Error('network'); e.network = true; throw e; });
+    }, function () { var e = new Error('network'); e.network = true; e.unsure = true; throw e; });
   }
   function num(n) { return (+n || 0).toLocaleString('ko-KR'); }
   function when(t) {
@@ -73,6 +82,7 @@
   function problem(e) {
     if (e && e.denied) return '운영자 키가 맞지 않거나 막힌 키예요.';
     if (e && e.network) return '연결이 끊겼어요. 잠시 뒤 같은 버튼을 다시 눌러 주세요(두 번 처리되지 않습니다).';
+    if (e && e.unsure) return '답을 받지 못했어요. 잠시 뒤 같은 내용 그대로 같은 버튼을 다시 눌러 주세요(두 번 처리되지 않습니다).';
     return '처리하지 못했어요. 잠시 뒤 다시 시도해 주세요. (' + ((e && e.message) || '알 수 없음') + ')';
   }
   function confirmBox(title, body, yesLabel) {
@@ -234,7 +244,6 @@
     $('grantSummary').textContent = who
       ? who + '에게 ' + itemName(kindNow()) + ' ' + qtyNow() + '개씩' + ($('grantPush').checked ? ' · 푸시 알림 보냄' : ' · 푸시 없음')
       : '받을 사람의 이메일을 넣어 주세요.';
-    grantRequest = null; // 내용이 바뀌면 새 지급
   }
   $('grantForm').addEventListener('input', grantSummary);
   $('grantForm').addEventListener('change', grantSummary);
@@ -284,10 +293,11 @@
     confirmBox('지급할까요?', who + '에게\n' + itemName(kind) + ' ' + qty + '개씩\n사유: ' + reason + ($('grantPush').checked ? '\n푸시 알림이 갑니다.' : ''), '지급하기').then(function (yes) {
       if (!yes) return;
       busy = true; $('grantBtn').disabled = true; say(msg, '', '');
-      grantRequest = grantRequest || uuid();
+      var push = $('grantPush').checked;
+      grantRequest = requestFor(grantRequest, [aud, kind, qty, reason, aud === 'EMAILS' ? emails : null, push]);
       rpc('ops_item_grant', {
-        p_token: token, p_request: grantRequest, p_kind: kind, p_qty: qty, p_reason: reason,
-        p_emails: aud === 'EMAILS' ? emails : null, p_audience: aud, p_push: $('grantPush').checked
+        p_token: token, p_request: grantRequest.id, p_kind: kind, p_qty: qty, p_reason: reason,
+        p_emails: aud === 'EMAILS' ? emails : null, p_audience: aud, p_push: push
       }).then(function (r) {
         var missing = (r && r.missing) || [];
         if (!r.ok) {
@@ -302,8 +312,8 @@
         if (aud === 'EMAILS') $('emails').value = missing.join('\n');
         return refresh();
       }, function (e) {
-        // 연결이 끊겼으면 같은 번호를 남겨 둔다 — 다시 눌러도 두 번 주지 않는다
-        if (!e.network) grantRequest = null;
+        // 답을 못 받았으면(끊김 · 5xx) 같은 번호를 남겨 둔다 — 같은 내용으로 다시 눌러도 두 번 주지 않는다
+        if (!e.unsure) grantRequest = null;
         if (e.denied) { leave(); say($('gateMsg'), 'err', problem(e)); return; }
         say(msg, 'err', problem(e));
       }).then(function () { busy = false; $('grantBtn').disabled = false; });
@@ -340,7 +350,6 @@
     if (start && hours) text += ' · ' + when(start) + ' ~ ' + when(new Date(start.getTime() + hours * 3600e3));
     $('eventSummary').textContent = text;
     $('eventBtn').textContent = later ? '이벤트 예약' : '이벤트 시작';
-    eventRequest = null;
   }
   $('eventForm').addEventListener('input', eventSummary);
   $('eventForm').addEventListener('change', eventSummary);
@@ -365,17 +374,18 @@
       later ? '예약하기' : '시작하기').then(function (yes) {
       if (!yes) return;
       busy = true; $('eventBtn').disabled = true; say(msg, '', '');
-      eventRequest = eventRequest || uuid();
+      var evPush = !later && $('evPush').checked;
+      eventRequest = requestFor(eventRequest, [title, mult, hours, later ? start.toISOString() : null, evPush]);
       rpc('ops_event_start', {
-        p_token: token, p_request: eventRequest, p_title: title, p_mult: mult, p_hours: hours,
-        p_starts_at: later ? start.toISOString() : null, p_push: !later && $('evPush').checked
+        p_token: token, p_request: eventRequest.id, p_title: title, p_mult: mult, p_hours: hours,
+        p_starts_at: later ? start.toISOString() : null, p_push: evPush
       }).then(function (r) {
         eventRequest = null;
         if (!r.ok) { say(msg, 'err', r.message || '시작하지 못했어요.'); return; }
         say(msg, 'ok', later ? '이벤트를 예약했어요.' : '이벤트를 시작했어요. 지금부터 시작하는 러닝에 적용됩니다.');
         return refresh();
       }, function (e) {
-        if (!e.network) eventRequest = null;
+        if (!e.unsure) eventRequest = null;
         if (e.denied) { leave(); say($('gateMsg'), 'err', problem(e)); return; }
         say(msg, 'err', problem(e));
       }).then(function () { busy = false; $('eventBtn').disabled = false; });

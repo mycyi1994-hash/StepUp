@@ -8,6 +8,7 @@ import com.stepup.android.data.repo.ItemsRepository
 import com.stepup.android.domain.Bag
 import com.stepup.android.domain.BagItem
 import com.stepup.android.domain.ItemKind
+import com.stepup.android.domain.RewardEvent
 import com.stepup.android.domain.RunItemPicks
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -91,13 +92,14 @@ class ItemsTest {
         var answer: ServerResult<Unit> = ServerResult.Ok(Unit)
         var bagNow: Bag? = null
 
-        fun repo() = ItemsRepository(
+        fun repo(now: () -> Long = { System.currentTimeMillis() }) = ItemsRepository(
             bagCall = { bagNow?.let { ServerResult.Ok(it) } ?: ServerResult.Retry("no") },
             useCall = { _, _, _ -> ServerResult.Ok(0) },
             bindCall = { at, kinds, _ -> bound += at to kinds; answer },
             addPending = { row -> pending.removeAll { it.startedAt == row.startedAt }; pending += row },
             readPending = { pending.toList() },
             takePending = { at -> pending.removeAll { it.startedAt == at } },
+            now = now,
         )
     }
 
@@ -107,6 +109,7 @@ class ItemsTest {
         repo.refresh()
         repo.toggle(ItemKind.RUN_BOOSTER, now = 10_000L)
         repo.toggle(ItemKind.ENERGY_DRINK, now = 10_000L)
+        repo.arm(now = 15_000L)
         repo.startRun(startedAt = 20_000L, owner = "account:u1")
         assertEquals(listOf(20_000L to listOf("ENERGY_DRINK", "RUN_BOOSTER")), fake.bound)
         assertTrue(fake.pending.isEmpty())
@@ -121,6 +124,7 @@ class ItemsTest {
         val repo = fake.repo()
         repo.refresh()
         repo.toggle(ItemKind.REWARD_DOUBLE, now = 0L)
+        repo.arm(now = 500L)
         repo.startRun(startedAt = 1_000L, owner = "account:u1")
         assertEquals(1, fake.pending.size)
         assertFalse(repo.flush("account:u1"))
@@ -149,9 +153,94 @@ class ItemsTest {
         val repo = fake.repo()
         repo.refresh()
         repo.toggle(ItemKind.RUN_BOOSTER, now = 0L)
+        repo.arm(now = 0L)
         repo.startRun(startedAt = 11 * 60 * 1000L, owner = "account:u1")
         assertTrue(fake.bound.isEmpty())
         assertTrue(fake.pending.isEmpty())
         assertNotNull(repo.bag.value)
+    }
+
+    // 2026-11-17 점검 — 고른 것은 점검에서 "출발"을 누른 그 출발에만 실린다
+    @Test fun `picks ride only the start they were armed for`() = runBlocking {
+        val fake = Fake().apply { bagNow = bag }
+        val repo = fake.repo()
+        repo.refresh()
+        // 고르기만 하고 출발을 누르지 않았다(점검을 떠남) — 그 뒤의 러닝에 쓰지 않는다
+        repo.toggle(ItemKind.RUN_BOOSTER, now = 0L)
+        repo.startRun(startedAt = 5_000L, owner = "account:u1")
+        assertTrue(fake.bound.isEmpty())
+        assertTrue(repo.picks.value.isEmpty())
+        // 출발을 눌렀다가 그만뒀다(3-2-1 취소 · 권한 안내 닫기) — 비워져 다음 러닝에 쓰지 않는다
+        repo.toggle(ItemKind.RUN_BOOSTER, now = 10_000L)
+        repo.arm(now = 11_000L)
+        repo.clearPicks()
+        repo.startRun(startedAt = 12_000L, owner = "account:u1")
+        assertTrue(fake.bound.isEmpty())
+        // 점검 없이 켜진 러닝(크루 · 번개 대기실 출발)에는 쓰지 않고 비운다
+        repo.toggle(ItemKind.ENERGY_DRINK, now = 20_000L)
+        repo.arm(now = 21_000L)
+        repo.startRun(startedAt = 22_000L, owner = "account:u1", fromCheck = false)
+        assertTrue(fake.bound.isEmpty())
+        assertTrue(repo.picks.value.isEmpty())
+        // 점검을 오래 열어 두었다가(고른 지 20분) 출발을 누르면 쓰인다 — 시간은 누른 때부터 잰다
+        repo.toggle(ItemKind.RUN_BOOSTER, now = 30_000L)
+        repo.arm(now = 30_000L + 20 * 60 * 1000L)
+        repo.startRun(startedAt = 30_000L + 20 * 60 * 1000L + 4_000L, owner = "account:u1")
+        assertEquals(1, fake.bound.size)
+    }
+
+    @Test fun `a reward item that cannot raise the multiplier cannot be picked`() = runBlocking {
+        val now = 1_000_000L
+        // 보상 2배 이벤트가 켜져 있다 — 2배권 · 부스터(×1.5)는 써도 늘지 않는다. 에너지 드링크는 그대로 고른다
+        val live = bag.copy(event = RewardEvent("2배", 2.0, endsAtMillis = now + 60_000L))
+        assertEquals(2.0, live.activeRewardMult(now), 0.0)
+        assertTrue(RunItemPicks.covered(ItemKind.REWARD_DOUBLE, live, now))
+        assertTrue(RunItemPicks.covered(ItemKind.RUN_BOOSTER, live, now))
+        assertFalse(RunItemPicks.covered(ItemKind.ENERGY_DRINK, live, now))
+        // 이벤트가 끝났으면 다시 고를 수 있다
+        assertFalse(RunItemPicks.covered(ItemKind.REWARD_DOUBLE, live, now + 61_000L))
+        // 이벤트가 ×1.5 면 2배권은 더 크니 쓸모가 있다(부스터 ×1.5 는 같아서 쓸모없다)
+        val small = bag.copy(event = RewardEvent("1.5배", 1.5, endsAtMillis = now + 60_000L))
+        assertFalse(RunItemPicks.covered(ItemKind.REWARD_DOUBLE, small, now))
+        assertTrue(RunItemPicks.covered(ItemKind.RUN_BOOSTER, small, now))
+        // 24시간 부스터(×2)도 같다
+        val boosted = bag.copy(boostUntilMillis = now + 60_000L)
+        assertTrue(RunItemPicks.covered(ItemKind.REWARD_DOUBLE, boosted, now))
+        val fake = Fake().apply { bagNow = live }
+        val repo = fake.repo()
+        repo.refresh()
+        repo.toggle(ItemKind.REWARD_DOUBLE, now = now)
+        repo.toggle(ItemKind.ENERGY_DRINK, now = now)
+        assertEquals(setOf(ItemKind.ENERGY_DRINK), repo.picks.value)
+    }
+
+    @Test fun `a fast phone clock keeps the binding for later`() = runBlocking {
+        val fake = Fake().apply { bagNow = bag }
+        var clock = 1_000_000L
+        val repo = fake.repo(now = { clock })
+        repo.refresh()
+        // 폰 시계가 앞서 있어 서버가 시작 시각을 받지 않는다 — 버리지 않고 러닝보다 먼저 다시 보낸다
+        fake.pending += RunItemBinding(clock, "account:u1", listOf("RUN_BOOSTER"))
+        fake.answer = ServerResult.Rejected("러닝 시작 시각이 올바르지 않습니다")
+        assertFalse(repo.flush("account:u1"))
+        assertEquals(1, fake.pending.size)
+        fake.answer = ServerResult.Ok(Unit)
+        assertTrue(repo.flush("account:u1"))
+        assertTrue(fake.pending.isEmpty())
+        // 하루 넘게 지난 줄은 시계 탓이 아니다 — 버린다
+        fake.pending += RunItemBinding(clock - 2 * 24 * 60 * 60 * 1000L, "account:u1", listOf("RUN_BOOSTER"))
+        fake.answer = ServerResult.Rejected("러닝 시작 시각이 올바르지 않습니다")
+        assertTrue(repo.flush("account:u1"))
+        assertTrue(fake.pending.isEmpty())
+    }
+
+    @Test fun `logout clears the bag and the picks`() = runBlocking {
+        val fake = Fake().apply { bagNow = bag }
+        val repo = fake.repo()
+        repo.refresh()
+        repo.toggle(ItemKind.RUN_BOOSTER, now = 0L)
+        repo.clear()
+        assertTrue(repo.picks.value.isEmpty())
+        assertEquals(null, repo.bag.value)
     }
 }

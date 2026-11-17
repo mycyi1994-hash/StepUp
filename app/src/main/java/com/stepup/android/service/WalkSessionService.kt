@@ -1016,10 +1016,12 @@ class WalkSessionService : Service() {
         lastMoveElapsed = SystemClock.elapsedRealtime()
         // 신은 신발로 보상을 받으며 달릴 수 있는 시간 — 다 쓰면 화면 · 알림이 알린다(2026-10-19). 되살린 러닝도 다시 읽는다
         val runStartedAt = _state.value.startedAt
-        // 출발 전 점검에서 고른 아이템(0106)을 이 러닝에 묶는다 — 새 러닝만(되살린 러닝은 이미 묶였다). 크루 러닝 대기실에서
-        // 출발한 러닝도 같다(고른 것이 있을 때만). 신호가 없으면 올리기 일꾼이 러닝보다 먼저 다시 보낸다
+        // 출발 전 점검에서 고른 아이템(0106)을 이 러닝에 묶는다 — 새 러닝만(되살린 러닝은 이미 묶였다). 대기실에서 출발하는
+        // 크루 · 번개 러닝에는 점검(아이템 고르기)이 없다 — 앞서 고르다 만 것이 그 러닝에 쓰이지 않게 비우기만 한다.
+        // 신호가 없으면 올리기 일꾼이 러닝보다 먼저 다시 보낸다
         if (restored == null) {
-            scope.launch { runCatching { ServiceLocator.itemsRepository.startRun(runStartedAt, owner) } }
+            val fromCheck = group == StartGroup.NONE
+            scope.launch { runCatching { ServiceLocator.itemsRepository.startRun(runStartedAt, owner, fromCheck) } }
         }
         scope.launch {
             val equipped = runCatching { ServiceLocator.database.sneakerDao().equippedNow() }.getOrNull()

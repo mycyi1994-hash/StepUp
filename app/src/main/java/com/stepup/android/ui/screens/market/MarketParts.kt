@@ -49,6 +49,21 @@ import com.stepup.android.ui.theme.Volt
  * 그리면 같은 것인지 알아보지 못한다.
  */
 
+/**
+ * 즉시 판매로 넘길 신발 — 구매 입찰의 "즉시 판매"를 눌렀을 때.
+ *
+ * 신발 상세의 판매하기로 들어왔으면([cameFor] = 그 신발의 폰 번호) 그 켤레가 레벨 조건을 채울 때 그 켤레를 판다.
+ * 예전에는 목록의 첫 켤레(가장 최근에 얻은 것)를 팔아, 레벨 1 신발을 팔러 와서 강화한 다른 켤레가 팔릴 수 있었다(2026-11-17 점검).
+ * 그 켤레가 조건에 모자라거나 시세판에서 바로 들어왔으면 조건을 채우는 것 중 레벨이 가장 낮은 켤레.
+ */
+internal fun sellNowPick(
+    sellable: List<com.stepup.android.data.local.SneakerEntity>,
+    minLevel: Int,
+    cameFor: Long,
+): com.stepup.android.data.local.SneakerEntity? =
+    sellable.firstOrNull { it.id == cameFor && it.level >= minLevel }
+        ?: sellable.filter { it.level >= minLevel }.minByOrNull { it.level }
+
 /** 값 하나. 시세는 소수점이 필요 없다 — SUP 는 1 단위로 오간다. */
 fun formatSup(value: Double): String = "%,d".format(value.toLong())
 

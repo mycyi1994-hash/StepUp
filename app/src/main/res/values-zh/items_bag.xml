@@ -34,4 +34,5 @@
     <string name="run_items_hint">同类只能选一个</string>
     <string name="run_items_note">出发时使用所选道具</string>
     <string name="run_items_owned">拥有 %1$d</string>
+    <string name="run_items_covered">当前已有收益 ×%1$s。倍率相同或更低的道具不会再增加收益，现在无法选择。</string>
 </resources>

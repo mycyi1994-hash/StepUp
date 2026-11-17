@@ -26,7 +26,9 @@ create or replace function economy.market_trading_guard() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if not economy.market_trading_open() then
-    raise exception '지금은 거래소를 쉬고 있습니다' using errcode = '55000';
+    -- 22023(HTTP 400) — 55000 은 PostgREST 가 500 으로 보내 앱이 "연결이 끊겼어요 · 다시 누르세요"로 읽는다
+    -- (예전 앱은 끝없이 다시 누르게 되고, 새 앱의 멈춤 안내도 닿지 않는다). 0085 의 초대 멈춤과 같은 코드.
+    raise exception '지금은 거래소를 쉬고 있습니다' using errcode = '22023';
   end if;
   return new;
 end $$;
