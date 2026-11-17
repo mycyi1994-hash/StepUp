@@ -72,9 +72,26 @@ class RunOverspeedTest {
         assertEquals(emptyList<OverspeedStop>(), OverspeedStop.decodeAll("x\t2\taccount:u1\n5\t6"))
     }
 
+    @Test fun `과속 정지 줄에 출발 신발을 적고, 예전 세 칸 줄도 읽는다`() {
+        val rows = listOf(OverspeedStop(1L, 2L, "account:u1", sneakerId = 77L), OverspeedStop(3L, 4L, "account:u1"))
+        val raw = OverspeedStop.encodeAll(rows)
+        assertEquals("1\t2\taccount:u1\t77\n3\t4\taccount:u1", raw)
+        assertEquals(rows, OverspeedStop.decodeAll(raw))
+        // 예전 앱이 적은 줄(신발 없음) — 서버가 지금 신은 신발로 친다
+        assertEquals(listOf(OverspeedStop(5L, 6L, "legacy", 0L)), OverspeedStop.decodeAll("5\t6\tlegacy"))
+        assertEquals(listOf(OverspeedStop(5L, 6L, "legacy", 0L)), OverspeedStop.decodeAll("5\t6\tlegacy\tx"))
+    }
+
+    @Test fun `신고는 출발 신발을 함께 보낸다`() = runBlocking {
+        val box = FakeOutbox(listOf(OverspeedStop(1L, 2L, "account:u1", sneakerId = 9L), OverspeedStop(3L, 4L, "account:u1")))
+        assertTrue(reporter(box, "account:u1", { ServerResult.Ok(Unit) }).flush())
+        assertEquals(listOf(9L, 0L), box.shoes)
+    }
+
     private class FakeOutbox(rows: List<OverspeedStop>) {
         val rows = rows.toMutableList()
         val sent = mutableListOf<Pair<Long, String>>()
+        val shoes = mutableListOf<Long>()
     }
 
     private fun reporter(box: FakeOutbox, owner: String, answer: (Long) -> ServerResult<Unit>, reported: MutableList<Unit> = mutableListOf()) =
@@ -82,7 +99,7 @@ class RunOverspeedTest {
             read = { box.rows.toList() },
             acknowledge = { started -> box.rows.removeAll { it.startedAt == started } },
             currentOwner = { owner },
-            report = { started, _, userId -> box.sent += started to userId; answer(started) },
+            report = { stop, userId -> box.sent += stop.startedAt to userId; box.shoes += stop.sneakerId; answer(stop.startedAt) },
             onReported = { reported += Unit },
         )
 

@@ -110,7 +110,7 @@ class UserPrefs(
         val PENDING_COURSE_RUNS = stringPreferencesKey("pending_course_runs")
         /** 과속으로 멈춘 뒤 러닝 금지가 끝나는 때(벽시계 ms) */
         val RUN_BAN_UNTIL = longPreferencesKey("run_ban_until")
-        /** 서버에 아직 알리지 않은 과속 정지 — 줄마다 "시작\t멈춤\t기록 주인" */
+        /** 서버에 아직 알리지 않은 과속 정지 — 줄마다 "시작\t멈춤\t기록 주인[\t출발 신발]"(OverspeedStop) */
         val PENDING_OVERSPEED = stringPreferencesKey("pending_overspeed_stops")
         /** 출발 때 고른 아이템 — 서버에 묶기 전(0106, 보내는 곳: RunItemsReporter) */
         val PENDING_RUN_ITEMS = stringPreferencesKey("pending_run_items")
@@ -135,6 +135,8 @@ class UserPrefs(
         val BONUS_DRAWS_LEFT = intPreferencesKey("bonus_draws_left")
         /** 서버 draw_grants 에서 쓴 뽑기 기회의 합(무료 · 보너스 · 러닝) — 업적 "신발 N회 뽑기"(2026-11-04) */
         val DRAW_GRANTS_USED = intPreferencesKey("draw_grants_used")
+        /** 서버가 적은 이 계정의 성공한 신발 강화 수(0110 my_forge_successes) — 업적 "강화 N회 성공" */
+        val FORGE_SUCCESSES = intPreferencesKey("forge_successes")
         val LEGACY_ECONOMY_IMPORTED = stringPreferencesKey("legacy_economy_imported")
         /** 폰의 서버 경제 사본(잔고 · 신발 · 부스터 · 받은 도전)이 어느 계정 것인가 */
         val ECONOMY_OWNER = stringPreferencesKey("economy_owner")
@@ -699,10 +701,10 @@ class UserPrefs(
     }
 
     /** 서버에 알릴 과속 정지를 적어 둔다(보내는 곳: OverspeedReporter). 같은 러닝은 한 줄 */
-    suspend fun addPendingOverspeedStop(startedAt: Long, stoppedAt: Long, owner: String) {
+    suspend fun addPendingOverspeedStop(startedAt: Long, stoppedAt: Long, owner: String, sneakerId: Long = 0) {
         store.edit {
             val rows = OverspeedStop.decodeAll(it[Keys.PENDING_OVERSPEED]).associateBy { row -> row.startedAt }.toMutableMap()
-            rows[startedAt] = OverspeedStop(startedAt, stoppedAt, owner)
+            rows[startedAt] = OverspeedStop(startedAt, stoppedAt, owner, sneakerId.coerceAtLeast(0))
             it[Keys.PENDING_OVERSPEED] = OverspeedStop.encodeAll(rows.values.sortedBy { row -> row.startedAt })
         }
     }
@@ -1070,6 +1072,8 @@ class UserPrefs(
         today: Long, energyLeft: Double, energyMax: Double, freeDraws: Int, bonusDraws: Int,
         /** 서버가 적은 쓴 뽑기 기회의 합. null 이면 그대로 둔다 */
         drawGrantsUsed: Int? = null,
+        /** 서버가 센 성공한 강화 수. null 이면 그대로 둔다(서버에 0110 이 없거나 못 받았다) */
+        forgeSuccesses: Int? = null,
     ) {
         store.edit {
             it[Keys.ENERGY] = energyLeft.coerceAtLeast(0.0)
@@ -1078,6 +1082,7 @@ class UserPrefs(
             it[Keys.FREE_DRAWS_LEFT] = freeDraws.coerceAtLeast(0)
             it[Keys.BONUS_DRAWS_LEFT] = bonusDraws.coerceAtLeast(0)
             if (drawGrantsUsed != null) it[Keys.DRAW_GRANTS_USED] = drawGrantsUsed.coerceAtLeast(0)
+            if (forgeSuccesses != null) it[Keys.FORGE_SUCCESSES] = forgeSuccesses.coerceAtLeast(0)
         }
     }
 
@@ -1089,6 +1094,7 @@ class UserPrefs(
             it.remove(Keys.FREE_DRAWS_LEFT)
             it.remove(Keys.BONUS_DRAWS_LEFT)
             it.remove(Keys.DRAW_GRANTS_USED)
+            it.remove(Keys.FORGE_SUCCESSES)
             it.remove(Keys.ENERGY)
             it.remove(Keys.ENERGY_DAY)
         }
@@ -1109,6 +1115,12 @@ class UserPrefs(
      * 매일 무료 몫(draw_daily)은 앱이 읽을 수 없어 여기 없다 — 업적은 뽑아 받은 신발 수와 함께 본다([com.stepup.android.domain.AchievementBook.drawCount]).
      */
     val drawGrantsUsed: Flow<Int> = store.data.map { it[Keys.DRAW_GRANTS_USED] ?: 0 }
+
+    /**
+     * 서버가 센 이 계정의 성공한 신발 강화 수(0110 my_forge_successes) — 강화(0054)는 원장에 줄을 남기지 않아 업적이 이 값으로 센다.
+     * 경제 사본과 함께 적고 지운다(계정이 바뀌면 지워진다 — 업적은 사본이 지금 계정 것일 때만 믿는다)
+     */
+    val forgeSuccesses: Flow<Int> = store.data.map { it[Keys.FORGE_SUCCESSES] ?: 0 }
 
     /** 남은 보너스 뽑기 — 지갑 연결로 받은 것. 지갑 페이지에서 뽑는다 */
     val bonusDrawsLeft: Flow<Int> = store.data.map { it[Keys.BONUS_DRAWS_LEFT] ?: 0 }
@@ -1438,18 +1450,27 @@ data class RunItemBinding(val startedAt: Long, val owner: String, val kinds: Lis
     }
 }
 
-data class OverspeedStop(val startedAt: Long, val stoppedAt: Long, val owner: String) {
+/**
+ * 서버에 알릴 과속 정지 한 줄. [sneakerId] 는 출발 때 신은 서버 신발(0 = 모름 — 예전에 적은 줄 · 서버 신발이 아님) —
+ * 서버가 그 신발에 패널티를 준다(0110, 신고가 닿을 때 신은 신발이 아니라).
+ */
+data class OverspeedStop(val startedAt: Long, val stoppedAt: Long, val owner: String, val sneakerId: Long = 0) {
     companion object {
+        /** 줄마다 "시작\t멈춤\t기록 주인" — 신발을 알면 끝에 "\t신발" */
         fun encodeAll(rows: List<OverspeedStop>): String =
-            rows.joinToString("\n") { "${it.startedAt}\t${it.stoppedAt}\t${it.owner}" }
+            rows.joinToString("\n") {
+                "${it.startedAt}\t${it.stoppedAt}\t${it.owner}" + if (it.sneakerId > 0) "\t${it.sneakerId}" else ""
+            }
 
+        /** 예전 세 칸 줄(신발 없음)도 읽는다 */
         fun decodeAll(raw: String?): List<OverspeedStop> =
             raw.orEmpty().lineSequence().mapNotNull { line ->
                 val parts = line.split('\t')
-                if (parts.size != 3) return@mapNotNull null
+                if (parts.size != 3 && parts.size != 4) return@mapNotNull null
                 val started = parts[0].toLongOrNull() ?: return@mapNotNull null
                 val stopped = parts[1].toLongOrNull() ?: return@mapNotNull null
-                if (parts[2].isBlank()) null else OverspeedStop(started, stopped, parts[2])
+                val shoe = if (parts.size == 4) parts[3].toLongOrNull()?.coerceAtLeast(0) ?: 0L else 0L
+                if (parts[2].isBlank()) null else OverspeedStop(started, stopped, parts[2], shoe)
             }.toList()
     }
 }

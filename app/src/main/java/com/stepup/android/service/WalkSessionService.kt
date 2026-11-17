@@ -499,7 +499,8 @@ class WalkSessionService : Service() {
                 runCatching {
                     val prefs = ServiceLocator.userPrefs
                     prefs.raiseRunBanUntil(stoppedAt + RunOverspeed.BAN_MS)
-                    prefs.addPendingOverspeedStop(session.startedAt, stoppedAt, session.recordingOwner)
+                    // 출발 때 신은 신발 — 서버가 그 신발에 패널티를 준다(0110, 올릴 때 신은 신발이 아니라)
+                    prefs.addPendingOverspeedStop(session.startedAt, stoppedAt, session.recordingOwner, session.startSneakerId)
                 }
                 stopSession()
             } finally {

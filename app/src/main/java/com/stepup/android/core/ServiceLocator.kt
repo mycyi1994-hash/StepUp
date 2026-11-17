@@ -389,7 +389,7 @@ object ServiceLocator {
             read = { userPrefs.pendingOverspeedStops() },
             acknowledge = { startedAt -> userPrefs.takePendingOverspeedStop(startedAt) },
             currentOwner = { sessionHolder.recordingOwner() },
-            report = { startedAt, stoppedAt, userId -> server.reportOverspeedStop(startedAt, stoppedAt, userId) },
+            report = { stop, userId -> server.reportOverspeedStop(stop.startedAt, stop.stoppedAt, userId, stop.sneakerId) },
             configured = { server.isConfigured },
             onReported = { if (serverEconomy) economySync.refresh() },
         )

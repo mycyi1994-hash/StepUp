@@ -189,14 +189,27 @@ class StepUpServer(
      * 과속이 30초 이어져 러닝을 멈췄다고 알린다(`report_overspeed_stop`, 서버 0065) — 서버가 신은 신발의 남은 내구도를 절반으로
      * 줄이고 멈춘 때부터 10분 러닝 금지를 적는다. 같은 러닝(시작 시각)을 다시 보내도 한 번만 깎는다.
      */
-    suspend fun reportOverspeedStop(startedAtMillis: Long, stoppedAtMillis: Long, expectedUserId: String): ServerResult<Unit> {
-        val body = jsonBody {
+    suspend fun reportOverspeedStop(
+        startedAtMillis: Long,
+        stoppedAtMillis: Long,
+        expectedUserId: String,
+        /** 출발 때 신은 서버 신발(0110) — 서버가 그 신발에 패널티를 준다. 0 이면 보내지 않는다(서버가 지금 신은 신발로) */
+        sneakerId: Long = 0,
+    ): ServerResult<Unit> {
+        fun body(withSneaker: Boolean) = jsonBody {
             put("p_started_at", startedAtMillis.toIsoInstant())
             put("p_stopped_at", stoppedAtMillis.toIsoInstant())
+            if (withSneaker) put("p_sneaker", sneakerId)
         }
-        return authed(expectedUserId) { token ->
-            http.post("$restUrl/rpc/report_overspeed_stop", body, headers(token))
+        suspend fun send(withSneaker: Boolean) = authed(expectedUserId) { token ->
+            http.post("$restUrl/rpc/report_overspeed_stop", body(withSneaker), headers(token))
         }.mapBody { }
+
+        val first = send(withSneaker = sneakerId > 0)
+        // 서버에 0110 이 아직 없으면(PGRST202 — p_sneaker 를 받는 함수가 없다) 신발 번호 없이 다시 보낸다(record_session 과 같은 방식)
+        val missing = first is ServerResult.Rejected &&
+            ("Could not find the function" in first.reason || "PGRST202" in first.reason)
+        return if (sneakerId > 0 && missing) send(withSneaker = false) else first
     }
 
     /** 방금 올린 러닝이 어느 크루의 러닝이었는지 적는다(`session_tag_crew`). */

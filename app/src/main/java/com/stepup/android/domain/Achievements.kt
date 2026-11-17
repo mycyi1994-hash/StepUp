@@ -192,6 +192,14 @@ object AchievementBook {
     fun drawCount(paidDraws: Int, grantsUsed: Int, drawnShoes: Int, purchases: Int): Int =
         maxOf(paidDraws.coerceAtLeast(0) + grantsUsed.coerceAtLeast(0), drawnShoes - purchases.coerceAtLeast(0), 0)
 
+    /**
+     * 업적 "강화 N회 성공"의 수 — 서버가 센 성공한 신발 강화(0110 my_forge_successes — 재료 신발 강화는 원장에 줄이 없다)와
+     * 원장의 예전 SUP 강화 줄(SPEND_UPGRADE) 중 큰 쪽. 둘 다 이 계정의 경제 사본이라 계정이 바뀐 직후에는 믿지 않는다([trusted]).
+     * 서버에 0110 이 없으면 강화 수는 0 이라 예전처럼 원장만 센다.
+     */
+    fun upgradeCount(ledgerUpgrades: Int, forgeSuccesses: Int): Int =
+        maxOf(ledgerUpgrades.coerceAtLeast(0), forgeSuccesses.coerceAtLeast(0))
+
     /** 두 최고값을 합친다 — 카테고리마다 큰 쪽 */
     fun mergeBest(now: Map<String, Double>, values: Map<String, Double>): Map<String, Double> {
         val merged = now.toMutableMap()

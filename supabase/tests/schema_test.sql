@@ -7707,8 +7707,8 @@ begin
     pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
   perform pg_temp.ok(r.verdict = 'FLAGGED' and r.points_awarded > 0
                      and (select verdict_reason from public.walk_sessions where id = r.session_id) like '%과속이 이어져%'
-                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now / 2 - 100,
-    '멈춘 러닝은 FLAGGED 로 남고 적립 · 닳기는 그대로');
+                     and (select durability_now from public.my_sneakers() where id = v_id) = (v_now - 100) / 2,
+    '멈춘 러닝은 FLAGGED 로 남고 적립 · 닳기는 그대로 — 패널티는 닳은 뒤 남은 것의 절반(0110)');
   -- 금지 시간(멈춘 뒤 5분)에 시작한 러닝은 무효
   select * into r from public.record_session(v_stop + interval '5 minutes', v_stop + interval '9 minutes', 400, 240,
     pg_temp.track(v_stop + interval '5 minutes', 240, 0.00001), 0, 1, '', false);
@@ -11151,6 +11151,119 @@ set role authenticated;
 call pg_temp.login('10700000-0000-0000-0000-000000000001');
 do $$ begin
   perform pg_temp.ok(public.market_list(pg_temp.fx('keep108')::bigint, 300) is not null, '다시 열면 판매 등록이 된다(0108)');
+end $$;
+reset role;
+
+\echo ''
+\echo '── 신발 고침: 강화 수 · 획득일 · 과속 패널티 순서(0110) ─────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                       where n.nspname = 'public' and p.proname = 'report_overspeed_stop'),
+    'report_overspeed_stop 은 하나뿐이다 — 예전 두 칸 함수가 남지 않는다(0110)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.report_overspeed_stop(timestamptz, timestamptz, bigint)', 'execute')
+                     and not has_function_privilege('anon', 'public.my_forge_successes()', 'execute')
+                     and not has_function_privilege('anon', 'public.my_sneaker_dates()', 'execute')
+                     and has_function_privilege('authenticated', 'public.my_forge_successes()', 'execute')
+                     and has_function_privilege('authenticated', 'public.my_sneaker_dates()', 'execute'),
+    '새 함수는 로그인한 사람만 부른다(0110)');
+end $$;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('11000000-0000-0000-0000-000000000001', 'shoe110@test', '{"full_name":"신발고침"}'),
+  ('11000000-0000-0000-0000-000000000002', 'other110@test', '{"full_name":"남"}');
+insert into fix (k, v) select 'a110', economy.draw_create('11000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'b110', economy.draw_create('11000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'x110', economy.draw_create('11000000-0000-0000-0000-000000000002', 'PAID_DRAW', 'FINISH')::text;
+
+-- #7 성공한 강화 수 — 성공만 센다(실패 · 막아 둔 키 · 남의 강화는 빼고)
+insert into public.forge_requests (user_id, request_key, status) values
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'SUCCESS'),
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'SUCCESS'),
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'FAILED'),
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'VOID'),
+  ('11000000-0000-0000-0000-000000000002', gen_random_uuid(), 'SUCCESS');
+
+-- #16 획득일 — A 는 만든 날, B 는 만든 뒤 거래소에서 산 날
+update public.market_sneakers set created_at = '2026-01-02 09:00:00+09' where id = pg_temp.fx('a110')::bigint;
+update public.market_sneakers set created_at = '2026-01-01 09:00:00+09' where id = pg_temp.fx('b110')::bigint;
+insert into public.market_trades (sneaker_id, faction, rarity, variant, level, seller_id, buyer_id, price, kind, traded_at)
+select s.id, s.faction, s.rarity, s.variant, s.level, '11000000-0000-0000-0000-000000000002',
+       '11000000-0000-0000-0000-000000000001', 1, 'BY_ASK', '2026-03-04 09:00:00+09'
+  from public.market_sneakers s where s.id = pg_temp.fx('b110')::bigint;
+
+set role authenticated;
+call pg_temp.must_fail($q$select public.my_forge_successes()$q$, '로그인 없이는 강화 수를 묻지 못한다(0110)');
+call pg_temp.login('11000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_a bigint := pg_temp.fx('a110')::bigint;
+  v_b bigint := pg_temp.fx('b110')::bigint;
+  v_x bigint := pg_temp.fx('x110')::bigint;
+begin
+  perform pg_temp.ok(public.my_forge_successes() = 2, '성공한 강화만 센다 — 실패 · 막아 둔 키 · 남의 강화는 빼고(0110)');
+  perform pg_temp.ok((select acquired_at from public.my_sneaker_dates() where id = v_a) = '2026-01-02 09:00:00+09'
+                     and (select acquired_at from public.my_sneaker_dates() where id = v_b) = '2026-03-04 09:00:00+09',
+    '획득일 — 만든 날, 거래소에서 샀으면 산 날(0110)');
+  perform pg_temp.ok(not exists (select 1 from public.my_sneaker_dates() where id = v_x)
+                     and (select count(*) from public.my_sneaker_dates()) = (select count(*) from public.my_sneakers()),
+    '획득일은 내 신발만 — my_sneakers 와 같은 신발(0110)');
+end $$;
+
+-- #11 과속 패널티는 그 러닝의 신발로, 그 러닝을 평소처럼 정산한 뒤
+reset role;
+-- B 는 거의 닳은 신발(50 — 10분) — 절반(25 — 5분)이면 6분 러닝의 수명이 잘린다
+update public.market_sneakers set dur_now = 50 where id = pg_temp.fx('b110')::bigint;
+set role authenticated;
+call pg_temp.login('11000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_a bigint := pg_temp.fx('a110')::bigint;
+  v_b bigint := pg_temp.fx('b110')::bigint;
+  v_x bigint := pg_temp.fx('x110')::bigint;
+  v_a0 int;
+  j json;
+  r record;
+  v_start timestamptz := now() - interval '30 hours';
+begin
+  perform public.sneaker_equip(v_a);
+  select durability_now into v_a0 from public.my_sneakers() where id = v_a;
+
+  -- B 를 신고 출발해 과속으로 멈췄다(신고가 러닝보다 먼저) — 지금 신은 A 가 아니라 B 가 절반
+  j := public.report_overspeed_stop(v_start, v_start + interval '361 seconds', v_b);
+  perform pg_temp.ok((j->>'sneaker_id')::bigint = v_b and (j->>'durability_before')::int = 50
+                     and (select durability_now from public.my_sneakers() where id = v_b) = 25
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0,
+    '과속 패널티는 출발 신발(p_sneaker)로 — 지금 신은 신발은 그대로(0110)');
+  -- 멈춘 러닝(6분 = 닳음 30)은 신고 전 내구도(50 — 10분)로 정산 — 수명이 잘리지 않는다. 끝값 = (50 − 30) / 2 = 10
+  select * into r from public.record_session(v_start, v_start + interval '361 seconds', 600, 361,
+    pg_temp.track(v_start, 360, 0.00001), 0, 1, '', false, v_b);
+  perform pg_temp.ok(r.verdict = 'FLAGGED' and r.points_awarded > 0 and r.verdict_reason like '%과속이 이어져%'
+                     and r.verdict_reason not like '%내구도가 다 닳은 뒤%',
+    '멈춘 러닝은 신고 전 내구도로 정산한다 — 깎인 내구도로 수명을 자르지 않는다(0110)');
+  perform pg_temp.ok((select durability_now from public.my_sneakers() where id = v_b) = 10
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0,
+    '패널티는 그 러닝이 닳게 한 뒤 남은 것의 절반 — (50 − 30) / 2 = 10(0110)');
+
+  -- 러닝이 먼저 올라가고 신고가 뒤에 왔다 — 그 러닝의 신발(A)을 닳은 뒤 값의 절반으로. 지금 신은 B 는 그대로
+  v_start := now() - interval '26 hours';
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00002), 0, 1, '', false, v_a);
+  perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_a) = v_a0 - 50,
+    '신고 전에 올라간 러닝은 평소처럼 닳는다(0110)');
+  perform public.sneaker_equip(v_b);
+  j := public.report_overspeed_stop(v_start, v_start + interval '601 seconds');
+  perform pg_temp.ok((j->>'sneaker_id')::bigint = v_a
+                     and (select durability_now from public.my_sneakers() where id = v_a) = (v_a0 - 50) / 2
+                     and (select durability_now from public.my_sneakers() where id = v_b) = 10,
+    '이미 올라간 러닝의 신고는 그 러닝의 신발로 — 닳은 뒤 남은 것의 절반, 예전 앱의 두 칸 호출도 받는다(0110)');
+
+  -- 남의 신발 번호면 예전처럼 지금 신은 신발(B)
+  v_start := now() - interval '22 hours';
+  j := public.report_overspeed_stop(v_start, v_start + interval '60 seconds', v_x);
+  perform pg_temp.ok((j->>'sneaker_id')::bigint = v_b and (select durability_now from public.my_sneakers() where id = v_b) = 5,
+    '내 신발이 아닌 번호는 쓰지 않는다 — 지금 신은 신발로(0110)');
 end $$;
 reset role;
 
