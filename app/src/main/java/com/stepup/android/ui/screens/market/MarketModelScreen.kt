@@ -37,6 +37,7 @@ import com.stepup.android.data.local.SneakerEntity
 import com.stepup.android.data.remote.AskRow
 import com.stepup.android.data.remote.BidRow
 import com.stepup.android.data.remote.ModelKey
+import com.stepup.android.domain.MarketFeature
 import com.stepup.android.domain.SellBlock
 import com.stepup.android.domain.sellBlock
 import com.stepup.android.data.remote.TradeRow
@@ -101,6 +102,8 @@ fun MarketModelScreen(
     // 잠금 거리(50km) 전 · 이미 건 것 · 체인에 있는 것은 서버가 거절하므로 고르지 못하게 한다
     // (서버의 can_withdraw 가 같은 조건이다).
     val sellable = state.mySneakers.filter { !it.equipped && it.canWithdraw }
+    // 거래를 멈춘 동안(0108)은 거는 버튼을 모두 막는다 — 보기 · 거두기만
+    val trading = MarketFeature.TRADING
 
     // 보관함에서 판매로 들어왔으면 등록 창을 한 번 열어 준다. 장부를
     // 받아 온 뒤에 여는 것은, 그 전에는 고를 신발 목록이 비어 있어 창이
@@ -108,7 +111,7 @@ fun MarketModelScreen(
     // 닫은 창을 앱이 도로 여는 것은 닫기를 무시하는 것이다.
     var sellOpened by rememberSaveable(sellLocalId) { mutableStateOf(false) }
     LaunchedEffect(sellLocalId, sellable) {
-        if (sellLocalId > 0 && !sellOpened && sellable.any { it.id == sellLocalId }) {
+        if (trading && sellLocalId > 0 && !sellOpened && sellable.any { it.id == sellLocalId }) {
             sellOpened = true
             asking = true
         }
@@ -196,15 +199,24 @@ fun MarketModelScreen(
                         text = stringResource(R.string.market_place_bid),
                         onClick = { bidding = true },
                         modifier = Modifier.weight(1f),
+                        enabled = trading,
                     )
                     GhostButton(
                         text = stringResource(R.string.market_place_ask),
                         onClick = { asking = true },
-                        enabled = sellable.isNotEmpty(),
+                        enabled = trading && sellable.isNotEmpty(),
                         modifier = Modifier.weight(1f),
                     )
                 }
-                if (sellable.isEmpty()) {
+                if (!trading) {
+                    Text(
+                        text = stringResource(R.string.market_trading_paused),
+                        fontSize = 14.sp,
+                        color = Slate,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.testTag("market-paused-note"),
+                    )
+                } else if (sellable.isEmpty()) {
                     // 왜 못 파는지 — 이 모델 신발이 없는지, 있는데 신고 있거나 아직 잠겨 있는지(무료 뽑기 신발은 잠금 거리를 달려야 판다)
                     Text(
                         text = sellNote(state.mySneakers.map { it.toDomain() }),
@@ -228,7 +240,7 @@ fun MarketModelScreen(
             }
         } else {
             items(asks.size) { index ->
-                AskRowCard(asks[index], onBuy = { viewModel.buy(asks[index].listingId) })
+                AskRowCard(asks[index], canBuy = trading, onBuy = { viewModel.buy(asks[index].listingId) })
             }
         }
 
@@ -249,7 +261,7 @@ fun MarketModelScreen(
                 val match = sellable.firstOrNull { it.level >= bid.minLevel }
                 BidRowCard(
                     row = bid,
-                    canSell = match != null,
+                    canSell = trading && match != null,
                     onSell = { match?.let { viewModel.sell(it.id, bid.bidId) } },
                 )
             }
@@ -269,7 +281,7 @@ fun MarketModelScreen(
         }
     }
 
-    if (bidding && !state.loading && state.problem == null) {
+    if (trading && bidding && !state.loading && state.problem == null) {
         BidDialog(
             tradable = state.tradable,
             suggested = state.quote?.bid ?: state.quote?.lastPrice,
@@ -281,7 +293,7 @@ fun MarketModelScreen(
         )
     }
 
-    if (asking && !state.loading && state.problem == null) {
+    if (trading && asking && !state.loading && state.problem == null) {
         AskDialog(
             sneakers = sellable,
             preselect = sellLocalId,
@@ -298,13 +310,13 @@ fun MarketModelScreen(
 // ── 줄 ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun AskRowCard(row: AskRow, onBuy: () -> Unit) {
+private fun AskRowCard(row: AskRow, canBuy: Boolean, onBuy: () -> Unit) {
     GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
         Text(stringResource(R.string.price_sup, formatSup(row.price)),
             style = MaterialTheme.typography.titleLarge, color = Snow)
         Text(stringResource(R.string.market_level, row.level) + " · #${row.mintNumber} · " +
             stringResource(R.string.market_durability, row.durability), fontSize = 14.sp, color = Silver)
-        VoltButton(stringResource(R.string.market_buy_now), onBuy, Modifier.fillMaxWidth())
+        VoltButton(stringResource(R.string.market_buy_now), onBuy, Modifier.fillMaxWidth(), enabled = canBuy)
     }
 }
 

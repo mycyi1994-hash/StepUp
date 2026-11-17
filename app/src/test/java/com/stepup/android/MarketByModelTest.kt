@@ -4,6 +4,8 @@ import com.stepup.android.data.local.SneakerEntity
 import com.stepup.android.data.remote.ModelKey
 import com.stepup.android.data.remote.QuoteRow
 import com.stepup.android.data.repo.toDomain
+import com.stepup.android.data.repo.MarketRefusal
+import com.stepup.android.domain.MarketFeature
 import com.stepup.android.domain.MarketShoeLook
 import com.stepup.android.domain.SellBlock
 import com.stepup.android.domain.sellBlock
@@ -85,5 +87,11 @@ class MarketByModelTest {
             luck = 1.0, comfort = 1.0, durability = 100, equipped = false, acquiredAt = 0,
         ).toDomain()
         assertEquals(SellBlock.Other, legacy.sellBlock)
+    }
+
+    @Test fun `거래를 멈춘 동안 앱은 거래 버튼을 막고, 서버 거절은 멈춤 안내로 읽는다(0108)`() {
+        // 사용자 "일단 지금 판매하기 버튼도 비활성화 — 거래 하면 안 돼". 다시 열 때는 서버 market_trading_enabled 와 함께 켠다
+        assertEquals(false, MarketFeature.TRADING)
+        assertEquals(MarketRefusal.PAUSED, MarketRefusal.of("지금은 거래소를 쉬고 있습니다"))
     }
 }

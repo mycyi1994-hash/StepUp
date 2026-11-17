@@ -347,6 +347,7 @@ internal fun refusalRes(refusal: MarketRefusal): Int = when (refusal) {
     MarketRefusal.LOCKED_SHOE -> R.string.market_err_locked_shoe
     MarketRefusal.NOT_TRANSFERABLE -> R.string.market_err_not_transferable
     MarketRefusal.RUN_MORE -> R.string.market_err_run_more
+    MarketRefusal.PAUSED -> R.string.market_trading_paused_short
     MarketRefusal.SIGN_IN -> R.string.market_msg_sign_in
     MarketRefusal.OTHER -> R.string.market_err_other
 }

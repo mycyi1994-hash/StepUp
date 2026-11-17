@@ -129,7 +129,9 @@ class ShoeCareDesignTest {
         // SD08 · SD13 · SD14 · SD15 · SD16
         show("SD08-loading", "shoe-stat-cells-loading", detail(state = ShoeDetailState.Loading))
         show("SD13-manage", "shoe-manage-sheet", detail(sheet = "Manage"))
-        compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
+        // 거래를 멈춘 동안(0108 · MarketFeature.TRADING)은 판매하기를 누를 수 없다
+        if (com.stepup.android.domain.MarketFeature.TRADING) compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
+        else compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
         show("SD14-manage-worn", "shoe-manage-sheet", detail(state = ShoeDetailState.Ready(WORN, WORN), sheet = "Manage"))
         compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
         show("SD15-record-none", "shoe-info-sheet", detail(sheet = "Record"))

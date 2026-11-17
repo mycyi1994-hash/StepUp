@@ -63,6 +63,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.domain.MarketFeature
 import com.stepup.android.domain.SellBlock
 import com.stepup.android.domain.sellBlock
 import com.stepup.android.core.ServiceLocator
@@ -590,7 +591,7 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onPoints: () -> Unit, onSe
             }
             CareActionRow(
                 Icons.Outlined.Sell, stringResource(R.string.care_sell),
-                if (busy && !shoe.equipped) stringResource(R.string.care_busy_note) else sellRowNote(shoe),
+                if (busy && !shoe.equipped && MarketFeature.TRADING) stringResource(R.string.care_busy_note) else sellRowNote(shoe),
                 enabled = sellRowEnabled(shoe, busy), onClick = onSell, tag = "shoe-care-sell",
             )
             CareDivider()
@@ -803,7 +804,7 @@ private fun ManageSheet(
             )
             CareMenuRow(
                 title = stringResource(R.string.care_sell),
-                description = if (busy && !shoe.equipped) stringResource(R.string.care_busy_note) else sellRowNote(shoe),
+                description = if (busy && !shoe.equipped && MarketFeature.TRADING) stringResource(R.string.care_busy_note) else sellRowNote(shoe),
                 enabled = sellRowEnabled(shoe, busy),
                 onClick = onSell,
                 tag = "shoe-manage-sell",
@@ -966,10 +967,14 @@ internal fun Sneaker.shoeName(): String =
  */
 @Composable
 private fun sellRowNote(shoe: Sneaker): String? =
-    shoe.sellBlock?.let { com.stepup.android.ui.screens.market.sellBlockText(it) }
+    if (!MarketFeature.TRADING) stringResource(R.string.market_trading_paused_short)
+    else shoe.sellBlock?.let { com.stepup.android.ui.screens.market.sellBlockText(it) }
 
-/** 판매하기 줄을 누를 수 있는가 — 신고 있음 · 첫 신발처럼 그 장에 가도 팔 길이 없는 신발은 막는다 */
-private fun sellRowEnabled(shoe: Sneaker, busy: Boolean): Boolean = !busy && when (shoe.sellBlock) {
+/**
+ * 판매하기 줄을 누를 수 있는가 — 거래를 멈춘 동안은 늘 막는다([MarketFeature.TRADING]). 열려 있을 때는 신고 있음 · 첫 신발처럼
+ * 그 장에 가도 팔 길이 없는 신발만 막는다.
+ */
+private fun sellRowEnabled(shoe: Sneaker, busy: Boolean): Boolean = MarketFeature.TRADING && !busy && when (shoe.sellBlock) {
     null, SellBlock.Listed, is SellBlock.Locked, SellBlock.Other -> true
     SellBlock.Equipped, SellBlock.Starter -> false
 }

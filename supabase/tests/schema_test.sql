@@ -741,6 +741,8 @@ $$;
 insert into public.sup_ledger (user_id, kind, amount, description) values
   ('22222222-2222-2222-2222-222222222222', 'EARN_WALK', 10000, '검사용'),
   ('33333333-3333-3333-3333-333333333333', 'EARN_WALK', 10000, '검사용');
+-- 거래소는 운영에서 멈춰 둔다(0108 market_trading_enabled 기본 false). 거래 규칙 검사는 연 채로 하고, 멈춤은 0108 절에서 본다
+update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';
 
 set role authenticated;
 
@@ -10780,7 +10782,8 @@ begin
   select * into v_a from public.walk_sessions where user_id = v_user and started_at < now() - interval '29 hours';
   select * into v_b from public.walk_sessions where user_id = v_user and started_at > now() - interval '29 hours';
   perform pg_temp.ok(v_a.reward_mult = 1 and v_b.reward_mult = 1.5, '적용된 배수가 러닝 기록에 남는다(0106)');
-  perform pg_temp.ok(v_a.energy_used > 0 and v_b.energy_used = round(v_a.energy_used / 2, 4), '에너지 드링크를 고른 러닝은 에너지를 절반만 쓴다(0106)');
+  -- 두 값은 저마다 소수 넷째 자리로 반올림된다 — 신발 착화감(뽑기마다 다름)에 따라 반의 반올림이 0.0001 어긋날 수 있다
+  perform pg_temp.ok(v_a.energy_used > 0 and abs(v_b.energy_used - v_a.energy_used / 2) <= 0.0001, '에너지 드링크를 고른 러닝은 에너지를 절반만 쓴다(0106)');
   perform pg_temp.ok((select count(*) = 2 and bool_and(session_id = v_b.id) from economy.item_uses where user_id = v_user and run_started_at = v_b.started_at),
     '쓴 아이템이 그 러닝에 이어진다(0106)');
 end $$;
@@ -11054,6 +11057,74 @@ call pg_temp.login('10700000-0000-0000-0000-000000000001');
 do $$ begin
   perform pg_temp.ok(public.market_sell_now(pg_temp.fx('tabi107b')::bigint, pg_temp.fx('oldbid107')::bigint) is not null,
     '예전 입찰은 그 줄의 신발이면 어느 모델이든 받는다(0107)');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0108 거래소 거래 멈춤 — 새 매물 · 새 입찰 · 체결을 받지 않고, 거두기는 된다 (2026-11-17)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 거래소 거래 멈춤(0108) ─────────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+-- 멈추기 전에 매물 하나 · 입찰 하나를 걸어 둔다(멈춘 뒤에도 거둘 수 있어야 한다)
+insert into fix (k, v) values ('lock108', pg_temp.shoe107(1101, 1)::text), ('keep108', pg_temp.shoe107(1102, 1)::text);
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('listing108', public.market_list(pg_temp.fx('lock108')::bigint, 400)::text);
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$ begin
+  -- keep108(1102) 이 받을 수 있는 입찰 — 멈춘 동안 즉시 판매가 막히는 것은 멈춤 때문이어야 한다
+  insert into fix (k, v) values ('bid108', public.market_bid_model(1102, 1, 100)::text);
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'market_trading_enabled'), '거래 멈춤 설정이 있다(0108)');
+end $$;
+update public.economy_settings set value = 'false'::jsonb where key = 'market_trading_enabled';
+
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+call pg_temp.must_fail(format($q$ select public.market_list(%s, 300) $q$, pg_temp.fx('keep108')),
+  '멈춘 동안 판매 등록은 안 된다(0108)');
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+call pg_temp.must_fail(format($q$ select public.market_buy_now(%s) $q$, pg_temp.fx('listing108')),
+  '멈춘 동안 즉시 구매는 안 된다(0108)');
+call pg_temp.must_fail($q$ select public.market_bid_model(1102, 1, 500) $q$, '멈춘 동안 모델 입찰은 안 된다(0108)');
+call pg_temp.must_fail($q$ select public.market_bid('NONE', 'RARE', 3, 1, 500) $q$, '멈춘 동안 예전 입찰도 안 된다(0108)');
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$
+declare v_before numeric;
+begin
+  call pg_temp.must_fail(format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('keep108'), pg_temp.fx('bid108')),
+    '멈춘 동안 즉시 판매도 안 된다(0108)');
+  perform public.market_cancel_listing(pg_temp.fx('listing108')::bigint);
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$
+declare v_before numeric := pg_temp.bal('10700000-0000-0000-0000-000000000002');
+begin
+  perform public.market_cancel_bid(pg_temp.fx('bid108')::bigint);
+  perform pg_temp.ok(pg_temp.bal('10700000-0000-0000-0000-000000000002') = v_before + 100,
+    '멈춘 동안에도 걸어 둔 입찰은 거두고 묶인 SUP 를 돌려받는다(0108)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status from public.market_listings where id = pg_temp.fx('listing108')::bigint) = 'CANCELLED'
+                     and (select status from public.market_sneakers where id = pg_temp.fx('lock108')::bigint) = 'OWNED',
+    '멈춘 동안에도 올린 매물은 거둔다(0108)');
+  perform pg_temp.ok(not exists (select 1 from public.market_trades where sneaker_id in (pg_temp.fx('lock108')::bigint, pg_temp.fx('keep108')::bigint)),
+    '멈춘 동안 체결된 것이 없다(0108)');
+end $$;
+-- 다시 열면 거래가 된다
+update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$ begin
+  perform pg_temp.ok(public.market_list(pg_temp.fx('keep108')::bigint, 300) is not null, '다시 열면 판매 등록이 된다(0108)');
 end $$;
 reset role;
 

@@ -7,4 +7,7 @@
     <string name="care_sell_locked_unknown">Free-draw shoes can be sold after you run a set distance in them</string>
     <string name="care_sell_unavailable">This shoe can\'t be sold right now</string>
     <string name="market_sell_none_owned">You don\'t have this model to sell.</string>
+    <!-- 거래 멈춤(0108) -->
+    <string name="market_trading_paused_short">Trading is paused for now</string>
+    <string name="market_trading_paused">Trading is paused for now. You can still view prices and take down your listings and bids in My orders.</string>
 </resources>

@@ -1,8 +1,10 @@
 # StepUp — 작업 메모
 
-## 최신 — 거래소를 도감 모델 단위로 · 팔 수 없는 까닭 (2026-11-17, 서버 0107 · 폰 DB 판 21)
+## 최신 — 거래소를 도감 모델 단위로 · 팔 수 없는 까닭 · 거래 멈춤 (2026-11-17, 서버 0107 · 0108 · 폰 DB 판 21)
 
 [docs/market-by-model-2026-11-17.md](docs/market-by-model-2026-11-17.md) — 테스터 "판매 누르면 딴 거로 연결"(타비 스플릿 토 조거 → 플레어 시프트).
+- **거래는 멈춰 있다**(사용자 "판매하기 버튼도 비활성화 · 거래 하면 안 돼"): 서버 설정 `market_trading_enabled` = false(0108 — 새 매물 · 입찰 · 체결 거절, 거두기는 됨,
+  예전 앱도 막힘) + 앱 `MarketFeature.TRADING = false`(판매하기 · 거래 버튼 막고 "지금은 거래를 쉬고 있어요"). 다시 열 때는 둘을 함께.
 - 도감 모델이 있는 신발은 모델 번호 하나가 한 장(`ModelKey.ofModel` · 길 `…&model={model}`). 새 앱은 `market_quotes_v2` · `market_asks_v2` · `market_bid_book_v2` ·
   `market_my_bids_v2` · `market_my_trades_v2` 를 읽고 모델 입찰은 `market_bid_model`. 예전 자리는 모양을 바꾸지 않는다(예전 앱 · setup.sql 다시 올리기).
 - 팔 수 없는 까닭은 `Sneaker.sellBlock`(서버 값) — 무료 뽑기 신발은 "이 신발로 N km 더 달리면 팔 수 있어요"(`kmRun` · `lockKm`, 폰 DB 판 21).

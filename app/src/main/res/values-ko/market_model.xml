@@ -7,4 +7,7 @@
     <string name="care_sell_locked_unknown">무료 뽑기 신발은 이 신발로 정해진 거리를 달려야 팔 수 있어요</string>
     <string name="care_sell_unavailable">지금은 팔 수 없는 신발이에요</string>
     <string name="market_sell_none_owned">갖고 있는 이 모델 신발이 없어요.</string>
+    <!-- 거래 멈춤(0108) -->
+    <string name="market_trading_paused_short">지금은 거래를 쉬고 있어요</string>
+    <string name="market_trading_paused">지금은 거래를 쉬고 있어요. 시세는 볼 수 있고, 올린 매물 · 걸어 둔 입찰은 내 거래에서 거둘 수 있어요.</string>
 </resources>
