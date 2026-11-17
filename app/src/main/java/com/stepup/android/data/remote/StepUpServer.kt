@@ -313,13 +313,14 @@ class StepUpServer(
             // 429 는 요청이 몰린 것, 5xx 는 서버 문제 — 둘 다 나중에 다시.
             response.status == 429 || response.status >= 500 ->
                 ServerResult.Retry("서버가 바쁩니다 (${response.status})")
-            else -> {
-                // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다)
-                if (response.status == 403 && response.body.contains("access_required")) {
-                    runCatching { onAccessRequired?.invoke() }
-                }
-                ServerResult.Rejected(response.postgrestMessage())
+            // 접속 코드 문에 막혔다 — 코드를 넣은 뒤라면 권한을 다시 물어 문을 연다(자주 묻지 않는 것은 받는 쪽이 정한다).
+            // 거절(Rejected)이 아니라 "나중에 다시"다: 문이 열리면 같은 요청이 된다. 거절로 두면 올리기 일꾼이 그사이 러닝을
+            // 영영 "적립 안 됨"으로 굳히고, 아이템 묶기 · 과속 신고도 버렸다(2026-11-17 점검 #10)
+            response.isAccessRequired() -> {
+                runCatching { onAccessRequired?.invoke() }
+                ServerResult.Retry(ACCESS_REQUIRED_REASON)
             }
+            else -> ServerResult.Rejected(response.postgrestMessage())
         }
     }
 
@@ -343,6 +344,7 @@ class StepUpServer(
             body,
             if (token != null) headers(token) else anonHeaders(),
         )
+        if (response.isAccessRequired()) runCatching { onAccessRequired?.invoke() }
         return response.toResult()
     }
 
@@ -379,8 +381,16 @@ internal fun HttpResponse.toResult(): ServerResult<String> = when {
     status == 0 -> ServerResult.Retry(body)
     status == 401 -> ServerResult.Retry("인증이 만료되었습니다")
     status == 429 || status >= 500 -> ServerResult.Retry("서버가 바쁩니다 ($status)")
+    // 접속 코드 문 — 문이 열리면 된다. 거절로 굳히지 않는다([StepUpServer.authed] 와 같다)
+    isAccessRequired() -> ServerResult.Retry(ACCESS_REQUIRED_REASON)
     else -> ServerResult.Rejected(postgrestMessage())
 }
+
+/** 접속 코드 문(서버 0079 `public.access_gate`)이 막은 답 — 403 · `access_required` */
+internal fun HttpResponse.isAccessRequired(): Boolean = status == 403 && body.contains("access_required")
+
+/** 접속 코드 문에 막혔을 때의 [ServerResult.Retry] 까닭 — 문이 열리면 같은 요청을 다시 보낸다 */
+internal const val ACCESS_REQUIRED_REASON = "access_required"
 
 /**
  * Postgres 가 보낸 실패 이유를 꺼낸다.

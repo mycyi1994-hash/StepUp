@@ -63,8 +63,11 @@ class ShoeDrawFlowTest {
         assertEquals(DrawCheck.Unknown, judgePending(pending, null, fresh.copy(dailyLeft = 2)))
         // 현황을 다시 읽지 못했다 — 모른다
         assertEquals(DrawCheck.Unknown, judgePending(pending, null, null))
-        // 서버가 번호를 이미 돌려줬다 — 뽑기는 됐다. 목록에 없다고 "시작 안 됨"이라 하지 않는다
-        assertEquals(DrawCheck.Unknown, judgePending(pending.copy(shoeId = 43), null, fresh))
+        // 서버가 번호를 이미 돌려줬는데 다시 읽은 목록에 없다 — 뽑기는 끝났고 신발은 이미 떠났다(강화 재료 등). "시작 안 됨"도,
+        // 24시간 "결과 확인"도 아니다(2026-11-17 점검 #15). 현황을 못 읽었어도 같다
+        assertEquals(DrawCheck.Gone, judgePending(pending.copy(shoeId = 43), null, fresh))
+        assertEquals(DrawCheck.Gone, judgePending(pending.copy(shoeId = 43), null, null))
+        assertEquals(DrawCheck.Found(shoe), judgePending(pending.copy(shoeId = 42), shoe, null))
         // 자정에 오늘 몫이 새로 생겨 수가 늘었어도 새 신발이 없으면 시작되지 않은 것이다
         assertEquals(DrawCheck.NotStarted, judgePending(pending, null, fresh.copy(dailyLeft = 3, signupLeft = 11)))
     }

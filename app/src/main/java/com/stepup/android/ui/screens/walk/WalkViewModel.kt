@@ -215,14 +215,16 @@ class WalkViewModel(
 
     /**
      * 이 계정의 러닝 가운데 서버가 아직 확인하지 않았거나, 확인했어도 그 뒤 동기화가 아직 없는 러닝이 신발을 닳게 할 양(내구도 점) —
-     * 출발 전 점검이 신은 신발에서 빼서 보인다(화면에만 — 서버에 보내지 않는다). 러닝 줄에는 신은 신발이 남지 않아 지금 신은 신발에서 뺀다.
+     * 신발마다([PendingShoeWear]). 출발 전 점검 · 신발 고르기 목록이 그 신발에서 빼서 보인다(화면에만 — 서버에 보내지 않는다).
+     * 러닝 줄에 적힌 출발 신발([com.stepup.android.data.local.WalkSessionEntity.sneakerServerId])로 나누고, 모르는 줄(판 20 전)만
+     * 지금 신은 신발에서 뺀다 — 서버도 그 줄은 올릴 때 신은 신발로 닳게 한다(2026-11-17 점검 #14: A 로 달리고 B 로 바꾸면 B 가 닳아 보였다).
      */
-    val pendingShoeWear: StateFlow<Int> = combine(
+    val pendingShoeWear: StateFlow<PendingShoeWear> = combine(
         stepRepository.recentSessions(PENDING_WEAR_SCAN),
         ServiceLocator.economySync.syncedFrom,
     ) { rows, syncedFrom ->
-        pendingShoeWearOf(rows, syncedFrom, System.currentTimeMillis())
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+        pendingShoeWearByShoe(rows, syncedFrom, System.currentTimeMillis())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PendingShoeWear.NONE)
 
     /**
      * 서버가 확인한 이번 러닝의 적립액. 확인 전이면 null — 완료 화면은 확인된 뒤에만 금액을 보인다.
@@ -288,21 +290,59 @@ internal fun shoeWearSettled(row: com.stepup.android.data.local.WalkSessionEntit
     }
 
 /**
- * 아직 사본에 들지 않은 러닝들의 닳음 합(러닝마다 [com.stepup.android.ui.screens.items.durabilityWear] — 서버가 러닝마다 뺀다).
+ * 이 러닝 줄이 아직 폰 사본에 들지 않은 신발 닳음(내구도 점) — 들 것이 없으면 0. 서버가 러닝마다 뺀다
+ * ([com.stepup.android.ui.screens.items.durabilityWear]).
+ * - 크루 러닝(줄에 크루가 적힘)은 크루 공용 체력을 쓰고 개인 신발은 닳지 않는다(서버 0071 · 0089 `record_session`) — 0.
  * - 확인 전(PENDING · FAILED): 올라갈 러닝만 — 시간이 있고, 가짜 위치(서버가 무효로 본다)가 아니고, 7일 안이고, 계정이 있는 줄.
  * - 확인됨(SIGNED): 이 앱이 켜진 뒤 동기화가 한 번이라도 성공했고([syncedFrom] > 0) 그 동기화가 확인보다 앞설 때만. 앱을 막 켜
  *   동기화 전이면 사본이 이미 그 닳음을 담았을 수 있다 — 두 번 빼지 않게 세지 않는다.
  */
-internal fun pendingShoeWearOf(rows: List<com.stepup.android.data.local.WalkSessionEntity>, syncedFrom: Long, now: Long): Int =
-    rows.sumOf { row ->
-        val unsettled = when (row.uploadState) {
-            com.stepup.android.data.local.UploadState.PENDING.name,
-            com.stepup.android.data.local.UploadState.FAILED.name ->
-                row.recordingOwner != com.stepup.android.domain.RecordingOwner.LEGACY && !row.mockLocation &&
-                    row.startedAt >= now - PENDING_WEAR_WINDOW_MS &&
-                    (row.steps > 0 || row.startedAt >= com.stepup.android.data.local.ZERO_STEP_UPLOAD_FROM_MS)
-            com.stepup.android.data.local.UploadState.SIGNED.name -> syncedFrom > 0 && !shoeWearSettled(row, syncedFrom)
-            else -> false
-        }
-        if (unsettled) com.stepup.android.ui.screens.items.durabilityWear(row.durationSec) else 0
+private fun pendingWearOfRow(row: com.stepup.android.data.local.WalkSessionEntity, syncedFrom: Long, now: Long): Int {
+    if (row.crewId.isNotBlank()) return 0
+    val unsettled = when (row.uploadState) {
+        com.stepup.android.data.local.UploadState.PENDING.name,
+        com.stepup.android.data.local.UploadState.FAILED.name ->
+            row.recordingOwner != com.stepup.android.domain.RecordingOwner.LEGACY && !row.mockLocation &&
+                row.startedAt >= now - PENDING_WEAR_WINDOW_MS &&
+                (row.steps > 0 || row.startedAt >= com.stepup.android.data.local.ZERO_STEP_UPLOAD_FROM_MS)
+        com.stepup.android.data.local.UploadState.SIGNED.name -> syncedFrom > 0 && !shoeWearSettled(row, syncedFrom)
+        else -> false
     }
+    return if (unsettled) com.stepup.android.ui.screens.items.durabilityWear(row.durationSec) else 0
+}
+
+/**
+ * 아직 사본에 들지 않은 닳음의 신발별 합 — [byShoe] 는 출발 신발의 서버 번호 → 닳음, [unknown] 은 출발 신발을 모르는 줄
+ * (판 20 전 · 폰에만 있던 신발 — 서버가 올릴 때 신은 신발로 닳게 한다)의 합.
+ */
+data class PendingShoeWear(val byShoe: Map<Long, Int> = emptyMap(), val unknown: Int = 0) {
+    /** 이 신발에서 뺄 닳음 — 서버 신발은 폰 id 가 서버 번호다(EconomySync). 모르는 줄은 지금 신은 신발 몫 */
+    fun of(shoe: Sneaker): Int =
+        (if (shoe.server != null) byShoe[shoe.id] ?: 0 else 0) + if (shoe.equipped) unknown else 0
+
+    val total: Int get() = byShoe.values.sum() + unknown
+
+    companion object {
+        val NONE = PendingShoeWear()
+    }
+}
+
+/** 신발마다 나눈 [pendingWearOfRow] 의 합 */
+internal fun pendingShoeWearByShoe(
+    rows: List<com.stepup.android.data.local.WalkSessionEntity>,
+    syncedFrom: Long,
+    now: Long,
+): PendingShoeWear {
+    val byShoe = LinkedHashMap<Long, Int>()
+    var unknown = 0
+    for (row in rows) {
+        val wear = pendingWearOfRow(row, syncedFrom, now)
+        if (wear <= 0) continue
+        if (row.sneakerServerId > 0) byShoe[row.sneakerServerId] = (byShoe[row.sneakerServerId] ?: 0) + wear else unknown += wear
+    }
+    return PendingShoeWear(byShoe, unknown)
+}
+
+/** 모든 신발을 더한 아직 들지 않은 닳음 — 수리 견적이 "아직 안 올라간 러닝이 있다"를 본다([ShoeCareStore]) */
+internal fun pendingShoeWearOf(rows: List<com.stepup.android.data.local.WalkSessionEntity>, syncedFrom: Long, now: Long): Int =
+    pendingShoeWearByShoe(rows, syncedFrom, now).total

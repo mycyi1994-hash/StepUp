@@ -2,4 +2,7 @@
 <!-- 러닝 · 신발 점검 수정(2026-11-03) -->
 <resources>
     <string name="run_equip_blocked">ランニング中はシューズを変更できません。ランニングを終えてから変更してください</string>
+    <!-- 버그 점검 수정(2026-11-17) -->
+    <string name="fix_draw_already_received">その抽選のシューズはすでに受け取っています。</string>
+    <string name="fix_points_error_not_reloaded">ポイントを振り分けられませんでした。最新の値をまだ読み込めていないので、少し待ってからもう一度お試しください。</string>
 </resources>

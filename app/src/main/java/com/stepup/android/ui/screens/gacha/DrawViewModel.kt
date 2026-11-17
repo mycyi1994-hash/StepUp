@@ -61,6 +61,9 @@ sealed interface DrawNotice {
 
     /** 23 — 횟수를 불러오지 못했다(소진과 다르다) */
     data object LoadFailed : DrawNotice
+
+    /** 확인해 보니 그 뽑기 신발은 이미 받았고 목록을 떠났다([DrawCheck.Gone]) — 짧은 알림만 */
+    data object AlreadyReceived : DrawNotice
 }
 
 /** 서버에 보낸 뽑기 한 번의 답 */
@@ -342,6 +345,13 @@ class DrawViewModel(
                 DrawCheck.NotStarted -> {
                     source.memory.forget()
                     stopped(kind, DrawStop.Network, fresh = status)
+                }
+                DrawCheck.Gone -> {
+                    // 뽑기는 끝났고 신발은 이미 받았다 — 표시를 지우고 새 뽑기를 연다(수는 위에서 읽었다)
+                    source.memory.forget()
+                    _pending.value = null
+                    if (_flow.value is DrawFlow.Checking) _flow.value = DrawFlow.Home
+                    notice.value = DrawNotice.AlreadyReceived
                 }
                 DrawCheck.Unknown -> {
                     _pending.value = DrawPending(kind, ready = false)

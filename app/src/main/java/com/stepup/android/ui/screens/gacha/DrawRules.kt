@@ -71,15 +71,22 @@ sealed interface DrawCheck {
 
     /** 아직 모른다 — 다시 읽지 못했거나, 수는 줄었는데 신발이 보이지 않는다(20 에 머문다, 새 뽑기는 막는다) */
     data object Unknown : DrawCheck
+
+    /**
+     * 끝났다 — 서버가 번호를 돌려준 뽑기인데, 다시 읽은 목록에 그 신발이 이제 없다(결과를 보기 전에 강화 재료로 태웠거나 팔았다).
+     * 뽑기는 이미 받은 것이라 표시를 지운다 — 예전엔 "결과 확인"에 24시간 묶여 새 뽑기가 막혔다(2026-11-17 점검 #15)
+     */
+    data object Gone : DrawCheck
 }
 
 /**
- * 결과를 모르는 요청을 서버 값으로 가른다. 새 신발이 보이면 그것이 결과다. 서버가 번호를 이미 돌려줬는데 목록에 없으면
- * 뽑기는 된 것이라 "시작 안 됨"이라 하지 않는다. 수를 다시 읽지 못했거나 수만 줄었으면 단정하지 않는다.
+ * 결과를 모르는 요청을 서버 값으로 가른다 — 서버 목록을 **다시 읽은 뒤에만** 부른다([found] 는 그 목록에서 찾은 신발, 없으면 null).
+ * 새 신발이 보이면 그것이 결과다. 서버가 번호를 이미 돌려줬는데 다시 읽은 목록에 없으면 뽑기는 끝났고 그 신발은 이미 떠났다
+ * ([DrawCheck.Gone] — "시작 안 됨"이라 하지 않는다). 수를 다시 읽지 못했거나 수만 줄었으면 단정하지 않는다.
  */
 fun judgePending(pending: PendingDraw, found: Sneaker?, status: DrawStatus?): DrawCheck = when {
     found != null -> DrawCheck.Found(found)
-    pending.shoeId != null -> DrawCheck.Unknown
+    pending.shoeId != null -> DrawCheck.Gone
     status == null -> DrawCheck.Unknown
     status.left(pending.kind) < pending.leftBefore -> DrawCheck.Unknown
     else -> DrawCheck.NotStarted

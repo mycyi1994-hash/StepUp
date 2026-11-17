@@ -2,4 +2,7 @@
 <!-- 러닝 · 신발 점검 수정(2026-11-03) -->
 <resources>
     <string name="run_equip_blocked">러닝 중에는 신발을 바꿀 수 없어요. 러닝을 마친 뒤 바꿔 주세요</string>
+    <!-- 버그 점검 수정(2026-11-17) -->
+    <string name="fix_draw_already_received">그 뽑기의 신발은 이미 받았어요.</string>
+    <string name="fix_points_error_not_reloaded">포인트를 나누지 못했어요. 최신 값을 아직 불러오지 못했으니 잠시 뒤 다시 해 주세요.</string>
 </resources>

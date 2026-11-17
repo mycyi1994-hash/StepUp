@@ -111,8 +111,8 @@ import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.items.LOW_DURABILITY_WARN_MIN
-import com.stepup.android.ui.screens.items.durabilityEarnMinutes
+import com.stepup.android.ui.screens.items.durabilityWornOut
+import com.stepup.android.ui.screens.items.lowDurabilityMinutes
 import com.stepup.android.ui.screens.items.durabilityPercent
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpNumbers
@@ -382,8 +382,9 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
     }
     // 내구도가 다 닳았거나 곧 닳으면 출발 전에 알린다 — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 예전엔 0% 에서도
     // "달릴 준비가 됐어요"라, 보상 0 의 까닭을 결과에서도 몰랐다(2026-10-17 점검)
-    val worn = (shoe.server?.durabilityFactor ?: 1.0) <= 0.0
-    val earnMinutes = durabilityEarnMinutes(shoe)?.takeIf { it < LOW_DURABILITY_WARN_MIN }
+    // 신발 탭 · 상세의 수리 강조(repairUrgent)와 같은 규칙 — 기준은 그 신발 수명의 절반 · 10분 가운데 작은 것, 가득 찬 신발은 알리지 않는다
+    val worn = durabilityWornOut(shoe)
+    val earnMinutes = lowDurabilityMinutes(shoe)
     if (worn || earnMinutes != null) {
         Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-low-durability"), verticalAlignment = Alignment.Top) {
             Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))

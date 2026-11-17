@@ -110,6 +110,7 @@ fun MysteryBoxScreen(
     val toast = when (notice) {
         is DrawNotice.RunReward -> stringResource(R.string.dv2_run_reward, notice.added)
         DrawNotice.Relinked -> stringResource(R.string.dv2_relinked)
+        DrawNotice.AlreadyReceived -> stringResource(R.string.fix_draw_already_received)
         else -> null
     }
     val toastRoom by animateDpAsState(
@@ -149,7 +150,7 @@ fun MysteryBoxScreen(
             }
         }
         LaunchedEffect(notice) {
-            if (notice is DrawNotice.RunReward || notice == DrawNotice.Relinked) {
+            if (notice is DrawNotice.RunReward || notice == DrawNotice.Relinked || notice == DrawNotice.AlreadyReceived) {
                 delay(3_200)
                 actions.onNoticeDone()
             }

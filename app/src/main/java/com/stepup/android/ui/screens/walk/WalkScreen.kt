@@ -1436,10 +1436,10 @@ fun RunScreen(
         if (shoeCheck && !session.isActive && repairShoeId == null) {
             val shoes by viewModel.shoes.collectAsStateWithLifecycle()
             val wearing by viewModel.wearing.collectAsStateWithLifecycle()
-            // 아직 서버가 빼지 않은(또는 이 폰 사본에 아직 들지 않은) 러닝의 닳음을 신은 신발에서 미리 뺀다 — 화면에만(2026-11-03 점검).
-            // 러닝 줄에 신은 신발이 남지 않아 지금 신은 신발에서만 뺀다
+            // 아직 서버가 빼지 않은(또는 이 폰 사본에 아직 들지 않은) 러닝의 닳음을 미리 뺀다 — 화면에만(2026-11-03 점검).
+            // 러닝 줄에 적힌 출발 신발마다 뺀다(신발 고르기 목록도). 출발 신발을 모르는 예전 줄만 지금 신은 신발에서(2026-11-17 점검 #14)
             val pendingWear by viewModel.pendingShoeWear.collectAsStateWithLifecycle()
-            val checkShoe = equipped?.withPendingWear(pendingWear)
+            val checkShoe = equipped?.let { it.withPendingWear(pendingWear.of(it)) }
             // 이번 러닝에 쓸 아이템(0106) — 점검이 열릴 때 가방을 다시 읽고, 지난번에 고르다 만 것은 비운다
             val itemsRepo = com.stepup.android.core.ServiceLocator.itemsRepository
             val bag by itemsRepo.bag.collectAsStateWithLifecycle()
@@ -1455,7 +1455,7 @@ fun RunScreen(
                 // 보상 이벤트 · 24시간 부스터가 이미 켜져 있으면 그보다 크지 않은 배수 아이템은 고르지 못한다(쓰면 아이템만 사라진다)
                 coveredRewardMult = bag?.activeRewardMult(System.currentTimeMillis()) ?: 1.0,
                 shoe = checkShoe,
-                shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it },
+                shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it.withPendingWear(pendingWear.of(it)) },
                 wearing = wearing,
                 onWear = viewModel::wear,
                 // 다 닳았으면 수리로 — 신발 탭과 같은 수리 시트를 이 화면에서 연다
