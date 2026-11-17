@@ -25,8 +25,8 @@
     <string name="set_save_failed_body">已保留之前的设置。请再试一次。</string>
     <string name="set_saves_right_away">更改后会立即保存。</string>
     <string name="set_notif_intro">请选择想接收的通知。</string>
-    <string name="set_notif_push">推送通知</string>
-    <string name="set_notif_push_desc">跑步总结和获得消息</string>
+    <string name="set_notif_push">所有推送通知</string>
+    <string name="set_notif_push_desc">关闭后，下面的通知也都不会收到</string>
     <string name="set_notif_goal">目标提醒</string>
     <string name="set_notif_goal_desc">每日目标未完成时提醒</string>
     <string name="set_notif_invite">跑步邀请</string>

@@ -345,13 +345,23 @@ fun BetaCodesScreen(onBack: () -> Unit) {
     }
 }
 
+/**
+ * 서버 시각(timestamptz) — PostgREST 는 "2026-11-17T10:00:00+00:00" 처럼 시차를 붙여 보낸다. 안드로이드 13 이하의
+ * `Instant.parse` 는 "Z" 만 읽어 날짜가 비었다(점검 2026-11-17 #21) — 시차 붙은 모양을 먼저 읽고, 못 읽으면 "Z" 모양으로.
+ */
+internal fun serverInstant(iso: String?): Instant? {
+    val text = iso?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return runCatching { java.time.OffsetDateTime.parse(text).toInstant() }.getOrNull()
+        ?: runCatching { Instant.parse(text) }.getOrNull()
+}
+
 @Composable
 private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
     val c = StepUpUi.colors
     val type = StepUpUi.type
     val open = row.status == "OPEN"
     val day = DateTimeFormatter.ofPattern(stringResource(R.string.beta_codes_date))
-    fun fmt(iso: String?) = iso?.let { runCatching { Instant.parse(it).atZone(ZoneId.systemDefault()).format(day) }.getOrNull() }
+    fun fmt(iso: String?) = serverInstant(iso)?.atZone(ZoneId.systemDefault())?.format(day)
     val statusText = when (row.status) {
         "USED" -> stringResource(R.string.beta_code_used, fmt(row.usedAt) ?: "")
         "EXPIRED" -> stringResource(R.string.beta_code_expired)

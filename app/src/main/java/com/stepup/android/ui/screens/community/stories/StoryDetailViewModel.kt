@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.BoardResult
-import com.stepup.android.data.repo.BoardSyncState
 import com.stepup.android.data.repo.CommunityRepository
 import com.stepup.android.data.repo.StoryNotice
 import com.stepup.android.domain.Comment
@@ -63,10 +62,10 @@ class StoryDetailViewModel(
         if (repository.posts.value.any { it.id == postId }) return
         _offline.value = false
         viewModelScope.launch {
-            val state = repository.refresh()
-            val found = repository.posts.value.any { it.id == postId }
-            _missing.value = !found && state == BoardSyncState.Ready
-            _offline.value = !found && state != BoardSyncState.Ready
+            // 전체 목록(최근 글)에 없으면 그 글만 따로 묻는다 — 예전 글의 댓글 알림이 "없는 글"로 열리지 않게(점검 2026-11-17 #19)
+            val found = repository.ensurePost(postId)
+            _missing.value = found == CommunityRepository.PostLookup.MISSING
+            _offline.value = found == CommunityRepository.PostLookup.OFFLINE
         }
     }
 

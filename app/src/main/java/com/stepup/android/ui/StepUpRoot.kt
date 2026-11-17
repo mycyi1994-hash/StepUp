@@ -564,9 +564,17 @@ private fun MainScaffoldContent(
     val pendingPush by InviteLinks.pendingPush.collectAsState()
     LaunchedEffect(pendingPush) {
         when (val target = pendingPush ?: return@LaunchedEffect) {
-            is InviteLinks.PushTarget.Post -> navController.navigate(Routes.storyDetail(target.postId)) { launchSingleTop = true }
-            is InviteLinks.PushTarget.Flash -> navController.navigate(Routes.flashDetail(target.postId)) { launchSingleTop = true }
-            is InviteLinks.PushTarget.Room -> navController.navigate(Routes.room(target.crewId, target.partyId)) { launchSingleTop = true }
+            // 같은 화면에 다른 글 · 다른 방이 열려 있으면 걷고 연다(같은 것이면 그대로 — 점검 2026-11-17 #6)
+            is InviteLinks.PushTarget.Post -> navController.openReplacingSame(
+                Routes.storyDetail(target.postId), Routes.STORY_DETAIL, mapOf("postId" to target.postId),
+            )
+            is InviteLinks.PushTarget.Flash -> navController.openReplacingSame(
+                Routes.flashDetail(target.postId), Routes.FLASH_DETAIL, mapOf("postId" to target.postId),
+            )
+            is InviteLinks.PushTarget.Room -> navController.openReplacingSame(
+                Routes.room(target.crewId, target.partyId), Routes.LOBBY,
+                mapOf("crewId" to target.crewId, "party" to target.partyId),
+            )
             // 아이템 도착(ITEM_GRANTED) · 보상 이벤트 시작(REWARD_EVENT) — 그 탭으로(0106)
             InviteLinks.PushTarget.Bag -> navController.switchTab(Screen.Bag)
             InviteLinks.PushTarget.RunTab -> navController.switchTab(Screen.Run)

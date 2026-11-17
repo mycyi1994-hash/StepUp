@@ -98,6 +98,8 @@ fun FlashRunDetailScreen(
 ) {
     val posts by viewModel.allPosts.collectAsStateWithLifecycle()
     val post = posts.firstOrNull { it.id == postId }
+    // 전체 목록(최근 글)에 없는 번개면 그 글만 받는다 — 예전 번개의 알림 · 링크가 빈 화면으로 열리지 않게
+    LaunchedEffect(postId) { if (posts.none { it.id == postId }) viewModel.ensurePost(postId) }
     var showMembers by rememberSaveable { mutableStateOf(false) }
     var more by rememberSaveable { mutableStateOf(false) }
     // 내가 쓴 번개를 지우기 전에 한 번 묻는다

@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -213,7 +214,11 @@ fun NotificationSettingsContent(
                         else -> item { BlueNote(stringResource(R.string.set_notif_intro), intro = true) }
                     }
                     item {
-                        // 네 가지는 따로 고른다(푸시가 나머지의 마스터 스위치가 아니다). 이 휴대폰에 저장하는 동안만 잠시 막는다
+                        // 첫 스위치는 모든 푸시의 큰 스위치다 — 서버 push_allowed 와 저녁 목표 알림(GoalReminderWorker)이 push 를
+                        // 먼저 본다(점검 2026-11-17 #8). 끈 동안 아래 셋은 흐리게 막고, 저장된 값은 그대로 둔다(다시 켜면 돌아온다).
+                        // 이 휴대폰에 저장하는 동안은 넷 다 잠시 막는다
+                        val subEnabled = !ui.saving && prefs.push
+                        val subLook = if (prefs.push) Modifier else Modifier.alpha(0.5f)
                         BlueGroup {
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_push), stringResource(R.string.set_notif_push_desc),
@@ -221,15 +226,15 @@ fun NotificationSettingsContent(
                             )
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_goal), stringResource(R.string.set_notif_goal_desc),
-                                prefs.goalReminder, { onChange(prefs.copy(goalReminder = it)) }, Modifier.testTag("notif-goal"), !ui.saving,
+                                prefs.goalReminder, { onChange(prefs.copy(goalReminder = it)) }, subLook.testTag("notif-goal"), subEnabled,
                             )
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_invite), stringResource(R.string.set_notif_invite_desc),
-                                prefs.partyInvite, { onChange(prefs.copy(partyInvite = it)) }, Modifier.testTag("notif-invite"), !ui.saving,
+                                prefs.partyInvite, { onChange(prefs.copy(partyInvite = it)) }, subLook.testTag("notif-invite"), subEnabled,
                             )
                             BlueSwitchRow(
                                 stringResource(R.string.set_notif_event), stringResource(R.string.set_notif_event_desc),
-                                prefs.eventNews, { onChange(prefs.copy(eventNews = it)) }, Modifier.testTag("notif-event"), !ui.saving,
+                                prefs.eventNews, { onChange(prefs.copy(eventNews = it)) }, subLook.testTag("notif-event"), subEnabled,
                             )
                         }
                     }

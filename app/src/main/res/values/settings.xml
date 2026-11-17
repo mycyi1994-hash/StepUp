@@ -27,8 +27,8 @@
     <string name="set_save_failed_body">Your previous setting was kept. Please try again.</string>
     <string name="set_saves_right_away">Changes are saved right away.</string>
     <string name="set_notif_intro">Choose the notifications you want.</string>
-    <string name="set_notif_push">Push notifications</string>
-    <string name="set_notif_push_desc">Run summaries and earnings</string>
+    <string name="set_notif_push">All push notifications</string>
+    <string name="set_notif_push_desc">When off, none of the notifications below arrive either</string>
     <string name="set_notif_goal">Goal reminders</string>
     <string name="set_notif_goal_desc">When your daily goal is still open</string>
     <string name="set_notif_invite">Run invites</string>

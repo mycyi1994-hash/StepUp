@@ -106,4 +106,11 @@ class InviteLinksTest {
         // 크루 링크 읽기는 번개 링크를 크루로 읽지 않는다
         assertNull(InviteLinks.crewIdOf(InviteLinks.flashLink(42)))
     }
+
+    @Test
+    fun `최근 앱 목록에서 다시 연 실행은 알림 링크를 다시 읽지 않는다`() {
+        val fromHistory = android.content.Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY or android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+        org.junit.Assert.assertTrue(InviteLinks.launchedFromHistory(fromHistory))
+        org.junit.Assert.assertFalse(InviteLinks.launchedFromHistory(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 }

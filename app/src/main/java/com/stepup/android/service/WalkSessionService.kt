@@ -1230,7 +1230,7 @@ class WalkSessionService : Service() {
             //    기준점이 모자라 그 몫을 백그라운드가 다시 지급한다.
             ServiceLocator.userPrefs.raiseAccountedTo(
                 LocalDate.now().toEpochDay(),
-                ServiceLocator.stepRepository.todaySteps.value,
+                ServiceLocator.stepRepository.rawTodaySteps.value,
             )
 
             // 부스트는 정산 **전에** 읽는다. 정산이 신발이나 크루 상태를 건드릴
