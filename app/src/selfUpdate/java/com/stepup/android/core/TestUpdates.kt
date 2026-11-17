@@ -55,13 +55,15 @@ data class TestBuild(
  *   일꾼은 새 빌드를 미리 받아 두고 "새 버전이 있어요 — 눌러서 업데이트" 알림을 남긴다(앱 밖에서는 설치 화면을 열 수 없다).
  * - 러닝 중에는 열지 않는다 — 깔면 앱이 다시 켜지며 러닝 서비스가 끊긴다.
  *
- * debug · qa 빌드(= test-apk 로 배포되는 파일)에서만 켜진다. 스토어 빌드에는 설치 권한도 받는 쪽도 없다(src/debug/AndroidManifest.xml).
+ * debug · qa 빌드(= test-apk 의 StepUp-test.apk)와 스토어 판 미리 보기(StepUp-store-preview.apk, 2026-11-06)에서만 켜진다.
+ * 스토어 빌드(release)에는 설치 권한도 받는 쪽도 없다(src/debug · src/storePreview 매니페스트).
  * 계측 테스트 중에는 끈다 — 에뮬레이터 화면 확인에 알림 창이 끼어들지 않게.
  */
 object TestUpdates {
     private const val RELEASE = "https://github.com/mycyi1994-hash/StepUp/releases/download/test-apk"
-    const val INFO_URL = "$RELEASE/StepUp-test.json"
-    const val APK_URL = "$RELEASE/StepUp-test.apk"
+    // 테스트 APK 는 StepUp-test, 스토어 판 미리 보기는 StepUp-store-preview(app/build.gradle.kts) — 미리 보기가 테스트 판으로 바뀌지 않게
+    val INFO_URL = "$RELEASE/${BuildConfig.SELF_UPDATE_FILE}.json"
+    val APK_URL = "$RELEASE/${BuildConfig.SELF_UPDATE_FILE}.apk"
 
     /** 앱으로 돌아올 때 다시 묻는 가장 짧은 간격 */
     const val RECHECK_MS = 5 * 60_000L
