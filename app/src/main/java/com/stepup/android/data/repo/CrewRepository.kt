@@ -404,11 +404,6 @@ class CrewRepository(
     private val exitedParties: suspend () -> Set<Long> = { emptySet() },
     private val rememberExit: suspend (Long) -> Unit = {},
     /**
-     * 나온 방에 다시 들어갔다 — "나온 방"에서 지운다(다음에 그 방을 다시 열 때 먼저 나가지 않게, 2026-11-18 점검).
-     * 이어 두지 않았으면 앱이 켜져 있는 동안만 기억한다(backIn)
-     */
-    private val forgetExit: suspend (Long) -> Unit = {},
-    /**
      * 이 폰이 그 방의 크루 러닝을 달렸는가(달리는 중 포함) — 달린 러닝의 오늘 기회는 돌려받지 않는다.
      * 기본은 러닝 상태 알림이 적어 둔 방([CrewRunLedger])
      */
@@ -662,7 +657,7 @@ class CrewRepository(
     /** 돌려받기를 서버가 받지 않은 방 — 달린 기록이 있다(다른 기기에서 달렸다). 목록을 볼 때마다 다시 묻지 않는다 */
     private val unreleasable: MutableSet<Long> = ConcurrentHashMap.newKeySet<Long>()
 
-    /** 나온 뒤 다시 들어간 방 — "나온 방"(exitedParties)에 남아 있어도 다시 열 때 먼저 나가지 않는다 */
+    /** 나온 뒤 다시 들어간 방 — "나온 방"(exitedParties)에 남아 있어도 다시 열 때 먼저 나가지 않는다. 앱을 다시 켜도 기억한다([PartyReturns]) */
     private val backIn: MutableSet<Long> = ConcurrentHashMap.newKeySet<Long>()
 
     /** 이 폰이 출발을 본(달렸다 · 놓쳤다 · 빠졌다) 번개 글 — 같은 글의 대기실을 다시 열면 새 방이라고 알린다(말없이 새 방에 넣지 않는다) */
@@ -832,7 +827,7 @@ class CrewRepository(
             while (true) {
                 // 방 번호를 받기 전에 읽어 둔다 — 받은 뒤에는 멈추지 않고 바로 적어, 그사이 대기실을 떠나도 받은 방이 남지 않는다.
                 // 나온 뒤 다시 들어간 방(backIn)은 "나온 방"으로 치지 않는다 — 들어가 있는 방에서 먼저 나가면 준비 · 진행자를 잃는다
-                val exited = exitedParties() - backIn
+                val exited = exitedParties() - backIn - PartyReturns.all()
                 val share = shareByDefault()
                 // "다시 연결"(null) — 걸려 있던 열기를 두고 바로 다시 연다
                 // 고른 방에서 나온 적이 있다 — 나가기가 아직 서버에 닿지 않았으면 먼저 나간 뒤 들어간다(늦게 닿은 나가기가
@@ -885,7 +880,7 @@ class CrewRepository(
                         }
                         // 다시 들어왔다 — "나온 방"에서 지운다(다음에 이 방을 다시 열 때 먼저 나가지 않게)
                         backIn.add(id)
-                        runCatching { forgetExit(id) }
+                        PartyReturns.add(id)
                         poll(id)
                         return@launch
                     }
@@ -962,6 +957,7 @@ class CrewRepository(
         val job = scope.launch(start = CoroutineStart.LAZY) {
             rememberExit(id)
             backIn.remove(id)
+            PartyReturns.remove(id)
             val freed = release?.await()
             if (freed != false) {
                 var attempt = 0
@@ -986,6 +982,7 @@ class CrewRepository(
             leaving.remove(id)?.cancelAndJoin()
             rememberExit(id)
             backIn.remove(id)
+            PartyReturns.remove(id)
             landed = epoch == accountEpoch && partyApi.leave(id) !is ServerResult.Retry
         } finally {
             if (!landed) leaveLater(id, epoch)
@@ -1684,6 +1681,7 @@ class CrewRepository(
                 // 먼저 적어 둔다 — 아래 나가기가 끝내 닿지 않아도 다음 대기실이 이 방에 다시 붙지 않는다
                 rememberExit(id)
                 backIn.remove(id)
+                PartyReturns.remove(id)
                 // 연결이 잠깐 끊겼으면 몇 번 더 보낸다(진행자의 마치기가 닿지 않으면 남은 사람의 방이 닫히지 않는다)
                 for (attempt in 1..EXIT_TRIES) {
                     val result = if (state.isHost) partyApi.finish(id) else partyApi.leave(id)

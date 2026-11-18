@@ -6,6 +6,7 @@ import com.stepup.android.data.repo.LatestOnly
 import com.stepup.android.data.repo.PartyPhase
 import com.stepup.android.data.repo.PartyProblem
 import com.stepup.android.data.repo.PartyPush
+import com.stepup.android.data.repo.PartyReturns
 import com.stepup.android.data.repo.PartyState
 import com.stepup.android.data.repo.joinProblem
 import com.stepup.android.data.repo.keepsLobby
@@ -19,6 +20,7 @@ import com.stepup.android.data.repo.startRefusal
 import com.stepup.android.data.repo.toDomain
 import com.stepup.android.data.repo.unrunRoom
 import com.stepup.android.data.repo.unrunToday
+import com.stepup.android.domain.CrewProblem
 import com.stepup.android.ui.screens.walk.LobbyTerminal
 import com.stepup.android.ui.screens.walk.lobbyTerminal
 import java.time.Instant
@@ -72,6 +74,11 @@ class TogetherLobbyFixTest {
         assertTrue(PartyProblem.COURSE_CHANGED.keepsRoom)
         assertFalse(PartyProblem.LEFT_BEHIND.keepsRoom)
         assertFalse(PartyProblem.REMOVED.keepsRoom)
+    }
+
+    @Test fun `해산 거절 - 달리는 중인 크루 러닝이 있으면 제 까닭으로`() {
+        assertEquals(CrewProblem.CREW_RUNNING, CrewProblem.of("crew_running"))
+        assertEquals(CrewProblem.OTHER, CrewProblem.of("crew_runner"))
     }
 
     // ── 방에 그대로 있는가 ──
@@ -173,6 +180,16 @@ class TogetherLobbyFixTest {
         assertEquals(PartyPush.OTHER, partyPush("flash/41", flash))
         assertEquals(PartyPush.OTHER, partyPush("flash/42", flash.copy(partyId = null)))
         assertEquals(PartyPush.OTHER, partyPush("flash/42", room))
+    }
+
+    // ── 나온 뒤 다시 들어간 방 ──
+
+    @Test fun `다시 들어간 방 목록 - 최근 스무 개, 같은 방은 한 번만`() {
+        assertEquals(listOf(3L, 5L, 9L), PartyReturns.parse("3, 5,x,,9"))
+        assertEquals(emptyList<Long>(), PartyReturns.parse(""))
+        assertEquals(listOf(5L, 9L, 3L), PartyReturns.added(listOf(3L, 5L, 9L), 3L))
+        val many = (1L..25L).fold(emptyList<Long>()) { ids, id -> PartyReturns.added(ids, id) }
+        assertEquals((6L..25L).toList(), many)
     }
 
     // ── 정해 둔 출발 시각 ──

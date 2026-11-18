@@ -699,7 +699,9 @@ fun RunScreen(
     )
 
     // 지도 틀 안 — 실제 지도(달린 길 · 지금 자리 · 고른 코스 · 같이 뛰는 사람). 위치 없이 기록하면 안내만
-    val together = session.isActive && party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
+    // 모임에서 출발한 러닝일 때만 — 혼자 러닝 지도에 지난 방의 크루원을 그리지 않게(2026-11-18)
+    val together = session.isActive && session.group != com.stepup.android.service.RunGroup.NONE &&
+        party.phase == com.stepup.android.data.repo.PartyPhase.RUNNING && party.members.size > 1
     // 같이 뛰는 사람 · 지금 자리 목록은 바뀔 때만 새로 만든다 — 갱신(1초에 여러 번)마다 새 목록을 넘기면 지도가 매번 타일부터 다시 그린다
     // 방과 끊겼으면(내보냄 · 로그인 필요 · 방 닫힘) 더 묻지 않아 남은 점이 굳는다 — 지금 위치처럼 그리지 않는다
     val showOthers = together && !party.networkProblem && !party.roomClosed &&
