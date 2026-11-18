@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 최신 — 사전 등록 마감 · 타워 게임은 누구나 (2026-11-18, 서버 0115)
+
+사용자 "홈페이지 사전예약 오늘 11시 59분에 마감" → "게임은 계속". 마감 시각 = 서버 설정 `waitlist_closes_at`("2026-11-18T23:59:00+09:00", 지나면 등록 `{ok:false, message:'waitlist closed'}`)
+과 홈페이지 `web/waitlist.js` 의 `WAITLIST_CLOSES` — 바꾸면 둘 다(다시 열기 `admin_economy_set('waitlist_closes_at', 'null')`). 마감 뒤 홈페이지는 사전 등록 버튼들이 "사전 등록 마감",
+등록 창은 폼 대신 마감 안내 · Google Play · 타워 게임(이미 등록한 사람은 예전 완료 · 공유 화면 그대로). 타워는 사전 등록 안 한 이메일도 참가(`economy.tower_guests`,
+`tower_entry` = 사전 등록 줄 먼저 · 없으면 손님 줄 — 타워 표 entry_id 의 사전 등록 FK 는 풀었다). 테스트는 마감을 비우고 돈다(`schema_test.sql`).
+
 ## 최신 — 새 판 1.19.0(27) · 매물 거두기 · 업데이트 보상 · 초대 코드 하루 1 · 운영자 보안 (2026-11-18, 서버 0112 · 0113 · 0114)
 
 - 스토어 판 versionCode 27 · versionName 1.19.0(26 · 1.18.0 은 스토어용 파일을 만든 적이 없다 — 마지막 Release AAB 는 v1.17.1).

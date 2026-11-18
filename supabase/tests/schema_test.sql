@@ -94,6 +94,15 @@ begin
     and has_table_privilege('service_role', 'public.waitlist_share_claims', 'INSERT'),
     '서버 역할은 대기 명단에 접근할 수 있다');
 end $$;
+-- 사전 등록 마감(0115): 지난 시각이면 등록을 받지 않는다 — 확인한 뒤 아래 등록 검사를 위해 마감을 비운다
+update public.economy_settings set value = to_jsonb('2020-01-01T00:00:00+09:00'::text) where key = 'waitlist_closes_at';
+set role anon;
+do $$
+begin
+  perform pg_temp.ok(public.waitlist_register('Closed@RunnerMail.com', true, '')->>'message' = 'waitlist closed', '마감 뒤에는 사전 등록을 받지 않는다(0115)');
+end $$;
+reset role;
+update public.economy_settings set value = 'null'::jsonb where key = 'waitlist_closes_at';
 set role anon;
 insert into fix (k, v)
 select 'waitlist-receipt', public.waitlist_register('Waitlist@RunnerMail.com', true, '')->>'receipt';
@@ -10606,7 +10615,6 @@ set role anon;
 do $$
 declare r jsonb;
 begin
-  perform pg_temp.ok(public.tower_join('nobody@runnermail.com', '러너')->>'code' = 'not_registered', '타워: 사전 등록 안 한 이메일은 참가 못 함(0104)');
   perform pg_temp.ok(public.tower_join('friend@runnermail.com', '<b>')->>'code' = 'name', '타워: 닉네임 2~12자 한글 · 영문 · 숫자(0104)');
   r := public.tower_join('friend@runnermail.com', ' 탑  러너 ');
   perform pg_temp.ok((r->>'ok')::boolean and r->>'name' = '탑 러너' and (r->>'runs_left')::int = 1 and (r->>'sns_left')::int = 3, '타워: 참가 · 오늘 1판(0104)');
@@ -10647,6 +10655,14 @@ begin
   perform pg_temp.ok(jsonb_array_length(r->'today') = 2 and r->'today'->0->>'name' = '탑 러너' and (r->'today'->1->>'me')::boolean
                      and (r->'me_today'->>'rank')::int = 2 and (r->>'players')::int = 2 and r::text !~ 'runnermail',
     '타워: 오늘 순위 · 내 자리, 이메일은 안 나간다(0104)');
+end $$;
+do $$
+declare r jsonb;
+begin
+  r := public.tower_join('guest@runnermail.com', '손님 러너');
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'runs_left')::int = 1, '타워: 사전 등록 안 한 이메일도 게임 손님으로 참가(0115)');
+  perform pg_temp.ok((public.tower_start('guest@runnermail.com')->>'ok')::boolean, '타워: 게임 손님도 오늘의 도전을 시작한다(0115)');
+  perform pg_temp.ok(public.tower_join('bad', '러너')->>'code' = 'email', '타워: 이메일 모양이 아니면 거절(0115)');
 end $$;
 reset role;
 

@@ -1,5 +1,5 @@
 import { PLATFORMS, validPostUrl, shareTarget, referralCode, shareUrl, shareText, normalizeEmail, validEmail, normalizePostUrl, isOwnSiteUrl } from './waitlist-core.mjs?v=20261107-ev';
-import { t, lang, onLangChange } from './i18n.js?v=20261116-app3';
+import { t, lang, onLangChange } from './i18n.js?v=20261118-close';
 
 const SUPABASE_URL = 'https://pupjzcmybuoyhzfwrsdf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
@@ -7,6 +7,10 @@ const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
 // 키를 넣으면 등록은 워커(/v1/waitlist/register)가 토큰을 확인한 뒤에만 들어간다.
 const TURNSTILE_SITE_KEY = '0x4AAAAAAFwSGcKev3bQRGVx';
 const WAITLIST_WORKER = 'https://stepup-attester.gana003.workers.dev/v1/waitlist/register';
+// 사전 등록 마감 — 서버 economy_settings 'waitlist_closes_at'(0115)과 같은 시각. 서버가 'waitlist closed' 로 답해도 마감으로 바꾼다
+const WAITLIST_CLOSES = Date.parse('2026-11-18T23:59:00+09:00');
+let closedByServer = false;
+const waitlistClosed = () => closedByServer || Date.now() >= WAITLIST_CLOSES;
 const RECEIPT_KEY = 'stepup.waitlist.receipt';
 const EMAIL_KEY = 'stepup.waitlist.email';
 const REF_KEY = 'stepup.waitlist.ref';
@@ -216,12 +220,15 @@ function renderClaims(items) {
 // After signing up, every entry point says so — the page used to look exactly as before (still "join").
 function renderEntry() {
   const joined = !!receipt;
+  const closed = !joined && waitlistClosed();
   document.documentElement.classList.toggle('waitlist-joined', joined);
+  document.documentElement.classList.toggle('waitlist-is-closed', closed);
+  $('.waitlist-closed-note').hidden = !closed;
   $('.waitlist-banner-title').textContent = t(joined ? 'banner.titleDone' : 'banner.title');
   $('.waitlist-banner-text').textContent = joined && registeredEmail ? t('banner.textDone', { email: registeredEmail }) : t('banner.text');
   $('.waitlist-open').textContent = t(joined ? 'banner.buttonDone' : 'banner.button');
-  $('.pill-join').textContent = t(joined ? 'header.joined' : 'header.join');
-  for (const cta of document.querySelectorAll('.cta[data-waitlist-open]')) cta.textContent = t(joined ? 'cta.joined' : 'cta.join');
+  $('.pill-join').textContent = t(joined ? 'header.joined' : closed ? 'header.closed' : 'header.join');
+  for (const cta of document.querySelectorAll('.cta[data-waitlist-open]')) cta.textContent = t(joined ? 'cta.joined' : closed ? 'cta.closed' : 'cta.join');
   $('.waitlist-done-email').textContent = registeredEmail ? t('done.email', { email: registeredEmail }) : '';
   // 워킹데이 마감(11/11 15:00 KST) 전에는 「더 할 일 없어요」 대신 걸음 인증 · 친구 초대 카드
   const walkingDay = Date.now() < Date.parse('2026-11-11T15:00:00+09:00');
@@ -402,6 +409,7 @@ consentInput.addEventListener('change', () => { if (consentInput.checked) fieldE
 // ── Sign up ─────────────────────────────────────────────────────────
 registerForm.addEventListener('submit', async event => {
   event.preventDefault();
+  if (waitlistClosed()) { renderEntry(); return; }
   if (busy) return;
   const email = normalizeEmail(emailInput.value);
   let firstInvalid = null;
@@ -426,7 +434,7 @@ registerForm.addEventListener('submit', async event => {
     if (TURNSTILE_SITE_KEY) {
       try { viaWorker = await registerViaWorker({ ...body, p_ref: invitedBy || '' }); }
       catch (error) {
-        if (/invalid waitlist registration|too many waitlist attempts/.test(error.message)) throw error;
+        if (/invalid waitlist registration|too many waitlist attempts|waitlist closed/.test(error.message)) throw error;
       }
     }
     if (viaWorker) result = viaWorker;
@@ -454,7 +462,11 @@ registerForm.addEventListener('submit', async event => {
     registerSubmit.disabled = false;
     await restoreClaims();
   } catch (error) {
-    if (error.message.includes('invalid waitlist registration')) {
+    if (error.message.includes('waitlist closed')) {
+      closedByServer = true;
+      feedback(registerFeedback, '');
+      renderEntry();
+    } else if (error.message.includes('invalid waitlist registration')) {
       // The server said the address is not valid — say so, instead of "try again later" forever.
       fieldError(emailInput, emailError, t('err.emailInvalid'));
       feedback(registerFeedback, '');
@@ -647,6 +659,9 @@ shareForm.addEventListener('submit', async event => {
 
 // ── Language ────────────────────────────────────────────────────────
 // i18n.js has just rewritten the fixed text; write the parts this script owns again in the new language.
+// 페이지를 연 채로 마감 시각이 지나면 그때 바꾼다
+if (!waitlistClosed() && WAITLIST_CLOSES - Date.now() < 2 ** 31 - 1) setTimeout(renderEntry, WAITLIST_CLOSES - Date.now() + 500);
+
 onLangChange(() => {
   renderEntry();
   renderClaims(claims);
