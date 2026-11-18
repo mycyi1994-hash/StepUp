@@ -5,7 +5,7 @@
     <string name="draw_blue_subtitle_loading">Loading your draw chances.</string>
     <string name="draw_blue_subtitle_failed">Couldn\'t load your draw chances.</string>
     <string name="draw_blue_left_label">Chances left</string>
-    <string name="draw_blue_free_breakdown">Sign-up gift %1$d + today %2$d</string>
+    <string name="draw_blue_free_breakdown">Saved boxes %1$d + today %2$d</string>
     <string name="draw_blue_before_link">Wallet not connected yet</string>
     <string name="draw_blue_on_first_link">On your first connection</string>
     <string name="draw_blue_run_per_step">1 per %1$s km run after connecting</string>

@@ -27,7 +27,7 @@
     <!-- 03 무료 내역 -->
     <string name="dv2_free_sheet_title">무료 뽑기 기회</string>
     <string name="dv2_free_sheet_sub">한 번 뽑을 때 기회 1회를 사용해요.</string>
-    <string name="dv2_signup_gift">첫 가입 선물</string>
+    <string name="dv2_signup_gift">받아 둔 상자</string>
     <string name="dv2_daily">오늘 무료 기회</string>
     <string name="dv2_free_now">지금 사용할 수 있는 기회</string>
     <string name="dv2_close">닫기</string>

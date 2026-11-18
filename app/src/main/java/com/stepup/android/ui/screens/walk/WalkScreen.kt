@@ -201,6 +201,9 @@ fun RunScreen(
     val course = viewModel.selectedCourse.collectAsStateWithLifecycle().value
     val lastUpload by viewModel.lastUpload.collectAsStateWithLifecycle()
     val lastServerPoints by viewModel.lastServerPoints.collectAsStateWithLifecycle()
+    // 서버가 확인한 이번 러닝 보상의 운(경제 4판, 0116) — 결과에 한 줄. 확인 전 · 모르면 null
+    val lastServerLuck by viewModel.lastServerLuck.collectAsStateWithLifecycle()
+    val lastLuckText = runLuckText(lastServerLuck)
     val lastShoeSettled by viewModel.lastShoeSettled.collectAsStateWithLifecycle()
     val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
@@ -919,6 +922,8 @@ fun RunScreen(
                     onDeleteBack = { deleteFailed = null },
                     penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null,
                     shoeNote = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null,
+                    // 보상의 운(0116) — 서버가 이 러닝을 확인하고 적립이 있을 때만 한 줄
+                    luckNote = lastLuckText,
                     // 다 쓴 신발을 바로 고칠 수 있게 — 신고 있는 신발의 수리 시트(신발 탭과 같은 수리)
                     onShoeRepair = equipped?.takeIf { session.lastShoeWornOut }?.let { shoe -> { repairShoeId = shoe.id } },
                     startedAt = session.lastStartedAt,
@@ -980,6 +985,8 @@ fun RunScreen(
                         )
                         add(stringResource(R.string.crew_result_level_bonus, outcome.levelBefore ?: 1, m.percent(outcome.levelPct), m.sup(outcome.level ?: 0.0)))
                         add(stringResource(R.string.crew_result_total, m.sup(outcome.base), m.percent(outcome.headcountPct), m.percent(outcome.levelPct), m.sup(outcome.total)))
+                        // 보상의 운(0116) — 크루 적립에도 곱했다(서버가 준 값)
+                        lastLuckText?.let { add(it) }
                         add(stringResource(R.string.crew_result_pool, m.amount(outcome.contribution), m.amount(outcome.consumed)))
                         outcome.pool?.let { add(stringResource(R.string.crew_result_pool_now, m.amount(it.remaining), m.amount(it.total))) }
                         add(stringResource(R.string.crew_result_personal))
@@ -1039,7 +1046,10 @@ fun RunScreen(
             finishing -> {
                 val km = finishKm(session)
                 val paceSec = finishPace(session)
-                val reward = finishReward(session, lastServerPoints, lastUpload)
+                // 보상의 운(0116) — 확정(반영 완료)된 보상에만 한 줄
+                val reward = finishReward(session, lastServerPoints, lastUpload).let { r ->
+                    if (r.settle == Settle.DONE && lastLuckText != null) r.copy(luck = lastLuckText) else r
+                }
                 val datePattern = stringResource(R.string.result_date_pattern)
                 // 요일은 앱 언어로 — 앱 안에서 고른 언어가 기기 기본 언어와 다를 수 있다
                 val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
@@ -1448,7 +1458,10 @@ fun RunScreen(
                 itemsRepo.clearPicks()
                 runCatching { itemsRepo.refresh() }
             }
+            // 오늘 적립 한도(에너지) — 읽은 값으로만(읽기 전 0 으로 단정하지 않는다). 다 썼어도 출발은 그대로
+            val energyNow by viewModel.energyKnown.collectAsStateWithLifecycle()
             FreeRunShoeCheck(
+                energyUsedUp = energyUsedUp(energyNow, checkShoe?.energyEfficiency ?: 1.0),
                 runItems = bag?.runPicks.orEmpty(),
                 pickedItems = pickedItems,
                 onPickItem = itemsRepo::toggle,

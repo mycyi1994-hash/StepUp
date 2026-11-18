@@ -5,7 +5,7 @@
     <string name="draw_blue_subtitle_loading">抽選回数を読み込んでいます。</string>
     <string name="draw_blue_subtitle_failed">抽選回数を読み込めませんでした。</string>
     <string name="draw_blue_left_label">残り回数</string>
-    <string name="draw_blue_free_breakdown">登録特典 %1$d回 + 今日 %2$d回</string>
+    <string name="draw_blue_free_breakdown">受け取ったボックス %1$d回 + 今日 %2$d回</string>
     <string name="draw_blue_before_link">ウォレット未接続</string>
     <string name="draw_blue_on_first_link">初めて接続すると</string>
     <string name="draw_blue_run_per_step">接続後ランニング%1$skmごとに1回</string>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 선물로 받은 상급 뽑기(앱 업데이트 보상, 서버 0112 GIFT) — 스토어 판에도 보이는 상급 칸 · 안내. 네 언어를 함께 고친다 -->
 <resources>
-    <string name="update_reward_panel_sub">Gifted chances</string>
+    <string name="update_reward_panel_sub">Premium boxes you have</string>
     <string name="update_reward_panel_detail">See the odds in How to get chances</string>
     <string name="update_reward_spent">All premium draws used</string>
-    <string name="update_reward_sheet_sub">Gifted premium draws can be used right away.</string>
-    <string name="update_reward_line">Gifted chances</string>
-    <string name="update_reward_rules_note">Premium draws come as app update and event gifts.</string>
+    <string name="update_reward_sheet_sub">Open your premium boxes right away with a premium draw.</string>
+    <string name="update_reward_line">Premium boxes you have</string>
+    <string name="update_reward_rules_note">Premium boxes come from weekly steps, 7-day goal streaks, shoe levels, SUP and events.</string>
 </resources>

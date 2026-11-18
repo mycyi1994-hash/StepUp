@@ -5,7 +5,7 @@
     <string name="draw_blue_subtitle_loading">正在加载抽取次数。</string>
     <string name="draw_blue_subtitle_failed">无法加载抽取次数。</string>
     <string name="draw_blue_left_label">剩余次数</string>
-    <string name="draw_blue_free_breakdown">注册礼物 %1$d次 + 今日 %2$d次</string>
+    <string name="draw_blue_free_breakdown">已领取的箱子 %1$d次 + 今日 %2$d次</string>
     <string name="draw_blue_before_link">尚未连接钱包</string>
     <string name="draw_blue_on_first_link">首次连接后</string>
     <string name="draw_blue_run_per_step">连接后每跑%1$s公里得1次</string>

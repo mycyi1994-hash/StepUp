@@ -75,6 +75,8 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     val context = LocalContext.current
     var reads by remember { mutableIntStateOf(0) }
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
+    // 이은 소셜 계정 — 이 폰의 로그인에 적힌 사용자(구글 로그인의 이메일). 본인 화면이라 가리지 않는다
+    var account by remember { mutableStateOf<String?>(null) }
     var wallet by remember { mutableStateOf(WalletLink.Checking) }
     // 지갑 앱에서 연결하고 돌아오면(2026-10-18 지갑 고르기) 연결 상태를 다시 읽는다
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
@@ -84,6 +86,10 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     LaunchedEffect(reads) {
         val now = ServiceLocator.sessionHolder.isSignedIn()
         signedIn = now
+        account = if (now) socialAccountOf(runCatching { ServiceLocator.sessionHolder.currentUser() }.getOrNull())?.let { linked ->
+            if (linked.email != null) context.getString(R.string.set_social_google, linked.email)
+            else context.getString(R.string.set_social_google_only)
+        } else null
         wallet = when {
             !now -> WalletLink.SignedOut
             else -> when (val status = runCatching { ServiceLocator.economyApi.drawStatus() }.getOrNull()) {
@@ -138,7 +144,7 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     }
 
     ConnectedAccountsContent(
-        signedIn = signedIn, wallet = wallet, step = step, contactOpen = contactOpen,
+        signedIn = signedIn, account = account, wallet = wallet, step = step, contactOpen = contactOpen,
         onBack = onBack, onConnectWallet = onConnectWallet,
         onAskDelete = { step = DeleteStep.Confirm }, onDelete = ::delete,
         logoutOpen = logoutOpen, loggingOut = loggingOut,
@@ -156,10 +162,24 @@ fun ConnectedAccountsScreen(onBack: () -> Unit = {}, onConnectWallet: () -> Unit
     )
 }
 
+/** 이은 소셜 계정 — 로그인은 구글뿐이다(SupabaseAuth 의 provider google). [email] 을 모르면 null("Google"만) */
+data class SocialAccount(val email: String?)
+
+/**
+ * 이 폰의 로그인 사용자 → 이은 소셜 계정("Google · user@email"). 익명 계정(구글을 붙이기 전) · 사용자를 모르면 null(설명 줄을 두지 않는다).
+ * 본인 화면이라 이메일을 가리지 않는다.
+ */
+fun socialAccountOf(user: com.stepup.android.data.remote.AuthUser?): SocialAccount? {
+    if (user == null || user.isAnonymous) return null
+    return SocialAccount(user.email?.trim()?.takeIf { it.isNotEmpty() })
+}
+
 @Composable
 fun ConnectedAccountsContent(
     signedIn: Boolean?,
     wallet: WalletLink,
+    /** 이은 소셜 계정("Google · user@email") — 모르면 null */
+    account: String? = null,
     step: DeleteStep = DeleteStep.Closed,
     contactOpen: Boolean = false,
     onBack: () -> Unit = {},
@@ -181,7 +201,7 @@ fun ConnectedAccountsContent(
             // 소셜 계정은 읽기 전용 — 이 휴대폰의 로그인 상태만
             BlueGroup {
                 BlueStatusRow(
-                    stringResource(R.string.set_social_account), null,
+                    stringResource(R.string.set_social_account), account.takeIf { signedIn == true },
                     stringResource(
                         when (signedIn) {
                             null -> R.string.set_checking

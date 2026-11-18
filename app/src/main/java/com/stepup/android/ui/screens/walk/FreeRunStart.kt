@@ -111,8 +111,6 @@ import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.screens.items.durabilityWornOut
-import com.stepup.android.ui.screens.items.lowDurabilityMinutes
 import com.stepup.android.ui.screens.items.durabilityPercent
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpNumbers
@@ -184,6 +182,8 @@ internal fun FreeRunShoeCheck(
     onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
     /** 아이템 없이도 이미 켜진 적립 배수(보상 이벤트 · 24시간 부스터) — 이보다 크지 않은 배수 아이템은 고르지 못한다 */
     coveredRewardMult: Double = 1.0,
+    /** 오늘 적립 한도(에너지)를 다 썼다 — 이 러닝은 적립이 없다는 한 줄(출발은 그대로 된다) */
+    energyUsedUp: Boolean = false,
 ) {
     Dialog(
         onDismissRequest = onCancel,
@@ -195,7 +195,7 @@ internal fun FreeRunShoeCheck(
         FreeRunShoeCheckContent(
             shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair,
             runItems = runItems, pickedItems = pickedItems, onPickItem = onPickItem,
-            coveredRewardMult = coveredRewardMult,
+            coveredRewardMult = coveredRewardMult, energyUsedUp = energyUsedUp,
         )
     }
 }
@@ -215,6 +215,7 @@ internal fun FreeRunShoeCheckContent(
     pickedItems: Set<com.stepup.android.domain.ItemKind> = emptySet(),
     onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
     coveredRewardMult: Double = 1.0,
+    energyUsedUp: Boolean = false,
 ) {
     val reduced = LocalMotion.current.reduced
     // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
@@ -285,6 +286,8 @@ internal fun FreeRunShoeCheckContent(
                     } else {
                         CheckNoShoe()
                     }
+                    // 오늘 적립 한도를 다 썼다(경제 4판 — 에너지 최대치는 가진 신발 가운데 가장 높은 레벨). 출발은 그대로 된다
+                    if (energyUsedUp) CheckEnergyUsedUp()
                     // 이번 러닝에 쓸 아이템(0106) — 가진 것만, 같은 묶음(적립 배수 · 에너지)은 하나만. 출발하면 그 러닝에 묶여 빠진다
                     if (runItems.isNotEmpty()) {
                         RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing, coveredRewardMult = coveredRewardMult)
@@ -383,17 +386,18 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
     // 내구도가 다 닳았거나 곧 닳으면 출발 전에 알린다 — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 예전엔 0% 에서도
     // "달릴 준비가 됐어요"라, 보상 0 의 까닭을 결과에서도 몰랐다(2026-10-17 점검)
     // 신발 탭 · 상세의 수리 강조(repairUrgent)와 같은 규칙 — 기준은 그 신발 수명의 절반 · 10분 가운데 작은 것, 가득 찬 신발은 알리지 않는다
-    val worn = durabilityWornOut(shoe)
-    val earnMinutes = lowDurabilityMinutes(shoe)
-    if (worn || earnMinutes != null) {
+    // 경제 4판(2026-11-18) — 넉넉한 신발도 "이 신발은 약 N분 동안 적립돼요"로 늘 분을 알린다(shoeCheckLine)
+    val line = shoeCheckLine(shoe)
+    val worn = line == ShoeCheckLine.WornOut
+    if (line is ShoeCheckLine.WornOut || line is ShoeCheckLine.Low) {
         Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-low-durability"), verticalAlignment = Alignment.Top) {
             Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
             Spacer(Modifier.width(7.dp))
             Text(
-                if (worn || earnMinutes == null) {
-                    stringResource(R.string.run_free_check_low_durability_none)
+                if (line is ShoeCheckLine.Low) {
+                    stringResource(R.string.run_free_check_low_durability_minutes, line.minutes)
                 } else {
-                    stringResource(R.string.run_free_check_low_durability_minutes, earnMinutes.coerceAtLeast(1))
+                    stringResource(R.string.run_free_check_low_durability_none)
                 },
                 style = checkText(12.sp, CheckWarnText),
             )
@@ -409,11 +413,26 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
             }
         }
     } else {
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-ready"), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = CheckReadyIcon, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(7.dp))
-            Text(stringResource(R.string.run_free_check_ready), style = checkText(12.sp, CheckReadyText))
+            Text(
+                if (line is ShoeCheckLine.Earns) stringResource(R.string.run_check_earn_minutes, line.minutes)
+                else stringResource(R.string.run_free_check_ready),
+                style = checkText(12.sp, CheckReadyText),
+                modifier = Modifier.testTag("run-shoe-check-earn"),
+            )
         }
+    }
+}
+
+/** 오늘 적립 한도를 다 썼다 — 이 러닝은 적립이 없다(기록은 남는다). 경고 줄과 같은 모양, 버튼은 더하지 않는다 */
+@Composable
+private fun CheckEnergyUsedUp() {
+    Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-energy-empty"), verticalAlignment = Alignment.Top) {
+        Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
+        Spacer(Modifier.width(7.dp))
+        Text(stringResource(R.string.run_check_energy_empty), style = checkText(12.sp, CheckWarnText))
     }
 }
 

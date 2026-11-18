@@ -537,6 +537,8 @@ internal data class ResultReward(
     val settle: Settle,
     val notes: List<String> = emptyList(),
     val signIn: Boolean = false,
+    /** 서버가 확인한 보상의 운 한 줄(경제 4판 — "운 ×1.12 · 오늘 운이 좋았어요"). 확인 전 · 모르면 null */
+    val luck: String? = null,
 )
 
 /**

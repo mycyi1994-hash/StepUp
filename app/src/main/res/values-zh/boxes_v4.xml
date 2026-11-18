@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 경제 4판(서버 0116) — 상자 받는 곳 · 보상의 운 · 출발 전 점검의 적립 분 · 적립 한도 · 부스터 판매 멈춤 · 이은 소셜 계정. 네 언어를 함께 고친다 -->
+<resources>
+    <string name="boxes_title">获取箱子的方法</string>
+    <string name="boxes_sub">普通箱子用免费抽取打开，高级箱子用高级抽取打开。</string>
+    <string name="boxes_entry_runs">今日跑步箱子 %1$d / %2$d</string>
+    <string name="boxes_entry_week">本周 %1$s / %2$s步</string>
+    <string name="boxes_entry_week_got">已领取本周高级箱子</string>
+    <string name="boxes_loading">正在读取箱子情况</string>
+    <string name="boxes_failed">无法读取箱子情况，请重新读取。</string>
+    <string name="boxes_normal">普通箱子</string>
+    <string name="boxes_premium">高级箱子</string>
+    <string name="boxes_check_in">签到</string>
+    <string name="boxes_per_day">每天%1$d个</string>
+    <string name="boxes_run">今日计入奖励的步数 %1$s步</string>
+    <string name="boxes_week">本周计入奖励的步数 %1$s步</string>
+    <string name="boxes_got">已领取</string>
+    <string name="boxes_steps_progress">%1$s / %2$s步</string>
+    <string name="boxes_streak">连续%1$d天达成目标</string>
+    <string name="boxes_streak_value">每%1$d天1个</string>
+    <string name="boxes_levels">鞋子首次达到Lv5・10・15・20时</string>
+    <string name="boxes_levels_value">各1个</string>
+    <string name="boxes_levels_got">已领取等级 %1$s</string>
+    <string name="boxes_buy_line">用SUP购买・%1$s SUP</string>
+    <string name="boxes_buy_today">今日已购买 %1$d / %2$d个</string>
+    <string name="boxes_buy_week">本周已购买 %1$d / %2$d个</string>
+    <string name="boxes_buy">购买</string>
+    <string name="boxes_block_limit_day">今日已达购买上限</string>
+    <string name="boxes_block_limit_week">本周已达购买上限</string>
+    <string name="boxes_block_balance">SUP不足</string>
+    <string name="boxes_block_selling">目前不出售箱子</string>
+    <string name="boxes_premium_have">拥有的高级箱子</string>
+    <string name="boxes_premium_have_note">拥有的高级箱子可以马上用高级抽取打开。</string>
+    <string name="boxes_count">%1$d个</string>
+    <string name="boxes_balance">我的余额</string>
+    <string name="boxes_rules_note">箱子也可通过签到、跑步、每周步数、鞋子等级和SUP获得。可在“获取箱子的方法”中查看。</string>
+    <string name="boxes_confirm_title_normal">购买普通箱子</string>
+    <string name="boxes_confirm_title_premium">购买高级箱子</string>
+    <string name="boxes_confirm_body_normal">用%1$s SUP购买1个普通箱子。免费抽取增加1次。</string>
+    <string name="boxes_confirm_body_premium">用%1$s SUP购买1个高级箱子。高级抽取增加1次。</string>
+    <string name="boxes_buy_today_label">今日已购买</string>
+    <string name="boxes_buy_week_label">本周已购买</string>
+    <string name="boxes_of">%1$d / %2$d个</string>
+    <string name="boxes_confirm_buy">用%1$s SUP购买</string>
+    <string name="boxes_retry">再试一次</string>
+    <string name="boxes_retry_note">连接中断，未收到结果。再次点击也只会购买一次。</string>
+    <string name="boxes_bought_normal">已获得1个普通箱子。用免费抽取打开。</string>
+    <string name="boxes_bought_premium">已获得1个高级箱子。用高级抽取打开。</string>
+    <string name="boxes_refused_not_enough">SUP不足，无法购买</string>
+    <string name="boxes_refused_limit_day">每天最多可购买%1$d个箱子</string>
+    <string name="boxes_refused_limit_week">高级箱子每周最多可购买%1$d个</string>
+    <string name="boxes_refused_sign_in">重新登录后即可购买</string>
+    <string name="boxes_refused_other">无法处理该请求，请稍后再试。</string>
+
+    <string name="run_luck_good">运气 %1$s・今天运气不错</string>
+    <string name="run_luck_even">运气 %1$s・和平时一样</string>
+    <string name="run_luck_low">运气 %1$s・这次稍微少了一点</string>
+
+    <string name="run_check_earn_minutes">这双鞋大约可以累积%1$d分钟奖励</string>
+    <string name="run_check_energy_empty">今天的奖励上限已用完 — 这次跑步没有奖励</string>
+
+    <string name="items_boosts_paused">加成目前不出售。道具可通过活动和奖励获得。</string>
+
+    <string name="set_social_google">Google・%1$s</string>
+    <string name="set_social_google_only">Google</string>
+</resources>
