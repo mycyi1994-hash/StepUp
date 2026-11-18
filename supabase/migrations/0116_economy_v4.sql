@@ -1115,6 +1115,8 @@ declare
   -- 운 (0116) — 보상 × 0.7 ~ 1.3 · 닳는 양 × 0.667 ~ 1.444(평균 1)
   v_luck numeric := 1;
   v_wear_luck numeric := 1;
+  -- 하루 걸음 상한 · 에너지로 적립에서 빠진 걸음 — 그 몫만큼은 신발이 닳지 않는다 (0116)
+  v_lost_cap int := 0;
 begin
   if v_user is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
@@ -1296,6 +1298,7 @@ begin
        and s.energy_pool <> 'CREW'
        and economy.game_day(s.started_at) = v_gday;
     if v_rewardable > economy.max_daily_steps() - v_already_steps then
+      v_lost_cap := v_lost_cap + v_rewardable - greatest(economy.max_daily_steps() - v_already_steps, 0);
       v_rewardable := greatest(economy.max_daily_steps() - v_already_steps, 0);
       v_verdict := 'FLAGGED';
       v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 상한에 걸렸습니다');
@@ -1411,6 +1414,7 @@ begin
                            * economy.run_energy_factor(v_user, p_started_at);
       v_energy_left := economy.energy_left(v_user, v_gday);
       if v_rewardable * v_energy_per_step > v_energy_left then
+        v_lost_cap := v_lost_cap + v_rewardable - greatest(floor(v_energy_left / v_energy_per_step)::int, 0);
         v_rewardable := greatest(floor(v_energy_left / v_energy_per_step)::int, 0);
         v_reason := concat_ws(' · ', nullif(v_reason, ''), '에너지를 다 썼습니다');
       end if;
@@ -1586,7 +1590,11 @@ begin
   -- 표에는 이미 A 가 있으니 그 차이((B − w) / 2 − A, 0 또는 음수)만큼 더한다 — 신고와 정산 사이에 바뀐 값(수리 등)은 그대로 둔다.
   -- 무효 러닝은 닳지 않아(w = 0) 신고가 남긴 A 그대로다
   v_wear_luck := economy.luck_draw('wear_luck');
-  v_wear := case when v_pool = 'CREW' then 0 else round(economy.durability_wear_time(v_elapsed) * v_wear_luck)::int end;
+  -- 하루 걸음 상한 · 에너지 · 하루 금액 상한으로 적립에서 빠진 몫만큼은 닳지 않는다 — 적립이 없는 구간에 수리비만 늘지 않게 (0116).
+  -- 내구도가 다 닳아 빠진 몫은 그대로 닳는다(신발이 다 닳았다). 걸음 0 인 러닝은 예전처럼 켜 둔 시간만큼(0068)
+  v_wear := case when v_pool = 'CREW' then 0 else round(economy.durability_wear_time(v_elapsed) * v_wear_luck
+              * least(1, greatest(0, (1 - v_lost_cap::numeric / greatest(v_verified, 1))
+                                     * case when v_points_full > 0 then v_points / v_points_full else 1 end)))::int end;
   if v_shoe.id is not null and v_verdict <> 'VOID' then
     update public.market_sneakers s
        set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),

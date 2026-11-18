@@ -10183,6 +10183,9 @@ end $$;
 insert into auth.users (id, email, raw_user_meta_data) values
   ('89000000-0000-0000-0000-000000000001', 'shoe89@test', '{"full_name":"출발신발"}'),
   ('89000000-0000-0000-0000-000000000002', 'other89@test', '{"full_name":"남의신발"}');
+-- 피니시 세 번(지수 1,000 넘게)이 하루에 몰려도 새 계정 절반 상한(300)에 닿지 않게 — 0116 부터 상한에 걸린 몫은 신발이 닳지 않는다
+update public.profiles set created_at = now() - interval '30 days'
+ where id in ('89000000-0000-0000-0000-000000000001', '89000000-0000-0000-0000-000000000002');
 insert into fix (k, v) select 'a89', economy.draw_create('89000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
 insert into fix (k, v) select 'b89', economy.draw_create('89000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
 insert into fix (k, v) select 'x89', economy.draw_create('89000000-0000-0000-0000-000000000002', 'PAID_DRAW', 'FINISH')::text;
@@ -12341,6 +12344,45 @@ do $$ begin
 end $$;
 update public.economy_settings set value = '5000'::jsonb where key = 'ops_key_daily_units';
 select set_config('request.headers', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+--  스토어에 나가 있는 앱 판이 부르는 서버 함수 — 모두 있고, 예전 호출 그대로 된다 (2026-11-18)
+--  목록: supabase/tests/store_app_functions.txt(이름 | 인자 | 돌려주는 모양). 인자는 기본값 있는 칸만 뒤에 더할 수 있고,
+--  돌려주는 표는 칸을 뒤에 더하기만 된다(예전 앱은 모르는 칸을 읽지 않는다)
+-- ════════════════════════════════════════════════════════════════════
+reset role;
+create temp table store_fns (line text);
+\set store_fns_file :rundir '/store_app_functions.txt'
+copy store_fns from :'store_fns_file' with (format text, delimiter E'\x01');
+do $$
+declare r record; v_bad text[] := '{}'; v_ok boolean; c record; v_rest text; v_n int := 0;
+begin
+  for r in select split_part(line, '|', 1) as name, split_part(line, '|', 2) as args,
+                  substr(line, length(split_part(line, '|', 1)) + length(split_part(line, '|', 2)) + 3) as res
+             from store_fns where line not like '#%' and btrim(line) <> '' loop
+    v_n := v_n + 1;
+    v_ok := false;
+    for c in select pg_get_function_arguments(p.oid) as args, pg_get_function_result(p.oid) as res
+               from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+              where n.nspname = 'public' and p.proname = r.name loop
+      v_rest := case when c.args = r.args then ''
+                     when r.args = '' then ', ' || c.args
+                     when position(r.args || ', ' in c.args) = 1 then substr(c.args, length(r.args) + 1)
+                     else null end;
+      if v_rest is not null
+         and not exists (select 1 from regexp_split_to_table(nullif(substr(v_rest, 3), ''), ', (?=[a-z_]+ )') x where x !~ 'DEFAULT')
+         and (c.res = r.res or (r.res like 'TABLE(%' and position(left(r.res, length(r.res) - 1) || ', ' in c.res) = 1)) then
+        v_ok := true;
+      end if;
+    end loop;
+    if not v_ok then
+      v_bad := v_bad || r.name;
+    end if;
+  end loop;
+  perform pg_temp.ok(v_n >= 150 and cardinality(v_bad) = 0,
+    format('스토어 판(v1.17.1)이 부르는 서버 함수 %s개가 모두 예전 호출 그대로 된다%s', v_n,
+           case when cardinality(v_bad) > 0 then ' — 어긋남: ' || array_to_string(v_bad, ', ') else '' end));
+end $$;
 
 -- ════════════════════════════════════════════════════════════════════
 --  0116 경제 4판 — 능력치 지수 · 등급 · 레벨업 포인트 · 운 · 수리 · 상자 · 운영자
