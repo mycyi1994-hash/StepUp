@@ -98,23 +98,55 @@ class SneakerRepository(
         return outcome to sneakerDao.byId(id)?.toDomain()
     }
 
-    /** 수리 — 내구도를 가득 채운다. 치른 SUP 는 소각된다. */
-    suspend fun repairOnServer(id: Long): EconomyOutcome {
-        val api = economy ?: return EconomyOutcome.SignInRequired
-        val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
-        if (local.origin.isBlank()) return EconomyOutcome.SignInRequired
+    /** 수리 — 내구도를 가득 채운다(무료 수리가 남아 있으면 0 SUP, 0116). 치른 SUP 는 소각된다. */
+    suspend fun repairOnServer(id: Long): EconomyOutcome = repairChecked(id, points = null, expected = null).outcome
+
+    /**
+     * 수리(경제 4판, 서버 0116 sneaker_repair_v2). [points] 는 고칠 내구도(가진 만큼 수리 — 비우면 견적에 보인 만큼, 곧 가득),
+     * [expected] 는 화면이 보인 수리비 — 서버 값이 다르면 고치지 않고 새 값을 돌려준다([RepairReply.quoteChanged], 치르지 않았다).
+     * 이틀에 한 번 무료 수리가 남아 있으면 서버가 [points] 와 상관없이 한 켤레를 가득 0 SUP 로 고친다.
+     * 서버에 새 함수가 없으면(PGRST202 — 예전 서버) 예전 수리(sneaker_repair)로 보낸다 — 그때는 [expected] 를 맞대어 보지 못한다.
+     */
+    suspend fun repairChecked(id: Long, points: Int?, expected: Double?): RepairReply {
+        val api = economy ?: return RepairReply(EconomyOutcome.SignInRequired)
+        val local = sneakerDao.byId(id) ?: return RepairReply(EconomyOutcome.Rejected("없는 신발입니다"))
+        if (local.origin.isBlank()) return RepairReply(EconomyOutcome.SignInRequired)
         // 견적에 보인 만큼만 고친다(최대 − 남은 내구도, 서버 p_points) — 견적과 실행 사이에 러닝이 올라가 더 닳았어도 보인 값보다
         // 많이 치르지 않는다. 최대 내구도를 보내지 않는 예전 서버(0)는 예전처럼 가득(null)
-        val points = if (local.durabilityMax > 0) {
-            local.durabilityMax - local.durabilityNow.coerceIn(0, local.durabilityMax)
-        } else {
-            null
+        val full = if (local.durabilityMax > 0) local.durabilityMax - local.durabilityNow.coerceIn(0, local.durabilityMax) else null
+        val send = when {
+            full == null -> null
+            points == null -> full
+            // 가진 만큼 수리 — 가득보다 많이 보내지 않는다
+            else -> points.coerceIn(0, full)
         }
-        return afterWrite(
-            payOnce(repairAction(local)) { key ->
-                api.repair(local.serverId.takeIf { it != 0L } ?: id, points = points, request = key).toEconomyOutcome()
-            },
-            afterRejection = true,
+        val serverId = local.serverId.takeIf { it != 0L } ?: id
+        var reply: com.stepup.android.domain.RepairV2Result? = null
+        val outcome = payOnce(repairAction(local, send.takeIf { it != full }, expected)) { key ->
+            val v2 = api.repairV2(serverId, points = send, request = key, expected = expected)
+            if (v2 is com.stepup.android.data.remote.ServerResult.Rejected &&
+                ("Could not find the function" in v2.reason || "PGRST202" in v2.reason)
+            ) {
+                api.repair(serverId, points = send, request = key).toEconomyOutcome()
+            } else when (v2) {
+                is com.stepup.android.data.remote.ServerResult.Ok -> {
+                    reply = v2.value
+                    when {
+                        v2.value.ok -> EconomyOutcome.Ok
+                        v2.value.code == QUOTE_CHANGED -> EconomyOutcome.Rejected(QUOTE_CHANGED)
+                        else -> EconomyOutcome.Rejected(v2.value.code.orEmpty())
+                    }
+                }
+                else -> v2.toEconomyOutcome()
+            }
+        }
+        // 바뀐 값(QUOTE_CHANGED)이면 서버 값을 다시 받는다 — 신발 목록의 수리 단가 · 무료 여부가 새 값이 되어 다시 확인받을 수 있다
+        val after = afterWrite(outcome, afterRejection = true)
+        val got = reply
+        return RepairReply(
+            outcome = after,
+            quoteChanged = got?.takeIf { !it.ok && it.code == QUOTE_CHANGED },
+            result = got?.takeIf { it.ok },
         )
     }
 
@@ -263,5 +295,20 @@ class SneakerRepository(
  * 옛 영수증을 받아, 고치지도 치르지도 않은 채 "됐어요"로 보이고 결과 확인에 머물렀다. 남은 비율은 최대 내구도를 보내지 않는
  * 예전 서버(남은 · 최대가 0)에서도 나뉘게 한다.
  */
-internal fun repairAction(shoe: SneakerEntity): String =
-    "REPAIR:${shoe.id}:${shoe.durabilityNow}/${shoe.durabilityMax}/${shoe.durabilityPts}"
+internal fun repairAction(shoe: SneakerEntity, points: Int? = null, expected: Double? = null): String =
+    "REPAIR:${shoe.id}:${shoe.durabilityNow}/${shoe.durabilityMax}/${shoe.durabilityPts}" +
+        // 가진 만큼 수리 · 확인한 금액이 다르면 다른 요청이다 — 응답을 잃은 부분 수리 뒤 가득 수리를 보내면 옛 영수증을 받지 않게
+        (points?.let { ":p$it" } ?: "") + (expected?.let { ":e$it" } ?: "")
+
+/** 서버가 보인 값과 실제 수리비가 달라 고치지 않았다(0116 sneaker_repair_v2) */
+const val QUOTE_CHANGED = "QUOTE_CHANGED"
+
+/**
+ * 수리 한 번의 대답 — [outcome] 은 지금까지의 결말(성공 · 거절 · 연결 끊김 …). [quoteChanged] 면 서버 수리비가 보인 값과 달라
+ * 고치지도 치르지도 않았다(새 값 · 무료 여부 · 고칠 양). [result] 는 서버가 고친 결과(새 서버만 — 예전 서버 · 같은 요청의 다시 받기는 일부만).
+ */
+data class RepairReply(
+    val outcome: EconomyOutcome,
+    val quoteChanged: com.stepup.android.domain.RepairV2Result? = null,
+    val result: com.stepup.android.domain.RepairV2Result? = null,
+)

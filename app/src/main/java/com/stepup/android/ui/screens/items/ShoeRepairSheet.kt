@@ -21,7 +21,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import com.stepup.android.R
+import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.ui.components.RunButton
 import com.stepup.android.ui.components.RunButtonKind
@@ -35,8 +37,12 @@ import com.stepup.android.ui.components.runTone
 /** 시트 고유 이름 — 테스트 · 캡처가 지금 어느 장면인지 본다 */
 fun RepairPhase.sceneTag(): String = "repair-" + when (this) {
     RepairPhase.Loading -> "loading"
-    is RepairPhase.Confirm -> if (changed) "changed" else "confirm"
-    is RepairPhase.Insufficient -> "insufficient"
+    is RepairPhase.Confirm -> when {
+        changed -> "changed"
+        quote.free -> "free"
+        else -> "confirm"
+    }
+    is RepairPhase.Insufficient -> if (partial != null) "partial" else "insufficient"
     is RepairPhase.NotNeeded -> "not-needed"
     is RepairPhase.Blocked -> "blocked"
     RepairPhase.LoadFailed -> "load-failed"
@@ -74,15 +80,46 @@ fun ShoeRepairSheet(
     onClose: () -> Unit,
     /** 아직 올라가지 않은 러닝이 있다 — 금액 아래 한 줄로 알린다(수리는 그대로 할 수 있다) */
     unsentRuns: Boolean = ShoeCareStore.shared.unsentRuns.collectAsState().value,
+    /** 무료 수리 규칙(경제 4판 — 몇 시간에 한 번 · 다음 무료 수리 시각) */
+    rules: ShoeRules = rememberShoeRules(),
 ) {
     RunSheet(onDismiss = onClose, modifier = Modifier.testTag("repair-sheet"), closeTag = "repair-close") {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag(phase.sceneTag()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            RepairBody(shoe, phase, onConfirm, onRecheck, onReload, onSignIn, onClose, unsentRuns)
+            RepairBody(shoe, phase, onConfirm, onRecheck, onReload, onSignIn, onClose, unsentRuns, rules)
         }
     }
+}
+
+/** 무료 수리 한 줄 — 남았으면 "무료 수리 1회 남음", 아니면 "다음 무료 수리 N시간 뒤"(모르면 없음) */
+@Composable
+private fun FreeRepairLine(free: Boolean, rules: ShoeRules) {
+    val t = runTone()
+    if (free) {
+        val hours = rules.freeRepairHours.roundToInt()
+        Column(Modifier.fillMaxWidth().testTag("repair-free-left").semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+            verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.v4s_repair_free_left), style = runTextStyle(16.sp, t.cyan, FontWeight.Bold))
+            if (hours > 0) {
+                Text(stringResource(R.string.v4s_repair_free_body, hours), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            }
+        }
+        return
+    }
+    val left = freeRepairHoursLeft(rules.freeRepairNextMs, System.currentTimeMillis()) ?: return
+    Text(stringResource(R.string.v4s_repair_free_next, left), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
+        modifier = Modifier.testTag("repair-free-next"))
+}
+
+/** "수리비는 신발의 효율만큼 — 걸어서 버는 돈의 약 45%" */
+@Composable
+private fun RepairCostNote(rules: ShoeRules) {
+    val share = (rules.repairShare * 100).roundToInt()
+    if (share <= 0) return
+    Text(stringResource(R.string.v4s_repair_cost_note, share), style = runTextStyle(13.sp, runTone().label, FontWeight.Medium),
+        modifier = Modifier.testTag("repair-cost-note"))
 }
 
 @Composable
@@ -95,6 +132,7 @@ private fun ColumnScope.RepairBody(
     onSignIn: (() -> Unit)?,
     onClose: () -> Unit,
     unsentRuns: Boolean,
+    rules: ShoeRules,
 ) {
     val t = runTone()
     // 금액을 보이는 장면의 한 줄 — 서버가 그 러닝을 받으면 닳은 만큼 금액이 바뀐다. 금액은 지금 서버 값 그대로 둔다
@@ -109,10 +147,12 @@ private fun ColumnScope.RepairBody(
     // 마지막으로 확인한 남은 · 최대 내구도(1 = 10m) — 견적이 없는 장면(읽는 중 · 실패 · 가득 · 완료)에 보인다
     val lastNow = durabilityLeft(shoe)
     val lastMax = durabilityMax(shoe)
+    // 최대 내구도를 아는 신발은 달릴 수 있는 분으로 보인다(경제 4판)
+    val minutes = shoe.server?.hasDurabilityMax == true
     when (phase) {
         RepairPhase.Loading -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(lastNow, lastMax, if (lastNow < lastMax) lastMax else null)
+            RepairDurabilityRow(lastNow, lastMax, if (lastNow < lastMax) lastMax else null, minutes = minutes)
             Text(stringResource(R.string.care_repair_loading), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             RunDivider()
@@ -126,14 +166,18 @@ private fun ColumnScope.RepairBody(
                 Text(stringResource(R.string.care_repair_changed), style = runTextStyle(14.sp, t.cyan, FontWeight.SemiBold),
                     modifier = Modifier.testTag("repair-changed").semantics { liveRegion = LiveRegionMode.Polite })
             }
-            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
+            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.targetNow, minutes = phase.quote.absolute)
             Text(stringResource(R.string.care_repair_full), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            FreeRepairLine(phase.quote.free, rules)
             unsentNote()
             RunDivider()
             CareAmountLine(stringResource(R.string.care_balance), sup(phase.balance), "repair-balance")
             CareAmountLine(stringResource(R.string.care_after_repair), sup(balanceAfter(phase.balance, phase.quote.cost)), "repair-after")
+            if (!phase.quote.free) RepairCostNote(rules)
             RunButton(
-                stringResource(R.string.care_repair_action, formatSupExact(phase.quote.cost)), onConfirm,
+                if (phase.quote.free) stringResource(R.string.v4s_repair_free_action)
+                else stringResource(R.string.care_repair_action, formatSupExact(phase.quote.cost)),
+                onConfirm,
                 modifier = Modifier.testTag("repair-confirm"),
             )
             if (phase.changed) {
@@ -143,8 +187,15 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.Insufficient -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
+            if (phase.changed) {
+                Text(stringResource(R.string.care_repair_changed), style = runTextStyle(14.sp, t.cyan, FontWeight.SemiBold),
+                    modifier = Modifier.testTag("repair-changed").semantics { liveRegion = LiveRegionMode.Polite })
+            }
+            val partial = phase.partial
+            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, (partial ?: phase.quote).targetNow,
+                minutes = phase.quote.absolute)
             Text(stringResource(R.string.care_repair_full), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+            FreeRepairLine(false, rules)
             unsentNote()
             RunDivider()
             CareAmountLine(stringResource(R.string.care_balance), sup(phase.balance), "repair-balance")
@@ -152,16 +203,29 @@ private fun ColumnScope.RepairBody(
                 stringResource(R.string.care_short, formatSupExact(repairShortfall(phase.quote, phase.balance))),
                 style = runTextStyle(15.sp, t.dangerText, FontWeight.Bold), modifier = Modifier.testTag("repair-short"),
             )
-            RunButton(
-                stringResource(R.string.care_repair_action, formatSupExact(phase.quote.cost)), {}, enabled = false,
-                modifier = Modifier.testTag("repair-confirm"),
-            )
+            if (partial != null) {
+                // 막다른 길 대신 — 가진 SUP 만큼만 고친다(가득은 SUP 를 모은 뒤에)
+                Text(
+                    stringResource(R.string.v4s_repair_partial_body, formatMinutes(partial.points.toInt())),
+                    style = runTextStyle(14.sp, t.text, FontWeight.SemiBold), modifier = Modifier.testTag("repair-partial-note"),
+                )
+                RepairCostNote(rules)
+                RunButton(
+                    stringResource(R.string.v4s_repair_partial_action, formatSupExact(partial.cost)), onConfirm,
+                    modifier = Modifier.testTag("repair-confirm"),
+                )
+            } else {
+                RunButton(
+                    stringResource(R.string.care_repair_action, formatSupExact(phase.quote.cost)), {}, enabled = false,
+                    modifier = Modifier.testTag("repair-confirm"),
+                )
+            }
             RunButton(stringResource(R.string.common_close), onClose, kind = RunButtonKind.Secondary,
                 modifier = Modifier.testTag("repair-dismiss"))
         }
         is RepairPhase.NotNeeded -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(lastNow, lastMax, null)
+            RepairDurabilityRow(lastNow, lastMax, null, minutes = minutes)
             Spacer(Modifier.height(4.dp))
             RunSheetText(stringResource(R.string.care_repair_not_needed_title), body = null,
                 note = stringResource(R.string.care_repair_not_needed_body))
@@ -177,7 +241,7 @@ private fun ColumnScope.RepairBody(
         RepairPhase.LoadFailed -> {
             RunSheetText(stringResource(R.string.care_repair_load_failed_title), body = subtitle,
                 note = stringResource(R.string.care_repair_load_failed_body))
-            RepairDurabilityRow(lastNow, lastMax, null)
+            RepairDurabilityRow(lastNow, lastMax, null, minutes = minutes)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 RunButton(stringResource(R.string.common_close), onClose, kind = RunButtonKind.Secondary,
                     modifier = Modifier.weight(1f).testTag("repair-dismiss"))
@@ -196,7 +260,7 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.Sending -> {
             CareSheetTitle(title, subtitle)
-            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.durabilityMax)
+            RepairDurabilityRow(phase.quote.durabilityNow, phase.quote.durabilityMax, phase.quote.targetNow, minutes = phase.quote.absolute)
             Text(stringResource(R.string.care_repair_sending_note), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             RunDivider()
@@ -219,7 +283,7 @@ private fun ColumnScope.RepairBody(
             if (observed != null) {
                 Text(
                     if (observed >= 100.0) stringResource(R.string.care_repair_observed_full)
-                    else stringResource(R.string.care_repair_observed_short, formatDurability(shoe)),
+                    else stringResource(R.string.care_repair_observed_short, durabilityText(shoe)),
                     style = runTextStyle(14.sp, t.text, FontWeight.Medium),
                     modifier = Modifier.testTag("repair-observed").semantics { liveRegion = LiveRegionMode.Polite },
                 )
@@ -233,9 +297,18 @@ private fun ColumnScope.RepairBody(
         }
         is RepairPhase.Done -> {
             CareSheetTitle(stringResource(R.string.care_repair_done_title), subtitle)
-            RepairDurabilityRow(lastNow, lastMax, null)
-            Text(stringResource(R.string.care_repair_done_body), style = runTextStyle(16.sp, t.text, FontWeight.SemiBold),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            RepairDurabilityRow(lastNow, lastMax, null, minutes = minutes)
+            Text(
+                stringResource(
+                    when {
+                        phase.quote.partial -> R.string.v4s_repair_partial_done
+                        phase.quote.free -> R.string.v4s_repair_free_done
+                        else -> R.string.care_repair_done_body
+                    },
+                ),
+                style = runTextStyle(16.sp, t.text, FontWeight.SemiBold),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
             RunDivider()
             CareAmountLine(stringResource(R.string.care_repair_cost), formatSupExact(phase.quote.cost) + " SUP", "repair-spent")
             CareAmountLine(stringResource(R.string.care_balance_left), sup(phase.balance), "repair-left")

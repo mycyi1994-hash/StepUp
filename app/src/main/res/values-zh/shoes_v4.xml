@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 经济第4版（2026-11-18）— 鞋子属性指数・分钟・星级・类型、属性点预览、免费・按现有SUP修理、强化所得 -->
+<resources>
+    <string name="v4s_unit_min">分钟</string>
+    <string name="v4s_unit_min_suffix">分钟</string>
+    <string name="v4s_minutes">%1$s分钟</string>
+    <string name="v4s_full_minutes">满耐久可跑%1$d分钟</string>
+    <string name="v4s_type_efficiency">效率型</string>
+    <string name="v4s_type_comfort">节能型</string>
+    <string name="v4s_type_endurance">耐力型</string>
+    <string name="v4s_type_balanced">均衡型</string>
+    <string name="v4s_quality_cd">%1$d星，%2$s</string>
+
+    <string name="v4s_basis_intro">效率和舒适度以100为基准。数字翻倍，效果也翻倍。</string>
+    <string name="v4s_basis_efficiency">效率：同样步数赚取的SUP。效率200赚的是效率100的2倍。进度条终点是该等级抽到的最佳新鞋。</string>
+    <string name="v4s_basis_comfort">舒适度：每1点能量计入的步数。进度条终点是该等级抽到的最佳新鞋，可用属性点提升到节省%1$d%%能量。</string>
+    <string name="v4s_basis_durability">耐久度：穿这双鞋可获得奖励的跑步时间（分钟）。进度条终点为满耐久。跑步时会减少，每次减少的量略有不同。</string>
+    <string name="v4s_basis_quality">星级（★～★★★）表示数值在该等级中抽得有多好。类型是抽得最好的属性。</string>
+    <string name="v4s_basis_note">实际获得的SUP在跑步结束后确定。</string>
+
+    <string name="v4s_points_hint">1点 = 抽到数值的+%1$s%%</string>
+    <string name="v4s_points_hint_comfort">1点 = 抽到数值的+%1$s%% · 最多节省%2$d%%能量</string>
+    <string name="v4s_points_per_level">每级%1$d点 · 每5级再加%2$d点</string>
+    <string name="v4s_points_manage_done">已全部分配 · 每升一级获得%1$d点</string>
+
+    <string name="v4s_repair_free_left">剩余1次免费修理</string>
+    <string name="v4s_repair_free_body">每%1$d小时可免费将一双鞋修满。</string>
+    <string name="v4s_repair_free_next">%1$d小时后可再次免费修理</string>
+    <string name="v4s_repair_free_action">免费修理</string>
+    <string name="v4s_repair_free_done">已用免费修理恢复全部耐久度。</string>
+    <string name="v4s_repair_cost_note">修理费与鞋子的效率成正比——约为穿这双鞋步行所赚SUP的%1$d%%。</string>
+    <string name="v4s_repair_partial_body">你的SUP可修理%1$s分钟。</string>
+    <string name="v4s_repair_partial_action">按现有SUP修理 · %1$s SUP</string>
+    <string name="v4s_repair_partial_done">已按现有SUP修理。其余部分可在攒够SUP后修理。</string>
+
+    <string name="v4s_upg_materials_rule">3双低一个等级及以上、耐久度%1$d%%以上的鞋子</string>
+    <string name="v4s_upg_gain_energy">每日能量 +%1$d（为你拥有的最高等级鞋子时）</string>
+    <string name="v4s_upg_gain_milestone">Lv. %1$d — 耐久度回满 · 高级箱子1个（账号首次达到该等级时）</string>
+    <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 耐久度回满（该等级的高级箱子已领取）</string>
+    <string name="v4s_upg_repair_note">提升效率后，修理费也会按效率同比上涨。</string>
+    <string name="v4s_upg_got_milestone">耐久度已回满。如果是首次达到该等级，1个高级箱子会加入抽取次数。</string>
+    <string name="v4s_upg_block_worn" formatted="false">只有耐久度50%以上的鞋子才能作为材料</string>
+</resources>

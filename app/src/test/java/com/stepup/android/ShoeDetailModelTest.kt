@@ -281,13 +281,20 @@ class ShoeDetailModelTest {
         // 레벨 상한은 서버의 양수 상한(여기서는 10)
         assertEquals("5 / 10", rows[0].value)
         assertEquals(0.5f, rows[0].fraction, 0.0001f)
-        assertEquals("+8.0%", rows[1].value)
-        assertEquals((8.0 / 55.0).toFloat(), rows[1].fraction, 0.0001f)
-        assertEquals(formatPercent(energySavingPercent(shoe)), rows[2].value)
-        assertEquals((energySavingPercent(shoe) / 20.0).toFloat(), rows[2].fraction, 0.0001f)
-        // 서버 내구도는 내려서 — 92.6 은 92
+        // 효율 · 착화감은 지수(경제 4판) — 일반 등급의 꼭대기(180 · 180)가 막대 끝
+        assertEquals("108", rows[1].value)
+        assertEquals((108.0 / 180.0).toFloat(), rows[1].fraction, 0.0001f)
+        assertEquals("106", rows[2].value)
+        assertEquals((100.0 / (1 - 0.058) / (100.0 / (1 - 0.4444))).toFloat(), rows[2].fraction, 0.0001f)
+        // 최대 내구도를 모르는 서버 내구도는 내려서 — 92.6 은 92(분으로 바꾸지 않는다)
         assertEquals("92 / 100", rows[3].value)
         assertEquals(0.92f, rows[3].fraction, 0.0001f)
+        assertEquals(com.stepup.android.ui.screens.customize.StatUnit.NONE, rows[3].unit)
+        // 최대 내구도를 아는 신발은 분 — 남은 590 / 1,230 → 118 / 246분
+        val absolute = shoe.copy(server = shoe.server!!.copy(durabilityNow = 590, durabilityMax = 1_230, durabilityBase = 1_230))
+        assertEquals("118 / 246", detailStatRows(absolute)[3].value)
+        assertEquals("246", detailStatRows(absolute)[3].end)
+        assertEquals(com.stepup.android.ui.screens.customize.StatUnit.MINUTES, detailStatRows(absolute)[3].unit)
     }
 
     @Test
@@ -297,8 +304,8 @@ class ShoeDetailModelTest {
         assertEquals(5f / 20f, detailStatRows(rare)[0].fraction, 0.0001f)
         assertEquals("30 / 30", detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].value)
         assertEquals(1f, detailStatRows(legacy(rarity = Rarity.FINISH, level = 30))[0].fraction, 0f)
-        // 상한을 넘는 값 · 음수 내구도는 막대 끝 · 0 에서 멈춘다
-        assertEquals(1f, detailStatRows(server(efficiencyBps = 6_000))[1].fraction, 0f)
+        // 상한을 넘는 값 · 음수 내구도는 막대 끝 · 0 에서 멈춘다(일반 효율 꼭대기 180 = +8,000bps)
+        assertEquals(1f, detailStatRows(server(efficiencyBps = 9_000))[1].fraction, 0f)
         assertEquals(0f, detailStatRows(server(durability = -3.0))[3].fraction, 0f)
     }
 

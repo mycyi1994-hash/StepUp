@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -207,7 +208,8 @@ fun SneakerDetailScreen(
     val pointsActions = PointsActions(
         onOpen = {
             val shoe = (state as? ShoeDetailState.Ready)?.shoe
-            val basis = shoe?.let(::pointsBasisOf)
+            // 포인트 1 의 폭 · 착화감 상한은 서버 규칙(경제 4판)
+            val basis = shoe?.let { pointsBasisOf(it, com.stepup.android.data.repo.shoeRulesNow()) }
             if (basis != null && !care.busy) pointsPhase = startPoints(basis)
         },
         onAdd = { stat -> pointsPhase = pointsPhase?.add(stat) },
@@ -510,6 +512,16 @@ private fun DetailBody(
             ),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
         )
+        // 뽑힌 값의 별 · 유형(경제 4판 — 같은 등급 안에서 얼마나 잘 뽑혔는가). 뽑은 값을 모르는 신발에는 없다
+        val quality = shoeQualityOf(shoe, rememberShoeRules())
+        if (quality != null) {
+            val qualityCd = qualityDescription(quality)
+            Text(
+                qualityLabel(quality), style = runTextStyle(15.sp, t.cyan, FontWeight.SemiBold),
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp)
+                    .semantics { contentDescription = qualityCd }.testTag("shoe-quality"),
+            )
+        }
         // 신고 있는 신발의 주 버튼이 수리하기가 되면 "지금 신고 있어요"는 여기 한 줄로(배지 아닌 보조 글자)
         if (repairInPrimary(shoe, care)) {
             Text(
@@ -582,7 +594,7 @@ private fun CareActions(shoe: Sneaker, busy: Boolean, onPoints: () -> Unit, onSe
                         !available -> careBlockText(if (shoe.server?.status != "OWNED") CareBlock.LISTED else CareBlock.ON_CHAIN)
                         entry is PointsEntry.Free -> stringResource(R.string.points_manage_free, entry.free)
                         entry == PointsEntry.Respec -> stringResource(R.string.points_manage_respec)
-                        else -> stringResource(R.string.points_manage_done)
+                        else -> stringResource(R.string.v4s_points_manage_done, rememberShoeRules().grade(shoe.rarity).pointsPerLevel)
                     },
                     enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
                     onClick = onPoints, tag = "shoe-care-points",
@@ -797,7 +809,7 @@ private fun ManageSheet(
             CareMenuRow(
                 title = stringResource(R.string.care_repair),
                 description = if (busy) stringResource(R.string.care_busy_note)
-                else stringResource(R.string.care_durability_now, formatDurability(shoe)),
+                else stringResource(R.string.care_durability_now, durabilityText(shoe)),
                 enabled = !busy,
                 onClick = onRepair,
                 tag = "shoe-manage-repair",
@@ -822,7 +834,7 @@ private fun ManageSheet(
                         )
                         entry is PointsEntry.Free -> stringResource(R.string.points_manage_free, entry.free)
                         entry == PointsEntry.Respec -> stringResource(R.string.points_manage_respec)
-                        else -> stringResource(R.string.points_manage_done)
+                        else -> stringResource(R.string.v4s_points_manage_done, rememberShoeRules().grade(shoe.rarity).pointsPerLevel)
                     },
                     enabled = !busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
                     onClick = onPoints,

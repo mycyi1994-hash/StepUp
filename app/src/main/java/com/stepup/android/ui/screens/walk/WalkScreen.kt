@@ -284,6 +284,8 @@ fun RunScreen(
             crewEmptyFrom = null
         }
     }
+    // 걸음당 SUP 는 서버 규칙(경제 4판 0116 — 운영자가 바꿀 수 있다). 신발의 효율 지수 ÷ 100 이 배율이다
+    val shoeRules = com.stepup.android.ui.screens.items.rememberShoeRules()
     val estimate = if (crewPoolRun) {
         RewardEconomy.sessionReward(
             walkedSteps = ((crewEmptyFrom ?: session.steps) - crewExcluded).coerceAtLeast(0),
@@ -292,6 +294,7 @@ fun RunScreen(
             earningMultiplier = crewShoeMultiplier,
             partyMultiplier = 1.0 + crewBonusPct + crewLevelPct,
             boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0,
+            pointsPerStep = shoeRules.pointsPerStep,
         )
     } else {
         RewardEconomy.sessionReward(
@@ -302,6 +305,7 @@ fun RunScreen(
             // 크루 방에서 크루 러닝이 아니면(오늘 이미 했다) 인원 보너스도 없다
             partyMultiplier = if (crewRunGroup) 1.0 else RewardEconomy.partyMultiplier(session.partySize),
             boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0,
+            pointsPerStep = shoeRules.pointsPerStep,
         )
     }
     val earnableSteps = if (crewPoolRun) {

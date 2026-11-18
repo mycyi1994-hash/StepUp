@@ -8,6 +8,7 @@ import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.screens.customize.BarStat
 import com.stepup.android.ui.screens.customize.StatScale
+import com.stepup.android.ui.screens.customize.StatUnit
 import com.stepup.android.ui.screens.customize.TierCount
 import com.stepup.android.ui.screens.customize.activeFilter
 import com.stepup.android.ui.screens.customize.barFraction
@@ -44,43 +45,51 @@ class MyShoesModelTest {
         for (r in Rarity.entries) assertEquals(r, shoe(rarity = r).tier.rarity)
     }
 
-    // ── 막대 ─────────────────────────────────────────────────────
+    // ── 막대 (경제 4판, 서버 0116 — 효율 · 착화감은 지수, 내구도는 분) ──────────────
 
     @Test
-    fun `막대 끝은 서버의 최대 · 상한 — 효율 55퍼센트 · 에너지 절감 20퍼센트, 내구도는 그 신발의 최대 내구도`() {
-        // 피니시 새 신발 최고 효율 5,500bps(서버 0066)
-        assertEquals(55.0, StatScale.EFFICIENCY_MAX_PERCENT, 0.0)
-        assertEquals(20.0, StatScale.ENERGY_MAX_PERCENT, 0.0)
-        val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 95.93, now = 1_180, max = 1_230))
-        assertEquals(listOf("55.0%", "20.0%", "1,230"), bars.map { it.end })
-        assertEquals("1,180 / 1,230", bars[2].value)
+    fun `막대 끝은 그 등급에서 가장 잘 뽑힌 새 신발 — 레어 효율 270 · 착화감 193, 내구도는 그 신발의 최대(분)`() {
+        assertEquals(100.0, StatScale.INDEX_BASE, 0.0)
+        // 레어 가운데 효율 210(+11,000bps) · 착화감 절약 3,000bps(지수 142.9) · 남은 1,180 / 1,230 → 236 / 246분
+        val bars = statBars(server(efficiencyBps = 11_000, comfortBps = 3_000, durability = 95.93, now = 1_180, max = 1_230))
+        assertEquals(listOf("270", "193", "246"), bars.map { it.end })
+        assertEquals(listOf("210", "143", "236 / 246"), bars.map { it.value })
+        assertEquals(listOf(StatUnit.NONE, StatUnit.NONE, StatUnit.MINUTES), bars.map { it.unit })
+        assertEquals(210f / 270f, bars[0].fraction, 0.0001f)
         assertEquals(1_180f / 1_230f, bars[2].fraction, 0.0001f)
-        // 최대 내구도를 모르는 예전 서버 · 폰에만 있던 신발은 100 기준
+        // 최대 내구도를 모르는 예전 서버 · 폰에만 있던 신발은 100 기준 그대로(분으로 바꾸지 않는다)
         assertEquals("100", statBars(shoe())[2].end)
+        assertEquals(StatUnit.NONE, statBars(shoe())[2].unit)
     }
 
     @Test
-    fun `막대 길이는 실제 값 나누기 막대 끝 — 4_8퍼센트를 48퍼센트 길이로 늘이지 않는다`() {
-        val bars = statBars(server(efficiencyBps = 480, comfortBps = 750, durability = 92.6))
-        assertEquals(listOf(BarStat.EFFICIENCY, BarStat.COMFORT, BarStat.DURABILITY), bars.map { it.stat })
-        assertEquals(listOf("+4.8%", "7.5%", "92 / 100"), bars.map { it.value })
-        assertEquals(4.8f / 55f, bars[0].fraction, 0.0001f)
-        assertEquals(7.5f / 20f, bars[1].fraction, 0.0001f)
-        assertEquals(0.92f, bars[2].fraction, 0.0001f)
+    fun `막대 길이는 실제 지수 나누기 막대 끝 — 같은 등급에서 못 뽑힌 신발은 짧다`() {
+        // 일반 바닥(효율 100 · 착화감 100)과 꼭대기(180 · 180)
+        val low = statBars(server(efficiencyBps = 0, comfortBps = 0, durability = 100.0, rarity = Rarity.COMMON))
+        val top = statBars(server(efficiencyBps = 8_000, comfortBps = 4_444, durability = 100.0, rarity = Rarity.COMMON))
+        assertEquals(listOf(BarStat.EFFICIENCY, BarStat.COMFORT, BarStat.DURABILITY), low.map { it.stat })
+        assertEquals("100" to "180", low[0].value to low[0].end)
+        assertEquals(100f / 180f, low[0].fraction, 0.0001f)
+        assertEquals(1f, top[0].fraction, 0.0001f)
+        assertEquals("180", top[1].value)
+        assertEquals(1f, top[1].fraction, 0.001f)
     }
 
     @Test
-    fun `막대는 0 에서 1 사이로 자른다`() {
+    fun `막대는 0 에서 1 사이로 자른다 — 포인트로 꼭대기를 넘으면 가득`() {
         assertEquals(0f, barFraction(-3.0, 55.0), 0f)
         assertEquals(1f, barFraction(60.0, 55.0), 0f)
         assertEquals(0f, barFraction(5.0, 0.0), 0f)
         assertEquals(0f, barFraction(Double.NaN, 20.0), 0f)
-        // 서버 상한을 넘는 값(있을 수 없지만)도 막대를 넘치지 않는다
-        assertEquals(1f, statBars(server(efficiencyBps = 3_000, comfortBps = 2_500, durability = 100.0))[1].fraction, 0f)
+        // 레어 효율 꼭대기 270 을 넘은 신발(포인트) · 착화감 상한 70% 절약(지수 333)
+        val maxed = statBars(server(efficiencyBps = 30_000, comfortBps = 7_000, durability = 100.0))
+        assertEquals(1f, maxed[0].fraction, 0f)
+        assertEquals("333", maxed[1].value)
+        assertEquals(1f, maxed[1].fraction, 0f)
     }
 
     @Test
-    fun `예전 신발도 같은 기준 — 행운 줄을 만들지 않는다`() {
+    fun `예전 신발도 같은 계산 — 행운 줄을 만들지 않는다`() {
         val bars = statBars(shoe(rarity = Rarity.RARE, level = 3, comfort = 1.2, durability = 80))
         assertEquals(3, bars.size)
         assertEquals("80 / 100", bars[2].value)
@@ -169,8 +178,8 @@ class MyShoesModelTest {
         luck = 1.0, comfort = comfort, durability = durability, equipped = worn, acquiredAt = acquired, modelId = model,
     )
 
-    private fun server(efficiencyBps: Int, comfortBps: Int, durability: Double, now: Int = 0, max: Int = 0) =
-        shoe(model = 1107, rarity = Rarity.RARE).copy(
+    private fun server(efficiencyBps: Int, comfortBps: Int, durability: Double, now: Int = 0, max: Int = 0, rarity: Rarity = Rarity.RARE) =
+        shoe(model = 1107, rarity = rarity).copy(
             server = ServerStats(
                 origin = "DRAW", efficiencyBps = efficiencyBps, comfortBps = comfortBps, durabilityPts = durability,
                 maxLevel = 15, status = "OWNED", chainState = "APP", canWithdraw = false, upgradeCost = 0.0,
