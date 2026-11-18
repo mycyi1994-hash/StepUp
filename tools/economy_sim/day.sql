@@ -37,7 +37,7 @@ begin
         update public.market_sneakers set equipped = false where owner_id = v_user;
         insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin,
             efficiency_bps, comfort_bps, equipped, dur_base, pts_eff)
-        values (v_user, 'NONE', v_rar, 0, v_lvl, 100, 'FREE_DRAW', (v_elo+v_ehi)/2, least((v_clo+v_chi)/2, 2000), true,
+        values (v_user, 'NONE', v_rar, 0, v_lvl, 100, 'FREE_DRAW', (v_elo+v_ehi)/2, least((v_clo+v_chi)/2, economy.comfort_cap_bps()), true,
             (v_lo+v_hi)/2, economy.points_total_of('FREE_DRAW', v_rar, v_lvl))
         returning id into v_shoe;
         perform set_config('request.jwt.claim.sub', v_user::text, false);
