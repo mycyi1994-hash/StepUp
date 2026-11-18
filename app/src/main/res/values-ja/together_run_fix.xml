@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 함께 뛰기 점검 수정(2026-11-18) — 달리는 중 · 결과: 마지막 한 사람 알림 · 마치기 안내 -->
+<resources>
+    <string name="notification_channel_crew_run_alert">クルーランのお知らせ</string>
+    <string name="crew_alone_notif_title">一緒に走っていた全員がランを終えました</string>
+    <string name="crew_alone_notif_body">%1$d秒後に自分のクルーランも終わります。そこまでの記録は保存されます。</string>
+    <string name="crew_alone_ended_title">クルーランが終わりました</string>
+    <string name="crew_alone_ended_body">一緒に走っていた全員が終えたため、自分のクルーランも終わりました。記録は保存されました。</string>
+    <string name="crew_alone_band">一緒に走っていた全員が終えました · %1$d秒後に自分のクルーランも終わります</string>
+    <string name="run_crew_end_last_note">いま残っているのはあと1人だけです。あなたが終えると、その人のクルーランも約1分後に終わります。</string>
+    <string name="run_crew_closed_band_last">主催者が一緒のランを終えました</string>
+</resources>

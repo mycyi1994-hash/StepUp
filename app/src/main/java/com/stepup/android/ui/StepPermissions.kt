@@ -33,6 +33,15 @@ object StepPermissions {
         return needed.toTypedArray()
     }
 
+    /**
+     * 함께 뛰기 출발 순간에 꼭 있어야 하는 권한 — 걸음 · 위치. 알림 권한은 뺀다: 출발 순간에 권한 창이 뜨면 답할 때까지 러닝이
+     * 늦게 켜진다(2026-11-18 점검 — 알림은 대기실에서 준비할 때 묻는다).
+     */
+    fun missingForStart(context: Context): Array<String> = startPermissions(Build.VERSION.SDK_INT) { granted(context, it) }
+
+    internal fun startPermissions(api: Int, granted: (String) -> Boolean): Array<String> =
+        requiredPermissions(api, granted).filter { it != Manifest.permission.POST_NOTIFICATIONS }.toTypedArray()
+
     fun missingActivity(context: Context): Array<String> =
         if (hasActivityRecognition(context)) emptyArray() else arrayOf(Manifest.permission.ACTIVITY_RECOGNITION)
 

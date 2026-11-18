@@ -497,6 +497,8 @@ internal fun crewProblemText(problem: CrewProblem): String = stringResource(
         CrewProblem.CREW_LIMIT -> R.string.crew_problem_limit
         CrewProblem.CREW_MISSING -> R.string.crew_missing_body
         CrewProblem.NOT_OWNER -> R.string.crew_problem_not_owner
+        // 해산이 막혔다 — 달리는 중인 크루 러닝이 끝난 뒤에(서버 0117)
+        CrewProblem.CREW_RUNNING -> R.string.tlf_crew_running
         else -> R.string.crew_action_failed
     },
 )

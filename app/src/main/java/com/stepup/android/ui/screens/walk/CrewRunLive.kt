@@ -110,6 +110,20 @@ internal fun crewEnd(party: PartyState, link: CrewLink): CrewEnd = when {
     else -> CrewEnd.Member
 }
 
+/**
+ * 마칠까요 시트의 안내 한 줄 — 끝나지 않은 사람이 나와 한 사람뿐이면([endsOther]) "내가 마치면 그 사람의 크루 러닝도 끝나요",
+ * 아니면 역할대로(진행자: 각자 휴대폰에서 이어진다 · 참가자: 다른 참가자의 러닝은 그대로 이어진다).
+ */
+internal fun crewEndNote(end: CrewEnd, endsOther: Boolean): Int = when {
+    endsOther -> R.string.run_crew_end_last_note
+    end == CrewEnd.Host -> R.string.run_crew_end_host_note
+    else -> R.string.run_crew_end_member_note
+}
+
+/** 내가 마치면 다른 사람의 크루 러닝도 끝나는가 — 서버가 센 "끝나지 않은 참가자"가 나와 한 사람뿐이고 내 참여가 아직 끝나지 않았을 때 */
+internal fun crewEndsOther(live: com.stepup.android.domain.CrewRunLive?): Boolean =
+    live != null && live.state != com.stepup.android.domain.CrewRunState.ENDED && live.notEnded == 2
+
 // ── 달리는 중 ──────────────────────────────────────────────────────
 
 /** 크루 달리기 화면의 때 — 달리는 중(일시정지 포함) · 기록 저장 중 · 저장 실패(기록은 서비스에 그대로, 같은 러닝으로 다시 저장) */
@@ -131,6 +145,12 @@ internal data class CrewLiveUi(
     val goalFraction: Float?,
     /** 크루 체력(0070) — 크루 러닝이 아니거나 아직 모르면 null */
     val pool: CrewLivePool? = null,
+    /**
+     * 마지막 한 사람 — 함께 달리던 사람이 모두 마쳐 내 크루 러닝도 곧 끝난다. 그때까지 남은 초(2026-11-18). 그런 러닝이 아니면 null
+     */
+    val aloneLeftSec: Int? = null,
+    /** 끝나지 않은 참가자가 나뿐이다(서버가 센 값) — "내 기록은 계속돼요"라고 적지 않는다(곧 끝나거나, 혼자 남았다) */
+    val lastOne: Boolean = false,
 )
 
 /**
@@ -199,14 +219,20 @@ internal fun CrewRunLive(
                 mode == CrewLiveMode.Failed ->
                     CrewBand(stringResource(R.string.run_free_save_failed), Icons.Filled.Warning, "run-save-error", band)
                 mode == CrewLiveMode.Saving -> Unit
+                // 마지막 한 사람 — 곧 내 크루 러닝도 끝난다. 다른 띠(연결 · 방 닫힘 · 체력)보다 먼저 알린다
+                ui.aloneLeftSec != null ->
+                    CrewBand(stringResource(R.string.crew_alone_band, ui.aloneLeftSec), Icons.Filled.Warning, "run-crew-alone", band)
                 ui.link == CrewLink.Offline ->
                     CrewBand(stringResource(R.string.run_crew_offline_band), Icons.Outlined.WifiOff, "run-crew-offline", band)
-                ui.link == CrewLink.Closed ->
-                    CrewBand(stringResource(R.string.run_crew_closed_band), Icons.Outlined.PeopleAlt, "run-crew-closed", band)
+                // 혼자 남았으면 "내 기록은 계속돼요"를 붙이지 않는다 — 마지막 한 사람은 곧 끝난다
+                ui.link == CrewLink.Closed -> CrewBand(
+                    stringResource(if (ui.lastOne) R.string.run_crew_closed_band_last else R.string.run_crew_closed_band),
+                    Icons.Outlined.PeopleAlt, "run-crew-closed", band,
+                )
                 ui.link == CrewLink.Detached ->
                     CrewBand(stringResource(R.string.run_crew_detached_band), Icons.Outlined.LinkOff, "run-crew-detached", band)
-                // 공용 체력을 다 썼다(0071) — 적립만 멈추고 기록은 이어진다
-                ui.pool?.empty == true ->
+                // 공용 체력을 다 썼다(0071) — 적립만 멈추고 기록은 이어진다. 일시정지한 동안은 일시정지 띠가 맡는다(기록이 멈춰 있다)
+                ui.pool?.empty == true && !ui.paused ->
                     CrewBand(stringResource(R.string.crew_live_pool_empty), Icons.Filled.Warning, "run-crew-pool-empty", band)
                 ui.paused -> CrewBand(stringResource(R.string.run_crew_paused_band), Icons.Filled.Pause, "run-crew-others", band)
             }
@@ -520,6 +546,8 @@ internal fun ColumnScope.CrewTogetherSheetContent(
  * 내 러닝을 마칠까요? — 실제로 일어나는 일만 적는다. 참가자: 저장하고 함께 달리기에서 나온다(다른 참가자는 그대로).
  * 진행자: 저장하면 이 함께 달리기가 끝난다(방이 닫힌다 — 다른 참가자의 기록은 각자 휴대폰에서 이어지지만 서로 보이지 않는다).
  * 혼자: 저장하고 마친다. 선택하는 동안 내 기록은 멈춰 있다.
+ * 끝나지 않은 사람이 나와 한 사람뿐이면([endsOther]) 내가 마칠 때 그 사람의 크루 러닝도 끝난다(서버 R06 — 마지막 한 사람은 1분 뒤 끝난다) —
+ * "다른 참가자의 러닝은 그대로 이어져요" 대신 그렇게 적는다(2026-11-18).
  */
 @Composable
 internal fun ColumnScope.CrewFinishSheetContent(
@@ -532,6 +560,8 @@ internal fun ColumnScope.CrewFinishSheetContent(
     onDiscard: (() -> Unit)?,
     /** 크루 러닝(0071)이면 끝내면 그날 다시 들어올 수 없다고 한 줄 더 */
     crewRunOnce: Boolean = false,
+    /** 끝나지 않은 참가자가 나와 한 사람뿐이다(서버가 센 값) — 내가 마치면 그 사람의 크루 러닝도 끝난다 */
+    endsOther: Boolean = false,
 ) {
     val c = crewColors()
     CrewSheetTitle(
@@ -547,11 +577,11 @@ internal fun ColumnScope.CrewFinishSheetContent(
     )
     Spacer(Modifier.height(14.dp))
     CrewStatsRow(distance, time, pace, 26.sp, tags = listOf("run-end-distance", "run-end-time", "run-end-pace"))
-    if (end != CrewEnd.Alone) {
+    if (end != CrewEnd.Alone || endsOther) {
         Spacer(Modifier.height(14.dp))
         CrewNote(
-            stringResource(if (end == CrewEnd.Host) R.string.run_crew_end_host_note else R.string.run_crew_end_member_note),
-            tag = "run-crew-end-note",
+            stringResource(crewEndNote(end, endsOther)),
+            tag = if (endsOther) "run-crew-end-last-note" else "run-crew-end-note",
         )
     }
     Spacer(Modifier.height(10.dp))

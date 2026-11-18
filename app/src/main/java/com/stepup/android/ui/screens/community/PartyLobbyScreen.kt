@@ -65,6 +65,8 @@ import com.stepup.android.ui.components.RunInitials
 import com.stepup.android.ui.components.RunNotice
 import com.stepup.android.ui.components.RunNoticeKind
 import com.stepup.android.ui.components.RunPage
+import com.stepup.android.ui.components.RunSheet
+import com.stepup.android.ui.components.RunSheetText
 import com.stepup.android.ui.components.RunSwitch
 import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.rememberCurrentLocation
@@ -130,10 +132,26 @@ fun PartyLobbyScreen(
             com.stepup.android.core.ExternalIntents.openLocationSettings(context)
         }
     }
+    // 준비 · 출발을 막는 까닭(2026-11-18 점검) — 과속으로 멈춘 뒤 10분(혼자 러닝과 같은 안내) · 끝나지 않은 러닝이 남아 있다.
+    // 그대로 출발하면 서버에는 오늘 크루 러닝을 한 사람으로 적히는데 이 폰의 러닝은 켜지지 않는다(러닝 서비스가 시작을 거절한다)
+    val runBanUntil by com.stepup.android.core.ServiceLocator.userPrefs.runBanUntil.collectAsStateWithLifecycle(0L)
+    val unfinishedRun = stringResource(R.string.tlf_ready_unfinished_run)
+    val startBlock: () -> String? = {
+        val banLeft = com.stepup.android.domain.RunOverspeed.banLeftMinutes(runBanUntil, System.currentTimeMillis())
+        when {
+            banLeft > 0 -> context.resources.getQuantityString(R.plurals.run_overspeed_ban, banLeft, banLeft)
+            WalkSessionService.recovery.value != null -> unfinishedRun
+            else -> null
+        }
+    }
+    // 알림 권한은 준비할 때 한 번 묻는다(출발 순간에 묻지 않는다 — 권한 창에 답할 때까지 러닝이 늦게 켜졌다). 거절해도 준비한다
+    var askedNotify by rememberSaveable { mutableStateOf(false) }
+    val notifyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { markReady() }
     // CR17 — 준비 전 확인에서 "위치 사용 허용": OS 창의 결과를 다시 읽어 걸음 권한 · 정확한 위치가 있으면 준비한다
     var readyCheck by rememberSaveable { mutableStateOf(false) }
     val readyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         readyCheck = false
+        askedNotify = true
         when {
             !StepPermissions.hasActivityRecognition(context) -> Unit
             StepPermissions.hasPreciseLocation(context) -> markReady()
@@ -145,6 +163,8 @@ fun PartyLobbyScreen(
     fun readyPermissions(): Array<String> = partyRunPermissions(context)
     var confirmStart by rememberSaveable { mutableStateOf(false) }
     var notify by rememberSaveable { mutableStateOf(false) }
+    // 번개러닝 대기실의 내보내기 — 한 번 묻는다(크루 대기실은 대기실 안 시트가 묻는다). 내보낸 사람은 이 번개의 대기실에 다시 못 들어온다
+    var kickTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(crewId, flashPostId, partyId) {
         // 이미 달리는 중이면 새 대기실을 열지 않고 지금 러닝으로 간다 — 다른 방을 열면 달리던 방에서 말없이
@@ -182,7 +202,8 @@ fun PartyLobbyScreen(
     val crewRunRepo = com.stepup.android.core.ServiceLocator.crewRun
     val todayFlow = remember(runCrew) { runCrew?.let { crewRunRepo.today(it) } ?: kotlinx.coroutines.flow.flowOf(null) }
     val crewToday by todayFlow.collectAsStateWithLifecycle(initialValue = runCrew?.let { crewRunRepo.todayNow(it) })
-    LaunchedEffect(runCrew) { runCrew?.let { crewRunRepo.loadToday(it) } }
+    // 준비가 "오늘 이미 했어요"로 거절됐으면 오늘 값을 다시 읽는다 — 들어올 때 읽지 못했거나 옛 값이었다(준비 버튼이 그 값으로 막힌다)
+    LaunchedEffect(runCrew, party.problem == PartyProblem.DONE_TODAY) { runCrew?.let { crewRunRepo.loadToday(it) } }
     val roomId = party.partyId.takeIf { runCrew != null }
     val roomFlow = remember(roomId) { roomId?.let { crewRunRepo.room(it) } ?: kotlinx.coroutines.flow.flowOf(null) }
     val crewRunRoom by roomFlow.collectAsStateWithLifecycle(initialValue = roomId?.let { crewRunRepo.roomNow(it) })
@@ -199,15 +220,31 @@ fun PartyLobbyScreen(
         party = party, title = title, resultPoints = resultPoints, canNotify = canNotify, here = here, monogram = monogram,
         onBack = leave,
         onReady = {
-            // 걸음 · 정확한 위치 권한이 없으면 먼저 묻는다(CR17) — 둘 다 있으면 바로 준비
-            if (StepPermissions.hasActivityRecognition(context) && StepPermissions.hasPreciseLocation(context)) markReady()
-            else readyCheck = true
+            val block = startBlock()
+            when {
+                block != null -> android.widget.Toast.makeText(context, block, android.widget.Toast.LENGTH_LONG).show()
+                // 걸음 · 정확한 위치 권한이 없으면 먼저 묻는다(CR17) — 둘 다 있으면 바로 준비
+                !(StepPermissions.hasActivityRecognition(context) && StepPermissions.hasPreciseLocation(context)) -> readyCheck = true
+                // 알림 권한이 없으면 한 번 묻고(거절해도) 준비한다 — 출발했을 때 앱이 뒤에 있으면 알림으로 알린다
+                !StepPermissions.hasNotificationPermission(context) && !askedNotify -> {
+                    askedNotify = true
+                    notifyLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+                else -> markReady()
+            }
         },
         onCancelReady = { viewModel.setReady(false) },
         // 크루 대기실은 대기실 안 시트(33 · 34)가 묻고, 번개러닝 대기실은 예전처럼 준비 전 인원이 있을 때만 묻는다
-        onStart = { if (crewRoom || party.allReady) viewModel.startParty() else confirmStart = true },
+        onStart = {
+            val block = startBlock()
+            when {
+                block != null -> android.widget.Toast.makeText(context, block, android.widget.Toast.LENGTH_LONG).show()
+                crewRoom || party.allReady -> viewModel.startParty()
+                else -> confirmStart = true
+            }
+        },
         onShare = viewModel::setShare,
-        onKick = viewModel::kick,
+        onKick = { id -> if (crewRoom) viewModel.kick(id) else kickTarget = id },
         onNotify = { notify = true },
         onRetry = viewModel::retry,
         onLeave = leave,
@@ -262,6 +299,20 @@ fun PartyLobbyScreen(
             },
             onWait = { confirmStart = false },
             v2 = crewRoom,
+        )
+    }
+    // 번개러닝 대기실의 내보내기 확인 — 그사이 그 사람이 나갔거나 진행자가 바뀌었으면 닫는다
+    val kickWho = kickTarget?.let { id -> party.members.firstOrNull { it.id == id } }
+        ?.takeIf { party.isHost && party.phase == PartyPhase.LOBBY }
+    LaunchedEffect(kickTarget, kickWho == null) { if (kickTarget != null && kickWho == null) kickTarget = null }
+    if (kickWho != null) {
+        FlashKickSheet(
+            kickWho.name,
+            onKick = {
+                kickTarget = null
+                viewModel.kick(kickWho.id)
+            },
+            onCancel = { kickTarget = null },
         )
     }
     val notifyCrew = party.crewId
@@ -364,8 +415,7 @@ fun PartyLobbyContent(
                 party.phase == PartyPhase.FINISHED ->
                     RunButton(stringResource(R.string.common_ok), onDismissResult, Modifier.testTag("party-result-ok"))
                 // 누른 것이 막힌 것뿐(FAILED)이거나 새 대기실 안내면 방에 그대로 있으니 버튼도 그대로 — 다시 누르면 문제가 풀린다
-                !lobby || (party.problem != null && party.problem != PartyProblem.FAILED &&
-                    party.problem != PartyProblem.MISSED_START) || party.partyId == null -> Unit
+                !lobby || !party.inRoom || party.problem == PartyProblem.NETWORK -> Unit
                 !party.myReady -> {
                     RunButton(stringResource(R.string.run_cr_get_ready), onReady, Modifier.testTag("party-ready"))
                     if (alone && canNotify) {
@@ -424,7 +474,8 @@ fun PartyLobbyContent(
                 stringResource(R.string.crew_running_together, party.partySize), icon = Icons.AutoMirrored.Filled.DirectionsRun,
                 tag = "party-running",
             )
-            else -> if (party.partyId != null) {
+            // 방을 더 묻지 않게 된 뒤(내보냄 · 닫힘 · 나를 빼고 출발 등)에는 굳은 명단을 두지 않는다 — 위 안내만
+            else -> if (party.inRoom) {
                 Counts(party)
                 Spacer(Modifier.height(8.dp))
                 RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 4.dp), tag = "party-members") {
@@ -448,9 +499,10 @@ fun PartyLobbyContent(
                     RunTextAction(stringResource(R.string.run_cr_notify), onNotify, Modifier.fillMaxWidth().testTag("party-notify-link"),
                         chevron = true)
                 }
-                // 인원 보너스는 함께 출발한 사람 모두(0076 — 거리 · 원격 상관없이)
+                // 인원 보너스는 함께 출발한 사람 모두(0076 — 거리 · 원격 상관없이). 이미 출발한 번개의 새 대기실이면 약속하지 않는다 —
+                // 인원 보너스는 번개 글 하나에 한 번이다(서버 0117)
                 Text(
-                    stringResource(R.string.tg_party_rule),
+                    stringResource(if (party.reopened) R.string.tlf_flash_bonus_once else R.string.tg_party_rule),
                     style = runTextStyle(12.sp, t.muted), modifier = Modifier.padding(top = 6.dp),
                 )
             }
@@ -536,7 +588,10 @@ private fun ShareRow(share: Boolean, onShare: (Boolean) -> Unit) {
     }
 }
 
-/** 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다(기다리지 않으려면 다시 연결). 나머지는 사람이 정한다 */
+/**
+ * 멈춘 까닭 — 서버에 닿지 못한 것은 저절로 다시 묻는다(기다리지 않으려면 다시 연결). 나머지는 사람이 정한다.
+ * 나를 빼고 출발한 번개는 "새 대기실 열기"를 눌러야만 새 방이 열린다(다시 시도가 말없이 새 방에 넣지 않는다 — 2026-11-18 점검).
+ */
 @Composable
 private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnect: () -> Unit, onLeave: () -> Unit) {
     val message = stringResource(
@@ -549,31 +604,54 @@ private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnec
             PartyProblem.FAILED -> R.string.party_problem_failed
             PartyProblem.NEED_TWO -> R.string.fxc_need_two
             PartyProblem.MISSED_START -> R.string.party_problem_missed_start
+            PartyProblem.LEFT_BEHIND -> R.string.tlf_flash_left_behind
+            PartyProblem.NOT_MEMBER -> R.string.tlf_flash_not_member
+            PartyProblem.START_BLOCKED -> R.string.tlf_flash_start_blocked
+            PartyProblem.DONE_TODAY -> R.string.tlf_done_today
+            PartyProblem.COURSE_CHANGED -> R.string.tlf_course_changed
+            PartyProblem.FLASH_CLOSED -> R.string.tlf_flash_lobby_closed
         },
     )
     // 방이 닫혔거나 빠졌으면 다시 열기, 연결이 끊긴 동안이면 지금 다시 묻기(나가기만 있으면 기다리거나 떠나야 했다)
     val action = when (problem) {
         PartyProblem.CLOSED, PartyProblem.REMOVED -> stringResource(R.string.crew_retry)
         PartyProblem.NETWORK -> stringResource(R.string.run_crew_reconnect)
+        PartyProblem.LEFT_BEHIND -> stringResource(R.string.tlf_open_new_lobby)
         else -> null
     }
     val onAction = when (problem) {
-        PartyProblem.CLOSED, PartyProblem.REMOVED -> onRetry
+        PartyProblem.CLOSED, PartyProblem.REMOVED, PartyProblem.LEFT_BEHIND -> onRetry
         PartyProblem.NETWORK -> onReconnect
         else -> null
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         RunNotice(
             message,
-            kind = if (problem == PartyProblem.NETWORK || problem == PartyProblem.MISSED_START) RunNoticeKind.Warn else RunNoticeKind.Error,
+            kind = if (problem == PartyProblem.NETWORK || problem == PartyProblem.MISSED_START || problem == PartyProblem.LEFT_BEHIND) {
+                RunNoticeKind.Warn
+            } else {
+                RunNoticeKind.Error
+            },
             tag = "party-problem",
             action = action,
             onAction = onAction,
         )
         // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
-        if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START && problem != PartyProblem.NEED_TWO) {
+        if (!problem.keepsRoom && problem != PartyProblem.MISSED_START) {
             RunButton(stringResource(R.string.run_cr_leave), onLeave, Modifier.testTag("party-leave"), kind = RunButtonKind.Secondary)
         }
+    }
+}
+
+/** 번개러닝 대기실의 내보내기 확인 — 내보낸 사람은 이 번개의 대기실에 다시 들어오지 못한다(잘못 누른 한 번으로 내보내지 않게) */
+@Composable
+private fun FlashKickSheet(name: String, onKick: () -> Unit, onCancel: () -> Unit) {
+    RunSheet(onDismiss = onCancel, modifier = Modifier.testTag("party-kick-sheet"), showClose = false) {
+        RunSheetText(stringResource(R.string.crew5_kick_title, name), body = stringResource(R.string.tlf_flash_kick_body))
+        Spacer(Modifier.height(16.dp))
+        RunButton(stringResource(R.string.crew5_kick_go), onKick, Modifier.testTag("party-kick-confirm"), kind = RunButtonKind.Danger)
+        Spacer(Modifier.height(10.dp))
+        RunButton(stringResource(R.string.common_cancel), onCancel, Modifier.testTag("party-kick-cancel"), kind = RunButtonKind.Secondary)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.stepup.android
 
+import com.stepup.android.data.local.GROUP_UPLOAD_HOLD_ATTEMPTS
 import com.stepup.android.data.local.UploadState
 import com.stepup.android.data.local.CrewDistance
 import com.stepup.android.data.local.RunRecordRow
@@ -59,8 +60,18 @@ class ClaimUploadTest {
                 .filter { it.recordingOwner == owner }
                 .filter { it.uploadState in setOf(UploadState.PENDING.name, UploadState.FAILED.name) }
                 .filter { it.track.isNotEmpty() && it.steps > 0 }
-                .sortedWith(compareBy<WalkSessionEntity>({ it.uploadAttemptedAt }, { it.startedAt }))
+                // 실제 질의와 같은 차례 — 아직 몇 번 안 실패한 모임 러닝이 맨 앞(오래된 것부터), 나머지는 시도한 때 · 시작한 때 순
+                .sortedWith(
+                    compareBy<WalkSessionEntity>(
+                        { if (heldFirst(it)) 0 else 1 },
+                        { if (heldFirst(it)) 0L else it.uploadAttemptedAt },
+                        { it.startedAt },
+                    ),
+                )
                 .take(limit)
+
+        private fun heldFirst(row: WalkSessionEntity) =
+            (row.crewId.isNotEmpty() || row.partySize > 1) && row.uploadAttempts < GROUP_UPLOAD_HOLD_ATTEMPTS
 
         override fun observeRecent(limit: Int): Flow<List<WalkSessionEntity>> = flowOf(rows.values.toList())
         override fun observeSessionCount(): Flow<Int> = flowOf(rows.size)
@@ -170,6 +181,9 @@ class ClaimUploadTest {
         steps: Int = 2_000,
         track: String = this.track,
         state: UploadState = UploadState.PENDING,
+        partySize: Int = 1,
+        crewId: String = "",
+        uploadAttempts: Int = 0,
     ) = WalkSessionEntity(
         id = id,
         startedAt = startedAt,
@@ -181,7 +195,9 @@ class ClaimUploadTest {
         pointsEarned = 20.0,
         track = track,
         boostBps = 1_200,
-        partySize = 2,
+        partySize = partySize,
+        crewId = crewId,
+        uploadAttempts = uploadAttempts,
         uploadState = state.name,
     )
 
@@ -242,7 +258,7 @@ class ClaimUploadTest {
 
     @Test
     fun `정산 시점에 저장해 둔 부스트와 파티 인원을 그대로 보낸다`() = runBlocking {
-        val dao = FakeDao(listOf(session(1)))
+        val dao = FakeDao(listOf(session(1, partySize = 2)))
         val recorder = FakeRecorder { okAnswer(it) }
         repo(dao, recorder).uploadPending()
 
@@ -342,6 +358,60 @@ class ClaimUploadTest {
         assertEquals(2, second.signed)
         assertEquals(UploadState.SIGNED.name, dao.rows.getValue(3L).uploadState)
         assertEquals(UploadState.SIGNED.name, dao.rows.getValue(4L).uploadState)
+    }
+
+    // ── 모임(크루 · 번개) 러닝은 다른 러닝보다 먼저(2026-11-18 함께 뛰기 점검) ─────────────
+    //
+    // 서버는 그 방의 러닝을 출발 시각으로 찾는다. 모임 러닝이 올라가기 전에 가까운 때의 다른 러닝이 먼저 기록되면 그 러닝이
+    // 방의 러닝(크루 보상 · 인원 보너스)이 되고, 진짜 모임 러닝은 혼자 러닝으로 정산됐다(개인 에너지 · 신발 내구도를 썼다).
+
+    @Test
+    fun `모임 러닝은 먼저 실패했어도 뒤에 끝난 혼자 러닝보다 먼저 올린다`() = runBlocking {
+        // 크루 러닝(1)이 한 번 끊긴 뒤 혼자 러닝(2)을 끝냈다 — 예전 차례(시도한 때 순)면 2 가 먼저 올라갔다
+        val crew = session(1, startedAt = 1_000_000_000_000L, partySize = 2, crewId = "crew-1", state = UploadState.FAILED, uploadAttempts = 1)
+            .copy(uploadAttemptedAt = 1_000_000_700_000L)
+        val solo = session(2, startedAt = 1_000_000_300_000L)
+        val dao = FakeDao(listOf(solo, crew))
+        val recorder = FakeRecorder { okAnswer(it) }
+        repo(dao, recorder).uploadPending()
+
+        assertEquals(listOf(1L, 2L), recorder.seen.map { it.id })
+    }
+
+    @Test
+    fun `모임 러닝이 끊기면 그 차례는 멈추고 뒤의 러닝을 먼저 올리지 않는다`() = runBlocking {
+        val dao = FakeDao(
+            listOf(
+                session(1, startedAt = 1_000_000_000_000L, partySize = 3),
+                session(2, startedAt = 1_000_000_300_000L),
+                session(3, startedAt = 1_000_000_900_000L),
+            ),
+        )
+        val recorder = FakeRecorder { if (it.id == 1L) ServerResult.Retry("통신 실패") else okAnswer(it) }
+        val run = repo(dao, recorder).uploadPending()
+
+        assertEquals("모임 러닝만 시도해야 한다", listOf(1L), recorder.seen.map { it.id })
+        assertEquals(0, run.signed)
+        assertEquals(1, run.failed)
+        assertTrue("일꾼이 다시 깨어나야 한다", run.shouldRetry)
+        assertEquals(UploadState.PENDING.name, dao.rows.getValue(2L).uploadState)
+        assertEquals(UploadState.PENDING.name, dao.rows.getValue(3L).uploadState)
+    }
+
+    @Test
+    fun `여러 번 실패한 모임 러닝은 뒤의 러닝을 더 막지 않는다`() = runBlocking {
+        // 계속 실패하는 모임 러닝 하나가 뒤의 러닝을 서버의 7일 기한까지 붙잡지 않게 — 몇 번 뒤에는 다른 러닝처럼 뒤에 선다
+        val stuck = session(
+            1, startedAt = 1_000_000_000_000L, partySize = 2, crewId = "crew-1",
+            state = UploadState.FAILED, uploadAttempts = GROUP_UPLOAD_HOLD_ATTEMPTS,
+        ).copy(uploadAttemptedAt = 1_000_000_700_000L)
+        val dao = FakeDao(listOf(stuck, session(2, startedAt = 1_000_000_300_000L), session(3, startedAt = 1_000_000_900_000L)))
+        val recorder = FakeRecorder { if (it.id == 1L) ServerResult.Retry("서버 오류") else okAnswer(it) }
+        val run = repo(dao, recorder).uploadPending()
+
+        assertEquals(listOf(2L, 3L, 1L), recorder.seen.map { it.id })
+        assertEquals(2, run.signed)
+        assertEquals(1, run.failed)
     }
 
     @Test

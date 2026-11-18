@@ -74,7 +74,7 @@ data class CrewRoom(
     val mode: RoomMode = RoomMode.TOGETHER,
     /** 만나는 곳(같이 뛰기) */
     val meetPlace: String? = null,
-    /** 출발 예정 시각(이 폰 시각, 0 이면 없음) — 안내일 뿐이다 */
+    /** 출발 예정 시각(정해 둔 시각 그대로 — 폰 시계 차이로 고치지 않는다, 0 이면 없음) — 안내일 뿐이다 */
     val planAtMs: Long = 0L,
     /** 들어온 사람 이름 앞 넷 */
     val memberNames: List<String> = emptyList(),

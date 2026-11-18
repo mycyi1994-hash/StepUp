@@ -1359,6 +1359,9 @@ class WalkSessionService : Service() {
             if (session.group != RunGroup.NONE && ServiceLocator.crewRepository.party.value.isActive) {
                 ServiceLocator.crewRepository.finishParty(session.startedAt, reward.rewardedSteps)
             }
+            // 크루 러닝이 끝났다 — 서버에 "끝냄"을 닿을 때까지 보낸다. 상태 알림(1초마다 본다)이 달리는 모습을 보지 못한 러닝
+            // (되살리자마자 끝낸 러닝)도 여기서 알린다 — 예전엔 그런 러닝은 올릴 때까지 서버에 "달리는 중"으로 남았다(2026-11-18)
+            if (session.group == RunGroup.CREW) runCatching { ServiceLocator.crewRun.noteEnded(session.startedAt) }
             // 저장까지 끝났다 — 저장본을 지운다(실패해도 다음 실행이 같은 러닝을 다시 저장할 뿐이다)
             runCatching { ServiceLocator.runCheckpoints.clear(session.startedAt, session.recordingOwner) }
             settling = false

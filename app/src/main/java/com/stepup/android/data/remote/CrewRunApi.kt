@@ -25,7 +25,15 @@ import kotlinx.serialization.json.JsonNull
  * 크루 러닝(서버 0071) — 오늘 크루 러닝(crew_run_today) · 대기실(crew_run_room) · 달리는 동안 상태 알림(crew_run_beat) ·
  * 결과(crew_run_result) · 대기실 신발 고르기(party_pick_shoe). 값은 서버가 센 그대로다.
  */
-class CrewRunApi(private val server: StepUpServer) {
+class CrewRunApi(
+    private val server: StepUpServer,
+    /**
+     * 크루 러닝 물음을 보내는 쪽 — 방 물음([PartyApi])과 같이 오래 기다리지 않는다. 앱 기본(연결 20초 + 읽기 20초)을 기다리면 달리는 중
+     * 걸린 물음 하나가 상태 알림을 40초까지 막아, 서버는 30초 넘게 소식이 없는 사람으로 봤고 일시정지 · 다시 달리기도 늦게 닿았다(2026-11-18).
+     * 서버에 흉내 낸 연결을 넣은 검사는 그것을 그대로 쓴다.
+     */
+    private val http: HttpPoster = server.http.let { if (it is UrlConnectionPoster) UrlConnectionPoster(timeoutMillis = PartyApi.TIMEOUT_MS) else it },
+) {
 
     suspend fun today(crewId: String): ServerResult<CrewRunTodayRow> =
         rpc("crew_run_today", jsonBody { put("p_crew", crewId) }) { serverJson.decodeFromString<CrewRunTodayRow>(it) }
@@ -61,7 +69,7 @@ class CrewRunApi(private val server: StepUpServer) {
 
     private suspend fun <T> rpc(name: String, body: String, parse: (String) -> T?): ServerResult<T> =
         server.authed { token ->
-            server.http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
+            http.post("${server.restUrl}/rpc/$name", body, server.headers(token))
         }.mapBody(parse)
 }
 
@@ -262,6 +270,9 @@ data class CrewRunLiveRow(
     val bonus: CrewBonusRow = CrewBonusRow(),
     val level: CrewLevelPctRow = CrewLevelPctRow(),
     @SerialName("earning_state") val earningState: String? = null,
+    /** 이 참여가 끝난 때 · 여기까지만 적립(끝난 때 + 60초) — 서버 0117. 달리는 중 · 예전 서버면 없다 */
+    @SerialName("ended_at") val endedAt: String? = null,
+    @SerialName("reward_until") val rewardUntil: String? = null,
 ) {
     /** 크루 러닝이 아니면(서버가 이 방의 참여를 모른다) null */
     fun toDomain(): CrewRunLive? {
@@ -274,6 +285,7 @@ data class CrewRunLiveRow(
             participants = participants, notEnded = notEnded, roomActiveRunners = roomActiveRunners,
             bonus = bonus.toDomain(), crewLevel = level.level, levelPct = level.pct, earning = CrewEarning.of(earningState),
             serverNowMs = serverNow.ms() ?: now,
+            endedAtMs = endedAt.ms(), rewardUntilMs = rewardUntil.ms(),
         )
     }
 }

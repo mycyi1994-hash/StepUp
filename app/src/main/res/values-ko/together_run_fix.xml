@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 함께 뛰기 점검 수정(2026-11-18) — 달리는 중 · 결과: 마지막 한 사람 알림 · 마치기 안내 -->
+<resources>
+    <string name="notification_channel_crew_run_alert">크루 러닝 알림</string>
+    <string name="crew_alone_notif_title">함께 달리던 모두가 러닝을 마쳤어요</string>
+    <string name="crew_alone_notif_body">%1$d초 뒤 내 크루 러닝도 끝나요. 그때까지의 기록은 저장돼요.</string>
+    <string name="crew_alone_ended_title">크루 러닝이 끝났어요</string>
+    <string name="crew_alone_ended_body">함께 달리던 모두가 마쳐 내 크루 러닝도 끝났어요. 기록은 저장됐어요.</string>
+    <string name="crew_alone_band">함께 달리던 모두가 마쳤어요 · %1$d초 뒤 내 크루 러닝도 끝나요</string>
+    <string name="run_crew_end_last_note">지금 다른 한 사람만 남아 있어요. 내가 마치면 그 사람의 크루 러닝도 약 1분 뒤에 끝나요.</string>
+    <string name="run_crew_closed_band_last">진행자가 함께 달리기를 마쳤어요</string>
+</resources>

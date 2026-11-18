@@ -15,6 +15,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.stepup.android.MainActivity
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
+import kotlinx.coroutines.flow.first
 
 /**
  * 서버가 보낸 푸시를 받는다 — 번개·파티런·크루·댓글 소식.
@@ -45,7 +46,36 @@ class PushService : FirebaseMessagingService() {
         // 지금 화면에 보이는 크루 채팅 방의 새 메시지는 띄우지 않는다(방이 이미 따라오고 있다)
         val visible = com.stepup.android.ui.screens.community.chat.ChatVisibility.crewId
         if (visible != null && link == "crew-chat/$visible") return
+        // 이 폰이 지금 들어가 있는(달리고 있는) 방의 출발 소식은 앱이 앞에 있으면 띄우지 않는다 — 화면이 이미 출발을 보인다(서버 0117)
+        if (shownByTheRoom(link)) return
         show(this, title, body, link)
+    }
+
+    /**
+     * 함께 뛰기 방의 출발 푸시(PARTY_STARTED · PARTY_MISSED, 서버 0117 — 링크 `room/<크루>/<방>` · `flash/<글>`)를 앱 화면이 대신 알리는가.
+     * 앱이 앞에 있고 이 폰이 그 방에 들어가 있을 때만: 방을 바로 다시 물어(출발 연출 · 러닝 켜기 · "함께 출발하지 못했어요"는 화면이 한다)
+     * 알림은 띄우지 않는다. 번개 글 링크는 그 글의 댓글 알림도 같이 쓴다 — 대기실이면 방을 다시 물어 출발한 것이 확인될 때만 띄우지 않는다.
+     */
+    private fun shownByTheRoom(link: String): Boolean {
+        if (link.isBlank() || !com.stepup.android.service.CrewStartAlert.appInForeground) return false
+        val repo = runCatching { ServiceLocator.crewRepository }.getOrNull() ?: return false
+        return when (com.stepup.android.data.repo.partyPush(link, repo.party.value)) {
+            com.stepup.android.data.repo.PartyPush.OTHER -> false
+            com.stepup.android.data.repo.PartyPush.MINE -> {
+                repo.wakeParty()
+                true
+            }
+            com.stepup.android.data.repo.PartyPush.CHECK -> {
+                repo.wakeParty()
+                // 일꾼 스레드라 잠깐 기다려도 된다 — 방 상태가 "출발"로 바뀌는지 본다(안 바뀌면 댓글 같은 다른 소식이다)
+                val settled = kotlinx.coroutines.runBlocking {
+                    kotlinx.coroutines.withTimeoutOrNull(ROOM_CHECK_MS) {
+                        repo.party.first { com.stepup.android.data.repo.partyPush(link, it) != com.stepup.android.data.repo.PartyPush.CHECK }
+                    }
+                }
+                settled != null && com.stepup.android.data.repo.partyPush(link, settled) == com.stepup.android.data.repo.PartyPush.MINE
+            }
+        }
     }
 
     companion object {
@@ -96,5 +126,8 @@ class PushService : FirebaseMessagingService() {
 
         /** 알림을 눌러 들어왔을 때 열 화면. 앱 안 링크 형식(예: crew/<id>) */
         const val EXTRA_LINK = "push_link"
+
+        /** 번개 글 링크의 푸시가 출발 소식인지 보려고 방 상태를 기다리는 시간 — 대기실은 깨우면 바로 다시 묻는다 */
+        private const val ROOM_CHECK_MS = 2_500L
     }
 }

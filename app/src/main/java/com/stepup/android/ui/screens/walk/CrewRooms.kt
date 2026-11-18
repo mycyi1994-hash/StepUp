@@ -139,6 +139,20 @@ fun CrewRoomsScreen(
             }
         }
     }
+    // "오늘 이미 했어요"인데 올린 러닝이 없다 — 출발만 하고 이 폰이 달리지 못한 방이면(앱을 껐다 켜 놓친 출발을 정리하지 못했다)
+    // 달리지 않은 오늘 크루 러닝을 돌려받고 목록을 다시 읽는다. 달린 러닝은 건드리지 않는다(2026-11-18 점검)
+    val done = (ui as? RoomsUi.Ready)?.rooms?.doneToday == true
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val givenBack = stringResource(R.string.tlf_unrun_given_back)
+    LaunchedEffect(crewId, done) {
+        if (!done) return@LaunchedEffect
+        val today = ServiceLocator.crewRun.loadToday(crewId) ?: return@LaunchedEffect
+        val mine = today.mine
+        if (mine.usedToday && repo.recoverUnrunToday(mine.partyId, mine.sessionId, mine.startedAtMs, today.serverNowMs) == true) {
+            android.widget.Toast.makeText(context, givenBack, android.widget.Toast.LENGTH_LONG).show()
+            reload++
+        }
+    }
     val crewName = repo.crewOf(crewId)?.name.orEmpty()
     CrewRoomsContent(
         ui = ui, crewName = crewName, onBack = onBack, onOpenRoom = onOpenRoom, onCreate = onCreate,
@@ -357,6 +371,12 @@ internal sealed interface CreateProblem {
     data object Network : CreateProblem
     /** 출발 시각 · 정원 · 만나는 곳을 서버가 받지 않았다(0074 room_options_invalid) */
     data object Options : CreateProblem
+
+    /**
+     * 이 폰에 달리고 있는(멈춰 둔) 러닝이 있다 — 대기실을 만들지 않는다. 만들면 대기실 화면이 그 러닝으로 돌려보내, 아무도 보지 않는
+     * 진행자만 있는 방이 목록에 남았다(2026-11-18 점검)
+     */
+    data object Running : CreateProblem
     data class Rejected(val reason: String) : CreateProblem
 }
 
@@ -433,6 +453,10 @@ fun CrewRoomCreateScreen(crewId: String, onBack: () -> Unit, onCreated: (Long) -
         busy = busy, problem = problem, onBack = onBack,
         onOpen = {
             if (busy || !CrewRoomRules.nameValid(name) || (courseChoice == CourseChoice.SET && course == null)) return@CrewRoomCreateContent
+            if (com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                problem = CreateProblem.Running
+                return@CrewRoomCreateContent
+            }
             busy = true
             problem = null
             scope.launch {
@@ -681,6 +705,7 @@ internal fun CrewRoomCreateContent(
             CreateProblem.DoneToday -> CrewError(stringResource(R.string.crew5_create_failed_done), tag = "crew-create-done-today")
             CreateProblem.Network -> CrewError(stringResource(R.string.crew5_create_failed_network), tag = "crew-create-network")
             CreateProblem.Options -> CrewError(stringResource(R.string.d26_create_invalid), tag = "crew-create-options")
+            CreateProblem.Running -> CrewError(stringResource(R.string.tlf_create_running), tag = "crew-create-running")
             is CreateProblem.Rejected -> CrewError(stringResource(R.string.crew5_create_failed, problem.reason), tag = "crew-create-failed")
         }
         Spacer(Modifier.height(12.dp))

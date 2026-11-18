@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 함께 뛰기 대기실 · 출발 점검 수정(2026-11-18, 서버 0117) — 까닭을 가려 알린다 · 출발을 켜지 못했을 때 · 놓친 출발 돌려받기 -->
+    <string name="tlf_missed_toast">함께 출발한 지 오래돼 그 대기실에서 나왔어요.</string>
+    <string name="tlf_start_blocked_toast">이 폰에서 러닝을 시작하지 못해 대기실에서 나왔어요.</string>
+    <string name="tlf_left_behind_toast">대기실 화면을 보고 있지 않은 사이 출발해서 함께 출발하지 못했어요.</string>
+    <string name="tlf_ready_unfinished_run">끝나지 않은 러닝이 있어요. 먼저 그 러닝을 이어 달리거나 마쳐 주세요.</string>
+    <string name="tlf_flash_left_behind">번개러닝이 출발했어요. 준비 전이었거나 대기실 화면을 보고 있지 않아 함께 출발하지 못했어요.</string>
+    <string name="tlf_flash_not_member">이 번개러닝에 참가한 러너만 대기실에 들어올 수 있어요.</string>
+    <string name="tlf_flash_start_blocked">번개러닝은 출발했지만 이 폰의 러닝이 켜지지 않아 대기실에서 나왔어요.</string>
+    <string name="tlf_done_today">오늘 크루 러닝을 이미 했어요. 크루 러닝은 하루에 한 번이에요.</string>
+    <string name="tlf_course_changed">코스가 바뀌었어요. 코스를 확인하고 다시 출발해 주세요.</string>
+    <string name="tlf_flash_lobby_closed">이 번개러닝의 대기실은 닫혔어요. 모이는 시각이 한 시간 넘게 지났어요.</string>
+    <string name="tlf_open_new_lobby">새 대기실 열기</string>
+    <string name="tlf_flash_bonus_once">인원 보너스는 번개러닝 하나에 한 번이에요. 같은 번개러닝의 새 대기실에서는 다시 붙지 않을 수 있어요.</string>
+    <string name="tlf_flash_kick_body">이 대기실에서 내보내요. 내보낸 사람은 이 번개러닝의 대기실에 다시 들어오지 못해요.</string>
+    <string name="tlf_left_behind_title">함께 출발하지 못했어요</string>
+    <string name="tlf_left_behind_body">크루 러닝이 출발했어요. 준비 전이었거나 대기실 화면을 보고 있지 않아 함께 출발하지 못했어요. 오늘의 크루 러닝은 쓰이지 않았어요.</string>
+    <string name="tlf_not_member_title">크루원만 들어갈 수 있어요</string>
+    <string name="tlf_not_member_body">이 크루의 크루원만 들어갈 수 있는 대기실이에요.</string>
+    <string name="tlf_start_blocked_title">이 폰에서 러닝이 켜지지 않았어요</string>
+    <string name="tlf_start_blocked_freed">크루 러닝은 출발했지만 이 폰의 러닝이 켜지지 않아 대기실에서 나왔어요. 오늘의 크루 러닝은 쓰이지 않았어요.</string>
+    <string name="tlf_start_blocked_used">크루 러닝은 출발했지만 이 폰의 러닝이 켜지지 않아 대기실에서 나왔어요. 오늘의 크루 러닝은 이미 쓰였어요.</string>
+    <string name="tlf_start_blocked_checking">크루 러닝은 출발했지만 이 폰의 러닝이 켜지지 않아 대기실에서 나왔어요.</string>
+    <string name="tlf_flash_start_alert_title">번개러닝이 출발했어요</string>
+    <string name="tlf_create_running">달리고 있는 러닝이 있어요. 그 러닝을 마친 뒤에 대기실을 만들어 주세요.</string>
+    <string name="tlf_unrun_given_back">출발만 하고 이 폰이 달리지 못한 크루 러닝이 있어, 오늘의 크루 러닝을 돌려받았어요.</string>
+    <string name="tlf_crew_running">달리고 있는 크루 러닝이 끝난 뒤에 해산할 수 있어요.</string>
+</resources>

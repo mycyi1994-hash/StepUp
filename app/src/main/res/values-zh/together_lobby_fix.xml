@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 함께 뛰기 대기실 · 출발 점검 수정(2026-11-18, 서버 0117) -->
+    <string name="tlf_missed_toast">距离一起出发已过去较久，已为你退出该等候室。</string>
+    <string name="tlf_start_blocked_toast">这部手机未能开始跑步，已为你退出等候室。</string>
+    <string name="tlf_left_behind_toast">你没有在看等候室时大家已经出发，未能一起出发。</string>
+    <string name="tlf_ready_unfinished_run">有一次未结束的跑步。请先继续或结束那次跑步。</string>
+    <string name="tlf_flash_left_behind">闪电跑已出发。你当时尚未就绪或没有在看等候室，未能一起出发。</string>
+    <string name="tlf_flash_not_member">只有报名这次闪电跑的跑者可以进入等候室。</string>
+    <string name="tlf_flash_start_blocked">闪电跑已出发，但这部手机未能开始跑步，已为你退出等候室。</string>
+    <string name="tlf_done_today">今天已经进行过团队跑。团队跑每天一次。</string>
+    <string name="tlf_course_changed">路线已更改。请确认路线后再次出发。</string>
+    <string name="tlf_flash_lobby_closed">这次闪电跑的等候室已关闭。集合时间已过去一个多小时。</string>
+    <string name="tlf_open_new_lobby">打开新的等候室</string>
+    <string name="tlf_flash_bonus_once">人数加成每次闪电跑只有一次。同一次闪电跑的新等候室可能不会再次加成。</string>
+    <string name="tlf_flash_kick_body">将对方移出本等候室。被移出的人无法再次进入这次闪电跑的等候室。</string>
+    <string name="tlf_left_behind_title">未能一起出发</string>
+    <string name="tlf_left_behind_body">团队跑已出发。你当时尚未就绪或没有在看等候室，未能一起出发。今日的团队跑未被占用。</string>
+    <string name="tlf_not_member_title">仅限队员进入</string>
+    <string name="tlf_not_member_body">只有该跑团的队员可以进入这个等候室。</string>
+    <string name="tlf_start_blocked_title">这部手机未能开始跑步</string>
+    <string name="tlf_start_blocked_freed">团队跑已出发，但这部手机未能开始跑步，已为你退出等候室。今日的团队跑未被占用。</string>
+    <string name="tlf_start_blocked_used">团队跑已出发，但这部手机未能开始跑步，已为你退出等候室。今日的团队跑已被占用。</string>
+    <string name="tlf_start_blocked_checking">团队跑已出发，但这部手机未能开始跑步，已为你退出等候室。</string>
+    <string name="tlf_flash_start_alert_title">闪电跑已出发</string>
+    <string name="tlf_create_running">有一次正在进行的跑步。请结束那次跑步后再创建等候室。</string>
+    <string name="tlf_unrun_given_back">有一次已出发但这部手机没有跑的团队跑，已为你恢复今日的团队跑。</string>
+    <string name="tlf_crew_running">正在进行的团队跑结束后才能解散。</string>
+</resources>

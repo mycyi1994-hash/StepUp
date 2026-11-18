@@ -35,6 +35,14 @@ interface StepDao {
  */
 const val ZERO_STEP_UPLOAD_FROM_MS = 1_792_335_600_000L
 
+/**
+ * 모임(크루 · 번개)에서 출발한 러닝을 다른 러닝보다 먼저 올리는 횟수 — 이만큼 실패하기 전까지는 먼저 올리고, 끊기면 그 차례를 멈춘다
+ * ([com.stepup.android.data.repo.ClaimRepository]). 서버는 그 방의 러닝을 출발 시각으로 찾는다 — 그 러닝이 올라가기 전에 가까운 때의
+ * 다른 러닝이 먼저 기록되면 그 러닝이 방의 러닝(크루 보상 · 인원 보너스)이 되고, 진짜 모임 러닝은 혼자 러닝으로 정산됐다(2026-11-18).
+ * 이 횟수를 넘겨 계속 실패하는 모임 러닝은 다른 러닝처럼 시도한 때 순으로 뒤에 선다(뒤의 러닝을 영영 막지 않게).
+ */
+const val GROUP_UPLOAD_HOLD_ATTEMPTS = 6
+
 @Dao
 interface WalkSessionDao {
 
@@ -91,6 +99,8 @@ interface WalkSessionDao {
      * 최신 것부터 처리하면 창을 넘긴 세션이 영영 청구되지 않는다.
      * 다만 시도했다 실패한 세션은 시도한 때 순으로 뒤에 선다 — 오래된 러닝 둘이 계속 실패하면(연달아 둘이면 그 차례를
      * 멈춘다) 뒤의 러닝이 모두 기다리다 창을 넘겼다. 아직 시도하지 않은 세션은 시도한 때가 0 이라 오래된 순 그대로다.
+     * 모임(크루 · 번개)에서 출발한 러닝(크루가 적혔거나 인원이 둘 이상)은 [GROUP_UPLOAD_HOLD_ATTEMPTS] 번 실패하기 전까지 맨 앞에,
+     * 오래된 것부터 선다 — 다른 러닝이 먼저 올라가 그 방의 러닝 자리를 차지하지 않게.
      *
      * 경로가 없는 세션도 올린다 — 서버가 "경로 없는 러닝"의 하루 상한 안에서만 인정한다.
      * 거르면 그 러닝은 영영 "서버 확인 중"으로 남는다.
@@ -103,7 +113,9 @@ interface WalkSessionDao {
          WHERE uploadState IN ('PENDING', 'FAILED')
            AND (steps > 0 OR (durationSec > 0 AND startedAt >= $ZERO_STEP_UPLOAD_FROM_MS))
            AND recordingOwner = :owner
-         ORDER BY uploadAttemptedAt ASC, startedAt ASC
+         ORDER BY CASE WHEN (crewId <> '' OR partySize > 1) AND uploadAttempts < $GROUP_UPLOAD_HOLD_ATTEMPTS THEN 0 ELSE 1 END ASC,
+                  CASE WHEN (crewId <> '' OR partySize > 1) AND uploadAttempts < $GROUP_UPLOAD_HOLD_ATTEMPTS THEN 0 ELSE uploadAttemptedAt END ASC,
+                  startedAt ASC
          LIMIT :limit
         """,
     )

@@ -50,7 +50,9 @@ class CrewFixesTest {
 
     @Test fun `refused start for too few people keeps a specific notice while someone is away`() {
         assertEquals(PartyProblem.NEED_TWO, startRefusal("crew_run_need_two"))
-        assertNull(startRefusal("course_changed"))
+        // 코스가 바뀐 거절 · 오늘 이미 한 거절은 제 까닭으로(2026-11-18 — 예전에는 "다시 눌러 주세요"였다), 그 밖은 일반 안내
+        assertEquals(PartyProblem.COURSE_CHANGED, startRefusal("course_changed"))
+        assertNull(startRefusal("방장이 먼저 준비해야 합니다"))
         assertEquals(PartyProblem.NEED_TWO,
             lobbyProblem(false, PartyPhase.LOBBY, PartyProblem.NEED_TWO, null, true, awayReady = true))
         // 돌아왔으면 거둔다 — 다시 누르면 출발한다

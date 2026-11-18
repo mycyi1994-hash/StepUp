@@ -462,6 +462,9 @@ enum class CrewProblem {
     CREW_LIMIT, CREW_CLOSED, CREW_FULL, CREW_MISSING, APPLICATION_DECIDED, APPLICATION_MISSING,
     CAPACITY_BELOW_MEMBERS, TARGET_NOT_MEMBER, TARGET_IS_OWNER, OWNER_CANNOT_LEAVE, NOT_OWNER,
 
+    /** 달리는 중인 크루 러닝이 있어 해산할 수 없다(서버 0117 crew_dissolve 의 crew_running) */
+    CREW_RUNNING,
+
     /** 서버에 닿지 못했다 · 나중에 다시 */
     NETWORK,
 
@@ -493,6 +496,7 @@ enum class CrewProblem {
                 code == "target_not_member" -> TARGET_NOT_MEMBER
                 code == "target_is_owner" -> TARGET_IS_OWNER
                 code == "owner_cannot_leave" -> OWNER_CANNOT_LEAVE
+                code == "crew_running" -> CREW_RUNNING
                 reason.contains("크루장만") -> NOT_OWNER
                 else -> OTHER
             }
