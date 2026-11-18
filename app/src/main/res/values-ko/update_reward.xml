@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 선물로 받은 상급 뽑기(앱 업데이트 보상, 서버 0112 GIFT) — 스토어 판에도 보이는 상급 칸 · 안내. 네 언어를 함께 고친다 -->
 <resources>
-    <string name="update_reward_panel_sub">선물로 받은 기회</string>
+    <string name="update_reward_panel_sub">가진 상급 상자</string>
     <string name="update_reward_panel_detail">확률은 기회 받는 방법에서 볼 수 있어요</string>
     <string name="update_reward_spent">상급 뽑기를 모두 썼어요</string>
-    <string name="update_reward_sheet_sub">선물로 받은 상급 뽑기는 바로 쓸 수 있어요.</string>
-    <string name="update_reward_line">선물로 받은 기회</string>
-    <string name="update_reward_rules_note">상급 뽑기는 앱 업데이트 · 이벤트 선물로 받아요.</string>
+    <string name="update_reward_sheet_sub">가진 상급 상자는 상급 뽑기로 바로 열 수 있어요.</string>
+    <string name="update_reward_line">가진 상급 상자</string>
+    <string name="update_reward_rules_note">상급 상자는 한 주 걸음 · 7일 연속 목표 · 신발 레벨 · SUP · 이벤트로 받아요.</string>
 </resources>

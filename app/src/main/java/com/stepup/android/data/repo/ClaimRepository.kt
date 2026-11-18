@@ -116,6 +116,8 @@ class ClaimRepository(
                         verdict = result.value.verdict,
                         // 서버가 적은 판정 까닭 — 기록 상세가 적립 0 의 까닭으로 보인다(서버 0089)
                         verdictReason = result.value.verdictReason.orEmpty(),
+                        // 이 러닝 보상의 운(0116) — 서버가 답한 그대로. 무효 · 예전 서버는 null
+                        rewardLuck = result.value.rewardLuck,
                         // 서버가 계산한 금액으로 덮는다. 앱이 화면에 보여준
                         // 값과 다를 수 있고, 다르면 서버 쪽이 맞다.
                         claimAmount = result.value.pointsAwarded.toString(),

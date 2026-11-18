@@ -126,6 +126,10 @@ fun ItemsScreen(
     val progress by viewModel.collectionProgress.collectAsStateWithLifecycle()
     val factions by viewModel.factionProgress.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    // 부스터 판매(경제 4판, 서버 0116 boost_shop_enabled) — 꺼져 있으면 서버가 사기를 거절한다. 사기 칸을 숨기고 한 줄만 둔다.
+    // 서버가 없는 빌드(폰 안 경제)는 예전처럼 판다
+    val shoeRules by com.stepup.android.core.ServiceLocator.shoeRules.rules.collectAsStateWithLifecycle()
+    val boostShopOpen = !com.stepup.android.core.ServiceLocator.economyApi.isConfigured || shoeRules.boostShopEnabled
 
     val msgNoBalance = stringResource(R.string.toast_no_balance)
     val msgBoostActive = stringResource(R.string.toast_boost_active)
@@ -369,16 +373,27 @@ fun ItemsScreen(
         }
 
         // ── 부스트 상점 — 설명과 구매 동작 분리 ─────────────────────
-        item {
-            SectionHeader(
-                title = stringResource(R.string.items_boosts),
-                actionText = stringResource(R.string.common_more),
-            )
-        }
+        if (boostShopOpen) {
+            item {
+                SectionHeader(
+                    title = stringResource(R.string.items_boosts),
+                    actionText = stringResource(R.string.common_more),
+                )
+            }
 
-        items(BoostType.entries.toList()) { type ->
-            BoostCard(type = type, affordable = balance?.let { it >= type.cost } == true,
-                onBuy = { viewModel.buyBoost(type) }, modifier = Modifier.fillMaxWidth())
+            items(BoostType.entries.toList()) { type ->
+                BoostCard(type = type, affordable = balance?.let { it >= type.cost } == true,
+                    onBuy = { viewModel.buyBoost(type) }, modifier = Modifier.fillMaxWidth())
+            }
+        } else {
+            // 부스터는 지금 팔지 않는다 — 아이템은 이벤트 · 보상으로 받는다(가방 탭)
+            item {
+                Text(
+                    stringResource(R.string.items_boosts_paused),
+                    style = MaterialTheme.typography.bodyMedium, color = Silver,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("items-boosts-paused"),
+                )
+            }
         }
 
     }

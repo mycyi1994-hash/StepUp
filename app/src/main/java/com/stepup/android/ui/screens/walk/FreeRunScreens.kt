@@ -931,6 +931,8 @@ internal fun FreeRunResult(
     /** 시작 시각(ms) · 시작 자리 근처 장소 — 위 한 줄 */
     startedAt: Long = 0L,
     place: String? = null,
+    /** 서버가 확인한 보상의 운 한 줄(경제 4판 — "운 ×1.12 · 오늘 운이 좋았어요"). 확인 전 · 모르면 null */
+    luckNote: String? = null,
 ) {
     val c = StepUpUi.colors
     var more by rememberSaveable { mutableStateOf(false) }
@@ -975,6 +977,7 @@ internal fun FreeRunResult(
         notes = {
             if (deleteFailed) ResultNote(stringResource(R.string.run_free_delete_failed), stringResource(R.string.run_free_try_again), "run-delete-failed")
             if (penalty != null) ResultNote(penalty, null, "run-result-overspeed")
+            if (luckNote != null) ResultInfoNote(luckNote, "run-result-luck")
             if (shoeNote != null) {
                 ResultNote(shoeNote, null, "run-result-shoe-worn")
                 // 다 쓴 신발을 바로 고치는 길 — 글자 단추 하나(주 버튼은 아래 "완료" 그대로)
@@ -1035,6 +1038,21 @@ private fun ResultNote(title: String, body: String?, tag: String) {
             Text(title, style = StepUpUi.type.rowTitle.copy(fontSize = 14.5.sp), color = c.live)
             if (body != null) Text(body, style = StepUpUi.type.caption.copy(fontSize = 12.5.sp), color = c.live.copy(alpha = .85f))
         }
+    }
+}
+
+/** 알림이 아닌 한 줄(보상의 운) — 오류 면(빨강) 대신 묶음 면 · 파란 그림 */
+@Composable
+private fun ResultInfoNote(text: String, tag: String) {
+    val c = StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.fill)
+            .padding(horizontal = 16.dp, vertical = 13.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Info, contentDescription = null, tint = c.accentText, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(text, style = StepUpUi.type.rowTitle.copy(fontSize = 14.5.sp), color = c.label, modifier = Modifier.weight(1f))
     }
 }
 

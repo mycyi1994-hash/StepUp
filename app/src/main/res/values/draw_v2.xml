@@ -27,7 +27,7 @@
     <!-- 03 Free chances -->
     <string name="dv2_free_sheet_title">Free draw chances</string>
     <string name="dv2_free_sheet_sub">Each draw uses one chance.</string>
-    <string name="dv2_signup_gift">Sign-up gift</string>
+    <string name="dv2_signup_gift">Saved boxes</string>
     <string name="dv2_daily">Free today</string>
     <string name="dv2_free_now">Chances you can use now</string>
     <string name="dv2_close">Close</string>

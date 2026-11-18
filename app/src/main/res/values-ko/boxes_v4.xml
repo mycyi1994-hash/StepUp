@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 경제 4판(서버 0116) — 상자 받는 곳 · 보상의 운 · 출발 전 점검의 적립 분 · 적립 한도 · 부스터 판매 멈춤 · 이은 소셜 계정. 네 언어를 함께 고친다 -->
+<resources>
+    <!-- 상자 받는 곳 -->
+    <string name="boxes_title">상자 받는 곳</string>
+    <string name="boxes_sub">일반 상자는 무료 뽑기, 상급 상자는 상급 뽑기로 열어요.</string>
+    <string name="boxes_entry_runs">오늘 러닝 상자 %1$d / %2$d</string>
+    <string name="boxes_entry_week">이번 주 %1$s / %2$s보</string>
+    <string name="boxes_entry_week_got">이번 주 상급 상자 받음</string>
+    <string name="boxes_loading">상자 현황을 불러오는 중이에요</string>
+    <string name="boxes_failed">상자 현황을 불러오지 못했어요. 다시 불러와 주세요.</string>
+    <string name="boxes_normal">일반 상자</string>
+    <string name="boxes_premium">상급 상자</string>
+    <string name="boxes_check_in">출석</string>
+    <string name="boxes_per_day">하루 %1$d개</string>
+    <string name="boxes_run">오늘 적립 걸음 %1$s보</string>
+    <string name="boxes_week">이번 주 적립 걸음 %1$s보</string>
+    <string name="boxes_got">받았어요</string>
+    <string name="boxes_steps_progress">%1$s / %2$s보</string>
+    <string name="boxes_streak">%1$d일 연속 목표 달성</string>
+    <string name="boxes_streak_value">%1$d일마다 1개</string>
+    <string name="boxes_levels">신발이 처음 Lv5 · 10 · 15 · 20 이 될 때</string>
+    <string name="boxes_levels_value">1개씩</string>
+    <string name="boxes_levels_got">받은 레벨 %1$s</string>
+    <string name="boxes_buy_line">SUP 로 사기 · %1$s SUP</string>
+    <string name="boxes_buy_today">오늘 %1$d / %2$d개 샀어요</string>
+    <string name="boxes_buy_week">이번 주 %1$d / %2$d개 샀어요</string>
+    <string name="boxes_buy">사기</string>
+    <string name="boxes_block_limit_day">오늘은 다 샀어요</string>
+    <string name="boxes_block_limit_week">이번 주는 다 샀어요</string>
+    <string name="boxes_block_balance">SUP 가 모자라요</string>
+    <string name="boxes_block_selling">지금은 상자를 팔지 않아요</string>
+    <string name="boxes_premium_have">가진 상급 상자</string>
+    <string name="boxes_premium_have_note">가진 상급 상자는 상급 뽑기로 바로 열 수 있어요.</string>
+    <string name="boxes_count">%1$d개</string>
+    <string name="boxes_balance">내 잔고</string>
+    <string name="boxes_rules_note">상자는 출석 · 러닝 · 한 주 걸음 · 신발 레벨 · SUP 로도 받아요. 상자 받는 곳에서 볼 수 있어요.</string>
+    <!-- 사기 확인 -->
+    <string name="boxes_confirm_title_normal">일반 상자 사기</string>
+    <string name="boxes_confirm_title_premium">상급 상자 사기</string>
+    <string name="boxes_confirm_body_normal">%1$s SUP 로 일반 상자 1개를 사요. 무료 뽑기가 1번 늘어요.</string>
+    <string name="boxes_confirm_body_premium">%1$s SUP 로 상급 상자 1개를 사요. 상급 뽑기가 1번 늘어요.</string>
+    <string name="boxes_buy_today_label">오늘 산 상자</string>
+    <string name="boxes_buy_week_label">이번 주 산 상자</string>
+    <string name="boxes_of">%1$d / %2$d개</string>
+    <string name="boxes_confirm_buy">%1$s SUP 로 사기</string>
+    <string name="boxes_retry">다시 시도</string>
+    <string name="boxes_retry_note">연결이 끊겨 결과를 받지 못했어요. 다시 눌러도 한 번만 사요.</string>
+    <!-- 산 결과 · 거절 -->
+    <string name="boxes_bought_normal">일반 상자 1개를 받았어요. 무료 뽑기로 열어요.</string>
+    <string name="boxes_bought_premium">상급 상자 1개를 받았어요. 상급 뽑기로 열어요.</string>
+    <string name="boxes_refused_not_enough">SUP 가 모자라 사지 못했어요</string>
+    <string name="boxes_refused_limit_day">오늘은 상자를 %1$d개까지 살 수 있어요</string>
+    <string name="boxes_refused_limit_week">상급 상자는 한 주에 %1$d개까지 살 수 있어요</string>
+    <string name="boxes_refused_sign_in">다시 로그인하면 살 수 있어요</string>
+    <string name="boxes_refused_other">요청을 처리하지 못했어요. 잠시 뒤 다시 해 주세요.</string>
+
+    <!-- 보상의 운(record_session reward_luck) -->
+    <string name="run_luck_good">운 %1$s · 오늘 운이 좋았어요</string>
+    <string name="run_luck_even">운 %1$s · 평소만큼 받았어요</string>
+    <string name="run_luck_low">운 %1$s · 이번엔 조금 아쉬웠어요</string>
+
+    <!-- 출발 전 점검 -->
+    <string name="run_check_earn_minutes">이 신발은 약 %1$d분 동안 적립돼요</string>
+    <string name="run_check_energy_empty">오늘 적립 한도를 다 썼어요 — 이 러닝은 적립이 없어요</string>
+
+    <!-- 부스터 판매 멈춤(boost_shop_enabled = false) -->
+    <string name="items_boosts_paused">부스터는 지금 팔지 않아요. 아이템은 이벤트 · 보상으로 받을 수 있어요.</string>
+
+    <!-- 연결된 계정 — 이은 소셜 계정 -->
+    <string name="set_social_google">Google · %1$s</string>
+    <string name="set_social_google_only">Google</string>
+</resources>

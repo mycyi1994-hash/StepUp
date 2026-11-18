@@ -118,6 +118,11 @@ data class WalkSessionEntity(
      */
     @ColumnInfo(defaultValue = "''")
     val verdictReason: String = "",
+    /**
+     * 이 러닝 보상의 운(경제 4판, record_session reward_luck — 0.7 ~ 1.3, 평균 1). 서버가 답한 그대로 — 결과 · 기록 상세가 한 줄로 보인다.
+     * 판 22 전에 확인받은 러닝 · 무효 · 예전 서버(0116 전)는 모르므로 null 이다(운을 짓지 않는다).
+     */
+    val rewardLuck: Double? = null,
 )
 
 /**

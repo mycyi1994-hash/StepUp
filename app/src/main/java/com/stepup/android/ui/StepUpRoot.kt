@@ -796,9 +796,15 @@ private fun MainScaffoldContent(
                     AppChromePolicy.immersive = drawImmersive
                     onDispose { AppChromePolicy.immersive = false }
                 }
-                // 지갑 페이지에서 연결하고 오거나 러닝을 마치고 오면 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다
+                // 상자 현황(경제 4판, 서버 0116 box_status) — 메인의 "상자 받는 곳" 줄. 로그인 전 · 예전 서버면 null(줄이 없다)
+                val boxStatus by ServiceLocator.shoeRules.boxes.collectAsStateWithLifecycle()
+                val boxScope = rememberCoroutineScope()
+                // 지갑 페이지에서 연결하고 오거나 러닝을 마치고 오면 수가 바뀌어 있다 — 돌아올 때마다 다시 읽는다(상자 현황도)
                 androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
                     drawVm.refresh()
+                    if (ServiceLocator.economyApi.isConfigured) {
+                        boxScope.launch { runCatching { ServiceLocator.shoeRules.refreshBoxes() } }
+                    }
                     onPauseOrDispose { }
                 }
                 // 21 — 신발 탭(내 신발)으로. 받은 신발이 있으면 그 신발을 고른 채로(착용은 바꾸지 않는다)
@@ -826,6 +832,7 @@ private fun MainScaffoldContent(
                 }
                 com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
                     modifier = Modifier.weight(1f),
+                    boxes = boxStatus,
                     state = drawState,
                     flow = drawFlow,
                     pending = drawPending,
@@ -859,6 +866,8 @@ private fun MainScaffoldContent(
                                 navController.navigate(Routes.RUN_NOW)
                             },
                             onNoticeDone = drawVm::consumeNotice,
+                            // 상자를 산 뒤(서버 확인) — 뽑기 칸의 남은 수를 다시 읽는다
+                            onBoxesBought = drawVm::refresh,
                             // 22 로그인 전 — 로그인 화면으로. 서버 설정이 없는 빌드는 로그인할 수 없어 누를 수 없는 버튼(null)
                             onSignIn = if (!ServiceLocator.economyApi.isConfigured) null else ({
                                 drawScope.launch {

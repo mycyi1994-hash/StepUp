@@ -43,6 +43,10 @@ class WalkViewModel(
     val energy: StateFlow<Double> = stepRepository.energy
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
+    /** 오늘 남은 에너지 — 아직 읽지 못했으면 null(출발 전 점검이 "적립 한도를 다 썼어요"를 읽기 전 0 으로 단정하지 않게) */
+    val energyKnown: StateFlow<Double?> = stepRepository.energy.map<Double, Double?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val sneakerLevel: StateFlow<Int> = rewardRepository.sneakerLevel
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1)
 
@@ -240,6 +244,26 @@ class WalkViewModel(
             rows.firstOrNull { it.startedAt == state.lastStartedAt }
                 ?.takeIf { it.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name }
                 ?.claimAmount?.toDoubleOrNull()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * 서버가 확인한 이번 러닝 보상의 운(경제 4판, 0116 reward_luck). 확인 전 · 무효 · 예전 서버 · 적립 0 이면 null —
+     * 결과 화면은 서버가 준 값만 한 줄로 보인다([com.stepup.android.domain.RunLuck]).
+     */
+    val lastServerLuck: StateFlow<Double?> = combine(
+        WalkSessionService.state,
+        stepRepository.recentSessions(5),
+    ) { state, rows ->
+        if (state.lastStartedAt == 0L) {
+            null
+        } else {
+            rows.firstOrNull { it.startedAt == state.lastStartedAt }?.let { row ->
+                com.stepup.android.domain.RunLuck.shown(
+                    row.rewardLuck, row.claimAmount.toDoubleOrNull(),
+                    signed = row.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name,
+                )
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

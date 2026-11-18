@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stepup.android.R
 import com.stepup.android.domain.DrawKind
 import com.stepup.android.domain.Sneaker
@@ -54,13 +55,15 @@ class DrawActions(
     val onNoticeDone: () -> Unit = {},
     /** 22 로그인 전 — 로그인 화면으로. 로그인할 수 없는 빌드(서버 설정 없음)면 null(버튼을 누를 수 없다) */
     val onSignIn: (() -> Unit)? = null,
+    /** 상자 받는 곳에서 상자를 산 뒤(서버가 확인한 뒤) — 뽑기 현황을 다시 읽는다 */
+    val onBoxesBought: () -> Unit = {},
 )
 
 /** 짧은 알림(DRAW18)이 보이는 동안 메인 아래에 비우는 자리 — 알림 48dp + 하단 탭과의 틈 12dp */
 private val ToastRoom = 60.dp
 
 /** 메인 위에서 여닫는 안내창 — 여닫아도 기회를 쓰지 않는다(10 · 13 · 14 · 15 · 16 · 17) */
-enum class DrawSheet { FreeChances, PremiumChances, Rules, WalletBenefit, FreeEmpty, RunChances }
+enum class DrawSheet { FreeChances, PremiumChances, Rules, WalletBenefit, FreeEmpty, RunChances, Boxes }
 
 /**
  * 신발 뽑기 — 하단 가운데 "뽑기" 탭(2026-10-03 파란 톤 통합 전달본 v4, stepup-draw-blue-claude-v19 · DRAW00~33).
@@ -84,6 +87,8 @@ fun MysteryBoxScreen(
     openingAt: Float? = null,
     /** 블록체인 기능이 있는 판인가 — 스토어 판(false)은 상급 칸 · 안내에 선물로 받은 상급 뽑기만 보인다(0112) */
     web3: Boolean = com.stepup.android.BuildConfig.WEB3,
+    /** 상자 현황(경제 4판, 서버 0116 box_status) — 있으면 메인에 "상자 받는 곳" 줄을 둔다. 모르면 null(줄이 없다) */
+    boxes: com.stepup.android.domain.BoxStatus? = null,
 ) {
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.DrawEnter) }
@@ -138,6 +143,7 @@ fun MysteryBoxScreen(
                     onSheet = { sheet = it },
                     premiumFocus = premiumFocus,
                     web3 = web3,
+                    boxes = boxes,
                 )
                 is DrawFlow.Requesting -> DrawRequestScreen(current.kind, onBack = actions.onLeaveFlow)
                 is DrawFlow.Opening -> DrawOpeningScreen(current.result, onFinish = actions.onFinishOpening, frozenAt = openingAt)
@@ -227,6 +233,24 @@ fun MysteryBoxScreen(
         // DRAW16 → "상급 뽑기 보기"는 같은 화면의 상급 패널로(글자 탭을 새로 만들지 않는다)
         DrawSheet.FreeEmpty -> FreeEmptySheet(status, onSeePremium = { close(); premiumFocus++ }, onClose = close, premiumShown = premiumShown)
         DrawSheet.RunChances -> RunChancesSheet(status, onStartRun = { close(); actions.onStartRun() }, onClose = close)
+        // 상자 받는 곳(0116) — 현황은 서버 box_status, 사기는 확인 뒤 box_buy 한 번(요청 번호)
+        DrawSheet.Boxes -> {
+            val shop: BoxShopViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = BoxShopViewModel.Factory)
+            LaunchedEffect(shop) { shop.open() }
+            val shopBoxes by shop.boxes.collectAsStateWithLifecycle()
+            val shopStep by shop.step.collectAsStateWithLifecycle()
+            val shopLoading by shop.loading.collectAsStateWithLifecycle()
+            val shopFailed by shop.failed.collectAsStateWithLifecycle()
+            BoxSourcesSheet(
+                boxes = shopBoxes, step = shopStep, loading = shopLoading, failed = shopFailed,
+                onAsk = shop::ask, onConfirm = { shop.confirm(actions.onBoxesBought) }, onCancel = shop::cancel,
+                onReload = shop::reload,
+                onClose = {
+                    shop.cancel()
+                    close()
+                },
+            )
+        }
         null -> Unit
     }
 }

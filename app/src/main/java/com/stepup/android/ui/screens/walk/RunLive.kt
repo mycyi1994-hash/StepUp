@@ -857,6 +857,10 @@ internal fun ResultRewardCard(reward: ResultReward, onReason: () -> Unit, onHist
                             modifier = Modifier.testTag("run-result-reward"))
                     }
                     Text(stringResource(R.string.run_reward_done_note), style = runTextStyle(12.sp, t.label))
+                    // 보상의 운(0116) — 서버가 준 값 한 줄
+                    reward.luck?.let { luck ->
+                        Text(luck, style = runTextStyle(12.sp, t.label, FontWeight.SemiBold), modifier = Modifier.testTag("run-result-luck"))
+                    }
                 }
                 RunChip(stringResource(R.string.run_reward_done), outlined = true, accent = t.cyan,
                     modifier = Modifier.testTag("run-result-settle-done"))

@@ -81,6 +81,8 @@ internal fun DrawHome(
     premiumFocus: Int = 0,
     /** 블록체인 기능이 있는 판인가 — 스토어 판(false)의 상급 칸은 선물로 받은 상급 뽑기만(지갑 · 러닝 안내 없이, 0112) */
     web3: Boolean = com.stepup.android.BuildConfig.WEB3,
+    /** 상자 현황(0116) — 있으면 "상자 받는 곳" 줄 */
+    boxes: com.stepup.android.domain.BoxStatus? = null,
 ) {
     val free = drawHomeCard(status, DrawKind.FREE, pending?.kind, loading, signedOut, web3)
     val premium = drawHomeCard(status, DrawKind.PREMIUM, pending?.kind, loading, signedOut, web3)
@@ -110,6 +112,11 @@ internal fun DrawHome(
                     premium, status, actions, onSheet, pendingAny = pending != null, web3 = web3,
                     modifier = Modifier.bringIntoViewRequester(premiumView),
                 )
+            }
+            if (status != null && boxes != null) {
+                // 상자 받는 곳(경제 4판) — 출석 · 러닝 · 주간 걸음 · 연속 · 신발 레벨 · SUP 로 사기. 서버 값 한 줄, 누르면 시트
+                Spacer(Modifier.height(12.dp))
+                BoxSourcesEntry(boxes, onOpen = { onSheet(DrawSheet.Boxes) }, Modifier.testTag("draw-boxes"))
             }
             if (status != null) {
                 // 기회 받는 방법 — 서버 값으로 회원에게 해당하는 규칙만(DRAW05)
