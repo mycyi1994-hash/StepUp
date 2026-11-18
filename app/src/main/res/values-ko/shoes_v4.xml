@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 경제 4판(서버 0116, 2026-11-18) — 신발 능력치 지수 · 분 · 별 · 유형, 포인트 미리보기, 무료 · 가진 만큼 수리, 강화가 주는 것 -->
+<resources>
+    <string name="v4s_unit_min">분</string>
+    <string name="v4s_unit_min_suffix">분</string>
+    <string name="v4s_minutes">%1$s분</string>
+    <string name="v4s_full_minutes">가득 차면 %1$d분</string>
+    <string name="v4s_type_efficiency">효율형</string>
+    <string name="v4s_type_comfort">절약형</string>
+    <string name="v4s_type_endurance">지구력형</string>
+    <string name="v4s_type_balanced">균형형</string>
+    <string name="v4s_quality_cd">별 %1$d개, %2$s</string>
+
+    <string name="v4s_basis_intro">효율 · 착화감은 100 이 기준이에요. 숫자가 2배면 효과도 2배예요.</string>
+    <string name="v4s_basis_efficiency">효율: 같은 걸음에 버는 SUP예요. 효율 200 이면 효율 100 의 2배를 벌어요. 막대 끝은 이 등급에서 가장 잘 뽑힌 새 신발이에요.</string>
+    <string name="v4s_basis_comfort">착화감: 에너지 1로 적립하는 걸음이에요. 막대 끝은 이 등급에서 가장 잘 뽑힌 새 신발이고, 포인트로 에너지 %1$d%% 절약까지 올릴 수 있어요.</string>
+    <string name="v4s_basis_durability">내구도: 이 신발로 보상을 받으며 달릴 수 있는 시간(분)이에요. 막대 끝은 가득 찼을 때예요. 달리면 줄고, 러닝마다 닳는 양이 조금씩 달라요.</string>
+    <string name="v4s_basis_quality">별(★ ~ ★★★)은 뽑힌 값이 이 등급 안에서 얼마나 좋은지예요. 유형은 가장 잘 뽑힌 능력치예요.</string>
+    <string name="v4s_basis_note">실제로 받는 SUP는 러닝을 마친 뒤 확정돼요.</string>
+
+    <string name="v4s_points_hint">1개 = 뽑은 값의 +%1$s%%</string>
+    <string name="v4s_points_hint_comfort">1개 = 뽑은 값의 +%1$s%% · 에너지 %2$d%% 절약까지</string>
+    <string name="v4s_points_per_level">레벨마다 %1$d개 · 5레벨마다 %2$d개 더</string>
+    <string name="v4s_points_manage_done">다 나눴어요 · 레벨이 오르면 %1$d개씩 받아요</string>
+
+    <string name="v4s_repair_free_left">무료 수리 1회 남음</string>
+    <string name="v4s_repair_free_body">%1$d시간에 한 번, 신발 한 켤레를 무료로 가득 고쳐요.</string>
+    <string name="v4s_repair_free_next">다음 무료 수리 %1$d시간 뒤</string>
+    <string name="v4s_repair_free_action">무료로 수리하기</string>
+    <string name="v4s_repair_free_done">무료 수리로 내구도가 모두 회복됐어요.</string>
+    <string name="v4s_repair_cost_note">수리비는 신발의 효율만큼 — 이 신발로 걸어서 버는 SUP의 약 %1$d%%예요.</string>
+    <string name="v4s_repair_partial_body">가진 SUP만큼 %1$s분을 고칠 수 있어요.</string>
+    <string name="v4s_repair_partial_action">가진 만큼 수리하기 · %1$s SUP</string>
+    <string name="v4s_repair_partial_done">가진 만큼 고쳤어요. 나머지는 SUP를 모아 고칠 수 있어요.</string>
+
+    <string name="v4s_upg_materials_rule">한 등급 아래 이상 · 내구도 %1$d%% 이상 신발 3개</string>
+    <string name="v4s_upg_gain_energy">하루 에너지 +%1$d(가진 신발 중 가장 높은 레벨일 때)</string>
+    <string name="v4s_upg_gain_milestone">Lv. %1$d — 내구도 가득 · 상급 상자 1개(이 레벨에 처음 닿으면)</string>
+    <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 내구도 가득(이 레벨의 상급 상자는 이미 받았어요)</string>
+    <string name="v4s_upg_repair_note">효율을 올리면 수리비도 효율만큼 올라요.</string>
+    <string name="v4s_upg_got_milestone">내구도를 가득 채웠어요. 이 레벨에 처음 닿았다면 상급 상자 1개가 뽑기에 쌓여요.</string>
+    <string name="v4s_upg_block_worn" formatted="false">내구도 50% 이상인 신발만 재료가 돼요</string>
+</resources>

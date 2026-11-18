@@ -2,6 +2,8 @@ package com.stepup.android
 
 import com.stepup.android.data.local.SneakerEntity
 import com.stepup.android.data.repo.EconomyOutcome
+import com.stepup.android.data.repo.QUOTE_CHANGED
+import com.stepup.android.data.repo.RepairReply
 import com.stepup.android.data.repo.RequestKeys
 import com.stepup.android.data.repo.repairAction
 import com.stepup.android.domain.Faction
@@ -9,6 +11,7 @@ import com.stepup.android.domain.ForgePending
 import com.stepup.android.domain.ForgeStats
 import com.stepup.android.domain.ForgeTarget
 import com.stepup.android.domain.Rarity
+import com.stepup.android.domain.RepairV2Result
 import com.stepup.android.domain.ServerStats
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.ui.screens.items.CareBlock
@@ -18,8 +21,12 @@ import com.stepup.android.ui.screens.items.ShoeCareBackend
 import com.stepup.android.ui.screens.items.ShoeCareStore
 import com.stepup.android.ui.screens.items.balanceAfter
 import com.stepup.android.ui.screens.items.careBlockOf
+import com.stepup.android.ui.screens.items.ForgeReward
 import com.stepup.android.ui.screens.items.forgePointsGain
+import com.stepup.android.ui.screens.items.forgeRewards
 import com.stepup.android.ui.screens.items.forgeRows
+import com.stepup.android.ui.screens.items.freeRepairHoursLeft
+import com.stepup.android.ui.screens.items.partialRepairOf
 import com.stepup.android.ui.screens.items.formatSupExact
 import com.stepup.android.ui.screens.items.holds
 import com.stepup.android.ui.screens.items.pending
@@ -99,6 +106,99 @@ class ShoeCareTest {
         assertEquals(RepairPhase.Blocked(CareBlock.MISSING), repairGate(null, 999.0, true))
         // 폰에서 올린 예전 신발도 서버는 수리를 받는다 — 강화 가능(upgradable)으로 수리 가능을 정하지 않는다
         assertTrue(repairGate(server(origin = "IMPORT", durability = 68.0), 999.0, true) is RepairPhase.Confirm)
+    }
+
+    // ── 경제 4판 수리(0116) — 무료 · 가진 만큼 · 바뀐 수리비 ─────────────
+
+    @Test fun `무료 수리가 남아 있으면(서버 단가 0) 잔고와 상관없이 0 SUP 로 가득`() {
+        val shoe = absolute(now = 100, max = 200, perUnit = 0.0)
+        val quote = requireNotNull(repairQuoteOf(shoe))
+        assertTrue(quote.free)
+        assertEquals(0, BigDecimal.ZERO.compareTo(quote.cost))
+        assertEquals(200, quote.targetNow)
+        val gate = repairGate(shoe, 0.0, true) as RepairPhase.Confirm
+        assertTrue(gate.quote.free)
+        // 단가가 있으면 무료가 아니다
+        assertFalse(requireNotNull(repairQuoteOf(absolute(now = 100, max = 200, perUnit = 0.12))).free)
+    }
+
+    @Test fun `잔고가 모자라면 가진 만큼 수리 — 내림(잔고 나누기 단가), 비용은 잔고를 넘지 않는다`() {
+        val shoe = absolute(now = 100, max = 200, perUnit = 0.12)
+        val gate = repairGate(shoe, 5.0, true) as RepairPhase.Insufficient
+        // 가득은 100 × 0.12 = 12 SUP, 가진 5 SUP 로는 41점(4.92 SUP)
+        assertEquals(0, BigDecimal("12").compareTo(gate.quote.cost))
+        val partial = requireNotNull(gate.partial)
+        assertTrue(partial.partial)
+        assertEquals(0, BigDecimal("41").compareTo(partial.points))
+        assertEquals(0, BigDecimal("4.92").compareTo(partial.cost))
+        assertEquals(141, partial.targetNow)
+        assertEquals(41, partial.sendPoints)
+        // 1점도 못 고치면 없다(막힌 장면 그대로) · 무료 · 예전 서버 견적에도 없다
+        assertNull((repairGate(shoe, 0.05, true) as RepairPhase.Insufficient).partial)
+        assertNull(partialRepairOf(requireNotNull(repairQuoteOf(absolute(now = 100, max = 200, perUnit = 0.0))), 5.0))
+        assertNull(partialRepairOf(requireNotNull(repairQuoteOf(server(durability = 68.0))), 20.0))
+        assertNull(requireNotNull(repairQuoteOf(server(durability = 68.0))).sendPoints)
+    }
+
+    @Test fun `가진 만큼 수리는 그 양과 보인 금액으로 보내고, 고친 만큼 동기화되면 완료`() {
+        val backend = FakeBackend(absolute(now = 100, max = 200, perUnit = 0.12), balance = 5.0)
+        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
+        store.openRepair(ID)
+        assertTrue((store.repair.value[ID] as RepairPhase.Insufficient).partial != null)
+        backend.onRepair = {
+            backend.shoe = absolute(now = 141, max = 200, perUnit = 0.12)
+            backend.balance = 0.08
+            EconomyOutcome.Ok
+        }
+        store.confirmRepair(ID)
+        assertEquals(1, backend.repairs)
+        assertEquals(41, backend.lastPoints)
+        assertEquals(4.92, backend.lastExpected!!, 1e-9)
+        val done = store.repair.value[ID] as RepairPhase.Done
+        assertTrue(done.quote.partial)
+        assertEquals(0.08, done.balance, 1e-9)
+    }
+
+    @Test fun `서버 수리비가 바뀌었으면(QUOTE_CHANGED) 치르지 않고 다시 받은 값으로 다시 확인받는다`() {
+        // 화면은 무료로 봤지만 그새 다른 폰에서 무료를 썼다
+        val backend = FakeBackend(absolute(now = 100, max = 200, perUnit = 0.0), balance = 50.0)
+        val store = ShoeCareStore(backend, CoroutineScope(Dispatchers.Unconfined))
+        store.openRepair(ID)
+        assertTrue((store.repair.value[ID] as RepairPhase.Confirm).quote.free)
+        backend.onReply = {
+            // 거절 뒤 다시 받은 신발 목록 — 단가가 생겼다
+            backend.shoe = absolute(now = 100, max = 200, perUnit = 0.12)
+            RepairReply(
+                EconomyOutcome.Rejected(QUOTE_CHANGED),
+                quoteChanged = RepairV2Result(false, QUOTE_CHANGED, null, 100, 12.0, false, null, null),
+            )
+        }
+        store.confirmRepair(ID)
+        assertEquals(0.0, backend.lastExpected!!, 1e-9)
+        val changed = store.repair.value[ID] as RepairPhase.Confirm
+        assertTrue(changed.changed)
+        assertFalse(changed.quote.free)
+        assertEquals(0, BigDecimal("12").compareTo(changed.quote.cost))
+        // 다시 누르면 새 금액으로 보낸다
+        backend.onReply = null
+        backend.onRepair = {
+            backend.shoe = absolute(now = 200, max = 200, perUnit = 0.12)
+            backend.balance = 38.0
+            EconomyOutcome.Ok
+        }
+        store.confirmRepair(ID)
+        assertEquals(2, backend.repairs)
+        assertEquals(12.0, backend.lastExpected!!, 1e-9)
+        assertTrue(store.repair.value[ID] is RepairPhase.Done)
+    }
+
+    @Test fun `다음 무료 수리까지 — 올려서 시간, 지금 쓸 수 있거나 모르면 없음`() {
+        val now = 1_000_000_000L
+        assertNull(freeRepairHoursLeft(null, now))
+        assertNull(freeRepairHoursLeft(now - 1, now))
+        assertEquals(2, freeRepairHoursLeft(now + 90 * 60_000L, now))
+        assertEquals(1, freeRepairHoursLeft(now + 1_000L, now))
+        assertEquals(48, freeRepairHoursLeft(now + 48 * 3_600_000L, now))
     }
 
     @Test fun `서버 거절 문구를 확인된 까닭으로 옮긴다`() {
@@ -261,32 +361,47 @@ class ShoeCareTest {
 
     // ── 강화 화면의 세 줄(서버 forge 값) ────────────────────────
 
-    @Test fun `강화 미리보기는 레벨 +1 · 등급 · 레벨만큼 스탯 포인트 — 효율 · 착화감은 저절로 오르지 않고 내구도 줄은 없다`() {
-        val stats = ForgeStats(level = 10, maxLevel = 20, efficiencyBps = 1_800, comfortBps = 800, pointsTotal = 36, pointsFree = 4)
+    @Test fun `강화 미리보기는 레벨 +1 · 등급의 포인트 — 효율 · 착화감은 저절로 오르지 않고 내구도 줄은 없다`() {
+        val stats = ForgeStats(level = 10, maxLevel = 27, efficiencyBps = 1_800, comfortBps = 800, pointsTotal = 36, pointsFree = 4)
         val target = ForgeTarget(ID, Rarity.LEGENDARY, stats, basePermille = 700, block = null)
         val next = target.previewNext()
-        // 레전더리 Lv10 → 11: 11 레벨 2 × 레전더리 4 = 8 (서버 0066)
-        assertEquals(listOf(11, 44, 12), listOf(next.level, next.pointsTotal, next.pointsFree))
+        // 레전더리 Lv10 → 11: 레벨마다 5 (서버 0116)
+        assertEquals(listOf(11, 41, 9), listOf(next.level, next.pointsTotal, next.pointsFree))
         assertEquals(1_800 to 800, next.efficiencyBps to next.comfortBps)
-        val rows = forgeRows(stats, next)
+        val rows = forgeRows(stats, next, Rarity.LEGENDARY)
         assertEquals(listOf(DetailStat.LEVEL, DetailStat.EFFICIENCY, DetailStat.COMFORT), rows.map { it.stat })
         assertEquals("10" to "11", rows[0].now to rows[0].next)
-        // 그대로인 효율 · 착화감은 화살표를 그리지 않는다
-        assertEquals("+18.0%" to null, rows[1].now to rows[1].next)
-        assertEquals("8.0%" to null, rows[2].now to rows[2].next)
+        // 효율 · 착화감은 지수(경제 4판) — 그대로인 값은 화살표를 그리지 않는다
+        assertEquals("118" to null, rows[1].now to rows[1].next)
+        assertEquals("109" to null, rows[2].now to rows[2].next)
         assertNull(rows[1].nextFraction)
-        assertEquals(8, forgePointsGain(stats, next, Rarity.LEGENDARY))
-        // 포인트를 보내지 않는 예전 서버 — 같은 표(등급 · 레벨)로 센다. 서버가 바뀐 효율을 주면 그대로 보인다
-        assertEquals(8, forgePointsGain(stats.copy(pointsTotal = 0), next.copy(pointsTotal = 0), Rarity.LEGENDARY))
-        assertEquals(1_200, forgePointsGain(stats.copy(level = 29, pointsTotal = 0), next.copy(level = 30, pointsTotal = 0), Rarity.FINISH))
-        assertEquals("+18.0%" to "+18.5%", forgeRows(stats, next.copy(efficiencyBps = 1_850))[1].let { it.now to it.next })
+        // 막대 끝은 레전더리 꼭대기(효율 607.5)
+        assertEquals((118.0 / 607.5).toFloat(), rows[1].nowFraction, 1e-4f)
+        assertEquals(5, forgePointsGain(stats, next, Rarity.LEGENDARY))
+        // 포인트를 보내지 않는 예전 서버 — 같은 표(등급 · 레벨)로 센다. 피니시 Lv30 은 8 + 5레벨 보너스 12
+        assertEquals(5, forgePointsGain(stats.copy(pointsTotal = 0), next.copy(pointsTotal = 0), Rarity.LEGENDARY))
+        assertEquals(20, forgePointsGain(stats.copy(level = 29, pointsTotal = 0), next.copy(level = 30, pointsTotal = 0), Rarity.FINISH))
+        // 서버가 바뀐 효율을 주면 그대로 보인다
+        assertEquals("118" to "119", forgeRows(stats, next.copy(efficiencyBps = 1_850))[1].let { it.now to it.next })
         assertEquals(0, forgePointsGain(stats, stats, Rarity.LEGENDARY))
-        // 레벨 분모는 서버가 준 상한(20)
-        assertEquals(10f / 20f, rows[0].nowFraction, 1e-6f)
-        assertEquals(11f / 20f, rows[0].nextFraction!!, 1e-6f)
+        // 레벨 분모는 서버가 준 상한(27)
+        assertEquals(10f / 27f, rows[0].nowFraction, 1e-6f)
+        assertEquals(11f / 27f, rows[0].nextFraction!!, 1e-6f)
         // 실패 · 결과 미확인 · 최대 화면은 다음 값을 그리지 않는다
         assertNull(forgeRows(stats, null)[0].next)
         assertNull(forgeRows(stats, null)[0].nextFraction)
+    }
+
+    @Test fun `한 레벨이 주는 것 — 등급의 포인트 · 하루 에너지 +2 · 5레벨마다 내구도 가득과 상급 상자`() {
+        // 일반 Lv5: 레벨 2 + 보너스 3
+        assertEquals(
+            listOf(ForgeReward.Points(5), ForgeReward.Energy(2), ForgeReward.Milestone(5, boxAlreadyGot = false)),
+            forgeRewards(Rarity.COMMON, 5),
+        )
+        // 피니시 Lv11 — 레벨마다 8, 5의 배수가 아니면 상자 없음
+        assertEquals(listOf(ForgeReward.Points(8), ForgeReward.Energy(2)), forgeRewards(Rarity.FINISH, 11))
+        // 이 계정이 Lv10 상자를 이미 받았으면 그렇게 말한다
+        assertEquals(ForgeReward.Milestone(10, boxAlreadyGot = true), forgeRewards(Rarity.RARE, 10, levelsGot = listOf(5, 10)).last())
     }
 
     @Test fun `결과를 모르는 강화 요청은 대상과 재료 신발을 붙잡는다`() {
@@ -303,7 +418,11 @@ class ShoeCareTest {
         var refreshOutcome: EconomyOutcome = EconomyOutcome.Ok
         var refreshes = 0
         var repairs = 0
+        var lastPoints: Int? = null
+        var lastExpected: Double? = null
         var onRepair: () -> EconomyOutcome = { EconomyOutcome.Ok }
+        /** 있으면 대답 전체(QUOTE_CHANGED 등) */
+        var onReply: (() -> RepairReply)? = null
         var unsent = false
         var sends = 0
         val syncs = kotlinx.coroutines.flow.MutableStateFlow(0L)
@@ -314,7 +433,12 @@ class ShoeCareTest {
         override suspend fun refresh(): EconomyOutcome = refreshOutcome.also { refreshes++ }
         override suspend fun shoe(id: Long): Sneaker? = shoe?.takeIf { it.id == id }
         override suspend fun balance(): Double? = balance
-        override suspend fun repair(id: Long): EconomyOutcome = onRepair().also { repairs++ }
+        override suspend fun repair(id: Long, points: Int?, expected: Double?): RepairReply {
+            repairs++
+            lastPoints = points
+            lastExpected = expected
+            return onReply?.invoke() ?: RepairReply(onRepair())
+        }
     }
 
     private companion object {

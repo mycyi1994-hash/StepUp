@@ -102,7 +102,8 @@ internal suspend fun sendPoints(sending: PointsPhase.Sending): PointsPhase {
         EconomyOutcome.Offline to false
     }
     val latest = try {
-        ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == sending.basis.shoeId }?.let(::pointsBasisOf)
+        ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == sending.basis.shoeId }
+            ?.let { pointsBasisOf(it, sending.basis.rules) }
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (_: Exception) {
@@ -143,7 +144,7 @@ private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: P
     when (phase) {
         is PointsPhase.Editing -> {
             CareSheetTitle(stringResource(R.string.points_title), shoe.nameAndNumber())
-            FreeLine(basis.free(draft))
+            FreeLine(basis.free(draft), basis)
             PointStat.entries.forEach { stat ->
                 PointRow(basis, draft, stat, editable = true, onAdd = { actions.onAdd(stat) }, onRemove = { actions.onRemove(stat) })
             }
@@ -199,7 +200,7 @@ private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: P
         }
         is PointsPhase.Done -> {
             CareSheetTitle(stringResource(R.string.points_done_title), shoe.nameAndNumber())
-            FreeLine(basis.free(draft))
+            FreeLine(basis.free(draft), basis)
             PointStat.entries.forEach { stat -> PointRow(basis, draft, stat, editable = false, showChange = false) }
             RunDivider()
             RunButton(stringResource(R.string.care_done), actions.onClose, modifier = Modifier.testTag("points-done"))
@@ -207,9 +208,9 @@ private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: P
     }
 }
 
-/** "남은 포인트 4" — 레벨마다 4개 */
+/** "남은 포인트 4" — 레벨마다 등급의 포인트(2 ~ 8개), 5레벨마다 더 */
 @Composable
-private fun FreeLine(free: Int) {
+private fun FreeLine(free: Int, basis: PointsBasis) {
     val t = runTone()
     Row(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("points-free"),
@@ -219,12 +220,14 @@ private fun FreeLine(free: Int) {
         Spacer(Modifier.width(10.dp))
         Text("$free", style = runTextStyle(22.sp, t.cyan, FontWeight.ExtraBold), modifier = Modifier.testTag("points-free-value"))
         Spacer(Modifier.weight(1f))
-        Text(stringResource(R.string.points_per_level), style = runTextStyle(13.sp, t.label, FontWeight.Medium))
+        val grade = basis.rules.grade(basis.rarity)
+        Text(stringResource(R.string.v4s_points_per_level, grade.pointsPerLevel, grade.pointsMilestone),
+            style = runTextStyle(13.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("points-per-level"))
     }
 }
 
-private fun signedBonus(bps: Int): String = formatBonus(bps / 100.0)
-private fun percentOf(bps: Int): String = formatPercent(bps / 100.0)
+/** 포인트 1 의 폭 "1.25" — 끝의 0 은 뺀다(1.0 → "1") */
+private fun rateText(percent: Double): String = trimmedDecimal(percent).removeSuffix(".0")
 
 /**
  * 한 줄 — 이름 · 지금 값(→ 나눈 뒤 값) · 1개의 값 · ± 와 나눈 수. [editable] 이 아니면 ± 없이 나눈 수만.
@@ -247,18 +250,19 @@ private fun PointRow(
             PointStat.DURABILITY -> R.string.sdv_stat_durability
         },
     )
-    val hint = stringResource(
-        when (stat) {
-            PointStat.EFFICIENCY -> R.string.points_hint_efficiency
-            PointStat.COMFORT -> R.string.points_hint_comfort
-            PointStat.DURABILITY -> R.string.points_hint_durability
-        },
-    )
-    val (now, next) = when (stat) {
-        PointStat.EFFICIENCY -> signedBonus(basis.efficiencyBps(basis.saved)) to signedBonus(basis.efficiencyBps(draft))
-        PointStat.COMFORT -> percentOf(basis.comfortBps(basis.saved)) to percentOf(basis.comfortBps(draft))
-        PointStat.DURABILITY -> formatCount(basis.durabilityMax(basis.saved)) to formatCount(basis.durabilityMax(draft))
+    // 포인트 1 = 뽑은 값의 +N%(등급마다) — 착화감은 에너지 70% 절약까지(서버 상한)
+    val rate = rateText(basis.pointRatePercent)
+    val hint = when (stat) {
+        PointStat.COMFORT -> stringResource(R.string.v4s_points_hint_comfort, rate, basis.comfortCapBps / 100)
+        else -> stringResource(R.string.v4s_points_hint, rate)
     }
+    // 효율 · 착화감은 지수(100 = 기준), 내구도는 가득 찼을 때 달리는 분
+    val (now, next) = when (stat) {
+        PointStat.EFFICIENCY -> formatIndex(basis.efficiencyIndex(basis.saved)) to formatIndex(basis.efficiencyIndex(draft))
+        PointStat.COMFORT -> formatIndex(basis.comfortIndex(basis.saved)) to formatIndex(basis.comfortIndex(draft))
+        PointStat.DURABILITY -> formatMinutes(basis.durabilityMax(basis.saved)) to formatMinutes(basis.durabilityMax(draft))
+    }
+    val unit = if (stat == PointStat.DURABILITY) stringResource(R.string.v4s_unit_min_suffix) else ""
     val changed = showChange && draft[stat] != basis.saved[stat]
     val accent = when (stat) {
         PointStat.EFFICIENCY -> CartoonColors.Efficiency.top
@@ -283,6 +287,7 @@ private fun PointRow(
                         append(" → ")
                         withStyle(SpanStyle(color = accent, fontWeight = FontWeight.ExtraBold)) { append(next) }
                     }
+                    append(unit)
                 },
                 style = runTextStyle(15.sp, CartoonColors.Text, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),
                 modifier = Modifier.weight(1f).testTag("points-value-$key"),

@@ -2,6 +2,8 @@ package com.stepup.android.ui.screens.items
 
 import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.repo.EconomyOutcome
+import com.stepup.android.data.repo.RepairReply
+import com.stepup.android.data.repo.refreshShoeRules
 import com.stepup.android.data.repo.toEconomyOutcome
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.sync.SessionUploadWorker
@@ -26,7 +28,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * 수리가 쓰는 기존 저장소 길 — 서버 요청은 지금 계약 그대로(SneakerRepository.repairOnServer).
+ * 수리가 쓰는 저장소 길 — 서버 요청은 경제 4판 수리(SneakerRepository.repairChecked → sneaker_repair_v2, 예전 서버면 sneaker_repair).
  * [refresh] 는 읽기만 한다(서버 값을 다시 받아 폰 사본을 맞춘다 — 차감 · 지급을 하지 않는다).
  * 강화는 여기를 지나지 않는다 — 재료 신발 3개 · 확률 강화(ShoeUpgradeViewModel · ForgeRepository, 0054).
  */
@@ -35,7 +37,12 @@ interface ShoeCareBackend {
     suspend fun refresh(): EconomyOutcome
     suspend fun shoe(id: Long): Sneaker?
     suspend fun balance(): Double?
-    suspend fun repair(id: Long): EconomyOutcome
+
+    /**
+     * 수리 한 번 — [points] 는 고칠 내구도(가진 만큼 수리 · 예전 서버는 null = 가득), [expected] 는 화면이 보인 수리비.
+     * 서버 값이 다르면 고치지 않고 [RepairReply.quoteChanged] 로 돌려준다
+     */
+    suspend fun repair(id: Long, points: Int?, expected: Double?): RepairReply
 
     /**
      * 이 계정에 서버가 아직 신발 닳음을 반영하지 않은 러닝이 있는가 — 출발 전 점검과 같은 판단([pendingShoeWearOf]).
@@ -56,7 +63,9 @@ private object AppShoeCareBackend : ShoeCareBackend {
         if (!serverEconomy) EconomyOutcome.SignInRequired else ServiceLocator.economySync.refresh().toEconomyOutcome()
     override suspend fun shoe(id: Long): Sneaker? = ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == id }
     override suspend fun balance(): Double? = ServiceLocator.rewardRepository.balance.first()
-    override suspend fun repair(id: Long): EconomyOutcome = ServiceLocator.sneakerRepository.repairOnServer(id)
+    override suspend fun repair(id: Long, points: Int?, expected: Double?): RepairReply =
+        // 수리 뒤 규칙을 다시 읽는다 — 무료 수리를 썼으면 다음 무료 수리 시각이 바뀐다
+        ServiceLocator.sneakerRepository.repairChecked(id, points, expected).also { refreshShoeRules() }
     override suspend fun unsentRuns(): Boolean {
         // 러닝 줄을 읽기만 한다(고치지 않는다) — 러닝 화면의 남은 닳음 계산 그대로
         val rows = ServiceLocator.stepRepository.recentSessions(PENDING_WEAR_SCAN).first()
@@ -151,7 +160,12 @@ class ShoeCareStore(
             is RepairPhase.Insufficient -> shown.quote
             else -> null
         }
-        val next = if (now is RepairPhase.Confirm && before != null && !now.quote.sameAs(before)) now.copy(changed = true) else now
+        val quoted = when (now) {
+            is RepairPhase.Confirm -> now.quote
+            is RepairPhase.Insufficient -> now.quote
+            else -> null
+        }
+        val next = if (before != null && quoted != null && !quoted.sameAs(before)) now.markChanged() else now
         setRepair(id, next)
     }
 
@@ -165,34 +179,47 @@ class ShoeCareStore(
     }
 
     /**
-     * RP01 · RP10 의 "N SUP로 수리하기" — 이때만 서버에 한 번 보낸다. 보내기 전 폰의 최신 사본으로 견적을 다시 보고,
-     * 레벨 · 내구도 · 단가가 바뀌었으면 보내지 않고 새 견적(RP10)을 다시 확인받는다.
-     * 한계: 지금 서버(sneaker_repair p_id)는 확인한 금액을 받지 않아, 확인과 실행 사이의 서버 쪽 변경까지 막지는 못한다.
+     * RP01 · RP10 의 "N SUP로 수리하기"(무료면 "무료로 수리하기") · RP06 의 "가진 만큼 수리하기" — 이때만 서버에 한 번 보낸다.
+     * 보내기 전 폰의 최신 사본으로 견적을 다시 보고, 레벨 · 내구도 · 단가가 바뀌었으면 보내지 않고 새 견적(RP10)을 다시 확인받는다.
+     * 보인 금액을 함께 보내(sneaker_repair_v2 의 p_expected) 서버 값이 다르면 서버가 고치지 않고 새 값을 돌려준다 — 그때도 다시 확인받는다.
      */
     fun confirmRepair(id: Long) {
-        val shown = _repair.value[id] as? RepairPhase.Confirm ?: return
+        val shown = _repair.value[id] ?: return
+        val quote = shown.sendable() ?: return
+        val shownBalance = (shown as? RepairPhase.Confirm)?.balance ?: (shown as? RepairPhase.Insufficient)?.balance ?: return
         // 누르는 즉시 보내는 중으로 — 두 번 눌러도 두 번 보내지 않는다
-        setRepair(id, RepairPhase.Sending(shown.quote, shown.balance))
+        setRepair(id, RepairPhase.Sending(quote, shownBalance))
         scope.launch {
             val now = repairGate(backend.shoe(id), backend.balance(), backend.serverEconomy)
-            if (now !is RepairPhase.Confirm) {
+            val nowQuote = now.sendable()
+            if (nowQuote == null) {
                 setRepair(id, now)
                 return@launch
             }
-            if (!now.quote.sameAs(shown.quote)) {
-                setRepair(id, now.copy(changed = true))
+            if (!now.sameQuoteAs(shown)) {
+                setRepair(id, now.markChanged())
                 return@launch
             }
-            setRepair(id, RepairPhase.Sending(now.quote, now.balance))
-            val outcome = safe { backend.repair(id) }
-            val next = when (outcome) {
-                EconomyOutcome.Ok -> settledRepair(id, now.quote, now.balance)
-                EconomyOutcome.Offline -> RepairPhase.Unknown(now.quote, now.balance, accepted = false)
+            val balance = (now as? RepairPhase.Confirm)?.balance ?: (now as? RepairPhase.Insufficient)?.balance ?: shownBalance
+            setRepair(id, RepairPhase.Sending(nowQuote, balance))
+            val reply = safeRepair { backend.repair(id, nowQuote.sendPoints, nowQuote.cost.toDouble()) }
+            val next = when (val outcome = reply.outcome) {
+                EconomyOutcome.Ok -> settledRepair(id, nowQuote, balance)
+                EconomyOutcome.Offline -> RepairPhase.Unknown(nowQuote, balance, accepted = false)
                 EconomyOutcome.NothingToRepair ->
                     RepairPhase.NotNeeded(backend.shoe(id)?.server?.durabilityPts ?: 100.0)
-                EconomyOutcome.NotEnoughBalance -> RepairPhase.Insufficient(now.quote, backend.balance() ?: now.balance)
+                EconomyOutcome.NotEnoughBalance -> {
+                    val latest = backend.balance() ?: balance
+                    val gate = repairGate(backend.shoe(id), latest, backend.serverEconomy)
+                    gate as? RepairPhase.Insufficient ?: RepairPhase.Insufficient(nowQuote, latest)
+                }
                 EconomyOutcome.SignInRequired -> RepairPhase.SignIn
-                is EconomyOutcome.Rejected -> RepairPhase.Blocked(careBlockOf(outcome.reason))
+                // 서버 수리비가 보인 값과 다르다(무료를 그새 다른 폰에서 썼다 · 효율이 바뀌었다) — 치르지 않았다. 다시 받은 값으로 다시 확인받는다
+                is EconomyOutcome.Rejected -> if (reply.quoteChanged != null || outcome.reason == com.stepup.android.data.repo.QUOTE_CHANGED) {
+                    repairGate(backend.shoe(id), backend.balance(), backend.serverEconomy).markChanged()
+                } else {
+                    RepairPhase.Blocked(careBlockOf(outcome.reason))
+                }
                 else -> RepairPhase.Blocked(CareBlock.OTHER)
             }
             ExperienceEvents.emit(if (next is RepairPhase.Done) FeedbackCue.Success else FeedbackCue.Error)
@@ -201,14 +228,20 @@ class ShoeCareStore(
     }
 
     /**
-     * 서버가 처리했다고 답한 뒤 — 동기화된 사본의 내구도가 가득일 때만 완료(RP04). 아직이면 확인 중으로 남긴다
+     * 서버가 처리했다고 답한 뒤 — 동기화된 사본의 내구도가 고친 만큼(가득 · 가진 만큼)일 때만 완료(RP04). 아직이면 확인 중으로 남긴다
      * (뒤이은 동기화가 됐는지 여기서는 모른다 — 결과 확인이 한 번 맞추면 끝낸다)
      */
     private suspend fun settledRepair(id: Long, quote: RepairQuote, before: Double): RepairPhase {
         val shoe = backend.shoe(id)
-        val durability = shoe?.server?.durabilityPts
+        val server = shoe?.server
+        val durability = server?.durabilityPts
         val balance = backend.balance()
-        return if (durability != null && durability >= 100.0 && balance != null) {
+        val reached = when {
+            server == null -> false
+            quote.absolute && server.hasDurabilityMax -> server.durabilityNow >= quote.targetNow
+            else -> server.durabilityPts >= 100.0
+        }
+        return if (reached && durability != null && balance != null) {
             RepairPhase.Done(quote, balance, durability)
         } else {
             RepairPhase.Unknown(quote, before, accepted = true)
@@ -263,6 +296,14 @@ class ShoeCareStore(
         throw cancelled
     } catch (_: Exception) {
         false
+    }
+
+    private suspend fun safeRepair(block: suspend () -> RepairReply): RepairReply = try {
+        block()
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        RepairReply(EconomyOutcome.Offline)
     }
 
     private suspend fun safe(block: suspend () -> EconomyOutcome): EconomyOutcome = try {

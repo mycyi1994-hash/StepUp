@@ -121,7 +121,6 @@ import com.stepup.android.ui.screens.items.RepairPhase
 import com.stepup.android.ui.screens.items.ShoeCareStore
 import com.stepup.android.ui.screens.items.ShoeRepairSheet
 import com.stepup.android.ui.screens.items.ShoeStatePanel
-import com.stepup.android.ui.screens.items.formatPercent
 import com.stepup.android.ui.screens.items.formatDurability
 import com.stepup.android.ui.screens.items.holds
 import com.stepup.android.ui.screens.items.itemSortRes
@@ -451,10 +450,21 @@ private fun NameBlock(shoe: Sneaker, onRename: () -> Unit) {
                 autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 30.sp, stepSize = 1.sp),
                 modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-hero-name"),
             )
+            // 뽑힌 값의 별 · 유형(경제 4판) · 가득 찼을 때 달리는 시간. 뽑은 값을 모르는 신발은 남은 내구도만
+            val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
+            val quality = com.stepup.android.ui.screens.items.shoeQualityOf(shoe, rules)
+            val time = if (shoe.server?.hasDurabilityMax == true) {
+                stringResource(R.string.v4s_full_minutes,
+                    com.stepup.android.ui.screens.items.wholeMinutes(com.stepup.android.ui.screens.items.durabilityMax(shoe)))
+            } else {
+                stringResource(R.string.shoes_durability_left, formatDurability(shoe))
+            }
+            val meta = listOfNotNull(quality?.let { com.stepup.android.ui.screens.items.qualityLabel(it) }, time).joinToString(" · ")
+            val metaCd = listOfNotNull(quality?.let { com.stepup.android.ui.screens.items.qualityDescription(it) }, time).joinToString(", ")
             Text(
-                stringResource(R.string.shoes_durability_left, formatDurability(shoe)),
+                meta,
                 style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel, maxLines = 1,
-                modifier = Modifier.padding(top = 4.dp).testTag("shoe-hero-meta"),
+                modifier = Modifier.padding(top = 4.dp).semantics { contentDescription = metaCd }.testTag("shoe-hero-meta"),
             )
         }
         CircleIconButton(
@@ -471,15 +481,23 @@ private fun NameBlock(shoe: Sneaker, onRename: () -> Unit) {
 @Composable
 private fun StatsBlock(shoe: Sneaker, onExplain: () -> Unit) {
     val explain = stringResource(R.string.my_shoes_basis_open)
+    // 경제 4판(0116) — 내구도는 남은 분, 효율 · 착화감은 지수(100 = 기준, 2배면 2배). 최대 내구도를 모르는 예전 신발은 남은 비율
+    val minutes = shoe.server?.hasDurabilityMax == true
     StatRow(
         listOf(
-            StatItem(stringResource(R.string.sdv_stat_durability), "${com.stepup.android.ui.screens.items.durabilityPercent(shoe)}", "%",
-                tag = "shoe-bar-durability-value"),
+            if (minutes) {
+                StatItem(stringResource(R.string.sdv_stat_durability),
+                    "${com.stepup.android.ui.screens.items.wholeMinutes(com.stepup.android.ui.screens.items.durabilityLeft(shoe))}",
+                    stringResource(R.string.v4s_unit_min), tag = "shoe-bar-durability-value")
+            } else {
+                StatItem(stringResource(R.string.sdv_stat_durability), "${com.stepup.android.ui.screens.items.durabilityPercent(shoe)}", "%",
+                    tag = "shoe-bar-durability-value")
+            },
             StatItem(stringResource(R.string.my_shoes_stat_efficiency),
-                "+" + com.stepup.android.ui.screens.items.trimmedDecimal(com.stepup.android.ui.screens.items.bonusPercent(shoe)), "%",
+                com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.efficiencyIndex(shoe)),
                 tag = "shoe-bar-bonus-value"),
             StatItem(stringResource(R.string.sdv_stat_comfort),
-                com.stepup.android.ui.screens.items.trimmedDecimal(com.stepup.android.ui.screens.items.energySavingPercent(shoe)), "%",
+                com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.comfortIndex(shoe)),
                 tag = "shoe-bar-energy-value"),
         ),
         numberStyle = StepUpUi.type.numberStat.copy(fontSize = 36.sp),
@@ -611,23 +629,28 @@ private fun MyShoesLoading(modifier: Modifier) {
     }
 }
 
-/** 막대 기준 — 모든 신발에 같은 기준(서버의 최대 · 상한)이라는 것과 효율은 금액이 아니라는 것 */
+/**
+ * 숫자 기준(경제 4판, 0116) — 효율 · 착화감은 100 이 기준이고 2배면 2배, 막대 끝은 그 등급에서 가장 잘 뽑힌 새 신발, 내구도는 달리는 분,
+ * 별 · 유형은 뽑힌 값. 효율은 금액이 아니라는 것(실제 SUP 는 러닝 뒤 확정)
+ */
 @Composable
 private fun StatBasisSheet(onClose: () -> Unit) {
     val p = shoeInk()
+    val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
     SettingsSheet(
         title = stringResource(R.string.my_shoes_basis_open), onDismiss = onClose,
         modifier = Modifier.testTag("shoe-basis-sheet"),
     ) {
         listOf(
-            stringResource(R.string.my_shoes_basis_intro),
-            stringResource(R.string.my_shoes_basis_efficiency, formatPercent(StatScale.EFFICIENCY_MAX_PERCENT)),
-            stringResource(R.string.my_shoes_basis_comfort, formatPercent(StatScale.ENERGY_MAX_PERCENT)),
-            stringResource(R.string.my_shoes_basis_durability),
+            stringResource(R.string.v4s_basis_intro),
+            stringResource(R.string.v4s_basis_efficiency),
+            stringResource(R.string.v4s_basis_comfort, com.stepup.android.ui.screens.items.comfortCapPercent(rules)),
+            stringResource(R.string.v4s_basis_durability),
+            stringResource(R.string.v4s_basis_quality),
         ).forEach { line ->
             Text(line, color = p.text, fontSize = 15.sp, lineHeight = 1.45.em)
         }
-        Text(stringResource(R.string.my_shoes_basis_note), color = p.secondary, fontSize = 14.sp, lineHeight = 1.45.em,
+        Text(stringResource(R.string.v4s_basis_note), color = p.secondary, fontSize = 14.sp, lineHeight = 1.45.em,
             modifier = Modifier.padding(top = 4.dp).testTag("shoe-basis-note"))
     }
 }

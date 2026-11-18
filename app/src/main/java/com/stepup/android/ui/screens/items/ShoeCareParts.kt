@@ -417,9 +417,12 @@ fun UpgradeStatRows(rows: List<UpgradeRow>, maxLevel: Int, modifier: Modifier = 
 
 /** 시트 안 내구도 한 줄(수리) — "내구도 · 막대(지금 → 가득 미리보기) · 680 → 1,230"(1 = 10m, 막대 끝은 그 신발의 최대 내구도) */
 @Composable
-fun RepairDurabilityRow(now: Int, max: Int, to: Int?, modifier: Modifier = Modifier) {
+fun RepairDurabilityRow(now: Int, max: Int, to: Int?, modifier: Modifier = Modifier, minutes: Boolean = false) {
     val shown = now.coerceIn(0, maxOf(max, 0))
-    val text = if (to != null) "${formatCount(shown)} → ${formatCount(to)}" else "${formatCount(shown)} / ${formatCount(max)}"
+    // 최대 내구도를 아는 신발은 달릴 수 있는 분으로(경제 4판) — "28 → 31분", 가진 만큼 수리처럼 작은 차이는 소수 한 자리
+    val text = if (minutes) {
+        minutesText(if (to != null) "${formatMinutes(shown)} → ${formatMinutes(to)}" else "${formatMinutes(shown)} / ${formatMinutes(max)}")
+    } else if (to != null) "${formatCount(shown)} → ${formatCount(to)}" else "${formatCount(shown)} / ${formatCount(max)}"
     val label = stringResource(R.string.sdv_stat_durability)
     Row(
         modifier.fillMaxWidth().heightIn(min = 52.dp).background(CartoonColors.Cell, RoundedCornerShape(14.dp))

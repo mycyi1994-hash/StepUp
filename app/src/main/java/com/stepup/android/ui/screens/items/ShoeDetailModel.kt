@@ -187,27 +187,36 @@ fun formatDurability(shoe: Sneaker): String = formatCount(durabilityLeft(shoe)) 
 
 enum class DetailStat { LEVEL, EFFICIENCY, COMFORT, DURABILITY }
 
-/** 상세 본문 한 줄 — 보이는 값("5 / 15"), 막대 길이(0 ~ 1), 막대 끝("20" · "55.0%" · "1,230") */
-data class DetailStatRow(val stat: DetailStat, val value: String, val fraction: Float, val end: String)
+/**
+ * 상세 본문 한 줄 — 보이는 값("5 / 15" · "140" · "28 / 31"), 막대 길이(0 ~ 1), 막대 끝("20" · "180" · "31"),
+ * 단위(내구도는 분 — 화면이 붙인다)
+ */
+data class DetailStatRow(
+    val stat: DetailStat,
+    val value: String,
+    val fraction: Float,
+    val end: String,
+    val unit: com.stepup.android.ui.screens.customize.StatUnit = com.stepup.android.ui.screens.customize.StatUnit.NONE,
+)
 
 /**
  * 레벨 · 효율 · 착화감 · 내구도 — 레벨은 [Sneaker.level] ÷ [Sneaker.maxLevel](서버의 양수 상한 우선, 없으면 등급 기본값),
- * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 55% · 착화감 20% · 내구도는 그 신발의 최대 내구도).
- * 행운 · 원시 착화감은 넣지 않는다.
+ * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 · 착화감은 지수, 막대 끝은 그 등급에서 가장 잘 뽑힌 새 신발 ·
+ * 내구도는 분, 막대 끝은 그 신발의 최대 내구도). 행운 · 원시 착화감은 넣지 않는다.
  */
-fun detailStatRows(shoe: Sneaker): List<DetailStatRow> {
+fun detailStatRows(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules = com.stepup.android.domain.ShoeRules.FALLBACK): List<DetailStatRow> {
     val level = DetailStatRow(
         DetailStat.LEVEL, "${shoe.level} / ${shoe.maxLevel}",
         com.stepup.android.ui.screens.customize.barFraction(shoe.level.toDouble(), shoe.maxLevel.toDouble()),
         shoe.maxLevel.toString(),
     )
-    return listOf(level) + com.stepup.android.ui.screens.customize.statBars(shoe).map { bar ->
+    return listOf(level) + com.stepup.android.ui.screens.customize.statBars(shoe, rules).map { bar ->
         val stat = when (bar.stat) {
             com.stepup.android.ui.screens.customize.BarStat.EFFICIENCY -> DetailStat.EFFICIENCY
             com.stepup.android.ui.screens.customize.BarStat.COMFORT -> DetailStat.COMFORT
             com.stepup.android.ui.screens.customize.BarStat.DURABILITY -> DetailStat.DURABILITY
         }
-        DetailStatRow(stat, bar.value, bar.fraction, bar.end)
+        DetailStatRow(stat, bar.value, bar.fraction, bar.end, bar.unit)
     }
 }
 

@@ -1304,8 +1304,11 @@ private fun ShoesSheet(shoes: List<Sneaker>, picked: Long?, crewLevel: Int, onCo
                         }
                         Spacer(Modifier.height(12.dp))
                         Row(Modifier.fillMaxWidth()) {
-                            ShoeAttr(stringResource(R.string.crew5_shoes_eff), CrewRunMath.percent(server.efficiencyBps / 10_000.0) + "%", Modifier.weight(1f))
-                            ShoeAttr(stringResource(R.string.crew5_shoes_comfort), CrewRunMath.percent(server.comfortBps / 10_000.0) + "%", Modifier.weight(1f))
+                            // 효율 · 착화감은 지수(경제 4판 — 100 = 기준, 2배면 2배), 신발 탭과 같은 숫자
+                            ShoeAttr(stringResource(R.string.crew5_shoes_eff),
+                                com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.efficiencyIndex(shoe)), Modifier.weight(1f))
+                            ShoeAttr(stringResource(R.string.crew5_shoes_comfort),
+                                com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.comfortIndex(shoe)), Modifier.weight(1f))
                             ShoeAttr(stringResource(R.string.crew5_shoes_dur), "${server.durabilityMax}", Modifier.weight(1f))
                         }
                     }

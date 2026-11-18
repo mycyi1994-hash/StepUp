@@ -214,6 +214,8 @@ class RewardRepository(
             energyEfficiency = energyEfficiency,
             partyMultiplier = RewardEconomy.partyMultiplier(partySize),
             boostMultiplier = boostMultiplier,
+            // 걸음당 SUP 는 서버 규칙(경제 4판 0116) — 앱이 준비되기 전이면 같은 기본값
+            pointsPerStep = shoeRulesNow().pointsPerStep,
         )
 
         return reward
@@ -256,6 +258,7 @@ class RewardRepository(
             earningMultiplier = earningMultiplier,
             energyEfficiency = energyEfficiency,
             boostMultiplier = boostMultiplier,
+            pointsPerStep = shoeRulesNow().pointsPerStep,
         )
 
         if (reward.points > 0) {
