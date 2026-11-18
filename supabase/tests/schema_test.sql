@@ -10663,6 +10663,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('10600000-0000-0000-0000-000000000002', 'quiet106@test.com', '{"full_name":"조용한러너"}');
 insert into fix (k, v) select 'shoe106', economy.draw_create('10600000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
 insert into fix (k, v) select 'ops106', economy.ops_key_new('검사 운영자');
+-- 0114 부터 운영자 함수는 로그인한 세션 번호만 받는다 — 키로 한 번 로그인해 둔다(키는 큰 일의 다시 확인에 쓴다)
+insert into fix (k, v) select 'ops106s', public.ops_login(pg_temp.fx('ops106'))->>'session';
 insert into public.push_tokens (token, user_id) values
   ('token-106-runner-aaaaaaaaaaaaaaaa', '10600000-0000-0000-0000-000000000001'),
   ('token-106-quiet-aaaaaaaaaaaaaaaaa', '10600000-0000-0000-0000-000000000002');
@@ -10689,7 +10691,7 @@ end $$;
 set role anon;
 do $$
 declare
-  v_key text := pg_temp.fx('ops106');
+  v_key text := pg_temp.fx('ops106s');
   r jsonb;
 begin
   call pg_temp.must_fail($q$select public.ops_overview('wrong-key')$q$, '틀린 키로는 운영자 함수를 못 부른다(0106)');
@@ -10792,7 +10794,7 @@ end $$;
 set role anon;
 do $$
 declare
-  v_key text := pg_temp.fx('ops106');
+  v_key text := pg_temp.fx('ops106s');
   r jsonb;
 begin
   perform pg_temp.ok(public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 1, 24)->>'code' = 'mult'
@@ -10841,7 +10843,7 @@ end $$;
 set role anon;
 do $$
 declare
-  v_key text := pg_temp.fx('ops106');
+  v_key text := pg_temp.fx('ops106s');
   r jsonb;
 begin
   r := public.ops_event_cancel(v_key, pg_temp.fx('event106')::bigint);
@@ -10892,13 +10894,13 @@ end $$;
 -- 가득 찬 신발 · 안 쓴 에너지에는 아이템이 사라지지 않는다, 지급 되돌리기
 set role anon;
 do $$
-declare v_key text := pg_temp.fx('ops106'); r jsonb;
+declare v_key text := pg_temp.fx('ops106s'); r jsonb;
 begin
   perform public.ops_item_grant(v_key, gen_random_uuid(), 'DURABILITY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
   perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
   r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000b1', 'ENERGY_DRINK', 3, '되돌릴 지급', array['runner106@test.com'], null, false);
   insert into fix (k, v) values ('batch106', r->>'batch');
-  r := public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '전체 지급', null, 'ALL', false);
+  r := public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '전체 지급', null, 'ALL', false, pg_temp.fx('ops106'));
   perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int >= 2, '전체에게 지급(0106)');
   perform pg_temp.ok(public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '대상 오류', null, 'EVERYONE')->>'code' = 'audience',
     '모르는 대상은 거절(0106)');
@@ -10919,12 +10921,12 @@ begin
 end $$;
 set role anon;
 do $$
-declare v_key text := pg_temp.fx('ops106'); r jsonb;
+declare v_key text := pg_temp.fx('ops106s'); r jsonb;
 begin
-  r := public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint);
+  r := public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint, pg_temp.fx('ops106'));
   perform pg_temp.ok((r->>'ok')::boolean and (r->>'taken')::int = 2 and (r->>'short')::int = 1,
     '지급 되돌리기 — 갖고 있는 만큼만 거두고 이미 쓴 것은 센다(0106)');
-  perform pg_temp.ok(public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint)->>'code' = 'revoked', '되돌린 지급은 다시 못 되돌린다(0106)');
+  perform pg_temp.ok(public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint, pg_temp.fx('ops106'))->>'code' = 'revoked', '되돌린 지급은 다시 못 되돌린다(0106)');
 end $$;
 reset role;
 do $$ begin
@@ -11493,6 +11495,340 @@ begin
     '출발 전에 끝난 러닝을 올리면 방의 러닝이 되지 않는다(0109)');
 end $$;
 reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0114 운영자 페이지 보안 — 세션 · 키 기한 · 로그인 잠금 · 다시 확인 · 하루 한도 (2026-11-18)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 운영자 페이지 보안(0114) ─────────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.headers', '', false);
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('11400000-0000-0000-0000-000000000001', 'ops114a@test.com', '{"full_name":"보안러너"}'),
+  ('11400000-0000-0000-0000-000000000002', 'ops114b@test.com', '{"full_name":"보안러너둘"}');
+insert into fix (k, v) select 'key114', economy.ops_key_new('보안 검사');
+insert into fix (k, v) select 'key114week', economy.ops_key_new('일주일 키', 7);
+insert into fix (k, v) select 'key114other', economy.ops_key_new('다른 운영자');
+do $$ begin
+  perform pg_temp.ok(has_function_privilege('anon', 'public.ops_login(text)', 'execute')
+                     and has_function_privilege('anon', 'public.ops_logout(text)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_key_new(text, int)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_session_of(text)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_confirm(economy.ops_sessions, text, text, boolean)', 'execute')
+                     and not has_table_privilege('anon', 'economy.ops_sessions', 'select')
+                     and not has_table_privilege('anon', 'economy.ops_login_fails', 'select')
+                     and not has_table_privilege('anon', 'economy.ops_secret', 'select'),
+    '로그인 · 로그아웃만 열려 있고 세션 · 실패 기록 · 소금은 서버만(0114)');
+  perform pg_temp.ok((select expires_at between now() + interval '29 days 23 hours' and now() + interval '30 days 1 minute'
+                        from economy.ops_keys where label = '보안 검사')
+                     and (select expires_at between now() + interval '6 days 23 hours' and now() + interval '7 days 1 minute'
+                            from economy.ops_keys where label = '일주일 키'),
+    '키 기한 — 예전 한 칸 호출은 30일 · 날 수를 정하면 그만큼(0114)');
+  perform pg_temp.ok(not exists (select 1 from economy.ops_keys where expires_at is null), '모든 키에 기한이 있다(0114)');
+  perform pg_temp.ok((select count(*) = 3 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                       where n.nspname = 'public' and p.proname in ('ops_item_grant', 'ops_grant_revoke', 'ops_event_start'))
+                     and (select provolatile = 'v' from pg_proc where oid = 'public.ops_overview(text)'::regprocedure)
+                     and (select provolatile = 'v' from pg_proc where oid = 'public.ops_user_find(text, text)'::regprocedure),
+    '운영자 함수는 하나씩(예전 칸 수는 지웠다) · 세션 시각을 고치는 함수는 stable 이 아니다(0114)');
+end $$;
+call pg_temp.must_fail($q$select economy.ops_key_new('너무 긴 키', 400)$q$, '키 기한은 365일까지(0114)');
+
+-- 세션: 로그인 · 한눈에 · 로그아웃
+select set_config('request.headers', '{"cf-connecting-ip": "203.0.113.41"}', false);
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('key114');
+  v_s text;
+  r jsonb;
+begin
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, v_key), '키를 그대로 보내면 운영자 함수가 받지 않는다 — 로그인한 세션만(0114)');
+  r := public.ops_login(' ' || v_key || ' ');
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'actor' = '보안 검사' and length(r->>'session') = 64 and r->>'session' <> v_key
+                     and (r->>'expires_at')::timestamptz between now() + interval '7 hours 59 minutes' and now() + interval '8 hours 1 minute'
+                     and (r->>'idle_min')::int = 30 and (r->>'key_expires_at')::timestamptz > now() + interval '29 days',
+    '키로 로그인하면 8시간짜리 세션 번호(0114)');
+  v_s := r->>'session';
+  insert into fix (k, v) values ('s114', v_s);
+  r := public.ops_overview(v_s);
+  perform pg_temp.ok(r->>'actor' = '보안 검사' and (r->'cap'->>'limit')::int = 5000 and (r->'cap'->>'left')::int = 5000
+                     and (r->'confirm'->>'recipients')::int = 200 and (r->'confirm'->>'mult')::numeric = 3
+                     and (r->'confirm'->>'hours')::numeric = 48 and r->'session'->>'expires_at' is not null,
+    '세션으로 한눈에 — 하루 한도 · 다시 확인 기준 · 세션 기한(0114)');
+  perform pg_temp.ok(jsonb_typeof(public.ops_user_find(v_s, 'ops114')) = 'array', '세션으로 사람 찾기(0114)');
+  perform pg_temp.ok((public.ops_logout(v_s)->>'ok')::boolean, '로그아웃(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, v_s), '로그아웃한 세션은 받지 않는다(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_user_find(%L, 'ops114')$q$, v_s), '로그아웃한 세션으로는 사람도 못 찾는다(0114)');
+  perform pg_temp.ok((public.ops_logout(v_s)->>'ok')::boolean and (public.ops_logout('없는 세션')->>'ok')::boolean,
+    '로그아웃은 몇 번을 불러도 된다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from economy.ops_sessions where token_hash = pg_temp.fx('s114'))
+                     and exists (select 1 from economy.ops_sessions
+                                  where token_hash = encode(sha256(convert_to(pg_temp.fx('s114'), 'UTF8')), 'hex') and ended_why = 'logout'),
+    '서버에는 세션 번호의 해시만 남는다(0114)');
+  perform pg_temp.ok(exists (select 1 from public.admin_audit where action = 'ops_login' and detail->>'by' = '보안 검사')
+                     and exists (select 1 from public.admin_audit where action = 'ops_logout' and detail->>'by' = '보안 검사')
+                     and not exists (select 1 from public.admin_audit
+                                      where action like 'ops%' and (detail::text like '%' || pg_temp.fx('key114') || '%'
+                                                                    or detail::text like '%' || pg_temp.fx('s114') || '%')),
+    '로그인 · 로그아웃은 감사 기록에 — 키 · 세션 번호는 없이(0114)');
+end $$;
+
+-- 세션 기한: 30분 쉼 · 8시간 · 쓰면 다시 30분
+set role anon;
+do $$ begin
+  insert into fix (k, v) values ('s114idle', public.ops_login(pg_temp.fx('key114'))->>'session');
+  insert into fix (k, v) values ('s114old', public.ops_login(pg_temp.fx('key114'))->>'session');
+  insert into fix (k, v) values ('s114fresh', public.ops_login(pg_temp.fx('key114'))->>'session');
+end $$;
+reset role;
+update economy.ops_sessions set last_used_at = now() - interval '31 minutes' where token_hash = economy.ops_hash(pg_temp.fx('s114idle'));
+update economy.ops_sessions set created_at = now() - interval '9 hours', expires_at = now() - interval '1 hour'
+ where token_hash = economy.ops_hash(pg_temp.fx('s114old'));
+update economy.ops_sessions set last_used_at = now() - interval '25 minutes' where token_hash = economy.ops_hash(pg_temp.fx('s114fresh'));
+set role anon;
+do $$ begin
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114idle')), '30분 넘게 쓰지 않은 세션은 끝난다(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114old')), '8시간이 지난 세션은 끝난다(0114)');
+  perform pg_temp.ok(public.ops_overview(pg_temp.fx('s114fresh'))->>'actor' = '보안 검사', '25분 쉰 세션은 아직 된다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select last_used_at > now() - interval '1 minute' from economy.ops_sessions
+                       where token_hash = economy.ops_hash(pg_temp.fx('s114fresh'))),
+    '쓰면 30분이 다시 시작된다(0114)');
+end $$;
+
+-- 키 기한 · 막은 키 — 그 키의 세션도 바로 끝난다
+set role anon;
+do $$ begin
+  insert into fix (k, v) values ('s114week', public.ops_login(pg_temp.fx('key114week'))->>'session');
+  insert into fix (k, v) values ('s114other', public.ops_login(pg_temp.fx('key114other'))->>'session');
+  perform pg_temp.ok(public.ops_overview(pg_temp.fx('s114week'))->>'actor' = '일주일 키', '일주일 키로도 들어온다(0114 준비)');
+end $$;
+reset role;
+update economy.ops_keys set expires_at = now() - interval '1 minute' where label = '일주일 키';
+update economy.ops_keys set revoked_at = now() where label = '다른 운영자';
+set role anon;
+do $$
+declare r jsonb;
+begin
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114week')), '기한이 지난 키의 세션은 바로 끝난다(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114other')), '막은 키의 세션은 바로 끝난다(0114)');
+  r := public.ops_login(pg_temp.fx('key114week'));
+  perform pg_temp.ok(not (r->>'ok')::boolean and r->>'code' = 'expired' and r->>'session' is null, '기한이 지난 키로는 로그인하지 못한다(0114)');
+  r := public.ops_login(pg_temp.fx('key114other'));
+  perform pg_temp.ok(not (r->>'ok')::boolean and r->>'code' = 'wrong' and r->>'session' is null,
+    '막은 키로는 로그인하지 못한다 — 틀린 키와 같은 답(0114)');
+end $$;
+
+-- 로그인 잠금: 같은 곳 10분에 5번 → 15분
+select set_config('request.headers', '{"cf-connecting-ip": "198.51.100.42"}', false);
+do $$
+declare r jsonb; i int;
+begin
+  for i in 1..4 loop
+    r := public.ops_login('틀린 키 ' || i);
+    perform pg_temp.ok(r->>'code' = 'wrong' and (r->>'left')::int = 5 - i, format('틀린 키 %s번째 — %s번 남았다고 알린다(0114)', i, 5 - i));
+  end loop;
+  r := public.ops_login('틀린 키 5');
+  perform pg_temp.ok(r->>'code' = 'locked' and (r->>'until')::timestamptz > now() + interval '14 minutes' and r->>'message' like '%다시 할 수 있어요%',
+    '같은 곳에서 10분에 다섯 번 틀리면 15분 동안 막는다(0114)');
+  r := public.ops_login(pg_temp.fx('key114'));
+  perform pg_temp.ok(r->>'code' = 'locked' and r->>'session' is null, '막힌 곳은 맞는 키로도 들어오지 못한다(0114)');
+end $$;
+select set_config('request.headers', '{"cf-connecting-ip": "198.51.100.43"}', false);
+do $$ begin
+  perform pg_temp.ok((public.ops_login(pg_temp.fx('key114'))->>'ok')::boolean, '다른 곳은 따로 센다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 5 from economy.ops_login_fails
+                       where client = (select l.scope from economy.ops_login_locks l where l.scope <> 'ALL')),
+    '막힌 동안의 시도는 쌓지 않는다(0114)');
+  perform pg_temp.ok(not exists (select 1 from economy.ops_login_fails where client like '%198.51%' or client like '%203.0%')
+                     and not exists (select 1 from economy.ops_sessions where client like '%198.51%' or client like '%203.0%')
+                     and not exists (select 1 from public.admin_audit where action like 'ops%' and detail::text like '%198.51%'),
+    'IP 원문은 어디에도 남기지 않는다(0114)');
+  perform pg_temp.ok((select count(*) = 1 from public.admin_audit where action = 'ops_login_locked' and target = 'client')
+                     and (select count(*) >= 7 from public.admin_audit where action = 'ops_login_fail'),
+    '틀린 로그인 · 잠금은 감사 기록에(0114)');
+end $$;
+-- 15분이 지난 것처럼
+update economy.ops_login_locks set until = now() - interval '1 second';
+update economy.ops_login_fails set at = at - interval '16 minutes';
+select set_config('request.headers', '{"cf-connecting-ip": "198.51.100.42"}', false);
+set role anon;
+do $$ begin
+  perform pg_temp.ok((public.ops_login(pg_temp.fx('key114'))->>'ok')::boolean, '15분이 지나면 다시 들어온다(0114)');
+end $$;
+
+-- 로그인 잠금: 모든 곳을 합쳐 10분에 30번 → 모든 로그인 15분
+reset role;
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+set role anon;
+do $$
+declare r jsonb; i int;
+begin
+  for i in 1..30 loop
+    perform set_config('request.headers', format('{"cf-connecting-ip": "192.0.2.%s"}', i), false);
+    r := public.ops_login('아무 키 ' || i);
+  end loop;
+  perform pg_temp.ok(r->>'code' = 'locked', '곳이 달라도 10분에 서른 번 틀리면 모든 로그인을 15분 막는다(0114)');
+  perform set_config('request.headers', '{"cf-connecting-ip": "192.0.2.200"}', false);
+  r := public.ops_login(pg_temp.fx('key114'));
+  perform pg_temp.ok(r->>'code' = 'locked' and r->>'session' is null, '모두 막힌 동안은 처음 오는 곳 · 맞는 키도 기다린다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 30 from economy.ops_login_fails)
+                     and exists (select 1 from public.admin_audit where action = 'ops_login_locked' and target = 'all'),
+    '모든 곳 잠금은 감사 기록에 · 막힌 동안의 시도는 쌓지 않는다(0114)');
+end $$;
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+
+-- 큰 일은 키를 한 번 더: 전체 · 기준보다 많은 사람 · 큰 배수 · 긴 이벤트 · 되돌리기
+select set_config('request.headers', '{"cf-connecting-ip": "203.0.113.77"}', false);
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('key114');
+  v_s text;
+  v_req uuid := '11400000-0000-0000-0000-0000000000a1';
+  r jsonb;
+begin
+  v_s := public.ops_login(v_key)->>'session';
+  insert into fix (k, v) values ('s114c', v_s);
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false);
+  perform pg_temp.ok(not (r->>'ok')::boolean and r->>'code' = 'confirm_required' and r->>'message' like '전체 지급%',
+    '전체 지급은 운영자 키를 한 번 더 넣어야 한다(0114)');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false, '틀린 키');
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong' and not (r->>'logged_out')::boolean and r->>'message' like '%2번 더%',
+    '틀린 키로는 다시 확인되지 않는다(0114)');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false, pg_temp.fx('ops106'));
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong', '다른 운영자의 키로는 다시 확인되지 않는다 — 이 세션을 연 키만(0114)');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false, v_key);
+  perform pg_temp.ok((r->>'ok')::boolean and not (r->>'replay')::boolean and (r->>'users')::int >= 2, '맞는 키로 다시 확인하면 전체 지급(0114)');
+  insert into fix (k, v) values ('batch114', r->>'batch');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'replay')::boolean, '같은 요청 번호는 키 없이도 처음 결과 — 두 번 주지 않는다(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '한 사람', array['ops114a@test.com'], null, false, '틀린 키');
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong', '작은 지급이라도 넣은 키가 틀리면 하지 않는다(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '한 사람', array['ops114a@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '작은 지급은 키 없이(0114)');
+end $$;
+reset role;
+update public.economy_settings set value = '1'::jsonb where key = 'ops_confirm_recipients';
+set role anon;
+do $$
+declare v_s text := pg_temp.fx('s114c'); r jsonb;
+begin
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '여럿 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false);
+  perform pg_temp.ok(r->>'code' = 'confirm_required' and r->>'message' like '2명에게 지급%', '기준(설정)보다 많은 사람에게 주면 키를 한 번 더(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '여럿 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false,
+                             pg_temp.fx('key114'));
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int = 2, '키를 넣으면 지급(0114)');
+end $$;
+reset role;
+update public.economy_settings set value = '200'::jsonb where key = 'ops_confirm_recipients';
+set role anon;
+do $$
+declare v_s text := pg_temp.fx('s114c'); v_key text := pg_temp.fx('key114'); r jsonb;
+begin
+  r := public.ops_event_start(v_s, gen_random_uuid(), '반짝 3배', 3, 3, null, false);
+  perform pg_temp.ok(r->>'code' = 'confirm_required' and r->>'message' like '보상 ×3 · 3시간 이벤트%', '3배 이상 이벤트는 키를 한 번 더(0114)');
+  r := public.ops_event_start(v_s, gen_random_uuid(), '긴 이벤트', 2, 49, null, false);
+  perform pg_temp.ok(r->>'code' = 'confirm_required', '48시간 넘는 이벤트는 키를 한 번 더(0114)');
+  r := public.ops_event_start(v_s, gen_random_uuid(), '보통 이벤트', 2.5, 48, null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '3배 미만 · 48시간까지는 키 없이(0114)');
+  perform pg_temp.ok((public.ops_event_cancel(v_s, (r->'event'->>'id')::bigint)->>'ok')::boolean, '끄기는 키 없이(0114)');
+  r := public.ops_event_start(v_s, gen_random_uuid(), '반짝 3배', 3, 3, null, false, v_key);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->'event'->>'mult')::numeric = 3, '키를 넣으면 3배 이벤트(0114)');
+  perform public.ops_event_cancel(v_s, (r->'event'->>'id')::bigint);
+  r := public.ops_grant_revoke(v_s, pg_temp.fx('batch114')::bigint);
+  perform pg_temp.ok(r->>'code' = 'confirm_required', '되돌리기는 늘 키를 한 번 더(0114)');
+  r := public.ops_grant_revoke(v_s, pg_temp.fx('batch114')::bigint, v_key);
+  perform pg_temp.ok((r->>'ok')::boolean, '키를 넣으면 되돌린다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from economy.item_batches where request_id = '11400000-0000-0000-0000-0000000000a1')
+                     and exists (select 1 from public.admin_audit where action = 'ops_item_grant' and detail->>'by' = '보안 검사'
+                                   and detail->>'target' = 'ALL' and (detail->>'confirmed')::boolean)
+                     and (select count(*) >= 3 from public.admin_audit where action = 'ops_confirm_fail' and detail->>'by' = '보안 검사'),
+    '전체 지급은 한 번 · 다시 확인과 틀린 키는 감사 기록에(0114)');
+end $$;
+-- 이 곳이 막혀 있으면 다시 확인도 받지 않는다
+insert into economy.ops_login_locks (scope, until) values (economy.ops_client(), now() + interval '5 minutes')
+on conflict (scope) do update set until = excluded.until;
+set role anon;
+do $$ declare r jsonb;
+begin
+  r := public.ops_event_start(pg_temp.fx('s114c'), gen_random_uuid(), '반짝 3배', 3, 3, null, false, pg_temp.fx('key114'));
+  perform pg_temp.ok(r->>'code' = 'confirm_locked', '로그인 실패로 막힌 곳에서는 다시 확인도 받지 않는다(0114)');
+end $$;
+reset role;
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+-- 다시 확인을 세 번 틀리면 그 세션은 끝난다
+set role anon;
+do $$
+declare v_s text := public.ops_login(pg_temp.fx('key114'))->>'session'; r jsonb; i int;
+begin
+  for i in 1..3 loop
+    r := public.ops_event_start(v_s, gen_random_uuid(), '반짝 3배', 3, 3, null, false, '틀린 키 ' || i);
+  end loop;
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong' and (r->>'logged_out')::boolean and r->>'message' like '%로그아웃%',
+    '다시 확인을 세 번 틀리면 로그아웃(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, v_s), '다시 확인을 세 번 틀린 세션은 받지 않는다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 3 from economy.ops_login_fails where kind = 'CONFIRM'), '틀린 다시 확인도 로그인 실패로 센다(0114)');
+end $$;
+delete from economy.ops_login_fails;
+
+-- 하루 지급 한도 — 키마다 · 받는 사람 수 × 개수
+update public.economy_settings set value = '10'::jsonb where key = 'ops_key_daily_units';
+insert into fix (k, v) select 'key114cap', economy.ops_key_new('한도 검사');
+insert into fix (k, v) select 'key114cap2', economy.ops_key_new('한도 검사 둘');
+set role anon;
+do $$
+declare v_s text := public.ops_login(pg_temp.fx('key114cap'))->>'session'; r jsonb;
+begin
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 4, '한도 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int = 2, '2명 × 4개 = 8개 지급(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 2, '한도 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false);
+  perform pg_temp.ok(r->>'code' = 'cap' and (r->>'left')::int = 2 and (r->>'units')::int = 4 and r->>'message' like '%2개예요%',
+    '하루 한도(10개)를 넘는 지급은 통째로 거절 — 남은 수를 알린다(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 2, '한도 검사', array['ops114a@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '한도까지는 된다(0114)');
+  r := public.ops_overview(v_s);
+  perform pg_temp.ok((r->'cap'->>'used')::int = 10 and (r->'cap'->>'left')::int = 0, '한눈에 오늘 쓴 한도(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '한도 검사', array['ops114a@test.com'], null, false);
+  perform pg_temp.ok(r->>'code' = 'cap', '한도를 다 쓴 키는 그날 더 주지 못한다(0114)');
+  r := public.ops_item_grant(public.ops_login(pg_temp.fx('key114cap2'))->>'session', gen_random_uuid(), 'ENERGY_DRINK', 1, '한도 검사',
+                             array['ops114a@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '한도는 키마다 따로(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select units = 10 from economy.ops_key_days d join economy.ops_keys k on k.token_hash = d.key_hash
+                       where k.label = '한도 검사' and d.day = economy.game_day(now()))
+                     and (select count(*) = 2 from public.admin_audit where action = 'ops_grant_cap' and detail->>'by' = '한도 검사')
+                     and (select count(*) = 2 from economy.item_batches where actor = '한도 검사'),
+    '한도는 한국 날짜로 세고 거절은 감사 기록에 · 거절한 지급은 남지 않는다(0114)');
+end $$;
+update public.economy_settings set value = '5000'::jsonb where key = 'ops_key_daily_units';
+select set_config('request.headers', '', false);
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
