@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 아이템 탭 · 출발 전 아이템 고르기(2026-11-17, 서버 0106) — 네 언어를 함께 고친다 -->
+<resources>
+    <string name="bag_count">%1$d kinds · %2$d items</string>
+    <string name="bag_event_title">%1$sx reward event now</string>
+    <string name="bag_event_until">Until %1$s · every run you start</string>
+    <string name="bag_section_run">Pick before a run</string>
+    <string name="bag_section_run_hint">Chosen at the pre-run check</string>
+    <string name="bag_section_now">Use now</string>
+    <string name="item_name_run_booster">Run Booster</string>
+    <string name="item_name_reward_double">Double Reward Ticket</string>
+    <string name="item_name_energy_drink">Energy Drink</string>
+    <string name="item_name_durability_reset">Durability Reset</string>
+    <string name="item_name_energy_reset">Daily Energy Reset</string>
+    <string name="item_effect_reward">Earn ×%1$s</string>
+    <string name="item_effect_energy">Uses only %1$d%% energy</string>
+    <string name="item_effect_durability">Restores shoe durability</string>
+    <string name="item_effect_energy_reset">Refills today\'s energy</string>
+    <string name="item_qty">×%1$d</string>
+    <string name="bag_run_item_note">Pick it at the pre-run check when you start a run</string>
+    <string name="bag_use">Use</string>
+    <string name="bag_use_durability_detail">Worn shoe durability %1$d%% → full</string>
+    <string name="bag_use_energy_detail">Energy left %1$s → full</string>
+    <string name="bag_used">Used · %1$d left</string>
+    <string name="bag_empty">No items yet. You can get them from event rewards</string>
+    <string name="bag_load_failed">Couldn\'t load your items</string>
+    <string name="bag_retry">Try again</string>
+    <string name="bag_err_full">Durability is already full</string>
+    <string name="bag_err_no_energy">You haven\'t used any energy today</string>
+    <string name="bag_err_no_shoe">No shoe is equipped</string>
+    <string name="bag_err_none">You don\'t have this item</string>
+    <string name="bag_err_generic">Couldn\'t complete that. Please try again shortly</string>
+    <string name="run_items_title">Items for this run</string>
+    <string name="run_items_hint">One per type</string>
+    <string name="run_items_note">Chosen items are used when you start</string>
+    <string name="run_items_owned">Have %1$d</string>
+    <string name="run_items_covered">Earnings ×%1$s is already on. Items with the same or a smaller boost add nothing, so they can\'t be picked now.</string>
+</resources>

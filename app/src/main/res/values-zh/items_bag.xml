@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 아이템 탭 · 출발 전 아이템 고르기(2026-11-17, 서버 0106) — 네 언어를 함께 고친다 -->
+<resources>
+    <string name="bag_count">%1$d种 · 共%2$d个</string>
+    <string name="bag_event_title">奖励×%1$s活动进行中</string>
+    <string name="bag_event_until">至%1$s · 期间开始的所有跑步</string>
+    <string name="bag_section_run">跑步前选择的道具</string>
+    <string name="bag_section_run_hint">出发前选择</string>
+    <string name="bag_section_now">立即使用的道具</string>
+    <string name="item_name_run_booster">跑步加速器</string>
+    <string name="item_name_reward_double">奖励双倍券</string>
+    <string name="item_name_energy_drink">能量饮料</string>
+    <string name="item_name_durability_reset">耐久度重置券</string>
+    <string name="item_name_energy_reset">每日能量重置券</string>
+    <string name="item_effect_reward">奖励×%1$s</string>
+    <string name="item_effect_energy">只消耗%1$d%%能量</string>
+    <string name="item_effect_durability">跑鞋耐久度回满</string>
+    <string name="item_effect_energy_reset">今日能量回满</string>
+    <string name="item_qty">×%1$d</string>
+    <string name="bag_run_item_note">开始跑步时在出发前检查中选择</string>
+    <string name="bag_use">使用</string>
+    <string name="bag_use_durability_detail">当前跑鞋耐久度 %1$d%% → 回满</string>
+    <string name="bag_use_energy_detail">剩余能量 %1$s → 回满</string>
+    <string name="bag_used">已使用 · 剩余%1$d个</string>
+    <string name="bag_empty">还没有道具。可通过活动奖励获得</string>
+    <string name="bag_load_failed">无法加载道具</string>
+    <string name="bag_retry">重试</string>
+    <string name="bag_err_full">耐久度已满</string>
+    <string name="bag_err_no_energy">今天还没有消耗能量</string>
+    <string name="bag_err_no_shoe">没有穿着跑鞋</string>
+    <string name="bag_err_none">没有这个道具</string>
+    <string name="bag_err_generic">无法完成请求，请稍后再试</string>
+    <string name="run_items_title">本次跑步使用的道具</string>
+    <string name="run_items_hint">同类只能选一个</string>
+    <string name="run_items_note">出发时使用所选道具</string>
+    <string name="run_items_owned">拥有 %1$d</string>
+    <string name="run_items_covered">当前已有收益 ×%1$s。倍率相同或更低的道具不会再增加收益，现在无法选择。</string>
+</resources>

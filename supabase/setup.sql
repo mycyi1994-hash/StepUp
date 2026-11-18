@@ -10711,7 +10711,9 @@ on conflict (key) do nothing;
 
 -- 러닝으로 받은 상급 뽑기('RUN')는 지갑 선물('BONUS')과 따로 센다 — 화면이 출처마다 남은 수를 보인다
 alter table public.draw_grants drop constraint if exists draw_grants_kind_check;
-alter table public.draw_grants add constraint draw_grants_kind_check check (kind in ('FREE', 'BONUS', 'RUN'));
+-- not valid: 뒤 파일(0112)이 종류를 더 늘린다(GIFT). 다시 배포할 때 여기서 옛 목록으로 기존 줄을 검사하면 배포가 멈춘다.
+-- 전체 검사는 최종 목록을 거는 0112 가 한다.
+alter table public.draw_grants add constraint draw_grants_kind_check check (kind in ('FREE', 'BONUS', 'RUN')) not valid;
 
 -- 매일 무료 — 날짜마다 쓴 수. 오늘 줄이 없으면 오늘은 아직 안 썼다.
 create table if not exists public.draw_daily (
@@ -32928,11 +32930,5138 @@ begin
 end $$;
 
 -- ══════════════════════════════════════════════════════════════════
--- 0106_waitlist_close.sql
+-- 0106_items.sql
 -- ══════════════════════════════════════════════════════════════════
 
 -- ════════════════════════════════════════════════════════════════════
---  0106 — 사전 등록 마감 · 타워 게임은 누구나 (2026-11-18)
+--  0106 — 아이템: 가방 · 운영자 지급 · 러닝 아이템 · 보상 이벤트 (2026-11-17)
+--
+--  사용자 "지급하고 싶을 때 쉽게 · 알람도 가게" · "운영자 페이지 만들자 — 24시간 보상 2배 같은 것도 설정" ·
+--  "러닝 부스터 · 에너지 드링크 · 내구도 / 하루 할당량 초기화권 · 보상 2배권" · "출발 전에 고르기 · 같은 종류는 겹쳐서 못 쓴다".
+--
+--  · 아이템 종류(economy.item_kinds) — 값은 표에 있어 배포 없이 바꾼다(다시 배포해도 운영 중 바꾼 값을 덮지 않는다).
+--      RUN_BOOSTER       러닝 부스터        이 러닝 적립 × 1.5         묶음 REWARD · 출발 전에 고른다
+--      REWARD_DOUBLE     보상 2배권         이 러닝 적립 × 2           묶음 REWARD · 출발 전에 고른다
+--      ENERGY_DRINK      에너지 드링크      이 러닝 에너지를 절반만    묶음 ENERGY · 출발 전에 고른다
+--      DURABILITY_RESET  내구도 초기화권    신발 내구도를 가득         바로 쓴다
+--      ENERGY_RESET      하루 할당량 초기화권  오늘 쓴 에너지를 되돌린다  바로 쓴다
+--    하루 할당량 = 하루 에너지다(기본 10칸 = 6,000보 — 사람들이 실제로 닿는 하루 몫). 하루 금액 상한(daily_earn_cap) · 걸음 상한 ·
+--    올린 날 상한은 부정 방지 선이라 그대로 둔다.
+--  · 가방(public.user_items) — 사람 · 종류마다 개수. 앱은 자기 것만 읽고, 바꾸는 길은 아래 함수뿐이다.
+--  · 바로 쓰는 아이템: item_use(종류, 요청 번호, 신발). 같은 요청 번호가 다시 오면 다시 쓰지 않는다.
+--  · 러닝 아이템: run_items_use(러닝 시작 시각, 종류들) — 앱이 출발할 때 고른 것을 알린다(인터넷이 없었으면 올리기 일꾼이 러닝보다
+--    먼저 보낸다 — 과속 신고와 같다). 그때 가방에서 빠지고, record_session 이 그 러닝(시작 시각)에 묶인 아이템을 읽는다.
+--    이미 기록한 러닝에는 붙이지 못한다. 같은 묶음은 한 러닝에 하나. 무효 러닝은 효과가 없고 돌려주지 않는다.
+--  · 적립 배수는 겹치지 않는다 — 24시간 부스터(XP_BOOSTER × 2) · 보상 이벤트 · 러닝 아이템 가운데 가장 큰 것 하나
+--    (economy.run_reward_mult). 예전엔 XP_BOOSTER 만 봤다.
+--  · 보상 이벤트(economy.reward_events) — 운영자가 정한 시간 동안 모든 사람의 러닝 적립 × N. 러닝이 시작한 시각으로 본다.
+--  · 운영자(ops_*) — 운영자 페이지(/ops)가 키로 부른다(워킹데이 검토 키와 같은 방식 — 서버에는 해시만).
+--      지급: 이메일 명단 · 전체 · 최근 7일 달린 사람 → 가방에 넣고 푸시(ITEM_GRANTED). 지급 묶음마다 기록 · 되돌리기.
+--      보상 이벤트: 시작 · 취소, 시작 푸시(REWARD_EVENT — 알림 설정 "이벤트 소식"을 끈 사람 제외).
+--    키 만들기 · 막기(SQL Editor):
+--      select economy.ops_key_new('담당자 이름');   -- 한 번만 보이는 키
+--      update economy.ops_keys set revoked_at = now() where label = '담당자 이름';
+--  · record_session 은 0089 본문 그대로이고 세 곳만 고쳤다(적립 배수 · 에너지 · 끝에 아이템과 러닝을 잇는 줄).
+-- ════════════════════════════════════════════════════════════════════
+
+-- ── 아이템 종류 ─────────────────────────────────────────────────────
+create table if not exists economy.item_kinds (
+  kind text primary key check (kind ~ '^[A-Z][A-Z_]{2,30}$'),
+  -- 같은 묶음끼리는 한 러닝에 하나만 쓴다
+  grp text not null,
+  -- RUN 출발 전에 골라 그 러닝에만 · NOW 바로 쓴다
+  mode text not null check (mode in ('RUN', 'NOW')),
+  -- 배수(REWARD) · 비율(ENERGY). 바로 쓰는 아이템은 비운다
+  value numeric(6, 3),
+  sort int not null default 0,
+  enabled boolean not null default true
+);
+revoke all on economy.item_kinds from public, anon, authenticated;
+
+comment on table economy.item_kinds is
+  '아이템 종류와 값. 운영 중에 값을 바꿔도 다시 배포할 때 덮지 않는다(0106).';
+
+insert into economy.item_kinds (kind, grp, mode, value, sort) values
+  ('RUN_BOOSTER',      'REWARD',     'RUN', 1.5, 10),
+  ('REWARD_DOUBLE',    'REWARD',     'RUN', 2,   20),
+  ('ENERGY_DRINK',     'ENERGY',     'RUN', 0.5, 30),
+  ('DURABILITY_RESET', 'DURABILITY', 'NOW', null, 40),
+  ('ENERGY_RESET',     'DAILY',      'NOW', null, 50)
+on conflict (kind) do nothing;
+
+-- ── 가방 ────────────────────────────────────────────────────────────
+create table if not exists public.user_items (
+  user_id uuid not null references auth.users on delete cascade,
+  kind text not null references economy.item_kinds,
+  qty int not null default 0 check (qty >= 0),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, kind)
+);
+
+comment on table public.user_items is
+  '가진 아이템. 앱은 자기 것만 읽는다 — 바꾸는 길은 item_use · run_items_use · 운영자 지급뿐이다(0106).';
+
+alter table public.user_items enable row level security;
+revoke all on public.user_items from anon, authenticated;
+drop policy if exists user_items_select_own on public.user_items;
+create policy user_items_select_own on public.user_items
+  for select using ((select auth.uid()) = user_id);
+grant select on public.user_items to authenticated;
+
+-- ── 지급 기록 ───────────────────────────────────────────────────────
+create table if not exists economy.item_batches (
+  id bigint generated always as identity primary key,
+  -- 같은 지급을 두 번 누르거나 응답을 잃고 다시 보내도 한 번만
+  request_id uuid not null unique,
+  kind text not null references economy.item_kinds,
+  qty int not null check (qty between 1 and 99),
+  reason text not null,
+  -- 누구에게 — 'EMAILS' · 'ALL' · 'RUNNERS_7D'
+  target text not null,
+  actor text not null,
+  push boolean not null default true,
+  users int not null default 0,
+  created_at timestamptz not null default now(),
+  revoked_at timestamptz,
+  revoked_by text
+);
+revoke all on economy.item_batches from public, anon, authenticated;
+
+create table if not exists economy.item_grants (
+  id bigint generated always as identity primary key,
+  batch_id bigint not null references economy.item_batches on delete cascade,
+  user_id uuid not null references auth.users on delete cascade,
+  kind text not null,
+  qty int not null check (qty > 0),
+  -- 되돌릴 때 실제로 거둔 개수(이미 쓴 것은 못 거둔다)
+  revoked_qty int not null default 0,
+  created_at timestamptz not null default now(),
+  unique (batch_id, user_id)
+);
+create index if not exists item_grants_user on economy.item_grants (user_id, created_at desc);
+revoke all on economy.item_grants from public, anon, authenticated;
+
+comment on table economy.item_batches is '운영자 아이템 지급 한 번(누가 · 무엇을 · 몇 개 · 왜 · 누구에게). 되돌릴 때 이것부터 본다(0106).';
+comment on table economy.item_grants is '지급 한 번에서 사람마다 받은 줄(0106).';
+
+-- ── 쓴 기록 ─────────────────────────────────────────────────────────
+create table if not exists economy.item_uses (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  kind text not null,
+  used_at timestamptz not null default now(),
+  -- 러닝 아이템이면 그 러닝의 시작 시각(앱이 올릴 때와 같은 값) — record_session 이 이것으로 찾는다
+  run_started_at timestamptz,
+  -- 기록된 러닝(record_session 이 적는다)
+  session_id bigint,
+  sneaker_id bigint
+);
+create unique index if not exists item_uses_run on economy.item_uses (user_id, run_started_at, kind)
+  where run_started_at is not null;
+create index if not exists item_uses_user on economy.item_uses (user_id, used_at desc);
+revoke all on economy.item_uses from public, anon, authenticated;
+
+comment on table economy.item_uses is '아이템을 쓴 기록. 러닝 아이템은 러닝 시작 시각에 묶인다(0106).';
+
+-- 러닝에 적용된 적립 배수(부스터 · 이벤트 · 아이템 가운데 가장 큰 것) — 앱 결과 화면이 읽는다
+alter table public.walk_sessions add column if not exists reward_mult numeric(6, 3) not null default 1;
+
+-- ── 보상 이벤트 ─────────────────────────────────────────────────────
+create table if not exists economy.reward_events (
+  id bigint generated always as identity primary key,
+  request_id uuid not null unique,
+  title text not null,
+  mult numeric(6, 3) not null check (mult > 1 and mult <= 5),
+  starts_at timestamptz not null,
+  ends_at timestamptz not null,
+  actor text not null,
+  created_at timestamptz not null default now(),
+  cancelled_at timestamptz,
+  cancelled_by text,
+  check (ends_at > starts_at)
+);
+revoke all on economy.reward_events from public, anon, authenticated;
+
+comment on table economy.reward_events is
+  '보상 이벤트 — 이 시간에 시작한 러닝의 적립 × mult(모든 사람). 취소하면 그때까지만(0106).';
+
+-- 그 시각에 켜져 있는 보상 이벤트(가장 큰 배수)
+create or replace function economy.reward_event_at(p_at timestamptz)
+returns economy.reward_events
+language sql stable security definer set search_path = '' as $$
+  select e.* from economy.reward_events e
+   where e.starts_at <= p_at
+     and p_at < least(e.ends_at, coalesce(e.cancelled_at, 'infinity'::timestamptz))
+   order by e.mult desc, e.id desc
+   limit 1
+$$;
+revoke all on function economy.reward_event_at(timestamptz) from public;
+
+-- 이 러닝의 적립 배수 — 겹치지 않고 가장 큰 것 하나: 24시간 부스터 · 보상 이벤트 · 이 러닝에 고른 아이템(묶음 REWARD)
+create or replace function economy.run_reward_mult(p_user uuid, p_started_at timestamptz)
+returns numeric
+language sql stable security definer set search_path = public, economy as $$
+  select greatest(
+    1,
+    case when economy.boost_active(p_user, 'XP_BOOSTER', p_started_at) then 2 else 1 end,
+    coalesce((economy.reward_event_at(p_started_at)).mult, 1),
+    coalesce((select max(k.value) from economy.item_uses u join economy.item_kinds k on k.kind = u.kind
+               where u.user_id = p_user and u.run_started_at = p_started_at and k.grp = 'REWARD'), 1)
+  )::numeric
+$$;
+revoke all on function economy.run_reward_mult(uuid, timestamptz) from public;
+
+-- 이 러닝의 에너지 비율 — 에너지 드링크를 골랐으면 그 비율만큼만 쓴다
+create or replace function economy.run_energy_factor(p_user uuid, p_started_at timestamptz)
+returns numeric
+language sql stable security definer set search_path = public, economy as $$
+  select coalesce((select min(greatest(least(k.value, 1), 0.1))
+                     from economy.item_uses u join economy.item_kinds k on k.kind = u.kind
+                    where u.user_id = p_user and u.run_started_at = p_started_at and k.grp = 'ENERGY'), 1)::numeric
+$$;
+revoke all on function economy.run_energy_factor(uuid, timestamptz) from public;
+
+-- 가방에 넣는다(서버 안에서만)
+create or replace function economy.item_add(p_user uuid, p_kind text, p_qty int) returns int
+language sql security definer set search_path = public, economy as $$
+  insert into public.user_items (user_id, kind, qty) values (p_user, p_kind, p_qty)
+  on conflict (user_id, kind) do update set qty = public.user_items.qty + excluded.qty, updated_at = now()
+  returning qty
+$$;
+revoke all on function economy.item_add(uuid, text, int) from public;
+
+-- ── 앱: 내 가방 ─────────────────────────────────────────────────────
+-- 종류마다 개수(0 개도 — 앱이 종류와 값을 여기서 받는다) · 지금 켜진 보상 이벤트 · 24시간 부스터가 끝나는 때
+create or replace function public.items_me() returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_event economy.reward_events;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  v_event := economy.reward_event_at(now());
+  return jsonb_build_object(
+    'items', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'kind', k.kind, 'group', k.grp, 'mode', k.mode, 'value', k.value,
+               'qty', coalesce((select i.qty from public.user_items i where i.user_id = v_user and i.kind = k.kind), 0))
+             order by k.sort, k.kind)
+        from economy.item_kinds k where k.enabled), '[]'::jsonb),
+    'event', case when v_event.id is null then null else jsonb_build_object(
+      'id', v_event.id, 'title', v_event.title, 'mult', v_event.mult,
+      'starts_at', v_event.starts_at, 'ends_at', v_event.ends_at) end,
+    'boost_until', (select max(b.ends_at) from public.boosts b
+                     where b.user_id = v_user and b.kind = 'XP_BOOSTER' and b.ends_at > now())
+  );
+end $$;
+revoke all on function public.items_me() from public, anon;
+grant execute on function public.items_me() to authenticated;
+
+-- ── 앱: 바로 쓰는 아이템 ────────────────────────────────────────────
+-- 돌려주는 값: { kind, left(남은 개수) } — 같은 요청 번호가 다시 오면 다시 쓰지 않고 처음 결과
+create or replace function public.item_use(p_kind text, p_request uuid, p_sneaker bigint default null)
+returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_k economy.item_kinds;
+  v_prev numeric;
+  v_left int;
+  v_day date := economy.game_day(now());
+  v_used numeric;
+  v_bonus numeric;
+  v public.market_sneakers;
+  v_shoe_id bigint;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_request is null then
+    raise exception '요청 번호가 필요합니다' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  select r.result into v_prev from economy.request_receipts r
+   where r.user_id = v_user and r.request_id = p_request;
+  if found then
+    return jsonb_build_object('kind', p_kind, 'left', v_prev::int, 'replay', true);
+  end if;
+
+  select * into v_k from economy.item_kinds k where k.kind = p_kind and k.enabled;
+  if v_k.kind is null then
+    raise exception '없는 아이템입니다' using errcode = '22023';
+  end if;
+  if v_k.mode <> 'NOW' then
+    raise exception '러닝을 시작할 때 고르는 아이템입니다' using errcode = '23514';
+  end if;
+  if coalesce((select i.qty from public.user_items i where i.user_id = v_user and i.kind = p_kind), 0) < 1 then
+    raise exception '아이템이 없습니다' using errcode = '23514';
+  end if;
+
+  if p_kind = 'DURABILITY_RESET' then
+    v_shoe_id := coalesce(p_sneaker, (select e.id from economy.equipped_sneaker(v_user) e));
+    if v_shoe_id is null then
+      raise exception '신은 신발이 없습니다' using errcode = '23514';
+    end if;
+    v := economy.my_app_sneaker(v_user, v_shoe_id);
+    -- 가득 찬 신발에 쓰면 아이템만 사라진다
+    if v.dur_now >= v.dur_max then
+      raise exception '내구도가 이미 가득합니다' using errcode = '23514';
+    end if;
+    update public.market_sneakers set dur_now = dur_max, updated_at = now() where id = v.id;
+  elsif p_kind = 'ENERGY_RESET' then
+    select d.used, d.bonus into v_used, v_bonus from public.energy_days d where d.user_id = v_user and d.day = v_day;
+    if coalesce(v_used, 0) <= coalesce(v_bonus, 0) then
+      raise exception '오늘 쓴 에너지가 없습니다' using errcode = '23514';
+    end if;
+    -- 쓴 만큼을 되돌린다 — 남은 에너지 = 최대치(economy.energy_left: 최대 + bonus − used)
+    update public.energy_days set bonus = used where user_id = v_user and day = v_day;
+  else
+    raise exception '쓸 수 없는 아이템입니다' using errcode = '22023';
+  end if;
+
+  update public.user_items set qty = qty - 1, updated_at = now()
+   where user_id = v_user and kind = p_kind
+  returning qty into v_left;
+  insert into economy.item_uses (user_id, kind, sneaker_id) values (v_user, p_kind, v.id);
+  insert into economy.request_receipts (user_id, request_id, kind, result)
+  values (v_user, p_request, 'ITEM:' || p_kind, v_left);
+
+  return jsonb_build_object('kind', p_kind, 'left', v_left, 'replay', false);
+end $$;
+revoke all on function public.item_use(text, uuid, bigint) from public, anon;
+grant execute on function public.item_use(text, uuid, bigint) to authenticated;
+
+-- ── 앱: 러닝 아이템 — 출발할 때 고른 것을 그 러닝에 묶는다 ──────────
+-- 같은 러닝 · 같은 종류를 다시 보내면 그대로다(다시 빼지 않는다). 돌려주는 값: { kinds, mult, energy_factor }
+create or replace function public.run_items_use(p_run_started_at timestamptz, p_kinds text[])
+returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_kinds text[];
+  v_new text[];
+  v_kind text;
+  v_recorded boolean;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_run_started_at is null
+     or p_run_started_at > now() + interval '5 minutes'
+     or p_run_started_at < now() - interval '7 days' then
+    raise exception '러닝 시작 시각이 올바르지 않습니다' using errcode = '22023';
+  end if;
+  select coalesce(array_agg(distinct k), '{}') into v_kinds from unnest(coalesce(p_kinds, '{}')) k where k is not null;
+  if cardinality(v_kinds) > 5 then
+    raise exception '아이템이 너무 많습니다' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  if exists (select 1 from unnest(v_kinds) k
+              where not exists (select 1 from economy.item_kinds c where c.kind = k and c.enabled and c.mode = 'RUN')) then
+    raise exception '러닝에 쓸 수 없는 아이템입니다' using errcode = '22023';
+  end if;
+
+  -- 이 러닝에 이미 묶인 것은 빼고
+  select coalesce(array_agg(k), '{}') into v_new from unnest(v_kinds) k
+   where not exists (select 1 from economy.item_uses u
+                      where u.user_id = v_user and u.run_started_at = p_run_started_at and u.kind = k);
+
+  if cardinality(v_new) > 0 then
+    select exists (select 1 from public.walk_sessions s where s.user_id = v_user and s.started_at = p_run_started_at)
+      into v_recorded;
+    if v_recorded then
+      raise exception '이미 기록한 러닝입니다' using errcode = '23514';
+    end if;
+    -- 같은 묶음은 한 러닝에 하나 — 이미 묶인 것과 새로 고른 것을 함께 본다
+    if exists (
+      select 1 from (
+        select c.grp from economy.item_uses u join economy.item_kinds c on c.kind = u.kind
+         where u.user_id = v_user and u.run_started_at = p_run_started_at
+        union all
+        select c.grp from unnest(v_new) k join economy.item_kinds c on c.kind = k
+      ) g group by g.grp having count(*) > 1) then
+      raise exception '같은 종류의 아이템은 함께 쓸 수 없습니다' using errcode = '23514';
+    end if;
+    foreach v_kind in array v_new loop
+      update public.user_items set qty = qty - 1, updated_at = now()
+       where user_id = v_user and kind = v_kind and qty >= 1;
+      if not found then
+        raise exception '아이템이 없습니다: %', v_kind using errcode = '23514';
+      end if;
+      insert into economy.item_uses (user_id, kind, run_started_at) values (v_user, v_kind, p_run_started_at);
+    end loop;
+  end if;
+
+  return jsonb_build_object(
+    'kinds', coalesce((select jsonb_agg(u.kind order by u.kind) from economy.item_uses u
+                        where u.user_id = v_user and u.run_started_at = p_run_started_at), '[]'::jsonb),
+    'mult', economy.run_reward_mult(v_user, p_run_started_at),
+    'energy_factor', economy.run_energy_factor(v_user, p_run_started_at));
+end $$;
+revoke all on function public.run_items_use(timestamptz, text[]) from public, anon;
+grant execute on function public.run_items_use(timestamptz, text[]) to authenticated;
+
+-- ── 푸시: 이벤트 소식을 끈 사람에게는 보상 이벤트를 알리지 않는다 ───
+create or replace function public.push_allowed(p_user uuid, p_kind text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((
+    select n.push and case p_kind
+      when 'PARTY_OPEN' then n.party_invite
+      when 'CREW_FLASH' then n.event_news
+      when 'REWARD_EVENT' then n.event_news
+      else true
+    end
+    from public.notify_prefs n where n.user_id = p_user
+  ), true)
+$$;
+
+-- ════════════════════════════════════════════════════════════════════
+--  운영자 — 운영자 페이지(/ops)가 키로 부른다. 서버에는 키의 해시만 있다
+-- ════════════════════════════════════════════════════════════════════
+create table if not exists economy.ops_keys (
+  token_hash text primary key,
+  label text not null,
+  created_at timestamptz not null default now(),
+  revoked_at timestamptz
+);
+revoke all on economy.ops_keys from public, anon, authenticated;
+
+comment on table economy.ops_keys is '운영자 페이지 키(해시만). economy.ops_key_new 로 만들고 revoked_at 으로 막는다(0106).';
+
+create or replace function economy.ops_key_new(p_label text) returns text
+language plpgsql security definer set search_path = '' as $$
+declare v_token text := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+begin
+  insert into economy.ops_keys (token_hash, label)
+  values (encode(sha256(convert_to(v_token, 'UTF8')), 'hex'), coalesce(nullif(btrim(p_label), ''), 'ops'));
+  return v_token;
+end $$;
+revoke all on function economy.ops_key_new(text) from public;
+
+-- 키가 맞으면 그 이름, 아니면 예외
+create or replace function economy.ops_actor(p_token text) returns text
+language plpgsql stable security definer set search_path = '' as $$
+declare v_label text;
+begin
+  select label into v_label from economy.ops_keys
+   where token_hash = encode(sha256(convert_to(coalesce(p_token, ''), 'UTF8')), 'hex') and revoked_at is null;
+  if v_label is null then
+    raise exception 'ops key required' using errcode = '42501';
+  end if;
+  return v_label;
+end $$;
+revoke all on function economy.ops_actor(text) from public;
+
+create or replace function economy.reward_event_json(e economy.reward_events) returns jsonb
+language sql stable set search_path = '' as $$
+  select jsonb_build_object(
+    'id', e.id, 'title', e.title, 'mult', e.mult, 'starts_at', e.starts_at, 'ends_at', e.ends_at,
+    'actor', e.actor, 'created_at', e.created_at, 'cancelled_at', e.cancelled_at,
+    'state', case when e.cancelled_at is not null then 'CANCELLED'
+                  when now() < e.starts_at then 'SCHEDULED'
+                  when now() < e.ends_at then 'LIVE' else 'ENDED' end)
+$$;
+revoke all on function economy.reward_event_json(economy.reward_events) from public;
+
+-- 한눈에: 아이템 종류(가진 개수 합 · 가진 사람 수) · 지금 이벤트 · 최근 이벤트 · 최근 지급
+create or replace function public.ops_overview(p_token text) returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_event economy.reward_events;
+begin
+  v_event := economy.reward_event_at(now());
+  return jsonb_build_object(
+    'actor', v_actor,
+    'now', now(),
+    'users', (select count(*) from public.profiles),
+    'runners_7d', (select count(distinct s.user_id) from public.walk_sessions s
+                    where s.started_at > now() - interval '7 days' and s.verdict <> 'VOID'),
+    'kinds', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'kind', k.kind, 'group', k.grp, 'mode', k.mode, 'value', k.value, 'enabled', k.enabled,
+               'held', coalesce((select sum(i.qty) from public.user_items i where i.kind = k.kind), 0),
+               'holders', (select count(*) from public.user_items i where i.kind = k.kind and i.qty > 0),
+               'used', (select count(*) from economy.item_uses u where u.kind = k.kind))
+             order by k.sort, k.kind)
+        from economy.item_kinds k), '[]'::jsonb),
+    'event', case when v_event.id is null then null else economy.reward_event_json(v_event) end,
+    'events', coalesce((
+      select jsonb_agg(economy.reward_event_json(e) order by e.id desc)
+        from (select * from economy.reward_events order by id desc limit 12) e), '[]'::jsonb),
+    'batches', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'id', b.id, 'kind', b.kind, 'qty', b.qty, 'reason', b.reason, 'target', b.target,
+               'actor', b.actor, 'users', b.users, 'push', b.push, 'created_at', b.created_at,
+               'revoked_at', b.revoked_at) order by b.id desc)
+        from (select * from economy.item_batches order by id desc limit 30) b), '[]'::jsonb)
+  );
+end $$;
+revoke all on function public.ops_overview(text) from public;
+grant execute on function public.ops_overview(text) to anon, authenticated;
+
+-- 사람 찾기 — 이메일 · 이름 일부(2자 이상), 20명까지. 가진 아이템도 함께
+create or replace function public.ops_user_find(p_token text, p_query text) returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_q text := btrim(coalesce(p_query, ''));
+  v_like text;
+begin
+  if char_length(v_q) < 2 then
+    return '[]'::jsonb;
+  end if;
+  v_like := '%' || replace(replace(replace(v_q, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'email', x.email, 'name', x.name, 'joined_at', x.created_at,
+             'items', coalesce((select jsonb_object_agg(i.kind, i.qty) from public.user_items i
+                                 where i.user_id = x.id and i.qty > 0), '{}'::jsonb))
+           order by x.created_at desc)
+      from (
+        select u.id, u.email, coalesce(p.display_name, '') as name, u.created_at
+          from auth.users u join public.profiles p on p.id = u.id
+         where u.email ilike v_like or p.display_name ilike v_like
+         order by u.created_at desc
+         limit 20
+      ) x), '[]'::jsonb);
+end $$;
+revoke all on function public.ops_user_find(text, text) from public;
+grant execute on function public.ops_user_find(text, text) to anon, authenticated;
+
+-- 지급 — 이메일 명단(p_emails) 또는 대상(p_audience: 'ALL' 전체 · 'RUNNERS_7D' 최근 7일 달린 사람).
+-- 같은 요청 번호가 다시 오면 다시 주지 않고 처음 결과. 못 찾은 이메일은 missing 으로 돌려준다(나머지는 지급한다).
+create or replace function public.ops_item_grant(
+  p_token text,
+  p_request uuid,
+  p_kind text,
+  p_qty int,
+  p_reason text,
+  p_emails text[] default null,
+  p_audience text default null,
+  p_push boolean default true
+) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_reason text := btrim(coalesce(p_reason, ''));
+  v_emails text[];
+  v_users uuid[];
+  v_missing text[] := '{}';
+  v_target text;
+  v_batch economy.item_batches;
+  v_user uuid;
+begin
+  if p_request is null then
+    return jsonb_build_object('ok', false, 'code', 'request', 'message', '요청 번호가 필요합니다');
+  end if;
+  -- 같은 지급을 두 번 누르지 못하게 — 요청 번호로 줄을 선다
+  perform pg_advisory_xact_lock(hashtext('ops-grant:' || p_request::text));
+  select * into v_batch from economy.item_batches b where b.request_id = p_request;
+  if found then
+    return jsonb_build_object('ok', true, 'batch', v_batch.id, 'users', v_batch.users, 'missing', '[]'::jsonb, 'replay', true);
+  end if;
+
+  if not exists (select 1 from economy.item_kinds k where k.kind = p_kind) then
+    return jsonb_build_object('ok', false, 'code', 'kind', 'message', '없는 아이템입니다');
+  end if;
+  if p_qty is null or p_qty < 1 or p_qty > 99 then
+    return jsonb_build_object('ok', false, 'code', 'qty', 'message', '개수는 1 ~ 99');
+  end if;
+  if char_length(v_reason) < 2 or char_length(v_reason) > 80 then
+    return jsonb_build_object('ok', false, 'code', 'reason', 'message', '사유를 2 ~ 80자로 적어 주세요');
+  end if;
+
+  if p_audience = 'ALL' then
+    v_target := 'ALL';
+    select coalesce(array_agg(p.id), '{}') into v_users from public.profiles p;
+  elsif p_audience = 'RUNNERS_7D' then
+    v_target := 'RUNNERS_7D';
+    select coalesce(array_agg(distinct s.user_id), '{}') into v_users from public.walk_sessions s
+     where s.started_at > now() - interval '7 days' and s.verdict <> 'VOID';
+  elsif p_audience is null or p_audience = 'EMAILS' then
+    v_target := 'EMAILS';
+    select coalesce(array_agg(distinct lower(btrim(e))), '{}') into v_emails
+      from unnest(coalesce(p_emails, '{}')) e where btrim(coalesce(e, '')) <> '';
+    if cardinality(v_emails) > 2000 then
+      return jsonb_build_object('ok', false, 'code', 'too_many', 'message', '한 번에 2,000명까지');
+    end if;
+    select coalesce(array_agg(u.id), '{}') into v_users
+      from auth.users u join public.profiles p on p.id = u.id
+     where lower(u.email) = any (v_emails);
+    select coalesce(array_agg(e order by e), '{}') into v_missing from unnest(v_emails) e
+     where not exists (select 1 from auth.users u join public.profiles p on p.id = u.id where lower(u.email) = e);
+  else
+    return jsonb_build_object('ok', false, 'code', 'audience', 'message', '대상이 올바르지 않습니다');
+  end if;
+
+  if cardinality(v_users) = 0 then
+    return jsonb_build_object('ok', false, 'code', 'no_target', 'message', '받을 사람이 없습니다', 'missing', to_jsonb(v_missing));
+  end if;
+
+  insert into economy.item_batches (request_id, kind, qty, reason, target, actor, push, users)
+  values (p_request, p_kind, p_qty, v_reason, v_target, v_actor, coalesce(p_push, true), cardinality(v_users))
+  returning * into v_batch;
+
+  foreach v_user in array v_users loop
+    perform economy.item_add(v_user, p_kind, p_qty);
+    insert into economy.item_grants (batch_id, user_id, kind, qty) values (v_batch.id, v_user, p_kind, p_qty);
+    if coalesce(p_push, true) then
+      perform public.push_enqueue(v_user, 'ITEM_GRANTED',
+        jsonb_build_object('item', p_kind, 'qty', p_qty::text, 'reason', v_reason), 'bag');
+    end if;
+  end loop;
+
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_item_grant', p_kind,
+          jsonb_build_object('by', v_actor, 'batch', v_batch.id, 'qty', p_qty, 'users', cardinality(v_users),
+                             'target', v_target, 'reason', v_reason));
+
+  return jsonb_build_object('ok', true, 'batch', v_batch.id, 'users', cardinality(v_users),
+                            'missing', to_jsonb(v_missing), 'replay', false);
+end $$;
+revoke all on function public.ops_item_grant(text, uuid, text, int, text, text[], text, boolean) from public;
+grant execute on function public.ops_item_grant(text, uuid, text, int, text, text[], text, boolean) to anon, authenticated;
+
+-- 지급 되돌리기 — 아직 갖고 있는 만큼만 거둔다(이미 쓴 것은 못 거둔다). taken 거둔 개수 · short 덜 거둔 사람 수
+create or replace function public.ops_grant_revoke(p_token text, p_batch bigint) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_batch economy.item_batches;
+  g record;
+  v_take int;
+  v_taken int := 0;
+  v_short int := 0;
+begin
+  select * into v_batch from economy.item_batches b where b.id = p_batch for update;
+  if not found then
+    return jsonb_build_object('ok', false, 'code', 'not_found', 'message', '없는 지급입니다');
+  end if;
+  if v_batch.revoked_at is not null then
+    return jsonb_build_object('ok', false, 'code', 'revoked', 'message', '이미 되돌린 지급입니다');
+  end if;
+  for g in select * from economy.item_grants x where x.batch_id = p_batch loop
+    perform pg_advisory_xact_lock(hashtext('ledger:' || g.user_id::text));
+    select least(g.qty - g.revoked_qty, coalesce(i.qty, 0)) into v_take
+      from (select 1) one left join public.user_items i on i.user_id = g.user_id and i.kind = g.kind;
+    v_take := greatest(coalesce(v_take, 0), 0);
+    if v_take > 0 then
+      update public.user_items set qty = qty - v_take, updated_at = now()
+       where user_id = g.user_id and kind = g.kind;
+      update economy.item_grants set revoked_qty = revoked_qty + v_take where id = g.id;
+    end if;
+    v_taken := v_taken + v_take;
+    if v_take < g.qty - g.revoked_qty then
+      v_short := v_short + 1;
+    end if;
+  end loop;
+  update economy.item_batches set revoked_at = now(), revoked_by = v_actor where id = p_batch;
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_grant_revoke', v_batch.kind,
+          jsonb_build_object('by', v_actor, 'batch', p_batch, 'taken', v_taken, 'short', v_short));
+  return jsonb_build_object('ok', true, 'taken', v_taken, 'short', v_short);
+end $$;
+revoke all on function public.ops_grant_revoke(text, bigint) from public;
+grant execute on function public.ops_grant_revoke(text, bigint) to anon, authenticated;
+
+-- 보상 이벤트 시작 — 지금부터(또는 p_starts_at 부터) p_hours 시간 동안 러닝 적립 × p_mult.
+-- 켜져 있거나 예약된 이벤트와 겹치면 거절한다(배수는 겹치지 않는다). 지금 시작하는 이벤트만 푸시를 보낸다.
+create or replace function public.ops_event_start(
+  p_token text,
+  p_request uuid,
+  p_title text,
+  p_mult numeric,
+  p_hours numeric,
+  p_starts_at timestamptz default null,
+  p_push boolean default true
+) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_title text := btrim(coalesce(p_title, ''));
+  v_from timestamptz := coalesce(p_starts_at, now());
+  v_to timestamptz;
+  v_event economy.reward_events;
+  v_user uuid;
+  v_pushed int := 0;
+begin
+  if p_request is null then
+    return jsonb_build_object('ok', false, 'code', 'request', 'message', '요청 번호가 필요합니다');
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ops-event'));
+  select * into v_event from economy.reward_events e where e.request_id = p_request;
+  if found then
+    return jsonb_build_object('ok', true, 'event', economy.reward_event_json(v_event), 'replay', true);
+  end if;
+
+  if char_length(v_title) < 2 or char_length(v_title) > 40 then
+    return jsonb_build_object('ok', false, 'code', 'title', 'message', '이름을 2 ~ 40자로 적어 주세요');
+  end if;
+  if p_mult is null or p_mult <= 1 or p_mult > 5 then
+    return jsonb_build_object('ok', false, 'code', 'mult', 'message', '배수는 1 보다 크고 5 이하');
+  end if;
+  if p_hours is null or p_hours < 1 or p_hours > 168 then
+    return jsonb_build_object('ok', false, 'code', 'hours', 'message', '기간은 1 ~ 168시간');
+  end if;
+  if v_from < now() - interval '1 minute' then
+    return jsonb_build_object('ok', false, 'code', 'past', 'message', '지난 시각에는 시작할 수 없습니다');
+  end if;
+  if v_from > now() + interval '30 days' then
+    return jsonb_build_object('ok', false, 'code', 'far', 'message', '30일 안으로 정해 주세요');
+  end if;
+  v_to := v_from + make_interval(secs => (p_hours * 3600)::double precision);
+
+  if exists (select 1 from economy.reward_events e
+              where e.cancelled_at is null and e.ends_at > now()
+                and e.starts_at < v_to and e.ends_at > v_from) then
+    return jsonb_build_object('ok', false, 'code', 'overlap', 'message', '그 시간에 이미 보상 이벤트가 있습니다');
+  end if;
+
+  insert into economy.reward_events (request_id, title, mult, starts_at, ends_at, actor)
+  values (p_request, v_title, round(p_mult, 2), v_from, v_to, v_actor)
+  returning * into v_event;
+
+  if coalesce(p_push, true) and v_from <= now() + interval '1 minute' then
+    for v_user in select p.id from public.profiles p loop
+      perform public.push_enqueue(v_user, 'REWARD_EVENT',
+        jsonb_build_object('mult', trim(trailing '.' from trim(trailing '0' from round(p_mult, 2)::text)),
+                           'hours', trim(trailing '.' from trim(trailing '0' from round(p_hours, 1)::text)),
+                           'title', v_title), 'run');
+      v_pushed := v_pushed + 1;
+    end loop;
+  end if;
+
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_event_start', v_event.id::text,
+          jsonb_build_object('by', v_actor, 'title', v_title, 'mult', v_event.mult,
+                             'starts_at', v_from, 'ends_at', v_to));
+
+  return jsonb_build_object('ok', true, 'event', economy.reward_event_json(v_event), 'replay', false);
+end $$;
+revoke all on function public.ops_event_start(text, uuid, text, numeric, numeric, timestamptz, boolean) from public;
+grant execute on function public.ops_event_start(text, uuid, text, numeric, numeric, timestamptz, boolean) to anon, authenticated;
+
+-- 보상 이벤트 취소 — 지금부터 꺼진다(이미 시작한 러닝은 시작 시각으로 보므로 그대로 받는다)
+create or replace function public.ops_event_cancel(p_token text, p_id bigint) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_event economy.reward_events;
+begin
+  update economy.reward_events e set cancelled_at = now(), cancelled_by = v_actor
+   where e.id = p_id and e.cancelled_at is null and e.ends_at > now()
+  returning * into v_event;
+  if not found then
+    return jsonb_build_object('ok', false, 'code', 'not_found', 'message', '끌 이벤트가 없습니다');
+  end if;
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_event_cancel', p_id::text, jsonb_build_object('by', v_actor));
+  return jsonb_build_object('ok', true, 'event', economy.reward_event_json(v_event));
+end $$;
+revoke all on function public.ops_event_cancel(text, bigint) from public;
+grant execute on function public.ops_event_cancel(text, bigint) to anon, authenticated;
+
+-- ════════════════════════════════════════════════════════════════════
+--  record_session — 0089 본문 그대로, 세 곳만:
+--    ① 적립 배수 = economy.run_reward_mult(24시간 부스터 · 보상 이벤트 · 러닝 아이템 가운데 가장 큰 것)
+--    ② 에너지 = 걸음마다 쓰는 양 × economy.run_energy_factor(에너지 드링크)
+--    ③ 끝에 이 러닝에 묶인 아이템과 적용된 배수를 적는다
+--  칸 · 돌려주는 값이 같아 create or replace 로 바꾼다(0089 가 먼저 지우고 만든 그 함수).
+-- ════════════════════════════════════════════════════════════════════
+
+create or replace function public.record_session(
+  p_started_at timestamptz,
+  p_ended_at timestamptz,
+  p_steps int,
+  p_duration_sec int,
+  p_track text default '',
+  p_boost_bps int default 0,
+  p_party_size int default 1,
+  p_faction text default '',
+  -- 안드로이드가 "모의 위치"로 표시한 좌표가 하나라도 있었나
+  p_mock_location boolean default false,
+  -- 출발 때 신은 신발(market_sneakers.id, 0089) — 앱이 사실로만 알린다. 내 신발이 아니거나 신을 수 없는 신발이면 예전처럼 지금 신은 신발
+  p_sneaker bigint default null
+)
+returns table (
+  session_id bigint,
+  verdict text,
+  points_awarded numeric,
+  balance numeric,
+  -- 판정 까닭(0089) — 적립이 0 이거나 줄어든 까닭. 예전 앱은 모르는 칸이라 읽지 않는다
+  verdict_reason text
+)
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_gday date;
+  v_already_steps int;
+  v_already_points numeric;
+  v_verified int;
+  v_rewardable int;
+  v_points numeric(20, 4);
+  v_cap numeric;
+  v_verdict text := 'CLEAN';
+  v_reason text := '';
+  v_session_id bigint;
+  v_kind text;
+  v_elapsed int;
+  v_top_speed double precision := 0;
+  v_glitch double precision := 0;
+  v_gps_m double precision := 0;
+  v_points_n int := 0;
+  v_first_at bigint;
+  v_last_at bigint;
+  v_step_m double precision;
+  v_distance_m double precision;
+  v_track text := coalesce(p_track, '');
+  v_party int := 1;
+  v_party_id bigint;
+  v_gps_backed boolean;
+  v_credit_m double precision := 0;
+  v_cap_left numeric;
+  v_shoe public.market_sneakers;
+  v_eff int := 0;
+  v_comfort int := 0;
+  v_dur numeric := 100;
+  v_energy_left numeric;
+  v_energy_per_step numeric;
+  v_energy_used numeric := 0;
+  v_xp numeric := 1;
+  v_recent_void int;
+  -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
+  v_held boolean := false;
+  v_new_account boolean;
+  -- 상한(하루 금액 · 경로 없는 러닝 · 올린 날)을 걸기 전 금액 — 상한에 걸려 덜 받은 만큼 에너지도 덜 쓴다 (0068)
+  v_points_full numeric := 0;
+  -- 크루 러닝(그 크루의 방 · 함께 달린 2명 이상 · 크루원)이면 그 크루 — 크루 체력 · 크루 레벨 거리 (0069)
+  v_crew uuid;
+  -- 이 러닝의 적립을 받쳐 준 체력 — PERSONAL 개인 에너지 · CREW 크루 체력(그날 나눠 받는 크루원만) (0069)
+  v_pool text := 'PERSONAL';
+  -- 크루 러닝 3판 (0070)
+  v_party_starts timestamptz;
+  v_crew_room boolean := false;
+  v_crew_level int := 1;
+  v_runners int := 0;
+  v_pool_pts numeric := 0;
+  v_pool_max numeric := 0;
+  v_share numeric := 0;
+  v_limit_sec int := 0;
+  v_wall numeric;
+  v_together_sec int := 0;
+  v_crew_sec numeric := 0;
+  v_crew_used numeric := 0;
+  v_headcount numeric := 0;
+  v_level_bonus numeric := 0;
+  -- 크루 러닝 — 공용 체력 (0071)
+  v_cr economy.crew_runs;
+  v_is_cr boolean := false;
+  v_base numeric := 0;
+  v_head_sup numeric := 0;
+  v_lvl_sup numeric := 0;
+  v_tm double precision;
+  v_em double precision;
+  v_lm double precision;
+  v_frac numeric := 1;
+  -- 서버가 이미 끝낸 참여(마지막 한 사람 자동 종료 · 끝냄)면 그때 + 60초(폰 시계 차이) 뒤의 기록은 크루 보상 · 경험치에서 뺀다
+  v_cut timestamptz;
+  v_xp_frac numeric := 1;
+  v_level_now int;
+  v_level_was int;
+  v_starters int := 1;
+  v_xp_m numeric := 0;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  -- ── 형식 검사 ──
+  if p_steps is null or p_steps < 0 then
+    raise exception '걸음 수가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_ended_at < p_started_at then
+    raise exception '종료 시각이 시작보다 빠릅니다' using errcode = '22023';
+  end if;
+  if p_ended_at > now() + interval '5 minutes' then
+    raise exception '종료 시각이 미래입니다' using errcode = '22023';
+  end if;
+  if p_started_at < now() - interval '7 days' and not exists (
+       select 1 from public.walk_sessions s
+        where s.user_id = v_user and s.started_at = p_started_at) then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  -- 이미 올린 러닝의 재시도면 원래 결과를 그대로 돌려준다. 아래 계산을 다시 하면
+  -- 에너지 · 내구도를 두 번 깎는다.
+  select s.id, s.verdict, s.points_awarded, coalesce(s.verdict_reason, '') into v_session_id, v_verdict, v_points, v_reason
+    from public.walk_sessions s
+   where s.user_id = v_user and s.started_at = p_started_at;
+  if found then
+    return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user), v_reason;
+    return;
+  end if;
+  v_reason := '';
+  v_verdict := 'CLEAN';
+
+  v_elapsed := least(
+    greatest(coalesce(p_duration_sec, 0), 0),
+    floor(extract(epoch from (p_ended_at - p_started_at)))::int
+  );
+  v_gday := economy.game_day(p_started_at);
+  v_step_m := p_steps * 0.762;
+
+  select t.top_speed_kmh, t.glitch_ratio into v_top_speed, v_glitch
+    from economy.track_speed_stats(v_track) t;
+  select t.gps_m, t.points, t.first_at, t.last_at
+    into v_gps_m, v_points_n, v_first_at, v_last_at
+    from economy.track_summary(v_track) t;
+  -- 경로 거리는 러닝 시간 안에 달릴 수 있는 만큼만(시속 25km). 경로 시각은 앞뒤로 여유를
+  -- 두므로, 아주 짧은 러닝 여러 개에 같은 몇 분짜리 경로를 붙여 거리를 여러 번 받지 못하게.
+  v_gps_m := least(coalesce(v_gps_m, 0), greatest(v_elapsed, 1) * 7.0);
+
+  -- ── 판정 ──
+  if coalesce(p_mock_location, false) then
+    v_verdict := 'VOID';
+    v_reason := '가짜 위치가 감지되었습니다';
+
+  -- 과속으로 멈춘 뒤 10분(러닝 금지 시간) 안에 시작한 러닝은 적립하지 않는다 (0065)
+  elsif exists (
+        select 1 from public.run_penalties x
+         where x.user_id = v_user
+           and p_started_at >= x.stopped_at and p_started_at < x.banned_until) then
+    v_verdict := 'VOID';
+    v_reason := '과속으로 멈춘 뒤 러닝 금지 시간에 시작한 러닝입니다';
+
+  -- 짧은 러닝도 실제 시간으로 잰다(예전엔 60초로 쳐서 1ms 러닝에 240걸음을 줬다)
+  elsif p_steps::numeric * 60 / greatest(v_elapsed, 1) > 240 then
+    v_verdict := 'VOID';
+    v_reason := '케이던스가 사람 범위를 벗어납니다';
+
+  elsif v_glitch > 0.5 then
+    v_verdict := 'VOID';
+    v_reason := '이동 속도가 사람 범위를 벗어납니다';
+
+  elsif v_points_n >= 2 and (
+        v_first_at < (extract(epoch from p_started_at) * 1000)::bigint - economy.track_time_slack_ms()
+     or v_last_at > (extract(epoch from p_ended_at) * 1000)::bigint + economy.track_time_slack_ms()) then
+    v_verdict := 'VOID';
+    v_reason := '경로 시각이 러닝 시간과 맞지 않습니다';
+
+  elsif v_track <> '' and exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.track <> ''
+           and md5(s.track) = md5(v_track) and s.started_at <> p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '이미 올린 경로입니다';
+
+  -- 같은 사람의 러닝은 시간이 겹칠 수 없다. 겹치게 여러 개를 올리면 같은 시간을
+  -- 여러 번 받는다.
+  elsif exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.verdict <> 'VOID'
+           and s.started_at < p_ended_at and s.ended_at > p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '다른 러닝과 시간이 겹칩니다';
+
+  elsif v_gps_m >= 1000 and v_step_m < v_gps_m * 0.2 then
+    v_verdict := 'VOID';
+    v_reason := '걸음 없이 이동한 거리입니다';
+  end if;
+
+  -- ── 검사를 통과한 걸음 ──
+  if v_verdict = 'VOID' then
+    v_verified := 0;
+  else
+    v_verified := p_steps;
+    if v_gps_m >= economy.gps_check_min_m()
+       and v_step_m > v_gps_m * economy.step_gps_max_ratio() then
+      v_verified := floor(v_gps_m * economy.step_gps_max_ratio() / 0.762)::int;
+      v_verdict := 'FLAGGED';
+      v_reason := '걸음 수가 GPS 거리보다 많습니다';
+    end if;
+  end if;
+  v_rewardable := v_verified;
+
+  -- 과속이 30초 넘게 이어져 앱이 멈춘 러닝 — 적립 규칙은 그대로, 판정에 까닭을 남긴다 (0065)
+  if v_verdict <> 'VOID' and exists (
+        select 1 from public.run_penalties x
+         where x.user_id = v_user and x.run_started_at = p_started_at) then
+    v_verdict := 'FLAGGED';
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '과속이 이어져 러닝이 멈췄습니다');
+  end if;
+
+  -- ── 함께 달리기 · 크루 러닝 (0070 — 걸음 상한 · 신발보다 먼저 정한다) ──
+  -- 파티 보너스는 한 파티에서 한 러닝만
+  select pf.party_id, pf.size into v_party_id, v_party from economy.party_for(v_user, p_started_at) pf;
+  if v_party_id is null or exists (select 1 from public.walk_sessions s
+                                    where s.user_id = v_user and s.party_id = v_party_id) then
+    v_party_id := null;
+    v_party := 1;
+  end if;
+
+  -- 크루 러닝(0071) — 이 러닝의 방에서 서버가 출발을 확정한 참여(economy.crew_runs, party_start)가 있어야 한다.
+  -- 앱이 크루 러닝이라고 말해서가 아니다. 참여가 이미 정산됐으면(같은 방 · 같은 날 두 번째 러닝) 보통 러닝이다
+  if v_party_id is not null then
+    select p.crew_id into v_crew from public.parties p where p.id = v_party_id;
+    v_crew_room := v_crew is not null;
+    v_crew := null;
+    if v_crew_room then
+      select * into v_cr from economy.crew_runs c where c.user_id = v_user and c.party_id = v_party_id;
+      if found and v_cr.session_id is null and v_cr.crew_id is not null then
+        v_is_cr := true;
+      elsif found then
+        v_party_id := null;
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '오늘 크루 러닝을 이미 했습니다');
+      end if;
+      -- 크루 방의 보너스는 크루 러닝 보너스 하나다 — 크루 러닝이 아니면 예전 함께 달리기 보너스도 없다(겹치지 않게)
+      if not v_is_cr then
+        v_party := 1;
+      end if;
+    end if;
+  end if;
+  if v_is_cr then
+    v_pool := 'CREW';
+    v_crew := v_cr.crew_id;
+    v_crew_level := v_cr.crew_level;
+    v_party_starts := v_cr.started_at;
+    select count(*)::int into v_starters from economy.crew_runs c where c.party_id = v_cr.party_id;
+    v_party := v_starters;
+    if v_cr.state = 'ENDED' and v_cr.terminal_reason in ('USER_END', 'LAST_PARTICIPANT_END') and v_cr.ended_at is not null then
+      v_cut := v_cr.ended_at + interval '60 seconds';
+    end if;
+    -- 공용 체력을 지금까지 정산하고(풀 → 사람 차례로 잠근다) 이 러닝을 끝낸다 — 다른 사람이 모두 끝났으면 마지막 사람도
+    perform economy.crew_pool_settle(v_cr.crew_id, v_cr.day, now());
+    perform economy.crew_run_close(v_user, v_cr.day, 'RECORDED');
+    -- 인원 보너스 — 2분이 지났으면 지금 정하고, 아니면 확인할 수 없다(D01)
+    perform economy.crew_run_bonus_eval(v_user, v_cr.day, true);
+    select * into v_cr from economy.crew_runs c where c.user_id = v_user and c.day = v_cr.day;
+    v_headcount := v_cr.bonus_pct;
+    v_level_bonus := v_cr.level_pct;
+  end if;
+
+  -- ── 하루 걸음 상한 (한국 하루) — 개인 러닝만, 크루 러닝 걸음은 세지 않는다 (0070) ──
+  if v_rewardable > 0 and v_pool = 'PERSONAL' then
+    select coalesce(sum(s.rewarded_steps), 0) into v_already_steps
+      from public.walk_sessions s
+     where s.user_id = v_user
+       and s.verdict in ('CLEAN', 'FLAGGED')
+       and s.energy_pool <> 'CREW'
+       and economy.game_day(s.started_at) = v_gday;
+    if v_rewardable > economy.max_daily_steps() - v_already_steps then
+      v_rewardable := greatest(economy.max_daily_steps() - v_already_steps, 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 무효가 잦으면 보류 ──
+  -- 적립할 걸음이 없는 러닝도 본다 — 걸음 0 인 경로 러닝이 보류 중에도 잠금 거리 · 꺼내기 조건 거리를 받았다
+  if v_verdict <> 'VOID' then
+    select count(*) into v_recent_void from public.walk_sessions s
+     where s.user_id = v_user and s.verdict = 'VOID'
+       and s.started_at > now() - interval '7 days';
+    if v_recent_void >= 5 then
+      v_rewardable := 0;
+      v_held := true;
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
+    end if;
+  end if;
+
+  -- ── 신발 ──
+  -- 크루 러닝은 출발 때 고른 신발(아직 내 것이면) — 효율 · 착화감은 그 신발 것 (0070)
+  if v_pool = 'CREW' then
+    -- 출발 때 고른 신발 — 기록에 적는 번호만. 효율은 출발 때 스냅샷(v_cr.shoe_eff_bps)으로 센다
+    select x.* into v_shoe from public.market_sneakers x where x.id = v_cr.sneaker_id and x.owner_id = v_user;
+  end if;
+  -- 개인 러닝은 출발 때 신은 신발(앱이 알린 p_sneaker, 0089) — 올릴 때 신은 신발이 아니라 달린 신발로 닳고 효율을 센다.
+  -- 내 것이고 신을 수 있는 신발(앱 안 · 갖고 있음 — 판매 중 · 체인 · 태운 신발은 아니다)일 때만. 아니면 예전처럼 지금 신은 신발
+  if v_shoe.id is null and p_sneaker is not null then
+    select x.* into v_shoe from public.market_sneakers x
+     where x.id = p_sneaker and x.owner_id = v_user and x.chain_state = 'APP' and x.status = 'OWNED';
+  end if;
+  if v_shoe.id is null then
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is null then
+    -- 신은 신발이 없으면(꺼내기로 벗었다) 첫 신발을 신긴다. 신발 없이 달리면 내구도 100 · 닳지 않음으로
+    -- 쳐서, 닳은 신발을 신고 수리비를 내는 것보다 나았다. 첫 신발을 아직 안 받은 계정(앱은 로그인하자마자
+    -- 받는다)은 예전처럼 신발 없이 계산한다 — 앱이 받기 전에 러닝이 먼저 올라가도 적립을 잃지 않게.
+    update public.market_sneakers set equipped = true, updated_at = now()
+     where id = (select m.id from public.market_sneakers m
+                  where m.owner_id = v_user and m.origin = 'STARTER'
+                    and m.chain_state = 'APP' and m.status = 'OWNED'
+                  limit 1)
+       and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is not null then
+    -- 효율 · 착화감은 레벨 1 값 + 나눈 포인트, 내구도는 남은 비율(%) — 이 러닝 전의 값으로 배율을 정한다 (0059)
+    select e.efficiency_bps, e.comfort_bps, e.durability into v_eff, v_comfort, v_dur
+      from economy.shoe_effective(v_shoe) e;
+  end if;
+
+  if v_pool = 'CREW' then
+    -- 크루 러닝은 개인 신발 내구도 · 개인 에너지를 쓰지 않는다(R02 · R11). 효율은 출발 때 고른 신발의 스냅샷(R04).
+    -- 공용 체력이 0 이던 구간에 달린 걸음은 적립하지 않는다(R03) — 경로를 시간으로 갈라 그 구간의 거리만큼, 경로가 없으면 시간만큼
+    v_dur := 100;
+    v_eff := v_cr.shoe_eff_bps;
+    v_comfort := 0;
+    select t.total_m, t.empty_m, t.late_m into v_tm, v_em, v_lm
+      from economy.track_meters_empty(v_track, v_cr.crew_id, v_cr.day, v_cut) t;
+    if v_tm > 0 then
+      v_frac := greatest(1 - v_em / v_tm, 0)::numeric;
+      v_xp_frac := greatest(1 - v_lm / v_tm, 0)::numeric;
+    else
+      -- 경로가 없으면 시간으로. 서버가 끝낸 뒤의 시간은 빼고, 0 이던 몫은 서버가 센 달린 초 중 0 이던 초로(일시정지와 상관없다)
+      v_xp_frac := case when v_cut is null or v_cut >= p_ended_at then 1
+                        else least(greatest(extract(epoch from (v_cut - p_started_at)), 0)
+                                   / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 1)::numeric end;
+      if v_cr.active_sec > 0 then
+        v_frac := greatest(1 - v_cr.empty_sec / v_cr.active_sec, 0) * v_xp_frac;
+      else
+        v_frac := greatest(v_xp_frac - economy.crew_empty_sec(v_cr.crew_id, v_cr.day, p_started_at, least(p_ended_at, coalesce(v_cut, p_ended_at)))
+                                       / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 0);
+      end if;
+    end if;
+    if v_rewardable > 0 and v_frac < 1 then
+      v_rewardable := floor(v_rewardable * v_frac)::int;
+      if v_frac < v_xp_frac then
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 체력을 다 썼습니다');
+      end if;
+    end if;
+    if v_xp_frac < 1 then
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 러닝이 끝난 뒤의 기록은 크루 보상에서 뺐습니다');
+    end if;
+  else
+    -- 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 (0066) — 남은 내구도로 달릴 수 있던 시간(1분마다 5)만큼만.
+    -- 적립 배율은 남은 비율이 0 보다 크면 그대로라(economy.durability_factor) 거의 닳은 신발로 오래 달려도 다 받던 것을 막는다
+    if v_rewardable > 0 and v_shoe.id is not null
+       and v_shoe.dur_now * economy.durability_sec_per_point() < v_elapsed then
+      v_rewardable := floor(v_rewardable * v_shoe.dur_now * economy.durability_sec_per_point()
+                            / greatest(v_elapsed, 1)::numeric)::int;
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳은 뒤의 걸음은 적립하지 않습니다');
+    end if;
+
+    -- 개인 에너지 — 적립 걸음 600 에 1, 착화감만큼 덜
+    if v_rewardable > 0 then
+      -- 에너지 드링크를 고른 러닝은 그 비율만큼만 쓴다 (0106)
+      v_energy_per_step := (1 - v_comfort / 10000.0) / economy.steps_per_energy()
+                           * economy.run_energy_factor(v_user, p_started_at);
+      v_energy_left := economy.energy_left(v_user, v_gday);
+      if v_rewardable * v_energy_per_step > v_energy_left then
+        v_rewardable := greatest(floor(v_energy_left / v_energy_per_step)::int, 0);
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '에너지를 다 썼습니다');
+      end if;
+      v_energy_used := round(v_rewardable * v_energy_per_step, 4);
+    end if;
+  end if;
+
+  -- 적립 배수 — 24시간 부스터 · 보상 이벤트 · 이 러닝에 고른 아이템 가운데 가장 큰 것 하나(겹치지 않는다, 0106)
+  v_xp := economy.run_reward_mult(v_user, p_started_at);
+
+  if v_pool = 'CREW' then
+    -- 기본 B(고른 신발) + B × 인원 보너스(구간 하나) + B × 레벨 보너스 — 더하기, 각 몫을 4자리로 정해 합이 원장과 같게 (R08 · R10)
+    v_base := round(v_rewardable * economy.points_per_step() * (1 + v_eff / 10000.0) * v_xp, 4);
+    v_head_sup := round(v_base * v_headcount, 4);
+    v_lvl_sup := round(v_base * v_level_bonus, 4);
+    v_points := v_base + v_head_sup + v_lvl_sup;
+  else
+    v_points := round(
+      v_rewardable * economy.points_per_step()
+        * (1 + v_eff / 10000.0)
+        * economy.durability_factor(v_dur)
+        * economy.party_multiplier(v_party)
+        * v_xp,
+      4
+    );
+  end if;
+  v_points_full := v_points;
+  if v_rewardable > 0 and economy.durability_factor(v_dur) < 1 then
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳아 적립이 없습니다');
+  end if;
+
+  -- ── 하루 금액 상한 — 가입 7일 안은 절반 ──
+  -- 아래 상한(하루 금액 · 경로 없는 러닝 · 올린 날)은 개인 러닝만 — 크루 러닝 보상은 따로이고 아직 상한이 없다
+  -- (2026-10-21 사용자 결정 "일단 무제한"). 개인 상한의 합에서도 크루 러닝은 뺀다 (0070)
+  if v_points > 0 and v_pool = 'PERSONAL' then
+    v_new_account := (select p.created_at from public.profiles p where p.id = v_user)
+                     > now() - make_interval(days => economy.setting_num('new_account_days')::int);
+    v_cap := economy.setting_num('daily_earn_cap') * case when v_new_account then 0.5 else 1 end;
+    select coalesce(sum(s.points_awarded), 0) into v_already_points
+      from public.walk_sessions s
+     where s.user_id = v_user and s.energy_pool <> 'CREW' and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap - v_already_points then
+      v_points := greatest(round(v_cap - v_already_points, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 금액 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 걸음만 있는 러닝 · 한꺼번에 올린 러닝 ──
+  --
+  -- 경로가 없으면 걸음은 폰이 지어낼 수 있다. 그런 러닝은 하루 적은 몫만 준다.
+  -- 7일치를 모아 한 번에 올리면 날마다 상한이 새로 열리므로, 올린 날 기준 상한도 둔다.
+  v_gps_backed := v_verdict <> 'VOID' and v_gps_m >= economy.gps_check_min_m();
+  if v_points > 0 and not v_gps_backed and v_pool = 'PERSONAL' then
+    select economy.setting_num('no_gps_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and not s.gps_backed and s.energy_pool <> 'CREW'
+       and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '경로 없는 러닝의 하루 상한에 걸렸습니다');
+    end if;
+  end if;
+  if v_points > 0 and v_pool = 'PERSONAL' then
+    select economy.setting_num('upload_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and s.energy_pool <> 'CREW'
+       and economy.game_day(s.created_at) = economy.game_day(now());
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루에 올릴 수 있는 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- 상한에 걸려 덜 받았으면 받은 몫만큼만 에너지를 쓴다 — 쓴 에너지 × 받은 SUP ÷ 상한 전 SUP (0068).
+  -- 예전엔 하루 금액 상한에 걸려 0 SUP 를 받은 러닝도 에너지를 다 썼다. 적립 걸음(rewarded_steps)은 그대로 둔다
+  if v_energy_used > 0 and v_points < v_points_full then
+    v_energy_used := round(v_energy_used * v_points / v_points_full, 4);
+  end if;
+
+  v_distance_m := case
+    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
+                                          + case when v_verified > 0 then 100 else 0 end)
+    else v_step_m
+  end;
+  if v_verdict = 'VOID' then v_distance_m := 0; end if;
+
+  -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
+  if v_gps_backed and not v_held then
+    select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
+      into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and economy.game_day(s.started_at) = v_gday;
+    v_credit_m := least(v_distance_m, v_cap_left);
+  end if;
+
+  -- ── 기록 ──
+  insert into public.walk_sessions (
+    user_id, started_at, ended_at, duration_sec, steps,
+    distance_meters, calories, track, boost_bps, party_size,
+    faction, top_speed_kmh, gps_distance_m,
+    verdict, verdict_reason, points_awarded, rewarded_steps,
+    mock_location, verified_steps, energy_used, sneaker_id,
+    gps_backed, backed_steps, gps_credit_m, party_id,
+    crew_id, energy_pool
+  )
+  values (
+    v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
+    v_distance_m, p_steps * 0.04, v_track, least(v_eff, 5000), least(greatest(v_party, 1), 20),
+    '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
+    v_verdict, v_reason, v_points, v_rewardable,
+    coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
+    v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id,
+    v_crew, v_pool
+  )
+  returning id into v_session_id;
+
+  if v_points > 0 then
+    v_kind := case when v_party > 1 then 'EARN_PARTY' else 'EARN_WALK' end;
+    insert into public.sup_ledger (user_id, kind, amount, description, session_id, occurred_at)
+    values (v_user, v_kind, v_points, format('러닝 세션 적립 (%s보)', v_rewardable),
+            v_session_id, p_ended_at);
+  end if;
+
+  -- 개인 에너지는 개인 러닝만 쓴다 — 크루 러닝은 공용 체력(crew_runs · crew_day_pools)
+  if v_energy_used > 0 and v_pool = 'PERSONAL' then
+    insert into public.energy_days (user_id, day, used) values (v_user, v_gday, v_energy_used)
+    on conflict (user_id, day) do update set used = public.energy_days.used + excluded.used;
+  end if;
+
+  -- 크루 레벨 — 경험치는 유효 크루 러닝의 사람마다 자기 거리(R09). 보류 · 무효 · 크루를 나간 뒤는 쌓지 않는다. 레벨은 내려가지 않고,
+  -- 넘은 레벨마다 레벨 업을 한 번 적는다. 정산은 참여 한 줄에 한 번(같은 러닝을 다시 올리면 위에서 원래 결과를 돌려준다)
+  if v_pool = 'CREW' then
+    select coalesce(c.level, 1) into v_level_was from public.crews c where c.id = v_crew for update;
+    v_level_now := v_level_was;
+    -- 서버가 끝낸 뒤의 거리는 빼고(v_xp_frac)
+    if v_verdict <> 'VOID' and not v_held and v_distance_m * v_xp_frac > 0
+       and exists (select 1 from public.crew_members m where m.crew_id = v_crew and m.user_id = v_user) then
+      update public.crews c
+         set run_km = c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3),
+             level = greatest(coalesce(c.level, 1),
+                              economy.crew_level_for_km(c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3)))
+       where c.id = v_crew
+      returning c.level into v_level_now;
+      v_xp_m := round((v_distance_m * v_xp_frac)::numeric, 1);
+      insert into economy.crew_level_events (crew_id, level, session_id, run_km)
+      select v_crew, l, v_session_id, (select run_km from public.crews where id = v_crew)
+        from generate_series(v_level_was + 1, v_level_now) l
+      on conflict (crew_id, level) do nothing;
+    end if;
+    update economy.crew_runs c
+       set session_id = v_session_id, base_sup = case when v_points > 0 then v_base else 0 end,
+           headcount_sup = case when v_points > 0 then v_head_sup else 0 end,
+           level_sup = case when v_points > 0 then v_lvl_sup else 0 end, total_sup = v_points,
+           xp_m = v_xp_m,
+           level_before = v_level_was, level_after = v_level_now, settled_at = now()
+     where c.user_id = v_user and c.day = v_cr.day;
+  end if;
+
+  -- 신발이 닳는다. 예전 신발(IMPORT·MINT)도 똑같이 닳는다 — 안 닳으면 수리비를 안 내는 신발이 된다.
+  -- 모든 신발이 같은 빠르기로 — 달린 1분마다 남은 내구도 5 (0064). 달린 시간은 멈춘 시간을 뺀 값(v_elapsed).
+  -- 거리 · 걸음과 상관없다 — 켜 두고 움직이지 않아도 닳는다(0068, 2026-10-19 사용자 결정. 예전엔 거리 0 이면 닳지 않았다).
+  -- 무효 러닝은 닳지 않는다. 남은 비율(durability_pts)은 트리거가 다시 센다.
+  -- 크루 러닝은 크루 체력을 쓰고 신발은 닳지 않는다 — 거리만 쌓는다 (0070, 사용자 결정 "하루에 내 자유러닝 + 크루러닝")
+  if v_shoe.id is not null and v_verdict <> 'VOID' then
+    update public.market_sneakers s
+       set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
+           dur_now = case when v_pool = 'CREW' then s.dur_now
+                          else greatest(s.dur_now - economy.durability_wear_time(v_elapsed), 0) end,
+           updated_at = now()
+     where s.id = v_shoe.id;
+  end if;
+
+  if v_verdict <> 'VOID' then
+    update public.profiles
+       set lifetime_km = lifetime_km + (v_distance_m / 1000),
+           gps_km = gps_km + (v_credit_m / 1000),
+           top_speed_kmh = greatest(top_speed_kmh, v_top_speed)
+     where id = v_user;
+  end if;
+
+  -- 이 러닝에 묶인 아이템을 러닝 기록에 잇고, 적용된 적립 배수를 적는다 (0106)
+  update economy.item_uses u set session_id = v_session_id
+   where u.user_id = v_user and u.run_started_at = p_started_at;
+  if v_xp <> 1 then
+    update public.walk_sessions s set reward_mult = v_xp where s.id = v_session_id;
+  end if;
+
+  return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user), v_reason;
+end;
+$$;
+
+
+comment on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint) is
+  '러닝 세션을 기록하고 적립액을 서버가 계산한다. 신발(출발 때 신은 신발 — 내 것일 때만)·에너지·크루 러닝·파티·부스터·보상 이벤트·러닝 아이템·상한 모두 서버 값으로. 판정 까닭도 돌려준다 (0089)';
+
+revoke all on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)
+  from public, anon;
+grant execute on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)
+  to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0107_market_by_model.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0107 — 거래소를 도감 모델 단위로 (2026-11-17)
+--
+--  테스터 "신발 상세에서 판매하기를 누르면 딴 신발로 연결된다"(타비 스플릿 토 조거 → 플레어 시프트).
+--
+--  거래소는 처음(0007)부터 신발을 "속성 × 등급 × 변형"으로 묶었다. 0066 뒤 신발은 속성이 없고(NONE),
+--  레어부터는 도감 모델(model_id)을 따로 뽑는다 — 변형은 그림에 쓰이지 않는 남은 숫자다. 그래서
+--  같은 "NONE · 레어 · 3" 줄에 서로 다른 모델이 섞이고, 앱은 그 줄에 예전 불 모델 이름(플레어 시프트)을
+--  붙이거나(11-03 전) "레어 신발"이라고만 적었다(11-04). 어느 쪽이든 누른 신발이 아니다.
+--
+--  모델이 있는 신발은 모델 번호 하나로 묶는다:
+--    · 체결 · 구매 입찰 표에 model_id 칸(체결은 신발에서 저절로 채운다).
+--    · 모델에 거는 구매 입찰 market_bid_model — 그 모델 신발만 그 입찰에 팔린다.
+--    · 새 앱이 읽는 자리는 _v2: market_quotes_v2(모델 하나가 한 줄) · market_asks_v2 · market_bid_book_v2 ·
+--      market_my_bids_v2 · market_my_trades_v2 — 예전 것에 model_id 를 더한 모양.
+--  예전 자리(market_quotes · market_asks · market_bid · …)는 모양을 바꾸지 않는다 — 예전 앱이 읽고,
+--  setup.sql 을 다시 올릴 때 앞 파일이 예전 모양으로 다시 만들기 때문이다(모양을 바꾸면 두 번째 배포가 깨진다).
+--  예전 앱이 거는 입찰(모델 없이 속성 × 등급 × 변형)은 예전 뜻 그대로 맞춘다(그 줄의 어느 모델이든).
+-- ════════════════════════════════════════════════════════════════════
+
+alter table public.market_bids add column if not exists model_id int references public.sneaker_models(id);
+alter table public.market_trades add column if not exists model_id int;
+
+comment on column public.market_bids.model_id is
+  '이 모델 신발에만 건 입찰(0107). 비어 있으면 예전처럼 속성 × 등급 × 변형 줄의 어느 신발이든.';
+comment on column public.market_trades.model_id is '체결된 신발의 도감 모델(0107). 신발이 지워져도 시세는 남는다.';
+
+-- 지난 체결에도 모델을 적는다(아직 남아 있는 신발만 — 지워진 신발의 체결은 예전 줄로 남는다)
+update public.market_trades t
+   set model_id = s.model_id
+  from public.market_sneakers s
+ where s.id = t.sneaker_id and t.model_id is null and s.model_id is not null;
+
+-- 체결은 market_settle 하나가 적는다 — 그 함수를 고치지 않고 적을 때 모델을 채운다
+create or replace function economy.market_trade_model() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.model_id is null and new.sneaker_id is not null then
+    select s.model_id into new.model_id from public.market_sneakers s where s.id = new.sneaker_id;
+  end if;
+  return new;
+end $$;
+revoke all on function economy.market_trade_model() from public;
+
+drop trigger if exists market_trades_model on public.market_trades;
+create trigger market_trades_model before insert on public.market_trades
+  for each row execute function economy.market_trade_model();
+
+-- 모델 번호는 가려 둘 정보가 아니다(0031 은 주인 · 뽑기 번호 · 토큰 번호만 가린다). 새 DB 에서도 열려 있게 따로 적는다
+grant select (model_id) on public.market_sneakers to anon, authenticated;
+
+-- ── 보는 자리(새 앱) — 예전 것에 model_id 를 더한 모양 ──
+create or replace view public.market_asks_v2
+with (security_invoker = true) as
+  select l.id as listing_id,
+         l.price,
+         l.created_at,
+         l.seller_id,
+         s.id as sneaker_id,
+         s.faction, s.rarity, s.variant,
+         s.level, s.mint_number, s.luck, s.comfort, s.durability,
+         s.model_id
+    from public.market_listings l
+    join public.market_sneakers s on s.id = l.sneaker_id
+   where l.status = 'OPEN';
+comment on view public.market_asks_v2 is '열려 있는 매물(도감 모델 번호도, 0107).';
+grant select on public.market_asks_v2 to anon, authenticated;
+
+create or replace view public.market_bid_book_v2
+with (security_invoker = true) as
+  select id as bid_id, buyer_id, faction, rarity, variant, min_level, price, created_at, model_id
+    from public.market_bids
+   where status = 'OPEN';
+comment on view public.market_bid_book_v2 is '열려 있는 구매 입찰(모델에 건 입찰은 모델 번호도, 0107).';
+grant select on public.market_bid_book_v2 to anon, authenticated;
+
+-- 시세판 2판 — 한 줄 = 모델 하나. 모델이 있는 신발은 (NONE, 등급, 0, 모델)로, 없는 신발은 (속성, 등급, 변형, 빈칸)으로 묶는다
+create or replace view public.market_quotes_v2
+with (security_invoker = true) as
+with shoes as (
+  select case when s.model_id is null then s.faction else 'NONE' end as faction,
+         s.rarity,
+         case when s.model_id is null then s.variant else 0 end as variant,
+         coalesce(s.model_id, 0) as model_id,
+         s.id, s.status
+    from public.market_sneakers s
+   -- 강화 재료로 태운 신발(0054 — 줄은 BURNED 로 남는다)은 "보유"에 세지 않는다
+   where s.status <> 'BURNED'
+),
+supply as (
+  select faction, rarity, variant, model_id,
+         count(*)::int as supply,
+         count(*) filter (where status = 'LISTED')::int as listed
+    from shoes group by 1, 2, 3, 4
+),
+asks as (
+  select k.faction, k.rarity, k.variant, k.model_id, min(l.price) as ask
+    from public.market_listings l
+    join shoes k on k.id = l.sneaker_id
+   where l.status = 'OPEN' group by 1, 2, 3, 4
+),
+bids as (
+  select case when model_id is null then faction else 'NONE' end as faction,
+         rarity,
+         case when model_id is null then variant else 0 end as variant,
+         coalesce(model_id, 0) as model_id,
+         max(price) as bid, count(*)::int as bid_count
+    from public.market_bids where status = 'OPEN' group by 1, 2, 3, 4
+),
+trades as (
+  select case when model_id is null then faction else 'NONE' end as faction,
+         rarity,
+         case when model_id is null then variant else 0 end as variant,
+         coalesce(model_id, 0) as model_id,
+         price, traded_at
+    from public.market_trades
+),
+last_trade as (
+  select distinct on (faction, rarity, variant, model_id)
+         faction, rarity, variant, model_id, price as last_price, traded_at as last_traded_at
+    from trades
+   order by faction, rarity, variant, model_id, traded_at desc
+),
+vol as (
+  select faction, rarity, variant, model_id,
+         count(*)::int as trades_24h,
+         coalesce(sum(price), 0)::numeric(20, 4) as volume_24h
+    from trades
+   where traded_at > now() - interval '24 hours'
+   group by 1, 2, 3, 4
+),
+models as (
+  select faction, rarity, variant, model_id from supply
+  union
+  select faction, rarity, variant, model_id from bids
+)
+select m.faction,
+       m.rarity,
+       m.variant,
+       nullif(m.model_id, 0) as model_id,
+       coalesce(s.supply, 0) as supply,
+       coalesce(s.listed, 0) as listed,
+       a.ask,
+       b.bid,
+       coalesce(b.bid_count, 0) as bid_count,
+       t.last_price,
+       t.last_traded_at,
+       coalesce(v.trades_24h, 0) as trades_24h,
+       coalesce(v.volume_24h, 0)::numeric(20, 4) as volume_24h
+  from models m
+  left join supply s using (faction, rarity, variant, model_id)
+  left join asks a using (faction, rarity, variant, model_id)
+  left join bids b using (faction, rarity, variant, model_id)
+  left join last_trade t using (faction, rarity, variant, model_id)
+  left join vol v using (faction, rarity, variant, model_id);
+
+comment on view public.market_quotes_v2 is
+  '모델별 시세 한 줄(0107) — 도감 모델이 있는 신발은 모델 하나가 한 줄(속성 NONE · 변형 0), 없으면 속성 × 등급 × 변형.';
+grant select on public.market_quotes_v2 to anon, authenticated;
+
+-- ── 예전 자리(예전 앱) — 칸은 그대로, 줄만 거른다 ──
+-- 모델에 건 입찰은 (NONE, 등급, 변형 0)으로 적힌다. 예전 장부 · 시세판이 그대로 읽으면 예전 앱의 "NONE · 등급 · 0" 장에
+-- 그 등급 모든 모델의 입찰이 섞여 보이고, 눌러도 "모델이 다릅니다"로 거절된다 — 예전 자리는 모델 없는 입찰만 보인다.
+-- 강화 재료로 태운 신발(BURNED)도 "보유"에서 뺀다. 칸 이름 · 차례 · 형은 0007 과 같다(다시 올려도 같은 모양).
+create or replace view public.market_bid_book
+with (security_invoker = true) as
+  select id as bid_id, buyer_id, faction, rarity, variant, min_level, price, created_at
+    from public.market_bids
+   where status = 'OPEN' and model_id is null;
+
+create or replace view public.market_quotes
+with (security_invoker = true) as
+with supply as (
+  select faction, rarity, variant,
+         count(*)::int as supply,
+         count(*) filter (where status = 'LISTED')::int as listed
+    from public.market_sneakers
+   where status <> 'BURNED'
+   group by 1, 2, 3
+),
+asks as (
+  select s.faction, s.rarity, s.variant, min(l.price) as ask
+    from public.market_listings l
+    join public.market_sneakers s on s.id = l.sneaker_id
+   where l.status = 'OPEN' group by 1, 2, 3
+),
+bids as (
+  select faction, rarity, variant, max(price) as bid, count(*)::int as bid_count
+    from public.market_bids where status = 'OPEN' and model_id is null group by 1, 2, 3
+),
+last_trade as (
+  select distinct on (faction, rarity, variant)
+         faction, rarity, variant, price as last_price, traded_at as last_traded_at
+    from public.market_trades
+   order by faction, rarity, variant, traded_at desc
+),
+vol as (
+  select faction, rarity, variant,
+         count(*)::int as trades_24h,
+         coalesce(sum(price), 0)::numeric(20, 4) as volume_24h
+    from public.market_trades
+   where traded_at > now() - interval '24 hours'
+   group by 1, 2, 3
+),
+models as (
+  select faction, rarity, variant from supply
+  union
+  select faction, rarity, variant from bids
+)
+select m.faction,
+       m.rarity,
+       m.variant,
+       coalesce(s.supply, 0) as supply,
+       coalesce(s.listed, 0) as listed,
+       a.ask,
+       b.bid,
+       coalesce(b.bid_count, 0) as bid_count,
+       t.last_price,
+       t.last_traded_at,
+       coalesce(v.trades_24h, 0) as trades_24h,
+       coalesce(v.volume_24h, 0)::numeric(20, 4) as volume_24h
+  from models m
+  left join supply s using (faction, rarity, variant)
+  left join asks a using (faction, rarity, variant)
+  left join bids b using (faction, rarity, variant)
+  left join last_trade t using (faction, rarity, variant)
+  left join vol v using (faction, rarity, variant);
+
+-- ── 판매 등록 — 걸려 있는 입찰이 그 신발에 맞는지에 모델을 더한다 ──
+create or replace function public.market_list(
+  p_sneaker_id bigint,
+  p_price numeric,
+  p_request uuid default null
+) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare
+  v_user uuid := public.market_me();
+  v_s record;
+  v_bid record;
+  v_id bigint;
+  v_prev record;
+begin
+  -- 같은 요청이 다시 왔다(응답을 잃고 다시 보냄) — 다시 하지 않고 처음 결과를 돌려준다
+  v_prev := economy.market_replay(v_user, p_request);
+  if v_prev.found_receipt then
+    return v_prev.result;
+  end if;
+
+  -- NaN 은 Postgres 에서 어떤 수보다 커서 아래 비교를 통과한다 — 먼저 막는다
+  if p_price is null or p_price = 'NaN'::numeric then
+    raise exception '값이 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_price < economy.market_min_price() then
+    raise exception '값이 너무 낮습니다' using errcode = '22023';
+  end if;
+
+  select * into v_s from public.market_sneakers where id = p_sneaker_id for update;
+  if not found or v_s.owner_id is distinct from v_user then
+    raise exception '내 스니커즈가 아닙니다' using errcode = '42501';
+  end if;
+  if v_s.status = 'LISTED' then
+    raise exception '이미 판매 중입니다' using errcode = '22023';
+  end if;
+
+  -- 이미 이 값 이상을 부른 사람이 있으면 바로 팔린다.
+  -- 값은 먼저 걸어 둔 쪽(구매 입찰)의 값으로 정해진다. 모델에 건 입찰은 그 모델 신발에만 맞는다(0107).
+  select * into v_bid from public.market_bids
+   where status = 'OPEN'
+     and ((model_id is null and faction = v_s.faction and rarity = v_s.rarity and variant = v_s.variant)
+          or (model_id is not null and model_id = v_s.model_id))
+     and min_level <= v_s.level
+     and buyer_id <> v_user
+     and price >= p_price
+   order by price desc, created_at asc
+   limit 1
+   for update;
+
+  if found then
+    update public.market_bids
+       set status = 'FILLED', closed_at = now()
+     where id = v_bid.id;
+    perform public.market_settle(
+      p_sneaker_id, v_user, v_bid.buyer_id, v_bid.price, 'BY_BID', true
+    );
+    return economy.market_receipt(v_user, p_request, 'MARKET_LIST', null);
+  end if;
+
+  insert into public.market_listings (sneaker_id, seller_id, price)
+  values (p_sneaker_id, v_user, p_price)
+  returning id into v_id;
+
+  update public.market_sneakers set status = 'LISTED' where id = p_sneaker_id;
+  return economy.market_receipt(v_user, p_request, 'MARKET_LIST', v_id);
+end $$;
+
+comment on function public.market_list(bigint, numeric, uuid) is
+  '내 스니커즈를 판다. 이미 그 값 이상을 부른 구매 입찰이 있으면 바로 체결된다(모델에 건 입찰은 그 모델만, 0107). 같은 요청 번호는 한 번만(0062).';
+
+-- ── 모델에 거는 구매 입찰 — 그 도감 모델 신발만 이 입찰에 팔린다 ──
+-- 예전 market_bid(속성 × 등급 × 변형)는 그대로 둔다(예전 앱). 규칙(값 · 잔고 · 바로 사기 · 잠그기)은 같다.
+create or replace function public.market_bid_model(
+  p_model int,
+  p_min_level int,
+  p_price numeric,
+  p_request uuid default null
+) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare
+  v_user uuid := public.market_me();
+  v_ask record;
+  v_balance numeric;
+  v_id bigint;
+  v_prev record;
+  v_rarity text;
+begin
+  v_prev := economy.market_replay(v_user, p_request);
+  if v_prev.found_receipt then
+    return v_prev.result;
+  end if;
+
+  if p_price is null or p_price = 'NaN'::numeric then
+    raise exception '값이 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_price < economy.market_min_price() then
+    raise exception '값이 너무 낮습니다' using errcode = '22023';
+  end if;
+  -- 등급은 모델이 정한다. 속성 · 변형은 그 모델 신발에 뜻이 없어 NONE · 0 으로 적는다
+  select m.rarity into v_rarity from public.sneaker_models m where m.id = p_model;
+  if not found then
+    raise exception '없는 모델입니다' using errcode = '22023';
+  end if;
+  if p_min_level is null or p_min_level < 1 or p_min_level > economy.max_level(v_rarity) then
+    raise exception '레벨 조건이 올바르지 않습니다' using errcode = '22023';
+  end if;
+
+  -- 잔고 확인과 묶기 사이에 같은 사람의 다른 결제가 끼지 못하게(spend_sup 과 같은 잠금)
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  select coalesce(sum(amount), 0) into v_balance
+    from public.sup_ledger where user_id = v_user;
+  if v_balance < p_price then
+    raise exception 'SUP 가 모자랍니다' using errcode = '22023';
+  end if;
+
+  -- 그 값 이하의 매물이 이미 있으면 그 값에 바로 산다
+  select l.id as listing_id, l.price, l.seller_id, s.id as sneaker_id
+    into v_ask
+    from public.market_listings l
+    join public.market_sneakers s on s.id = l.sneaker_id
+   where l.status = 'OPEN'
+     and s.model_id = p_model
+     and s.level >= p_min_level
+     and l.seller_id <> v_user
+     and l.price <= p_price
+   order by l.price asc, l.created_at asc
+   limit 1
+   for update of l;
+
+  if found then
+    update public.market_listings
+       set status = 'SOLD', closed_at = now() where id = v_ask.listing_id;
+    perform public.market_settle(
+      v_ask.sneaker_id, v_ask.seller_id, v_user, v_ask.price, 'BY_ASK', false
+    );
+    return economy.market_receipt(v_user, p_request, 'MARKET_BID', null);
+  end if;
+
+  -- 기다린다. 건 값은 잠근다 — 잠그지 않으면 같은 돈으로 열 곳에 입찰할 수 있다.
+  insert into public.market_bids (buyer_id, faction, rarity, variant, min_level, price, model_id)
+  values (v_user, 'NONE', v_rarity, 0, p_min_level, p_price, p_model)
+  returning id into v_id;
+
+  insert into public.sup_ledger (user_id, kind, amount, description)
+  values (v_user, 'ESCROW_LOCK', -p_price, '구매 입찰');
+
+  return economy.market_receipt(v_user, p_request, 'MARKET_BID', v_id);
+end $$;
+
+comment on function public.market_bid_model(int, int, numeric, uuid) is
+  '도감 모델에 값을 건다(0107) — 그 모델 신발만 이 입찰에 팔린다. 조건에 맞는 매물이 이미 있으면 그 값에 바로 산다. 같은 요청 번호는 한 번만.';
+
+-- ── 즉시 판매 — 모델에 건 입찰은 그 모델 신발만 받는다 ──
+create or replace function public.market_sell_now(
+  p_sneaker_id bigint,
+  p_bid_id bigint,
+  p_request uuid default null
+) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare
+  v_user uuid := public.market_me();
+  v_s record;
+  v_b record;
+  v_trade bigint;
+  v_prev record;
+begin
+  v_prev := economy.market_replay(v_user, p_request);
+  if v_prev.found_receipt then
+    return v_prev.result;
+  end if;
+
+  select * into v_s from public.market_sneakers where id = p_sneaker_id for update;
+  if not found or v_s.owner_id is distinct from v_user then
+    raise exception '내 스니커즈가 아닙니다' using errcode = '42501';
+  end if;
+
+  select * into v_b from public.market_bids where id = p_bid_id for update;
+  if not found or v_b.status <> 'OPEN' then
+    raise exception '이미 끝난 입찰입니다' using errcode = '22023';
+  end if;
+  if v_b.buyer_id = v_user then
+    raise exception '내 입찰에는 팔 수 없습니다' using errcode = '22023';
+  end if;
+  if (v_b.model_id is not null and v_s.model_id is distinct from v_b.model_id)
+     or (v_b.model_id is null
+         and (v_b.faction <> v_s.faction or v_b.rarity <> v_s.rarity or v_b.variant <> v_s.variant)) then
+    raise exception '모델이 다릅니다' using errcode = '22023';
+  end if;
+  if v_s.level < v_b.min_level then
+    raise exception '레벨이 모자랍니다' using errcode = '22023';
+  end if;
+
+  -- 팔려고 내놓은 상태였다면 그 매물은 거둔다
+  if v_s.status = 'LISTED' then
+    update public.market_listings
+       set status = 'CANCELLED', closed_at = now()
+     where sneaker_id = p_sneaker_id and status = 'OPEN';
+  end if;
+
+  update public.market_bids
+     set status = 'FILLED', closed_at = now() where id = p_bid_id;
+
+  v_trade := public.market_settle(
+    p_sneaker_id, v_user, v_b.buyer_id, v_b.price, 'BY_BID', true
+  );
+  return economy.market_receipt(v_user, p_request, 'MARKET_SELL', v_trade);
+end $$;
+
+comment on function public.market_sell_now(bigint, bigint, uuid) is
+  '걸려 있는 구매 입찰에 내 스니커즈를 판다. 값은 그 입찰의 값이다. 모델에 건 입찰은 그 모델만(0107). 같은 요청 번호는 한 번만(0062).';
+
+-- ── 내 입찰 · 내 거래(새 앱) — 예전 것에 모델 번호를 더한 모양 ──
+create or replace function public.market_my_bids_v2()
+returns table (
+  id bigint,
+  faction text,
+  rarity text,
+  variant int,
+  min_level int,
+  price numeric,
+  created_at timestamptz,
+  model_id int
+)
+language sql stable security definer set search_path = public as $$
+  select id, faction, rarity, variant, min_level, price, created_at, model_id
+    from public.market_bids
+   where buyer_id = auth.uid() and status = 'OPEN'
+   order by created_at desc
+$$;
+comment on function public.market_my_bids_v2() is '내가 걸어 둔 구매 입찰(모델에 건 입찰은 모델 번호도, 0107).';
+
+create or replace function public.market_my_trades_v2(p_limit int default 30)
+returns table (
+  id bigint,
+  faction text,
+  rarity text,
+  variant int,
+  level int,
+  price numeric,
+  fee numeric,
+  sold boolean,
+  traded_at timestamptz,
+  model_id int
+)
+language sql stable security definer set search_path = public as $$
+  select id, faction, rarity, variant, level, price, fee,
+         coalesce(seller_id = auth.uid(), false) as sold,
+         traded_at, model_id
+    from public.market_trades
+   where seller_id = auth.uid() or buyer_id = auth.uid()
+   order by traded_at desc
+   limit greatest(1, least(coalesce(p_limit, 30), 100))
+$$;
+comment on function public.market_my_trades_v2(int) is '내가 사고판 기록(모델 번호도, 0107).';
+
+revoke all on function public.market_list(bigint, numeric, uuid) from public, anon;
+grant execute on function public.market_list(bigint, numeric, uuid) to authenticated;
+revoke all on function public.market_bid_model(int, int, numeric, uuid) from public, anon;
+grant execute on function public.market_bid_model(int, int, numeric, uuid) to authenticated;
+revoke all on function public.market_sell_now(bigint, bigint, uuid) from public, anon;
+grant execute on function public.market_sell_now(bigint, bigint, uuid) to authenticated;
+revoke all on function public.market_my_bids_v2() from public, anon;
+grant execute on function public.market_my_bids_v2() to authenticated;
+revoke all on function public.market_my_trades_v2(int) from public, anon;
+grant execute on function public.market_my_trades_v2(int) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0108_market_pause.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0108 — 거래소 거래 멈춤 (2026-11-17)
+--
+--  사용자 "일단 지금 판매하기 버튼도 비활성화 해놔야 함. 거래 하면 안 돼."
+--
+--  · 설정 market_trading_enabled(기본 false) — false 면 새 매물 · 새 구매 입찰 · 체결을 모두 받지 않는다.
+--    서버가 막으므로 이미 깔린 예전 앱(스토어 판 26 등)에서도 거래가 일어나지 않는다.
+--  · 막는 곳은 표 셋의 넣기(트리거) — market_listings(판매 등록) · market_bids(구매 입찰) · market_trades(체결:
+--    즉시 구매 · 즉시 판매 · 걸려 있던 입찰에 바로 팔림이 모두 market_settle 의 이 한 줄을 지난다). 함수를 다시 쓰지 않는다.
+--  · 이미 올린 매물 · 걸어 둔 입찰은 거둘 수 있다(market_cancel_listing · market_cancel_bid — 묶인 SUP 가 돌아온다).
+--  · 보는 것(시세 · 매물 · 내 거래)은 그대로다.
+--  · 다시 열려면: select admin_economy_set('market_trading_enabled', 'true');  (앱은 MarketFeature.TRADING 도 함께)
+-- ════════════════════════════════════════════════════════════════════
+
+-- 처음 설치할 때만 넣는다. 다시 붙여넣어도 운영 중에 바꾼 값을 덮지 않는다.
+insert into public.economy_settings (key, value) values ('market_trading_enabled', 'false'::jsonb)
+on conflict (key) do nothing;
+
+create or replace function economy.market_trading_open() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select value = 'true'::jsonb from public.economy_settings where key = 'market_trading_enabled'), false)
+$$;
+revoke all on function economy.market_trading_open() from public;
+
+create or replace function economy.market_trading_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if not economy.market_trading_open() then
+    -- 22023(HTTP 400) — 55000 은 PostgREST 가 500 으로 보내 앱이 "연결이 끊겼어요 · 다시 누르세요"로 읽는다
+    -- (예전 앱은 끝없이 다시 누르게 되고, 새 앱의 멈춤 안내도 닿지 않는다). 0085 의 초대 멈춤과 같은 코드.
+    raise exception '지금은 거래소를 쉬고 있습니다' using errcode = '22023';
+  end if;
+  return new;
+end $$;
+revoke all on function economy.market_trading_guard() from public;
+
+drop trigger if exists market_listings_pause on public.market_listings;
+create trigger market_listings_pause before insert on public.market_listings
+  for each row execute function economy.market_trading_guard();
+
+drop trigger if exists market_bids_pause on public.market_bids;
+create trigger market_bids_pause before insert on public.market_bids
+  for each row execute function economy.market_trading_guard();
+
+drop trigger if exists market_trades_pause on public.market_trades;
+create trigger market_trades_pause before insert on public.market_trades
+  for each row execute function economy.market_trading_guard();
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0109_crew_fixes.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0109 — 크루 · 번개 러닝 버그 고침 (2026-11-17, 점검 문서 docs/점검-2026-11-17-버그.md #2 · #3 · #5 · #9 · #13)
+--
+--  #2  party_start — 자리에 없는(15초 넘게 대기실에 묻지 않은) 준비 인원을 빼면 2명이 안 되는 크루 방은 아무것도 바꾸기 전에
+--      거절한다(crew_run_need_two, 23514 — detail 에 자리에 없는 사람 이름). 예전에는 준비를 풀고 · 거절하며 그것까지 되돌려
+--      진행자 화면에 "준비 완료"가 그대로 남고 출발을 눌러도 같은 거절만 되풀이됐다. 나머지는 0087 그대로.
+--  #3  economy.party_stale — 출발 시각(plan_at)을 정한 대기실은 그 시각 30분 뒤까지 "아무도 안 봄(10분)"으로 닫지 않고,
+--      6시간 상한도 정한 시각부터 센다(출발한 방은 출발 시각부터). party_close_stale(크루 목록 · 방 열기)과
+--      party_open(번개 · 예전 앱 — 모든 방을 함께 닫는다)이 같은 기준을 쓴다.
+--  #5  crew_run_release(p_party) — 출발을 놓친 사람(달린 소식 · 올린 러닝이 없다)이 그 방의 오늘 크루 러닝을 푼다:
+--      참여 줄 · 출발 명단을 지우고 공용 체력에서 기여를 뺀다(이미 다른 사람이 쓴 양 아래로는 빼지 않는다).
+--      앱은 "출발을 놓쳤어요"에서 부르고, 풀렸을 때만 "오늘의 크루 러닝은 쓰이지 않았어요"라고 말한다.
+--  #9  post_delete — 출발한 번개(하루 안)의 글은 지우지 않는다(22023) — 글을 지우면 방 · 출발 명단까지 지워져
+--      달리던 사람의 인원 보너스가 없어졌다.
+--  #13 economy.party_for(p_user, p_started_at, p_ended_at) — 방이 출발하기 전에 끝난 러닝(1분 여유 — 폰 시계)은 그 방의
+--      러닝이 아니다. record_session 이 끝난 시각을 넘긴다(0106 본문 그대로, 그 한 줄만). 예전 두 칸 호출은 그대로 된다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- ── #3 오래된 방 ─────────────────────────────────────────────────────
+
+-- 이 방을 닫을까 — 대기실(LOBBY): 정한 출발 시각(plan_at)이 30분 넘게 지나기 전에는 "아무도 안 봄"으로 닫지 않는다.
+-- 6시간 상한은 만든 때와 정한 시각 중 늦은 것부터. 출발한 방: 출발 시각(없으면 만든 때)부터 6시간 · 10분 아무도 안 봄
+create or replace function economy.party_stale(p public.parties) returns boolean
+language sql stable security definer set search_path = public, economy as $$
+  select p.status <> 'FINISHED'
+     and (case when p.status = 'LOBBY' then greatest(p.created_at, p.plan_at)
+               else coalesce(p.starts_at, p.created_at) end < now() - interval '6 hours'
+          or ((p.status <> 'LOBBY' or p.plan_at is null or p.plan_at < now() - interval '30 minutes')
+              and not exists (
+                select 1 from public.party_members m
+                 where m.party_id = p.id and m.last_seen > now() - interval '10 minutes')))
+$$;
+revoke all on function economy.party_stale(public.parties) from public;
+
+-- 0072 그대로 + 기준은 party_stale
+create or replace function economy.party_close_stale(p_crew uuid) returns void
+language sql security definer set search_path = public, economy as $$
+  with closed as (
+    update public.parties p set status = 'FINISHED'
+     where p.crew_id = p_crew
+       and economy.party_stale(p)
+    returning p.id)
+  update public.party_members m set lat = null, lng = null, km = null
+    from closed
+   where m.party_id = closed.id
+$$;
+revoke all on function economy.party_close_stale(uuid) from public;
+
+-- 로비 열기 — 0070 그대로 + 닫는 기준은 party_stale(정한 출발 시각이 남은 대기실을 닫지 않는다)
+create or replace function public.party_open(p_crew uuid, p_post bigint)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_party bigint;
+  v_status text;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if (p_crew is null) = (p_post is null) then
+    raise exception '크루 또는 번개 하나를 골라야 합니다' using errcode = '22023';
+  end if;
+  if not public.party_can_enter(p_crew, p_post) then
+    raise exception '크루원이나 번개 참가자만 들어갈 수 있습니다' using errcode = '42501';
+  end if;
+
+  -- 아무도 안 보는 방과 오래된 방은 닫는다. 닫는 방에 남은 위치 · 거리는 지운다.
+  with closed as (
+    update public.parties p set status = 'FINISHED'
+     where economy.party_stale(p)
+    returning p.id)
+  update public.party_members m set lat = null, lng = null, km = null
+    from closed
+   where m.party_id = closed.id;
+
+  -- 이 크루(번개)의 열린 방. 두 사람이 동시에 열어도 방이 둘 생기지 않게 잠근다.
+  perform pg_advisory_xact_lock(hashtext(coalesce(p_crew::text, 'post:' || p_post)));
+
+  -- 이미 들어가 있는 방이 먼저 — 꽉 차 새 방이 열린 뒤에도 앞 방 사람은 제 방으로 돌아간다
+  select p.id, p.status into v_party, v_status
+    from public.parties p
+   where p.status <> 'FINISHED'
+     and ((p_crew is not null and p.crew_id = p_crew)
+          or (p_post is not null and p.flash_post_id = p_post))
+   order by exists (select 1 from public.party_members m where m.party_id = p.id and m.user_id = v_user) desc,
+            p.created_at desc
+   limit 1;
+
+  -- 이미 출발한 방에 늦게 온 사람은 끼워 넣지 않는다. 대신 새 방을 연다.
+  if v_party is not null and v_status <> 'LOBBY' and not exists (
+    select 1 from public.party_members m where m.party_id = v_party and m.user_id = v_user
+  ) then
+    v_party := null;
+  end if;
+
+  -- 크루 대기실은 20명까지 — 꽉 찬 방에 새로 오는 사람은 새 방을 연다
+  if v_party is not null and p_crew is not null and not exists (
+    select 1 from public.party_members m where m.party_id = v_party and m.user_id = v_user
+  ) and (select count(*) from public.party_members m where m.party_id = v_party) >= economy.crew_room_max() then
+    v_party := null;
+  end if;
+
+  -- 진행자가 내보낸 방에는 다시 들어가지 않는다
+  if v_party is not null and exists (
+    select 1 from public.party_kicks k where k.party_id = v_party and k.user_id = v_user
+  ) then
+    raise exception '진행자가 내보낸 방입니다' using errcode = '42501';
+  end if;
+
+  if v_party is null then
+    insert into public.parties (crew_id, flash_post_id, host_id)
+    values (p_crew, p_post, v_user)
+    returning id into v_party;
+  end if;
+
+  insert into public.party_members (party_id, user_id)
+  values (v_party, v_user)
+  on conflict (party_id, user_id) do update set last_seen = now();
+
+  return v_party;
+end;
+$$;
+
+-- ── #2 출발 — 자리에 없는 사람을 빼면 2명이 안 되면 아무것도 바꾸지 않고 거절 ─────────
+
+create or replace function public.party_start(p_party bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_starts timestamptz;
+  v_party public.parties;
+  v_day date;
+  v_level int;
+  v_n int;
+  v_added numeric;
+  v_pool economy.crew_day_pools;
+  v_away text;
+begin
+  select * into v_party from public.parties where id = p_party and host_id = auth.uid() and status = 'LOBBY' for update;
+  if not found then
+    raise exception '로비에서 방장만 출발할 수 있습니다' using errcode = '42501';
+  end if;
+  -- 크루 방은 6초 뒤 — 대기실은 2초마다 묻는다. 늦게 안 사람도 3 · 2 · 1 · 0 · StepUP! 을 처음부터 본다(0072). 번개러닝은 예전 그대로 4초
+  v_starts := now() + case when v_party.crew_id is not null then interval '6 seconds' else interval '4 seconds' end;
+  if not exists (
+    select 1 from public.party_members
+     where party_id = p_party and user_id = auth.uid() and ready
+  ) then
+    raise exception '방장이 먼저 준비해야 합니다' using errcode = '23514';
+  end if;
+
+  -- 크루 방은 함께 출발할 사람(준비 · 15초 안에 대기실에 물음 · 오늘 아직 안 함 · 크루원)이 2명이 안 되면 바로 거절한다(0109).
+  -- 아래에서 준비를 풀고 뺀 뒤 거절하면 그것까지 되돌아가 진행자 화면에 "준비 완료"가 남았다. 자리에 없는 사람 이름을 알린다
+  if v_party.crew_id is not null then
+    v_day := economy.game_day(v_starts);
+    select count(*)::int into v_n
+      from public.party_members m
+     where m.party_id = p_party and m.ready
+       and (m.user_id = auth.uid() or m.last_seen >= now() - interval '15 seconds')
+       and not exists (select 1 from economy.crew_runs c where c.user_id = m.user_id and c.day = v_day)
+       and exists (select 1 from public.crew_members cm where cm.crew_id = v_party.crew_id and cm.user_id = m.user_id);
+    if v_n < 2 then
+      select string_agg(coalesce(pr.display_name, '러너'), ', ' order by m.joined_at) into v_away
+        from public.party_members m
+        left join public.profiles pr on pr.id = m.user_id
+       where m.party_id = p_party and m.ready and m.user_id <> auth.uid()
+         and m.last_seen < now() - interval '15 seconds';
+      raise exception 'crew_run_need_two' using errcode = '23514',
+        detail = case when v_away is not null then '대기실을 보고 있지 않은 크루원: ' || v_away
+                      else '크루 러닝은 준비한 크루원 2명 이상이 함께 출발합니다' end;
+    end if;
+  end if;
+
+  -- 진행자는 지금 누르고 있다. 다른 사람은 15초 안에 대기실에 물어 온 사람만 함께 출발한다(0087)
+  update public.party_members set last_seen = now() where party_id = p_party and user_id = auth.uid();
+  update public.party_members set ready = false
+   where party_id = p_party and ready and last_seen < now() - interval '15 seconds';
+
+  delete from public.party_members where party_id = p_party and not ready;
+
+  if v_party.crew_id is not null then
+    v_level := greatest(coalesce((select c.level from public.crews c where c.id = v_party.crew_id), 1), 1);
+    -- 공용 풀을 먼저 잠근다(모든 크루 러닝 함수가 같은 차례) — 같은 크루의 다른 방이 동시에 출발해도 기여가 섞이지 않게
+    perform economy.crew_pool_settle(v_party.crew_id, v_day, now());
+    delete from public.party_members m
+     where m.party_id = p_party
+       and (exists (select 1 from economy.crew_runs c where c.user_id = m.user_id and c.day = v_day)
+            or not exists (select 1 from public.crew_members cm where cm.crew_id = v_party.crew_id and cm.user_id = m.user_id));
+    select count(*)::int into v_n from public.party_members m where m.party_id = p_party;
+    if v_n < 2 then
+      raise exception 'crew_run_need_two' using errcode = '23514', detail = '크루 러닝은 준비한 크루원 2명 이상이 함께 출발합니다';
+    end if;
+    if not exists (select 1 from public.party_members m where m.party_id = p_party and m.user_id = auth.uid()) then
+      raise exception 'crew_run_done_today' using errcode = '23514', detail = '오늘 크루 러닝을 이미 했습니다';
+    end if;
+  end if;
+
+  update public.parties p
+     set status = 'COUNTDOWN', starts_at = v_starts,
+         crew_level = case when p.crew_id is not null then v_level end
+   where p.id = p_party;
+
+  insert into public.party_runs (party_id, user_id, starts_at, sneaker_id, shoe_dur_max)
+  select p_party, m.user_id, v_starts, s.id, s.dur_max
+    from public.party_members m
+    left join lateral economy.party_shoe(m.user_id, m.sneaker_id) s on true
+   where m.party_id = p_party
+  on conflict do nothing;
+
+  if v_party.crew_id is not null then
+    -- 참여 · 신발 스냅샷 · 기여 = 최대 내구도 × (1 + 레벨 체력 보너스). 같은 날 다른 방에서 먼저 출발했으면(동시 출발) 이 방에서 뺀다
+    with ins as (
+      insert into economy.crew_runs (user_id, day, crew_id, party_id, started_at, state, last_beat_at,
+                                     sneaker_id, shoe_dur_max, shoe_eff_bps, crew_level, contribution, level_pct,
+                                     party_name, course_name, course_km, course_rev)
+      select m.user_id, v_day, v_party.crew_id, p_party, v_starts, 'RUNNING', v_starts,
+             s.id, coalesce(s.dur_max, 0), coalesce(e.efficiency_bps, 0), v_level,
+             round(coalesce(s.dur_max, 0) * (1 + economy.crew_level_stamina(v_level)), 4), economy.crew_level_reward(v_level),
+             v_party.name, v_party.course_name, v_party.course_km, v_party.course_rev
+        from public.party_members m
+        left join lateral economy.party_shoe(m.user_id, m.sneaker_id) s on true
+        left join lateral economy.shoe_effective(s) e on s.id is not null
+       where m.party_id = p_party
+      on conflict (user_id, day) do nothing
+      returning user_id, contribution)
+    select count(*)::int, coalesce(sum(ins.contribution), 0) into v_n, v_added from ins;
+    if v_n < 2 then
+      raise exception 'crew_run_need_two' using errcode = '23514', detail = '크루 러닝은 준비한 크루원 2명 이상이 함께 출발합니다';
+    end if;
+    delete from public.party_runs r
+     where r.party_id = p_party
+       and not exists (select 1 from economy.crew_runs c where c.user_id = r.user_id and c.party_id = p_party);
+    delete from public.party_members m
+     where m.party_id = p_party
+       and not exists (select 1 from economy.crew_runs c where c.user_id = m.user_id and c.party_id = p_party);
+    update economy.crew_day_pools d
+       set capacity = d.capacity + v_added, contributors = d.contributors + v_n, version = d.version + 1,
+           exhausted_at = case when d.capacity + v_added > d.consumed then null else d.exhausted_at end,
+           low_at = case when d.capacity + v_added - d.consumed > (d.capacity + v_added) * 0.2 then null else d.low_at end
+     where d.crew_id = v_party.crew_id and d.day = v_day
+    returning * into v_pool;
+    -- 새 기여로 다시 생겼으면 0 이던 구간을 닫는다(그 뒤로는 다시 적립 — D06)
+    if v_pool.capacity > v_pool.consumed then
+      update economy.crew_pool_empty x set to_at = now()
+       where x.crew_id = v_party.crew_id and x.day = v_day and x.to_at is null;
+    end if;
+  end if;
+end;
+$$;
+
+-- ── #5 출발을 놓친 크루 러닝 풀기 ─────────────────────────────────────
+
+-- 출발을 놓친 사람이 그 방의 오늘 크루 러닝을 푼다 — 달린 소식(crew_run_beat)도, 올린 러닝도, 스스로 끝냄도 없을 때만.
+-- 참여 줄(하루 한 번) · 출발 명단을 지우고, 공용 체력에서 기여 · 쓴 양(출발 직후 30초 동안 달리는 사람으로 세어진 몫)을 뺀다.
+-- 총량은 남은 다른 사람이 이미 쓴 양 아래로 내리지 않는다. 다른 사람의 인원 보너스가 판정 시각(2분 15초)을 지났으면
+-- 나를 센 채로 먼저 정한다(뒤늦게 줄지 않게). 잠금 차례는 출발과 같다(방 → 공용 체력 → 사람).
+-- @return 오늘 크루 러닝이 쓰이지 않았다(풀었거나 처음부터 없었다) · false 면 달린 기록이 있어 그대로 둔다
+create or replace function public.crew_run_release(p_party bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  r economy.crew_runs;
+  v_other uuid;
+  v_pool economy.crew_day_pools;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform 1 from public.parties p where p.id = p_party for update;
+  select * into r from economy.crew_runs c where c.user_id = v_user and c.party_id = p_party;
+  if not found then
+    return true;
+  end if;
+  if r.crew_id is not null then
+    perform economy.crew_pool_settle(r.crew_id, r.day, now());
+  end if;
+  -- 공용 체력을 잠근 뒤 다시 본다 — 그사이 닿은 박동 · 올린 러닝이 있으면 그대로 둔다
+  select * into r from economy.crew_runs c where c.user_id = v_user and c.day = r.day and c.party_id = p_party for update;
+  if not found then
+    return true;
+  end if;
+  if r.session_id is not null
+     or r.last_beat_at is distinct from r.started_at
+     or r.terminal_reason = 'USER_END'
+     or exists (select 1 from public.walk_sessions s where s.user_id = v_user and s.party_id = p_party) then
+    return false;
+  end if;
+
+  if r.crew_id is not null then
+    if now() >= r.started_at + interval '2 minutes 15 seconds' then
+      for v_other in
+        select c.user_id from economy.crew_runs c
+         where c.party_id = p_party and c.user_id <> v_user and c.bonus_status = 'PENDING'
+         order by c.user_id
+      loop
+        perform economy.crew_run_bonus_eval(v_other, r.day, true);
+      end loop;
+    end if;
+    update economy.crew_day_pools d
+       set consumed = greatest(d.consumed - r.consumed, 0),
+           capacity = greatest(d.capacity - r.contribution, greatest(d.consumed - r.consumed, 0)),
+           contributors = greatest(d.contributors - 1, 0),
+           version = d.version + 1
+     where d.crew_id = r.crew_id and d.day = r.day
+    returning * into v_pool;
+    if found then
+      if v_pool.capacity > v_pool.consumed then
+        -- 남아 있다 — 0 이던 구간이 열려 있었으면 닫는다(출발과 같다)
+        update economy.crew_day_pools d set exhausted_at = null where d.crew_id = r.crew_id and d.day = r.day;
+        update economy.crew_pool_empty x set to_at = now()
+         where x.crew_id = r.crew_id and x.day = r.day and x.to_at is null;
+      elsif v_pool.capacity > 0 then
+        -- 내 기여를 빼니 남은 양이 0 — 0 인 구간을 연다(그 뒤로 달린 걸음은 적립하지 않는다, 정산과 같다)
+        update economy.crew_day_pools d set exhausted_at = coalesce(d.exhausted_at, now()) where d.crew_id = r.crew_id and d.day = r.day;
+        insert into economy.crew_pool_empty (crew_id, day, from_at)
+        select r.crew_id, r.day, now()
+         where not exists (select 1 from economy.crew_pool_empty x
+                            where x.crew_id = r.crew_id and x.day = r.day and x.to_at is null)
+        on conflict do nothing;
+      end if;
+    end if;
+  end if;
+
+  delete from economy.crew_runs c where c.user_id = v_user and c.day = r.day and c.party_id = p_party;
+  delete from public.party_runs x where x.party_id = p_party and x.user_id = v_user;
+  return true;
+end;
+$$;
+revoke all on function public.crew_run_release(bigint) from public, anon;
+grant execute on function public.crew_run_release(bigint) to authenticated;
+
+-- ── #9 출발한 번개는 지우지 않는다 ────────────────────────────────────
+
+-- 0062 그대로 + 이 글의 번개 대기실이 하루 안에 출발했으면 거절(22023). 방 줄을 먼저 잠근다 — 지우는 사이 출발하지 않게
+create or replace function public.post_delete(p_post bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if exists (select 1 from public.posts p where p.id = p_post and p.author_id = auth.uid()) then
+    perform 1 from public.parties x where x.flash_post_id = p_post order by x.id for update;
+    if exists (select 1 from public.parties x
+                where x.flash_post_id = p_post and x.starts_at is not null and x.starts_at > now() - interval '1 day') then
+      raise exception '이미 출발한 번개러닝은 취소할 수 없어요' using errcode = '22023', detail = 'flash_started';
+    end if;
+  end if;
+  delete from public.posts where id = p_post and author_id = auth.uid();
+  if not found and exists (select 1 from public.posts where id = p_post) then
+    raise exception '내가 쓴 글만 지울 수 있습니다' using errcode = '42501';
+  end if;
+end;
+$$;
+
+-- ── #13 방이 출발하기 전에 끝난 러닝은 그 방의 러닝이 아니다 ───────────────
+
+-- 0076 그대로 + p_ended_at(null 이면 보지 않는다) — 방의 출발 시각이 러닝이 끝난 때(1분 여유 — 폰 시계)보다 앞서야 한다.
+-- 크루 출발 10분 안에 끝낸 혼자 러닝이 출발 뒤에 올라가 그날의 크루 러닝(참여 줄)을 가져가던 것
+create or replace function economy.party_for(p_user uuid, p_started_at timestamptz, p_ended_at timestamptz,
+                                             out party_id bigint, out size int)
+language sql stable security definer set search_path = public as $$
+  with recursive p as (
+    select r.party_id, r.starts_at from public.party_runs r
+     where r.user_id = p_user
+       and r.starts_at between p_started_at - interval '10 minutes'
+                           and p_started_at + interval '10 minutes'
+       and (p_ended_at is null or r.starts_at < p_ended_at + interval '1 minute')
+     order by abs(extract(epoch from (r.starts_at - p_started_at)))
+     limit 1),
+  e as (
+    select n.user_a, n.user_b
+      from public.party_near n join p on n.party_id = p.party_id
+     where n.last_at >= p.starts_at + interval '2 minutes'),
+  g(u) as (
+    select p_user
+    union
+    select case when e.user_a = g.u then e.user_b else e.user_a end
+      from e join g on g.u = e.user_a or g.u = e.user_b)
+  select p.party_id,
+         case when coalesce(economy.setting('party_bonus_rule') #>> '{}', 'ALL') = 'ALL'
+              then greatest((select count(*)::int from public.party_runs r where r.party_id = p.party_id), 1)
+              else (select count(*)::int from g) end
+    from p
+$$;
+revoke all on function economy.party_for(uuid, timestamptz, timestamptz) from public;
+
+-- 예전 두 칸 — 끝난 시각 없이(예전 record_session 본문 · 다시 붙여넣는 사이)
+create or replace function economy.party_for(p_user uuid, p_started_at timestamptz,
+                                             out party_id bigint, out size int)
+language sql stable security definer set search_path = public as $$
+  select f.party_id, f.size from economy.party_for(p_user, p_started_at, null::timestamptz) f
+$$;
+revoke all on function economy.party_for(uuid, timestamptz) from public;
+
+-- ════════════════════════════════════════════════════════════════════
+--  record_session — 0106 본문 그대로, 한 곳만: economy.party_for 에 끝난 시각(p_ended_at)을 넘긴다(#13).
+--  칸 · 돌려주는 값이 같아 create or replace 로 바꾼다. 뒤 파일에서 record_session 을 다시 쓰면 이 한 줄을 함께 옮긴다.
+-- ════════════════════════════════════════════════════════════════════
+create or replace function public.record_session(
+  p_started_at timestamptz,
+  p_ended_at timestamptz,
+  p_steps int,
+  p_duration_sec int,
+  p_track text default '',
+  p_boost_bps int default 0,
+  p_party_size int default 1,
+  p_faction text default '',
+  -- 안드로이드가 "모의 위치"로 표시한 좌표가 하나라도 있었나
+  p_mock_location boolean default false,
+  -- 출발 때 신은 신발(market_sneakers.id, 0089) — 앱이 사실로만 알린다. 내 신발이 아니거나 신을 수 없는 신발이면 예전처럼 지금 신은 신발
+  p_sneaker bigint default null
+)
+returns table (
+  session_id bigint,
+  verdict text,
+  points_awarded numeric,
+  balance numeric,
+  -- 판정 까닭(0089) — 적립이 0 이거나 줄어든 까닭. 예전 앱은 모르는 칸이라 읽지 않는다
+  verdict_reason text
+)
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_gday date;
+  v_already_steps int;
+  v_already_points numeric;
+  v_verified int;
+  v_rewardable int;
+  v_points numeric(20, 4);
+  v_cap numeric;
+  v_verdict text := 'CLEAN';
+  v_reason text := '';
+  v_session_id bigint;
+  v_kind text;
+  v_elapsed int;
+  v_top_speed double precision := 0;
+  v_glitch double precision := 0;
+  v_gps_m double precision := 0;
+  v_points_n int := 0;
+  v_first_at bigint;
+  v_last_at bigint;
+  v_step_m double precision;
+  v_distance_m double precision;
+  v_track text := coalesce(p_track, '');
+  v_party int := 1;
+  v_party_id bigint;
+  v_gps_backed boolean;
+  v_credit_m double precision := 0;
+  v_cap_left numeric;
+  v_shoe public.market_sneakers;
+  v_eff int := 0;
+  v_comfort int := 0;
+  v_dur numeric := 100;
+  v_energy_left numeric;
+  v_energy_per_step numeric;
+  v_energy_used numeric := 0;
+  v_xp numeric := 1;
+  v_recent_void int;
+  -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
+  v_held boolean := false;
+  v_new_account boolean;
+  -- 상한(하루 금액 · 경로 없는 러닝 · 올린 날)을 걸기 전 금액 — 상한에 걸려 덜 받은 만큼 에너지도 덜 쓴다 (0068)
+  v_points_full numeric := 0;
+  -- 크루 러닝(그 크루의 방 · 함께 달린 2명 이상 · 크루원)이면 그 크루 — 크루 체력 · 크루 레벨 거리 (0069)
+  v_crew uuid;
+  -- 이 러닝의 적립을 받쳐 준 체력 — PERSONAL 개인 에너지 · CREW 크루 체력(그날 나눠 받는 크루원만) (0069)
+  v_pool text := 'PERSONAL';
+  -- 크루 러닝 3판 (0070)
+  v_party_starts timestamptz;
+  v_crew_room boolean := false;
+  v_crew_level int := 1;
+  v_runners int := 0;
+  v_pool_pts numeric := 0;
+  v_pool_max numeric := 0;
+  v_share numeric := 0;
+  v_limit_sec int := 0;
+  v_wall numeric;
+  v_together_sec int := 0;
+  v_crew_sec numeric := 0;
+  v_crew_used numeric := 0;
+  v_headcount numeric := 0;
+  v_level_bonus numeric := 0;
+  -- 크루 러닝 — 공용 체력 (0071)
+  v_cr economy.crew_runs;
+  v_is_cr boolean := false;
+  v_base numeric := 0;
+  v_head_sup numeric := 0;
+  v_lvl_sup numeric := 0;
+  v_tm double precision;
+  v_em double precision;
+  v_lm double precision;
+  v_frac numeric := 1;
+  -- 서버가 이미 끝낸 참여(마지막 한 사람 자동 종료 · 끝냄)면 그때 + 60초(폰 시계 차이) 뒤의 기록은 크루 보상 · 경험치에서 뺀다
+  v_cut timestamptz;
+  v_xp_frac numeric := 1;
+  v_level_now int;
+  v_level_was int;
+  v_starters int := 1;
+  v_xp_m numeric := 0;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  -- ── 형식 검사 ──
+  if p_steps is null or p_steps < 0 then
+    raise exception '걸음 수가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_ended_at < p_started_at then
+    raise exception '종료 시각이 시작보다 빠릅니다' using errcode = '22023';
+  end if;
+  if p_ended_at > now() + interval '5 minutes' then
+    raise exception '종료 시각이 미래입니다' using errcode = '22023';
+  end if;
+  if p_started_at < now() - interval '7 days' and not exists (
+       select 1 from public.walk_sessions s
+        where s.user_id = v_user and s.started_at = p_started_at) then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  -- 이미 올린 러닝의 재시도면 원래 결과를 그대로 돌려준다. 아래 계산을 다시 하면
+  -- 에너지 · 내구도를 두 번 깎는다.
+  select s.id, s.verdict, s.points_awarded, coalesce(s.verdict_reason, '') into v_session_id, v_verdict, v_points, v_reason
+    from public.walk_sessions s
+   where s.user_id = v_user and s.started_at = p_started_at;
+  if found then
+    return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user), v_reason;
+    return;
+  end if;
+  v_reason := '';
+  v_verdict := 'CLEAN';
+
+  v_elapsed := least(
+    greatest(coalesce(p_duration_sec, 0), 0),
+    floor(extract(epoch from (p_ended_at - p_started_at)))::int
+  );
+  v_gday := economy.game_day(p_started_at);
+  v_step_m := p_steps * 0.762;
+
+  select t.top_speed_kmh, t.glitch_ratio into v_top_speed, v_glitch
+    from economy.track_speed_stats(v_track) t;
+  select t.gps_m, t.points, t.first_at, t.last_at
+    into v_gps_m, v_points_n, v_first_at, v_last_at
+    from economy.track_summary(v_track) t;
+  -- 경로 거리는 러닝 시간 안에 달릴 수 있는 만큼만(시속 25km). 경로 시각은 앞뒤로 여유를
+  -- 두므로, 아주 짧은 러닝 여러 개에 같은 몇 분짜리 경로를 붙여 거리를 여러 번 받지 못하게.
+  v_gps_m := least(coalesce(v_gps_m, 0), greatest(v_elapsed, 1) * 7.0);
+
+  -- ── 판정 ──
+  if coalesce(p_mock_location, false) then
+    v_verdict := 'VOID';
+    v_reason := '가짜 위치가 감지되었습니다';
+
+  -- 과속으로 멈춘 뒤 10분(러닝 금지 시간) 안에 시작한 러닝은 적립하지 않는다 (0065)
+  elsif exists (
+        select 1 from public.run_penalties x
+         where x.user_id = v_user
+           and p_started_at >= x.stopped_at and p_started_at < x.banned_until) then
+    v_verdict := 'VOID';
+    v_reason := '과속으로 멈춘 뒤 러닝 금지 시간에 시작한 러닝입니다';
+
+  -- 짧은 러닝도 실제 시간으로 잰다(예전엔 60초로 쳐서 1ms 러닝에 240걸음을 줬다)
+  elsif p_steps::numeric * 60 / greatest(v_elapsed, 1) > 240 then
+    v_verdict := 'VOID';
+    v_reason := '케이던스가 사람 범위를 벗어납니다';
+
+  elsif v_glitch > 0.5 then
+    v_verdict := 'VOID';
+    v_reason := '이동 속도가 사람 범위를 벗어납니다';
+
+  elsif v_points_n >= 2 and (
+        v_first_at < (extract(epoch from p_started_at) * 1000)::bigint - economy.track_time_slack_ms()
+     or v_last_at > (extract(epoch from p_ended_at) * 1000)::bigint + economy.track_time_slack_ms()) then
+    v_verdict := 'VOID';
+    v_reason := '경로 시각이 러닝 시간과 맞지 않습니다';
+
+  elsif v_track <> '' and exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.track <> ''
+           and md5(s.track) = md5(v_track) and s.started_at <> p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '이미 올린 경로입니다';
+
+  -- 같은 사람의 러닝은 시간이 겹칠 수 없다. 겹치게 여러 개를 올리면 같은 시간을
+  -- 여러 번 받는다.
+  elsif exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.verdict <> 'VOID'
+           and s.started_at < p_ended_at and s.ended_at > p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '다른 러닝과 시간이 겹칩니다';
+
+  elsif v_gps_m >= 1000 and v_step_m < v_gps_m * 0.2 then
+    v_verdict := 'VOID';
+    v_reason := '걸음 없이 이동한 거리입니다';
+  end if;
+
+  -- ── 검사를 통과한 걸음 ──
+  if v_verdict = 'VOID' then
+    v_verified := 0;
+  else
+    v_verified := p_steps;
+    if v_gps_m >= economy.gps_check_min_m()
+       and v_step_m > v_gps_m * economy.step_gps_max_ratio() then
+      v_verified := floor(v_gps_m * economy.step_gps_max_ratio() / 0.762)::int;
+      v_verdict := 'FLAGGED';
+      v_reason := '걸음 수가 GPS 거리보다 많습니다';
+    end if;
+  end if;
+  v_rewardable := v_verified;
+
+  -- 과속이 30초 넘게 이어져 앱이 멈춘 러닝 — 적립 규칙은 그대로, 판정에 까닭을 남긴다 (0065)
+  if v_verdict <> 'VOID' and exists (
+        select 1 from public.run_penalties x
+         where x.user_id = v_user and x.run_started_at = p_started_at) then
+    v_verdict := 'FLAGGED';
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '과속이 이어져 러닝이 멈췄습니다');
+  end if;
+
+  -- ── 함께 달리기 · 크루 러닝 (0070 — 걸음 상한 · 신발보다 먼저 정한다) ──
+  -- 파티 보너스는 한 파티에서 한 러닝만
+  select pf.party_id, pf.size into v_party_id, v_party from economy.party_for(v_user, p_started_at, p_ended_at) pf;
+  if v_party_id is null or exists (select 1 from public.walk_sessions s
+                                    where s.user_id = v_user and s.party_id = v_party_id) then
+    v_party_id := null;
+    v_party := 1;
+  end if;
+
+  -- 크루 러닝(0071) — 이 러닝의 방에서 서버가 출발을 확정한 참여(economy.crew_runs, party_start)가 있어야 한다.
+  -- 앱이 크루 러닝이라고 말해서가 아니다. 참여가 이미 정산됐으면(같은 방 · 같은 날 두 번째 러닝) 보통 러닝이다
+  if v_party_id is not null then
+    select p.crew_id into v_crew from public.parties p where p.id = v_party_id;
+    v_crew_room := v_crew is not null;
+    v_crew := null;
+    if v_crew_room then
+      select * into v_cr from economy.crew_runs c where c.user_id = v_user and c.party_id = v_party_id;
+      if found and v_cr.session_id is null and v_cr.crew_id is not null then
+        v_is_cr := true;
+      elsif found then
+        v_party_id := null;
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '오늘 크루 러닝을 이미 했습니다');
+      end if;
+      -- 크루 방의 보너스는 크루 러닝 보너스 하나다 — 크루 러닝이 아니면 예전 함께 달리기 보너스도 없다(겹치지 않게)
+      if not v_is_cr then
+        v_party := 1;
+      end if;
+    end if;
+  end if;
+  if v_is_cr then
+    v_pool := 'CREW';
+    v_crew := v_cr.crew_id;
+    v_crew_level := v_cr.crew_level;
+    v_party_starts := v_cr.started_at;
+    select count(*)::int into v_starters from economy.crew_runs c where c.party_id = v_cr.party_id;
+    v_party := v_starters;
+    if v_cr.state = 'ENDED' and v_cr.terminal_reason in ('USER_END', 'LAST_PARTICIPANT_END') and v_cr.ended_at is not null then
+      v_cut := v_cr.ended_at + interval '60 seconds';
+    end if;
+    -- 공용 체력을 지금까지 정산하고(풀 → 사람 차례로 잠근다) 이 러닝을 끝낸다 — 다른 사람이 모두 끝났으면 마지막 사람도
+    perform economy.crew_pool_settle(v_cr.crew_id, v_cr.day, now());
+    perform economy.crew_run_close(v_user, v_cr.day, 'RECORDED');
+    -- 인원 보너스 — 2분이 지났으면 지금 정하고, 아니면 확인할 수 없다(D01)
+    perform economy.crew_run_bonus_eval(v_user, v_cr.day, true);
+    select * into v_cr from economy.crew_runs c where c.user_id = v_user and c.day = v_cr.day;
+    v_headcount := v_cr.bonus_pct;
+    v_level_bonus := v_cr.level_pct;
+  end if;
+
+  -- ── 하루 걸음 상한 (한국 하루) — 개인 러닝만, 크루 러닝 걸음은 세지 않는다 (0070) ──
+  if v_rewardable > 0 and v_pool = 'PERSONAL' then
+    select coalesce(sum(s.rewarded_steps), 0) into v_already_steps
+      from public.walk_sessions s
+     where s.user_id = v_user
+       and s.verdict in ('CLEAN', 'FLAGGED')
+       and s.energy_pool <> 'CREW'
+       and economy.game_day(s.started_at) = v_gday;
+    if v_rewardable > economy.max_daily_steps() - v_already_steps then
+      v_rewardable := greatest(economy.max_daily_steps() - v_already_steps, 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 무효가 잦으면 보류 ──
+  -- 적립할 걸음이 없는 러닝도 본다 — 걸음 0 인 경로 러닝이 보류 중에도 잠금 거리 · 꺼내기 조건 거리를 받았다
+  if v_verdict <> 'VOID' then
+    select count(*) into v_recent_void from public.walk_sessions s
+     where s.user_id = v_user and s.verdict = 'VOID'
+       and s.started_at > now() - interval '7 days';
+    if v_recent_void >= 5 then
+      v_rewardable := 0;
+      v_held := true;
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
+    end if;
+  end if;
+
+  -- ── 신발 ──
+  -- 크루 러닝은 출발 때 고른 신발(아직 내 것이면) — 효율 · 착화감은 그 신발 것 (0070)
+  if v_pool = 'CREW' then
+    -- 출발 때 고른 신발 — 기록에 적는 번호만. 효율은 출발 때 스냅샷(v_cr.shoe_eff_bps)으로 센다
+    select x.* into v_shoe from public.market_sneakers x where x.id = v_cr.sneaker_id and x.owner_id = v_user;
+  end if;
+  -- 개인 러닝은 출발 때 신은 신발(앱이 알린 p_sneaker, 0089) — 올릴 때 신은 신발이 아니라 달린 신발로 닳고 효율을 센다.
+  -- 내 것이고 신을 수 있는 신발(앱 안 · 갖고 있음 — 판매 중 · 체인 · 태운 신발은 아니다)일 때만. 아니면 예전처럼 지금 신은 신발
+  if v_shoe.id is null and p_sneaker is not null then
+    select x.* into v_shoe from public.market_sneakers x
+     where x.id = p_sneaker and x.owner_id = v_user and x.chain_state = 'APP' and x.status = 'OWNED';
+  end if;
+  if v_shoe.id is null then
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is null then
+    -- 신은 신발이 없으면(꺼내기로 벗었다) 첫 신발을 신긴다. 신발 없이 달리면 내구도 100 · 닳지 않음으로
+    -- 쳐서, 닳은 신발을 신고 수리비를 내는 것보다 나았다. 첫 신발을 아직 안 받은 계정(앱은 로그인하자마자
+    -- 받는다)은 예전처럼 신발 없이 계산한다 — 앱이 받기 전에 러닝이 먼저 올라가도 적립을 잃지 않게.
+    update public.market_sneakers set equipped = true, updated_at = now()
+     where id = (select m.id from public.market_sneakers m
+                  where m.owner_id = v_user and m.origin = 'STARTER'
+                    and m.chain_state = 'APP' and m.status = 'OWNED'
+                  limit 1)
+       and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is not null then
+    -- 효율 · 착화감은 레벨 1 값 + 나눈 포인트, 내구도는 남은 비율(%) — 이 러닝 전의 값으로 배율을 정한다 (0059)
+    select e.efficiency_bps, e.comfort_bps, e.durability into v_eff, v_comfort, v_dur
+      from economy.shoe_effective(v_shoe) e;
+  end if;
+
+  if v_pool = 'CREW' then
+    -- 크루 러닝은 개인 신발 내구도 · 개인 에너지를 쓰지 않는다(R02 · R11). 효율은 출발 때 고른 신발의 스냅샷(R04).
+    -- 공용 체력이 0 이던 구간에 달린 걸음은 적립하지 않는다(R03) — 경로를 시간으로 갈라 그 구간의 거리만큼, 경로가 없으면 시간만큼
+    v_dur := 100;
+    v_eff := v_cr.shoe_eff_bps;
+    v_comfort := 0;
+    select t.total_m, t.empty_m, t.late_m into v_tm, v_em, v_lm
+      from economy.track_meters_empty(v_track, v_cr.crew_id, v_cr.day, v_cut) t;
+    if v_tm > 0 then
+      v_frac := greatest(1 - v_em / v_tm, 0)::numeric;
+      v_xp_frac := greatest(1 - v_lm / v_tm, 0)::numeric;
+    else
+      -- 경로가 없으면 시간으로. 서버가 끝낸 뒤의 시간은 빼고, 0 이던 몫은 서버가 센 달린 초 중 0 이던 초로(일시정지와 상관없다)
+      v_xp_frac := case when v_cut is null or v_cut >= p_ended_at then 1
+                        else least(greatest(extract(epoch from (v_cut - p_started_at)), 0)
+                                   / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 1)::numeric end;
+      if v_cr.active_sec > 0 then
+        v_frac := greatest(1 - v_cr.empty_sec / v_cr.active_sec, 0) * v_xp_frac;
+      else
+        v_frac := greatest(v_xp_frac - economy.crew_empty_sec(v_cr.crew_id, v_cr.day, p_started_at, least(p_ended_at, coalesce(v_cut, p_ended_at)))
+                                       / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 0);
+      end if;
+    end if;
+    if v_rewardable > 0 and v_frac < 1 then
+      v_rewardable := floor(v_rewardable * v_frac)::int;
+      if v_frac < v_xp_frac then
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 체력을 다 썼습니다');
+      end if;
+    end if;
+    if v_xp_frac < 1 then
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 러닝이 끝난 뒤의 기록은 크루 보상에서 뺐습니다');
+    end if;
+  else
+    -- 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 (0066) — 남은 내구도로 달릴 수 있던 시간(1분마다 5)만큼만.
+    -- 적립 배율은 남은 비율이 0 보다 크면 그대로라(economy.durability_factor) 거의 닳은 신발로 오래 달려도 다 받던 것을 막는다
+    if v_rewardable > 0 and v_shoe.id is not null
+       and v_shoe.dur_now * economy.durability_sec_per_point() < v_elapsed then
+      v_rewardable := floor(v_rewardable * v_shoe.dur_now * economy.durability_sec_per_point()
+                            / greatest(v_elapsed, 1)::numeric)::int;
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳은 뒤의 걸음은 적립하지 않습니다');
+    end if;
+
+    -- 개인 에너지 — 적립 걸음 600 에 1, 착화감만큼 덜
+    if v_rewardable > 0 then
+      -- 에너지 드링크를 고른 러닝은 그 비율만큼만 쓴다 (0106)
+      v_energy_per_step := (1 - v_comfort / 10000.0) / economy.steps_per_energy()
+                           * economy.run_energy_factor(v_user, p_started_at);
+      v_energy_left := economy.energy_left(v_user, v_gday);
+      if v_rewardable * v_energy_per_step > v_energy_left then
+        v_rewardable := greatest(floor(v_energy_left / v_energy_per_step)::int, 0);
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '에너지를 다 썼습니다');
+      end if;
+      v_energy_used := round(v_rewardable * v_energy_per_step, 4);
+    end if;
+  end if;
+
+  -- 적립 배수 — 24시간 부스터 · 보상 이벤트 · 이 러닝에 고른 아이템 가운데 가장 큰 것 하나(겹치지 않는다, 0106)
+  v_xp := economy.run_reward_mult(v_user, p_started_at);
+
+  if v_pool = 'CREW' then
+    -- 기본 B(고른 신발) + B × 인원 보너스(구간 하나) + B × 레벨 보너스 — 더하기, 각 몫을 4자리로 정해 합이 원장과 같게 (R08 · R10)
+    v_base := round(v_rewardable * economy.points_per_step() * (1 + v_eff / 10000.0) * v_xp, 4);
+    v_head_sup := round(v_base * v_headcount, 4);
+    v_lvl_sup := round(v_base * v_level_bonus, 4);
+    v_points := v_base + v_head_sup + v_lvl_sup;
+  else
+    v_points := round(
+      v_rewardable * economy.points_per_step()
+        * (1 + v_eff / 10000.0)
+        * economy.durability_factor(v_dur)
+        * economy.party_multiplier(v_party)
+        * v_xp,
+      4
+    );
+  end if;
+  v_points_full := v_points;
+  if v_rewardable > 0 and economy.durability_factor(v_dur) < 1 then
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳아 적립이 없습니다');
+  end if;
+
+  -- ── 하루 금액 상한 — 가입 7일 안은 절반 ──
+  -- 아래 상한(하루 금액 · 경로 없는 러닝 · 올린 날)은 개인 러닝만 — 크루 러닝 보상은 따로이고 아직 상한이 없다
+  -- (2026-10-21 사용자 결정 "일단 무제한"). 개인 상한의 합에서도 크루 러닝은 뺀다 (0070)
+  if v_points > 0 and v_pool = 'PERSONAL' then
+    v_new_account := (select p.created_at from public.profiles p where p.id = v_user)
+                     > now() - make_interval(days => economy.setting_num('new_account_days')::int);
+    v_cap := economy.setting_num('daily_earn_cap') * case when v_new_account then 0.5 else 1 end;
+    select coalesce(sum(s.points_awarded), 0) into v_already_points
+      from public.walk_sessions s
+     where s.user_id = v_user and s.energy_pool <> 'CREW' and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap - v_already_points then
+      v_points := greatest(round(v_cap - v_already_points, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 금액 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 걸음만 있는 러닝 · 한꺼번에 올린 러닝 ──
+  --
+  -- 경로가 없으면 걸음은 폰이 지어낼 수 있다. 그런 러닝은 하루 적은 몫만 준다.
+  -- 7일치를 모아 한 번에 올리면 날마다 상한이 새로 열리므로, 올린 날 기준 상한도 둔다.
+  v_gps_backed := v_verdict <> 'VOID' and v_gps_m >= economy.gps_check_min_m();
+  if v_points > 0 and not v_gps_backed and v_pool = 'PERSONAL' then
+    select economy.setting_num('no_gps_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and not s.gps_backed and s.energy_pool <> 'CREW'
+       and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '경로 없는 러닝의 하루 상한에 걸렸습니다');
+    end if;
+  end if;
+  if v_points > 0 and v_pool = 'PERSONAL' then
+    select economy.setting_num('upload_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and s.energy_pool <> 'CREW'
+       and economy.game_day(s.created_at) = economy.game_day(now());
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루에 올릴 수 있는 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- 상한에 걸려 덜 받았으면 받은 몫만큼만 에너지를 쓴다 — 쓴 에너지 × 받은 SUP ÷ 상한 전 SUP (0068).
+  -- 예전엔 하루 금액 상한에 걸려 0 SUP 를 받은 러닝도 에너지를 다 썼다. 적립 걸음(rewarded_steps)은 그대로 둔다
+  if v_energy_used > 0 and v_points < v_points_full then
+    v_energy_used := round(v_energy_used * v_points / v_points_full, 4);
+  end if;
+
+  v_distance_m := case
+    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
+                                          + case when v_verified > 0 then 100 else 0 end)
+    else v_step_m
+  end;
+  if v_verdict = 'VOID' then v_distance_m := 0; end if;
+
+  -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
+  if v_gps_backed and not v_held then
+    select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
+      into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and economy.game_day(s.started_at) = v_gday;
+    v_credit_m := least(v_distance_m, v_cap_left);
+  end if;
+
+  -- ── 기록 ──
+  insert into public.walk_sessions (
+    user_id, started_at, ended_at, duration_sec, steps,
+    distance_meters, calories, track, boost_bps, party_size,
+    faction, top_speed_kmh, gps_distance_m,
+    verdict, verdict_reason, points_awarded, rewarded_steps,
+    mock_location, verified_steps, energy_used, sneaker_id,
+    gps_backed, backed_steps, gps_credit_m, party_id,
+    crew_id, energy_pool
+  )
+  values (
+    v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
+    v_distance_m, p_steps * 0.04, v_track, least(v_eff, 5000), least(greatest(v_party, 1), 20),
+    '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
+    v_verdict, v_reason, v_points, v_rewardable,
+    coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
+    v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id,
+    v_crew, v_pool
+  )
+  returning id into v_session_id;
+
+  if v_points > 0 then
+    v_kind := case when v_party > 1 then 'EARN_PARTY' else 'EARN_WALK' end;
+    insert into public.sup_ledger (user_id, kind, amount, description, session_id, occurred_at)
+    values (v_user, v_kind, v_points, format('러닝 세션 적립 (%s보)', v_rewardable),
+            v_session_id, p_ended_at);
+  end if;
+
+  -- 개인 에너지는 개인 러닝만 쓴다 — 크루 러닝은 공용 체력(crew_runs · crew_day_pools)
+  if v_energy_used > 0 and v_pool = 'PERSONAL' then
+    insert into public.energy_days (user_id, day, used) values (v_user, v_gday, v_energy_used)
+    on conflict (user_id, day) do update set used = public.energy_days.used + excluded.used;
+  end if;
+
+  -- 크루 레벨 — 경험치는 유효 크루 러닝의 사람마다 자기 거리(R09). 보류 · 무효 · 크루를 나간 뒤는 쌓지 않는다. 레벨은 내려가지 않고,
+  -- 넘은 레벨마다 레벨 업을 한 번 적는다. 정산은 참여 한 줄에 한 번(같은 러닝을 다시 올리면 위에서 원래 결과를 돌려준다)
+  if v_pool = 'CREW' then
+    select coalesce(c.level, 1) into v_level_was from public.crews c where c.id = v_crew for update;
+    v_level_now := v_level_was;
+    -- 서버가 끝낸 뒤의 거리는 빼고(v_xp_frac)
+    if v_verdict <> 'VOID' and not v_held and v_distance_m * v_xp_frac > 0
+       and exists (select 1 from public.crew_members m where m.crew_id = v_crew and m.user_id = v_user) then
+      update public.crews c
+         set run_km = c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3),
+             level = greatest(coalesce(c.level, 1),
+                              economy.crew_level_for_km(c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3)))
+       where c.id = v_crew
+      returning c.level into v_level_now;
+      v_xp_m := round((v_distance_m * v_xp_frac)::numeric, 1);
+      insert into economy.crew_level_events (crew_id, level, session_id, run_km)
+      select v_crew, l, v_session_id, (select run_km from public.crews where id = v_crew)
+        from generate_series(v_level_was + 1, v_level_now) l
+      on conflict (crew_id, level) do nothing;
+    end if;
+    update economy.crew_runs c
+       set session_id = v_session_id, base_sup = case when v_points > 0 then v_base else 0 end,
+           headcount_sup = case when v_points > 0 then v_head_sup else 0 end,
+           level_sup = case when v_points > 0 then v_lvl_sup else 0 end, total_sup = v_points,
+           xp_m = v_xp_m,
+           level_before = v_level_was, level_after = v_level_now, settled_at = now()
+     where c.user_id = v_user and c.day = v_cr.day;
+  end if;
+
+  -- 신발이 닳는다. 예전 신발(IMPORT·MINT)도 똑같이 닳는다 — 안 닳으면 수리비를 안 내는 신발이 된다.
+  -- 모든 신발이 같은 빠르기로 — 달린 1분마다 남은 내구도 5 (0064). 달린 시간은 멈춘 시간을 뺀 값(v_elapsed).
+  -- 거리 · 걸음과 상관없다 — 켜 두고 움직이지 않아도 닳는다(0068, 2026-10-19 사용자 결정. 예전엔 거리 0 이면 닳지 않았다).
+  -- 무효 러닝은 닳지 않는다. 남은 비율(durability_pts)은 트리거가 다시 센다.
+  -- 크루 러닝은 크루 체력을 쓰고 신발은 닳지 않는다 — 거리만 쌓는다 (0070, 사용자 결정 "하루에 내 자유러닝 + 크루러닝")
+  if v_shoe.id is not null and v_verdict <> 'VOID' then
+    update public.market_sneakers s
+       set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
+           dur_now = case when v_pool = 'CREW' then s.dur_now
+                          else greatest(s.dur_now - economy.durability_wear_time(v_elapsed), 0) end,
+           updated_at = now()
+     where s.id = v_shoe.id;
+  end if;
+
+  if v_verdict <> 'VOID' then
+    update public.profiles
+       set lifetime_km = lifetime_km + (v_distance_m / 1000),
+           gps_km = gps_km + (v_credit_m / 1000),
+           top_speed_kmh = greatest(top_speed_kmh, v_top_speed)
+     where id = v_user;
+  end if;
+
+  -- 이 러닝에 묶인 아이템을 러닝 기록에 잇고, 적용된 적립 배수를 적는다 (0106)
+  update economy.item_uses u set session_id = v_session_id
+   where u.user_id = v_user and u.run_started_at = p_started_at;
+  if v_xp <> 1 then
+    update public.walk_sessions s set reward_mult = v_xp where s.id = v_session_id;
+  end if;
+
+  return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user), v_reason;
+end;
+$$;
+
+
+comment on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint) is
+  '러닝 세션을 기록하고 적립액을 서버가 계산한다. 신발(출발 때 신은 신발 — 내 것일 때만)·에너지·크루 러닝·파티·부스터·보상 이벤트·러닝 아이템·상한 모두 서버 값으로. 판정 까닭도 돌려준다 (0089)';
+
+revoke all on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)
+  from public, anon;
+grant execute on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)
+  to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0110_shoe_fixes.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0110 — 신발 고침 셋 (2026-11-17 버그 점검 #7 · #11 · #16)
+--
+--  #7  강화 업적 — 신발 강화(0054 forge_start)는 원장에 줄을 남기지 않아 업적 "강화 N회 성공"이 0 에서 안 올랐다.
+--      my_forge_successes() 가 이 계정의 성공한 강화 수(forge_requests.status = 'SUCCESS')를 돌려준다. 앱은 원장의 예전 SUP 강화 수와 큰 쪽을 쓴다.
+--  #11 과속 정지 패널티 — 신고(report_overspeed_stop)가 러닝보다 먼저 와 신발을 절반으로 깎은 뒤 record_session 이 그 깎인 값으로
+--      그 러닝의 수명 자르기 · 적립 배율 · 닳음을 셌다(0065 의 "멈춘 러닝의 적립 규칙은 그대로"와 다르다). 이제 멈춘 러닝은 신고 전
+--      내구도로 평소처럼 정산하고, 패널티는 그 러닝이 닳게 한 뒤 남은 내구도의 절반이다. 패널티 신발은 그 러닝의 신발
+--      (이미 올라간 러닝의 신발 → 앱이 알린 출발 신발 p_sneaker → 지금 신은 신발).
+--  #16 신발 획득일 — my_sneakers 는 만든 날을 주지 않아 로그아웃 · 재설치 · 다른 폰에서 획득일이 오늘이 됐다.
+--      my_sneakers 의 칸은 바꾸지 않고(setup.sql 을 다시 올려도 되게) my_sneaker_dates() 를 따로 둔다.
+--
+--  이 파일은 배포 때마다 다시 돈다 — create or replace 만, 칸이 바뀌는 함수는 지우고 다시 만든다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- ── #7 성공한 강화 수 ─────────────────────────────────────────────
+create or replace function public.my_forge_successes()
+returns int
+language plpgsql stable security definer set search_path = public, economy as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  return (select count(*)::int from public.forge_requests r where r.user_id = v_user and r.status = 'SUCCESS');
+end $$;
+comment on function public.my_forge_successes() is
+  '이 계정의 성공한 신발 강화 수(forge_requests SUCCESS) — 업적 "강화 N회 성공". 0066 초기화 뒤의 강화만 남아 있다 (0110)';
+revoke all on function public.my_forge_successes() from public, anon;
+grant execute on function public.my_forge_successes() to authenticated;
+
+-- ── #16 내 신발의 획득일 ──────────────────────────────────────────
+-- 서버가 신발을 만든 때, 거래소에서 샀으면 마지막으로 산 때(늦은 쪽). my_sneakers 와 같은 신발(owner_id = 나)
+create index if not exists market_trades_sneaker on public.market_trades (sneaker_id);
+
+create or replace function public.my_sneaker_dates()
+returns table (id bigint, acquired_at timestamptz)
+language plpgsql stable security definer set search_path = public, economy as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  return query
+  select s.id,
+         greatest(s.created_at,
+                  (select max(t.traded_at) from public.market_trades t
+                    where t.sneaker_id = s.id and t.buyer_id = v_user))
+    from public.market_sneakers s
+   where s.owner_id = v_user
+   order by s.id;
+end $$;
+comment on function public.my_sneaker_dates() is
+  '내 신발의 획득일 — 만든 때 또는 거래소에서 마지막으로 산 때(늦은 쪽). my_sneakers 의 칸을 바꾸지 않으려고 따로 둔다 (0110)';
+revoke all on function public.my_sneaker_dates() from public, anon;
+grant execute on function public.my_sneaker_dates() to authenticated;
+
+-- ── #11 과속 정지 신고 — 그 러닝의 신발로 ───────────────────────────
+-- 0065 와 같고 신발만 바뀐다: 이미 올라간 러닝이면 그 러닝이 닳게 한 신발, 아니면 앱이 알린 출발 신발(p_sneaker),
+-- 둘 다 내 것이고 신을 수 있는 신발(앱 안 · 갖고 있음)일 때만. 아니면 예전처럼 지금 신은 신발.
+-- 칸이 바뀌어 지우고 다시 만든다(0089 와 같은 방식). 예전 앱은 이름으로 두 칸만 보내고 p_sneaker 는 기본값(null)이 된다.
+--
+-- 순서와 상관없이 같은 값이 되게(B = 신고 전 내구도, w = 그 러닝의 닳음, 버림 나눗셈):
+--   · 신고가 먼저 — 여기서 B → B/2 로 깎고 dur_before = B 를 적는다. record_session 이 B 로 정산하고 끝값을 (B − w)/2 로 맞춘다.
+--   · 러닝이 먼저 — record_session 이 B → B − w 로 닳게 했다. 여기서 (B − w)/2 로 깎는다(dur_before = B − w).
+--   어느 쪽이든 패널티 = 그 러닝이 닳게 한 뒤 남은 내구도의 절반.
+drop function if exists public.report_overspeed_stop(timestamptz, timestamptz);
+drop function if exists public.report_overspeed_stop(timestamptz, timestamptz, bigint);
+
+create function public.report_overspeed_stop(
+  p_started_at timestamptz,
+  p_stopped_at timestamptz,
+  -- 출발 때 신은 신발(market_sneakers.id) — 앱이 사실로만 알린다 (0110)
+  p_sneaker bigint default null
+)
+returns json
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_row public.run_penalties;
+  v_shoe public.market_sneakers;
+  v_stop timestamptz;
+  v_after int;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_started_at is null or p_stopped_at is null or p_stopped_at < p_started_at then
+    raise exception '멈춘 시각이 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_stopped_at > now() + interval '5 minutes' then
+    raise exception '멈춘 시각이 미래입니다' using errcode = '22023';
+  end if;
+  if p_started_at < now() - interval '7 days' then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
+
+  -- record_session 과 같은 잠금 — 러닝 기록 · 닳기와 섞이지 않게
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  select * into v_row from public.run_penalties x
+   where x.user_id = v_user and x.run_started_at = p_started_at;
+  if not found then
+    v_stop := least(p_stopped_at, now());
+    -- 이미 올라간 러닝이면 그 러닝의 신발
+    select x.* into v_shoe from public.walk_sessions w
+      join public.market_sneakers x on x.id = w.sneaker_id
+     where w.user_id = v_user and w.started_at = p_started_at
+       and x.owner_id = v_user and x.chain_state = 'APP' and x.status = 'OWNED';
+    -- 아니면 앱이 알린 출발 신발
+    if v_shoe.id is null and p_sneaker is not null then
+      select x.* into v_shoe from public.market_sneakers x
+       where x.id = p_sneaker and x.owner_id = v_user and x.chain_state = 'APP' and x.status = 'OWNED';
+    end if;
+    if v_shoe.id is null then
+      select * into v_shoe from economy.equipped_sneaker(v_user);
+    end if;
+    if v_shoe.id is not null then
+      update public.market_sneakers s
+         set dur_now = s.dur_now / 2,
+             updated_at = now()
+       where s.id = v_shoe.id
+      returning s.dur_now into v_after;
+    end if;
+    insert into public.run_penalties (user_id, run_started_at, stopped_at, banned_until, sneaker_id, dur_before, dur_after)
+    values (v_user, p_started_at, v_stop, v_stop + make_interval(mins => economy.overspeed_ban_min()),
+            v_shoe.id, v_shoe.dur_now, v_after)
+    returning * into v_row;
+  end if;
+
+  return json_build_object(
+    'banned_until', v_row.banned_until,
+    'sneaker_id', v_row.sneaker_id,
+    'durability_before', v_row.dur_before,
+    'durability_after', v_row.dur_after
+  );
+end;
+$$;
+
+comment on function public.report_overspeed_stop(timestamptz, timestamptz, bigint) is
+  '과속이 30초 넘게 이어져 앱이 러닝을 멈췄다 — 그 러닝의 신발(올라간 러닝 · 출발 신발 · 지금 신은 신발 순)의 남은 내구도를 절반으로, 멈춘 때부터 10분 러닝 금지. 같은 러닝은 한 번만 (0110)';
+
+revoke all on function public.report_overspeed_stop(timestamptz, timestamptz, bigint) from public, anon;
+grant execute on function public.report_overspeed_stop(timestamptz, timestamptz, bigint) to authenticated;
+
+-- ════════════════════════════════════════════════════════════════════
+--  record_session — 0106 본문 그대로, 세 곳만 (#11):
+--    ① 선언에 v_pen(이 러닝 · 이 신발의 과속 패널티) · v_wear
+--    ② 신발을 고른 뒤 — 패널티가 먼저 깎았으면 그 신발을 신고 전 내구도(dur_before)로 되돌려(이 함수 안의 사본만) 수명 자르기 · 적립 배율을 센다
+--    ③ 신발이 닳을 때 — 끝값 = (신고 전 내구도 − 이 러닝의 닳음)의 절반
+--  칸 · 돌려주는 값이 같아 create or replace 로 바꾼다.
+-- ════════════════════════════════════════════════════════════════════
+
+create or replace function public.record_session(
+  p_started_at timestamptz,
+  p_ended_at timestamptz,
+  p_steps int,
+  p_duration_sec int,
+  p_track text default '',
+  p_boost_bps int default 0,
+  p_party_size int default 1,
+  p_faction text default '',
+  -- 안드로이드가 "모의 위치"로 표시한 좌표가 하나라도 있었나
+  p_mock_location boolean default false,
+  -- 출발 때 신은 신발(market_sneakers.id, 0089) — 앱이 사실로만 알린다. 내 신발이 아니거나 신을 수 없는 신발이면 예전처럼 지금 신은 신발
+  p_sneaker bigint default null
+)
+returns table (
+  session_id bigint,
+  verdict text,
+  points_awarded numeric,
+  balance numeric,
+  -- 판정 까닭(0089) — 적립이 0 이거나 줄어든 까닭. 예전 앱은 모르는 칸이라 읽지 않는다
+  verdict_reason text
+)
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_gday date;
+  v_already_steps int;
+  v_already_points numeric;
+  v_verified int;
+  v_rewardable int;
+  v_points numeric(20, 4);
+  v_cap numeric;
+  v_verdict text := 'CLEAN';
+  v_reason text := '';
+  v_session_id bigint;
+  v_kind text;
+  v_elapsed int;
+  v_top_speed double precision := 0;
+  v_glitch double precision := 0;
+  v_gps_m double precision := 0;
+  v_points_n int := 0;
+  v_first_at bigint;
+  v_last_at bigint;
+  v_step_m double precision;
+  v_distance_m double precision;
+  v_track text := coalesce(p_track, '');
+  v_party int := 1;
+  v_party_id bigint;
+  v_gps_backed boolean;
+  v_credit_m double precision := 0;
+  v_cap_left numeric;
+  v_shoe public.market_sneakers;
+  -- 이 러닝 · 이 신발의 과속 패널티 — 신고가 먼저 와 신발을 이미 절반으로 깎았다 (0110)
+  v_pen public.run_penalties;
+  -- 이 러닝이 신발을 닳게 하는 양(크루 러닝은 0, 0110)
+  v_wear int := 0;
+  v_eff int := 0;
+  v_comfort int := 0;
+  v_dur numeric := 100;
+  v_energy_left numeric;
+  v_energy_per_step numeric;
+  v_energy_used numeric := 0;
+  v_xp numeric := 1;
+  v_recent_void int;
+  -- 무효가 잦아 보류 중 — 목표 보너스 · 주간 도전 · 코스 보상에도 이 러닝을 세지 않는다
+  v_held boolean := false;
+  v_new_account boolean;
+  -- 상한(하루 금액 · 경로 없는 러닝 · 올린 날)을 걸기 전 금액 — 상한에 걸려 덜 받은 만큼 에너지도 덜 쓴다 (0068)
+  v_points_full numeric := 0;
+  -- 크루 러닝(그 크루의 방 · 함께 달린 2명 이상 · 크루원)이면 그 크루 — 크루 체력 · 크루 레벨 거리 (0069)
+  v_crew uuid;
+  -- 이 러닝의 적립을 받쳐 준 체력 — PERSONAL 개인 에너지 · CREW 크루 체력(그날 나눠 받는 크루원만) (0069)
+  v_pool text := 'PERSONAL';
+  -- 크루 러닝 3판 (0070)
+  v_party_starts timestamptz;
+  v_crew_room boolean := false;
+  v_crew_level int := 1;
+  v_runners int := 0;
+  v_pool_pts numeric := 0;
+  v_pool_max numeric := 0;
+  v_share numeric := 0;
+  v_limit_sec int := 0;
+  v_wall numeric;
+  v_together_sec int := 0;
+  v_crew_sec numeric := 0;
+  v_crew_used numeric := 0;
+  v_headcount numeric := 0;
+  v_level_bonus numeric := 0;
+  -- 크루 러닝 — 공용 체력 (0071)
+  v_cr economy.crew_runs;
+  v_is_cr boolean := false;
+  v_base numeric := 0;
+  v_head_sup numeric := 0;
+  v_lvl_sup numeric := 0;
+  v_tm double precision;
+  v_em double precision;
+  v_lm double precision;
+  v_frac numeric := 1;
+  -- 서버가 이미 끝낸 참여(마지막 한 사람 자동 종료 · 끝냄)면 그때 + 60초(폰 시계 차이) 뒤의 기록은 크루 보상 · 경험치에서 뺀다
+  v_cut timestamptz;
+  v_xp_frac numeric := 1;
+  v_level_now int;
+  v_level_was int;
+  v_starters int := 1;
+  v_xp_m numeric := 0;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  -- ── 형식 검사 ──
+  if p_steps is null or p_steps < 0 then
+    raise exception '걸음 수가 올바르지 않습니다' using errcode = '22023';
+  end if;
+  if p_ended_at < p_started_at then
+    raise exception '종료 시각이 시작보다 빠릅니다' using errcode = '22023';
+  end if;
+  if p_ended_at > now() + interval '5 minutes' then
+    raise exception '종료 시각이 미래입니다' using errcode = '22023';
+  end if;
+  if p_started_at < now() - interval '7 days' and not exists (
+       select 1 from public.walk_sessions s
+        where s.user_id = v_user and s.started_at = p_started_at) then
+    raise exception '너무 오래된 러닝입니다' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  -- 이미 올린 러닝의 재시도면 원래 결과를 그대로 돌려준다. 아래 계산을 다시 하면
+  -- 에너지 · 내구도를 두 번 깎는다.
+  select s.id, s.verdict, s.points_awarded, coalesce(s.verdict_reason, '') into v_session_id, v_verdict, v_points, v_reason
+    from public.walk_sessions s
+   where s.user_id = v_user and s.started_at = p_started_at;
+  if found then
+    return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user), v_reason;
+    return;
+  end if;
+  v_reason := '';
+  v_verdict := 'CLEAN';
+
+  v_elapsed := least(
+    greatest(coalesce(p_duration_sec, 0), 0),
+    floor(extract(epoch from (p_ended_at - p_started_at)))::int
+  );
+  v_gday := economy.game_day(p_started_at);
+  v_step_m := p_steps * 0.762;
+
+  select t.top_speed_kmh, t.glitch_ratio into v_top_speed, v_glitch
+    from economy.track_speed_stats(v_track) t;
+  select t.gps_m, t.points, t.first_at, t.last_at
+    into v_gps_m, v_points_n, v_first_at, v_last_at
+    from economy.track_summary(v_track) t;
+  -- 경로 거리는 러닝 시간 안에 달릴 수 있는 만큼만(시속 25km). 경로 시각은 앞뒤로 여유를
+  -- 두므로, 아주 짧은 러닝 여러 개에 같은 몇 분짜리 경로를 붙여 거리를 여러 번 받지 못하게.
+  v_gps_m := least(coalesce(v_gps_m, 0), greatest(v_elapsed, 1) * 7.0);
+
+  -- ── 판정 ──
+  if coalesce(p_mock_location, false) then
+    v_verdict := 'VOID';
+    v_reason := '가짜 위치가 감지되었습니다';
+
+  -- 과속으로 멈춘 뒤 10분(러닝 금지 시간) 안에 시작한 러닝은 적립하지 않는다 (0065)
+  elsif exists (
+        select 1 from public.run_penalties x
+         where x.user_id = v_user
+           and p_started_at >= x.stopped_at and p_started_at < x.banned_until) then
+    v_verdict := 'VOID';
+    v_reason := '과속으로 멈춘 뒤 러닝 금지 시간에 시작한 러닝입니다';
+
+  -- 짧은 러닝도 실제 시간으로 잰다(예전엔 60초로 쳐서 1ms 러닝에 240걸음을 줬다)
+  elsif p_steps::numeric * 60 / greatest(v_elapsed, 1) > 240 then
+    v_verdict := 'VOID';
+    v_reason := '케이던스가 사람 범위를 벗어납니다';
+
+  elsif v_glitch > 0.5 then
+    v_verdict := 'VOID';
+    v_reason := '이동 속도가 사람 범위를 벗어납니다';
+
+  elsif v_points_n >= 2 and (
+        v_first_at < (extract(epoch from p_started_at) * 1000)::bigint - economy.track_time_slack_ms()
+     or v_last_at > (extract(epoch from p_ended_at) * 1000)::bigint + economy.track_time_slack_ms()) then
+    v_verdict := 'VOID';
+    v_reason := '경로 시각이 러닝 시간과 맞지 않습니다';
+
+  elsif v_track <> '' and exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.track <> ''
+           and md5(s.track) = md5(v_track) and s.started_at <> p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '이미 올린 경로입니다';
+
+  -- 같은 사람의 러닝은 시간이 겹칠 수 없다. 겹치게 여러 개를 올리면 같은 시간을
+  -- 여러 번 받는다.
+  elsif exists (
+        select 1 from public.walk_sessions s
+         where s.user_id = v_user and s.verdict <> 'VOID'
+           and s.started_at < p_ended_at and s.ended_at > p_started_at) then
+    v_verdict := 'VOID';
+    v_reason := '다른 러닝과 시간이 겹칩니다';
+
+  elsif v_gps_m >= 1000 and v_step_m < v_gps_m * 0.2 then
+    v_verdict := 'VOID';
+    v_reason := '걸음 없이 이동한 거리입니다';
+  end if;
+
+  -- ── 검사를 통과한 걸음 ──
+  if v_verdict = 'VOID' then
+    v_verified := 0;
+  else
+    v_verified := p_steps;
+    if v_gps_m >= economy.gps_check_min_m()
+       and v_step_m > v_gps_m * economy.step_gps_max_ratio() then
+      v_verified := floor(v_gps_m * economy.step_gps_max_ratio() / 0.762)::int;
+      v_verdict := 'FLAGGED';
+      v_reason := '걸음 수가 GPS 거리보다 많습니다';
+    end if;
+  end if;
+  v_rewardable := v_verified;
+
+  -- 과속이 30초 넘게 이어져 앱이 멈춘 러닝 — 적립 규칙은 그대로, 판정에 까닭을 남긴다 (0065)
+  if v_verdict <> 'VOID' and exists (
+        select 1 from public.run_penalties x
+         where x.user_id = v_user and x.run_started_at = p_started_at) then
+    v_verdict := 'FLAGGED';
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '과속이 이어져 러닝이 멈췄습니다');
+  end if;
+
+  -- ── 함께 달리기 · 크루 러닝 (0070 — 걸음 상한 · 신발보다 먼저 정한다) ──
+  -- 파티 보너스는 한 파티에서 한 러닝만
+  select pf.party_id, pf.size into v_party_id, v_party from economy.party_for(v_user, p_started_at, p_ended_at) pf;  -- 0109 #13: 출발 전에 끝난 러닝은 그 방 러닝이 아니다
+  if v_party_id is null or exists (select 1 from public.walk_sessions s
+                                    where s.user_id = v_user and s.party_id = v_party_id) then
+    v_party_id := null;
+    v_party := 1;
+  end if;
+
+  -- 크루 러닝(0071) — 이 러닝의 방에서 서버가 출발을 확정한 참여(economy.crew_runs, party_start)가 있어야 한다.
+  -- 앱이 크루 러닝이라고 말해서가 아니다. 참여가 이미 정산됐으면(같은 방 · 같은 날 두 번째 러닝) 보통 러닝이다
+  if v_party_id is not null then
+    select p.crew_id into v_crew from public.parties p where p.id = v_party_id;
+    v_crew_room := v_crew is not null;
+    v_crew := null;
+    if v_crew_room then
+      select * into v_cr from economy.crew_runs c where c.user_id = v_user and c.party_id = v_party_id;
+      if found and v_cr.session_id is null and v_cr.crew_id is not null then
+        v_is_cr := true;
+      elsif found then
+        v_party_id := null;
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '오늘 크루 러닝을 이미 했습니다');
+      end if;
+      -- 크루 방의 보너스는 크루 러닝 보너스 하나다 — 크루 러닝이 아니면 예전 함께 달리기 보너스도 없다(겹치지 않게)
+      if not v_is_cr then
+        v_party := 1;
+      end if;
+    end if;
+  end if;
+  if v_is_cr then
+    v_pool := 'CREW';
+    v_crew := v_cr.crew_id;
+    v_crew_level := v_cr.crew_level;
+    v_party_starts := v_cr.started_at;
+    select count(*)::int into v_starters from economy.crew_runs c where c.party_id = v_cr.party_id;
+    v_party := v_starters;
+    if v_cr.state = 'ENDED' and v_cr.terminal_reason in ('USER_END', 'LAST_PARTICIPANT_END') and v_cr.ended_at is not null then
+      v_cut := v_cr.ended_at + interval '60 seconds';
+    end if;
+    -- 공용 체력을 지금까지 정산하고(풀 → 사람 차례로 잠근다) 이 러닝을 끝낸다 — 다른 사람이 모두 끝났으면 마지막 사람도
+    perform economy.crew_pool_settle(v_cr.crew_id, v_cr.day, now());
+    perform economy.crew_run_close(v_user, v_cr.day, 'RECORDED');
+    -- 인원 보너스 — 2분이 지났으면 지금 정하고, 아니면 확인할 수 없다(D01)
+    perform economy.crew_run_bonus_eval(v_user, v_cr.day, true);
+    select * into v_cr from economy.crew_runs c where c.user_id = v_user and c.day = v_cr.day;
+    v_headcount := v_cr.bonus_pct;
+    v_level_bonus := v_cr.level_pct;
+  end if;
+
+  -- ── 하루 걸음 상한 (한국 하루) — 개인 러닝만, 크루 러닝 걸음은 세지 않는다 (0070) ──
+  if v_rewardable > 0 and v_pool = 'PERSONAL' then
+    select coalesce(sum(s.rewarded_steps), 0) into v_already_steps
+      from public.walk_sessions s
+     where s.user_id = v_user
+       and s.verdict in ('CLEAN', 'FLAGGED')
+       and s.energy_pool <> 'CREW'
+       and economy.game_day(s.started_at) = v_gday;
+    if v_rewardable > economy.max_daily_steps() - v_already_steps then
+      v_rewardable := greatest(economy.max_daily_steps() - v_already_steps, 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 무효가 잦으면 보류 ──
+  -- 적립할 걸음이 없는 러닝도 본다 — 걸음 0 인 경로 러닝이 보류 중에도 잠금 거리 · 꺼내기 조건 거리를 받았다
+  if v_verdict <> 'VOID' then
+    select count(*) into v_recent_void from public.walk_sessions s
+     where s.user_id = v_user and s.verdict = 'VOID'
+       and s.started_at > now() - interval '7 days';
+    if v_recent_void >= 5 then
+      v_rewardable := 0;
+      v_held := true;
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '최근 무효 러닝이 많아 적립을 보류합니다');
+    end if;
+  end if;
+
+  -- ── 신발 ──
+  -- 크루 러닝은 출발 때 고른 신발(아직 내 것이면) — 효율 · 착화감은 그 신발 것 (0070)
+  if v_pool = 'CREW' then
+    -- 출발 때 고른 신발 — 기록에 적는 번호만. 효율은 출발 때 스냅샷(v_cr.shoe_eff_bps)으로 센다
+    select x.* into v_shoe from public.market_sneakers x where x.id = v_cr.sneaker_id and x.owner_id = v_user;
+  end if;
+  -- 개인 러닝은 출발 때 신은 신발(앱이 알린 p_sneaker, 0089) — 올릴 때 신은 신발이 아니라 달린 신발로 닳고 효율을 센다.
+  -- 내 것이고 신을 수 있는 신발(앱 안 · 갖고 있음 — 판매 중 · 체인 · 태운 신발은 아니다)일 때만. 아니면 예전처럼 지금 신은 신발
+  if v_shoe.id is null and p_sneaker is not null then
+    select x.* into v_shoe from public.market_sneakers x
+     where x.id = p_sneaker and x.owner_id = v_user and x.chain_state = 'APP' and x.status = 'OWNED';
+  end if;
+  if v_shoe.id is null then
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  if v_shoe.id is null then
+    -- 신은 신발이 없으면(꺼내기로 벗었다) 첫 신발을 신긴다. 신발 없이 달리면 내구도 100 · 닳지 않음으로
+    -- 쳐서, 닳은 신발을 신고 수리비를 내는 것보다 나았다. 첫 신발을 아직 안 받은 계정(앱은 로그인하자마자
+    -- 받는다)은 예전처럼 신발 없이 계산한다 — 앱이 받기 전에 러닝이 먼저 올라가도 적립을 잃지 않게.
+    update public.market_sneakers set equipped = true, updated_at = now()
+     where id = (select m.id from public.market_sneakers m
+                  where m.owner_id = v_user and m.origin = 'STARTER'
+                    and m.chain_state = 'APP' and m.status = 'OWNED'
+                  limit 1)
+       and not exists (select 1 from public.market_sneakers e where e.owner_id = v_user and e.equipped);
+    select * into v_shoe from economy.equipped_sneaker(v_user);
+  end if;
+  -- 과속으로 멈춘 러닝 — 신고(report_overspeed_stop)가 먼저 와 이 신발을 이미 절반으로 깎았다 (0110).
+  -- 멈춘 러닝 자체는 평소처럼 정산한다(0065) — 수명 자르기 · 적립 배율은 신고 전 내구도로 센다. 여기서는 v_shoe(이 함수의 사본)만
+  -- 되돌린다. 표의 신발은 아래 "신발이 닳는다"에서 (신고 전 − 이 러닝의 닳음)의 절반으로 맞춘다.
+  -- 패널티가 다른 신발에 갔으면(예전 앱 · 출발 뒤 신발을 바꿈) 이 신발은 그대로 정산하고 그 신발의 패널티도 그대로다
+  if v_shoe.id is not null then
+    select x.* into v_pen from public.run_penalties x
+     where x.user_id = v_user and x.run_started_at = p_started_at and x.sneaker_id = v_shoe.id
+       and x.dur_before is not null and x.dur_after is not null;
+    if v_pen.user_id is not null then
+      v_shoe.dur_now := least(greatest(v_pen.dur_before, 0), v_shoe.dur_max);
+      v_shoe.durability_pts := round(100.0 * v_shoe.dur_now / greatest(v_shoe.dur_max, 1), 2);
+    end if;
+  end if;
+  if v_shoe.id is not null then
+    -- 효율 · 착화감은 레벨 1 값 + 나눈 포인트, 내구도는 남은 비율(%) — 이 러닝 전의 값으로 배율을 정한다 (0059)
+    select e.efficiency_bps, e.comfort_bps, e.durability into v_eff, v_comfort, v_dur
+      from economy.shoe_effective(v_shoe) e;
+  end if;
+
+  if v_pool = 'CREW' then
+    -- 크루 러닝은 개인 신발 내구도 · 개인 에너지를 쓰지 않는다(R02 · R11). 효율은 출발 때 고른 신발의 스냅샷(R04).
+    -- 공용 체력이 0 이던 구간에 달린 걸음은 적립하지 않는다(R03) — 경로를 시간으로 갈라 그 구간의 거리만큼, 경로가 없으면 시간만큼
+    v_dur := 100;
+    v_eff := v_cr.shoe_eff_bps;
+    v_comfort := 0;
+    select t.total_m, t.empty_m, t.late_m into v_tm, v_em, v_lm
+      from economy.track_meters_empty(v_track, v_cr.crew_id, v_cr.day, v_cut) t;
+    if v_tm > 0 then
+      v_frac := greatest(1 - v_em / v_tm, 0)::numeric;
+      v_xp_frac := greatest(1 - v_lm / v_tm, 0)::numeric;
+    else
+      -- 경로가 없으면 시간으로. 서버가 끝낸 뒤의 시간은 빼고, 0 이던 몫은 서버가 센 달린 초 중 0 이던 초로(일시정지와 상관없다)
+      v_xp_frac := case when v_cut is null or v_cut >= p_ended_at then 1
+                        else least(greatest(extract(epoch from (v_cut - p_started_at)), 0)
+                                   / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 1)::numeric end;
+      if v_cr.active_sec > 0 then
+        v_frac := greatest(1 - v_cr.empty_sec / v_cr.active_sec, 0) * v_xp_frac;
+      else
+        v_frac := greatest(v_xp_frac - economy.crew_empty_sec(v_cr.crew_id, v_cr.day, p_started_at, least(p_ended_at, coalesce(v_cut, p_ended_at)))
+                                       / greatest(extract(epoch from (p_ended_at - p_started_at)), 1), 0);
+      end if;
+    end if;
+    if v_rewardable > 0 and v_frac < 1 then
+      v_rewardable := floor(v_rewardable * v_frac)::int;
+      if v_frac < v_xp_frac then
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 체력을 다 썼습니다');
+      end if;
+    end if;
+    if v_xp_frac < 1 then
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '크루 러닝이 끝난 뒤의 기록은 크루 보상에서 뺐습니다');
+    end if;
+  else
+    -- 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다 (0066) — 남은 내구도로 달릴 수 있던 시간(1분마다 5)만큼만.
+    -- 적립 배율은 남은 비율이 0 보다 크면 그대로라(economy.durability_factor) 거의 닳은 신발로 오래 달려도 다 받던 것을 막는다
+    if v_rewardable > 0 and v_shoe.id is not null
+       and v_shoe.dur_now * economy.durability_sec_per_point() < v_elapsed then
+      v_rewardable := floor(v_rewardable * v_shoe.dur_now * economy.durability_sec_per_point()
+                            / greatest(v_elapsed, 1)::numeric)::int;
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳은 뒤의 걸음은 적립하지 않습니다');
+    end if;
+
+    -- 개인 에너지 — 적립 걸음 600 에 1, 착화감만큼 덜
+    if v_rewardable > 0 then
+      -- 에너지 드링크를 고른 러닝은 그 비율만큼만 쓴다 (0106)
+      v_energy_per_step := (1 - v_comfort / 10000.0) / economy.steps_per_energy()
+                           * economy.run_energy_factor(v_user, p_started_at);
+      v_energy_left := economy.energy_left(v_user, v_gday);
+      if v_rewardable * v_energy_per_step > v_energy_left then
+        v_rewardable := greatest(floor(v_energy_left / v_energy_per_step)::int, 0);
+        v_reason := concat_ws(' · ', nullif(v_reason, ''), '에너지를 다 썼습니다');
+      end if;
+      v_energy_used := round(v_rewardable * v_energy_per_step, 4);
+    end if;
+  end if;
+
+  -- 적립 배수 — 24시간 부스터 · 보상 이벤트 · 이 러닝에 고른 아이템 가운데 가장 큰 것 하나(겹치지 않는다, 0106)
+  v_xp := economy.run_reward_mult(v_user, p_started_at);
+
+  if v_pool = 'CREW' then
+    -- 기본 B(고른 신발) + B × 인원 보너스(구간 하나) + B × 레벨 보너스 — 더하기, 각 몫을 4자리로 정해 합이 원장과 같게 (R08 · R10)
+    v_base := round(v_rewardable * economy.points_per_step() * (1 + v_eff / 10000.0) * v_xp, 4);
+    v_head_sup := round(v_base * v_headcount, 4);
+    v_lvl_sup := round(v_base * v_level_bonus, 4);
+    v_points := v_base + v_head_sup + v_lvl_sup;
+  else
+    v_points := round(
+      v_rewardable * economy.points_per_step()
+        * (1 + v_eff / 10000.0)
+        * economy.durability_factor(v_dur)
+        * economy.party_multiplier(v_party)
+        * v_xp,
+      4
+    );
+  end if;
+  v_points_full := v_points;
+  if v_rewardable > 0 and economy.durability_factor(v_dur) < 1 then
+    v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳아 적립이 없습니다');
+  end if;
+
+  -- ── 하루 금액 상한 — 가입 7일 안은 절반 ──
+  -- 아래 상한(하루 금액 · 경로 없는 러닝 · 올린 날)은 개인 러닝만 — 크루 러닝 보상은 따로이고 아직 상한이 없다
+  -- (2026-10-21 사용자 결정 "일단 무제한"). 개인 상한의 합에서도 크루 러닝은 뺀다 (0070)
+  if v_points > 0 and v_pool = 'PERSONAL' then
+    v_new_account := (select p.created_at from public.profiles p where p.id = v_user)
+                     > now() - make_interval(days => economy.setting_num('new_account_days')::int);
+    v_cap := economy.setting_num('daily_earn_cap') * case when v_new_account then 0.5 else 1 end;
+    select coalesce(sum(s.points_awarded), 0) into v_already_points
+      from public.walk_sessions s
+     where s.user_id = v_user and s.energy_pool <> 'CREW' and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap - v_already_points then
+      v_points := greatest(round(v_cap - v_already_points, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루 적립 금액 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- ── 걸음만 있는 러닝 · 한꺼번에 올린 러닝 ──
+  --
+  -- 경로가 없으면 걸음은 폰이 지어낼 수 있다. 그런 러닝은 하루 적은 몫만 준다.
+  -- 7일치를 모아 한 번에 올리면 날마다 상한이 새로 열리므로, 올린 날 기준 상한도 둔다.
+  v_gps_backed := v_verdict <> 'VOID' and v_gps_m >= economy.gps_check_min_m();
+  if v_points > 0 and not v_gps_backed and v_pool = 'PERSONAL' then
+    select economy.setting_num('no_gps_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and not s.gps_backed and s.energy_pool <> 'CREW'
+       and economy.game_day(s.started_at) = v_gday;
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '경로 없는 러닝의 하루 상한에 걸렸습니다');
+    end if;
+  end if;
+  if v_points > 0 and v_pool = 'PERSONAL' then
+    select economy.setting_num('upload_daily_cap') - coalesce(sum(s.points_awarded), 0) into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and s.energy_pool <> 'CREW'
+       and economy.game_day(s.created_at) = economy.game_day(now());
+    if v_points > v_cap_left then
+      v_points := greatest(round(v_cap_left, 4), 0);
+      v_verdict := 'FLAGGED';
+      v_reason := concat_ws(' · ', nullif(v_reason, ''), '하루에 올릴 수 있는 적립 상한에 걸렸습니다');
+    end if;
+  end if;
+
+  -- 상한에 걸려 덜 받았으면 받은 몫만큼만 에너지를 쓴다 — 쓴 에너지 × 받은 SUP ÷ 상한 전 SUP (0068).
+  -- 예전엔 하루 금액 상한에 걸려 0 SUP 를 받은 러닝도 에너지를 다 썼다. 적립 걸음(rewarded_steps)은 그대로 둔다
+  if v_energy_used > 0 and v_points < v_points_full then
+    v_energy_used := round(v_energy_used * v_points / v_points_full, 4);
+  end if;
+
+  v_distance_m := case
+    -- 걸음이 있어야 100m 여유를 준다 — 걸음 0 인 경로만으로 거리를 받지 않게
+    when v_gps_m >= 100 then least(v_gps_m, greatest(v_verified, 0) * 0.762 * 3
+                                          + case when v_verified > 0 then 100 else 0 end)
+    else v_step_m
+  end;
+  if v_verdict = 'VOID' then v_distance_m := 0; end if;
+
+  -- 잠금 거리 · 꺼내기 조건에 쳐 주는 거리 — 경로로 잰 것만, 하루 상한 안에서
+  if v_gps_backed and not v_held then
+    select greatest(economy.setting_num('gps_km_daily_cap') * 1000 - coalesce(sum(s.gps_credit_m), 0), 0)
+      into v_cap_left
+      from public.walk_sessions s
+     where s.user_id = v_user and economy.game_day(s.started_at) = v_gday;
+    v_credit_m := least(v_distance_m, v_cap_left);
+  end if;
+
+  -- ── 기록 ──
+  insert into public.walk_sessions (
+    user_id, started_at, ended_at, duration_sec, steps,
+    distance_meters, calories, track, boost_bps, party_size,
+    faction, top_speed_kmh, gps_distance_m,
+    verdict, verdict_reason, points_awarded, rewarded_steps,
+    mock_location, verified_steps, energy_used, sneaker_id,
+    gps_backed, backed_steps, gps_credit_m, party_id,
+    crew_id, energy_pool
+  )
+  values (
+    v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
+    v_distance_m, p_steps * 0.04, v_track, least(v_eff, 5000), least(greatest(v_party, 1), 20),
+    '', case when v_verdict = 'VOID' then 0 else v_top_speed end, v_gps_m,
+    v_verdict, v_reason, v_points, v_rewardable,
+    coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
+    v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id,
+    v_crew, v_pool
+  )
+  returning id into v_session_id;
+
+  if v_points > 0 then
+    v_kind := case when v_party > 1 then 'EARN_PARTY' else 'EARN_WALK' end;
+    insert into public.sup_ledger (user_id, kind, amount, description, session_id, occurred_at)
+    values (v_user, v_kind, v_points, format('러닝 세션 적립 (%s보)', v_rewardable),
+            v_session_id, p_ended_at);
+  end if;
+
+  -- 개인 에너지는 개인 러닝만 쓴다 — 크루 러닝은 공용 체력(crew_runs · crew_day_pools)
+  if v_energy_used > 0 and v_pool = 'PERSONAL' then
+    insert into public.energy_days (user_id, day, used) values (v_user, v_gday, v_energy_used)
+    on conflict (user_id, day) do update set used = public.energy_days.used + excluded.used;
+  end if;
+
+  -- 크루 레벨 — 경험치는 유효 크루 러닝의 사람마다 자기 거리(R09). 보류 · 무효 · 크루를 나간 뒤는 쌓지 않는다. 레벨은 내려가지 않고,
+  -- 넘은 레벨마다 레벨 업을 한 번 적는다. 정산은 참여 한 줄에 한 번(같은 러닝을 다시 올리면 위에서 원래 결과를 돌려준다)
+  if v_pool = 'CREW' then
+    select coalesce(c.level, 1) into v_level_was from public.crews c where c.id = v_crew for update;
+    v_level_now := v_level_was;
+    -- 서버가 끝낸 뒤의 거리는 빼고(v_xp_frac)
+    if v_verdict <> 'VOID' and not v_held and v_distance_m * v_xp_frac > 0
+       and exists (select 1 from public.crew_members m where m.crew_id = v_crew and m.user_id = v_user) then
+      update public.crews c
+         set run_km = c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3),
+             level = greatest(coalesce(c.level, 1),
+                              economy.crew_level_for_km(c.run_km + round((v_distance_m * v_xp_frac / 1000)::numeric, 3)))
+       where c.id = v_crew
+      returning c.level into v_level_now;
+      v_xp_m := round((v_distance_m * v_xp_frac)::numeric, 1);
+      insert into economy.crew_level_events (crew_id, level, session_id, run_km)
+      select v_crew, l, v_session_id, (select run_km from public.crews where id = v_crew)
+        from generate_series(v_level_was + 1, v_level_now) l
+      on conflict (crew_id, level) do nothing;
+    end if;
+    update economy.crew_runs c
+       set session_id = v_session_id, base_sup = case when v_points > 0 then v_base else 0 end,
+           headcount_sup = case when v_points > 0 then v_head_sup else 0 end,
+           level_sup = case when v_points > 0 then v_lvl_sup else 0 end, total_sup = v_points,
+           xp_m = v_xp_m,
+           level_before = v_level_was, level_after = v_level_now, settled_at = now()
+     where c.user_id = v_user and c.day = v_cr.day;
+  end if;
+
+  -- 신발이 닳는다. 예전 신발(IMPORT·MINT)도 똑같이 닳는다 — 안 닳으면 수리비를 안 내는 신발이 된다.
+  -- 모든 신발이 같은 빠르기로 — 달린 1분마다 남은 내구도 5 (0064). 달린 시간은 멈춘 시간을 뺀 값(v_elapsed).
+  -- 거리 · 걸음과 상관없다 — 켜 두고 움직이지 않아도 닳는다(0068, 2026-10-19 사용자 결정. 예전엔 거리 0 이면 닳지 않았다).
+  -- 무효 러닝은 닳지 않는다. 남은 비율(durability_pts)은 트리거가 다시 센다.
+  -- 크루 러닝은 크루 체력을 쓰고 신발은 닳지 않는다 — 거리만 쌓는다 (0070, 사용자 결정 "하루에 내 자유러닝 + 크루러닝")
+  --
+  -- 과속 패널티가 먼저 깎은 러닝(v_pen, 0110): B = 신고 전 내구도(dur_before), A = 신고가 남긴 값(dur_after = B / 2),
+  -- w = 이 러닝의 닳음(크루 러닝은 0). 맞는 끝값은 (B − w) / 2(버림, 0 아래로 가지 않음) — 평소처럼 닳은 뒤 남은 것의 절반.
+  -- 표에는 이미 A 가 있으니 그 차이((B − w) / 2 − A, 0 또는 음수)만큼 더한다 — 신고와 정산 사이에 바뀐 값(수리 등)은 그대로 둔다.
+  -- 무효 러닝은 닳지 않아(w = 0) 신고가 남긴 A 그대로다
+  v_wear := case when v_pool = 'CREW' then 0 else economy.durability_wear_time(v_elapsed) end;
+  if v_shoe.id is not null and v_verdict <> 'VOID' then
+    update public.market_sneakers s
+       set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
+           dur_now = case when v_pen.user_id is not null
+                            then greatest(s.dur_now + (greatest(v_pen.dur_before - v_wear, 0) / 2 - v_pen.dur_after), 0)
+                          when v_pool = 'CREW' then s.dur_now
+                          else greatest(s.dur_now - economy.durability_wear_time(v_elapsed), 0) end,
+           updated_at = now()
+     where s.id = v_shoe.id;
+  end if;
+
+  if v_verdict <> 'VOID' then
+    update public.profiles
+       set lifetime_km = lifetime_km + (v_distance_m / 1000),
+           gps_km = gps_km + (v_credit_m / 1000),
+           top_speed_kmh = greatest(top_speed_kmh, v_top_speed)
+     where id = v_user;
+  end if;
+
+  -- 이 러닝에 묶인 아이템을 러닝 기록에 잇고, 적용된 적립 배수를 적는다 (0106)
+  update economy.item_uses u set session_id = v_session_id
+   where u.user_id = v_user and u.run_started_at = p_started_at;
+  if v_xp <> 1 then
+    update public.walk_sessions s set reward_mult = v_xp where s.id = v_session_id;
+  end if;
+
+  return query select v_session_id, v_verdict, v_points, economy.balance_of(v_user), v_reason;
+end;
+$$;
+
+
+comment on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint) is
+  '러닝 세션을 기록하고 적립액을 서버가 계산한다. 신발(출발 때 신은 신발 — 내 것일 때만)·에너지·크루 러닝·파티·부스터·보상 이벤트·러닝 아이템·상한 모두 서버 값으로. 판정 까닭도 돌려준다 (0089)';
+
+revoke all on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)
+  from public, anon;
+grant execute on function public.record_session(timestamptz, timestamptz, int, int, text, int, int, text, boolean, bigint)
+  to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0111_account_fixes.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0111 — 계정 · 커뮤니티 점검 수정 (2026-11-17, docs/점검-2026-11-17-버그.md #23)
+--
+--  친구 초대 코드 "찾을 수 없어요"가 errcode P0002 였다 — PostgREST 는 P0002 를 HTTP 500 으로 보내
+--  앱이 "연결 끊김 · 다시 시도"로 읽는다(초대는 지금 멈춰 있어 안 보이지만 다시 켤 때). 앱에 까닭을 보일
+--  거절은 22023 으로. 0085 의 마지막 정의를 그대로 옮기고 그 errcode 하나만 바꿨다.
+-- ════════════════════════════════════════════════════════════════════
+
+create or replace function public.invite_redeem(p_code text)
+returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_code text := upper(regexp_replace(coalesce(p_code, ''), '\s', '', 'g'));
+  v_inviter uuid;
+  v_cfg economy.invite_config;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  -- 0085 — 베타 동안 친구 초대 코드는 받지 않는다(입장은 베타 초대 코드)
+  if not coalesce((select value = 'true'::jsonb from public.economy_settings where key = 'invite_enabled'), false) then
+    raise exception '지금은 친구 초대 코드를 받지 않아요' using errcode = '22023';
+  end if;
+  if v_code !~ '^STEP-' then
+    v_code := 'STEP-' || v_code;
+  end if;
+  select c.user_id into v_inviter from public.invite_codes c where c.code = v_code;
+  if v_inviter is null then
+    raise exception '초대 코드를 찾을 수 없어요' using errcode = '22023';  -- 0111: P0002 는 HTTP 500
+  end if;
+  if v_inviter = v_user then
+    raise exception '내 초대 코드는 입력할 수 없어요' using errcode = '22023';
+  end if;
+  if exists (select 1 from public.invite_redemptions r where r.invitee = v_user) then
+    raise exception '이미 초대 코드를 입력했어요' using errcode = '23505';
+  end if;
+  -- 서로 맞초대로 두 번 받지 못하게
+  if exists (select 1 from public.invite_redemptions r where r.invitee = v_inviter and r.inviter = v_user) then
+    raise exception '나를 초대한 사람의 코드는 입력할 수 없어요' using errcode = '22023';
+  end if;
+  select * into v_cfg from economy.invite_config where id;
+  if not exists (select 1 from auth.users u where u.id = v_user
+                  and u.created_at > now() - coalesce(v_cfg.redeem_window, interval '7 days')) then
+    raise exception '초대 코드는 가입하고 7일 안에만 입력할 수 있어요' using errcode = '22023';
+  end if;
+  insert into public.invite_redemptions (invitee, inviter) values (v_user, v_inviter);
+  return (select coalesce(p.display_name, '러너') from public.profiles p where p.id = v_inviter);
+end $$;
+revoke all on function public.invite_redeem(text) from public, anon;
+grant execute on function public.invite_redeem(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0112_market_reclaim_update_reward.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0112 — 거래소 매물 · 입찰 모두 거두기 · 앱 업데이트 보상(뽑기 5 + 상급 1) · 나중에 보낼 알림 (2026-11-18)
+--
+--  사용자 "모든 거래를 막고 거래 매물을 다 회수시키고" + "알림은 보내야 함, 근데 지금은 아님".
+--  사용자 "앱업데이트 보상으로 신발 뽑기권 5개씩, 상급뽑기 1개씩 증정해 (18일 기준 이전에 실제로 코드로 등록한 사람만)" ·
+--  "우리 새로운 버전을 만들고 있잖아. 만들어서 올려야 할 거 아니니"(스토어 판도 상급 뽑기 선물을 쓰게).
+--
+--  A. 거두기(한 번 — 표시 market_reclaim_20261118): 열린 매물은 모두 내리고 신발은 주인에게(OWNED), 열린 구매 입찰은 모두
+--     거두고 묶인 SUP 를 돌려준다. 사람이 "거두기"를 누른 것과 똑같이 — market_cancel_listing · market_cancel_bid 의 몸통을
+--     economy.market_cancel_listing_as · market_cancel_bid_as 로 옮기고 두 함수가 그것을 부른다(원장 줄 · 설명이 같다).
+--     거래 멈춤(0108)은 그대로다. 누가 몇 개를 돌려받았는지는 economy.market_reclaim_20261118 에 남는다.
+--  B. 업데이트 보상(한 번 — 표시 update_reward_20261118): 2026-11-18 00:00(한국 시각) 전에 접속 코드를 실제로 넣어 들어온 계정
+--     (economy.access_grants.source = 'CODE' — 배포 때 있던 계정의 LEGACY 줄 · 운영자가 준 ADMIN · 공개 베타 WAITLIST 는 빼고,
+--     막힌 권한 · 지운 계정도 뺀다)에 무료 뽑기(FREE) +5 · 상급 뽑기 선물(GIFT, 새 종류) +1. 받은 사람은
+--     economy.update_reward_20261118 에 남는다.
+--     상급 뽑기 선물(GIFT)은 지갑 없이 쓴다 — premium_draw 가 선물을 가장 먼저 쓰고, 없으면 예전처럼 지갑 혜택(BONUS → RUN,
+--     지갑 · 체인 확인 그대로). 앱은 draw_status_v2 의 reward_left 로 그 수를 읽는다(draw_status 는 모양을 바꾸지 않는다).
+--  C. 알림은 지금 보내지 않는다. 보낼 때(SQL Editor):
+--       select admin_notice_send('MARKET_RECLAIMED');   -- 거래소에서 돌려받은 사람에게
+--       select admin_notice_send('UPDATE_REWARD');      -- 업데이트 보상을 받은 사람에게(새 앱을 올린 뒤에)
+--     한 사람에게 한 번만 간다(economy.notice_sends). 받을 폰이 없거나 푸시를 끈 사람은 적어 두지 않는다 — 다시 부르면
+--     그 사이 폰을 등록한 사람에게만 간다. push-send 함수를 다시 올려야 새 종류 글이 나간다.
+-- ════════════════════════════════════════════════════════════════════
+
+-- ══════════════════════════════════════════════════════════════════
+-- A. 거래소 거두기
+-- ══════════════════════════════════════════════════════════════════
+
+-- 매물 거두기 — 0007 market_cancel_listing 의 몸통 그대로, 누구의 일인지만 받는다. 거뒀으면 true(이미 끝난 매물은 false)
+create or replace function economy.market_cancel_listing_as(p_user uuid, p_listing_id bigint)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+declare
+  v_l record;
+begin
+  select * into v_l from public.market_listings where id = p_listing_id for update;
+  if not found or v_l.seller_id is distinct from p_user then
+    raise exception '내 매물이 아닙니다' using errcode = '42501';
+  end if;
+  if v_l.status <> 'OPEN' then
+    return false;
+  end if;
+
+  update public.market_listings
+     set status = 'CANCELLED', closed_at = now() where id = p_listing_id;
+  update public.market_sneakers
+     set status = 'OWNED' where id = v_l.sneaker_id;
+  return true;
+end $$;
+revoke all on function economy.market_cancel_listing_as(uuid, bigint) from public;
+
+-- 구매 입찰 거두기 — 0007 market_cancel_bid 의 몸통 그대로. 돌려준 SUP(이미 끝난 입찰은 0)
+create or replace function economy.market_cancel_bid_as(p_user uuid, p_bid_id bigint)
+returns numeric
+language plpgsql security definer set search_path = public as $$
+declare
+  v_b record;
+begin
+  select * into v_b from public.market_bids where id = p_bid_id for update;
+  if not found or v_b.buyer_id is distinct from p_user then
+    raise exception '내 입찰이 아닙니다' using errcode = '42501';
+  end if;
+  if v_b.status <> 'OPEN' then
+    return 0;
+  end if;
+
+  update public.market_bids
+     set status = 'CANCELLED', closed_at = now() where id = p_bid_id;
+
+  insert into public.sup_ledger (user_id, kind, amount, description)
+  values (p_user, 'ESCROW_UNLOCK', v_b.price, '구매 입찰 취소');
+  return v_b.price;
+end $$;
+revoke all on function economy.market_cancel_bid_as(uuid, bigint) from public;
+
+-- 앱이 부르는 두 함수 — 모양 · 뜻은 0007 그대로(같은 몸통을 부른다)
+create or replace function public.market_cancel_listing(p_listing_id bigint)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform economy.market_cancel_listing_as(public.market_me(), p_listing_id);
+end $$;
+comment on function public.market_cancel_listing(bigint) is '내 매물을 거둔다.';
+
+create or replace function public.market_cancel_bid(p_bid_id bigint)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform economy.market_cancel_bid_as(public.market_me(), p_bid_id);
+end $$;
+comment on function public.market_cancel_bid(bigint) is '내 구매 입찰을 거두고 잠긴 SUP 를 푼다.';
+
+-- 거두기로 돌려받은 사람 — 나중에 보낼 알림(MARKET_RECLAIMED)이 읽는다. 앱은 읽지 못한다
+create table if not exists economy.market_reclaim_20261118 (
+  user_id uuid primary key references auth.users on delete cascade,
+  listings int not null default 0 check (listings >= 0),
+  bids int not null default 0 check (bids >= 0),
+  refunded numeric(20, 4) not null default 0 check (refunded >= 0),
+  reclaimed_at timestamptz not null default now()
+);
+revoke all on economy.market_reclaim_20261118 from public, anon, authenticated;
+comment on table economy.market_reclaim_20261118 is
+  '2026-11-18 거래소 거두기(0112)로 돌려받은 사람 — 내린 매물 수 · 거둔 입찰 수 · 돌려받은 SUP.';
+
+/*
+ * 한 번만 — 열린 매물 · 열린 구매 입찰을 모두 거둔다. 이미 했으면(표시 market_reclaim_20261118) null.
+ * 돌려주는 값: { listings, bids, sup, users }.
+ */
+create or replace function economy.market_reclaim_20261118()
+returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  r record;
+  v_amount numeric;
+  v_listings int := 0;
+  v_bids int := 0;
+  v_sup numeric := 0;
+  v_out jsonb;
+begin
+  if exists (select 1 from public.economy_settings where key = 'market_reclaim_20261118') then
+    return null;
+  end if;
+
+  for r in select l.id, l.seller_id from public.market_listings l where l.status = 'OPEN' order by l.id loop
+    if economy.market_cancel_listing_as(r.seller_id, r.id) then
+      insert into economy.market_reclaim_20261118 as m (user_id, listings) values (r.seller_id, 1)
+      on conflict (user_id) do update set listings = m.listings + 1;
+      v_listings := v_listings + 1;
+    end if;
+  end loop;
+
+  for r in select b.id, b.buyer_id from public.market_bids b where b.status = 'OPEN' order by b.id loop
+    v_amount := economy.market_cancel_bid_as(r.buyer_id, r.id);
+    if v_amount > 0 then
+      insert into economy.market_reclaim_20261118 as m (user_id, bids, refunded) values (r.buyer_id, 1, v_amount)
+      on conflict (user_id) do update set bids = m.bids + 1, refunded = m.refunded + excluded.refunded;
+      v_bids := v_bids + 1;
+      v_sup := v_sup + v_amount;
+    end if;
+  end loop;
+
+  v_out := jsonb_build_object('listings', v_listings, 'bids', v_bids, 'sup', v_sup,
+                              'users', (select count(*) from economy.market_reclaim_20261118));
+  insert into public.admin_audit (actor, action, target, detail) values (null, 'market_reclaim', '20261118', v_out);
+  insert into public.economy_settings (key, value) values ('market_reclaim_20261118', 'true'::jsonb)
+  on conflict (key) do nothing;
+  return v_out;
+end $$;
+revoke all on function economy.market_reclaim_20261118() from public;
+
+-- ══════════════════════════════════════════════════════════════════
+-- B. 앱 업데이트 보상 — 상급 뽑기 선물(GIFT)
+-- ══════════════════════════════════════════════════════════════════
+
+-- 운영자 · 업데이트 선물로 준 상급 뽑기('GIFT') — 지갑 없이 쓴다. 0042 의 목록 + GIFT(최종 목록이라 기존 줄까지 검사한다.
+-- 0042 는 not valid 로 건다 — 다시 붙여넣을 때 GIFT 줄이 있어도 거기서 멈추지 않게)
+alter table public.draw_grants drop constraint if exists draw_grants_kind_check;
+alter table public.draw_grants add constraint draw_grants_kind_check check (kind in ('FREE', 'BONUS', 'RUN', 'GIFT'));
+
+-- 이 시각 전에 접속 코드를 넣은 계정만(2026-11-18 00:00 한국 시각 — 사용자 "18일 기준 이전")
+create or replace function economy.update_reward_cutoff() returns timestamptz
+  language sql immutable as $$ select timestamptz '2026-11-18 00:00:00+09' $$;
+
+-- 업데이트 보상을 받은 사람 — 나중에 보낼 알림(UPDATE_REWARD)이 읽는다. 앱은 읽지 못한다
+create table if not exists economy.update_reward_20261118 (
+  user_id uuid primary key references auth.users on delete cascade,
+  free int not null check (free >= 0),
+  premium int not null check (premium >= 0),
+  granted_at timestamptz not null default now()
+);
+revoke all on economy.update_reward_20261118 from public, anon, authenticated;
+comment on table economy.update_reward_20261118 is
+  '2026-11-18 앱 업데이트 보상(0112)을 받은 사람 — 무료 뽑기 · 상급 뽑기 선물 수.';
+
+/*
+ * 한 번만 — 업데이트 보상을 준다. 이미 했으면(표시 update_reward_20261118) null, 했으면 받은 사람 수.
+ *   대상: economy.access_grants 의 CODE 줄(코드를 실제로 넣은 계정 — LEGACY 줄을 코드로 바꾼 계정도 그때 CODE 가 된다)
+ *         · 권한이 살아 있고(막힌 계정 빼기) · 그 시각이 update_reward_cutoff() 전. 지운 계정은 줄이 없다.
+ *   무료 뽑기는 가입 선물과 같은 FREE 줄에 더한다. 아직 FREE 줄이 없는 계정(코드만 넣고 앱이 아직 첫 동기화를 못 함)은
+ *   economy_bootstrap 이 줄 가입 선물(10회)을 먼저 같은 조건으로 넣는다 — 나중에 그 함수가 "이미 줄이 있다"며 건너뛰지 않게.
+ */
+create or replace function economy.update_reward_20261118()
+returns int
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  c_free constant int := 5;
+  c_premium constant int := 1;
+  v_since timestamptz := (economy.setting('free_draw_since') #>> '{}')::timestamptz;
+  v_n int;
+begin
+  if exists (select 1 from public.economy_settings where key = 'update_reward_20261118') then
+    return null;
+  end if;
+
+  insert into economy.update_reward_20261118 (user_id, free, premium)
+  select g.user_id, c_free, c_premium
+    from economy.access_grants g
+   where g.source = 'CODE'
+     and g.revoked_at is null
+     and g.granted_at < economy.update_reward_cutoff()
+     and exists (select 1 from auth.users u where u.id = g.user_id)
+  on conflict (user_id) do nothing;
+  get diagnostics v_n = row_count;
+
+  -- 가입 선물(economy_bootstrap 0066 과 같은 조건) — FREE 줄이 아직 없는 계정만
+  insert into public.draw_grants (user_id, kind, granted)
+  select r.user_id, 'FREE', 10
+    from economy.update_reward_20261118 r
+    join public.profiles p on p.id = r.user_id
+   where p.created_at >= v_since
+     and not exists (select 1 from public.draw_grants d where d.user_id = r.user_id and d.kind = 'FREE')
+  on conflict (user_id, kind) do nothing;
+
+  insert into public.draw_grants as d (user_id, kind, granted)
+  select r.user_id, 'FREE', r.free from economy.update_reward_20261118 r where r.free > 0
+  on conflict (user_id, kind) do update set granted = d.granted + excluded.granted;
+
+  insert into public.draw_grants as d (user_id, kind, granted)
+  select r.user_id, 'GIFT', r.premium from economy.update_reward_20261118 r where r.premium > 0
+  on conflict (user_id, kind) do update set granted = d.granted + excluded.granted;
+
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'update_reward', '20261118',
+          jsonb_build_object('users', v_n, 'free', c_free, 'premium', c_premium, 'cutoff', economy.update_reward_cutoff()));
+  insert into public.economy_settings (key, value) values ('update_reward_20261118', 'true'::jsonb)
+  on conflict (key) do nothing;
+  return v_n;
+end $$;
+revoke all on function economy.update_reward_20261118() from public;
+
+/*
+ * 상급 뽑기 한 번 — 0044 + 선물(GIFT)부터(0112).
+ *   1) 선물(GIFT) — 지갑 · 체인 상태와 상관없이. 스토어 판(지갑 없음)이 보이는 상급 뽑기는 이것뿐이고, 업데이트 알림도
+ *      이것을 말한다 — 누른 사람이 보는 수가 줄어야 한다.
+ *   2) 선물이 없으면 0044 그대로: 지갑을 연결한 사람만 · 체인이 멈춰 있으면 기다린다 · 첫 연결 선물(BONUS, 첫 번 Genesis)
+ *      → 러닝으로 받은 기회(RUN). 지갑 혜택은 지갑을 끊어도 남아(다시 연결하면 쓴다) 선물을 먼저 써도 잃는 것이 없다.
+ * 선물 뽑기도 같은 상급 표(레어 이상)에서 굴리고 출처는 BONUS_DRAW — 신발 체인 기록은 vault_mint_enqueue(shoe_chain_enabled)가 정한다.
+ */
+create or replace function public.premium_draw()
+returns bigint
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v_genesis boolean := false;
+  v_min text := nullif(economy.setting('premium_min_rarity') #>> '{}', '');
+  v_id bigint;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  update public.draw_grants set used = used + 1
+   where user_id = v_user and kind = 'GIFT' and used < granted;
+  if not found then
+    -- 지갑을 연결한 사람만(지갑 혜택), 체인이 멈춰 있으면 기다린다 — 예전과 같은 조건 · 같은 거절
+    perform economy.withdraw_gate(v_user, false);
+
+    select g.genesis_used < g.genesis_granted into v_genesis
+      from public.draw_grants g
+     where g.user_id = v_user and g.kind = 'BONUS' and g.used < g.granted;
+    if found then
+      update public.draw_grants
+         set used = used + 1,
+             genesis_used = genesis_used + case when v_genesis then 1 else 0 end
+       where user_id = v_user and kind = 'BONUS';
+    else
+      v_genesis := false;
+      update public.draw_grants set used = used + 1
+       where user_id = v_user and kind = 'RUN' and used < granted;
+      if not found then
+        raise exception '상급 뽑기가 남아 있지 않습니다' using errcode = '23514';
+      end if;
+    end if;
+  end if;
+
+  v_id := economy.draw_create(v_user, 'BONUS_DRAW',
+                              case when v_genesis then 'EPIC' else v_min end, coalesce(v_genesis, false));
+  perform economy.vault_mint_enqueue(v_id);
+  return v_id;
+end $$;
+revoke all on function public.premium_draw() from public, anon;
+grant execute on function public.premium_draw() to authenticated;
+
+/*
+ * 뽑기 화면 현황 2판 — draw_status(0042) 그대로 + reward_left(선물로 받은 상급 뽑기 중 남은 수, 지갑 없이 쓴다).
+ * draw_status 는 예전 앱이 읽고 다시 붙여넣을 때 앞 파일이 예전 모양으로 만들므로 모양을 바꾸지 않는다.
+ */
+create or replace function public.draw_status_v2()
+returns table (
+  daily_left int,
+  daily_total int,
+  signup_left int,
+  signup_granted int,
+  wallet_linked boolean,
+  gift_on_link int,
+  gift_left int,
+  run_left int,
+  genesis_left int,
+  run_progress_m double precision,
+  run_step_m int,
+  run_today int,
+  run_daily_cap int,
+  chain_paused boolean,
+  reward_left int
+)
+language sql stable security definer set search_path = public, economy as $$
+  select s.daily_left, s.daily_total, s.signup_left, s.signup_granted, s.wallet_linked, s.gift_on_link, s.gift_left,
+         s.run_left, s.genesis_left, s.run_progress_m, s.run_step_m, s.run_today, s.run_daily_cap, s.chain_paused,
+         coalesce((select g.granted - g.used from public.draw_grants g
+                    where g.user_id = auth.uid() and g.kind = 'GIFT'), 0)::int
+    from public.draw_status() s
+$$;
+revoke all on function public.draw_status_v2() from public, anon;
+grant execute on function public.draw_status_v2() to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- C. 나중에 보낼 알림 — 한 사람에게 한 번
+-- ══════════════════════════════════════════════════════════════════
+create table if not exists economy.notice_sends (
+  notice text not null,
+  user_id uuid not null references auth.users on delete cascade,
+  sent_at timestamptz not null default now(),
+  primary key (notice, user_id)
+);
+revoke all on economy.notice_sends from public, anon, authenticated;
+comment on table economy.notice_sends is '운영 알림(economy.notice_send)을 푸시 목록에 넣은 사람 — 같은 알림은 한 사람에게 한 번(0112).';
+
+/*
+ * 알림 하나를 대상에게 푸시 목록(push_outbox)으로 넣는다. 넣은 사람 수를 돌려준다.
+ *   MARKET_RECLAIMED  거래소 거두기로 돌려받은 사람(economy.market_reclaim_20261118) — 신발 탭(`shoes`)
+ *   UPDATE_REWARD     업데이트 보상을 받은 사람(economy.update_reward_20261118) — 뽑기(`draw`)
+ * 푸시를 받을 수 있는 사람(push_allowed · 등록된 폰)만 넣고 적어 둔다 — 못 받은 사람은 다음에 다시 부르면 그때 받는다.
+ */
+create or replace function economy.notice_send(p_notice text)
+returns int
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  r record;
+  v_n int := 0;
+begin
+  if p_notice is null or p_notice not in ('MARKET_RECLAIMED', 'UPDATE_REWARD') then
+    raise exception '모르는 알림입니다: %', coalesce(p_notice, '') using errcode = '22023';
+  end if;
+  -- 같은 알림을 두 곳에서 동시에 보내도 한 사람에게 한 번
+  perform pg_advisory_xact_lock(hashtext('notice:' || p_notice));
+
+  for r in
+    select m.user_id,
+           jsonb_build_object('listings', m.listings::text, 'bids', m.bids::text,
+                              'sup', rtrim(to_char(m.refunded, 'FM999,999,999,999,990.9999'), '.')) as args,
+           'shoes' as link
+      from economy.market_reclaim_20261118 m
+     where p_notice = 'MARKET_RECLAIMED'
+    union all
+    select u.user_id, jsonb_build_object('free', u.free::text, 'premium', u.premium::text), 'draw'
+      from economy.update_reward_20261118 u
+     where p_notice = 'UPDATE_REWARD'
+  loop
+    continue when exists (select 1 from economy.notice_sends s where s.notice = p_notice and s.user_id = r.user_id);
+    continue when not public.push_allowed(r.user_id, p_notice)
+               or not exists (select 1 from public.push_tokens t where t.user_id = r.user_id);
+    perform public.push_enqueue(r.user_id, p_notice, r.args, r.link);
+    insert into economy.notice_sends (notice, user_id) values (p_notice, r.user_id) on conflict do nothing;
+    v_n := v_n + 1;
+  end loop;
+  return v_n;
+end $$;
+revoke all on function economy.notice_send(text) from public;
+
+-- 운영자 — 앱의 운영자 계정 또는 Supabase SQL Editor(로그인 없이 postgres). 누가 언제 보냈는지 admin_audit 에 남는다
+create or replace function public.admin_notice_send(p_notice text)
+returns int
+language plpgsql security definer set search_path = public, economy as $$
+declare v_n int;
+begin
+  perform economy.access_admin_guard();
+  v_n := economy.notice_send(p_notice);
+  perform public.admin_log('notice_send', p_notice, jsonb_build_object('enqueued', v_n));
+  return v_n;
+end $$;
+revoke all on function public.admin_notice_send(text) from public, anon;
+grant execute on function public.admin_notice_send(text) to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 한 번만 — 거두기 · 업데이트 보상(각 함수가 표시를 보고 두 번 하지 않는다)
+-- ══════════════════════════════════════════════════════════════════
+do $$ begin
+  perform economy.market_reclaim_20261118();
+  perform economy.update_reward_20261118();
+end $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0113_access_code_limits.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0113 — 베타 초대 코드: 하루 1개 · 7일에 3개 (2026-11-18, docs/access-codes-2026-10-28.md "2026-11-18")
+--
+--  사용자 결정: "3개씩 나오던 코드를 하루에 1개, 일주일에 3개까지만 나올 수 있게 해".
+--  · 하루 — access_user_daily_codes(0079 기본 3 → 1). 하루는 지금처럼 한국 날짜(00시 KST)로 센다.
+--  · 일주일 — 새 설정 access_user_weekly_codes = 3. 달력의 주가 아니라 **지금부터 거슬러 168시간(7 × 24시간)** 안에
+--    만든 사용자 코드 수로 센다(굴러가는 7일 — 월요일에 몰아 만들고 일요일에 또 몰아 만드는 일이 없다).
+--    가장 오래된 코드가 168시간을 넘기는 순간 한 자리가 다시 열린다.
+--  · 이미 만든 코드는 그대로 쓸 수 있다(만료 · 차단 규칙도 그대로). 세는 것은 0079 처럼 만든 코드 모두(차단된 것도 — 만든 일은 만든 일).
+--  · 0 이면 그 한도로 코드를 만들 수 없다(하루 0 과 같다 — can_issue = false).
+--
+--  앱 계약:
+--    · access_status() — 예전 칸(daily_limit · issued_today) 그대로에 weekly_limit · issued_week · left_today · left_week ·
+--      left · next_at(막혔을 때 다음 코드를 만들 수 있는 시각) · limited_by(DAY · WEEK)를 더했다. jsonb 라 모양은 그대로다.
+--    · access_code_issue() — 예전 앱용. 거절은 지금처럼 답 안의 { error } (daily_limit 에 weekly_limit 이 더해졌다 —
+--      예전 앱은 모르는 error 를 "지금은 초대 코드를 만들 수 없어요"로 보인다, 사실과 맞다).
+--    · access_code_issue_v2() — 새 앱용. 한도 거절은 23514, 권한 없음은 42501 로 거절한다(한국어 문장 · hint 에 갈래 ·
+--      detail 에 next_at). 이름에 숫자가 있어 문지기(access_gate)의 access_* 예외에 들지 않는다 — 문지기는 권한 없는
+--      사람만 막고, 권한 없는 사람은 어차피 코드를 만들 수 없다(막히면 앱이 권한을 다시 묻는다).
+-- ════════════════════════════════════════════════════════════════════
+
+insert into public.economy_settings (key, value) values
+  ('access_user_weekly_codes', '3'::jsonb)
+on conflict (key) do nothing;
+
+/*
+ * 하루 개수 3 → 1. setup.sql 은 배포 때마다 다시 올라가므로 값만 보고 바꾸면, 운영자가 나중에 일부러 3 으로 돌린 값을
+ * 다음 배포가 다시 1 로 덮는다. 그래서 두 가지를 함께 본다:
+ *   · 한 번만 — 표시 access_daily_codes_0113 이 없을 때만(0079 의 access_v1_applied 와 같은 방식).
+ *   · 0079 기본값(3) 그대로일 때만 — 운영자가 이미 다른 값(예: 5 · 0)으로 바꿨으면 그 결정을 따른다.
+ * 바꿨으면 true. 검사가 같은 규칙을 다시 부를 수 있게 함수로 둔다.
+ */
+create or replace function economy.access_daily_codes_0113() returns boolean
+language plpgsql security definer set search_path = public, economy as $$
+declare v_changed boolean := false;
+begin
+  if exists (select 1 from public.economy_settings where key = 'access_daily_codes_0113') then
+    return false;
+  end if;
+  update public.economy_settings set value = '1'::jsonb, updated_at = now()
+   where key = 'access_user_daily_codes' and economy.setting_num('access_user_daily_codes') = 3;
+  v_changed := found;
+  insert into public.economy_settings (key, value) values ('access_daily_codes_0113', 'true'::jsonb)
+  on conflict (key) do nothing;
+  return v_changed;
+end $$;
+revoke all on function economy.access_daily_codes_0113() from public;
+
+do $$ begin perform economy.access_daily_codes_0113(); end $$;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 한도 — 오늘(한국 날짜) · 지난 168시간
+-- ══════════════════════════════════════════════════════════════════
+/*
+ * { daily_limit, issued_today, weekly_limit, issued_week, left_today, left_week, left, next_at, limited_by }
+ * next_at — left 가 0 일 때 다음 코드를 만들 수 있는 가장 이른 시각(없으면 null):
+ *   하루가 막혔으면 내일 00시(KST), 7일이 막혔으면 창 안 코드 중 (issued_week − weekly_limit + 1)번째로 오래된 것 + 168시간.
+ *   둘 다 막혔으면 늦은 쪽(앞의 시각에는 다른 쪽이 아직 막는다). 앞으로 만들 코드는 없으니(막혀 있다) 이 시각이 맞다.
+ * limited_by — 그 늦은 쪽(DAY · WEEK). 한도가 0 이면(꺼 둠) 다시 열리지 않으니 next_at · limited_by 는 null.
+ */
+create or replace function economy.access_issue_quota(p_user uuid) returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_day_limit int := greatest(coalesce(economy.setting_num('access_user_daily_codes'), 0)::int, 0);
+  -- 설정 줄이 지워졌으면 사용자가 정한 3
+  v_week_limit int := greatest(coalesce(economy.setting_num('access_user_weekly_codes'), 3)::int, 0);
+  v_window timestamptz := now() - interval '168 hours';
+  v_today int;
+  v_week int;
+  v_left_today int;
+  v_left_week int;
+  v_day_next timestamptz;
+  v_week_next timestamptz;
+  v_next timestamptz;
+begin
+  select count(*) filter (where c.created_at >= economy.today_start())::int, count(*)::int
+    into v_today, v_week
+    from economy.access_codes c
+   where c.created_by = p_user and c.kind = 'USER' and c.created_at > v_window;
+  v_left_today := greatest(v_day_limit - v_today, 0);
+  v_left_week := greatest(v_week_limit - v_week, 0);
+  if v_left_today = 0 and v_day_limit > 0 then
+    v_day_next := economy.game_day_start(economy.game_day(now()) + 1);
+  end if;
+  if v_left_week = 0 and v_week_limit > 0 then
+    select c.created_at + interval '168 hours' into v_week_next
+      from economy.access_codes c
+     where c.created_by = p_user and c.kind = 'USER' and c.created_at > v_window
+     order by c.created_at
+     offset greatest(v_week - v_week_limit, 0) limit 1;
+  end if;
+  if v_day_limit > 0 and v_week_limit > 0 then
+    v_next := greatest(v_day_next, v_week_next);  -- greatest 는 null 을 건너뛴다
+  end if;
+  return jsonb_build_object(
+    'daily_limit', v_day_limit,
+    'issued_today', v_today,
+    'weekly_limit', v_week_limit,
+    'issued_week', v_week,
+    'left_today', v_left_today,
+    'left_week', v_left_week,
+    'left', least(v_left_today, v_left_week),
+    'next_at', v_next,
+    'limited_by', case
+      when least(v_left_today, v_left_week) > 0 or v_day_limit = 0 or v_week_limit = 0 then null
+      when v_left_week = 0 and (v_left_today > 0 or v_week_next >= v_day_next or v_day_next is null) then 'WEEK'
+      else 'DAY' end);
+end $$;
+revoke all on function economy.access_issue_quota(uuid) from public;
+
+-- 코드를 만들 수 있는 사람인가 — 0079 access_status 의 can_issue 그대로 + 7일 한도가 0 이 아닌가
+create or replace function economy.access_can_issue(p_user uuid) returns boolean
+language sql stable security definer set search_path = public, economy as $$
+  select economy.access_mode() <> 'OPEN'
+     and greatest(coalesce(economy.setting_num('access_user_daily_codes'), 0), 0) > 0
+     and greatest(coalesce(economy.setting_num('access_user_weekly_codes'), 3), 0) > 0
+     and exists (select 1 from economy.access_grants g
+                  where g.user_id = p_user and g.revoked_at is null
+                    and coalesce(economy.setting('access_issue_sources'), '[]'::jsonb) ? g.source)
+$$;
+revoke all on function economy.access_can_issue(uuid) from public;
+
+/*
+ * 코드 하나 만들기(잠금은 부르는 쪽이 잡는다). 된 답 { code, expires_at } + 만든 뒤의 한도,
+ * 거절 { error: not_allowed | daily_limit | weekly_limit } + 지금 한도(next_at · limited_by).
+ */
+create or replace function economy.access_code_issue_core(p_user uuid) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  q jsonb;
+  v_code text;
+  v_exp timestamptz := now() + make_interval(days => greatest(coalesce(economy.setting_num('access_user_code_days'), 14)::int, 1));
+begin
+  if not economy.access_can_issue(p_user) then
+    return jsonb_build_object('error', 'not_allowed');
+  end if;
+  q := economy.access_issue_quota(p_user);
+  if (q ->> 'left')::int <= 0 then
+    return q || jsonb_build_object('error', case when q ->> 'limited_by' = 'WEEK' then 'weekly_limit' else 'daily_limit' end);
+  end if;
+  v_code := economy.access_new_code();
+  insert into economy.access_codes (code, kind, created_by, max_uses, expires_at)
+  values (v_code, 'USER', p_user, 1, v_exp);
+  return economy.access_issue_quota(p_user) || jsonb_build_object('code', economy.access_pretty(v_code), 'expires_at', v_exp);
+end $$;
+revoke all on function economy.access_code_issue_core(uuid) from public;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 앱
+-- ══════════════════════════════════════════════════════════════════
+/*
+ * 내 접속 상태(0079 그대로 + 한도 칸). 공개 베타면 고른 사전 예약 이메일 계정에 여기서 권한을 준다.
+ * { mode, granted, source, revoked, can_issue, daily_limit, issued_today,
+ *   weekly_limit, issued_week, left_today, left_week, left, next_at, limited_by }
+ */
+create or replace function public.access_status()
+returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  g economy.access_grants;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform economy.access_waitlist_grant(v_user);
+  select * into g from economy.access_grants x where x.user_id = v_user;
+  return jsonb_build_object(
+    'mode', economy.access_mode(),
+    'granted', economy.access_ok(v_user),
+    'source', g.source,
+    'revoked', g.revoked_at is not null,
+    'can_issue', economy.access_can_issue(v_user)) || economy.access_issue_quota(v_user);
+end $$;
+revoke all on function public.access_status() from public, anon;
+grant execute on function public.access_status() to authenticated;
+
+/* 예전 앱 — 내 코드 하나 만들기. { code, expires_at, … } 또는 { error: not_allowed | daily_limit | weekly_limit, … } */
+create or replace function public.access_code_issue()
+returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('access:' || v_user::text));
+  perform economy.access_waitlist_grant(v_user);
+  return economy.access_code_issue_core(v_user);
+end $$;
+revoke all on function public.access_code_issue() from public, anon;
+grant execute on function public.access_code_issue() to authenticated;
+
+/*
+ * 새 앱 — 내 코드 하나 만들기. 된 답은 access_code_issue 와 같다({ code, expires_at } + 만든 뒤 한도).
+ * 거절은 앱이 까닭을 읽는 코드로: 한도 23514(hint daily_limit · weekly_limit, detail 다음 시각), 권한 없음 42501(hint not_allowed).
+ */
+create or replace function public.access_code_issue_v2()
+returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v jsonb;
+  v_next timestamptz;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('access:' || v_user::text));
+  perform economy.access_waitlist_grant(v_user);
+  v := economy.access_code_issue_core(v_user);
+  v_next := (v ->> 'next_at')::timestamptz;
+  if v ->> 'error' = 'not_allowed' then
+    raise exception '지금은 초대 코드를 만들 수 없어요' using errcode = '42501', hint = 'not_allowed';
+  elsif v ->> 'error' = 'weekly_limit' then
+    raise exception '초대 코드는 7일 동안 %개까지 만들 수 있어요.%', v ->> 'weekly_limit',
+      coalesce(' ' || to_char(v_next at time zone 'Asia/Seoul', 'FMMM"월" FMDD"일" HH24:MI') || '부터 다시 만들 수 있어요', '')
+      using errcode = '23514', hint = 'weekly_limit', detail = coalesce(v ->> 'next_at', '');
+  elsif v ->> 'error' = 'daily_limit' then
+    raise exception '초대 코드는 하루 %개까지 만들 수 있어요. 내일 다시 만들 수 있어요', v ->> 'daily_limit'
+      using errcode = '23514', hint = 'daily_limit', detail = coalesce(v ->> 'next_at', '');
+  end if;
+  return v;
+end $$;
+revoke all on function public.access_code_issue_v2() from public, anon;
+grant execute on function public.access_code_issue_v2() to authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0114_ops_security.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0114 — 운영자 페이지 보안: 세션 · 키 기한 · 로그인 잠금 · 큰 일 다시 확인 · 하루 지급 한도 (2026-11-18)
+--
+--  사용자 "운영자 페이지 보안 더" — 방법은 맡겼다. 예전(0106)에는 키 하나를 모든 요청의 본문에 실어 보냈고,
+--  그 키를 가진 사람은 누구에게나 아이템을 줄 수 있었다. 이제 서버가 다섯 겹을 지킨다:
+--
+--  · 세션: public.ops_login(키) 가 무작위 세션 번호를 돌려준다(서버에는 해시만). 8시간까지 · 30분 동안 쓰지 않으면 끝,
+--    쓸 때마다 30분이 다시 시작된다. economy.ops_actor(번호) 는 이제 세션 번호만 받는다(키를 그대로 보내면 거절).
+--    public.ops_logout(번호) 로 끝낸다. 키를 막거나 기한이 지나면 그 키의 세션도 바로 끝난다.
+--  · 키 기한: economy.ops_keys.expires_at(기본 30일). economy.ops_key_new('이름', 날 수) — 예전 한 칸 호출은 30일.
+--    이 마이그레이션 전에 만든 키는 처음 적용할 때 한 번 지금부터 30일(칸이 비지 않게 되어 다시 붙여넣어도 그대로).
+--  · 로그인 잠금: 같은 곳(IP — 서버만 아는 소금을 친 해시, 원문은 남기지 않는다 · 0082 waitlist_client 와 같은 머리글)에서
+--    10분에 5번 틀리면 그 곳을 15분, 모든 곳을 합쳐 10분에 30번 틀리면 모든 로그인을 15분 막는다. 막힌 동안의 시도는
+--    키를 보지도 쌓지도 않는다. 큰 일의 다시 확인에서 틀린 키도 같은 실패로 센다(한 세션에서 세 번 틀리면 그 세션은 끝).
+--  · 다시 확인: 전체 지급 · 200명 넘는 지급 · 3배 이상이거나 48시간 넘는 보상 이벤트 · 지급 되돌리기는 그 요청에
+--    운영자 키를 한 번 더(p_confirm) — 이 세션을 연 키여야 한다. 요청 번호(같은 일은 한 번만)는 그대로다.
+--  · 하루 지급 한도: 키마다 한국 날짜 하루 아이템 5,000개(받는 사람 수 × 개수)까지. 넘는 지급은 통째로 거절한다.
+--  값은 economy_settings(ops_*) — 배포 없이 바꾼다(admin_economy_set). 모두 public.admin_audit 에 남는다(키 · 세션 값 없이).
+--
+--  거절은 예외가 아니라 {ok:false, code, message} 로 답한다 — 예외는 실패 기록까지 되돌려 잠금이 세지 못한다
+--  (0082 대기 명단과 같은 까닭). 끝난 · 없는 세션만 예전처럼 예외(42501 → PostgREST 401)다.
+--
+--  가장 센 겹은 Cloudflare Access(사용자가 대시보드에서) — docs/items-2026-11-17.md "운영자 페이지 보안".
+--
+--  다시 붙여넣기: 0106 이 예전 칸 수의 함수를 다시 만들므로 여기서 매번 먼저 지우고(drop) 새 칸 수로 만든다.
+--  ops_overview · ops_user_find 는 세션 시각을 고치므로 stable 을 뗐다(PostgREST 는 stable 함수를 읽기 전용으로 부른다).
+-- ════════════════════════════════════════════════════════════════════
+
+insert into public.economy_settings (key, value) values
+  ('ops_session_hours',       '8'::jsonb),
+  ('ops_session_idle_min',    '30'::jsonb),
+  ('ops_login_window_min',    '10'::jsonb),
+  ('ops_login_client_fails',  '5'::jsonb),
+  ('ops_login_global_fails',  '30'::jsonb),
+  ('ops_login_lock_min',      '15'::jsonb),
+  ('ops_key_daily_units',     '5000'::jsonb),
+  ('ops_confirm_recipients',  '200'::jsonb),
+  ('ops_confirm_mult',        '3'::jsonb),
+  ('ops_confirm_hours',       '48'::jsonb)
+on conflict (key) do nothing;
+
+-- ── 키 기한 ─────────────────────────────────────────────────────────
+alter table economy.ops_keys add column if not exists expires_at timestamptz;
+-- 이 마이그레이션 전에 만든 키 — 처음 적용할 때 한 번(아래에서 칸이 비지 않게 되므로 다시 붙여넣어도 바뀌지 않는다)
+update economy.ops_keys set expires_at = now() + interval '30 days' where expires_at is null;
+alter table economy.ops_keys alter column expires_at set default (now() + interval '30 days');
+alter table economy.ops_keys alter column expires_at set not null;
+
+comment on table economy.ops_keys is
+  '운영자 페이지 키(해시만). economy.ops_key_new(이름, 날 수 — 기본 30) 로 만들고 revoked_at 으로 막는다. 기한은 expires_at(0106 · 0114).';
+
+-- 같은 키 값의 해시 — 키 · 세션 번호 모두(앞뒤 공백은 뺀다. 키는 16진수라 원래 공백이 없다)
+create or replace function economy.ops_hash(p_secret text) returns text
+language sql immutable set search_path = '' as $$
+  select encode(sha256(convert_to(btrim(coalesce(p_secret, '')), 'UTF8')), 'hex')
+$$;
+revoke all on function economy.ops_hash(text) from public;
+
+-- 운영 값(economy_settings) — 없으면 기본값
+create or replace function economy.ops_num(p_key text, p_default numeric) returns numeric
+language sql stable security definer set search_path = '' as $$
+  select coalesce(economy.setting_num(p_key), p_default)
+$$;
+revoke all on function economy.ops_num(text, numeric) from public;
+
+-- 키 만들기 — 날 수(1 ~ 365). 한 번만 보이는 키를 돌려준다
+create or replace function economy.ops_key_new(p_label text, p_days int) returns text
+language plpgsql security definer set search_path = '' as $$
+declare v_token text := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+begin
+  if p_days is null or p_days < 1 or p_days > 365 then
+    raise exception '키 기한은 1 ~ 365일입니다' using errcode = '22023';
+  end if;
+  insert into economy.ops_keys (token_hash, label, expires_at)
+  values (economy.ops_hash(v_token), coalesce(nullif(btrim(p_label), ''), 'ops'), now() + make_interval(days => p_days));
+  return v_token;
+end $$;
+revoke all on function economy.ops_key_new(text, int) from public;
+
+-- 예전 한 칸 호출(select economy.ops_key_new('이름')) — 30일. 두 칸 함수에 기본값을 두지 않는 것은 한 칸 호출이 둘 중 어느 것인지 모호해지지 않게
+create or replace function economy.ops_key_new(p_label text) returns text
+language sql security definer set search_path = '' as $$
+  select economy.ops_key_new(p_label, 30)
+$$;
+revoke all on function economy.ops_key_new(text) from public;
+
+-- ── 부른 곳(IP) — 서버만 아는 소금을 친 해시. 원문은 남기지 않는다 ──
+create table if not exists economy.ops_secret (
+  id boolean primary key default true check (id),
+  salt text not null
+);
+revoke all on economy.ops_secret from public, anon, authenticated;
+insert into economy.ops_secret (salt)
+values (replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''))
+on conflict (id) do nothing;
+
+comment on table economy.ops_secret is '운영자 로그인 실패를 곳마다 셀 때 IP 에 치는 소금(서버만). 원문 IP 는 어디에도 남기지 않는다(0114).';
+
+-- 머리글은 0082 economy.waitlist_client 와 같다(Cloudflare 가 넣는 cf-connecting-ip 먼저). 머리글이 없으면(SQL Editor · 검사) 'unknown'
+create or replace function economy.ops_client() returns text
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_headers jsonb;
+  v_ip text;
+begin
+  begin
+    v_headers := nullif(current_setting('request.headers', true), '')::jsonb;
+  exception when others then
+    v_headers := null;
+  end;
+  v_ip := coalesce(nullif(btrim(v_headers ->> 'cf-connecting-ip'), ''),
+                   nullif(btrim(split_part(v_headers ->> 'x-forwarded-for', ',', 1)), ''),
+                   nullif(btrim(v_headers ->> 'x-real-ip'), ''));
+  if v_ip is null then
+    return 'unknown';
+  end if;
+  return encode(sha256(convert_to((select s.salt from economy.ops_secret s) || ':ops:' || v_ip, 'UTF8')), 'hex');
+end $$;
+revoke all on function economy.ops_client() from public;
+
+-- ── 세션 ────────────────────────────────────────────────────────────
+create table if not exists economy.ops_sessions (
+  id bigint generated always as identity primary key,
+  -- 세션 번호의 해시(번호는 로그인할 때 한 번 돌려주고 남기지 않는다)
+  token_hash text not null unique,
+  -- 이 세션을 연 키 — 키를 막거나 기한이 지나면 세션도 끝난다
+  key_hash text not null references economy.ops_keys (token_hash) on delete cascade,
+  label text not null,
+  client text not null default 'unknown',
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  last_used_at timestamptz not null default now(),
+  ended_at timestamptz,
+  -- 'logout' 로그아웃 · 'confirm' 다시 확인을 세 번 틀림
+  ended_why text,
+  -- 큰 일의 다시 확인에서 틀린 횟수(맞으면 0)
+  confirm_fails int not null default 0
+);
+create index if not exists ops_sessions_key on economy.ops_sessions (key_hash);
+revoke all on economy.ops_sessions from public, anon, authenticated;
+
+comment on table economy.ops_sessions is
+  '운영자 페이지 세션(번호의 해시만). 8시간 · 30분 쉬면 끝(ops_session_hours · ops_session_idle_min). 모두 끝내기: update economy.ops_sessions set ended_at = now() where ended_at is null (0114).';
+
+-- ── 로그인 실패 · 잠금 ──────────────────────────────────────────────
+create table if not exists economy.ops_login_fails (
+  client text not null,
+  at timestamptz not null default now(),
+  -- LOGIN 로그인 · CONFIRM 큰 일의 다시 확인
+  kind text not null default 'LOGIN' check (kind in ('LOGIN', 'CONFIRM'))
+);
+create index if not exists ops_login_fails_client on economy.ops_login_fails (client, at);
+create index if not exists ops_login_fails_at on economy.ops_login_fails (at);
+revoke all on economy.ops_login_fails from public, anon, authenticated;
+
+create table if not exists economy.ops_login_locks (
+  -- 곳(ops_client 해시) 또는 'ALL'(모든 곳)
+  scope text primary key,
+  until timestamptz not null
+);
+revoke all on economy.ops_login_locks from public, anon, authenticated;
+
+comment on table economy.ops_login_fails is '운영자 로그인 · 다시 확인 실패(곳은 해시). 하루 지나면 지운다(0114).';
+comment on table economy.ops_login_locks is
+  '막힌 곳(해시)과 모든 곳(ALL) — 풀기: delete from economy.ops_login_locks (0114).';
+
+-- ── 하루 지급 한도 ──────────────────────────────────────────────────
+create table if not exists economy.ops_key_days (
+  key_hash text not null references economy.ops_keys (token_hash) on delete cascade,
+  -- 한국 날짜
+  day date not null,
+  -- 그날 이 키로 준 아이템(받는 사람 수 × 개수). 되돌려도 돌아오지 않는다
+  units int not null default 0,
+  primary key (key_hash, day)
+);
+revoke all on economy.ops_key_days from public, anon, authenticated;
+
+comment on table economy.ops_key_days is '운영자 키마다 하루에 준 아이템 수 — 한도는 ops_key_daily_units(0114).';
+
+-- 지금 막혀 있으면 풀리는 시각(p_global 이면 모든 곳 잠금도 본다)
+create or replace function economy.ops_locked_until(p_client text, p_global boolean default true) returns timestamptz
+language sql stable security definer set search_path = '' as $$
+  select max(l.until) from economy.ops_login_locks l
+   where l.until > now() and (l.scope = p_client or (p_global and l.scope = 'ALL'))
+$$;
+revoke all on function economy.ops_locked_until(text, boolean) from public;
+
+create or replace function economy.ops_locked_reply(p_until timestamptz, p_code text default 'locked') returns jsonb
+language sql stable set search_path = '' as $$
+  select jsonb_build_object('ok', false, 'code', p_code, 'until', p_until,
+    'message', format('운영자 키를 여러 번 틀려 잠시 막았어요. %s(한국 시간)부터 다시 할 수 있어요',
+                      to_char(p_until at time zone 'Asia/Seoul', 'HH24:MI')))
+$$;
+revoke all on function economy.ops_locked_reply(timestamptz, text) from public;
+
+-- 실패 하나를 적고, 곳 · 모든 곳의 기준을 넘으면 막는다. 지금 이 곳이 막혀 있으면 풀리는 시각
+-- (부르는 쪽이 pg_advisory_xact_lock(hashtext('ops-login')) 으로 줄을 세운다 — 수가 정확하게)
+create or replace function economy.ops_fail(p_client text, p_kind text) returns timestamptz
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_window interval := economy.ops_num('ops_login_window_min', 10)::float8 * interval '1 minute';
+  v_until timestamptz := now() + economy.ops_num('ops_login_lock_min', 15)::float8 * interval '1 minute';
+begin
+  insert into economy.ops_login_fails (client, kind) values (p_client, p_kind);
+  if (select count(*) from economy.ops_login_fails f where f.client = p_client and f.at > now() - v_window)
+       >= economy.ops_num('ops_login_client_fails', 5)
+     and economy.ops_locked_until(p_client, false) is null then
+    insert into economy.ops_login_locks (scope, until) values (p_client, v_until)
+    on conflict (scope) do update set until = excluded.until;
+    insert into public.admin_audit (actor, action, target, detail)
+    values (null, 'ops_login_locked', 'client', jsonb_build_object('client', left(p_client, 12), 'until', v_until, 'kind', p_kind));
+  end if;
+  if (select count(*) from economy.ops_login_fails f where f.at > now() - v_window)
+       >= economy.ops_num('ops_login_global_fails', 30)
+     and not exists (select 1 from economy.ops_login_locks l where l.scope = 'ALL' and l.until > now()) then
+    insert into economy.ops_login_locks (scope, until) values ('ALL', v_until)
+    on conflict (scope) do update set until = excluded.until;
+    insert into public.admin_audit (actor, action, target, detail)
+    values (null, 'ops_login_locked', 'all', jsonb_build_object('until', v_until, 'kind', p_kind));
+  end if;
+  return economy.ops_locked_until(p_client);
+end $$;
+revoke all on function economy.ops_fail(text, text) from public;
+
+-- ── 로그인 · 로그아웃 ───────────────────────────────────────────────
+-- 맞으면 { ok, session(이번 한 번만 보이는 번호), actor, expires_at, idle_min, key_expires_at }
+-- 틀리면 { ok:false, code: 'wrong'(틀림 · 막힌 키) · 'expired'(기한 지남) · 'locked'(잠시 막힘), message, left? · until? }
+create or replace function public.ops_login(p_key text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_client text := economy.ops_client();
+  v_key economy.ops_keys;
+  v_session economy.ops_sessions;
+  v_reason text;
+  v_until timestamptz;
+  v_token text;
+  v_left int;
+  v_lock_min int := economy.ops_num('ops_login_lock_min', 15)::int;
+begin
+  -- 로그인끼리 줄을 선다 — 동시에 몰려도 실패 수가 정확하게
+  perform pg_advisory_xact_lock(hashtext('ops-login'));
+  delete from economy.ops_login_fails f where f.at < now() - interval '1 day';
+  delete from economy.ops_login_locks l where l.until < now() - interval '1 day';
+  delete from economy.ops_sessions s where coalesce(s.ended_at, s.expires_at) < now() - interval '30 days';
+
+  -- 막힌 동안은 키를 보지도, 시도를 쌓지도 않는다
+  v_until := economy.ops_locked_until(v_client);
+  if v_until is not null then
+    return economy.ops_locked_reply(v_until);
+  end if;
+
+  select * into v_key from economy.ops_keys k where k.token_hash = economy.ops_hash(p_key);
+  if v_key.token_hash is null then
+    v_reason := 'wrong';
+  elsif v_key.revoked_at is not null then
+    v_reason := 'revoked';
+  elsif v_key.expires_at <= now() then
+    v_reason := 'expired';
+  end if;
+
+  if v_reason is not null then
+    v_until := economy.ops_fail(v_client, 'LOGIN');
+    insert into public.admin_audit (actor, action, target, detail)
+    values (null, 'ops_login_fail', coalesce(v_key.label, ''),
+            jsonb_build_object('reason', v_reason, 'client', left(v_client, 12)));
+    if v_until is not null then
+      return economy.ops_locked_reply(v_until);
+    end if;
+    if v_reason = 'expired' then
+      return jsonb_build_object('ok', false, 'code', 'expired',
+        'message', '기한이 지난 운영자 키예요. 새 키를 받아 주세요');
+    end if;
+    v_left := greatest(economy.ops_num('ops_login_client_fails', 5)::int
+                - (select count(*) from economy.ops_login_fails f
+                    where f.client = v_client
+                      and f.at > now() - economy.ops_num('ops_login_window_min', 10)::float8 * interval '1 minute')::int, 0);
+    return jsonb_build_object('ok', false, 'code', 'wrong', 'left', v_left,
+      'message', format('운영자 키가 맞지 않거나 막힌 키예요. %s번 더 틀리면 %s분 동안 로그인을 막아요', v_left, v_lock_min));
+  end if;
+
+  v_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+  insert into economy.ops_sessions (token_hash, key_hash, label, client, expires_at)
+  values (economy.ops_hash(v_token), v_key.token_hash, v_key.label, v_client,
+          now() + economy.ops_num('ops_session_hours', 8)::float8 * interval '1 hour')
+  returning * into v_session;
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_login', v_key.label,
+          jsonb_build_object('by', v_key.label, 'session', v_session.id, 'client', left(v_client, 12),
+                             'expires_at', v_session.expires_at));
+  return jsonb_build_object('ok', true, 'session', v_token, 'actor', v_key.label,
+    'expires_at', v_session.expires_at,
+    'idle_min', economy.ops_num('ops_session_idle_min', 30),
+    'key_expires_at', v_key.expires_at);
+end $$;
+revoke all on function public.ops_login(text) from public;
+grant execute on function public.ops_login(text) to anon, authenticated;
+
+-- 로그아웃 — 몇 번을 불러도 { ok:true }
+create or replace function public.ops_logout(p_token text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_id bigint;
+  v_label text;
+begin
+  update economy.ops_sessions s set ended_at = now(), ended_why = 'logout'
+   where s.token_hash = economy.ops_hash(p_token) and s.ended_at is null
+  returning s.id, s.label into v_id, v_label;
+  if v_id is not null then
+    insert into public.admin_audit (actor, action, target, detail)
+    values (null, 'ops_logout', v_label, jsonb_build_object('by', v_label, 'session', v_id));
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+revoke all on function public.ops_logout(text) from public;
+grant execute on function public.ops_logout(text) to anon, authenticated;
+
+-- 살아 있는 세션 — 쓸 때마다 30분이 다시 시작된다. 없거나 끝났으면 예외(42501 → PostgREST 401)
+create or replace function economy.ops_session_of(p_token text) returns economy.ops_sessions
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_s economy.ops_sessions;
+begin
+  update economy.ops_sessions s set last_used_at = now()
+    from economy.ops_keys k
+   where s.token_hash = economy.ops_hash(p_token)
+     and k.token_hash = s.key_hash
+     and s.ended_at is null
+     and s.expires_at > now()
+     and s.last_used_at > now() - economy.ops_num('ops_session_idle_min', 30)::float8 * interval '1 minute'
+     and k.revoked_at is null
+     and k.expires_at > now()
+  returning s.* into v_s;
+  if v_s.id is null then
+    raise exception 'ops session required' using errcode = '42501',
+      hint = '로그인이 끝났습니다(30분 쉼 · 8시간 · 막힌 키 · 기한 지난 키) — 운영자 키로 다시 들어오세요';
+  end if;
+  return v_s;
+end $$;
+revoke all on function economy.ops_session_of(text) from public;
+
+-- 세션이 맞으면 그 키의 이름, 아니면 예외 — 0106 과 같은 칸. 이제 키가 아니라 세션 번호를 받는다
+create or replace function economy.ops_actor(p_token text) returns text
+language plpgsql security definer set search_path = '' as $$
+declare v_s economy.ops_sessions;
+begin
+  v_s := economy.ops_session_of(p_token);
+  return v_s.label;
+end $$;
+revoke all on function economy.ops_actor(text) from public;
+
+-- 큰 일의 다시 확인 — 됐으면 null, 아니면 돌려줄 답. p_need 가 아니어도 키를 넣었으면 맞는지 본다(틀린 키로 "됐다"가 나오지 않게)
+create or replace function economy.ops_confirm(p_session economy.ops_sessions, p_confirm text, p_what text, p_need boolean)
+returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_client text := economy.ops_client();
+  v_until timestamptz;
+  v_fails int;
+  v_out boolean := false;
+begin
+  if nullif(btrim(coalesce(p_confirm, '')), '') is null then
+    if p_need then
+      return jsonb_build_object('ok', false, 'code', 'confirm_required',
+        'message', p_what || ' — 운영자 키를 한 번 더 넣어 주세요');
+    end if;
+    return null;
+  end if;
+  -- 이 곳이 로그인 실패로 막혀 있으면 다시 확인도 받지 않는다(세션은 이미 있으므로 모든 곳 잠금은 보지 않는다)
+  v_until := economy.ops_locked_until(v_client, false);
+  if v_until is not null then
+    return economy.ops_locked_reply(v_until, 'confirm_locked');
+  end if;
+  if economy.ops_hash(p_confirm) = p_session.key_hash then
+    if p_session.confirm_fails > 0 then
+      update economy.ops_sessions s set confirm_fails = 0 where s.id = p_session.id;
+    end if;
+    return null;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('ops-login'));
+  v_until := economy.ops_fail(v_client, 'CONFIRM');
+  update economy.ops_sessions s set confirm_fails = s.confirm_fails + 1
+   where s.id = p_session.id returning s.confirm_fails into v_fails;
+  if v_fails >= 3 then
+    update economy.ops_sessions s set ended_at = now(), ended_why = 'confirm' where s.id = p_session.id;
+    v_out := true;
+  end if;
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_confirm_fail', p_session.label,
+          jsonb_build_object('by', p_session.label, 'what', p_what, 'fails', v_fails, 'logged_out', v_out,
+                             'client', left(v_client, 12)));
+  return jsonb_build_object('ok', false, 'code', 'confirm_wrong', 'logged_out', v_out,
+    'message', case
+      when v_out then '운영자 키를 세 번 틀려 로그아웃했어요. 키로 다시 들어와 주세요'
+      when v_until is not null then format('운영자 키를 여러 번 틀려 잠시 막았어요. %s(한국 시간)부터 다시 할 수 있어요',
+                                            to_char(v_until at time zone 'Asia/Seoul', 'HH24:MI'))
+      else format('운영자 키가 맞지 않아요(이 세션을 연 키여야 해요). %s번 더 틀리면 로그아웃해요', 3 - v_fails)
+    end);
+end $$;
+revoke all on function economy.ops_confirm(economy.ops_sessions, text, text, boolean) from public;
+
+-- 배수 · 시간을 사람이 읽는 글자로(2.00 → 2)
+create or replace function economy.ops_short(p numeric) returns text
+language sql immutable set search_path = '' as $$
+  select trim(trailing '.' from trim(trailing '0' from round(p, 2)::text))
+$$;
+revoke all on function economy.ops_short(numeric) from public;
+
+-- ════════════════════════════════════════════════════════════════════
+--  운영자 함수 — 0106 본문 그대로에 세션 · 한도 · 다시 확인만 더했다
+-- ════════════════════════════════════════════════════════════════════
+
+-- 한눈에 — 0106 에 세션 · 오늘 한도 · 다시 확인 기준을 더했다(세션 시각을 고치므로 stable 아님)
+create or replace function public.ops_overview(p_token text) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_session economy.ops_sessions := economy.ops_session_of(p_token);
+  v_actor text := v_session.label;
+  v_event economy.reward_events;
+  v_limit int := economy.ops_num('ops_key_daily_units', 5000)::int;
+  v_used int;
+begin
+  select coalesce(sum(d.units), 0) into v_used from economy.ops_key_days d
+   where d.key_hash = v_session.key_hash and d.day = economy.game_day(now());
+  v_event := economy.reward_event_at(now());
+  return jsonb_build_object(
+    'actor', v_actor,
+    'now', now(),
+    'users', (select count(*) from public.profiles),
+    'runners_7d', (select count(distinct s.user_id) from public.walk_sessions s
+                    where s.started_at > now() - interval '7 days' and s.verdict <> 'VOID'),
+    'kinds', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'kind', k.kind, 'group', k.grp, 'mode', k.mode, 'value', k.value, 'enabled', k.enabled,
+               'held', coalesce((select sum(i.qty) from public.user_items i where i.kind = k.kind), 0),
+               'holders', (select count(*) from public.user_items i where i.kind = k.kind and i.qty > 0),
+               'used', (select count(*) from economy.item_uses u where u.kind = k.kind))
+             order by k.sort, k.kind)
+        from economy.item_kinds k), '[]'::jsonb),
+    'event', case when v_event.id is null then null else economy.reward_event_json(v_event) end,
+    'events', coalesce((
+      select jsonb_agg(economy.reward_event_json(e) order by e.id desc)
+        from (select * from economy.reward_events order by id desc limit 12) e), '[]'::jsonb),
+    'batches', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'id', b.id, 'kind', b.kind, 'qty', b.qty, 'reason', b.reason, 'target', b.target,
+               'actor', b.actor, 'users', b.users, 'push', b.push, 'created_at', b.created_at,
+               'revoked_at', b.revoked_at) order by b.id desc)
+        from (select * from economy.item_batches order by id desc limit 30) b), '[]'::jsonb),
+    'session', jsonb_build_object(
+      'expires_at', v_session.expires_at,
+      'idle_min', economy.ops_num('ops_session_idle_min', 30),
+      'key_expires_at', (select k.expires_at from economy.ops_keys k where k.token_hash = v_session.key_hash)),
+    'cap', jsonb_build_object('limit', v_limit, 'used', v_used, 'left', greatest(v_limit - v_used, 0)),
+    'confirm', jsonb_build_object(
+      'recipients', economy.ops_num('ops_confirm_recipients', 200),
+      'mult', economy.ops_num('ops_confirm_mult', 3),
+      'hours', economy.ops_num('ops_confirm_hours', 48))
+  );
+end $$;
+revoke all on function public.ops_overview(text) from public;
+grant execute on function public.ops_overview(text) to anon, authenticated;
+
+-- 사람 찾기 — 0106 그대로(세션 시각을 고치므로 stable 아님)
+create or replace function public.ops_user_find(p_token text, p_query text) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_actor text := economy.ops_actor(p_token);
+  v_q text := btrim(coalesce(p_query, ''));
+  v_like text;
+begin
+  if char_length(v_q) < 2 then
+    return '[]'::jsonb;
+  end if;
+  v_like := '%' || replace(replace(replace(v_q, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'email', x.email, 'name', x.name, 'joined_at', x.created_at,
+             'items', coalesce((select jsonb_object_agg(i.kind, i.qty) from public.user_items i
+                                 where i.user_id = x.id and i.qty > 0), '{}'::jsonb))
+           order by x.created_at desc)
+      from (
+        select u.id, u.email, coalesce(p.display_name, '') as name, u.created_at
+          from auth.users u join public.profiles p on p.id = u.id
+         where u.email ilike v_like or p.display_name ilike v_like
+         order by u.created_at desc
+         limit 20
+      ) x), '[]'::jsonb);
+end $$;
+revoke all on function public.ops_user_find(text, text) from public;
+grant execute on function public.ops_user_find(text, text) to anon, authenticated;
+
+-- 지급 — 0106 에 칸 하나(p_confirm)를 더했다. 같은 요청 번호면 키 없이도 처음 결과(두 번 주지 않는다).
+-- 차례: 검사(종류 · 개수 · 사유 · 대상) → 하루 한도 → 다시 확인(전체 · 200명 넘게) → 지급
+drop function if exists public.ops_item_grant(text, uuid, text, int, text, text[], text, boolean);
+create or replace function public.ops_item_grant(
+  p_token text,
+  p_request uuid,
+  p_kind text,
+  p_qty int,
+  p_reason text,
+  p_emails text[] default null,
+  p_audience text default null,
+  p_push boolean default true,
+  p_confirm text default null
+) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_session economy.ops_sessions := economy.ops_session_of(p_token);
+  v_actor text := v_session.label;
+  v_reason text := btrim(coalesce(p_reason, ''));
+  v_emails text[];
+  v_users uuid[];
+  v_missing text[] := '{}';
+  v_target text;
+  v_batch economy.item_batches;
+  v_user uuid;
+  v_day date := economy.game_day(now());
+  v_units int;
+  v_limit int;
+  v_used int;
+  v_big boolean;
+  v_refuse jsonb;
+begin
+  if p_request is null then
+    return jsonb_build_object('ok', false, 'code', 'request', 'message', '요청 번호가 필요합니다');
+  end if;
+  -- 같은 지급을 두 번 누르지 못하게 — 요청 번호로 줄을 선다
+  perform pg_advisory_xact_lock(hashtext('ops-grant:' || p_request::text));
+  select * into v_batch from economy.item_batches b where b.request_id = p_request;
+  if found then
+    return jsonb_build_object('ok', true, 'batch', v_batch.id, 'users', v_batch.users, 'missing', '[]'::jsonb, 'replay', true);
+  end if;
+
+  if not exists (select 1 from economy.item_kinds k where k.kind = p_kind) then
+    return jsonb_build_object('ok', false, 'code', 'kind', 'message', '없는 아이템입니다');
+  end if;
+  if p_qty is null or p_qty < 1 or p_qty > 99 then
+    return jsonb_build_object('ok', false, 'code', 'qty', 'message', '개수는 1 ~ 99');
+  end if;
+  if char_length(v_reason) < 2 or char_length(v_reason) > 80 then
+    return jsonb_build_object('ok', false, 'code', 'reason', 'message', '사유를 2 ~ 80자로 적어 주세요');
+  end if;
+
+  if p_audience = 'ALL' then
+    v_target := 'ALL';
+    select coalesce(array_agg(p.id), '{}') into v_users from public.profiles p;
+  elsif p_audience = 'RUNNERS_7D' then
+    v_target := 'RUNNERS_7D';
+    select coalesce(array_agg(distinct s.user_id), '{}') into v_users from public.walk_sessions s
+     where s.started_at > now() - interval '7 days' and s.verdict <> 'VOID';
+  elsif p_audience is null or p_audience = 'EMAILS' then
+    v_target := 'EMAILS';
+    select coalesce(array_agg(distinct lower(btrim(e))), '{}') into v_emails
+      from unnest(coalesce(p_emails, '{}')) e where btrim(coalesce(e, '')) <> '';
+    if cardinality(v_emails) > 2000 then
+      return jsonb_build_object('ok', false, 'code', 'too_many', 'message', '한 번에 2,000명까지');
+    end if;
+    select coalesce(array_agg(u.id), '{}') into v_users
+      from auth.users u join public.profiles p on p.id = u.id
+     where lower(u.email) = any (v_emails);
+    select coalesce(array_agg(e order by e), '{}') into v_missing from unnest(v_emails) e
+     where not exists (select 1 from auth.users u join public.profiles p on p.id = u.id where lower(u.email) = e);
+  else
+    return jsonb_build_object('ok', false, 'code', 'audience', 'message', '대상이 올바르지 않습니다');
+  end if;
+
+  if cardinality(v_users) = 0 then
+    return jsonb_build_object('ok', false, 'code', 'no_target', 'message', '받을 사람이 없습니다', 'missing', to_jsonb(v_missing));
+  end if;
+
+  -- 하루 한도(0114) — 키마다 한국 날짜 하루. 같은 키의 지급끼리 줄을 세워 함께 넘지 않게
+  v_units := cardinality(v_users) * p_qty;
+  perform pg_advisory_xact_lock(hashtext('ops-cap:' || v_session.key_hash));
+  v_limit := economy.ops_num('ops_key_daily_units', 5000)::int;
+  select coalesce(sum(d.units), 0) into v_used from economy.ops_key_days d
+   where d.key_hash = v_session.key_hash and d.day = v_day;
+  if v_used + v_units > v_limit then
+    insert into public.admin_audit (actor, action, target, detail)
+    values (null, 'ops_grant_cap', p_kind,
+            jsonb_build_object('by', v_actor, 'units', v_units, 'used', v_used, 'limit', v_limit, 'target', v_target));
+    return jsonb_build_object('ok', false, 'code', 'cap', 'units', v_units, 'used', v_used, 'limit', v_limit,
+      'left', greatest(v_limit - v_used, 0),
+      'message', format('이 키로 오늘 더 줄 수 있는 아이템은 %s개예요(하루 %s개 — 받는 사람 수 × 개수). 이번 지급은 %s개예요',
+                        to_char(greatest(v_limit - v_used, 0), 'FM999,999,990'), to_char(v_limit, 'FM999,999,990'),
+                        to_char(v_units, 'FM999,999,990')));
+  end if;
+
+  -- 다시 확인(0114) — 전체 · 기준보다 많은 사람
+  v_big := v_target = 'ALL' or cardinality(v_users) > economy.ops_num('ops_confirm_recipients', 200);
+  v_refuse := economy.ops_confirm(v_session, p_confirm,
+    case when v_target = 'ALL' then '전체 지급'
+         else format('%s명에게 지급', to_char(cardinality(v_users), 'FM999,999,990')) end, v_big);
+  if v_refuse is not null then
+    return v_refuse;
+  end if;
+
+  insert into economy.ops_key_days (key_hash, day, units) values (v_session.key_hash, v_day, v_units)
+  on conflict (key_hash, day) do update set units = economy.ops_key_days.units + excluded.units;
+
+  insert into economy.item_batches (request_id, kind, qty, reason, target, actor, push, users)
+  values (p_request, p_kind, p_qty, v_reason, v_target, v_actor, coalesce(p_push, true), cardinality(v_users))
+  returning * into v_batch;
+
+  foreach v_user in array v_users loop
+    perform economy.item_add(v_user, p_kind, p_qty);
+    insert into economy.item_grants (batch_id, user_id, kind, qty) values (v_batch.id, v_user, p_kind, p_qty);
+    if coalesce(p_push, true) then
+      perform public.push_enqueue(v_user, 'ITEM_GRANTED',
+        jsonb_build_object('item', p_kind, 'qty', p_qty::text, 'reason', v_reason), 'bag');
+    end if;
+  end loop;
+
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_item_grant', p_kind,
+          jsonb_build_object('by', v_actor, 'batch', v_batch.id, 'qty', p_qty, 'users', cardinality(v_users),
+                             'target', v_target, 'reason', v_reason, 'units', v_units,
+                             'confirmed', nullif(btrim(coalesce(p_confirm, '')), '') is not null));
+
+  return jsonb_build_object('ok', true, 'batch', v_batch.id, 'users', cardinality(v_users),
+                            'missing', to_jsonb(v_missing), 'replay', false);
+end $$;
+revoke all on function public.ops_item_grant(text, uuid, text, int, text, text[], text, boolean, text) from public;
+grant execute on function public.ops_item_grant(text, uuid, text, int, text, text[], text, boolean, text) to anon, authenticated;
+
+-- 지급 되돌리기 — 0106 에 칸 하나(p_confirm, 늘 필요)를 더했다
+drop function if exists public.ops_grant_revoke(text, bigint);
+create or replace function public.ops_grant_revoke(p_token text, p_batch bigint, p_confirm text default null) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_session economy.ops_sessions := economy.ops_session_of(p_token);
+  v_actor text := v_session.label;
+  v_batch economy.item_batches;
+  v_refuse jsonb;
+  g record;
+  v_take int;
+  v_taken int := 0;
+  v_short int := 0;
+begin
+  select * into v_batch from economy.item_batches b where b.id = p_batch for update;
+  if not found then
+    return jsonb_build_object('ok', false, 'code', 'not_found', 'message', '없는 지급입니다');
+  end if;
+  if v_batch.revoked_at is not null then
+    return jsonb_build_object('ok', false, 'code', 'revoked', 'message', '이미 되돌린 지급입니다');
+  end if;
+  v_refuse := economy.ops_confirm(v_session, p_confirm, '지급 되돌리기', true);
+  if v_refuse is not null then
+    return v_refuse;
+  end if;
+  for g in select * from economy.item_grants x where x.batch_id = p_batch loop
+    perform pg_advisory_xact_lock(hashtext('ledger:' || g.user_id::text));
+    select least(g.qty - g.revoked_qty, coalesce(i.qty, 0)) into v_take
+      from (select 1) one left join public.user_items i on i.user_id = g.user_id and i.kind = g.kind;
+    v_take := greatest(coalesce(v_take, 0), 0);
+    if v_take > 0 then
+      update public.user_items set qty = qty - v_take, updated_at = now()
+       where user_id = g.user_id and kind = g.kind;
+      update economy.item_grants set revoked_qty = revoked_qty + v_take where id = g.id;
+    end if;
+    v_taken := v_taken + v_take;
+    if v_take < g.qty - g.revoked_qty then
+      v_short := v_short + 1;
+    end if;
+  end loop;
+  update economy.item_batches set revoked_at = now(), revoked_by = v_actor where id = p_batch;
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_grant_revoke', v_batch.kind,
+          jsonb_build_object('by', v_actor, 'batch', p_batch, 'taken', v_taken, 'short', v_short, 'confirmed', true));
+  return jsonb_build_object('ok', true, 'taken', v_taken, 'short', v_short);
+end $$;
+revoke all on function public.ops_grant_revoke(text, bigint, text) from public;
+grant execute on function public.ops_grant_revoke(text, bigint, text) to anon, authenticated;
+
+-- 보상 이벤트 시작 — 0106 에 칸 하나(p_confirm)를 더했다. 3배 이상 · 48시간 넘게는 다시 확인
+drop function if exists public.ops_event_start(text, uuid, text, numeric, numeric, timestamptz, boolean);
+create or replace function public.ops_event_start(
+  p_token text,
+  p_request uuid,
+  p_title text,
+  p_mult numeric,
+  p_hours numeric,
+  p_starts_at timestamptz default null,
+  p_push boolean default true,
+  p_confirm text default null
+) returns jsonb
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_session economy.ops_sessions := economy.ops_session_of(p_token);
+  v_actor text := v_session.label;
+  v_title text := btrim(coalesce(p_title, ''));
+  v_from timestamptz := coalesce(p_starts_at, now());
+  v_to timestamptz;
+  v_event economy.reward_events;
+  v_user uuid;
+  v_pushed int := 0;
+  v_big boolean;
+  v_refuse jsonb;
+begin
+  if p_request is null then
+    return jsonb_build_object('ok', false, 'code', 'request', 'message', '요청 번호가 필요합니다');
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ops-event'));
+  select * into v_event from economy.reward_events e where e.request_id = p_request;
+  if found then
+    return jsonb_build_object('ok', true, 'event', economy.reward_event_json(v_event), 'replay', true);
+  end if;
+
+  if char_length(v_title) < 2 or char_length(v_title) > 40 then
+    return jsonb_build_object('ok', false, 'code', 'title', 'message', '이름을 2 ~ 40자로 적어 주세요');
+  end if;
+  if p_mult is null or p_mult <= 1 or p_mult > 5 then
+    return jsonb_build_object('ok', false, 'code', 'mult', 'message', '배수는 1 보다 크고 5 이하');
+  end if;
+  if p_hours is null or p_hours < 1 or p_hours > 168 then
+    return jsonb_build_object('ok', false, 'code', 'hours', 'message', '기간은 1 ~ 168시간');
+  end if;
+  if v_from < now() - interval '1 minute' then
+    return jsonb_build_object('ok', false, 'code', 'past', 'message', '지난 시각에는 시작할 수 없습니다');
+  end if;
+  if v_from > now() + interval '30 days' then
+    return jsonb_build_object('ok', false, 'code', 'far', 'message', '30일 안으로 정해 주세요');
+  end if;
+  v_to := v_from + make_interval(secs => (p_hours * 3600)::double precision);
+
+  if exists (select 1 from economy.reward_events e
+              where e.cancelled_at is null and e.ends_at > now()
+                and e.starts_at < v_to and e.ends_at > v_from) then
+    return jsonb_build_object('ok', false, 'code', 'overlap', 'message', '그 시간에 이미 보상 이벤트가 있습니다');
+  end if;
+
+  -- 다시 확인(0114) — 큰 배수 · 긴 기간
+  v_big := p_mult >= economy.ops_num('ops_confirm_mult', 3) or p_hours > economy.ops_num('ops_confirm_hours', 48);
+  v_refuse := economy.ops_confirm(v_session, p_confirm,
+    format('보상 ×%s · %s시간 이벤트', economy.ops_short(p_mult), economy.ops_short(p_hours)), v_big);
+  if v_refuse is not null then
+    return v_refuse;
+  end if;
+
+  insert into economy.reward_events (request_id, title, mult, starts_at, ends_at, actor)
+  values (p_request, v_title, round(p_mult, 2), v_from, v_to, v_actor)
+  returning * into v_event;
+
+  if coalesce(p_push, true) and v_from <= now() + interval '1 minute' then
+    for v_user in select p.id from public.profiles p loop
+      perform public.push_enqueue(v_user, 'REWARD_EVENT',
+        jsonb_build_object('mult', trim(trailing '.' from trim(trailing '0' from round(p_mult, 2)::text)),
+                           'hours', trim(trailing '.' from trim(trailing '0' from round(p_hours, 1)::text)),
+                           'title', v_title), 'run');
+      v_pushed := v_pushed + 1;
+    end loop;
+  end if;
+
+  insert into public.admin_audit (actor, action, target, detail)
+  values (null, 'ops_event_start', v_event.id::text,
+          jsonb_build_object('by', v_actor, 'title', v_title, 'mult', v_event.mult,
+                             'starts_at', v_from, 'ends_at', v_to,
+                             'confirmed', nullif(btrim(coalesce(p_confirm, '')), '') is not null));
+
+  return jsonb_build_object('ok', true, 'event', economy.reward_event_json(v_event), 'replay', false);
+end $$;
+revoke all on function public.ops_event_start(text, uuid, text, numeric, numeric, timestamptz, boolean, text) from public;
+grant execute on function public.ops_event_start(text, uuid, text, numeric, numeric, timestamptz, boolean, text) to anon, authenticated;
+
+-- ops_event_cancel 은 0106 그대로다(economy.ops_actor 가 세션을 본다 · 끄기는 다시 확인 없음).
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0115_waitlist_close.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════
+--  0115 — 사전 등록 마감 · 타워 게임은 누구나 (2026-11-18)
 --
 --  사용자 "홈페이지 사전예약 오늘 11시 59분에 닫아서 마감" → "게임은 계속으로".
 --  1) 마감 시각 설정 waitlist_closes_at(문자열 timestamptz, 비우면 마감 없음). 지나면 등록은 {ok:false, message:'waitlist closed'}.

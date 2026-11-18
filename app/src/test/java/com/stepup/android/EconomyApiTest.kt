@@ -145,6 +145,10 @@ class EconomyApiTest {
     @Test fun drawStatusAndPremiumDrawGoThroughTheServer() = runBlocking {
         val http = Http { url ->
             when (url.substringAfterLast('/')) {
+                // 0112 전 서버 — 현황 2판이 없으면 예전 draw_status 를 읽는다(UpdateRewardDrawTest 가 2판을 본다)
+                "draw_status_v2" -> HttpResponse(
+                    404, """{"code":"PGRST202","message":"Could not find the function public.draw_status_v2 without parameters in the schema cache"}""",
+                )
                 "draw_status" -> HttpResponse(200, """[{"daily_left":2,"daily_total":3,"signup_left":10,"signup_granted":10,
                     "wallet_linked":true,"gift_on_link":0,"gift_left":9,"run_left":1,"genesis_left":0,
                     "run_progress_m":600.5,"run_step_m":1000,"run_today":1,"run_daily_cap":10,"chain_paused":false}]""")

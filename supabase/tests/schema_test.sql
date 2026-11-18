@@ -94,12 +94,12 @@ begin
     and has_table_privilege('service_role', 'public.waitlist_share_claims', 'INSERT'),
     '서버 역할은 대기 명단에 접근할 수 있다');
 end $$;
--- 사전 등록 마감(0106): 지난 시각이면 등록을 받지 않는다 — 확인한 뒤 아래 등록 검사를 위해 마감을 비운다
+-- 사전 등록 마감(0115): 지난 시각이면 등록을 받지 않는다 — 확인한 뒤 아래 등록 검사를 위해 마감을 비운다
 update public.economy_settings set value = to_jsonb('2020-01-01T00:00:00+09:00'::text) where key = 'waitlist_closes_at';
 set role anon;
 do $$
 begin
-  perform pg_temp.ok(public.waitlist_register('Closed@RunnerMail.com', true, '')->>'message' = 'waitlist closed', '마감 뒤에는 사전 등록을 받지 않는다(0106)');
+  perform pg_temp.ok(public.waitlist_register('Closed@RunnerMail.com', true, '')->>'message' = 'waitlist closed', '마감 뒤에는 사전 등록을 받지 않는다(0115)');
 end $$;
 reset role;
 update public.economy_settings set value = 'null'::jsonb where key = 'waitlist_closes_at';
@@ -750,6 +750,8 @@ $$;
 insert into public.sup_ledger (user_id, kind, amount, description) values
   ('22222222-2222-2222-2222-222222222222', 'EARN_WALK', 10000, '검사용'),
   ('33333333-3333-3333-3333-333333333333', 'EARN_WALK', 10000, '검사용');
+-- 거래소는 운영에서 멈춰 둔다(0108 market_trading_enabled 기본 false). 거래 규칙 검사는 연 채로 하고, 멈춤은 0108 절에서 본다
+update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';
 
 set role authenticated;
 
@@ -7714,8 +7716,8 @@ begin
     pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
   perform pg_temp.ok(r.verdict = 'FLAGGED' and r.points_awarded > 0
                      and (select verdict_reason from public.walk_sessions where id = r.session_id) like '%과속이 이어져%'
-                     and (select durability_now from public.my_sneakers() where id = v_id) = v_now / 2 - 100,
-    '멈춘 러닝은 FLAGGED 로 남고 적립 · 닳기는 그대로');
+                     and (select durability_now from public.my_sneakers() where id = v_id) = (v_now - 100) / 2,
+    '멈춘 러닝은 FLAGGED 로 남고 적립 · 닳기는 그대로 — 패널티는 닳은 뒤 남은 것의 절반(0110)');
   -- 금지 시간(멈춘 뒤 5분)에 시작한 러닝은 무효
   select * into r from public.record_session(v_stop + interval '5 minutes', v_stop + interval '9 minutes', 400, 240,
     pg_temp.track(v_stop + interval '5 minutes', 240, 0.00001), 0, 1, '', false);
@@ -10658,11 +10660,1668 @@ do $$
 declare r jsonb;
 begin
   r := public.tower_join('guest@runnermail.com', '손님 러너');
-  perform pg_temp.ok((r->>'ok')::boolean and (r->>'runs_left')::int = 1, '타워: 사전 등록 안 한 이메일도 게임 손님으로 참가(0106)');
-  perform pg_temp.ok((public.tower_start('guest@runnermail.com')->>'ok')::boolean, '타워: 게임 손님도 오늘의 도전을 시작한다(0106)');
-  perform pg_temp.ok(public.tower_join('bad', '러너')->>'code' = 'email', '타워: 이메일 모양이 아니면 거절(0106)');
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'runs_left')::int = 1, '타워: 사전 등록 안 한 이메일도 게임 손님으로 참가(0115)');
+  perform pg_temp.ok((public.tower_start('guest@runnermail.com')->>'ok')::boolean, '타워: 게임 손님도 오늘의 도전을 시작한다(0115)');
+  perform pg_temp.ok(public.tower_join('bad', '러너')->>'code' = 'email', '타워: 이메일 모양이 아니면 거절(0115)');
 end $$;
 reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0106 아이템 — 가방 · 운영자 지급 · 러닝 아이템 · 보상 이벤트 (2026-11-17)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 아이템 · 운영자 지급 · 보상 이벤트(0106) ─────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('10600000-0000-0000-0000-000000000001', 'Runner106@Test.com', '{"full_name":"아이템러너"}'),
+  ('10600000-0000-0000-0000-000000000002', 'quiet106@test.com', '{"full_name":"조용한러너"}');
+insert into fix (k, v) select 'shoe106', economy.draw_create('10600000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'ops106', economy.ops_key_new('검사 운영자');
+-- 0114 부터 운영자 함수는 로그인한 세션 번호만 받는다 — 키로 한 번 로그인해 둔다(키는 큰 일의 다시 확인에 쓴다)
+insert into fix (k, v) select 'ops106s', public.ops_login(pg_temp.fx('ops106'))->>'session';
+insert into public.push_tokens (token, user_id) values
+  ('token-106-runner-aaaaaaaaaaaaaaaa', '10600000-0000-0000-0000-000000000001'),
+  ('token-106-quiet-aaaaaaaaaaaaaaaaa', '10600000-0000-0000-0000-000000000002');
+-- 두 번째 사람은 이벤트 소식을 껐다
+insert into public.notify_prefs (user_id, event_news) values ('10600000-0000-0000-0000-000000000002', false)
+on conflict (user_id) do update set event_news = false;
+delete from public.push_outbox;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 5 from economy.item_kinds where enabled), '아이템 종류 다섯(0106)');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'economy.item_batches', 'select')
+                     and not has_table_privilege('anon', 'public.user_items', 'select')
+                     and not has_table_privilege('authenticated', 'public.user_items', 'insert')
+                     and not has_table_privilege('authenticated', 'public.user_items', 'update'),
+    '가방은 읽기만 · 지급 기록은 앱이 못 본다(0106)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.items_me()', 'execute')
+                     and not has_function_privilege('anon', 'public.item_use(text, uuid, bigint)', 'execute')
+                     and not has_function_privilege('anon', 'public.run_items_use(timestamptz, text[])', 'execute')
+                     and not has_function_privilege('authenticated', 'economy.item_add(uuid, text, int)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_key_new(text)', 'execute'),
+    '아이템 함수는 로그인한 사람만 · 넣기와 키 만들기는 서버만(0106)');
+end $$;
+
+-- 운영자: 지급
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('ops106s');
+  r jsonb;
+begin
+  call pg_temp.must_fail($q$select public.ops_overview('wrong-key')$q$, '틀린 키로는 운영자 함수를 못 부른다(0106)');
+  r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000a1', 'RUN_BOOSTER', 2, '출시 기념',
+                             array[' runner106@test.com ', 'nobody106@test.com']);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int = 1 and r->'missing' = '["nobody106@test.com"]'::jsonb,
+    '이메일 명단으로 지급 — 대소문자 · 공백 무시, 못 찾은 이메일은 돌려준다(0106)');
+  r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000a1', 'RUN_BOOSTER', 2, '출시 기념',
+                             array['runner106@test.com']);
+  perform pg_temp.ok((r->>'replay')::boolean, '같은 요청 번호의 지급은 다시 주지 않는다(0106)');
+  perform pg_temp.ok(public.ops_item_grant(v_key, gen_random_uuid(), 'NOPE', 1, '사유 있음', array['runner106@test.com'])->>'code' = 'kind'
+                     and public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 100, '사유 있음', array['runner106@test.com'])->>'code' = 'qty'
+                     and public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '', array['runner106@test.com'])->>'code' = 'reason'
+                     and public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '사유 있음', array['nobody106@test.com'])->>'code' = 'no_target',
+    '지급 검사 — 종류 · 개수 · 사유 · 받을 사람(0106)');
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'REWARD_DOUBLE', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_DRINK', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'DURABILITY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  r := public.ops_user_find(v_key, 'runner106');
+  perform pg_temp.ok(jsonb_array_length(r) = 1 and (r->0->'items'->>'RUN_BOOSTER')::int = 2 and r->0->>'name' = '아이템러너',
+    '운영자 사람 찾기 — 이메일 일부 · 가진 아이템(0106)');
+  r := public.ops_overview(v_key);
+  perform pg_temp.ok(r->>'actor' = '검사 운영자' and jsonb_array_length(r->'kinds') = 5 and jsonb_array_length(r->'batches') >= 5,
+    '운영자 한눈에 — 종류 · 최근 지급(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select qty from public.user_items where user_id = '10600000-0000-0000-0000-000000000001' and kind = 'RUN_BOOSTER') = 2,
+    '지급은 한 번만 가방에 들어간다(0106)');
+  perform pg_temp.ok((select count(*) = 1 and bool_and(link = 'bag' and args->>'item' = 'RUN_BOOSTER' and args->>'qty' = '2')
+                        from public.push_outbox where kind = 'ITEM_GRANTED'),
+    '지급 푸시는 한 번 · 푸시를 끈 지급은 보내지 않는다(0106)');
+  perform pg_temp.ok((select count(*) >= 5 from public.admin_audit where action = 'ops_item_grant' and detail->>'by' = '검사 운영자'),
+    '지급은 감사 기록에 남는다(0106)');
+end $$;
+
+-- 앱: 가방 · 러닝 아이템
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_shoe bigint := pg_temp.fx('shoe106')::bigint;
+  v_a timestamptz := now() - interval '30 hours';
+  v_b timestamptz := now() - interval '28 hours';
+  r jsonb;
+  s record;
+begin
+  perform public.sneaker_equip(v_shoe);
+  r := public.items_me();
+  perform pg_temp.ok(jsonb_array_length(r->'items') = 5 and r->'event' = 'null'::jsonb
+                     and (select (x->>'qty')::int from jsonb_array_elements(r->'items') x where x->>'kind' = 'RUN_BOOSTER') = 2
+                     and (select x->>'mode' from jsonb_array_elements(r->'items') x where x->>'kind' = 'ENERGY_RESET') = 'NOW',
+    '내 가방 — 종류 · 개수 · 쓰는 때(0106)');
+  perform pg_temp.ok((select count(*) from public.user_items) = 5, '가방은 내 것만 보인다(0106)');
+
+  -- 아이템 없는 러닝(기준)
+  select * into s from public.record_session(v_a, v_a + interval '601 seconds', 900, 601, pg_temp.track(v_a, 600, 0.00001), 0, 1, '', false, v_shoe);
+  insert into fix (k, v) values ('base106', s.points_awarded::text);
+
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['RUN_BOOSTER', 'REWARD_DOUBLE'])$q$, v_b),
+    '같은 종류(적립 배수)는 한 러닝에 함께 못 쓴다(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['DURABILITY_RESET'])$q$, v_b),
+    '바로 쓰는 아이템은 러닝에 못 붙인다(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['RUN_BOOSTER'])$q$, now() - interval '8 days'),
+    '오래된 러닝에는 아이템을 못 붙인다(0106)');
+  r := public.run_items_use(v_b, array['RUN_BOOSTER', 'ENERGY_DRINK']);
+  perform pg_temp.ok((r->>'mult')::numeric = 1.5 and (r->>'energy_factor')::numeric = 0.5 and jsonb_array_length(r->'kinds') = 2,
+    '출발 때 고른 아이템 — 적립 1.5배 · 에너지 절반(0106)');
+  r := public.run_items_use(v_b, array['RUN_BOOSTER', 'ENERGY_DRINK']);
+  perform pg_temp.ok((select qty from public.user_items where kind = 'RUN_BOOSTER') = 1
+                     and (select qty from public.user_items where kind = 'ENERGY_DRINK') = 0,
+    '같은 러닝에 다시 보내도 한 번만 빠진다(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['REWARD_DOUBLE'])$q$, v_b),
+    '이미 적립 배수 아이템을 고른 러닝에 같은 종류를 더하지 못한다(0106)');
+
+  select * into s from public.record_session(v_b, v_b + interval '601 seconds', 900, 601, pg_temp.track(v_b, 600, 0.00002), 0, 1, '', false, v_shoe);
+  perform pg_temp.ok(s.verdict <> 'VOID' and s.points_awarded = round(pg_temp.fx('base106')::numeric * 1.5, 4),
+    '러닝 부스터를 고른 러닝은 적립 1.5배(0106)');
+  call pg_temp.must_fail(format($q$select public.run_items_use(%L, array['REWARD_DOUBLE'])$q$, v_a),
+    '이미 기록한 러닝에는 아이템을 못 붙인다(0106)');
+end $$;
+reset role;
+do $$
+declare
+  v_user uuid := '10600000-0000-0000-0000-000000000001';
+  v_a public.walk_sessions;
+  v_b public.walk_sessions;
+begin
+  select * into v_a from public.walk_sessions where user_id = v_user and started_at < now() - interval '29 hours';
+  select * into v_b from public.walk_sessions where user_id = v_user and started_at > now() - interval '29 hours';
+  perform pg_temp.ok(v_a.reward_mult = 1 and v_b.reward_mult = 1.5, '적용된 배수가 러닝 기록에 남는다(0106)');
+  -- 두 값은 저마다 소수 넷째 자리로 반올림된다 — 신발 착화감(뽑기마다 다름)에 따라 반의 반올림이 0.0001 어긋날 수 있다
+  perform pg_temp.ok(v_a.energy_used > 0 and abs(v_b.energy_used - v_a.energy_used / 2) <= 0.0001, '에너지 드링크를 고른 러닝은 에너지를 절반만 쓴다(0106)');
+  perform pg_temp.ok((select count(*) = 2 and bool_and(session_id = v_b.id) from economy.item_uses where user_id = v_user and run_started_at = v_b.started_at),
+    '쓴 아이템이 그 러닝에 이어진다(0106)');
+end $$;
+
+-- 보상 이벤트
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('ops106s');
+  r jsonb;
+begin
+  perform pg_temp.ok(public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 1, 24)->>'code' = 'mult'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 6, 24)->>'code' = 'mult'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 2, 0)->>'code' = 'hours'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '', 2, 24)->>'code' = 'title'
+                     and public.ops_event_start(v_key, gen_random_uuid(), '주말 2배', 2, 24, now() - interval '1 hour')->>'code' = 'past',
+    '보상 이벤트 검사 — 배수 · 기간 · 이름 · 시작 시각(0106)');
+  r := public.ops_event_start(v_key, '10600000-0000-0000-0000-0000000000e1', '주말 2배', 2, 24);
+  perform pg_temp.ok((r->>'ok')::boolean and r->'event'->>'state' = 'LIVE' and (r->'event'->>'mult')::numeric = 2, '보상 이벤트 시작(0106)');
+  insert into fix (k, v) values ('event106', r->'event'->>'id');
+  perform pg_temp.ok((public.ops_event_start(v_key, '10600000-0000-0000-0000-0000000000e1', '주말 2배', 2, 24)->>'replay')::boolean,
+    '같은 요청 번호의 이벤트는 다시 만들지 않는다(0106)');
+  perform pg_temp.ok(public.ops_event_start(v_key, gen_random_uuid(), '겹치는 이벤트', 3, 2, now() + interval '2 hours')->>'code' = 'overlap',
+    '보상 이벤트는 겹치지 않는다(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from public.push_outbox
+                       where kind = 'REWARD_EVENT' and user_id = '10600000-0000-0000-0000-000000000001'
+                         and args->>'mult' = '2' and args->>'hours' = '24' and link = 'run')
+                     and not exists (select 1 from public.push_outbox
+                                      where kind = 'REWARD_EVENT' and user_id = '10600000-0000-0000-0000-000000000002'),
+    '이벤트 시작 푸시 — 이벤트 소식을 끈 사람에게는 보내지 않는다(0106)');
+end $$;
+-- 이벤트가 두 시간 전에 시작한 것으로 돌려 그 사이의 러닝을 올린다
+update economy.reward_events set starts_at = now() - interval '2 hours' where id = pg_temp.fx('event106')::bigint;
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_shoe bigint := pg_temp.fx('shoe106')::bigint;
+  v_c timestamptz := now() - interval '90 minutes';
+  r jsonb;
+  s record;
+begin
+  r := public.items_me();
+  perform pg_temp.ok((r->'event'->>'mult')::numeric = 2 and r->'event'->>'title' = '주말 2배', '앱이 지금 켜진 보상 이벤트를 읽는다(0106)');
+  -- 이벤트(2배) 중에 러닝 부스터(1.5배)를 써도 겹치지 않는다 — 큰 쪽 하나
+  r := public.run_items_use(v_c, array['RUN_BOOSTER']);
+  perform pg_temp.ok((r->>'mult')::numeric = 2, '적립 배수는 겹치지 않는다 — 이벤트 2배와 부스터 1.5배면 2배(0106)');
+  select * into s from public.record_session(v_c, v_c + interval '601 seconds', 900, 601, pg_temp.track(v_c, 600, 0.00003), 0, 1, '', false, v_shoe);
+  perform pg_temp.ok(s.verdict <> 'VOID' and s.points_awarded = round(pg_temp.fx('base106')::numeric * 2, 4),
+    '보상 이벤트 중에 시작한 러닝은 적립 2배(0106)');
+end $$;
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('ops106s');
+  r jsonb;
+begin
+  r := public.ops_event_cancel(v_key, pg_temp.fx('event106')::bigint);
+  perform pg_temp.ok((r->>'ok')::boolean and r->'event'->>'state' = 'CANCELLED', '보상 이벤트 취소(0106)');
+  perform pg_temp.ok(public.ops_event_cancel(v_key, pg_temp.fx('event106')::bigint)->>'code' = 'not_found', '끈 이벤트는 다시 못 끈다(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(economy.run_reward_mult('10600000-0000-0000-0000-000000000002', now()) = 1
+                     and economy.run_reward_mult('10600000-0000-0000-0000-000000000002', now() - interval '1 hour') = 2,
+    '취소한 이벤트는 그때부터 꺼진다 — 그 전에 시작한 러닝은 그대로(0106)');
+end $$;
+
+-- 바로 쓰는 아이템
+-- 오늘(한국 날짜) 쓴 에너지가 있게 — 위 러닝들이 자정 앞뒤로 갈려도 검사가 흔들리지 않는다
+insert into public.energy_days (user_id, day, used)
+values ('10600000-0000-0000-0000-000000000001', economy.game_day(now()), 3)
+on conflict (user_id, day) do update set used = public.energy_days.used + 3;
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_shoe bigint := pg_temp.fx('shoe106')::bigint;
+  v_now int; v_max int;
+  r jsonb;
+begin
+  select durability_now, durability_max into v_now, v_max from public.my_sneakers() where id = v_shoe;
+  perform pg_temp.ok(v_now = v_max - 150, '러닝 세 번(10분씩)에 150 닳았다(0106 준비)');
+  call pg_temp.must_fail($q$select public.item_use('RUN_BOOSTER', gen_random_uuid())$q$, '러닝 아이템은 바로 못 쓴다(0106)');
+  r := public.item_use('DURABILITY_RESET', '10600000-0000-0000-0000-0000000000d1');
+  perform pg_temp.ok((r->>'left')::int = 0 and not (r->>'replay')::boolean
+                     and (select durability_now = durability_max from public.my_sneakers() where id = v_shoe),
+    '내구도 초기화권 — 신은 신발 내구도가 가득(0106)');
+  r := public.item_use('DURABILITY_RESET', '10600000-0000-0000-0000-0000000000d1');
+  perform pg_temp.ok((r->>'replay')::boolean and (r->>'left')::int = 0, '같은 요청 번호로 다시 오면 다시 쓰지 않는다(0106)');
+  call pg_temp.must_fail($q$select public.item_use('DURABILITY_RESET', gen_random_uuid())$q$, '없는 아이템은 못 쓴다(0106)');
+  r := public.item_use('ENERGY_RESET', gen_random_uuid());
+  perform pg_temp.ok((r->>'left')::int = 0, '하루 할당량 초기화권을 썼다(0106)');
+end $$;
+reset role;
+do $$
+declare v_user uuid := '10600000-0000-0000-0000-000000000001';
+begin
+  perform pg_temp.ok(economy.energy_left(v_user, economy.game_day(now())) = economy.energy_max(v_user),
+    '하루 할당량 초기화권 — 오늘 에너지가 가득(0106)');
+end $$;
+
+-- 가득 찬 신발 · 안 쓴 에너지에는 아이템이 사라지지 않는다, 지급 되돌리기
+set role anon;
+do $$
+declare v_key text := pg_temp.fx('ops106s'); r jsonb;
+begin
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'DURABILITY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  perform public.ops_item_grant(v_key, gen_random_uuid(), 'ENERGY_RESET', 1, '검사 지급', array['runner106@test.com'], null, false);
+  r := public.ops_item_grant(v_key, '10600000-0000-0000-0000-0000000000b1', 'ENERGY_DRINK', 3, '되돌릴 지급', array['runner106@test.com'], null, false);
+  insert into fix (k, v) values ('batch106', r->>'batch');
+  r := public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '전체 지급', null, 'ALL', false, pg_temp.fx('ops106'));
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int >= 2, '전체에게 지급(0106)');
+  perform pg_temp.ok(public.ops_item_grant(v_key, gen_random_uuid(), 'RUN_BOOSTER', 1, '대상 오류', null, 'EVERYONE')->>'code' = 'audience',
+    '모르는 대상은 거절(0106)');
+end $$;
+set role authenticated;
+call pg_temp.login('10600000-0000-0000-0000-000000000001');
+do $$
+declare r jsonb;
+begin
+  call pg_temp.must_fail($q$select public.item_use('DURABILITY_RESET', gen_random_uuid())$q$, '내구도가 가득한 신발에는 초기화권을 쓰지 않는다(0106)');
+  call pg_temp.must_fail($q$select public.item_use('ENERGY_RESET', gen_random_uuid())$q$, '오늘 쓴 에너지가 없으면 초기화권을 쓰지 않는다(0106)');
+  perform pg_temp.ok((select qty from public.user_items where kind = 'DURABILITY_RESET') = 1
+                     and (select qty from public.user_items where kind = 'ENERGY_RESET') = 1,
+    '못 쓴 아이템은 가방에 그대로(0106)');
+  -- 되돌릴 지급 3개 가운데 하나를 러닝에 쓴다
+  r := public.run_items_use(now() - interval '10 minutes', array['ENERGY_DRINK']);
+  perform pg_temp.ok((select qty from public.user_items where kind = 'ENERGY_DRINK') = 2, '에너지 드링크 하나를 썼다(0106 준비)');
+end $$;
+set role anon;
+do $$
+declare v_key text := pg_temp.fx('ops106s'); r jsonb;
+begin
+  r := public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint, pg_temp.fx('ops106'));
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'taken')::int = 2 and (r->>'short')::int = 1,
+    '지급 되돌리기 — 갖고 있는 만큼만 거두고 이미 쓴 것은 센다(0106)');
+  perform pg_temp.ok(public.ops_grant_revoke(v_key, pg_temp.fx('batch106')::bigint, pg_temp.fx('ops106'))->>'code' = 'revoked', '되돌린 지급은 다시 못 되돌린다(0106)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select qty from public.user_items where user_id = '10600000-0000-0000-0000-000000000001' and kind = 'ENERGY_DRINK') = 0,
+    '되돌린 뒤 가방에서 빠졌다(0106)');
+end $$;
+-- 계정을 지우면 가방 · 받은 기록 · 쓴 기록도 지워진다
+delete from auth.users where id = '10600000-0000-0000-0000-000000000002';
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from public.user_items where user_id = '10600000-0000-0000-0000-000000000002')
+                     and not exists (select 1 from economy.item_grants where user_id = '10600000-0000-0000-0000-000000000002'),
+    '계정을 지우면 가방과 받은 기록도 지워진다(0106)');
+end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0107 거래소를 도감 모델 단위로 — 판매하기가 그 모델 장으로 (2026-11-17)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 거래소 모델 단위(0107) ─────────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email) values
+  ('10700000-0000-0000-0000-000000000001', 'seller107@test.com'),
+  ('10700000-0000-0000-0000-000000000002', 'buyer107@test.com');
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('10700000-0000-0000-0000-000000000002', 'EARN_WALK', 5000, '검사용');
+-- 같은 "NONE · 레어 · 3" 줄에 서로 다른 두 모델(타비 1119 · 패커블 1120) — 0066 뒤 신발은 변형이 그림과 상관없다
+create or replace function pg_temp.shoe107(p_model int, p_level int default 1) returns bigint
+language plpgsql security definer as $$
+declare v bigint;
+begin
+  insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin, model_id)
+  values ('10700000-0000-0000-0000-000000000001', 'NONE', 'RARE', 3, p_level, 100, 'PAID_DRAW', p_model)
+  returning id into v;
+  return v;
+end $$;
+insert into fix (k, v) values
+  ('tabi107', pg_temp.shoe107(1119, 3)::text),
+  ('pack107', pg_temp.shoe107(1120, 3)::text),
+  ('tabi107b', pg_temp.shoe107(1119, 1)::text);
+do $$ begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.market_bid_model(int, int, numeric, uuid)', 'execute')
+                     and has_function_privilege('authenticated', 'public.market_bid_model(int, int, numeric, uuid)', 'execute')
+                     and not has_function_privilege('anon', 'public.market_my_bids_v2()', 'execute'),
+    '모델 입찰 · 내 입찰은 로그인한 사람만(0107)');
+  perform pg_temp.ok(has_table_privilege('authenticated', 'public.market_quotes_v2', 'select')
+                     and has_table_privilege('authenticated', 'public.market_asks_v2', 'select')
+                     and has_column_privilege('authenticated', 'public.market_sneakers', 'model_id', 'select')
+                     and not has_column_privilege('authenticated', 'public.market_sneakers', 'owner_id', 'select'),
+    '모델 번호는 열고 주인은 그대로 가린다(0107)');
+end $$;
+
+-- 산 사람이 타비에 모델 입찰 — 아직 매물이 없어 기다린다
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$
+declare v_bid bigint;
+begin
+  call pg_temp.must_fail($q$ select public.market_bid_model(9999, 1, 300) $q$, '없는 모델에는 걸 수 없다(0107)');
+  call pg_temp.must_fail($q$ select public.market_bid_model(1119, 0, 300) $q$, '레벨 조건이 1 아래면 거절(0107)');
+  v_bid := public.market_bid_model(1119, 2, 300);
+  perform pg_temp.ok(v_bid is not null
+                     and (select model_id = 1119 and faction = 'NONE' and rarity = 'RARE' and variant = 0
+                            from public.market_bid_book_v2 where bid_id = v_bid),
+    '모델에 건 입찰 — 등급은 모델이 정한다(0107)');
+  perform pg_temp.ok((select count(*) from public.market_my_bids_v2() where model_id = 1119) = 1, '내 입찰에 모델 번호(0107)');
+  -- 모델 입찰은 (NONE, 레어, 0)으로 적힌다 — 예전 앱의 그 장에 섞여 보이면 눌러도 "모델이 다릅니다"다
+  perform pg_temp.ok(not exists (select 1 from public.market_bid_book where bid_id = v_bid)
+                     and not exists (select 1 from public.market_quotes
+                                      where faction = 'NONE' and rarity = 'RARE' and variant = 0 and bid is not null)
+                     and (select bid from public.market_quotes_v2 where model_id = 1119) = 300,
+    '모델 입찰은 예전 장부 · 시세판에 섞이지 않고 2판에만 보인다(0107)');
+  insert into fix (k, v) values ('bid107', v_bid::text);
+end $$;
+
+-- 판 사람: 같은 줄의 다른 모델(패커블)은 타비 입찰에 팔리지 않는다
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$
+declare v_listing bigint;
+begin
+  call pg_temp.must_fail(
+    format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('pack107'), pg_temp.fx('bid107')),
+    '같은 줄이라도 다른 모델은 모델 입찰에 팔 수 없다(0107)');
+  call pg_temp.must_fail(
+    format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('tabi107b'), pg_temp.fx('bid107')),
+    '같은 모델이라도 레벨 조건이 모자라면 못 판다(0107)');
+  v_listing := public.market_list(pg_temp.fx('pack107')::bigint, 200);
+  perform pg_temp.ok(v_listing is not null, '다른 모델을 입찰보다 싸게 내놓아도 타비 입찰에 체결되지 않고 매물로 남는다(0107)');
+  insert into fix (k, v) values ('packlisting107', v_listing::text);
+  -- 타비는 입찰 값 이하로 내놓으면 바로 그 입찰에 팔린다
+  v_listing := public.market_list(pg_temp.fx('tabi107')::bigint, 250);
+  perform pg_temp.ok(v_listing is null, '같은 모델은 걸려 있던 입찰에 바로 팔린다(0107)');
+end $$;
+
+reset role;
+do $$ begin
+  perform pg_temp.ok((select model_id from public.market_trades where sneaker_id = pg_temp.fx('tabi107')::bigint) = 1119
+                     and (select price from public.market_trades where sneaker_id = pg_temp.fx('tabi107')::bigint) = 300,
+    '체결 줄에 모델이 저절로 적힌다 · 값은 입찰 값(0107)');
+  perform pg_temp.ok((select status from public.market_bids where id = pg_temp.fx('bid107')::bigint) = 'FILLED', '모델 입찰은 채워졌다(0107)');
+end $$;
+
+-- 시세판 2판: 같은 줄의 두 모델이 따로 한 줄씩
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$ begin
+  perform pg_temp.ok((select last_price from public.market_quotes_v2 where model_id = 1119) = 300
+                     and (select ask from public.market_quotes_v2 where model_id = 1119) is null
+                     and (select ask from public.market_quotes_v2 where model_id = 1120) = 200
+                     and not exists (select 1 from public.market_quotes_v2 where model_id is null and faction = 'NONE'
+                                       and rarity = 'RARE' and variant = 3),
+    '시세판 2판은 모델마다 한 줄 — 같은 줄의 다른 모델이 섞이지 않는다(0107)');
+  perform pg_temp.ok((select count(*) from public.market_asks_v2 where model_id = 1120) = 1
+                     and (select count(*) from public.market_asks_v2 where model_id = 1119) = 0,
+    '매물 장부도 모델로 고른다(0107)');
+  perform pg_temp.ok((select count(*) from public.market_my_trades_v2() where model_id = 1119 and not sold) = 1, '내 거래에 모델 번호(0107)');
+  -- 패커블 매물 값(200)보다 비싸게 패커블에 걸면 그 매물을 바로 산다
+  perform pg_temp.ok(public.market_bid_model(1120, 1, 220) is null, '매물이 있으면 기다리지 않는다(0107)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status from public.market_listings where id = pg_temp.fx('packlisting107')::bigint) = 'SOLD'
+                     and (select price from public.market_trades where sneaker_id = pg_temp.fx('pack107')::bigint) = 200
+                     and (select owner_id from public.market_sneakers where id = pg_temp.fx('pack107')::bigint)
+                         = '10700000-0000-0000-0000-000000000002',
+    '모델 입찰은 그 모델 매물을 바로 산다 — 값은 매물 값(0107)');
+end $$;
+-- 예전 앱이 거는 입찰(속성 × 등급 × 변형)은 예전 뜻 그대로 — 그 줄의 어느 모델이든
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$ begin
+  insert into fix (k, v) values ('oldbid107', public.market_bid('NONE', 'RARE', 3, 1, 150)::text);
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$ begin
+  perform pg_temp.ok(public.market_sell_now(pg_temp.fx('tabi107b')::bigint, pg_temp.fx('oldbid107')::bigint) is not null,
+    '예전 입찰은 그 줄의 신발이면 어느 모델이든 받는다(0107)');
+end $$;
+reset role;
+-- 강화 재료로 태운 신발(0054 — 줄은 BURNED 로 남는다)은 "보유"에 세지 않는다
+do $$
+declare
+  v_v2 int := (select supply from public.market_quotes_v2 where model_id = 1119);
+  v_v1 int := (select supply from public.market_quotes where faction = 'NONE' and rarity = 'RARE' and variant = 3);
+  v_burned bigint := pg_temp.shoe107(1119, 1);
+begin
+  update public.market_sneakers set owner_id = null, status = 'BURNED' where id = v_burned;
+  perform pg_temp.ok(v_v2 >= 2 and (select supply from public.market_quotes_v2 where model_id = 1119) = v_v2
+                     and (select supply from public.market_quotes where faction = 'NONE' and rarity = 'RARE' and variant = 3) = v_v1,
+    '태운 신발은 보유 수에 세지 않는다 — 2판 · 예전 시세판 모두(0107)');
+end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0108 거래소 거래 멈춤 — 새 매물 · 새 입찰 · 체결을 받지 않고, 거두기는 된다 (2026-11-17)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 거래소 거래 멈춤(0108) ─────────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+-- 멈추기 전에 매물 하나 · 입찰 하나를 걸어 둔다(멈춘 뒤에도 거둘 수 있어야 한다)
+insert into fix (k, v) values ('lock108', pg_temp.shoe107(1101, 1)::text), ('keep108', pg_temp.shoe107(1102, 1)::text);
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('listing108', public.market_list(pg_temp.fx('lock108')::bigint, 400)::text);
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$ begin
+  -- keep108(1102) 이 받을 수 있는 입찰 — 멈춘 동안 즉시 판매가 막히는 것은 멈춤 때문이어야 한다
+  insert into fix (k, v) values ('bid108', public.market_bid_model(1102, 1, 100)::text);
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'market_trading_enabled'), '거래 멈춤 설정이 있다(0108)');
+end $$;
+update public.economy_settings set value = 'false'::jsonb where key = 'market_trading_enabled';
+
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+call pg_temp.must_fail(format($q$ select public.market_list(%s, 300) $q$, pg_temp.fx('keep108')),
+  '멈춘 동안 판매 등록은 안 된다(0108)');
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+call pg_temp.must_fail(format($q$ select public.market_buy_now(%s) $q$, pg_temp.fx('listing108')),
+  '멈춘 동안 즉시 구매는 안 된다(0108)');
+call pg_temp.must_fail($q$ select public.market_bid_model(1102, 1, 500) $q$, '멈춘 동안 모델 입찰은 안 된다(0108)');
+call pg_temp.must_fail($q$ select public.market_bid('NONE', 'RARE', 3, 1, 500) $q$, '멈춘 동안 예전 입찰도 안 된다(0108)');
+-- 거절 코드는 22023(HTTP 400) — 55000 은 PostgREST 가 500 으로 보내 앱이 "연결이 끊겼어요 · 다시 누르세요"로 읽는다
+do $$ begin
+  perform public.market_bid_model(1102, 1, 500);
+  perform pg_temp.ok(false, '멈춤 거절이 나와야 한다(0108)');
+exception when others then
+  perform pg_temp.ok(sqlstate = '22023' and sqlerrm like '%거래소를 쉬고%',
+    '멈춤 거절은 앱이 까닭을 읽는 코드로 온다 — ' || sqlstate || '(0108)');
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$
+declare v_before numeric;
+begin
+  call pg_temp.must_fail(format($q$ select public.market_sell_now(%s, %s) $q$, pg_temp.fx('keep108'), pg_temp.fx('bid108')),
+    '멈춘 동안 즉시 판매도 안 된다(0108)');
+  perform public.market_cancel_listing(pg_temp.fx('listing108')::bigint);
+end $$;
+call pg_temp.login('10700000-0000-0000-0000-000000000002');
+do $$
+declare v_before numeric := pg_temp.bal('10700000-0000-0000-0000-000000000002');
+begin
+  perform public.market_cancel_bid(pg_temp.fx('bid108')::bigint);
+  perform pg_temp.ok(pg_temp.bal('10700000-0000-0000-0000-000000000002') = v_before + 100,
+    '멈춘 동안에도 걸어 둔 입찰은 거두고 묶인 SUP 를 돌려받는다(0108)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status from public.market_listings where id = pg_temp.fx('listing108')::bigint) = 'CANCELLED'
+                     and (select status from public.market_sneakers where id = pg_temp.fx('lock108')::bigint) = 'OWNED',
+    '멈춘 동안에도 올린 매물은 거둔다(0108)');
+  perform pg_temp.ok(not exists (select 1 from public.market_trades where sneaker_id in (pg_temp.fx('lock108')::bigint, pg_temp.fx('keep108')::bigint)),
+    '멈춘 동안 체결된 것이 없다(0108)');
+end $$;
+-- 다시 열면 거래가 된다
+update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';
+set role authenticated;
+call pg_temp.login('10700000-0000-0000-0000-000000000001');
+do $$ begin
+  perform pg_temp.ok(public.market_list(pg_temp.fx('keep108')::bigint, 300) is not null, '다시 열면 판매 등록이 된다(0108)');
+end $$;
+reset role;
+
+-- 0111 — 친구 초대 코드 "찾을 수 없어요"는 22023(4xx — 앱이 까닭을 보인다). P0002 는 PostgREST 가 500 으로 보낸다
+update public.economy_settings set value = 'true'::jsonb where key = 'invite_enabled';
+set role authenticated;
+call pg_temp.login('1a1a1a1a-0000-0000-0000-000000000003');
+do $$
+declare v_state text;
+begin
+  begin
+    perform public.invite_redeem('STEP-ZZZZZZ');
+  exception when others then
+    v_state := sqlstate;
+  end;
+  perform pg_temp.ok(v_state = '22023', format('없는 초대 코드는 22023 으로 거절한다(0111, 받은 값 %s)', coalesce(v_state, '통과')));
+end $$;
+reset role;
+update public.economy_settings set value = 'false'::jsonb where key = 'invite_enabled';
+
+\echo ''
+\echo '── 신발 고침: 강화 수 · 획득일 · 과속 패널티 순서(0110) ─────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                       where n.nspname = 'public' and p.proname = 'report_overspeed_stop'),
+    'report_overspeed_stop 은 하나뿐이다 — 예전 두 칸 함수가 남지 않는다(0110)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.report_overspeed_stop(timestamptz, timestamptz, bigint)', 'execute')
+                     and not has_function_privilege('anon', 'public.my_forge_successes()', 'execute')
+                     and not has_function_privilege('anon', 'public.my_sneaker_dates()', 'execute')
+                     and has_function_privilege('authenticated', 'public.my_forge_successes()', 'execute')
+                     and has_function_privilege('authenticated', 'public.my_sneaker_dates()', 'execute'),
+    '새 함수는 로그인한 사람만 부른다(0110)');
+end $$;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('11000000-0000-0000-0000-000000000001', 'shoe110@test', '{"full_name":"신발고침"}'),
+  ('11000000-0000-0000-0000-000000000002', 'other110@test', '{"full_name":"남"}');
+insert into fix (k, v) select 'a110', economy.draw_create('11000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'b110', economy.draw_create('11000000-0000-0000-0000-000000000001', 'PAID_DRAW', 'FINISH')::text;
+insert into fix (k, v) select 'x110', economy.draw_create('11000000-0000-0000-0000-000000000002', 'PAID_DRAW', 'FINISH')::text;
+
+-- #7 성공한 강화 수 — 성공만 센다(실패 · 막아 둔 키 · 남의 강화는 빼고)
+insert into public.forge_requests (user_id, request_key, status) values
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'SUCCESS'),
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'SUCCESS'),
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'FAILED'),
+  ('11000000-0000-0000-0000-000000000001', gen_random_uuid(), 'VOID'),
+  ('11000000-0000-0000-0000-000000000002', gen_random_uuid(), 'SUCCESS');
+
+-- #16 획득일 — A 는 만든 날, B 는 만든 뒤 거래소에서 산 날
+update public.market_sneakers set created_at = '2026-01-02 09:00:00+09' where id = pg_temp.fx('a110')::bigint;
+update public.market_sneakers set created_at = '2026-01-01 09:00:00+09' where id = pg_temp.fx('b110')::bigint;
+insert into public.market_trades (sneaker_id, faction, rarity, variant, level, seller_id, buyer_id, price, kind, traded_at)
+select s.id, s.faction, s.rarity, s.variant, s.level, '11000000-0000-0000-0000-000000000002',
+       '11000000-0000-0000-0000-000000000001', 1, 'BY_ASK', '2026-03-04 09:00:00+09'
+  from public.market_sneakers s where s.id = pg_temp.fx('b110')::bigint;
+
+set role authenticated;
+call pg_temp.must_fail($q$select public.my_forge_successes()$q$, '로그인 없이는 강화 수를 묻지 못한다(0110)');
+call pg_temp.login('11000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_a bigint := pg_temp.fx('a110')::bigint;
+  v_b bigint := pg_temp.fx('b110')::bigint;
+  v_x bigint := pg_temp.fx('x110')::bigint;
+begin
+  perform pg_temp.ok(public.my_forge_successes() = 2, '성공한 강화만 센다 — 실패 · 막아 둔 키 · 남의 강화는 빼고(0110)');
+  perform pg_temp.ok((select acquired_at from public.my_sneaker_dates() where id = v_a) = '2026-01-02 09:00:00+09'
+                     and (select acquired_at from public.my_sneaker_dates() where id = v_b) = '2026-03-04 09:00:00+09',
+    '획득일 — 만든 날, 거래소에서 샀으면 산 날(0110)');
+  perform pg_temp.ok(not exists (select 1 from public.my_sneaker_dates() where id = v_x)
+                     and (select count(*) from public.my_sneaker_dates()) = (select count(*) from public.my_sneakers()),
+    '획득일은 내 신발만 — my_sneakers 와 같은 신발(0110)');
+end $$;
+
+-- #11 과속 패널티는 그 러닝의 신발로, 그 러닝을 평소처럼 정산한 뒤
+reset role;
+-- B 는 거의 닳은 신발(50 — 10분) — 절반(25 — 5분)이면 6분 러닝의 수명이 잘린다
+update public.market_sneakers set dur_now = 50 where id = pg_temp.fx('b110')::bigint;
+set role authenticated;
+call pg_temp.login('11000000-0000-0000-0000-000000000001');
+do $$
+declare
+  v_a bigint := pg_temp.fx('a110')::bigint;
+  v_b bigint := pg_temp.fx('b110')::bigint;
+  v_x bigint := pg_temp.fx('x110')::bigint;
+  v_a0 int;
+  j json;
+  r record;
+  v_start timestamptz := now() - interval '30 hours';
+begin
+  perform public.sneaker_equip(v_a);
+  select durability_now into v_a0 from public.my_sneakers() where id = v_a;
+
+  -- B 를 신고 출발해 과속으로 멈췄다(신고가 러닝보다 먼저) — 지금 신은 A 가 아니라 B 가 절반
+  j := public.report_overspeed_stop(v_start, v_start + interval '361 seconds', v_b);
+  perform pg_temp.ok((j->>'sneaker_id')::bigint = v_b and (j->>'durability_before')::int = 50
+                     and (select durability_now from public.my_sneakers() where id = v_b) = 25
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0,
+    '과속 패널티는 출발 신발(p_sneaker)로 — 지금 신은 신발은 그대로(0110)');
+  -- 멈춘 러닝(6분 = 닳음 30)은 신고 전 내구도(50 — 10분)로 정산 — 수명이 잘리지 않는다. 끝값 = (50 − 30) / 2 = 10
+  select * into r from public.record_session(v_start, v_start + interval '361 seconds', 600, 361,
+    pg_temp.track(v_start, 360, 0.00001), 0, 1, '', false, v_b);
+  perform pg_temp.ok(r.verdict = 'FLAGGED' and r.points_awarded > 0 and r.verdict_reason like '%과속이 이어져%'
+                     and r.verdict_reason not like '%내구도가 다 닳은 뒤%',
+    '멈춘 러닝은 신고 전 내구도로 정산한다 — 깎인 내구도로 수명을 자르지 않는다(0110)');
+  perform pg_temp.ok((select durability_now from public.my_sneakers() where id = v_b) = 10
+                     and (select durability_now from public.my_sneakers() where id = v_a) = v_a0,
+    '패널티는 그 러닝이 닳게 한 뒤 남은 것의 절반 — (50 − 30) / 2 = 10(0110)');
+
+  -- 러닝이 먼저 올라가고 신고가 뒤에 왔다 — 그 러닝의 신발(A)을 닳은 뒤 값의 절반으로. 지금 신은 B 는 그대로
+  v_start := now() - interval '26 hours';
+  select * into r from public.record_session(v_start, v_start + interval '601 seconds', 900, 601,
+    pg_temp.track(v_start, 600, 0.00002), 0, 1, '', false, v_a);
+  perform pg_temp.ok(r.verdict <> 'VOID' and (select durability_now from public.my_sneakers() where id = v_a) = v_a0 - 50,
+    '신고 전에 올라간 러닝은 평소처럼 닳는다(0110)');
+  perform public.sneaker_equip(v_b);
+  j := public.report_overspeed_stop(v_start, v_start + interval '601 seconds');
+  perform pg_temp.ok((j->>'sneaker_id')::bigint = v_a
+                     and (select durability_now from public.my_sneakers() where id = v_a) = (v_a0 - 50) / 2
+                     and (select durability_now from public.my_sneakers() where id = v_b) = 10,
+    '이미 올라간 러닝의 신고는 그 러닝의 신발로 — 닳은 뒤 남은 것의 절반, 예전 앱의 두 칸 호출도 받는다(0110)');
+
+  -- 남의 신발 번호면 예전처럼 지금 신은 신발(B)
+  v_start := now() - interval '22 hours';
+  j := public.report_overspeed_stop(v_start, v_start + interval '60 seconds', v_x);
+  perform pg_temp.ok((j->>'sneaker_id')::bigint = v_b and (select durability_now from public.my_sneakers() where id = v_b) = 5,
+    '내 신발이 아닌 번호는 쓰지 않는다 — 지금 신은 신발로(0110)');
+end $$;
+reset role;
+
+-- ═══ 0109 — 크루 · 번개 러닝 버그 고침 ═════════════════════════════════
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('10900000-0000-0000-0000-000000000001', 'a109@test', '{"full_name":"진행109"}'),
+  ('10900000-0000-0000-0000-000000000002', 'b109@test', '{"full_name":"잠든폰"}'),
+  ('10900000-0000-0000-0000-000000000003', 'c109@test', '{"full_name":"셋109"}');
+insert into public.crews (id, owner_id, name)
+values ('10900000-0000-0000-0000-0000000000cc', '10900000-0000-0000-0000-000000000001', '고침 크루'),
+       ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', '다른 크루');
+insert into public.crew_members (crew_id, user_id, role)
+select '10900000-0000-0000-0000-0000000000cc', u::uuid, 'MEMBER'
+  from unnest(array['10900000-0000-0000-0000-000000000001', '10900000-0000-0000-0000-000000000002']) u
+on conflict do nothing;
+insert into public.crew_members (crew_id, user_id, role)
+values ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', 'MEMBER')
+on conflict do nothing;
+update public.profiles set display_name = '잠든폰' where id = '10900000-0000-0000-0000-000000000002';
+
+-- #2 상대 폰이 잠들었다(20초째 묻지 않음) — 거절은 아무것도 바꾸지 않고 까닭(자리에 없는 사람)을 알린다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into fix (k, v) values ('p109', public.party_open('10900000-0000-0000-0000-0000000000cc', null)::text);
+  perform public.party_ready(pg_temp.fx('p109')::bigint, true);
+end $$;
+call pg_temp.login('10900000-0000-0000-0000-000000000002');
+do $$ begin perform public.party_open('10900000-0000-0000-0000-0000000000cc', null);
+  perform public.party_ready(pg_temp.fx('p109')::bigint, true); end $$;
+reset role;
+update public.party_members set last_seen = now() - interval '20 seconds'
+ where party_id = pg_temp.fx('p109')::bigint and user_id = '10900000-0000-0000-0000-000000000002';
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$
+declare v_detail text;
+begin
+  begin
+    perform public.party_start(pg_temp.fx('p109')::bigint);
+  exception when others then
+    get stacked diagnostics v_detail = pg_exception_detail;
+    perform pg_temp.ok(sqlstate = '23514' and sqlerrm = 'crew_run_need_two' and v_detail like '%잠든폰%',
+      '혼자 남는 출발은 crew_run_need_two · 자리에 없는 사람 이름과 함께 거절 — ' || sqlstate || ' ' || coalesce(v_detail, '') || '(0109)');
+    return;
+  end;
+  perform pg_temp.ok(false, '자리에 없는 사람을 빼면 혼자인 방은 출발하지 못해야 한다(0109)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(
+    (select status = 'LOBBY' from public.parties where id = pg_temp.fx('p109')::bigint)
+    and (select count(*) = 2 from public.party_members m where m.party_id = pg_temp.fx('p109')::bigint and m.ready),
+    '거절된 출발은 대기실 · 준비를 바꾸지 않는다 — 돌아온 사람은 그대로 함께 출발한다(0109)');
+end $$;
+
+-- #3 출발 시각을 정한 방은 그 시각 30분 뒤까지 "아무도 안 봄"으로 닫지 않는다 · 6시간 상한도 그 시각부터
+insert into public.parties (crew_id, host_id, plan_at) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', now() + interval '3 hours');
+insert into fix (k, v) select 'plan109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.parties (crew_id, host_id, plan_at) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', now() - interval '40 minutes');
+insert into fix (k, v) select 'past109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.parties (crew_id, host_id, plan_at, created_at) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003', now() + interval '1 hour', now() - interval '7 hours');
+insert into fix (k, v) select 'old109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.parties (crew_id, host_id) values
+  ('10900000-0000-0000-0000-0000000000dd', '10900000-0000-0000-0000-000000000003');
+insert into fix (k, v) select 'idle109', max(id)::text from public.parties where crew_id = '10900000-0000-0000-0000-0000000000dd';
+insert into public.party_members (party_id, user_id, last_seen)
+select x.id, '10900000-0000-0000-0000-000000000003', now() - interval '20 minutes'
+  from public.parties x where x.crew_id = '10900000-0000-0000-0000-0000000000dd'
+on conflict (party_id, user_id) do update set last_seen = excluded.last_seen;
+do $$ begin
+  perform economy.party_close_stale('10900000-0000-0000-0000-0000000000dd');
+  perform pg_temp.ok((select status = 'LOBBY' from public.parties where id = pg_temp.fx('plan109')::bigint),
+    '정한 출발 시각이 남은 대기실은 20분 동안 아무도 안 봐도 열려 있다(0109)');
+  perform pg_temp.ok((select status = 'LOBBY' from public.parties where id = pg_temp.fx('old109')::bigint),
+    '7시간 전에 만들었어도 정한 시각이 남았으면 열려 있다 — 6시간은 정한 시각부터(0109)');
+  perform pg_temp.ok((select status = 'FINISHED' from public.parties where id = pg_temp.fx('past109')::bigint),
+    '정한 시각이 30분 넘게 지났고 아무도 안 보면 닫는다(0109)');
+  perform pg_temp.ok((select status = 'FINISHED' from public.parties where id = pg_temp.fx('idle109')::bigint),
+    '시각을 정하지 않은 방은 예전처럼 10분 아무도 안 보면 닫는다(0109)');
+end $$;
+-- 번개 · 예전 앱의 방 열기(party_open)는 모든 방을 함께 닫는다 — 같은 기준
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_open('10900000-0000-0000-0000-0000000000cc', null); end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select status = 'LOBBY' from public.parties where id = pg_temp.fx('plan109')::bigint),
+    '다른 크루가 방을 열어도 정한 시각이 남은 대기실은 닫지 않는다(0109)');
+end $$;
+
+-- 돌아왔다 — 함께 출발한다
+update public.party_members set last_seen = now()
+ where party_id = pg_temp.fx('p109')::bigint and user_id = '10900000-0000-0000-0000-000000000002';
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin perform public.party_start(pg_temp.fx('p109')::bigint); end $$;
+reset role;
+-- 기여를 정해 둔다(신발 없는 계정은 0) — 공용 체력 100 = 50 + 50
+update economy.crew_runs set contribution = 50 where party_id = pg_temp.fx('p109')::bigint;
+update economy.crew_day_pools set capacity = 100, contributors = 2
+ where crew_id = '10900000-0000-0000-0000-0000000000cc' and day = economy.game_day(now());
+
+-- #5 출발을 놓친 사람(박동 · 올린 러닝 없음)은 오늘 크루 러닝을 푼다 — 달린 사람은 풀지 않는다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000001');
+do $$ begin
+  perform public.crew_run_beat(pg_temp.fx('p109')::bigint, 'RUNNING');
+  perform pg_temp.ok(public.crew_run_release(pg_temp.fx('p109')::bigint) = false,
+    '달린 소식이 있는 사람의 크루 러닝은 풀지 않는다(0109)');
+end $$;
+call pg_temp.login('10900000-0000-0000-0000-000000000002');
+do $$ begin
+  perform pg_temp.ok(public.crew_run_release(pg_temp.fx('p109')::bigint) = true, '출발을 놓친 사람은 크루 러닝을 푼다(0109)');
+  perform pg_temp.ok(public.crew_run_release(pg_temp.fx('p109')::bigint) = true, '다시 불러도 같다(0109)');
+end $$;
+reset role;
+do $$
+declare v_day date := economy.game_day(now());
+begin
+  perform pg_temp.ok(
+    not exists (select 1 from economy.crew_runs c where c.user_id = '10900000-0000-0000-0000-000000000002' and c.day = v_day)
+    and not exists (select 1 from public.party_runs r where r.party_id = pg_temp.fx('p109')::bigint
+                                                      and r.user_id = '10900000-0000-0000-0000-000000000002')
+    and exists (select 1 from economy.crew_runs c where c.user_id = '10900000-0000-0000-0000-000000000001' and c.day = v_day),
+    '푼 사람은 참여 줄 · 출발 명단이 없다 — 달린 사람은 그대로(0109)');
+  perform pg_temp.ok(
+    (select d.capacity = 50 and d.contributors = 1 and d.consumed <= d.capacity from economy.crew_day_pools d
+      where d.crew_id = '10900000-0000-0000-0000-0000000000cc' and d.day = v_day),
+    '공용 체력에서 푼 사람의 기여를 뺀다(0109)');
+end $$;
+-- 푼 사람은 오늘 다른 대기실에서 다시 준비할 수 있다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000002');
+do $$ begin
+  perform public.party_leave(pg_temp.fx('p109')::bigint);
+  insert into fix (k, v) values ('p109b', public.party_open('10900000-0000-0000-0000-0000000000cc', null)::text);
+  perform public.party_ready(pg_temp.fx('p109b')::bigint, true);
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select m.ready from public.party_members m where m.party_id = pg_temp.fx('p109b')::bigint
+                        and m.user_id = '10900000-0000-0000-0000-000000000002'),
+    '크루 러닝을 푼 사람은 오늘 다시 준비할 수 있다(0109)');
+end $$;
+
+-- #9 출발한 번개는 글을 지우지 못한다(방 · 출발 명단이 함께 지워져 달리던 사람의 보너스가 없어졌다)
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000003');
+do $$
+declare v_post bigint; v_lobby bigint;
+begin
+  v_post := public.post_create('FLASH', null, '출발할 번개', '', '반포', 5, now() + interval '1 hour', 4, 37.51, 126.99);
+  insert into fix (k, v) values ('post109', v_post::text);
+  insert into fix (k, v) values ('fp109', public.party_open(null, v_post)::text);
+  perform public.party_ready(pg_temp.fx('fp109')::bigint, true);
+  perform public.party_start(pg_temp.fx('fp109')::bigint);
+  v_lobby := public.post_create('FLASH', null, '대기 번개', '', '반포', 5, now() + interval '1 hour', 4, 37.51, 126.99);
+  perform public.party_open(null, v_lobby);
+  perform public.post_delete(v_lobby);
+  perform pg_temp.ok(not exists (select 1 from public.posts where id = v_lobby), '대기실만 열린 번개는 취소(지우기)된다(0109)');
+end $$;
+do $$ begin
+  begin
+    perform public.post_delete(pg_temp.fx('post109')::bigint);
+  exception when others then
+    perform pg_temp.ok(sqlstate = '22023' and sqlerrm like '%출발한 번개%',
+      '출발한 번개 취소는 앱이 까닭을 읽는 코드(22023)로 거절 — ' || sqlstate || '(0109)');
+    return;
+  end;
+  perform pg_temp.ok(false, '출발한 번개는 지우지 못해야 한다(0109)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.posts where id = pg_temp.fx('post109')::bigint)
+                     and exists (select 1 from public.party_runs where party_id = pg_temp.fx('fp109')::bigint),
+    '거절된 취소는 글 · 출발 명단을 그대로 둔다(0109)');
+end $$;
+
+-- #13 방이 출발하기 전에 끝난 러닝은 그 방의 러닝이 아니다(1분 여유)
+do $$
+declare v_at timestamptz;
+begin
+  select r.starts_at into v_at from public.party_runs r
+   where r.party_id = pg_temp.fx('fp109')::bigint and r.user_id = '10900000-0000-0000-0000-000000000003';
+  insert into fix (k, v) values ('at109', v_at::text);
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '8 minutes',
+                                                               v_at - interval '2 minutes') f) is null,
+    '출발 2분 전에 끝난 혼자 러닝은 방의 러닝으로 셈하지 않는다(0109)');
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at,
+                                                               v_at + interval '20 minutes') f) = pg_temp.fx('fp109')::bigint,
+    '출발 시각에 시작해 뒤에 끝난 러닝은 그 방의 러닝(0109)');
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '8 minutes') f)
+                     = pg_temp.fx('fp109')::bigint,
+    '예전 두 칸 호출은 끝난 시각을 보지 않는다(0109)');
+end $$;
+-- record_session 이 끝난 시각을 넘긴다 — 출발 전에 끝난 러닝은 방 번호 없이 기록된다
+set role authenticated;
+call pg_temp.login('10900000-0000-0000-0000-000000000003');
+do $$
+declare v_at timestamptz; v_sid bigint;
+begin
+  v_at := pg_temp.fx('at109')::timestamptz;
+  select s.session_id into v_sid from public.record_session(v_at - interval '9 minutes', v_at - interval '3 minutes', 600, 360) s;
+  perform pg_temp.ok(v_sid is not null and (select w.party_id is null from public.walk_sessions w where w.id = v_sid),
+    '출발 전에 끝난 러닝을 올리면 방의 러닝이 되지 않는다(0109)');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0112 거래소 매물 · 입찰 모두 거두기 · 앱 업데이트 보상(뽑기 5 + 상급 선물 1) · 나중에 보낼 알림 (2026-11-18)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 거래소 거두기 · 업데이트 보상 · 알림(0112) ─────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email) values
+  ('11200000-0000-0000-0000-000000000001', 'reclaim-seller@test'),
+  ('11200000-0000-0000-0000-000000000002', 'reclaim-buyer@test'),
+  ('11200000-0000-0000-0000-000000000003', 'reclaim-both@test'),
+  ('11200000-0000-0000-0000-000000000004', 'reclaim-quiet@test'),
+  ('11200000-0000-0000-0000-000000000005', 'reclaim-none@test');
+create or replace function pg_temp.shoe112(p_owner uuid) returns bigint
+language plpgsql as $$
+declare v bigint;
+begin
+  insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin, model_id)
+  values (p_owner, 'NONE', 'RARE', 3, 1, 100, 'PAID_DRAW', 1119)
+  returning id into v;
+  return v;
+end $$;
+-- 매물 · 입찰을 걸어 둔다(거래를 잠시 열고 — 운영처럼 멈춘 채로 거두는지도 본다)
+update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';
+insert into fix (k, v) values
+  ('s112a', pg_temp.shoe112('11200000-0000-0000-0000-000000000001')::text),
+  ('s112b', pg_temp.shoe112('11200000-0000-0000-0000-000000000001')::text),
+  ('s112c', pg_temp.shoe112('11200000-0000-0000-0000-000000000001')::text),
+  ('s112d', pg_temp.shoe112('11200000-0000-0000-0000-000000000003')::text),
+  ('s112e', pg_temp.shoe112('11200000-0000-0000-0000-000000000004')::text);
+insert into public.market_listings (sneaker_id, seller_id, price, status) values
+  (pg_temp.fx('s112a')::bigint, '11200000-0000-0000-0000-000000000001', 300, 'OPEN'),
+  (pg_temp.fx('s112b')::bigint, '11200000-0000-0000-0000-000000000001', 320, 'OPEN'),
+  (pg_temp.fx('s112c')::bigint, '11200000-0000-0000-0000-000000000001', 340, 'CANCELLED'),
+  (pg_temp.fx('s112d')::bigint, '11200000-0000-0000-0000-000000000003', 360, 'OPEN'),
+  (pg_temp.fx('s112e')::bigint, '11200000-0000-0000-0000-000000000004', 380, 'OPEN');
+update public.market_sneakers set status = 'LISTED'
+ where id in (pg_temp.fx('s112a')::bigint, pg_temp.fx('s112b')::bigint, pg_temp.fx('s112d')::bigint, pg_temp.fx('s112e')::bigint);
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('11200000-0000-0000-0000-000000000002', 'EARN_EVENT', 1000, '검사'),
+  ('11200000-0000-0000-0000-000000000003', 'EARN_EVENT', 1000, '검사');
+insert into public.market_bids (buyer_id, faction, rarity, variant, min_level, price, model_id, status) values
+  ('11200000-0000-0000-0000-000000000002', 'NONE', 'RARE', 3, 1, 100, null, 'OPEN'),
+  ('11200000-0000-0000-0000-000000000002', 'NONE', 'RARE', 0, 1, 50.5, 1119, 'OPEN'),
+  ('11200000-0000-0000-0000-000000000002', 'NONE', 'RARE', 3, 1, 70, null, 'FILLED'),
+  ('11200000-0000-0000-0000-000000000003', 'NONE', 'RARE', 3, 1, 1234, null, 'OPEN');
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('11200000-0000-0000-0000-000000000002', 'ESCROW_LOCK', -100, '구매 입찰'),
+  ('11200000-0000-0000-0000-000000000002', 'ESCROW_LOCK', -50.5, '구매 입찰'),
+  ('11200000-0000-0000-0000-000000000003', 'ESCROW_LOCK', -1234, '구매 입찰');
+update public.economy_settings set value = 'false'::jsonb where key = 'market_trading_enabled';
+insert into fix (k, v) values
+  ('bal112b', pg_temp.bal('11200000-0000-0000-0000-000000000002')::text),
+  ('bal112c', pg_temp.bal('11200000-0000-0000-0000-000000000003')::text);
+
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'market_reclaim_20261118')
+                     and exists (select 1 from public.economy_settings where key = 'update_reward_20261118'),
+    '배포할 때 거두기 · 업데이트 보상을 한 번 했다고 적는다 — 다시 붙여넣어도 다시 하지 않는다(0112)');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'economy.market_reclaim_20261118', 'select')
+                     and not has_table_privilege('authenticated', 'economy.update_reward_20261118', 'select')
+                     and not has_table_privilege('authenticated', 'economy.notice_sends', 'select'),
+    '돌려받은 사람 · 보상 받은 사람 · 보낸 알림 표는 앱이 읽지 못한다(0112)');
+end $$;
+
+-- 처음 배포한 것처럼 표시를 지우고 한 번 돌린다
+delete from public.economy_settings where key = 'market_reclaim_20261118';
+do $$
+declare v jsonb;
+begin
+  v := economy.market_reclaim_20261118();
+  perform pg_temp.ok(v is not null and (v->>'listings')::int >= 4 and (v->>'bids')::int >= 3,
+    '거두기 — 열린 매물 ' || (v->>'listings') || '개 · 입찰 ' || (v->>'bids') || '개(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.market_listings where status = 'OPEN')
+                     and not exists (select 1 from public.market_bids where status = 'OPEN'),
+    '열린 매물 · 열린 구매 입찰이 하나도 남지 않는다(0112)');
+  perform pg_temp.ok((select bool_and(status = 'OWNED') from public.market_sneakers
+                       where id in (pg_temp.fx('s112a')::bigint, pg_temp.fx('s112b')::bigint, pg_temp.fx('s112d')::bigint,
+                                    pg_temp.fx('s112e')::bigint))
+                     and (select owner_id from public.market_sneakers where id = pg_temp.fx('s112a')::bigint)
+                         = '11200000-0000-0000-0000-000000000001',
+    '내린 매물의 신발은 주인에게 그대로 돌아온다(OWNED)(0112)');
+  perform pg_temp.ok((select bool_and(status = 'CANCELLED' and closed_at is not null) from public.market_listings
+                       where sneaker_id in (pg_temp.fx('s112a')::bigint, pg_temp.fx('s112b')::bigint)),
+    '매물은 사람이 거둔 것처럼 CANCELLED · 닫은 시각(0112)');
+  perform pg_temp.ok(pg_temp.bal('11200000-0000-0000-0000-000000000002') = pg_temp.fx('bal112b')::numeric + 150.5
+                     and pg_temp.bal('11200000-0000-0000-0000-000000000003') = pg_temp.fx('bal112c')::numeric + 1234,
+    '입찰에 묶였던 SUP 를 모두 돌려받는다(0112)');
+  perform pg_temp.ok((select count(*) from public.sup_ledger
+                       where user_id = '11200000-0000-0000-0000-000000000002' and kind = 'ESCROW_UNLOCK'
+                         and description = '구매 입찰 취소') = 2,
+    '원장 줄은 사람이 입찰을 거둔 것과 같다(ESCROW_UNLOCK · 구매 입찰 취소)(0112)');
+  perform pg_temp.ok((select status from public.market_bids
+                       where buyer_id = '11200000-0000-0000-0000-000000000002' and price = 70) = 'FILLED',
+    '이미 끝난 입찰 · 매물은 건드리지 않는다(0112)');
+  perform pg_temp.ok((select listings = 2 and bids = 0 and refunded = 0 from economy.market_reclaim_20261118
+                       where user_id = '11200000-0000-0000-0000-000000000001')
+                     and (select listings = 0 and bids = 2 and refunded = 150.5 from economy.market_reclaim_20261118
+                           where user_id = '11200000-0000-0000-0000-000000000002')
+                     and (select listings = 1 and bids = 1 and refunded = 1234 from economy.market_reclaim_20261118
+                           where user_id = '11200000-0000-0000-0000-000000000003')
+                     and not exists (select 1 from economy.market_reclaim_20261118
+                                      where user_id = '11200000-0000-0000-0000-000000000005'),
+    '돌려받은 사람마다 매물 · 입찰 · SUP 를 적는다(0112)');
+  perform pg_temp.ok(exists (select 1 from public.admin_audit where action = 'market_reclaim'),
+    '거두기는 운영 기록에 남는다(0112)');
+  perform pg_temp.ok(economy.market_reclaim_20261118() is null
+                     and pg_temp.bal('11200000-0000-0000-0000-000000000002') = pg_temp.fx('bal112b')::numeric + 150.5,
+    '두 번째는 아무것도 하지 않는다(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'MARKET_RECLAIMED'),
+    '거둘 때는 알림을 보내지 않는다(0112)');
+end $$;
+-- 앱이 부르는 거두기는 그대로 — 남의 매물은 거두지 못한다
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-000000000005');
+do $$
+declare v_listing bigint := (select id from public.market_listings where sneaker_id = pg_temp.fx('s112a')::bigint);
+begin
+  begin
+    perform public.market_cancel_listing(v_listing);
+    perform pg_temp.ok(false, '남의 매물은 거두지 못해야 한다(0112)');
+  exception when others then
+    perform pg_temp.ok(sqlstate = '42501', '앱의 거두기는 예전처럼 내 매물만(42501)(0112)');
+  end;
+end $$;
+reset role;
+call pg_temp.login(null);
+
+-- 알림: 받을 폰이 있는 사람에게 한 번 · 폰이 없거나 푸시를 끈 사람은 적어 두지 않는다
+insert into public.push_tokens (token, user_id, locale) values
+  ('fcm-token-reclaim-seller-0001', '11200000-0000-0000-0000-000000000001', 'ko'),
+  ('fcm-token-reclaim-buyer-00002', '11200000-0000-0000-0000-000000000002', 'en'),
+  ('fcm-token-reclaim-quiet-00004', '11200000-0000-0000-0000-000000000004', 'ko');
+insert into public.notify_prefs (user_id, push) values ('11200000-0000-0000-0000-000000000004', false);
+do $$
+declare v_n int;
+begin
+  v_n := economy.notice_send('MARKET_RECLAIMED');
+  perform pg_temp.ok(v_n >= 2, '돌려받은 사람에게 알림을 넣는다 — ' || v_n || '명(0112)');
+  perform pg_temp.ok((select count(*) from public.push_outbox
+                       where user_id = '11200000-0000-0000-0000-000000000001' and kind = 'MARKET_RECLAIMED' and link = 'shoes'
+                         and args->>'listings' = '2' and args->>'bids' = '0') = 1
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-000000000002' and kind = 'MARKET_RECLAIMED'
+                             and args->>'bids' = '2' and args->>'sup' = '150.5' and args->>'listings' = '0') = 1,
+    '알림은 신발 탭으로 — 돌려받은 매물 · 입찰 · SUP 를 싣는다(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'MARKET_RECLAIMED'
+                                   and user_id in ('11200000-0000-0000-0000-000000000003', '11200000-0000-0000-0000-000000000004'))
+                     and not exists (select 1 from economy.notice_sends
+                                      where user_id in ('11200000-0000-0000-0000-000000000003', '11200000-0000-0000-0000-000000000004')),
+    '폰이 없거나 푸시를 끈 사람에게는 넣지 않고 적어 두지도 않는다(0112)');
+  perform pg_temp.ok(economy.notice_send('MARKET_RECLAIMED') = 0
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-000000000001' and kind = 'MARKET_RECLAIMED') = 1,
+    '다시 불러도 같은 사람에게 두 번 가지 않는다(0112)');
+end $$;
+insert into public.push_tokens (token, user_id, locale) values
+  ('fcm-token-reclaim-both-000003', '11200000-0000-0000-0000-000000000003', 'ja');
+-- 넣기와 세기를 한 문장에 두면 세는 쪽이 넣기 전 모습을 본다 — 따로 부른다
+do $$
+declare v_n int;
+begin
+  v_n := economy.notice_send('MARKET_RECLAIMED');
+  perform pg_temp.ok(v_n = 1
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-000000000003' and kind = 'MARKET_RECLAIMED'
+                             and args->>'sup' = '1,234') = 1,
+    '그 사이 폰을 등록한 사람에게만 간다 · SUP 는 천 단위 쉼표(0112)');
+end $$;
+-- 운영자 함수 — 운영자 · SQL Editor 만, 모르는 알림은 22023
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-000000000005');
+call pg_temp.must_fail($q$ select public.admin_notice_send('MARKET_RECLAIMED') $q$, '운영자가 아니면 알림을 보내지 못한다(0112)');
+reset role;
+call pg_temp.login(null);
+do $$
+declare v_n int;
+begin
+  v_n := public.admin_notice_send('MARKET_RECLAIMED');
+  perform pg_temp.ok(v_n = 0
+                     and exists (select 1 from public.admin_audit where action = 'notice_send' and target = 'MARKET_RECLAIMED'),
+    'SQL Editor(로그인 없는 postgres)에서 보낸다 — 운영 기록에 남는다(0112)');
+  begin
+    perform public.admin_notice_send('NOPE');
+    perform pg_temp.ok(false, '모르는 알림은 거절해야 한다(0112)');
+  exception when others then
+    perform pg_temp.ok(sqlstate = '22023', '모르는 알림은 22023 으로 거절(0112)');
+  end;
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.admin_notice_send(text)', 'execute')
+                     and not has_function_privilege('authenticated', 'economy.notice_send(text)', 'execute'),
+    '알림 보내기는 앱 · 방문자가 부르지 못한다(0112)');
+end $$;
+
+-- ── 업데이트 보상: 2026-11-18 00:00(한국) 전에 코드를 넣은 계정만 ─────────
+insert into auth.users (id, email) values
+  ('11200000-0000-0000-0000-00000000000a', 'reward-code@test'),
+  ('11200000-0000-0000-0000-00000000000b', 'reward-late@test'),
+  ('11200000-0000-0000-0000-00000000000c', 'reward-legacy@test'),
+  ('11200000-0000-0000-0000-00000000000d', 'reward-blocked@test'),
+  ('11200000-0000-0000-0000-00000000000e', 'reward-admin@test'),
+  ('11200000-0000-0000-0000-00000000000f', 'reward-nosync@test');
+insert into economy.access_codes (code, kind, max_uses) values ('UPDATE112', 'ADMIN', 100) on conflict (code) do nothing;
+insert into economy.access_grants (user_id, source, code, granted_at, revoked_at) values
+  ('11200000-0000-0000-0000-00000000000a', 'CODE', 'UPDATE112', timestamptz '2026-11-17 23:59:59+09', null),
+  ('11200000-0000-0000-0000-00000000000b', 'CODE', 'UPDATE112', timestamptz '2026-11-18 00:00:00+09', null),
+  ('11200000-0000-0000-0000-00000000000c', 'LEGACY', null, timestamptz '2026-10-28 12:00+09', null),
+  ('11200000-0000-0000-0000-00000000000d', 'CODE', 'UPDATE112', timestamptz '2026-11-01 12:00+09', timestamptz '2026-11-10 12:00+09'),
+  ('11200000-0000-0000-0000-00000000000e', 'ADMIN', null, timestamptz '2026-11-01 12:00+09', null),
+  ('11200000-0000-0000-0000-00000000000f', 'CODE', 'UPDATE112', timestamptz '2026-11-02 12:00+09', null);
+insert into public.draw_grants (user_id, kind, granted, used) values
+  ('11200000-0000-0000-0000-00000000000a', 'FREE', 10, 3),
+  ('11200000-0000-0000-0000-00000000000b', 'FREE', 10, 0),
+  ('11200000-0000-0000-0000-00000000000c', 'FREE', 10, 0),
+  ('11200000-0000-0000-0000-00000000000d', 'FREE', 10, 0),
+  ('11200000-0000-0000-0000-00000000000e', 'FREE', 10, 0);
+delete from public.economy_settings where key = 'update_reward_20261118';
+do $$
+declare v_n int;
+begin
+  v_n := economy.update_reward_20261118();
+  perform pg_temp.ok(v_n >= 2, '업데이트 보상 — ' || v_n || '명(0112)');
+  perform pg_temp.ok((select granted = 15 and used = 3 from public.draw_grants
+                       where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'FREE')
+                     and (select granted = 1 and used = 0 from public.draw_grants
+                           where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'GIFT'),
+    '코드를 넣은 계정: 무료 뽑기 +5 · 상급 뽑기 선물 1(0112)');
+  perform pg_temp.ok((select granted from public.draw_grants
+                       where user_id = '11200000-0000-0000-0000-00000000000f' and kind = 'FREE') = 15
+                     and (select granted from public.draw_grants
+                           where user_id = '11200000-0000-0000-0000-00000000000f' and kind = 'GIFT') = 1,
+    '아직 첫 동기화를 못 한 계정은 가입 선물 10회 + 5 — 가입 선물을 잃지 않는다(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.draw_grants where kind = 'GIFT' and user_id in (
+                       '11200000-0000-0000-0000-00000000000b', '11200000-0000-0000-0000-00000000000c',
+                       '11200000-0000-0000-0000-00000000000d', '11200000-0000-0000-0000-00000000000e'))
+                     and (select bool_and(granted = 10) from public.draw_grants where kind = 'FREE' and user_id in (
+                       '11200000-0000-0000-0000-00000000000b', '11200000-0000-0000-0000-00000000000c',
+                       '11200000-0000-0000-0000-00000000000d', '11200000-0000-0000-0000-00000000000e')),
+    '18일 00시부터 넣은 코드 · 배포 때 있던 계정(LEGACY) · 막힌 계정 · 운영자가 준 권한은 받지 않는다(0112)');
+  perform pg_temp.ok((select count(*) from economy.update_reward_20261118
+                       where user_id in ('11200000-0000-0000-0000-00000000000a', '11200000-0000-0000-0000-00000000000f')
+                         and free = 5 and premium = 1) = 2
+                     and not exists (select 1 from economy.update_reward_20261118 where user_id = '11200000-0000-0000-0000-00000000000b'),
+    '받은 사람을 적어 둔다 — 나중에 보낼 알림이 읽는다(0112)');
+  perform pg_temp.ok(economy.update_reward_20261118() is null
+                     and (select granted from public.draw_grants
+                           where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'FREE') = 15,
+    '두 번째는 주지 않는다(0112)');
+end $$;
+
+-- 상급 뽑기 선물 — 지갑 없이, 체인이 멈춰도. 다 쓰면 예전과 같은 거절
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-00000000000a');
+do $$
+declare r record; v_id bigint;
+begin
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.reward_left = 1 and not r.wallet_linked and r.signup_left = 12 and r.gift_left = 0 and r.run_left = 0,
+    '뽑기 현황 2판에 선물 상급 뽑기 수(reward_left) — 나머지 칸은 draw_status 그대로(0112)');
+  v_id := public.premium_draw();
+  perform pg_temp.ok((select origin = 'BONUS_DRAW' and rarity <> 'COMMON' and genesis_no is null
+                        from public.my_sneakers() where id = v_id),
+    '지갑 없이 선물로 상급 뽑기 — 상급 표(레어 이상)에서 굴린다(0112)');
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.reward_left = 0, '선물을 쓰면 reward_left 가 준다(0112)');
+end $$;
+do $$ begin
+  perform public.premium_draw();
+  perform pg_temp.ok(false, '선물을 다 쓰면 지갑 없이는 상급 뽑기를 못 해야 한다(0112)');
+exception when others then
+  perform pg_temp.ok(sqlstate = '23514' and sqlerrm like '%지갑%', '선물이 없으면 예전과 같은 거절(지갑 연결)(0112)');
+end $$;
+reset role;
+update public.economy_settings set value = 'true'::jsonb where key = 'chain_paused';
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-00000000000f');
+do $$ begin
+  perform pg_temp.ok(public.premium_draw() is not null, '체인 작업이 멈춰 있어도 선물 상급 뽑기는 된다(0112)');
+end $$;
+reset role;
+update public.economy_settings set value = 'false'::jsonb where key = 'chain_paused';
+-- 지갑을 연결한 사람도 선물부터 — 첫 연결 선물(BONUS)은 그 뒤에
+update public.draw_grants set granted = granted + 1 where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'BONUS';
+insert into public.draw_grants (user_id, kind, granted) values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', 'GIFT', 1);
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+do $$
+declare r record;
+begin
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.wallet_linked and r.gift_left = 1 and r.reward_left = 1, '지갑 연결 · 첫 연결 선물 1 · 선물 1(0112)');
+  perform public.premium_draw();
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.gift_left = 1 and r.reward_left = 0, '선물을 먼저 쓴다 — 첫 연결 선물은 그대로(0112)');
+  perform public.premium_draw();
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.gift_left = 0 and r.reward_left = 0, '그다음은 예전처럼 지갑 혜택(0112)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.draw_status_v2()', 'execute')
+                     and has_function_privilege('authenticated', 'public.draw_status_v2()', 'execute'),
+    '뽑기 현황 2판은 로그인한 사람만(0112)');
+  perform pg_temp.ok((select pg_get_constraintdef(c.oid) like '%GIFT%' and c.convalidated
+                        from pg_constraint c where c.conname = 'draw_grants_kind_check'),
+    '뽑기 권리 종류에 GIFT — 마지막 목록은 기존 줄까지 검사한다(0112)');
+end $$;
+
+-- 업데이트 보상 알림 — 뽑기로
+insert into public.push_tokens (token, user_id, locale) values
+  ('fcm-token-reward-code-00000a', '11200000-0000-0000-0000-00000000000a', 'zh');
+do $$
+declare v_n int;
+begin
+  v_n := economy.notice_send('UPDATE_REWARD');
+  perform pg_temp.ok(v_n >= 1
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'UPDATE_REWARD' and link = 'draw'
+                             and args->>'free' = '5' and args->>'premium' = '1') = 1
+                     and not exists (select 1 from public.push_outbox where kind = 'UPDATE_REWARD'
+                                       and user_id = '11200000-0000-0000-0000-00000000000b'),
+    '업데이트 보상 알림은 받은 사람에게만 · 뽑기로 · 받은 수를 싣는다(0112)');
+  perform pg_temp.ok(economy.notice_send('UPDATE_REWARD') = 0, '업데이트 보상 알림도 한 사람에게 한 번(0112)');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
+--  0113 베타 초대 코드 — 하루 1개 · 지난 168시간에 3개 (2026-11-18)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 베타 초대 코드 하루 1개 · 7일에 3개(0113) ─────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+-- 하루 개수 3 → 1 은 한 번만, 그리고 0079 기본값(3) 그대로일 때만 — 운영자가 정한 값은 다음 배포가 덮지 않는다
+-- (바꾸는 함수와 읽는 함수를 한 문장에 두면 읽는 쪽이 바꾸기 전 값을 본다 — 나눠 부른다)
+do $$
+declare v_changed boolean;
+begin
+  perform pg_temp.ok(economy.setting_num('access_user_weekly_codes') = 3
+                     and exists (select 1 from public.economy_settings where key = 'access_daily_codes_0113'),
+    '7일 한도 설정은 3 · 하루 개수 바꾸기는 이미 한 번 했다(0113)');
+  delete from public.economy_settings where key = 'access_daily_codes_0113';
+  update public.economy_settings set value = '3' where key = 'access_user_daily_codes';
+  v_changed := economy.access_daily_codes_0113();
+  perform pg_temp.ok(v_changed and economy.setting_num('access_user_daily_codes') = 1,
+    '0079 기본값 3 그대로면 하루 1개로 바꾼다(0113)');
+  update public.economy_settings set value = '3' where key = 'access_user_daily_codes';
+  v_changed := economy.access_daily_codes_0113();
+  perform pg_temp.ok(not v_changed and economy.setting_num('access_user_daily_codes') = 3,
+    '바꾼 뒤 운영자가 다시 3 으로 돌리면 다시 올려도 덮지 않는다(0113)');
+  delete from public.economy_settings where key = 'access_daily_codes_0113';
+  update public.economy_settings set value = '5' where key = 'access_user_daily_codes';
+  v_changed := economy.access_daily_codes_0113();
+  perform pg_temp.ok(not v_changed and economy.setting_num('access_user_daily_codes') = 5
+                     and exists (select 1 from public.economy_settings where key = 'access_daily_codes_0113'),
+    '운영자가 이미 다른 값(5)으로 바꿨으면 그대로 둔다(0113)');
+  update public.economy_settings set value = '1' where key = 'access_user_daily_codes';
+end $$;
+
+insert into auth.users (id, email) values
+  ('a1130000-0000-0000-0000-000000000001', 'quota1@test'),
+  ('a1130000-0000-0000-0000-000000000002', 'quota2@test');
+insert into economy.access_grants (user_id, source) values ('a1130000-0000-0000-0000-000000000001', 'ADMIN');
+select public.admin_access_mode_set('CLOSED_BETA');
+
+-- 다음에 거절할 때의 코드 · 갈래 · 다음 시각 — 함수가 거절하지 않으면 state 는 null
+create or replace function pg_temp.issue113() returns jsonb
+language plpgsql as $$
+declare v_state text; v_hint text; v_msg text; v_detail text;
+begin
+  begin
+    perform public.access_code_issue_v2();
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate, v_hint = pg_exception_hint, v_msg = message_text,
+                            v_detail = pg_exception_detail;
+  end;
+  return jsonb_build_object('state', v_state, 'hint', v_hint, 'message', v_msg, 'detail', v_detail);
+end $$;
+
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000001', '/rpc/access_code_issue_v2');
+do $$
+declare s jsonb; v jsonb; r jsonb;
+begin
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'can_issue')::boolean and (s ->> 'daily_limit')::int = 1 and (s ->> 'weekly_limit')::int = 3
+                     and (s ->> 'left_today')::int = 1 and (s ->> 'left_week')::int = 3 and (s ->> 'left')::int = 1
+                     and s ->> 'next_at' is null and s ->> 'limited_by' is null,
+    format('상태에 오늘 · 7일 남은 수(%s)(0113)', s));
+  v := public.access_code_issue_v2();
+  perform pg_temp.ok(v ->> 'code' ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}$' and (v ->> 'left_today')::int = 0 and (v ->> 'left_week')::int = 2,
+    format('새 앱 코드 만들기 — 만든 뒤 남은 수도 함께(%s)(0113)', v));
+  insert into fix (k, v) values ('q113_1', v ->> 'code');
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'state' = '23514' and r ->> 'hint' = 'daily_limit' and r ->> 'message' like '%하루 1개%',
+    format('하루 1개 — 둘째는 23514 로 거절(%s)(0113)', r));
+  perform pg_temp.ok(public.access_code_issue() ->> 'error' = 'daily_limit', '예전 앱 함수는 지금처럼 답 안의 daily_limit(0113)');
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'left')::int = 0 and s ->> 'limited_by' = 'DAY'
+                     and (s ->> 'next_at')::timestamptz = economy.game_day_start(economy.game_day(now()) + 1),
+    format('하루가 막히면 다음 시각은 내일 00시(한국)(%s)(0113)', s));
+end $$;
+
+-- 지난 168시간에 셋 — 하루가 바뀌어도 7일이 막는다
+do $$
+declare s jsonb; v jsonb; r jsonb; v_first timestamptz;
+begin
+  update economy.access_codes set created_at = now() - interval '100 hours' where code = economy.access_norm(pg_temp.fx('q113_1'));
+  v := public.access_code_issue_v2();
+  insert into fix (k, v) values ('q113_2', v ->> 'code');
+  update economy.access_codes set created_at = now() - interval '50 hours' where code = economy.access_norm(v ->> 'code');
+  v := public.access_code_issue_v2();
+  insert into fix (k, v) values ('q113_3', v ->> 'code');
+  perform pg_temp.ok(v ->> 'code' is not null and (v ->> 'issued_week')::int = 3 and (v ->> 'left_week')::int = 0,
+    format('하루 하나씩 세 번(%s)(0113)', v));
+  v_first := (select created_at from economy.access_codes where code = economy.access_norm(pg_temp.fx('q113_1')));
+  s := public.access_status();
+  perform pg_temp.ok(s ->> 'limited_by' = 'WEEK' and (s ->> 'next_at')::timestamptz = v_first + interval '168 hours',
+    format('둘 다 막히면 늦은 쪽 — 가장 오래된 코드 + 168시간(%s)(0113)', s));
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'state' = '23514' and r ->> 'hint' = 'weekly_limit' and r ->> 'message' like '%7일 동안 3개%'
+                     and r ->> 'message' like '%부터 다시%' and (r ->> 'detail')::timestamptz = v_first + interval '168 hours',
+    format('7일 셋 — 23514 와 다시 만들 수 있는 시각(%s)(0113)', r));
+  perform pg_temp.ok(public.access_code_issue() ->> 'error' = 'weekly_limit', '예전 앱 함수는 weekly_limit(0113)');
+  -- 오늘 만든 것이 없어도(내일이 되었다) 7일이 막는다
+  update economy.access_codes set created_at = now() - interval '30 hours' where code = economy.access_norm(pg_temp.fx('q113_3'));
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'left_today')::int = 1 and (s ->> 'left_week')::int = 0 and (s ->> 'left')::int = 0
+                     and s ->> 'limited_by' = 'WEEK' and (s ->> 'next_at')::timestamptz = v_first + interval '168 hours',
+    format('하루가 바뀌어도 지난 168시간에 셋이면 막힌다(%s)(0113)', s));
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'hint' = 'weekly_limit', '— 만들기도 weekly_limit 로 거절(0113)');
+  -- 가장 오래된 코드가 168시간을 넘기면 한 자리가 열린다
+  update economy.access_codes set created_at = now() - interval '169 hours' where code = economy.access_norm(pg_temp.fx('q113_1'));
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'issued_week')::int = 2 and (s ->> 'left')::int = 1 and s ->> 'next_at' is null,
+    format('굴러가는 7일 — 168시간이 지난 코드는 세지 않는다(%s)(0113)', s));
+  v := public.access_code_issue_v2();
+  perform pg_temp.ok(v ->> 'code' is not null, '한 자리가 열리면 다시 만든다(0113)');
+  perform pg_temp.ok((select count(*) = 4 and bool_and(status = 'OPEN') from public.my_access_codes()),
+    '이미 만든 코드는 그대로 쓸 수 있다 — 세는 창 밖으로 나가도(0113)');
+end $$;
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000002', '/rpc/access_redeem');
+do $$ begin
+  perform pg_temp.ok((public.access_redeem(pg_temp.fx('q113_1')) ->> 'ok')::boolean, '168시간 전에 만든 코드로도 들어온다(0113)');
+end $$;
+
+-- 운영자가 7일 한도를 낮추면 다음 시각은 (만든 수 − 한도 + 1)번째로 오래된 코드 + 168시간 · 0 이면 만들 수 없다
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000001', '/rpc/access_status');
+update public.economy_settings set value = '2' where key = 'access_user_weekly_codes';
+do $$
+declare s jsonb; r jsonb; v_second timestamptz;
+begin
+  v_second := (select created_at from economy.access_codes where code = economy.access_norm(pg_temp.fx('q113_3')));
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'issued_week')::int = 3 and (s ->> 'left_week')::int = 0
+                     and (s ->> 'next_at')::timestamptz = v_second + interval '168 hours',
+    format('한도 2 · 창 안에 셋 — 둘째로 오래된 코드 + 168시간(%s)(0113)', s));
+  update public.economy_settings set value = '0' where key = 'access_user_weekly_codes';
+  s := public.access_status();
+  perform pg_temp.ok(not (s ->> 'can_issue')::boolean and s ->> 'next_at' is null and s ->> 'limited_by' is null,
+    format('7일 한도 0 — 만들 수 없다(%s)(0113)', s));
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'state' = '42501' and r ->> 'hint' = 'not_allowed', format('권한 없음은 42501(%s)(0113)', r));
+  perform pg_temp.ok(public.access_code_issue() ->> 'error' = 'not_allowed', '예전 앱 함수는 not_allowed(0113)');
+end $$;
+update public.economy_settings set value = '3' where key = 'access_user_weekly_codes';
+set role authenticated;
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000001', '/rpc/access_code_issue_v2');
+call pg_temp.must_fail($q$ select economy.access_code_issue_core('a1130000-0000-0000-0000-000000000001') $q$,
+  '한도를 건너뛰는 안쪽 함수는 앱이 부르지 못한다(0113)');
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+select public.admin_access_mode_set('OPEN');
+
+-- ════════════════════════════════════════════════════════════════════
+--  0114 운영자 페이지 보안 — 세션 · 키 기한 · 로그인 잠금 · 다시 확인 · 하루 한도 (2026-11-18)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 운영자 페이지 보안(0114) ─────────────────────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.headers', '', false);
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('11400000-0000-0000-0000-000000000001', 'ops114a@test.com', '{"full_name":"보안러너"}'),
+  ('11400000-0000-0000-0000-000000000002', 'ops114b@test.com', '{"full_name":"보안러너둘"}');
+insert into fix (k, v) select 'key114', economy.ops_key_new('보안 검사');
+insert into fix (k, v) select 'key114week', economy.ops_key_new('일주일 키', 7);
+insert into fix (k, v) select 'key114other', economy.ops_key_new('다른 운영자');
+do $$ begin
+  perform pg_temp.ok(has_function_privilege('anon', 'public.ops_login(text)', 'execute')
+                     and has_function_privilege('anon', 'public.ops_logout(text)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_key_new(text, int)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_session_of(text)', 'execute')
+                     and not has_function_privilege('anon', 'economy.ops_confirm(economy.ops_sessions, text, text, boolean)', 'execute')
+                     and not has_table_privilege('anon', 'economy.ops_sessions', 'select')
+                     and not has_table_privilege('anon', 'economy.ops_login_fails', 'select')
+                     and not has_table_privilege('anon', 'economy.ops_secret', 'select'),
+    '로그인 · 로그아웃만 열려 있고 세션 · 실패 기록 · 소금은 서버만(0114)');
+  perform pg_temp.ok((select expires_at between now() + interval '29 days 23 hours' and now() + interval '30 days 1 minute'
+                        from economy.ops_keys where label = '보안 검사')
+                     and (select expires_at between now() + interval '6 days 23 hours' and now() + interval '7 days 1 minute'
+                            from economy.ops_keys where label = '일주일 키'),
+    '키 기한 — 예전 한 칸 호출은 30일 · 날 수를 정하면 그만큼(0114)');
+  perform pg_temp.ok(not exists (select 1 from economy.ops_keys where expires_at is null), '모든 키에 기한이 있다(0114)');
+  perform pg_temp.ok((select count(*) = 3 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                       where n.nspname = 'public' and p.proname in ('ops_item_grant', 'ops_grant_revoke', 'ops_event_start'))
+                     and (select provolatile = 'v' from pg_proc where oid = 'public.ops_overview(text)'::regprocedure)
+                     and (select provolatile = 'v' from pg_proc where oid = 'public.ops_user_find(text, text)'::regprocedure),
+    '운영자 함수는 하나씩(예전 칸 수는 지웠다) · 세션 시각을 고치는 함수는 stable 이 아니다(0114)');
+end $$;
+call pg_temp.must_fail($q$select economy.ops_key_new('너무 긴 키', 400)$q$, '키 기한은 365일까지(0114)');
+
+-- 세션: 로그인 · 한눈에 · 로그아웃
+select set_config('request.headers', '{"cf-connecting-ip": "203.0.113.41"}', false);
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('key114');
+  v_s text;
+  r jsonb;
+begin
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, v_key), '키를 그대로 보내면 운영자 함수가 받지 않는다 — 로그인한 세션만(0114)');
+  r := public.ops_login(' ' || v_key || ' ');
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'actor' = '보안 검사' and length(r->>'session') = 64 and r->>'session' <> v_key
+                     and (r->>'expires_at')::timestamptz between now() + interval '7 hours 59 minutes' and now() + interval '8 hours 1 minute'
+                     and (r->>'idle_min')::int = 30 and (r->>'key_expires_at')::timestamptz > now() + interval '29 days',
+    '키로 로그인하면 8시간짜리 세션 번호(0114)');
+  v_s := r->>'session';
+  insert into fix (k, v) values ('s114', v_s);
+  r := public.ops_overview(v_s);
+  perform pg_temp.ok(r->>'actor' = '보안 검사' and (r->'cap'->>'limit')::int = 5000 and (r->'cap'->>'left')::int = 5000
+                     and (r->'confirm'->>'recipients')::int = 200 and (r->'confirm'->>'mult')::numeric = 3
+                     and (r->'confirm'->>'hours')::numeric = 48 and r->'session'->>'expires_at' is not null,
+    '세션으로 한눈에 — 하루 한도 · 다시 확인 기준 · 세션 기한(0114)');
+  perform pg_temp.ok(jsonb_typeof(public.ops_user_find(v_s, 'ops114')) = 'array', '세션으로 사람 찾기(0114)');
+  perform pg_temp.ok((public.ops_logout(v_s)->>'ok')::boolean, '로그아웃(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, v_s), '로그아웃한 세션은 받지 않는다(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_user_find(%L, 'ops114')$q$, v_s), '로그아웃한 세션으로는 사람도 못 찾는다(0114)');
+  perform pg_temp.ok((public.ops_logout(v_s)->>'ok')::boolean and (public.ops_logout('없는 세션')->>'ok')::boolean,
+    '로그아웃은 몇 번을 불러도 된다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(not exists (select 1 from economy.ops_sessions where token_hash = pg_temp.fx('s114'))
+                     and exists (select 1 from economy.ops_sessions
+                                  where token_hash = encode(sha256(convert_to(pg_temp.fx('s114'), 'UTF8')), 'hex') and ended_why = 'logout'),
+    '서버에는 세션 번호의 해시만 남는다(0114)');
+  perform pg_temp.ok(exists (select 1 from public.admin_audit where action = 'ops_login' and detail->>'by' = '보안 검사')
+                     and exists (select 1 from public.admin_audit where action = 'ops_logout' and detail->>'by' = '보안 검사')
+                     and not exists (select 1 from public.admin_audit
+                                      where action like 'ops%' and (detail::text like '%' || pg_temp.fx('key114') || '%'
+                                                                    or detail::text like '%' || pg_temp.fx('s114') || '%')),
+    '로그인 · 로그아웃은 감사 기록에 — 키 · 세션 번호는 없이(0114)');
+end $$;
+
+-- 세션 기한: 30분 쉼 · 8시간 · 쓰면 다시 30분
+set role anon;
+do $$ begin
+  insert into fix (k, v) values ('s114idle', public.ops_login(pg_temp.fx('key114'))->>'session');
+  insert into fix (k, v) values ('s114old', public.ops_login(pg_temp.fx('key114'))->>'session');
+  insert into fix (k, v) values ('s114fresh', public.ops_login(pg_temp.fx('key114'))->>'session');
+end $$;
+reset role;
+update economy.ops_sessions set last_used_at = now() - interval '31 minutes' where token_hash = economy.ops_hash(pg_temp.fx('s114idle'));
+update economy.ops_sessions set created_at = now() - interval '9 hours', expires_at = now() - interval '1 hour'
+ where token_hash = economy.ops_hash(pg_temp.fx('s114old'));
+update economy.ops_sessions set last_used_at = now() - interval '25 minutes' where token_hash = economy.ops_hash(pg_temp.fx('s114fresh'));
+set role anon;
+do $$ begin
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114idle')), '30분 넘게 쓰지 않은 세션은 끝난다(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114old')), '8시간이 지난 세션은 끝난다(0114)');
+  perform pg_temp.ok(public.ops_overview(pg_temp.fx('s114fresh'))->>'actor' = '보안 검사', '25분 쉰 세션은 아직 된다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select last_used_at > now() - interval '1 minute' from economy.ops_sessions
+                       where token_hash = economy.ops_hash(pg_temp.fx('s114fresh'))),
+    '쓰면 30분이 다시 시작된다(0114)');
+end $$;
+
+-- 키 기한 · 막은 키 — 그 키의 세션도 바로 끝난다
+set role anon;
+do $$ begin
+  insert into fix (k, v) values ('s114week', public.ops_login(pg_temp.fx('key114week'))->>'session');
+  insert into fix (k, v) values ('s114other', public.ops_login(pg_temp.fx('key114other'))->>'session');
+  perform pg_temp.ok(public.ops_overview(pg_temp.fx('s114week'))->>'actor' = '일주일 키', '일주일 키로도 들어온다(0114 준비)');
+end $$;
+reset role;
+update economy.ops_keys set expires_at = now() - interval '1 minute' where label = '일주일 키';
+update economy.ops_keys set revoked_at = now() where label = '다른 운영자';
+set role anon;
+do $$
+declare r jsonb;
+begin
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114week')), '기한이 지난 키의 세션은 바로 끝난다(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, pg_temp.fx('s114other')), '막은 키의 세션은 바로 끝난다(0114)');
+  r := public.ops_login(pg_temp.fx('key114week'));
+  perform pg_temp.ok(not (r->>'ok')::boolean and r->>'code' = 'expired' and r->>'session' is null, '기한이 지난 키로는 로그인하지 못한다(0114)');
+  r := public.ops_login(pg_temp.fx('key114other'));
+  perform pg_temp.ok(not (r->>'ok')::boolean and r->>'code' = 'wrong' and r->>'session' is null,
+    '막은 키로는 로그인하지 못한다 — 틀린 키와 같은 답(0114)');
+end $$;
+
+-- 로그인 잠금: 같은 곳 10분에 5번 → 15분
+select set_config('request.headers', '{"cf-connecting-ip": "198.51.100.42"}', false);
+do $$
+declare r jsonb; i int;
+begin
+  for i in 1..4 loop
+    r := public.ops_login('틀린 키 ' || i);
+    perform pg_temp.ok(r->>'code' = 'wrong' and (r->>'left')::int = 5 - i, format('틀린 키 %s번째 — %s번 남았다고 알린다(0114)', i, 5 - i));
+  end loop;
+  r := public.ops_login('틀린 키 5');
+  perform pg_temp.ok(r->>'code' = 'locked' and (r->>'until')::timestamptz > now() + interval '14 minutes' and r->>'message' like '%다시 할 수 있어요%',
+    '같은 곳에서 10분에 다섯 번 틀리면 15분 동안 막는다(0114)');
+  r := public.ops_login(pg_temp.fx('key114'));
+  perform pg_temp.ok(r->>'code' = 'locked' and r->>'session' is null, '막힌 곳은 맞는 키로도 들어오지 못한다(0114)');
+end $$;
+select set_config('request.headers', '{"cf-connecting-ip": "198.51.100.43"}', false);
+do $$ begin
+  perform pg_temp.ok((public.ops_login(pg_temp.fx('key114'))->>'ok')::boolean, '다른 곳은 따로 센다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 5 from economy.ops_login_fails
+                       where client = (select l.scope from economy.ops_login_locks l where l.scope <> 'ALL')),
+    '막힌 동안의 시도는 쌓지 않는다(0114)');
+  perform pg_temp.ok(not exists (select 1 from economy.ops_login_fails where client like '%198.51%' or client like '%203.0%')
+                     and not exists (select 1 from economy.ops_sessions where client like '%198.51%' or client like '%203.0%')
+                     and not exists (select 1 from public.admin_audit where action like 'ops%' and detail::text like '%198.51%'),
+    'IP 원문은 어디에도 남기지 않는다(0114)');
+  perform pg_temp.ok((select count(*) = 1 from public.admin_audit where action = 'ops_login_locked' and target = 'client')
+                     and (select count(*) >= 7 from public.admin_audit where action = 'ops_login_fail'),
+    '틀린 로그인 · 잠금은 감사 기록에(0114)');
+end $$;
+-- 15분이 지난 것처럼
+update economy.ops_login_locks set until = now() - interval '1 second';
+update economy.ops_login_fails set at = at - interval '16 minutes';
+select set_config('request.headers', '{"cf-connecting-ip": "198.51.100.42"}', false);
+set role anon;
+do $$ begin
+  perform pg_temp.ok((public.ops_login(pg_temp.fx('key114'))->>'ok')::boolean, '15분이 지나면 다시 들어온다(0114)');
+end $$;
+
+-- 로그인 잠금: 모든 곳을 합쳐 10분에 30번 → 모든 로그인 15분
+reset role;
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+set role anon;
+do $$
+declare r jsonb; i int;
+begin
+  for i in 1..30 loop
+    perform set_config('request.headers', format('{"cf-connecting-ip": "192.0.2.%s"}', i), false);
+    r := public.ops_login('아무 키 ' || i);
+  end loop;
+  perform pg_temp.ok(r->>'code' = 'locked', '곳이 달라도 10분에 서른 번 틀리면 모든 로그인을 15분 막는다(0114)');
+  perform set_config('request.headers', '{"cf-connecting-ip": "192.0.2.200"}', false);
+  r := public.ops_login(pg_temp.fx('key114'));
+  perform pg_temp.ok(r->>'code' = 'locked' and r->>'session' is null, '모두 막힌 동안은 처음 오는 곳 · 맞는 키도 기다린다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 30 from economy.ops_login_fails)
+                     and exists (select 1 from public.admin_audit where action = 'ops_login_locked' and target = 'all'),
+    '모든 곳 잠금은 감사 기록에 · 막힌 동안의 시도는 쌓지 않는다(0114)');
+end $$;
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+
+-- 큰 일은 키를 한 번 더: 전체 · 기준보다 많은 사람 · 큰 배수 · 긴 이벤트 · 되돌리기
+select set_config('request.headers', '{"cf-connecting-ip": "203.0.113.77"}', false);
+set role anon;
+do $$
+declare
+  v_key text := pg_temp.fx('key114');
+  v_s text;
+  v_req uuid := '11400000-0000-0000-0000-0000000000a1';
+  r jsonb;
+begin
+  v_s := public.ops_login(v_key)->>'session';
+  insert into fix (k, v) values ('s114c', v_s);
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false);
+  perform pg_temp.ok(not (r->>'ok')::boolean and r->>'code' = 'confirm_required' and r->>'message' like '전체 지급%',
+    '전체 지급은 운영자 키를 한 번 더 넣어야 한다(0114)');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false, '틀린 키');
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong' and not (r->>'logged_out')::boolean and r->>'message' like '%2번 더%',
+    '틀린 키로는 다시 확인되지 않는다(0114)');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false, pg_temp.fx('ops106'));
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong', '다른 운영자의 키로는 다시 확인되지 않는다 — 이 세션을 연 키만(0114)');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false, v_key);
+  perform pg_temp.ok((r->>'ok')::boolean and not (r->>'replay')::boolean and (r->>'users')::int >= 2, '맞는 키로 다시 확인하면 전체 지급(0114)');
+  insert into fix (k, v) values ('batch114', r->>'batch');
+  r := public.ops_item_grant(v_s, v_req, 'RUN_BOOSTER', 1, '전체 검사', null, 'ALL', false);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'replay')::boolean, '같은 요청 번호는 키 없이도 처음 결과 — 두 번 주지 않는다(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '한 사람', array['ops114a@test.com'], null, false, '틀린 키');
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong', '작은 지급이라도 넣은 키가 틀리면 하지 않는다(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '한 사람', array['ops114a@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '작은 지급은 키 없이(0114)');
+end $$;
+reset role;
+update public.economy_settings set value = '1'::jsonb where key = 'ops_confirm_recipients';
+set role anon;
+do $$
+declare v_s text := pg_temp.fx('s114c'); r jsonb;
+begin
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '여럿 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false);
+  perform pg_temp.ok(r->>'code' = 'confirm_required' and r->>'message' like '2명에게 지급%', '기준(설정)보다 많은 사람에게 주면 키를 한 번 더(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '여럿 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false,
+                             pg_temp.fx('key114'));
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int = 2, '키를 넣으면 지급(0114)');
+end $$;
+reset role;
+update public.economy_settings set value = '200'::jsonb where key = 'ops_confirm_recipients';
+set role anon;
+do $$
+declare v_s text := pg_temp.fx('s114c'); v_key text := pg_temp.fx('key114'); r jsonb;
+begin
+  r := public.ops_event_start(v_s, gen_random_uuid(), '반짝 3배', 3, 3, null, false);
+  perform pg_temp.ok(r->>'code' = 'confirm_required' and r->>'message' like '보상 ×3 · 3시간 이벤트%', '3배 이상 이벤트는 키를 한 번 더(0114)');
+  r := public.ops_event_start(v_s, gen_random_uuid(), '긴 이벤트', 2, 49, null, false);
+  perform pg_temp.ok(r->>'code' = 'confirm_required', '48시간 넘는 이벤트는 키를 한 번 더(0114)');
+  r := public.ops_event_start(v_s, gen_random_uuid(), '보통 이벤트', 2.5, 48, null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '3배 미만 · 48시간까지는 키 없이(0114)');
+  perform pg_temp.ok((public.ops_event_cancel(v_s, (r->'event'->>'id')::bigint)->>'ok')::boolean, '끄기는 키 없이(0114)');
+  r := public.ops_event_start(v_s, gen_random_uuid(), '반짝 3배', 3, 3, null, false, v_key);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->'event'->>'mult')::numeric = 3, '키를 넣으면 3배 이벤트(0114)');
+  perform public.ops_event_cancel(v_s, (r->'event'->>'id')::bigint);
+  r := public.ops_grant_revoke(v_s, pg_temp.fx('batch114')::bigint);
+  perform pg_temp.ok(r->>'code' = 'confirm_required', '되돌리기는 늘 키를 한 번 더(0114)');
+  r := public.ops_grant_revoke(v_s, pg_temp.fx('batch114')::bigint, v_key);
+  perform pg_temp.ok((r->>'ok')::boolean, '키를 넣으면 되돌린다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 1 from economy.item_batches where request_id = '11400000-0000-0000-0000-0000000000a1')
+                     and exists (select 1 from public.admin_audit where action = 'ops_item_grant' and detail->>'by' = '보안 검사'
+                                   and detail->>'target' = 'ALL' and (detail->>'confirmed')::boolean)
+                     and (select count(*) >= 3 from public.admin_audit where action = 'ops_confirm_fail' and detail->>'by' = '보안 검사'),
+    '전체 지급은 한 번 · 다시 확인과 틀린 키는 감사 기록에(0114)');
+end $$;
+-- 이 곳이 막혀 있으면 다시 확인도 받지 않는다
+insert into economy.ops_login_locks (scope, until) values (economy.ops_client(), now() + interval '5 minutes')
+on conflict (scope) do update set until = excluded.until;
+set role anon;
+do $$ declare r jsonb;
+begin
+  r := public.ops_event_start(pg_temp.fx('s114c'), gen_random_uuid(), '반짝 3배', 3, 3, null, false, pg_temp.fx('key114'));
+  perform pg_temp.ok(r->>'code' = 'confirm_locked', '로그인 실패로 막힌 곳에서는 다시 확인도 받지 않는다(0114)');
+end $$;
+reset role;
+delete from economy.ops_login_fails;
+delete from economy.ops_login_locks;
+-- 다시 확인을 세 번 틀리면 그 세션은 끝난다
+set role anon;
+do $$
+declare v_s text := public.ops_login(pg_temp.fx('key114'))->>'session'; r jsonb; i int;
+begin
+  for i in 1..3 loop
+    r := public.ops_event_start(v_s, gen_random_uuid(), '반짝 3배', 3, 3, null, false, '틀린 키 ' || i);
+  end loop;
+  perform pg_temp.ok(r->>'code' = 'confirm_wrong' and (r->>'logged_out')::boolean and r->>'message' like '%로그아웃%',
+    '다시 확인을 세 번 틀리면 로그아웃(0114)');
+  call pg_temp.must_fail(format($q$select public.ops_overview(%L)$q$, v_s), '다시 확인을 세 번 틀린 세션은 받지 않는다(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select count(*) = 3 from economy.ops_login_fails where kind = 'CONFIRM'), '틀린 다시 확인도 로그인 실패로 센다(0114)');
+end $$;
+delete from economy.ops_login_fails;
+
+-- 하루 지급 한도 — 키마다 · 받는 사람 수 × 개수
+update public.economy_settings set value = '10'::jsonb where key = 'ops_key_daily_units';
+insert into fix (k, v) select 'key114cap', economy.ops_key_new('한도 검사');
+insert into fix (k, v) select 'key114cap2', economy.ops_key_new('한도 검사 둘');
+set role anon;
+do $$
+declare v_s text := public.ops_login(pg_temp.fx('key114cap'))->>'session'; r jsonb;
+begin
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 4, '한도 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean and (r->>'users')::int = 2, '2명 × 4개 = 8개 지급(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 2, '한도 검사', array['ops114a@test.com', 'ops114b@test.com'], null, false);
+  perform pg_temp.ok(r->>'code' = 'cap' and (r->>'left')::int = 2 and (r->>'units')::int = 4 and r->>'message' like '%2개예요%',
+    '하루 한도(10개)를 넘는 지급은 통째로 거절 — 남은 수를 알린다(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 2, '한도 검사', array['ops114a@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '한도까지는 된다(0114)');
+  r := public.ops_overview(v_s);
+  perform pg_temp.ok((r->'cap'->>'used')::int = 10 and (r->'cap'->>'left')::int = 0, '한눈에 오늘 쓴 한도(0114)');
+  r := public.ops_item_grant(v_s, gen_random_uuid(), 'ENERGY_DRINK', 1, '한도 검사', array['ops114a@test.com'], null, false);
+  perform pg_temp.ok(r->>'code' = 'cap', '한도를 다 쓴 키는 그날 더 주지 못한다(0114)');
+  r := public.ops_item_grant(public.ops_login(pg_temp.fx('key114cap2'))->>'session', gen_random_uuid(), 'ENERGY_DRINK', 1, '한도 검사',
+                             array['ops114a@test.com'], null, false);
+  perform pg_temp.ok((r->>'ok')::boolean, '한도는 키마다 따로(0114)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok((select units = 10 from economy.ops_key_days d join economy.ops_keys k on k.token_hash = d.key_hash
+                       where k.label = '한도 검사' and d.day = economy.game_day(now()))
+                     and (select count(*) = 2 from public.admin_audit where action = 'ops_grant_cap' and detail->>'by' = '한도 검사')
+                     and (select count(*) = 2 from economy.item_batches where actor = '한도 검사'),
+    '한도는 한국 날짜로 세고 거절은 감사 기록에 · 거절한 지급은 남지 않는다(0114)');
+end $$;
+update public.economy_settings set value = '5000'::jsonb where key = 'ops_key_daily_units';
+select set_config('request.headers', '', false);
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

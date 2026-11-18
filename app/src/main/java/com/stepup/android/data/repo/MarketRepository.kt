@@ -180,7 +180,9 @@ class MarketRepository(
         }
 
     suspend fun placeBid(model: ModelKey, minLevel: Int, price: Double): MarketOutcome {
-        val action = "BID:${model.faction}:${model.rarity}:${model.variant}:$minLevel:$price"
+        // 모델 장(0107)은 모델 번호로 가른다 — 같은 등급의 다른 모델에 건 같은 값이 한 요청으로 묶이지 않게
+        val action = model.modelId?.let { "BID:M$it:$minLevel:$price" }
+            ?: "BID:${model.faction}:${model.rarity}:${model.variant}:$minLevel:$price"
         return when (val result = requestKeys.sendOnce(action) { key -> api.bid(model, minLevel, price, key) }) {
             is ServerResult.Ok -> {
                 syncQuietly()

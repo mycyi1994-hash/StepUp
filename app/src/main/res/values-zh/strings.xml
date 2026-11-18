@@ -13,7 +13,7 @@
     <!-- Tabs -->
     <string name="tab_home">首页</string>
     <string name="tab_community">一起跑</string>
-    <string name="tab_items">装备</string>
+    <string name="tab_items">道具</string>
     <string name="tab_events">活动</string>
     <string name="tab_profile">我的</string>
     <string name="tab_market">市场</string>
@@ -1012,7 +1012,6 @@
     <string name="market_quote_note">登记 %1$d 双 · 24 小时成交 %2$d 笔</string>
     <string name="market_place_bid">购买出价</string>
     <string name="market_place_ask">挂出售卖</string>
-    <string name="market_nothing_to_sell">这个型号没有可卖的跑鞋。正在穿着的不能卖。</string>
     <string name="market_asks_title">在售</string>
     <string name="market_asks_empty">暂时没有在售商品。</string>
     <string name="market_bids_title">购买出价</string>

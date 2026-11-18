@@ -63,6 +63,9 @@ object ServiceLocator {
     lateinit var runSettlementRepository: com.stepup.android.data.repo.RunSettlementRepository
         private set
     lateinit var stepRepository: StepRepository
+
+    /** 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18) */
+    lateinit var dailyStepsUploader: com.stepup.android.data.repo.DailyStepsUploader
         private set
     lateinit var sneakerRepository: SneakerRepository
         private set
@@ -244,6 +247,9 @@ object ServiceLocator {
     /** 과속으로 멈춘 러닝의 패널티 신고 — 올리기 일꾼이 러닝보다 먼저 보낸다 */
     lateinit var overspeedReporter: com.stepup.android.data.repo.OverspeedReporter
 
+    /** 아이템(서버 0106) — 가방 · 바로 쓰기 · 출발 때 고른 아이템 */
+    lateinit var itemsRepository: com.stepup.android.data.repo.ItemsRepository
+
     /** 순위표 — 유일하게 남의 기록이 필요한 화면이라 서버가 계산해 준다 */
     lateinit var rankingRepository: RankingRepository
         private set
@@ -344,12 +350,19 @@ object ServiceLocator {
         economyApi = com.stepup.android.data.remote.EconomyApi(server)
         inviteApi = com.stepup.android.data.remote.InviteApi(server)
         accessApi = com.stepup.android.data.remote.AccessApi(server)
+        val stepsApi = EventApi(server)
+        dailyStepsUploader = com.stepup.android.data.repo.DailyStepsUploader(
+            readDay = { day -> database.stepDao().byDay(day)?.let { it.steps to it.goal } },
+            send = { days -> stepsApi.syncSteps(days) },
+            account = { runCatching { sessionHolder.recordingOwner() }.getOrNull() },
+        )
         economySync = com.stepup.android.data.repo.EconomySync(
             api = economyApi,
             market = MarketApi(server),
             db = database,
             prefs = userPrefs,
             sessions = sessionHolder,
+            afterCheckIn = { if (economyApi.isConfigured) dailyStepsUploader.upload() },
         )
         // 서버 주소가 있는 빌드는 언제나 서버 경제다. 없는 빌드(로컬 개발)만 예전처럼 폰 안에서 계산한다.
         val serverEconomy = economyApi.isConfigured
@@ -386,9 +399,20 @@ object ServiceLocator {
             read = { userPrefs.pendingOverspeedStops() },
             acknowledge = { startedAt -> userPrefs.takePendingOverspeedStop(startedAt) },
             currentOwner = { sessionHolder.recordingOwner() },
-            report = { startedAt, stoppedAt, userId -> server.reportOverspeedStop(startedAt, stoppedAt, userId) },
+            report = { stop, userId -> server.reportOverspeedStop(stop.startedAt, stop.stoppedAt, userId, stop.sneakerId) },
             configured = { server.isConfigured },
             onReported = { if (serverEconomy) economySync.refresh() },
+        )
+        val itemsApi = com.stepup.android.data.remote.ItemsApi(server)
+        itemsRepository = com.stepup.android.data.repo.ItemsRepository(
+            bagCall = { itemsApi.bag() },
+            useCall = { kind, request, sneaker -> itemsApi.use(kind, request, sneaker) },
+            bindCall = { startedAt, kinds, userId -> itemsApi.bindToRun(startedAt, kinds, userId) },
+            addPending = { row -> userPrefs.addPendingRunItems(row) },
+            readPending = { userPrefs.pendingRunItems() },
+            takePending = { startedAt -> userPrefs.takePendingRunItems(startedAt) },
+            configured = { server.isConfigured },
+            onChanged = { if (serverEconomy) economySync.refresh() },
         )
         rankingRepository = RankingRepository(server)
         leaderboards = com.stepup.android.data.repo.ServerLeaderboardSource(com.stepup.android.data.remote.LeaderboardApi(server))
@@ -420,6 +444,7 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
             pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
             owner = recordingOwnerFlow(),
+            uploadSteps = { if (serverEconomy && sessionHolder.isSignedIn()) dailyStepsUploader.upload() },
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,

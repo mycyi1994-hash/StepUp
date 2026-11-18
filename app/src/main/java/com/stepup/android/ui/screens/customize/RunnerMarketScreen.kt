@@ -93,7 +93,7 @@ import com.stepup.android.ui.theme.VoltText
 fun RunnerMarketScreen(
     onBack: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
-    onOpenModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
+    onOpenModel: (com.stepup.android.data.remote.ModelKey) -> Unit = {},
     onOpenVault: () -> Unit = {},
     viewModel: CustomizeViewModel = viewModel(factory = CustomizeViewModel.Factory),
     marketViewModel: MarketViewModel = viewModel(factory = MarketViewModel.Factory),

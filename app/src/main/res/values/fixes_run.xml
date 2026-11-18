@@ -2,4 +2,7 @@
 <!-- 러닝 · 신발 점검 수정(2026-11-03) -->
 <resources>
     <string name="run_equip_blocked">You can\'t change shoes during a run. Change them after you finish.</string>
+    <!-- 버그 점검 수정(2026-11-17) -->
+    <string name="fix_draw_already_received">We already gave you the shoe from that draw.</string>
+    <string name="fix_points_error_not_reloaded">Couldn\'t spend the points, and we couldn\'t load the latest values yet. Try again in a moment.</string>
 </resources>

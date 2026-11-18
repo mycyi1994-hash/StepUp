@@ -237,6 +237,9 @@ data class SneakerEntity(
     @ColumnInfo(defaultValue = "0") val pointsRespec: Boolean = false,
     /** 내구도 1(10m) 고치는 값 */
     @ColumnInfo(defaultValue = "0") val repairCostPerUnit: Double = 0.0,
+    /** 이 신발로 달린 거리(km)와 팔 수 있게 되는 거리(km) — 무료 뽑기 신발은 잠금 거리를 달려야 판다(서버 can_withdraw, 판 21) */
+    @ColumnInfo(defaultValue = "0") val kmRun: Double = 0.0,
+    @ColumnInfo(defaultValue = "0") val lockKm: Double = 0.0,
 )
 
 /**

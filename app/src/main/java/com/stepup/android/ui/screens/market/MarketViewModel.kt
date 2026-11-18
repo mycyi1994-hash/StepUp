@@ -203,11 +203,7 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
                     is ServerResult.Ok -> {
                         val quotesResult = repo.quotes()
                         val quote = if (quotesResult is ServerResult.Ok) {
-                            quotesResult.value.firstOrNull {
-                                it.faction == key.faction &&
-                                    it.rarity == key.rarity &&
-                                    it.variant == key.variant
-                            }
+                            quotesResult.value.firstOrNull { it.key == key }
                         } else {
                             null
                         }
@@ -224,10 +220,14 @@ class MarketModelViewModel(private val repo: MarketRepository) : ViewModel() {
                             book = book.value,
                             quote = quote,
                             tradable = tradable,
-                            mySneakers = repo.inventory().first().filter {
-                                it.factionId == key.faction &&
-                                    it.rarity == key.rarity &&
-                                    it.variant == key.variant
+                            // 이 장의 내 신발 — 도감 모델 장이면 그 모델(0107), 아니면 예전처럼 속성 × 등급 × 변형(모델 없는 신발)
+                            mySneakers = repo.inventory().first().filter { shoe ->
+                                if (key.modelId != null) {
+                                    shoe.modelId == key.modelId
+                                } else {
+                                    shoe.modelId == 0 && shoe.factionId == key.faction &&
+                                        shoe.rarity == key.rarity && shoe.variant == key.variant
+                                }
                             },
                         )
                     }
@@ -347,6 +347,7 @@ internal fun refusalRes(refusal: MarketRefusal): Int = when (refusal) {
     MarketRefusal.LOCKED_SHOE -> R.string.market_err_locked_shoe
     MarketRefusal.NOT_TRANSFERABLE -> R.string.market_err_not_transferable
     MarketRefusal.RUN_MORE -> R.string.market_err_run_more
+    MarketRefusal.PAUSED -> R.string.market_trading_paused_short
     MarketRefusal.SIGN_IN -> R.string.market_msg_sign_in
     MarketRefusal.OTHER -> R.string.market_err_other
 }

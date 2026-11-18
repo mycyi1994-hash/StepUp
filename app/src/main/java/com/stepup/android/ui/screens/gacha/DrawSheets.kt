@@ -170,9 +170,38 @@ internal fun FreeChancesSheet(status: DrawStatus, canDraw: Boolean, onDraw: () -
 /**
  * DRAW04 — 상급 뽑기 기회: 첫 연결 선물 · 러닝으로 받은 기회(남은 수) → 남은 상급 뽑기, 다음 1회까지(서버 거리).
  * DRAW30 — 오늘 러닝 지급 한도면 진행 막대 대신 알림. 이미 가진 기회는 그대로 쓸 수 있다(뽑기 버튼은 남는다).
+ * 선물로 받은 상급 뽑기(0112)가 있으면 그 줄을 더한다. 스토어 판([web3] = false)은 선물 줄 · 합계만 — 지갑 · 러닝 · 일시 중단 안내는 없다.
  */
 @Composable
-internal fun PremiumChancesSheet(status: DrawStatus, canDraw: Boolean, onDraw: () -> Unit, onRules: () -> Unit, onClose: () -> Unit) {
+internal fun PremiumChancesSheet(
+    status: DrawStatus,
+    canDraw: Boolean,
+    onDraw: () -> Unit,
+    onRules: () -> Unit,
+    onClose: () -> Unit,
+    web3: Boolean = com.stepup.android.BuildConfig.WEB3,
+) {
+    if (!web3) {
+        DrawSheetFrame(
+            title = stringResource(R.string.dv2_premium_sheet_title), subtitle = stringResource(R.string.update_reward_sheet_sub),
+            onDismiss = onClose, modifier = Modifier.testTag("draw-sheet-premium"),
+            actions = {
+                SheetActions(
+                    stringResource(R.string.dv2_action_premium), onDraw, "draw-sheet-draw",
+                    stringResource(R.string.dv2_close), onClose, primaryEnabled = canDraw, primaryIcon = true,
+                )
+            },
+        ) {
+            SheetLine(stringResource(R.string.update_reward_line), count(status.rewardLeft.coerceAtLeast(0)), tag = "draw-sheet-reward")
+            RunDivider()
+            SheetTotal(
+                stringResource(R.string.dv2_premium_now), count(status.shownLeft(com.stepup.android.domain.DrawKind.PREMIUM, web3 = false)),
+                "draw-sheet-premium-total",
+            )
+            RulesLink(onRules)
+        }
+        return
+    }
     DrawSheetFrame(
         title = stringResource(R.string.dv2_premium_sheet_title),
         subtitle = if (status.walletLinked && status.runStepMeters > 0) {
@@ -190,6 +219,9 @@ internal fun PremiumChancesSheet(status: DrawStatus, canDraw: Boolean, onDraw: (
     ) {
         SheetLine(stringResource(R.string.dv2_link_gift), count(status.giftLeft))
         SheetLine(stringResource(R.string.dv2_run_earned), count(status.runLeft))
+        if (status.rewardLeft > 0) {
+            SheetLine(stringResource(R.string.update_reward_line), count(status.rewardLeft), tag = "draw-sheet-reward")
+        }
         RunDivider()
         SheetTotal(stringResource(R.string.dv2_premium_now), count(status.premiumLeft), "draw-sheet-premium-total")
         if (status.walletLinked) {
@@ -226,9 +258,17 @@ private fun RunProgress(status: DrawStatus) {
     }
 }
 
-/** DRAW05 — 기회 받는 방법. 숫자는 서버가 준 것만(가입 선물이 없던 계정 · 이미 연결한 계정은 그 줄을 뺀다) */
+/**
+ * DRAW05 — 기회 받는 방법. 숫자는 서버가 준 것만(가입 선물이 없던 계정 · 이미 연결한 계정은 그 줄을 뺀다).
+ * 상급 칸이 보이는 동안([premiumShown])은 상급 확률도 보인다 — 스토어 판은 선물로 받은 상급 뽑기가 있을 때만(지갑 · 러닝 줄 없이).
+ */
 @Composable
-internal fun RulesSheet(status: DrawStatus, onClose: () -> Unit) {
+internal fun RulesSheet(
+    status: DrawStatus,
+    onClose: () -> Unit,
+    web3: Boolean = com.stepup.android.BuildConfig.WEB3,
+    premiumShown: Boolean = web3,
+) {
     val step = DrawDistance.stepKm(status.runStepMeters)
     // 등급별 확률 — 뽑기가 쓰는 서버 표 그대로(0077). 읽지 못하면 줄을 두지 않는다(앱이 확률을 지어내지 않는다)
     val odds by androidx.compose.runtime.produceState<com.stepup.android.domain.DrawOdds?>(null) {
@@ -244,12 +284,16 @@ internal fun RulesSheet(status: DrawStatus, onClose: () -> Unit) {
         if (status.signupGranted > 0) SheetLine(stringResource(R.string.dv2_rules_signup), count(status.signupGranted))
         if (status.dailyTotal > 0) SheetLine(stringResource(R.string.dv2_rules_daily), count(status.dailyTotal))
         odds?.free?.let { OddsLines(it, "draw-odds-free") }
-        // 상급(지갑 연결 혜택)은 블록체인 기능이 있는 판에만
-        if (com.stepup.android.BuildConfig.WEB3) {
+        // 상급(지갑 연결 혜택)은 블록체인 기능이 있는 판에 — 스토어 판은 선물로 받은 상급 뽑기가 있어 상급 칸이 보일 때만(0112)
+        if (web3 || premiumShown) {
             RunDivider()
             SheetGroupLabel(stringResource(R.string.dv2_premium))
-            if (status.giftOnLink > 0) SheetLine(stringResource(R.string.dv2_rules_first_link), count(status.giftOnLink))
-            if (status.runStepMeters > 0) SheetLine(stringResource(R.string.dv2_rules_run, step), stringResource(R.string.dv2_plus_one))
+            if (web3) {
+                if (status.giftOnLink > 0) SheetLine(stringResource(R.string.dv2_rules_first_link), count(status.giftOnLink))
+                if (status.runStepMeters > 0) SheetLine(stringResource(R.string.dv2_rules_run, step), stringResource(R.string.dv2_plus_one))
+            } else {
+                SheetBody(stringResource(R.string.update_reward_rules_note), modifier = Modifier.padding(top = 4.dp))
+            }
             SheetBody(stringResource(R.string.dv2_rules_note), modifier = Modifier.padding(top = 4.dp))
             odds?.premium?.takeIf { it.isNotEmpty() }?.let { OddsLines(it, "draw-odds-premium") }
         }
@@ -323,11 +367,17 @@ internal fun WalletLinkedSheet(gift: Int, canDraw: Boolean, onDraw: () -> Unit, 
 
 /** DRAW16 — 무료 기회를 모두 썼다. 갱신 시각 · 소멸을 지어내지 않는다. "상급 뽑기 보기"는 같은 화면의 상급 패널로 */
 @Composable
-internal fun FreeEmptySheet(status: DrawStatus, onSeePremium: () -> Unit, onClose: () -> Unit) {
+internal fun FreeEmptySheet(
+    status: DrawStatus,
+    onSeePremium: () -> Unit,
+    onClose: () -> Unit,
+    /** 상급 칸이 보이는가 — 스토어 판은 선물로 받은 상급 뽑기가 있을 때만(0112) */
+    premiumShown: Boolean = com.stepup.android.BuildConfig.WEB3,
+) {
     DrawSheetFrame(
         title = stringResource(R.string.dv2_free_empty_title), onDismiss = onClose, modifier = Modifier.testTag("draw-sheet-free-empty"),
         actions = {
-            if (com.stepup.android.BuildConfig.WEB3) {
+            if (premiumShown) {
                 SheetActions(
                     stringResource(R.string.dv2_ok), onClose, "draw-sheet-ok",
                     stringResource(R.string.dv2_see_premium), onSeePremium, secondaryTag = "draw-sheet-see-premium",

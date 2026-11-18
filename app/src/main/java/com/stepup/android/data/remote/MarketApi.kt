@@ -18,11 +18,11 @@ class MarketApi(private val server: StepUpServer) {
 
     // ── 읽기 ────────────────────────────────────────────────────────
 
-    /** 모델별 시세 한 줄씩. 거래가 많은 순으로 온다. */
+    /** 모델별 시세 한 줄씩(0107 — 도감 모델이 있는 신발은 모델 하나가 한 줄). 거래가 많은 순으로 온다. */
     suspend fun quotes(): ServerResult<List<QuoteRow>> =
         server.authed { token ->
             server.http.get(
-                "${server.restUrl}/market_quotes?select=*" +
+                "${server.restUrl}/market_quotes_v2?select=*" +
                     "&order=volume_24h.desc,supply.desc,rarity.asc",
                 server.headers(token),
             )
@@ -32,7 +32,7 @@ class MarketApi(private val server: StepUpServer) {
     suspend fun asks(model: ModelKey): ServerResult<List<AskRow>> =
         server.authed { token ->
             server.http.get(
-                "${server.restUrl}/market_asks?select=*&${model.filter()}&order=price.asc",
+                "${server.restUrl}/market_asks_v2?select=*&${model.filter()}&order=price.asc",
                 server.headers(token),
             )
         }.mapBody { serverJson.decodeFromString<List<AskRow>>(it) }
@@ -41,7 +41,7 @@ class MarketApi(private val server: StepUpServer) {
     suspend fun bids(model: ModelKey): ServerResult<List<BidRow>> =
         server.authed { token ->
             server.http.get(
-                "${server.restUrl}/market_bid_book?select=*&${model.filter()}&order=price.desc",
+                "${server.restUrl}/market_bid_book_v2?select=*&${model.filter()}&order=price.desc",
                 server.headers(token),
             )
         }.mapBody { serverJson.decodeFromString<List<BidRow>>(it) }
@@ -51,7 +51,7 @@ class MarketApi(private val server: StepUpServer) {
         server.authed { token ->
             server.http.get(
                 "${server.restUrl}/market_trades" +
-                    "?select=id,faction,rarity,variant,level,price,kind,traded_at" +
+                    "?select=id,faction,rarity,variant,level,price,kind,traded_at,model_id" +
                     "&${model.filter()}&order=traded_at.desc&limit=$limit",
                 server.headers(token),
             )
@@ -62,7 +62,7 @@ class MarketApi(private val server: StepUpServer) {
         rpc("market_my_sneakers", "{}") { serverJson.decodeFromString<List<MySneakerRow>>(it) }
 
     suspend fun myBids(): ServerResult<List<MyBidRow>> =
-        rpc("market_my_bids", "{}") { serverJson.decodeFromString<List<MyBidRow>>(it) }
+        rpc("market_my_bids_v2", "{}") { serverJson.decodeFromString<List<MyBidRow>>(it) }
 
     /**
      * 거래로 오간 SUP 줄들. [afterId] 다음 것만 온다.
@@ -82,7 +82,7 @@ class MarketApi(private val server: StepUpServer) {
         }.mapBody { serverJson.decodeFromString<List<LedgerRow>>(it) }
 
     suspend fun myTrades(limit: Int = 30): ServerResult<List<MyTradeRow>> =
-        rpc("market_my_trades", jsonBody { put("p_limit", limit) }) {
+        rpc("market_my_trades_v2", jsonBody { put("p_limit", limit) }) {
             serverJson.decodeFromString<List<MyTradeRow>>(it)
         }
 
@@ -142,23 +142,41 @@ class MarketApi(private val server: StepUpServer) {
     suspend fun buyNow(listingId: Long, request: String? = null): ServerResult<Long?> =
         rpcNullable("market_buy_now", jsonBody { put("p_listing_id", listingId); request?.let { put("p_request", it) } })
 
-    /** 모델에 값을 건다. 살 수 있는 매물이 이미 있으면 기다리지 않고 산다. */
+    /**
+     * 모델에 값을 건다. 살 수 있는 매물이 이미 있으면 기다리지 않고 산다.
+     * 도감 모델이면 그 모델에만 건다(0107 market_bid_model — 같은 등급의 다른 모델은 이 입찰에 팔리지 않는다).
+     */
     suspend fun bid(
         model: ModelKey,
         minLevel: Int,
         price: Double,
         request: String? = null,
-    ): ServerResult<Long?> = rpcNullable(
-        "market_bid",
-        jsonBody {
-            put("p_faction", model.faction)
-            put("p_rarity", model.rarity)
-            put("p_variant", model.variant)
-            put("p_min_level", minLevel)
-            put("p_price", price)
-            request?.let { put("p_request", it) }
-        },
-    )
+    ): ServerResult<Long?> {
+        val shoeModel = model.modelId
+        return if (shoeModel != null) {
+            rpcNullable(
+                "market_bid_model",
+                jsonBody {
+                    put("p_model", shoeModel)
+                    put("p_min_level", minLevel)
+                    put("p_price", price)
+                    request?.let { put("p_request", it) }
+                },
+            )
+        } else {
+            rpcNullable(
+                "market_bid",
+                jsonBody {
+                    put("p_faction", model.faction)
+                    put("p_rarity", model.rarity)
+                    put("p_variant", model.variant)
+                    put("p_min_level", minLevel)
+                    put("p_price", price)
+                    request?.let { put("p_request", it) }
+                },
+            )
+        }
+    }
 
     suspend fun cancelBid(bidId: Long): ServerResult<Unit> =
         rpcVoid("market_cancel_bid", jsonBody { put("p_bid_id", bidId) })
@@ -210,9 +228,27 @@ class MarketApi(private val server: StepUpServer) {
     private class Box(val value: Long?)
 }
 
-/** 모델 하나 — 속성 × 등급 × 변형. 시세는 이 단위로 매겨진다. */
-data class ModelKey(val faction: String, val rarity: String, val variant: Int) {
-    internal fun filter(): String = "faction=eq.$faction&rarity=eq.$rarity&variant=eq.$variant"
+/**
+ * 거래소의 모델 하나 — 시세는 이 단위로 매겨진다(0107).
+ *
+ * 도감 모델이 있는 신발(0066 뒤 레어부터)은 모델 번호 하나([modelId])가 한 장이다 — 속성 · 변형은 그 신발의 그림 · 이름과 상관없어
+ * 속성 "NONE" · 변형 0 으로 둔다. 모델이 없는 신발(일반 등급 · 예전 52종)은 예전처럼 속성 × 등급 × 변형.
+ */
+data class ModelKey(val faction: String, val rarity: String, val variant: Int, val modelId: Int? = null) {
+    internal fun filter(): String =
+        if (modelId != null) "model_id=eq.$modelId"
+        else "faction=eq.$faction&rarity=eq.$rarity&variant=eq.$variant&model_id=is.null"
+
+    companion object {
+        /** 도감 모델 장 */
+        fun ofModel(rarity: String, modelId: Int) = ModelKey(NO_FACTION, rarity, 0, modelId)
+
+        /** 이 신발이 거래되는 장 — 신발 탭 · 상세의 "판매하기"가 이 장을 연다(누른 신발과 같은 모델) */
+        fun of(shoe: com.stepup.android.domain.Sneaker): ModelKey =
+            shoe.modelId?.let { ofModel(shoe.rarity.id, it) } ?: ModelKey(shoe.factionId, shoe.rarity.id, shoe.variant)
+
+        private const val NO_FACTION = "NONE"
+    }
 }
 
 @Serializable
@@ -220,6 +256,8 @@ data class QuoteRow(
     val faction: String,
     val rarity: String,
     val variant: Int,
+    /** 도감 모델(0107 시세판 2판). 있으면 이 줄은 그 모델 하나 */
+    @SerialName("model_id") val modelId: Int? = null,
     val supply: Int,
     val listed: Int,
     /** 즉시 구매가 — 가장 싼 매물. 매물이 없으면 null */
@@ -230,7 +268,9 @@ data class QuoteRow(
     @SerialName("last_price") val lastPrice: Double? = null,
     @SerialName("trades_24h") val trades24h: Int = 0,
     @SerialName("volume_24h") val volume24h: Double = 0.0,
-)
+) {
+    val key: ModelKey get() = ModelKey(faction, rarity, variant, modelId)
+}
 
 @Serializable
 data class AskRow(
@@ -244,6 +284,7 @@ data class AskRow(
     val level: Int,
     @SerialName("mint_number") val mintNumber: Long,
     val durability: Int,
+    @SerialName("model_id") val modelId: Int? = null,
 )
 
 @Serializable
@@ -255,6 +296,7 @@ data class BidRow(
     val variant: Int,
     @SerialName("min_level") val minLevel: Int,
     val price: Double,
+    @SerialName("model_id") val modelId: Int? = null,
 )
 
 @Serializable
@@ -268,6 +310,7 @@ data class TradeRow(
     /** BY_ASK = 매물이 먼저 있었다, BY_BID = 구매 입찰이 먼저 있었다 */
     val kind: String,
     @SerialName("traded_at") val tradedAt: String,
+    @SerialName("model_id") val modelId: Int? = null,
 )
 
 @Serializable
@@ -306,7 +349,10 @@ data class MyBidRow(
     val variant: Int,
     @SerialName("min_level") val minLevel: Int,
     val price: Double,
-)
+    @SerialName("model_id") val modelId: Int? = null,
+) {
+    val key: ModelKey get() = ModelKey(faction, rarity, variant, modelId)
+}
 
 @Serializable
 data class MyTradeRow(
@@ -320,4 +366,7 @@ data class MyTradeRow(
     /** true = 내가 팔았다, false = 내가 샀다 */
     val sold: Boolean,
     @SerialName("traded_at") val tradedAt: String,
-)
+    @SerialName("model_id") val modelId: Int? = null,
+) {
+    val key: ModelKey get() = ModelKey(faction, rarity, variant, modelId)
+}

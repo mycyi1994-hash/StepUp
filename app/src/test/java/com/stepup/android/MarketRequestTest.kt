@@ -111,6 +111,27 @@ class MarketRequestTest {
         assertNotEquals(requests[1], requests[2])
     }
 
+    @Test fun `도감 모델 장의 입찰은 market_bid_model 로 그 모델에만 건다(0107)`() = runBlocking {
+        val http = Http { HttpResponse(200, "7") }
+        val api = api(http)
+        api.bid(ModelKey.ofModel("RARE", 1119), 2, 300.0, "k9")
+        assertEquals("market_bid_model", http.calls.single().first.substringAfterLast('/'))
+        assertEquals("""{"p_model":1119,"p_min_level":2,"p_price":300.0,"p_request":"k9"}""", http.calls.single().second)
+    }
+
+    @Test fun `장부는 모델 장이면 모델 번호로, 아니면 모델 없는 줄만 읽는다(0107)`() = runBlocking {
+        val http = Http { HttpResponse(200, "[]") }
+        val api = api(http)
+        api.asks(ModelKey.ofModel("RARE", 1119))
+        api.bids(model)
+        api.history(ModelKey.ofModel("RARE", 1119))
+        val urls = http.calls.map { it.first }
+        assertTrue(urls[0], urls[0].contains("/market_asks_v2?") && urls[0].contains("model_id=eq.1119") && !urls[0].contains("variant="))
+        assertTrue(urls[1], urls[1].contains("/market_bid_book_v2?") &&
+            urls[1].contains("faction=eq.WIND&rarity=eq.RARE&variant=eq.1&model_id=is.null"))
+        assertTrue(urls[2], urls[2].contains("model_id=eq.1119") && urls[2].contains(",model_id"))
+    }
+
     @Test fun `거절도 답이다 — 다음 거래는 새 번호로 보낸다`() = runBlocking {
         val http = Http { HttpResponse(400, """{"message":"이미 끝난 매물입니다"}""") }
         val api = api(http)

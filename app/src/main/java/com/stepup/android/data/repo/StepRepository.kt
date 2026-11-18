@@ -6,6 +6,7 @@ import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RunIntegrity
+import com.stepup.android.domain.DayClock
 import com.stepup.android.domain.StreakRules
 import com.stepup.android.sensor.StepTracker
 import com.stepup.android.service.WalkSessionService
@@ -15,11 +16,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** 걸음 수 추적, 일별 기록 저장, 목표 달성 판정을 담당한다. */
@@ -33,12 +37,22 @@ class StepRepository(
     private val pushGoal: (suspend (Int) -> Unit)? = null,
     /** 지금 계정의 기록 주인 — 화면에 보일 러닝을 그 계정 것(+ 옛 기록)으로 좁힌다 */
     private val owner: Flow<String> = kotlinx.coroutines.flow.flowOf(com.stepup.android.domain.RecordingOwner.LEGACY),
+    /** 하루 목표를 채운 순간 어제 · 오늘 걸음을 서버에 올린다(체인 하루 걸음 기록 — 그날이 끝나기 전에 서버가 알게). 서버가 없으면 null */
+    private val uploadSteps: (suspend () -> Unit)? = null,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val trackingStarted = AtomicBoolean(false)
 
-    val todaySteps: StateFlow<Int> = tracker.todaySteps
+    /**
+     * 화면에 보이는 오늘 걸음 — 센서 값이 어제 잰 것이면(자정이 지나고 아직 첫 걸음 전) 0(점검 2026-11-17 #24).
+     * 걸음 세기 · 저장 · 적립은 이 값이 아니라 센서 값([rawTodaySteps] · [startTracking])을 그대로 쓴다.
+     */
+    val todaySteps: StateFlow<Int> = combine(tracker.reading, DayClock.ticker()) { reading, today -> reading.shownOn(today) }
+        .stateIn(scope, SharingStarted.WhileSubscribed(5_000), tracker.reading.value.shownOn(LocalDate.now().toEpochDay()))
+
+    /** 센서가 낸 오늘 걸음 그대로 — 러닝 정산의 기준점 맞추기처럼 예전 값이 필요한 곳 */
+    val rawTodaySteps: StateFlow<Int> = tracker.todaySteps
     val dailyGoal: Flow<Int> = prefs.dailyGoal
 
     /**
@@ -46,10 +60,10 @@ class StepRepository(
      * 저장된 값은 목표를 채운 날에만 바뀌어, 하루를 놓쳐도 다음에 채울 때까지 옛 값이 보였다(2026-10-17 점검).
      * 날짜 · 보호막은 [onSteps] 가 이어 셀 때와 같은 규칙이다(StreakRules).
      */
-    val streak: Flow<Int> = prefs.streakRecord
-        .distinctUntilChanged()
-        .map { (stored, lastMet) ->
-            val today = LocalDate.now().toEpochDay()
+    val streak: Flow<Int> = combine(prefs.streakRecord.distinctUntilChanged(), DayClock.ticker()) { record, today -> record to today }
+        // 날짜가 바뀌면 다시 본다 — 저장값이 바뀔 때만 보면 자정이 지나 어제를 놓친 것이 첫 걸음 전까지 안 보였다(점검 2026-11-17 #24)
+        .map { (record, today) ->
+            val (stored, lastMet) = record
             val shielded = StreakRules.needsShield(lastMet, today) && rewardRepository.streakShieldCovered(today - 1)
             StreakRules.shown(stored, lastMet, today, shielded)
         }
@@ -168,6 +182,7 @@ class StepRepository(
             val newStreak = if (metYesterday || shielded) prefs.streakValue() + 1 else 1
             prefs.setGoalMet(today, newStreak)
             rewardRepository.creditGoalBonus(newStreak, goal)
+            uploadSteps?.let { upload -> scope.launch { runCatching { upload() } } }
         }
 
         accrueBackground(today, steps)

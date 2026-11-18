@@ -7,7 +7,7 @@ const SUPABASE_KEY = 'sb_publishable_jt74AKM32zdqnJlsFHEo2g_MNHa-WRO';
 // 키를 넣으면 등록은 워커(/v1/waitlist/register)가 토큰을 확인한 뒤에만 들어간다.
 const TURNSTILE_SITE_KEY = '0x4AAAAAAFwSGcKev3bQRGVx';
 const WAITLIST_WORKER = 'https://stepup-attester.gana003.workers.dev/v1/waitlist/register';
-// 사전 등록 마감 — 서버 economy_settings 'waitlist_closes_at'(0106)과 같은 시각. 서버가 'waitlist closed' 로 답해도 마감으로 바꾼다
+// 사전 등록 마감 — 서버 economy_settings 'waitlist_closes_at'(0115)과 같은 시각. 서버가 'waitlist closed' 로 답해도 마감으로 바꾼다
 const WAITLIST_CLOSES = Date.parse('2026-11-18T23:59:00+09:00');
 let closedByServer = false;
 const waitlistClosed = () => closedByServer || Date.now() >= WAITLIST_CLOSES;

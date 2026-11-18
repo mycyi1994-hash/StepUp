@@ -80,6 +80,7 @@ fun PointsPhase.sceneTag(): String = "points-" + when (this) {
         null -> "editing"
         PointsError.OFFLINE -> "offline"
         PointsError.REJECTED -> "rejected"
+        PointsError.REJECTED_NOT_RELOADED -> "rejected-stale"
         PointsError.SIGN_IN -> "sign-in"
     }
     is PointsPhase.Confirm -> "confirm"
@@ -93,12 +94,12 @@ fun PointsPhase.sceneTag(): String = "points-" + when (this) {
  */
 internal suspend fun sendPoints(sending: PointsPhase.Sending): PointsPhase {
     val draft = sending.draft
-    val outcome = try {
-        ServiceLocator.sneakerRepository.setPointsOnServer(sending.basis.shoeId, draft.efficiency, draft.comfort, draft.durability)
+    val (outcome, reloaded) = try {
+        ServiceLocator.sneakerRepository.setPointsOnServerChecked(sending.basis.shoeId, draft.efficiency, draft.comfort, draft.durability)
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (_: Exception) {
-        EconomyOutcome.Offline
+        EconomyOutcome.Offline to false
     }
     val latest = try {
         ServiceLocator.sneakerRepository.inventory.first().firstOrNull { it.id == sending.basis.shoeId }?.let(::pointsBasisOf)
@@ -108,7 +109,7 @@ internal suspend fun sendPoints(sending: PointsPhase.Sending): PointsPhase {
         null
     }
     ExperienceEvents.emit(if (outcome == EconomyOutcome.Ok) FeedbackCue.Success else FeedbackCue.Error)
-    return pointsAfterSend(sending, outcome, latest)
+    return pointsAfterSend(sending, outcome, latest, reloaded)
 }
 
 @Composable
@@ -157,6 +158,7 @@ private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: P
                         when (error) {
                             PointsError.OFFLINE -> R.string.points_error_offline
                             PointsError.REJECTED -> R.string.points_error_rejected
+                            PointsError.REJECTED_NOT_RELOADED -> R.string.fix_points_error_not_reloaded
                             PointsError.SIGN_IN -> R.string.points_error_sign_in
                         },
                     ),

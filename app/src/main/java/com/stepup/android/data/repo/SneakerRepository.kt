@@ -50,18 +50,26 @@ class SneakerRepository(
     /** 지갑 연결로 받은 보너스 뽑기 — 지갑 페이지에서 쓴다 */
     val bonusDrawsLeft: Flow<Int> = prefs?.bonusDrawsLeft ?: kotlinx.coroutines.flow.flowOf(0)
 
-    /** 서버 요청 뒤 목록을 다시 받는다. 받지 못해도 요청 자체는 이미 끝났다. */
-    private suspend fun resync() {
-        sync?.refresh()
-    }
+    /** 서버 요청 뒤 목록을 다시 받는다. 받지 못해도 요청 자체는 이미 끝났다. 다시 받았으면 true */
+    private suspend fun resync(): Boolean = sync?.refresh() is com.stepup.android.data.remote.ServerResult.Ok
 
     /**
      * 요청 결과가 성공이거나, 응답을 못 받았을 때(보냈는지 모름)는 서버 값을 다시 받는다 —
      * 응답만 잃고 서버에서는 이미 처리됐으면 잔고 · 신발이 그걸 보여 줘야 다시 누르지 않는다.
+     * [afterRejection] 이면 서버가 거절했을 때도 다시 받는다 — 폰 사본이 낡아 거절됐으면(이미 나눈 포인트 · 이미 가득 찬 내구도 ·
+     * 다른 폰에서 바꾼 착용) 낡은 사본으로 같은 거절을 되풀이하지 않게(2026-11-17 점검 #17). 로그인이 필요하면 받을 수 없다.
      */
-    private suspend fun afterWrite(outcome: EconomyOutcome): EconomyOutcome {
-        if (outcome == EconomyOutcome.Ok || outcome == EconomyOutcome.Offline) resync()
-        return outcome
+    private suspend fun afterWrite(outcome: EconomyOutcome, afterRejection: Boolean = false): EconomyOutcome =
+        afterWriteChecked(outcome, afterRejection).first
+
+    /** [afterWrite] 에 더해 실제로 다시 받았는가(화면이 "최신 값으로 다시 불러왔어요"라고 써도 되는가) */
+    private suspend fun afterWriteChecked(outcome: EconomyOutcome, afterRejection: Boolean): Pair<EconomyOutcome, Boolean> {
+        val again = when (outcome) {
+            EconomyOutcome.Ok, EconomyOutcome.Offline -> true
+            EconomyOutcome.SignInRequired -> false
+            else -> afterRejection
+        }
+        return outcome to (again && resync())
     }
 
     /**
@@ -75,7 +83,7 @@ class SneakerRepository(
         if (!serverEconomy || api == null || local.origin.isBlank()) {
             return if (sneakerDao.equipExclusively(id) > 0) EconomyOutcome.Ok else EconomyOutcome.Rejected("")
         }
-        return afterWrite(api.equip(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome())
+        return afterWrite(api.equip(local.serverId.takeIf { it != 0L } ?: id).toEconomyOutcome(), afterRejection = true)
     }
 
     /** 강화 (서버). 새 레벨이 적용된 신발을 함께 돌려준다. */
@@ -106,6 +114,7 @@ class SneakerRepository(
             payOnce(repairAction(local)) { key ->
                 api.repair(local.serverId.takeIf { it != 0L } ?: id, points = points, request = key).toEconomyOutcome()
             },
+            afterRejection = true,
         )
     }
 
@@ -113,14 +122,22 @@ class SneakerRepository(
      * 스탯 포인트 나누기(0059) — 나눈 뒤의 합계(효율 · 착화감 · 내구도)를 보낸다. 늘리기만 된다.
      * 응답을 잃은 같은 나누기를 다시 보내면 같은 번호라 서버가 한 번만 적는다. 값을 바꿔 보내면 새 번호다.
      */
-    suspend fun setPointsOnServer(id: Long, efficiency: Int, comfort: Int, durability: Int): EconomyOutcome {
-        val api = economy ?: return EconomyOutcome.SignInRequired
-        val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다")
-        if (local.origin.isBlank()) return EconomyOutcome.SignInRequired
-        return afterWrite(
+    suspend fun setPointsOnServer(id: Long, efficiency: Int, comfort: Int, durability: Int): EconomyOutcome =
+        setPointsOnServerChecked(id, efficiency, comfort, durability).first
+
+    /**
+     * [setPointsOnServer] 에 더해 그 뒤 서버 값을 실제로 다시 받았는가 — 거절됐을 때 시트가 "최신 값으로 다시 불러왔어요"는
+     * 다시 받았을 때만 쓴다.
+     */
+    suspend fun setPointsOnServerChecked(id: Long, efficiency: Int, comfort: Int, durability: Int): Pair<EconomyOutcome, Boolean> {
+        val api = economy ?: return EconomyOutcome.SignInRequired to false
+        val local = sneakerDao.byId(id) ?: return EconomyOutcome.Rejected("없는 신발입니다") to false
+        if (local.origin.isBlank()) return EconomyOutcome.SignInRequired to false
+        return afterWriteChecked(
             payOnce("POINTS:$id:$efficiency/$comfort/$durability") { key ->
                 api.setPoints(local.serverId.takeIf { it != 0L } ?: id, efficiency, comfort, durability, key).toEconomyOutcome()
             },
+            afterRejection = true,
         )
     }
 

@@ -15,7 +15,8 @@ class OverspeedReporter(
     private val read: suspend () -> List<OverspeedStop>,
     private val acknowledge: suspend (startedAt: Long) -> Unit,
     private val currentOwner: suspend () -> String,
-    private val report: suspend (startedAt: Long, stoppedAt: Long, userId: String) -> ServerResult<Unit>,
+    /** 한 줄을 보낸다 — 시작 · 멈춤 시각과 출발 신발([OverspeedStop.sneakerId], 0 이면 서버가 지금 신은 신발로) */
+    private val report: suspend (stop: OverspeedStop, userId: String) -> ServerResult<Unit>,
     private val configured: () -> Boolean = { true },
     /** 서버가 하나라도 받았다 — 신발 내구도가 바뀌었으니 다시 받아 온다 */
     private val onReported: suspend () -> Unit = {},
@@ -38,7 +39,7 @@ class OverspeedReporter(
                 acknowledge(stop.startedAt)
                 continue
             }
-            when (val result = report(stop.startedAt, stop.stoppedAt, userId)) {
+            when (val result = report(stop, userId)) {
                 is ServerResult.Ok -> {
                     acknowledge(stop.startedAt)
                     reported = true

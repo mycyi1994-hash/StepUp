@@ -114,6 +114,37 @@ class CommunityApi(private val server: StepUpServer) {
         }.mapBody { serverJson.decodeFromString<List<PostRow>>(it) }
 
     /**
+     * 글 한 편 — 전체 목록(최근 [posts] 개)에 없는 예전 글을 알림 · 링크로 열 때(점검 2026-11-17 #19).
+     * 지워졌거나 볼 수 없으면(RLS · 차단 · 숨김 — post_feed 가 거른다) 빈 목록.
+     */
+    suspend fun post(postId: Long): ServerResult<List<PostRow>> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/post_feed?select=*&id=eq.$postId",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<PostRow>>(it) }
+
+    /** 한 크루 게시판의 글 — 최근 것부터 [limit] 개. 크루원이 아니면 서버(RLS)가 빈 목록을 준다 */
+    suspend fun crewPosts(crewId: String, limit: Int = 200): ServerResult<List<PostRow>> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/post_feed?select=*&crew_id=eq.${java.net.URLEncoder.encode(crewId, "UTF-8")}" +
+                    "&order=created_at.desc&limit=$limit",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<PostRow>>(it) }
+
+    /** 내가 쓴 글 — 최근 것부터 [limit] 개(post_feed 의 mine = 쓴 사람이 나) */
+    suspend fun myPosts(limit: Int = 200): ServerResult<List<PostRow>> =
+        server.authed { token ->
+            server.http.get(
+                "${server.restUrl}/post_feed?select=*&mine=is.true&order=created_at.desc&limit=$limit",
+                server.headers(token),
+            )
+        }.mapBody { serverJson.decodeFromString<List<PostRow>>(it) }
+
+    /**
      * 이 글을 지금 볼 수 있는가 — 지워졌거나 볼 수 없는 크루 글이면 서버(RLS)가 빈 목록을 준다.
      * 알림이 가리키는 글이 없어졌는지, 연결이 안 된 것인지 가르는 데 쓴다.
      */

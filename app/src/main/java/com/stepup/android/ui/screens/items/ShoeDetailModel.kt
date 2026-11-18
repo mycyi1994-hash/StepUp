@@ -107,16 +107,31 @@ fun durabilityEarnMinutes(shoe: Sneaker): Int? {
     return (server.durabilityNow.coerceAtLeast(0).toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT / 60).toInt()
 }
 
-/** 출발 전 점검에서 "약 N분만 보상" 을 알리는 기준(분) — 이보다 짧게 남았으면 알린다 */
+/** 출발 전 점검에서 "약 N분만 보상" 을 알리는 기준(분)의 상한 — 이보다 짧게 남았으면 알린다(짧은 신발은 [lowDurabilityMinutes]) */
 const val LOW_DURABILITY_WARN_MIN = 10
 
 /**
- * 수리를 앞에 내세울 때 — 다 닳았거나 보상을 받으며 달릴 시간이 [LOW_DURABILITY_WARN_MIN] 분보다 짧다.
+ * 출발 전 점검의 "약 N분만 보상을 받아요 · 수리하면 더 오래" 에 넣을 분 — 알리지 않을 때는 null.
+ * 기준은 그 신발 자신의 수명에 맞춘다: 남은 분이 [LOW_DURABILITY_WARN_MIN] 과 가득 찬 수명의 절반 가운데 작은 것보다 짧을 때.
+ * 새 일반 신발은 가득 차도 9 ~ 11분이라(최대 45 ~ 55) 예전 10분 기준이면 가득 찬 새 신발에도 알렸고, 수리를 눌러도 "이미 가득"이었다
+ * (2026-11-17 점검 #1). 가득 찬 신발은 고칠 것이 없으니 알리지 않는다. 최대 내구도를 모르는 신발도 알리지 않는다.
+ */
+fun lowDurabilityMinutes(shoe: Sneaker): Int? {
+    val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 } ?: return null
+    if (server.durabilityNow >= server.durabilityMax) return null
+    val left = durabilityEarnMinutes(shoe) ?: return null
+    val full = (server.durabilityMax.toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT / 60).toInt()
+    return left.takeIf { it < minOf(LOW_DURABILITY_WARN_MIN, full / 2) }
+}
+
+/** 다 닳았다 — 남은 비율이 0(서버 값). 이 뒤의 걸음은 적립하지 않는다(서버 0066) */
+fun durabilityWornOut(shoe: Sneaker): Boolean = (shoe.server?.durabilityFactor ?: 1.0) <= 0.0
+
+/**
+ * 수리를 앞에 내세울 때 — 다 닳았거나 [lowDurabilityMinutes] 가 알릴 만큼 짧게 남았다.
  * 출발 전 점검(FreeRunStart 의 경고 줄)과 같은 기준이다. 신발 탭 · 상세의 수리 버튼 강조가 이것 하나를 쓴다.
  */
-fun repairUrgent(shoe: Sneaker): Boolean =
-    (shoe.server?.durabilityFactor ?: 1.0) <= 0.0 ||
-        (durabilityEarnMinutes(shoe) ?: Int.MAX_VALUE) < LOW_DURABILITY_WARN_MIN
+fun repairUrgent(shoe: Sneaker): Boolean = durabilityWornOut(shoe) || lowDurabilityMinutes(shoe) != null
 
 /** 수리할 곳이 있다 — 남은 내구도가 최대보다 적다(수리 시트가 견적을 낼 수 있는 신발) */
 fun repairable(shoe: Sneaker): Boolean = durabilityLeft(shoe) < durabilityMax(shoe)

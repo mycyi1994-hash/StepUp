@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NotificationEntity::class,
         NewsItemEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -244,10 +244,21 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 신발을 팔 수 있게 되는 거리(2026-11-17) — 무료 뽑기 신발은 그 신발로 잠금 거리를 달려야 판다. 예전 줄은 0 ·
+         * 0 으로 두고 다음 동기화가 서버 값으로 채운다(그 전에는 까닭을 숫자 없이 말한다).
+         */
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sneakers ADD COLUMN kmRun REAL NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE sneakers ADD COLUMN lockKm REAL NOT NULL DEFAULT 0")
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
             MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
-            MIGRATION_18_19, MIGRATION_19_20,
+            MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
         )
     }
 }

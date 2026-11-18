@@ -22,7 +22,9 @@ on conflict (key) do nothing;
 
 -- 러닝으로 받은 상급 뽑기('RUN')는 지갑 선물('BONUS')과 따로 센다 — 화면이 출처마다 남은 수를 보인다
 alter table public.draw_grants drop constraint if exists draw_grants_kind_check;
-alter table public.draw_grants add constraint draw_grants_kind_check check (kind in ('FREE', 'BONUS', 'RUN'));
+-- not valid: 뒤 파일(0112)이 종류를 더 늘린다(GIFT). 다시 배포할 때 여기서 옛 목록으로 기존 줄을 검사하면 배포가 멈춘다.
+-- 전체 검사는 최종 목록을 거는 0112 가 한다.
+alter table public.draw_grants add constraint draw_grants_kind_check check (kind in ('FREE', 'BONUS', 'RUN')) not valid;
 
 -- 매일 무료 — 날짜마다 쓴 수. 오늘 줄이 없으면 오늘은 아직 안 썼다.
 create table if not exists public.draw_daily (

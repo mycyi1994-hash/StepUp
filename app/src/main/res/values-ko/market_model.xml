@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 거래소를 도감 모델 단위로 · 팔 수 없는 까닭(2026-11-17, 서버 0107) -->
+<resources>
+    <string name="care_sell_listed">판매 중이에요</string>
+    <string name="care_sell_starter">첫 신발은 팔 수 없어요</string>
+    <string name="care_sell_locked">이 신발로 %1$s km 더 달리면 팔 수 있어요</string>
+    <string name="care_sell_locked_unknown">무료 뽑기 신발은 이 신발로 정해진 거리를 달려야 팔 수 있어요</string>
+    <string name="care_sell_unavailable">지금은 팔 수 없는 신발이에요</string>
+    <string name="market_sell_none_owned">갖고 있는 이 모델 신발이 없어요.</string>
+    <!-- 거래 멈춤(0108) -->
+    <string name="market_trading_paused_short">지금은 거래를 쉬고 있어요</string>
+    <string name="market_trading_paused">지금은 거래를 쉬고 있어요. 시세는 볼 수 있고, 올린 매물 · 걸어 둔 입찰은 내 거래에서 거둘 수 있어요.</string>
+</resources>

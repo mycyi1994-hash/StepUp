@@ -42,6 +42,8 @@ class EconomySync(
     private val prefs: UserPrefs,
     private val sessions: SessionHolder,
     private val now: () -> Long = System::currentTimeMillis,
+    /** 동기화 때마다 — 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18). 실패해도 동기화는 계속한다 */
+    private val afterCheckIn: suspend () -> Unit = {},
 ) {
     private val lock = Mutex()
     private var bootstrapped: String? = null
@@ -119,6 +121,13 @@ class EconomySync(
         // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
         val checkIn = "$userId:${LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))}"
         if (checkedIn != checkIn && api.checkIn() is ServerResult.Ok) checkedIn = checkIn
+        // 하루 걸음(어제 · 오늘) — 서버가 그날 목표 달성 여부를 체인에 남긴다(0078 DAILY_STEPS). 바뀐 날만 보낸다
+        try {
+            afterCheckIn()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+        }
         // 폰에서 바꾼 프로필 이름을 서버에도(0084) — 예전 앱은 폰에만 적어 크루장 이름이 그대로였다. 실패해도 동기화는 계속한다
         syncNickname(userId)
         importLegacy(userId)?.let { return it }
@@ -146,6 +155,9 @@ class EconomySync(
         // 받아 오는 사이에 다른 계정으로 바뀌었으면 쓰지 않는다 — 두 계정의 잔고 · 신발이 섞이지 않게.
         // 새 계정은 로그인하면서 다시 맞춘다.
         // 저장된 세션만 본다 — 출입증을 다시 받으면(네트워크) 느린 연결에서 다 받아 온 사본을 버렸다(2026-10-17 점검)
+        // 서버 0110 의 값 — 함수가 아직 없거나 못 받으면 없이 간다(예전처럼): 획득일은 폰이 처음 본 때, 강화 수는 지난 값 그대로
+        val acquired = (api.sneakerDates() as? ServerResult.Ok)?.value.orEmpty()
+        val forgeSuccesses = (api.forgeSuccesses() as? ServerResult.Ok)?.value
         val stillSame = sessions.currentUserId() == userId
         if (!stillSame) return ServerResult.Retry("계정이 바뀌어 다시 맞춥니다")
         // 러너 레벨 — 계정의 누적 거리(서버). 못 받으면 지난 값을 두고 동기화는 계속한다
@@ -154,7 +166,7 @@ class EconomySync(
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }
         db.withTransaction {
             db.sneakerDao().deleteAll()
-            db.sneakerDao().insertAll(sneakers.map { it.toEntity(previous[it.id]?.acquiredAt ?: now()) })
+            db.sneakerDao().insertAll(sneakers.map { it.toEntity(acquiredAt(acquired[it.id], previous[it.id]?.acquiredAt, now())) })
             db.rewardDao().deleteAll()
             db.rewardDao().insertAll(ledgerRows(ledger, economy.balance, complete))
             db.boostDao().deleteAll()
@@ -171,6 +183,8 @@ class EconomySync(
             bonusDraws = left("BONUS"),
             // 업적 "신발 N회 뽑기" — 서버가 처리한 뽑기만 오르는 값
             drawGrantsUsed = grants.sumOf { it.used.coerceAtLeast(0) },
+            // 업적 "강화 N회 성공" — 강화(0054)는 원장에 줄을 남기지 않는다
+            forgeSuccesses = forgeSuccesses,
         )
         return ServerResult.Ok(Unit)
     }
@@ -321,6 +335,8 @@ class EconomySync(
         pointsDurability = pointsDurability,
         pointsRespec = pointsRespec,
         repairCostPerUnit = repairCostPerUnit,
+        kmRun = kmRun,
+        lockKm = lockKm,
     )
 
     companion object {
@@ -329,6 +345,13 @@ class EconomySync(
         private const val LEDGER_PAGE = 1000
         private const val MAX_LEDGER_PAGES = 20
         private const val BOOST_KEEP_MILLIS = 2 * 24 * 60 * 60 * 1000L
+
+        /**
+         * 신발의 획득일 — 서버가 알려 준 날(0110 my_sneaker_dates: 만든 때 · 거래소에서 산 때)이 먼저. 로그아웃 · 재설치 · 다른 폰에서도
+         * 같은 날이다. 서버 값이 없으면(서버에 0110 전) 예전처럼 이 폰이 처음 본 때, 그것도 없으면 지금.
+         */
+        fun acquiredAt(server: Long?, previous: Long?, now: Long): Long =
+            server?.takeIf { it > 0 } ?: previous ?: now
     }
 }
 

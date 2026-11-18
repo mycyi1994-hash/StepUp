@@ -257,6 +257,20 @@ internal fun pastedAccessCode(raw: String): String {
     return BARE_CODE_IN_TEXT.find(raw)?.value ?: raw
 }
 
+/** 코드 만들기 거절(서버 갈래) → 화면 문구. 모르는 갈래는 "지금은 만들 수 없어요" */
+internal fun issueErrorText(error: String?): Int = when (error) {
+    "daily_limit" -> R.string.beta_codes_limit
+    "weekly_limit" -> R.string.beta_codes_week_limit
+    else -> R.string.beta_codes_not_allowed
+}
+
+/**
+ * 다음 코드를 만들 수 있는 때 — 코드를 만들 수 있는 사람이 지금 다 만들었고 서버가 시각을 줄 때만(0113).
+ * 예전 서버 · 한도를 꺼 둔 때(다시 열리지 않는다)는 null.
+ */
+internal fun betaCodeNextAt(status: AccessStatusRow?): Instant? =
+    status?.takeIf { it.canIssue && it.codesLeft <= 0 }?.let { serverInstant(it.nextAt) }
+
 internal fun errorText(error: String?): Int = when (error) {
     "not_found" -> R.string.access_error_not_found
     "revoked" -> R.string.access_error_revoked
@@ -268,7 +282,7 @@ internal fun errorText(error: String?): Int = when (error) {
 }
 
 /**
- * 베타 초대 코드 — 코드로 들어온 사람(과 운영자가 고른 사람)이 하루 N개 만들어 나눈다.
+ * 베타 초대 코드 — 코드로 들어온 사람(과 운영자가 고른 사람)이 하루 N개 · 지난 7일에 M개(0113) 만들어 나눈다.
  * 내가 만든 코드가 쓰였는지만 보인다(누가 썼는지는 서버도 앱에 주지 않는다).
  */
 @Composable
@@ -290,7 +304,17 @@ fun BetaCodesScreen(onBack: () -> Unit) {
         }
     }
     LaunchedEffect(Unit) { reload() }
-    val left = status?.let { (it.dailyLimit - it.issuedToday).coerceAtLeast(0) } ?: 0
+    val left = status?.codesLeft ?: 0
+    val nextAt = betaCodeNextAt(status)
+    val nextPattern = stringResource(R.string.beta_codes_next_format)
+    // 다음 자리가 열리는 때가 지나면 한 번 다시 묻는다 — 화면을 연 채로 기다려도 버튼이 살아나게(같은 시각이 다시 오면 또 묻지 않는다)
+    LaunchedEffect(nextAt) {
+        val wait = (nextAt ?: return@LaunchedEffect).toEpochMilli() - System.currentTimeMillis()
+        if (wait > 0) {
+            kotlinx.coroutines.delay(wait + 1_000L)
+            reload()
+        }
+    }
     Column(Modifier.fillMaxSize().background(c.background).testTag("beta-codes")) {
         SecondaryHeader(
             onBack = onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.beta_codes_title),
@@ -301,11 +325,29 @@ fun BetaCodesScreen(onBack: () -> Unit) {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = StepUpDesign.Gutter, vertical = 8.dp),
         ) {
             item(key = "intro") {
+                val s = status?.takeIf { it.canIssue }
+                val week = s?.codesLeftWeek
                 Text(
-                    if (status?.canIssue == true) stringResource(R.string.beta_codes_left, left, status?.dailyLimit ?: 0)
-                    else stringResource(R.string.beta_codes_not_allowed),
-                    style = type.body, color = c.secondaryLabel, modifier = Modifier.padding(bottom = 14.dp).testTag("beta-codes-left"),
+                    when {
+                        s == null -> stringResource(R.string.beta_codes_not_allowed)
+                        // 0113 — 오늘 · 지난 7일 남은 수
+                        week != null -> stringResource(
+                            R.string.beta_codes_left_week, s.codesLeftToday, week, s.dailyLimit, s.weeklyLimit ?: 0,
+                        )
+                        // 예전 서버 — 하루 한도만
+                        else -> stringResource(R.string.beta_codes_left, left, s.dailyLimit)
+                    },
+                    style = type.body, color = c.secondaryLabel,
+                    modifier = Modifier.padding(bottom = if (nextAt != null) 4.dp else 14.dp).testTag("beta-codes-left"),
                 )
+                // 다 만들었다 — 다음 코드를 만들 수 있는 때(지난 7일이 막으면 며칠 뒤일 수 있다)
+                nextAt?.let { at ->
+                    val whenText = at.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(nextPattern))
+                    Text(
+                        stringResource(R.string.beta_codes_next, whenText), style = type.caption, color = c.secondaryLabel,
+                        modifier = Modifier.padding(bottom = 14.dp).testTag("beta-codes-next"),
+                    )
+                }
                 message?.let { Text(stringResource(it), style = type.caption, color = c.live, modifier = Modifier.padding(bottom = 10.dp)) }
             }
             when {
@@ -331,9 +373,7 @@ fun BetaCodesScreen(onBack: () -> Unit) {
                 message = null
                 scope.launch {
                     when (val r = ServiceLocator.accessApi.issue()) {
-                        is ServerResult.Ok -> if (r.value.code == null) {
-                            message = if (r.value.error == "daily_limit") R.string.beta_codes_limit else R.string.beta_codes_not_allowed
-                        }
+                        is ServerResult.Ok -> if (r.value.code == null) message = issueErrorText(r.value.error)
                         else -> message = R.string.access_error_network
                     }
                     reload()
@@ -345,13 +385,23 @@ fun BetaCodesScreen(onBack: () -> Unit) {
     }
 }
 
+/**
+ * 서버 시각(timestamptz) — PostgREST 는 "2026-11-17T10:00:00+00:00" 처럼 시차를 붙여 보낸다. 안드로이드 13 이하의
+ * `Instant.parse` 는 "Z" 만 읽어 날짜가 비었다(점검 2026-11-17 #21) — 시차 붙은 모양을 먼저 읽고, 못 읽으면 "Z" 모양으로.
+ */
+internal fun serverInstant(iso: String?): Instant? {
+    val text = iso?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return runCatching { java.time.OffsetDateTime.parse(text).toInstant() }.getOrNull()
+        ?: runCatching { Instant.parse(text) }.getOrNull()
+}
+
 @Composable
 private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
     val c = StepUpUi.colors
     val type = StepUpUi.type
     val open = row.status == "OPEN"
     val day = DateTimeFormatter.ofPattern(stringResource(R.string.beta_codes_date))
-    fun fmt(iso: String?) = iso?.let { runCatching { Instant.parse(it).atZone(ZoneId.systemDefault()).format(day) }.getOrNull() }
+    fun fmt(iso: String?) = serverInstant(iso)?.atZone(ZoneId.systemDefault())?.format(day)
     val statusText = when (row.status) {
         "USED" -> stringResource(R.string.beta_code_used, fmt(row.usedAt) ?: "")
         "EXPIRED" -> stringResource(R.string.beta_code_expired)

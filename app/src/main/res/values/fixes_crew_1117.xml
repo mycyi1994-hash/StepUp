@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-17 bug sweep — crew and flash runs (#2 start, #4 flash time, #5 missed start, server 0109) -->
+<resources>
+    <string name="fxc_missed_used_body">The crew started while you were away from the lobby. Today\'s crew run was already used.</string>
+    <string name="fxc_missed_checking_body">The crew started while you were away from the lobby.</string>
+    <string name="fxc_need_two">At least 2 ready crew members need to be in the lobby to start together.</string>
+    <string name="fxc_need_two_away">Couldn\'t start because %1$s isn\'t looking at the lobby. You\'ll start together once they come back.</string>
+    <string name="fxc_away_notice">%1$s isn\'t looking at the lobby. If you start now, they won\'t start with you.</string>
+    <string name="fxc_away_label">Away</string>
+    <string name="fxc_away_more">%1$s and %2$d more</string>
+    <string name="fxc_flash_time_earliest">The earliest start is 5 minutes from now, so we set it to that.</string>
+</resources>

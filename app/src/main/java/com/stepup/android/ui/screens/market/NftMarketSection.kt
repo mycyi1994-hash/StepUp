@@ -118,16 +118,12 @@ fun LazyListScope.nftMarketSection(
     items(board.quotes.size) { index ->
         val quote = board.quotes[index]
         QuoteRowCard(
-            faction = quote.faction,
-            rarity = quote.rarity,
-            variant = quote.variant,
+            key = quote.key,
             supply = quote.supply,
             ask = quote.ask,
             bid = quote.bid,
             lastPrice = quote.lastPrice,
-            modifier = Modifier.quietClickable {
-                onOpenModel(ModelKey(quote.faction, quote.rarity, quote.variant))
-            },
+            modifier = Modifier.quietClickable { onOpenModel(quote.key) },
         )
     }
 
@@ -198,17 +194,17 @@ private fun MarketEmptyState(title: Int, message: Int, icon: ImageVector) {
  */
 @Composable
 private fun HoldingSummary(
-    faction: String, rarity: String, variant: Int, meta: String, level: Int = 1,
+    key: ModelKey, meta: String, level: Int = 1,
     own: com.stepup.android.domain.Sneaker? = null,
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         if (own != null) {
             SneakerFrame(own, modifier = Modifier.size(72.dp), corner = 14.dp)
         } else {
-            MarketShoeThumb(faction, rarity, variant, modifier = Modifier.size(72.dp), level = level)
+            MarketShoeThumb(key, modifier = Modifier.size(72.dp), level = level)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(own?.shoeName() ?: modelName(faction, rarity, variant), style = MaterialTheme.typography.titleMedium, color = Snow)
+            Text(own?.shoeName() ?: modelName(key), style = MaterialTheme.typography.titleMedium, color = Snow)
             Text(meta, style = MaterialTheme.typography.bodyMedium, color = Silver)
         }
     }
@@ -223,7 +219,7 @@ private fun HoldingAmount(value: Double?, color: androidx.compose.ui.graphics.Co
 @Composable
 private fun MyListingRow(row: MySneakerRow, own: com.stepup.android.domain.Sneaker?, onCancel: (Long) -> Unit) {
     GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
-        HoldingSummary(row.faction, row.rarity, row.variant, stringResource(R.string.market_level, row.level) + " · #${row.mintNumber}", row.level, own)
+        HoldingSummary(ModelKey(row.faction, row.rarity, row.variant), stringResource(R.string.market_level, row.level) + " · #${row.mintNumber}", row.level, own)
         HoldingAmount(row.listingPrice)
         row.listingId?.let { id ->
             GhostButton(stringResource(R.string.market_cancel_listing), onClick = { onCancel(id) }, modifier = Modifier.fillMaxWidth())
@@ -234,7 +230,7 @@ private fun MyListingRow(row: MySneakerRow, own: com.stepup.android.domain.Sneak
 @Composable
 private fun MyBidRowCard(row: MyBidRow, onCancel: (Long) -> Unit) {
     GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
-        HoldingSummary(row.faction, row.rarity, row.variant, stringResource(R.string.market_min_level, row.minLevel))
+        HoldingSummary(row.key, stringResource(R.string.market_min_level, row.minLevel))
         HoldingAmount(row.price)
         Text(stringResource(R.string.market_bid_locked), style = MaterialTheme.typography.bodyMedium, color = Silver)
         GhostButton(stringResource(R.string.market_cancel_bid), onClick = { onCancel(row.id) }, modifier = Modifier.fillMaxWidth())
@@ -245,7 +241,7 @@ private fun MyBidRowCard(row: MyBidRow, onCancel: (Long) -> Unit) {
 private fun MyTradeRowCard(row: MyTradeRow) {
     GlowCard(contentPadding = PaddingValues(20.dp), spacing = 12.dp) {
         Text(stringResource(if (row.sold) R.string.market_trade_sold else R.string.market_trade_bought), style = MaterialTheme.typography.bodyMedium, color = Silver)
-        Text(modelName(row.faction, row.rarity, row.variant), style = MaterialTheme.typography.titleMedium, color = Snow)
+        Text(modelName(row.key), style = MaterialTheme.typography.titleMedium, color = Snow)
         HoldingAmount(row.price, color = if (row.sold) VoltText else Snow)
         if (row.sold && row.fee > 0) Text(stringResource(R.string.market_fee_paid, formatSup(row.fee)), style = MaterialTheme.typography.bodyMedium, color = Silver)
     }

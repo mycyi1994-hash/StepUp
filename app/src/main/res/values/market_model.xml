@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 거래소를 도감 모델 단위로 · 팔 수 없는 까닭(2026-11-17, 서버 0107) -->
+<resources>
+    <string name="care_sell_listed">Listed for sale</string>
+    <string name="care_sell_starter">Your first shoe can\'t be sold</string>
+    <string name="care_sell_locked">Run %1$s km more in this shoe to sell it</string>
+    <string name="care_sell_locked_unknown">Free-draw shoes can be sold after you run a set distance in them</string>
+    <string name="care_sell_unavailable">This shoe can\'t be sold right now</string>
+    <string name="market_sell_none_owned">You don\'t have this model to sell.</string>
+    <!-- 거래 멈춤(0108) -->
+    <string name="market_trading_paused_short">Trading is paused for now</string>
+    <string name="market_trading_paused">Trading is paused for now. You can still view prices and take down your listings and bids in My orders.</string>
+</resources>
