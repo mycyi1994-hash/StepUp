@@ -1913,7 +1913,7 @@ end $$;
 revoke all on function public.ops_economy_settings(text) from public;
 grant execute on function public.ops_economy_settings(text) to anon, authenticated;
 
-create or replace function public.ops_economy_set(p_token text, p_key text, p_value jsonb, p_confirm text default null) returns jsonb
+create or replace function public.ops_economy_set(p_token text, p_setting text, p_value jsonb, p_confirm text default null) returns jsonb
 language plpgsql security definer set search_path = public, economy as $$
 declare
   v_session economy.ops_sessions := economy.ops_session_of(p_token);
@@ -1924,7 +1924,7 @@ declare
   v_n numeric;
   e jsonb;
 begin
-  select * into r from economy.ops_setting_rule(p_key);
+  select * into r from economy.ops_setting_rule(p_setting);
   if r.kind is null then
     return jsonb_build_object('ok', false, 'code', 'key', 'message', '여기서 바꿀 수 없는 설정입니다');
   end if;
@@ -1955,12 +1955,12 @@ begin
   if v_refuse is not null then
     return v_refuse;
   end if;
-  select s.value into v_old from public.economy_settings s where s.key = p_key;
-  insert into public.economy_settings (key, value) values (p_key, p_value)
+  select s.value into v_old from public.economy_settings s where s.key = p_setting;
+  insert into public.economy_settings (key, value) values (p_setting, p_value)
   on conflict (key) do update set value = excluded.value, updated_at = now();
   insert into public.admin_audit (actor, action, target, detail)
-  values (null, 'ops_economy_set', p_key, jsonb_build_object('by', v_session.label, 'old', v_old, 'new', p_value));
-  return jsonb_build_object('ok', true, 'key', p_key, 'old', v_old, 'value', p_value);
+  values (null, 'ops_economy_set', p_setting, jsonb_build_object('by', v_session.label, 'old', v_old, 'new', p_value));
+  return jsonb_build_object('ok', true, 'key', p_setting, 'old', v_old, 'value', p_value);
 end $$;
 revoke all on function public.ops_economy_set(text, text, jsonb, text) from public;
 grant execute on function public.ops_economy_set(text, text, jsonb, text) to anon, authenticated;

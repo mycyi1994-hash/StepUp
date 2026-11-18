@@ -1,4 +1,4 @@
-/* StepUp 운영자 페이지 — 아이템 지급 · 보상 이벤트(서버 0106 · 보안 0114).
+/* StepUp 운영자 페이지 — 아이템 지급 · 보상 이벤트(서버 0106 · 보안 0114) · 바로 적용 · 경제 현황 · 설정(0116).
    운영자 키는 SQL 로 만든다: select economy.ops_key_new('담당자 이름', 30);  -- 날 수(1 ~ 365, 한 칸으로 부르면 30일)
    막기: update economy.ops_keys set revoked_at = now() where label = '…';
    키는 로그인(ops_login)할 때 한 번만 보내고 어디에도 남기지 않는다. 이 탭의 세션 저장소에는 서버가 준 세션 번호만 둔다
@@ -307,11 +307,13 @@
   }
 
   // ── 탭 ──
-  var TABS = [['tabGrant', 'paneGrant'], ['tabEvent', 'paneEvent'], ['tabLog', 'paneLog']];
+  var TABS = [['tabGrant', 'paneGrant'], ['tabEvent', 'paneEvent'], ['tabApply', 'paneApply'], ['tabEcon', 'paneEcon'], ['tabLog', 'paneLog']];
   TABS.forEach(function (t) {
     $(t[0]).addEventListener('click', function () {
       TABS.forEach(function (x) { $(x[0]).setAttribute('aria-selected', String(x === t)); $(x[1]).hidden = x !== t; });
       if (t[0] === 'tabLog') refresh();
+      if (t[0] === 'tabEcon') loadEcon();
+      if (t[0] === 'tabApply') applySummary();
     });
   });
 
@@ -346,6 +348,26 @@
     if (over) parts.unshift('이번 지급(' + num(units) + '개)은 오늘 남은 한도를 넘어요');
     note.textContent = parts.join(' · ');
     note.className = 'note' + (over ? ' warn' : '');
+    versionCheck(aud, emails, who);
+  }
+  // 받는 사람의 앱 판(0116 ops_audience_preview) — 아이템 가방은 새 판(1.19.0)부터. 예전 판에는 "바로 적용"을 권한다
+  var versionTimer = 0, versionSeq = 0;
+  function versionCheck(aud, emails, who) {
+    clearTimeout(versionTimer);
+    var box = $('grantVersion');
+    if (!who) { box.textContent = ''; return; }
+    versionTimer = setTimeout(function () {
+      var seq = ++versionSeq;
+      rpc('ops_audience_preview', { p_token: token, p_audience: aud, p_emails: aud === 'EMAILS' ? emails : null }).then(function (r) {
+        if (seq !== versionSeq || !r || !r.ok) return;
+        var old = +r.old_app || 0;
+        box.textContent = old
+          ? '받는 ' + num(r.users) + '명 중 ' + num(old) + '명은 아이템 가방이 없는 예전 판 앱이에요(새 판을 깔기 전에는 못 써요). ' +
+            '내구도 · 에너지는 "바로 적용" 탭에서 바로 채울 수 있어요.'
+          : '받는 ' + num(r.users) + '명 모두 아이템 가방이 있는 앱이에요.';
+        box.className = 'note' + (old ? ' warn' : '');
+      }, function (e) { if (e.denied) leave(problem(e)); });
+    }, 300);
   }
   $('grantForm').addEventListener('input', grantSummary);
   $('grantForm').addEventListener('change', grantSummary);
@@ -539,6 +561,122 @@
         say($('eventMsg'), 'err', problem(x));
       }).then(function () { busy = false; });
     });
+  }
+
+
+  // ── 바로 적용 (0116 ops_apply_now) ──
+  var applyRequest = null;
+  var APPLY = { DURABILITY_FULL: '신발 내구도 가득', ENERGY_RESET: '오늘 쓴 에너지 되돌리기' };
+  function apAud() { return (document.querySelector('input[name=apAud]:checked') || {}).value || 'EMAILS'; }
+  function apAction() { return (document.querySelector('input[name=apAction]:checked') || {}).value || 'DURABILITY_FULL'; }
+  function apEmails() {
+    var seen = {};
+    return $('apEmails').value.split(/[\s,;]+/).map(function (x) { return x.trim().toLowerCase(); })
+      .filter(function (x) { if (!x || seen[x]) return false; seen[x] = 1; return true; });
+  }
+  function apWho(aud, emails) {
+    if (!state) return '';
+    return aud === 'ALL' ? '전체 ' + num(state.users) + '명' : aud === 'RUNNERS_7D' ? '최근 7일 달린 ' + num(state.runners_7d) + '명'
+      : emails.length ? '이메일 ' + num(emails.length) + '명' : '';
+  }
+  function applySummary() {
+    var aud = apAud(), emails = apEmails(), who = apWho(aud, emails);
+    $('apEmailBox').hidden = aud !== 'EMAILS';
+    $('applySummary').textContent = who ? who + '에게 ' + APPLY[apAction()] : '받을 사람의 이메일을 넣어 주세요.';
+  }
+  $('applyForm').addEventListener('input', applySummary);
+  $('applyForm').addEventListener('change', applySummary);
+  $('applyForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (busy || !state) return;
+    var aud = apAud(), action = apAction(), emails = apEmails(), reason = $('apReason').value.trim(), msg = $('applyMsg');
+    if (aud === 'EMAILS' && !emails.length) { say(msg, 'err', '받을 사람의 이메일을 넣어 주세요.'); $('apEmails').focus(); return; }
+    if (reason.length < 2) { say(msg, 'err', '사유를 두 글자 이상 적어 주세요.'); $('apReason').focus(); return; }
+    var n = aud === 'EMAILS' ? emails.length : aud === 'ALL' ? +state.users : +state.runners_7d;
+    var big = aud === 'ALL' || n > +limits.recipients;
+    busy = true; $('applyBtn').disabled = true; say(msg, '', '');
+    runAction({
+      big: big, title: big ? '크게 적용해요 — 운영자 키를 한 번 더' : '바로 적용할까요?',
+      body: apWho(aud, emails) + '에게\n' + APPLY[action] + '\n사유: ' + reason + '\n되돌릴 수 없고, 알림은 가지 않습니다.', yes: '바로 적용',
+      send: function (pass) {
+        applyRequest = requestFor(applyRequest, [aud, action, reason, aud === 'EMAILS' ? emails : null]);
+        var req = { p_token: token, p_request: applyRequest.id, p_action: action, p_reason: reason,
+                    p_emails: aud === 'EMAILS' ? emails : null, p_audience: aud };
+        if (pass) req.p_confirm = pass;
+        return rpc('ops_apply_now', req);
+      }
+    }).then(function (r) {
+      if (!r) return;
+      var missing = r.missing || [];
+      if (!r.ok) {
+        applyRequest = null;
+        if (r.logged_out) { leave(r.message); return; }
+        say(msg, 'err', r.message || '적용하지 못했어요.', missing.length ? missing.map(function (m) { return '가입하지 않은 이메일: ' + m; }) : null);
+        return;
+      }
+      applyRequest = null;
+      say(msg, missing.length ? 'warn' : 'ok',
+        num(r.users) + '명에게 적용했어요(' + (action === 'DURABILITY_FULL' ? '신발 ' + num(r.shoes) + '켤레' : '에너지 ' + num(r.shoes) + '명') + ').' +
+        (r.replay ? ' (이미 처리된 요청이에요)' : ''), missing.length ? missing.map(function (m) { return '가입하지 않은 이메일: ' + m; }) : null);
+      if (aud === 'EMAILS') $('apEmails').value = missing.join('\n');
+      return refresh();
+    }, function (e) {
+      if (!e.unsure) applyRequest = null;
+      if (e.denied) { leave(problem(e)); return; }
+      say(msg, 'err', problem(e));
+    }).then(function () { busy = false; $('applyBtn').disabled = false; });
+  });
+
+  // ── 경제 현황 · 설정 (0116 ops_economy_status · ops_economy_settings · ops_economy_set) ──
+  function kv(label, value, sub) {
+    return el('div', { class: 'li' }, [el('div', null, [el('b', { text: label }), sub ? el('span', { text: sub }) : null]), el('b', { text: value })]);
+  }
+  function loadEcon() {
+    var box = $('econStatus');
+    rpc('ops_economy_status', { p_token: token }).then(function (r) {
+      box.textContent = '';
+      if (!r || !r.ok) { box.appendChild(el('div', { class: 'empty', text: '불러오지 못했어요.' })); return; }
+      var run = r.runs_7d || {}, money = r.money_7d || {}, y = r.yesterday || {}, v = r.versions || {};
+      box.appendChild(kv('러닝', num(run.runs) + '번 · ' + num(run.people) + '명', '평균 ' + (run.avg_min || 0) + '분 · 10분 넘는 러닝 ' + (run.over_10min_pct || 0) + '%'));
+      box.appendChild(kv('잘린 러닝', '내구도 ' + (run.durability_cut_pct || 0) + '% · 에너지 ' + (run.energy_cut_pct || 0) + '%', '0 SUP 러닝 ' + (run.zero_pct || 0) + '% · 평균 운 ×' + (run.avg_luck || 1)));
+      box.appendChild(kv('적립 · 수리 · 상자(7일)', num(money.earned) + ' · ' + num(money.repair) + ' · ' + num(money.boxes) + ' SUP',
+        '적립한 사람 ' + num(money.earners) + '명 · 수리비가 더 큰 사람 ' + num(money.repair_over_earn) + '명'));
+      box.appendChild(kv('어제', num(y.earned) + ' · ' + num(y.repair) + ' · ' + num(y.boxes) + ' SUP', '적립 · 수리 · 상자'));
+      var stuck = el('div', { class: 'li' }, [el('div', null, [el('b', { text: '막힌 사람' }),
+        el('span', { text: '신발이 모두 0% · 잔고가 수리비보다 적고 · 무료 수리도 아직' })]), el('b', { text: num(r.stuck) + '명' })]);
+      box.appendChild(stuck);
+      box.appendChild(kv('앱 판', '새 판 ' + num(v.new_app) + '명', '판을 알린 사람 ' + num(v.reported) + '명 · 가입 ' + num(v.users) + '명'));
+    }, function (e) { if (e.denied) leave(problem(e)); else { box.textContent = ''; box.appendChild(el('div', { class: 'empty', text: problem(e) })); } });
+    rpc('ops_economy_settings', { p_token: token }).then(function (r) {
+      var list = $('econSettings'); list.textContent = '';
+      ((r && r.settings) || []).forEach(function (x) {
+        var b = el('button', { class: 'btn ghost', type: 'button', text: '바꾸기' });
+        b.addEventListener('click', function () { editSetting(x); });
+        list.appendChild(el('div', { class: 'li' }, [el('div', null, [el('b', { text: x.label || x.key }),
+          el('span', { text: x.key + ' = ' + JSON.stringify(x.value) })]), b]));
+      });
+    }, function (e) { if (e.denied) leave(problem(e)); });
+  }
+  function editSetting(x) {
+    if (busy) return;
+    var now = JSON.stringify(x.value);
+    var hint = x.kind === 'bool' ? 'true(켬) 또는 false(끔)' : x.kind === 'luck' ? '[가장 작게, 가장 자주, 가장 크게] 예: [0.7, 1, 1.3]'
+      : x.kind === 'steps' ? '걸음 수 목록 예: [2000, 4000]' : '숫자';
+    var raw = window.prompt((x.label || x.key) + '\n지금: ' + now + '\n새 값(' + hint + ')', now);
+    if (raw === null || raw.trim() === now) return;
+    var value;
+    try { value = JSON.parse(raw.trim()); } catch (e) { say($('econMsg'), 'err', '값을 읽지 못했어요. ' + hint + ' 꼴로 넣어 주세요.'); return; }
+    busy = true; say($('econMsg'), '', '');
+    runAction({
+      big: true, title: '경제 설정을 바꿔요 — 운영자 키를 한 번 더', body: (x.label || x.key) + '\n' + now + ' → ' + JSON.stringify(value) + '\n바로 모든 사람에게 적용됩니다.', yes: '바꾸기',
+      send: function (pass) { return rpc('ops_economy_set', { p_token: token, p_setting: x.key, p_value: value, p_confirm: pass || null }); }
+    }).then(function (r) {
+      if (!r) return;
+      if (!r.ok) { if (r.logged_out) { leave(r.message); return; } say($('econMsg'), 'err', r.message || '바꾸지 못했어요.'); return; }
+      say($('econMsg'), 'ok', (x.label || x.key) + ' — ' + JSON.stringify(r.old) + ' → ' + JSON.stringify(r.value));
+      loadEcon();
+    }, function (e) { if (e.denied) { leave(problem(e)); return; } say($('econMsg'), 'err', problem(e)); })
+      .then(function () { busy = false; });
   }
 
   // 이 탭에서 이미 로그인했으면 이어서(세션 번호만 — 끝났으면 로그인 화면)
