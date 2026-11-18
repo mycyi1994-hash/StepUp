@@ -180,7 +180,8 @@ data class ShoeQuality(val stars: Int, val type: ShoeType, val position: Double)
             val pe = ShoeIndex.efficiencyPosition(efficiencyBaseBps, g)
             val pc = ShoeIndex.comfortPosition(comfortBaseBps, g)
             val pd = ShoeIndex.durabilityPosition(durabilityBase, g)
-            val avg = (pe + pc + pd) / 3
+            // 천분의 일로 반올림 — 저장 값(정수 bps)의 반올림 때문에 가운데 신발이 0.49999 로 ★ 이 되지 않게
+            val avg = Math.round((pe + pc + pd) / 3 * 1000) / 1000.0
             val stars = when {
                 avg < 0.5 -> 1
                 avg < 0.65 -> 2
