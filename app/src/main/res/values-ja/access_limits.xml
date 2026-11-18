@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 베타 초대 코드 한도 — 하루 · 지난 7일(서버 0113) -->
+<resources>
+    <string name="beta_codes_left_week">今日はあと%1$d個 · この7日間はあと%2$d個作れます（1日%3$d個 · 7日間で%4$d個）。コード1つにつき1人が使えます。</string>
+    <string name="beta_codes_next">次のコードは%1$sから作れます。</string>
+    <string name="beta_codes_next_format">M月d日 HH:mm</string>
+    <string name="beta_codes_week_limit">7日間で作れるコードはすべて作りました。</string>
+</resources>

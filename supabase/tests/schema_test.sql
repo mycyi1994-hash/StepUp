@@ -11494,6 +11494,157 @@ begin
 end $$;
 reset role;
 
+-- ════════════════════════════════════════════════════════════════════
+--  0113 베타 초대 코드 — 하루 1개 · 지난 168시간에 3개 (2026-11-18)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 베타 초대 코드 하루 1개 · 7일에 3개(0113) ─────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+-- 하루 개수 3 → 1 은 한 번만, 그리고 0079 기본값(3) 그대로일 때만 — 운영자가 정한 값은 다음 배포가 덮지 않는다
+-- (바꾸는 함수와 읽는 함수를 한 문장에 두면 읽는 쪽이 바꾸기 전 값을 본다 — 나눠 부른다)
+do $$
+declare v_changed boolean;
+begin
+  perform pg_temp.ok(economy.setting_num('access_user_weekly_codes') = 3
+                     and exists (select 1 from public.economy_settings where key = 'access_daily_codes_0113'),
+    '7일 한도 설정은 3 · 하루 개수 바꾸기는 이미 한 번 했다(0113)');
+  delete from public.economy_settings where key = 'access_daily_codes_0113';
+  update public.economy_settings set value = '3' where key = 'access_user_daily_codes';
+  v_changed := economy.access_daily_codes_0113();
+  perform pg_temp.ok(v_changed and economy.setting_num('access_user_daily_codes') = 1,
+    '0079 기본값 3 그대로면 하루 1개로 바꾼다(0113)');
+  update public.economy_settings set value = '3' where key = 'access_user_daily_codes';
+  v_changed := economy.access_daily_codes_0113();
+  perform pg_temp.ok(not v_changed and economy.setting_num('access_user_daily_codes') = 3,
+    '바꾼 뒤 운영자가 다시 3 으로 돌리면 다시 올려도 덮지 않는다(0113)');
+  delete from public.economy_settings where key = 'access_daily_codes_0113';
+  update public.economy_settings set value = '5' where key = 'access_user_daily_codes';
+  v_changed := economy.access_daily_codes_0113();
+  perform pg_temp.ok(not v_changed and economy.setting_num('access_user_daily_codes') = 5
+                     and exists (select 1 from public.economy_settings where key = 'access_daily_codes_0113'),
+    '운영자가 이미 다른 값(5)으로 바꿨으면 그대로 둔다(0113)');
+  update public.economy_settings set value = '1' where key = 'access_user_daily_codes';
+end $$;
+
+insert into auth.users (id, email) values
+  ('a1130000-0000-0000-0000-000000000001', 'quota1@test'),
+  ('a1130000-0000-0000-0000-000000000002', 'quota2@test');
+insert into economy.access_grants (user_id, source) values ('a1130000-0000-0000-0000-000000000001', 'ADMIN');
+select public.admin_access_mode_set('CLOSED_BETA');
+
+-- 다음에 거절할 때의 코드 · 갈래 · 다음 시각 — 함수가 거절하지 않으면 state 는 null
+create or replace function pg_temp.issue113() returns jsonb
+language plpgsql as $$
+declare v_state text; v_hint text; v_msg text; v_detail text;
+begin
+  begin
+    perform public.access_code_issue_v2();
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate, v_hint = pg_exception_hint, v_msg = message_text,
+                            v_detail = pg_exception_detail;
+  end;
+  return jsonb_build_object('state', v_state, 'hint', v_hint, 'message', v_msg, 'detail', v_detail);
+end $$;
+
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000001', '/rpc/access_code_issue_v2');
+do $$
+declare s jsonb; v jsonb; r jsonb;
+begin
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'can_issue')::boolean and (s ->> 'daily_limit')::int = 1 and (s ->> 'weekly_limit')::int = 3
+                     and (s ->> 'left_today')::int = 1 and (s ->> 'left_week')::int = 3 and (s ->> 'left')::int = 1
+                     and s ->> 'next_at' is null and s ->> 'limited_by' is null,
+    format('상태에 오늘 · 7일 남은 수(%s)(0113)', s));
+  v := public.access_code_issue_v2();
+  perform pg_temp.ok(v ->> 'code' ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}$' and (v ->> 'left_today')::int = 0 and (v ->> 'left_week')::int = 2,
+    format('새 앱 코드 만들기 — 만든 뒤 남은 수도 함께(%s)(0113)', v));
+  insert into fix (k, v) values ('q113_1', v ->> 'code');
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'state' = '23514' and r ->> 'hint' = 'daily_limit' and r ->> 'message' like '%하루 1개%',
+    format('하루 1개 — 둘째는 23514 로 거절(%s)(0113)', r));
+  perform pg_temp.ok(public.access_code_issue() ->> 'error' = 'daily_limit', '예전 앱 함수는 지금처럼 답 안의 daily_limit(0113)');
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'left')::int = 0 and s ->> 'limited_by' = 'DAY'
+                     and (s ->> 'next_at')::timestamptz = economy.game_day_start(economy.game_day(now()) + 1),
+    format('하루가 막히면 다음 시각은 내일 00시(한국)(%s)(0113)', s));
+end $$;
+
+-- 지난 168시간에 셋 — 하루가 바뀌어도 7일이 막는다
+do $$
+declare s jsonb; v jsonb; r jsonb; v_first timestamptz;
+begin
+  update economy.access_codes set created_at = now() - interval '100 hours' where code = economy.access_norm(pg_temp.fx('q113_1'));
+  v := public.access_code_issue_v2();
+  insert into fix (k, v) values ('q113_2', v ->> 'code');
+  update economy.access_codes set created_at = now() - interval '50 hours' where code = economy.access_norm(v ->> 'code');
+  v := public.access_code_issue_v2();
+  insert into fix (k, v) values ('q113_3', v ->> 'code');
+  perform pg_temp.ok(v ->> 'code' is not null and (v ->> 'issued_week')::int = 3 and (v ->> 'left_week')::int = 0,
+    format('하루 하나씩 세 번(%s)(0113)', v));
+  v_first := (select created_at from economy.access_codes where code = economy.access_norm(pg_temp.fx('q113_1')));
+  s := public.access_status();
+  perform pg_temp.ok(s ->> 'limited_by' = 'WEEK' and (s ->> 'next_at')::timestamptz = v_first + interval '168 hours',
+    format('둘 다 막히면 늦은 쪽 — 가장 오래된 코드 + 168시간(%s)(0113)', s));
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'state' = '23514' and r ->> 'hint' = 'weekly_limit' and r ->> 'message' like '%7일 동안 3개%'
+                     and r ->> 'message' like '%부터 다시%' and (r ->> 'detail')::timestamptz = v_first + interval '168 hours',
+    format('7일 셋 — 23514 와 다시 만들 수 있는 시각(%s)(0113)', r));
+  perform pg_temp.ok(public.access_code_issue() ->> 'error' = 'weekly_limit', '예전 앱 함수는 weekly_limit(0113)');
+  -- 오늘 만든 것이 없어도(내일이 되었다) 7일이 막는다
+  update economy.access_codes set created_at = now() - interval '30 hours' where code = economy.access_norm(pg_temp.fx('q113_3'));
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'left_today')::int = 1 and (s ->> 'left_week')::int = 0 and (s ->> 'left')::int = 0
+                     and s ->> 'limited_by' = 'WEEK' and (s ->> 'next_at')::timestamptz = v_first + interval '168 hours',
+    format('하루가 바뀌어도 지난 168시간에 셋이면 막힌다(%s)(0113)', s));
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'hint' = 'weekly_limit', '— 만들기도 weekly_limit 로 거절(0113)');
+  -- 가장 오래된 코드가 168시간을 넘기면 한 자리가 열린다
+  update economy.access_codes set created_at = now() - interval '169 hours' where code = economy.access_norm(pg_temp.fx('q113_1'));
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'issued_week')::int = 2 and (s ->> 'left')::int = 1 and s ->> 'next_at' is null,
+    format('굴러가는 7일 — 168시간이 지난 코드는 세지 않는다(%s)(0113)', s));
+  v := public.access_code_issue_v2();
+  perform pg_temp.ok(v ->> 'code' is not null, '한 자리가 열리면 다시 만든다(0113)');
+  perform pg_temp.ok((select count(*) = 4 and bool_and(status = 'OPEN') from public.my_access_codes()),
+    '이미 만든 코드는 그대로 쓸 수 있다 — 세는 창 밖으로 나가도(0113)');
+end $$;
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000002', '/rpc/access_redeem');
+do $$ begin
+  perform pg_temp.ok((public.access_redeem(pg_temp.fx('q113_1')) ->> 'ok')::boolean, '168시간 전에 만든 코드로도 들어온다(0113)');
+end $$;
+
+-- 운영자가 7일 한도를 낮추면 다음 시각은 (만든 수 − 한도 + 1)번째로 오래된 코드 + 168시간 · 0 이면 만들 수 없다
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000001', '/rpc/access_status');
+update public.economy_settings set value = '2' where key = 'access_user_weekly_codes';
+do $$
+declare s jsonb; r jsonb; v_second timestamptz;
+begin
+  v_second := (select created_at from economy.access_codes where code = economy.access_norm(pg_temp.fx('q113_3')));
+  s := public.access_status();
+  perform pg_temp.ok((s ->> 'issued_week')::int = 3 and (s ->> 'left_week')::int = 0
+                     and (s ->> 'next_at')::timestamptz = v_second + interval '168 hours',
+    format('한도 2 · 창 안에 셋 — 둘째로 오래된 코드 + 168시간(%s)(0113)', s));
+  update public.economy_settings set value = '0' where key = 'access_user_weekly_codes';
+  s := public.access_status();
+  perform pg_temp.ok(not (s ->> 'can_issue')::boolean and s ->> 'next_at' is null and s ->> 'limited_by' is null,
+    format('7일 한도 0 — 만들 수 없다(%s)(0113)', s));
+  r := pg_temp.issue113();
+  perform pg_temp.ok(r ->> 'state' = '42501' and r ->> 'hint' = 'not_allowed', format('권한 없음은 42501(%s)(0113)', r));
+  perform pg_temp.ok(public.access_code_issue() ->> 'error' = 'not_allowed', '예전 앱 함수는 not_allowed(0113)');
+end $$;
+update public.economy_settings set value = '3' where key = 'access_user_weekly_codes';
+set role authenticated;
+call pg_temp.as_app('a1130000-0000-0000-0000-000000000001', '/rpc/access_code_issue_v2');
+call pg_temp.must_fail($q$ select economy.access_code_issue_core('a1130000-0000-0000-0000-000000000001') $q$,
+  '한도를 건너뛰는 안쪽 함수는 앱이 부르지 못한다(0113)');
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+select public.admin_access_mode_set('OPEN');
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

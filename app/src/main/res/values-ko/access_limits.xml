@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 베타 초대 코드 한도 — 하루 · 지난 7일(서버 0113) -->
+<resources>
+    <string name="beta_codes_left_week">오늘 %1$d개 · 이번 7일 %2$d개 남았어요(하루 %3$d개 · 7일에 %4$d개). 코드 하나는 한 명이 쓸 수 있어요.</string>
+    <string name="beta_codes_next">다음 코드는 %1$s부터 만들 수 있어요.</string>
+    <string name="beta_codes_next_format">M월 d일 HH:mm</string>
+    <string name="beta_codes_week_limit">7일 동안 만들 수 있는 코드를 다 만들었어요.</string>
+</resources>
