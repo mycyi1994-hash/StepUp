@@ -493,9 +493,10 @@ enum class UpgradeBlock {
 }
 
 /**
- * 레벨업 스탯 포인트(서버 0059 · 0066) — 레벨이 오를 때 [atLevel] × [rarityMultiplier] 를 받는다. 포인트 1 은 효율 +0.05%p ·
- * 착화감 +0.02%p(20% 까지) · 최대 내구도 + 그 신발 기본의 1%([durabilityPerPoint]) 중 하나. 나눈 포인트는 되돌리지 않는다 —
- * [respec] 인 신발(0059 전에 강화한 신발)만 한 번 처음부터 다시 나눈다.
+ * 레벨업 스탯 포인트(서버 0116, 경제 4판) — 레벨마다 등급의 포인트(일반 2 · 레어 3 · 에픽 4 · 레전더리 5 · 레드라인 6 · 피니시 8),
+ * 5 · 10 · 15 …레벨에는 보너스(3 · 5 · 6 · 8 · 9 · 12)를 더 받는다. 포인트 1 은 뽑은 값의 +1.0 ~ +1.8%(등급마다) — 효율 ·
+ * 착화감(에너지 70% 절약까지) · 최대 내구도 중 하나. 값은 [ShoeRules] 가 센다(서버 shoe_rules_v4). 나눈 포인트는 되돌리지 않는다 —
+ * [respec] 인 신발만 한 번 처음부터 다시 나눈다.
  */
 data class StatPoints(
     val total: Int = 0,
@@ -506,44 +507,11 @@ data class StatPoints(
     val respec: Boolean = false,
 ) {
     companion object {
-        /** 포인트 1 의 값(서버 0066) — 효율 +0.05%p · 착화감 +0.02%p */
-        const val EFFICIENCY_BPS = 5
-        const val COMFORT_BPS = 2
-        /** 착화감 상한(economy.comfort_cap_bps) */
-        const val COMFORT_CAP_BPS = 2000
-
-        /** 내구도 포인트 1 이 올리는 최대 내구도 — 기본 최대 내구도의 1%(반올림, 적어도 1). 서버 economy.point_durability_of 와 같다 */
-        fun durabilityPerPoint(base: Int): Int = maxOf((base.coerceAtLeast(0) + 50) / 100, 1)
-
-        /** 레벨 [level] 에 오를 때 받는 기본 포인트(등급 배수 전) — 서버 economy.points_at_level 과 같다 */
-        fun atLevel(level: Int): Int = when {
-            level <= 1 -> 0
-            level <= 10 -> 1
-            level <= 15 -> 2
-            level <= 20 -> 3
-            level <= 25 -> 5
-            level == 26 -> 15
-            level == 27 -> 30
-            level == 28 -> 60
-            level == 29 -> 100
-            else -> 150
-        }
-
-        /** 등급 배수 — 서버 economy.points_rarity_mult 와 같다 */
-        fun rarityMultiplier(rarity: Rarity): Int = when (rarity) {
-            Rarity.COMMON -> 1
-            Rarity.RARE -> 2
-            Rarity.EPIC -> 3
-            Rarity.LEGENDARY -> 4
-            Rarity.REDLINE -> 6
-            Rarity.FINISH -> 8
-        }
-
-        /** 이 등급 신발이 레벨 [level] 에 오를 때 받는 포인트 */
-        fun gainAt(rarity: Rarity, level: Int): Int = atLevel(level) * rarityMultiplier(rarity)
+        /** 이 등급 신발이 레벨 [level] 에 오를 때 받는 포인트(5의 배수 레벨이면 보너스까지) — 서버 economy.points_total_of 의 한 칸 */
+        fun gainAt(rarity: Rarity, level: Int, rules: ShoeRules = ShoeRules.FALLBACK): Int = rules.pointsAt(rarity.id, level)
 
         /** 레벨 [level] 까지 받은 포인트 — 서버 economy.points_total_of 와 같다 */
-        fun totalAt(rarity: Rarity, level: Int): Int = (2..level).sumOf { gainAt(rarity, it) }
+        fun totalAt(rarity: Rarity, level: Int, rules: ShoeRules = ShoeRules.FALLBACK): Int = rules.pointsTotal(rarity.id, level)
     }
 }
 
@@ -563,16 +531,19 @@ data class ServerStats(
     val upgradeCost: Double,
     val repairCostPerPoint: Double,
     val genesisNo: Int,
-    /** 남은 · 최대 내구도(1 = 10m, 0059). 0 이면 서버가 아직 보내지 않았다 — 그때는 남은 비율(100 기준)을 쓴다 */
+    /** 남은 · 최대 내구도(1 = 12초 — 1분마다 5, 0064). 0 이면 서버가 아직 보내지 않았다 — 그때는 남은 비율(100 기준)을 쓴다 */
     val durabilityNow: Int = 0,
     val durabilityMax: Int = 0,
-    /** 만들 때 고른 최대 내구도 — 최대 내구도 = 이 값 + 내구도 포인트 × 100 */
+    /** 만들 때 뽑은 최대 내구도 — 최대 내구도 = 이 값 × (1 + 등급의 포인트 폭 × 내구도 포인트)(0116) */
     val durabilityBase: Int = 0,
     /** 레벨 1 의 효율 · 착화감(bps) — 포인트를 나누기 전 값 */
     val efficiencyBaseBps: Int = 0,
     val comfortBaseBps: Int = 0,
     val points: StatPoints = StatPoints(),
-    /** 내구도 1(10m) 고치는 값 — 0 이면 예전 서버(1% 값 [repairCostPerPoint] 를 쓴다) */
+    /**
+     * 내구도 1(12초) 고치는 값 — 그 신발의 효율에 비례(0116). 최대 내구도를 보내는 서버에서 0 이면 무료 수리가 남아 있다(0116),
+     * 최대 내구도를 모르는 예전 서버면 1% 값 [repairCostPerPoint] 를 쓴다
+     */
     val repairCostPerUnit: Double = 0.0,
     /** 이 신발로 달린 거리 · 팔 수 있게 되는 거리(km) — 무료 뽑기 신발은 잠금 거리를 달려야 판다(서버 can_withdraw) */
     val kmRun: Double = 0.0,

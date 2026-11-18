@@ -318,14 +318,23 @@ alter table public.market_sneakers add constraint market_sneakers_chain_state_ch
   chain_state in ('APP', 'WITHDRAWING', 'ON_CHAIN', 'DEPOSITING')
 );
 
-alter table public.market_sneakers drop constraint if exists market_sneakers_stats_check;
--- 효율 기본값의 위는 10,000(0066 — 피니시 새 신발 45 ~ 55%). 배포마다 다시 걸리므로 여기서 넓힌다.
+do $$
+begin
+  -- 0116(경제 4판)이 옮긴 뒤에는 0116 이 4판 식으로 건다 — 다시 올릴 때 여기서 옛 식으로 검사해 배포가 멈추지 않게
+  if to_regclass('public.economy_settings') is not null then
+    if exists (select 1 from public.economy_settings where key = 'economy_v4_migrated') then
+      return;
+    end if;
+  end if;
+  execute $q$alter table public.market_sneakers drop constraint if exists market_sneakers_stats_check$q$;
+  execute $q$-- 효율 기본값의 위는 10,000(0066 — 피니시 새 신발 45 ~ 55%). 배포마다 다시 걸리므로 여기서 넓힌다.
 alter table public.market_sneakers add constraint market_sneakers_stats_check check (
   efficiency_bps between 0 and 10000
   and comfort_bps between 0 and 2000
   and durability_pts between 0 and 100
   and km_run >= 0 and lock_km >= 0
-);
+)$q$;
+end $$;
 
 -- 계정을 지워도 체인에 나가 있는 신발의 기록은 남아야 한다. 나중에 산 사람이 넣을
 -- 때 그 신발을 찾아야 하기 때문이다. 주인만 비운다.

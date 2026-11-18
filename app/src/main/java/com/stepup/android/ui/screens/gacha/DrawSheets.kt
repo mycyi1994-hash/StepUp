@@ -56,7 +56,7 @@ import com.stepup.android.ui.components.runTone
 
 /** 이름 — 값 한 줄. [strong] 이면 값이 시안색 */
 @Composable
-private fun SheetLine(label: String, value: String, strong: Boolean = false, tag: String? = null) {
+internal fun SheetLine(label: String, value: String, strong: Boolean = false, tag: String? = null) {
     val t = runTone()
     Row(
         Modifier.fillMaxWidth().heightIn(min = 40.dp).semantics(mergeDescendants = true) {}
@@ -82,7 +82,7 @@ private fun SheetTotal(label: String, value: String, tag: String) {
 }
 
 @Composable
-private fun SheetBody(text: String, modifier: Modifier = Modifier, center: Boolean = false, strong: Boolean = false) {
+internal fun SheetBody(text: String, modifier: Modifier = Modifier, center: Boolean = false, strong: Boolean = false) {
     val t = runTone()
     Text(
         text, style = runTextStyle(if (strong) 17.sp else 15.sp, if (strong) t.text else t.label, if (strong) FontWeight.Bold else FontWeight.Medium, 1.5f),
@@ -108,7 +108,7 @@ private fun SheetBoxRow(label: String, value: String, tag: String? = null) {
 }
 
 @Composable
-private fun SheetGroupLabel(text: String) {
+internal fun SheetGroupLabel(text: String) {
     val t = runTone()
     Text(text, style = runTextStyle(18.sp, t.text, FontWeight.Bold), modifier = Modifier.padding(top = 4.dp))
 }
@@ -123,7 +123,7 @@ private fun RulesLink(onRules: () -> Unit) {
 
 /** 아래 두 행동 — 주 행동(흰 버튼) · 보조 행동(글자) */
 @Composable
-private fun ColumnScope.SheetActions(
+internal fun ColumnScope.SheetActions(
     primary: String,
     onPrimary: () -> Unit,
     primaryTag: String,
@@ -281,8 +281,10 @@ internal fun RulesSheet(
         actions = { SheetActions(stringResource(R.string.dv2_ok), onClose, "draw-sheet-ok") },
     ) {
         SheetGroupLabel(stringResource(R.string.dv2_free))
-        if (status.signupGranted > 0) SheetLine(stringResource(R.string.dv2_rules_signup), count(status.signupGranted))
+        // 경제 4판(0116) — 받아 둔 기회(draw_grants FREE)는 가입 선물만이 아니다(러닝 상자 · 산 상자 · 선물이 함께 쌓인다).
+        // 처음 받은 수를 "처음 가입"으로 적지 않고, 받는 곳은 상자 받는 곳에서 보인다
         if (status.dailyTotal > 0) SheetLine(stringResource(R.string.dv2_rules_daily), count(status.dailyTotal))
+        SheetBody(stringResource(R.string.boxes_rules_note), modifier = Modifier.padding(top = 2.dp))
         odds?.free?.let { OddsLines(it, "draw-odds-free") }
         // 상급(지갑 연결 혜택)은 블록체인 기능이 있는 판에 — 스토어 판은 선물로 받은 상급 뽑기가 있어 상급 칸이 보일 때만(0112)
         if (web3 || premiumShown) {

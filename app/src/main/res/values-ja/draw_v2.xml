@@ -25,7 +25,7 @@
 
     <string name="dv2_free_sheet_title">無料ガチャの回数</string>
     <string name="dv2_free_sheet_sub">1回引くごとに1回分を使います。</string>
-    <string name="dv2_signup_gift">新規登録ギフト</string>
+    <string name="dv2_signup_gift">受け取ったボックス</string>
     <string name="dv2_daily">今日の無料回数</string>
     <string name="dv2_free_now">今使える回数</string>
     <string name="dv2_close">閉じる</string>

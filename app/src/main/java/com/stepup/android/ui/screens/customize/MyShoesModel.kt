@@ -1,63 +1,73 @@
 package com.stepup.android.ui.screens.customize
 
+import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.ShoeTier
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.domain.tier
 import com.stepup.android.ui.screens.items.ItemSort
-import com.stepup.android.ui.screens.items.bonusPercent
+import com.stepup.android.ui.screens.items.comfortBarEnd
+import com.stepup.android.ui.screens.items.comfortIndex
 import com.stepup.android.ui.screens.items.durabilityFraction
+import com.stepup.android.ui.screens.items.durabilityLeft
 import com.stepup.android.ui.screens.items.durabilityMax
-import com.stepup.android.ui.screens.items.energySavingPercent
-import com.stepup.android.ui.screens.items.formatBonus
+import com.stepup.android.ui.screens.items.efficiencyBarEnd
+import com.stepup.android.ui.screens.items.efficiencyIndex
 import com.stepup.android.ui.screens.items.formatCount
 import com.stepup.android.ui.screens.items.formatDurability
-import com.stepup.android.ui.screens.items.formatPercent
+import com.stepup.android.ui.screens.items.formatIndex
+import com.stepup.android.ui.screens.items.wholeMinutes
 
 /*
  * 신발 화면 확정안(2026-09-28)이 쓰는 순수 계산 — 내 신발의 능력치 막대 · 보유 목록 순서, 신발 보관함의 정렬 · 거르기.
  *
  * 값은 모두 실제 신발([Sneaker])에서 온다(기존 상세와 같은 출처 — ShoeDetailModel). 시안의 예시 값(+4.8% · 7.5% · 92 / 100)을
- * 쓰지 않는다. 고르기는 늘 소유 id 로 한다.
+ * 쓰지 않는다. 능력치는 경제 4판(0116)의 지수 · 분으로 보인다(ShoeStatsV4). 고르기는 늘 소유 id 로 한다.
  */
 
 /**
- * 막대 끝 — 효율 · 착화감은 모든 신발(서버 신발 · 폰에만 있던 예전 신발)에 같은 기준을 쓴다. 내구도는 신발마다 최대
- * 내구도가 달라(서버 0059) 그 신발의 최대 내구도가 끝이다. 값을 100점으로 바꾸지 않는다: 막대 길이 = 실제 값 ÷ 막대 끝.
+ * 막대 끝(경제 4판, 서버 0116) — 효율 · 착화감은 지수(100 = 기준, 숫자가 2배면 2배)이고 막대 끝은 **그 등급에서 가장 잘 뽑힌 새 신발**
+ * (서버 shoe_rules_v4 의 등급 범위 꼭대기)이다. 같은 등급 안에서 얼마나 잘 뽑혔는지가 막대로 보이고, 포인트로 넘으면 가득 찬다.
+ * 내구도는 그 신발의 최대 내구도가 끝(달릴 수 있는 분으로 보인다). 막대 길이 = 실제 값 ÷ 막대 끝 — 값을 100점으로 바꾸지 않는다.
  */
 object StatScale {
-    /**
-     * 효율(SUP 적립 보너스) — 피니시 새 신발의 최고 효율 5,500bps = 55%(서버 0066 economy.efficiency_range).
-     * 포인트를 효율에 나누면 이보다 높아질 수 있고, 그때는 막대가 가득 찬다.
-     */
-    const val EFFICIENCY_MAX_PERCENT = 55.0
-
-    /** 착화감(에너지 절감) — economy.comfort_cap_bps() 2,000bps = 20%. 예전 신발은 최대 15%(Sneaker.energyEfficiency) */
-    const val ENERGY_MAX_PERCENT = 20.0
+    /** 지수의 기준 — 효율 100 = 걸음당 기본 SUP(서버 points_per_step), 착화감 100 = 에너지 1 에 600걸음 */
+    const val INDEX_BASE = 100.0
 }
 
 enum class BarStat { EFFICIENCY, COMFORT, DURABILITY }
 
-/** 막대 한 줄 — 보이는 값("+4.8%"), 막대 길이(0 ~ 1), 막대 끝("27.5%" · "20%" · 그 신발의 최대 내구도 "1,230") */
-data class StatBar(val stat: BarStat, val value: String, val fraction: Float, val end: String)
+/** 값의 단위 — 지수는 단위가 없고, 내구도는 분(화면이 "28 / 31분"처럼 단위를 붙인다). 최대 내구도를 모르는 예전 신발은 그대로 */
+enum class StatUnit { NONE, MINUTES }
+
+/** 막대 한 줄 — 보이는 값("140" · "28 / 31"), 막대 길이(0 ~ 1), 막대 끝("180" · "31"), 단위 */
+data class StatBar(val stat: BarStat, val value: String, val fraction: Float, val end: String, val unit: StatUnit = StatUnit.NONE)
 
 /** 막대 길이 — 값 ÷ 막대 끝, 0 ~ 1 로 자른다 */
 fun barFraction(value: Double, max: Double): Float =
     if (max <= 0.0 || value.isNaN()) 0f else (value / max).coerceIn(0.0, 1.0).toFloat()
 
-/** 내 신발의 막대 셋 — 효율 · 착화감(에너지 절감) · 내구도. 서버 신발에 없는 행운은 만들지 않는다 */
-fun statBars(shoe: Sneaker): List<StatBar> {
-    val bonus = bonusPercent(shoe)
-    val energy = energySavingPercent(shoe)
+/**
+ * 내 신발의 막대 셋 — 효율 지수 · 착화감 지수 · 내구도(분). 서버 신발에 없는 행운은 만들지 않는다.
+ * 막대 끝은 [rules] 의 그 등급 꼭대기(서버를 아직 못 읽었으면 서버 0116 과 같은 값).
+ */
+fun statBars(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): List<StatBar> {
+    val efficiency = efficiencyIndex(shoe)
+    val comfort = comfortIndex(shoe)
+    val efficiencyEnd = efficiencyBarEnd(shoe, rules)
+    val comfortEnd = comfortBarEnd(shoe, rules)
+    val minutes = shoe.server?.hasDurabilityMax == true
+    val durability = if (minutes) {
+        StatBar(
+            BarStat.DURABILITY, "${wholeMinutes(durabilityLeft(shoe))} / ${wholeMinutes(durabilityMax(shoe))}",
+            durabilityFraction(shoe), "${wholeMinutes(durabilityMax(shoe))}", StatUnit.MINUTES,
+        )
+    } else {
+        StatBar(BarStat.DURABILITY, formatDurability(shoe), durabilityFraction(shoe), formatCount(durabilityMax(shoe)))
+    }
     return listOf(
-        StatBar(
-            BarStat.EFFICIENCY, formatBonus(bonus), barFraction(bonus, StatScale.EFFICIENCY_MAX_PERCENT),
-            formatPercent(StatScale.EFFICIENCY_MAX_PERCENT),
-        ),
-        StatBar(
-            BarStat.COMFORT, formatPercent(energy), barFraction(energy, StatScale.ENERGY_MAX_PERCENT),
-            formatPercent(StatScale.ENERGY_MAX_PERCENT),
-        ),
-        StatBar(BarStat.DURABILITY, formatDurability(shoe), durabilityFraction(shoe), formatCount(durabilityMax(shoe))),
+        StatBar(BarStat.EFFICIENCY, formatIndex(efficiency), barFraction(efficiency, efficiencyEnd), formatIndex(efficiencyEnd)),
+        StatBar(BarStat.COMFORT, formatIndex(comfort), barFraction(comfort, comfortEnd), formatIndex(comfortEnd)),
+        durability,
     )
 }
 

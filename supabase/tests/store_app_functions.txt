@@ -1,0 +1,164 @@
+# 스토어에 나가 있는 앱 판(v1.17.1, 2026-10-29)이 부르는 서버 함수 — 이름 · 인자 · 돌려주는 모양
+# scripts/check-store-functions.py 가 지금 setup.sql 과 맞대어 본다. 새 판을 스토어에 올리면 그 판으로 다시 만든다.
+access_code_issue||jsonb
+access_mode||text
+access_redeem|p_code text|jsonb
+access_status||jsonb
+account_delete||void
+boost_buy|p_kind text, p_request uuid DEFAULT NULL::uuid|numeric
+chain_check_in||boolean
+chain_recipient_set|p_on boolean|boolean
+coaching_apply_pace|p_result_id bigint, p_expected_revision bigint|jsonb
+coaching_apply_plan|p_week_start date, p_tz text, p_expected_revision bigint|jsonb
+coaching_consent_grant|p_version text|jsonb
+coaching_consent_withdraw|p_delete_results boolean|jsonb
+coaching_job_retry|p_job_id bigint|jsonb
+coaching_prefs_save|p_goal text, p_runs integer, p_minutes integer, p_auto boolean, p_weekly boolean, p_expected_revision bigint|jsonb
+coaching_recommend|p_tz text, p_locale text, p_request boolean DEFAULT false|jsonb
+coaching_run|p_started_at timestamp with time zone, p_locale text, p_request boolean DEFAULT false|jsonb
+coaching_splits_put|p_started_at timestamp with time zone, p_laps integer[]|text
+coaching_state|p_tz text|jsonb
+coaching_week|p_week_start date, p_tz text, p_locale text, p_request boolean DEFAULT false|jsonb
+comment_create|p_post bigint, p_parent bigint, p_body text, p_client_key uuid DEFAULT NULL::uuid|bigint
+comment_delete|p_comment bigint|void
+content_report|p_type text, p_target text, p_reason text, p_note text|void
+course_leaderboard|p_course_track text, p_limit integer DEFAULT 20|TABLE(rank integer, display_name text, duration_sec integer, runs integer, is_me boolean)
+course_run_submit|p_course_track text, p_started_at timestamp with time zone|TABLE(course_id bigint, duration_sec integer, rank integer, runners integer)
+course_share|p_name text, p_area text, p_distance_km double precision, p_elevation_m integer, p_track text|bigint
+course_toggle_like|p_course bigint|boolean
+course_unshare|p_track text|void
+crew_application|p_application bigint|jsonb
+crew_application_cancel|p_application bigint|jsonb
+crew_application_decide|p_application bigint, p_approve boolean|jsonb
+crew_application_seen|p_application bigint|void
+crew_apply|p_crew uuid, p_phrases text[] DEFAULT '{}'::text[], p_message text DEFAULT ''::text, p_client_key uuid DEFAULT NULL::uuid|jsonb
+crew_chat_confirm|p_crew uuid, p_client_ids uuid[]|jsonb
+crew_chat_delete|p_message bigint|jsonb
+crew_chat_hide|p_message bigint|jsonb
+crew_chat_history|p_crew uuid, p_before_seq bigint, p_limit integer DEFAULT 50|jsonb
+crew_chat_image|p_message bigint|text
+crew_chat_notice_delete|p_notice bigint|void
+crew_chat_notice_save|p_crew uuid, p_notice bigint, p_title text, p_body text, p_pinned boolean, p_client_key uuid DEFAULT NULL::uuid, p_meeting bigint DEFAULT NULL::bigint, p_meeting_change boolean DEFAULT false|jsonb
+crew_chat_notices|p_crew uuid|jsonb
+crew_chat_notify_set|p_crew uuid, p_on boolean|boolean
+crew_chat_read|p_crew uuid, p_seq bigint|bigint
+crew_chat_report|p_message bigint, p_reason text|void
+crew_chat_rooms||jsonb
+crew_chat_search|p_crew uuid, p_query text|jsonb
+crew_chat_send|p_crew uuid, p_client_id uuid, p_body text DEFAULT ''::text, p_reply_to bigint DEFAULT NULL::bigint, p_image text DEFAULT NULL::text|jsonb
+crew_chat_sync|p_crew uuid, p_since_rev bigint DEFAULT NULL::bigint|jsonb
+crew_create|p_name text, p_monogram text, p_tagline text, p_area text, p_join_policy text|uuid
+crew_create_card|p_name text, p_tagline text DEFAULT ''::text, p_leader_note text DEFAULT ''::text, p_image_bg integer DEFAULT NULL::integer, p_image text DEFAULT NULL::text, p_area text DEFAULT ''::text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_meet_days integer DEFAULT 0, p_meet_time integer DEFAULT NULL::integer, p_distance text DEFAULT NULL::text, p_moods text[] DEFAULT '{}'::text[], p_capacity integer DEFAULT NULL::integer, p_recruiting boolean DEFAULT true, p_goal_km integer DEFAULT NULL::integer, p_client_key uuid DEFAULT NULL::uuid|uuid
+crew_decide|p_crew uuid, p_user uuid, p_approve boolean|void
+crew_dissolve|p_crew uuid|void
+crew_home|p_crew uuid|jsonb
+crew_join|p_crew uuid|text
+crew_leaderboard|p_period text DEFAULT 'ALL'::text|TABLE(crew_id uuid, km double precision, runs integer, runners integer)
+crew_leave|p_crew uuid|void
+crew_level|p_crew uuid|jsonb
+crew_meeting|p_post bigint|jsonb
+crew_meeting_attendees|p_post bigint|jsonb
+crew_meeting_respond|p_post bigint, p_attend boolean|jsonb
+crew_meetings_upcoming|p_crew uuid|jsonb
+crew_member_last_run|p_crew uuid, p_user uuid|jsonb
+crew_member_remove|p_crew uuid, p_user uuid|jsonb
+crew_pending_applications|p_crew uuid|TABLE(id bigint, user_id uuid, name text, phrases text[], message text, created_at timestamp with time zone)
+crew_person|p_crew uuid, p_user uuid|jsonb
+crew_requests|p_crew uuid|TABLE(user_id uuid, name text, requested_at timestamp with time zone)
+crew_roster|p_crew uuid|TABLE(user_id uuid, name text, role text, joined_at timestamp with time zone, week_km double precision, week_runs integer)
+crew_run|p_run bigint|jsonb
+crew_run_beat|p_party bigint, p_state text|jsonb
+crew_run_result|p_started_at timestamp with time zone|jsonb
+crew_run_room|p_party bigint|jsonb
+crew_run_today|p_crew uuid|jsonb
+crew_runs|p_crew uuid, p_week date DEFAULT NULL::date, p_day date DEFAULT NULL::date, p_user uuid DEFAULT NULL::uuid, p_before_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_before_id bigint DEFAULT NULL::bigint, p_limit integer DEFAULT 30|jsonb
+crew_set_goal|p_crew uuid, p_goal_km integer|jsonb
+crew_set_join_policy|p_crew uuid, p_policy text|integer
+crew_set_recruiting|p_crew uuid, p_open boolean|jsonb
+crew_transfer_owner|p_crew uuid, p_user uuid|jsonb
+crew_update_profile|p_crew uuid, p_name text, p_tagline text, p_leader_note text, p_image_bg integer DEFAULT NULL::integer, p_image_action text DEFAULT 'KEEP'::text, p_image text DEFAULT NULL::text|jsonb
+crew_update_recruit|p_crew uuid, p_capacity integer, p_recruiting boolean, p_goal_change boolean DEFAULT false, p_goal_km integer DEFAULT NULL::integer|jsonb
+crew_update_running|p_crew uuid, p_area text, p_lat double precision, p_lng double precision, p_meet_days integer, p_meet_time integer, p_distance text, p_moods text[]|void
+crew_week|p_crew uuid, p_week date DEFAULT NULL::date|jsonb
+draw_free||bigint
+draw_odds||jsonb
+draw_status||TABLE(daily_left integer, daily_total integer, signup_left integer, signup_granted integer, wallet_linked boolean, gift_on_link integer, gift_left integer, run_left integer, genesis_left integer, run_progress_m double precision, run_step_m integer, run_today integer, run_daily_cap integer, chain_paused boolean)
+economy_bootstrap||void
+event_claim|p_event text, p_tz text DEFAULT 'Asia/Seoul'::text|numeric
+event_disciplines_of|p_id uuid|TABLE(raw_name text, distance_key text, distance_meters integer, registration_open_at timestamp with time zone, registration_close_at timestamp with time zone, registration_status text, fee numeric)
+event_progress|p_event text, p_tz text DEFAULT 'Asia/Seoul'::text|double precision
+forge_materials|p_target bigint|jsonb
+forge_quote|p_target bigint, p_materials bigint[]|jsonb
+forge_result|p_key uuid|jsonb
+forge_start|p_key uuid, p_target bigint, p_materials bigint[], p_quote text|jsonb
+get_running_event|p_id uuid|TABLE(id uuid, title text, organizer text, region text, venue text, event_date date, event_end_date date, event_start_time time without time zone, date_precision text, event_type text, registration_status text, registration_open_at timestamp with time zone, registration_close_at timestamp with time zone, fee_min numeric, currency text, official_url text, registration_url text, source_url text, destination_type text, source_name text, attribution_text text, last_verified_at timestamp with time zone, cancelled_or_postponed text, saved boolean)
+goal_claim||numeric
+goal_claim_day|p_day date|numeric
+invite_list||TABLE(display_name text, joined_at timestamp with time zone, rewarded_at timestamp with time zone)
+invite_redeem|p_code text|text
+invite_status||TABLE(code text, reward_sup numeric, invited integer, rewarded integer, can_redeem boolean, redeemed boolean)
+join_flash|p_post_id bigint|integer
+leaderboard|p_board text DEFAULT 'TOP_SPEED'::text, p_limit integer DEFAULT 20, p_period text DEFAULT 'ALL'::text|TABLE(rank integer, user_id uuid, name text, monogram text, top_speed_kmh double precision, active_sec bigint, sup numeric, is_me boolean, total integer)
+leave_flash|p_post_id bigint|integer
+list_running_events|p_query text DEFAULT ''::text, p_event_type text DEFAULT 'ALL'::text, p_distance text DEFAULT 'ALL'::text, p_region text DEFAULT 'ALL'::text, p_status text DEFAULT 'ALL'::text, p_from date DEFAULT NULL::date, p_to date DEFAULT NULL::date, p_sort text DEFAULT 'DATE'::text, p_include_past boolean DEFAULT false, p_limit integer DEFAULT 20, p_offset integer DEFAULT 0|TABLE(id uuid, title text, organizer text, region text, venue text, event_date date, event_end_date date, has_start_time boolean, date_precision text, event_type text, registration_status text, registration_close_at timestamp with time zone, fee_min numeric, currency text, destination_type text, target_url text, last_verified_at timestamp with time zone, cancelled_or_postponed text, distances text[], discipline_names text[], saved boolean, total_count bigint)
+list_running_news|p_query text DEFAULT ''::text, p_category text DEFAULT 'ALL'::text, p_publisher text DEFAULT 'ALL'::text, p_sort text DEFAULT 'RECENT'::text, p_limit integer DEFAULT 20, p_offset integer DEFAULT 0|TABLE(id uuid, title text, publisher_name text, publisher_domain text, original_url text, published_at timestamp with time zone, fetched_at timestamp with time zone, description text, summary text, summary_type text, category text, thumbnail_url text, attribution_text text, saved boolean, total_count bigint)
+market_bid|p_faction text, p_rarity text, p_variant integer, p_min_level integer, p_price numeric, p_request uuid DEFAULT NULL::uuid|bigint
+market_buy_now|p_listing_id bigint, p_request uuid DEFAULT NULL::uuid|bigint
+market_cancel_bid|p_bid_id bigint|void
+market_cancel_listing|p_listing_id bigint|void
+market_import|p_local_id bigint, p_faction text, p_rarity text, p_variant integer, p_level integer, p_luck numeric, p_comfort numeric, p_durability integer|bigint
+market_list|p_sneaker_id bigint, p_price numeric, p_request uuid DEFAULT NULL::uuid|bigint
+market_my_bids||TABLE(id bigint, faction text, rarity text, variant integer, min_level integer, price numeric, created_at timestamp with time zone)
+market_my_sneakers||TABLE(id bigint, local_id bigint, faction text, rarity text, variant integer, level integer, mint_number bigint, luck numeric, comfort numeric, durability integer, status text, listing_id bigint, listing_price numeric)
+market_my_trades|p_limit integer DEFAULT 30|TABLE(id bigint, faction text, rarity text, variant integer, level integer, price numeric, fee numeric, sold boolean, traded_at timestamp with time zone)
+market_sell_now|p_sneaker_id bigint, p_bid_id bigint, p_request uuid DEFAULT NULL::uuid|bigint
+my_access_codes|p_limit integer DEFAULT 50|TABLE(code text, status text, created_at timestamp with time zone, expires_at timestamp with time zone, used_at timestamp with time zone)
+my_chain_activity|p_limit integer DEFAULT 50|TABLE(id bigint, kind text, status text, day integer, distance_m integer, duration_sec integer, badge text, badge_value integer, sneaker_id bigint, tx_hash text, result text, created_at timestamp with time zone, confirmed_at timestamp with time zone)
+my_chain_settings||jsonb
+my_economy||TABLE(balance numeric, energy_max numeric, energy_left numeric, xp_booster_until timestamp with time zone, streak_shield_until timestamp with time zone, equipped_id bigint, game_day date)
+my_sneakers||TABLE(id bigint, faction text, rarity text, variant integer, level integer, max_level integer, efficiency_bps integer, comfort_bps integer, durability numeric, equipped boolean, origin text, chain_state text, status text, mint_number bigint, genesis_no integer, token_id numeric, km_run numeric, lock_km numeric, can_withdraw boolean, upgrade_cost numeric, repair_cost_per_point numeric, model_id integer, durability_now integer, durability_max integer, durability_base integer, efficiency_base_bps integer, comfort_base_bps integer, points_total integer, points_free integer, points_efficiency integer, points_comfort integer, points_durability integer, points_respec boolean, repair_cost_per_unit numeric)
+notify_prefs_set|p_push boolean, p_goal_reminder boolean, p_party_invite boolean, p_event_news boolean|void
+party_course|p_party bigint|jsonb
+party_create|p_crew uuid, p_name text, p_course_name text, p_course_km numeric, p_course_track text, p_request uuid DEFAULT NULL::uuid|bigint
+party_create_v2|p_crew uuid, p_name text, p_course_name text, p_course_km numeric, p_course_track text, p_request uuid, p_mode text, p_meet_place text, p_meet_lat double precision, p_meet_lng double precision, p_plan_at timestamp with time zone, p_capacity integer|bigint
+party_finish|p_party bigint|void
+party_join|p_party bigint|bigint
+party_kick|p_party bigint, p_user uuid|void
+party_leave|p_party bigint|void
+party_live|p_party bigint, p_km numeric|void
+party_open|p_crew uuid, p_post bigint|bigint
+party_pick_shoe|p_party bigint, p_sneaker bigint|void
+party_ping|p_party bigint, p_lat double precision, p_lng double precision|void
+party_ready|p_party bigint, p_ready boolean|void
+party_rooms|p_crew uuid|jsonb
+party_set_course|p_party bigint, p_course_name text, p_course_km numeric, p_course_track text|integer
+party_share|p_party bigint, p_share boolean|void
+party_start|p_party bigint|void
+party_start_rev|p_party bigint, p_course_rev integer|void
+party_state|p_party bigint|json
+post_create|p_category text, p_crew uuid, p_title text, p_body text, p_place text, p_distance_km double precision, p_meet_at timestamp with time zone, p_capacity integer, p_lat double precision, p_lng double precision, p_client_key uuid DEFAULT NULL::uuid, p_run_mode text DEFAULT NULL::text|bigint
+post_delete|p_post bigint|void
+post_set_like|p_post bigint, p_liked boolean|boolean
+post_toggle_like|p_post bigint|boolean
+premium_draw||bigint
+profile_set_daily_goal|p_goal integer|integer
+push_register|p_token text, p_locale text|void
+record_session|p_started_at timestamp with time zone, p_ended_at timestamp with time zone, p_steps integer, p_duration_sec integer, p_track text DEFAULT ''::text, p_boost_bps integer DEFAULT 0, p_party_size integer DEFAULT 1, p_faction text DEFAULT ''::text, p_mock_location boolean DEFAULT false|TABLE(session_id bigint, verdict text, points_awarded numeric, balance numeric)
+report_overspeed_stop|p_started_at timestamp with time zone, p_stopped_at timestamp with time zone|json
+save_event|p_id uuid, p_on boolean|boolean
+save_news|p_id uuid, p_on boolean|boolean
+session_tag_crew|p_started_at timestamp with time zone, p_crew uuid|boolean
+sneaker_equip|p_id bigint|void
+sneaker_points_set|p_id bigint, p_efficiency integer, p_comfort integer, p_durability integer, p_request uuid DEFAULT NULL::uuid|integer
+sneaker_repair|p_id bigint, p_points numeric DEFAULT NULL::numeric, p_request uuid DEFAULT NULL::uuid|numeric
+sneaker_upgrade|p_id bigint, p_request uuid DEFAULT NULL::uuid|integer
+steps_sync|p_days json|integer
+story_create|p_title text, p_body text, p_place text, p_place_address text, p_lat double precision, p_lng double precision, p_run bigint DEFAULT NULL::bigint, p_client_key uuid DEFAULT NULL::uuid|bigint
+story_runs|p_limit integer DEFAULT 20|jsonb
+story_update|p_post bigint, p_title text, p_body text, p_place text, p_place_address text, p_lat double precision, p_lng double precision, p_run bigint DEFAULT NULL::bigint, p_run_change boolean DEFAULT false|void
+territory_board|p_limit integer DEFAULT 20|TABLE(crew_id uuid, crew_name text, cells integer, mine boolean)
+territory_view|p_min_lat double precision, p_min_lng double precision, p_max_lat double precision, p_max_lng double precision|TABLE(cell text, lat double precision, lng double precision, crew_id uuid, crew_name text, score integer, mine boolean)
+user_block|p_user uuid|void
+wallet_link_challenge||text
+weekly_crew_board|p_top integer DEFAULT 30|jsonb
+weekly_runner_board|p_top integer DEFAULT 20|jsonb

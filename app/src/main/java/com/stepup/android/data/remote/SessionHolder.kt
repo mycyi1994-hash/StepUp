@@ -119,6 +119,9 @@ class SessionHolder(
 
     suspend fun currentUserId(): String? = store.load()?.user?.id
 
+    /** 이 폰에 저장된 로그인의 사용자(아이디 · 이메일 · 익명 여부) — 연결된 계정 화면이 보인다. 갱신 · 네트워크 없음 */
+    suspend fun currentUser(): AuthUser? = store.load()?.user
+
     /**
      * A local snapshot, including offline sessions; no refresh or account creation.
      * 잠금을 잡지 않는다 — 저장된 세션 하나를 읽을 뿐이다. 잠금을 기다리면 느린 연결에서 출입증 갱신(네트워크, 40초까지)이

@@ -22,8 +22,30 @@ class RewardEconomyTest {
     fun `에너지가 충분하면 걸은 만큼 전부 적립된다`() {
         val reward = RewardEconomy.sessionReward(walkedSteps = 500, energyRemaining = 10.0, sneakerLevel = 1)
         assertEquals(500, reward.rewardedSteps)
-        assertEquals(5.0, reward.points, 1e-9)
+        assertEquals(500 * RewardEconomy.POINTS_PER_STEP, reward.points, 1e-9)
         assertEquals(500.0 / 600, reward.energyUsed, 1e-9)
+    }
+
+    @Test
+    fun `걸음당 SUP 는 서버 규칙 값 — 효율 지수 ÷ 100 이 배율(경제 4판, 0116)`() {
+        // 서버 기본 0.0118 — 가운데 일반 신발(효율 140)이 걸음당 0.01652
+        assertEquals(0.0118, RewardEconomy.POINTS_PER_STEP, 0.0)
+        val mid = RewardEconomy.sessionReward(walkedSteps = 1_000, energyRemaining = 10.0, earningMultiplier = 1.4, pointsPerStep = 0.0118)
+        assertEquals(16.52, mid.points, 1e-9)
+        // 운영자가 값을 바꾸면 예상도 그 값으로
+        val tuned = RewardEconomy.sessionReward(walkedSteps = 1_000, energyRemaining = 10.0, earningMultiplier = 1.0, pointsPerStep = 0.02)
+        assertEquals(20.0, tuned.points, 1e-9)
+    }
+
+    @Test
+    fun `착화감은 에너지 70퍼센트 절약까지 — 같은 에너지로 1 ÷ 0_3 배를 걷는다`() {
+        // 에너지 1 · 절약 70%(에너지 배율 0.3) → 2,000보
+        assertEquals(2_000, RewardEconomy.earnableSteps(1.0, 0.3))
+        // 그보다 크게 아끼는 값은 70% 로 자른다
+        assertEquals(2_000, RewardEconomy.earnableSteps(1.0, 0.1))
+        val reward = RewardEconomy.sessionReward(walkedSteps = 3_000, energyRemaining = 1.0, earningMultiplier = 1.0, energyEfficiency = 0.3)
+        assertEquals(2_000, reward.rewardedSteps)
+        assertEquals(1.0, reward.energyUsed, 1e-9)
     }
 
     @Test

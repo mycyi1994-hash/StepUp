@@ -155,6 +155,7 @@ fun RunRecordContent(
                         modifier = Modifier.padding(top = 2.dp).testTag("run-date"),
                     )
                     RewardReasonLine(s)
+                    RewardLuckLine(s)
                     when (delete) {
                         DeleteState.Failed -> RunNotice(
                             stringResource(R.string.run_rec_delete_failed_title), Modifier.padding(top = 12.dp),
@@ -214,6 +215,22 @@ private fun RewardReasonLine(session: WalkSessionEntity) {
         text,
         style = runTextStyle(14.sp, t.label, FontWeight.Medium),
         modifier = Modifier.padding(top = 6.dp).testTag("run-reward-reason"),
+    )
+}
+
+/** 보상의 운 한 줄(경제 4판, 서버 0116 reward_luck) — 서버가 확인하고 적립이 있는 러닝의 서버 값만. 판 22 전 러닝은 모른다(줄 없음) */
+@Composable
+private fun RewardLuckLine(session: WalkSessionEntity) {
+    val t = runTone()
+    val luck = com.stepup.android.domain.RunLuck.shown(
+        session.rewardLuck, session.pointsEarned,
+        signed = session.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name,
+    )
+    val text = com.stepup.android.ui.screens.walk.runLuckText(luck) ?: return
+    androidx.compose.material3.Text(
+        text,
+        style = runTextStyle(14.sp, t.label, FontWeight.Medium),
+        modifier = Modifier.padding(top = 6.dp).testTag("run-reward-luck"),
     )
 }
 

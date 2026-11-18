@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 경제 4판(서버 0116) — 상자 받는 곳 · 보상의 운 · 출발 전 점검의 적립 분 · 적립 한도 · 부스터 판매 멈춤 · 이은 소셜 계정. 네 언어를 함께 고친다 -->
+<resources>
+    <string name="boxes_title">ボックスのもらい方</string>
+    <string name="boxes_sub">通常ボックスは無料ガチャ、上級ボックスは上級ガチャで開けます。</string>
+    <string name="boxes_entry_runs">今日のランボックス %1$d / %2$d</string>
+    <string name="boxes_entry_week">今週 %1$s / %2$s歩</string>
+    <string name="boxes_entry_week_got">今週の上級ボックスを受け取りました</string>
+    <string name="boxes_loading">ボックスの状況を読み込んでいます</string>
+    <string name="boxes_failed">ボックスの状況を読み込めませんでした。もう一度読み込んでください。</string>
+    <string name="boxes_normal">通常ボックス</string>
+    <string name="boxes_premium">上級ボックス</string>
+    <string name="boxes_check_in">出席</string>
+    <string name="boxes_per_day">1日%1$d個</string>
+    <string name="boxes_run">今日の報酬歩数 %1$s歩</string>
+    <string name="boxes_week">今週の報酬歩数 %1$s歩</string>
+    <string name="boxes_got">受け取り済み</string>
+    <string name="boxes_steps_progress">%1$s / %2$s歩</string>
+    <string name="boxes_streak">%1$d日連続で目標達成</string>
+    <string name="boxes_streak_value">%1$d日ごとに1個</string>
+    <string name="boxes_levels">シューズが初めてLv5・10・15・20になったとき</string>
+    <string name="boxes_levels_value">1個ずつ</string>
+    <string name="boxes_levels_got">受け取ったレベル %1$s</string>
+    <string name="boxes_buy_line">SUPで購入・%1$s SUP</string>
+    <string name="boxes_buy_today">今日 %1$d / %2$d個 購入</string>
+    <string name="boxes_buy_week">今週 %1$d / %2$d個 購入</string>
+    <string name="boxes_buy">購入</string>
+    <string name="boxes_block_limit_day">今日の上限まで購入しました</string>
+    <string name="boxes_block_limit_week">今週の上限まで購入しました</string>
+    <string name="boxes_block_balance">SUPが足りません</string>
+    <string name="boxes_block_selling">現在ボックスは販売していません</string>
+    <string name="boxes_premium_have">持っている上級ボックス</string>
+    <string name="boxes_premium_have_note">持っている上級ボックスは上級ガチャですぐに開けられます。</string>
+    <string name="boxes_count">%1$d個</string>
+    <string name="boxes_balance">残高</string>
+    <string name="boxes_rules_note">ボックスは出席・ラン・週の歩数・シューズのレベル・SUPでももらえます。「ボックスのもらい方」で確認できます。</string>
+    <string name="boxes_confirm_title_normal">通常ボックスを購入</string>
+    <string name="boxes_confirm_title_premium">上級ボックスを購入</string>
+    <string name="boxes_confirm_body_normal">%1$s SUPで通常ボックスを1個購入します。無料ガチャが1回増えます。</string>
+    <string name="boxes_confirm_body_premium">%1$s SUPで上級ボックスを1個購入します。上級ガチャが1回増えます。</string>
+    <string name="boxes_buy_today_label">今日購入したボックス</string>
+    <string name="boxes_buy_week_label">今週購入したボックス</string>
+    <string name="boxes_of">%1$d / %2$d個</string>
+    <string name="boxes_confirm_buy">%1$s SUPで購入</string>
+    <string name="boxes_retry">もう一度試す</string>
+    <string name="boxes_retry_note">接続が切れて結果を受け取れませんでした。もう一度押しても購入は1回だけです。</string>
+    <string name="boxes_bought_normal">通常ボックスを1個受け取りました。無料ガチャで開けます。</string>
+    <string name="boxes_bought_premium">上級ボックスを1個受け取りました。上級ガチャで開けます。</string>
+    <string name="boxes_refused_not_enough">SUPが足りず購入できませんでした</string>
+    <string name="boxes_refused_limit_day">ボックスは1日%1$d個まで購入できます</string>
+    <string name="boxes_refused_limit_week">上級ボックスは1週間に%1$d個まで購入できます</string>
+    <string name="boxes_refused_sign_in">もう一度ログインすると購入できます</string>
+    <string name="boxes_refused_other">リクエストを処理できませんでした。しばらくしてからもう一度お試しください。</string>
+
+    <string name="run_luck_good">運 %1$s・今日はついていました</string>
+    <string name="run_luck_even">運 %1$s・いつも通りでした</string>
+    <string name="run_luck_low">運 %1$s・今回は少し控えめでした</string>
+
+    <string name="run_check_earn_minutes">このシューズは約%1$d分間報酬がたまります</string>
+    <string name="run_check_energy_empty">今日の報酬上限を使い切りました — このランは報酬がありません</string>
+
+    <string name="items_boosts_paused">ブースターは現在販売していません。アイテムはイベントや報酬でもらえます。</string>
+
+    <string name="set_social_google">Google・%1$s</string>
+    <string name="set_social_google_only">Google</string>
+</resources>

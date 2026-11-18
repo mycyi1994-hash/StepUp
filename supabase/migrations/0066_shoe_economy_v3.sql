@@ -523,8 +523,17 @@ begin
 end $$;
 revoke all on function economy.shoe_economy_v3_reset() from public;
 
--- 표 검사는 비운 뒤에 다시 건다(예전 기준의 신발은 새 식에 맞지 않는다)
-alter table public.market_sneakers drop constraint if exists market_sneakers_points_check;
+do $$
+begin
+  -- 0116(경제 4판)이 옮긴 뒤에는 0116 이 4판 식으로 건다 — 다시 올릴 때 여기서 옛 식으로 검사해 배포가 멈추지 않게
+  if to_regclass('public.economy_settings') is not null then
+    if exists (select 1 from public.economy_settings where key = 'economy_v4_migrated') then
+      return;
+    end if;
+  end if;
+  execute $q$-- 표 검사는 비운 뒤에 다시 건다(예전 기준의 신발은 새 식에 맞지 않는다)
+alter table public.market_sneakers drop constraint if exists market_sneakers_points_check$q$;
+end $$;
 do $$
 begin
   insert into public.economy_settings (key, value) values ('shoe_economy_v3_reset', to_jsonb(now()::text))
@@ -536,14 +545,23 @@ end $$;
 
 
 -- ── 표 검사 — 포인트는 등급 · 레벨 표, 내구도 포인트 1 = 기본의 1% (비운 뒤에 모두 검사한다) ──────────────
-alter table public.market_sneakers drop constraint if exists market_sneakers_points_check;
-alter table public.market_sneakers add constraint market_sneakers_points_check check (
+do $$
+begin
+  -- 0116(경제 4판)이 옮긴 뒤에는 0116 이 4판 식으로 건다 — 다시 올릴 때 여기서 옛 식으로 검사해 배포가 멈추지 않게
+  if to_regclass('public.economy_settings') is not null then
+    if exists (select 1 from public.economy_settings where key = 'economy_v4_migrated') then
+      return;
+    end if;
+  end if;
+  execute $q$alter table public.market_sneakers drop constraint if exists market_sneakers_points_check$q$;
+  execute $q$alter table public.market_sneakers add constraint market_sneakers_points_check check (
   dur_base > 0
   and dur_max = dur_base + greatest((dur_base + 50) / 100, 1) * pts_dur
   and dur_now between 0 and dur_max
   and pts_eff >= 0 and pts_comfort >= 0 and pts_dur >= 0
   and pts_eff + pts_comfort + pts_dur <= economy.points_total_of(origin, rarity, level)
-);
+)$q$;
+end $$;
 
 
 -- ── 포인트 나누기 — 0059 그대로 + 등급 · 레벨마다 다른 포인트 · 내구도 포인트 1 = 기본의 1% ───────────────────────────────────────────────────

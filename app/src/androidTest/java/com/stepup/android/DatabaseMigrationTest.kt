@@ -55,6 +55,11 @@ class DatabaseMigrationTest {
                 assertEquals(0L, it.getLong(0))
                 assertEquals("", it.getString(1))
             }
+            // 판 22 — 옛 러닝은 보상의 운을 모른다: null(결과 · 기록 상세가 운을 짓지 않는다)
+            sql.query("SELECT rewardLuck FROM walk_sessions WHERE id=17").use {
+                assertTrue(it.moveToFirst())
+                assertTrue(it.isNull(0))
+            }
             assertEquals(62.82, db.rewardDao().balanceNow(), 0.001)
             assertEquals("pending-purchase", db.energyPurchaseDao().pending().single().id)
             assertNull(db.runSettlementDao().find("account:runner-a", 1000))

@@ -133,6 +133,8 @@ dialog form{margin:0}
     <div class="tabs" role="tablist">
       <button role="tab" id="tabGrant" aria-selected="true" aria-controls="paneGrant" type="button">아이템 지급</button>
       <button role="tab" id="tabEvent" aria-selected="false" aria-controls="paneEvent" type="button">보상 이벤트</button>
+      <button role="tab" id="tabApply" aria-selected="false" aria-controls="paneApply" type="button">바로 적용</button>
+      <button role="tab" id="tabEcon" aria-selected="false" aria-controls="paneEcon" type="button">경제</button>
       <button role="tab" id="tabLog" aria-selected="false" aria-controls="paneLog" type="button">기록</button>
     </div>
 
@@ -180,6 +182,7 @@ dialog form{margin:0}
 
         <div class="summary" id="grantSummary" aria-live="polite"></div>
         <p class="note" id="grantNote" aria-live="polite"></p>
+        <p class="note" id="grantVersion" aria-live="polite"></p>
         <div class="msg" id="grantMsg" role="status" hidden></div>
         <div class="actions"><button class="btn" id="grantBtn" type="submit">지급하기</button></div>
       </form>
@@ -226,6 +229,44 @@ dialog form{margin:0}
       </form>
     </section>
 
+    <!-- 바로 적용 (0116) — 아이템을 거치지 않고 서버가 직접. 예전 판 앱에도 다음 동기화부터 보인다 -->
+    <section class="card" id="paneApply" role="tabpanel" aria-labelledby="tabApply" hidden>
+      <h2>바로 적용</h2>
+      <p class="hint">아이템을 주지 않고 서버가 바로 채웁니다. 아이템 가방이 없는 예전 판 앱에도 앱을 다시 열면 보입니다. 알림은 가지 않으니 공지로 알려 주세요.</p>
+      <form id="applyForm">
+        <span class="f" id="lblApWho">1. 누구에게</span>
+        <div class="row" role="radiogroup" aria-labelledby="lblApWho">
+          <label class="pick"><input type="radio" name="apAud" value="EMAILS" checked>이메일로 고르기</label>
+          <label class="pick"><input type="radio" name="apAud" value="RUNNERS_7D">최근 7일 달린 사람</label>
+          <label class="pick"><input type="radio" name="apAud" value="ALL">전체</label>
+        </div>
+        <div id="apEmailBox">
+          <label class="f" for="apEmails">이메일 (한 줄에 하나 · 쉼표도 됩니다)</label>
+          <textarea id="apEmails" placeholder="runner@example.com" spellcheck="false"></textarea>
+        </div>
+        <span class="f" id="lblApWhat">2. 무엇을</span>
+        <div class="row" role="radiogroup" aria-labelledby="lblApWhat">
+          <label class="pick"><input type="radio" name="apAction" value="DURABILITY_FULL" checked>신발 내구도 가득(앱 안 신발 모두)</label>
+          <label class="pick"><input type="radio" name="apAction" value="ENERGY_RESET">오늘 쓴 에너지 되돌리기</label>
+        </div>
+        <label class="f" for="apReason">3. 사유 (기록에 남고, 받는 사람에게는 보이지 않습니다)</label>
+        <input id="apReason" type="text" maxlength="80" placeholder="예: 경제 개편 보상" required>
+        <div class="summary" id="applySummary" aria-live="polite"></div>
+        <div class="msg" id="applyMsg" role="status" hidden></div>
+        <div class="actions"><button class="btn" id="applyBtn" type="submit">바로 적용</button></div>
+      </form>
+    </section>
+
+    <!-- 경제 (0116) — 현황 · 설정 -->
+    <section class="card" id="paneEcon" role="tabpanel" aria-labelledby="tabEcon" hidden>
+      <h2>경제 현황 <span class="hint" style="font-weight:400">지난 7일 · 개인 러닝</span></h2>
+      <div class="list" id="econStatus"><div class="empty">불러오는 중…</div></div>
+      <h2 style="margin-top:24px">경제 설정</h2>
+      <p class="hint">바꾸면 바로 모든 사람에게 적용됩니다. 언제나 운영자 키를 한 번 더 묻고 기록이 남습니다. 숫자를 바꾸기 전에 <code>tools/economy_sim/check.py</code> 로 돌려 보세요.</p>
+      <div class="list" id="econSettings"></div>
+      <div class="msg" id="econMsg" role="status" hidden></div>
+    </section>
+
     <!-- 기록 -->
     <section class="card" id="paneLog" role="tabpanel" aria-labelledby="tabLog" hidden>
       <h2>최근 지급</h2>
@@ -264,6 +305,6 @@ dialog form{margin:0}
   </form>
 </dialog>
 
-<script src="/ops/ops.js?v=20261118a"></script>
+<script src="/ops/ops.js?v=20261118b"></script>
 </body>
 </html>

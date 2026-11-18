@@ -12,8 +12,17 @@ import kotlin.math.roundToInt
  */
 object RewardEconomy {
 
-    /** 1보당 기본 적립 포인트(SUP) */
-    const val POINTS_PER_STEP = 0.01
+    /**
+     * 1보당 기본 적립 포인트(SUP) — 효율 100(지수) 신발의 값. 서버 설정 points_per_step(0116)과 같은 값이고, 화면의 예상은
+     * 서버에서 받은 값([ShoeRules.pointsPerStep])을 [sessionReward] 에 넘긴다. 신발의 효율 지수 ÷ 100 이 곧 적립 배율이다.
+     */
+    const val POINTS_PER_STEP = 0.0118
+
+    /**
+     * 에너지 1 로 적립하는 걸음의 가장 큰 배율의 역수 — 착화감 상한(에너지 70% 절약, 서버 economy.comfort_cap_bps 7000)이면
+     * 같은 에너지로 1 ÷ 0.3 배를 걷는다. 예전(0066)에는 50% 까지였다.
+     */
+    const val MIN_ENERGY_FACTOR = 0.3
 
     /** 에너지 1칸으로 적립할 수 있는 걸음 수 */
     const val STEPS_PER_ENERGY = 600
@@ -102,6 +111,7 @@ object RewardEconomy {
      * @param energyEfficiency  1.0 미만이면 같은 에너지로 더 많이 걷는다
      * @param partyMultiplier   파티런 보너스
      * @param boostMultiplier   XP 부스터 등 활성 부스트
+     * @param pointsPerStep     효율 100 신발의 걸음당 SUP — 서버 규칙(ShoeRules.pointsPerStep)
      */
     fun sessionReward(
         walkedSteps: Int,
@@ -110,12 +120,13 @@ object RewardEconomy {
         energyEfficiency: Double = 1.0,
         partyMultiplier: Double = 1.0,
         boostMultiplier: Double = 1.0,
+        pointsPerStep: Double = POINTS_PER_STEP,
     ): SessionReward {
-        val eff = energyEfficiency.coerceIn(0.5, 1.0)
+        val eff = energyEfficiency.coerceIn(MIN_ENERGY_FACTOR, 1.0)
         val energy = energyRemaining.coerceAtLeast(0.0)
         val earnableSteps = floor(energy * STEPS_PER_ENERGY / eff).toInt()
         val rewardedSteps = walkedSteps.coerceAtLeast(0).coerceAtMost(earnableSteps)
-        val points = rewardedSteps * POINTS_PER_STEP *
+        val points = rewardedSteps * pointsPerStep *
             earningMultiplier * partyMultiplier * boostMultiplier
         val energyUsed = rewardedSteps.toDouble() * eff / STEPS_PER_ENERGY
         return SessionReward(rewardedSteps, points, energyUsed)
@@ -135,7 +146,7 @@ object RewardEconomy {
     /** 현재 에너지로 더 걸을 수 있는 걸음 수 */
     fun earnableSteps(energyRemaining: Double, energyEfficiency: Double = 1.0): Int =
         floor(energyRemaining.coerceAtLeast(0.0) * STEPS_PER_ENERGY /
-            energyEfficiency.coerceIn(0.5, 1.0)).toInt()
+            energyEfficiency.coerceIn(MIN_ENERGY_FACTOR, 1.0)).toInt()
 
     /** streak일 연속 달성 시 일일 목표 보너스 (7일 초과분은 가산하지 않음) */
     /**

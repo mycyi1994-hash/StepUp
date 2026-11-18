@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 경제 4판(서버 0116) — 상자 받는 곳 · 보상의 운 · 출발 전 점검의 적립 분 · 적립 한도 · 부스터 판매 멈춤 · 이은 소셜 계정. 네 언어를 함께 고친다 -->
+<resources>
+    <string name="boxes_title">Where to get boxes</string>
+    <string name="boxes_sub">Normal boxes open as free draws, premium boxes as premium draws.</string>
+    <string name="boxes_entry_runs">Run boxes today %1$d / %2$d</string>
+    <string name="boxes_entry_week">This week %1$s / %2$s steps</string>
+    <string name="boxes_entry_week_got">Premium box for this week received</string>
+    <string name="boxes_loading">Loading your boxes</string>
+    <string name="boxes_failed">We could not load your boxes. Please try again.</string>
+    <string name="boxes_normal">Normal box</string>
+    <string name="boxes_premium">Premium box</string>
+    <string name="boxes_check_in">Daily check-in</string>
+    <string name="boxes_per_day">%1$d a day</string>
+    <string name="boxes_run">%1$s rewarded steps today</string>
+    <string name="boxes_week">%1$s rewarded steps this week</string>
+    <string name="boxes_got">Received</string>
+    <string name="boxes_steps_progress">%1$s / %2$s steps</string>
+    <string name="boxes_streak">Daily goal %1$d days in a row</string>
+    <string name="boxes_streak_value">1 every %1$d days</string>
+    <string name="boxes_levels">A shoe first reaches Lv5 · 10 · 15 · 20</string>
+    <string name="boxes_levels_value">1 each</string>
+    <string name="boxes_levels_got">Received at %1$s</string>
+    <string name="boxes_buy_line">Buy with SUP · %1$s SUP</string>
+    <string name="boxes_buy_today">Bought %1$d / %2$d today</string>
+    <string name="boxes_buy_week">Bought %1$d / %2$d this week</string>
+    <string name="boxes_buy">Buy</string>
+    <string name="boxes_block_limit_day">Daily limit reached</string>
+    <string name="boxes_block_limit_week">Weekly limit reached</string>
+    <string name="boxes_block_balance">Not enough SUP</string>
+    <string name="boxes_block_selling">Boxes are not on sale right now</string>
+    <string name="boxes_premium_have">Premium boxes you have</string>
+    <string name="boxes_premium_have_note">Open your premium boxes right away with a premium draw.</string>
+    <string name="boxes_count">%1$d</string>
+    <string name="boxes_balance">My balance</string>
+    <string name="boxes_rules_note">Boxes also come from check-ins, runs, weekly steps, shoe levels and SUP. See Where to get boxes.</string>
+    <string name="boxes_confirm_title_normal">Buy a normal box</string>
+    <string name="boxes_confirm_title_premium">Buy a premium box</string>
+    <string name="boxes_confirm_body_normal">Buy 1 normal box for %1$s SUP. You get 1 more free draw.</string>
+    <string name="boxes_confirm_body_premium">Buy 1 premium box for %1$s SUP. You get 1 more premium draw.</string>
+    <string name="boxes_buy_today_label">Bought today</string>
+    <string name="boxes_buy_week_label">Bought this week</string>
+    <string name="boxes_of">%1$d / %2$d</string>
+    <string name="boxes_confirm_buy">Buy for %1$s SUP</string>
+    <string name="boxes_retry">Try again</string>
+    <string name="boxes_retry_note">The connection dropped before we got the result. Tapping again only buys once.</string>
+    <string name="boxes_bought_normal">You got 1 normal box. Open it with a free draw.</string>
+    <string name="boxes_bought_premium">You got 1 premium box. Open it with a premium draw.</string>
+    <string name="boxes_refused_not_enough">Not enough SUP to buy</string>
+    <string name="boxes_refused_limit_day">You can buy up to %1$d boxes a day</string>
+    <string name="boxes_refused_limit_week">You can buy up to %1$d premium boxes a week</string>
+    <string name="boxes_refused_sign_in">Sign in again to buy</string>
+    <string name="boxes_refused_other">We could not handle that request. Please try again shortly.</string>
+
+    <string name="run_luck_good">Luck %1$s · A lucky run today</string>
+    <string name="run_luck_even">Luck %1$s · A usual run</string>
+    <string name="run_luck_low">Luck %1$s · A little less this time</string>
+
+    <string name="run_check_earn_minutes">These shoes earn for about %1$d min</string>
+    <string name="run_check_energy_empty">Today\'s earning limit is used up — this run will not earn</string>
+
+    <string name="items_boosts_paused">Boosters are not on sale right now. Items come from events and rewards.</string>
+
+    <string name="set_social_google">Google · %1$s</string>
+    <string name="set_social_google_only">Google</string>
+</resources>

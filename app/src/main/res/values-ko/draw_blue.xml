@@ -5,7 +5,7 @@
     <string name="draw_blue_subtitle_loading">뽑기 기회를 불러오고 있어요.</string>
     <string name="draw_blue_subtitle_failed">뽑기 기회를 불러오지 못했어요.</string>
     <string name="draw_blue_left_label">남은 횟수</string>
-    <string name="draw_blue_free_breakdown">가입 선물 %1$d회 + 오늘 %2$d회</string>
+    <string name="draw_blue_free_breakdown">받아 둔 상자 %1$d회 + 오늘 %2$d회</string>
     <string name="draw_blue_before_link">지갑 연결 전</string>
     <string name="draw_blue_on_first_link">처음 연결하면</string>
     <string name="draw_blue_run_per_step">연결 후 러닝 %1$skm당 1회</string>

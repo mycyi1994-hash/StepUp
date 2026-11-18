@@ -159,6 +159,42 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
             },
         ) { it.trim().toDoubleOrNull() }
 
+    /**
+     * 새 수리(0116) — [expected] 는 화면이 보인 값. 서버 값이 달라졌으면 고치지 않고 새 값을 돌려준다(QUOTE_CHANGED).
+     * 이틀에 한 번 무료 수리가 남아 있으면 [points] 와 상관없이 한 켤레 가득 · 0 SUP. 서버에 함수가 없으면 거절로 온다(PGRST202)
+     */
+    suspend fun repairV2(id: Long, points: Int?, request: String?, expected: Double?): ServerResult<com.stepup.android.domain.RepairV2Result> =
+        rpc(
+            "sneaker_repair_v2",
+            jsonBody {
+                put("p_id", id)
+                points?.let { put("p_points", it) }
+                request?.let { put("p_request", it) }
+                expected?.let { put("p_expected", it) }
+            },
+        ) { com.stepup.android.domain.RepairV2Result.parse(it) }
+
+    /** 신발 규칙(0116) — 등급 범위 · 레벨업 포인트 · 수리 몫 · 무료 수리 · 운. 로그인 전에도 읽는다 */
+    suspend fun shoeRules(): ServerResult<com.stepup.android.domain.ShoeRules> =
+        rpc("shoe_rules_v4", "{}") { com.stepup.android.domain.ShoeRules.parse(it) }
+
+    /** 상자 현황(0116) — 출석 · 러닝 · 주간 · 연속 · 레벨 상자와 살 수 있는 수 */
+    suspend fun boxStatus(): ServerResult<com.stepup.android.domain.BoxStatus> =
+        rpc("box_status", "{}") { com.stepup.android.domain.BoxStatus.parse(it) }
+
+    /** 상자 사기(0116) — NORMAL(일반) · PREMIUM(상급). 산 상자는 무료 · 상급 뽑기 수로 쌓인다. 남은 잔고를 돌려준다 */
+    suspend fun boxBuy(kind: String, request: String?): ServerResult<Double> =
+        rpc("box_buy", jsonBody { put("p_kind", kind); request?.let { put("p_request", it) } }) { body ->
+            runCatching {
+                serverJson.parseToJsonElement(body).let { it as kotlinx.serialization.json.JsonObject }["balance"]
+                    ?.let { (it as kotlinx.serialization.json.JsonPrimitive).content.toDoubleOrNull() }
+            }.getOrNull()
+        }
+
+    /** 이 앱의 판을 서버에 알린다(0116) — 운영자가 아이템을 줄 때 받는 사람이 가방이 있는 판인지 본다 */
+    suspend fun reportAppVersion(versionCode: Int, versionName: String): ServerResult<Unit> =
+        rpc("app_client_report", jsonBody { put("p_version_code", versionCode); put("p_version_name", versionName) }) { Unit }
+
     suspend fun equip(id: Long): ServerResult<Unit> =
         rpc("sneaker_equip", jsonBody { put("p_id", id) }) { Unit }
 

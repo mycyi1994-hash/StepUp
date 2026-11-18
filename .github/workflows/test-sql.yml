@@ -20,6 +20,9 @@ on:
       - "scripts/build-setup-sql.py"
       - "scripts/feed-collect.py"
       - "scripts/check-coaching-twin.py"
+      - "scripts/check-economy-twin.py"
+      - "tools/economy_sim/**"
+      - "app/src/main/java/com/stepup/android/domain/EconomyV4.kt"
       - "coach-worker/**"
       - "app/src/main/java/com/stepup/android/domain/coaching/**"
       - ".github/workflows/test-sql.yml"
@@ -54,6 +57,15 @@ jobs:
 
       - name: 스키마 검사
         run: supabase/tests/run.sh
+
+      # 경제 불변식(2026-11-18) — 실제 서버 규칙으로 등급 · 레벨마다 하루를 돌려, 운이 가장 나쁜 날에도 걸어서 남는지 ·
+      # 강화하면 덜 남지 않는지 · 새 사용자가 첫 러닝 뒤 고칠 수 있는지 · 갈아 신어도 에너지가 남는지 본다
+      - name: 경제 불변식
+        run: python3 tools/economy_sim/check.py
+
+      # 경제 4판 규칙(0116)은 앱에도 있다(서버를 읽기 전의 값) — 서버만 고쳐 앱과 어긋나지 않게
+      - name: 경제 쌍둥이(앱 = 서버)
+        run: python3 scripts/check-economy-twin.py
 
       # AI 코칭(0060)의 규칙은 앱에도 있다 — 서버만 고쳐 앱과 어긋나지 않게
       - name: AI 코칭 쌍둥이(앱 = 서버)

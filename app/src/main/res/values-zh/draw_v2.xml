@@ -25,7 +25,7 @@
 
     <string name="dv2_free_sheet_title">免费抽取机会</string>
     <string name="dv2_free_sheet_sub">每抽取一次使用1次机会。</string>
-    <string name="dv2_signup_gift">注册礼物</string>
+    <string name="dv2_signup_gift">已领取的箱子</string>
     <string name="dv2_daily">今日免费机会</string>
     <string name="dv2_free_now">现在可用的机会</string>
     <string name="dv2_close">关闭</string>

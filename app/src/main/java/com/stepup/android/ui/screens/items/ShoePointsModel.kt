@@ -1,16 +1,18 @@
 package com.stepup.android.ui.screens.items
 
 import com.stepup.android.data.repo.EconomyOutcome
+import com.stepup.android.domain.ShoeIndex
+import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.Sneaker
-import com.stepup.android.domain.StatPoints
 
 /*
- * 스탯 포인트 나누기(서버 0059 sneaker_points_set, 2026-10-16 사용자 결정)가 쓰는 순수 계산.
+ * 스탯 포인트 나누기(서버 sneaker_points_set — 경제 4판 0116)가 쓰는 순수 계산.
  *
- * 레벨이 오를 때 받는 포인트는 레벨 표([StatPoints.atLevel]) × 등급 배수([StatPoints.rarityMultiplier]) — 서버 0066. 포인트 1 은
- * 효율 +0.05%p · 착화감 +0.02%p(착화감은 20% 까지) · 최대 내구도 + 기본의 1%(남은 내구도도 같이) 중 하나다.
- * 나눈 포인트는 되돌리지 않는다. 0059 전에 강화한 신발은 지금 스탯이 그대로이도록 효율 2 · 착화감 2 씩 나눠 둔 채로 받았고, 한 번은 처음부터 다시 나눌 수 있다([PointsBasis.respec]).
- * 값은 모두 서버가 준 신발 값에서 온다 — 이 계산은 미리보기이고, 서버가 같은 규칙으로 다시 확인한다.
+ * 레벨이 오를 때 받는 포인트는 등급마다(레벨마다 2 · 3 · 4 · 5 · 6 · 8, 5레벨마다 보너스 3 · 5 · 6 · 8 · 9 · 12). 포인트 1 은
+ * 뽑은 값의 +1.0 · 1.1 · 1.25 · 1.4 · 1.6 · 1.8%(등급마다) — 효율 · 착화감(에너지 70% 절약까지) · 최대 내구도(남은 내구도도 같이) 중 하나다.
+ * 계산은 서버와 같은 식([ShoeRules.efficiencyWithPoints] · [ShoeRules.comfortWithPoints] · [ShoeRules.durabilityWithPoints]).
+ * 나눈 포인트는 되돌리지 않는다. [PointsBasis.respec] 인 신발만 한 번 처음부터 다시 나눌 수 있다.
+ * 값은 모두 서버가 준 신발 값 · 규칙에서 온다 — 이 계산은 미리보기이고, 서버가 같은 규칙으로 다시 확인한다.
  */
 
 enum class PointStat { EFFICIENCY, COMFORT, DURABILITY }
@@ -32,7 +34,7 @@ data class PointsDraft(val efficiency: Int = 0, val comfort: Int = 0, val durabi
     }
 }
 
-/** 시트가 시작하는 값 — 서버가 준 이 켤레의 받은 포인트 · 나눈 포인트 · 레벨 1 값 · 내구도 */
+/** 시트가 시작하는 값 — 서버가 준 이 켤레의 받은 포인트 · 나눈 포인트 · 뽑은 값(포인트 전) · 내구도, 등급과 규칙 */
 data class PointsBasis(
     val shoeId: Long,
     val total: Int,
@@ -42,7 +44,16 @@ data class PointsBasis(
     val comfortBaseBps: Int,
     val durabilityBase: Int,
     val durabilityNow: Int,
+    /** 서버 등급(COMMON …) — 포인트 1 의 폭이 등급마다 다르다 */
+    val rarity: String = "COMMON",
+    val rules: ShoeRules = ShoeRules.FALLBACK,
 ) {
+    /** 포인트 1 이 올리는 폭(뽑은 값의 %) — 1.0 · 1.1 · 1.25 · 1.4 · 1.6 · 1.8 */
+    val pointRatePercent: Double get() = rules.grade(rarity).pointRateBps / 100.0
+
+    /** 착화감 상한(에너지 절약 bps) — 7000 = 에너지 70% 절약 */
+    val comfortCapBps: Int get() = rules.comfortCapBps
+
     fun free(draft: PointsDraft): Int = total - draft.sum
 
     /** 줄일 수 있는 바닥 — 다시 나누기가 남았으면 0, 아니면 이미 나눈 값 */
@@ -50,39 +61,44 @@ data class PointsBasis(
 
     fun canRemove(draft: PointsDraft, stat: PointStat): Boolean = draft[stat] > floor(stat)
 
-    /** 남은 포인트가 있고, 착화감이면 20% 를 넘지 않을 때 */
+    /** 남은 포인트가 있고, 착화감이면 상한(에너지 70% 절약)을 넘지 않을 때 — 서버 sneaker_points_set 과 같은 검사 */
     fun canAdd(draft: PointsDraft, stat: PointStat): Boolean =
-        free(draft) > 0 && (stat != PointStat.COMFORT || comfortRaw(draft.comfort + 1) <= StatPoints.COMFORT_CAP_BPS)
+        free(draft) > 0 && (stat != PointStat.COMFORT || comfortRaw(draft.comfort + 1) <= comfortCapBps)
 
-    private fun comfortRaw(points: Int): Int = comfortBaseBps + StatPoints.COMFORT_BPS * points
+    /** 착화감 포인트를 더한 에너지 절약 bps(상한 전) — 서버 economy.comfort_with_points */
+    private fun comfortRaw(points: Int): Int = rules.comfortWithPoints(comfortBaseBps, rarity, points)
 
-    fun efficiencyBps(draft: PointsDraft): Int = efficiencyBaseBps + StatPoints.EFFICIENCY_BPS * draft.efficiency
-    fun comfortBps(draft: PointsDraft): Int = minOf(comfortRaw(draft.comfort), StatPoints.COMFORT_CAP_BPS)
-    /** 내구도 포인트 1 이 올리는 값 — 이 신발 기본 최대 내구도의 10% */
-    val durabilityPerPoint: Int get() = StatPoints.durabilityPerPoint(durabilityBase)
+    /** 효율(적립 +bps) — 서버 economy.shoe_effective */
+    fun efficiencyBps(draft: PointsDraft): Int = rules.efficiencyWithPoints(efficiencyBaseBps, rarity, draft.efficiency)
+    fun comfortBps(draft: PointsDraft): Int = minOf(comfortRaw(draft.comfort), comfortCapBps)
 
-    fun durabilityMax(draft: PointsDraft): Int = durabilityBase + durabilityPerPoint * draft.durability
+    /** 지수로 — 화면이 보이는 값(효율 140 · 착화감 140) */
+    fun efficiencyIndex(draft: PointsDraft): Double = ShoeIndex.efficiency(efficiencyBps(draft))
+    fun comfortIndex(draft: PointsDraft): Double = ShoeIndex.comfort(comfortBps(draft))
 
-    /** 내구도 포인트는 최대 · 남은 내구도를 함께 올린다(다시 나누기로 줄이면 함께 내린다) */
+    /** 최대 내구도 — 서버 economy.dur_max_of(뽑은 값 × (1 + 폭 × 포인트), 반올림) */
+    fun durabilityMax(draft: PointsDraft): Int = rules.durabilityWithPoints(durabilityBase, rarity, draft.durability)
+
+    /** 내구도 포인트는 최대 · 남은 내구도를 함께 올린다(다시 나누기로 줄이면 함께 내린다) — 서버 sneaker_points_set 과 같다 */
     fun durabilityNow(draft: PointsDraft): Int =
-        (durabilityNow + durabilityPerPoint * (draft.durability - saved.durability)).coerceIn(0, durabilityMax(draft))
+        (durabilityNow + durabilityMax(draft) - durabilityMax(saved)).coerceIn(0, durabilityMax(draft))
 
     fun changed(draft: PointsDraft): Boolean = draft != saved
 
     /** 이미 나눈 포인트를 줄이는가 — 다시 나누기를 쓰는 것이다 */
     fun lowers(draft: PointsDraft): Boolean = PointStat.entries.any { draft[it] < saved[it] }
 
-    /** 서버가 받을 초안인가 — 받은 포인트 안, 바닥 위, 늘린 착화감은 20% 까지 */
+    /** 서버가 받을 초안인가 — 받은 포인트 안, 바닥 위, 늘린 착화감은 상한(에너지 70% 절약)까지 */
     fun valid(draft: PointsDraft): Boolean =
         free(draft) >= 0 && PointStat.entries.all { draft[it] >= floor(it) } &&
-            (draft.comfort <= saved.comfort || comfortRaw(draft.comfort) <= StatPoints.COMFORT_CAP_BPS)
+            (draft.comfort <= saved.comfort || comfortRaw(draft.comfort) <= comfortCapBps)
 }
 
 /**
  * 포인트를 나눌 수 있는 신발이면 그 값. 폰에만 있던 신발 · 폰에서 올린 예전 신발(IMPORT · MINT) · 아직 1레벨인 신발 ·
  * 포인트를 모르는 예전 서버면 null.
  */
-fun pointsBasisOf(shoe: Sneaker): PointsBasis? {
+fun pointsBasisOf(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): PointsBasis? {
     val server = shoe.server ?: return null
     if (!server.hasDurabilityMax || !server.upgradable || server.points.total <= 0) return null
     val p = server.points
@@ -95,6 +111,8 @@ fun pointsBasisOf(shoe: Sneaker): PointsBasis? {
         comfortBaseBps = server.comfortBaseBps,
         durabilityBase = server.durabilityBase,
         durabilityNow = server.durabilityNow,
+        rarity = shoe.rarity.id,
+        rules = rules,
     )
 }
 

@@ -159,6 +159,18 @@ class ShoeCareDesignTest {
         compose.onNodeWithTag("repair-short", useUnmergedTree = true).assertTextEquals(string(R.string.care_short, "30"))
         compose.onNodeWithTag("repair-confirm").assertIsNotEnabled()
 
+        // 경제 4판(0116) — 무료 수리(단가 0) · 가진 만큼 수리(잔고 5 SUP 로 41점 = 4.92 SUP). 값은 이 테스트 화면에만 있는 예시다
+        val absolute = WORN_DOWN.copy(server = WORN_DOWN.server!!.copy(durabilityNow = 100, durabilityMax = 200, durabilityBase = 200))
+        val absState = ShoeDetailState.Ready(absolute, WORN)
+        val freeQuote = requireNotNull(repairQuoteOf(absolute.copy(server = absolute.server!!.copy(repairCostPerUnit = 0.0))))
+        show("RP12-free", "repair-free", detail(state = absState, repair = RepairPhase.Confirm(freeQuote, 3.0)))
+        compose.onNodeWithTag("repair-free-left", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("repair-confirm").assertIsEnabled().assertTextEquals(string(R.string.v4s_repair_free_action))
+        val paidQuote = requireNotNull(repairQuoteOf(absolute.copy(server = absolute.server!!.copy(repairCostPerUnit = 0.12))))
+        val partial = requireNotNull(com.stepup.android.ui.screens.items.partialRepairOf(paidQuote, 5.0))
+        show("RP13-partial", "repair-partial", detail(state = absState, repair = RepairPhase.Insufficient(paidQuote, 5.0, partial)))
+        compose.onNodeWithTag("repair-confirm").assertIsEnabled().assertTextEquals(string(R.string.v4s_repair_partial_action, "4.92"))
+
         // 밝은 테마 · 큰 글씨 · 320dp
         compose.runOnIdle { light = true }
         show("L-SD01", "shoe-art", detail())

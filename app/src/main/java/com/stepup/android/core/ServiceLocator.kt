@@ -66,6 +66,9 @@ object ServiceLocator {
 
     /** 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18) */
     lateinit var dailyStepsUploader: com.stepup.android.data.repo.DailyStepsUploader
+
+    /** 경제 4판(서버 0116) 규칙 · 상자 현황 — 신발 · 수리 · 강화 · 출발 전 점검 · 뽑기가 함께 본다 */
+    lateinit var shoeRules: com.stepup.android.data.repo.ShoeRulesRepository
         private set
     lateinit var sneakerRepository: SneakerRepository
         private set
@@ -348,6 +351,10 @@ object ServiceLocator {
         )
         territoryApi = TerritoryApi(server)
         economyApi = com.stepup.android.data.remote.EconomyApi(server)
+        shoeRules = com.stepup.android.data.repo.ShoeRulesRepository(
+            fetchRules = { economyApi.shoeRules() },
+            fetchBoxes = { economyApi.boxStatus() },
+        )
         inviteApi = com.stepup.android.data.remote.InviteApi(server)
         accessApi = com.stepup.android.data.remote.AccessApi(server)
         val stepsApi = EventApi(server)
@@ -362,7 +369,15 @@ object ServiceLocator {
             db = database,
             prefs = userPrefs,
             sessions = sessionHolder,
-            afterCheckIn = { if (economyApi.isConfigured) dailyStepsUploader.upload() },
+            afterCheckIn = {
+                if (economyApi.isConfigured) {
+                    dailyStepsUploader.upload()
+                    shoeRules.refresh()
+                    shoeRules.refreshBoxes()
+                    // 이 앱의 판(스토어 번호) — 운영자가 아이템을 줄 때 가방이 있는 판인지 본다(0116). 테스트 판은 데이터베이스 판 × 1000 을 뺀다
+                    economyApi.reportAppVersion(BuildConfig.VERSION_CODE % 1000, BuildConfig.VERSION_NAME)
+                }
+            },
         )
         // 서버 주소가 있는 빌드는 언제나 서버 경제다. 없는 빌드(로컬 개발)만 예전처럼 폰 안에서 계산한다.
         val serverEconomy = economyApi.isConfigured

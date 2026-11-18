@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Economy v4 (2026-11-18) — shoe stat index · minutes · stars · type, point previews, free · partial repair, what a level gives -->
+<resources>
+    <string name="v4s_unit_min">min</string>
+    <string name="v4s_unit_min_suffix">" min"</string>
+    <string name="v4s_minutes">%1$s min</string>
+    <string name="v4s_full_minutes">%1$d min when full</string>
+    <string name="v4s_type_efficiency">Earner</string>
+    <string name="v4s_type_comfort">Saver</string>
+    <string name="v4s_type_endurance">Endurance</string>
+    <string name="v4s_type_balanced">Balanced</string>
+    <string name="v4s_quality_cd">%1$d stars, %2$s</string>
+
+    <string name="v4s_basis_intro">Efficiency and comfort use 100 as the baseline. Twice the number means twice the effect.</string>
+    <string name="v4s_basis_efficiency">Efficiency: SUP earned for the same steps. 200 earns twice as much as 100. The bar ends at the best new shoe of this grade.</string>
+    <string name="v4s_basis_comfort">Comfort: steps credited per unit of energy. The bar ends at the best new shoe of this grade. Points can raise it until it saves %1$d%% energy.</string>
+    <string name="v4s_basis_durability">Durability: minutes you can run with rewards on this shoe. The bar ends at full. It goes down as you run, a little differently each run.</string>
+    <string name="v4s_basis_quality">Stars (★ to ★★★) show how well this shoe rolled within its grade. The type is its best-rolled stat.</string>
+    <string name="v4s_basis_note">The SUP you actually get is confirmed after the run.</string>
+
+    <string name="v4s_points_hint">1 point = +%1$s%% of the rolled value</string>
+    <string name="v4s_points_hint_comfort">1 point = +%1$s%% of the rolled value · up to %2$d%% energy saved</string>
+    <string name="v4s_points_per_level">%1$d per level · %2$d more every 5 levels</string>
+    <string name="v4s_points_manage_done">All spent · you get %1$d per level</string>
+
+    <string name="v4s_repair_free_left">1 free repair left</string>
+    <string name="v4s_repair_free_body">Once every %1$d hours, one pair is fully repaired for free.</string>
+    <string name="v4s_repair_free_next">Next free repair in %1$d h</string>
+    <string name="v4s_repair_free_action">Repair for free</string>
+    <string name="v4s_repair_free_done">Fully repaired with your free repair.</string>
+    <string name="v4s_repair_cost_note">Repair cost follows the shoe\'s efficiency — about %1$d%% of what it earns walking.</string>
+    <string name="v4s_repair_partial_body">Your SUP covers %1$s min of repair.</string>
+    <string name="v4s_repair_partial_action">Repair what I can · %1$s SUP</string>
+    <string name="v4s_repair_partial_done">Repaired as much as your SUP covered. Repair the rest when you have more SUP.</string>
+
+    <string name="v4s_upg_materials_rule">3 shoes, one grade lower or above, %1$d%%+ durability</string>
+    <string name="v4s_upg_gain_energy">+%1$d daily energy (when it\'s your highest-level shoe)</string>
+    <string name="v4s_upg_gain_milestone">Lv. %1$d — full durability · 1 premium box (the first time your account reaches this level)</string>
+    <string name="v4s_upg_gain_milestone_got">Lv. %1$d — full durability (this level\'s premium box is already claimed)</string>
+    <string name="v4s_upg_repair_note">Raising efficiency raises the repair cost at the same rate.</string>
+    <string name="v4s_upg_got_milestone">Durability is full. If this is the first time you reached this level, 1 premium box is added to your draws.</string>
+    <string name="v4s_upg_block_worn" formatted="false">Only shoes with 50% durability or more can be materials</string>
+</resources>

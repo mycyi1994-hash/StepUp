@@ -1,15 +1,24 @@
 # StepUp — 작업 메모
 
-## 최신 — 사전 등록 마감 · 타워 게임은 누구나 (2026-11-18, 서버 0115)
+## 최신 — 경제 4판: 능력치 지수 · 등급별 레벨업 · 운 · 수리 · 상자 · 운영자 (2026-11-18, 서버 0116 · 새 판 28 · 1.20.0)
 
-사용자 "홈페이지 사전예약 오늘 11시 59분에 마감" → "게임은 계속". 마감 시각 = 서버 설정 `waitlist_closes_at`("2026-11-18T23:59:00+09:00", 지나면 등록 `{ok:false, message:'waitlist closed'}`)
-과 홈페이지 `web/waitlist.js` 의 `WAITLIST_CLOSES` — 바꾸면 둘 다(다시 열기 `admin_economy_set('waitlist_closes_at', 'null')`). 마감 뒤 홈페이지는 사전 등록 버튼들이 "사전 등록 마감",
-등록 창은 폼 대신 마감 안내 · Google Play · 타워 게임(이미 등록한 사람은 예전 완료 · 공유 화면 그대로). 타워는 사전 등록 안 한 이메일도 참가(`economy.tower_guests`,
-`tower_entry` = 사전 등록 줄 먼저 · 없으면 손님 줄 — 타워 표 entry_id 의 사전 등록 FK 는 풀었다). 테스트는 마감을 비우고 돈다(`schema_test.sql`).
+[docs/economy-v4-2026-11-18.md](docs/economy-v4-2026-11-18.md) — 사용자 "전부 진행해"(점검 [docs/점검-2026-11-18-경제-흐름.md](docs/점검-2026-11-18-경제-흐름.md) · 설계 [docs/shoe-stats-boxes-2026-11-18.md](docs/shoe-stats-boxes-2026-11-18.md) 3판 + 운).
+- 능력치는 지수(100 = 기준): 같은 등급 안 100 → 180 · 등급마다 효율 × 1.5 · 시간 × 1.35(일반 22 ~ 40분). 저장은 그대로 `efficiency_bps`(적립 +bps) · `comfort_bps`(에너지 절약 bps).
+  레벨마다 포인트 2 · 3 · 4 · 5 · 6 · 8 · 5레벨마다 보너스 + 내구도 가득 + 상급 상자, 포인트 1 = 뽑은 값의 +1.0 ~ +1.8%. SUP 레벨업(`sneaker_upgrade`)은 닫음.
+- 걸음당 SUP = 설정 `points_per_step`(0.0118), 수리비 = 신발 효율에 비례(`repair_share` 0.45), 운(보상 0.7 ~ 1.3 · 닳음 0.667 ~ 1.444, `record_session` 이 `reward_luck` 을 돌려준다),
+  48시간에 한 번 무료 수리, 상한 · 에너지로 빠진 몫은 닳지 않음, 에너지 최대치는 가진 신발 중 최고 레벨, 부스터 판매 멈춤, 상자(출석 1 + 러닝 2 + 40 SUP · 상급 주간 · 7일 연속 · 레벨 · 600 SUP).
+- **`record_session` 은 0116 이 마지막 정의다** — 다시 고칠 때 0116 을 복사한다. 0022 · 0059 · 0066 의 표 검사는 4판으로 옮긴 뒤 건너뛴다(다시 배포할 때 옛 식으로 막지 않게).
+- 경제 숫자를 바꾸면: `python3 tools/economy_sim/check.py`(CI — 운이 가장 나쁜 날에도 걸어서 남는다 · 강화하면 덜 남지 않는다 · 새 사용자 수리 · 갈아 신어도 에너지),
+  `python3 scripts/check-economy-twin.py`(앱 `ShoeRules.FALLBACK` = 서버). 설정은 운영자 페이지 "경제" 탭에서도 바꾼다(열아홉 개 · 늘 키를 한 번 더).
+- 예전 스토어 판(v1.17.1)이 부르는 함수 162개는 `supabase/tests/store_app_functions.txt` 로 서버 검사가 맞대어 본다 — 새 판을 스토어에 올리면 그 판으로 다시 만든다.
+- 운영자 페이지: 바로 적용(아이템 없이 내구도 가득 · 에너지 되돌리기 — 예전 판에도) · 경제(현황 · 설정) · 지급 때 예전 판 인원 경고. 앱은 동기화 때 판을 알린다(`app_client_report`, 스토어 번호 = versionCode % 1000).
+- 앱: `domain/EconomyV4.kt`(규칙 · 지수 · 별 · 유형 · 상자) · `data/repo/ShoeRulesRepository.kt`(`ServiceLocator.shoeRules`) · `ui/screens/items/ShoeStatsV4.kt` ·
+  상자 `ui/screens/gacha/BoxShop.kt` · `BoxSheets.kt` · 운 `domain/RunLuck.kt`(폰 DB 판 22 `rewardLuck`). 화면은 문서 "앱 화면".
+- 2026-11-18 운영 DB 에서 모든 신발 내구도를 한 번 가득 채웠다(SQL 창, 251켤레).
 
 ## 최신 — 새 판 1.19.0(27) · 매물 거두기 · 업데이트 보상 · 초대 코드 하루 1 · 운영자 보안 (2026-11-18, 서버 0112 · 0113 · 0114)
 
-- 스토어 판 versionCode 27 · versionName 1.19.0(26 · 1.18.0 은 스토어용 파일을 만든 적이 없다 — 마지막 Release AAB 는 v1.17.1).
+- 스토어 판 versionCode 27 · versionName 1.19.0(26 · 1.18.0 은 스토어용 파일을 만든 적이 없다 — 마지막 Release AAB 는 v1.17.1). → 경제 4판에서 28 · 1.20.0 으로 올렸다(27 은 AAB 로 만들었을 수 있어).
 - **0112** 배포 때 한 번: 열린 매물 · 입찰을 모두 거둔다(`economy.market_reclaim_20261118`) · 2026-11-18 00:00 KST 전에 **코드로** 들어온 사람
   (`access_grants.source = 'CODE'`, 거둔 권한 · LEGACY · ADMIN 빼고)에게 무료 뽑기 +5 · 상급 뽑기 선물 +1(`draw_grants` kind `GIFT` — 지갑 없이 쓴다,
   상급 뽑기는 GIFT 먼저). 스토어 판도 GIFT 가 있으면 상급 뽑기 칸이 보인다(지갑 · 체인 말 없이). 알림은 **보내지 않았다** —

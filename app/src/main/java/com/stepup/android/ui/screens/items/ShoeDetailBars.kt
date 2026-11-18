@@ -119,18 +119,22 @@ fun ShoeStatCells(
     repairEnabled: Boolean = true,
     repairEmphasis: Boolean = false,
 ) {
-    val rows = remember(shoe) { detailStatRows(shoe) }
+    val rules = rememberShoeRules()
+    val rows = remember(shoe, rules) { detailStatRows(shoe, rules) }
     val labels = rows.map { statTitle(it.stat) }
+    // 내구도는 분 — "28 / 31분"(단위는 언어마다 다르다)
+    val values = rows.map { if (it.unit == com.stepup.android.ui.screens.customize.StatUnit.MINUTES) minutesText(it.value) else it.value }
+    val ends = rows.map { if (it.unit == com.stepup.android.ui.screens.customize.StatUnit.MINUTES) minutesText(it.end) else it.end }
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val base = LocalTextStyle.current
     val labelStyle = remember(base) { base.merge(LabelStyle) }
     val valueStyle = remember(base) { base.merge(ValueStyle) }
-    val (labelWidth, valueWidth) = remember(labels, rows, labelStyle, valueStyle, density) {
+    val (labelWidth, valueWidth) = remember(labels, values, labelStyle, valueStyle, density) {
         fun widest(texts: List<String>, style: TextStyle): Dp = with(density) {
             (texts.maxOf { measurer.measure(it, style, softWrap = false).size.width } + 1).toDp()
         }
-        maxOf(LabelMin, widest(labels, labelStyle)) to maxOf(ValueMin, widest(rows.map { it.value }, valueStyle))
+        maxOf(LabelMin, widest(labels, labelStyle)) to maxOf(ValueMin, widest(values, valueStyle))
     }
     val repair = onRepair?.let { StatRepair(it, enabled = repairEnabled, emphasis = repairEmphasis) }
     BoxWithConstraints(modifier.fillMaxWidth()) {
@@ -139,10 +143,10 @@ fun ShoeStatCells(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             rows.forEachIndexed { index, row ->
                 StatCell(
-                    label = labels[index], value = row.value, fraction = row.fraction, fill = fillOf(row.stat),
+                    label = labels[index], value = values[index], fraction = row.fraction, fill = fillOf(row.stat),
                     labelWidth = labelWidth, valueWidth = valueWidth, labelStyle = labelStyle, valueStyle = valueStyle,
                     stacked = stacked,
-                    description = stringResource(R.string.sdv_bar_cd, labels[index], row.value, row.end),
+                    description = stringResource(R.string.sdv_bar_cd, labels[index], values[index], ends[index]),
                     tag = "shoe-cell-" + row.stat.name.lowercase(),
                     repair = if (row.stat == DetailStat.DURABILITY) repair else null,
                 )

@@ -29,6 +29,8 @@ data class SessionRecorded(
      * 판정 까닭(0089) — 적립이 0 이거나 줄어든 까닭. 서버 글 그대로(여러 개면 " · " 로 이어진다). 예전 서버는 보내지 않는다 — 빈 글자.
      */
     @SerialName("verdict_reason") val verdictReason: String? = null,
+    /** 이 러닝 보상의 운(0116 — 0.7 ~ 1.3, 평균 1). 무효 · 예전 서버는 null */
+    @SerialName("reward_luck") val rewardLuck: Double? = null,
 )
 
 @Serializable

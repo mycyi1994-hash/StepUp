@@ -84,9 +84,10 @@ enum class ForgeTargetBlock {
     }
 }
 
-/** 재료가 될 수 없는 까닭(서버 forge_material_block). GRADE 는 두 등급 이상 아래 */
+/** 재료가 될 수 없는 까닭(서버 forge_material_block). GRADE 는 두 등급 이상 아래,
+ * WORN 은 내구도가 설정(forge_material_min_durability, 50%)보다 낮다(0116 — 뽑은 신발을 신어 닳게 한 뒤 재료로 쓰지 못하게) */
 enum class ForgeMaterialBlock {
-    GONE, TARGET, GRADE, LISTED, EQUIPPED, LOCKED, ON_CHAIN, LEVEL, UNKNOWN;
+    GONE, TARGET, GRADE, LISTED, EQUIPPED, LOCKED, ON_CHAIN, WORN, LEVEL, UNKNOWN;
 
     companion object {
         fun of(code: String?): ForgeMaterialBlock? = code?.let { c -> entries.firstOrNull { it.name == c } ?: UNKNOWN }
@@ -118,13 +119,13 @@ data class ForgeTarget(
     val block: ForgeTargetBlock?,
 ) {
     /**
-     * 성공 시 값의 미리보기 — 서버 규칙(0066)과 같다: 레벨 +1, 스탯 포인트는 오른 레벨 · 등급만큼([StatPoints.gainAt]).
-     * 효율 · 착화감은 저절로 오르지 않는다(받은 포인트를 사용자가 나눈다). 3개를 고르면 서버 견적의 값으로 바꿔 쓴다.
+     * 성공 시 값의 미리보기 — 서버 규칙(0116)과 같다: 레벨 +1, 스탯 포인트는 그 레벨 · 등급만큼([ShoeRules.pointsAt] — 5의 배수 레벨이면
+     * 보너스까지). 효율 · 착화감은 저절로 오르지 않는다(받은 포인트를 사용자가 나눈다). 3개를 고르면 서버 견적의 값으로 바꿔 쓴다.
      */
-    fun previewNext(): ForgeStats = stats.copy(
+    fun previewNext(rules: ShoeRules = ShoeRules.FALLBACK): ForgeStats = stats.copy(
         level = stats.level + 1,
-        pointsTotal = stats.pointsTotal + StatPoints.gainAt(rarity, stats.level + 1),
-        pointsFree = stats.pointsFree + StatPoints.gainAt(rarity, stats.level + 1),
+        pointsTotal = stats.pointsTotal + StatPoints.gainAt(rarity, stats.level + 1, rules),
+        pointsFree = stats.pointsFree + StatPoints.gainAt(rarity, stats.level + 1, rules),
     )
 }
 

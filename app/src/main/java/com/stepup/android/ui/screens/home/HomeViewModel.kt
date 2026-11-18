@@ -143,9 +143,12 @@ class HomeViewModel(
         val earnableSteps: Int
             get() = RewardEconomy.earnableSteps(energy, equipped?.energyEfficiency ?: 1.0)
 
-        /** 그 걸음을 다 걸었을 때 받는 SUP — 신발 부스트와 종족 배율 포함 전 기본값 */
+        /**
+         * 그 걸음을 다 걸었을 때 받는 SUP 의 예상 — 서버 규칙의 걸음당 SUP × 신은 신발의 효율 지수 ÷ 100(경제 4판). 부스터 · 인원 ·
+         * 운은 넣지 않는다(실제 적립은 러닝을 마친 뒤 서버가 정한다)
+         */
         val earnableSup: Double
-            get() = earnableSteps * RewardEconomy.POINTS_PER_STEP
+            get() = earnableSteps * com.stepup.android.data.repo.shoeRulesNow().pointsPerStep * (equipped?.earningMultiplier ?: 1.0)
         val goalPercent: Int
             get() = if (goal > 0) (todaySteps * 100 / goal) else 0
 

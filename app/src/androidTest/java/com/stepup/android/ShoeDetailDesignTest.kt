@@ -262,8 +262,9 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-care-sell", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("shoe-care-record", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
-        assertCell("efficiency", "+0.45%")
-        assertCell("comfort", "7.5%")
+        // 효율 · 착화감은 지수(경제 4판) — 효율 +45bps = 100, 착화감 절약 7.5% = 108
+        assertCell("efficiency", "100")
+        assertCell("comfort", "108")
         assertCell("durability", "100 / 100")
         assertCell("level", "1 / 15")
         // 설명 문구 · 예전 두 칸 · 본문 링크가 없다(능력치 자세히 · 신발 정보는 ⋯ 안)
@@ -277,16 +278,16 @@ class ShoeDetailDesignTest {
         // 이 값은 이 테스트 화면에만 있는 예시다(계정 데이터가 아니다)
         show("s00-cartoon-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
         assertCell("level", "5 / 15")
-        assertCell("efficiency", "+8.0%")
-        assertCell("comfort", "5.8%")
+        assertCell("efficiency", "108")
+        assertCell("comfort", "106")
         assertCell("durability", "92 / 100")
         assertNameHas("No. 0007")
         assertBarsAligned()
         // 막대 끝값 — 0% · 아주 작은 양수 · 100% · 레벨 끝(레전더리 30) · 긴 번호
         show("s00b-cartoon-edges", "shoe-art", detail(ready(EDGES, all + EDGES)))
         assertCell("level", "30 / 30")
-        assertCell("efficiency", "+0.0%")
-        assertCell("comfort", "0.1%")
+        assertCell("efficiency", "100")
+        assertCell("comfort", "100")
         assertCell("durability", "100 / 100")
         assertNameHas("No. 12345")
         assertBarsAligned()
@@ -312,7 +313,7 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
         show("s08-another-copy", "shoe-art", detail(ready(PAIR_B)))
-        assertCell("comfort", "6.0%")
+        assertCell("comfort", "106")
         // 09 — 바꾸는 중: 다시 누를 수 없다
         show("s09-equipping", "shoe-art", detail(ready(PAIR_A), equipping = true))
         compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_wear_busy))
@@ -373,7 +374,8 @@ class ShoeDetailDesignTest {
         // 40 ~ 46 — 신발마다 다른 최대 내구도 · 레벨업 스탯 포인트(서버 0059). 값은 이 테스트 화면에만 있는 예시다
         val withPoints = all + POINTS + RESPEC
         show("s40-points-notice", "shoe-points-notice", detail(ready(POINTS, withPoints)))
-        assertCell("durability", "1,180 / 1,330")
+        // 내구도는 달릴 수 있는 분(1분마다 5) — 1,180 / 1,330 = 236 / 266분
+        assertCell("durability", string(R.string.v4s_minutes, "236 / 266"))
         compose.onNodeWithTag("shoe-points-notice").assertExists()
         // 다시 나누기만 남은 신발은 알림 없이 ⋯ 안에만
         show("s40b-points-respec-detail", "shoe-art", detail(ready(RESPEC, withPoints)))
