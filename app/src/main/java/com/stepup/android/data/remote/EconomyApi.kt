@@ -25,6 +25,18 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun sneakers(): ServerResult<List<ServerSneakerRow>> =
         rpc("my_sneakers", "{}") { serverJson.decodeFromString<List<ServerSneakerRow>>(it) }
 
+    /** 이 계정의 성공한 신발 강화 수(0110) — 업적 "강화 N회 성공". 서버에 함수가 없으면 거절로 온다 */
+    suspend fun forgeSuccesses(): ServerResult<Int> =
+        rpc("my_forge_successes", "{}") { it.trim().toIntOrNull() }
+
+    /** 내 신발의 획득일(0110) — 신발 번호 → 서버가 만든 때 · 거래소에서 산 때(벽시계 ms). 서버에 함수가 없으면 거절로 온다 */
+    suspend fun sneakerDates(): ServerResult<Map<Long, Long>> =
+        rpc("my_sneaker_dates", "{}") { body ->
+            serverJson.decodeFromString<List<SneakerDateRow>>(body).mapNotNull { row ->
+                SneakerDateRow.millis(row.acquiredAt)?.let { row.id to it }
+            }.toMap()
+        }
+
     /** 원장 한 쪽. [afterId] 다음 줄부터 번호 순으로. */
     suspend fun ledgerPage(afterId: Long, limit: Int = 1000): ServerResult<List<LedgerEntryRow>> =
         server.authed { token ->
@@ -92,9 +104,15 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     suspend fun walletLinkChallenge(): ServerResult<String> =
         rpc("wallet_link_challenge", "{}") { runCatching { serverJson.decodeFromString<String>(it) }.getOrNull() }
 
-    /** 뽑기 화면의 현황(0042) — 오늘 무료 · 가입 선물 · 지갑 선물 · 러닝으로 받은 상급 · 모은 거리 */
-    suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> =
-        rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
+    /**
+     * 뽑기 화면의 현황 — 오늘 무료 · 가입 선물 · 지갑 선물 · 러닝으로 받은 상급 · 모은 거리, 2판(0112)은 선물로 받은 상급(reward_left)까지.
+     * 서버에 2판이 아직 없으면(PGRST202) 예전 draw_status(0042)를 읽는다 — 선물 수는 0.
+     */
+    suspend fun drawStatus(): ServerResult<com.stepup.android.domain.DrawStatus> {
+        val v2 = rpc("draw_status_v2", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
+        if (!v2.missingServerFunction()) return v2
+        return rpc("draw_status", "{}") { serverJson.decodeFromString<List<DrawStatusRow>>(it).firstOrNull()?.toDomain() }
+    }
 
     /** 뽑기 확률(0077) — 뽑기가 실제로 쓰는 등급 표(천분율). 로그인 전에도 읽는다 */
     suspend fun drawOdds(): ServerResult<com.stepup.android.domain.DrawOdds> =
@@ -334,10 +352,23 @@ data class LedgerEntryRow(
     @SerialName("occurred_at") val occurredAt: String,
 )
 
+/** my_sneaker_dates(0110) 한 줄 */
+@Serializable
+data class SneakerDateRow(
+    val id: Long,
+    @SerialName("acquired_at") val acquiredAt: String? = null,
+) {
+    companion object {
+        /** 서버 시각(timestamptz) → 벽시계 ms. 읽지 못하면 null(그 신발은 예전 값을 둔다) */
+        fun millis(raw: String?): Long? =
+            raw?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
+    }
+}
+
 @Serializable
 data class DrawGrantRow(val kind: String, val granted: Int, val used: Int)
 
-/** draw_status(0042) 한 줄 — 모두 남은 수다 */
+/** draw_status(0042) · draw_status_v2(0112 — reward_left 를 더했다) 한 줄 — 모두 남은 수다 */
 @Serializable
 data class DrawStatusRow(
     @SerialName("daily_left") val dailyLeft: Int = 0,
@@ -354,12 +385,14 @@ data class DrawStatusRow(
     @SerialName("run_today") val runToday: Int = 0,
     @SerialName("run_daily_cap") val runDailyCap: Int = 0,
     @SerialName("chain_paused") val chainPaused: Boolean = false,
+    /** 선물로 받은 상급 뽑기 중 남은 수(0112 draw_status_v2) — 예전 draw_status 에는 없다 */
+    @SerialName("reward_left") val rewardLeft: Int = 0,
 ) {
     fun toDomain() = com.stepup.android.domain.DrawStatus(
         dailyLeft = dailyLeft, dailyTotal = dailyTotal, signupLeft = signupLeft, signupGranted = signupGranted,
         walletLinked = walletLinked, giftOnLink = giftOnLink, giftLeft = giftLeft, runLeft = runLeft,
         genesisLeft = genesisLeft, runProgressMeters = runProgressM, runStepMeters = runStepM,
-        runToday = runToday, runDailyCap = runDailyCap, chainPaused = chainPaused,
+        runToday = runToday, runDailyCap = runDailyCap, chainPaused = chainPaused, rewardLeft = rewardLeft,
     )
 }
 

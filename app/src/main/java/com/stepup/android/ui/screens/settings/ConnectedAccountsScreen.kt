@@ -346,6 +346,10 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     ServiceLocator.sessionHolder.signOut()
     // 앞 계정의 잔고 · 신발 사본도 이 폰에서 지운다
     ServiceLocator.economySync.clearLocal()
+    // 앞 계정의 가방(아이템 개수) · 출발 전에 고르다 만 아이템도 — 다음 계정의 아이템 탭에 앞 계정 것이 보이지 않게
+    ServiceLocator.itemsRepository.clear()
+    // 이 폰의 하루 걸음을 다음 계정에도 처음부터 다시 올리게
+    runCatching { ServiceLocator.dailyStepsUploader.forget() }
     // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
     ServiceLocator.userPrefs.clearStoryData()
     // 쓰다 둔 크루 만들기 초안(사진 파일 포함) · 크루 채팅의 쓰다 만 공지도 지운다

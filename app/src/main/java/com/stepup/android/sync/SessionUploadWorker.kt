@@ -38,6 +38,16 @@ class SessionUploadWorker(
             }
         if (!reported) return Result.retry()
 
+        // 출발 때 고른 아이템을 러닝보다 먼저 그 러닝에 묶는다 — 서버는 이미 기록한 러닝에는 붙이지 않는다(0106).
+        // 못 보냈으면 러닝도 올리지 않고 다시 시도한다(아이템 효과를 잃지 않게)
+        val bound = runCatching {
+            ServiceLocator.itemsRepository.flush(ServiceLocator.sessionHolder.recordingOwner())
+        }.getOrElse { error ->
+            Log.w(TAG, "러닝 아이템 묶기 중 예기치 못한 오류", error)
+            false
+        }
+        if (!bound) return Result.retry()
+
         // 한 번에 10개씩 올린다. 더 남았거나 도는 사이 새로 끝난 러닝이 있으면
         // 이어서 올린다 — 여기서 그만두면 남은 것은 다음 러닝을 끝낼 때까지 잠든다.
         while (!isStopped) {

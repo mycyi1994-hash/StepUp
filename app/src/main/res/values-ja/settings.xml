@@ -25,8 +25,8 @@
     <string name="set_save_failed_body">以前の設定のままです。もう一度押してください。</string>
     <string name="set_saves_right_away">変えるとすぐに保存されます。</string>
     <string name="set_notif_intro">受け取りたい通知を選んでください。</string>
-    <string name="set_notif_push">プッシュ通知</string>
-    <string name="set_notif_push_desc">ランのまとめと獲得のお知らせ</string>
+    <string name="set_notif_push">すべてのプッシュ通知</string>
+    <string name="set_notif_push_desc">オフにすると、下の通知も届きません</string>
     <string name="set_notif_goal">目標リマインダー</string>
     <string name="set_notif_goal_desc">1日の目標が残っているときにお知らせ</string>
     <string name="set_notif_invite">ランの招待</string>

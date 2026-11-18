@@ -1012,7 +1012,6 @@ StepUp과 함께 달려보세요.</string>
     <string name="market_quote_note">등록 %1$d켤레 · 24시간 %2$d건 체결</string>
     <string name="market_place_bid">구매 입찰</string>
     <string name="market_place_ask">판매 등록</string>
-    <string name="market_nothing_to_sell">이 모델로 팔 수 있는 신발이 없습니다. 신고 있는 신발은 팔 수 없습니다.</string>
     <string name="market_asks_title">매물</string>
     <string name="market_asks_empty">아직 매물이 없습니다.</string>
     <string name="market_bids_title">구매 입찰</string>

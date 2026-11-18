@@ -273,12 +273,12 @@ class ExperienceUiTest {
         compose.setContent { StepUpTheme { ExperienceProvider {
             Box(Modifier.background(Night).testTag("capture")) { MainScaffold() }
         } } }
-        // Four tab roles — 러닝 / 신발 / 커뮤니티 / 내 정보(2026-10-26 시안). 뽑기는 신발 탭 안의 글자 탭.
-        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_me)
+        // Five tab roles — 러닝 / 함께 뛰기 / 신발 / 아이템 / 내 정보(2026-11-17 아이템 탭). 뽑기는 신발 탭 안의 글자 탭.
+        val tabs = listOf(R.string.tab_run, R.string.tab_customize, R.string.tab_community, R.string.tab_items, R.string.tab_me)
         // 프로필 화면 안에도 "Profile" 탭이 있으므로 하단 탭 줄 안의 탭만 센다.
         val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and
             hasAnyAncestor(hasTestTag(BOTTOM_NAV_TAG))
-        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 4 }
+        compose.waitUntil(15_000) { compose.onAllNodes(tabRole).fetchSemanticsNodes().size == 5 }
         tabs.forEachIndexed { index, title ->
             val node = compose.onNode(hasText(compose.activity.getString(title)) and tabRole)
             node.performClick().assertIsSelected()

@@ -359,7 +359,7 @@ class ScreenGalleryTest {
             reset(37)
             capture("navigation-home")
             for ((id, name) in listOf(R.string.tab_customize to "customize",
-                    R.string.tab_community to "community", R.string.tab_me to "profile")) {
+                    R.string.tab_community to "community", R.string.tab_items to "bag", R.string.tab_me to "profile")) {
                 try { tap(id); capture("navigation-$name") } catch (error: Throwable) { failures.add("navigation-$name: ${error.message}") }
             }
             reset(40)
@@ -521,7 +521,7 @@ class ScreenGalleryTest {
             29 -> RunnerMarketScreen()
             30 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.MAP)
             31 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.HISTORY_MAP)
-            32 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.marketModel("FIRE", "COMMON", 1))
+            32 -> MainScaffold(initialRoute = com.stepup.android.ui.Routes.marketModel(com.stepup.android.data.remote.ModelKey("FIRE", "COMMON", 1)))
             33 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Loading)
             36 -> PartyLobbyScreen(flashPostId = 101L, onBack = {}, onRunStarted = {})
             37 -> MainScaffold()

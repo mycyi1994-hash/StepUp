@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.outlined.Settings
 import com.stepup.android.ui.screens.customize.RunnerMarketScreen
 import com.stepup.android.ui.screens.customize.CustomizeScreen
@@ -150,6 +152,12 @@ sealed class Screen(val route: String, val labelRes: Int, val icon: ImageVector)
 
     data object Community : Screen("community", R.string.tab_community, Icons.Filled.Groups)
 
+    /**
+     * 아이템 — 가방(러닝 부스터 · 보상 2배권 · 에너지 드링크 · 초기화권 둘, 서버 0106). 길은 "bag" — "items" 는 예전 신발 보관함 ·
+     * 거래소 길이라 그대로 둔다(알림 · 다른 화면이 그 이름으로 간다)
+     */
+    data object Bag : Screen(Routes.BAG, R.string.tab_items, Icons.Outlined.Inventory2)
+
     /** 내 정보 — 프로필 · 기록 · 포인트 · 설정 */
     data object Profile : Screen("profile", R.string.tab_me, Icons.Filled.Person)
 }
@@ -187,6 +195,9 @@ object Routes {
 
     /** 꾸미기 안의 신발 보관함 · 거래소 · 스토어 */
     const val ITEMS = "items"
+
+    /** 하단 아이템 탭 — 가방(0106). 운영자 지급 푸시(ITEM_GRANTED)가 이 길로 연다 */
+    const val BAG = "bag"
     const val MYSTERY_BOX = "mystery-box"
 
     /** 꾸미기 안의 러너 마켓 — 의상 / 신발 */
@@ -284,13 +295,14 @@ object Routes {
      * 들고 오면 판매 등록 창이 그 켤레를 고른 채로 열린다. 등록은 값을 적고
      * 확정해야 끝난다 — 번호를 들고 왔다고 저절로 올라가지 않는다.
      */
-    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}"
+    const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}&model={model}"
 
     fun sneaker(id: Long) = "sneaker/$id"
     fun sneakerUpgrade(id: Long) = "sneaker/$id/upgrade"
 
-    fun marketModel(faction: String, rarity: String, variant: Int, sell: Long = 0) =
-        "market/$faction/$rarity/$variant?sell=$sell"
+    /** 거래소의 한 장 — 도감 모델이 있으면 모델 번호로(0107, 같은 등급의 다른 모델과 섞이지 않는다) */
+    fun marketModel(key: com.stepup.android.data.remote.ModelKey, sell: Long = 0) =
+        "market/${key.faction}/${key.rarity}/${key.variant}?sell=$sell&model=${key.modelId ?: 0}"
     fun lobby(crewId: String) = "lobby/$crewId"
 
     /** 고른 크루 대기실 */
@@ -552,9 +564,23 @@ private fun MainScaffoldContent(
     val pendingPush by InviteLinks.pendingPush.collectAsState()
     LaunchedEffect(pendingPush) {
         when (val target = pendingPush ?: return@LaunchedEffect) {
-            is InviteLinks.PushTarget.Post -> navController.navigate(Routes.storyDetail(target.postId)) { launchSingleTop = true }
-            is InviteLinks.PushTarget.Flash -> navController.navigate(Routes.flashDetail(target.postId)) { launchSingleTop = true }
-            is InviteLinks.PushTarget.Room -> navController.navigate(Routes.room(target.crewId, target.partyId)) { launchSingleTop = true }
+            // 같은 화면에 다른 글 · 다른 방이 열려 있으면 걷고 연다(같은 것이면 그대로 — 점검 2026-11-17 #6)
+            is InviteLinks.PushTarget.Post -> navController.openReplacingSame(
+                Routes.storyDetail(target.postId), Routes.STORY_DETAIL, mapOf("postId" to target.postId),
+            )
+            is InviteLinks.PushTarget.Flash -> navController.openReplacingSame(
+                Routes.flashDetail(target.postId), Routes.FLASH_DETAIL, mapOf("postId" to target.postId),
+            )
+            is InviteLinks.PushTarget.Room -> navController.openReplacingSame(
+                Routes.room(target.crewId, target.partyId), Routes.LOBBY,
+                mapOf("crewId" to target.crewId, "party" to target.partyId),
+            )
+            // 아이템 도착(ITEM_GRANTED) · 보상 이벤트 시작(REWARD_EVENT) — 그 탭으로(0106)
+            InviteLinks.PushTarget.Bag -> navController.switchTab(Screen.Bag)
+            InviteLinks.PushTarget.RunTab -> navController.switchTab(Screen.Run)
+            // 거래소 매물을 돌려받음(MARKET_RECLAIMED) — 신발 탭, 업데이트 보상(UPDATE_REWARD) — 신발 뽑기(0112)
+            InviteLinks.PushTarget.Shoes -> navController.switchTab(Screen.Customize)
+            InviteLinks.PushTarget.Draw -> navController.switchTab(Screen.Draw)
         }
         InviteLinks.consumePush()
     }
@@ -871,7 +897,7 @@ private fun MainScaffoldContent(
                     onOpenMarket = { navController.navigate(Routes.RUNNER_MARKET) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
-                    onOpenMarketModel = { faction, rarity, variant -> navController.navigate(Routes.marketModel(faction, rarity, variant)) },
+                    onOpenMarketModel = { key -> navController.navigate(Routes.marketModel(key)) },
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDraw = { navController.switchTab(Screen.Draw) },
                 )
@@ -880,9 +906,7 @@ private fun MainScaffoldContent(
                 RunnerMarketScreen(
                     onBack = { navController.popBackStack() },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
-                    onOpenModel = { faction, rarity, variant ->
-                        navController.navigate(Routes.marketModel(faction, rarity, variant))
-                    },
+                    onOpenModel = { key -> navController.navigate(Routes.marketModel(key)) },
                     onOpenVault = { navController.navigate(Routes.ITEMS) },
                 )
             }
@@ -998,9 +1022,7 @@ private fun MainScaffoldContent(
                     onOpenSneaker = { id -> navController.navigate(Routes.sneaker(id)) },
                     onOpenDex = { navController.navigate(Routes.SNEAKER_DEX) },
                     onOpenDraw = { navController.switchTab(Screen.Draw) },
-                    onOpenMarketModel = { faction, rarity, variant ->
-                        navController.navigate(Routes.marketModel(faction, rarity, variant))
-                    },
+                    onOpenMarketModel = { key -> navController.navigate(Routes.marketModel(key)) },
                 )
             }
             composable(
@@ -1013,12 +1035,17 @@ private fun MainScaffoldContent(
                         type = NavType.LongType
                         defaultValue = 0L
                     },
+                    navArgument("model") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    },
                 ),
             ) { entry ->
                 MarketModelScreen(
                     faction = entry.arguments?.getString("faction").orEmpty(),
                     rarity = entry.arguments?.getString("rarity").orEmpty(),
                     variant = entry.arguments?.getInt("variant") ?: 0,
+                    modelId = entry.arguments?.getInt("model")?.takeIf { it > 0 },
                     sellLocalId = entry.arguments?.getLong("sell") ?: 0L,
                     onBack = { navController.popBackStack() },
                 )
@@ -1039,6 +1066,9 @@ private fun MainScaffoldContent(
                     },
                     onOpenHistory = { navController.navigate(Routes.CHALLENGE_HISTORY) },
                 )
+            }
+            composable(Screen.Bag.route) {
+                com.stepup.android.ui.screens.items.BagScreen()
             }
             composable(Screen.Profile.route) { entry ->
                 val nicknameSaved by entry.savedStateHandle.getStateFlow(Routes.NICKNAME_SAVED, false).collectAsState()
@@ -1538,11 +1568,7 @@ private fun MainScaffoldContent(
                 SneakerDetailScreen(
                     sneakerId = entry.arguments?.getLong("id") ?: 0L,
                     onBack = { navController.popBackStack() },
-                    onSell = { faction, rarity, variant, localId ->
-                        navController.navigate(
-                            Routes.marketModel(faction, rarity, variant, localId),
-                        )
-                    },
+                    onSell = { key, localId -> navController.navigate(Routes.marketModel(key, localId)) },
                     // 보유 신발 상세 v1 — 조회 실패(14) · 없는 신발(15)에서 "보유 신발로 돌아가기": 신발 탭의 최신 목록으로
                     onOpenOwned = {
                         if (!navController.popBackStack(Screen.Customize.route, inclusive = false)) {
@@ -1952,6 +1978,8 @@ private fun tabIcon(screen: Screen, selected: Boolean): ImageVector = when (scre
     Screen.Draw -> com.stepup.android.ui.components.StepUpIcons.TabDraw
     Screen.Community -> if (selected) Icons.Filled.Groups else com.stepup.android.ui.components.StepUpIcons.TabCommunity
     Screen.Profile -> com.stepup.android.ui.components.StepUpIcons.TabProfile
+    // 아이템(가방) — 상자 선 아이콘. 고르면 채운 모양
+    Screen.Bag -> if (selected) Icons.Filled.Inventory2 else Icons.Outlined.Inventory2
 }
 
 /** 앱이 죽어 멈춘 러닝 — 이어 달리거나 여기서 끝내고 저장한다. 버리는 선택은 두지 않는다(뛴 기록을 잃지 않게). */

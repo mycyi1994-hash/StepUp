@@ -443,6 +443,43 @@ data class Sneaker(
     val slotKey: String get() = catalogModel?.let { "M:${it.id}" } ?: "${faction.id}:${rarity.id}:$variant"
 }
 
+/**
+ * 팔 수 없는 까닭(2026-11-17 — 테스터 "판매를 누르면 딴 거로 연결"과 함께 본 "팔 수 있는 신발이 없습니다"). null 이면 팔 수 있다.
+ * 서버 can_withdraw(넘길 수 있음 · 잠금 거리를 달림 · 앱 안 · 판매 중 아님)를 화면이 까닭마다 다른 말로 풀어 보인다 — 판정은 서버 값이다.
+ */
+sealed interface SellBlock {
+    /** 신고 있다 — 팔면 다음 러닝의 신발이 말없이 바뀐다 */
+    data object Equipped : SellBlock
+
+    /** 이미 판매 중 */
+    data object Listed : SellBlock
+
+    /** 첫 신발 — 서버가 넘기지 않는다(withdrawable = false) */
+    data object Starter : SellBlock
+
+    /** 무료 뽑기 신발 — 이 신발로 [leftKm] 를 더 달려야 판다. 0 이면 남은 거리를 아직 모른다(동기화 전) */
+    data class Locked(val leftKm: Double) : SellBlock
+
+    /** 그 밖(폰에만 있던 옛 신발 · 체인에 있는 신발 · 서버가 막은 신발) */
+    data object Other : SellBlock
+}
+
+/** 팔 수 없는 까닭 — 서버 값(can_withdraw · 출처 · 잠금 거리)으로 가른다 */
+val Sneaker.sellBlock: SellBlock?
+    get() {
+        val s = server ?: return SellBlock.Other
+        return when {
+            equipped -> SellBlock.Equipped
+            s.status == "LISTED" -> SellBlock.Listed
+            s.canWithdraw -> null
+            s.origin == "STARTER" -> SellBlock.Starter
+            s.chainState != "APP" || s.status != "OWNED" -> SellBlock.Other
+            s.origin in setOf("FREE_DRAW", "BONUS_DRAW") || s.kmRun < s.lockKm ->
+                SellBlock.Locked((s.lockKm - s.kmRun).coerceAtLeast(0.0))
+            else -> SellBlock.Other
+        }
+    }
+
 /** 강화할 수 없는 까닭 */
 enum class UpgradeBlock {
     /** 최대 레벨 */
@@ -537,6 +574,9 @@ data class ServerStats(
     val points: StatPoints = StatPoints(),
     /** 내구도 1(10m) 고치는 값 — 0 이면 예전 서버(1% 값 [repairCostPerPoint] 를 쓴다) */
     val repairCostPerUnit: Double = 0.0,
+    /** 이 신발로 달린 거리 · 팔 수 있게 되는 거리(km) — 무료 뽑기 신발은 잠금 거리를 달려야 판다(서버 can_withdraw) */
+    val kmRun: Double = 0.0,
+    val lockKm: Double = 0.0,
 ) {
     /** 내구도 계수 — 남은 비율이 0 보다 크면 1, 다 닳았으면 0 (서버 economy.durability_factor, 0066) */
     val durabilityFactor: Double

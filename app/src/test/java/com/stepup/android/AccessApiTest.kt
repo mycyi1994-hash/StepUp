@@ -55,7 +55,11 @@ class AccessApiTest {
                 "access_code_issue" -> HttpResponse(200, """{"code":"ABCD-EFGH","expires_at":"2026-11-11T00:00:00Z"}""")
                 "my_access_codes" -> HttpResponse(200, """[{"code":"ABCD-EFGH","status":"USED","created_at":"2026-10-28T00:00:00Z",
                     "expires_at":"2026-11-11T00:00:00Z","used_at":"2026-10-28T01:00:00Z"}]""")
-                else -> HttpResponse(404, "{}")
+                // 0113 전 서버 — 새 함수가 없다(PostgREST PGRST202). 코드 만들기는 예전 함수로 한 번 더 간다
+                else -> HttpResponse(
+                    404,
+                    """{"code":"PGRST202","message":"Could not find the function public.${url.substringAfterLast('/')} without parameters"}""",
+                )
             }
         }
         val api = api(http)

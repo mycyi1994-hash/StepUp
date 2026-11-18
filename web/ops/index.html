@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>StepUp 운영자</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#F2F4F9;--card:#FFFFFF;--ink:#0B0D12;--sub:#566074;--line:#E1E5EE;--blue:#1166FF;--blue-ink:#0B4FCC;--blue-soft:#E8F0FF;--red:#C62828;--red-soft:#FDECEC;--green:#0B7A43;--green-soft:#E3F6EC;--amber:#8A5A00;--amber-soft:#FFF3D6}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;font-size:16px;line-height:1.5;word-break:keep-all}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 80px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+header.top h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+header.top h1 span{color:var(--blue)}
+.who{font-size:14px;color:var(--sub);display:flex;align-items:center;gap:10px}
+.link{background:none;border:0;padding:8px 4px;color:var(--blue-ink);font-weight:700;text-decoration:underline}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:18px;font-weight:800}
+.card p.hint{margin:0 0 14px;font-size:14px;color:var(--sub)}
+.gate{max-width:420px;margin:12vh auto 0}
+.f{display:block;font-size:14px;font-weight:700;margin:18px 0 6px}
+input[type=text],input[type=password],input[type=number],input[type=datetime-local],textarea{width:100%;min-height:48px;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fff}
+textarea{min-height:96px;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible,.pick:focus-within{outline:3px solid rgba(17,102,255,.35);outline-offset:1px}
+.btn{min-height:50px;padding:0 22px;border-radius:14px;border:0;background:var(--blue);color:#fff;font-weight:800;font-size:16px}
+.btn:disabled{background:#B8C2D6;cursor:not-allowed}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.btn.danger{background:#fff;border:1.5px solid #E7B4B4;color:var(--red)}
+.btn.small{min-height:40px;padding:0 14px;font-size:14px;border-radius:10px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.stat b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.stat span{font-size:13px;color:var(--sub)}
+.stat.live{background:var(--blue);border-color:var(--blue);color:#fff}
+.stat.live span{color:#DCE8FF}
+.tabs{display:flex;gap:6px;margin-bottom:14px;background:#E3E7F0;padding:4px;border-radius:14px}
+.tabs button{flex:1;min-height:44px;border:0;border-radius:10px;background:transparent;font-weight:700;color:var(--sub)}
+.tabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(20,40,100,.12)}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.pick{position:relative;display:flex;align-items:center;min-height:46px;padding:0 16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-weight:700;font-size:15px}
+.pick input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.pick:has(input:checked){border-color:var(--blue);background:var(--blue-soft);color:var(--blue-ink)}
+.items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.item{position:relative;display:block;padding:14px 16px;border:1.5px solid var(--line);border-radius:14px;background:#fff}
+.item input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.item:has(input:checked){border-color:var(--blue);background:var(--blue-soft)}
+.item:focus-within{outline:3px solid rgba(17,102,255,.35);outline-offset:1px}
+.item b{display:block;font-size:16px}
+.item span{display:block;font-size:13px;color:var(--sub)}
+.item em{font-style:normal;font-size:12px;font-weight:700;color:var(--blue-ink);background:var(--blue-soft);border-radius:8px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+.item small{display:block;margin-top:6px;font-size:12px;color:var(--sub)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.stepper button{width:48px;height:48px;border:0;background:#fff;font-size:22px;font-weight:700}
+.stepper input{width:64px;min-height:48px;border:0;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);border-radius:0;text-align:center;font-weight:800;font-size:18px;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:18px;background:#fff;font-size:13px;font-weight:700;color:var(--sub)}
+.check{display:flex;align-items:center;gap:10px;margin-top:16px;font-weight:700;min-height:44px}
+.check input{width:22px;height:22px;accent-color:var(--blue)}
+.found{margin-top:8px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.found button{display:flex;justify-content:space-between;gap:10px;width:100%;min-height:48px;padding:8px 14px;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left}
+.found button:last-child{border-bottom:0}
+.found button span{color:var(--sub);font-size:13px}
+.summary{margin-top:18px;padding:14px 16px;border-radius:14px;background:var(--blue-soft);color:var(--blue-ink);font-weight:700}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.msg{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;font-weight:700}
+.msg.ok{background:var(--green-soft);color:var(--green)}
+.msg.err{background:var(--red-soft);color:var(--red)}
+.msg.warn{background:var(--amber-soft);color:var(--amber)}
+.msg ul{margin:6px 0 0;padding-left:18px;font-weight:500}
+.list{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#eventNow{margin-bottom:6px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff}
+.li:last-child{border-bottom:0}
+.li b{display:block;font-size:15px}
+.li span{display:block;font-size:13px;color:var(--sub)}
+.li span.tag{display:inline-block}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px;margin-right:6px;vertical-align:1px}
+.tag.live{background:var(--green-soft);color:var(--green)}
+.tag.wait{background:var(--blue-soft);color:var(--blue-ink)}
+.tag.off{background:#EEF0F5;color:var(--sub)}
+.empty{padding:20px;text-align:center;color:var(--sub);font-size:14px;background:#fff}
+dialog{border:0;border-radius:20px;padding:24px;max-width:420px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(10,20,60,.3)}
+dialog::backdrop{background:rgba(8,12,24,.5)}
+dialog h3{margin:0 0 8px;font-size:19px}
+dialog p{margin:0;color:var(--sub);white-space:pre-line}
+dialog form{margin:0}
+.session{margin:-6px 0 14px;font-size:13px;color:var(--sub)}
+.session.warn{color:var(--amber);font-weight:700}
+.note{margin:8px 2px 0;font-size:13px;color:var(--sub)}
+.note:empty{display:none}
+.note.warn{color:var(--amber);font-weight:700}
+[hidden]{display:none!important}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.items{grid-template-columns:minmax(0,1fr)}.actions .btn{flex:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 키 -->
+  <section class="card gate" id="gate">
+    <h2>StepUp 운영자</h2>
+    <p class="hint">받은 운영자 키로 로그인해 주세요. 로그인은 8시간까지, 30분 동안 쓰지 않으면 끝나요.
+      키는 이 기기에 남기지 않고, 10분에 다섯 번 틀리면 15분 동안 막혀요.</p>
+    <form id="gateForm">
+      <label class="f" for="key">운영자 키</label>
+      <input id="key" type="password" autocomplete="off" spellcheck="false" required>
+      <div class="msg err" id="gateMsg" role="alert" hidden></div>
+      <div class="actions"><button class="btn" id="gateBtn" type="submit">로그인</button></div>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <header class="top">
+      <h1>StepUp <span>운영자</span></h1>
+      <div class="who"><span id="actor"></span><button class="link" id="logout" type="button">로그아웃</button></div>
+    </header>
+    <p class="session" id="sessionInfo" aria-live="polite"></p>
+
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="stUsers">–</b><span>가입한 사람</span></div>
+      <div class="stat"><b id="stRunners">–</b><span>최근 7일 달린 사람</span></div>
+      <div class="stat"><b id="stHeld">–</b><span>풀려 있는 아이템</span></div>
+      <div class="stat" id="stEventBox"><b id="stEvent">없음</b><span id="stEventSub">지금 보상 이벤트</span></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabGrant" aria-selected="true" aria-controls="paneGrant" type="button">아이템 지급</button>
+      <button role="tab" id="tabEvent" aria-selected="false" aria-controls="paneEvent" type="button">보상 이벤트</button>
+      <button role="tab" id="tabLog" aria-selected="false" aria-controls="paneLog" type="button">기록</button>
+    </div>
+
+    <!-- 아이템 지급 -->
+    <section class="card" id="paneGrant" role="tabpanel" aria-labelledby="tabGrant">
+      <h2>아이템 지급</h2>
+      <p class="hint">받는 사람의 가방에 바로 들어가고, 푸시 알림이 갑니다.</p>
+      <form id="grantForm">
+        <span class="f" id="lblWho">1. 누구에게</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lblWho">
+          <label class="pick"><input type="radio" name="aud" value="EMAILS" checked>이메일로 고르기</label>
+          <label class="pick"><input type="radio" name="aud" value="RUNNERS_7D">최근 7일 달린 사람 <span id="audRunners"></span></label>
+          <label class="pick"><input type="radio" name="aud" value="ALL">전체 <span id="audAll"></span></label>
+        </div>
+        <div id="emailBox">
+          <label class="f" for="emails">이메일 (한 줄에 하나 · 쉼표도 됩니다)</label>
+          <textarea id="emails" placeholder="runner@example.com" spellcheck="false"></textarea>
+          <label class="f" for="find">이름 · 이메일로 찾아 넣기</label>
+          <input id="find" type="text" placeholder="두 글자 이상" autocomplete="off">
+          <div class="found" id="found" hidden></div>
+        </div>
+
+        <span class="f" id="lblItem">2. 무엇을</span>
+        <div class="items" id="items" role="radiogroup" aria-labelledby="lblItem"></div>
+
+        <span class="f" id="lblQty">3. 몇 개 (한 사람당)</span>
+        <div class="row">
+          <div class="stepper" role="group" aria-labelledby="lblQty">
+            <button type="button" id="qtyMinus" aria-label="하나 빼기">−</button>
+            <input id="qty" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="개수">
+            <button type="button" id="qtyPlus" aria-label="하나 더하기">+</button>
+          </div>
+        </div>
+
+        <label class="f" for="reason">4. 사유 (기록에 남고, 받는 사람에게는 보이지 않습니다)</label>
+        <input id="reason" type="text" maxlength="80" placeholder="예: 출시 기념" required>
+        <div class="chips" id="reasonChips">
+          <button class="chip" type="button">출시 기념</button>
+          <button class="chip" type="button">이벤트 당첨</button>
+          <button class="chip" type="button">오류 보상</button>
+          <button class="chip" type="button">문의 보상</button>
+        </div>
+
+        <label class="check"><input id="grantPush" type="checkbox" checked>푸시 알림 보내기</label>
+
+        <div class="summary" id="grantSummary" aria-live="polite"></div>
+        <p class="note" id="grantNote" aria-live="polite"></p>
+        <div class="msg" id="grantMsg" role="status" hidden></div>
+        <div class="actions"><button class="btn" id="grantBtn" type="submit">지급하기</button></div>
+      </form>
+    </section>
+
+    <!-- 보상 이벤트 -->
+    <section class="card" id="paneEvent" role="tabpanel" aria-labelledby="tabEvent" hidden>
+      <h2>보상 이벤트</h2>
+      <p class="hint">정한 시간 동안 시작한 모든 러닝의 적립이 배수만큼 늘어납니다. 부스터 · 아이템과 겹치지 않고 가장 큰 배수 하나만 적용됩니다.</p>
+      <div class="list" id="eventNow"></div>
+      <form id="eventForm">
+        <span class="f" id="lblPreset">빠른 설정</span>
+        <div class="chips" id="presets">
+          <button class="chip" type="button" data-title="24시간 보상 2배" data-mult="2" data-hours="24">24시간 보상 2배</button>
+          <button class="chip" type="button" data-title="주말 보상 1.5배" data-mult="1.5" data-hours="48">48시간 1.5배</button>
+          <button class="chip" type="button" data-title="반짝 보상 3배" data-mult="3" data-hours="3">3시간 3배</button>
+        </div>
+        <label class="f" for="evTitle">이벤트 이름 (푸시 알림에 나옵니다)</label>
+        <input id="evTitle" type="text" maxlength="40" placeholder="예: 24시간 보상 2배" required>
+        <div class="row">
+          <div style="flex:1;min-width:140px">
+            <label class="f" for="evMult">배수 (1.1 ~ 5)</label>
+            <input id="evMult" type="number" inputmode="decimal" min="1.1" max="5" step="0.1" value="2" required>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label class="f" for="evHours">기간 (시간, 1 ~ 168)</label>
+            <input id="evHours" type="number" inputmode="numeric" min="1" max="168" step="1" value="24" required>
+          </div>
+        </div>
+        <span class="f" id="lblStart">언제부터</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lblStart">
+          <label class="pick"><input type="radio" name="evWhen" value="now" checked>지금 바로</label>
+          <label class="pick"><input type="radio" name="evWhen" value="later">예약</label>
+        </div>
+        <div id="evLaterBox" hidden>
+          <label class="f" for="evStart">시작 시각 (이 기기의 시간)</label>
+          <input id="evStart" type="datetime-local">
+        </div>
+        <label class="check"><input id="evPush" type="checkbox" checked><span id="evPushLabel">시작 푸시 알림 보내기</span></label>
+        <div class="summary" id="eventSummary" aria-live="polite"></div>
+        <p class="note" id="eventNote" aria-live="polite"></p>
+        <div class="msg" id="eventMsg" role="status" hidden></div>
+        <div class="actions"><button class="btn" id="eventBtn" type="submit">이벤트 시작</button></div>
+      </form>
+    </section>
+
+    <!-- 기록 -->
+    <section class="card" id="paneLog" role="tabpanel" aria-labelledby="tabLog" hidden>
+      <h2>최근 지급</h2>
+      <p class="hint">되돌리면 아직 갖고 있는 만큼만 거둡니다. 이미 쓴 아이템은 거두지 못합니다.</p>
+      <div class="list" id="batches"></div>
+      <div class="msg" id="logMsg" role="status" hidden></div>
+      <h2 style="margin-top:24px">보상 이벤트 기록</h2>
+      <div class="list" id="events" style="margin-top:10px"></div>
+      <h2 style="margin-top:24px">아이템 현황</h2>
+      <div class="list" id="kinds" style="margin-top:10px"></div>
+    </section>
+  </div>
+</div>
+
+<dialog id="confirm" aria-labelledby="cfTitle">
+  <h3 id="cfTitle"></h3>
+  <p id="cfBody"></p>
+  <div class="actions">
+    <button class="btn ghost" id="cfNo" type="button">취소</button>
+    <button class="btn" id="cfYes" type="button">확인</button>
+  </div>
+</dialog>
+
+<!-- 큰 일(전체 · 많은 사람 지급 · 큰 배수 · 긴 이벤트 · 되돌리기)은 키를 한 번 더 — 서버가 이 세션을 연 키인지 본다 -->
+<dialog id="reauth" aria-labelledby="raTitle">
+  <form id="raForm">
+    <h3 id="raTitle"></h3>
+    <p id="raBody"></p>
+    <label class="f" for="raKey">운영자 키 (큰 일이라 한 번 더 확인해요)</label>
+    <input id="raKey" type="password" autocomplete="off" spellcheck="false">
+    <div class="msg" id="raMsg" role="alert" hidden></div>
+    <div class="actions">
+      <button class="btn ghost" id="raNo" type="button">취소</button>
+      <button class="btn" id="raYes" type="submit">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/ops/ops.js?v=20261118a"></script>
+</body>
+</html>

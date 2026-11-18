@@ -137,7 +137,18 @@ data class PartyMember(
     /** 화면용 거리(km) — 본인이거나 공유를 켠 사람만 */
     val km: Double? = null,
     val sharing: Boolean = false,
-)
+) {
+    /**
+     * 대기실을 보고 있지 않다 — [AWAY_SEC] 넘게 대기실에 묻지 않았다(폰이 잠들었거나 앱을 떠났다). 서버는 출발할 때 이런 준비 인원을
+     * 빼고 센다(0087 · 0109). 나는 지금 보고 있으니 아니다. 대기실(LOBBY)에서만 뜻이 있다
+     */
+    val away: Boolean get() = !isMe && seenSec > AWAY_SEC
+
+    companion object {
+        /** 서버 party_start 의 "15초 안에 대기실에 물어 온 사람"과 같다 */
+        const val AWAY_SEC = 15
+    }
+}
 
 /** 로비가 멈춘 까닭 */
 enum class PartyProblem {
@@ -164,6 +175,9 @@ enum class PartyProblem {
 
     /** 고른 대기실이 그사이 출발했다 — 늦게 끼지 않는다(0072 room_started · D10) */
     STARTED,
+
+    /** 크루 방 출발을 서버가 받지 않았다 — 함께 출발할(대기실을 보고 있는) 준비 인원이 2명이 안 된다(crew_run_need_two, 0109) */
+    NEED_TWO,
 }
 
 enum class PartyPhase {
@@ -231,10 +245,23 @@ data class PartyState(
     val meetPlace: String? = null,
     val planAtLocal: Long = 0L,
     val capacity: Int = 0,
+    /**
+     * 출발을 놓친 뒤([PartyProblem.MISSED_START]) 오늘 크루 러닝이 쓰이지 않았는가(서버 crew_run_release, 0109) —
+     * true 풀렸다(처음부터 없었다) · false 달린 기록이 있어 쓰였다 · null 아직 모른다(묻는 중 · 닿지 못함)
+     */
+    val missedFreed: Boolean? = null,
 ) {
     /** 로비 · 달리는 중 어디서든 서버에 닿지 못하고 있다 */
     val networkProblem: Boolean get() = problem == PartyProblem.NETWORK || liveOffline
-    val readyCount: Int get() = members.count { it.ready }
+
+    /**
+     * 함께 출발할 준비 인원 — 대기실에서는 대기실을 보고 있는 사람만 센다([PartyMember.away]). 서버가 출발할 때 같은 기준으로
+     * 빼므로(0087), 잠든 폰을 세면 출발 버튼이 켜져 있는데 눌러도 거절만 되풀이됐다(0109 crew_run_need_two)
+     */
+    val readyCount: Int get() = members.count { it.ready && (phase != PartyPhase.LOBBY || !it.away) }
+
+    /** 준비했지만 대기실을 보고 있지 않은 사람 — 출발할 때 빠진다(대기실에서만) */
+    val awayReady: List<PartyMember> get() = if (phase == PartyPhase.LOBBY) members.filter { it.ready && it.away } else emptyList()
     val partySize: Int get() = members.size
     val allReady: Boolean get() = members.isNotEmpty() && members.all { it.ready }
     val myReady: Boolean get() = members.firstOrNull { it.isMe }?.ready == true
@@ -650,6 +677,8 @@ class CrewRepository(
         // 다른 대기실로 옮긴다 — 앞 방의 나가기는 서버에 닿을 때까지 뒤에서 보낸다
         current.partyId?.let { old -> if (!sameRoom) leaveLater(old) }
         lastRoster = null
+        // 같은 방에 다시 들어와도 첫 상태를 "코스가 바뀌었다"로 읽지 않게 — 다시 들어온 방의 지금 판을 본 것으로 둔다(#18)
+        lastCourseRoom = null
         readyTap = null
         startingParty = null
         _party.value = PartyState(
@@ -1049,7 +1078,7 @@ class CrewRepository(
             roomClosed = closed,
             liveOffline = false,
             pendingShare = pendingShare,
-            problem = lobbyProblem(closed, phase, before.problem, tap, serverReady),
+            problem = lobbyProblem(closed, phase, before.problem, tap, serverReady, awayReady = members.any { it.ready && it.away }),
         )
         left.forEach { rewardRepository.notify(NotificationType.PARTY_MEMBER_LEFT, it.name) }
     }
@@ -1061,11 +1090,13 @@ class CrewRepository(
     private fun act(
         undo: (PartyState) -> PartyState = { it },
         lost: (() -> Unit)? = null,
+        /** 서버가 거절한 까닭으로 고른 안내 — null 이면 "처리되지 않았어요"([PartyProblem.FAILED]) */
+        refused: (String) -> PartyProblem? = { null },
         call: suspend (Long) -> ServerResult<Unit>,
     ) {
         val id = _party.value.partyId ?: return
         val problem = _party.value.problem
-        if (problem == PartyProblem.FAILED || problem == PartyProblem.MISSED_START) {
+        if (problem == PartyProblem.FAILED || problem == PartyProblem.MISSED_START || problem == PartyProblem.NEED_TWO) {
             _party.value = _party.value.copy(problem = null)
         }
         scope.launch {
@@ -1075,7 +1106,11 @@ class CrewRepository(
                 if (result is ServerResult.Retry && lost != null) {
                     lost()
                 } else {
-                    val failed = if (result is ServerResult.SignInRequired) PartyProblem.SIGN_IN else PartyProblem.FAILED
+                    val failed = when (result) {
+                        is ServerResult.SignInRequired -> PartyProblem.SIGN_IN
+                        is ServerResult.Rejected -> refused(result.reason) ?: PartyProblem.FAILED
+                        else -> PartyProblem.FAILED
+                    }
                     _party.value = undo(_party.value).copy(problem = failed)
                 }
             }
@@ -1090,6 +1125,7 @@ class CrewRepository(
     fun leaveLobby() {
         pollJob?.cancel()
         _party.value.partyId?.let { leaveLater(it) }
+        lastCourseRoom = null
         readyTap = null
         _party.value = PartyState()
     }
@@ -1154,7 +1190,7 @@ class CrewRepository(
         startingParty = room
         // 코스 판이 있는 방(0072 · 코스를 넣었다 뺀 방 0073)은 진행자가 본 코스 판으로 출발한다 — 그사이 바뀌었으면 서버가 거절한다(course_changed)
         val rev = state.courseRev.takeIf { it > 0 }
-        act { id ->
+        act(refused = ::startRefusal) { id ->
             (if (rev != null) partyApi.startRev(id, rev) else partyApi.start(id)).also {
                 if (it is ServerResult.Ok) Analytics.partyStarted(state.readyCount) else startingParty = null
             }
@@ -1180,8 +1216,28 @@ class CrewRepository(
         val epoch = accountEpoch
         // 고른 방(0072) — 저절로 다른 방을 열지 않는다. 그 방에서 나오고 "출발을 놓쳤어요"를 남긴다(목록에서 다른 방을 고른다)
         if (state.pickedRoom != null) {
-            _party.value = state.copy(phase = PartyPhase.LOBBY, partyId = null, members = emptyList(), problem = PartyProblem.MISSED_START)
-            pollJob = scope.launch { leaveNow(id, epoch) }
+            _party.value = state.copy(
+                phase = PartyPhase.LOBBY, partyId = null, members = emptyList(), problem = PartyProblem.MISSED_START, missedFreed = null,
+            )
+            pollJob = scope.launch {
+                // 크루 방이면 달리지 않은 오늘 크루 러닝을 먼저 푼다(0109) — 풀렸을 때만 "쓰이지 않았어요"라고 말한다.
+                // 나가기보다 먼저 — 방에서 나온 뒤에도 풀 수 있지만, 같은 방 번호로 묻는 차례를 하나로 둔다
+                val freed = if (state.crewId != null && state.flashPostId == null) {
+                    (partyApi.releaseCrewRun(id) as? ServerResult.Ok)?.value
+                } else {
+                    true
+                }
+                if (epoch == accountEpoch) {
+                    _party.update { now ->
+                        if (now.problem == PartyProblem.MISSED_START && now.partyId == null && now.pickedRoom == state.pickedRoom) {
+                            now.copy(missedFreed = freed)
+                        } else {
+                            now
+                        }
+                    }
+                }
+                leaveNow(id, epoch)
+            }
             return
         }
         _party.value = state.copy(phase = PartyPhase.IDLE)
@@ -1384,13 +1440,21 @@ internal fun lobbyProblem(
     before: PartyProblem?,
     readyTap: Boolean?,
     serverReady: Boolean?,
+    /** 준비했지만 대기실을 보고 있지 않은 사람이 아직 있다 — "출발하지 못했어요(자리 비움)" 안내를 그동안 둔다 */
+    awayReady: Boolean = false,
 ): PartyProblem? = when {
     closed && phase == PartyPhase.LOBBY -> PartyProblem.CLOSED
     phase != PartyPhase.LOBBY -> null
     readyTap != null -> PartyProblem.FAILED.takeIf { serverReady != readyTap }
     before == PartyProblem.FAILED || before == PartyProblem.MISSED_START -> before
+    // 자리에 없던 사람이 돌아왔으면 거둔다 — 다시 누르면 출발한다
+    before == PartyProblem.NEED_TWO -> before.takeIf { awayReady }
     else -> null
 }
+
+/** 출발 거절의 까닭 — 함께 출발할 준비 인원이 모자라다(crew_run_need_two, 0109) */
+internal fun startRefusal(reason: String): PartyProblem? =
+    PartyProblem.NEED_TWO.takeIf { reason.contains("crew_run_need_two") }
 
 /** 지금 상태가 아직 이 대기실(크루 · 번개 글)인가 — 떠났거나(빈 상태) 다른 대기실로 옮겼으면 아니다 */
 internal fun PartyState.inLobby(crewId: String?, flashPostId: Long?): Boolean =

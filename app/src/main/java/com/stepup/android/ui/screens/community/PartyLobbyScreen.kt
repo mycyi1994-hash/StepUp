@@ -547,6 +547,7 @@ private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnec
             PartyProblem.NETWORK -> R.string.party_problem_network
             PartyProblem.CLOSED -> R.string.party_problem_closed
             PartyProblem.FAILED -> R.string.party_problem_failed
+            PartyProblem.NEED_TWO -> R.string.fxc_need_two
             PartyProblem.MISSED_START -> R.string.party_problem_missed_start
         },
     )
@@ -570,7 +571,7 @@ private fun ProblemNotice(problem: PartyProblem, onRetry: () -> Unit, onReconnec
             onAction = onAction,
         )
         // 누른 것이 막힌 것뿐이거나 새 대기실 안내면 방에는 그대로 있다
-        if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START) {
+        if (problem != PartyProblem.FAILED && problem != PartyProblem.MISSED_START && problem != PartyProblem.NEED_TWO) {
             RunButton(stringResource(R.string.run_cr_leave), onLeave, Modifier.testTag("party-leave"), kind = RunButtonKind.Secondary)
         }
     }

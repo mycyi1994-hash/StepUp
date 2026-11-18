@@ -315,6 +315,8 @@ fun com.stepup.android.data.local.SneakerEntity.toDomain(): Sneaker {
                 respec = pointsRespec,
             ),
             repairCostPerUnit = repairCostPerUnit,
+            kmRun = kmRun,
+            lockKm = lockKm,
         ),
         modelId = modelId.takeIf { it > 0 },
         tokenId = tokenId.takeIf { it > 0 },
@@ -361,4 +363,6 @@ fun Sneaker.toEntity(): com.stepup.android.data.local.SneakerEntity =
         pointsDurability = server?.points?.durability ?: 0,
         pointsRespec = server?.points?.respec ?: false,
         repairCostPerUnit = server?.repairCostPerUnit ?: 0.0,
+        kmRun = server?.kmRun ?: 0.0,
+        lockKm = server?.lockKm ?: 0.0,
     )

@@ -81,8 +81,8 @@ class ChromeNavigationTest {
             val logo = bounds("brand-wordmark")
             val bar = bounds(BOTTOM_NAV_TAG)
             val token = bounds("sup-balance")
-            // 하단 탭 넷 — 러닝 / 신발 / 커뮤니티 / 내 정보(2026-10-26 시안)
-            val tabRoutes = listOf("home", "customize", "community", "profile")
+            // 하단 탭 다섯 — 러닝 / 함께 뛰기 / 신발 / 아이템 / 내 정보(2026-11-17 아이템 탭)
+            val tabRoutes = listOf("home", "customize", "community", "bag", "profile")
             assertEquals("icons stay on one baseline $next", 1,
                 tabRoutes.map { bounds("nav-icon-$it").top }.distinct().size)
             assertEquals("labels stay on one baseline $next", 1,

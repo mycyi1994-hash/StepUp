@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 베타 초대 코드 한도 — 하루 · 지난 7일(서버 0113) -->
+<resources>
+    <string name="beta_codes_left_week">今天还能创建 %1$d 个 · 这 7 天还能创建 %2$d 个（每天 %3$d 个 · 每 7 天 %4$d 个）。每个邀请码限一人使用。</string>
+    <string name="beta_codes_next">%1$s 起可以创建下一个邀请码。</string>
+    <string name="beta_codes_next_format">M月d日 HH:mm</string>
+    <string name="beta_codes_week_limit">这 7 天可创建的邀请码已用完。</string>
+</resources>

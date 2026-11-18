@@ -1013,7 +1013,6 @@ StepUp と走り出そう。</string>
     <string name="market_quote_note">登録 %1$d足 · 24時間 %2$d件約定</string>
     <string name="market_place_bid">購入入札</string>
     <string name="market_place_ask">出品する</string>
-    <string name="market_nothing_to_sell">このモデルで売れる一足がありません。履いている一足は売れません。</string>
     <string name="market_asks_title">出品</string>
     <string name="market_asks_empty">まだ出品はありません。</string>
     <string name="market_bids_title">購入入札</string>

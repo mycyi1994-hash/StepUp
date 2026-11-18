@@ -21,7 +21,8 @@
 
 - **운영자 코드** — 1인용 여러 개, 또는 여러 명이 쓰는 공용(행사), 만료일 · 메모.
 - **사용자 코드** — 권한이 있는 사람(코드로 들어옴 · 운영자가 줌 — `access_issue_sources`, 0080 부터 LEGACY 는 빠짐)이 하루
-  `access_user_daily_codes`(기본 3)개, 1인용, `access_user_code_days`(기본 14)일 뒤 만료. 앱: 설정 › **베타 초대 코드**(만들 수 있는 사람에게만 보인다).
+  `access_user_daily_codes`(~~기본 3~~ 0113 부터 1)개 · 지난 7일에 `access_user_weekly_codes`(3)개(아래 "2026-11-18"), 1인용,
+  `access_user_code_days`(기본 14)일 뒤 만료. 앱: 설정 › **베타 초대 코드**(만들 수 있는 사람에게만 보인다).
   내가 만든 코드가 쓰였는지만 보이고, 누가 썼는지는 운영자만 본다.
 - 코드는 8자(헷갈리는 0 · O · 1 · I · L 없음), 보일 때 `XXXX-XXXX`. 입력은 대소문자 · 띄어쓰기 · `-` 를 가리지 않는다.
 - 틀린 코드는 한 사람 1시간 10번까지. 자기가 만든 코드는 자기가 쓰지 못한다. 차단된 계정은 코드로 되살리지 못한다(운영자만).
@@ -57,12 +58,40 @@ select admin_open_beta_invite(200);                                -- 먼저 등
 select admin_open_beta_invite(null, array['a@x.com', 'b@y.com']);  -- 정한 이메일만(사전 예약한 이메일이어야 한다)
 select * from admin_open_beta_list();                             -- 고른 사람 · 들어왔는가
 
--- 사용자 코드 하루 개수 · 만료일 바꾸기
+-- 사용자 코드 하루 개수 · 지난 7일 개수 · 만료일 바꾸기(0 이면 그 한도로 만들 수 없다)
 select admin_economy_set('access_user_daily_codes', '5');
+select admin_economy_set('access_user_weekly_codes', '10');
 select admin_economy_set('access_user_code_days', '7');
 ```
 
 운영자 함수는 앱의 운영자 계정(`app_admins`) 또는 SQL Editor(로그인 없이 postgres)에서만 된다. 모든 바꿈은 `admin_audit` 에 남는다.
+
+## 2026-11-18 — 하루 1개 · 7일에 3개 (서버 0113)
+
+사용자 "3개씩 나오던 코드를 하루에 1개, 일주일에 3개까지만 나올 수 있게 해".
+
+- **하루** — `access_user_daily_codes` 3 → 1. 지금처럼 한국 날짜(00시 KST)로 센다.
+  배포가 바꾸는 것은 한 번뿐이고(표시 `access_daily_codes_0113`), 그때 값이 0079 기본값 3 그대로일 때만이다 — 운영자가 이미 다른 값으로
+  바꿨거나, 바뀐 뒤 일부러 3 으로 돌렸으면 다시 배포해도 덮지 않는다.
+- **일주일** — 새 설정 `access_user_weekly_codes` = 3. 달력의 주(월요일)가 아니라 **지금부터 거슬러 168시간** 안에 만든 사용자 코드를 센다
+  (굴러가는 7일 — 주가 바뀌는 날 몰아 만들 수 없다). 가장 오래된 코드가 168시간을 넘기면 한 자리가 다시 열린다.
+  세는 것은 하루 한도처럼 만든 코드 모두(차단된 코드도).
+- 이미 만든 코드는 그대로 쓸 수 있다(만료 · 차단 규칙도 그대로). 운영자 코드(`admin_access_codes_create` · `admin_access_code_named`)는 한도와 상관없다.
+- 서버: `access_status()` 에 `weekly_limit` · `issued_week` · `left_today` · `left_week` · `left` · `next_at`(다 만들었을 때 다음 코드를
+  만들 수 있는 시각 — 하루가 막으면 내일 00시, 7일이 막으면 그 자리가 열리는 시각, 둘 다면 늦은 쪽) · `limited_by`(DAY · WEEK)를 더했다(jsonb, 예전 칸 그대로).
+  새 앱은 `access_code_issue_v2()` — 한도 거절은 23514(hint `daily_limit` · `weekly_limit`, detail 다음 시각), 권한 없음은 42501(hint `not_allowed`).
+  예전 앱의 `access_code_issue()` 는 지금처럼 답 안의 `{ error }`(새 갈래 `weekly_limit` — 예전 앱은 "지금은 초대 코드를 만들 수 없어요"로 보인다).
+- 앱: 베타 초대 코드 화면 첫 줄이 "오늘 n개 · 이번 7일 n개 남았어요(하루 1개 · 7일에 3개)", 다 만들었으면 아래에 "다음 코드는 11월 21일 11:04부터
+  만들 수 있어요"(폰 시간대). 0113 이 없는 서버면 예전 줄(하루 한도만) · 예전 함수로 만든다(`AccessApi.issue`).
+
+```sql
+-- 이 사람이 지난 7일에 만든 코드 · 다음 자리
+select created_at, created_at + interval '168 hours' as frees_at, economy.access_pretty(code)
+  from economy.access_codes
+ where kind = 'USER' and created_at > now() - interval '168 hours'
+   and created_by = (select id from auth.users where email = 'someone@gmail.com')
+ order by created_at;
+```
 
 ## 출시 때
 

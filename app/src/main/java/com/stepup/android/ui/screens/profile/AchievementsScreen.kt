@@ -152,10 +152,11 @@ class AchievementsViewModel(
     private val economy = combine(
         draws,
         rewardDao.observeCountByType(RewardType.SPEND_UPGRADE),
+        prefs.forgeSuccesses,
         rewardDao.observeCountByType(RewardType.EARN_PARTY),
         rewardDao.observeCountByType(RewardType.EARN_EVENT),
-    ) { d, upgrades, partyRuns, eventClaims ->
-        EconomyCounts(d.first, d.second, d.third, upgrades, partyRuns, eventClaims)
+    ) { d, ledgerUpgrades, forgeSuccesses, partyRuns, eventClaims ->
+        EconomyCounts(d.first, d.second, d.third, AchievementBook.upgradeCount(ledgerUpgrades, forgeSuccesses), partyRuns, eventClaims)
     }
 
     private val social = combine(
@@ -178,7 +179,7 @@ class AchievementsViewModel(
                 drawnShoes = inventory.count { shoe -> shoe.server?.origin?.let { it in AchievementBook.DRAW_ORIGINS } == true },
                 purchases = eco.purchases,
             ),
-            // 강화(0054)는 재료 신발을 태우고 원장에 줄을 남기지 않는다 — 이 수는 예전 SUP 강화만 센다(앱에 강화 이력이 없다)
+            // 강화(0054)는 원장에 줄을 남기지 않는다 — 서버가 센 성공한 강화 수(0110)와 원장의 예전 SUP 강화 수 중 큰 쪽
             upgrades = eco.upgrades,
             partyRuns = eco.partyRuns,
             eventClaims = eco.eventClaims,

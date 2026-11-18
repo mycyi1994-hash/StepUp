@@ -537,7 +537,13 @@ fun RunScreen(
                 context, context.resources.getQuantityString(R.plurals.run_overspeed_ban, banLeft, banLeft), android.widget.Toast.LENGTH_LONG,
             ).show()
         } else if (!startPending && !countingDown && !locationOffGate && !shoeCheck) {
-            if (freeRunNow) shoeCheck = true else startPending = true
+            if (freeRunNow) {
+                shoeCheck = true
+            } else {
+                // 점검(아이템 고르기)이 없는 러닝 — 앞서 고르다 만 아이템이 이 러닝에 쓰이지 않게 비운다
+                com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
+                startPending = true
+            }
         }
     }
     // 달리기 시작했으면(알림 · 다른 화면) 점검창을 거둔다 — 그 러닝이 끝난 뒤에 저절로 다시 뜨지 않게
@@ -1396,10 +1402,13 @@ fun RunScreen(
                 // 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴 · 챌린지 · 다이어트)에서 왔으면 그리로
                 onCancel = {
                     startPending = false
+                    // 출발을 그만뒀다 — 고른 아이템을 다음 러닝으로 넘기지 않는다
+                    com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
                     if (autoStart) onBack()
                 },
                 onHome = {
                     startPending = false
+                    com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
                     onLeaveToHome()
                 },
             )
@@ -1414,6 +1423,7 @@ fun RunScreen(
             }
             val leave = {
                 locationOffGate = false
+                com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
                 if (autoStart) onBack()
             }
             androidx.activity.compose.BackHandler { leave() }
@@ -1426,13 +1436,26 @@ fun RunScreen(
         if (shoeCheck && !session.isActive && repairShoeId == null) {
             val shoes by viewModel.shoes.collectAsStateWithLifecycle()
             val wearing by viewModel.wearing.collectAsStateWithLifecycle()
-            // 아직 서버가 빼지 않은(또는 이 폰 사본에 아직 들지 않은) 러닝의 닳음을 신은 신발에서 미리 뺀다 — 화면에만(2026-11-03 점검).
-            // 러닝 줄에 신은 신발이 남지 않아 지금 신은 신발에서만 뺀다
+            // 아직 서버가 빼지 않은(또는 이 폰 사본에 아직 들지 않은) 러닝의 닳음을 미리 뺀다 — 화면에만(2026-11-03 점검).
+            // 러닝 줄에 적힌 출발 신발마다 뺀다(신발 고르기 목록도). 출발 신발을 모르는 예전 줄만 지금 신은 신발에서(2026-11-17 점검 #14)
             val pendingWear by viewModel.pendingShoeWear.collectAsStateWithLifecycle()
-            val checkShoe = equipped?.withPendingWear(pendingWear)
+            val checkShoe = equipped?.let { it.withPendingWear(pendingWear.of(it)) }
+            // 이번 러닝에 쓸 아이템(0106) — 점검이 열릴 때 가방을 다시 읽고, 지난번에 고르다 만 것은 비운다
+            val itemsRepo = com.stepup.android.core.ServiceLocator.itemsRepository
+            val bag by itemsRepo.bag.collectAsStateWithLifecycle()
+            val pickedItems by itemsRepo.picks.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) {
+                itemsRepo.clearPicks()
+                runCatching { itemsRepo.refresh() }
+            }
             FreeRunShoeCheck(
+                runItems = bag?.runPicks.orEmpty(),
+                pickedItems = pickedItems,
+                onPickItem = itemsRepo::toggle,
+                // 보상 이벤트 · 24시간 부스터가 이미 켜져 있으면 그보다 크지 않은 배수 아이템은 고르지 못한다(쓰면 아이템만 사라진다)
+                coveredRewardMult = bag?.activeRewardMult(System.currentTimeMillis()) ?: 1.0,
                 shoe = checkShoe,
-                shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it },
+                shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it.withPendingWear(pendingWear.of(it)) },
                 wearing = wearing,
                 onWear = viewModel::wear,
                 // 다 닳았으면 수리로 — 신발 탭과 같은 수리 시트를 이 화면에서 연다
@@ -1444,6 +1467,8 @@ fun RunScreen(
                         // 읽는 사이 닫았다(뒤로) — 시작하지 않는다
                         if (!shoeCheck) return@launch
                         shoeCheck = false
+                        // 고른 아이템은 지금 누른 이 출발에만 실린다 — 그만두면 아래 길들이 비운다
+                        itemsRepo.arm()
                         locationAllowed = StepPermissions.hasLocation(context)
                         when {
                             !ready -> startPending = true
@@ -1452,8 +1477,9 @@ fun RunScreen(
                         }
                     }
                 },
-                // 돌아가기 · 닫기 — 아무것도 시작하지 않는다. 이 러닝을 연 화면(시작 메뉴)에서 왔으면 그리로
+                // 돌아가기 · 닫기 — 아무것도 시작하지 않는다(고른 아이템도 비운다). 이 러닝을 연 화면(시작 메뉴)에서 왔으면 그리로
                 onCancel = {
+                    itemsRepo.clearPicks()
                     shoeCheck = false
                     if (autoStart) onBack()
                 },
@@ -1506,9 +1532,16 @@ fun RunScreen(
                 },
                 onFinished = { countingDown = false },
                 // 시작이 거절됐다 — 끝나지 않은 러닝 묻기 · 저장 공간 안내는 서비스 · 앱이 띄운다. 연출만 거두고 시작 전 화면으로
-                onFailed = { countingDown = false },
+                onFailed = {
+                    countingDown = false
+                    com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
+                },
                 // 기록 전 뒤로 가기 — 이 러닝을 연 화면(시작 메뉴)으로 돌아간다(시안 R01 의 시작 취소와 같다)
-                onCancel = { countingDown = false; onBack() },
+                onCancel = {
+                    countingDown = false
+                    com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
+                    onBack()
+                },
             )
         } else if (countingDown && !session.isActive) {
             val servicesOn = remember { locationServicesOn(context) }

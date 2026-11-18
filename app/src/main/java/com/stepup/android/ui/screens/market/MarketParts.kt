@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import com.stepup.android.data.remote.ModelKey
+import com.stepup.android.ui.screens.items.modelShoeName
 import com.stepup.android.domain.Faction
 import com.stepup.android.domain.MarketShoeLook
 import com.stepup.android.domain.Rarity
@@ -47,6 +49,21 @@ import com.stepup.android.ui.theme.Volt
  * 그리면 같은 것인지 알아보지 못한다.
  */
 
+/**
+ * 즉시 판매로 넘길 신발 — 구매 입찰의 "즉시 판매"를 눌렀을 때.
+ *
+ * 신발 상세의 판매하기로 들어왔으면([cameFor] = 그 신발의 폰 번호) 그 켤레가 레벨 조건을 채울 때 그 켤레를 판다.
+ * 예전에는 목록의 첫 켤레(가장 최근에 얻은 것)를 팔아, 레벨 1 신발을 팔러 와서 강화한 다른 켤레가 팔릴 수 있었다(2026-11-17 점검).
+ * 그 켤레가 조건에 모자라거나 시세판에서 바로 들어왔으면 조건을 채우는 것 중 레벨이 가장 낮은 켤레.
+ */
+internal fun sellNowPick(
+    sellable: List<com.stepup.android.data.local.SneakerEntity>,
+    minLevel: Int,
+    cameFor: Long,
+): com.stepup.android.data.local.SneakerEntity? =
+    sellable.firstOrNull { it.id == cameFor && it.level >= minLevel }
+        ?: sellable.filter { it.level >= minLevel }.minByOrNull { it.level }
+
 /** 값 하나. 시세는 소수점이 필요 없다 — SUP 는 1 단위로 오간다. */
 fun formatSup(value: Double): String = "%,d".format(value.toLong())
 
@@ -59,31 +76,42 @@ fun formatSup(value: Double): String = "%,d".format(value.toLong())
 fun previewSneaker(faction: String, rarity: String, variant: Int, level: Int = 1): Sneaker =
     MarketShoeLook.preview(faction, rarity, variant, level)
 
-/**
- * 줄의 이름. 매물마다 모델이 다를 수 있는 줄(0066 뒤 신발의 레어 이상 — [MarketShoeLook.pinsDesign])은 예전 불 모델 이름을
- * 붙이지 않고 "레어 신발"처럼 등급만 적는다. 나머지는 신발 탭과 같은 도감 이름이다.
- */
+/** 거래소 한 장의 겉모습 — 도감 모델 장이면 그 모델(신발 탭과 같은 그림 · 이름) */
+fun previewSneaker(key: ModelKey, level: Int = 1): Sneaker =
+    MarketShoeLook.preview(key.faction, key.rarity, key.variant, level, key.modelId)
+
 @Composable
-fun modelName(faction: String, rarity: String, variant: Int): String {
-    if (!MarketShoeLook.pinsDesign(faction, rarity)) {
-        return stringResource(R.string.market_model_any, Rarity.of(rarity).tier.label())
-    }
-    return stringResource(variantNameRes(Faction.of(faction), Rarity.of(rarity), variant))
-}
+fun modelName(faction: String, rarity: String, variant: Int): String = modelName(ModelKey(faction, rarity, variant))
 
 /**
- * 줄의 신발 그림. 모델이 정해진 줄은 신발 탭과 같은 그림, 매물마다 모델이 다를 수 있는 줄은 그 등급 틀만(다른 신발 그림을 대신 넣지 않는다).
+ * 장의 이름. 도감 모델 장(0107)은 신발 탭과 같은 모델 이름("타비 스플릿 토 조거"). 매물마다 모델이 다를 수 있는 줄
+ * (모델 번호 없는 0066 뒤 레어 이상 — [MarketShoeLook.pinsDesign])은 예전 불 모델 이름을 붙이지 않고 "레어 신발"처럼 등급만 적는다.
+ * 나머지(일반 등급 · 예전 52종)는 신발 탭과 같은 도감 이름이다.
+ */
+@Composable
+fun modelName(key: ModelKey): String {
+    if (key.modelId != null) return previewSneaker(key).modelShoeName()
+    if (!MarketShoeLook.pinsDesign(key.faction, key.rarity)) {
+        return stringResource(R.string.market_model_any, Rarity.of(key.rarity).tier.label())
+    }
+    return stringResource(variantNameRes(Faction.of(key.faction), Rarity.of(key.rarity), key.variant))
+}
+
+@Composable
+fun MarketShoeThumb(faction: String, rarity: String, variant: Int, modifier: Modifier = Modifier, level: Int = 1) =
+    MarketShoeThumb(ModelKey(faction, rarity, variant), modifier, level)
+
+/**
+ * 장의 신발 그림. 모델이 정해진 장은 신발 탭과 같은 그림, 매물마다 모델이 다를 수 있는 줄은 그 등급 틀만(다른 신발 그림을 대신 넣지 않는다).
  */
 @Composable
 fun MarketShoeThumb(
-    faction: String,
-    rarity: String,
-    variant: Int,
+    key: ModelKey,
     modifier: Modifier = Modifier,
     level: Int = 1,
 ) {
-    val preview = previewSneaker(faction, rarity, variant, level)
-    if (MarketShoeLook.pinsDesign(faction, rarity)) {
+    val preview = previewSneaker(key, level)
+    if (MarketShoeLook.pinsDesign(key.faction, key.rarity, key.modelId)) {
         SneakerFrame(preview, modifier = modifier, corner = 14.dp)
     } else {
         Box(modifier, contentAlignment = Alignment.Center) {
@@ -192,9 +220,7 @@ fun MarketProblemNote(problem: MarketProblem, modifier: Modifier = Modifier, onR
 /** 시세판 한 줄 — 모델 하나 */
 @Composable
 fun QuoteRowCard(
-    faction: String,
-    rarity: String,
-    variant: Int,
+    key: ModelKey,
     supply: Int,
     ask: Double?,
     bid: Double?,
@@ -203,12 +229,12 @@ fun QuoteRowCard(
 ) {
     Column(modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CarbonHigh).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            val preview = previewSneaker(faction, rarity, variant)
-            MarketShoeThumb(faction, rarity, variant, modifier = Modifier.size(80.dp))
+            val preview = previewSneaker(key)
+            MarketShoeThumb(key, modifier = Modifier.size(80.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 따로 한 줄로 쓰지 않는다
                 com.stepup.android.ui.components.ShoeNameWithBadge(
-                    name = modelName(faction, rarity, variant), tier = preview.tier,
+                    name = modelName(key), tier = preview.tier,
                     style = MaterialTheme.typography.titleMedium.copy(color = Snow), maxLines = 2,
                     modifier = Modifier.fillMaxWidth(),
                 )

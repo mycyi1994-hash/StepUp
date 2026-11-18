@@ -162,8 +162,13 @@ class CommunityRepository(
     /** 전체 게시판 글만 */
     val boardPosts: Flow<List<Post>> = posts.map { list -> list.filter { it.crewId.isEmpty() } }
 
+    /**
+     * 한 크루 게시판 — 보기 시작할 때 그 크루의 글을 따로 받아 목록에 더한다(점검 2026-11-17 #19 — 전체 목록은 최근
+     * [FEED_LIMIT] 개뿐이라 조용한 크루의 예전 글이 빠졌다)
+     */
     fun crewPosts(crewId: String): Flow<List<Post>> =
         posts.map { list -> list.filter { it.crewId == crewId } }
+            .onStart { if (crewId.isNotBlank()) scope.launch { loadCrewPosts(crewId) } }
 
     /** 내가 쓴 글 수 — 업적에 쓴다 */
     val myPostCount: Flow<Int> = posts.map { list -> list.count { it.mine } }
@@ -182,12 +187,37 @@ class CommunityRepository(
         prefs.clearHotPosts()
     }
 
-    /** 서버에서 글 목록을 다시 받는다. 동시에 여러 번 불려도 차례로 한 번씩 한다. */
+    /** 목록을 채운 계정 — 계정이 바뀌면 따로 받아 둔 예전 글(크루 · 내 글 · 한 편)을 버린다 */
+    private var listedFor: String? = null
+
+    /** 지금 목록 — 다른 계정이 받아 둔 글이면 빈 목록으로 본다 */
+    private suspend fun currentFor(): List<Post> {
+        val who = runCatching { owner() }.getOrDefault("")
+        if (listedFor != who) {
+            listedFor = who
+            return emptyList()
+        }
+        return _posts.value
+    }
+
+    /**
+     * 서버에서 글 목록을 다시 받는다. 동시에 여러 번 불려도 차례로 한 번씩 한다.
+     *
+     * 전체 목록은 최근 [FEED_LIMIT] 개다. 그보다 오래된 글(크루 게시판 · 알림으로 연 글)은 따로 받아 두었으면 남긴다
+     * ([PostMerge]). 목록이 꽉 찼으면(더 오래된 글이 있다) 내 글을 따로 받는다 — 업적의 글 수 · 최근 장소가 빠지지 않게.
+     */
     suspend fun refresh(): BoardSyncState = refreshLock.withLock {
         if (_posts.value.isEmpty()) _sync.value = BoardSyncState.Loading
-        val next = when (val result = api.posts()) {
+        val next = when (val result = api.posts(FEED_LIMIT)) {
             is ServerResult.Ok -> {
-                _posts.value = result.value.map { it.toDomain() }
+                val fresh = result.value.map { it.toDomain() }
+                var merged = PostMerge.merge(currentFor(), fresh, FEED_LIMIT) { true }
+                if (fresh.size >= FEED_LIMIT) {
+                    (api.myPosts(FEED_LIMIT) as? ServerResult.Ok)?.value?.let { mine ->
+                        merged = PostMerge.merge(merged, mine.map { it.toDomain() }, FEED_LIMIT) { it.mine }
+                    }
+                }
+                _posts.value = merged
                 BoardSyncState.Ready
             }
             is ServerResult.SignInRequired -> BoardSyncState.SignInRequired
@@ -196,6 +226,35 @@ class CommunityRepository(
         }
         _sync.value = next
         next
+    }
+
+    /** 한 크루 게시판의 글을 받아 목록에 더한다 — 못 받으면 목록 그대로(전체 목록에 든 글은 보인다) */
+    suspend fun loadCrewPosts(crewId: String): Boolean = refreshLock.withLock {
+        val result = api.crewPosts(crewId, FEED_LIMIT) as? ServerResult.Ok ?: return@withLock false
+        _posts.value = PostMerge.merge(currentFor(), result.value.map { it.toDomain() }, FEED_LIMIT) { it.crewId == crewId }
+        true
+    }
+
+    /** 글 한 편을 찾은 결과 */
+    enum class PostLookup { FOUND, MISSING, OFFLINE }
+
+    /**
+     * 글 한 편을 목록에 둔다 — 알림 · 링크로 연 글이 전체 목록(최근 [FEED_LIMIT] 개)에 없으면 그 글만 받는다.
+     * 서버가 없다고 답할 때만 [PostLookup.MISSING](지워졌거나 볼 수 없다), 닿지 못하면 [PostLookup.OFFLINE].
+     */
+    suspend fun ensurePost(postId: Long): PostLookup {
+        if (_posts.value.any { it.id == postId }) return PostLookup.FOUND
+        val state = refresh()
+        if (_posts.value.any { it.id == postId }) return PostLookup.FOUND
+        if (state != BoardSyncState.Ready) return PostLookup.OFFLINE
+        val rows = (api.post(postId) as? ServerResult.Ok)?.value ?: return PostLookup.OFFLINE
+        return refreshLock.withLock {
+            val one = rows.firstOrNull { it.id == postId }?.toDomain()
+            val current = currentFor()
+            _posts.value = if (one == null) current.filterNot { it.id == postId }
+            else PostMerge.merge(current, listOf(one), Int.MAX_VALUE) { false }
+            if (one == null) PostLookup.MISSING else PostLookup.FOUND
+        }
     }
 
     /**
@@ -259,7 +318,7 @@ class CommunityRepository(
     /**
      * 글쓰기.
      *
-     * @param meetInMinutes 번개러닝이 몇 분 뒤에 모이는지
+     * @param meetAtMillis 번개러닝의 출발 시각(epoch ms) — 화면에서 고른 시각 그대로 보낸다(예전에는 "N분 뒤"를 올릴 때 다시 더해 시각이 어긋났다)
      * @param clientKey 글쓰기마다 만든 요청 키 — 결과를 모른 채 다시 올려도 두 편(번개는 모임 둘)이 되지 않는다
      */
     suspend fun write(
@@ -269,7 +328,7 @@ class CommunityRepository(
         crewId: String = "",
         place: String = "",
         distanceKm: Double = 0.0,
-        meetInMinutes: Int = 0,
+        meetAtMillis: Long = 0L,
         capacity: Int = 0,
         lat: Double? = null,
         lng: Double? = null,
@@ -279,8 +338,8 @@ class CommunityRepository(
     ): BoardResult {
         val flash = category == PostCategory.FLASH
         val meetAt = if (flash) {
-            Instant.ofEpochMilli(System.currentTimeMillis() + meetInMinutes.coerceAtLeast(1) * 60_000L)
-                .toString()
+            // 지나 버린 시각은 보내지 않는다(서버가 거절한다) — 화면이 올리기 전에 5분 뒤로 맞춘다
+            Instant.ofEpochMilli(meetAtMillis.coerceAtLeast(System.currentTimeMillis() + 60_000L)).toString()
         } else {
             ""
         }
@@ -711,6 +770,9 @@ class CommunityRepository(
         /** 동네 이야기 글쓰기의 최근 장소 — 보일 수 */
         const val RECENT_PLACES = 5
 
+        /** 한 번에 받는 글 수 — 전체 목록 · 크루 게시판 · 내 글 각각 */
+        const val FEED_LIMIT = 200
+
         /** 갱신 시각 — 한국 시간 월요일 09:00 */
         private val ROTATION_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
         private val ROTATION_DAY: DayOfWeek = DayOfWeek.MONDAY
@@ -733,6 +795,21 @@ class CommunityRepository(
             if (boundary.isAfter(zoned)) boundary = boundary.minusWeeks(1)
             return boundary.toInstant().toEpochMilli()
         }
+    }
+}
+
+/**
+ * 따로 받은 글 묶음을 목록에 합친다(점검 2026-11-17 #19). [fresh] 는 한 범위([inScope] — 전체 · 한 크루 · 내 글)를 최근 것부터
+ * [limit] 개까지 다시 읽은 것이다. 그 범위에서 [fresh] 가 덮는 시각(다 읽었으면 전부, 아니면 가장 오래된 글 뒤) 안에 있는데
+ * [fresh] 에 없는 글은 지워졌거나 볼 수 없게 된 것이라 뺀다. 범위 밖이나 더 오래된 글은 남긴다. 최근 것부터 늘어선다.
+ */
+internal object PostMerge {
+    fun merge(current: List<Post>, fresh: List<Post>, limit: Int, inScope: (Post) -> Boolean): List<Post> {
+        val ids = fresh.mapTo(HashSet()) { it.id }
+        val complete = fresh.size < limit
+        val oldest = fresh.minOfOrNull { it.createdAt } ?: Long.MIN_VALUE
+        val kept = current.filter { p -> p.id !in ids && !(inScope(p) && (complete || p.createdAt >= oldest)) }
+        return (fresh + kept).sortedWith(compareByDescending<Post> { it.createdAt }.thenByDescending { it.id })
     }
 }
 

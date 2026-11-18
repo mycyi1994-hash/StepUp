@@ -29,6 +29,8 @@ enum class MarketRefusal {
     NOT_TRANSFERABLE,
     /** 이 신발로 더 달려야 넘길 수 있다 — 남은 km 는 [marketRefusalKm] */
     RUN_MORE,
+    /** 거래소 거래를 멈춰 두었다(0108 market_trading_enabled) */
+    PAUSED,
     SIGN_IN,
     OTHER;
 
@@ -55,6 +57,7 @@ enum class MarketRefusal {
             "착용 중이거나 체인에 있는 신발" to LOCKED_SHOE,
             "넘길 수 없는 신발" to NOT_TRANSFERABLE,
             "더 달려야 넘길 수 있" to RUN_MORE,
+            "거래소를 쉬고" to PAUSED,
             "로그인이 필요" to SIGN_IN,
         )
 

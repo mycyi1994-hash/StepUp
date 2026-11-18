@@ -159,7 +159,9 @@ class ShoeDetailDesignTest {
             tap("shoe-more")
             awaitTag("shoe-manage-sheet")
             awaitTag("shoe-manage-repair")
-            compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
+            // 거래를 멈춘 동안(0108 · MarketFeature.TRADING)은 판매하기를 누를 수 없다
+            if (com.stepup.android.domain.MarketFeature.TRADING) compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
+            else compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
             compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
             shot("19-in-app-manage")
             back()

@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -36,6 +37,9 @@ import com.stepup.android.data.local.SneakerEntity
 import com.stepup.android.data.remote.AskRow
 import com.stepup.android.data.remote.BidRow
 import com.stepup.android.data.remote.ModelKey
+import com.stepup.android.domain.MarketFeature
+import com.stepup.android.domain.SellBlock
+import com.stepup.android.domain.sellBlock
 import com.stepup.android.data.remote.TradeRow
 import com.stepup.android.ui.components.DetailPage
 import com.stepup.android.ui.components.DialogPanel
@@ -74,6 +78,8 @@ fun MarketModelScreen(
     rarity: String,
     variant: Int,
     onBack: () -> Unit,
+    /** 도감 모델 장(0107) — 있으면 이 모델 신발만 사고판다. 신발 상세의 "판매하기"는 그 신발의 모델로 온다 */
+    modelId: Int? = null,
     /**
      * 보관함에서 "판매"로 들어왔을 때 그 신발의 로컬 번호. 0이면 그냥
      * 들어온 것이다. 값이 있으면 판매 등록 창을 그 켤레로 열어 준다 —
@@ -82,7 +88,7 @@ fun MarketModelScreen(
     sellLocalId: Long = 0,
     viewModel: MarketModelViewModel = viewModel(factory = MarketModelViewModel.Factory),
 ) {
-    val model = remember(faction, rarity, variant) { ModelKey(faction, rarity, variant) }
+    val model = remember(faction, rarity, variant, modelId) { ModelKey(faction, rarity, variant, modelId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
 
@@ -96,6 +102,8 @@ fun MarketModelScreen(
     // 잠금 거리(50km) 전 · 이미 건 것 · 체인에 있는 것은 서버가 거절하므로 고르지 못하게 한다
     // (서버의 can_withdraw 가 같은 조건이다).
     val sellable = state.mySneakers.filter { !it.equipped && it.canWithdraw }
+    // 거래를 멈춘 동안(0108)은 거는 버튼을 모두 막는다 — 보기 · 거두기만
+    val trading = MarketFeature.TRADING
 
     // 보관함에서 판매로 들어왔으면 등록 창을 한 번 열어 준다. 장부를
     // 받아 온 뒤에 여는 것은, 그 전에는 고를 신발 목록이 비어 있어 창이
@@ -103,20 +111,20 @@ fun MarketModelScreen(
     // 닫은 창을 앱이 도로 여는 것은 닫기를 무시하는 것이다.
     var sellOpened by rememberSaveable(sellLocalId) { mutableStateOf(false) }
     LaunchedEffect(sellLocalId, sellable) {
-        if (sellLocalId > 0 && !sellOpened && sellable.any { it.id == sellLocalId }) {
+        if (trading && sellLocalId > 0 && !sellOpened && sellable.any { it.id == sellLocalId }) {
             sellOpened = true
             asking = true
         }
     }
 
-    DetailPage(title = modelName(faction, rarity, variant), onBack = onBack) {
+    DetailPage(title = modelName(model), onBack = onBack) {
         // S2 머리 — 모델 이름(속성 줄은 없앴다, 2026-10-17) → 등급 무대(프레임 v8) 위 신발
         item {
-            val preview = previewSneaker(faction, rarity, variant)
+            val preview = previewSneaker(model)
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 // 이름 끝에 공통 등급 배지(2026-09-29) — 등급을 위 한 줄에 글로 쓰지 않는다
                 com.stepup.android.ui.components.ShoeNameWithBadge(
-                    name = modelName(faction, rarity, variant),
+                    name = modelName(model),
                     tier = preview.tier,
                     style = androidx.compose.ui.text.TextStyle(
                         color = Snow, fontFamily = com.stepup.android.ui.theme.StepUpSans,
@@ -127,7 +135,7 @@ fun MarketModelScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(16.dp))
-                if (com.stepup.android.domain.MarketShoeLook.pinsDesign(faction, rarity)) {
+                if (com.stepup.android.domain.MarketShoeLook.pinsDesign(model.faction, model.rarity, model.modelId)) {
                     com.stepup.android.ui.components.S2ShoeStage(preview, Modifier.fillMaxWidth(0.86f))
                 } else {
                     // 매물마다 모델이 다를 수 있다 — 다른 신발 그림을 대신 넣지 않고 등급 틀과 한 줄 안내만
@@ -191,20 +199,31 @@ fun MarketModelScreen(
                         text = stringResource(R.string.market_place_bid),
                         onClick = { bidding = true },
                         modifier = Modifier.weight(1f),
+                        enabled = trading,
                     )
                     GhostButton(
                         text = stringResource(R.string.market_place_ask),
                         onClick = { asking = true },
-                        enabled = sellable.isNotEmpty(),
+                        enabled = trading && sellable.isNotEmpty(),
                         modifier = Modifier.weight(1f),
                     )
                 }
-                if (sellable.isEmpty()) {
+                if (!trading) {
                     Text(
-                        text = stringResource(R.string.market_nothing_to_sell),
+                        text = stringResource(R.string.market_trading_paused),
                         fontSize = 14.sp,
                         color = Slate,
                         lineHeight = 20.sp,
+                        modifier = Modifier.testTag("market-paused-note"),
+                    )
+                } else if (sellable.isEmpty()) {
+                    // 왜 못 파는지 — 이 모델 신발이 없는지, 있는데 신고 있거나 아직 잠겨 있는지(무료 뽑기 신발은 잠금 거리를 달려야 판다)
+                    Text(
+                        text = sellNote(state.mySneakers.map { it.toDomain() }),
+                        fontSize = 14.sp,
+                        color = Slate,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.testTag("market-sell-note"),
                     )
                 }
             }
@@ -221,7 +240,7 @@ fun MarketModelScreen(
             }
         } else {
             items(asks.size) { index ->
-                AskRowCard(asks[index], onBuy = { viewModel.buy(asks[index].listingId) })
+                AskRowCard(asks[index], canBuy = trading, onBuy = { viewModel.buy(asks[index].listingId) })
             }
         }
 
@@ -239,10 +258,10 @@ fun MarketModelScreen(
                 val bid = bids[index]
                 // 레벨 조건을 채우는 내 신발이 있어야 팔 수 있다.
                 // 조건이 모자라면 버튼을 꺼 둔다 — 눌렀을 때 거절되는 것보다 낫다.
-                val match = sellable.firstOrNull { it.level >= bid.minLevel }
+                val match = sellNowPick(sellable, bid.minLevel, sellLocalId)
                 BidRowCard(
                     row = bid,
-                    canSell = match != null,
+                    canSell = trading && match != null,
                     onSell = { match?.let { viewModel.sell(it.id, bid.bidId) } },
                 )
             }
@@ -262,10 +281,11 @@ fun MarketModelScreen(
         }
     }
 
-    if (bidding && !state.loading && state.problem == null) {
+    if (trading && bidding && !state.loading && state.problem == null) {
         BidDialog(
             tradable = state.tradable,
             suggested = state.quote?.bid ?: state.quote?.lastPrice,
+            maxLevel = com.stepup.android.domain.Rarity.of(model.rarity).maxLevel,
             onDismiss = { bidding = false },
             onConfirm = { minLevel, price ->
                 bidding = false
@@ -274,7 +294,7 @@ fun MarketModelScreen(
         )
     }
 
-    if (asking && !state.loading && state.problem == null) {
+    if (trading && asking && !state.loading && state.problem == null) {
         AskDialog(
             sneakers = sellable,
             preselect = sellLocalId,
@@ -291,13 +311,13 @@ fun MarketModelScreen(
 // ── 줄 ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun AskRowCard(row: AskRow, onBuy: () -> Unit) {
+private fun AskRowCard(row: AskRow, canBuy: Boolean, onBuy: () -> Unit) {
     GlowCard(contentPadding = PaddingValues(18.dp), spacing = 12.dp) {
         Text(stringResource(R.string.price_sup, formatSup(row.price)),
             style = MaterialTheme.typography.titleLarge, color = Snow)
         Text(stringResource(R.string.market_level, row.level) + " · #${row.mintNumber} · " +
             stringResource(R.string.market_durability, row.durability), fontSize = 14.sp, color = Silver)
-        VoltButton(stringResource(R.string.market_buy_now), onBuy, Modifier.fillMaxWidth())
+        VoltButton(stringResource(R.string.market_buy_now), onBuy, Modifier.fillMaxWidth(), enabled = canBuy)
     }
 }
 
@@ -332,6 +352,8 @@ private fun TradeHistoryRow(row: TradeRow) {
 private fun BidDialog(
     tradable: Double,
     suggested: Double?,
+    /** 이 등급 신발이 오를 수 있는 가장 높은 레벨 — 그 위 조건은 서버가 거절한다(채울 신발이 없다) */
+    maxLevel: Int,
     onDismiss: () -> Unit,
     onConfirm: (minLevel: Int, price: Double) -> Unit,
 ) {
@@ -339,7 +361,7 @@ private fun BidDialog(
     var minLevel by remember { mutableStateOf("1") }
     val amount = price.toDoubleOrNull() ?: 0.0
     val level = minLevel.toIntOrNull() ?: 1
-    val canSend = amount >= 1 && amount <= tradable && level in 1..30
+    val canSend = amount >= 1 && amount <= tradable && level in 1..maxLevel
     DialogPanel(
         title = stringResource(R.string.market_place_bid), onDismiss = onDismiss,
         actions = {
@@ -392,4 +414,34 @@ private fun AskDialog(
 private fun NumberField(label: String, value: String, onValueChange: (String) -> Unit) {
     FormField(label = label, value = value, onValueChange = onValueChange,
         placeholder = "0", keyboardType = KeyboardType.Number)
+}
+
+/**
+ * "팔 수 없어요"의 까닭 한 줄(2026-11-17). 이 장의 내 신발([owned])이 없으면 그렇다고, 있으면 가장 가까운 까닭 —
+ * 잠긴 무료 뽑기 신발(남은 거리가 가장 짧은 것) · 신고 있음 · 첫 신발 · 판매 중 · 그 밖. 판정은 서버 값이다([sellBlock]).
+ */
+@Composable
+internal fun sellNote(owned: List<com.stepup.android.domain.Sneaker>): String {
+    val blocks = owned.mapNotNull { it.sellBlock }
+    if (owned.isEmpty() || blocks.isEmpty()) return stringResource(R.string.market_sell_none_owned)
+    val locked = blocks.filterIsInstance<SellBlock.Locked>().minByOrNull { it.leftKm }
+    return when {
+        locked != null -> sellBlockText(locked)
+        SellBlock.Equipped in blocks -> sellBlockText(SellBlock.Equipped)
+        SellBlock.Starter in blocks -> sellBlockText(SellBlock.Starter)
+        SellBlock.Listed in blocks -> sellBlockText(SellBlock.Listed)
+        else -> sellBlockText(SellBlock.Other)
+    }
+}
+
+/** 팔 수 없는 까닭의 말 — 신발 상세의 판매하기 줄과 거래소가 같은 말을 쓴다 */
+@Composable
+internal fun sellBlockText(block: SellBlock): String = when (block) {
+    SellBlock.Equipped -> stringResource(R.string.care_sell_equipped)
+    SellBlock.Listed -> stringResource(R.string.care_sell_listed)
+    SellBlock.Starter -> stringResource(R.string.care_sell_starter)
+    is SellBlock.Locked ->
+        if (block.leftKm > 0.05) stringResource(R.string.care_sell_locked, "%.1f".format(java.util.Locale.ROOT, block.leftKm))
+        else stringResource(R.string.care_sell_locked_unknown)
+    SellBlock.Other -> stringResource(R.string.care_sell_unavailable)
 }

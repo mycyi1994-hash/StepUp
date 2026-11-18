@@ -500,6 +500,11 @@ class CommunityViewModel(
         viewModelScope.launch { noticeFailure(communityRepository.toggleLike(postId)) }
     }
 
+    /** 목록에 없는 글(예전 번개 · 알림으로 연 글)을 그 글만 받아 둔다(점검 2026-11-17 #19) */
+    fun ensurePost(postId: Long) {
+        viewModelScope.launch { communityRepository.ensurePost(postId) }
+    }
+
     fun toggleJoinFlash(postId: Long) {
         viewModelScope.launch { noticeFailure(communityRepository.toggleJoinFlash(postId)) }
     }
@@ -523,7 +528,8 @@ class CommunityViewModel(
         crewId: String,
         place: String,
         distanceKm: Double,
-        meetInMinutes: Int,
+        /** 번개러닝의 출발 시각(epoch ms) — 고른 시각 그대로(#4). 번개가 아니면 0 */
+        meetAtMillis: Long,
         capacity: Int,
         lat: Double?,
         lng: Double?,
@@ -542,7 +548,7 @@ class CommunityViewModel(
                 crewId = crewId,
                 place = place,
                 distanceKm = distanceKm,
-                meetInMinutes = meetInMinutes,
+                meetAtMillis = meetAtMillis,
                 capacity = capacity,
                 lat = lat,
                 lng = lng,

@@ -51,6 +51,18 @@ object InviteLinks {
 
         /** 크루 대기실이 열렸다는 알림 — 그 방(`room/<크루 id>/<방 번호>`) */
         data class Room(val crewId: String, val partyId: Long) : PushTarget
+
+        /** 운영자가 아이템을 보냈다는 알림 — 아이템 탭(`bag`, 서버 0106) */
+        data object Bag : PushTarget
+
+        /** 보상 이벤트가 시작됐다는 알림 — 러닝 탭(`run`, 서버 0106) */
+        data object RunTab : PushTarget
+
+        /** 거래소 매물 · 입찰을 돌려받았다는 알림 — 신발 탭(`shoes`, 서버 0112 MARKET_RECLAIMED) */
+        data object Shoes : PushTarget
+
+        /** 앱 업데이트 보상(뽑기 · 상급 뽑기)이 왔다는 알림 — 신발 뽑기(`draw`, 서버 0112 UPDATE_REWARD) */
+        data object Draw : PushTarget
     }
 
     private val _pendingPush = MutableStateFlow<PushTarget?>(null)
@@ -124,8 +136,31 @@ object InviteLinks {
             parts.size == 2 && parts[0] == "flash" -> idOf(parts[1])?.let { PushTarget.Flash(it) }
             parts.size == 3 && parts[0] == "room" && UUID.matches(parts[1]) ->
                 idOf(parts[2])?.let { PushTarget.Room(parts[1].lowercase(), it) }
+            parts.size == 1 && parts[0] == "bag" -> PushTarget.Bag
+            parts.size == 1 && parts[0] == "run" -> PushTarget.RunTab
+            parts.size == 1 && parts[0] == "shoes" -> PushTarget.Shoes
+            parts.size == 1 && parts[0] == "draw" -> PushTarget.Draw
             else -> null
         }
+    }
+
+    /**
+     * 최근 앱 목록에서 다시 연 실행인가 — 안드로이드는 그 실행에 처음 앱을 연 인텐트(알림 · 링크)를 그대로 다시 싣는다.
+     * 그것을 또 읽으면 예전 알림 화면으로 다시 끌려간다(점검 2026-11-17 #20, 안드로이드 11 이하).
+     */
+    fun launchedFromHistory(flags: Int): Boolean = (flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+
+    /**
+     * 화면(MainActivity)이 받은 인텐트를 한 번만 읽는다 — 최근 앱 목록에서 다시 연 것이면 읽지 않고, 읽은 뒤에는
+     * 링크 칸(알림 링크 · 주소)을 비워 같은 화면이 다시 읽지 않게 한다.
+     */
+    fun handleOnce(intent: Intent?) {
+        intent ?: return
+        if (launchedFromHistory(intent.flags)) return
+        handle(intent)
+        intent.removeExtra(PushService.EXTRA_LINK)
+        intent.removeExtra("link")
+        if (intent.data != null) intent.data = null
     }
 
     /** 앱을 연 인텐트를 본다. 초대 링크(크루 · 번개)나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을, 글 · 번개 · 대기실 알림이면 그 자리를 연다. */

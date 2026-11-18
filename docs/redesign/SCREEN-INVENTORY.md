@@ -2,7 +2,7 @@
 
 Source inventory, not completion proof. A function may serve multiple routes/states. All rows require actual runtime review.
 
-116 registered navigation routes; 123 screen functions; 17 overlay declarations. These counts are different measures, not completed screens.
+117 registered navigation routes; 124 screen functions; 18 overlay declarations. These counts are different measures, not completed screens.
 
 ## Routes
 
@@ -23,6 +23,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | Routes.MARKET_MODEL | Customize | Detail | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | Routes.NEWS | Run | Detail | home/catalog/news UI source finish; see HOME-CATALOG-NEWS-FINISH-2026-09-24-KO.md | source checks only; Android compile/runtime/font/theme/IME verification pending; equipment art gaps remain; no APK requested |
 | Routes.EVENTS | Run | Detail | character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md | 29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md |
+| Screen.Bag.route | Bag | Main | pending | pending |
 | Screen.Profile.route | Profile | Main | 내 정보 첫 화면 러닝 패스(2026-09-27): see docs/redesign/profile-running-path/README.md (settings tab unchanged from S2 batch 1) | ProfileRunningPathTest (Experience QA community suite, screen-gallery/profile-running-path/): five buttons and states 11-17 — see README 상태 |
 | Routes.PROFILE_EDIT | Profile | Form | 프로필 수정 v1(2026-09-28 전달본): full-height photo and nickname editor replacing the small dialog; photo saves on pick, nickname on 저장 — see docs/redesign/profile-edit-v1/README.md | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49) |
 | Routes.SETTINGS | Profile | Detail | 설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md — settings first list (was the profile inner tab) | SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48) |
@@ -129,8 +130,8 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 
 | Function | Source | Implementation | Verification |
 |---|---|---|---|
-| AccessCodeScreen | app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt:72 | pending | pending |
-| BetaCodesScreen | app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt:171 | pending | pending |
+| AccessCodeScreen | app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt:91 | pending | pending |
+| BetaCodesScreen | app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt:275 | pending | pending |
 | CoachingHomeScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingHomeScreen.kt:142 | pending | pending |
 | CoachingConsentScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:136 | pending | pending |
 | CoachingGoalsScreen | app/src/main/java/com/stepup/android/ui/screens/coaching/CoachingSetupScreens.kt:242 | pending | pending |
@@ -141,7 +142,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | CrewBoardScreen | app/src/main/java/com/stepup/android/ui/screens/community/CrewBoardScreen.kt:51 | stage 7-9 source finish; see DESIGN-FINISH-2026-09-24-KO.md | source checks only; Android compile/capture pending |
 | FlashRunDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/FlashRunDetailScreen.kt:93 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed; no capture with a real meetup/lobby (guest test data) — populated S2 layout not visually verified |
 | PartyLobbyScreen | app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt:95 | S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md | S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed |
-| PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:62 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
+| PostComposeScreen | app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt:63 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude |
 | RankingScreen | app/src/main/java/com/stepup/android/ui/screens/community/RankingScreen.kt:72 | character-free visual pass; see CHARACTER-FREE-STAGE9-2026-09-25-KO.md; 5단계(1): faction board removed — four boards | Android 14/15 all/week/crew captures; live ranking unverified; PR #20 Experience QA captures |
 | ChatInfoScreen | app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt:75 | pending | pending |
 | ChatMembersScreen | app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatInfoScreens.kt:256 | pending | pending |
@@ -155,10 +156,10 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | ChatEndedScreen | app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatPhotoScreens.kt:192 | pending | pending |
 | ChatRoomScreen | app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatRoomScreen.kt:115 | pending | pending |
 | ChatSearchScreen | app/src/main/java/com/stepup/android/ui/screens/community/chat/ChatSearchScreen.kt:72 | pending | pending |
-| CrewRecruitEntryScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt:103 | pending | pending |
-| CrewDraftScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt:208 | pending | pending |
-| CrewCreatedScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt:1082 | pending | pending |
-| CrewDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewDetailScreen.kt:97 | pending | pending |
+| CrewRecruitEntryScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt:106 | pending | pending |
+| CrewDraftScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt:211 | pending | pending |
+| CrewCreatedScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt:1086 | pending | pending |
+| CrewDetailScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewDetailScreen.kt:100 | pending | pending |
 | CrewGoalScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewGoalScreens.kt:41 | pending | pending |
 | CrewGoalEditScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewGoalScreens.kt:131 | pending | pending |
 | CrewJoinScreen | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewJoinScreens.kt:60 | pending | pending |
@@ -193,7 +194,7 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | StoryLocationScreen | app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryLocationScreens.kt:70 | pending | pending |
 | StoryRegionScreen | app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryLocationScreens.kt:113 | pending | pending |
 | StoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/community/stories/StoryMapScreen.kt:61 | pending | pending |
-| CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:142 | 신발 화면 확정안(2026-09-28): see docs/redesign/shoes-ui-2026-09-28/README.md — MyShoesContent · ShoeVaultContent | MyShoesDesignTest + ShoeDetailDesignTest (Experience QA community suite) + MyShoesModelTest (unit): device run pending |
+| CustomizeScreen | app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt:151 | 신발 화면 확정안(2026-09-28): see docs/redesign/shoes-ui-2026-09-28/README.md — MyShoesContent · ShoeVaultContent | MyShoesDesignTest + ShoeDetailDesignTest (Experience QA community suite) + MyShoesModelTest (unit): device run pending |
 | RunnerMarketScreen | app/src/main/java/com/stepup/android/ui/screens/customize/RunnerMarketScreen.kt:93 | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | ChallengeHistoryScreen | app/src/main/java/com/stepup/android/ui/screens/events/ChallengeHistoryScreen.kt:43 | pending | pending |
 | EventsScreen | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:82 | character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md | 29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md |
@@ -205,25 +206,26 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | MysteryBoxScreen | app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt:75 | 신발 뽑기 디자인 26장(2026-09-28 전달본): 무료 · 상급 글자 탭 하나씩의 메인(DrawHome.kt), 안내창(DrawSheets.kt), 흐름(DrawFlowScreens.kt), 하단 탭 위 짧은 알림 — 수 · 연결 상태 · 결과는 서버 값만(v2 규칙 그대로) — see docs/redesign/shoe-draw-v3/README.md | ShoeDrawTabsDesignTest (Experience QA community suite, screen-gallery/shoe-draw-v3/: in-app example server 03→01→15→17→09→10→02→16→04→06, 12 · 23 · 13 · 14 · 26 · 20, 22→21, device sizes 360×800 · 390×844 · 412×915 · font 1.3 · light with zero-scroll checks, direct scenes 05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawHomeTest · ShoeDrawFlowTest (unit); local compile only — emulator run pending CI |
 | HomeScreen | app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt:102 | S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md | 443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md) |
 | InviteScreen | app/src/main/java/com/stepup/android/ui/screens/invite/InviteScreen.kt:154 | pending | pending |
+| BagScreen | app/src/main/java/com/stepup/android/ui/screens/items/BagScreen.kt:77 | pending | pending |
 | ItemsScreen | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:92 | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | ShoeUpgradeScreen | app/src/main/java/com/stepup/android/ui/screens/items/ShoeUpgradeScreen.kt:127 | 신발 강화 — 파란 톤 v4 강화 전달본 UP01–UP15 · UP18(UP16 없음, UP17 은 2026-10-04 재료 규칙으로 없어짐): see docs/redesign/blue-v4-2026-10/IMPLEMENTATION-REPORT.md · docs/redesign/shoe-upgrade-2026-10-01/README.md — 재료 신발 3개 · 확률(0054 forge_*, 규칙 forge-v2) | ShoeUpgradeDesignTest (Experience QA community suite, screen-gallery/shoe-upgrade/) + ShoeForgeTest (unit) + supabase/tests forge block: device run pending |
-| SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:134 | 보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — detail (ShoeDetailContent) | ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending |
+| SneakerDetailScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt:142 | 보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — detail (ShoeDetailContent) | ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending |
 | SneakerDexScreen | app/src/main/java/com/stepup/android/ui/screens/items/SneakerDexScreen.kt:76 | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | LeaderboardScreen | app/src/main/java/com/stepup/android/ui/screens/leaderboard/LeaderboardScreen.kt:116 | 리더보드 3판(2026-10-17): see docs/redesign/leaderboard-2026-10-17/README.md | LeaderboardDesignTest L01~L16 · M01~M04 (fixtures); local Robolectric renders; live server data not verified |
-| LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:95 | 시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scenes 01 · 05~10 (system account picker kept) | OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; LoginPresentationTest |
-| MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:98 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA passed; S2 map not in the reviewed capture set |
-| MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:70 | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
+| LoginScreen | app/src/main/java/com/stepup/android/ui/screens/login/LoginScreen.kt:88 | 시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scenes 01 · 05~10 (system account picker kept) | OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; LoginPresentationTest |
+| MapScreen | app/src/main/java/com/stepup/android/ui/screens/map/MapScreen.kt:101 | S2 batch A (PR #28): see docs/redesign/s2/STATUS.md | 871f4fd: Experience QA passed; S2 map not in the reviewed capture set |
+| MarketModelScreen | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:76 | S2 batch C (PR #30): see docs/redesign/s2/STATUS.md | 148d684: Experience QA run 36236519563 passed (Android 15); this screen is not in the PR capture set — S2 layout not visually verified on device |
 | NoticeDetailScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NoticeDetailScreen.kt:64 | 알림·공지 v1(2026-09-28): announcement detail 16 · 19 — see docs/redesign/notifications-v1/README.md | NotificationsDesignTest scenes 16 · 16b · 19: Experience QA 147 · 148 passed (PR #48) |
 | NotificationsScreen | app/src/main/java/com/stepup/android/ui/screens/notifications/NotificationsScreen.kt:136 | 알림·공지 v1(2026-09-28): see docs/redesign/notifications-v1/README.md — 내 알림 · 공지 두 메뉴, 연 알림만 읽음, 종류별 내용 시트 · 초대 단계 | NotificationsDesignTest (Experience QA community suite, screen-gallery/notifications-v1/) + NotificationPersistenceTest · NotificationNavigationTest: Experience QA 147 · 148 passed (PR #48) |
 | GuideReplayScreen | app/src/main/java/com/stepup/android/ui/screens/onboarding/OnboardingScreens.kt:126 | 시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scene 20 | OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending |
-| AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:214 | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
+| AchievementsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt:239 | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
 | AnalyticsScreen | app/src/main/java/com/stepup/android/ui/screens/profile/AnalyticsScreen.kt:139 | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
 | HistoryMapScreen | app/src/main/java/com/stepup/android/ui/screens/profile/HistoryMapScreen.kt:138 | record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md | Android 14/15 record captures on final source; see stage 8 report for limits |
 | ProfileEditScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileEditScreen.kt:184 | 프로필 수정 v1(2026-09-28 전달본): scenes 01–11, saved notice 12 on the profile — see docs/redesign/profile-edit-v1/README.md | ProfileEditDesignTest (Experience QA community suite, screen-gallery/profile-edit-v1/) + AvatarPhotoStoreTest: Experience QA run 36350039338 (e8a1021) passed (PR #49) |
 | ProfileScreen | app/src/main/java/com/stepup/android/ui/screens/profile/ProfileScreen.kt:139 | 내 정보 첫 화면 러닝 패스(2026-09-27): see docs/redesign/profile-running-path/README.md; first screen in ProfileHome.kt, card in ui/components/RunningPathCard.kt | ProfileRunningPathTest (Experience QA community suite, screen-gallery/profile-running-path/): five buttons and states 11-17 — see README 상태 |
 | RecordStatsScreen | app/src/main/java/com/stepup/android/ui/screens/records/RecordStatsScreen.kt:94 | 내 러닝 기록(2026-09-28 전달본): stats 04 · 05 · 06 · 15 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49) |
 | RecordsScreen | app/src/main/java/com/stepup/android/ui/screens/records/RecordsScreen.kt:102 | 내 러닝 기록(2026-09-28 전달본): list 01 · 02 · 03 · 07–10 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49) |
-| RunRecordScreen | app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt:70 | 내 러닝 기록(2026-09-28 전달본): detail 11 · 13 · 14 · 16 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49) |
+| RunRecordScreen | app/src/main/java/com/stepup/android/ui/screens/records/RunRecordScreen.kt:71 | 내 러닝 기록(2026-09-28 전달본): detail 11 · 13 · 14 · 16 — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49) |
 | RunRouteMapScreen | app/src/main/java/com/stepup/android/ui/screens/records/RunRouteMapScreen.kt:56 | 내 러닝 기록(2026-09-28 전달본): route 12 (map fit for large viewports fixed after that run: RouteMapFitTest) — see docs/redesign/running-records/README.md | RecordsDesignTest (Experience QA community suite, screen-gallery/running-records/): Experience QA run 36350039338 (e8a1021) passed (PR #49) |
 | ChainActivityScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/ChainActivityScreen.kt:185 | 체인 기록(2026-09-28): see docs/온체인-거래-발생-지도.md | ChainActivityDesignTest: Experience QA run 36367461885 (ff924fd) passed (PR #55) |
 | WalletScreen | app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt:97 | 지갑 v1(2026-09-28 전달본): scenes 01–14 · 16 (15 not applicable — no reconnect state in the service) — see docs/redesign/wallet-v1/README.md | WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49) |
@@ -249,29 +251,30 @@ Source inventory, not completion proof. A function may serve multiple routes/sta
 | RunStartMenuScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:77 | 시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scene 12 + run permission sheets 13~19 | OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; RunStartFlowTest |
 | RunGoalsScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:217 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
 | RunGoalHistoryScreen | app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt:272 | Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md | f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them. |
-| RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:167 | character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md | 29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md |
-| RunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2812 | pending | pending |
-| FreeRunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2866 | pending | pending |
+| RunScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:168 | character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md | 29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md |
+| RunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2888 | pending | pending |
+| FreeRunShareScreen | app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt:2942 | pending | pending |
 
 ## Dialog / sheet / menu declarations
 
 | Owner | Type | Source | Verification |
 |---|---|---|---|
+| AccessCodeModal | Dialog | app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt:135 | pending |
 | ReportDialog | AlertDialog | app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt:138 | pending |
 | CommentSheet | Dialog | app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt:176 | pending |
-| CrewSheet | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewUi.kt:750 | pending |
+| CrewSheet | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewUi.kt:753 | pending |
 | InviteDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt:426 | pending |
 | DrawSheetFrame | Dialog | app/src/main/java/com/stepup/android/ui/screens/gacha/DrawBlueParts.kt:248 | pending |
 | InviteScreen | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/invite/InviteScreen.kt:207 | pending |
 | CopiesDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt:518 | pending |
 | LbSheetHost | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/leaderboard/LeaderboardScreen.kt:1050 | pending |
-| BidDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:327 | pending |
-| AskDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:354 | pending |
+| BidDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:362 | pending |
+| AskDialog | DialogPanel | app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt:389 | pending |
 | LobbyHeader | DropdownMenu | app/src/main/java/com/stepup/android/ui/screens/walk/CrewLobby.kt:484 | pending |
 | LobbySheetFrame | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/CrewLobby.kt:951 | pending |
 | NavySheet | ModalBottomSheet | app/src/main/java/com/stepup/android/ui/screens/walk/CrewNavyKit.kt:217 | pending |
 | CrewRoomCreateContent | DropdownMenu | app/src/main/java/com/stepup/android/ui/screens/walk/CrewRooms.kt:660 | pending |
-| FreeRunShoeCheck | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/FreeRunStart.kt:178 | pending |
+| FreeRunShoeCheck | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/FreeRunStart.kt:185 | pending |
 | RunPermissionSheetView | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt:412 | pending |
 | MinimalPermissionCard | Dialog | app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt:483 | pending |
 

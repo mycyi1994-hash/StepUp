@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stepup.android.R
+import com.stepup.android.domain.PostLimits
 import com.stepup.android.domain.PostCategory
 import com.stepup.android.ui.components.BottomActionBar
 import com.stepup.android.ui.components.ButtonState
@@ -75,7 +77,10 @@ fun PostComposeScreen(
     var body by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
     var distance by rememberSaveable { mutableDoubleStateOf(1.0) }
-    var startsIn by rememberSaveable { mutableIntStateOf(60) }
+    // 고른 출발 시각 그 자체(epoch ms) — 올릴 때 그대로 보낸다(#4). "N분 뒤"는 보여 주기만
+    var meetAt by rememberSaveable { mutableLongStateOf(FlashMeetTime.initial(System.currentTimeMillis())) }
+    // 고른 시각이 너무 가까워 가장 이른 시각(5분 뒤)으로 맞췄다 — 칸 아래에 알린다
+    var meetClamped by rememberSaveable { mutableStateOf(false) }
     var capacity by rememberSaveable { mutableIntStateOf(6) }
     // 글쓰기 화면마다 한 요청 키 — 응답을 못 받고 다시 올려도 서버(0062)가 같은 글 번호를 돌려준다(번개 모임이 둘이 되지 않게)
     var clientKey by rememberSaveable { mutableStateOf(UUID.randomUUID().toString()) }
@@ -122,13 +127,13 @@ fun PostComposeScreen(
                 Text(crewName, style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel, modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter))
             }
             FormField(
-                stringResource(R.string.post_field_title), title, { title = it },
+                stringResource(R.string.post_field_title), title, { title = PostLimits.cap(it, PostLimits.TITLE) },
                 Modifier.padding(horizontal = StepUpUi.Gutter).testTag("post-title"),
                 placeholder = if (flash) template else stringResource(R.string.post_field_title_hint),
             )
             if (!flash) {
                 FormField(
-                    stringResource(R.string.post_field_body), body, { body = it },
+                    stringResource(R.string.post_field_body), body, { body = PostLimits.cap(it, PostLimits.BODY) },
                     Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_body_hint),
                     minLines = 8, minHeight = 240.dp,
                 )
@@ -152,11 +157,15 @@ fun PostComposeScreen(
                     )
                 } else {
                     FormField(
-                        stringResource(R.string.post_field_place), place, { place = it },
+                        stringResource(R.string.post_field_place), place, { place = PostLimits.cap(it, PostLimits.PLACE) },
                         Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.post_field_place_hint),
                     )
                 }
-                FlashTimeField(startsIn, onMinutes = { startsIn = it }, modifier = Modifier.padding(horizontal = StepUpUi.Gutter))
+                FlashTimeField(
+                    meetAt, clamped = meetClamped,
+                    onPick = { pick -> meetAt = pick.atMillis; meetClamped = pick.clamped },
+                    modifier = Modifier.padding(horizontal = StepUpUi.Gutter),
+                )
                 Spacer(Modifier.height(4.dp))
                 GroupedList(
                     rows = listOf(
@@ -173,7 +182,7 @@ fun PostComposeScreen(
                     ),
                 )
                 FormField(
-                    stringResource(R.string.d26_flash_note) + " · " + stringResource(R.string.d26_flash_optional), body, { body = it },
+                    stringResource(R.string.d26_flash_note) + " · " + stringResource(R.string.d26_flash_optional), body, { body = PostLimits.cap(it, PostLimits.BODY) },
                     Modifier.padding(horizontal = StepUpUi.Gutter), placeholder = stringResource(R.string.d26_flash_note_hint),
                     minLines = 3, minHeight = 96.dp,
                 )
@@ -191,6 +200,15 @@ fun PostComposeScreen(
             PrimaryButton(
                 stringResource(R.string.post_submit),
                 onClick = {
+                    // 화면을 오래 열어 두어 출발이 5분 안으로 들어왔다 — 가장 이른 시각으로 맞추고 알린 뒤 다시 누르게 한다
+                    if (flash) {
+                        val checked = FlashMeetTime.beforeSubmit(meetAt, System.currentTimeMillis())
+                        if (checked.clamped) {
+                            meetAt = checked.atMillis
+                            meetClamped = true
+                            return@PrimaryButton
+                        }
+                    }
                     viewModel.writePost(
                         category = selected,
                         title = if (flash) title.ifBlank { template } else title,
@@ -198,7 +216,7 @@ fun PostComposeScreen(
                         crewId = crewId,
                         place = if (flash && remote) "" else place,
                         distanceKm = if (flash) distance else 0.0,
-                        meetInMinutes = if (flash) startsIn else 0,
+                        meetAtMillis = if (flash) meetAt else 0L,
                         capacity = if (flash) capacity else 0,
                         lat = if (remote) null else here?.lat,
                         lng = if (remote) null else here?.lng,
@@ -222,17 +240,28 @@ fun PostComposeScreen(
     }
 }
 
-/** 출발 시각 칸 — 시각을 고르면 지금부터의 분으로(5분 ~ 24시간). 아래에 "오늘 오후 7:00 · 23분 뒤 출발" */
+/**
+ * 출발 시각 칸 — 고른 시각 그 자체를 보인다(예전에는 "지금부터 N분"을 다시 더해 19:00 이 18:59 로 보였다). 아래에 "오늘 오후 7:00 · 23분 뒤 출발".
+ * 너무 가까운 시각을 고르면 가장 이른 시각(5분 뒤)으로 맞추고 그렇게 알린다 — 말없이 내일로 넘기지 않는다.
+ */
 @Composable
-private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Modifier = Modifier) {
+private fun FlashTimeField(atMillis: Long, clamped: Boolean, onPick: (FlashMeetTime.Pick) -> Unit, modifier: Modifier = Modifier) {
     val c = StepUpUi.colors
     val context = androidx.compose.ui.platform.LocalContext.current
     val zone = java.time.ZoneId.systemDefault()
-    val at = java.time.ZonedDateTime.now(zone).plusMinutes(minutes.toLong())
+    // "N분 뒤"가 화면을 열어 둔 동안에도 줄어들게
+    val nowMillis by androidx.compose.runtime.produceState(System.currentTimeMillis()) {
+        while (true) {
+            kotlinx.coroutines.delay(15_000L)
+            value = System.currentTimeMillis()
+        }
+    }
+    val at = java.time.Instant.ofEpochMilli(atMillis).atZone(zone)
     val is24 = android.text.format.DateFormat.is24HourFormat(context)
     val time = java.time.format.DateTimeFormatter.ofPattern(if (is24) "HH:mm" else "a h:mm", Locale.getDefault()).format(at)
-    val day = if (at.toLocalDate() == java.time.LocalDate.now(zone)) stringResource(R.string.d26_when_today, time)
+    val day = if (at.toLocalDate() == java.time.Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalDate()) stringResource(R.string.d26_when_today, time)
         else stringResource(R.string.d26_when_tomorrow, time)
+    val minutes = FlashMeetTime.minutesLeft(atMillis, nowMillis)
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
     Column(modifier.fillMaxWidth()) {
         Text(stringResource(R.string.d26_flash_time), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel)
@@ -241,7 +270,11 @@ private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Mod
             Modifier.fillMaxWidth().height(56.dp).clip(shape).background(c.card, shape)
                 .border(1.dp, c.separator, shape)
                 .feedbackClickable {
-                    android.app.TimePickerDialog(context, { _, h, m -> onMinutes(minutesUntil(h, m)) }, at.hour, at.minute, is24).show()
+                    android.app.TimePickerDialog(
+                        context,
+                        { _, h, m -> onPick(FlashMeetTime.pick(h, m, java.time.ZonedDateTime.now(zone))) },
+                        at.hour, at.minute, is24,
+                    ).show()
                 }
                 .padding(horizontal = 16.dp).testTag("post-starts"),
             verticalAlignment = Alignment.CenterVertically,
@@ -254,15 +287,13 @@ private fun FlashTimeField(minutes: Int, onMinutes: (Int) -> Unit, modifier: Mod
             else stringResource(R.string.d26_flash_when_hours, day, minutes / 60, minutes % 60),
             style = StepUpUi.type.caption, color = c.accentText, modifier = Modifier.padding(top = 8.dp).testTag("post-starts-line"),
         )
+        if (clamped) {
+            Text(
+                stringResource(R.string.fxc_flash_time_earliest),
+                style = StepUpUi.type.caption, color = c.secondaryLabel, modifier = Modifier.padding(top = 4.dp).testTag("post-starts-earliest"),
+            )
+        }
     }
-}
-
-/** 고른 시 · 분까지 남은 분 — 이미 지났으면 다음 날, 5분 ~ 24시간으로 자른다(서버 규칙) */
-internal fun minutesUntil(hour: Int, minute: Int, now: java.time.ZonedDateTime = java.time.ZonedDateTime.now()): Int {
-    var at = now.withHour(hour).withMinute(minute).withSecond(0).withNano(0)
-    if (at.isBefore(now.plusMinutes(5))) at = at.plusDays(1)
-    val diff = java.time.Duration.between(now, at).toMinutes().toInt()
-    return diff.coerceIn(5, 24 * 60)
 }
 
 /** 출발까지 — 1시간 안은 5분씩, 그 뒤는 30분씩(5분 ~ 24시간) */

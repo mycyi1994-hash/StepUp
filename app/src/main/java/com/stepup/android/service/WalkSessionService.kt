@@ -428,6 +428,9 @@ class WalkSessionService : Service() {
         // 서버보다 25% 엄격하게 튄 구간으로 잡힌다.
         val seconds = if (prevAt == 0L) 0L else (now - prevAt + 500) / 1000
         val plausible = prev == null || RunIntegrity.isPlausible(meters, seconds)
+        // 튄 구간을 셀까 — 두 끝의 오차를 알고 둘 다 20m 안일 때만(과속 멈춤과 같은 기준, RunOverspeed.counts).
+        // 흐린 위치(실내 와이파이 · 기지국 · 러닝머신)의 튐까지 세면 세 번 만에 러닝 전체가 무효가 됐다(2026-11-17 점검 #12)
+        val hopCounts = !plausible && RunOverspeed.counts(accuracy, prevAccuracy)
 
         // 걸음 수집기·타이머와 서로 덮어쓰지 않게 원자적으로 갱신한다
         val trackBefore = _state.value.track.size
@@ -442,11 +445,12 @@ class WalkSessionService : Service() {
                 return@update current.copy(
                     gpsFix = true,
                     gpsLost = false,
-                    flaggedSegments = current.flaggedSegments + 1,
+                    // 무효 판정(RunIntegrity.verdict)이 세는 튄 구간 — 흐린 위치의 튐은 세지 않는다(위 hopCounts)
+                    flaggedSegments = current.flaggedSegments + if (hopCounts) 1 else 0,
                     lastFlaggedAt = now,
                     // 흐린 위치(와이파이 · 기지국)의 튐은 과속으로 세지 않는다 — 실내에서 두 자리를 오가 서 있는 러너가 멈추고
                     // 패널티를 받을 수 있었다(2026-10-19 점검). 거리 · 경로에는 여전히 넣지 않는다
-                    overspeed = if (RunOverspeed.counts(accuracy, prevAccuracy)) {
+                    overspeed = if (hopCounts) {
                         RunOverspeed.onFlagged(current.overspeed, now, prev, p)
                     } else {
                         current.overspeed
@@ -499,7 +503,8 @@ class WalkSessionService : Service() {
                 runCatching {
                     val prefs = ServiceLocator.userPrefs
                     prefs.raiseRunBanUntil(stoppedAt + RunOverspeed.BAN_MS)
-                    prefs.addPendingOverspeedStop(session.startedAt, stoppedAt, session.recordingOwner)
+                    // 출발 때 신은 신발 — 서버가 그 신발에 패널티를 준다(0110, 올릴 때 신은 신발이 아니라)
+                    prefs.addPendingOverspeedStop(session.startedAt, stoppedAt, session.recordingOwner, session.startSneakerId)
                 }
                 stopSession()
             } finally {
@@ -1016,6 +1021,13 @@ class WalkSessionService : Service() {
         lastMoveElapsed = SystemClock.elapsedRealtime()
         // 신은 신발로 보상을 받으며 달릴 수 있는 시간 — 다 쓰면 화면 · 알림이 알린다(2026-10-19). 되살린 러닝도 다시 읽는다
         val runStartedAt = _state.value.startedAt
+        // 출발 전 점검에서 고른 아이템(0106)을 이 러닝에 묶는다 — 새 러닝만(되살린 러닝은 이미 묶였다). 대기실에서 출발하는
+        // 크루 · 번개 러닝에는 점검(아이템 고르기)이 없다 — 앞서 고르다 만 것이 그 러닝에 쓰이지 않게 비우기만 한다.
+        // 신호가 없으면 올리기 일꾼이 러닝보다 먼저 다시 보낸다
+        if (restored == null) {
+            val fromCheck = group == StartGroup.NONE
+            scope.launch { runCatching { ServiceLocator.itemsRepository.startRun(runStartedAt, owner, fromCheck) } }
+        }
         scope.launch {
             val equipped = runCatching { ServiceLocator.database.sneakerDao().equippedNow() }.getOrNull()
             val life = runCatching { equippedShoeLifeSec(equipped) }.getOrNull()
@@ -1218,7 +1230,7 @@ class WalkSessionService : Service() {
             //    기준점이 모자라 그 몫을 백그라운드가 다시 지급한다.
             ServiceLocator.userPrefs.raiseAccountedTo(
                 LocalDate.now().toEpochDay(),
-                ServiceLocator.stepRepository.todaySteps.value,
+                ServiceLocator.stepRepository.rawTodaySteps.value,
             )
 
             // 부스트는 정산 **전에** 읽는다. 정산이 신발이나 크루 상태를 건드릴

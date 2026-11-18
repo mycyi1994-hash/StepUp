@@ -45,6 +45,15 @@ class StepTracker(
     private val _todaySteps = MutableStateFlow(0)
     val todaySteps: StateFlow<Int> = _todaySteps
 
+    private val _reading = MutableStateFlow(StepReading(LocalDate.now().toEpochDay(), 0))
+
+    /**
+     * [todaySteps] 와 같은 값에 그 값이 어느 날의 것인지를 붙인 것 — 화면용(점검 2026-11-17 #24). 자정이 지나도 다음 센서
+     * 이벤트 전까지 [todaySteps] 는 어제 값이라, 화면은 날짜가 다르면 오늘 걸음을 0 으로 보인다(StepReading.shownOn).
+     * 걸음을 세는 방법(기준점 · 재부팅 · 넘겨받기)은 바꾸지 않는다.
+     */
+    val reading: StateFlow<StepReading> = _reading
+
     /** 디버그 시뮬레이션으로 더한 걸음 (센서 미지원 환경용) */
     private var simulatedSteps = 0
 
@@ -89,6 +98,7 @@ class StepTracker(
         hasReading = true
         simulatedSteps += count.coerceAtLeast(0)
         _todaySteps.value = _todaySteps.value + count.coerceAtLeast(0)
+        _reading.value = StepReading(LocalDate.now().toEpochDay(), _todaySteps.value)
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -143,6 +153,7 @@ class StepTracker(
         }
         val sensorSteps = (cumulative - baseline).toInt().coerceAtLeast(0)
         _todaySteps.value = sensorSteps + simulatedSteps
+        _reading.value = StepReading(today, _todaySteps.value)
         hasReading = true
     }
 
@@ -168,4 +179,10 @@ class StepTracker(
         /** 자정을 넘겨 넘겨받을 수 있는 걸음 상한 — 활동적인 하루치 */
         const val CARRY_OVER_CAP = 12_000L
     }
+}
+
+/** 걸음 수와 그것을 잰 날(epoch day) */
+data class StepReading(val day: Long, val steps: Int) {
+    /** [today] 에 보일 오늘 걸음 — 다른 날에 잰 값이면 0(새 날의 첫 센서 값이 오기 전) */
+    fun shownOn(today: Long): Int = if (day == today) steps else 0
 }

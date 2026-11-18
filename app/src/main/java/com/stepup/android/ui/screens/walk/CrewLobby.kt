@@ -52,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -148,7 +149,7 @@ internal fun CrewLobbyContent(
     // 빈 화면 상태(불러오기 실패 · 나옴 · 닫힘 · 찼음 · 출발함) — 방 화면 대신 앱 바탕의 한 화면(69 · 70)
     val terminal = lobbyTerminal(party)
     if (terminal != null) {
-        CrewLobbyTerminal(terminal, onBack = onLeave, onRetry = onRetry, onReconnect = onReconnect, onOtherRooms = onOtherRooms)
+        CrewLobbyTerminal(terminal, onBack = onLeave, onRetry = onRetry, onReconnect = onReconnect, onOtherRooms = onOtherRooms, missedFreed = party.missedFreed)
         return
     }
     if (party.phase == PartyPhase.FINISHED) {
@@ -396,7 +397,7 @@ internal fun lobbyTerminal(party: PartyState): LobbyTerminal? = when (party.prob
     PartyProblem.STARTED -> LobbyTerminal.STARTED
     PartyProblem.MISSED_START -> LobbyTerminal.MISSED.takeIf { party.pickedRoom != null && party.partyId == null }
     PartyProblem.NETWORK -> LobbyTerminal.FAILED.takeIf { party.partyId == null }
-    PartyProblem.FAILED, null -> null
+    PartyProblem.FAILED, PartyProblem.NEED_TWO, null -> null
 }
 
 /** 한 화면(앱 바탕 — APP_EXISTING) — 오류를 참가자 0 · 체력 0 으로 덮지 않는다. 주 행동 하나 */
@@ -407,6 +408,8 @@ private fun CrewLobbyTerminal(
     onRetry: () -> Unit,
     onReconnect: () -> Unit,
     onOtherRooms: () -> Unit,
+    /** 출발을 놓친 뒤 오늘 크루 러닝이 풀렸나(0109) — 풀렸을 때만 "쓰이지 않았어요" */
+    missedFreed: Boolean? = null,
 ) {
     val (titleRes, bodyRes) = when (terminal) {
         LobbyTerminal.FAILED -> R.string.crew5_failed_title to R.string.crew5_failed_body
@@ -414,7 +417,11 @@ private fun CrewLobbyTerminal(
         LobbyTerminal.CLOSED -> R.string.crew5_closed_title to R.string.crew5_closed_body
         LobbyTerminal.FULL -> R.string.crew5_full_title to R.string.crew5_full_body
         LobbyTerminal.STARTED -> R.string.crew5_started_title to R.string.crew5_started_body
-        LobbyTerminal.MISSED -> R.string.crew5_missed_title to R.string.crew5_missed_body
+        LobbyTerminal.MISSED -> R.string.crew5_missed_title to when (missedFreed) {
+            true -> R.string.crew5_missed_body
+            false -> R.string.fxc_missed_used_body
+            null -> R.string.fxc_missed_checking_body
+        }
         LobbyTerminal.SIGN_IN -> R.string.crew5_sign_in_title to R.string.party_problem_sign_in
     }
     val tag = "party-terminal-" + terminal.name.lowercase()
@@ -533,6 +540,19 @@ private fun LobbyNotices(
             }
         }
         if (party.problem == PartyProblem.FAILED) add { LobbyNotice(stringResource(R.string.crew5_lobby_failed), Modifier.testTag("party-problem"), warn = true) }
+        // 출발을 서버가 받지 않았다 — 준비했지만 대기실을 보고 있지 않은 사람이 있어 2명이 안 된다(0109). 누가 자리에 없는지 말한다
+        if (party.problem == PartyProblem.NEED_TWO) add {
+            val away = party.awayReady
+            LobbyNotice(
+                if (away.isNotEmpty()) stringResource(R.string.fxc_need_two_away, awayNames(away))
+                else stringResource(R.string.fxc_need_two),
+                Modifier.testTag("party-problem"), warn = true,
+            )
+        }
+        // 진행자 — 출발을 누르기 전에도 자리에 없는 준비 인원을 알린다(출발할 때 빠진다)
+        if (party.problem != PartyProblem.NEED_TWO && party.isHost && party.awayReady.isNotEmpty()) add {
+            LobbyNotice(stringResource(R.string.fxc_away_notice, awayNames(party.awayReady)), Modifier.testTag("party-away"))
+        }
         if (doneToday) add {
             LobbyNotice(
                 if (crewToday?.usedElsewhere == true) stringResource(R.string.crew_lobby_done_elsewhere, crewToday.mine.crewName.orEmpty())
@@ -623,7 +643,7 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
                         three.forEach { cell ->
                             Box(Modifier.weight(1f)) {
                                 when (cell) {
-                                    is RosterCell.Person -> PersonCell(cell.member, firstRow = row == 0)
+                                    is RosterCell.Person -> PersonCell(cell.member, firstRow = row == 0, away = party.phase == PartyPhase.LOBBY && cell.member.away)
                                     is RosterCell.More -> EmptyCell(stringResource(R.string.crew5_lobby_more, cell.rest), stringResource(R.string.crew5_lobby_all), onRoster, "party-more")
                                     RosterCell.Empty -> EmptyCell("+", stringResource(R.string.crew5_lobby_invite), if (canNotify) onCall else null, "party-empty")
                                 }
@@ -644,14 +664,16 @@ private sealed interface RosterCell {
 
 /** 크루원 한 칸 — 52dp 원(진행자는 파란 면) · 준비면 오른쪽 아래 확인 표시 · 이름(나) · 진행자 */
 @Composable
-private fun PersonCell(member: PartyMember, firstRow: Boolean) {
+private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = false) {
     val me = stringResource(R.string.crew5_lobby_me)
     val host = stringResource(R.string.run_cr_host)
     val ready = stringResource(R.string.crew5_roster_ready)
+    val awayLabel = stringResource(R.string.fxc_away_label)
     Column(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
-            contentDescription = listOfNotNull(member.name, me.takeIf { member.isMe }, host.takeIf { member.isHost }, ready.takeIf { member.ready })
-                .joinToString(", ")
+            contentDescription = listOfNotNull(
+                member.name, me.takeIf { member.isMe }, host.takeIf { member.isHost }, ready.takeIf { member.ready }, awayLabel.takeIf { away },
+            ).joinToString(", ")
         }.testTag("party-member-${member.id}"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -666,7 +688,9 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean) {
             }
             if (member.ready) {
                 Box(
-                    Modifier.align(Alignment.BottomEnd).offset(x = 7.dp, y = 6.dp).size(27.dp).clip(CircleShape).background(LobbyInk.CheckRing)
+                    // 자리에 없는 준비 인원은 확인 표시를 흐리게 — 출발할 때 빠진다
+                    Modifier.align(Alignment.BottomEnd).offset(x = 7.dp, y = 6.dp).size(27.dp).alpha(if (away) 0.35f else 1f)
+                        .clip(CircleShape).background(LobbyInk.CheckRing)
                         .padding(3.dp).clip(CircleShape).background(LobbyInk.CheckFace).testTag("party-ready-mark"),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Check, contentDescription = null, tint = LobbyInk.CheckInk, modifier = Modifier.size(13.dp)) }
@@ -679,6 +703,7 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean) {
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
             if (member.isHost) Text(host, style = navyText(11.sp, Color(0xFFCEE5F6), FontWeight.Normal, 1.2f))
+            if (away) Text(awayLabel, style = navyText(11.sp, LobbyInk.Sub, FontWeight.Medium, 1.2f), modifier = Modifier.testTag("party-member-away"))
         }
     }
 }
@@ -1426,4 +1451,11 @@ private fun CrewLobbyResult(resultPoints: Double?) {
         }
         Spacer(Modifier.height(10.dp))
     }
+}
+
+/** 자리에 없는 사람 이름 — 둘까지 쓰고 나머지는 "외 N명" */
+@Composable
+private fun awayNames(away: List<PartyMember>): String {
+    val names = away.take(2).joinToString(", ") { it.name }
+    return if (away.size > 2) stringResource(R.string.fxc_away_more, names, away.size - 2) else names
 }

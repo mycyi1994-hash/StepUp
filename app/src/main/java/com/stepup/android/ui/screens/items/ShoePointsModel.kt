@@ -131,6 +131,9 @@ enum class PointsError {
     /** 서버가 받지 않았다(이미 바뀐 값 · 판매 중 · 체인 등) — 최신 값으로 다시 시작한다 */
     REJECTED,
 
+    /** 서버가 받지 않았고 최신 값도 아직 다시 받지 못했다 — 보이는 값이 예전 값일 수 있다("다시 불러왔어요"라고 쓰지 않는다) */
+    REJECTED_NOT_RELOADED,
+
     /** 로그인이 필요하다 */
     SIGN_IN,
 }
@@ -183,11 +186,19 @@ fun PointsPhase.backToEdit(): PointsPhase = if (this is PointsPhase.Confirm) Poi
  * 서버의 대답 → 다음 장면. 받았으면 완료, 연결이 끊겼으면 같은 초안으로 다시 보낼 수 있게, 거절이면 최신 값([latest])으로
  * 다시 시작한다(최신 값을 모르면 보낸 초안에서 — 다음 동기화가 맞춘다).
  */
-fun pointsAfterSend(sent: PointsPhase.Sending, outcome: EconomyOutcome, latest: PointsBasis?): PointsPhase = when (outcome) {
+fun pointsAfterSend(
+    sent: PointsPhase.Sending,
+    outcome: EconomyOutcome,
+    latest: PointsBasis?,
+    reloaded: Boolean = latest != null,
+): PointsPhase = when (outcome) {
     EconomyOutcome.Ok -> PointsPhase.Done(sent.basis, sent.draft)
     EconomyOutcome.Offline -> PointsPhase.Editing(sent.basis, sent.draft, PointsError.OFFLINE)
     EconomyOutcome.SignInRequired -> PointsPhase.Editing(sent.basis, sent.draft, PointsError.SIGN_IN)
-    else -> (latest ?: sent.basis).let { PointsPhase.Editing(it, it.saved, PointsError.REJECTED) }
+    // "최신 값으로 다시 불러왔어요"는 서버 값을 실제로 다시 받았을 때만(2026-11-17 점검 #17)
+    else -> (latest ?: sent.basis).let {
+        PointsPhase.Editing(it, it.saved, if (reloaded && latest != null) PointsError.REJECTED else PointsError.REJECTED_NOT_RELOADED)
+    }
 }
 
 /** 서버가 포인트를 받는 상태인가 — 내 신발 · 판매 중 아님 · 앱 안(economy.my_app_sneaker 와 같은 조건) */

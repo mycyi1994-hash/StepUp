@@ -96,7 +96,7 @@ fun ItemsScreen(
     marketOnly: Boolean = false,
     onOpenSneaker: (Long) -> Unit = {},
     onOpenDex: () -> Unit = {},
-    onOpenMarketModel: (faction: String, rarity: String, variant: Int) -> Unit = { _, _, _ -> },
+    onOpenMarketModel: (com.stepup.android.data.remote.ModelKey) -> Unit = {},
     /** 신발 뽑기 화면으로 — 뽑기는 모두 무료이고 그 화면에서 한다(2026-09-27) */
     onOpenDraw: () -> Unit = {},
     viewModel: ItemsViewModel = viewModel(factory = ItemsViewModel.Factory),
@@ -227,7 +227,7 @@ fun ItemsScreen(
                 board = board,
                 section = marketSection,
                 onSection = { marketSection = it },
-                onOpenModel = { onOpenMarketModel(it.faction, it.rarity, it.variant) },
+                onOpenModel = onOpenMarketModel,
                 onCancelListing = marketViewModel::cancelListing,
                 onCancelBid = marketViewModel::cancelBid,
                 onRetry = marketViewModel::refresh,
