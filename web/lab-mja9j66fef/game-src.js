@@ -1357,13 +1357,13 @@ async function api(name, body) {
 }
 const NAME_RE = /^[가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9 _.\-]{2,12}$/;
 const CODES = {
-  email: '이메일 주소를 다시 확인해 주세요.', not_registered: '사전 등록한 이메일이 아니에요.', name: '닉네임은 2~12자, 한글 · 영문 · 숫자로 적어 주세요.',
+  email: '이메일 주소를 다시 확인해 주세요.', not_registered: '먼저 참가하기를 해 주세요.', name: '닉네임은 2~12자, 한글 · 영문 · 숫자로 적어 주세요.',
   busy: '잠시 뒤 다시 시도해 주세요.', no_runs: '오늘 기회를 다 썼어요. SNS에 올리면 한 번 더 할 수 있어요.', url: 'X · 인스타 · 스레드 게시물 링크가 아니에요.', account: '계정 아이디를 영문 · 숫자 · 밑줄 · 점으로 적어 주세요.',
   duplicate: '이미 낸 게시물이에요. 새 게시물을 올려 주세요.', day_limit: '오늘은 SNS로 받을 수 있는 기회(3번)를 다 썼어요. 00시에 다시 채워져요.', consent: '동의에 체크해 주세요.', closed: '지금은 게임을 쉬고 있어요.'
 };
 function paintStatus() {
   const st = ACC.status, who = $('whoLine'), btn = $('dailyBtn');
-  if (!st) { who.innerHTML = ACC.email ? '' : '<span class="muted">사전 등록한 이메일로 참가해요</span>'; btn.textContent = '오늘의 도전'; return; }
+  if (!st) { who.innerHTML = ACC.email ? '' : '<span class="muted">이메일로 바로 참가해요</span>'; btn.textContent = '오늘의 도전'; return; }
   who.innerHTML = `<b>${esc(st.name)}</b> · 오늘 최고 ${st.best_today != null ? (+st.best_today).toLocaleString('ko-KR') + '점' : '—'} <button class="link" id="switchAcc" type="button">바꾸기</button>`;
   $('switchAcc').onclick = () => openJoin(true);
   btn.textContent = st.runs_left > 0 ? `오늘의 도전 (${st.runs_left})` : '공유하고 한 판 더';
@@ -1385,7 +1385,7 @@ $('joinForm').onsubmit = async e => {
   try {
     const d = await api('tower_join', { p_email: email, p_name: name, p_trap: $('joinTrap').value });
     if (d && d.ok) { ACC.email = email; ACC.name = name; ACC.status = d; try { localStorage.setItem('tower_email', email); localStorage.setItem('tower_name', name); } catch (x) { /* 없음 */ } show(ui.join, false); show(ui.title, true); paintStatus(); }
-    else { err.textContent = CODES[d && d.code] || '확인하지 못했어요. 잠시 뒤 다시 시도해 주세요.'; if (d && d.code === 'not_registered') err.insertAdjacentHTML('beforeend', ' <a href="/?utm_source=game&amp;utm_medium=web#join">사전 등록하기</a>'); }
+    else { err.textContent = CODES[d && d.code] || '확인하지 못했어요. 잠시 뒤 다시 시도해 주세요.'; }
   } catch (x) { err.textContent = '연결이 끊겼어요. 잠시 뒤 다시 시도해 주세요.'; }
   btn.disabled = false; btn.textContent = '참가하기';
 };
