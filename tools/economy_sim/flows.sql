@@ -28,10 +28,11 @@ begin
   exception when others then
     raise notice '[수리 시도] 거절 — % (%)', sqlerrm, sqlstate;
   end;
-  -- 2) 0% 신발로 또 걷기 10분
+  -- 2) 같은 신발로 또 걷기 10분(수리가 거절됐으면 0% 인 채로)
   v_t := v_t + interval '15 minutes';
   select * into r from public.record_session(v_t, v_t + interval '600 seconds', 1100, 600, pg_temp.track(v_t, 600, 0.000012477), 0, 1, '', false, s.id);
-  raise notice '[0%% 신발로 걷기 10분] +% SUP (% · %)', r.points_awarded, r.verdict, r.verdict_reason;
+  select * into s from public.market_sneakers where id = s.id;
+  raise notice '[같은 신발로 걷기 10분 더] +% SUP (% · %) 내구도 %/%', r.points_awarded, r.verdict, r.verdict_reason, s.dur_now, s.dur_max;
   -- 3) 30분 한 번에(새 신발로) — 무료 뽑기
   v_new := public.draw_free();
   select * into s from public.market_sneakers where id = v_new;
