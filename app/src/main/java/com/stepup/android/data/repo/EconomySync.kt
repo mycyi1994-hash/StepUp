@@ -42,6 +42,8 @@ class EconomySync(
     private val prefs: UserPrefs,
     private val sessions: SessionHolder,
     private val now: () -> Long = System::currentTimeMillis,
+    /** 동기화 때마다 — 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18). 실패해도 동기화는 계속한다 */
+    private val afterCheckIn: suspend () -> Unit = {},
 ) {
     private val lock = Mutex()
     private var bootstrapped: String? = null
@@ -119,6 +121,13 @@ class EconomySync(
         // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
         val checkIn = "$userId:${LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))}"
         if (checkedIn != checkIn && api.checkIn() is ServerResult.Ok) checkedIn = checkIn
+        // 하루 걸음(어제 · 오늘) — 서버가 그날 목표 달성 여부를 체인에 남긴다(0078 DAILY_STEPS). 바뀐 날만 보낸다
+        try {
+            afterCheckIn()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+        }
         // 폰에서 바꾼 프로필 이름을 서버에도(0084) — 예전 앱은 폰에만 적어 크루장 이름이 그대로였다. 실패해도 동기화는 계속한다
         syncNickname(userId)
         importLegacy(userId)?.let { return it }

@@ -37,6 +37,8 @@ class StepRepository(
     private val pushGoal: (suspend (Int) -> Unit)? = null,
     /** 지금 계정의 기록 주인 — 화면에 보일 러닝을 그 계정 것(+ 옛 기록)으로 좁힌다 */
     private val owner: Flow<String> = kotlinx.coroutines.flow.flowOf(com.stepup.android.domain.RecordingOwner.LEGACY),
+    /** 하루 목표를 채운 순간 어제 · 오늘 걸음을 서버에 올린다(체인 하루 걸음 기록 — 그날이 끝나기 전에 서버가 알게). 서버가 없으면 null */
+    private val uploadSteps: (suspend () -> Unit)? = null,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -180,6 +182,7 @@ class StepRepository(
             val newStreak = if (metYesterday || shielded) prefs.streakValue() + 1 else 1
             prefs.setGoalMet(today, newStreak)
             rewardRepository.creditGoalBonus(newStreak, goal)
+            uploadSteps?.let { upload -> scope.launch { runCatching { upload() } } }
         }
 
         accrueBackground(today, steps)

@@ -63,6 +63,9 @@ object ServiceLocator {
     lateinit var runSettlementRepository: com.stepup.android.data.repo.RunSettlementRepository
         private set
     lateinit var stepRepository: StepRepository
+
+    /** 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18) */
+    lateinit var dailyStepsUploader: com.stepup.android.data.repo.DailyStepsUploader
         private set
     lateinit var sneakerRepository: SneakerRepository
         private set
@@ -347,12 +350,19 @@ object ServiceLocator {
         economyApi = com.stepup.android.data.remote.EconomyApi(server)
         inviteApi = com.stepup.android.data.remote.InviteApi(server)
         accessApi = com.stepup.android.data.remote.AccessApi(server)
+        val stepsApi = EventApi(server)
+        dailyStepsUploader = com.stepup.android.data.repo.DailyStepsUploader(
+            readDay = { day -> database.stepDao().byDay(day)?.let { it.steps to it.goal } },
+            send = { days -> stepsApi.syncSteps(days) },
+            account = { runCatching { sessionHolder.recordingOwner() }.getOrNull() },
+        )
         economySync = com.stepup.android.data.repo.EconomySync(
             api = economyApi,
             market = MarketApi(server),
             db = database,
             prefs = userPrefs,
             sessions = sessionHolder,
+            afterCheckIn = { if (economyApi.isConfigured) dailyStepsUploader.upload() },
         )
         // 서버 주소가 있는 빌드는 언제나 서버 경제다. 없는 빌드(로컬 개발)만 예전처럼 폰 안에서 계산한다.
         val serverEconomy = economyApi.isConfigured
@@ -434,6 +444,7 @@ object ServiceLocator {
             rewardRepository = rewardRepository,
             pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
             owner = recordingOwnerFlow(),
+            uploadSteps = { if (serverEconomy && sessionHolder.isSignedIn()) dailyStepsUploader.upload() },
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,
