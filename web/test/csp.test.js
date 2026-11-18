@@ -92,3 +92,15 @@ test('ops page is locked down: self scripts only, no analytics, not indexed', ()
   assert.match(block, /Referrer-Policy: no-referrer/);
   assert.match(block, /Cache-Control: no-store/);
 });
+
+// 운영자 페이지는 키를 로그인(ops_login)에만 보내고, 탭에는 서버가 준 세션 번호만 둔다(2026-11-18 서버 0114).
+// 큰 일의 다시 확인(p_confirm)은 그 요청에만 싣는다 — 키를 기기에 오래 남기거나 다른 요청에 싣지 않게.
+test('ops page sends the key only to login and keeps only the session token', () => {
+  const js = readFileSync(new URL('../ops/ops.js', import.meta.url), 'utf8');
+  assert.match(js, /rpc\('ops_login', \{ p_key: k \}\)/);
+  assert.equal((js.match(/p_key:/g) || []).length, 1, 'p_key 는 로그인 요청에만');
+  assert.doesNotMatch(js, /localStorage/, '키 · 세션을 기기에 오래 남기지 않는다');
+  assert.match(js, /var STORE = 'stepup\.ops\.session';/);
+  assert.match(js, /sessionStorage\.setItem\(STORE, t\)/, '세션 저장소에는 세션 번호(t)만');
+  assert.match(js, /sessionStorage\.removeItem\('stepup\.ops\.key'\)/, '예전 페이지가 남긴 키는 지운다');
+});

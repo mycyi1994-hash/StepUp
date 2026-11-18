@@ -90,6 +90,12 @@ dialog{border:0;border-radius:20px;padding:24px;max-width:420px;width:calc(100% 
 dialog::backdrop{background:rgba(8,12,24,.5)}
 dialog h3{margin:0 0 8px;font-size:19px}
 dialog p{margin:0;color:var(--sub);white-space:pre-line}
+dialog form{margin:0}
+.session{margin:-6px 0 14px;font-size:13px;color:var(--sub)}
+.session.warn{color:var(--amber);font-weight:700}
+.note{margin:8px 2px 0;font-size:13px;color:var(--sub)}
+.note:empty{display:none}
+.note.warn{color:var(--amber);font-weight:700}
 [hidden]{display:none!important}
 @media (max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.items{grid-template-columns:minmax(0,1fr)}.actions .btn{flex:1}}
 </style>
@@ -100,20 +106,22 @@ dialog p{margin:0;color:var(--sub);white-space:pre-line}
   <!-- 키 -->
   <section class="card gate" id="gate">
     <h2>StepUp 운영자</h2>
-    <p class="hint">받은 운영자 키를 넣어 주세요. 이 탭을 닫으면 다시 물어봅니다.</p>
+    <p class="hint">받은 운영자 키로 로그인해 주세요. 로그인은 8시간까지, 30분 동안 쓰지 않으면 끝나요.
+      키는 이 기기에 남기지 않고, 10분에 다섯 번 틀리면 15분 동안 막혀요.</p>
     <form id="gateForm">
       <label class="f" for="key">운영자 키</label>
-      <input id="key" type="password" autocomplete="off" required>
+      <input id="key" type="password" autocomplete="off" spellcheck="false" required>
       <div class="msg err" id="gateMsg" role="alert" hidden></div>
-      <div class="actions"><button class="btn" type="submit">들어가기</button></div>
+      <div class="actions"><button class="btn" id="gateBtn" type="submit">로그인</button></div>
     </form>
   </section>
 
   <div id="app" hidden>
     <header class="top">
       <h1>StepUp <span>운영자</span></h1>
-      <div class="who"><span id="actor"></span><button class="link" id="logout" type="button">나가기</button></div>
+      <div class="who"><span id="actor"></span><button class="link" id="logout" type="button">로그아웃</button></div>
     </header>
+    <p class="session" id="sessionInfo" aria-live="polite"></p>
 
     <div class="stats" aria-live="polite">
       <div class="stat"><b id="stUsers">–</b><span>가입한 사람</span></div>
@@ -171,6 +179,7 @@ dialog p{margin:0;color:var(--sub);white-space:pre-line}
         <label class="check"><input id="grantPush" type="checkbox" checked>푸시 알림 보내기</label>
 
         <div class="summary" id="grantSummary" aria-live="polite"></div>
+        <p class="note" id="grantNote" aria-live="polite"></p>
         <div class="msg" id="grantMsg" role="status" hidden></div>
         <div class="actions"><button class="btn" id="grantBtn" type="submit">지급하기</button></div>
       </form>
@@ -211,6 +220,7 @@ dialog p{margin:0;color:var(--sub);white-space:pre-line}
         </div>
         <label class="check"><input id="evPush" type="checkbox" checked><span id="evPushLabel">시작 푸시 알림 보내기</span></label>
         <div class="summary" id="eventSummary" aria-live="polite"></div>
+        <p class="note" id="eventNote" aria-live="polite"></p>
         <div class="msg" id="eventMsg" role="status" hidden></div>
         <div class="actions"><button class="btn" id="eventBtn" type="submit">이벤트 시작</button></div>
       </form>
@@ -239,6 +249,21 @@ dialog p{margin:0;color:var(--sub);white-space:pre-line}
   </div>
 </dialog>
 
-<script src="/ops/ops.js?v=20261117c"></script>
+<!-- 큰 일(전체 · 많은 사람 지급 · 큰 배수 · 긴 이벤트 · 되돌리기)은 키를 한 번 더 — 서버가 이 세션을 연 키인지 본다 -->
+<dialog id="reauth" aria-labelledby="raTitle">
+  <form id="raForm">
+    <h3 id="raTitle"></h3>
+    <p id="raBody"></p>
+    <label class="f" for="raKey">운영자 키 (큰 일이라 한 번 더 확인해요)</label>
+    <input id="raKey" type="password" autocomplete="off" spellcheck="false">
+    <div class="msg" id="raMsg" role="alert" hidden></div>
+    <div class="actions">
+      <button class="btn ghost" id="raNo" type="button">취소</button>
+      <button class="btn" id="raYes" type="submit">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/ops/ops.js?v=20261118a"></script>
 </body>
 </html>
