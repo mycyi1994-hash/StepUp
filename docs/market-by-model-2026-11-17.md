@@ -47,7 +47,9 @@
 - 이미 올린 매물 · 걸어 둔 입찰은 거둘 수 있다(묶인 SUP 가 돌아온다). 시세 · 매물 보기는 그대로다.
 - **앱**: `domain/MarketFeature.TRADING = false` — 신발 상세의 판매하기(줄 · ⋯ 시트)를 막고 "지금은 거래를 쉬고 있어요",
   거래소 장의 구매 입찰 · 판매 등록 · 즉시 구매 · 즉시 판매를 막고 한 줄 안내. 서버 거절 "거래소를 쉬고"는 같은 안내로 읽는다(`MarketRefusal.PAUSED`).
-- **다시 열기**: `select admin_economy_set('market_trading_enabled', 'true');` 와 앱 `MarketFeature.TRADING = true` 를 함께.
+- **다시 열기**: 앱 `MarketFeature.TRADING = true` 판을 낸 뒤 서버 설정을 켠다 — Supabase SQL 창에서
+  `update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';`
+  (`admin_economy_set` 은 앱에서 로그인한 운영자 계정만 받는다 — SQL 창은 로그인이 없어 거절된다).
 - 검사: 서버 0108 11개(멈춘 동안 판매 등록 · 즉시 구매 · 모델 입찰 · 예전 입찰 · 즉시 판매 거절 · 거절 코드 22023, 거두기와 SUP 돌려받기는 됨, 다시 열면 됨).
 
 ## 점검에서 고친 것 (2026-11-17 같은 날)
@@ -66,6 +68,12 @@
 **다시 열기 전에 정할 것**: 예전 앱이 거는 모델 없는 입찰은 새 앱의 모델 장에 보이지 않는다(서버는 판매 등록 때 그 입찰에도 맞춘다 —
 "예전 뜻 그대로"). 판 사람이 더 높은 예전 입찰을 못 보고 모델 입찰에 즉시 판매할 수 있다. 거래를 다시 열 때 예전 앱을 막거나(강제 업데이트 ·
 `market_bid` 를 모델 없는 등급에만) 모델 장에 내 신발의 예전 줄 입찰도 보이게 한다.
+
+## 매물 · 입찰 모두 거두기 (2026-11-18, 서버 0112)
+
+사용자 "모든 거래를 막고 거래 매물을 다 회수". 배포 때 한 번(표시 `market_reclaim_20261118`) 열린 매물을 모두 거두고(신발은 주인에게 OWNED)
+열린 입찰을 모두 취소한다(묶인 SUP 를 돌려준다 — 사용자가 거둘 때와 같은 원장 줄). 거둔 사람은 `economy.market_reclaim_20261118`.
+알림은 바로 보내지 않는다(사용자 "보내야 함, 근데 지금은 아님") — 보낼 때 `select admin_notice_send('MARKET_RECLAIMED');`(push-send 를 먼저 다시 올린다).
 
 ## 남은 것
 
