@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 베타 초대 코드 한도 — 하루 · 지난 7일(서버 0113) -->
+<resources>
+    <string name="beta_codes_left_week">You can make %1$d more today and %2$d more in these 7 days (%3$d a day, %4$d per 7 days). Each code is for one person.</string>
+    <string name="beta_codes_next">You can make your next code from %1$s.</string>
+    <string name="beta_codes_next_format">MMM d, HH:mm</string>
+    <string name="beta_codes_week_limit">You’ve made all the codes you can in 7 days.</string>
+</resources>
