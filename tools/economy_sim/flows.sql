@@ -20,11 +20,10 @@ begin
   -- 1) 첫 러닝: 걷기 10분
   select * into r from public.record_session(v_t, v_t + interval '600 seconds', 1100, 600, pg_temp.track(v_t, 600, 0.000012477), 0, 1, '', false, s.id);
   select * into s from public.market_sneakers where id = s.id;
-  raise notice '[걷기 10분] +% SUP (%) → 잔고 %, 내구도 %/%, 가득 수리비 %', r.points_awarded, r.verdict, r.balance, s.dur_now, s.dur_max,
-    round((s.dur_max - s.dur_now) * economy.repair_cost_per_unit(s.rarity, s.level), 4);
+  raise notice '[걷기 10분] +% SUP (%) → 잔고 %, 내구도 %/%', r.points_awarded, r.verdict, r.balance, s.dur_now, s.dur_max;
   begin
     perform public.sneaker_repair(s.id);
-    raise notice '[수리] 됨';
+    raise notice '[수리] 됨 — % SUP', r.balance - economy.balance_of(v_user);
   exception when others then
     raise notice '[수리 시도] 거절 — % (%)', sqlerrm, sqlstate;
   end;

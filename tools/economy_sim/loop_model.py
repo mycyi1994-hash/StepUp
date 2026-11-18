@@ -14,17 +14,19 @@ EFF_STEP, DUR_STEP = 1.5, 1.35
 EFF_LO = [100 * EFF_STEP ** i for i in range(6)]              # 효율 지수의 바닥
 CMF_LO = [100 + 10 * i / 1.4 for i in range(6)]               # 착화감 지수의 바닥(가운데가 등급마다 +10)
 DUR_LO_MIN = [22 * DUR_STEP ** i for i in range(6)]           # 한 켤레로 달리는 분의 바닥
-UNIT = [0.1625 * 1.5 ** i for i in range(6)]                  # 내구도 1 의 수리값(레벨 0)
-LEVEL_STEP = 0.02
+REPAIR_SHARE = 0.45          # 수리비 = 그 신발로 걸을 때(분당 110걸음) 버는 돈의 이 몫 — 효율에 비례한다
+PTS_LEVEL = [2, 3, 4, 5, 6, 8]            # 레벨마다 포인트(등급마다)
+PTS_MILE = [3, 5, 6, 8, 9, 12]            # 5레벨마다 보너스
+RATE = [1.0, 1.1, 1.25, 1.4, 1.6, 1.8]    # 포인트 1 이 올리는 폭(뽑은 값의 %)
 MAX_LEVEL = [20, 20, 26, 27, 28, 30]
 BOX_PRICE, PREMIUM_PRICE = 40, 600
 RUN_BOX_STEPS = (2000, 4000)
 FORGE_OK = lambda lvl, bonus=90: min(1.0, (1000 - 30 * lvl + bonus) / 1000)   # 강화 성공 확률(서버 forge-v2)
 
 
-def points(level):
-    """레벨마다 2, 5레벨마다 +3"""
-    return sum(2 + (3 if l % 5 == 0 else 0) for l in range(2, level + 1))
+def points(g, level):
+    """레벨마다 PTS_LEVEL, 5레벨마다 PTS_MILE"""
+    return PTS_LEVEL[g] * (level - 1) + PTS_MILE[g] * (level // 5)
 
 
 def roll(lo, pos):
@@ -33,14 +35,14 @@ def roll(lo, pos):
 
 
 def run(g, level, steps_wanted, spm, eff_pos=0.5, cmf_pos=0.5, pts_eff=None):
-    pts_eff = points(level) if pts_eff is None else pts_eff
-    eff = roll(EFF_LO[g], eff_pos) * (1 + pts_eff / 100)
+    pts_eff = points(g, level) if pts_eff is None else pts_eff
+    eff = roll(EFF_LO[g], eff_pos) * (1 + RATE[g] * pts_eff / 100)
     cmf = roll(CMF_LO[g], cmf_pos)
     energy = 10 + 2 * (level - 1)
     steps = min(steps_wanted, energy * 600 * cmf / 100)
     minutes = steps / spm
     earn = steps * PPS * eff / 100
-    repair = minutes * 5 * UNIT[g] * (1 + LEVEL_STEP * level)
+    repair = minutes * REPAIR_SHARE * 110 * PPS * eff / 100
     return eff, earn, repair, minutes, steps
 
 
@@ -53,12 +55,22 @@ def main():
         print('%-6s %6.0f ~ %-6.0f %4.0f ~ %-4.0f %7.0f / %4.0f / %-6.0f %8.0f %8.0f'
               % (name, EFF_LO[g], EFF_LO[g] * SPREAD, DUR_LO_MIN[g], DUR_LO_MIN[g] * SPREAD, e[0], e[1], e[2], rep, e[1] - rep))
     print()
-    print('── 레벨업 — 가운데 일반 신발(효율 140)을 효율에 몰아 찍으면 ──')
-    for lvl in (1, 2, 5, 10, 15, 20):
-        eff, earn, rep, _, _ = run(0, lvl, 4400, 110)
-        print('Lv%-2d 포인트 %2d  효율 %3.0f  하루 에너지 %2d  걷기 40분: 적립 %3.0f − 수리 %2.0f = %3.0f'
-              % (lvl, points(lvl), eff, 10 + 2 * (lvl - 1), earn, rep, earn - rep))
-    print('가운데 레어 Lv1 의 효율 %.0f — 일반 Lv20(효율 %.0f)과 같다' % (roll(EFF_LO[1], .5), roll(EFF_LO[0], .5) * (1 + points(20) / 100)))
+    print('── 레벨업 — 등급마다(가운데 신발 · 효율에 몰아 찍으면) ──')
+    print('%-6s %6s %8s %10s %8s %8s %10s %10s' % ('', '레벨당', '포인트1', '한 레벨', 'Lv1', 'Lv10', 'Lv20', '최대 레벨'))
+    for g, name in enumerate(GRADES):
+        e = lambda lvl: run(g, lvl, 3300, 110)[0]
+        m = MAX_LEVEL[g]
+        print('%-6s %5d개 %7.2f%% %9.1f%% %8.0f %8.0f %10.0f %6.0f(Lv%d, ×%.2f)'
+              % (name, PTS_LEVEL[g], RATE[g], PTS_LEVEL[g] * RATE[g], e(1), e(10), e(20), e(m), m, e(m) / e(1)))
+    print('가장 센 신발(가운데 피니시 Lv30) ÷ 가운데 일반 새 신발 = %.0f배' % (run(5, 30, 1, 110)[0] / run(0, 1, 1, 110)[0]))
+    print()
+    print('── 같은 걷기 30분 — 적립 / 남는 돈(가운데 신발 · 효율에 몰면) ──')
+    for g, name in enumerate(GRADES):
+        cells = []
+        for lvl in (1, 5, 10, 20):
+            _, earn, rep, _, _ = run(g, lvl, 3300, 110)
+            cells.append('Lv%-2d %5.0f / %-5.0f' % (lvl, earn, earn - rep))
+        print('%-6s %s' % (name, '   '.join(cells)))
     print()
     print('── 사람별 하루(가운데 신발 · Lv5 · 포인트는 효율) ──')
     for name, spm, minutes in (('가볍게 — 걷기 20분', 110, 20), ('보통 — 걷기 40분', 110, 40), ('러너 — 달리기 30분', 165, 30), ('열심히 — 달리기 60분', 165, 60)):
