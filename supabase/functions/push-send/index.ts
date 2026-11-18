@@ -80,6 +80,13 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_DECIDED: (a) => a.approved === "1"
       ? ["가입 승인 🎉", `${a.crew} 크루에 가입됐어요. 같이 달려요!`]
       : ["가입 결과", `${a.crew} 크루 가입이 이번엔 승인되지 않았어요`],
+    // 출발(0117) — a.flash "1" 이면 번개러닝, a.title 은 크루 이름 · 번개 글 제목
+    PARTY_STARTED: (a) => a.flash === "1"
+      ? ["번개러닝이 출발했어요 🏃", `${a.title} — 지금 앱을 열면 함께 달려요`]
+      : ["크루 러닝이 출발했어요 🏃", `${a.title} — 지금 앱을 열면 함께 달려요`],
+    PARTY_MISSED: (a) => a.flash === "1"
+      ? ["번개러닝이 출발했어요", `${a.title} — 대기실 화면을 보고 있지 않아 이번엔 함께 출발하지 못했어요`]
+      : ["크루 러닝이 출발했어요", `${a.title} — 대기실 화면을 보고 있지 않아 이번엔 함께 출발하지 못했어요. 오늘 크루 러닝은 그대로 남아 있어요`],
     PARTY_OPEN: (a) => ["크루 러닝 대기실이 열렸어요 🏃", `${a.crew} 크루 러닝 대기실이 열렸어요. ${a.name}님과 같이 달려요!`],
     CREW_FLASH: (a) => ["크루 번개 ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 사진을 보냈어요` : `${a.name}: ${a.text}`],
@@ -99,6 +106,12 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_DECIDED: (a) => a.approved === "1"
       ? ["Request approved 🎉", `You're now a member of ${a.crew}. Let's run together!`]
       : ["Join request update", `Your request to join ${a.crew} wasn't approved this time`],
+    PARTY_STARTED: (a) => a.flash === "1"
+      ? ["Your flash run has started 🏃", `${a.title} — open the app now to run together`]
+      : ["Your crew run has started 🏃", `${a.title} — open the app now to run together`],
+    PARTY_MISSED: (a) => a.flash === "1"
+      ? ["Your flash run has started", `${a.title} — you weren't on the lobby screen, so you didn't start together this time`]
+      : ["Your crew run has started", `${a.title} — you weren't on the lobby screen, so you didn't start together this time. Today's crew run is still yours`],
     PARTY_OPEN: (a) => ["Crew run lobby is open 🏃", `A ${a.crew} crew run lobby is open. Run with ${a.name}!`],
     CREW_FLASH: (a) => ["Crew flash run ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: sent a photo` : `${a.name}: ${a.text}`],
@@ -118,6 +131,12 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_DECIDED: (a) => a.approved === "1"
       ? ["参加が承認されました 🎉", `${a.crew}のメンバーになりました。一緒に走りましょう！`]
       : ["参加申請の結果", `今回は${a.crew}への参加が承認されませんでした`],
+    PARTY_STARTED: (a) => a.flash === "1"
+      ? ["フラッシュランがスタートしました 🏃", `${a.title} — 今アプリを開くと一緒に走れます`]
+      : ["クルーランがスタートしました 🏃", `${a.title} — 今アプリを開くと一緒に走れます`],
+    PARTY_MISSED: (a) => a.flash === "1"
+      ? ["フラッシュランがスタートしました", `${a.title} — 待機室の画面を見ていなかったため、今回は一緒にスタートできませんでした`]
+      : ["クルーランがスタートしました", `${a.title} — 待機室の画面を見ていなかったため、今回は一緒にスタートできませんでした。今日のクルーランはそのまま残っています`],
     PARTY_OPEN: (a) => ["クルーランの待機室が開きました 🏃", `${a.crew}のクルーラン待機室が開きました。${a.name}さんと一緒に走りましょう！`],
     CREW_FLASH: (a) => ["クルーのフラッシュラン ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 写真を送りました` : `${a.name}: ${a.text}`],
@@ -137,6 +156,12 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_DECIDED: (a) => a.approved === "1"
       ? ["加入申请已通过 🎉", `你已加入 ${a.crew}，一起跑吧！`]
       : ["加入申请结果", `你加入 ${a.crew} 的申请这次未通过`],
+    PARTY_STARTED: (a) => a.flash === "1"
+      ? ["快闪跑已出发 🏃", `${a.title} — 现在打开应用就能一起跑`]
+      : ["跑团跑步已出发 🏃", `${a.title} — 现在打开应用就能一起跑`],
+    PARTY_MISSED: (a) => a.flash === "1"
+      ? ["快闪跑已出发", `${a.title} — 你当时没在看等候室页面，这次没能一起出发`]
+      : ["跑团跑步已出发", `${a.title} — 你当时没在看等候室页面，这次没能一起出发。今天的跑团跑步机会仍然保留`],
     PARTY_OPEN: (a) => ["跑团跑步等候室已开启 🏃", `${a.crew} 的跑团跑步等候室已开启，和 ${a.name} 一起跑吧！`],
     CREW_FLASH: (a) => ["跑团闪电跑 ⚡", `${a.name}: ${a.title}`],
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 发送了一张照片` : `${a.name}: ${a.text}`],
@@ -219,7 +244,8 @@ async function send(
         data: { title, body, link },
         // 크루 채팅은 방마다 알림 하나 — 같은 방의 새 알림이 앞의 것을 바꾼다
         android: {
-          notification: { channel_id: "community", ...(link.startsWith("crew-chat/") ? { tag: link } : {}) },
+          // 방 출발 알림(room/…, 0117)도 방마다 하나 — 앱이 띄운 "출발했어요" 알림(CrewStartAlert)과 같은 tag 로 겹치지 않게
+          notification: { channel_id: "community", ...(link.startsWith("crew-chat/") || link.startsWith("room/") ? { tag: link } : {}) },
         },
       },
     }),

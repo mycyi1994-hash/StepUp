@@ -35,7 +35,9 @@ begin
   perform t.login(1); perform public.party_finish(p2);
   begin p2 := public.party_open(null, post); perform t.say('(다) 이틀 지난 번개 글로 대기실', '열림 ' || p2);
   exception when others then perform t.say('(다) 거절', sqlerrm); end;
-  -- (라) 달리는 중 글 삭제
+  -- (라) 달리는 중 글 삭제 — 모이는 시각을 다시 앞으로
+  update public.posts set meet_at = now() + interval '10 minutes' where id = post;
+  perform t.login(1); p2 := public.party_open(null, post);
   perform public.party_ready(p2, true);
   perform t.login(2); perform public.party_open(null, post); perform public.party_ready(p2, true);
   perform t.login(1); perform public.party_start(p2);

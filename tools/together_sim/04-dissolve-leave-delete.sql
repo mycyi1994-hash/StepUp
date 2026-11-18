@@ -51,8 +51,9 @@ begin
   perform t.age(interval '6 seconds');
   perform t.run(p, array[7,8], 600);
   select started_at into v_start from economy.crew_runs where user_id = t.u(8);
-  delete from auth.users where id = t.u(7);
-  perform t.say('(다) 진행자 계정 삭제 뒤 방', (select count(*) from public.parties where id = p));
+  -- 앱의 계정 삭제와 같은 길(account_delete)
+  perform t.login(7); perform public.account_delete();
+  perform t.say('(다) 진행자 계정 삭제 뒤 방', (select format('남음=%s 진행자=u8 %s', count(*), bool_or(host_id = t.u(8))) from public.parties where id = p));
   perform t.say('(다) 8 정산(10분)', t.rec(8, v_start, 600, 1600));
   perform t.say('(다) 8 신발', (select format('dur %s/%s', dur_now, dur_max) from public.market_sneakers where owner_id = t.u(8) and equipped));
   perform t.say('(다) 8', t.cr(8));
