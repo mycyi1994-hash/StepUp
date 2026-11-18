@@ -7,6 +7,6 @@
     <string name="crew_alone_ended_title">크루 러닝이 끝났어요</string>
     <string name="crew_alone_ended_body">함께 달리던 모두가 마쳐 내 크루 러닝도 끝났어요. 기록은 저장됐어요.</string>
     <string name="crew_alone_band">함께 달리던 모두가 마쳤어요 · %1$d초 뒤 내 크루 러닝도 끝나요</string>
-    <string name="run_crew_end_last_note">지금 다른 한 사람만 남아 있어요. 내가 마치면 그 사람의 크루 러닝도 약 1분 뒤에 끝나요.</string>
+    <string name="run_crew_end_last_note">지금 다른 한 사람만 남아 있어요. 내가 마치면 그 사람의 크루 러닝도 곧 끝나요.</string>
     <string name="run_crew_closed_band_last">진행자가 함께 달리기를 마쳤어요</string>
 </resources>

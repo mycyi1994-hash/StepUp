@@ -7,6 +7,6 @@
     <string name="crew_alone_ended_title">Your crew run has ended</string>
     <string name="crew_alone_ended_body">Everyone you ran with had finished, so your crew run ended too. Your record is saved.</string>
     <string name="crew_alone_band">Everyone else has finished · your crew run ends in %1$d s</string>
-    <string name="run_crew_end_last_note">Only one other runner is left. When you finish, their crew run ends too, about a minute later.</string>
+    <string name="run_crew_end_last_note">Only one other runner is left. When you finish, their crew run ends soon too.</string>
     <string name="run_crew_closed_band_last">The host ended the group run</string>
 </resources>

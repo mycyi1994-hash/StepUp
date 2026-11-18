@@ -232,6 +232,7 @@ async function send(
   title: string,
   body: string,
   link: string,
+  kind: string,
 ): Promise<[SendResult, string]> {
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, {
     method: "POST",
@@ -241,7 +242,8 @@ async function send(
         token,
         notification: { title, body },
         // 앱이 켜져 있을 때는 PushService 가 이 값으로 띄우고, 누르면 link 로 간다
-        data: { title, body, link },
+        // kind — 앱이 앞에 있을 때 어떤 소식인지 가른다(0117: 번개 글 링크는 출발 소식과 댓글이 같이 쓴다). 예전 앱은 읽지 않는다
+        data: { title, body, link, kind },
         // 크루 채팅은 방마다 알림 하나 — 같은 방의 새 알림이 앞의 것을 바꾼다
         android: {
           // 방 출발 알림(room/…, 0117)도 방마다 하나 — 앱이 띄운 "출발했어요" 알림(CrewStartAlert)과 같은 tag 로 겹치지 않게
@@ -284,7 +286,7 @@ Deno.serve(async (req: Request) => {
         continue;
       }
       try {
-        const [result, detail] = await send(sa, t.token, text[0], text[1], row.link ?? "");
+        const [result, detail] = await send(sa, t.token, text[0], text[1], row.link ?? "", row.kind);
         if (result === "ok") delivered = true;
         else if (result === "gone") await db.rpc("push_forget_token", { p_token: t.token });
         else lastError = detail;

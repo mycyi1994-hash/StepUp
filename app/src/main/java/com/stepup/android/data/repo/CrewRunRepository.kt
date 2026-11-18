@@ -390,12 +390,12 @@ class CrewRunRepository(
             if (runNow?.invoke()?.let { it.isActive && it.startedAt == startedAt } == true) return
             // 오래된 것은 버린다 — 러닝을 올리면 서버가 그 참여를 닫는다
             if (System.currentTimeMillis() - (store.get(KEY_END_SINCE) ?: 0L) > CrewEndRetry.KEEP_MS) {
-                clearEnd(store, startedAt, landed = false)
+                clearEnd(store, startedAt)
                 return
             }
             val reply = runCatching { beatReply(partyId, CrewRunState.ENDED, publish = false) }.getOrDefault(BeatReply.Failed)
             if (reply !is BeatReply.Failed) {
-                clearEnd(store, startedAt, landed = true)
+                clearEnd(store, startedAt)
                 return
             }
             // 이번에는 여기까지 — 인터넷이 다시 되거나 앱을 다시 켜면 이어 보낸다
@@ -405,14 +405,11 @@ class CrewRunRepository(
         }
     }
 
-    private fun clearEnd(store: CrewBeatStore, startedAt: Long, landed: Boolean) {
+    private fun clearEnd(store: CrewBeatStore, startedAt: Long) {
         // 그사이 다른 러닝의 끝냄이 적혔으면 그것은 두고 간다
         if (store.get(KEY_END_STARTED) != startedAt) return
-        if (landed) {
-            store.put(KEY_END_STARTED to null, KEY_END_PARTY to null, KEY_END_SINCE to null, KEY_END_DONE to startedAt)
-        } else {
-            store.put(KEY_END_STARTED to null, KEY_END_PARTY to null, KEY_END_SINCE to null)
-        }
+        // 닿았든 버렸든(24시간) 이 러닝은 끝냈다고 적는다 — 버린 끝냄을 상태 알림이 다시 걸어 하루마다 10분씩 보내지 않게(2026-11-18 검토)
+        store.put(KEY_END_STARTED to null, KEY_END_PARTY to null, KEY_END_SINCE to null, KEY_END_DONE to startedAt)
     }
 
     /** 이 러닝(시작 시각)이 상태를 알리던 방 — 적어 둔 것이 그 러닝의 것일 때만 */

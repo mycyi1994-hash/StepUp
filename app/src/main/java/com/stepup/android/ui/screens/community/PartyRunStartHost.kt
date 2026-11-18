@@ -74,21 +74,29 @@ fun PartyRunStartHost(onLobby: Boolean, onRunStarted: () -> Unit) {
             room.flashPostId?.let { post -> ServiceLocator.communityRepository.posts.value.firstOrNull { it.id == post }?.title }.orEmpty()
         }
         val refusals = WalkSessionService.startRefusals.value
+        // 켜는 동안 이 방에서 나가거나 돌려받지 않게 적어 둔다(뒤로 가기 — 2026-11-18 검토)
+        repo.startingRoom = id
         WalkSessionService.start(context, room.partySize, StartGroup.of(room, title))
         scope.launch {
-            val started = withTimeoutOrNull(START_WAIT_MS) {
-                combine(WalkSessionService.state, WalkSessionService.startRefusals) { run, refused ->
-                    when {
-                        run.isActive -> true
-                        refused != refusals -> false
-                        else -> null
-                    }
-                }.filterNotNull().first()
-            } ?: WalkSessionService.state.value.isActive
+            val started = try {
+                withTimeoutOrNull(START_WAIT_MS) {
+                    combine(WalkSessionService.state, WalkSessionService.startRefusals) { run, refused ->
+                        when {
+                            run.isActive -> true
+                            refused != refusals -> false
+                            else -> null
+                        }
+                    }.filterNotNull().first()
+                }
+            } finally {
+                if (repo.startingRoom == id) repo.startingRoom = null
+            }
             when {
-                started -> goRun()
-                // 그사이 방을 떠났으면(다른 방 · 나가기) 그 방의 일이 아니다
-                repo.party.value.partyId == id -> giveUp(true)
+                started == true || WalkSessionService.state.value.isActive -> goRun()
+                // 서비스가 거절했다 — 그사이 방을 떠났으면(다른 방) 그 방의 일이 아니다
+                started == false && repo.party.value.partyId == id -> giveUp(true)
+                // 시간 안에 답이 없었다(느리게 켜지는 중일 수 있다) — 방을 그대로 둔다. 늦게 켜지면 그대로 크루 러닝이고,
+                // 끝내 켜지지 않으면 방 목록 · 오늘 크루 러닝이 달리지 않은 러닝을 돌려받는다(recoverUnrun)
                 else -> Unit
             }
         }
@@ -168,7 +176,7 @@ fun PartyRunStartHost(onLobby: Boolean, onRunStarted: () -> Unit) {
     // 대기실에서 출발을 기다리는 동안 화면을 켜 둔다 — 화면이 꺼지면 출발 때 이 폰의 러닝을 켤 수 없고, 15초 넘게 대기실을 묻지 않은
     // 준비 인원은 출발에서 빠진다. 진행자는 준비 전에도 켜 둔다(화면이 꺼지고 30초 뒤 진행자가 말없이 다른 사람에게 넘어갔다 — 2026-11-18).
     // 방을 더 묻지 않게 된 뒤(내보냄 · 닫힘 등)의 굳은 "준비 완료"로는 켜 두지 않는다
-    val waiting = party.inRoom && (party.myReady || party.isHost) &&
+    val waiting = party.inRoom && (party.myReady || (party.isHost && lobbyOnTop)) &&
         (party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.COUNTDOWN)
     val view = LocalView.current
     DisposableEffect(view, waiting) {

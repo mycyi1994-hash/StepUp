@@ -1021,8 +1021,15 @@ class CrewRepository(
         return job
     }
 
-    /** 이 폰이 그 방의 크루 러닝을 달리고 있거나 달렸다 — 그 러닝의 오늘 기회는 돌려받지 않는다(서버도 달린 기록이 있으면 거절한다) */
+    /**
+     * 이 폰이 지금 러닝을 켜고 있는 방([com.stepup.android.ui.screens.community.PartyRunStartHost] 가 적고 지운다) — 켜지는 1초 남짓
+     * 사이에 뒤로 가기 · 나가기를 눌러도 그 방의 오늘 크루 러닝을 돌려받거나 방에서 나오지 않는다(켜진 러닝이 방 없이 혼자 달리게 된다 — 2026-11-18 검토)
+     */
+    @Volatile var startingRoom: Long? = null
+
+    /** 이 폰이 그 방의 크루 러닝을 달리고 있거나 달렸다(켜는 중 포함) — 그 러닝의 오늘 기회는 돌려받지 않는다(서버도 달린 기록이 있으면 거절한다) */
     private fun ranOnThisPhone(id: Long): Boolean {
+        if (startingRoom == id) return true
         val run = com.stepup.android.service.WalkSessionService.state.value
         if (run.isActive && run.group != com.stepup.android.service.RunGroup.NONE) return true
         return runCatching { ranParty(id) }.getOrDefault(true)
@@ -1434,8 +1441,10 @@ class CrewRepository(
      * 출발했을 수 있는 크루 방이면 달리지 않은 오늘 크루 러닝을 먼저 돌려받는다([exitRoom]).
      */
     fun leaveLobby() {
-        pollJob?.cancel()
         val state = _party.value
+        // 이 방의 러닝을 켜는 중이다 — 나가지 않는다(켜지면 러닝 화면으로, 못 켜면 놓친 출발로 정리된다)
+        if (state.partyId != null && state.partyId == startingRoom) return
+        pollJob?.cancel()
         state.partyId?.let { exitRoom(state, it) }
         lastCourseRoom = null
         readyTap = null
@@ -1579,6 +1588,15 @@ class CrewRepository(
         pollJob?.cancel()
         val epoch = accountEpoch
         val crew = state.isCrewRoom
+        // 이 폰이 그 방의 러닝을 달렸다(나가기가 닿지 않아 남은 옛 방에 링크 · 목록으로 다시 들어왔다) — 돌려받지 않고 조용히 나온다.
+        // 놓친 출발이 아니다(2026-11-18 검토 — 연결 없이 달려 아직 올리지 않은 러닝이면 서버가 돌려주어 혼자 러닝으로 정산될 뻔했다)
+        if (crew && ranOnThisPhone(id)) {
+            readyTap = null
+            readyAsk.clear()
+            _party.value = PartyState()
+            leaveLater(id, epoch)
+            return
+        }
         state.flashPostId?.let { startedPosts.add(it) }
         val problem = when {
             blocked -> PartyProblem.START_BLOCKED
