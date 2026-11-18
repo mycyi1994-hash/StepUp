@@ -12,7 +12,8 @@
   `python3 scripts/check-economy-twin.py`(앱 `ShoeRules.FALLBACK` = 서버). 설정은 운영자 페이지 "경제" 탭에서도 바꾼다(열아홉 개 · 늘 키를 한 번 더).
 - 예전 스토어 판(v1.17.1)이 부르는 함수 162개는 `supabase/tests/store_app_functions.txt` 로 서버 검사가 맞대어 본다 — 새 판을 스토어에 올리면 그 판으로 다시 만든다.
 - 운영자 페이지: 바로 적용(아이템 없이 내구도 가득 · 에너지 되돌리기 — 예전 판에도) · 경제(현황 · 설정) · 지급 때 예전 판 인원 경고. 앱은 동기화 때 판을 알린다(`app_client_report`, 스토어 번호 = versionCode % 1000).
-- 앱: `domain/EconomyV4.kt`(규칙 · 지수 · 별 · 유형 · 상자) · `data/repo/ShoeRulesRepository.kt`(`ServiceLocator.shoeRules`). 화면은 문서 "앱 화면".
+- 앱: `domain/EconomyV4.kt`(규칙 · 지수 · 별 · 유형 · 상자) · `data/repo/ShoeRulesRepository.kt`(`ServiceLocator.shoeRules`) · `ui/screens/items/ShoeStatsV4.kt` ·
+  상자 `ui/screens/gacha/BoxShop.kt` · `BoxSheets.kt` · 운 `domain/RunLuck.kt`(폰 DB 판 22 `rewardLuck`). 화면은 문서 "앱 화면".
 - 2026-11-18 운영 DB 에서 모든 신발 내구도를 한 번 가득 채웠다(SQL 창, 251켤레).
 
 ## 최신 — 새 판 1.19.0(27) · 매물 거두기 · 업데이트 보상 · 초대 코드 하루 1 · 운영자 보안 (2026-11-18, 서버 0112 · 0113 · 0114)
