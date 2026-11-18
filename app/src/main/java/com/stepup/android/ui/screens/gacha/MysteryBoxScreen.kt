@@ -82,6 +82,8 @@ fun MysteryBoxScreen(
     initialSheet: DrawSheet? = null,
     initialTab: DrawKind? = null,
     openingAt: Float? = null,
+    /** 블록체인 기능이 있는 판인가 — 스토어 판(false)은 상급 칸 · 안내에 선물로 받은 상급 뽑기만 보인다(0112) */
+    web3: Boolean = com.stepup.android.BuildConfig.WEB3,
 ) {
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.DrawEnter) }
@@ -135,13 +137,14 @@ fun MysteryBoxScreen(
                     actions = actions,
                     onSheet = { sheet = it },
                     premiumFocus = premiumFocus,
+                    web3 = web3,
                 )
                 is DrawFlow.Requesting -> DrawRequestScreen(current.kind, onBack = actions.onLeaveFlow)
                 is DrawFlow.Opening -> DrawOpeningScreen(current.result, onFinish = actions.onFinishOpening, frozenAt = openingAt)
                 is DrawFlow.Result -> DrawResultScreen(
                     result = current.result,
                     canDrawAgain = pending == null && current.result.left.let { it != null && it > 0 } &&
-                        status?.canDraw(current.result.kind) == true,
+                        status?.canDraw(current.result.kind, web3) == true,
                     onOpenShoes = { actions.onOpenShoes(current.result.shoe.id) },
                     onDrawAgain = { actions.onDraw(current.result.kind) },
                     onClose = actions.onCloseResult,
@@ -167,9 +170,11 @@ fun MysteryBoxScreen(
     when (notice) {
         is DrawNotice.NotStarted -> {
             LaunchedEffect(notice) { feedback?.play(FeedbackCue.DrawFail) }
+            // 스토어 판에는 지갑 · 발행이 없다 — 그 까닭은 "남은 상급 뽑기가 없어요"로(0112)
+            val stop = notice.stop.shownIn(web3)
             NotStartedSheet(
-                stop = notice.stop,
-                canRetry = notice.stop.retryable && pending == null && status?.canDraw(notice.kind) == true,
+                stop = stop,
+                canRetry = stop.retryable && pending == null && status?.canDraw(notice.kind, web3) == true,
                 onRetry = {
                     actions.onNoticeDone()
                     actions.onDraw(notice.kind)
@@ -208,17 +213,19 @@ fun MysteryBoxScreen(
     }
     if (status == null) return
     val canFree = pending == null && status.canDraw(DrawKind.FREE)
-    val canPremium = pending == null && status.canDraw(DrawKind.PREMIUM)
+    val canPremium = pending == null && status.canDraw(DrawKind.PREMIUM, web3)
+    val premiumShown = premiumPanelShown(web3, status, pending?.kind)
     val toRules = { sheet = DrawSheet.Rules }
     when (sheet) {
         DrawSheet.FreeChances -> FreeChancesSheet(status, canFree, onDraw = { close(); actions.onDraw(DrawKind.FREE) }, onRules = toRules, onClose = close)
         DrawSheet.PremiumChances -> PremiumChancesSheet(
-            status, canPremium, onDraw = { close(); actions.onDraw(DrawKind.PREMIUM) }, onRules = toRules, onClose = close,
+            status, canPremium, onDraw = { close(); actions.onDraw(DrawKind.PREMIUM) }, onRules = toRules, onClose = close, web3 = web3,
         )
-        DrawSheet.Rules -> RulesSheet(status, onClose = close)
+        // 상급 칸이 보이는 동안은 상급 확률도(스토어 판은 선물로 받은 상급 뽑기가 있을 때)
+        DrawSheet.Rules -> RulesSheet(status, onClose = close, web3 = web3, premiumShown = premiumShown)
         DrawSheet.WalletBenefit -> WalletBenefitSheet(status, onConnect = { close(); actions.onConnectWallet() }, onClose = close)
         // DRAW16 → "상급 뽑기 보기"는 같은 화면의 상급 패널로(글자 탭을 새로 만들지 않는다)
-        DrawSheet.FreeEmpty -> FreeEmptySheet(status, onSeePremium = { close(); premiumFocus++ }, onClose = close)
+        DrawSheet.FreeEmpty -> FreeEmptySheet(status, onSeePremium = { close(); premiumFocus++ }, onClose = close, premiumShown = premiumShown)
         DrawSheet.RunChances -> RunChancesSheet(status, onStartRun = { close(); actions.onStartRun() }, onClose = close)
         null -> Unit
     }

@@ -59,8 +59,18 @@ const ITEM_NAME: Record<string, Record<string, string>> = {
 };
 const itemName = (lang: string, kind: string) => (ITEM_NAME[lang] ?? ITEM_NAME.ko)[kind] ?? ({ ko: "아이템", en: "an item", ja: "アイテム", zh: "道具" }[lang] ?? "아이템");
 
+// 거래소 거두기 알림(0112 MARKET_RECLAIMED) — 매물만 · 입찰만 · 둘 다. a.listings · a.bids 는 개수, a.sup 은 돌려준 SUP(쉼표 넣은 글)
+const reclaimed = (a: Record<string, string>, both: string, listings: string, bids: string) =>
+  a.listings !== "0" && a.bids !== "0" ? both : a.listings !== "0" ? listings : bids;
+const plural = (n: string, one: string, many: string) => (n === "1" ? one : many);
+
 const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string, string]>> = {
   ko: {
+    MARKET_RECLAIMED: (a) => ["거래소를 잠시 쉬어요", reclaimed(a,
+      `판매 중이던 신발 ${a.listings}켤레와 입찰에 묶였던 ${a.sup} SUP를 돌려드렸어요`,
+      `판매 중이던 신발 ${a.listings}켤레를 내 신발로 돌려드렸어요`,
+      `구매 입찰에 묶였던 ${a.sup} SUP를 돌려드렸어요`)],
+    UPDATE_REWARD: (a) => ["업데이트 선물이 도착했어요 🎁", `신발 뽑기 ${a.free}회와 상급 뽑기 ${a.premium}회를 받았어요. 뽑기에서 확인해 보세요`],
     ITEM_GRANTED: (a) => ["아이템이 도착했어요 🎁", `${itemName("ko", a.item)} ${a.qty}개를 받았어요. 아이템에서 확인해 보세요`],
     REWARD_EVENT: (a) => [`지금부터 ${a.hours}시간 보상 ${a.mult}배 🔥`, `${a.title} — 지금 달리면 적립이 ${a.mult}배예요`],
     WALLET_LINKED: (a) => ["지갑이 연결됐어요 🔐", `${a.address} 지갑이 계정에 연결됐어요. 본인이 아니라면 바로 고객센터에 알려 주세요`],
@@ -75,6 +85,11 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 사진을 보냈어요` : `${a.name}: ${a.text}`],
   },
   en: {
+    MARKET_RECLAIMED: (a) => ["The market is taking a short break", reclaimed(a,
+      `We returned your ${a.listings} listed ${plural(a.listings, "shoe", "shoes")} and the ${a.sup} SUP held in your bids`,
+      `We moved your ${a.listings} listed ${plural(a.listings, "shoe", "shoes")} back to My Shoes`,
+      `We returned the ${a.sup} SUP held in your bids`)],
+    UPDATE_REWARD: (a) => ["Your update gift arrived 🎁", `You got ${a.free} shoe ${plural(a.free, "draw", "draws")} and ${a.premium} premium ${plural(a.premium, "draw", "draws")}. Check them in Draw`],
     ITEM_GRANTED: (a) => ["An item arrived 🎁", `You received ${a.qty} × ${itemName("en", a.item)}. Check it in Items`],
     REWARD_EVENT: (a) => [`${a.mult}x rewards for the next ${a.hours}h 🔥`, `${a.title} — run now and earn ${a.mult}x`],
     WALLET_LINKED: (a) => ["Wallet linked 🔐", `Wallet ${a.address} was linked to your account. If this wasn't you, contact support now`],
@@ -89,6 +104,11 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: sent a photo` : `${a.name}: ${a.text}`],
   },
   ja: {
+    MARKET_RECLAIMED: (a) => ["マーケットはしばらくお休みします", reclaimed(a,
+      `出品中のシューズ${a.listings}足と入札で預かっていた${a.sup} SUPをお返ししました`,
+      `出品中のシューズ${a.listings}足をマイシューズにお返ししました`,
+      `購入入札で預かっていた${a.sup} SUPをお返ししました`)],
+    UPDATE_REWARD: (a) => ["アップデートのプレゼントが届きました 🎁", `シューズガチャ${a.free}回と上級ガチャ${a.premium}回を受け取りました。ガチャで確認してください`],
     ITEM_GRANTED: (a) => ["アイテムが届きました 🎁", `${itemName("ja", a.item)}を${a.qty}個受け取りました。アイテムで確認してください`],
     REWARD_EVENT: (a) => [`今から${a.hours}時間、報酬${a.mult}倍 🔥`, `${a.title} — 今走ると獲得が${a.mult}倍です`],
     WALLET_LINKED: (a) => ["ウォレットを連携しました 🔐", `ウォレット ${a.address} がアカウントに連携されました。心当たりがない場合はすぐにサポートへご連絡ください`],
@@ -103,6 +123,11 @@ const TEXT: Record<string, Record<string, (a: Record<string, string>) => [string
     CREW_CHAT: (a) => [a.crew, a.photo === "1" ? `${a.name}: 写真を送りました` : `${a.name}: ${a.text}`],
   },
   zh: {
+    MARKET_RECLAIMED: (a) => ["交易所暂时休息", reclaimed(a,
+      `挂单中的 ${a.listings} 双鞋子和出价冻结的 ${a.sup} SUP 已退还给你`,
+      `挂单中的 ${a.listings} 双鞋子已退回我的跑鞋`,
+      `出价冻结的 ${a.sup} SUP 已退还给你`)],
+    UPDATE_REWARD: (a) => ["更新礼物已到账 🎁", `你获得了 ${a.free} 次鞋子抽取和 ${a.premium} 次高级抽取，请在抽取中查看`],
     ITEM_GRANTED: (a) => ["道具已到账 🎁", `你收到了 ${a.qty} 个${itemName("zh", a.item)}，请在道具中查看`],
     REWARD_EVENT: (a) => [`接下来 ${a.hours} 小时奖励 ${a.mult} 倍 🔥`, `${a.title} — 现在跑步可获得 ${a.mult} 倍奖励`],
     WALLET_LINKED: (a) => ["钱包已绑定 🔐", `钱包 ${a.address} 已绑定到你的账户。如非本人操作，请立即联系客服`],

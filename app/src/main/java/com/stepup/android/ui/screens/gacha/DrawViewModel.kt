@@ -109,6 +109,8 @@ class DrawViewModel(
     private val clock: () -> Long = System::currentTimeMillis,
     private val settleMillis: Long = SETTLE_MILLIS,
     private val orphanMillis: Long = ORPHAN_MILLIS,
+    /** 블록체인 기능이 있는 판인가 — 스토어 판(false)의 상급 뽑기는 선물로 받은 것만(0112). 결과의 남은 수도 그 수다 */
+    private val web3: Boolean = com.stepup.android.BuildConfig.WEB3,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<DrawScreenState>(DrawScreenState.Loading)
@@ -147,7 +149,7 @@ class DrawViewModel(
     fun draw(kind: DrawKind) {
         if (sending != null || checking != null || _pending.value != null) return
         val status = (_state.value as? DrawScreenState.Ready)?.status ?: return
-        if (!status.canDraw(kind)) return
+        if (!status.canDraw(kind, web3)) return
         readyResult = null
         replied = false
         _pending.value = DrawPending(kind, ready = false)
@@ -274,9 +276,9 @@ class DrawViewModel(
                 _pending.value = DrawPending(result.kind, ready = true)
             }
         }
-        // 뽑은 뒤의 수 — 결과의 "남은 N회"와 메인. 읽지 못하면 결과에 수를 두지 않는다
+        // 뽑은 뒤의 수 — 결과의 "남은 N회"와 메인. 읽지 못하면 결과에 수를 두지 않는다(스토어 판의 상급은 선물 수만)
         val status = fresh ?: load()
-        if (status != null) withLeft(result.shoe.id, status.left(result.kind))
+        if (status != null) withLeft(result.shoe.id, status.shownLeft(result.kind, web3))
     }
 
     private fun withLeft(shoeId: Long, left: Int) {
@@ -424,7 +426,7 @@ class DrawViewModel(
         val account = account()
         val added = runChancesAdded(source.memory.seenRunChances(account), status)
         // "상급 뽑기 +N" 은 상급 뽑기 칸이 있는 블록체인 판에만 — 스토어 판(WEB3 = false)은 그 칸을 숨긴다(DrawHome)
-        if (added > 0 && notice.value == null && com.stepup.android.BuildConfig.WEB3) notice.value = DrawNotice.RunReward(added)
+        if (added > 0 && notice.value == null && web3) notice.value = DrawNotice.RunReward(added)
         source.memory.seeRunChances(account, status.runLeft)
     }
 
