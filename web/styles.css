@@ -559,6 +559,14 @@ a:focus-visible,button:focus-visible,video:focus-visible{outline:3px solid var(-
 /* 앱 받기(2026-11-16 안드로이드 출시) — 넓은 화면은 영상 양옆 세로 카드, 900px 아래는 영상 밑 버튼 한 줄.
    좁은 화면에서 .film-row 는 display:contents 라 영상 칸이 예전처럼 .film-card 의 바로 아래 칸으로 남는다 */
 .waitlist-banner .waitlist-open{display:none}
+/* 사전 등록 마감 — 폼은 숨기고 안내 · 앱 받기 · 게임만 */
+.waitlist-is-closed .waitlist-form>:not(.waitlist-closed-note):not(.waitlist-kicker){display:none}
+.waitlist-closed-note{display:flex;flex-direction:column;gap:12px;padding:6px 0 4px}
+.waitlist-closed-note[hidden]{display:none}
+.waitlist-closed-note h3{margin:0;font-size:28px;font-weight:900;letter-spacing:-.04em;color:inherit}
+.waitlist-closed-note p{margin:0 0 6px;font-size:15px;line-height:1.5;opacity:.8}
+.waitlist-closed-note a.waitlist-submit{display:flex;align-items:center;justify-content:center;text-decoration:none}
+.waitlist-closed-note .banner-game{justify-content:center;width:100%;box-sizing:border-box}
 /* 출시 이벤트(타워 게임) — 흰 띠 오른쪽의 큰 버튼 */
 .banner-game{flex:none;display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:12px 22px 12px 14px;border-radius:14px;background:linear-gradient(100deg,#FF4F8B,#FF9F1C);color:#fff;font-size:17px;font-weight:900;letter-spacing:-.02em;text-decoration:none;white-space:nowrap;box-shadow:0 10px 24px -10px #FF4F8Bcc;transition:transform .2s,box-shadow .2s;animation:game-glow 2.4s ease-in-out infinite}
 .banner-game:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 14px 30px -10px #FF4F8B}
