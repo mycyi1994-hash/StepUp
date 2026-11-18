@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 수집기부터 확인한다. 한 시간마다 도는 일이라 깨진 것을 사람이
       # 알아채기까지 오래 걸린다 — 보내기 전에 여기서 멈추는 편이 낫다.
