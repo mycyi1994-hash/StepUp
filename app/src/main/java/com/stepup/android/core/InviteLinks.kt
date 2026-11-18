@@ -57,6 +57,12 @@ object InviteLinks {
 
         /** 보상 이벤트가 시작됐다는 알림 — 러닝 탭(`run`, 서버 0106) */
         data object RunTab : PushTarget
+
+        /** 거래소 매물 · 입찰을 돌려받았다는 알림 — 신발 탭(`shoes`, 서버 0112 MARKET_RECLAIMED) */
+        data object Shoes : PushTarget
+
+        /** 앱 업데이트 보상(뽑기 · 상급 뽑기)이 왔다는 알림 — 신발 뽑기(`draw`, 서버 0112 UPDATE_REWARD) */
+        data object Draw : PushTarget
     }
 
     private val _pendingPush = MutableStateFlow<PushTarget?>(null)
@@ -132,6 +138,8 @@ object InviteLinks {
                 idOf(parts[2])?.let { PushTarget.Room(parts[1].lowercase(), it) }
             parts.size == 1 && parts[0] == "bag" -> PushTarget.Bag
             parts.size == 1 && parts[0] == "run" -> PushTarget.RunTab
+            parts.size == 1 && parts[0] == "shoes" -> PushTarget.Shoes
+            parts.size == 1 && parts[0] == "draw" -> PushTarget.Draw
             else -> null
         }
     }

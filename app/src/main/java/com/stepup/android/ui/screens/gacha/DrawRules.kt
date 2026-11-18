@@ -28,13 +28,23 @@ enum class PremiumMode {
 
     /** 15 — 연결됨 · 기회 없음. "러닝하고 기회 받기" */
     Empty,
+
+    /**
+     * 선물로 받은 상급 뽑기(운영자 · 앱 업데이트 선물, 서버 0112 GIFT)를 쓰는 칸 — 지갑 · 체인 상태와 상관없이 뽑는다.
+     * 스토어 판(WEB3 = false)의 상급 칸은 늘 이 모습이고, 블록체인 판은 선물이 있는데 지갑으로 뽑을 수 없을 때(연결 전 · 해제 · 일시 중단)만.
+     */
+    Gift,
 }
 
 /**
  * 서버 값으로 상급 칸을 고른다. `gift_on_link` 는 지갑을 연결한 적이 없을 때만 0 보다 크다(0042 draw_status —
  * wallet_history 가 있으면 0). 그래서 "연결 안 됨 + 선물 0"은 연결했다가 해제된 기존 회원이다.
+ * 선물로 받은 상급 뽑기([DrawStatus.rewardLeft])는 서버가 가장 먼저 쓴다 — 지갑으로 뽑을 수 없는 동안에도 그 칸으로 뽑는다.
+ * 블록체인 기능이 없는 판([web3] = false)은 지갑 칸이 없다 — 선물 칸뿐이다.
  */
-fun DrawStatus.premiumMode(): PremiumMode = when {
+fun DrawStatus.premiumMode(web3: Boolean = true): PremiumMode = when {
+    !web3 -> PremiumMode.Gift
+    rewardLeft > 0 && (!walletLinked || chainPaused) -> PremiumMode.Gift
     !walletLinked && giftOnLink > 0 -> PremiumMode.Connect
     !walletLinked -> PremiumMode.Reconnect
     chainPaused -> PremiumMode.Paused
@@ -94,6 +104,13 @@ fun judgePending(pending: PendingDraw, found: Sneaker?, status: DrawStatus?): Dr
 
 /** 뽑기를 시작하지 못한 까닭(19) — 서버가 거절했거나(기회를 쓰지 않았다) 보내지 못했다 */
 enum class DrawStop { Network, NoFree, NoPremium, Wallet, MintLimit, ChainPaused, SignIn, Other }
+
+/**
+ * 스토어 판(WEB3 = false)에서 보일 까닭 — 그 판에는 지갑 · 발행이 없다. 선물을 다 쓴 뒤 서버가 지갑 혜택으로 넘어가 거절한 것
+ * (지갑 필요 · 체인 일시 중단 · 발행 한도)은 "남은 상급 뽑기가 없어요"로 보인다.
+ */
+fun DrawStop.shownIn(web3: Boolean): DrawStop =
+    if (!web3 && (this == DrawStop.Wallet || this == DrawStop.ChainPaused || this == DrawStop.MintLimit)) DrawStop.NoPremium else this
 
 /** 서버가 거절한 결말 → 19 의 까닭 */
 fun EconomyOutcome.toDrawStop(): DrawStop = when (this) {
@@ -208,6 +225,9 @@ enum class DrawCardAction {
 
     /** 22 — 로그인 화면으로 */
     SignIn,
+
+    /** 선물 칸 — 선물을 다 썼다(누를 수 없다). 스토어 판은 이때 상급 칸을 숨기므로([premiumPanelShown]) 보통 보이지 않는다 */
+    Spent,
 }
 
 data class DrawHomeCard(
@@ -228,10 +248,25 @@ private fun DrawKind.leftLabel(): DrawRowLabel = if (this == DrawKind.FREE) Draw
 private fun DrawKind.plainTitle(): DrawCardTitle = if (this == DrawKind.FREE) DrawCardTitle.Free else DrawCardTitle.Premium
 
 /**
+ * 상급 칸을 보일까 — 블록체인 판([web3])은 늘. 스토어 판은 선물로 받은 상급 뽑기가 남았거나 상급 요청의 결과를 기다릴 때만
+ * (쓸 수 없는 칸은 두지 않는다 — 선물을 다 쓰면 칸이 사라진다).
+ */
+fun premiumPanelShown(web3: Boolean, status: DrawStatus?, pendingKind: DrawKind?): Boolean =
+    web3 || (status?.rewardLeft ?: 0) > 0 || pendingKind == DrawKind.PREMIUM
+
+/**
  * 고른 탭 [tab] 의 모습. [status] 가 없으면 [loading] · [signedOut] 으로 가른다(둘 다 아니면 불러오기 실패).
  * 결과를 모르는 요청 [pending] 이 그 종류면 "뽑은 신발 · 확인 중", 다른 종류여도 버튼은 "결과 확인"이다.
+ * [web3] 가 false(스토어 판)면 상급 칸은 선물 칸이다 — 수는 선물로 받은 상급 뽑기만, 지갑 · 러닝 안내는 없다.
  */
-fun drawHomeCard(status: DrawStatus?, tab: DrawKind, pendingKind: DrawKind?, loading: Boolean, signedOut: Boolean): DrawHomeCard {
+fun drawHomeCard(
+    status: DrawStatus?,
+    tab: DrawKind,
+    pendingKind: DrawKind?,
+    loading: Boolean,
+    signedOut: Boolean,
+    web3: Boolean = true,
+): DrawHomeCard {
     if (status == null) {
         return when {
             signedOut -> DrawHomeCard(tab, DrawCardTitle.SignedOut, null, DrawChip.None, DrawRow.Unknown(tab.leftLabel()), DrawCardAction.SignIn)
@@ -252,7 +287,12 @@ fun drawHomeCard(status: DrawStatus?, tab: DrawKind, pendingKind: DrawKind?, loa
             if (status.freeLeft > 0) DrawCardAction.Draw else DrawCardAction.FreeInfo,
         )
     } else {
-        when (status.premiumMode()) {
+        when (status.premiumMode(web3)) {
+            PremiumMode.Gift -> DrawHomeCard(
+                tab, DrawCardTitle.Premium, null, DrawChip.Count(status.rewardLeft.coerceAtLeast(0)),
+                DrawRow.Count(DrawRowLabel.PremiumLeft, status.rewardLeft.coerceAtLeast(0)),
+                if (status.rewardLeft > 0) DrawCardAction.Draw else DrawCardAction.Spent,
+            )
             PremiumMode.Connect -> DrawHomeCard(
                 tab, DrawCardTitle.Premium, DrawCardSub.WalletNeeded, DrawChip.Wallet, DrawRow.Gift(status.giftOnLink), DrawCardAction.Connect,
             )
@@ -282,8 +322,8 @@ fun drawHomeCard(status: DrawStatus?, tab: DrawKind, pendingKind: DrawKind?, loa
  * 한 종류의 안내 — 무료는 무료 기회(DRAW03), 상급은 상급 기회 · 러닝(DRAW04 · 30), 지갑을 연결한 적이 없으면 받는 방법(DRAW05).
  * v4 메인은 패널마다 "기회 내역 보기"(연결 전 상급 패널에는 없음)와 아래 "기회 받는 방법"을 따로 두어 이 고르기를 그대로 따른다.
  */
-fun drawInfoSheet(status: DrawStatus, tab: DrawKind): DrawSheet = when {
+fun drawInfoSheet(status: DrawStatus, tab: DrawKind, web3: Boolean = true): DrawSheet = when {
     tab == DrawKind.FREE -> DrawSheet.FreeChances
-    status.premiumMode() == PremiumMode.Connect -> DrawSheet.Rules
+    status.premiumMode(web3) == PremiumMode.Connect -> DrawSheet.Rules
     else -> DrawSheet.PremiumChances
 }

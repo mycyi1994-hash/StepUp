@@ -578,6 +578,9 @@ private fun MainScaffoldContent(
             // 아이템 도착(ITEM_GRANTED) · 보상 이벤트 시작(REWARD_EVENT) — 그 탭으로(0106)
             InviteLinks.PushTarget.Bag -> navController.switchTab(Screen.Bag)
             InviteLinks.PushTarget.RunTab -> navController.switchTab(Screen.Run)
+            // 거래소 매물을 돌려받음(MARKET_RECLAIMED) — 신발 탭, 업데이트 보상(UPDATE_REWARD) — 신발 뽑기(0112)
+            InviteLinks.PushTarget.Shoes -> navController.switchTab(Screen.Customize)
+            InviteLinks.PushTarget.Draw -> navController.switchTab(Screen.Draw)
         }
         InviteLinks.consumePush()
     }

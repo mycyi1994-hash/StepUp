@@ -11497,6 +11497,332 @@ end $$;
 reset role;
 
 -- ════════════════════════════════════════════════════════════════════
+--  0112 거래소 매물 · 입찰 모두 거두기 · 앱 업데이트 보상(뽑기 5 + 상급 선물 1) · 나중에 보낼 알림 (2026-11-18)
+-- ════════════════════════════════════════════════════════════════════
+\echo ''
+\echo '── 거래소 거두기 · 업데이트 보상 · 알림(0112) ─────────────────'
+reset role;
+call pg_temp.login(null);
+select set_config('request.jwt.claims', '', false);
+insert into auth.users (id, email) values
+  ('11200000-0000-0000-0000-000000000001', 'reclaim-seller@test'),
+  ('11200000-0000-0000-0000-000000000002', 'reclaim-buyer@test'),
+  ('11200000-0000-0000-0000-000000000003', 'reclaim-both@test'),
+  ('11200000-0000-0000-0000-000000000004', 'reclaim-quiet@test'),
+  ('11200000-0000-0000-0000-000000000005', 'reclaim-none@test');
+create or replace function pg_temp.shoe112(p_owner uuid) returns bigint
+language plpgsql as $$
+declare v bigint;
+begin
+  insert into public.market_sneakers (owner_id, faction, rarity, variant, level, durability, origin, model_id)
+  values (p_owner, 'NONE', 'RARE', 3, 1, 100, 'PAID_DRAW', 1119)
+  returning id into v;
+  return v;
+end $$;
+-- 매물 · 입찰을 걸어 둔다(거래를 잠시 열고 — 운영처럼 멈춘 채로 거두는지도 본다)
+update public.economy_settings set value = 'true'::jsonb where key = 'market_trading_enabled';
+insert into fix (k, v) values
+  ('s112a', pg_temp.shoe112('11200000-0000-0000-0000-000000000001')::text),
+  ('s112b', pg_temp.shoe112('11200000-0000-0000-0000-000000000001')::text),
+  ('s112c', pg_temp.shoe112('11200000-0000-0000-0000-000000000001')::text),
+  ('s112d', pg_temp.shoe112('11200000-0000-0000-0000-000000000003')::text),
+  ('s112e', pg_temp.shoe112('11200000-0000-0000-0000-000000000004')::text);
+insert into public.market_listings (sneaker_id, seller_id, price, status) values
+  (pg_temp.fx('s112a')::bigint, '11200000-0000-0000-0000-000000000001', 300, 'OPEN'),
+  (pg_temp.fx('s112b')::bigint, '11200000-0000-0000-0000-000000000001', 320, 'OPEN'),
+  (pg_temp.fx('s112c')::bigint, '11200000-0000-0000-0000-000000000001', 340, 'CANCELLED'),
+  (pg_temp.fx('s112d')::bigint, '11200000-0000-0000-0000-000000000003', 360, 'OPEN'),
+  (pg_temp.fx('s112e')::bigint, '11200000-0000-0000-0000-000000000004', 380, 'OPEN');
+update public.market_sneakers set status = 'LISTED'
+ where id in (pg_temp.fx('s112a')::bigint, pg_temp.fx('s112b')::bigint, pg_temp.fx('s112d')::bigint, pg_temp.fx('s112e')::bigint);
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('11200000-0000-0000-0000-000000000002', 'EARN_EVENT', 1000, '검사'),
+  ('11200000-0000-0000-0000-000000000003', 'EARN_EVENT', 1000, '검사');
+insert into public.market_bids (buyer_id, faction, rarity, variant, min_level, price, model_id, status) values
+  ('11200000-0000-0000-0000-000000000002', 'NONE', 'RARE', 3, 1, 100, null, 'OPEN'),
+  ('11200000-0000-0000-0000-000000000002', 'NONE', 'RARE', 0, 1, 50.5, 1119, 'OPEN'),
+  ('11200000-0000-0000-0000-000000000002', 'NONE', 'RARE', 3, 1, 70, null, 'FILLED'),
+  ('11200000-0000-0000-0000-000000000003', 'NONE', 'RARE', 3, 1, 1234, null, 'OPEN');
+insert into public.sup_ledger (user_id, kind, amount, description) values
+  ('11200000-0000-0000-0000-000000000002', 'ESCROW_LOCK', -100, '구매 입찰'),
+  ('11200000-0000-0000-0000-000000000002', 'ESCROW_LOCK', -50.5, '구매 입찰'),
+  ('11200000-0000-0000-0000-000000000003', 'ESCROW_LOCK', -1234, '구매 입찰');
+update public.economy_settings set value = 'false'::jsonb where key = 'market_trading_enabled';
+insert into fix (k, v) values
+  ('bal112b', pg_temp.bal('11200000-0000-0000-0000-000000000002')::text),
+  ('bal112c', pg_temp.bal('11200000-0000-0000-0000-000000000003')::text);
+
+do $$ begin
+  perform pg_temp.ok(exists (select 1 from public.economy_settings where key = 'market_reclaim_20261118')
+                     and exists (select 1 from public.economy_settings where key = 'update_reward_20261118'),
+    '배포할 때 거두기 · 업데이트 보상을 한 번 했다고 적는다 — 다시 붙여넣어도 다시 하지 않는다(0112)');
+  perform pg_temp.ok(not has_table_privilege('authenticated', 'economy.market_reclaim_20261118', 'select')
+                     and not has_table_privilege('authenticated', 'economy.update_reward_20261118', 'select')
+                     and not has_table_privilege('authenticated', 'economy.notice_sends', 'select'),
+    '돌려받은 사람 · 보상 받은 사람 · 보낸 알림 표는 앱이 읽지 못한다(0112)');
+end $$;
+
+-- 처음 배포한 것처럼 표시를 지우고 한 번 돌린다
+delete from public.economy_settings where key = 'market_reclaim_20261118';
+do $$
+declare v jsonb;
+begin
+  v := economy.market_reclaim_20261118();
+  perform pg_temp.ok(v is not null and (v->>'listings')::int >= 4 and (v->>'bids')::int >= 3,
+    '거두기 — 열린 매물 ' || (v->>'listings') || '개 · 입찰 ' || (v->>'bids') || '개(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.market_listings where status = 'OPEN')
+                     and not exists (select 1 from public.market_bids where status = 'OPEN'),
+    '열린 매물 · 열린 구매 입찰이 하나도 남지 않는다(0112)');
+  perform pg_temp.ok((select bool_and(status = 'OWNED') from public.market_sneakers
+                       where id in (pg_temp.fx('s112a')::bigint, pg_temp.fx('s112b')::bigint, pg_temp.fx('s112d')::bigint,
+                                    pg_temp.fx('s112e')::bigint))
+                     and (select owner_id from public.market_sneakers where id = pg_temp.fx('s112a')::bigint)
+                         = '11200000-0000-0000-0000-000000000001',
+    '내린 매물의 신발은 주인에게 그대로 돌아온다(OWNED)(0112)');
+  perform pg_temp.ok((select bool_and(status = 'CANCELLED' and closed_at is not null) from public.market_listings
+                       where sneaker_id in (pg_temp.fx('s112a')::bigint, pg_temp.fx('s112b')::bigint)),
+    '매물은 사람이 거둔 것처럼 CANCELLED · 닫은 시각(0112)');
+  perform pg_temp.ok(pg_temp.bal('11200000-0000-0000-0000-000000000002') = pg_temp.fx('bal112b')::numeric + 150.5
+                     and pg_temp.bal('11200000-0000-0000-0000-000000000003') = pg_temp.fx('bal112c')::numeric + 1234,
+    '입찰에 묶였던 SUP 를 모두 돌려받는다(0112)');
+  perform pg_temp.ok((select count(*) from public.sup_ledger
+                       where user_id = '11200000-0000-0000-0000-000000000002' and kind = 'ESCROW_UNLOCK'
+                         and description = '구매 입찰 취소') = 2,
+    '원장 줄은 사람이 입찰을 거둔 것과 같다(ESCROW_UNLOCK · 구매 입찰 취소)(0112)');
+  perform pg_temp.ok((select status from public.market_bids
+                       where buyer_id = '11200000-0000-0000-0000-000000000002' and price = 70) = 'FILLED',
+    '이미 끝난 입찰 · 매물은 건드리지 않는다(0112)');
+  perform pg_temp.ok((select listings = 2 and bids = 0 and refunded = 0 from economy.market_reclaim_20261118
+                       where user_id = '11200000-0000-0000-0000-000000000001')
+                     and (select listings = 0 and bids = 2 and refunded = 150.5 from economy.market_reclaim_20261118
+                           where user_id = '11200000-0000-0000-0000-000000000002')
+                     and (select listings = 1 and bids = 1 and refunded = 1234 from economy.market_reclaim_20261118
+                           where user_id = '11200000-0000-0000-0000-000000000003')
+                     and not exists (select 1 from economy.market_reclaim_20261118
+                                      where user_id = '11200000-0000-0000-0000-000000000005'),
+    '돌려받은 사람마다 매물 · 입찰 · SUP 를 적는다(0112)');
+  perform pg_temp.ok(exists (select 1 from public.admin_audit where action = 'market_reclaim'),
+    '거두기는 운영 기록에 남는다(0112)');
+  perform pg_temp.ok(economy.market_reclaim_20261118() is null
+                     and pg_temp.bal('11200000-0000-0000-0000-000000000002') = pg_temp.fx('bal112b')::numeric + 150.5,
+    '두 번째는 아무것도 하지 않는다(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'MARKET_RECLAIMED'),
+    '거둘 때는 알림을 보내지 않는다(0112)');
+end $$;
+-- 앱이 부르는 거두기는 그대로 — 남의 매물은 거두지 못한다
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-000000000005');
+do $$
+declare v_listing bigint := (select id from public.market_listings where sneaker_id = pg_temp.fx('s112a')::bigint);
+begin
+  begin
+    perform public.market_cancel_listing(v_listing);
+    perform pg_temp.ok(false, '남의 매물은 거두지 못해야 한다(0112)');
+  exception when others then
+    perform pg_temp.ok(sqlstate = '42501', '앱의 거두기는 예전처럼 내 매물만(42501)(0112)');
+  end;
+end $$;
+reset role;
+call pg_temp.login(null);
+
+-- 알림: 받을 폰이 있는 사람에게 한 번 · 폰이 없거나 푸시를 끈 사람은 적어 두지 않는다
+insert into public.push_tokens (token, user_id, locale) values
+  ('fcm-token-reclaim-seller-0001', '11200000-0000-0000-0000-000000000001', 'ko'),
+  ('fcm-token-reclaim-buyer-00002', '11200000-0000-0000-0000-000000000002', 'en'),
+  ('fcm-token-reclaim-quiet-00004', '11200000-0000-0000-0000-000000000004', 'ko');
+insert into public.notify_prefs (user_id, push) values ('11200000-0000-0000-0000-000000000004', false);
+do $$
+declare v_n int;
+begin
+  v_n := economy.notice_send('MARKET_RECLAIMED');
+  perform pg_temp.ok(v_n >= 2, '돌려받은 사람에게 알림을 넣는다 — ' || v_n || '명(0112)');
+  perform pg_temp.ok((select count(*) from public.push_outbox
+                       where user_id = '11200000-0000-0000-0000-000000000001' and kind = 'MARKET_RECLAIMED' and link = 'shoes'
+                         and args->>'listings' = '2' and args->>'bids' = '0') = 1
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-000000000002' and kind = 'MARKET_RECLAIMED'
+                             and args->>'bids' = '2' and args->>'sup' = '150.5' and args->>'listings' = '0') = 1,
+    '알림은 신발 탭으로 — 돌려받은 매물 · 입찰 · SUP 를 싣는다(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.push_outbox where kind = 'MARKET_RECLAIMED'
+                                   and user_id in ('11200000-0000-0000-0000-000000000003', '11200000-0000-0000-0000-000000000004'))
+                     and not exists (select 1 from economy.notice_sends
+                                      where user_id in ('11200000-0000-0000-0000-000000000003', '11200000-0000-0000-0000-000000000004')),
+    '폰이 없거나 푸시를 끈 사람에게는 넣지 않고 적어 두지도 않는다(0112)');
+  perform pg_temp.ok(economy.notice_send('MARKET_RECLAIMED') = 0
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-000000000001' and kind = 'MARKET_RECLAIMED') = 1,
+    '다시 불러도 같은 사람에게 두 번 가지 않는다(0112)');
+end $$;
+insert into public.push_tokens (token, user_id, locale) values
+  ('fcm-token-reclaim-both-000003', '11200000-0000-0000-0000-000000000003', 'ja');
+-- 넣기와 세기를 한 문장에 두면 세는 쪽이 넣기 전 모습을 본다 — 따로 부른다
+do $$
+declare v_n int;
+begin
+  v_n := economy.notice_send('MARKET_RECLAIMED');
+  perform pg_temp.ok(v_n = 1
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-000000000003' and kind = 'MARKET_RECLAIMED'
+                             and args->>'sup' = '1,234') = 1,
+    '그 사이 폰을 등록한 사람에게만 간다 · SUP 는 천 단위 쉼표(0112)');
+end $$;
+-- 운영자 함수 — 운영자 · SQL Editor 만, 모르는 알림은 22023
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-000000000005');
+call pg_temp.must_fail($q$ select public.admin_notice_send('MARKET_RECLAIMED') $q$, '운영자가 아니면 알림을 보내지 못한다(0112)');
+reset role;
+call pg_temp.login(null);
+do $$
+declare v_n int;
+begin
+  v_n := public.admin_notice_send('MARKET_RECLAIMED');
+  perform pg_temp.ok(v_n = 0
+                     and exists (select 1 from public.admin_audit where action = 'notice_send' and target = 'MARKET_RECLAIMED'),
+    'SQL Editor(로그인 없는 postgres)에서 보낸다 — 운영 기록에 남는다(0112)');
+  begin
+    perform public.admin_notice_send('NOPE');
+    perform pg_temp.ok(false, '모르는 알림은 거절해야 한다(0112)');
+  exception when others then
+    perform pg_temp.ok(sqlstate = '22023', '모르는 알림은 22023 으로 거절(0112)');
+  end;
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.admin_notice_send(text)', 'execute')
+                     and not has_function_privilege('authenticated', 'economy.notice_send(text)', 'execute'),
+    '알림 보내기는 앱 · 방문자가 부르지 못한다(0112)');
+end $$;
+
+-- ── 업데이트 보상: 2026-11-18 00:00(한국) 전에 코드를 넣은 계정만 ─────────
+insert into auth.users (id, email) values
+  ('11200000-0000-0000-0000-00000000000a', 'reward-code@test'),
+  ('11200000-0000-0000-0000-00000000000b', 'reward-late@test'),
+  ('11200000-0000-0000-0000-00000000000c', 'reward-legacy@test'),
+  ('11200000-0000-0000-0000-00000000000d', 'reward-blocked@test'),
+  ('11200000-0000-0000-0000-00000000000e', 'reward-admin@test'),
+  ('11200000-0000-0000-0000-00000000000f', 'reward-nosync@test');
+insert into economy.access_codes (code, kind, max_uses) values ('UPDATE112', 'ADMIN', 100) on conflict (code) do nothing;
+insert into economy.access_grants (user_id, source, code, granted_at, revoked_at) values
+  ('11200000-0000-0000-0000-00000000000a', 'CODE', 'UPDATE112', timestamptz '2026-11-17 23:59:59+09', null),
+  ('11200000-0000-0000-0000-00000000000b', 'CODE', 'UPDATE112', timestamptz '2026-11-18 00:00:00+09', null),
+  ('11200000-0000-0000-0000-00000000000c', 'LEGACY', null, timestamptz '2026-10-28 12:00+09', null),
+  ('11200000-0000-0000-0000-00000000000d', 'CODE', 'UPDATE112', timestamptz '2026-11-01 12:00+09', timestamptz '2026-11-10 12:00+09'),
+  ('11200000-0000-0000-0000-00000000000e', 'ADMIN', null, timestamptz '2026-11-01 12:00+09', null),
+  ('11200000-0000-0000-0000-00000000000f', 'CODE', 'UPDATE112', timestamptz '2026-11-02 12:00+09', null);
+insert into public.draw_grants (user_id, kind, granted, used) values
+  ('11200000-0000-0000-0000-00000000000a', 'FREE', 10, 3),
+  ('11200000-0000-0000-0000-00000000000b', 'FREE', 10, 0),
+  ('11200000-0000-0000-0000-00000000000c', 'FREE', 10, 0),
+  ('11200000-0000-0000-0000-00000000000d', 'FREE', 10, 0),
+  ('11200000-0000-0000-0000-00000000000e', 'FREE', 10, 0);
+delete from public.economy_settings where key = 'update_reward_20261118';
+do $$
+declare v_n int;
+begin
+  v_n := economy.update_reward_20261118();
+  perform pg_temp.ok(v_n >= 2, '업데이트 보상 — ' || v_n || '명(0112)');
+  perform pg_temp.ok((select granted = 15 and used = 3 from public.draw_grants
+                       where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'FREE')
+                     and (select granted = 1 and used = 0 from public.draw_grants
+                           where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'GIFT'),
+    '코드를 넣은 계정: 무료 뽑기 +5 · 상급 뽑기 선물 1(0112)');
+  perform pg_temp.ok((select granted from public.draw_grants
+                       where user_id = '11200000-0000-0000-0000-00000000000f' and kind = 'FREE') = 15
+                     and (select granted from public.draw_grants
+                           where user_id = '11200000-0000-0000-0000-00000000000f' and kind = 'GIFT') = 1,
+    '아직 첫 동기화를 못 한 계정은 가입 선물 10회 + 5 — 가입 선물을 잃지 않는다(0112)');
+  perform pg_temp.ok(not exists (select 1 from public.draw_grants where kind = 'GIFT' and user_id in (
+                       '11200000-0000-0000-0000-00000000000b', '11200000-0000-0000-0000-00000000000c',
+                       '11200000-0000-0000-0000-00000000000d', '11200000-0000-0000-0000-00000000000e'))
+                     and (select bool_and(granted = 10) from public.draw_grants where kind = 'FREE' and user_id in (
+                       '11200000-0000-0000-0000-00000000000b', '11200000-0000-0000-0000-00000000000c',
+                       '11200000-0000-0000-0000-00000000000d', '11200000-0000-0000-0000-00000000000e')),
+    '18일 00시부터 넣은 코드 · 배포 때 있던 계정(LEGACY) · 막힌 계정 · 운영자가 준 권한은 받지 않는다(0112)');
+  perform pg_temp.ok((select count(*) from economy.update_reward_20261118
+                       where user_id in ('11200000-0000-0000-0000-00000000000a', '11200000-0000-0000-0000-00000000000f')
+                         and free = 5 and premium = 1) = 2
+                     and not exists (select 1 from economy.update_reward_20261118 where user_id = '11200000-0000-0000-0000-00000000000b'),
+    '받은 사람을 적어 둔다 — 나중에 보낼 알림이 읽는다(0112)');
+  perform pg_temp.ok(economy.update_reward_20261118() is null
+                     and (select granted from public.draw_grants
+                           where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'FREE') = 15,
+    '두 번째는 주지 않는다(0112)');
+end $$;
+
+-- 상급 뽑기 선물 — 지갑 없이, 체인이 멈춰도. 다 쓰면 예전과 같은 거절
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-00000000000a');
+do $$
+declare r record; v_id bigint;
+begin
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.reward_left = 1 and not r.wallet_linked and r.signup_left = 12 and r.gift_left = 0 and r.run_left = 0,
+    '뽑기 현황 2판에 선물 상급 뽑기 수(reward_left) — 나머지 칸은 draw_status 그대로(0112)');
+  v_id := public.premium_draw();
+  perform pg_temp.ok((select origin = 'BONUS_DRAW' and rarity <> 'COMMON' and genesis_no is null
+                        from public.my_sneakers() where id = v_id),
+    '지갑 없이 선물로 상급 뽑기 — 상급 표(레어 이상)에서 굴린다(0112)');
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.reward_left = 0, '선물을 쓰면 reward_left 가 준다(0112)');
+end $$;
+do $$ begin
+  perform public.premium_draw();
+  perform pg_temp.ok(false, '선물을 다 쓰면 지갑 없이는 상급 뽑기를 못 해야 한다(0112)');
+exception when others then
+  perform pg_temp.ok(sqlstate = '23514' and sqlerrm like '%지갑%', '선물이 없으면 예전과 같은 거절(지갑 연결)(0112)');
+end $$;
+reset role;
+update public.economy_settings set value = 'true'::jsonb where key = 'chain_paused';
+set role authenticated;
+call pg_temp.login('11200000-0000-0000-0000-00000000000f');
+do $$ begin
+  perform pg_temp.ok(public.premium_draw() is not null, '체인 작업이 멈춰 있어도 선물 상급 뽑기는 된다(0112)');
+end $$;
+reset role;
+update public.economy_settings set value = 'false'::jsonb where key = 'chain_paused';
+-- 지갑을 연결한 사람도 선물부터 — 첫 연결 선물(BONUS)은 그 뒤에
+update public.draw_grants set granted = granted + 1 where user_id = 'f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9' and kind = 'BONUS';
+insert into public.draw_grants (user_id, kind, granted) values ('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9', 'GIFT', 1);
+set role authenticated;
+call pg_temp.login('f9f9f9f9-f9f9-f9f9-f9f9-f9f9f9f9f9f9');
+do $$
+declare r record;
+begin
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.wallet_linked and r.gift_left = 1 and r.reward_left = 1, '지갑 연결 · 첫 연결 선물 1 · 선물 1(0112)');
+  perform public.premium_draw();
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.gift_left = 1 and r.reward_left = 0, '선물을 먼저 쓴다 — 첫 연결 선물은 그대로(0112)');
+  perform public.premium_draw();
+  select * into r from public.draw_status_v2();
+  perform pg_temp.ok(r.gift_left = 0 and r.reward_left = 0, '그다음은 예전처럼 지갑 혜택(0112)');
+end $$;
+reset role;
+do $$ begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.draw_status_v2()', 'execute')
+                     and has_function_privilege('authenticated', 'public.draw_status_v2()', 'execute'),
+    '뽑기 현황 2판은 로그인한 사람만(0112)');
+  perform pg_temp.ok((select pg_get_constraintdef(c.oid) like '%GIFT%' and c.convalidated
+                        from pg_constraint c where c.conname = 'draw_grants_kind_check'),
+    '뽑기 권리 종류에 GIFT — 마지막 목록은 기존 줄까지 검사한다(0112)');
+end $$;
+
+-- 업데이트 보상 알림 — 뽑기로
+insert into public.push_tokens (token, user_id, locale) values
+  ('fcm-token-reward-code-00000a', '11200000-0000-0000-0000-00000000000a', 'zh');
+do $$
+declare v_n int;
+begin
+  v_n := economy.notice_send('UPDATE_REWARD');
+  perform pg_temp.ok(v_n >= 1
+                     and (select count(*) from public.push_outbox
+                           where user_id = '11200000-0000-0000-0000-00000000000a' and kind = 'UPDATE_REWARD' and link = 'draw'
+                             and args->>'free' = '5' and args->>'premium' = '1') = 1
+                     and not exists (select 1 from public.push_outbox where kind = 'UPDATE_REWARD'
+                                       and user_id = '11200000-0000-0000-0000-00000000000b'),
+    '업데이트 보상 알림은 받은 사람에게만 · 뽑기로 · 받은 수를 싣는다(0112)');
+  perform pg_temp.ok(economy.notice_send('UPDATE_REWARD') = 0, '업데이트 보상 알림도 한 사람에게 한 번(0112)');
+end $$;
+reset role;
+
+-- ════════════════════════════════════════════════════════════════════
 --  0113 베타 초대 코드 — 하루 1개 · 지난 168시간에 3개 (2026-11-18)
 -- ════════════════════════════════════════════════════════════════════
 \echo '── 베타 초대 코드 하루 1개 · 7일에 3개(0113) ─────────────'

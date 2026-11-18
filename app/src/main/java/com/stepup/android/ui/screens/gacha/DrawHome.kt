@@ -79,9 +79,11 @@ internal fun DrawHome(
     actions: DrawActions,
     onSheet: (DrawSheet) -> Unit,
     premiumFocus: Int = 0,
+    /** 블록체인 기능이 있는 판인가 — 스토어 판(false)의 상급 칸은 선물로 받은 상급 뽑기만(지갑 · 러닝 안내 없이, 0112) */
+    web3: Boolean = com.stepup.android.BuildConfig.WEB3,
 ) {
-    val free = drawHomeCard(status, DrawKind.FREE, pending?.kind, loading, signedOut)
-    val premium = drawHomeCard(status, DrawKind.PREMIUM, pending?.kind, loading, signedOut)
+    val free = drawHomeCard(status, DrawKind.FREE, pending?.kind, loading, signedOut, web3)
+    val premium = drawHomeCard(status, DrawKind.PREMIUM, pending?.kind, loading, signedOut, web3)
     val premiumView = remember { BringIntoViewRequester() }
     LaunchedEffect(premiumFocus) {
         if (premiumFocus > 0) runCatching { premiumView.bringIntoView() }
@@ -100,11 +102,14 @@ internal fun DrawHome(
             Spacer(Modifier.height(4.dp))
             DrawHomeTitle(subtitle)
             Spacer(Modifier.height(14.dp))
-            DrawKindPanel(free, status, actions, onSheet, pendingAny = pending != null)
-            // 상급 뽑기는 지갑 연결 혜택이다 — 블록체인 기능이 없는 스토어 판(WEB3 = false)에는 무료 뽑기만
-            if (com.stepup.android.BuildConfig.WEB3) {
+            DrawKindPanel(free, status, actions, onSheet, pendingAny = pending != null, web3 = web3)
+            // 상급 뽑기는 지갑 연결 혜택이다 — 블록체인 기능이 없는 스토어 판(WEB3 = false)은 선물로 받은 상급 뽑기가 남았을 때만(0112)
+            if (premiumPanelShown(web3, status, pending?.kind)) {
                 Spacer(Modifier.height(12.dp))
-                DrawKindPanel(premium, status, actions, onSheet, pendingAny = pending != null, Modifier.bringIntoViewRequester(premiumView))
+                DrawKindPanel(
+                    premium, status, actions, onSheet, pendingAny = pending != null, web3 = web3,
+                    modifier = Modifier.bringIntoViewRequester(premiumView),
+                )
             }
             if (status != null) {
                 // 기회 받는 방법 — 서버 값으로 회원에게 해당하는 규칙만(DRAW05)
@@ -145,6 +150,7 @@ private fun DrawKindPanel(
     actions: DrawActions,
     onSheet: (DrawSheet) -> Unit,
     pendingAny: Boolean,
+    web3: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val t = runTone()
@@ -159,12 +165,12 @@ private fun DrawKindPanel(
                     style = drawTitleStyle(27.sp, t.text), maxLines = 2,
                     modifier = Modifier.semantics { heading() }.testTag("draw-$key-title"),
                 )
-                val sub = panelSub(card, status)
+                val sub = panelSub(card, status, web3)
                 if (sub != null) {
                     Text(sub, style = runTextStyle(14.sp, t.label, FontWeight.SemiBold), modifier = Modifier.padding(top = 2.dp).testTag("draw-$key-sub"))
                 }
                 PanelValue(card, key, Modifier.padding(top = 8.dp))
-                val detail = panelDetail(card, status)
+                val detail = panelDetail(card, status, web3)
                 if (detail != null) {
                     Text(
                         detail, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.35f),
@@ -190,11 +196,14 @@ private fun DrawKindPanel(
     }
 }
 
-/** 이름 아래 상태 한 줄 — 상급의 지갑 상태(연결 전 · 연결 필요). 일시 중단은 따로 알약으로 */
+/** 이름 아래 상태 한 줄 — 상급의 지갑 상태(연결 전 · 연결 필요) · 선물 칸. 일시 중단은 따로 알약으로 */
 @Composable
-private fun panelSub(card: DrawHomeCard, status: DrawStatus?): String? = when {
+private fun panelSub(card: DrawHomeCard, status: DrawStatus?, web3: Boolean): String? = when {
     card.kind == DrawKind.PREMIUM && card.action == DrawCardAction.Connect -> stringResource(R.string.draw_blue_before_link)
-    card.kind == DrawKind.PREMIUM && status?.premiumMode() == PremiumMode.Reconnect -> stringResource(R.string.dv3_state_wallet_needed)
+    card.kind == DrawKind.PREMIUM && status?.premiumMode(web3) == PremiumMode.Reconnect -> stringResource(R.string.dv3_state_wallet_needed)
+    // 선물로 받은 상급 뽑기(0112) — 결과를 기다리는 동안은 그 안내가 먼저다
+    card.kind == DrawKind.PREMIUM && card.row != DrawRow.Pending && status?.premiumMode(web3) == PremiumMode.Gift ->
+        stringResource(R.string.update_reward_panel_sub)
     else -> null
 }
 
@@ -231,7 +240,7 @@ private fun PanelValue(card: DrawHomeCard, key: String, modifier: Modifier) {
 
 /** 수 아래 한 줄 — 무료는 출처별 남은 수, 상급은 다음 1회까지의 거리(서버 값) · 오늘 한도 · 연결 규칙 · 다시 연결 · 결과 대기 */
 @Composable
-private fun panelDetail(card: DrawHomeCard, status: DrawStatus?): String? {
+private fun panelDetail(card: DrawHomeCard, status: DrawStatus?, web3: Boolean): String? {
     if (card.action == DrawCardAction.SignIn) return stringResource(R.string.dv3_signed_out_title)
     if (status == null) return null
     if (card.row == DrawRow.Pending) return stringResource(R.string.draw_blue_pending_hint)
@@ -242,7 +251,9 @@ private fun panelDetail(card: DrawHomeCard, status: DrawStatus?): String? {
             else -> null
         }
     } else {
-        when (status.premiumMode()) {
+        when (status.premiumMode(web3)) {
+            // 선물 칸 — 지갑 · 러닝 안내 없이 한 줄
+            PremiumMode.Gift -> stringResource(R.string.update_reward_panel_detail)
             PremiumMode.Connect ->
                 if (status.runStepMeters > 0) stringResource(R.string.draw_blue_run_per_step, DrawDistance.stepKm(status.runStepMeters)) else null
             PremiumMode.Reconnect -> stringResource(R.string.draw_blue_reconnect_hint)
@@ -285,6 +296,7 @@ private fun DrawMainButton(card: DrawHomeCard, status: DrawStatus?, actions: Dra
         // DRAW24 — 선물은 다시 주지 않는다. 연결은 기존 웹 지갑 페이지에서
         DrawCardAction.Reconnect -> DrawButton(stringResource(R.string.dv2_action_reconnect), actions.onConnectWallet, modifier)
         DrawCardAction.Paused -> DrawButton(stringResource(R.string.dv2_action_paused), {}, modifier, DrawButtonStyle.Off)
+        DrawCardAction.Spent -> DrawButton(stringResource(R.string.update_reward_spent), {}, modifier, DrawButtonStyle.Off)
         DrawCardAction.Check -> DrawButton(stringResource(R.string.dv2_action_check), actions.onCheckPending, modifier)
         DrawCardAction.Loading -> DrawButton(stringResource(R.string.dv2_action_loading), {}, modifier, DrawButtonStyle.Off)
         DrawCardAction.Reload -> DrawButton(stringResource(R.string.dv2_action_reload), actions.onRetry, modifier)
