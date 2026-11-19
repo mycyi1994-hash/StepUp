@@ -171,6 +171,20 @@ internal fun TogetherRoomsSegment(
     val loadingCrews = crews.isNotEmpty() && crews.any { (id, _) -> rooms[id] == null || rooms[id] == RoomsUi.Loading } && crewRuns.isEmpty()
     val failed = crews.mapNotNull { (id, _) -> rooms[id] as? RoomsUi.Failed }.firstOrNull()
     val doneToday = ready.mapValues { it.value.doneToday }
+    // "오늘 이미 했어요"인데 올린 러닝이 없다 — 출발만 하고 이 폰이 달리지 못한 방이면(앱을 껐다 켜 놓친 출발을 정리하지 못했다)
+    // 달리지 않은 오늘 크루 러닝을 돌려받고 목록을 다시 읽는다. 하루 한 번은 크루를 가리지 않으니 한 크루로 물으면 된다(2026-11-18 점검)
+    val doneCrew = crews.firstOrNull { (id, _) -> doneToday[id] == true }?.first
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val givenBack = stringResource(R.string.tlf_unrun_given_back)
+    LaunchedEffect(doneCrew) {
+        val crewId = doneCrew ?: return@LaunchedEffect
+        val today = ServiceLocator.crewRun.loadToday(crewId) ?: return@LaunchedEffect
+        val mine = today.mine
+        if (mine.usedToday && crewRepo.recoverUnrunToday(mine.partyId, mine.sessionId, mine.startedAtMs, today.serverNowMs) == true) {
+            android.widget.Toast.makeText(context, givenBack, android.widget.Toast.LENGTH_LONG).show()
+            reload++
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxWidth().weight(1f).testTag("community-meetups"), contentPadding = PaddingValues(bottom = 16.dp)) {

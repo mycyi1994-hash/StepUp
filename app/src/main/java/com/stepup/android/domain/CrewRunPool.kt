@@ -200,9 +200,88 @@ data class CrewRunLive(
     val levelPct: Double,
     val earning: CrewEarning,
     val serverNowMs: Long,
+    /** 이 참여가 끝난 때(서버 0117) — 달리는 중이거나 예전 서버면 null */
+    val endedAtMs: Long? = null,
+    /**
+     * 여기까지 달린 걸음만 적립한다(서버 0117 — 끝난 때 + 60초, 내가 끝냈거나 마지막 한 사람으로 끝났을 때). 그 뒤 걸음은 보상이 없다.
+     * 달리는 중이거나 예전 서버면 null
+     */
+    val rewardUntilMs: Long? = null,
 ) {
     /** 다른 참가자가 모두 끝내 서버가 나를 끝냈다 */
     val endedAlone: Boolean get() = state == CrewRunState.ENDED && terminal == CrewTerminal.LAST_PARTICIPANT_END
+
+    /**
+     * 지금 공용 체력으로는 적립이 없는가 — 서버가 다 썼다고 했거나(POOL_EMPTY), 총량이 0 이거나(기여 없이 출발),
+     * 받은 뒤 [sinceMs] 동안 지금 쓰는 사람 수만큼 흘려 보면 남은 양이 0 이하일 때. 서버에 닿지 못하는 동안에도 0 을 지나면 그렇게 본다
+     * (서버도 보지 못한 달린 시간을 올릴 때 공용 체력에서 뺀다, 0117). 풀을 모르면 아니다.
+     */
+    fun poolEmptyAfter(sinceMs: Long): Boolean {
+        if (earning == CrewEarning.POOL_EMPTY) return true
+        val p = pool ?: return false
+        return p.exhausted || p.total <= 0.0 || p.remainingAt(p.asOfMs + max(sinceMs, 0L)) <= 0.0
+    }
+}
+
+/**
+ * 마지막 한 사람 — 함께 달린 사람이 모두 마쳐 서버가 내 크루 러닝을 끝냈다(R06). 폰은 바로 멈추지 않고 크게 알린 뒤
+ * [stopAtElapsedMs](부팅 기준 시계)까지 기록하고 멈춘다 — 화면을 보지 않고 달리는 사람이 모르는 채 기록이 끊기지 않게(2026-11-18).
+ */
+data class CrewAloneGrace(val startedAt: Long, val stopAtElapsedMs: Long) {
+    /** 멈출 때까지 남은 초(올림) — 지났으면 0 */
+    fun leftSec(nowElapsedMs: Long): Int = CrewAlone.seconds(stopAtElapsedMs - nowElapsedMs)
+}
+
+object CrewAlone {
+    /** 서버가 끝낸 뒤에도 적립하는 시간 — 서버(0117 reward_until)와 같다 */
+    const val GRACE_MS = 60_000L
+
+    /**
+     * 처음 안 때부터 러닝을 멈출 때까지(ms) — 서버가 알려 준 "여기까지 적립"과 서버 시각의 차(폰 시계와 상관없다), 0 ~ 60초.
+     * 이미 지났으면 0(바로 멈춘다). 서버가 알려 주지 않으면(예전 서버) 처음 안 때부터 60초.
+     */
+    fun leftMs(rewardUntilMs: Long?, serverNowMs: Long): Long =
+        if (rewardUntilMs == null) GRACE_MS else (rewardUntilMs - serverNowMs).coerceIn(0L, GRACE_MS)
+
+    /** ms → 초(올림), 0 아래는 0 */
+    fun seconds(ms: Long): Int = ((ms + 999L) / 1000L).coerceAtLeast(0L).toInt()
+}
+
+/**
+ * 공용 체력이 0 이던 동안의 걸음 — 러닝(시작 시각)마다. 예상 보상은 [earningSteps] 만 센다(서버도 빈 구간만 뺀다, 다시 채워지면 그 뒤는 센다).
+ * 화면이 아니라 크루 러닝 상태 알림(CrewRunRepository)이 들고 있어 화면이 꺼져 있어도 · 화면을 오가도 잃지 않는다(2026-11-18).
+ *
+ * @param excluded 이미 지난 빈 구간들의 걸음 합
+ * @param emptyFrom 지금 빈 구간이 시작한 때의 걸음 — 비어 있지 않으면 null
+ */
+data class CrewEmptySteps(val startedAt: Long, val excluded: Int = 0, val emptyFrom: Int? = null) {
+    val emptyNow: Boolean get() = emptyFrom != null
+
+    /** 적립에 드는 걸음 — 빈 구간의 걸음을 뺀다 */
+    fun earningSteps(steps: Int): Int = ((emptyFrom ?: steps) - excluded).coerceAtLeast(0)
+
+    /** 지금 걸음 · 비었는지를 받아 다음 값 — 바뀐 것이 없으면 자기 자신 */
+    fun next(steps: Int, empty: Boolean): CrewEmptySteps = when {
+        empty && emptyFrom == null -> copy(emptyFrom = steps.coerceAtLeast(0))
+        !empty && emptyFrom != null -> copy(excluded = excluded + (steps - emptyFrom).coerceAtLeast(0), emptyFrom = null)
+        else -> this
+    }
+}
+
+/**
+ * "끝냄"을 서버에 다시 보내는 간격 — 3 · 6 · 12 · 24 · 48 · 60초 …, 한 번에 [WINDOW_MS](10분)까지.
+ * 그 안에 닿지 못하면 인터넷이 다시 되거나 앱을 다시 켤 때 이어 보낸다. [KEEP_MS] 가 지난 것은 버린다(러닝을 올리면 서버가 그 참여를 닫는다).
+ */
+object CrewEndRetry {
+    const val FIRST_MS = 3_000L
+    const val MAX_MS = 60_000L
+    const val WINDOW_MS = 10 * 60_000L
+    const val KEEP_MS = 24 * 60 * 60_000L
+
+    fun delayMs(attempt: Int): Long = (FIRST_MS shl attempt.coerceIn(0, 10)).coerceAtMost(MAX_MS)
+
+    /** [spentMs] 를 쓴 뒤 [attempt] 번째 기다림까지 하면 창을 넘는가 — 넘으면 이번에는 그만둔다 */
+    fun over(spentMs: Long, attempt: Int): Boolean = spentMs + delayMs(attempt) > WINDOW_MS
 }
 
 /** 결과 — `crew_run_result`. 서버가 정산하기 전에는 settled=false */

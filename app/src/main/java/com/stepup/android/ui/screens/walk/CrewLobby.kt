@@ -333,18 +333,22 @@ internal fun CrewLobbyContent(
                 onWait = { sheet = LobbySheet.None },
             )
         }
-        LobbySheet.Leave -> LeaveSheet(
-            host = party.isHost,
-            onStay = { sheet = LobbySheet.None },
-            onLeave = {
-                sheet = LobbySheet.None
-                onBack()
-            },
-        )
+        // 나가기 확인은 출발 전에만 — 진행자가 출발을 누른 뒤(카운트다운)에는 닫는다. 그때 "나가기"를 누르면 서버에는 이미
+        // 출발 명단에 든 사람이라 "오늘의 크루 러닝은 쓰이지 않아요"가 거짓이 됐다(2026-11-18 점검)
+        LobbySheet.Leave -> if (lobby) {
+            LeaveSheet(
+                host = party.isHost,
+                onStay = { sheet = LobbySheet.None },
+                onLeave = {
+                    sheet = LobbySheet.None
+                    onBack()
+                },
+            )
+        }
     }
     // 열린 시트의 값이 사라졌다(방 상태가 바뀌었다) — 빈 시트를 두지 않고 닫는다
     val stale = (sheet == LobbySheet.Shoes && room == null) || (sheet == LobbySheet.Course && party.course == null) ||
-        (sheet == LobbySheet.Start && !(party.isHost && lobby && party.readyCount >= 2))
+        (sheet == LobbySheet.Start && !(party.isHost && lobby && party.readyCount >= 2)) || (sheet == LobbySheet.Leave && !lobby)
     androidx.compose.runtime.LaunchedEffect(stale) { if (stale) sheet = LobbySheet.None }
     val kickGone = kickTarget?.let { id -> party.members.none { it.id == id } || !party.isHost || !lobby } == true
     androidx.compose.runtime.LaunchedEffect(kickGone) { if (kickGone) kickTarget = null }
@@ -385,19 +389,27 @@ internal enum class LobbySheet { None, Roster, Rules, Bonus, Stamina, Goal, Leve
 /** 진행자 메뉴(⋯) */
 internal enum class LobbyMenu { Roster, Course, Call, Rules, Leave }
 
-/** 대기실 대신 보이는 한 화면 — 불러오기 실패(69) · 나옴(70) · 닫힘 · 찼음 · 출발함 · 출발을 놓침 · 로그인 */
-internal enum class LobbyTerminal { FAILED, REMOVED, CLOSED, FULL, STARTED, MISSED, SIGN_IN }
+/**
+ * 대기실 대신 보이는 한 화면 — 불러오기 실패(69) · 나옴(70) · 닫힘 · 찼음 · 출발함 · 출발을 놓침 · 로그인 ·
+ * 나를 빼고 출발함 · 크루원이 아님 · 이 폰이 러닝을 켜지 못함(2026-11-18 점검)
+ */
+internal enum class LobbyTerminal { FAILED, REMOVED, CLOSED, FULL, STARTED, MISSED, SIGN_IN, LEFT_BEHIND, NOT_MEMBER, BLOCKED }
 
 /** 이 상태면 방 화면 대신 한 화면 — 방에 들어가기 전의 연결 실패 · 다시 들어갈 수 없는 까닭 */
 internal fun lobbyTerminal(party: PartyState): LobbyTerminal? = when (party.problem) {
     PartyProblem.SIGN_IN -> LobbyTerminal.SIGN_IN
     PartyProblem.REMOVED -> LobbyTerminal.REMOVED
-    PartyProblem.CLOSED -> LobbyTerminal.CLOSED
+    // FLASH_CLOSED 는 번개러닝 대기실의 것 — 크루 대기실에는 오지 않는다
+    PartyProblem.CLOSED, PartyProblem.FLASH_CLOSED -> LobbyTerminal.CLOSED
     PartyProblem.FULL -> LobbyTerminal.FULL
     PartyProblem.STARTED -> LobbyTerminal.STARTED
-    PartyProblem.MISSED_START -> LobbyTerminal.MISSED.takeIf { party.pickedRoom != null && party.partyId == null }
+    PartyProblem.LEFT_BEHIND -> LobbyTerminal.LEFT_BEHIND
+    PartyProblem.NOT_MEMBER -> LobbyTerminal.NOT_MEMBER
+    PartyProblem.MISSED_START -> LobbyTerminal.MISSED.takeIf { party.partyId == null }
+    PartyProblem.START_BLOCKED -> LobbyTerminal.BLOCKED.takeIf { party.partyId == null }
     PartyProblem.NETWORK -> LobbyTerminal.FAILED.takeIf { party.partyId == null }
-    PartyProblem.FAILED, PartyProblem.NEED_TWO, null -> null
+    // 방 위 안내 — 방에는 그대로 있다
+    PartyProblem.FAILED, PartyProblem.NEED_TWO, PartyProblem.DONE_TODAY, PartyProblem.COURSE_CHANGED, null -> null
 }
 
 /** 한 화면(앱 바탕 — APP_EXISTING) — 오류를 참가자 0 · 체력 0 으로 덮지 않는다. 주 행동 하나 */
@@ -423,6 +435,15 @@ private fun CrewLobbyTerminal(
             null -> R.string.fxc_missed_checking_body
         }
         LobbyTerminal.SIGN_IN -> R.string.crew5_sign_in_title to R.string.party_problem_sign_in
+        // 준비 전이었거나 대기실을 보고 있지 않아 출발에서 빠졌다 — "진행자가 내보냈어요"가 아니다. 출발 명단에 없어 오늘 크루 러닝은 그대로다
+        LobbyTerminal.LEFT_BEHIND -> R.string.tlf_left_behind_title to R.string.tlf_left_behind_body
+        LobbyTerminal.NOT_MEMBER -> R.string.tlf_not_member_title to R.string.tlf_not_member_body
+        // 출발했지만 이 폰이 러닝을 켜지 못했다 — 방에서 나왔고, 달리지 않은 오늘 크루 러닝은 돌려받았을 때만 그렇게 말한다
+        LobbyTerminal.BLOCKED -> R.string.tlf_start_blocked_title to when (missedFreed) {
+            true -> R.string.tlf_start_blocked_freed
+            false -> R.string.tlf_start_blocked_used
+            null -> R.string.tlf_start_blocked_checking
+        }
     }
     val tag = "party-terminal-" + terminal.name.lowercase()
     CrewPage(
@@ -432,6 +453,8 @@ private fun CrewLobbyTerminal(
                 // 원래 방 번호로 다시 묻는다(닫힘 · 나옴과 가른다)
                 LobbyTerminal.FAILED -> FreeRunButton(stringResource(R.string.crew5_rooms_reload), onReconnect, Modifier.fillMaxWidth().testTag("party-reconnect"))
                 LobbyTerminal.SIGN_IN -> FreeRunButton(stringResource(R.string.crew_retry), onRetry, Modifier.fillMaxWidth().testTag("party-retry"))
+                // 크루원이 아니면 그 크루의 다른 대기실도 볼 수 없다 — 돌아가기만
+                LobbyTerminal.NOT_MEMBER -> FreeRunButton(stringResource(R.string.common_ok), onBack, Modifier.fillMaxWidth().testTag("party-terminal-back"))
                 else -> FreeRunButton(stringResource(R.string.crew5_other_rooms), onOtherRooms, Modifier.fillMaxWidth().testTag("party-other-rooms"))
             }
         },
@@ -540,6 +563,13 @@ private fun LobbyNotices(
             }
         }
         if (party.problem == PartyProblem.FAILED) add { LobbyNotice(stringResource(R.string.crew5_lobby_failed), Modifier.testTag("party-problem"), warn = true) }
+        // 까닭을 아는 거절 — "다시 눌러 주세요"가 아니다: 오늘 이미 했다(아래 줄이 이미 말하고 있으면 겹치지 않는다) · 코스가 바뀌었다
+        if (party.problem == PartyProblem.DONE_TODAY && !doneToday) add {
+            LobbyNotice(stringResource(R.string.tlf_done_today), Modifier.testTag("party-problem"), warn = true)
+        }
+        if (party.problem == PartyProblem.COURSE_CHANGED) add {
+            LobbyNotice(stringResource(R.string.tlf_course_changed), Modifier.testTag("party-problem"), warn = true)
+        }
         // 출발을 서버가 받지 않았다 — 준비했지만 대기실을 보고 있지 않은 사람이 있어 2명이 안 된다(0109). 누가 자리에 없는지 말한다
         if (party.problem == PartyProblem.NEED_TWO) add {
             val away = party.awayReady

@@ -37,11 +37,18 @@ import kotlinx.coroutines.launch
  * 달리는 중)을 보면 알림을 띄운다. 누르면 앱이 앞으로 오고 PartyRunStartHost 가 출발 2분 안이면 러닝을 켠다.
  * 러닝이 켜졌거나 · 앱이 앞으로 왔거나 · 2분이 지났거나 · 방을 떠나면 알림을 거둔다.
  * 전체 화면 알림 권한은 없으므로 높은 중요도의 일반 알림(헤드업)이다.
+ *
+ * 2026-11-18(서버 0117) — 서버도 출발할 때 푸시(PARTY_STARTED)를 보낸다: 폰이 재워 대기실 묻기가 멈췄어도 알 수 있게.
+ * 크루 방의 그 푸시는 안드로이드가 꼬리표(tag) = 링크 `room/<크루>/<방>` · 번호 0 으로 띄운다 — 이 알림도 같은 꼬리표 · 번호로
+ * 띄워 둘이 겹치지 않고 하나가 다른 하나를 바꾼다. 번개러닝은 꼬리표가 없어 예전 번호 그대로다. 글도 크루 · 번개를 가려 적는다.
  */
 object CrewStartAlert {
 
     const val CHANNEL_ID = "crew_start"
     private const val NOTIFICATION_ID = 0x5C2E
+
+    /** 안드로이드가 꼬리표 달린 푸시를 띄울 때 쓰는 번호 */
+    private const val PUSH_TAG_ID = 0
 
     // 처음 쓸 때 만든다 — 판단만 보는 단위 검사가 안드로이드 메인 스레드 없이 이 객체를 읽을 수 있게
     private val scope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate) }
@@ -53,6 +60,12 @@ object CrewStartAlert {
 
     /** 지금 알림을 띄운 방 */
     private var shownParty: Long? = null
+
+    /** 지금 띄운 알림의 꼬리표(크루 방 — 서버 출발 푸시와 같은 것). 번개러닝이면 null */
+    private var shownTag: String? = null
+
+    /** 앱 화면이 앞에 보이는가 — 푸시(PushService)가 지금 보고 있는 방의 출발 소식을 겹쳐 띄우지 않게 읽는다 */
+    val appInForeground: Boolean get() = foreground.value
 
     /** 앱 켤 때 한 번(StepUpApp) — 앞에 보이는 화면이 있는지 세고, 방 상태 · 러닝 상태를 본다. 따로 묻지 않는다(가벼운 일만) */
     fun attach(app: Application, crew: CrewRepository) {
@@ -97,10 +110,17 @@ object CrewStartAlert {
             running = running,
         )
         when {
-            show && shownParty != id -> post(context, id!!, party.startsAtLocal)
+            show && shownParty != id -> post(context, id!!, party.startsAtLocal, roomTag(party.crewId, party.flashPostId, id))
             !show && shownParty != null -> cancel(context)
         }
     }
+
+    /**
+     * 크루 방 알림의 꼬리표 — 서버 출발 푸시의 링크와 같다(`room/<크루>/<방>`, 서버 0117). 번개러닝 방이면 null(꼬리표 없이 띄운다).
+     * 크루 id 는 서버가 적는 소문자 그대로다.
+     */
+    internal fun roomTag(crewId: String?, flashPostId: Long?, partyId: Long): String? =
+        if (flashPostId == null && !crewId.isNullOrBlank()) "room/${crewId.lowercase()}/$partyId" else null
 
     /**
      * 알림을 띄울까 — 준비한 방이 출발했고(카운트다운 · 출발 2분 안) 앱이 뒤에 있고 이 폰의 러닝이 아직 꺼져 있을 때.
@@ -123,7 +143,7 @@ object CrewStartAlert {
         }
     }
 
-    private fun post(context: Context, partyId: Long, startsAtLocal: Long) {
+    private fun post(context: Context, partyId: Long, startsAtLocal: Long, tag: String?) {
         val allowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         if (!allowed) return
@@ -139,7 +159,8 @@ object CrewStartAlert {
         val left = (until - System.currentTimeMillis()).coerceAtLeast(1_000L)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_walk)
-            .setContentTitle(context.getString(R.string.crew_start_alert_title))
+            // 번개러닝은 크루 러닝이 아니다 — 꼬리표가 없으면 번개 글의 방이다
+            .setContentTitle(context.getString(if (tag != null) R.string.crew_start_alert_title else R.string.tlf_flash_start_alert_title))
             .setContentText(context.getString(R.string.crew_start_alert_body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
@@ -149,11 +170,14 @@ object CrewStartAlert {
             .setContentIntent(pending)
             .build()
         try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+            // 크루 방 — 서버 출발 푸시와 같은 꼬리표 · 번호 0(둘 중 나중 것이 앞의 것을 바꾼다). 번개러닝은 예전 번호
+            if (tag != null) NotificationManagerCompat.from(context).notify(tag, PUSH_TAG_ID, notification)
+            else NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
         } catch (e: SecurityException) {
             return // 그사이 알림 권한을 거뒀다
         }
         shownParty = partyId
+        shownTag = tag
         // 창이 닫히는 때 다시 본다 — 그사이 방 상태가 바뀌지 않아도 알림을 거둔다(위 setTimeoutAfter 와 같이)
         scope.launch {
             delay(left)
@@ -162,8 +186,12 @@ object CrewStartAlert {
     }
 
     private fun cancel(context: Context) {
+        val tag = shownTag
         shownParty = null
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        shownTag = null
+        // 같은 꼬리표로 온 서버 출발 푸시도 함께 거둔다(앱이 앞으로 왔다 · 러닝이 켜졌다 — 더 알릴 것이 없다)
+        if (tag != null) NotificationManagerCompat.from(context).cancel(tag, PUSH_TAG_ID)
+        else NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 
     private fun createChannel(context: Context) {

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 함께 뛰기 대기실 · 출발 점검 수정(2026-11-18, 서버 0117) — 까닭을 가려 알린다 · 출발을 켜지 못했을 때 · 놓친 출발 돌려받기 -->
+    <string name="tlf_missed_toast">You missed the group start, so you left that lobby.</string>
+    <string name="tlf_start_blocked_toast">This phone couldn\'t start the run, so you left the lobby.</string>
+    <string name="tlf_left_behind_toast">The run started while you weren\'t on the lobby screen, so you didn\'t start together.</string>
+    <string name="tlf_ready_unfinished_run">You have an unfinished run. Resume or finish it first.</string>
+    <string name="tlf_flash_left_behind">The flash run started. You weren\'t ready or weren\'t on the lobby screen, so you didn\'t start together.</string>
+    <string name="tlf_flash_not_member">Only runners who joined this flash run can enter its lobby.</string>
+    <string name="tlf_flash_start_blocked">The flash run started, but the run didn\'t start on this phone, so you left the lobby.</string>
+    <string name="tlf_done_today">You already did today\'s crew run. It\'s once a day.</string>
+    <string name="tlf_course_changed">The course changed. Check it and start again.</string>
+    <string name="tlf_flash_lobby_closed">This flash run\'s lobby has closed. It\'s more than an hour past the meet time.</string>
+    <string name="tlf_open_new_lobby">Open a new lobby</string>
+    <string name="tlf_flash_bonus_once">The party bonus applies once per flash run. A new lobby for the same flash run may not add it again.</string>
+    <string name="tlf_flash_kick_body">They\'re removed from this lobby and can\'t come back into this flash run\'s lobby.</string>
+    <string name="tlf_left_behind_title">You didn\'t start together</string>
+    <string name="tlf_left_behind_body">The crew run started. You weren\'t ready or weren\'t on the lobby screen, so you didn\'t start together. Today\'s crew run wasn\'t used.</string>
+    <string name="tlf_not_member_title">Crew members only</string>
+    <string name="tlf_not_member_body">Only members of this crew can enter this lobby.</string>
+    <string name="tlf_start_blocked_title">The run didn\'t start on this phone</string>
+    <string name="tlf_start_blocked_freed">The crew started, but the run didn\'t start on this phone, so you left the lobby. Today\'s crew run wasn\'t used.</string>
+    <string name="tlf_start_blocked_used">The crew started, but the run didn\'t start on this phone, so you left the lobby. Today\'s crew run was already used.</string>
+    <string name="tlf_start_blocked_checking">The crew started, but the run didn\'t start on this phone, so you left the lobby.</string>
+    <string name="tlf_flash_start_alert_title">Your flash run has started</string>
+    <string name="tlf_create_running">You have a run in progress. Finish it before opening a lobby.</string>
+    <string name="tlf_unrun_given_back">A crew run started without this phone running, so today\'s crew run was given back.</string>
+    <string name="tlf_crew_running">You can disband the crew after the crew run in progress ends.</string>
+</resources>

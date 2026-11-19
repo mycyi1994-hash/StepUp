@@ -45,7 +45,54 @@ class PushService : FirebaseMessagingService() {
         // 지금 화면에 보이는 크루 채팅 방의 새 메시지는 띄우지 않는다(방이 이미 따라오고 있다)
         val visible = com.stepup.android.ui.screens.community.chat.ChatVisibility.crewId
         if (visible != null && link == "crew-chat/$visible") return
+        // 이 폰이 지금 들어가 있는(달리고 있는) 방의 출발 소식은 앱이 앞에 있으면 띄우지 않는다 — 화면이 이미 출발을 보인다(서버 0117)
+        if (shownByTheRoom(link, message.data["kind"])) return
         show(this, title, body, link)
+    }
+
+    /**
+     * 함께 뛰기 방의 출발 푸시(PARTY_STARTED · PARTY_MISSED, 서버 0117 — 링크 `room/<크루>/<방>` · `flash/<글>`)를 앱 화면이 대신 알리는가.
+     * 앱이 앞에 있고 이 폰이 그 방에 들어가 있을 때만: 방을 바로 다시 물어(출발 연출 · 러닝 켜기 · "함께 출발하지 못했어요"는 화면이 한다)
+     * 알림은 띄우지 않는다. 어떤 소식인지는 푸시의 kind 로 가른다 — 번개 글 링크는 그 글의 댓글 알림도 같이 쓴다(2026-11-18 검토:
+     * 링크만 보면 달리는 동안 그 글의 댓글 알림까지 숨겼다). kind 가 없으면(예전 push-send) 크루 방 링크만 가린다.
+     */
+    private fun shownByTheRoom(link: String, kind: String?): Boolean {
+        if (link.isBlank() || !com.stepup.android.service.CrewStartAlert.appInForeground) return false
+        val startPush = kind == KIND_STARTED || kind == KIND_MISSED
+        if (kind != null && !startPush) return false
+        val repo = runCatching { ServiceLocator.crewRepository }.getOrNull() ?: return false
+        val party = repo.party.value
+        // 이미 "함께 출발하지 못했어요"를 화면이 보이고 있다(방 묻기가 푸시보다 먼저 닿았다)
+        if (kind == KIND_MISSED && leftBehindFor(link, party)) return true
+        return when (com.stepup.android.data.repo.partyPush(link, party)) {
+            com.stepup.android.data.repo.PartyPush.OTHER -> false
+            com.stepup.android.data.repo.PartyPush.MINE ->
+                if (!startPush && link.startsWith("flash/")) {
+                    false
+                } else {
+                    repo.wakeParty()
+                    true
+                }
+            // 이 폰이 그 번개 글의 대기실에 있다 — 출발 소식이면 방을 바로 다시 물어 화면이 알린다
+            com.stepup.android.data.repo.PartyPush.CHECK ->
+                if (startPush) {
+                    repo.wakeParty()
+                    true
+                } else {
+                    false
+                }
+        }
+    }
+
+    /** 이 폰이 그 방(크루) · 그 번개 글에서 "함께 출발하지 못했어요"를 보이고 있다 */
+    private fun leftBehindFor(link: String, party: com.stepup.android.data.repo.PartyState): Boolean {
+        if (party.problem != com.stepup.android.data.repo.PartyProblem.LEFT_BEHIND) return false
+        val parts = link.trim('/').split('/')
+        return when {
+            parts.size == 3 && parts[0] == "room" -> party.crewId == parts[1]
+            parts.size == 2 && parts[0] == "flash" -> party.flashPostId != null && party.flashPostId == parts[1].toLongOrNull()
+            else -> false
+        }
     }
 
     companion object {
@@ -96,5 +143,9 @@ class PushService : FirebaseMessagingService() {
 
         /** 알림을 눌러 들어왔을 때 열 화면. 앱 안 링크 형식(예: crew/<id>) */
         const val EXTRA_LINK = "push_link"
+
+        /** 함께 뛰기 출발 푸시의 kind(서버 0117 · push-send) */
+        private const val KIND_STARTED = "PARTY_STARTED"
+        private const val KIND_MISSED = "PARTY_MISSED"
     }
 }

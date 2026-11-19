@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 함께 뛰기 점검 수정(2026-11-18) — 달리는 중 · 결과: 마지막 한 사람 알림 · 마치기 안내 -->
+<resources>
+    <string name="notification_channel_crew_run_alert">团队跑提醒</string>
+    <string name="crew_alone_notif_title">一起跑的人都已结束</string>
+    <string name="crew_alone_notif_body">%1$d秒后你的团队跑也会结束，到那时为止的记录会保存。</string>
+    <string name="crew_alone_ended_title">团队跑已结束</string>
+    <string name="crew_alone_ended_body">一起跑的人都已结束，你的团队跑也随之结束。记录已保存。</string>
+    <string name="crew_alone_band">一起跑的人都已结束 · %1$d秒后你的团队跑也会结束</string>
+    <string name="run_crew_end_last_note">现在只剩另一位跑者。你结束后，对方的团队跑也会很快结束。</string>
+    <string name="run_crew_closed_band_last">组织者已结束一起跑</string>
+</resources>

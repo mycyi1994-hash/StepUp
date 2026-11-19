@@ -8528,7 +8528,9 @@ call pg_temp.login('71000000-0000-0000-0000-000000000023');
 do $$
 declare r record; v_at timestamptz := pg_temp.fx('t71_z')::timestamptz;
 begin
-  select * into r from public.record_session(v_at, v_at + interval '1200 seconds', 1000, 1200, '', 0, 1, '', false);
+  -- 앱은 멈춘 시간을 뺀 달린 초를 보낸다(벽시계 1,200초 중 쉰 600초를 뺀 600) — 서버가 센 달린 초와 같다.
+  -- 0117 부터 서버가 세지 못한 달린 시간은 정산 때 체력에서 쓴다(아래 "경제 함께 뛰기 고침")
+  select * into r from public.record_session(v_at, v_at + interval '1200 seconds', 1000, 600, '', 0, 1, '', false);
   insert into fix (k, v) values ('r71_w', r.session_id::text);
 end $$;
 reset role;
@@ -11511,15 +11513,23 @@ begin
   select r.starts_at into v_at from public.party_runs r
    where r.party_id = pg_temp.fx('fp109')::bigint and r.user_id = '10900000-0000-0000-0000-000000000003';
   insert into fix (k, v) values ('at109', v_at::text);
-  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '8 minutes',
-                                                               v_at - interval '2 minutes') f) is null,
-    '출발 2분 전에 끝난 혼자 러닝은 방의 러닝으로 셈하지 않는다(0109)');
+  -- 0117 부터 방의 러닝은 출발 2분 앞 ~ 3분 뒤에 시작한 것만이라 창 안에서 시작 · 출발 전에 끝난 러닝으로 잰다
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '110 seconds',
+                                                               v_at - interval '65 seconds') f) is null,
+    '출발 1분 넘게 전에 끝난 혼자 러닝은 방의 러닝으로 셈하지 않는다(0109)');
   perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at,
                                                                v_at + interval '20 minutes') f) = pg_temp.fx('fp109')::bigint,
     '출발 시각에 시작해 뒤에 끝난 러닝은 그 방의 러닝(0109)');
-  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '8 minutes') f)
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '110 seconds') f)
                      = pg_temp.fx('fp109')::bigint,
     '예전 두 칸 호출은 끝난 시각을 보지 않는다(0109)');
+  perform pg_temp.ok((select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at + interval '4 minutes',
+                                                               v_at + interval '30 minutes') f) is null
+                     and (select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at - interval '3 minutes',
+                                                               v_at + interval '30 minutes') f) is null
+                     and (select f.party_id from economy.party_for('10900000-0000-0000-0000-000000000003', v_at + interval '170 seconds',
+                                                               v_at + interval '30 minutes') f) = pg_temp.fx('fp109')::bigint,
+    '방의 러닝은 출발 2분 앞 ~ 3분 뒤에 시작한 것만 — 출발 4분 뒤 · 3분 앞에 시작한 러닝은 아니다(0117)');
 end $$;
 -- record_session 이 끝난 시각을 넘긴다 — 출발 전에 끝난 러닝은 방 번호 없이 기록된다
 set role authenticated;
@@ -12698,6 +12708,265 @@ begin
     '키를 한 번 더 넣으면 바뀌고 기록이 남는다 (0116)');
 end $$;
 update public.economy_settings set value = '40' where key = 'box_price';
+
+-- ════════════════════════════════════════════════════════════════════
+--  함께 뛰기 고침(0117) — docs/점검-2026-11-18-함께뛰기.md · tools/together_sim
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 함께 뛰기 고침(0117) ──────────────────────────────────────────'
+create or replace function pg_temp.u117(n int) returns uuid language sql immutable as $$
+  select ('b5000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $$;
+create or replace function pg_temp.c117(n int) returns uuid language sql immutable as $$
+  select ('b5c00000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $$;
+create or replace function pg_temp.mk117(n int) returns void language plpgsql as $$
+begin
+  insert into auth.users (id, email) values (pg_temp.u117(n), 'u117_' || n || '@test.invalid') on conflict do nothing;
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(n)::text, false);
+  perform public.economy_bootstrap();
+  update public.profiles set display_name = '러너' || n, created_at = now() - interval '40 days' where id = pg_temp.u117(n);
+  update public.market_sneakers
+     set level = 1, efficiency_bps = 4000, comfort_bps = 0, pts_eff = 0, pts_comfort = 0, pts_dur = 0, dur_base = 150, dur_now = 150
+   where owner_id = pg_temp.u117(n) and equipped;
+end $$;
+-- 시계를 돌릴 수 없어 그 방의 기록을 뒤로 옮긴다
+create or replace function pg_temp.age117(p_party bigint, p interval) returns void language plpgsql as $$
+declare v_crew uuid := (select crew_id from public.parties where id = p_party);
+begin
+  update public.parties set starts_at = starts_at - p, created_at = created_at - p, plan_at = plan_at - p where id = p_party;
+  update public.party_members set joined_at = joined_at - p, last_seen = last_seen - p, pinged_at = pinged_at - p where party_id = p_party;
+  update public.party_runs set starts_at = starts_at - p, last_ping = last_ping - p where party_id = p_party;
+  update economy.crew_runs set started_at = started_at - p, last_beat_at = last_beat_at - p, ended_at = ended_at - p where party_id = p_party;
+  update economy.crew_day_pools set settled_at = settled_at - p, exhausted_at = exhausted_at - p, low_at = low_at - p where crew_id = v_crew;
+  update economy.crew_pool_empty set from_at = from_at - p, to_at = to_at - p where crew_id = v_crew;
+end $$;
+create or replace function pg_temp.room117(p_crew uuid, p_users int[]) returns bigint language plpgsql as $$
+declare v bigint; n int;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(p_users[1])::text, false);
+  v := public.party_create_v2(p_crew, '고침 검사', null, null, null, gen_random_uuid(), 'TOGETHER', null, null, null, null, null);
+  foreach n in array p_users loop
+    perform set_config('request.jwt.claim.sub', pg_temp.u117(n)::text, false);
+    perform public.party_join(v);
+    perform public.party_ready(v, true);
+  end loop;
+  return v;
+end $$;
+
+select pg_temp.mk117(n) from generate_series(1, 13) n;
+insert into public.crews (id, owner_id, name) values
+  (pg_temp.c117(1), pg_temp.u117(1), '고침 크루 하나'), (pg_temp.c117(2), pg_temp.u117(4), '고침 크루 둘'),
+  (pg_temp.c117(3), pg_temp.u117(6), '고침 크루 셋'), (pg_temp.c117(4), pg_temp.u117(12), '고침 크루 넷');
+insert into public.crew_members (crew_id, user_id, role)
+select c, u, r from (values
+  (pg_temp.c117(1), pg_temp.u117(1), 'OWNER'), (pg_temp.c117(1), pg_temp.u117(2), 'MEMBER'), (pg_temp.c117(1), pg_temp.u117(3), 'MEMBER'),
+  (pg_temp.c117(2), pg_temp.u117(4), 'OWNER'), (pg_temp.c117(2), pg_temp.u117(5), 'MEMBER'),
+  (pg_temp.c117(3), pg_temp.u117(6), 'OWNER'), (pg_temp.c117(3), pg_temp.u117(7), 'MEMBER'), (pg_temp.c117(3), pg_temp.u117(8), 'MEMBER'),
+  (pg_temp.c117(4), pg_temp.u117(12), 'OWNER'), (pg_temp.c117(4), pg_temp.u117(13), 'MEMBER')) x(c, u, r)
+on conflict do nothing;
+insert into public.push_tokens (token, user_id, platform, locale)
+select 'fcm-token-117-' || lpad(n::text, 12, 'x'), pg_temp.u117(n), 'android', 'ko' from generate_series(1, 13) n on conflict do nothing;
+
+-- ① 출발 푸시 · 빠진 사람 · 알림 없이 달린 크루 러닝은 정산 때 체력을 쓴다
+do $$
+declare v_p bigint; v_at timestamptz; r record; a public.walk_sessions; b public.walk_sessions; d economy.crew_day_pools; c economy.crew_runs;
+begin
+  v_p := pg_temp.room117(pg_temp.c117(1), array[1, 2, 3]);
+  -- 3 은 준비한 뒤 폰을 잠갔다(20초 동안 대기실을 묻지 않았다)
+  update public.party_members set last_seen = now() - interval '20 seconds' where party_id = v_p and user_id = pg_temp.u117(3);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(1)::text, false);
+  perform public.party_start_rev(v_p, 0);
+  perform pg_temp.ok((select count(*) from public.push_outbox where kind = 'PARTY_STARTED' and user_id = pg_temp.u117(2)
+                        and link = 'room/' || pg_temp.c117(1) || '/' || v_p) = 1
+                     and not exists (select 1 from public.push_outbox where kind = 'PARTY_STARTED' and user_id = pg_temp.u117(1))
+                     and (select count(*) from public.push_outbox where kind = 'PARTY_MISSED' and user_id = pg_temp.u117(3)) = 1,
+    '출발하면 함께 출발한 사람에게 PARTY_STARTED(진행자 빼고) · 준비했지만 대기실을 보지 않아 빠진 사람에게 PARTY_MISSED (0117)');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(3)::text, false);
+  begin
+    perform public.party_state(v_p);
+    perform pg_temp.ok(false, '빠진 사람의 대기실 묻기는 거절돼야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'room_started' and sqlstate = '23514',
+      '출발에서 빠진 사람에게는 "내보냈어요"가 아니라 room_started — ' || sqlerrm || ' (0117)');
+  end;
+  -- 둘 다 연결 없이 60분(상태 알림 0번). 체력 300 = 혼자 60분
+  perform pg_temp.age117(v_p, interval '60 minutes 6 seconds');
+  select started_at into v_at from economy.crew_runs where party_id = v_p and user_id = pg_temp.u117(1);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(1)::text, false);
+  select * into r from public.record_session(v_at, v_at + interval '3600 seconds', 6000, 3600, pg_temp.track(v_at, 3600, 0.000012477), 0, 1, '', false);
+  select * into a from public.walk_sessions where id = r.session_id;
+  select * into d from economy.crew_day_pools where crew_id = pg_temp.c117(1);
+  select * into c from economy.crew_runs where party_id = v_p and user_id = pg_temp.u117(1);
+  perform pg_temp.ok(a.energy_pool = 'CREW' and a.rewarded_steps = 6000 and round(d.consumed, 2) = 300 and round(c.consumed, 2) = 300,
+    format('알림 없이 달린 60분 — 정산 때 공용 체력 300 을 쓰고(%s) 체력이 넉넉하면 다 적립(%s걸음) (0117)', round(d.consumed, 2), a.rewarded_steps));
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(2)::text, false);
+  select * into r from public.record_session(v_at, v_at + interval '3600 seconds', 6000, 3600, pg_temp.track(v_at, 3600, 0.000012477), 0, 1, '', false);
+  select * into b from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(b.energy_pool = 'CREW' and b.rewarded_steps = 0 and b.points_awarded = 0 and b.verdict_reason like '%크루 체력을 다 썼습니다%'
+                     and exists (select 1 from economy.crew_pool_empty where crew_id = pg_temp.c117(1)),
+    format('체력이 남지 않았으면 알림 없이 달린 시간은 적립하지 않는다 — %s걸음 · 0 인 구간을 연다 (0117)', b.rewarded_steps));
+end $$;
+
+-- ② 0/0 으로 출발하면 earning_state = POOL_EMPTY · 혼자 남아 서버가 끝내면 끝난 시각과 적립이 끝나는 시각
+do $$
+declare v_p bigint; v jsonb;
+begin
+  update public.market_sneakers set equipped = false, status = 'BURNED' where owner_id in (pg_temp.u117(4), pg_temp.u117(5));
+  v_p := pg_temp.room117(pg_temp.c117(2), array[4, 5]);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(4)::text, false);
+  perform public.party_start_rev(v_p, 0);
+  perform pg_temp.age117(v_p, interval '10 seconds');
+  v := public.crew_run_beat(v_p, 'RUNNING');
+  perform pg_temp.ok(v ->> 'earning_state' = 'POOL_EMPTY' and (v -> 'pool' ->> 'total')::numeric = 0 and v ? 'reward_until',
+    '신발 없이 0/0 으로 출발한 크루 러닝은 적립이 없는 상태(POOL_EMPTY)로 보인다 — ' || (v ->> 'earning_state') || ' (0117)');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(5)::text, false);
+  perform public.crew_run_beat(v_p, 'ENDED');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(4)::text, false);
+  v := public.crew_run_beat(v_p, 'RUNNING');
+  perform pg_temp.ok(v ->> 'terminal_reason' = 'LAST_PARTICIPANT_END' and v ->> 'ended_at' is not null
+                     and (v ->> 'reward_until')::timestamptz = (v ->> 'ended_at')::timestamptz + interval '60 seconds',
+    '혼자 남아 서버가 끝냈으면 끝난 시각과 적립이 끝나는 시각(+60초)을 알린다 — 앱이 그때까지 알리고 기록한다 (0117)');
+end $$;
+
+-- ③ 카운트다운 중 나가기는 오늘 크루 러닝을 돌려준다 · 달리는 중 해산 거절 · 계정을 지우면 진행자를 넘긴다 · 방을 닫지 않는다
+do $$
+declare v_p bigint; d economy.crew_day_pools;
+begin
+  v_p := pg_temp.room117(pg_temp.c117(3), array[6, 7, 8]);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(6)::text, false);
+  perform public.party_start_rev(v_p, 0);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(8)::text, false);
+  perform public.party_leave(v_p);
+  select * into d from economy.crew_day_pools where crew_id = pg_temp.c117(3);
+  perform pg_temp.ok(not exists (select 1 from economy.crew_runs where user_id = pg_temp.u117(8))
+                     and not exists (select 1 from public.party_runs where party_id = v_p and user_id = pg_temp.u117(8))
+                     and d.capacity = 300 and d.contributors = 2,
+    format('카운트다운 중 나간 사람은 오늘 크루 러닝 · 출발 명단 · 기여에서 빠진다(체력 %s · 기여 %s명) (0117)', d.capacity, d.contributors));
+  perform pg_temp.ok(public.party_create_v2(pg_temp.c117(3), '다시', null, null, null, gen_random_uuid(), 'TOGETHER', null, null, null, null, null) is not null,
+    '돌려받은 사람은 오늘 다시 크루 러닝 대기실을 연다 (0117)');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(6)::text, false);
+  begin
+    perform public.crew_dissolve(pg_temp.c117(3));
+    perform pg_temp.ok(false, '달리는 중 해산은 거절돼야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'crew_running' and sqlstate = '23514', '크루 러닝이 달리는 중이면 해산을 거절한다 — ' || sqlerrm || ' (0117)');
+  end;
+  perform public.account_delete();
+  perform pg_temp.ok((select host_id from public.parties where id = v_p) = pg_temp.u117(7)
+                     and exists (select 1 from public.party_runs where party_id = v_p and user_id = pg_temp.u117(7)),
+    '진행자가 계정을 지우면 방이 지워지지 않고 진행자가 넘어간다 — 같이 뛰던 사람은 크루 러닝 그대로 (0117)');
+  perform pg_temp.age117(v_p, interval '15 minutes');
+  perform pg_temp.ok(not economy.party_stale((select p from public.parties p where p.id = v_p)),
+    '크루 러닝이 끝나지 않은 방은 모두 15분 끊겨도 닫지 않는다 (0117)');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(7)::text, false);
+  perform public.party_live(v_p, 2.5);
+  perform pg_temp.ok((select km from public.party_members where party_id = v_p and user_id = pg_temp.u117(7)) = 2.5,
+    '출발 시각이 지난 카운트다운 방에서도 거리를 나눈다 (0117)');
+end $$;
+
+-- ④ 내보낸 · 닫힌 대기실의 까닭 · 경로 없는 크루 러닝은 경로 없는 러닝 상한을 함께 쓴다 · 과속 벌칙은 고른 신발에
+do $$
+declare v_p bigint; v_q bigint; v_shoe bigint; v_at timestamptz; r record; w public.walk_sessions; c economy.crew_runs; v json;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(12)::text, false);
+  v_p := public.party_create_v2(pg_temp.c117(4), '내보내기', null, null, null, gen_random_uuid(), 'TOGETHER', null, null, null, null, null);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(13)::text, false);
+  perform public.party_join(v_p);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(12)::text, false);
+  perform public.party_kick(v_p, pg_temp.u117(13));
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(13)::text, false);
+  begin
+    perform public.party_state(v_p);
+    perform pg_temp.ok(false, '내보낸 사람의 대기실 묻기는 거절돼야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlerrm = '진행자가 내보낸 방입니다', '내보낸 사람에게는 내보냈다고 — ' || sqlerrm || ' (0117)');
+  end;
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(12)::text, false);
+  perform public.party_leave(v_p);
+  begin
+    perform public.party_state(v_p);
+    perform pg_temp.ok(false, '닫힌 대기실 묻기는 거절돼야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'room_closed', '닫힌 대기실은 room_closed — ' || sqlerrm || ' (0117)');
+  end;
+  -- 13 은 신지 않은 둘째 신발을 골라 출발한다
+  v_shoe := economy.draw_create(pg_temp.u117(13), 'PAID_DRAW');
+  update public.market_sneakers set equipped = false, level = 1, efficiency_bps = 4000, comfort_bps = 0, dur_base = 150, dur_now = 150,
+         pts_eff = 0, pts_comfort = 0, pts_dur = 0 where id = v_shoe;
+  v_q := pg_temp.room117(pg_temp.c117(4), array[12, 13]);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(13)::text, false);
+  perform public.party_pick_shoe(v_q, v_shoe);
+  perform public.party_ready(v_q, true);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(12)::text, false);
+  perform public.party_start_rev(v_q, 0);
+  perform pg_temp.age117(v_q, interval '30 minutes 6 seconds');
+  select started_at into v_at from economy.crew_runs where party_id = v_q and user_id = pg_temp.u117(12);
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 7000, 1800, '', 0, 1, '', false);
+  select * into w from public.walk_sessions where id = r.session_id;
+  select * into c from economy.crew_runs where user_id = pg_temp.u117(12) and party_id = v_q;
+  perform pg_temp.ok(w.energy_pool = 'CREW' and w.points_awarded = economy.setting_num('no_gps_daily_cap')
+                     and w.verdict_reason like '%경로 없는 러닝의 하루 상한%'
+                     and c.total_sup = w.points_awarded and c.base_sup + c.headcount_sup + c.level_sup = c.total_sup,
+    format('경로 없는 크루 러닝도 경로 없는 러닝의 하루 상한(%s SUP)을 함께 쓴다 · 세 몫의 합이 원장과 같다 (0117)', w.points_awarded));
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(13)::text, false);
+  v := public.report_overspeed_stop(v_at, v_at + interval '5 minutes',
+         (select id from public.market_sneakers where owner_id = pg_temp.u117(13) and equipped));
+  perform pg_temp.ok((v ->> 'sneaker_id')::bigint = v_shoe,
+    '크루 러닝 중 과속 벌칙은 앱이 알린 신은 신발이 아니라 크루에서 고른 신발에 (0117)');
+end $$;
+
+-- ⑤ 번개러닝 — 정원은 글의 정원 · 보너스는 글 하나에 한 번 · 모이는 시각 60분 뒤에는 대기실을 열지 않는다
+do $$
+declare v_post bigint; v_p bigint; v_q bigint; v_at timestamptz; r record; a public.walk_sessions; b public.walk_sessions; n int;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(9)::text, false);
+  v_post := public.post_create('FLASH', null, '고침 번개', '', '', 3, now() + interval '20 minutes', 3, null, null, gen_random_uuid(), 'REMOTE');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(10)::text, false);
+  perform public.join_flash(v_post);
+  foreach n in array array[9, 10] loop
+    perform set_config('request.jwt.claim.sub', pg_temp.u117(n)::text, false);
+    v_p := public.party_open(null, v_post);
+    perform public.party_ready(v_p, true);
+  end loop;
+  perform pg_temp.ok(economy.party_capacity(v_p) = 3, '번개 대기실의 정원은 글의 정원(3) — 예전엔 언제나 20 (0117)');
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(9)::text, false);
+  perform public.party_start(v_p);
+  perform pg_temp.age117(v_p, interval '10 minutes 4 seconds');
+  select starts_at into v_at from public.party_runs where party_id = v_p and user_id = pg_temp.u117(9);
+  select * into r from public.record_session(v_at, v_at + interval '600 seconds', 1500, 600, pg_temp.track(v_at, 600, 0.000012477), 0, 1, '', false);
+  select * into a from public.walk_sessions where id = r.session_id;
+  perform public.party_finish(v_p);
+  -- 같은 글로 방을 다시 연다
+  foreach n in array array[9, 10] loop
+    perform set_config('request.jwt.claim.sub', pg_temp.u117(n)::text, false);
+    v_q := public.party_open(null, v_post);
+    perform public.party_ready(v_q, true);
+  end loop;
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(9)::text, false);
+  perform public.party_start(v_q);
+  perform pg_temp.age117(v_q, interval '4 seconds');
+  select starts_at into v_at from public.party_runs where party_id = v_q and user_id = pg_temp.u117(9);
+  update public.parties set starts_at = v_at - interval '9 minutes 56 seconds' where id = v_q;
+  update public.party_runs set starts_at = v_at - interval '9 minutes 56 seconds' where party_id = v_q;
+  -- 첫 러닝 바로 뒤가 아니라 다른 시각에 — 시각이 겹치지 않게
+  update public.walk_sessions set started_at = started_at - interval '1 hour', ended_at = ended_at - interval '1 hour' where id = a.id;
+  v_at := v_at - interval '9 minutes 56 seconds';
+  select * into r from public.record_session(v_at, v_at + interval '600 seconds', 1500, 600, pg_temp.track(v_at, 600, 0.000013), 0, 1, '', false);
+  select * into b from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(a.party_size = 2 and a.party_id = v_p and b.party_id is null and b.party_size = 1,
+    format('번개 보너스는 글 하나에 한 번 — 같은 글로 다시 연 방은 보너스 없음(첫 러닝 %s명 · 둘째 %s명) (0117)', a.party_size, b.party_size));
+  update public.posts set meet_at = now() - interval '61 minutes' where id = v_post;
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(10)::text, false);
+  perform public.party_finish(v_q);
+  perform set_config('request.jwt.claim.sub', pg_temp.u117(9)::text, false);
+  perform public.party_finish(v_q);
+  begin
+    perform public.party_open(null, v_post);
+    perform pg_temp.ok(false, '지난 번개 대기실 열기는 거절돼야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlerrm = 'flash_lobby_closed' and sqlstate = '23514',
+      '모이는 시각이 60분 넘게 지난 번개는 대기실을 열지 않는다 — ' || sqlerrm || ' (0117)');
+  end;
+end $$;
+select set_config('request.jwt.claim.sub', '', false);
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

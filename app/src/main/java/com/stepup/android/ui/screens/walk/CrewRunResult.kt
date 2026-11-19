@@ -282,8 +282,9 @@ private fun CrewRewardCard(reward: ResultReward, onOpen: () -> Unit, onReason: (
             Column(Modifier.weight(1f)) {
                 Text(label, style = runTextStyle(13.sp, c.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag("run-result-reward-label"))
-                // 금액은 예상 · 반영 완료일 때만 — 지급 제외 · 미지급에 "0 SUP"를 크게 적지 않는다
-                if (reward.settle == Settle.PENDING || reward.settle == Settle.DONE) {
+                // 금액은 예상 · 반영 완료일 때만 — 지급 제외 · 미지급에 "0 SUP"를 크게 적지 않는다.
+                // 금액이 비어 있으면(확인 전의 크루 러닝 — 이 폰은 크루 보상을 셈하지 않는다) 숫자 자리를 두지 않는다
+                if ((reward.settle == Settle.PENDING || reward.settle == Settle.DONE) && reward.amount.isNotBlank()) {
                     Text("${reward.amount} SUP", style = runTextStyle(20.sp, c.text, FontWeight.ExtraBold, 1.2f),
                         modifier = Modifier.testTag("run-result-reward"))
                 }
@@ -352,7 +353,7 @@ private fun CrewRewardSheet(reward: ResultReward, crewLines: List<String>, onClo
         CrewSheetTitle(rewardLabel(reward))
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (reward.settle == Settle.PENDING || reward.settle == Settle.DONE) {
+            if ((reward.settle == Settle.PENDING || reward.settle == Settle.DONE) && reward.amount.isNotBlank()) {
                 Text("${reward.amount} SUP", style = runTextStyle(24.sp, c.text, FontWeight.ExtraBold, 1.2f))
                 Spacer(Modifier.width(10.dp))
             }

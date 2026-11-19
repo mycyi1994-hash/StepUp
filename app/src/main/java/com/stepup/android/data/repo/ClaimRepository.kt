@@ -1,11 +1,15 @@
 package com.stepup.android.data.repo
 
+import com.stepup.android.data.local.GROUP_UPLOAD_HOLD_ATTEMPTS
 import com.stepup.android.data.local.UploadState
 import com.stepup.android.data.local.WalkSessionDao
 import com.stepup.android.data.local.WalkSessionEntity
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.data.remote.SessionRecorded
 import kotlinx.coroutines.flow.Flow
+
+/** 모임(크루 · 번개)에서 출발한 러닝인가 — 크루가 적혔거나 함께 달린 인원이 둘 이상(저장할 때 적은 값) */
+internal fun WalkSessionEntity.isGroupRun(): Boolean = crewId.isNotBlank() || partySize > 1
 
 /**
  * 한 번 돌린 업로드의 결말.
@@ -97,6 +101,8 @@ class ClaimRepository(
         var rejected = 0
         var failed = 0
         var retriesInRow = 0
+        // 모임 러닝이 끊겨 이 차례를 멈췄다 — 뒤의 러닝을 먼저 올리지 않는다(아래 holdsUploads)
+        var held = false
         // 이번 차례에 확인받아 뒤 일을 이미 낸 러닝 — 아래 다시 내기에서 건너뛴다
         val followedNow = HashSet<Long>()
         // 이번 차례에 확인받은 러닝의 시작 시각 — onSigned 로 넘긴다
@@ -143,6 +149,11 @@ class ClaimRepository(
                         ),
                     )
                     failed++
+                    // 모임 러닝이 아직 올라가지 못했다 — 뒤의 러닝을 먼저 올리지 않는다(아래 끊김과 같다)
+                    if (session.holdsUploads()) {
+                        held = true
+                        break
+                    }
                 } else {
                     sessionDao.update(session.rejected(result.reason))
                     rejected++
@@ -158,6 +169,13 @@ class ClaimRepository(
                         ),
                     )
                     failed++
+                    // 모임(크루 · 번개)에서 출발한 러닝이 끊겼다 — 이 차례는 여기서 멈춘다. 서버는 그 방의 러닝을 출발 시각으로 찾으므로,
+                    // 이 러닝보다 다른 러닝이 먼저 기록되면 그 러닝이 방의 러닝(크루 보상 · 인원 보너스)이 되고 이 러닝은 혼자 러닝으로
+                    // 정산됐다(2026-11-18 점검). 몇 번 실패한 뒤에는 더 막지 않는다(GROUP_UPLOAD_HOLD_ATTEMPTS — 뒤의 러닝이 영영 기다리지 않게)
+                    if (session.holdsUploads()) {
+                        held = true
+                        break
+                    }
                     // 연달아 두 번 끊기면 서버나 연결이 멈춘 것이다 — 남은 세션까지 줄줄이 실패시켜 시도 횟수만 올릴
                     // 이유가 없다. 한 번이면 그 러닝만의 문제일 수 있다 — 가장 오래된 러닝 하나가 계속 실패하면 뒤의
                     // 러닝이 모두 기다리다 서버의 7일 기한을 넘겼다. 다음 것을 계속 올린다.
@@ -182,7 +200,7 @@ class ClaimRepository(
             retriesInRow = 0
         }
         // 앞서 끝내지 못한 뒤 일 — 연결이 끊겨 멈춘 차례면 다음으로 미룬다
-        if (retriesInRow < 2) retryFollowUps(owner, skip = followedNow)
+        if (retriesInRow < 2 && !held) retryFollowUps(owner, skip = followedNow)
 
         if (signed > 0) runCatching { onSigned(signedStarts) }
         return UploadRun(
@@ -240,6 +258,12 @@ class ClaimRepository(
         uploadAttempts = uploadAttempts + 1,
         uploadError = reason,
     )
+
+    /**
+     * 이 러닝이 올라가기 전에는 뒤의 러닝을 올리지 않을까 — 모임(크루 · 번개)에서 출발한 러닝이고 아직 몇 번 안 실패했을 때.
+     * 대기열([WalkSessionDao.pendingUploads])도 같은 기준으로 이런 러닝을 맨 앞에 세운다.
+     */
+    private fun WalkSessionEntity.holdsUploads(): Boolean = isGroupRun() && uploadAttempts < GROUP_UPLOAD_HOLD_ATTEMPTS
 
     companion object {
         /** 확인받은 러닝(SIGNED)의 뒤 일이 남았다는 표시 — 그 줄의 uploadError 에 둔다(확인된 줄의 이 칸은 화면이 읽지 않는다) */

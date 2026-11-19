@@ -175,8 +175,10 @@ fun FlashRunDetailScreen(
                         },
                     ),
                 )
-                // 참가만 눌러 놓고 끝나면 이 글은 게시판 글일 뿐이다 — 실제로 같이 뛰려면 대기실(준비하고 모이면 출발)로 간다
-                if (lobby) {
+                // 참가만 눌러 놓고 끝나면 이 글은 게시판 글일 뿐이다 — 실제로 같이 뛰려면 대기실(준비하고 모이면 출발)로 간다.
+                // 이 번개의 방이 이미 출발했거나(이 폰이 든 방) 새로 연 대기실이면 인원 보너스를 약속하지 않는다 —
+                // 인원 보너스는 번개 글 하나에 한 번이다(서버 0117)
+                if (lobby && flashCancelable(post.id, party) && !(party.flashPostId == post.id && party.reopened)) {
                     Text(
                         stringResource(R.string.flash_lobby_hint, RewardEconomy.partyBonusPercent(post.joinedCount.coerceAtLeast(1))),
                         style = StepUpUi.type.caption, color = c.secondaryLabel,

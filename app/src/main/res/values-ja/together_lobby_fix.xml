@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 함께 뛰기 대기실 · 출발 점검 수정(2026-11-18, 서버 0117) -->
+    <string name="tlf_missed_toast">一緒の出発から時間が経ったため、その待機室を出ました。</string>
+    <string name="tlf_start_blocked_toast">この端末でランを開始できなかったため、待機室を出ました。</string>
+    <string name="tlf_left_behind_toast">待機室の画面を見ていない間に出発したため、一緒に出発できませんでした。</string>
+    <string name="tlf_ready_unfinished_run">終わっていないランがあります。先にそのランを再開するか終了してください。</string>
+    <string name="tlf_flash_left_behind">フラッシュランが出発しました。準備前だったか待機室の画面を見ていなかったため、一緒に出発できませんでした。</string>
+    <string name="tlf_flash_not_member">このフラッシュランの参加者だけが待機室に入れます。</string>
+    <string name="tlf_flash_start_blocked">フラッシュランは出発しましたが、この端末でランが始まらなかったため待機室を出ました。</string>
+    <string name="tlf_done_today">今日はすでにクルーランをしました。クルーランは1日1回です。</string>
+    <string name="tlf_course_changed">コースが変わりました。コースを確認してもう一度出発してください。</string>
+    <string name="tlf_flash_lobby_closed">このフラッシュランの待機室は閉じました。集合時刻から1時間以上過ぎています。</string>
+    <string name="tlf_open_new_lobby">新しい待機室を開く</string>
+    <string name="tlf_flash_bonus_once">人数ボーナスはフラッシュラン1つにつき1回です。同じフラッシュランの新しい待機室では、もう一度付かないことがあります。</string>
+    <string name="tlf_flash_kick_body">この待機室から外します。外した人はこのフラッシュランの待機室に戻れません。</string>
+    <string name="tlf_left_behind_title">一緒に出発できませんでした</string>
+    <string name="tlf_left_behind_body">クルーランが出発しました。準備前だったか待機室の画面を見ていなかったため、一緒に出発できませんでした。今日のクルーランは使われていません。</string>
+    <string name="tlf_not_member_title">クルーメンバーだけが入れます</string>
+    <string name="tlf_not_member_body">このクルーのメンバーだけが入れる待機室です。</string>
+    <string name="tlf_start_blocked_title">この端末でランが始まりませんでした</string>
+    <string name="tlf_start_blocked_freed">クルーランは出発しましたが、この端末でランが始まらなかったため待機室を出ました。今日のクルーランは使われていません。</string>
+    <string name="tlf_start_blocked_used">クルーランは出発しましたが、この端末でランが始まらなかったため待機室を出ました。今日のクルーランはすでに使われています。</string>
+    <string name="tlf_start_blocked_checking">クルーランは出発しましたが、この端末でランが始まらなかったため待機室を出ました。</string>
+    <string name="tlf_flash_start_alert_title">フラッシュランがスタートしました</string>
+    <string name="tlf_create_running">進行中のランがあります。そのランを終えてから待機室を作ってください。</string>
+    <string name="tlf_unrun_given_back">出発だけしてこの端末で走れなかったクルーランがあったため、今日のクルーランを戻しました。</string>
+    <string name="tlf_crew_running">進行中のクルーランが終わってから解散できます。</string>
+</resources>

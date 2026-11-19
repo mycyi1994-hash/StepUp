@@ -317,7 +317,8 @@ object Routes {
     fun crewRun(crewId: String): String {
         val party = ServiceLocator.crewRepository.party.value
         val id = party.partyId
-        val inRoom = party.crewId == crewId && party.flashPostId == null && id != null &&
+        // 방을 더 묻지 않게 된 방(내보냄 · 닫힘 · 로그인 필요)은 "들어가 있던 대기실"이 아니다 — 목록으로 간다(2026-11-18 점검)
+        val inRoom = party.crewId == crewId && party.flashPostId == null && id != null && party.inRoom &&
             (party.phase == com.stepup.android.data.repo.PartyPhase.LOBBY || party.phase == com.stepup.android.data.repo.PartyPhase.COUNTDOWN)
         return if (inRoom && id != null) room(crewId, id) else crewRooms(crewId)
     }
