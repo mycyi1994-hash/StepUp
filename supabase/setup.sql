@@ -41664,12 +41664,14 @@ begin
   if not exists (select 1 from public.economy_settings where key = 'forge_xp_20261119') then
     update public.economy_settings set value = '100', updated_at = now() where key = 'forge_material_min_durability';
     update public.walk_sessions set reward_steps = backed_steps where reward_steps is null;
+    -- 목표를 먼저 4,000 으로 올린 뒤 최근 8일을 그 값으로 적는다 — 배포 날 · 지난주를 늦게 올려도 1,000보 목표가 남지 않게
+    update public.profiles set daily_goal = 4000 where daily_goal < 4000;
+    update public.profiles set daily_goal = 20000 where daily_goal > 20000;
     insert into economy.goal_days (user_id, day, goal)
-    select p.id, d::date, least(greatest(coalesce(p.daily_goal, 8000), 1000), 100000)
+    select p.id, d::date, least(greatest(coalesce(p.daily_goal, 8000), 4000), 20000)
       from public.profiles p
       cross join generate_series(economy.game_day(now()) - 7, economy.game_day(now()), interval '1 day') d
     on conflict do nothing;
-    update public.profiles set daily_goal = 4000 where daily_goal < 4000;
     insert into public.economy_settings (key, value) values ('forge_xp_20261119', to_jsonb(now()));
   end if;
 end $$;
@@ -42009,7 +42011,7 @@ declare
   m public.market_sneakers;
   v_quote jsonb;
   v_ids bigint[];
-  v_bytes bytea := economy.random_bytes32();
+  v_bytes bytea := ''::bytea;
   v_chance int := round(economy.fx('forge_xp_crit_chance', 0.1) * 1000)::int;
   v_mult numeric := economy.fx('forge_xp_crit_mult', 2);
   v_val record;
@@ -42039,6 +42041,11 @@ begin
   end if;
 
   perform 1 from public.market_sneakers where id = p_target or id = any(p_materials) for update;
+  -- 재료마다 2바이트(천분율) — 32바이트 하나로는 16켤레까지라 켤레 수만큼 이어 붙인다(운영자가 최대 켤레를 올려도 멈추지 않게)
+  for v_i in 1 .. greatest(ceil(coalesce(cardinality(p_materials), 0) / 16.0)::int, 1) loop
+    v_bytes := v_bytes || economy.random_bytes32();
+  end loop;
+  v_i := 0;
   v_quote := economy.forge_xp_quote_for(v_user, p_target, p_materials);
   if v_quote ? 'error' then
     return v_quote;
@@ -42252,6 +42259,13 @@ begin
   if v_user is null then
     raise exception '로그인이 필요합니다' using errcode = '28000';
   end if;
+  -- 러닝 기록(record_session)과 한 줄로 — 막 올라가는 러닝을 못 본 채 오늘 목표를 바꾸지 않게
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  -- 지난 7일은 바꾸기 전 목표로 굳힌다 — 연결 없이 달린 지난 러닝을 목표를 낮춘 뒤 올려 받지 못하게
+  insert into economy.goal_days (user_id, day, goal)
+  select v_user, d::date, economy.goal_peek(v_user, d::date)
+    from generate_series(v_today - 7, v_today - 1, interval '1 day') d
+  on conflict do nothing;
   if economy.verified_steps_on(v_user, v_today) > 0
      or exists (select 1 from public.sup_ledger l where l.user_id = v_user and l.ref = 'goal:' || v_today) then
     perform economy.goal_of(v_user, v_today);

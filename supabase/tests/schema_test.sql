@@ -13272,13 +13272,13 @@ do $$
 declare r record; v_y date := economy.game_day(now()) - 1; v_at timestamptz; s public.walk_sessions;
 begin
   perform set_config('request.jwt.claim.sub', pg_temp.u118(5)::text, false);
+  -- 오늘 목표를 4,000 으로 — 지난 7일은 바꾸기 전 목표(새 계정 6,000)로 굳는다
   perform public.profile_set_daily_goal(4000);
-  -- 어제 목표 줄이 없으면 지금 목표로 적고 그 값을 쓴다
   v_at := economy.game_day_start(v_y) + interval '10 hours';
-  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 4200, 1800, pg_temp.track(v_at, 1800, 0.000025), 0, 1, '', false);
-  perform pg_temp.ok(exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u118(5) and l.ref = 'goal:' || v_y and l.amount = 10)
-                     and exists (select 1 from economy.goal_days g where g.user_id = pg_temp.u118(5) and g.day = v_y and g.goal = 4000),
-    '늦게 올린 러닝은 그 날의 목표로 — 어제 보너스(10 SUP) (0118)');
+  select * into r from public.record_session(v_at, v_at + interval '2700 seconds', 6200, 2700, pg_temp.track(v_at, 2700, 0.000025), 0, 1, '', false);
+  perform pg_temp.ok(exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u118(5) and l.ref = 'goal:' || v_y and l.amount = 15)
+                     and exists (select 1 from economy.goal_days g where g.user_id = pg_temp.u118(5) and g.day = v_y and g.goal = 6000),
+    '늦게 올린 러닝은 그 날의 목표(6,000)로 — 어제 보너스 15 SUP (0118)');
   -- 다 닳은 신발: 보상 걸음 0
   update public.market_sneakers set dur_now = 0 where owner_id = pg_temp.u118(5) and equipped;
   v_at := now() - interval '5 hours';
@@ -13300,6 +13300,33 @@ begin
     '되돌리기 스위치(reward_steps_rule = OLD) — 상자는 예전처럼 적립 걸음 (0118)');
   update public.economy_settings set value = '"REWARD"' where key = 'reward_steps_rule';
   perform pg_temp.ok((public.box_status() ->> 'steps_today')::int = 4200, '(스위치를 되돌리면 보상 걸음)');
+end $$;
+
+-- 리뷰 고침: 목표를 낮춘 뒤 올린 지난 러닝 · 재료 16켤레 넘게
+do $$
+declare r record; v_y date := economy.game_day(now()) - 1; v_at timestamptz; q jsonb; v_t bigint; v_m bigint[] := '{}'; i int;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(6)::text, false);
+  update public.profiles set daily_goal = 20000 where id = pg_temp.u118(6);
+  -- 어제 목표 20,000 으로 연결 없이 5,000보 → 오늘 아침 목표를 4,000 으로 → 어제 러닝을 올린다
+  perform public.profile_set_daily_goal(4000);
+  v_at := economy.game_day_start(v_y) + interval '9 hours';
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 5000, 1800, pg_temp.track(v_at, 1800, 0.000027), 0, 1, '', false);
+  perform pg_temp.ok((select goal from economy.goal_days where user_id = pg_temp.u118(6) and day = v_y) = 20000
+                     and not exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u118(6) and l.ref = 'goal:' || v_y)
+                     and (public.box_status() ->> 'goal')::int = 4000,
+    '목표를 낮추면 지난 7일은 예전 목표로 굳는다 — 늦게 올린 어제 러닝은 어제 목표(20,000)로 (0118)');
+  -- 운영자가 최대 켤레를 20 으로 올려도 18켤레 넣기가 멈추지 않는다(대성공 굴림 바이트)
+  update public.economy_settings set value = '20' where key = 'forge_xp_max_materials';
+  update public.economy_settings set value = '1' where key = 'forge_xp_crit_chance';
+  v_t := pg_temp.shoe118(6, 'EPIC');
+  for i in 1 .. 18 loop v_m := v_m || pg_temp.shoe118(6, 'COMMON'); end loop;
+  q := public.forge_xp_quote(v_t, v_m);
+  r := null;
+  perform pg_temp.ok((public.forge_xp_add(gen_random_uuid(), v_t, v_m, q ->> 'quote_version') ->> 'crits')::int = 18,
+    '재료 18켤레 — 켤레마다 대성공을 굴린다 (0118)');
+  update public.economy_settings set value = '10' where key = 'forge_xp_max_materials';
+  update public.economy_settings set value = '0.10' where key = 'forge_xp_crit_chance';
 end $$;
 
 -- 권한 — 서버 안의 셈은 앱이 부르지 못한다 · 목표 표는 볼 수 없다
