@@ -58,12 +58,14 @@ end $$;
 
 -- 일정한 속도로 달린 경로를 만든다.
 -- @param p_dps  1초에 움직이는 위도(도). 0.00003 이면 대략 시속 12km.
+-- 경도는 사람마다 0.5m 안쪽으로 다르게(로그인한 사람의 해시, 동쪽으로만 — 소수 다섯째 자리 그림은 그대로) — 같은 경로 검사는 모든 계정끼리 맞대어 보므로(0118)
+-- 같은 시각 · 같은 길을 둘이 올리는 검사에서 둘째가 무효가 되지 않게. 시각 · 거리는 그대로다
 create or replace function pg_temp.track(p_start timestamptz, p_secs int, p_dps numeric)
 returns text language sql as $$
   select string_agg(
     format('%s,%s,%s',
       (37.5 + i * p_dps)::numeric(12, 6),
-      127.000000,
+      (127 + (abs(hashtext(coalesce(current_setting('request.jwt.claim.sub', true), ''))) % 49 + 1) * 0.0000001)::numeric(12, 7),
       (extract(epoch from p_start) * 1000)::bigint + i * 1000),
     ';' order by i)
   from generate_series(0, p_secs) i
@@ -242,6 +244,9 @@ insert into fix (k, v)
 
 insert into fix (k, v)
   select 'track_ok', pg_temp.track(pg_temp.fx('run_start')::timestamptz, 600, 0.00003);
+-- 다른 계정이 1초 뒤에 같은 길을 따로 달린 경로(같은 경로 검사는 모든 계정으로 — 0118)
+insert into fix (k, v)
+  select 'track_ok_b', pg_temp.track(pg_temp.fx('run_start')::timestamptz + interval '1 second', 600, 0.00003);
 
 -- 새 경제 규칙(0022~0024)의 에너지·신규 계정 상한이 아래 옛 검사(걸음 상한 등)를
 -- 가리지 않게 에너지를 넉넉히 주고 신규 계정 절반 상한을 끈다.
@@ -2438,7 +2443,7 @@ returns text language sql as $$
   select string_agg(
     format('%s,%s,%s',
       (37.5 + i * p_dps)::numeric(12, 6),
-      p_lng::numeric(12, 6),
+      (p_lng + (abs(hashtext(coalesce(current_setting('request.jwt.claim.sub', true), ''))) % 49 + 1) * 0.0000001)::numeric(12, 7),
       (extract(epoch from p_start) * 1000)::bigint + i * 1000),
     ';' order by i)
   from generate_series(0, p_secs) i
@@ -2481,8 +2486,17 @@ call pg_temp.login('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 do $$
 declare r record; v_start timestamptz := pg_temp.fx('run_start')::timestamptz;
 begin
+  -- 다른 계정(1111)이 먼저 올린 경로를 그대로 올리면 무효 — 같은 경로 검사는 모든 계정으로 (0118)
   select * into r from public.record_session(
     v_start, v_start + interval '601 seconds', 2000, 601, pg_temp.fx('track_ok'), 0, 1, '');
+  perform pg_temp.ok(r.verdict = 'VOID' and r.verdict_reason = '이미 올린 경로입니다',
+    format('다른 계정의 경로를 그대로 올리면 VOID — 이미 올린 경로 (%s · %s)', r.verdict, r.verdict_reason));
+  perform pg_temp.ok((select reward_steps from public.walk_sessions where id = r.session_id) = 0,
+    '무효 러닝은 보상 걸음이 0');
+
+  v_start := v_start + interval '1 second';
+  select * into r from public.record_session(
+    v_start, v_start + interval '601 seconds', 2000, 601, pg_temp.fx('track_ok_b'), 0, 1, '');
   perform pg_temp.ok(r.verdict = 'CLEAN', '걸음과 경로가 맞는 러닝은 CLEAN');
   perform pg_temp.ok(
     (select distance_meters from public.walk_sessions where id = r.session_id) between 1950 and 2050,
@@ -2494,7 +2508,7 @@ begin
   -- 같은 경로를 1분 뒤 시작한 다른 세션으로 다시 올린다
   select * into r from public.record_session(
     v_start + interval '60 seconds', v_start + interval '600 seconds', 1800, 540,
-    pg_temp.fx('track_ok'), 0, 1, '');
+    pg_temp.fx('track_ok_b'), 0, 1, '');
   perform pg_temp.ok(r.verdict = 'VOID', '이미 올린 경로를 다시 쓰면 VOID');
   perform pg_temp.ok(
     (select verdict_reason from public.walk_sessions where id = r.session_id) = '이미 올린 경로입니다',
@@ -2597,7 +2611,8 @@ call pg_temp.login('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 do $$
 declare r record;
 begin
-  select * into r from public.course_run_submit(pg_temp.fx('course_ok'), pg_temp.fx('run_start')::timestamptz);
+  -- 이 사람은 1초 뒤에 같은 길을 따로 달렸다(같은 경로 검사는 모든 계정으로 — 0118)
+  select * into r from public.course_run_submit(pg_temp.fx('course_ok'), pg_temp.fx('run_start')::timestamptz + interval '1 second');
   perform pg_temp.ok(r.runners = 2, '다른 사람의 기록이 더해진다');
 end $$;
 
@@ -3121,24 +3136,25 @@ end $$;
 call pg_temp.must_fail(format($q$ select public.sneaker_repair(%s) $q$, pg_temp.fx('paid_shoe')),
   '고칠 곳이 없으면 값을 받지 않는다');
 
--- 목표 보너스는 서버가 확인한 걸음으로, 하루 한 번
-update public.profiles set daily_goal = 1000 where id = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1';
--- 위 러닝(3시간 전)은 한국 시각 00~03시에 돌면 어제로 잡힌다. 그때만 오늘 러닝 하나를 더 둔다 —
--- 검사가 도는 시각에 따라 결과가 달라지지 않게 (다른 시각에는 아무것도 바꾸지 않는다).
+-- 목표 보너스는 서버가 확인한 걸음(보상 걸음)으로, 하루 한 번. 0118 부터 목표는 4,000 부터 · 그 날의 목표(goal_days)로 센다 —
+-- 오늘 러닝은 위에서 이미 저절로 정산됐을 수 있어 그저께(이 사람의 러닝이 없는 날)를 늦게 올린 것처럼 둔다
 reset role;
+insert into economy.goal_days (user_id, day, goal)
+values ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', economy.game_day(now()) - 2, 4000)
+on conflict (user_id, day) do update set goal = excluded.goal;
 insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
-                                  backed_steps, gps_backed, rewarded_steps, verdict)
-select 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
-       economy.game_day_start(economy.game_day(now())) + interval '3 seconds',
-       economy.game_day_start(economy.game_day(now())) + interval '4 seconds', 1, 1000, 1000, 1000, true, 0, 'CLEAN'
- where economy.verified_steps_on('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', economy.game_day(now())) < 1000;
+                                  backed_steps, gps_backed, rewarded_steps, reward_steps, verdict)
+values ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1',
+        economy.game_day_start(economy.game_day(now()) - 2) + interval '3 seconds',
+        economy.game_day_start(economy.game_day(now()) - 2) + interval '4 seconds', 1, 4000, 4000, 4000, true, 0, 4000, 'CLEAN');
+insert into fix (k, v) values ('day118m2', (economy.game_day(now()) - 2)::text);
 set role authenticated;
 call pg_temp.login('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1');
 do $$
 begin
-  perform pg_temp.ok(public.goal_claim() = 2.5, '목표 1,000보 달성 보너스 2.5 SUP');
+  perform pg_temp.ok(public.goal_claim_day(pg_temp.fx('day118m2')::date) = 10, '목표 4,000보 달성 보너스 10 SUP (0118 — 예전 1,000보 2.5)');
 end $$;
-call pg_temp.must_fail($q$ select public.goal_claim() $q$, '목표 보너스는 하루 한 번');
+call pg_temp.must_fail($q$ select public.goal_claim_day(pg_temp.fx('day118m2')::date) $q$, '목표 보너스는 하루 한 번');
 
 -- 파티 인원은 출발 명단으로 센다 — 아래는 예전 규칙(0056 곁에서 같이 뛴 무리, 설정 NEAR) 검사. 0076 기본(ALL)은 맨 끝에서 본다
 reset role;
@@ -3823,12 +3839,12 @@ reset role;
 set role authenticated;
 call pg_temp.login('f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3');
 do $$ begin
-  perform pg_temp.ok(public.profile_set_daily_goal(3000) = 3000, '목표를 서버에 적는다');
-  perform pg_temp.ok(public.profile_set_daily_goal(999999) = 30000, '범위 밖 목표는 goal_claim 범위로 맞춘다');
+  perform pg_temp.ok(public.profile_set_daily_goal(5000) = 5000, '목표를 서버에 적는다');
+  perform pg_temp.ok(public.profile_set_daily_goal(999999) = 20000, '범위 밖 목표는 4,000 ~ 20,000 으로 맞춘다 (0118)');
 end $$;
 reset role;
 do $$ begin
-  perform pg_temp.ok((select daily_goal from public.profiles where id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3') = 30000,
+  perform pg_temp.ok((select daily_goal from public.profiles where id = 'f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3') = 20000,
     '프로필에 남는다');
 end $$;
 set role anon;
@@ -7844,11 +7860,12 @@ call pg_temp.login('68000000-0000-0000-0000-000000000002');
 do $$
 declare r record; v_start timestamptz := pg_temp.fx('d68')::timestamptz;
 begin
+  -- 경로는 이 사람만의 것(0.0000101) — 같은 경로 검사는 모든 계정으로(0118)
   select * into r from public.record_session(v_start, v_start + interval '1201 seconds', 2000, 1201,
-    pg_temp.track(v_start, 1200, 0.00001), 0, 1, '', false);
+    pg_temp.track(v_start, 1200, 0.0000101), 0, 1, '', false);
   insert into fix (k, v) values ('cap68a', r.session_id::text);
   select * into r from public.record_session(v_start + interval '1 hour', v_start + interval '1 hour 1201 seconds',
-    2000, 1201, pg_temp.track(v_start + interval '1 hour', 1200, 0.00001), 0, 1, '', false);
+    2000, 1201, pg_temp.track(v_start + interval '1 hour', 1200, 0.0000101), 0, 1, '', false);
   insert into fix (k, v) values ('cap68b', r.session_id::text);
 end $$;
 reset role;
@@ -7917,6 +7934,10 @@ reset role;
 -- ── 3. 목표 보너스 — 러닝을 시작한 날(한국 시각)로 ───────────────────────
 -- 그저께 낮 러닝과, 어제 23:30 에 시작해 오늘 00:10 에 끝난 러닝(어제의 목표에 든다)
 update public.profiles set daily_goal = 1000 where id = '68000000-0000-0000-0000-000000000004';
+-- 0118 부터 목표는 4,000 부터 — 이 검사(0068)의 셈은 예전 1,000보 목표로 두려고 그 날의 목표 줄을 1,000 으로 적어 둔다
+insert into economy.goal_days (user_id, day, goal)
+select '68000000-0000-0000-0000-000000000004', economy.game_day(now()) - d, 1000 from generate_series(0, 8) d
+on conflict (user_id, day) do update set goal = excluded.goal;
 insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps,
                                   backed_steps, gps_backed, rewarded_steps, verdict)
 values
@@ -12405,7 +12426,7 @@ select set_config('request.jwt.claims', '', false);
 update public.economy_settings set value = v.value
   from (values ('points_per_step', '0.0118'::jsonb), ('free_repair_hours', '48'::jsonb), ('boost_shop_enabled', 'false'::jsonb),
                ('daily_free_draws', '1'::jsonb), ('run_box_steps', '[2000, 4000]'::jsonb), ('weekly_box_steps', '25000'::jsonb),
-               ('streak_box_days', '7'::jsonb), ('forge_material_min_durability', '50'::jsonb), ('daily_earn_cap', '960'::jsonb),
+               ('streak_box_days', '7'::jsonb), ('forge_material_min_durability', '100'::jsonb), ('daily_earn_cap', '960'::jsonb),
                ('no_gps_daily_cap', '96'::jsonb), ('upload_daily_cap', '1920'::jsonb), ('earn_cap_by_shoe', 'true'::jsonb)) v(key, value)
  where public.economy_settings.key = v.key;
 
@@ -12621,6 +12642,10 @@ end $$;
 
 -- 7일 연속 목표 · 주간 걸음 → 상급 상자
 update public.profiles set daily_goal = 1000 where id = 'b4000000-0000-0000-0000-000000000002';
+-- (0118 — 그 날의 목표 줄을 예전 1,000 으로)
+insert into economy.goal_days (user_id, day, goal)
+select 'b4000000-0000-0000-0000-000000000002', economy.game_day(now()) - d, 1000 from generate_series(0, 8) d
+on conflict (user_id, day) do update set goal = excluded.goal;
 insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps, backed_steps, gps_backed,
                                   rewarded_steps, verdict)
 select 'b4000000-0000-0000-0000-000000000002', economy.game_day_start(economy.game_day(now()) - d) + interval '1 hour',
@@ -12693,7 +12718,7 @@ begin
   perform pg_temp.ok((v ->> 'ok')::boolean and v ? 'runs_7d' and v ? 'money_7d' and (v -> 'versions' ->> 'new_app')::int >= 1,
     '경제 현황 — 지난 7일 러닝 · 돈 · 앱 판 (0116)');
   v := public.ops_economy_settings(v_s);
-  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 19, '경제 설정 — 바꿀 수 있는 값 열아홉 (0116)');
+  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 30, '경제 설정 — 바꿀 수 있는 값 서른 (0116 열아홉 + 0118 강화 경험치 여덟 · 목표 셋)');
   v := public.ops_economy_set(v_s, 'box_price', '45'::jsonb);
   perform pg_temp.ok(v ->> 'code' = 'confirm_required', '설정은 언제나 키를 한 번 더 (0116)');
   v := public.ops_economy_set(v_s, 'box_price', '"사십"'::jsonb, pg_temp.fx('key116'));
@@ -12966,6 +12991,335 @@ begin
       '모이는 시각이 60분 넘게 지난 번개는 대기실을 열지 않는다 — ' || sqlerrm || ' (0117)');
   end;
 end $$;
+select set_config('request.jwt.claim.sub', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+--  강화 경험치 · 오늘의 보상(0118) — docs/forge-xp-daily-spec-2026-11-19.md
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 강화 경험치 · 오늘의 보상(0118) ──────────────────────────────'
+create or replace function pg_temp.u118(n int) returns uuid language sql immutable as $$
+  select ('b6000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $$;
+create or replace function pg_temp.mk118(n int, p_dur int default 1500) returns void language plpgsql as $$
+begin
+  insert into auth.users (id, email) values (pg_temp.u118(n), 'u118_' || n || '@test.invalid') on conflict do nothing;
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(n)::text, false);
+  perform public.economy_bootstrap();
+  update public.profiles set created_at = now() - interval '40 days' where id = pg_temp.u118(n);
+  update public.market_sneakers
+     set level = 1, efficiency_bps = 4000, comfort_bps = 0, pts_eff = 0, pts_comfort = 0, pts_dur = 0, dur_base = p_dur, dur_now = p_dur
+   where owner_id = pg_temp.u118(n) and equipped;
+end $$;
+-- 가운데 스펙(q) · 가득 찬 신발 하나
+create or replace function pg_temp.shoe118(n int, p_rarity text, p_level int default 1, p_q numeric default 0.5) returns bigint language plpgsql as $$
+declare v bigint := economy.draw_create(pg_temp.u118(n), 'PAID_DRAW', p_rarity);
+begin
+  update public.market_sneakers
+     set rarity = p_rarity, model_id = (select min(m.id) from public.sneaker_models m where m.rarity = p_rarity),
+         level = p_level, pts_eff = 0, pts_comfort = 0, pts_dur = 0, forge_xp = 0,
+         efficiency_bps = economy.stat_efficiency(p_rarity, p_q), comfort_bps = economy.stat_comfort(p_rarity, p_q),
+         dur_base = economy.stat_durability(p_rarity, p_q)
+   where id = v;
+  update public.market_sneakers set dur_now = dur_max where id = v;
+  return v;
+end $$;
+create or replace function pg_temp.mat118(p_target bigint, p_id bigint) returns jsonb language sql as $$
+  select x from jsonb_array_elements(public.forge_xp_materials(p_target) -> 'items') x where (x ->> 'id')::bigint = p_id $$;
+
+select pg_temp.mk118(n) from generate_series(1, 6) n;
+select pg_temp.mk118(7, 150);
+
+-- 통의 크기 · 재료 값 (spec 2.2 · 2.3)
+do $$
+declare v_t bigint; v_a bigint; v_b bigint; v_c bigint; v_d bigint; v_e bigint; v_f bigint; m jsonb; s public.market_sneakers;
+begin
+  perform pg_temp.ok(economy.forge_need('COMMON', 1) = 2880 and economy.forge_need('RARE', 1) = 2880 and economy.forge_need('RARE', 5) = 3260
+                     and economy.forge_need('RARE', 10) = 3903 and economy.forge_need('RARE', 19) = 6054
+                     and economy.forge_need('EPIC', 1) = 8928 and economy.forge_need('EPIC', 19) = 18767
+                     and economy.forge_need('LEGENDARY', 1) = 27677 and economy.forge_need('LEGENDARY', 15) = 46733,
+    '통의 크기 — 일반 · 레어 2,880 · 에픽 8,928 · 레전더리 27,677 … 레벨마다 굽이 (0118)');
+  perform pg_temp.ok(economy.forge_need('RARE', 20) is null and economy.forge_need('FINISH', 30) is null,
+    '만렙에는 통이 없다 (0118)');
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(1)::text, false);
+  v_t := pg_temp.shoe118(1, 'RARE');
+  v_a := pg_temp.shoe118(1, 'COMMON');
+  v_b := pg_temp.shoe118(1, 'COMMON', 1, 0.8);
+  v_c := pg_temp.shoe118(1, 'COMMON');
+  update public.market_sneakers set dur_now = dur_max / 2 where id = v_c;
+  v_d := pg_temp.shoe118(1, 'COMMON', 5);
+  v_e := pg_temp.shoe118(1, 'RARE');
+  update public.market_sneakers set dur_now = 0 where id = v_e;
+  v_f := pg_temp.shoe118(1, 'COMMON');
+  update public.market_sneakers set dur_now = 0 where id = v_f;
+  insert into fix (k, v) values ('x118_t', v_t), ('x118_a', v_a), ('x118_b', v_b), ('x118_c', v_c), ('x118_d', v_d), ('x118_e', v_e), ('x118_f', v_f);
+  m := pg_temp.mat118(v_t, v_a);
+  perform pg_temp.ok((m ->> 'own')::int = 1000 and (m ->> 'inherit')::int = 0 and (m ->> 'pct')::numeric = 34.7 and (m ->> 'stars')::int = 2
+                     and m ->> 'block' is null,
+    format('가운데 일반 가득 = 1켤레값 1,000 → 레어 Lv1 통의 34.7%% (%s) (0118)', m));
+  m := pg_temp.mat118(v_t, v_b);
+  perform pg_temp.ok((m ->> 'own')::int = round(1000 * (0.7 + 0.6 * (m ->> 'q')::numeric)) and (m ->> 'own')::int between 1170 and 1190
+                     and (m ->> 'stars')::int = 3 and m -> 'precious' ? 'STARS3',
+    format('★★★(q 0.80) 일반은 1,180 · 아까운 재료 (%s) (0118)', m));
+  select * into s from public.market_sneakers where id = v_c;
+  m := pg_temp.mat118(v_t, v_c);
+  perform pg_temp.ok((m ->> 'repair_part')::int = round((s.dur_max - s.dur_now) * economy.repair_unit_of(s) / 24 * 1000)
+                     and (m ->> 'own')::int = 1000 - (m ->> 'repair_part')::int and (m ->> 'own')::int between 400 and 550,
+    format('닳은 재료는 가득 수리비(SUP ÷ 24 × 1,000)만큼 덜 — 절반 닳은 일반 %s (0118)', m ->> 'own'));
+  m := pg_temp.mat118(v_t, v_d);
+  perform pg_temp.ok((m ->> 'inherit')::int = 6030 and (m ->> 'inherit')::int = round(0.5 * economy.forge_cum_need('COMMON', 5)) and (m ->> 'own')::int = 1000
+                     and m -> 'precious' ? 'LEVELED',
+    format('강화한 재료는 그 레벨까지 통의 합의 50%%를 물려준다 — Lv5 일반 %s (0118)', m));
+  m := pg_temp.mat118(v_t, v_e);
+  perform pg_temp.ok((m ->> 'own')::int between 900 and 1000 and m ->> 'block' is null,
+    format('다 닳은 레어도 수리비만큼 덜고 남는 값이 있다 (%s) (0118)', m ->> 'own'));
+  m := pg_temp.mat118(v_t, v_f);
+  perform pg_temp.ok((m ->> 'own')::int = 0 and m ->> 'block' = 'NO_VALUE',
+    format('다 닳은 일반은 값이 0 — NO_VALUE (%s) (0118)', m));
+  m := pg_temp.mat118(v_t, (select id from public.market_sneakers where owner_id = pg_temp.u118(1) and equipped));
+  perform pg_temp.ok(m ->> 'block' = 'EQUIPPED', '신은 신발은 재료가 아니다 (0118)');
+  perform pg_temp.ok(economy.forge_xp_value((select x from public.market_sneakers x where x.id = v_a))
+                     = economy.forge_xp_value((select x from public.market_sneakers x where x.id = v_a)),
+    '(값은 대상과 상관없다)');
+end $$;
+
+-- 견적 · 넣기 · 요청 번호 · 대성공 · 레벨 상자
+do $$
+declare v_t bigint := pg_temp.fx('x118_t')::bigint; v_a bigint := pg_temp.fx('x118_a')::bigint; v_c bigint := pg_temp.fx('x118_c')::bigint;
+  v_d bigint := pg_temp.fx('x118_d')::bigint; v_f bigint := pg_temp.fx('x118_f')::bigint;
+  q jsonb; r jsonb; r2 jsonb; v_key uuid := gen_random_uuid(); s public.market_sneakers; v_jobs int;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(1)::text, false);
+  perform pg_temp.ok(public.forge_xp_quote(v_t, '{}') ->> 'error' = 'MATERIALS_INVALID'
+                     and public.forge_xp_quote(v_t, array[v_a, v_a]) ->> 'error' = 'MATERIALS_INVALID'
+                     and public.forge_xp_quote(v_t, (select array_agg(g) from generate_series(1, 11) g)::bigint[]) ->> 'error' = 'MATERIALS_INVALID',
+    '재료는 1 ~ 10켤레 · 겹치지 않게 (0118)');
+  perform pg_temp.ok(public.forge_xp_quote(v_t, array[v_f]) ->> 'error' = 'NO_VALUE'
+                     and public.forge_xp_quote(v_t, array[v_t]) -> 'unavailable' -> 0 ->> 'block' = 'TARGET',
+    '값이 0 인 재료 · 대상 자신은 넣을 수 없다 (0118)');
+  q := public.forge_xp_quote(v_t, array[v_a, v_c]);
+  perform pg_temp.ok((q ->> 'gain')::int = 1000 + (pg_temp.mat118(v_t, v_c) ->> 'own')::int and q -> 'after' ->> 'level' = '1'
+                     and (q -> 'after' ->> 'pct')::numeric = floor((q ->> 'gain')::numeric * 1000 / 2880) / 10,
+    format('견적 = 대성공 없이 받는 최소 · %% 는 소수 한 자리 버림 (%s) (0118)', q -> 'after'));
+  update public.economy_settings set value = '0' where key = 'forge_xp_crit_chance';
+  q := public.forge_xp_quote(v_t, array[v_a, v_d]);
+  perform pg_temp.ok(q -> 'after' ->> 'level' = '3' and (q -> 'after' ->> 'levels')::int = 2
+                     and (q -> 'energy' ->> 'before')::numeric > (q -> 'energy' ->> 'after')::numeric,
+    format('여러 레벨이 한 번에 오른다 · 가장 높은 레벨 신발을 태우면 하루 에너지가 준다(%s → %s) (0118)',
+           q -> 'energy' ->> 'before', q -> 'energy' ->> 'after'));
+  r := public.forge_xp_add(v_key, v_t, array[v_a, v_d], 'wrong');
+  perform pg_temp.ok(r ->> 'error' = 'QUOTE_CHANGED' and r -> 'quote' ->> 'quote_version' = q ->> 'quote_version'
+                     and (select status from public.market_sneakers where id = v_a) = 'OWNED',
+    '견적 서명이 다르면 넣지 않고 새 견적을 돌려준다 (0118)');
+  r := public.forge_xp_add(v_key, v_t, array[v_d, v_a], q ->> 'quote_version');
+  select * into s from public.market_sneakers where id = v_t;
+  perform pg_temp.ok((r ->> 'ok')::boolean and (r ->> 'levels')::int = 2 and s.level = 3 and s.forge_xp = (r ->> 'xp_after')::int
+                     and (r ->> 'gain')::int = (q ->> 'gain')::int and (r ->> 'crits')::int = 0
+                     and (select bool_and(status = 'BURNED' and owner_id is null) from public.market_sneakers where id in (v_a, v_d)),
+    format('넣기 — 실패 없음 · 재료는 태우고 통에 남은 점수는 다음 레벨로 (Lv%s · %s점) (0118)', s.level, s.forge_xp));
+  r2 := public.forge_xp_add(v_key, v_t, array[v_a, v_d], q ->> 'quote_version');
+  perform pg_temp.ok(r2 = r and public.forge_xp_result(v_key) = r,
+    '같은 요청 번호는 같은 결과(다시 태우지 않는다) (0118)');
+  perform pg_temp.ok(public.forge_xp_add(v_key, v_t, array[v_c], 'x') ->> 'error' = 'KEY_REUSED',
+    '같은 요청 번호로 다른 재료는 거절 (0118)');
+  perform pg_temp.ok((select (x ->> 'xp')::int = s.forge_xp and (x ->> 'need')::int = economy.forge_need('RARE', 3)
+                        from jsonb_array_elements(public.my_shoe_xp()) x where (x ->> 'id')::bigint = v_t)
+                     and public.my_forge_successes() >= 2,
+    '내 신발마다 통 · 강화 성공은 오른 레벨 수로 센다 (0118)');
+  select count(*) into v_jobs from public.chain_jobs where user_id = pg_temp.u118(1) and kind = 'SHOE_FORGE';
+  perform pg_temp.ok(v_jobs = 1, format('레벨이 오른 경험치 넣기만 체인 기록 (%s) (0118)', v_jobs));
+  -- 대성공 100%: 제 값만 두 배
+  update public.economy_settings set value = '1' where key = 'forge_xp_crit_chance';
+  q := public.forge_xp_quote(v_t, array[v_c]);
+  r := public.forge_xp_add(gen_random_uuid(), v_t, array[v_c], q ->> 'quote_version');
+  perform pg_temp.ok((r ->> 'crits')::int = 1 and (r ->> 'gain')::int = 2 * (q ->> 'gain')::int,
+    format('대성공은 그 재료 제 값 × 2 (%s → %s) (0118)', q ->> 'gain', r ->> 'gain'));
+  select count(*) into v_jobs from public.chain_jobs where user_id = pg_temp.u118(1) and kind = 'SHOE_FORGE';
+  update public.economy_settings set value = '0' where key = 'forge_xp_crit_chance';
+  q := public.forge_xp_quote(v_t, array[pg_temp.fx('x118_b')::bigint]);
+  r := public.forge_xp_add(gen_random_uuid(), v_t, array[pg_temp.fx('x118_b')::bigint], q ->> 'quote_version');
+  perform pg_temp.ok((r ->> 'levels')::int = 0
+                     and (select count(*) from public.chain_jobs where user_id = pg_temp.u118(1) and kind = 'SHOE_FORGE') = v_jobs,
+    '레벨이 오르지 않은 넣기는 통에만 쌓이고 체인 기록이 없다 (0118)');
+  update public.economy_settings set value = '0.10' where key = 'forge_xp_crit_chance';
+end $$;
+
+-- 5레벨 · 만렙 · 예전 길
+do $$
+declare v_t bigint; v_m bigint[]; q jsonb; r jsonb; s public.market_sneakers; v_old jsonb; i int;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(2)::text, false);
+  v_t := pg_temp.shoe118(2, 'COMMON', 4);
+  update public.market_sneakers set dur_now = 10 where id = v_t;
+  v_m := array[pg_temp.shoe118(2, 'COMMON'), pg_temp.shoe118(2, 'COMMON'), pg_temp.shoe118(2, 'COMMON'), pg_temp.shoe118(2, 'COMMON')];
+  update public.economy_settings set value = '0' where key = 'forge_xp_crit_chance';
+  q := public.forge_xp_quote(v_t, v_m);
+  r := public.forge_xp_add(gen_random_uuid(), v_t, v_m, q ->> 'quote_version');
+  select * into s from public.market_sneakers where id = v_t;
+  perform pg_temp.ok(s.level = 5 and s.dur_now = s.dur_max and r -> 'level_boxes' = '[5]'::jsonb
+                     and exists (select 1 from economy.box_awards a where a.user_id = pg_temp.u118(2) and a.source = 'LEVEL:5'),
+    format('5레벨에 닿으면 내구도 가득 · 레벨 상자(%s) (0118)', r -> 'level_boxes'));
+  -- 만렙 바로 앞: 넘치는 점수는 버린다
+  update public.market_sneakers set level = 19, forge_xp = 0 where id = v_t;
+  v_m := array[pg_temp.shoe118(2, 'EPIC')];
+  q := public.forge_xp_quote(v_t, v_m);
+  perform pg_temp.ok((q ->> 'overflow_possible')::boolean and (q -> 'after' ->> 'overflow')::int > 0,
+    '만렙을 넘칠 견적은 미리 알린다 (0118)');
+  r := public.forge_xp_add(gen_random_uuid(), v_t, v_m, q ->> 'quote_version');
+  select * into s from public.market_sneakers where id = v_t;
+  perform pg_temp.ok(s.level = 20 and s.forge_xp = 0 and (r ->> 'overflow')::int > 0,
+    format('만렙에 닿으면 통은 0 · 넘친 %s점은 버린다 (0118)', r ->> 'overflow'));
+  perform pg_temp.ok(public.forge_xp_materials(v_t) ->> 'error' = 'MAX_LEVEL', '만렙 신발에는 넣을 수 없다 (0118)');
+  update public.economy_settings set value = '0.10' where key = 'forge_xp_crit_chance';
+  -- 예전 길(예전 앱): 재료는 내구도 가득만 · 만렙이 되면 통을 비운다
+  perform pg_temp.ok(economy.setting_num('forge_material_min_durability') = 100,
+    '예전 강화의 재료는 내구도 가득만(설정 50 → 100) (0118)');
+  update public.market_sneakers set level = 19, forge_xp = 1234 where id = v_t;
+  update public.market_sneakers set level = 20 where id = v_t;
+  perform pg_temp.ok((select forge_xp from public.market_sneakers where id = v_t) = 0,
+    '어떤 길로든 만렙이 되면 통을 비운다 (0118)');
+end $$;
+
+-- 대기실 · 크루 러닝 · 예전 앱 함수 그대로
+do $$
+declare v_t bigint; v_m bigint; v_p bigint; v jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(3)::text, false);
+  v_t := pg_temp.shoe118(3, 'RARE');
+  v_m := pg_temp.shoe118(3, 'COMMON');
+  insert into public.crews (id, owner_id, name) values ('b6c00000-0000-0000-0000-000000000001', pg_temp.u118(3), '경험치 크루');
+  insert into public.crew_members (crew_id, user_id, role) values ('b6c00000-0000-0000-0000-000000000001', pg_temp.u118(3), 'OWNER')
+  on conflict do nothing;
+  v_p := public.party_create_v2('b6c00000-0000-0000-0000-000000000001', '경험치 방', null, null, null, gen_random_uuid(), 'TOGETHER', null, null, null, null, null);
+  perform public.party_join(v_p);
+  update public.party_members set sneaker_id = v_m where party_id = v_p and user_id = pg_temp.u118(3);
+  perform pg_temp.ok(pg_temp.mat118(v_t, v_m) ->> 'block' = 'IN_ROOM'
+                     and public.forge_xp_quote(v_t, array[v_m]) -> 'unavailable' -> 0 ->> 'block' = 'IN_ROOM',
+    '대기실에서 고른 신발은 재료가 아니다 — IN_ROOM (0118)');
+  perform public.party_leave(v_p);
+  insert into economy.crew_runs (user_id, day, crew_id, party_id, started_at, state, sneaker_id)
+  values (pg_temp.u118(3), economy.game_day(now()), 'b6c00000-0000-0000-0000-000000000001', v_p, now(), 'RUNNING', v_m);
+  perform pg_temp.ok(public.forge_xp_materials(v_t) ->> 'error' = 'RUNNING',
+    '크루 러닝 중이면 강화하지 않는다 — RUNNING (0118)');
+  delete from economy.crew_runs where user_id = pg_temp.u118(3);
+  v := public.forge_materials(v_t);
+  perform pg_temp.ok(v is not null, '예전 강화 함수도 그대로 부를 수 있다 (0118)');
+end $$;
+
+-- 보상 걸음 · 그 날의 목표 · 목표 보너스 · 상자
+do $$
+declare r record; v_at timestamptz := now() - interval '5 hours'; b jsonb; s public.walk_sessions; v_bal numeric;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(4)::text, false);
+  perform pg_temp.ok((select daily_goal from public.profiles where id = pg_temp.u118(4)) = 6000,
+    '새 계정의 하루 목표는 6,000 (0118)');
+  perform pg_temp.ok(public.profile_set_daily_goal(3000) = 4000 and public.profile_set_daily_goal(25000) = 20000
+                     and public.profile_set_daily_goal(6250) = 6500 and public.profile_set_daily_goal(8000) = 8000,
+    '목표는 4,000 ~ 20,000 · 500 단위로 맞춘다 (0118)');
+  b := public.box_status();
+  perform pg_temp.ok((b ->> 'goal')::int = 8000 and b ->> 'goal_next' is null and b ->> 'rule' = 'REWARD_STEPS'
+                     and (b ->> 'goal_bonus')::numeric = 20 and (b ->> 'streak')::int = 1 and jsonb_array_length(b -> 'ticks') = 3,
+    format('보상 걸음이 0 인 날은 오늘 목표를 바로 바꾼다 · 막대 눈금 (%s) (0118)', b -> 'ticks'));
+  -- 경로 없는 러닝 — 적립은 그대로(상한 안), 보상 걸음은 0
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 5000, 1800, '', 0, 1, '', false);
+  select * into s from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(s.reward_steps = 0 and r.verdict_reason like '%경로가 확인되지 않아 보상 걸음에 들지 않았습니다%'
+                     and not exists (select 1 from economy.box_awards a where a.user_id = pg_temp.u118(4) and a.source like 'RUN%'),
+    format('경로 없는 러닝은 보상 걸음 0 · 러닝 상자 없음 · 까닭 (%s) (0118)', r.verdict_reason));
+  v_at := now() - interval '4 hours';
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 4500, 1800, pg_temp.track(v_at, 1800, 0.000025), 0, 1, '', false);
+  select * into s from public.walk_sessions where id = r.session_id;
+  b := public.box_status();
+  perform pg_temp.ok(s.reward_steps = 4500 and (b ->> 'reward_steps_today')::int = 4500 and (b ->> 'steps_today')::int = 4500
+                     and (select count(*) from economy.box_awards a where a.user_id = pg_temp.u118(4) and a.source like 'RUN%')
+                         = (select count(*) from jsonb_array_elements(coalesce(economy.setting('run_box_steps'), '[]'::jsonb)) t where (t #>> '{}')::int <= 4500)
+                     and (public.event_progress('daily_goal'))::int = 4500,
+    format('경로로 확인된 걸음이 보상 걸음 — 상자 · 오늘 걸음 · 이벤트가 같은 숫자 (%s) (0118)', b ->> 'reward_steps_today'));
+  -- 걸은 뒤 목표를 낮추면 오늘은 그대로 · 내일부터
+  perform public.profile_set_daily_goal(4000);
+  b := public.box_status();
+  perform pg_temp.ok((b ->> 'goal')::int = 8000 and (b ->> 'goal_next')::int = 4000 and b ->> 'goal_paid' is null,
+    '걸은 뒤 바꾼 목표는 다음 날부터 — 오늘 목표는 그대로 (0118)');
+  v_bal := economy.balance_of(pg_temp.u118(4));
+  v_at := now() - interval '3 hours';
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 4000, 1800, pg_temp.track(v_at, 1800, 0.000023), 0, 1, '', false);
+  b := public.box_status();
+  perform pg_temp.ok((b ->> 'goal_paid')::numeric = 20
+                     and exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u118(4) and l.ref = 'goal:' || economy.game_day(now()) and l.amount = 20)
+                     and b -> 'recent' @> '[{"kind": "GOAL"}]'::jsonb and (b -> 'ticks' -> 2 ->> 'got')::boolean,
+    format('목표를 채우면 러닝을 기록할 때 서버가 바로 보너스 (%s SUP) (0118)', b ->> 'goal_paid'));
+  begin
+    perform public.goal_claim();
+    perform pg_temp.ok(false, '이미 받은 목표 보너스는 거절돼야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlstate = '23505', '예전 앱의 받기는 이미 받았다고 답한다(23505) (0118)');
+  end;
+end $$;
+
+-- 내구도가 짧은 신발 · 크루 러닝 몫
+do $$
+declare r record; v_at timestamptz := now() - interval '5 hours'; s public.walk_sessions;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(7)::text, false);
+  -- 내구도 150 = 30분. 1시간 달리면 보상 걸음은 절반
+  select * into r from public.record_session(v_at, v_at + interval '3600 seconds', 8000, 3600, pg_temp.track(v_at, 3600, 0.000015), 0, 1, '', false);
+  select * into s from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(s.reward_steps = 4000 and s.backed_steps = 8000,
+    format('보상 걸음은 신발 내구도가 남아 있던 동안만 (%s / %s) (0118)', s.reward_steps, s.backed_steps));
+  perform pg_temp.ok(economy.reward_steps_on(pg_temp.u118(7), economy.game_day(v_at)) = 4000, '(하루 합)');
+end $$;
+
+-- 늦게 올린 어제 러닝 · 다 닳은 신발 · 에너지를 다 쓴 뒤 · 되돌리기 스위치
+do $$
+declare r record; v_y date := economy.game_day(now()) - 1; v_at timestamptz; s public.walk_sessions;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(5)::text, false);
+  perform public.profile_set_daily_goal(4000);
+  -- 어제 목표 줄이 없으면 지금 목표로 적고 그 값을 쓴다
+  v_at := economy.game_day_start(v_y) + interval '10 hours';
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 4200, 1800, pg_temp.track(v_at, 1800, 0.000025), 0, 1, '', false);
+  perform pg_temp.ok(exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u118(5) and l.ref = 'goal:' || v_y and l.amount = 10)
+                     and exists (select 1 from economy.goal_days g where g.user_id = pg_temp.u118(5) and g.day = v_y and g.goal = 4000),
+    '늦게 올린 러닝은 그 날의 목표로 — 어제 보너스(10 SUP) (0118)');
+  -- 다 닳은 신발: 보상 걸음 0
+  update public.market_sneakers set dur_now = 0 where owner_id = pg_temp.u118(5) and equipped;
+  v_at := now() - interval '5 hours';
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 4200, 1800, pg_temp.track(v_at, 1800, 0.000024), 0, 1, '', false);
+  select * into s from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(s.reward_steps = 0 and s.backed_steps = 4200, '다 닳은 신발로 달린 걸음은 보상 걸음이 0 (0118)');
+  -- 에너지를 다 쓴 뒤의 걸음도 센다
+  update public.market_sneakers set dur_now = dur_max where owner_id = pg_temp.u118(5) and equipped;
+  insert into public.energy_days (user_id, day, used) values (pg_temp.u118(5), economy.game_day(now()), 1000)
+  on conflict (user_id, day) do update set used = 1000;
+  v_at := now() - interval '4 hours';
+  select * into r from public.record_session(v_at, v_at + interval '1800 seconds', 4200, 1800, pg_temp.track(v_at, 1800, 0.000026), 0, 1, '', false);
+  select * into s from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(s.reward_steps = 4200 and s.rewarded_steps = 0 and r.points_awarded = 0,
+    format('에너지를 다 쓴 뒤의 걸음도 보상 걸음 — 적립은 0 (%s · %s) (0118)', s.reward_steps, s.rewarded_steps));
+  -- 되돌리기: 'OLD' 면 상자는 적립 걸음으로(이 사람 오늘 적립 걸음 0)
+  update public.economy_settings set value = '"OLD"' where key = 'reward_steps_rule';
+  perform pg_temp.ok((public.box_status() ->> 'steps_today')::int = 0 and public.box_status() ->> 'rule' = 'OLD',
+    '되돌리기 스위치(reward_steps_rule = OLD) — 상자는 예전처럼 적립 걸음 (0118)');
+  update public.economy_settings set value = '"REWARD"' where key = 'reward_steps_rule';
+  perform pg_temp.ok((public.box_status() ->> 'steps_today')::int = 4200, '(스위치를 되돌리면 보상 걸음)');
+end $$;
+
+-- 권한 — 서버 안의 셈은 앱이 부르지 못한다 · 목표 표는 볼 수 없다
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'b6000000-0000-0000-0000-000000000005', false);
+do $$ begin
+  begin
+    perform economy.goal_settle('b6000000-0000-0000-0000-000000000005', current_date);
+    perform pg_temp.ok(false, '앱은 목표 정산을 부를 수 없어야 한다');
+  exception when insufficient_privilege then
+    perform pg_temp.ok(true, '앱은 목표 정산 · 강화 셈을 직접 부를 수 없다 (0118)');
+  end;
+  begin
+    perform 1 from economy.goal_days limit 1;
+    perform pg_temp.ok(false, '앱은 목표 표를 볼 수 없어야 한다');
+  exception when insufficient_privilege then
+    perform pg_temp.ok(true, '앱은 그 날의 목표 표를 볼 수 없다 (0118)');
+  end;
+end $$;
+reset role;
 select set_config('request.jwt.claim.sub', '', false);
 
 \echo ''

@@ -21,6 +21,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -37,8 +39,12 @@ class HomeViewModel(
     rewardRepository: RewardRepository,
     sneakerRepository: SneakerRepository,
     notificationRepository: NotificationRepository,
-    prefs: UserPrefs,
+    private val prefs: UserPrefs,
     avatarRepository: AvatarRepository,
+    /** 오늘의 보상(서버 0118) — 상자 현황 저장소. 서버 경제가 없는 빌드 · 검사에서는 null(예전 홈) */
+    private val shoeRules: com.stepup.android.data.repo.ShoeRulesRepository? = null,
+    /** 지금 로그인해 있는가 — 오늘의 보상은 로그인한 계정의 서버 상태다 */
+    private val signedIn: suspend () -> Boolean = { false },
 ) : ViewModel() {
 
     /**
@@ -100,6 +106,87 @@ class HomeViewModel(
     /** 오늘 시작한 러닝 세션의 운동 시간 합(초) */
     val todayRunSec: StateFlow<Long> = today.flatMapLatest { stepRepository.observeDurationSince(startOf(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    // ── 오늘의 보상(서버 0118) ──────────────────────────────────
+
+    /** 오늘 — 한국 날짜(서버 economy.game_day). 30초마다 보고 바뀌면 다시 낸다(자정에 어제 눈금이 남지 않게) */
+    private val gameToday: StateFlow<LocalDate> = flow {
+        while (true) {
+            emit(com.stepup.android.domain.DailyRewards.gameDay(System.currentTimeMillis()))
+            delay(30_000)
+        }
+    }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.stepup.android.domain.DailyRewards.gameDay(System.currentTimeMillis()))
+
+    /** 아직 서버가 답하지 않은 이 계정의 러닝(시작 시각 · 걸음) — 홈 막대의 옅은 "확인 중" 구간 */
+    private val waitingRuns: Flow<List<Pair<Long, Int>>> = stepRepository.recentSessions(20)
+        .map { sessions ->
+            sessions.filter {
+                it.uploadState == com.stepup.android.data.local.UploadState.PENDING.name ||
+                    it.uploadState == com.stepup.android.data.local.UploadState.FAILED.name
+            }.map { it.startedAt to it.steps }
+        }
+        .distinctUntilChanged()
+
+    /** 지금 달리는 러닝(시작 시각 · 걸음) — 이 계정의 러닝일 때만 */
+    private val liveRun: Flow<Pair<Long, Int>?> = com.stepup.android.service.WalkSessionService.state
+        .map { s -> if (s.isActive && s.startedAt > 0) s.startedAt to s.steps else null }
+        .distinctUntilChanged()
+
+    /**
+     * 홈 막대 — 서버가 오늘의 보상을 주지 않으면(예전 서버 · 로그인 전 · 서버 없는 빌드) null 이고 홈은 예전 모습(하루 전체 걸음)이다.
+     * 숫자 · 눈금 · ✓ · "+SUP" 는 서버 상태에서만, 확인 중 걸음은 옅은 구간으로만(눈금을 채우지 않는다).
+     */
+    val dailyBar: StateFlow<com.stepup.android.domain.DailyBar?> = run {
+        val state = shoeRules?.daily ?: kotlinx.coroutines.flow.MutableStateFlow(null)
+        combine(state, gameToday, waitingRuns, liveRun) { daily, today, waiting, live ->
+            daily?.let {
+                val pending = com.stepup.android.domain.DailyRewardsBar.pendingToday(waiting, live?.first, live?.second ?: 0, today)
+                com.stepup.android.domain.DailyRewardsBar.of(it, today, pending)
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    }
+
+    /** 오늘의 보상 서버 상태 그대로 — 오늘의 활동 시트의 이번 주 · 연속 */
+    val daily: StateFlow<com.stepup.android.domain.DailyRewards?> =
+        shoeRules?.daily ?: kotlinx.coroutines.flow.MutableStateFlow(null)
+
+    /** 러닝이 올라간 뒤 새로 받은 보상 — 홈에 한 줄 */
+    val rewardNews: StateFlow<com.stepup.android.domain.RewardNews?> =
+        shoeRules?.news ?: kotlinx.coroutines.flow.MutableStateFlow(null)
+
+    fun consumeRewardNews() {
+        shoeRules?.consumeNews()
+    }
+
+    /** 기존 사용자에게 한 번 — "목표가 러닝 걸음 기준으로 바뀌었어요 · 다시 고르기" */
+    val goalRuleNotice: StateFlow<Boolean> = prefs.goalRuleNotice
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun dismissGoalRuleNotice() {
+        viewModelScope.launch { runCatching { prefs.dismissGoalRuleNotice() } }
+    }
+
+    private var dailyAskedAt = 0L
+
+    /** 홈이 보일 때 · 한국 날짜가 바뀌었을 때 오늘의 보상을 다시 묻는다(30초에 한 번까지) */
+    fun refreshDaily(force: Boolean = false) {
+        val repo = shoeRules ?: return
+        val now = System.currentTimeMillis()
+        if (!force && now - dailyAskedAt < 30_000) return
+        dailyAskedAt = now
+        viewModelScope.launch {
+            runCatching {
+                repo.restore()
+                if (signedIn()) repo.refreshBoxes()
+            }
+        }
+    }
+
+    init {
+        // 자정(한국 시각)이 지나면 새 날의 상태를 묻는다 — 그 사이 막대는 "—"
+        viewModelScope.launch { gameToday.drop(1).collect { refreshDaily(force = true) } }
+    }
 
     /** 캐릭터가 지금 입고 있는 것 — 꾸미기 · 내 정보와 같은 값 */
     val look: StateFlow<AvatarLook?> = avatarRepository.look
@@ -223,6 +310,8 @@ class HomeViewModel(
                     ServiceLocator.notificationRepository,
                     ServiceLocator.userPrefs,
                     ServiceLocator.avatarRepository,
+                    shoeRules = ServiceLocator.shoeRules.takeIf { ServiceLocator.serverEconomyOn },
+                    signedIn = { ServiceLocator.sessionHolder.isSignedIn() },
                 )
             }
         }

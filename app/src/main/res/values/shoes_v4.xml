@@ -39,5 +39,5 @@
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — full durability (this level\'s premium box is already claimed)</string>
     <string name="v4s_upg_repair_note">Raising efficiency raises the repair cost at the same rate.</string>
     <string name="v4s_upg_got_milestone">Durability is full. If this is the first time you reached this level, 1 premium box is added to your draws.</string>
-    <string name="v4s_upg_block_worn" formatted="false">Only shoes with 50% durability or more can be materials</string>
+    <string name="v4s_upg_block_worn">Too worn to use as material — repair it first</string>
 </resources>

@@ -39,5 +39,5 @@
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 耐久度回满（该等级的高级箱子已领取）</string>
     <string name="v4s_upg_repair_note">提升效率后，修理费也会按效率同比上涨。</string>
     <string name="v4s_upg_got_milestone">耐久度已回满。如果是首次达到该等级，1个高级箱子会加入抽取次数。</string>
-    <string name="v4s_upg_block_worn" formatted="false">只有耐久度50%以上的鞋子才能作为材料</string>
+    <string name="v4s_upg_block_worn">已磨损，无法作为材料 · 修理后可以使用</string>
 </resources>

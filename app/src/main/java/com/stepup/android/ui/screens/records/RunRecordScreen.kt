@@ -257,6 +257,7 @@ private fun reasonText(kind: RunVerdictReason.Kind): Int = when (kind) {
     RunVerdictReason.Kind.NO_GPS_CAP -> R.string.run_reason_no_gps_cap
     RunVerdictReason.Kind.UPLOAD_CAP -> R.string.run_reason_upload_cap
     RunVerdictReason.Kind.TOO_OLD -> R.string.run_reason_too_old
+    RunVerdictReason.Kind.NO_ROUTE_REWARD -> R.string.run_reason_no_route_reward
 }
 
 @Composable

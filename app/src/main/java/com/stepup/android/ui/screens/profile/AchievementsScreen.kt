@@ -91,6 +91,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
 
@@ -109,6 +110,8 @@ class AchievementsViewModel(
     /** 지금 계정의 기록 주인(account:… · guest · legacy) — 업적 최고값을 계정마다 둔다 */
     owner: Flow<String>,
     private val prefs: UserPrefs,
+    /** 서버가 센 가장 긴 러닝 목표 연속(오늘의 보상 0118 streak_best) — 모르면 null */
+    serverStreakBest: Flow<Int?> = kotlinx.coroutines.flow.flowOf(null),
 ) : ViewModel() {
 
     // 크루와 글은 서버에만 있다 — 이 화면에서 새로 받아 끝났을 때(Ready)만 그 수를 최고값으로 적는다.
@@ -126,14 +129,16 @@ class AchievementsViewModel(
 
     private val activity = combine(
         stepRepository.observeLifetimeSteps(),
-        // 연속 달성은 가장 길었던 값으로 연다 — 지금 이어진 값은 하루를 놓치면 0 이 된다
+        // 연속 달성은 가장 길었던 값으로 연다 — 지금 이어진 값은 하루를 놓치면 0 이 된다. 러닝 목표 연속은 서버가 센다(0118),
+        // 이 폰이 예전에 하루 전체 걸음으로 센 값은 연 티어가 다시 잠기지 않게만 남긴다
         stepRepository.bestStreak,
+        serverStreakBest,
         rewardDao.observeEarnedTotal(),
-    ) { steps, streak, earned ->
+    ) { steps, localStreak, serverStreak, earned ->
         AchievementMetrics(
             steps = steps,
             km = steps * RewardEconomy.STRIDE_METERS / 1000.0,
-            streak = streak,
+            streak = AchievementBook.streakCount(localStreak, serverStreak),
             supEarned = earned,
         )
     }
@@ -220,6 +225,12 @@ class AchievementsViewModel(
                     communityRepository = ServiceLocator.communityRepository,
                     owner = ServiceLocator.recordingOwnerFlow(),
                     prefs = ServiceLocator.userPrefs,
+                    // 오늘의 보상 상태는 지금 계정 것만 들고 있다(로그아웃 · 계정 바뀜이면 비운다)
+                    serverStreakBest = if (ServiceLocator.serverEconomyOn) {
+                        ServiceLocator.shoeRules.daily.map { it?.streakBest }
+                    } else {
+                        kotlinx.coroutines.flow.flowOf(null)
+                    },
                 )
             }
         }

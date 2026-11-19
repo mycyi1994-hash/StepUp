@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
  * 경제 4판(서버 0116, 2026-11-18) — 신발 능력치 지수 · 등급 · 레벨업 포인트 · 수리 · 운 · 상자.
  *
  * 정본은 서버(`shoe_rules_v4` · `my_sneakers` · `box_status`)다. 앱은 받은 규칙으로 화면 값(지수 · 별 · 유형 · 포인트 미리보기)만 센다.
- * [ShoeRules.FALLBACK] 은 서버를 아직 못 읽었을 때의 같은 값 — 서버 0116 과 맞대어 본다(`scripts/check-economy-twin.py`).
+ * [ShoeRules.FALLBACK] 은 서버를 아직 못 읽었을 때의 같은 값 — 서버 0116 · 0118 과 맞대어 본다(`scripts/check-economy-twin.py`).
  *
  * 능력치는 지수로 보인다 — 100 이 기준이고 숫자가 2배면 2배:
  *  - 효율 지수 = 100 + 적립 +bps ÷ 100 (서버 `efficiency_bps` = 적립 +bps)
@@ -40,6 +40,70 @@ data class GradeRule(
     val maxLevel: Int,
 )
 
+/**
+ * 강화 경험치(서버 0118 `shoe_rules_v4().forge` — docs/forge-xp-daily-spec-2026-11-19.md 2장). 재료 켤레값 · 통 크기를 미리 셀 때 쓰는 값이고,
+ * 정본은 서버 견적(`forge_xp_quote`)이다. [fromServer] 가 아니면 [FALLBACK](서버 0118 의 기본값 — `scripts/check-economy-twin.py`).
+ */
+data class ForgeXpRule(
+    /** 규칙 판 — 서버 `forge-xp-1` */
+    val ruleVersion: String,
+    /** 등급 한 칸마다 값 배수(3.1) — 재료 값 = 1,000 × step^등급 차례, 통은 레어부터 한 칸마다 × step */
+    val step: Double,
+    /** 일반 · 레어 Lv1 통 크기(켤레값, 2.88 — 1켤레값 = 1,000점) */
+    val need: Double,
+    /** 재료 스펙 배수 [아래, 위](0.7 ~ 1.3) — 0.7 + 0.6 × q */
+    val spec: List<Double>,
+    /** 재료마다 대성공 확률(0.10) · 그때 배수(2) */
+    val critChance: Double,
+    val critMult: Double,
+    /** 강화한 재료가 물려주는 몫(0.5) */
+    val inherit: Double,
+    /** 닳은 몫 — 가득 수리비(SUP) ÷ 이 값 × 1,000점(24) */
+    val supPerUnit: Double,
+    /** 한 번에 넣는 최대 켤레(10) */
+    val maxMaterials: Int,
+    val fromServer: Boolean = false,
+) {
+    val specLo: Double get() = spec.getOrElse(0) { 0.7 }
+    val specHi: Double get() = spec.getOrElse(1) { 1.3 }
+
+    companion object {
+        /** 서버 0118 의 기본값 */
+        val FALLBACK = ForgeXpRule(
+            ruleVersion = "forge-xp-1",
+            step = 3.1,
+            need = 2.88,
+            spec = listOf(0.7, 1.3),
+            critChance = 0.10,
+            critMult = 2.0,
+            inherit = 0.5,
+            supPerUnit = 24.0,
+            maxMaterials = 10,
+        )
+    }
+}
+
+/** 하루 러닝 목표의 범위(서버 0118 `shoe_rules_v4().goal` — 4,000 ~ 20,000 · 500 단위, 새 계정 6,000) */
+data class GoalRule(
+    val min: Int,
+    val max: Int,
+    val default: Int,
+    val step: Int,
+    val fromServer: Boolean = false,
+) {
+    /** 서버 `profile_set_daily_goal` 처럼 범위 안 · 단위에 맞춘다(가까운 단위로 반올림) — 서버가 돌려준 값이 정본이다 */
+    fun fit(goal: Int): Int {
+        val unit = step.coerceAtLeast(1)
+        val rounded = Math.round(goal / unit.toDouble()).toInt() * unit
+        return rounded.coerceIn(min, max.coerceAtLeast(min))
+    }
+
+    companion object {
+        /** 서버 0118 의 기본값 */
+        val FALLBACK = GoalRule(min = 4000, max = 20000, default = 6000, step = 500)
+    }
+}
+
 data class ShoeRules(
     val pointsPerStep: Double,
     val repairShare: Double,
@@ -54,6 +118,10 @@ data class ShoeRules(
     val forgeMaterialMinDurability: Double,
     val boostShopEnabled: Boolean,
     val grades: List<GradeRule>,
+    /** 강화 경험치(서버 0118). 서버에 0118 이 없으면 [ForgeXpRule.FALLBACK](fromServer = false) */
+    val forge: ForgeXpRule = ForgeXpRule.FALLBACK,
+    /** 하루 러닝 목표의 범위(서버 0118). 서버에 0118 이 없으면 [GoalRule.FALLBACK](fromServer = false) */
+    val goal: GoalRule = GoalRule.FALLBACK,
     /** 서버에서 받은 값인가(아니면 [FALLBACK]) */
     val fromServer: Boolean = false,
 ) {
@@ -90,7 +158,7 @@ data class ShoeRules(
     fun repairUnit(efficiencyBps: Int): Double = repairShare * 110 * pointsPerStep / 5 * (10000 + efficiencyBps) / 10000.0
 
     companion object {
-        /** 서버 0116 과 같은 값 — 서버를 아직 못 읽었을 때 */
+        /** 서버 0116 · 0118 과 같은 값 — 서버를 아직 못 읽었을 때 */
         val FALLBACK = ShoeRules(
             pointsPerStep = 0.0118,
             repairShare = 0.45,
@@ -100,7 +168,8 @@ data class ShoeRules(
             freeRepairHours = 48.0,
             freeRepairReady = null,
             freeRepairNextMs = null,
-            forgeMaterialMinDurability = 50.0,
+            // 예전 강화 길의 재료는 내구도 가득만(0118 — 50 → 100)
+            forgeMaterialMinDurability = 100.0,
             boostShopEnabled = false,
             grades = listOf(
                 GradeRule("COMMON", 0, 8000, 0, 4444, 110, 200, 2, 3, 100, 20),
@@ -110,6 +179,8 @@ data class ShoeRules(
                 GradeRule("REDLINE", 40625, 81125, 2222, 5679, 365, 660, 6, 9, 160, 28),
                 GradeRule("FINISH", 65938, 126688, 2632, 5906, 495, 890, 8, 12, 180, 30),
             ),
+            forge = ForgeXpRule.FALLBACK,
+            goal = GoalRule.FALLBACK,
         )
 
         fun parse(body: String): ShoeRules? = runCatching {
@@ -141,9 +212,44 @@ data class ShoeRules(
                 forgeMaterialMinDurability = o.dbl("forge_material_min_durability") ?: 0.0,
                 boostShopEnabled = (o["boost_shop_enabled"] as? JsonPrimitive)?.booleanOrNull ?: false,
                 grades = grades,
+                forge = (o["forge"] as? JsonObject)?.let(::parseForge) ?: FALLBACK.forge,
+                goal = (o["goal"] as? JsonObject)?.let(::parseGoal) ?: FALLBACK.goal,
                 fromServer = true,
             )
         }.getOrNull()
+
+        /** `forge` 묶음(0118) — 빠진 칸은 기본값. 묶음이 없는 서버(0118 전)는 부르지 않는다([FALLBACK] 그대로 · fromServer = false) */
+        private fun parseForge(f: JsonObject): ForgeXpRule {
+            val d = ForgeXpRule.FALLBACK
+            val spec = (f["spec"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.doubleOrNull }?.takeIf { it.size == 2 }
+            return ForgeXpRule(
+                ruleVersion = f.str("rule_version") ?: d.ruleVersion,
+                step = f.dbl("step") ?: d.step,
+                need = f.dbl("need") ?: d.need,
+                spec = spec ?: d.spec,
+                critChance = f.dbl("crit_chance") ?: d.critChance,
+                critMult = f.dbl("crit_mult") ?: d.critMult,
+                inherit = f.dbl("inherit") ?: d.inherit,
+                supPerUnit = f.dbl("sup_per_unit") ?: d.supPerUnit,
+                maxMaterials = f.int("max_materials") ?: d.maxMaterials,
+                fromServer = true,
+            )
+        }
+
+        /** `goal` 묶음(0118) — 범위가 뒤집혔으면 버린다(기본값으로) */
+        private fun parseGoal(g: JsonObject): GoalRule? {
+            val d = GoalRule.FALLBACK
+            val min = g.int("min") ?: d.min
+            val max = g.int("max") ?: d.max
+            if (min <= 0 || max < min) return null
+            return GoalRule(
+                min = min,
+                max = max,
+                default = (g.int("default") ?: d.default).coerceIn(min, max),
+                step = (g.int("step") ?: d.step).coerceAtLeast(1),
+                fromServer = true,
+            )
+        }
     }
 }
 

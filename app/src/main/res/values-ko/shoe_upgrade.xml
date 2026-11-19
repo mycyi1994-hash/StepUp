@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 신발 강화(지시서 v6 · 파란 톤 v4 강화 전달본, 재료 규칙 2026-10-04 forge-v2 — docs/redesign/shoe-upgrade-2026-10-01) — 강화 화면 · 재료 선택 · 최종 확인 · 결과 -->
 <resources>
+    <!-- 2026-11-19: 이 파일의 재료 3개 · 성공률 · 소각 · 실패 글은 예전 확률 강화(서버에 0118 이 없을 때 · 1.20.x 에서 보낸 요청의 결과)에만 보인다. 경험치 강화의 글은 forge_xp.xml -->
     <string name="upg_title">신발 강화</string>
     <string name="upg_action">강화하기</string>
     <string name="upg_action_check">강화 결과 확인</string>

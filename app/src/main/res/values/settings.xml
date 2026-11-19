@@ -8,7 +8,7 @@
     <string name="set_group_account">Account &amp; help</string>
     <string name="set_group_more">More</string>
     <string name="set_group_about">About</string>
-    <string name="set_goal">Daily step goal</string>
+    <string name="set_goal">Daily run goal</string>
     <string name="set_goal_value">%1$s steps</string>
     <string name="set_notifications">Notifications</string>
     <string name="set_privacy">Privacy &amp; permissions</string>
@@ -144,7 +144,7 @@
     <string name="set_goal_minus">− 500</string>
     <string name="set_goal_plus">+ 500</string>
     <string name="set_goal_range">%1$s–%2$s steps · in steps of 500</string>
-    <string name="set_goal_distance">Estimated distance</string>
+    <string name="set_goal_distance">Estimated run distance</string>
     <string name="set_goal_distance_value">about %1$s km</string>
     <string name="set_goal_bonus">Base goal bonus</string>
     <string name="set_goal_bonus_value">%1$s SUP</string>

@@ -184,7 +184,7 @@ fun EventsScreen(
                     tag = stringResource(R.string.challenge_tag_daily),
                     title = stringResource(R.string.challenge_daily_title),
                     current = d?.takeIf { it.known }?.steps?.toDouble(), target = d?.goal?.toDouble(),
-                    reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
+                    reward = if (d != null && d.paidToday > 0) d.paidToday else d?.bonus ?: RewardEconomy.goalBaseBonus(d?.goal ?: 0),
                     km = false,
                 )
                 1 -> ChallengeHero(
@@ -211,8 +211,9 @@ fun EventsScreen(
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk,
                 title = stringResource(R.string.challenge_daily_title),
                 desc = stringResource(R.string.challenge_daily_desc),
-                reward = if (d != null && d.paidToday > 0) d.paidToday else RewardEconomy.goalBaseBonus(d?.goal ?: 0),
-                rewardNote = if (d != null && d.paidToday > 0) null else stringResource(R.string.challenge_daily_streak_note),
+                reward = if (d != null && d.paidToday > 0) d.paidToday else d?.bonus ?: RewardEconomy.goalBaseBonus(d?.goal ?: 0),
+                // 서버가 연속까지 넣은 금액을 주면(0118 goal_bonus) "연속 달성 시 더"를 붙이지 않는다
+                rewardNote = if (d != null && (d.paidToday > 0 || d.bonus != null)) null else stringResource(R.string.challenge_daily_streak_note),
                 fraction = d?.takeIf { it.known }?.fraction,
                 progressText = if (d == null || !d.known) "—" else "%,d / %,d".format(d.steps, d.goal),
                 state = when {

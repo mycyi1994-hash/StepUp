@@ -254,6 +254,8 @@ fun SneakerDetailScreen(
         onCheckWear = viewModel::reloadOwned,
         points = pointsPhase,
         pointsActions = pointsActions,
+        // 처음 포인트가 생긴 사람 — 포인트 ⓘ 에 "나눈 포인트는 되돌릴 수 없어요"를 함께(한 번 나누면 더 보이지 않는다)
+        firstPoints = (owned as? OwnedLoad.Ready)?.shoes?.let(::firstPointsOf) ?: false,
     )
 }
 
@@ -287,6 +289,8 @@ fun ShoeDetailContent(
     /** 스탯 포인트 시트(0059) — 있으면 그 장면으로 띄운다 */
     points: PointsPhase? = null,
     pointsActions: PointsActions = PointsActions(),
+    /** 처음 포인트가 생긴 사람([firstPointsOf]) — 포인트 시트의 ⓘ 가 되돌릴 수 없다는 한 줄을 함께 보인다 */
+    firstPoints: Boolean = false,
 ) {
     var sheet by rememberSaveable { mutableStateOf(initialSheet?.let(DetailSheet::valueOf) ?: DetailSheet.None) }
     var artAttempt by rememberSaveable { mutableIntStateOf(0) }
@@ -429,7 +433,7 @@ fun ShoeDetailContent(
             DetailSheet.None -> Unit
         }
         if (points != null && sheet == DetailSheet.None && repair == null) {
-            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn)
+            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn, firstPoints = firstPoints)
         }
         if (repair != null && sheet == DetailSheet.None) {
             ShoeRepairSheet(

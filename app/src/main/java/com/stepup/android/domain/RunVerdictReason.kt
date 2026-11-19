@@ -13,6 +13,9 @@ object RunVerdictReason {
         MOCK, BANNED, CADENCE, SPEED, TRACK_TIME, DUPLICATE_ROUTE, OVERLAP, NO_STEPS, STEPS_OVER_GPS,
         OVERSPEED_STOP, CREW_DONE, DAILY_STEPS, HELD, CREW_EMPTY, CREW_AFTER, WORN_AFTER, ENERGY, WORN,
         DAILY_SUP, NO_GPS_CAP, UPLOAD_CAP, TOO_OLD,
+
+        /** 경로가 받쳐 주지 않아(경로 300m 아래 포함) 오늘의 보상(상자 · 목표)에 세지 않았다(서버 0118) — 적립은 있을 수 있다 */
+        NO_ROUTE_REWARD,
     }
 
     /** 서버 글(supabase/migrations 0071 · 0089 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
@@ -38,6 +41,8 @@ object RunVerdictReason {
         "하루 적립 금액 상한에 걸렸습니다" to Kind.DAILY_SUP,
         "경로 없는 러닝의 하루 상한에 걸렸습니다" to Kind.NO_GPS_CAP,
         "하루에 올릴 수 있는 적립 상한에 걸렸습니다" to Kind.UPLOAD_CAP,
+        // 0118 — 보상 걸음(상자 · 목표 · 연속)에 들지 않은 러닝. 서버 글과 글자까지 같게(docs/forge-xp-daily-contract-2026-11-19.md)
+        "경로가 확인되지 않아 보상 걸음에 들지 않았습니다" to Kind.NO_ROUTE_REWARD,
         // 거절(REJECTED) — 서버가 받지 않은 러닝의 까닭(uploadError)
         "너무 오래된 러닝입니다" to Kind.TOO_OLD,
     )

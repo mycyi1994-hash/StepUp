@@ -116,6 +116,31 @@ fun pointsBasisOf(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): PointsB
     )
 }
 
+// ── ⓘ — 포인트 1 이 이 신발(등급)에 주는 것(2026-11-19 사용 후기 "포인트 화면에 ⓘ") ─────────────
+
+/** 포인트 1 의 폭 "1.1" · "1.25" · "1" — 등급의 point_rate_bps(서버 규칙). 끝의 0 은 뺀다 */
+fun PointsBasis.rateText(): String = trimmedDecimal(pointRatePercent).removeSuffix(".0")
+
+/**
+ * 내구도 포인트 1 이 늘리는 달리는 시간(분) "0.3" · "1.3" — 뽑은 최대 내구도 × 폭(서버 dur_max_of 는 합계를 반올림하므로 한 개씩은
+ * 1 단위쯤 오르내린다 — 그 평균). 소수 한 자리로 내려서(부풀리지 않게), 끝의 .0 은 뺀다. 뽑은 값을 모르면 그 등급의 가장 낮은 값으로
+ */
+fun PointsBasis.minutesPerPointText(): String {
+    val base = durabilityBase.takeIf { it > 0 } ?: rules.grade(rarity).durabilityLo
+    val units = base * rules.grade(rarity).pointRateBps / 10000.0
+    val tenths = kotlin.math.floor(units / RUN_UNITS_PER_MINUTE * 10 + 1e-9).toInt().coerceAtLeast(0)
+    return if (tenths % 10 == 0) "${tenths / 10}" else "${tenths / 10}.${tenths % 10}"
+}
+
+/**
+ * 처음 포인트가 생긴 사람인가 — 나눌 포인트가 있는 신발이 있고 아직 어느 신발에도 포인트를 나눈 적이 없다.
+ * 이때만 ⓘ 에 "나눈 포인트는 되돌릴 수 없어요"를 함께 보인다(한 번 나누면 더는 보이지 않는다 — 폰에 따로 적지 않는다)
+ */
+fun firstPointsOf(shoes: List<Sneaker>): Boolean {
+    val bases = shoes.mapNotNull { pointsBasisOf(it) }
+    return bases.isNotEmpty() && bases.all { it.saved.sum == 0 }
+}
+
 /** 상세에서 포인트로 가는 길 — 남은 포인트가 있으면 알림, 다시 나누기만 남았으면 관리 시트의 한 줄만 */
 sealed interface PointsEntry {
     /** 포인트가 없는 신발 */

@@ -21,9 +21,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -54,6 +59,7 @@ import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.ExperienceEvents
 import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.theme.StepUpDesign
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 
@@ -119,6 +125,8 @@ fun ShoePointsSheet(
     phase: PointsPhase,
     actions: PointsActions,
     onSignIn: (() -> Unit)?,
+    /** 처음 포인트가 생긴 사람([firstPointsOf]) — ⓘ 를 펼치면 "나눈 포인트는 되돌릴 수 없어요"도 함께 */
+    firstPoints: Boolean = false,
 ) {
     val sending = phase is PointsPhase.Sending
     RunSheet(
@@ -131,22 +139,33 @@ fun ShoePointsSheet(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag(phase.sceneTag()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            PointsBody(shoe, phase, actions, onSignIn)
+            PointsBody(shoe, phase, actions, onSignIn, firstPoints)
         }
     }
 }
 
 @Composable
-private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: PointsActions, onSignIn: (() -> Unit)?) {
+private fun ColumnScope.PointsBody(
+    shoe: Sneaker,
+    phase: PointsPhase,
+    actions: PointsActions,
+    onSignIn: (() -> Unit)?,
+    firstPoints: Boolean,
+) {
     val t = runTone()
     val basis = phase.basis
     val draft = phase.draft
+    // ⓘ — 펼친 줄 하나(창 없이 그 줄 아래). 다른 줄을 펼치면 앞의 것은 접힌다
+    var infoOpen by rememberSaveable { mutableStateOf<PointStat?>(null) }
+    val info = { stat: PointStat -> PointInfo(open = infoOpen == stat, firstPoints = firstPoints, onToggle = {
+        infoOpen = if (infoOpen == stat) null else stat
+    }) }
     when (phase) {
         is PointsPhase.Editing -> {
             CareSheetTitle(stringResource(R.string.points_title), shoe.nameAndNumber())
             FreeLine(basis.free(draft), basis)
             PointStat.entries.forEach { stat ->
-                PointRow(basis, draft, stat, editable = true, onAdd = { actions.onAdd(stat) }, onRemove = { actions.onRemove(stat) })
+                PointRow(basis, draft, stat, editable = true, info = info(stat), onAdd = { actions.onAdd(stat) }, onRemove = { actions.onRemove(stat) })
             }
             Text(
                 stringResource(if (basis.respec) R.string.points_note_respec else R.string.points_note_final),
@@ -182,7 +201,7 @@ private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: P
         }
         is PointsPhase.Confirm, is PointsPhase.Sending -> {
             CareSheetTitle(stringResource(R.string.points_confirm_title), shoe.nameAndNumber())
-            PointStat.entries.forEach { stat -> PointRow(basis, draft, stat, editable = false) }
+            PointStat.entries.forEach { stat -> PointRow(basis, draft, stat, editable = false, info = info(stat)) }
             Text(
                 stringResource(if (basis.lowers(draft)) R.string.points_confirm_respec else R.string.points_confirm_body),
                 style = runTextStyle(15.sp, t.text, FontWeight.SemiBold), modifier = Modifier.testTag("points-confirm-note"),
@@ -201,7 +220,7 @@ private fun ColumnScope.PointsBody(shoe: Sneaker, phase: PointsPhase, actions: P
         is PointsPhase.Done -> {
             CareSheetTitle(stringResource(R.string.points_done_title), shoe.nameAndNumber())
             FreeLine(basis.free(draft), basis)
-            PointStat.entries.forEach { stat -> PointRow(basis, draft, stat, editable = false, showChange = false) }
+            PointStat.entries.forEach { stat -> PointRow(basis, draft, stat, editable = false, info = info(stat), showChange = false) }
             RunDivider()
             RunButton(stringResource(R.string.care_done), actions.onClose, modifier = Modifier.testTag("points-done"))
         }
@@ -226,8 +245,8 @@ private fun FreeLine(free: Int, basis: PointsBasis) {
     }
 }
 
-/** 포인트 1 의 폭 "1.25" — 끝의 0 은 뺀다(1.0 → "1") */
-private fun rateText(percent: Double): String = trimmedDecimal(percent).removeSuffix(".0")
+/** 한 줄의 ⓘ — 펼쳤는가 · 처음 포인트가 생긴 사람인가 · 누르면 */
+private class PointInfo(val open: Boolean, val firstPoints: Boolean, val onToggle: () -> Unit)
 
 /**
  * 한 줄 — 이름 · 지금 값(→ 나눈 뒤 값) · 1개의 값 · ± 와 나눈 수. [editable] 이 아니면 ± 없이 나눈 수만.
@@ -239,6 +258,7 @@ private fun PointRow(
     draft: PointsDraft,
     stat: PointStat,
     editable: Boolean,
+    info: PointInfo? = null,
     onAdd: () -> Unit = {},
     onRemove: () -> Unit = {},
     showChange: Boolean = true,
@@ -251,7 +271,7 @@ private fun PointRow(
         },
     )
     // 포인트 1 = 뽑은 값의 +N%(등급마다) — 착화감은 에너지 70% 절약까지(서버 상한)
-    val rate = rateText(basis.pointRatePercent)
+    val rate = basis.rateText()
     val hint = when (stat) {
         PointStat.COMFORT -> stringResource(R.string.v4s_points_hint_comfort, rate, basis.comfortCapBps / 100)
         else -> stringResource(R.string.v4s_points_hint, rate)
@@ -273,11 +293,15 @@ private fun PointRow(
     val countCd = stringResource(R.string.points_count_cd, label, draft[stat])
     Column(
         Modifier.fillMaxWidth().heightIn(min = 64.dp).background(CartoonColors.Cell, RoundedCornerShape(14.dp))
-            .testTag("points-row-$key").padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .testTag("points-row-$key").padding(horizontal = 14.dp, vertical = if (info != null) 4.dp else 10.dp),
+        verticalArrangement = Arrangement.spacedBy(if (info != null) 0.dp else 6.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = runTextStyle(16.sp, CartoonColors.Text, FontWeight.SemiBold), maxLines = 1)
+            if (info != null) {
+                InfoLabel(label, info, "points-info-$key")
+            } else {
+                Text(label, style = runTextStyle(16.sp, CartoonColors.Text, FontWeight.SemiBold), maxLines = 1)
+            }
             Spacer(Modifier.width(8.dp))
             Text(
                 buildAnnotatedString {
@@ -310,6 +334,62 @@ private fun PointRow(
                 StepButton(Icons.Filled.Add, stringResource(R.string.points_add_cd, label), basis.canAdd(draft, stat), onAdd,
                     "points-add-$key")
             }
+        }
+        if (info?.open == true) PointInfoLines(basis, stat, info.firstPoints, key)
+    }
+}
+
+/**
+ * 이름 + ⓘ — 함께 누르는 자리(높이 48). 누르면 그 줄 아래 설명이 펼쳐지고, 다시 누르면 접힌다(창을 띄우지 않는다)
+ */
+@Composable
+private fun InfoLabel(label: String, info: PointInfo, tag: String) {
+    val cd = stringResource(if (info.open) R.string.shoe_info_hide_cd else R.string.shoe_info_show_cd, label)
+    Row(
+        Modifier.heightIn(min = StepUpDesign.TouchTarget).clip(RoundedCornerShape(8.dp))
+            .feedbackClickable(role = Role.Button, onClick = info.onToggle)
+            .semantics(mergeDescendants = true) { contentDescription = cd }
+            .testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = runTextStyle(16.sp, CartoonColors.Text, FontWeight.SemiBold), maxLines = 1)
+        Spacer(Modifier.width(5.dp))
+        Icon(
+            Icons.Outlined.Info, contentDescription = null,
+            tint = if (info.open) CartoonColors.Text else CartoonColors.Number, modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+/**
+ * ⓘ 를 펼친 두 줄 — 한 줄 설명 + 이 신발(등급)에서 포인트 1 의 값(서버 규칙). 처음 포인트가 생긴 사람에게는 되돌릴 수 없다는 한 줄을 더
+ */
+@Composable
+private fun PointInfoLines(basis: PointsBasis, stat: PointStat, firstPoints: Boolean, key: String) {
+    val meaning = stringResource(
+        when (stat) {
+            PointStat.EFFICIENCY -> R.string.shoe_info_efficiency
+            PointStat.COMFORT -> R.string.shoe_info_comfort
+            PointStat.DURABILITY -> R.string.shoe_info_durability
+        },
+    )
+    val value = when (stat) {
+        PointStat.EFFICIENCY -> stringResource(R.string.shoe_info_point_efficiency, basis.rateText())
+        PointStat.COMFORT -> stringResource(R.string.shoe_info_point_comfort, basis.rateText(), basis.comfortCapBps / 100)
+        PointStat.DURABILITY -> stringResource(R.string.shoe_info_point_durability, basis.minutesPerPointText())
+    }
+    Column(
+        Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp)
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+            .testTag("points-info-lines-$key"),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text(meaning, style = runTextStyle(14.sp, CartoonColors.Text, FontWeight.Medium, 1.35f), modifier = Modifier.testTag("points-info-meaning-$key"))
+        Text(value, style = runTextStyle(14.sp, CartoonColors.Number, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),
+            modifier = Modifier.testTag("points-info-value-$key"))
+        if (firstPoints) {
+            Text(stringResource(R.string.points_note_final), style = runTextStyle(13.sp, CartoonColors.Number, FontWeight.Medium, 1.35f),
+                modifier = Modifier.testTag("points-info-final-$key"))
         }
     }
 }

@@ -25,4 +25,5 @@
     <string name="run_reason_no_gps_cap">ルートなしランの1日上限に達しました</string>
     <string name="run_reason_upload_cap">1日に送れる上限に達しました</string>
     <string name="run_reason_too_old">7日以上前のランです</string>
+    <string name="run_reason_no_route_reward">経路を確認できなかったため、報酬の歩数(ボックス・目標)に入りませんでした</string>
 </resources>

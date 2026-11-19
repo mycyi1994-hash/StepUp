@@ -39,5 +39,5 @@
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 내구도 가득(이 레벨의 상급 상자는 이미 받았어요)</string>
     <string name="v4s_upg_repair_note">효율을 올리면 수리비도 효율만큼 올라요.</string>
     <string name="v4s_upg_got_milestone">내구도를 가득 채웠어요. 이 레벨에 처음 닿았다면 상급 상자 1개가 뽑기에 쌓여요.</string>
-    <string name="v4s_upg_block_worn" formatted="false">내구도 50% 이상인 신발만 재료가 돼요</string>
+    <string name="v4s_upg_block_worn">닳아서 재료로 쓸 수 없어요 · 수리하면 쓸 수 있어요</string>
 </resources>

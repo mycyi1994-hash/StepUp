@@ -25,4 +25,5 @@
     <string name="run_reason_no_gps_cap">경로 없는 러닝의 하루 상한에 닿았어요</string>
     <string name="run_reason_upload_cap">하루에 올릴 수 있는 상한에 닿았어요</string>
     <string name="run_reason_too_old">7일이 지난 러닝이에요</string>
+    <string name="run_reason_no_route_reward">경로가 확인되지 않아 보상 걸음(상자 · 목표)에 들지 않았어요</string>
 </resources>

@@ -264,8 +264,11 @@ object Routes {
     const val CHALLENGE_HISTORY = "challenge-history"
     const val SNEAKER = "sneaker/{id}"
 
-    /** 신발 강화(파란 톤 v4 강화 · 재료 신발 3개, 0054) — 상세의 강화하기 · 강화 결과 확인이 같은 화면으로. 뒤로는 상세로 */
-    const val SNEAKER_UPGRADE = "sneaker/{id}/upgrade"
+    /**
+     * 신발 강화(0118 경험치 강화 — 서버에 없으면 예전 재료 3개 강화) — 상세의 강화하기 · 강화 결과 확인이 같은 화면으로. 뒤로는 상세로.
+     * material 은 뽑기 결과의 "재료로 쓰면" 줄에서 왔을 때 골라 둘 신발(0 이면 없음)
+     */
+    const val SNEAKER_UPGRADE = "sneaker/{id}/upgrade?material={material}"
     /** 크루 대기실 — party 는 목록에서 고른(또는 방금 연) 방 번호(0072). 없으면(-1) 예전처럼 크루의 열린 방 하나에 */
     const val LOBBY = "lobby/{crewId}?party={party}"
 
@@ -298,7 +301,8 @@ object Routes {
     const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}&model={model}"
 
     fun sneaker(id: Long) = "sneaker/$id"
-    fun sneakerUpgrade(id: Long) = "sneaker/$id/upgrade"
+    fun sneakerUpgrade(id: Long, material: Long = 0) =
+        if (material > 0) "sneaker/$id/upgrade?material=$material" else "sneaker/$id/upgrade"
 
     /** 거래소의 한 장 — 도감 모델이 있으면 모델 번호로(0107, 같은 등급의 다른 모델과 섞이지 않는다) */
     fun marketModel(key: com.stepup.android.data.remote.ModelKey, sell: Long = 0) =
@@ -831,6 +835,13 @@ private fun MainScaffoldContent(
                         },
                     )
                 }
+                // 뽑기 결과의 "재료로 쓰면 ○○ +N%" — 그 신발을 골라 둔 강화 화면으로(결과는 닫는다)
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.stepup.android.ui.screens.gacha.LocalOpenForgeWith provides { target: Long, material: Long ->
+                        drawVm.closeResult()
+                        navController.navigate(Routes.sneakerUpgrade(target, material)) { launchSingleTop = true }
+                    },
+                ) {
                 com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
                     modifier = Modifier.weight(1f),
                     boxes = boxStatus,
@@ -884,6 +895,7 @@ private fun MainScaffoldContent(
                         )
                     },
                 )
+                }
                 }
             }
             composable(Screen.Customize.route) { entry ->
@@ -1591,10 +1603,14 @@ private fun MainScaffoldContent(
             }
             composable(
                 route = Routes.SNEAKER_UPGRADE,
-                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                arguments = listOf(
+                    navArgument("id") { type = NavType.LongType },
+                    navArgument("material") { type = NavType.LongType; defaultValue = 0L },
+                ),
             ) { entry ->
                 com.stepup.android.ui.screens.items.ShoeUpgradeScreen(
                     sneakerId = entry.arguments?.getLong("id") ?: 0L,
+                    material = entry.arguments?.getLong("material") ?: 0L,
                     onBack = { navController.popBackStack() },
                     // UP09 · UP18 보유 신발 보기 — 신발 탭의 최신 목록으로
                     onOpenOwned = {

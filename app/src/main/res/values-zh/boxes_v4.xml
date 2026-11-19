@@ -12,8 +12,8 @@
     <string name="boxes_premium">高级箱子</string>
     <string name="boxes_check_in">签到</string>
     <string name="boxes_per_day">每天%1$d个</string>
-    <string name="boxes_run">今日计入奖励的步数 %1$s步</string>
-    <string name="boxes_week">本周计入奖励的步数 %1$s步</string>
+    <string name="boxes_run">今日跑步 %1$s 步</string>
+    <string name="boxes_week">本周跑步 %1$s 步</string>
     <string name="boxes_got">已领取</string>
     <string name="boxes_steps_progress">%1$s / %2$s步</string>
     <string name="boxes_streak">连续%1$d天达成目标</string>

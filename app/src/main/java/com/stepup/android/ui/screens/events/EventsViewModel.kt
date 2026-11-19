@@ -33,6 +33,8 @@ data class DailyChallenge(
     val known: Boolean = true,
     /** 폰 만보기 걸음이라 지금 달리는 러닝의 걸음이 이미 들어 있다 */
     val live: Boolean = false,
+    /** 오늘 채우면 받을 목표 보너스(연속 포함, 서버 0118 goal_bonus) — 모르면 null(목표만으로 정해지는 몫을 보인다) */
+    val bonus: Double? = null,
 ) {
     val fraction: Float get() = if (goal > 0) (steps.toFloat() / goal).coerceIn(0f, 1f) else 0f
     val done: Boolean get() = goal in 1..steps
@@ -52,6 +54,8 @@ class EventsViewModel(
     rewardRepository: RewardRepository,
     private val eventRepository: EventRepository,
     avatarRepository: com.stepup.android.data.repo.AvatarRepository,
+    /** 오늘의 보상(서버 0118) — 홈 막대와 같은 상태. 서버 경제가 없는 빌드에서는 null */
+    private val shoeRules: com.stepup.android.data.repo.ShoeRulesRepository? = null,
 ) : ViewModel() {
     val look = avatarRepository.look.map<com.stepup.android.domain.AvatarLook, com.stepup.android.domain.AvatarLook?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -82,24 +86,36 @@ class EventsViewModel(
      */
     private val _verifiedToday = MutableStateFlow<Long?>(null)
 
+    /** 서버가 확인한 오늘 걸음(예전 서버의 event_progress) · 오늘의 보상(0118) 한 묶음 */
+    private val serverToday = combine(
+        _verifiedToday,
+        shoeRules?.daily ?: MutableStateFlow(null),
+    ) { verified, rewards -> verified to rewards }
+
     /**
-     * 오늘의 도전 — 하루 걸음 목표.
+     * 오늘의 도전 — 하루 러닝 목표.
      *
-     * 보너스는 목표를 넘기는 순간 저절로 적립된다(StepRepository). 그래서
-     * 여기에는 "받기" 버튼이 없고, 원장에 오늘 보너스가 적혔는지로 지급
-     * 여부를 보여 준다.
+     * 보너스는 러닝을 기록할 때 서버가 저절로 준다(0118 — 예전 서버는 앱이 청구). 그래서 여기에는 "받기" 버튼이 없고,
+     * 서버가 오늘 보너스를 줬는지로 지급 여부를 보여 준다. 서버에 오늘의 보상이 있으면 홈 막대와 같은 상태(오늘 보상 걸음 · 오늘의 목표 ·
+     * 받은 보너스)를 읽는다 — 한국 날짜가 오늘이 아니면 진행 중으로만("—").
      */
     val daily: StateFlow<DailyChallenge?> = combine(
         stepRepository.todaySteps,
         stepRepository.dailyGoal,
         rewardRepository.sumOfTypeSince(RewardType.BONUS_GOAL, startOfToday),
-        _verifiedToday,
-    ) { phoneSteps, goal, paid, verified ->
-        if (com.stepup.android.core.ServiceLocator.serverEconomyOn) {
-            // 서버 경제: 서버가 확인한 걸음으로 잰다. 아직 못 받았으면 진행 중으로만 보인다
-            DailyChallenge(steps = verified?.toInt() ?: 0, goal = goal, paidToday = paid, known = verified != null)
-        } else {
-            DailyChallenge(steps = phoneSteps, goal = goal, paidToday = paid, live = true)
+        serverToday,
+    ) { phoneSteps, goal, paid, (verified, rewards) ->
+        val today = com.stepup.android.domain.DailyRewards.gameDay(System.currentTimeMillis())
+        when {
+            rewards != null && rewards.isFor(today) -> DailyChallenge(
+                steps = rewards.rewardStepsToday, goal = rewards.goal, paidToday = rewards.goalPaid ?: 0.0,
+                known = true, bonus = rewards.goalBonus,
+            )
+            rewards != null -> DailyChallenge(steps = 0, goal = rewards.goal, paidToday = 0.0, known = false)
+            // 서버 경제(예전 서버): 서버가 확인한 걸음으로 잰다. 아직 못 받았으면 진행 중으로만 보인다
+            com.stepup.android.core.ServiceLocator.serverEconomyOn ->
+                DailyChallenge(steps = verified?.toInt() ?: 0, goal = goal, paidToday = paid, known = verified != null)
+            else -> DailyChallenge(steps = phoneSteps, goal = goal, paidToday = paid, live = true)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -120,6 +136,8 @@ class EventsViewModel(
                 .getOrNull()?.let { _nightKm.value = it }
             runCatching { eventRepository.serverDailyGoalSteps() }
                 .getOrNull()?.let { _verifiedToday.value = it.toLong() }
+            // 오늘의 보상(0118) — 홈 막대와 같은 상태를 다시 읽는다
+            shoeRules?.let { repo -> runCatching { repo.restore(); repo.refreshBoxes() } }
         }
     }
 
@@ -175,6 +193,7 @@ class EventsViewModel(
                     ServiceLocator.rewardRepository,
                     ServiceLocator.eventRepository,
                     ServiceLocator.avatarRepository,
+                    shoeRules = ServiceLocator.shoeRules.takeIf { ServiceLocator.serverEconomyOn },
                 )
             }
         }

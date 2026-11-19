@@ -3,6 +3,7 @@ package com.stepup.android.ui.screens.items
 import com.stepup.android.data.repo.EconomyOutcome
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.nextLevelPercentText
 import java.util.Locale
 
 /*
@@ -197,18 +198,24 @@ data class DetailStatRow(
     val fraction: Float,
     val end: String,
     val unit: com.stepup.android.ui.screens.customize.StatUnit = com.stepup.android.ui.screens.customize.StatUnit.NONE,
+    /** ⓘ — 누르면 칸 아래에 한 줄 설명이 펼쳐진다(효율 · 착화감 · 내구도. 레벨은 없다) */
+    val explained: Boolean = false,
+    /** 레벨 칸 — 다음 레벨까지 채운 양 "65.3"(강화 경험치, 0118). 통을 모르거나 만렙이면 null(줄을 보이지 않는다) */
+    val nextLevelPercent: String? = null,
 )
 
 /**
  * 레벨 · 효율 · 착화감 · 내구도 — 레벨은 [Sneaker.level] ÷ [Sneaker.maxLevel](서버의 양수 상한 우선, 없으면 등급 기본값),
  * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 · 착화감은 지수, 막대 끝은 그 등급에서 가장 잘 뽑힌 새 신발 ·
  * 내구도는 분, 막대 끝은 그 신발의 최대 내구도). 행운 · 원시 착화감은 넣지 않는다.
+ * 레벨 칸에는 강화 경험치(다음 레벨까지 %)를, 나머지 셋에는 ⓘ 설명을 붙인다(2026-11-19).
  */
 fun detailStatRows(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules = com.stepup.android.domain.ShoeRules.FALLBACK): List<DetailStatRow> {
     val level = DetailStatRow(
         DetailStat.LEVEL, "${shoe.level} / ${shoe.maxLevel}",
         com.stepup.android.ui.screens.customize.barFraction(shoe.level.toDouble(), shoe.maxLevel.toDouble()),
         shoe.maxLevel.toString(),
+        nextLevelPercent = shoe.nextLevelPercentText,
     )
     return listOf(level) + com.stepup.android.ui.screens.customize.statBars(shoe, rules).map { bar ->
         val stat = when (bar.stat) {
@@ -216,7 +223,7 @@ fun detailStatRows(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules = c
             com.stepup.android.ui.screens.customize.BarStat.COMFORT -> DetailStat.COMFORT
             com.stepup.android.ui.screens.customize.BarStat.DURABILITY -> DetailStat.DURABILITY
         }
-        DetailStatRow(stat, bar.value, bar.fraction, bar.end, bar.unit)
+        DetailStatRow(stat, bar.value, bar.fraction, bar.end, bar.unit, explained = true)
     }
 }
 

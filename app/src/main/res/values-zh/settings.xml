@@ -6,7 +6,7 @@
     <string name="set_group_account">账号与帮助</string>
     <string name="set_group_more">更多</string>
     <string name="set_group_about">关于应用</string>
-    <string name="set_goal">每日步数目标</string>
+    <string name="set_goal">每日跑步目标</string>
     <string name="set_goal_value">%1$s步</string>
     <string name="set_notifications">通知</string>
     <string name="set_privacy">隐私与权限</string>
@@ -142,7 +142,7 @@
     <string name="set_goal_minus">− 500</string>
     <string name="set_goal_plus">+ 500</string>
     <string name="set_goal_range">%1$s–%2$s步 · 每次调整500步</string>
-    <string name="set_goal_distance">预计距离</string>
+    <string name="set_goal_distance">预计跑步距离</string>
     <string name="set_goal_distance_value">约%1$s公里</string>
     <string name="set_goal_bonus">目标基础奖励</string>
     <string name="set_goal_bonus_value">%1$s SUP</string>

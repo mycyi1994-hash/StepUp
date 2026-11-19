@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- シューズ能力値 ⓘ · 強化経験値の線(2026-11-19) -->
+<resources>
+    <string name="shoe_info_show_cd">%1$sの説明を見る</string>
+    <string name="shoe_info_hide_cd">%1$sの説明を閉じる</string>
+    <string name="shoe_info_efficiency">同じ歩数で受け取るSUPが増えます</string>
+    <string name="shoe_info_comfort">エネルギーの消費が減り、1日により長く貯められます</string>
+    <string name="shoe_info_durability">修理なしでより長く走れます</string>
+    <string name="shoe_info_point_efficiency">ポイント1 = 獲得 +%1$s%%</string>
+    <string name="shoe_info_point_comfort">ポイント1 = エネルギー −%1$s%%（%2$d%%節約まで）</string>
+    <string name="shoe_info_point_durability">ポイント1 = +%1$s分</string>
+    <string name="shoe_xp_next">次のレベルまで %1$s%%</string>
+</resources>

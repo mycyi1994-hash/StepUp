@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 今日奖励（0118, 2026-11-19）— 四种语言一起修改 -->
+<resources>
+    <string name="dr_all_day">全天 %1$s</string>
+    <string name="dr_all_day_allow">显示全天步数</string>
+    <string name="dr_all_day_label">全天步数</string>
+    <string name="dr_all_day_note">全天步数由这部手机统计。奖励按跑步步数计算。</string>
+    <string name="dr_tick_box">箱子</string>
+    <string name="dr_tick_goal">+%1$s SUP</string>
+    <string name="dr_tick_goal_plain">目标</string>
+    <string name="dr_tick_box_goal">箱子 · +%1$s SUP</string>
+    <string name="dr_tick_box_goal_plain">箱子 · 目标</string>
+    <string name="dr_tick_got_cd">%1$s步 %2$s · 已领取</string>
+    <string name="dr_tick_open_cd">%1$s步 %2$s</string>
+    <string name="dr_next_box">再跑 %1$s 步得箱子</string>
+    <string name="dr_next_goal">再跑 %1$s 步得 +%2$s SUP</string>
+    <string name="dr_next_goal_plain">再跑 %1$s 步达成目标</string>
+    <string name="dr_next_box_goal">再跑 %1$s 步得箱子 · +%2$s SUP</string>
+    <string name="dr_waiting">正在确认跑步记录</string>
+    <string name="dr_all_got">今天的奖励已全部领取</string>
+    <string name="dr_loading">正在加载今天的奖励</string>
+    <string name="dr_pending">确认中 %1$s 步</string>
+    <string name="dr_streak_today">连续第 %1$d 天</string>
+    <string name="dr_streak_if">今天达成即连续 %1$d 天</string>
+    <string name="dr_sheet_today">今日跑步步数 · 目标 %1$s 步</string>
+    <string name="dr_goal_next">明天起目标 %1$s 步</string>
+    <string name="dr_week_title">本周</string>
+    <string name="dr_week_box">跑步 %1$s 步 · 高级箱子</string>
+    <string name="dr_surge">步数狂飙 %1$s 步 · %2$s SUP</string>
+    <string name="dr_streak_title">连续</string>
+    <string name="dr_streak_week">7 天中 %1$d 天</string>
+    <string name="dr_streak_box_in">距连续箱子还有 %1$d 天</string>
+    <string name="dr_streak_box_today">今天达成可得连续箱子</string>
+    <string name="dr_streak_best">最长连续 %1$d 天</string>
+    <string name="dr_goal_change">更改目标</string>
+    <string name="dr_goal_day_bonus">每天 +%1$s SUP</string>
+    <string name="dr_goal_from_tomorrow_today">新目标明天起生效 · 今天仍为 %1$s 步</string>
+    <string name="dr_goal_from_today">今天还没跑步，新目标今天起生效</string>
+    <string name="dr_goal_next_saved">明天起 %1$s 步 · 今天仍为 %2$s 步</string>
+    <string name="dr_goal_rule">新目标明天起生效（今天还没跑步则今天起）</string>
+    <string name="dr_goal_notice_title">目标改为按跑步步数计算</string>
+    <string name="dr_goal_notice_action">重新选择</string>
+    <string name="dr_news_title">今日奖励</string>
+    <string name="dr_channel_name">已获得的奖励</string>
+    <string name="dr_news_run_box">获得跑步箱子</string>
+    <string name="dr_news_run_boxes">获得 %1$d 个跑步箱子</string>
+    <string name="dr_news_week_box">获得本周高级箱子</string>
+    <string name="dr_news_streak_box">获得连续目标高级箱子</string>
+    <string name="dr_news_level_box">获得鞋子等级箱子</string>
+    <string name="dr_news_goal">目标奖励 +%1$s SUP</string>
+    <string name="dr_news_goal_streak">目标奖励 +%1$s SUP · 连续第 %2$d 天</string>
+    <string name="dr_news_goal_plain">获得目标奖励</string>
+    <string name="dr_news_yesterday">昨天 %1$s</string>
+    <string name="dr_news_on_day">%1$s %2$s</string>
+</resources>

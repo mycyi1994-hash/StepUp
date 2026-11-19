@@ -33,12 +33,22 @@ class StepRepository(
     private val prefs: UserPrefs,
     private val tracker: StepTracker,
     private val rewardRepository: RewardRepository,
-    /** 목표를 서버에도 적는다(목표 보너스를 서버가 이 값으로 판정). 서버가 없으면 null. */
-    private val pushGoal: (suspend (Int) -> Unit)? = null,
+    /**
+     * 목표를 서버에도 적는다(목표 보너스를 서버가 이 값으로 판정) — 서버가 적은 값을 돌려준다(닿지 못했으면 null). 서버가 없으면 null.
+     * 서버가 돌려준 값을 폰이 따른다(0118 — 서버가 4,000 ~ 20,000 · 500 단위로 맞춘다)
+     */
+    private val pushGoal: (suspend (Int) -> Int?)? = null,
     /** 지금 계정의 기록 주인 — 화면에 보일 러닝을 그 계정 것(+ 옛 기록)으로 좁힌다 */
     private val owner: Flow<String> = kotlinx.coroutines.flow.flowOf(com.stepup.android.domain.RecordingOwner.LEGACY),
     /** 하루 목표를 채운 순간 어제 · 오늘 걸음을 서버에 올린다(체인 하루 걸음 기록 — 그날이 끝나기 전에 서버가 알게). 서버가 없으면 null */
     private val uploadSteps: (suspend () -> Unit)? = null,
+    /**
+     * 하루 전체 걸음으로 목표 달성 · 연속 · 목표 보너스를 폰에서 정한다 — 서버 경제가 없는 빌드(로컬 개발)만. 서버 경제에서는 목표가
+     * "러닝 걸음" 목표라 서버가 러닝을 기록할 때 보너스를 준다(0118) — 폰 만보기 걸음으로 청구하지 않는다.
+     */
+    private val localGoal: Boolean = true,
+    /** 오늘의 보상(서버 0118) — 서버가 센 목표 연속을 화면에 보인다. 서버 경제가 없으면 비어 있다 */
+    private val serverDaily: Flow<com.stepup.android.domain.DailyRewards?> = kotlinx.coroutines.flow.flowOf(null),
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -60,9 +70,13 @@ class StepRepository(
      * 저장된 값은 목표를 채운 날에만 바뀌어, 하루를 놓쳐도 다음에 채울 때까지 옛 값이 보였다(2026-10-17 점검).
      * 날짜 · 보호막은 [onSteps] 가 이어 셀 때와 같은 규칙이다(StreakRules).
      */
-    val streak: Flow<Int> = combine(prefs.streakRecord.distinctUntilChanged(), DayClock.ticker()) { record, today -> record to today }
+    val streak: Flow<Int> = combine(prefs.streakRecord.distinctUntilChanged(), DayClock.ticker(), serverDaily) { record, today, daily ->
+        Triple(record, today, daily)
+    }
         // 날짜가 바뀌면 다시 본다 — 저장값이 바뀔 때만 보면 자정이 지나 어제를 놓친 것이 첫 걸음 전까지 안 보였다(점검 2026-11-17 #24)
-        .map { (record, today) ->
+        .map { (record, today, daily) ->
+            // 서버가 오늘의 보상을 주면 서버가 센 러닝 목표 연속(한국 날짜가 오늘인 상태일 때) — 폰은 서버 경제에서 연속을 세지 않는다
+            daily?.streakNow(com.stepup.android.domain.DailyRewards.gameDay(System.currentTimeMillis()))?.let { return@map it }
             val (stored, lastMet) = record
             val shielded = StreakRules.needsShield(lastMet, today) && rewardRepository.streakShieldCovered(today - 1)
             StreakRules.shown(stored, lastMet, today, shielded)
@@ -130,11 +144,22 @@ class StepRepository(
         }
     }
 
-    suspend fun setDailyGoal(goal: Int) {
-        val clamped = goal.coerceIn(UserPrefs.MIN_GOAL, UserPrefs.MAX_GOAL)
+    /**
+     * 하루 러닝 목표를 바꾼다 — 폰에 먼저 적고 서버에 보낸다. 서버가 적은 값이 다르면(서버가 범위 · 500 단위로 맞췄다) 그 값을 따른다.
+     * 적힌 목표를 돌려준다. 연결이 없으면 폰 값 그대로 두고 다음에 서버와 맞출 때(EconomySync) 보낸다.
+     * 서버는 오늘 이미 달렸으면 오늘 목표를 그대로 두고 내일부터 바꾼다(box_status goal_next).
+     */
+    suspend fun setDailyGoal(goal: Int): Int {
+        val rule = runCatching { prefs.goalRule() }.getOrDefault(com.stepup.android.domain.GoalRule.FALLBACK)
+        val clamped = rule.fit(goal)
         prefs.setDailyGoal(clamped)
-        // 연결이 없으면 다음에 서버와 맞출 때(EconomySync) 보낸다
-        runCatching { pushGoal?.invoke(clamped) }
+        val saved = runCatching { pushGoal?.invoke(clamped) }.getOrNull()
+        if (saved != null && saved > 0 && saved != clamped) {
+            // 서버가 적은 값이 정본이다 — 폰 범위로 다시 깎지 않는다(서버 규칙이 폰이 읽은 규칙보다 새로울 수 있다)
+            prefs.setDailyGoalFromServer(saved)
+            return saved
+        }
+        return clamped
     }
 
     /** 지난 7일(오늘 포함) 기록 */
@@ -173,6 +198,16 @@ class StepRepository(
         val goal = prefs.dailyGoal.first()
         stepDao.upsert(DailyStepsEntity(today, steps, goal, System.currentTimeMillis()))
 
+        if (!localGoal) {
+            // 서버 경제: 목표 보너스 · 연속은 서버가 러닝 걸음으로 정한다(러닝을 기록할 때). 하루 전체 걸음이 목표를 넘은 순간에는
+            // 체인 하루 걸음 기록(steps_sync — 하루 전체 걸음의 기록)만 그날이 끝나기 전에 올린다, 하루 한 번
+            if (steps >= goal && uploadedOnGoalDay != today) {
+                uploadedOnGoalDay = today
+                uploadSteps?.let { upload -> scope.launch { runCatching { upload() } } }
+            }
+            accrueBackground(today, steps)
+            return
+        }
         val lastMet = prefs.lastGoalMetDay()
         if (steps >= goal && lastMet != today) {
             val metYesterday = lastMet == today - 1
@@ -234,6 +269,10 @@ class StepRepository(
         prefs.addAccountedSteps(today, pending)
         rewardRepository.settleBackground(pending)
     }
+
+    /** 하루 전체 걸음이 목표를 넘어 하루 걸음을 올린 날(epochDay) — 서버 경제에서 하루 한 번만 */
+    @Volatile
+    private var uploadedOnGoalDay: Long = -1L
 
     /** 직전 백그라운드 배치를 정산한 시각. 케이던스를 구간으로 재기 위한 기준. */
     @Volatile

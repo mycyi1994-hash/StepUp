@@ -48,6 +48,11 @@ class UserPrefs(
      * 처음 설치 시각과 마지막 업데이트 시각이 같다 — 그 세션은 버리고 다시 로그인하게 한다.
      */
     private val legacySessionAdoptable: () -> Boolean = { updatedInPlace(context) },
+    /**
+     * 예전 판에서 올라온 설치인가 — 하루 목표를 고른 적 없는 기존 사용자는 예전 기본값(8,000)을 그대로 두고, 새 설치만 6,000 이다
+     * (2026-11-19 오늘의 보상, docs/forge-xp-daily-spec-2026-11-19.md 3.2).
+     */
+    private val existingInstall: () -> Boolean = { updatedInPlace(context) },
 ) {
 
     private object Keys {
@@ -161,9 +166,98 @@ class UserPrefs(
         val NOTIFY_PARTY = booleanPreferencesKey("notify_party_invite")
         val NOTIFY_EVENT = booleanPreferencesKey("notify_event_news")
         val DEMO_OUTFIT = stringPreferencesKey("demo_outfit")
+
+        // ── 오늘의 보상(서버 0118, 2026-11-19) ──
+        /** 목표 규칙 판 — 2 = 러닝 걸음 목표(4,000 ~ 20,000). 없으면 아직 옮기지 않았다 */
+        val GOAL_RULE = intPreferencesKey("goal_rule")
+        /** 기존 사용자에게 한 번 — "목표가 러닝 걸음 기준으로 바뀌었어요 · 다시 고르기" */
+        val GOAL_RULE_NOTICE = booleanPreferencesKey("goal_rule_notice")
+        /** 마지막으로 받은 box_status 글 — "계정\n받은 시각\n글" */
+        val DAILY_REWARDS = stringPreferencesKey("daily_rewards")
     }
 
-    val dailyGoal: Flow<Int> = store.data.map { it[Keys.DAILY_GOAL] ?: DEFAULT_GOAL }
+    /**
+     * 하루 러닝 목표 — 4,000 ~ 20,000 · 500 단위로 맞춰 읽는다(예전 앱은 3,000 · 3,500 을 고를 수 있었다 — 서버도 4,000 으로 올린다).
+     * 고른 적이 없으면 새 설치는 6,000, 예전 판에서 올라온 설치는 예전 기본값 8,000(서버에 이미 그 값으로 적혀 있다).
+     */
+    val dailyGoal: Flow<Int> = store.data.map { goalIn(it) }
+
+    /**
+     * 목표의 범위 · 기본값 · 단위 — 서버 규칙(shoe_rules_v4 "goal", ShoeRules.goal). 앱이 켜질 때 ServiceLocator 가 이어 준다.
+     * 서버 규칙을 아직 못 읽었으면 [com.stepup.android.domain.GoalRule.FALLBACK](4,000 ~ 20,000 · 기본 6,000 · 500 단위)
+     */
+    @Volatile
+    var goalRule: () -> com.stepup.android.domain.GoalRule = { com.stepup.android.domain.GoalRule.FALLBACK }
+
+    private fun goalIn(prefs: Preferences): Int =
+        goalOf(
+            prefs[Keys.DAILY_GOAL], legacyDefault = prefs[Keys.GOAL_RULE] == null && wasInstalledBefore(prefs),
+            rule = runCatching { goalRule() }.getOrDefault(com.stepup.android.domain.GoalRule.FALLBACK),
+        )
+
+    /** 이 설치가 업데이트로 올라왔는가 — 한 번만 묻는다(설정이 바뀔 때마다 패키지 관리자를 부르지 않게) */
+    private val updatedFromOlder: Boolean by lazy { runCatching { existingInstall() }.getOrDefault(false) }
+
+    /**
+     * 예전 판의 흔적 — 고른 목표 · 연속 달성 기록이 있거나 이 설치가 업데이트로 올라왔다. 걸음 기준점은 보지 않는다(새 설치도 옮기기 전에
+     * 적을 수 있다)
+     */
+    private fun wasInstalledBefore(prefs: Preferences): Boolean =
+        prefs[Keys.DAILY_GOAL] != null || prefs[Keys.STREAK] != null || prefs[Keys.LAST_GOAL_MET_DAY] != null || updatedFromOlder
+
+    /**
+     * 목표 규칙을 한 번 옮긴다(앱을 켤 때) — 예전 판에서 올라온 설치는 지금 보이는 목표를 적어 두고(고른 적 없으면 8,000) "목표가 러닝 걸음
+     * 기준으로 바뀌었어요"를 한 번 보이게 한다. 새 설치는 표시만 적는다(기본 6,000).
+     */
+    suspend fun migrateGoalRule() {
+        store.edit {
+            if (it[Keys.GOAL_RULE] != null) return@edit
+            if (wasInstalledBefore(it)) {
+                it[Keys.DAILY_GOAL] = goalIn(it)
+                it[Keys.GOAL_RULE_NOTICE] = true
+            }
+            it[Keys.GOAL_RULE] = GOAL_RULE_VERSION
+        }
+    }
+
+    /** "목표가 러닝 걸음 기준으로 바뀌었어요" 를 아직 보이지 않았다(기존 사용자에게 한 번) */
+    val goalRuleNotice: Flow<Boolean> = store.data.map { it[Keys.GOAL_RULE_NOTICE] == true }
+
+    suspend fun dismissGoalRuleNotice() {
+        store.edit { it.remove(Keys.GOAL_RULE_NOTICE) }
+    }
+
+    // ── 오늘의 보상 — 마지막으로 받은 box_status 글 · 본 것(계정마다) ──
+
+    /** [owner] 의 마지막 box_status 글과 받은 시각 — 다른 계정 것이면 null */
+    suspend fun dailyRewardsSaved(owner: String): com.stepup.android.data.repo.SavedBoxStatus? {
+        val raw = store.data.first()[Keys.DAILY_REWARDS] ?: return null
+        val parts = raw.split('\n', limit = 3)
+        if (parts.size < 3 || parts[0] != owner) return null
+        val at = parts[1].toLongOrNull() ?: return null
+        return com.stepup.android.data.repo.SavedBoxStatus(parts[2], at)
+    }
+
+    suspend fun setDailyRewardsSaved(owner: String, raw: String, fetchedAt: Long) {
+        store.edit { it[Keys.DAILY_REWARDS] = "$owner\n$fetchedAt\n$raw" }
+    }
+
+    private fun dailyRewardsSeenKey(owner: String) = longPreferencesKey("daily_rewards_seen:$owner")
+
+    /** [owner] 가 마지막으로 본 받은 시각(벽시계 ms) — 이 폰에서 처음이면 null */
+    suspend fun dailyRewardsSeen(owner: String): Long? = store.data.first()[dailyRewardsSeenKey(owner)]
+
+    suspend fun setDailyRewardsSeen(owner: String, at: Long) {
+        store.edit { it[dailyRewardsSeenKey(owner)] = at }
+    }
+
+    /** 오늘의 보상 사본을 남기는 곳 — ShoeRulesRepository 가 쓴다 */
+    val dailyRewardsStore: com.stepup.android.data.repo.DailyRewardsStore = object : com.stepup.android.data.repo.DailyRewardsStore {
+        override suspend fun read(owner: String) = dailyRewardsSaved(owner)
+        override suspend fun write(owner: String, raw: String, fetchedAt: Long) = setDailyRewardsSaved(owner, raw, fetchedAt)
+        override suspend fun seenAt(owner: String) = dailyRewardsSeen(owner)
+        override suspend fun setSeenAt(owner: String, at: Long) = setDailyRewardsSeen(owner, at)
+    }
 
     // ── 러너 캐릭터 ──────────────────────────────────────────
 
@@ -1024,6 +1118,13 @@ class UserPrefs(
         else LocalDate.now().toEpochDay()
 
     suspend fun setDailyGoal(goal: Int) {
+        val rule = runCatching { goalRule() }.getOrDefault(com.stepup.android.domain.GoalRule.FALLBACK)
+        store.edit { it[Keys.DAILY_GOAL] = goalOf(goal, legacyDefault = false, rule = rule) }
+    }
+
+    /** 서버가 적은 목표를 그대로 적는다 — 서버 값이 정본이다(목표 바꾸기 · 동기화). 읽을 때 지금 규칙으로 맞춘다 */
+    suspend fun setDailyGoalFromServer(goal: Int) {
+        if (goal <= 0) return
         store.edit { it[Keys.DAILY_GOAL] = goal }
     }
 
@@ -1271,9 +1372,30 @@ class UserPrefs(
     }
 
     companion object {
-        const val DEFAULT_GOAL = 8000
-        const val MIN_GOAL = 3000
+        /**
+         * 새 설치의 하루 러닝 목표 · 범위 · 단위 — 서버 규칙을 못 읽었을 때의 값(GoalRule.FALLBACK 과 같다). 화면 · 저장은 서버 규칙
+         * ([goalRule] — ShoeRules.goal)을 따른다
+         */
+        const val DEFAULT_GOAL = 6000
+
+        /** 예전 판의 기본 목표 — 고른 적 없이 올라온 기존 사용자 */
+        const val LEGACY_DEFAULT_GOAL = 8000
+        const val MIN_GOAL = 4000
         const val MAX_GOAL = 20000
+        const val GOAL_STEP = 500
+
+        /** 목표 규칙 판(오늘의 보상, 서버 0118) */
+        const val GOAL_RULE_VERSION = 2
+
+        /**
+         * 저장된 목표를 [rule] 범위로 — 서버 profile_set_daily_goal 과 같은 맞춤(가까운 단위, 범위 밖은 끝값, GoalRule.fit).
+         * 없으면 [legacyDefault] 면 8,000(예전 기본값), 아니면 규칙의 기본값(6,000).
+         */
+        fun goalOf(
+            stored: Int?,
+            legacyDefault: Boolean,
+            rule: com.stepup.android.domain.GoalRule = com.stepup.android.domain.GoalRule.FALLBACK,
+        ): Int = rule.fit(stored ?: if (legacyDefault) LEGACY_DEFAULT_GOAL else rule.default)
 
         /** 쉼표로 이어 붙인 id 문자열을 목록으로. 비었거나 깨진 값은 건너뛴다. */
         private fun String?.toIdList(): List<Long> =

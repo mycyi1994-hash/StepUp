@@ -6,7 +6,7 @@
     <string name="set_group_account">アカウントとヘルプ</string>
     <string name="set_group_more">その他</string>
     <string name="set_group_about">アプリ情報</string>
-    <string name="set_goal">1日の歩数目標</string>
+    <string name="set_goal">1日のラン目標</string>
     <string name="set_goal_value">%1$s歩</string>
     <string name="set_notifications">通知</string>
     <string name="set_privacy">プライバシーと権限</string>
@@ -142,7 +142,7 @@
     <string name="set_goal_minus">− 500</string>
     <string name="set_goal_plus">+ 500</string>
     <string name="set_goal_range">%1$s〜%2$s歩・500歩ずつ調整</string>
-    <string name="set_goal_distance">予想距離</string>
+    <string name="set_goal_distance">予想ラン距離</string>
     <string name="set_goal_distance_value">約%1$s km</string>
     <string name="set_goal_bonus">目標の基本ボーナス</string>
     <string name="set_goal_bonus_value">%1$s SUP</string>

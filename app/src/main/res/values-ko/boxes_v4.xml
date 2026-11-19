@@ -13,8 +13,8 @@
     <string name="boxes_premium">상급 상자</string>
     <string name="boxes_check_in">출석</string>
     <string name="boxes_per_day">하루 %1$d개</string>
-    <string name="boxes_run">오늘 적립 걸음 %1$s보</string>
-    <string name="boxes_week">이번 주 적립 걸음 %1$s보</string>
+    <string name="boxes_run">오늘 러닝 걸음 %1$s보</string>
+    <string name="boxes_week">이번 주 러닝 걸음 %1$s보</string>
     <string name="boxes_got">받았어요</string>
     <string name="boxes_steps_progress">%1$s / %2$s보</string>
     <string name="boxes_streak">%1$d일 연속 목표 달성</string>

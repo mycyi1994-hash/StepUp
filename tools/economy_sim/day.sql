@@ -8,9 +8,10 @@
 -- earned = 그날 적립, repair = 그날 수리비, net = 남는 돈. reasons = 서버가 적은 까닭(상한에 걸렸는지 본다).
 \set ON_ERROR_STOP on
 set client_min_messages = warning;
-create or replace function pg_temp.track(p_start timestamptz, p_secs int, p_dps numeric)
+-- 모의 사용자마다 시작 자리를 조금씩 옮긴다 — 같은 경로 검사가 모든 계정끼리 맞대어 보므로(0118) 같은 길이면 둘째부터 무효다
+create or replace function pg_temp.track(p_start timestamptz, p_secs int, p_dps numeric, p_lng numeric default 127)
 returns text language sql as $$
-  select string_agg(format('%s,%s,%s', (37.5 + i * p_dps)::numeric(12, 6), 127.000000,
+  select string_agg(format('%s,%s,%s', (37.5 + i * p_dps)::numeric(12, 6), p_lng::numeric(12, 6),
       (extract(epoch from p_start) * 1000)::bigint + i * 1000), ';' order by i)
   from generate_series(0, p_secs) i
 $$;
@@ -21,13 +22,14 @@ declare
   v_rar text; v_lvl int; v_mode text; v_user uuid; v_shoe bigint; v_t timestamptz; v_day date;
   v_spm int; v_dps numeric; v_e numeric; v_mins int; v_need int; r record; s public.market_sneakers;
   v_earned numeric; v_repair numeric; v_b0 numeric; v_b1 numeric; v_sess int; v_reps int; v_steps int; v_min_total int;
-  v_lo int; v_hi int; v_elo int; v_ehi int; v_clo int; v_chi int; v_reasons text; v_guard int;
+  v_lo int; v_hi int; v_elo int; v_ehi int; v_clo int; v_chi int; v_reasons text; v_guard int; v_n int := 0;
 begin
   foreach v_rar in array array['COMMON','RARE','EPIC','LEGENDARY','REDLINE','FINISH'] loop
     foreach v_lvl in array array[1,5,10,15,20,26,30] loop
       continue when v_lvl > economy.max_level(v_rar);
       foreach v_mode in array array['WALK','RUN'] loop
         v_user := gen_random_uuid();
+        v_n := v_n + 1;
         insert into auth.users (id, email) values (v_user, v_user::text || '@sim.test');
         update public.profiles set created_at = now() - interval '30 days' where id = v_user;
         insert into public.sup_ledger (user_id, kind, amount, description) values (v_user, 'EARN_EVENT', 1000000, 'sim');
@@ -60,7 +62,7 @@ begin
           v_mins := least(s.dur_now / 5, v_need);
           exit when v_mins < 1;
           select * into r from public.record_session(v_t, v_t + make_interval(secs => v_mins * 60), v_mins * v_spm, v_mins * 60,
-              pg_temp.track(v_t, v_mins * 60, v_dps), 0, 1, '', false, v_shoe);
+              pg_temp.track(v_t, v_mins * 60, v_dps, 127 + v_n * 0.001), 0, 1, '', false, v_shoe);
           v_earned := v_earned + r.points_awarded; v_sess := v_sess + 1; v_steps := v_steps + v_mins * v_spm; v_min_total := v_min_total + v_mins;
           if r.verdict <> 'CLEAN' or coalesce(r.verdict_reason, '') <> '' then
             if position(coalesce(r.verdict_reason, r.verdict) in v_reasons) = 0 then

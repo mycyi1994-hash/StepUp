@@ -44,6 +44,8 @@ class EconomySync(
     private val now: () -> Long = System::currentTimeMillis,
     /** 동기화 때마다 — 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18). 실패해도 동기화는 계속한다 */
     private val afterCheckIn: suspend () -> Unit = {},
+    /** 신발마다 강화 경험치 통(서버 0118 my_shoe_xp). 없으면(로컬 빌드) 통을 모르는 채로 — 경험치 줄이 숨는다 */
+    private val shoeXp: com.stepup.android.data.remote.ShoeXpApi? = null,
 ) {
     private val lock = Mutex()
     private var bootstrapped: String? = null
@@ -115,7 +117,11 @@ class EconomySync(
             api.bootstrap().failure()?.let { return it }
             // 폰의 하루 목표를 서버에 맞춘다 — 목표 보너스를 서버가 이 값으로 판정한다(0030).
             // 목표를 바꿀 때 보내지 못했어도(연결 없음) 여기서 따라간다. 실패해도 동기화는 계속한다.
-            api.setDailyGoal(prefs.dailyGoal.first())
+            // 서버가 맞춰 적은 값(0118 — 4,000 ~ 20,000 · 500 단위)을 돌려주면 폰도 그 값으로(폰 값이 범위 밖이면 서버 값이 이긴다).
+            // 그 사이 목표를 또 바꿨으면 건드리지 않는다 — 새 목표는 바꾼 곳이 다시 보낸다
+            val goal = prefs.dailyGoal.first()
+            val stored = (api.setDailyGoal(goal) as? ServerResult.Ok)?.value
+            if (stored != null && stored > 0 && stored != goal && prefs.dailyGoal.first() == goal) prefs.setDailyGoal(stored)
             bootstrapped = userId
         }
         // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
@@ -134,6 +140,16 @@ class EconomySync(
 
         val economy = when (val r = api.economy()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
         val sneakers = when (val r = api.sneakers()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
+        // 신발 목록 다음에 강화 경험치 통(0118) — 서버에 함수가 없으면 비운다(줄이 숨는다), 못 받았으면 지난 값(레벨이 같을 때만)
+        val xp = shoeXp?.takeIf { it.isConfigured }?.let {
+            try {
+                it.mine()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                com.stepup.android.data.remote.ShoeXpResult.Failed
+            }
+        } ?: com.stepup.android.data.remote.ShoeXpResult.Missing
         val grants = when (val r = api.drawGrants()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
         val boosts = when (val r = api.boosts(Instant.ofEpochMilli(now() - BOOST_KEEP_MILLIS).toString())) {
             is ServerResult.Ok -> r.value
@@ -166,7 +182,11 @@ class EconomySync(
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }
         db.withTransaction {
             db.sneakerDao().deleteAll()
-            db.sneakerDao().insertAll(sneakers.map { it.toEntity(acquiredAt(acquired[it.id], previous[it.id]?.acquiredAt, now())) })
+            db.sneakerDao().insertAll(sneakers.map { row ->
+                val (forgeXp, forgeNeed) = forgeXpOf(xp, row.id, row.level, previous[row.id])
+                row.toEntity(acquiredAt(acquired[row.id], previous[row.id]?.acquiredAt, now()))
+                    .copy(forgeXp = forgeXp, forgeNeed = forgeNeed)
+            })
             db.rewardDao().deleteAll()
             db.rewardDao().insertAll(ledgerRows(ledger, economy.balance, complete))
             db.boostDao().deleteAll()
@@ -352,6 +372,22 @@ class EconomySync(
          */
         fun acquiredAt(server: Long?, previous: Long?, now: Long): Long =
             server?.takeIf { it > 0 } ?: previous ?: now
+
+        /**
+         * 이 켤레의 강화 경험치 통(점수 · 통 크기) — 서버 0118 my_shoe_xp 가 정본. 받았는데 이 켤레가 없으면(목록과 사이에 생긴 신발) 모른다(null),
+         * 서버에 함수가 없으면 모른다. 연결이 끊겨 못 받았으면 지난 값을 레벨이 같을 때만 남긴다(레벨이 바뀌면 통이 달라 모른다).
+         */
+        fun forgeXpOf(
+            result: com.stepup.android.data.remote.ShoeXpResult,
+            serverId: Long,
+            level: Int,
+            previous: SneakerEntity?,
+        ): Pair<Int?, Int?> = when (result) {
+            is com.stepup.android.data.remote.ShoeXpResult.Ok -> result.byShoe[serverId]?.let { it.xp to it.need } ?: (null to null)
+            com.stepup.android.data.remote.ShoeXpResult.Missing -> null to null
+            com.stepup.android.data.remote.ShoeXpResult.Failed ->
+                if (previous != null && previous.level == level) previous.forgeXp to previous.forgeNeed else null to null
+        }
     }
 }
 
