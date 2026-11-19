@@ -13329,6 +13329,41 @@ begin
   update public.economy_settings set value = '0.10' where key = 'forge_xp_crit_chance';
 end $$;
 
+-- 올리기 전에 다른 폰에서 태운 신발로 달린 러닝 — 그 신발 값으로 셈한다 · 규칙 바뀜 알림
+do $$
+declare r record; v_at timestamptz := now() - interval '6 hours'; v_worn bigint; v_t bigint; q jsonb; s public.walk_sessions; v_eq public.market_sneakers;
+begin
+  perform set_config('request.jwt.claim.sub', pg_temp.u118(6)::text, false);
+  update public.economy_settings set value = '0' where key = 'forge_xp_crit_chance';
+  -- 내구도 150(30분) 남은 레어로 1시간 달리고, 올리기 전에 그 신발을 재료로 태웠다(다른 폰). 지금 신은 신발은 가득
+  v_worn := pg_temp.shoe118(6, 'RARE');
+  update public.market_sneakers set dur_now = 150 where id = v_worn;
+  v_t := pg_temp.shoe118(6, 'RARE');
+  q := public.forge_xp_quote(v_t, array[v_worn]);
+  perform public.forge_xp_add(gen_random_uuid(), v_t, array[v_worn], q ->> 'quote_version');
+  select * into v_eq from public.market_sneakers where owner_id = pg_temp.u118(6) and equipped;
+  select * into r from public.record_session(v_at, v_at + interval '3600 seconds', 8000, 3600, pg_temp.track(v_at, 3600, 0.000016),
+                                             0, 1, '', false, v_worn);
+  select * into s from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(s.sneaker_id = v_worn and s.reward_steps = 4000 and s.rewarded_steps <= 4000
+                     and (select dur_now from public.market_sneakers where id = v_eq.id) = v_eq.dur_now
+                     and (select status from public.market_sneakers where id = v_worn) = 'BURNED',
+    format('태운 신발로 달린 러닝은 그 신발 값으로 — 내구도 몫만(%s / 8000) · 지금 신은 신발은 닳지 않는다 (0118)', s.reward_steps));
+  update public.economy_settings set value = '0.10' where key = 'forge_xp_crit_chance';
+end $$;
+do $$
+declare v int; v2 int;
+begin
+  insert into public.push_tokens (token, user_id, platform, locale)
+  select 'fcm-token-118-' || lpad(n::text, 12, 'x'), pg_temp.u118(n), 'android', 'ko' from generate_series(1, 3) n on conflict do nothing;
+  v := economy.notice_send('REWARD_RULES');
+  v2 := economy.notice_send('REWARD_RULES');
+  perform pg_temp.ok(v >= 3 and v2 = 0
+                     and (select args ->> 'goal' from public.push_outbox where user_id = pg_temp.u118(1) and kind = 'REWARD_RULES') ~ '^[0-9,]+$'
+                     and (select link from public.push_outbox where user_id = pg_temp.u118(1) and kind = 'REWARD_RULES') = 'run',
+    format('규칙 바뀜 알림(REWARD_RULES)은 받을 폰이 있는 사람마다 한 번 — %s명 (0118)', v));
+end $$;
+
 -- 권한 — 서버 안의 셈은 앱이 부르지 못한다 · 목표 표는 볼 수 없다
 set role authenticated;
 select set_config('request.jwt.claim.sub', 'b6000000-0000-0000-0000-000000000005', false);

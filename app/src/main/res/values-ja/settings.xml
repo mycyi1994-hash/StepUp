@@ -139,15 +139,15 @@
     <string name="set_mail_open_failed_body">アドレスをコピーして、お使いのメールに貼り付けてください。</string>
     <string name="set_mail_subject">StepUpへのお問い合わせ</string>
     <string name="set_goal_steps">歩</string>
-    <string name="set_goal_minus">− 500</string>
-    <string name="set_goal_plus">+ 500</string>
-    <string name="set_goal_range">%1$s〜%2$s歩・500歩ずつ調整</string>
+    <string name="set_goal_minus">− %1$s</string>
+    <string name="set_goal_plus">+ %1$s</string>
+    <string name="set_goal_range">%1$s〜%2$s歩・%3$s歩ずつ調整</string>
     <string name="set_goal_distance">予想ラン距離</string>
     <string name="set_goal_distance_value">約%1$s km</string>
     <string name="set_goal_bonus">目標の基本ボーナス</string>
     <string name="set_goal_bonus_value">%1$s SUP</string>
     <string name="set_goal_note">目標は変えるとすぐに保存されます。</string>
     <string name="set_goal_save_failed">目標を保存できませんでした。保存済みの目標を表示しています。</string>
-    <string name="set_goal_decrease">目標を500歩減らす</string>
-    <string name="set_goal_increase">目標を500歩増やす</string>
+    <string name="set_goal_decrease">目標を%1$s歩減らす</string>
+    <string name="set_goal_increase">目標を%1$s歩増やす</string>
 </resources>

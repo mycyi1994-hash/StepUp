@@ -2,10 +2,13 @@ package com.stepup.android.data.repo
 
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.BoxStatus
+import com.stepup.android.domain.DailyGoalSync
 import com.stepup.android.domain.DailyRewards
 import com.stepup.android.domain.DailyRewardsNews
 import com.stepup.android.domain.RewardNews
+import com.stepup.android.domain.ServerGoal
 import com.stepup.android.domain.ShoeRules
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +35,13 @@ class ShoeRulesRepository(
     /** 지금 계정(기록 주인) — 남긴 글 · 본 것은 계정마다 */
     private val owner: suspend () -> String = { com.stepup.android.domain.RecordingOwner.LEGACY },
     private val clock: () -> Long = System::currentTimeMillis,
+    /**
+     * 오늘 목표를 채웠는데 보너스가 없을 때 그날을 청구한다(`goal_claim_day`) — 받았으면 true. 서버가 러닝을 기록할 때 주는데(0118) 그 단계가
+     * 실패하면 아무도 다시 하지 않아서다(DailyGoalSync.missedToday). 없으면 청구하지 않는다
+     */
+    private val claimGoalDay: (suspend (LocalDate) -> Boolean)? = null,
+    /** 청구해 받았다 — 잔고 · 원장을 다시 맞춘다. 이 저장소를 부른 동기화 안에서 불릴 수 있어 기다리지 않는 일이어야 한다 */
+    private val onGoalPaid: () -> Unit = {},
 ) {
     private val _rules = MutableStateFlow(ShoeRules.FALLBACK)
     val rules: StateFlow<ShoeRules> = _rules.asStateFlow()
@@ -90,6 +100,29 @@ class ShoeRulesRepository(
             if (r is ServerResult.Ok) _boxes.value = r.value
             return (r as? ServerResult.Ok)?.value
         }
+        fetchRaw(raw) ?: return null
+        retryMissedGoal(raw)
+        return _boxes.value
+    }
+
+    /**
+     * 동기화 때 폰 목표를 맞추려고(EconomySync) — `box_status` 를 다시 읽어(상자 현황 · 오늘의 보상도 함께 바뀐다) 서버 목표를 돌려준다.
+     * 못 읽었으면(연결 · 로그인) null. 0118 칸을 읽지 않는 빌드 · 서버가 거절했으면(함수가 없는 예전 서버) [ServerGoal.NO_RULE](예전처럼
+     * 폰 목표를 보낸다)
+     */
+    suspend fun refreshGoal(): ServerGoal? {
+        val raw = fetchBoxesRaw ?: return ServerGoal.NO_RULE
+        var refused = false
+        val body = fetchRaw { raw().also { refused = it is ServerResult.Rejected } }
+        return when {
+            body != null -> ServerGoal.parse(body)
+            refused -> ServerGoal.NO_RULE
+            else -> null
+        }
+    }
+
+    /** `box_status` 를 받아 상자 현황 · 오늘의 보상 · 폰에 남긴 글을 바꾼다 — 받은 글(못 받았으면 null) */
+    private suspend fun fetchRaw(raw: suspend () -> ServerResult<String>): String? {
         val r = raw()
         if (r !is ServerResult.Ok) return null
         val fetchedAt = clock()
@@ -98,7 +131,31 @@ class ShoeRulesRepository(
         // 0118 이 없는 서버면 null — 화면은 예전 모습으로 돌아간다
         _daily.value = DailyRewards.parse(r.value, fetchedAt)
         store?.let { s -> runCatching { s.write(owner(), r.value, fetchedAt) } }
-        return box
+        return r.value
+    }
+
+    /** 목표를 청구해 본 계정 · 날("계정:날") — 앱이 켜진 동안 한 번씩만 */
+    private val goalRetried = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    /**
+     * 방금 받은 오늘 상태가 "목표를 채웠는데 보너스가 없다"면 오늘을 한 번 청구하고 상태를 다시 읽는다(계정 · 날마다 한 번). 금액은 서버 상태가
+     * 받았다고 할 때만 화면에 보인다 — 청구의 답을 화면에 쓰지 않는다
+     */
+    private suspend fun retryMissedGoal(raw: suspend () -> ServerResult<String>) {
+        val claim = claimGoalDay ?: return
+        val today = DailyRewards.gameDay(clock())
+        if (!DailyGoalSync.missedToday(_daily.value, today)) return
+        val who = runCatching { owner() }.getOrNull() ?: return
+        if (!goalRetried.add("$who:$today")) return
+        val paid = try {
+            claim(today)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            false
+        }
+        fetchRaw(raw)
+        if (paid) runCatching { onGoalPaid() }
     }
 
     /**

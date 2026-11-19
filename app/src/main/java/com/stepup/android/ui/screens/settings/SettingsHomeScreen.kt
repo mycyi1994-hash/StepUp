@@ -209,7 +209,8 @@ private fun AboutLine(label: String, value: String) {
 }
 
 /**
- * 하루 러닝 목표(설정 v1 24 · 오늘의 보상 2026-11-19) — 큰 숫자와 −500 · +500. 범위 4,000 ~ 20,000걸음, 500걸음씩(서버 0118 과 같다).
+ * 하루 러닝 목표(설정 v1 24 · 오늘의 보상 2026-11-19) — 큰 숫자와 − · + 한 단계. 범위 · 단계는 서버 규칙(ShoeRules.goal — 못 읽었으면
+ * 4,000 ~ 20,000걸음 · 500걸음씩, 서버 0118 과 같다).
  *
  * 누를 때마다 바로 저장한다(StepRepository.setDailyGoal — 폰에 적고 서버 목표도 맞춘다, 서버가 적은 값을 따른다).
  * 빨리 여러 번 눌러도 마지막 값이 남는다(앞선 저장은 새 값이 오면 접는다). 저장하지 못하면 실제로 저장된 목표로
@@ -280,20 +281,22 @@ fun DailyGoalSheet(
                 modifier = Modifier.padding(bottom = 10.dp))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val decrease = stringResource(R.string.set_goal_decrease)
-            val increase = stringResource(R.string.set_goal_increase)
+            // 한 번에 바꾸는 걸음 · 범위는 서버 규칙(ShoeRules.goal) 그대로 — 글자에 박지 않는다
+            val step = "%,d".format(rule.step)
+            val decrease = stringResource(R.string.set_goal_decrease, step)
+            val increase = stringResource(R.string.set_goal_increase, step)
             GoalStep(
-                stringResource(R.string.set_goal_minus), onClick = { change(-rule.step) },
+                stringResource(R.string.set_goal_minus, step), onClick = { change(-rule.step) },
                 enabled = current != null && current > rule.min,
                 modifier = Modifier.weight(1f).semantics { contentDescription = decrease }.testTag("goal-minus"),
             )
             GoalStep(
-                stringResource(R.string.set_goal_plus), onClick = { change(rule.step) },
+                stringResource(R.string.set_goal_plus, step), onClick = { change(rule.step) },
                 enabled = current != null && current < rule.max,
                 modifier = Modifier.weight(1f).semantics { contentDescription = increase }.testTag("goal-plus"),
             )
         }
-        Text(stringResource(R.string.set_goal_range, "%,d".format(rule.min), "%,d".format(rule.max)),
+        Text(stringResource(R.string.set_goal_range, "%,d".format(rule.min), "%,d".format(rule.max), "%,d".format(rule.step)),
             style = runTextStyle(14.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center)
         // 계산 안내 — 기존 계산식의 예상이며 지급 확정이 아니다. 읽기 전엔 "—"
         BlueSheetDivider()

@@ -174,6 +174,8 @@ class UserPrefs(
         val GOAL_RULE_NOTICE = booleanPreferencesKey("goal_rule_notice")
         /** 마지막으로 받은 box_status 글 — "계정\n받은 시각\n글" */
         val DAILY_REWARDS = stringPreferencesKey("daily_rewards")
+        /** 이 폰에서 바꾼 목표가 아직 서버에 닿지 않았다 — "계정(로그인 전이면 빈 글자)\n목표" */
+        val GOAL_UNSENT = stringPreferencesKey("goal_unsent")
     }
 
     /**
@@ -1126,6 +1128,27 @@ class UserPrefs(
     suspend fun setDailyGoalFromServer(goal: Int) {
         if (goal <= 0) return
         store.edit { it[Keys.DAILY_GOAL] = goal }
+    }
+
+    /**
+     * 목표를 바꿨는데 아직 서버에 닿지 않았다고 적는다(바꿀 때 보내기 전에) — 동기화(EconomySync)가 이 표시가 있을 때만 폰 목표를 보낸다.
+     * 지금 계정(경제 사본의 주인, 로그인 전이면 빈 글자)과 함께 적는다. 적은 표시를 돌려준다 — 보내고 나서 그 표시 그대로일 때만 지운다
+     */
+    suspend fun markGoalUnsent(goal: Int): String {
+        var mark = ""
+        store.edit {
+            mark = com.stepup.android.domain.DailyGoalSync.unsentMark(it[Keys.ECONOMY_OWNER], goal)
+            it[Keys.GOAL_UNSENT] = mark
+        }
+        return mark
+    }
+
+    /** 아직 서버에 닿지 않은 목표 표시 — 없으면 null */
+    suspend fun goalUnsentMark(): String? = store.data.first()[Keys.GOAL_UNSENT]
+
+    /** 표시를 지운다 — [ifMark] 를 주면 그 표시 그대로일 때만(그 사이 또 바꿨으면 남긴다) */
+    suspend fun clearGoalUnsent(ifMark: String? = null) {
+        store.edit { if (ifMark == null || it[Keys.GOAL_UNSENT] == ifMark) it.remove(Keys.GOAL_UNSENT) }
     }
 
     suspend fun setSneakerLevel(level: Int) {

@@ -1035,6 +1035,16 @@ fun RunScreen(
                 }
                 val levelUp = outcome?.takeIf { recorded && it.levelUp }?.levelAfter
                     ?.let { stringResource(R.string.crew_result_level_up, it) }
+                // 오늘의 보상(0118) — 크루 체력을 다 쓴 뒤 걸음은 보상 걸음(상자 · 목표)에 들지 않는다. 그 러닝의 서버 까닭에 있을 때만 한 줄
+                val rewardStepsOn by remember {
+                    if (com.stepup.android.core.ServiceLocator.serverEconomyOn) com.stepup.android.core.ServiceLocator.shoeRules.daily
+                    else kotlinx.coroutines.flow.MutableStateFlow(null)
+                }.collectAsStateWithLifecycle()
+                val lastServerReason by viewModel.lastServerReason.collectAsStateWithLifecycle()
+                val staminaNote = if (
+                    com.stepup.android.domain.RunVerdictReason.crewStaminaOut(lastServerReason, rewardStepsOn != null) ||
+                    com.stepup.android.domain.RunVerdictReason.crewStaminaOut(outcome?.reason?.takeIf { recorded }, rewardStepsOn != null)
+                ) stringResource(R.string.dr_crew_stamina_note) else null
                 CrewRunResult(
                     ui = CrewResultUi(
                         crewName = crewTitle,
@@ -1050,6 +1060,7 @@ fun RunScreen(
                         room = outcome?.partyName?.let { room ->
                             listOfNotNull(room, outcome.courseName?.let { c -> outcome.courseKm?.let { "$c ${courseKm(it)}km" } ?: c }).joinToString(" · ")
                         },
+                        rewardStepsNote = staminaNote,
                     ),
                     reward = reward,
                     map = if (geoTrack.size >= 2) ({

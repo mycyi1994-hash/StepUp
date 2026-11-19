@@ -141,15 +141,15 @@
     <string name="set_mail_open_failed_body">Copy the address and paste it into the email you use.</string>
     <string name="set_mail_subject">StepUp support</string>
     <string name="set_goal_steps">steps</string>
-    <string name="set_goal_minus">− 500</string>
-    <string name="set_goal_plus">+ 500</string>
-    <string name="set_goal_range">%1$s–%2$s steps · in steps of 500</string>
+    <string name="set_goal_minus">− %1$s</string>
+    <string name="set_goal_plus">+ %1$s</string>
+    <string name="set_goal_range">%1$s–%2$s steps · in steps of %3$s</string>
     <string name="set_goal_distance">Estimated run distance</string>
     <string name="set_goal_distance_value">about %1$s km</string>
     <string name="set_goal_bonus">Base goal bonus</string>
     <string name="set_goal_bonus_value">%1$s SUP</string>
     <string name="set_goal_note">Your goal is saved as soon as you change it.</string>
     <string name="set_goal_save_failed">Couldn\'t save your goal. Showing your saved goal.</string>
-    <string name="set_goal_decrease">Decrease goal by 500 steps</string>
-    <string name="set_goal_increase">Increase goal by 500 steps</string>
+    <string name="set_goal_decrease">Decrease goal by %1$s steps</string>
+    <string name="set_goal_increase">Increase goal by %1$s steps</string>
 </resources>

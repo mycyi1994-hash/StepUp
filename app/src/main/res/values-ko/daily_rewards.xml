@@ -52,4 +52,7 @@
     <string name="dr_news_goal_plain">목표 보너스를 받았어요</string>
     <string name="dr_news_yesterday">어제 %1$s</string>
     <string name="dr_news_on_day">%1$s %2$s</string>
+    <string name="dr_crew_stamina_note">크루 체력을 다 쓴 뒤의 걸음은 상자 · 목표 보너스에 들지 않아요.</string>
+    <string name="dr_off_run_note">실내 · 경로 없는 걸음은 상자 · 목표에 들지 않아요. 경로가 확인된 러닝에서 닳지 않은 신발로 걸은 걸음만 세요.</string>
+    <string name="dr_overnight_note">어젯밤 시작한 러닝은 어제 걸음으로 셌어요.</string>
 </resources>

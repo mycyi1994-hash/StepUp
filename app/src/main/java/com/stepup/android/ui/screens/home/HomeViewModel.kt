@@ -147,6 +147,19 @@ class HomeViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     }
 
+    /**
+     * 막대 아래 "어젯밤 러닝은 어제 걸음으로 셌어요" — 이 계정의 가장 최근 러닝이 오늘(한국 날짜) 자정 전에 시작해 자정 뒤에 끝났을 때, 오늘만
+     * (DailyRewardsBar.overnightNote). 무효 · 거절된 러닝은 말하지 않는다
+     */
+    val overnightRun: StateFlow<Boolean> =
+        combine(stepRepository.observeLatestSession(), gameToday) { latest, today ->
+            latest != null && com.stepup.android.domain.DailyRewardsBar.overnightNote(
+                startedAt = latest.startedAt, endedAt = latest.endedAt,
+                counted = latest.verdict != "VOID" && latest.uploadState != com.stepup.android.data.local.UploadState.REJECTED.name,
+                today = today,
+            )
+        }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     /** 오늘의 보상 서버 상태 그대로 — 오늘의 활동 시트의 이번 주 · 연속 */
     val daily: StateFlow<com.stepup.android.domain.DailyRewards?> =
         shoeRules?.daily ?: kotlinx.coroutines.flow.MutableStateFlow(null)

@@ -123,6 +123,7 @@ fun HomeScreen(
     val daily by viewModel.daily.collectAsStateWithLifecycle()
     val news by viewModel.rewardNews.collectAsStateWithLifecycle()
     val goalNotice by viewModel.goalRuleNotice.collectAsStateWithLifecycle()
+    val overnightRun by viewModel.overnightRun.collectAsStateWithLifecycle()
     var goalSheet by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -176,6 +177,7 @@ fun HomeScreen(
         onNewsSeen = { viewModel.consumeRewardNews() },
         goalNotice = goalNotice && bar != null,
         onGoalNotice = { viewModel.dismissGoalRuleNotice(); goalSheet = true },
+        overnightRun = overnightRun,
     )
 
     if (goalSheet) {
@@ -266,6 +268,8 @@ internal fun HomeContent(
     /** 기존 사용자에게 한 번 — 목표가 러닝 걸음 기준으로 바뀌었다 */
     goalNotice: Boolean = false,
     onGoalNotice: () -> Unit = {},
+    /** 가장 최근 러닝이 어젯밤 시작해 오늘 끝났다 — 막대 아래 "어제 걸음으로 셌어요"(오늘만) */
+    overnightRun: Boolean = false,
 ) {
     // 본문은 넘기고, 이 화면의 주 행동(러닝 시작)은 늘 아래에 보인다(작은 화면 · 큰 글씨에서도)
     Column(Modifier.fillMaxSize()) {
@@ -280,7 +284,7 @@ internal fun HomeContent(
                 todaySteps = todaySteps, goal = goal, loaded = loaded,
                 hasPermission = hasPermission, firstHome = firstHome,
                 onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
-                bar = bar,
+                bar = bar, overnightRun = overnightRun,
             )
             if (newsText != null) {
                 // 새로 받은 보상 — 한 번 보이고 잠시 뒤 걷힌다(누르면 바로)
@@ -346,6 +350,7 @@ private fun StepsHero(
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
     bar: com.stepup.android.domain.DailyBar? = null,
+    overnightRun: Boolean = false,
 ) {
     val c = StepUpUi.colors
     if (firstHome) {
@@ -368,6 +373,7 @@ private fun StepsHero(
         RewardsHero(
             bar = bar, allDaySteps = todaySteps, loaded = loaded, hasPermission = hasPermission,
             onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
+            overnightRun = overnightRun,
         )
         return
     }
@@ -524,6 +530,7 @@ private fun RewardsHero(
     hasPermission: Boolean,
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
+    overnightRun: Boolean = false,
 ) {
     val c = StepUpUi.colors
     val detailsLabel = stringResource(R.string.home_open_details)
@@ -561,7 +568,22 @@ private fun RewardsHero(
         RewardTrack(bar, hole = c.background)
         Spacer(Modifier.height(8.dp))
         RewardLine(bar)
+        // 보상 걸음에 들지 않은 걸음 · 어젯밤 러닝 — 그럴 때만 작은 한 줄씩(오늘 상태를 알 때만)
+        if (com.stepup.android.domain.DailyRewardsBar.offRunNote(bar, allDaySteps, allDayKnown = loaded && hasPermission)) {
+            RewardNote(stringResource(R.string.dr_off_run_note), "home-reward-note-off-run")
+        }
+        if (overnightRun && bar.known) RewardNote(stringResource(R.string.dr_overnight_note), "home-reward-note-overnight")
     }
+}
+
+/** 막대 아래 작은 설명 한 줄 — 누를 곳 없이 */
+@Composable
+private fun RewardNote(text: String, tag: String) {
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text, style = StepUpUi.type.caption, color = StepUpUi.colors.secondaryLabel,
+        modifier = Modifier.fillMaxWidth().testTag(tag),
+    )
 }
 
 /** 하루 전체 걸음(폰 만보기) — 작게. 걸음 권한이 없으면 그 자리에 "하루 전체 걸음 보기"(누르면 권한을 묻는다) */

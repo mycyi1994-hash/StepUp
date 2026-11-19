@@ -42519,6 +42519,49 @@ begin
       left join public.economy_settings s on s.key = k.key));
 end $$;
 
+-- ════════════════════════════════════════════════════════════════════
+--  운영 알림: 오늘의 보상 규칙이 바뀌었다(REWARD_RULES) — 예전 앱 사용자에게도 간다
+-- ════════════════════════════════════════════════════════════════════
+-- 배포한 뒤 SQL 창에서 한 번:  select admin_notice_send('REWARD_RULES');   (push-send 를 먼저 다시 올린다 — 글은 거기에)
+-- 받을 폰이 있는 모든 사람에게 한 번. args.goal = 그 사람의 하루 목표(4,000 ~ 20,000 으로 맞춘 값)
+create or replace function economy.notice_send(p_notice text)
+returns integer language plpgsql security definer set search_path = public, economy as $$
+declare
+  r record;
+  v_n int := 0;
+begin
+  if p_notice is null or p_notice not in ('MARKET_RECLAIMED', 'UPDATE_REWARD', 'REWARD_RULES') then
+    raise exception '모르는 알림입니다: %', coalesce(p_notice, '') using errcode = '22023';
+  end if;
+  -- 같은 알림을 두 곳에서 동시에 보내도 한 사람에게 한 번
+  perform pg_advisory_xact_lock(hashtext('notice:' || p_notice));
+
+  for r in
+    select m.user_id,
+           jsonb_build_object('listings', m.listings::text, 'bids', m.bids::text,
+                              'sup', rtrim(to_char(m.refunded, 'FM999,999,999,999,990.9999'), '.')) as args,
+           'shoes' as link
+      from economy.market_reclaim_20261118 m
+     where p_notice = 'MARKET_RECLAIMED'
+    union all
+    select u.user_id, jsonb_build_object('free', u.free::text, 'premium', u.premium::text), 'draw'
+      from economy.update_reward_20261118 u
+     where p_notice = 'UPDATE_REWARD'
+    union all
+    select p.id, jsonb_build_object('goal', to_char(economy.goal_clamp(p.daily_goal), 'FM999,999')), 'run'
+      from public.profiles p
+     where p_notice = 'REWARD_RULES'
+  loop
+    continue when exists (select 1 from economy.notice_sends s where s.notice = p_notice and s.user_id = r.user_id);
+    continue when not public.push_allowed(r.user_id, p_notice)
+               or not exists (select 1 from public.push_tokens t where t.user_id = r.user_id);
+    perform public.push_enqueue(r.user_id, p_notice, r.args, r.link);
+    insert into economy.notice_sends (notice, user_id) values (p_notice, r.user_id) on conflict do nothing;
+    v_n := v_n + 1;
+  end loop;
+  return v_n;
+end $$;
+
 create or replace function public.ops_economy_set(p_token text, p_setting text, p_value jsonb, p_confirm text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -42652,7 +42695,7 @@ end $function$;
 -- ════════════════════════════════════════════════════════════════════
 --  7. 러닝 기록 — record_session(0117 본문 복사 + 세 곳)
 -- ════════════════════════════════════════════════════════════════════
--- 0117 본문 그대로, 세 곳만 (0118): ① 보상 걸음(reward_steps)을 적는다 ② 같은 경로 검사를 모든 계정으로 ③ 기록한 뒤 목표 보너스 정산.
+-- 0117 본문 그대로, 네 곳만 (0118): ① 보상 걸음(reward_steps)을 적는다 ② 같은 경로 검사를 모든 계정으로 ③ 기록한 뒤 목표 보너스 정산 ④ 올리기 전에 태운 신발은 그 신발 값으로.
 -- 경로가 받쳐 주지 않은 러닝은 까닭에 '경로가 확인되지 않아 보상 걸음에 들지 않았습니다'를 더한다. 다시 고칠 때는 이 본문(0118)을 복사한다.
 create or replace function public.record_session(
   p_started_at timestamptz,
@@ -42998,6 +43041,13 @@ begin
     select x.* into v_shoe from public.market_sneakers x
      where x.id = p_sneaker and x.owner_id = v_user and x.chain_state = 'APP' and x.status = 'OWNED';
   end if;
+  -- 출발 때 신은 신발(크루 러닝은 고른 신발)을 이 계정이 올리기 전에 강화 재료로 태웠다(다른 폰에서 — 0118) — 그 신발의 마지막 값으로 셈한다.
+  -- 예전엔 지금 신은 다른 신발로 정산해, 닳은 신발로 달린 러닝이 내구도 몫만큼 깎이지 않았다. 태운 신발은 닳음 · 거리를 남기지 않는다(아래)
+  if v_shoe.id is null and coalesce(case when v_pool = 'CREW' then v_cr.sneaker_id end, p_sneaker) is not null then
+    select x.* into v_shoe from public.market_sneakers x
+     where x.id = coalesce(case when v_pool = 'CREW' then v_cr.sneaker_id end, p_sneaker) and x.status = 'BURNED'
+       and exists (select 1 from public.forge_requests r where r.user_id = v_user and x.id = any(r.material_ids));
+  end if;
   if v_shoe.id is null then
     select * into v_shoe from economy.equipped_sneaker(v_user);
   end if;
@@ -43326,7 +43376,7 @@ begin
   v_wear := case when v_pool = 'CREW' then 0 else round(economy.durability_wear_time(v_elapsed) * v_wear_luck
               * least(1, greatest(0, (1 - v_lost_cap::numeric / greatest(v_verified, 1))
                                      * case when v_points_full > 0 then v_points / v_points_full else 1 end)))::int end;
-  if v_shoe.id is not null and v_verdict <> 'VOID' then
+  if v_shoe.id is not null and v_verdict <> 'VOID' and v_shoe.status <> 'BURNED' then
     update public.market_sneakers s
        set km_run = s.km_run + round((v_credit_m / 1000)::numeric, 3),
            dur_now = case when v_pen.user_id is not null

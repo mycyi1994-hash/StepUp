@@ -57,6 +57,13 @@ object RunVerdictReason {
 
     const val MAX = 2
 
+    /**
+     * 크루 러닝 결과의 "크루 체력을 다 쓴 뒤 걸음은 상자 · 목표 보너스에 들지 않아요" — 그 러닝의 서버 판정 까닭에 "크루 체력을 다 썼습니다"가
+     * 있고 오늘의 보상(보상 걸음, 서버 0118)이 켜져 있을 때만([rewardSteps])
+     */
+    fun crewStaminaOut(verdictReason: String?, rewardSteps: Boolean): Boolean =
+        rewardSteps && verdictReason?.contains(CrewRunMath.REASON_POOL_EMPTY) == true
+
     /** 서버 글을 까닭으로 — 모르는 조각은 버린다 */
     fun kinds(reason: String): List<Kind> =
         reason.split(" · ").mapNotNull { KNOWN[it.trim()] }.distinct().take(MAX)

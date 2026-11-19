@@ -148,12 +148,16 @@ class StepRepository(
      * 하루 러닝 목표를 바꾼다 — 폰에 먼저 적고 서버에 보낸다. 서버가 적은 값이 다르면(서버가 범위 · 500 단위로 맞췄다) 그 값을 따른다.
      * 적힌 목표를 돌려준다. 연결이 없으면 폰 값 그대로 두고 다음에 서버와 맞출 때(EconomySync) 보낸다.
      * 서버는 오늘 이미 달렸으면 오늘 목표를 그대로 두고 내일부터 바꾼다(box_status goal_next).
+     * 보내기 전에 "아직 닿지 않음"을 적고(UserPrefs.markGoalUnsent) 서버가 받으면 지운다 — 동기화는 그 표시가 있을 때만 폰 목표를 보내고,
+     * 아니면 서버 목표를 받아 온다(새 폰 · 다시 깐 폰이 고른 목표를 덮지 않게, DailyGoalSync).
      */
     suspend fun setDailyGoal(goal: Int): Int {
         val rule = runCatching { prefs.goalRule() }.getOrDefault(com.stepup.android.domain.GoalRule.FALLBACK)
         val clamped = rule.fit(goal)
+        val mark = if (pushGoal != null) runCatching { prefs.markGoalUnsent(clamped) }.getOrNull() else null
         prefs.setDailyGoal(clamped)
         val saved = runCatching { pushGoal?.invoke(clamped) }.getOrNull()
+        if (saved != null && saved > 0 && mark != null) runCatching { prefs.clearGoalUnsent(mark) }
         if (saved != null && saved > 0 && saved != clamped) {
             // 서버가 적은 값이 정본이다 — 폰 범위로 다시 깎지 않는다(서버 규칙이 폰이 읽은 규칙보다 새로울 수 있다)
             prefs.setDailyGoalFromServer(saved)

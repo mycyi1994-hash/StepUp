@@ -314,6 +314,109 @@ object DailyRewardsBar {
         val live = if (liveStartedAt != null && liveStartedAt > 0 && DailyRewards.gameDay(liveStartedAt) == today) liveSteps.coerceAtLeast(0) else 0
         return waiting + live
     }
+
+    /** 하루 전체 걸음이 보상 걸음(+ 확인 중 걸음)보다 이만큼 많으면 "실내 · 경로 없는 걸음은 빠져요" 한 줄 */
+    const val OFF_RUN_GAP = 2_000
+
+    /**
+     * 막대 아래 "실내 · 경로 없는 걸음은 상자 · 목표에 들지 않아요" — 오늘(한국 날짜) 상태를 알고, 폰이 센 하루 전체 걸음([allDaySteps],
+     * 읽었을 때만 — [allDayKnown])이 서버의 보상 걸음과 확인 중 걸음을 더한 것보다 [OFF_RUN_GAP] 이상 많을 때만. 확인 중 걸음을 빼는 것은
+     * 아직 올라가는 러닝의 걸음 때문에 잠깐 뜨지 않게
+     */
+    fun offRunNote(bar: DailyBar, allDaySteps: Int, allDayKnown: Boolean): Boolean =
+        bar.known && allDayKnown && allDaySteps - bar.rewardSteps - bar.pendingSteps >= OFF_RUN_GAP
+
+    /**
+     * 막대 아래 "어젯밤 러닝은 어제 걸음으로 셌어요" — 이 계정의 가장 최근 러닝이 오늘(한국 날짜) 자정 전에 시작해 자정 뒤에 끝났을 때, 오늘만.
+     * 서버는 러닝을 시작한 날에 센다(economy.game_day(started_at)). 무효 · 거절된 러닝은 어디에도 세지 않으므로 말하지 않는다
+     */
+    fun overnightNote(startedAt: Long, endedAt: Long, counted: Boolean, today: LocalDate): Boolean =
+        counted && startedAt > 0 && endedAt > startedAt &&
+            DailyRewards.gameDay(startedAt).isBefore(today) && DailyRewards.gameDay(endedAt) == today
+}
+
+/** 서버에 적힌 목표(box_status `rule` · `goal` · `goal_next`) — 동기화 때 폰 목표를 맞추는 데 쓴다 */
+data class ServerGoal(val rule: String?, val goal: Int?, val goalNext: Int?) {
+    /** 사람이 고른 목표 — 내일부터 바뀔 목표가 있으면 그것, 없으면 오늘 목표 */
+    val chosen: Int? get() = goalNext?.takeIf { it > 0 } ?: goal?.takeIf { it > 0 }
+
+    companion object {
+        /** 0118 을 읽지 않는 빌드 · 예전 서버 — 규칙을 모른다(예전처럼 폰 목표를 보낸다) */
+        val NO_RULE = ServerGoal(rule = null, goal = null, goalNext = null)
+
+        /** `box_status` 글 → 서버 목표. 글이 JSON 객체가 아니면 null(읽지 못했다) */
+        fun parse(body: String): ServerGoal? = runCatching {
+            val o = Json.parseToJsonElement(body) as? JsonObject ?: return@runCatching null
+            ServerGoal(rule = o.str("rule"), goal = o.int("goal"), goalNext = o.int("goal_next"))
+        }.getOrNull()
+    }
+}
+
+/** 동기화 때 폰 목표를 어떻게 맞출지 — [DailyGoalSync.action] */
+sealed interface GoalSyncAction {
+    /** 폰 목표를 서버에 보낸다(이 폰에서 바꾼 목표가 아직 닿지 않았다 · 예전 서버) */
+    data object Push : GoalSyncAction
+
+    /** 서버 목표를 폰에 적는다(새 폰 · 다시 깐 폰 · 다른 폰에서 바꾼 목표) */
+    data class Adopt(val goal: Int) : GoalSyncAction
+
+    /** 같다 — 할 일 없음 */
+    data object Keep : GoalSyncAction
+
+    /** 서버 목표를 읽지 못했다 — 덮어쓰지 않고 다음 동기화에서 다시 */
+    data object Wait : GoalSyncAction
+}
+
+/**
+ * 하루 러닝 목표 · 목표 보너스를 서버와 맞추는 규칙(오늘의 보상, 서버 0118) — EconomySync · ShoeRulesRepository · ServiceLocator 가 쓴다.
+ *
+ * 서버의 목표가 정본이다. 예전엔 동기화 때마다 폰 목표를 서버에 보내, 새 폰 · 다시 깐 폰(기본 6,000)이나 목표가 옛 값인 둘째 폰이
+ * 사람이 고른 목표를 덮었다(바뀐 목표는 다음 날부터라 연속이 끊기기도 했다). 이제 이 폰에서 바꾼 목표가 서버에 닿지 않았을 때만 보내고,
+ * 아니면 서버 목표를 받아 온다.
+ */
+object DailyGoalSync {
+
+    /**
+     * @param unsent 이 폰(이 계정)에서 바꾼 목표가 아직 서버에 닿지 않았다
+     * @param server 방금 읽은 서버 목표 — 못 읽었으면 null
+     * @param phoneGoal 지금 폰의 목표
+     */
+    fun action(unsent: Boolean, server: ServerGoal?, phoneGoal: Int): GoalSyncAction = when {
+        unsent -> GoalSyncAction.Push
+        server == null -> GoalSyncAction.Wait
+        // 예전 서버(rule 이 없다) · 되돌린 서버(OLD) — 예전처럼 폰 목표를 보낸다
+        server.rule != DailyRewards.RULE_REWARD_STEPS -> GoalSyncAction.Push
+        else -> server.chosen?.takeIf { it != phoneGoal }?.let { GoalSyncAction.Adopt(it) } ?: GoalSyncAction.Keep
+    }
+
+    /** 바꾼 목표가 아직 닿지 않았다는 표시("계정\n목표") — 이 계정 것이거나 로그인 전에 바꾼 것일 때만 보낸다 */
+    fun unsentFor(mark: String?, userId: String): Boolean {
+        if (mark == null) return false
+        val owner = mark.substringBefore('\n', missingDelimiterValue = "")
+        return owner.isEmpty() || owner == userId
+    }
+
+    fun unsentMark(owner: String?, goal: Int): String = "${owner.orEmpty()}\n$goal"
+
+    /**
+     * 확인받은 러닝마다 그 러닝이 시작한 날(한국 날짜)의 목표 보너스를 한 번 더 청구할 날 — 서버가 러닝을 기록할 때 주지만(0118) 그 단계가
+     * 실패하면 아무도 다시 하지 않는다. 서버가 받는 최근 7일 안의 날만, 오래된 날부터(뒷날의 연속이 앞날을 센다). 이미 받은 날(23505) ·
+     * 못 채운 날(23514)은 서버가 거절할 뿐이다
+     */
+    fun signedRunDays(signedStartedAt: Collection<Long>, now: Long = System.currentTimeMillis(), windowDays: Long = 7): List<LocalDate> {
+        val today = DailyRewards.gameDay(now)
+        val from = today.minusDays(windowDays)
+        return signedStartedAt.filter { it > 0 }.map { DailyRewards.gameDay(it) }
+            .filter { !it.isBefore(from) && !it.isAfter(today) }.distinct().sorted()
+    }
+
+    /**
+     * 오늘 목표를 채웠는데 보너스가 없다 — 서버 상태가 오늘(한국 날짜) 것이고 규칙이 보상 걸음이며 보상 걸음이 목표 이상인데 받은 보너스가 없다.
+     * 이때 한 번(계정 · 날마다, 앱이 켜진 동안) 오늘을 청구해 본다. 금액은 서버 상태가 받았다고 할 때만 보인다
+     */
+    fun missedToday(state: DailyRewards?, today: LocalDate): Boolean =
+        state != null && state.rule == DailyRewards.RULE_REWARD_STEPS && state.isFor(today) &&
+            state.goal > 0 && state.rewardStepsToday >= state.goal && state.goalPaid == null
 }
 
 /** 새로 받은 보상 한 묶음 — 그날 · 종류마다 몇 개(목표 보너스는 SUP) */

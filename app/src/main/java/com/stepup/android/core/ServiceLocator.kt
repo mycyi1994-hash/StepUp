@@ -359,6 +359,9 @@ object ServiceLocator {
             fetchBoxesRaw = { dailyRewardsApi.boxStatusRaw() },
             store = userPrefs.dailyRewardsStore,
             owner = { sessionHolder.recordingOwner() },
+            // 오늘 목표를 채웠는데 보너스가 없으면(러닝을 기록할 때 서버가 주는 단계가 실패했다) 그날을 한 번 청구한다 — 받으면 잔고를 다시 맞춘다
+            claimGoalDay = { day -> economyApi.goalClaimDay(day) is ServerResult.Ok },
+            onGoalPaid = { refreshEconomyInBackground() },
         )
         // 하루 러닝 목표의 범위 · 기본값 — 서버 규칙(shoe_rules_v4 "goal"). 예전 판에서 올라온 설치는 목표 규칙을 한 번 옮기고
         // 남긴 오늘의 보상을 되살린다(앱을 켜자마자 막대를 그리게 — 한국 날짜가 지났으면 "—")
@@ -392,6 +395,8 @@ object ServiceLocator {
             },
             // 신발마다 강화 경험치 통(0118 my_shoe_xp) — 신발 카드 · 상세의 "다음 레벨까지 N%"
             shoeXp = com.stepup.android.data.remote.ShoeXpApi(server),
+            // 서버에 적힌 목표(0118 box_status) — 이 폰에서 바꾼 목표가 닿지 않았을 때가 아니면 폰이 서버 목표를 따른다
+            serverGoal = { shoeRules.refreshGoal() },
         )
         // 서버 주소가 있는 빌드는 언제나 서버 경제다. 없는 빌드(로컬 개발)만 예전처럼 폰 안에서 계산한다.
         val serverEconomy = economyApi.isConfigured
@@ -403,9 +408,14 @@ object ServiceLocator {
                 // AI 코칭 자동 분석(켠 사람만) — 따로 돌아 올리기 · 잔고 맞추기를 늦추거나 막지 않는다
                 coachAfterUpload()
                 if (serverEconomy) {
-                    // 오늘의 보상(0118)이면 목표 보너스는 서버가 러닝을 기록할 때 준다 — 청구하지 않는다
+                    // 오늘의 보상(0118)이면 목표 보너스는 서버가 러닝을 기록할 때 준다. 그 단계가 실패했을 때만 남지 않게 확인받은 러닝이
+                    // 시작한 날을 한 번 더 청구한다 — 이미 받은 날(23505) · 못 채운 날(23514)은 서버가 거절할 뿐이다
                     val serverPays = shoeRules.daily.value?.rule == com.stepup.android.domain.DailyRewards.RULE_REWARD_STEPS
-                    if (!serverPays) {
+                    if (serverPays) {
+                        for (day in com.stepup.android.domain.DailyGoalSync.signedRunDays(signedStartedAt)) {
+                            economyApi.goalClaimDay(day)
+                        }
+                    } else {
                         // 러닝은 시작한 날(한국 시각)의 목표에 든다 — 자정을 넘긴 러닝 · 자정 뒤에 올린 러닝도 그날 보너스를 받게
                         // 서버가 받는 최근 7일부터 오늘까지, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068).
                         // 아직 올리지 못한 이 계정의 러닝이 있으면 그날 뒤는 미룬다 — 짧은 연속 일수로 굳지 않게(EconomyApi.goalDays)

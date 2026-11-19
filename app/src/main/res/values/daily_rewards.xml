@@ -52,4 +52,7 @@
     <string name="dr_news_goal_plain">You got the goal bonus</string>
     <string name="dr_news_yesterday">Yesterday · %1$s</string>
     <string name="dr_news_on_day">%1$s · %2$s</string>
+    <string name="dr_crew_stamina_note">Steps after the crew stamina ran out don\'t count toward boxes or the goal bonus.</string>
+    <string name="dr_off_run_note">Indoor and no-route steps don\'t count toward boxes or your goal. Only steps from runs with a confirmed route, in shoes that aren\'t worn out, count.</string>
+    <string name="dr_overnight_note">Last night\'s run was counted for yesterday.</string>
 </resources>

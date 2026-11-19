@@ -139,15 +139,15 @@
     <string name="set_mail_open_failed_body">주소를 복사해 사용하는 메일에 붙여 넣어주세요.</string>
     <string name="set_mail_subject">StepUp 문의</string>
     <string name="set_goal_steps">걸음</string>
-    <string name="set_goal_minus">− 500</string>
-    <string name="set_goal_plus">+ 500</string>
-    <string name="set_goal_range">%1$s–%2$s걸음 · 500걸음씩 조절</string>
+    <string name="set_goal_minus">− %1$s</string>
+    <string name="set_goal_plus">+ %1$s</string>
+    <string name="set_goal_range">%1$s–%2$s걸음 · %3$s걸음씩 조절</string>
     <string name="set_goal_distance">예상 러닝 거리</string>
     <string name="set_goal_distance_value">약 %1$s km</string>
     <string name="set_goal_bonus">목표 기본 보너스</string>
     <string name="set_goal_bonus_value">%1$s SUP</string>
     <string name="set_goal_note">목표를 바꾸면 바로 저장돼요.</string>
     <string name="set_goal_save_failed">목표를 저장하지 못했어요. 저장된 목표를 보여드려요.</string>
-    <string name="set_goal_decrease">목표 500걸음 줄이기</string>
-    <string name="set_goal_increase">목표 500걸음 늘리기</string>
+    <string name="set_goal_decrease">목표 %1$s걸음 줄이기</string>
+    <string name="set_goal_increase">목표 %1$s걸음 늘리기</string>
 </resources>

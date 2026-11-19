@@ -267,6 +267,20 @@ class WalkViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** 서버가 적은 이번 러닝의 판정 까닭(record_session verdict_reason) — 확인 전 · 까닭이 없으면 빈 글자 */
+    val lastServerReason: StateFlow<String> = combine(
+        WalkSessionService.state,
+        stepRepository.recentSessions(5),
+    ) { state, rows ->
+        if (state.lastStartedAt == 0L) {
+            ""
+        } else {
+            rows.firstOrNull { it.startedAt == state.lastStartedAt }
+                ?.takeIf { it.uploadState == com.stepup.android.data.local.UploadState.SIGNED.name }
+                ?.verdictReason.orEmpty()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
     /** 완료 화면의 캐릭터 — 홈 · 꾸미기와 같은 모습 */
     val look: StateFlow<AvatarLook?> = ServiceLocator.avatarRepository.look
         .map<AvatarLook, AvatarLook?> { it }
