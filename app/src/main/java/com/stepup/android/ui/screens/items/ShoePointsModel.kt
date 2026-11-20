@@ -87,9 +87,19 @@ data class PointsBasis(
     /** 최대 내구도 — 서버 economy.dur_max_of(뽑은 값 × (1 + 폭 × 포인트), 반올림) */
     fun durabilityMax(draft: PointsDraft): Int = rules.durabilityWithPoints(durabilityBase, rarity, draft.durability)
 
-    /** 내구도 포인트는 최대 · 남은 내구도를 함께 올린다(다시 나누기로 줄이면 함께 내린다) — 서버 sneaker_points_set 과 같다 */
-    fun durabilityNow(draft: PointsDraft): Int =
-        (durabilityNow + durabilityMax(draft) - durabilityMax(saved)).coerceIn(0, durabilityMax(draft))
+    /**
+     * 내구도 포인트를 바꾼 뒤의 남은 내구도 — 서버 sneaker_points_set 과 같다. 0119 부터는 남은 비율을 지킨다(가득이면 가득 · 절반이면 절반 —
+     * 다 닳은 신발의 포인트를 뺐다 넣어 공짜로 채우지 못하게). 0119 전 서버는 늘어난 만큼 더하고 줄어든 만큼 뺀다.
+     */
+    fun durabilityNow(draft: PointsDraft): Int {
+        val before = durabilityMax(saved)
+        val after = durabilityMax(draft)
+        return if (rules.stats.fromServer) {
+            Math.round(durabilityNow.toDouble() * after / before.coerceAtLeast(1)).toInt().coerceIn(0, after)
+        } else {
+            (durabilityNow + after - before).coerceIn(0, after)
+        }
+    }
 
     /**
      * 가득에서 달리는 분 — 최대 내구도 ÷ (분당 닳음 × 효율 포인트 배수)(서버 0119). 효율 포인트는 줄이고 내구도 포인트는 늘린다.
