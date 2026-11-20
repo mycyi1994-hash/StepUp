@@ -13471,6 +13471,16 @@ begin
   update public.economy_settings set value = '0.5' where key = 'energy_per_level';
   perform pg_temp.ok(economy.energy_max_for_level(5) = 12 and economy.energy_max_for_level(20) = 19.5, '레벨마다 에너지는 설정으로 바꾼다 (0119)');
   update public.economy_settings set value = '0' where key = 'energy_per_level';
+  -- 운영자 페이지의 범위 끝에서도 예전 앱의 기본 확률이 0 에서 멈추지 않는다(멈추면 재료 보너스만 남아 예전 앱이 다시 싸진다)
+  update public.economy_settings set value = to_jsonb((economy.ops_setting_rule('forge_xp_need')).hi) where key = 'forge_xp_need';
+  update public.economy_settings set value = to_jsonb((economy.ops_setting_rule('forge_xp_level_growth')).hi) where key = 'forge_xp_level_growth';
+  perform pg_temp.ok(economy.forge_base_permille(29) > 0 and (economy.ops_setting_rule('worn_rate')).hi = 0.45,
+    format('손잡이를 끝까지 돌려도 예전 앱 강화의 기본 확률이 남는다(Lv29 %s‰) · 닳은 뒤 적립은 45%% 까지 (0119)', economy.forge_base_permille(29)));
+  update public.economy_settings set value = '2.88' where key = 'forge_xp_need';
+  update public.economy_settings set value = '0.30' where key = 'forge_xp_level_growth';
+  update public.economy_settings set value = '"classic"' where key = 'forge_xp_curve';
+  perform pg_temp.ok(economy.forge_need('RARE', 19) = 6054, '굽이 이름은 대소문자를 가리지 않는다 (0119)');
+  update public.economy_settings set value = '"LINEAR"' where key = 'forge_xp_curve';
   perform pg_temp.ok((economy.ops_setting_rule('worn_rate')).kind = 'num' and (economy.ops_setting_rule('eff_wear_exp')).hi = 1
                      and (economy.ops_setting_rule('energy_per_level')).hi = 5 and (economy.ops_setting_rule('forge_xp_level_growth')).label is not null
                      and (economy.ops_setting_rule('forge_xp_curve')).kind is null and (economy.ops_setting_rule('dur_repair_exp')).kind is null,
@@ -13647,6 +13657,41 @@ begin
   -- 남의 신발 · 예전 신발
   perform set_config('request.jwt.claim.sub', pg_temp.u119(5)::text, false);
   perform pg_temp.ok(public.sneaker_points_preview(v) ->> 'code' = 'NO_POINTS', '남의 신발은 미리보기를 주지 않는다 (0119)');
+end $$;
+
+-- 큰 숫자: 피니시 Lv30 · 내구도 3,774 · 효율 포인트 124(닳는 속도 × 3.2) · 5시간 47,900보 — 걸음 × 내구도 × 12 가 int 를 넘어도 기록된다
+do $$
+declare r record; v bigint; v_at timestamptz := economy.game_day_start(economy.game_day(now()) - 1) + interval '6 hours'; s public.walk_sessions;
+begin
+  v := pg_temp.mk119(9, 890);
+  update public.market_sneakers set rarity = 'FINISH', level = 30, pts_eff = 124, pts_dur = 180 where id = v;
+  update public.market_sneakers set dur_now = dur_max, pts_respec = false where id = v;
+  select * into r from public.record_session(v_at, v_at + interval '18000 seconds', 47900, 18000, pg_temp.track(v_at, 18000, 0.000025), 0, 1, '', false);
+  select * into s from public.walk_sessions where id = r.session_id;
+  perform pg_temp.ok(r.verdict <> 'VOID' and s.reward_steps > 0 and (select dur_max from public.market_sneakers where id = v) = 3774,
+    format('아주 큰 신발 · 아주 긴 러닝도 기록된다(큰 수는 numeric 으로) — 보상 걸음 %s · %s (0119)', s.reward_steps, r.verdict_reason));
+end $$;
+
+-- 다시 나누기로 내구도 포인트를 바꿔도 남은 내구도는 같은 비율 — 뺐다 넣어 공짜로 채우지 못한다
+do $$
+declare v bigint; n int; m public.market_sneakers;
+begin
+  v := pg_temp.mk119(10, 200, 0, 0, 50);                       -- 일반 Lv20 · 내구도 포인트 50 → 최대 300
+  update public.market_sneakers set dur_now = 0, pts_respec = true where id = v;
+  n := public.sneaker_points_set(v, 0, 0, 0);                  -- 다시 나누기로 모두 뺀다
+  n := public.sneaker_points_set(v, 0, 0, 50);                 -- 다시 넣는다
+  select * into m from public.market_sneakers where id = v;
+  perform pg_temp.ok(m.dur_max = 300 and m.dur_now = 0 and not m.pts_respec,
+    format('다 닳은 신발의 내구도 포인트를 뺐다 넣어도 0 그대로다(예전엔 늘어난 100 이 공짜로 찼다) — %s/%s (0119)', m.dur_now, m.dur_max));
+  update public.market_sneakers set dur_now = 150, pts_respec = true where id = v;   -- 절반 남음
+  n := public.sneaker_points_set(v, 50, 0, 0);                 -- 내구도 → 효율로 옮긴다: 최대 200 · 남은 것도 절반
+  select * into m from public.market_sneakers where id = v;
+  perform pg_temp.ok(m.dur_max = 200 and m.dur_now = 100,
+    format('내구도 포인트를 빼도 남은 비율은 그대로(절반 → 절반) — %s/%s (0119)', m.dur_now, m.dur_max));
+  v := pg_temp.mk119(11, 200);                                 -- 가득 찬 신발에 넣으면 가득
+  n := public.sneaker_points_set(v, 0, 0, 30);
+  select * into m from public.market_sneakers where id = v;
+  perform pg_temp.ok(m.dur_max = 260 and m.dur_now = 260, '가득 찬 신발에 내구도 포인트를 넣으면 가득 그대로 (0119)');
 end $$;
 
 -- 5레벨마다 다시 나누기 한 번

@@ -12,11 +12,16 @@
   포인트 화면은 `sneaker_points_preview`(내 지난 14일 러닝 → "1포인트 = 하루 약 +N SUP" · 추천 배분), 5레벨마다 다시 나누기 한 번(+ 0119 를 올릴 때 모든 신발 한 번).
 - 통은 레벨마다 Lv1 통의 30%씩 커진다(`forge_xp_level_growth` — 레어 만렙 24일 · 에픽 약 120일). 예전 앱의 확률 강화 성공률도 같은 굽이(`forge_base_permille` — 더 싸지 않게 3%p 낮춤).
 - 되돌리기: 설정 여섯을 예전 값으로 두면 0118 과 똑같이 셈한다 — `worn_rate` 0 · `eff_wear_exp` 0 · `eff_energy_exp` 0 · `dur_repair_exp` 0 · `energy_per_level` 2 · `forge_xp_curve` "CLASSIC"
-  (서버 검사의 예전 절은 모두 이 값으로 돈다 — 맨 위에서 맞추고 "경제의 뿌리(0119)" 절이 다시 켠다). 운영자 페이지 "경제"는 서른다섯 개(굽이 · 수리 세기는 SQL 창에서만).
+  (서버 검사의 예전 절은 모두 이 값으로 돈다 — 맨 위에서 맞추고 "경제의 뿌리(0119)" 절이 다시 켠다). 운영자 페이지 "경제"는 서른다섯 개(굽이 · 수리 세기는 SQL 창에서만,
+  `worn_rate` 0.45 · `forge_xp_need` 3.2 · `forge_xp_level_growth` 0.33 까지 — 그 밖은 "수리가 늘 이득" · "예전 앱 강화가 더 싸지 않다"가 깨진다).
 - 경제 숫자를 바꾸면(CI `test-sql.yml`): `python3 tools/economy_sim/check.py`(불변식 여덟 — 포인트 배분 넷 · 새 사용자 첫날 목표 · 수리하는 쪽이 늘 낫다 · 예전 앱 강화가 더 싸지 않다) ·
   `python3 tools/economy_sim/pace.py --check`(레어 24일 · 에픽 119일 ±20%) · `forge_xp_model.py --check` · `scripts/check-economy-twin.py`(앱 `StatRule.FALLBACK` = 서버).
   장면 `tools/together_sim/13-first-day-starter-shoe.sql` · `14-stat-points-value.sql`(한 곳에 다 넣기 vs 서버 추천) · 실제 사용 숫자 `tools/economy_sim/usage.sql`(SQL 창 · 읽기만).
-- 앱: `StatRule` · `ShoeRules.stats`(`domain/EconomyV4.kt` — 서버에 `stats` 묶음이 없으면 `StatRule.LEGACY` 로 예전처럼 보인다). 화면(닳은 신발 안내 · 포인트 미리보기 · 추천 · 다시 나누기)은 약속 문서대로.
+- 앱: `StatRule` · `ShoeRules.stats`(`domain/EconomyV4.kt` — 서버에 `stats` 묶음이 없으면 `StatRule.LEGACY` 로 예전 글 · 예전 셈). 신발 수명 · 닳음 · 예상 적립은
+  `RewardEconomy.shoeSessionReward` · `ShoeRules.lifeSecOf / wearOf / startLifeSec`(`domain/RewardEconomy.kt`) 하나로, 닳은 신발 글은 `walk/RunV4Lines.kt`(`shoeWorn*Text` · `shoeCheckLineText`),
+  포인트 화면은 `domain/ShoePointsPreview.kt` · `ShoePointsPreviewApi`(서버에 함수가 없으면 칸을 숨긴다) · `ShoePointsSheet.kt`(값 · 수명 · "추천대로 나누기" · "처음부터 추천대로") ·
+  `ShoeStatsV4.kt`(`lifeMinutes(shoe, 내구도, rules)` — 신발 화면의 "분"은 모두 이것). 글은 `economy_roots_run.xml` · `economy_roots_shoe.xml` · `shoe_info.xml` 의 `_v2`(4개 언어).
+- 다시 나눌 때 남은 내구도는 같은 비율로 바뀐다(`sneaker_points_set` 0119 — 뺐다 넣어 공짜로 채우지 못하게). 독립 검토에서 나온 것 · 알고 둔 것(달린 시간은 앱이 보낸 값 · 크루 러닝 · 아주 느린 걸음)은 문서 8.5.
 - **사용자 몫**: 공지에 0119 줄(기획서 8장 — 닳은 신발도 걸음은 센다 · 능력치 뜻 · 에너지 10 · 다시 나누기) · `energy_per_level` 은 실제 사용 숫자(`usage.sql`)를 보고 굳힌다(문서 8.4).
 
 ## 최신 — 강화 경험치 · 오늘의 보상 · 능력치 ⓘ 만듦 (2026-11-19, 서버 0118 · 새 판 30 · 1.21.0 · 폰 DB 판 23)

@@ -53,7 +53,8 @@ returns numeric language sql stable security definer set search_path = public, e
 $$;
 create or replace function economy.worn_rate()
 returns numeric language sql stable security definer set search_path = public, economy as $$
-  select least(greatest(economy.fx('worn_rate', 0.30), 0), 0.9)
+  -- 0.45 를 넘기면 수리하지 않는 쪽이 이득이 된다(걷기는 수리비를 내고 55% 가 남는다) — 그 위는 받지 않는다
+  select least(greatest(economy.fx('worn_rate', 0.30), 0), 0.45)
 $$;
 
 -- 하루 에너지 — 레벨과 떼었다(설정 energy_per_level, 기본 0). 에너지를 늘리는 길은 착화감이다
@@ -78,7 +79,7 @@ $$;
 -- ════════════════════════════════════════════════════════════════════
 create or replace function economy.forge_curve_classic()
 returns boolean language sql stable security definer set search_path = public, economy as $$
-  select coalesce(economy.setting('forge_xp_curve') #>> '{}', 'LINEAR') = 'CLASSIC'
+  select upper(coalesce(economy.setting('forge_xp_curve') #>> '{}', 'LINEAR')) = 'CLASSIC'
 $$;
 create or replace function economy.forge_level_factor(p_level int)
 returns numeric language sql stable security definer set search_path = public, economy as $$
@@ -93,7 +94,9 @@ returns int language sql stable security definer set search_path = public, econo
                          * economy.forge_level_factor(p_level))::int end
 $$;
 -- 예전 앱의 확률 강화도 같은 굽이 — 안 맞추면 예전 앱이 싼 뒷문이 된다. 재료 3켤레의 평균 비용(3 ÷ 성공률)이 통보다 싸지 않게:
--- 같은 등급 Lv1 재료 3켤레(보너스 90 — 일반 신발은 이것뿐)일 때 통과 같고, 한 등급 아래 재료(보너스 60)면 조금 더 든다
+-- 같은 등급 Lv1 재료 3켤레(보너스 90 — 일반 신발은 이것뿐)일 때 통과 같고, 한 등급 아래 재료(보너스 60)면 조금 더 든다.
+-- 통을 아주 크게 키우면(Lv1 통 × 레벨 몫이 33켤레값을 넘으면) 기본 확률이 0 에서 멈춰 재료 보너스만 남고 예전 앱이 다시 싸진다 —
+-- 운영자 페이지의 범위(forge_xp_need 3.2 · forge_xp_level_growth 0.33 까지)는 그 안쪽이다. SQL 창에서 더 키울 때는 이 식을 함께 본다
 create or replace function economy.forge_base_permille(p_level integer)
 returns integer language sql stable security definer set search_path = public, economy as $$
   select case when economy.forge_curve_classic() then greatest(0, 1000 - 30 * p_level)
@@ -124,6 +127,75 @@ begin
      where owner_id is not null and status <> 'BURNED' and pts_eff + pts_comfort + pts_dur > 0 and not pts_respec;
     insert into public.economy_settings (key, value) values ('stat_rebalance_20261121', to_jsonb(now()));
   end if;
+end $$;
+
+-- 포인트 나누기 — 0116 본문 그대로, 한 곳만: 내구도 포인트를 바꾸면 남은 내구도는 같은 비율로(가득이면 가득 · 절반이면 절반)
+create or replace function public.sneaker_points_set(p_id bigint, p_efficiency integer, p_comfort integer, p_durability integer,
+    p_request uuid default null)
+returns integer
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid := auth.uid();
+  v public.market_sneakers;
+  v_prev numeric;
+  v_total int;
+  v_lowered boolean;
+  v_free int;
+begin
+  if v_user is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+
+  if p_request is not null then
+    select r.result into v_prev from economy.request_receipts r
+     where r.user_id = v_user and r.request_id = p_request;
+    if found then
+      return v_prev::int;
+    end if;
+  end if;
+
+  v := economy.my_app_sneaker(v_user, p_id);
+  if v.origin in ('IMPORT', 'MINT') then
+    raise exception '예전 신발은 포인트가 없습니다' using errcode = '22023';
+  end if;
+  if p_efficiency is null or p_comfort is null or p_durability is null
+     or p_efficiency < 0 or p_comfort < 0 or p_durability < 0 then
+    raise exception '포인트가 올바르지 않습니다' using errcode = '22023';
+  end if;
+
+  v_total := economy.points_total_of(v.origin, v.rarity, v.level);
+  if p_efficiency + p_comfort + p_durability > v_total then
+    raise exception '포인트가 모자랍니다' using errcode = '23514';
+  end if;
+  v_lowered := p_efficiency < v.pts_eff or p_comfort < v.pts_comfort or p_durability < v.pts_dur;
+  if v_lowered and not v.pts_respec then
+    raise exception '나눈 포인트는 되돌릴 수 없습니다' using errcode = '23514';
+  end if;
+  if p_comfort > v.pts_comfort
+     and economy.comfort_with_points(v.comfort_bps, v.rarity, p_comfort) > economy.comfort_cap_bps() then
+    raise exception '착화감은 에너지 70%%를 아끼는 데까지 올릴 수 있습니다' using errcode = '23514';
+  end if;
+
+  update public.market_sneakers
+     set pts_eff = p_efficiency,
+         pts_comfort = p_comfort,
+         pts_dur = p_durability,
+         -- 남은 내구도는 비율을 지킨다(0119) — 예전엔 늘어난 만큼 더하고 줄어든 만큼 뺐다: 다 닳은 신발의 내구도 포인트를
+         -- 다시 나누기로 뺐다가 다시 넣으면 늘어난 만큼이 공짜로 찼고(가득 수리의 절반 가까이), 닳은 신발에서 빼면 남은 것이 0 이 됐다
+         dur_now = least(round(dur_now::numeric * economy.dur_max_of(v.dur_base, v.rarity, p_durability)
+                               / greatest(economy.dur_max_of(v.dur_base, v.rarity, v.pts_dur), 1))::int,
+                         economy.dur_max_of(v.dur_base, v.rarity, p_durability)),
+         pts_respec = pts_respec and not v_lowered,
+         updated_at = now()
+   where id = p_id;
+
+  v_free := v_total - p_efficiency - p_comfort - p_durability;
+  if p_request is not null then
+    insert into economy.request_receipts (user_id, request_id, kind, result)
+    values (v_user, p_request, 'POINTS:' || p_id, v_free);
+  end if;
+  return v_free;
 end $$;
 
 -- 포인트를 [효율 pe · 착화감 pc · 내구도 pd]로 나눴을 때 "달린 날 하루에 남는 SUP"(적립 − 수리비) — 내 러닝들을 그 신발로 다시 달려 본다.
@@ -371,7 +443,7 @@ returns record language sql immutable as $$
     ('forge_material_min_durability', 'num', 0, 100, '예전 강화(예전 앱) 재료 최소 내구도(%)'),
     ('app_current_version_code', 'num', 1, 999, '아이템 가방이 있는 앱 판(이 번호부터)'),
     ('forge_xp_step', 'num', 1.5, 6, '강화 경험치: 등급 한 칸의 값(배)'),
-    ('forge_xp_need', 'num', 1, 10, '강화 경험치: Lv1 통의 크기(일반 켤레)'),
+    ('forge_xp_need', 'num', 1, 3.2, '강화 경험치: Lv1 통의 크기(일반 켤레)'),
     ('forge_xp_spec', 'pair', 0.3, 2, '강화 경험치: 재료 스펙 [가장 낮게, 가장 높게]'),
     ('forge_xp_crit_chance', 'num', 0, 0.5, '강화 경험치: 대성공 확률'),
     ('forge_xp_crit_mult', 'num', 1, 5, '강화 경험치: 대성공 배수'),
@@ -381,11 +453,11 @@ returns record language sql immutable as $$
     ('goal_min', 'num', 1000, 20000, '하루 목표 가장 낮게(걸음)'),
     ('goal_max', 'num', 4000, 100000, '하루 목표 가장 높게(걸음)'),
     ('goal_default', 'num', 1000, 100000, '새 사용자 하루 목표(걸음)'),
-    ('worn_rate', 'num', 0, 0.9, '다 닳은 신발의 적립 비율(0 = 적립 없음 · 걸음도 안 셈)'),
+    ('worn_rate', 'num', 0, 0.45, '다 닳은 신발의 적립 비율(0 = 적립 없음 · 걸음도 안 셈, 0.45 를 넘기면 수리하지 않는 쪽이 이득)'),
     ('eff_wear_exp', 'num', 0, 1, '효율 포인트가 닳는 속도를 올리는 세기(0 = 끔, 1 = 버는 속도만큼)'),
     ('eff_energy_exp', 'num', 0, 1, '효율 포인트가 에너지 소모를 올리는 세기(0 = 끔, 1 = 버는 속도만큼)'),
     ('energy_per_level', 'num', 0, 5, '레벨마다 늘어나는 하루 에너지(가진 신발 중 최고 레벨 기준)'),
-    ('forge_xp_level_growth', 'num', 0, 2, '강화 경험치: 통이 레벨마다 커지는 몫(Lv1 통의 배)')
+    ('forge_xp_level_growth', 'num', 0, 0.33, '강화 경험치: 통이 레벨마다 커지는 몫(Lv1 통의 배)')
   ) r(key, kind, lo, hi, label) where r.key = p_key
 $$;
 
@@ -893,8 +965,9 @@ begin
     v_life_steps := v_rewardable;
     if v_rewardable > 0 and v_shoe.id is not null
        and v_shoe.dur_now * economy.durability_sec_per_point() / v_wear_mult < v_elapsed then
-      v_life_steps := floor(v_rewardable * v_shoe.dur_now * economy.durability_sec_per_point() / v_wear_mult
-                            / greatest(v_elapsed, 1)::numeric)::int;
+      -- 큰 수(걸음 × 내구도 × 12)가 int 를 넘지 않게 numeric 으로 셈한다
+      v_life_steps := floor(v_rewardable::numeric * v_shoe.dur_now * economy.durability_sec_per_point() / v_wear_mult
+                            / greatest(v_elapsed, 1))::int;
       if v_worn_rate <= 0 then
         v_rewardable := v_life_steps;
         v_reason := concat_ws(' · ', nullif(v_reason, ''), '내구도가 다 닳은 뒤의 걸음은 적립하지 않습니다');
@@ -1036,8 +1109,8 @@ begin
     when v_pool = 'CREW' then floor(v_verified * least(greatest(v_frac, 0), 1))::int
     when v_shoe.id is null then v_verified
     when coalesce(v_shoe.dur_now, 0) * economy.durability_sec_per_point() / v_wear_mult < v_elapsed
-      then floor(v_verified * coalesce(v_shoe.dur_now, 0) * economy.durability_sec_per_point() / v_wear_mult
-                 / greatest(v_elapsed, 1)::numeric)::int
+      then floor(v_verified::numeric * coalesce(v_shoe.dur_now, 0) * economy.durability_sec_per_point() / v_wear_mult
+                 / greatest(v_elapsed, 1))::int
     else v_verified end;
   if v_verdict <> 'VOID' and not v_held and not v_gps_backed and coalesce(v_verified, 0) > 0 then
     v_reason := concat_ws(' · ', nullif(v_reason, ''), '경로가 확인되지 않아 보상 걸음에 들지 않았습니다');
@@ -1181,6 +1254,8 @@ grant execute on function public.record_session(timestamptz, timestamptz, int, i
 -- ════════════════════════════════════════════════════════════════════
 --  7. 권한 — 서버 안의 셈은 앱이 부르지 못한다
 -- ════════════════════════════════════════════════════════════════════
+revoke all on function public.sneaker_points_set(bigint, integer, integer, integer, uuid) from public, anon;
+grant execute on function public.sneaker_points_set(bigint, integer, integer, integer, uuid) to authenticated;
 revoke all on function economy.eff_point_mult(public.market_sneakers) from public, anon, authenticated;
 revoke all on function economy.dur_point_mult(public.market_sneakers) from public, anon, authenticated;
 revoke all on function economy.wear_mult(public.market_sneakers) from public, anon, authenticated;
