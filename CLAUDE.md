@@ -44,7 +44,8 @@
 - 운영자 페이지: 바로 적용(아이템 없이 내구도 가득 · 에너지 되돌리기 — 예전 판에도) · 경제(현황 · 설정) · 지급 때 예전 판 인원 경고. 앱은 동기화 때 판을 알린다(`app_client_report`, 스토어 번호 = versionCode % 1000).
 - 앱: `domain/EconomyV4.kt`(규칙 · 지수 · 별 · 유형 · 상자) · `data/repo/ShoeRulesRepository.kt`(`ServiceLocator.shoeRules`) · `ui/screens/items/ShoeStatsV4.kt` ·
   상자 `ui/screens/gacha/BoxShop.kt` · `BoxSheets.kt` · 운 `domain/RunLuck.kt`(폰 DB 판 22 `rewardLuck`). 화면은 문서 "앱 화면".
-- 2026-11-18 운영 DB 에서 모든 신발 내구도를 한 번 가득 채웠다(SQL 창, 251켤레).
+- 2026-11-18 운영 DB 에서 모든 신발 내구도를 한 번 가득 채웠다(SQL 창, 251켤레). 2026-11-20 또 한 번(12켤레 · 9명, `admin_audit` 의 `durability_reset_sql` —
+  조건은 운영자 페이지 "바로 적용 › 내구도 가득"과 같다: 가진 · 앱 안 신발만).
 
 ## 최신 — 새 판 1.19.0(27) · 매물 거두기 · 업데이트 보상 · 초대 코드 하루 1 · 운영자 보안 (2026-11-18, 서버 0112 · 0113 · 0114)
 
