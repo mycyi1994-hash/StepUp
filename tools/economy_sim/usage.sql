@@ -21,7 +21,7 @@ select * from (values
   (2, '한 번에 달린 분 (25 · 50 · 75 · 90%)', (select string_agg(coalesce(run_min::text, '-'), ' · ' order by p) from q)),
   (3, '하루에 달린 분 (25 · 50 · 75 · 90%)', (select string_agg(coalesce(day_min::text, '-'), ' · ' order by p) from q)),
   (4, '하루에 두 번 넘게 달린 날 %', (select round(100.0 * count(*) filter (where n >= 2) / greatest(count(*), 1))::text from days)),
-  (5, '신발이 먼저 닳은 러닝 %', (select round(100.0 * count(*) filter (where why like '%내구도가 다 닳%') / greatest(count(*), 1))::text from runs)),
+  (5, '신발이 먼저 닳은 러닝 %', (select round(100.0 * count(*) filter (where why like '%내구도가 다 닳%' or why like '%신발이 다 닳은 뒤%') / greatest(count(*), 1))::text from runs)),
   (6, '에너지가 끝난 러닝 %', (select round(100.0 * count(*) filter (where why like '%에너지를 다 썼습니다%') / greatest(count(*), 1))::text from runs)),
   (7, '가장 높은 신발 레벨별 사람 수 (1 · 2~4 · 5~9 · 10~19 · 20 넘게)', (select concat_ws(' · ', count(*) filter (where lv = 1), count(*) filter (where lv between 2 and 4),
         count(*) filter (where lv between 5 and 9), count(*) filter (where lv between 10 and 19), count(*) filter (where lv >= 20)) from top)),

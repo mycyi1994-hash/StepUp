@@ -10,6 +10,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /**
@@ -104,6 +105,71 @@ data class GoalRule(
     }
 }
 
+/**
+ * 능력치 규칙(서버 0119 `shoe_rules_v4().stats` — docs/economy-roots-2026-11-21.md). 효율 = 버는 속도(그만큼 신발 · 에너지를 빨리 쓴다) ·
+ * 내구도 = 한 켤레로 버는 양(가득 수리비는 늘지 않는다) · 착화감 = 하루에 버는 양. 미리 보일 때만 쓰고 정산은 늘 서버다.
+ * 묶음이 없는 서버(0119 전)는 [LEGACY] — 닳은 뒤 적립 없음 · 효율이 수명 / 에너지를 건드리지 않음 · 레벨마다 에너지 +2.
+ */
+data class StatRule(
+    /** 신발이 다 닳은 뒤 걸음의 적립 비율(0.30). 0 이면 예전처럼 적립 없음 */
+    val wornRate: Double,
+    /** 효율 포인트 배수가 닳는 속도를 올리는 세기(0 ~ 1) — 분당 닳음 = [wearPerMinute] × 배수^세기 */
+    val effWearExp: Double,
+    /** 효율 포인트 배수가 걸음당 에너지를 올리는 세기(0 ~ 1) */
+    val effEnergyExp: Double,
+    /** 내구도 포인트가 가득 수리비를 올리지 않는 세기(1 = 가득 수리비는 뽑은 내구도가 정한다) */
+    val durRepairExp: Double,
+    /** 포인트 없는 신발이 1분에 닳는 양(5) */
+    val wearPerMinute: Int,
+    /** 하루 에너지 = [energyBase] + (가진 신발 중 최고 레벨 − 1) × [energyPerLevel] */
+    val energyBase: Double,
+    val energyPerLevel: Double,
+    /** 에너지 1 로 적립하는 걸음(600 — 착화감 · 효율 포인트 전) */
+    val stepsPerEnergy: Int,
+    /** 이 레벨마다 포인트를 한 번 다시 나눌 수 있다(5, 0 이면 없음) */
+    val respecEvery: Int,
+    val fromServer: Boolean = false,
+) {
+    /** 다 닳은 신발로도 적립하고 걸음을 세는가 */
+    val earnsWhenWorn: Boolean get() = wornRate > 0
+
+    /** 포인트 배수 — 1 + 등급의 포인트당 비율 × 포인트(효율 · 내구도 같은 식) */
+    fun pointMult(pointRateBps: Int, points: Int): Double = 1 + pointRateBps * points.coerceAtLeast(0) / 10000.0
+
+    /** 효율 포인트를 넣은 신발이 닳는 속도의 배수(서버 `economy.wear_mult`) */
+    fun wearMult(pointRateBps: Int, effPoints: Int): Double = pointMult(pointRateBps, effPoints).pow(effWearExp.coerceIn(0.0, 1.0))
+
+    /** 효율 포인트를 넣은 신발이 에너지를 쓰는 속도의 배수(서버 `economy.energy_mult`) */
+    fun energyMult(pointRateBps: Int, effPoints: Int): Double = pointMult(pointRateBps, effPoints).pow(effEnergyExp.coerceIn(0.0, 1.0))
+
+    /** 내구도 [durability] 로 달릴 수 있는 초 — 서버 정산과 같은 식(내구도 × 12초 ÷ 닳는 배수) */
+    fun lifeSeconds(durability: Int, pointRateBps: Int, effPoints: Int): Double =
+        durability.coerceAtLeast(0) * 60.0 / wearPerMinute.coerceAtLeast(1) / wearMult(pointRateBps, effPoints)
+
+    fun lifeMinutes(durability: Int, pointRateBps: Int, effPoints: Int): Double = lifeSeconds(durability, pointRateBps, effPoints) / 60.0
+
+    /** 달린 [seconds] 초 동안 닳는 내구도(운 전 · 버림) — 서버 `durability_wear_time` × 닳는 배수 */
+    fun wearFor(seconds: Long, pointRateBps: Int, effPoints: Int): Int =
+        (wearPerMinute * (seconds.coerceAtLeast(0) / 60) * wearMult(pointRateBps, effPoints)).roundToInt()
+
+    /** 하루 에너지 최대치 — 서버 `economy.energy_max_for_level` */
+    fun energyMax(topLevel: Int): Double = energyBase + (topLevel.coerceAtLeast(1) - 1) * energyPerLevel.coerceAtLeast(0.0)
+
+    companion object {
+        /** 서버 0119 의 기본값 */
+        val FALLBACK = StatRule(
+            wornRate = 0.30, effWearExp = 1.0, effEnergyExp = 1.0, durRepairExp = 1.0,
+            wearPerMinute = 5, energyBase = 10.0, energyPerLevel = 0.0, stepsPerEnergy = 600, respecEvery = 5,
+        )
+
+        /** 0119 전 서버의 규칙 — `stats` 묶음이 없을 때 */
+        val LEGACY = StatRule(
+            wornRate = 0.0, effWearExp = 0.0, effEnergyExp = 0.0, durRepairExp = 0.0,
+            wearPerMinute = 5, energyBase = 10.0, energyPerLevel = 2.0, stepsPerEnergy = 600, respecEvery = 0,
+        )
+    }
+}
+
 data class ShoeRules(
     val pointsPerStep: Double,
     val repairShare: Double,
@@ -122,6 +188,8 @@ data class ShoeRules(
     val forge: ForgeXpRule = ForgeXpRule.FALLBACK,
     /** 하루 러닝 목표의 범위(서버 0118). 서버에 0118 이 없으면 [GoalRule.FALLBACK](fromServer = false) */
     val goal: GoalRule = GoalRule.FALLBACK,
+    /** 능력치 규칙(서버 0119). 서버에 0119 가 없으면 [StatRule.LEGACY] */
+    val stats: StatRule = StatRule.FALLBACK,
     /** 서버에서 받은 값인가(아니면 [FALLBACK]) */
     val fromServer: Boolean = false,
 ) {
@@ -157,6 +225,20 @@ data class ShoeRules(
     /** 내구도 1(12초)을 고치는 값 — 그 신발로 걸을 때(분당 110걸음) 버는 돈 × [repairShare] ÷ 5 */
     fun repairUnit(efficiencyBps: Int): Double = repairShare * 110 * pointsPerStep / 5 * (10000 + efficiencyBps) / 10000.0
 
+    /**
+     * 포인트를 넣은 신발의 내구도 1점 수리비 — 서버 `economy.repair_unit_of`(0119). [efficiencyBps] 는 포인트까지 든 효율.
+     * 효율 포인트는 닳는 속도만큼, 내구도 포인트는 늘어난 내구도만큼 1점 값을 낮춘다 — 가득 수리비는 포인트와 상관없다.
+     */
+    fun repairUnit(efficiencyBps: Int, rarity: String?, effPoints: Int, durPoints: Int): Double {
+        val rate = grade(rarity).pointRateBps
+        return repairUnit(efficiencyBps) / stats.wearMult(rate, effPoints) /
+            stats.pointMult(rate, durPoints).pow(stats.durRepairExp.coerceIn(0.0, 1.0))
+    }
+
+    /** 그 신발이 가득에서 달릴 수 있는 분 — 최대 내구도 ÷ (분당 닳음 × 효율 포인트 배수) */
+    fun lifeMinutes(durability: Int, rarity: String?, effPoints: Int): Double =
+        stats.lifeMinutes(durability, grade(rarity).pointRateBps, effPoints)
+
     companion object {
         /** 서버 0116 · 0118 과 같은 값 — 서버를 아직 못 읽었을 때 */
         val FALLBACK = ShoeRules(
@@ -181,6 +263,7 @@ data class ShoeRules(
             ),
             forge = ForgeXpRule.FALLBACK,
             goal = GoalRule.FALLBACK,
+            stats = StatRule.FALLBACK,
         )
 
         fun parse(body: String): ShoeRules? = runCatching {
@@ -214,6 +297,8 @@ data class ShoeRules(
                 grades = grades,
                 forge = (o["forge"] as? JsonObject)?.let(::parseForge) ?: FALLBACK.forge,
                 goal = (o["goal"] as? JsonObject)?.let(::parseGoal) ?: FALLBACK.goal,
+                // 묶음이 없으면 0119 전 서버다 — 예전 규칙으로 보인다(닳은 뒤 적립 없음 · 레벨마다 에너지 +2)
+                stats = (o["stats"] as? JsonObject)?.let(::parseStats) ?: StatRule.LEGACY,
                 fromServer = true,
             )
         }.getOrNull()
@@ -232,6 +317,23 @@ data class ShoeRules(
                 inherit = f.dbl("inherit") ?: d.inherit,
                 supPerUnit = f.dbl("sup_per_unit") ?: d.supPerUnit,
                 maxMaterials = f.int("max_materials") ?: d.maxMaterials,
+                fromServer = true,
+            )
+        }
+
+        /** `stats` 묶음(0119) — 빠진 칸은 기본값 */
+        private fun parseStats(t: JsonObject): StatRule {
+            val d = StatRule.FALLBACK
+            return StatRule(
+                wornRate = (t.dbl("worn_rate") ?: d.wornRate).coerceIn(0.0, 0.9),
+                effWearExp = (t.dbl("eff_wear_exp") ?: d.effWearExp).coerceIn(0.0, 1.0),
+                effEnergyExp = (t.dbl("eff_energy_exp") ?: d.effEnergyExp).coerceIn(0.0, 1.0),
+                durRepairExp = (t.dbl("dur_repair_exp") ?: d.durRepairExp).coerceIn(0.0, 1.0),
+                wearPerMinute = (t.int("wear_per_minute") ?: d.wearPerMinute).coerceAtLeast(1),
+                energyBase = t.dbl("energy_base") ?: d.energyBase,
+                energyPerLevel = (t.dbl("energy_per_level") ?: d.energyPerLevel).coerceAtLeast(0.0),
+                stepsPerEnergy = (t.int("steps_per_energy") ?: d.stepsPerEnergy).coerceAtLeast(1),
+                respecEvery = (t.int("respec_every") ?: d.respecEvery).coerceAtLeast(0),
                 fromServer = true,
             )
         }

@@ -2,6 +2,7 @@
 --   NEED|등급|레벨|통의 크기                   → forge_xp_model.py --check 가 모형과 맞대어 본다
 --   VAL|등급|상태|제 값|물려줌|닳은 몫|스펙 q   → 같음(가득 · 절반 · 다 닳음 · Lv5)
 --   REPAIR|등급|닳은 채 제 값|가득 제 값|수리비 SUP → check.py "수리하고 넣기 = 그냥 넣기"
+--   OLDNEW|등급|레벨|재료(SAME · BELOW)|예전 확률 강화의 평균 비용|통 → check.py "예전 앱의 강화가 더 싸지 않다"(0119)
 \set ON_ERROR_STOP on
 update public.economy_settings set value = '0'::jsonb where key = 'free_repair_hours';
 insert into auth.users (id, email) values ('f0f0f0f0-0000-0000-0000-000000000118', 'forge@sim.test') on conflict do nothing;
@@ -15,6 +16,17 @@ select 'NEED|' || g || '|' || l || '|' || economy.forge_need(g, l)
   from unnest(array['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH']) g, generate_series(1, 29) l
  where l < economy.max_level(g)
  order by array_position(array['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'], g), l;
+
+-- 예전 앱의 확률 강화(재료 3켤레 · Lv1)의 평균 비용(점수) 과 통 — 한 등급 아래 재료(BELOW) · 같은 등급 재료(SAME)
+select 'OLDNEW|' || g || '|' || l || '|' || k.kind || '|'
+       || round(3 * 1000 * power(economy.fx('forge_xp_step', 3.1), economy.rarity_ord(k.mat))
+                / (least(1000, economy.forge_base_permille(l) + 3 * economy.forge_bonus_permille(g, k.mat, 1)) / 1000.0))
+       || '|' || economy.forge_need(g, l)
+  from unnest(array['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH']) g, generate_series(1, 29) l,
+       lateral (values ('SAME', g), ('BELOW', (array['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'])[greatest(economy.rarity_ord(g), 1)])) k(kind, mat)
+ where l < economy.max_level(g) and (k.kind = 'SAME' or g <> 'COMMON')
+   and economy.forge_base_permille(l) + 3 * economy.forge_bonus_permille(g, k.mat, 1) > 0
+ order by array_position(array['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'], g), l, k.kind;
 
 create temp table sim_shoes (g text, state text, id bigint);
 do $$

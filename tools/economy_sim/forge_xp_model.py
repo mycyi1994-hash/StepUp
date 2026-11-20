@@ -5,7 +5,7 @@
 SUP 로 산 상자의 경험치 값 · 레벨 하나의 값어치(효율 포인트 · 에너지)와 본전 뽑는 날.
 
     python3 tools/economy_sim/forge_xp_model.py
-    python3 tools/economy_sim/forge_xp_model.py --check   # 통 크기 · 재료 값이 서버 함수(0118)와 같은가 — CI(test-sql.yml)
+    python3 tools/economy_sim/forge_xp_model.py --check   # 통 크기 · 재료 값이 서버 함수(0118 · 0119)와 같은가 — CI(test-sql.yml)
 """
 import os
 import subprocess
@@ -24,9 +24,13 @@ NEED1 = 2.88                                           # Lv1 → 2 에 필요한
 N1 = {g: NEED1 * V[G[max(i - 1, 0)]] for i, g in enumerate(G)}
 
 
+GROWTH = 0.30                                          # 통은 레벨마다 Lv1 통의 30%씩 커진다(0119 — forge_xp_level_growth)
+
+
 def need_pct(level):
-    """그 레벨에서 다음 레벨까지 — Lv1 을 100 으로. 지금 확률 방식의 평균 비용(3 ÷ 성공 확률)과 같은 굽이"""
-    return 100 * 1.03 / (1.06 - 0.03 * level)
+    """그 레벨에서 다음 레벨까지 — Lv1 을 100 으로. 0119: 레벨마다 +30%(예전 확률 강화가 실제로 걸리던 날 수에 맞춘 굽이).
+    0118 의 굽이는 100 × 1.03 ÷ (1.06 − 0.03 × 레벨) — 레어 만렙이 24일 → 9일로 빨라져 바꿨다(docs/economy-roots-2026-11-21.md)"""
+    return 100 * (1 + GROWTH * (level - 1))
 
 
 def units(grade, frm, to):
@@ -131,7 +135,7 @@ print('\n── 레벨 하나의 값어치 — 하루 8,000보 러너 · 포인�
 for g in G[:4]:
     for L in (1, 5, 10, 19):
         def gross(level, steps=8000):
-            energy = 10 + 2 * (level - 1)
+            energy = 10                                # 0119: 하루 에너지는 레벨과 상관없다
             s = min(steps, energy * 600)
             pts = PPL[g] * (level - 1)
             return s * PPS * (1 + EFF_MID[g] / 10000) * (1 + RATE[g] * pts)

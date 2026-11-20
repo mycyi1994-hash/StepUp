@@ -1,11 +1,13 @@
-"""레벨이 오르는 속도 — 날마다 꾸준히 하는 무과금 사용자를 모의로 돌린다(서버를 부르지 않는다, 값은 0118 그대로).
+"""레벨이 오르는 속도 — 날마다 꾸준히 하는 무과금 사용자를 모의로 돌린다.
 
 하루 보통 상자 3(출석 1 + 러닝 2) · 주마다 상급 2(주간 걸음 + 7일 연속) · 5레벨마다 상급 1, 받은 신발은 모두 주력 신발에 넣는다.
-  1) 예전 확률 강화(3켤레 · 성공률)와 새 경험치 강화를 같은 상자 운으로 견준다
+  1) 예전 확률 강화(3켤레 · 성공률)와 경험치 강화를 같은 상자 운으로 견준다
   2) 통이 레벨마다 커지는 굽이 후보("레벨마다 +N%")로 등급별 만렙까지 걸리는 날
-2026-11-21 점검(docs/economy-roots-2026-11-21.md 뿌리 2): 레어 만렙 예전 24일 → 0118 9일. "레벨마다 +30%"면 25일 · 에픽 121일.
+2026-11-21(docs/economy-roots-2026-11-21.md 뿌리 2): 0118 의 굽이로는 레어 만렙이 예전 24일 → 9일. 0119 는 "레벨마다 +30%"(레어 24일 · 에픽 119일).
 
-    python3 tools/economy_sim/pace.py
+    python3 tools/economy_sim/pace.py            # 표(서버를 부르지 않는다 — 0119 굽이)
+    python3 tools/economy_sim/pace.py --check    # 서버 규칙의 통(setup.sql — run.sh ONLY=forge)으로 레어 · 에픽 만렙까지 걸리는 날이
+                                                 # 목표(레어 24일 · 에픽 119일)의 ±20% 안인가 — CI(test-sql.yml). 벗어나면 1
 """
 import random, statistics, sys
 G = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH']
@@ -14,9 +16,16 @@ NORMAL = [(0, .79), (1, .20), (2, .01)]
 PREMIUM = [(1, .60), (2, .28), (3, .09), (4, .025), (5, .005)]
 STEP, NEED = 3.1, 2.88
 
-def need(g, lv):
+GROWTH = 0.30
+
+def need_0118(g, lv):
     if lv >= MAXLV[g]: return None
     return round(1000 * NEED * STEP ** max(g - 1, 0) * 1.03 / (1.06 - 0.03 * lv))
+
+def need(g, lv):
+    """0119 — 통은 레벨마다 Lv1 통의 30%씩 커진다(서버 economy.forge_need, LINEAR)"""
+    if lv >= MAXLV[g]: return None
+    return round(1000 * NEED * STEP ** max(g - 1, 0) * (1 + GROWTH * (lv - 1)))
 
 def draw(pool, rng):
     x = rng.random(); a = 0
@@ -91,21 +100,8 @@ def summarize(label, runs, marks=(7, 14, 30, 60, 90)):
     line = []
     for d in marks:
         lv = sorted(h[d - 1][2] for h in runs); gr = sorted(h[d - 1][1] for h in runs)
-        line.append(f'{d}일: Lv{lv[len(lv)//2]}({["일반","레어","에픽","레전","레드","피니"][gr[len(gr)//2]]}) 에너지 {10 + 2 * (lv[len(lv)//2] - 1)}')
+        line.append(f'{d}일: Lv{lv[len(lv)//2]}({["일반","레어","에픽","레전","레드","피니"][gr[len(gr)//2]]})')
     print(f'{label:34s} ' + ' | '.join(line))
-
-N = 1500
-rng = random.Random(118)
-summarize('예전 확률 강화 · 레어 주력', [run_old(rng, 90) for _ in range(N)])
-summarize('새 경험치 · 레어 주력 고정', [run_new(rng, 90, False) for _ in range(N)])
-summarize('새 경험치 · 높은 등급으로 갈아탐', [run_new(rng, 90, True) for _ in range(N)])
-summarize('새 경험치 · 갈아탐 + 상자 다 삼', [run_new(rng, 90, True, 3, 2) for _ in range(N)])
-def days_to(runs, lv):
-    ds = sorted(next((d for d, g, l in h if l >= lv), 999) for h in runs)
-    return ds[len(ds)//2]
-old = [run_old(rng, 200) for _ in range(N)]; new = [run_new(rng, 200, False) for _ in range(N)]
-print('레어 주력이 Lv10 / Lv20(만렙)에 닿는 날(가운데 값) — 예전:', days_to(old, 10), '/', days_to(old, 20), '· 새:', days_to(new, 10), '/', days_to(new, 20))
-
 
 # ── 2) 통이 레벨마다 커지는 굽이 — 주력 등급을 고정했을 때 만렙까지(가운데 값) ──
 def run_fixed(rng, days, grade):
@@ -129,14 +125,64 @@ def run_fixed(rng, days, grade):
 def linear(k):
     return lambda g, lv: None if lv >= MAXLV[g] else round(1000 * NEED * STEP ** max(g - 1, 0) * (1 + k * (lv - 1)))
 
-_now = need
-print()
-for label, fn in [('지금(0118)', _now)] + [(f'레벨마다 +{int(k * 100)}%', linear(k)) for k in (0.25, 0.30, 0.35)]:
-    need = fn
-    rng = random.Random(21); out = []
-    for g, nm, horizon, n in ((1, '레어', 400, 400), (2, '에픽', 1500, 200), (3, '레전더리', 6000, 80)):
-        runs = [run_fixed(rng, horizon, g) for _ in range(n)]
-        ds = sorted(len(h) for h in runs); d7 = sorted(h[min(6, len(h) - 1)] for h in runs)
-        out.append(f'{nm} 만렙 {ds[len(ds) // 2]}일(7일째 Lv{d7[len(d7) // 2]})')
-    print(f'{label:12s} 레어 통(켤레값) Lv1 · 10 · 19 = {need(1, 1) / 1000:.1f} · {need(1, 10) / 1000:.1f} · {need(1, 19) / 1000:.1f} | ' + ' | '.join(out))
-need = _now
+
+TARGET = {1: ('레어', 24, 400, 400), 2: ('에픽', 119, 1500, 200)}     # 등급: 이름 · 목표 날 · 모의 기간 · 사람 수
+
+def median_days(grade, horizon, n, seed=21):
+    rng = random.Random(seed)
+    ds = sorted(len(run_fixed(rng, horizon, grade)) for _ in range(n))
+    return ds[len(ds) // 2]
+
+def check():
+    """서버가 주는 통(NEED 줄)으로 만렙까지 걸리는 날을 잰다 — 목표의 ±20% 를 벗어나면 1"""
+    global need
+    import os, subprocess
+    here = os.path.dirname(os.path.abspath(__file__))
+    out = subprocess.run(['bash', os.path.join(here, 'run.sh')], capture_output=True, text=True, env=dict(os.environ, ONLY='forge'))
+    if out.returncode != 0:
+        print(out.stdout[-3000:], out.stderr[-3000:]); sys.exit('강화 표를 뽑지 못했다')
+    table = {}
+    for line in out.stdout.splitlines():
+        q = line.strip().split('|')
+        if q[0] == 'NEED' and len(q) == 4: table[(G.index(q[1]), int(q[2]))] = int(q[3])
+    if len(table) < 100: sys.exit(f'통의 크기를 읽지 못했다({len(table)}줄)')
+    need = lambda g, lv: table.get((g, lv))
+    bad = []
+    for g, (name, want, horizon, n) in TARGET.items():
+        got = median_days(g, horizon, n)
+        ok = want * 0.8 <= got <= want * 1.2
+        print(f'{name} 만렙까지(꾸준한 무과금 · 가운데 값) {got}일 — 목표 {want}일 ±20% {"안" if ok else "밖"}')
+        if not ok: bad.append(name)
+    if bad: sys.exit('레벨이 오르는 속도가 목표를 벗어났다: ' + ' · '.join(bad) + ' — 통의 굽이(forge_xp_need · forge_xp_step · forge_xp_level_growth)나 상자 수급을 바꿨다면 docs/economy-roots-2026-11-21.md 의 목표와 함께 본다')
+    print('레벨 속도 — 목표 안')
+
+def main():
+    global need
+    N = 1500
+    rng = random.Random(118)
+    summarize('예전 확률 강화 · 레어 주력', [run_old(rng, 90) for _ in range(N)])
+    summarize('경험치(0119) · 레어 주력 고정', [run_new(rng, 90, False) for _ in range(N)])
+    summarize('경험치(0119) · 높은 등급으로 갈아탐', [run_new(rng, 90, True) for _ in range(N)])
+    summarize('경험치(0119) · 갈아탐 + 상자 다 삼', [run_new(rng, 90, True, 3, 2) for _ in range(N)])
+    def days_to(runs, lv):
+        ds = sorted(next((d for d, g, l in h if l >= lv), 999) for h in runs)
+        return ds[len(ds)//2]
+    old = [run_old(rng, 200) for _ in range(N)]; new = [run_new(rng, 200, False) for _ in range(N)]
+    print('레어 주력이 Lv10 / Lv20(만렙)에 닿는 날(가운데 값) — 예전:', days_to(old, 10), '/', days_to(old, 20), '· 새:', days_to(new, 10), '/', days_to(new, 20))
+
+
+    _now = need
+    print()
+    for label, fn in [('0118 의 굽이', need_0118)] + [(f'레벨마다 +{int(k * 100)}%', linear(k)) for k in (0.25, 0.30, 0.35)]:
+        need = fn
+        rng = random.Random(21); out = []
+        for g, nm, horizon, n in ((1, '레어', 400, 400), (2, '에픽', 1500, 200), (3, '레전더리', 6000, 80)):
+            runs = [run_fixed(rng, horizon, g) for _ in range(n)]
+            ds = sorted(len(h) for h in runs); d7 = sorted(h[min(6, len(h) - 1)] for h in runs)
+            out.append(f'{nm} 만렙 {ds[len(ds) // 2]}일(7일째 Lv{d7[len(d7) // 2]})')
+        print(f'{label:12s} 레어 통(켤레값) Lv1 · 10 · 19 = {need(1, 1) / 1000:.1f} · {need(1, 10) / 1000:.1f} · {need(1, 19) / 1000:.1f} | ' + ' | '.join(out))
+    need = _now
+
+if __name__ == '__main__':
+    if '--check' in sys.argv[1:]: check()
+    else: main()

@@ -1,6 +1,6 @@
 -- 확인: 새 사용자의 첫날 — 첫 신발(내구도 31분)로 기본 목표(6,000보)를 한 번에 채울 수 있는가
--- 2026-11-21: 달리기 37분 · 걷기 55분 모두 못 채운다(신발이 먼저 닳아 그 뒤 걸음이 보상 걸음에서 빠진다). 중간에 수리하면 채운다.
--- docs/economy-roots-2026-11-21.md 뿌리 1.
+-- 2026-11-21(0118 까지): 달리기 37분 · 걷기 55분 모두 못 채웠다(신발이 먼저 닳아 그 뒤 걸음이 보상 걸음에서 빠졌다). docs/economy-roots-2026-11-21.md 뿌리 1.
+-- 0119 부터: 닳은 뒤 걸음도 다 세고 적립은 30% — 둘 다 목표를 채운다(같은 장면이 tools/economy_sim/check.py 불변식 6 으로 CI 에 있다).
 update public.economy_settings set value = '[1,1,1]' where key in ('reward_luck', 'wear_luck');
 -- 새 사용자: 첫 신발 그대로
 insert into auth.users (id, email) values (t.u(71), 'new71@test.invalid'), (t.u(72), 'new72@test.invalid'), (t.u(73), 'new73@test.invalid');
