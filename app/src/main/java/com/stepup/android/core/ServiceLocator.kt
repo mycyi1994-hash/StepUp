@@ -505,6 +505,8 @@ object ServiceLocator {
             economy = economyApi.takeIf { serverEconomy },
             sync = economySync.takeIf { serverEconomy },
             prefs = userPrefs,
+            // 포인트 미리보기(0119) — 서버에 없으면 포인트 시트가 그 칸만 숨긴다
+            pointsPreviewApi = com.stepup.android.data.remote.ShoePointsPreviewApi(server).takeIf { serverEconomy },
         )
         forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi.takeIf { serverEconomy },

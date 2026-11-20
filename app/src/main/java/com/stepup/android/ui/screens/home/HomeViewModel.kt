@@ -12,6 +12,8 @@ import com.stepup.android.data.repo.NotificationRepository
 import com.stepup.android.data.repo.RewardRepository
 import com.stepup.android.data.repo.SneakerRepository
 import com.stepup.android.data.repo.StepRepository
+import com.stepup.android.domain.earningMultiplierWith
+import com.stepup.android.domain.energyMultOf
 import com.stepup.android.domain.AvatarLook
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunnerLevels
@@ -241,14 +243,20 @@ class HomeViewModel(
          * 신발의 에너지 절감이 붙으면 같은 칸으로 더 걸을 수 있다.
          */
         val earnableSteps: Int
-            get() = RewardEconomy.earnableSteps(energy, equipped?.energyEfficiency ?: 1.0)
+            get() = RewardEconomy.earnableSteps(
+                energy, equipped?.energyEfficiency ?: 1.0,
+                // 효율 포인트를 넣은 신발은 그 배수만큼 에너지를 더 쓴다(서버 0119)
+                equipped?.let { com.stepup.android.data.repo.shoeRulesNow().energyMultOf(it) } ?: 1.0,
+            )
 
         /**
          * 그 걸음을 다 걸었을 때 받는 SUP 의 예상 — 서버 규칙의 걸음당 SUP × 신은 신발의 효율 지수 ÷ 100(경제 4판). 부스터 · 인원 ·
          * 운은 넣지 않는다(실제 적립은 러닝을 마친 뒤 서버가 정한다)
          */
         val earnableSup: Double
-            get() = earnableSteps * com.stepup.android.data.repo.shoeRulesNow().pointsPerStep * (equipped?.earningMultiplier ?: 1.0)
+            get() = com.stepup.android.data.repo.shoeRulesNow().let { rules ->
+                earnableSteps * rules.pointsPerStep * (equipped?.earningMultiplierWith(rules.stats) ?: 1.0)
+            }
         val goalPercent: Int
             get() = if (goal > 0) (todaySteps * 100 / goal) else 0
 
@@ -295,7 +303,7 @@ class HomeViewModel(
             todaySteps = steps,
             goal = goal,
             energy = energy,
-            maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: wallet.sneakerLevel),
+            maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: wallet.sneakerLevel, com.stepup.android.data.repo.shoeRulesNow().stats),
             balance = wallet.balance,
             streak = wallet.streak,
             sneakerLevel = wallet.sneakerLevel,

@@ -350,7 +350,7 @@ private fun MyShoesReady(
         // 다 찬 신발이면 흐리게, 곧 닳으면(출발 전 점검과 같은 기준) 파란 글자 · 테두리로 앞세운다. 주 버튼은 상세 보기 하나 그대로
         BottomActionBar {
             val canRepair = repairable(shown) && !forgePending.holds(shown.id)
-            val urgent = canRepair && repairUrgent(shown)
+            val urgent = canRepair && repairUrgent(shown, com.stepup.android.ui.screens.items.rememberShoeRules())
             val accent = StepUpUi.colors.accentText
             SecondaryButton(
                 stringResource(R.string.care_repair),
@@ -455,7 +455,7 @@ private fun NameBlock(shoe: Sneaker, onRename: () -> Unit) {
             val quality = com.stepup.android.ui.screens.items.shoeQualityOf(shoe, rules)
             val time = if (shoe.server?.hasDurabilityMax == true) {
                 stringResource(R.string.v4s_full_minutes,
-                    com.stepup.android.ui.screens.items.wholeMinutes(com.stepup.android.ui.screens.items.durabilityMax(shoe)))
+                    com.stepup.android.ui.screens.items.wholeMinutes(shoe, com.stepup.android.ui.screens.items.durabilityMax(shoe), rules))
             } else {
                 stringResource(R.string.shoes_durability_left, formatDurability(shoe))
             }
@@ -483,11 +483,13 @@ private fun StatsBlock(shoe: Sneaker, onExplain: () -> Unit) {
     val explain = stringResource(R.string.my_shoes_basis_open)
     // 경제 4판(0116) — 내구도는 남은 분, 효율 · 착화감은 지수(100 = 기준, 2배면 2배). 최대 내구도를 모르는 예전 신발은 남은 비율
     val minutes = shoe.server?.hasDurabilityMax == true
+    // 분 = 내구도 ÷ (5 × 효율 포인트 배수) — 효율에 포인트를 넣은 신발은 그만큼 빨리 닳는다(서버 0119)
+    val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
     StatRow(
         listOf(
             if (minutes) {
                 StatItem(stringResource(R.string.sdv_stat_durability),
-                    "${com.stepup.android.ui.screens.items.wholeMinutes(com.stepup.android.ui.screens.items.durabilityLeft(shoe))}",
+                    "${com.stepup.android.ui.screens.items.wholeMinutes(shoe, com.stepup.android.ui.screens.items.durabilityLeft(shoe), rules)}",
                     stringResource(R.string.v4s_unit_min), tag = "shoe-bar-durability-value")
             } else {
                 StatItem(stringResource(R.string.sdv_stat_durability), "${com.stepup.android.ui.screens.items.durabilityPercent(shoe)}", "%",
@@ -637,15 +639,17 @@ private fun MyShoesLoading(modifier: Modifier) {
 private fun StatBasisSheet(onClose: () -> Unit) {
     val p = shoeInk()
     val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
+    val newMeaning = com.stepup.android.ui.screens.items.newStatMeaning(rules)
     SettingsSheet(
         title = stringResource(R.string.my_shoes_basis_open), onDismiss = onClose,
         modifier = Modifier.testTag("shoe-basis-sheet"),
     ) {
         listOf(
             stringResource(R.string.v4s_basis_intro),
-            stringResource(R.string.v4s_basis_efficiency),
+            // 서버 0119 의 능력치 뜻(효율 포인트는 신발 · 에너지도 빨리 쓴다 · 내구도 포인트는 가득 수리비를 올리지 않는다) — 예전 서버면 예전 글
+            stringResource(if (newMeaning) R.string.ers_basis_efficiency else R.string.v4s_basis_efficiency),
             stringResource(R.string.v4s_basis_comfort, com.stepup.android.ui.screens.items.comfortCapPercent(rules)),
-            stringResource(R.string.v4s_basis_durability),
+            stringResource(if (newMeaning) R.string.ers_basis_durability else R.string.v4s_basis_durability),
             stringResource(R.string.v4s_basis_quality),
         ).forEach { line ->
             Text(line, color = p.text, fontSize = 15.sp, lineHeight = 1.45.em)

@@ -39,6 +39,8 @@ class SneakerRepository(
     private val economy: com.stepup.android.data.remote.EconomyApi? = null,
     private val sync: EconomySync? = null,
     private val prefs: com.stepup.android.data.prefs.UserPrefs? = null,
+    /** 포인트 미리보기(서버 0119) — 없으면(서버 경제가 아님) 미리보기도 없다 */
+    private val pointsPreviewApi: com.stepup.android.data.remote.ShoePointsPreviewApi? = null,
 ) {
     private val sneakerDao = database.sneakerDao()
 
@@ -171,6 +173,29 @@ class SneakerRepository(
             },
             afterRejection = true,
         )
+    }
+
+    /** 서버에 포인트 미리보기 함수가 없다(0119 전) — 앱이 켜져 있는 동안 다시 묻지 않는다 */
+    @Volatile private var pointsPreviewMissing = false
+
+    /**
+     * 포인트 미리보기(서버 0119 `sneaker_points_preview` — 읽기만): 내 지난 14일 러닝으로 능력치마다 "1포인트 = 하루 약 +N SUP"와
+     * 추천 배분. 보일 것이 없으면 null — 서버에 함수가 없음(0119 전) · 내 신발이 아님 · 예전 신발 · 연결 끊김 · 로그인 전.
+     * 그때 포인트 시트는 미리보기 칸만 숨기고 예전처럼 나눈다.
+     */
+    suspend fun pointsPreview(id: Long): com.stepup.android.domain.PointsPreview? {
+        val api = pointsPreviewApi?.takeIf { !pointsPreviewMissing } ?: return null
+        val local = sneakerDao.byId(id) ?: return null
+        if (local.origin.isBlank()) return null
+        return when (val result = api.preview(local.serverId.takeIf { it != 0L } ?: id)) {
+            is com.stepup.android.data.remote.PointsPreviewResult.Ok -> result.preview
+            com.stepup.android.data.remote.PointsPreviewResult.Missing -> {
+                pointsPreviewMissing = true
+                null
+            }
+            com.stepup.android.data.remote.PointsPreviewResult.None,
+            com.stepup.android.data.remote.PointsPreviewResult.Failed -> null
+        }
     }
 
     /**

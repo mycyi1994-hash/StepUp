@@ -324,8 +324,11 @@ sealed interface ForgeReward {
     /** 스탯 포인트 — 등급마다(레벨마다 2 · 3 · 4 · 5 · 6 · 8, 5레벨마다 보너스까지) */
     data class Points(val count: Int) : ForgeReward
 
-    /** 하루 에너지 +[amount] — 가진 신발 가운데 가장 높은 레벨이 에너지 최대치를 정한다 */
-    data class Energy(val amount: Int) : ForgeReward
+    /**
+     * 하루 에너지 +[amount] — 가진 신발 가운데 가장 높은 레벨이 에너지 최대치를 정한다. 서버 규칙의 레벨당 에너지가 0 이면(서버 0119 —
+     * 에너지는 레벨과 상관없다) 이 줄은 없다
+     */
+    data class Energy(val amount: Double) : ForgeReward
 
     /**
      * 5 · 10 · 15 …레벨 — 그 신발 내구도 가득 · 상급 상자 1개(계정마다 그 레벨에 처음 닿을 때).
@@ -334,12 +337,16 @@ sealed interface ForgeReward {
     data class Milestone(val level: Int, val boxAlreadyGot: Boolean) : ForgeReward
 }
 
-/** 레벨마다 하루 에너지 — 서버 economy.energy_max_for_level(레벨 1 에 10, 레벨마다 +2) */
-const val ENERGY_PER_LEVEL = 2
+/**
+ * 레벨마다 늘어나는 하루 에너지 — 서버 규칙(`shoe_rules_v4().stats.energy_per_level`, economy.energy_max_for_level).
+ * 서버 0119 부터 0(하루 에너지는 레벨과 상관없이 10 — 에너지를 늘리는 길은 착화감), 0119 전 서버는 2. 0 이면 에너지 줄을 보이지 않는다
+ */
+fun energyPerLevel(rules: com.stepup.android.domain.ShoeRules): Double =
+    rules.stats.energyPerLevel.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
 
 /**
- * 레벨 [nextLevel] 에 닿으면 받는 것 — 포인트(등급 표) · 하루 에너지 +2 · (5의 배수면) 내구도 가득 · 상급 상자.
- * [levelsGot] 은 상자 현황(box_status)의 이미 상자를 받은 레벨들 — 모르면 null.
+ * 레벨 [nextLevel] 에 닿으면 받는 것 — 포인트(등급 표, 맨 앞) · 하루 에너지(규칙이 레벨마다 늘릴 때만) · (5의 배수면) 내구도 가득 ·
+ * 상급 상자. [levelsGot] 은 상자 현황(box_status)의 이미 상자를 받은 레벨들 — 모르면 null.
  */
 fun forgeRewards(
     rarity: com.stepup.android.domain.Rarity,
@@ -349,6 +356,14 @@ fun forgeRewards(
 ): List<ForgeReward> = buildList {
     val points = rules.pointsAt(rarity.id, nextLevel)
     if (points > 0) add(ForgeReward.Points(points))
-    if (nextLevel > 1) add(ForgeReward.Energy(ENERGY_PER_LEVEL))
+    val energy = energyPerLevel(rules)
+    if (nextLevel > 1 && energy > 0.0) add(ForgeReward.Energy(energy))
     if (nextLevel % 5 == 0) add(ForgeReward.Milestone(nextLevel, boxAlreadyGot = levelsGot?.contains(nextLevel) == true))
 }
+
+/**
+ * 레벨이 [fromLevel] 에서 [toLevel] 로 오르며 포인트를 다시 나눌 수 있게 되는가 — 서버 0119: 5 · 10 · 15 … 레벨에 닿을 때마다 한 번
+ * (`respec_every`, 트리거와 같은 셈 — 새 레벨 ÷ 간격 > 예전 레벨 ÷ 간격). [every] 가 0 이면(0119 전 서버 · 규칙을 못 읽음) 아니다.
+ */
+fun respecEarned(fromLevel: Int, toLevel: Int, every: Int): Boolean =
+    every > 0 && toLevel > fromLevel && toLevel / every > fromLevel.coerceAtLeast(0) / every

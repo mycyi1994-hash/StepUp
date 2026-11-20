@@ -6,6 +6,10 @@
     <string name="shoe_info_efficiency">같은 걸음에 받는 SUP 가 늘어요</string>
     <string name="shoe_info_comfort">에너지를 덜 써서 하루에 더 오래 적립해요</string>
     <string name="shoe_info_durability">수리 없이 더 오래 달려요</string>
+    <!-- 능력치의 뜻이 바뀐 뒤(2026-11-21 — 규칙이 그렇게 말할 때만 보인다) -->
+    <string name="shoe_info_efficiency_v2">같은 시간에 더 많이 벌어요. 포인트로 올린 만큼은 신발과 에너지도 빨리 써요</string>
+    <string name="shoe_info_comfort_v2">에너지를 덜 써서 하루에 더 많이 벌어요</string>
+    <string name="shoe_info_durability_v2">한 켤레로 더 오래 달려요. 포인트로 늘려도 가득 수리비는 그대로라 같은 수리비로 더 많이 벌어요</string>
     <string name="shoe_info_point_efficiency">포인트 1 = 적립 +%1$s%%</string>
     <string name="shoe_info_point_comfort">포인트 1 = 에너지 −%1$s%% (%2$d%% 절약까지)</string>
     <string name="shoe_info_point_durability">포인트 1 = +%1$s분</string>

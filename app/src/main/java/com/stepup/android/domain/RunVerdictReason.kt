@@ -16,9 +16,15 @@ object RunVerdictReason {
 
         /** 경로가 받쳐 주지 않아(경로 300m 아래 포함) 오늘의 보상(상자 · 목표)에 세지 않았다(서버 0118) — 적립은 있을 수 있다 */
         NO_ROUTE_REWARD,
+
+        /**
+         * 신발이 다 닳은 뒤의 걸음은 일부만 적립했다(서버 0119 worn_rate) — 걸음은 다 셌다. 비율은 서버 설정이라 글에 적지 않는다("일부만").
+         * 닳은 뒤 적립이 없는 서버(0119 전 · worn_rate 0)는 [WORN_AFTER] · [WORN] 을 보낸다
+         */
+        WORN_PARTIAL,
     }
 
-    /** 서버 글(supabase/migrations 0071 · 0089 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
+    /** 서버 글(supabase/migrations 0071 · 0089 · 0118 · 0119 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
     private val KNOWN: Map<String, Kind> = mapOf(
         "가짜 위치가 감지되었습니다" to Kind.MOCK,
         "과속으로 멈춘 뒤 러닝 금지 시간에 시작한 러닝입니다" to Kind.BANNED,
@@ -43,6 +49,9 @@ object RunVerdictReason {
         "하루에 올릴 수 있는 적립 상한에 걸렸습니다" to Kind.UPLOAD_CAP,
         // 0118 — 보상 걸음(상자 · 목표 · 연속)에 들지 않은 러닝. 서버 글과 글자까지 같게(docs/forge-xp-daily-contract-2026-11-19.md)
         "경로가 확인되지 않아 보상 걸음에 들지 않았습니다" to Kind.NO_ROUTE_REWARD,
+        // 0119 — 닳은 구간이 있던 러닝. 서버 글과 글자까지 같게(docs/economy-roots-contract-2026-11-21.md 2장).
+        // 닳은 뒤 적립이 없는 서버는 위의 예전 두 글을 그대로 보낸다 — 둘 다 안다
+        "신발이 다 닳은 뒤의 걸음은 일부만 적립했습니다" to Kind.WORN_PARTIAL,
         // 거절(REJECTED) — 서버가 받지 않은 러닝의 까닭(uploadError)
         "너무 오래된 러닝입니다" to Kind.TOO_OLD,
     )
@@ -59,7 +68,8 @@ object RunVerdictReason {
 
     /**
      * 크루 러닝 결과의 "크루 체력을 다 쓴 뒤 걸음은 상자 · 목표 보너스에 들지 않아요" — 그 러닝의 서버 판정 까닭에 "크루 체력을 다 썼습니다"가
-     * 있고 오늘의 보상(보상 걸음, 서버 0118)이 켜져 있을 때만([rewardSteps])
+     * 있고 오늘의 보상(보상 걸음, 서버 0118)이 켜져 있을 때만([rewardSteps]). 서버 0119(닳은 뒤에도 적립하는 규칙)부터는 크루 체력이
+     * 비었어도 경로로 확인된 걸음을 모두 세므로, 부르는 쪽이 그때는 [rewardSteps] 를 false 로 넘긴다(줄을 두지 않는다)
      */
     fun crewStaminaOut(verdictReason: String?, rewardSteps: Boolean): Boolean =
         rewardSteps && verdictReason?.contains(CrewRunMath.REASON_POOL_EMPTY) == true

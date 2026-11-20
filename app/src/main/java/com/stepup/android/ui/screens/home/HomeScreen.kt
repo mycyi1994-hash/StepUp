@@ -570,7 +570,13 @@ private fun RewardsHero(
         RewardLine(bar)
         // 보상 걸음에 들지 않은 걸음 · 어젯밤 러닝 — 그럴 때만 작은 한 줄씩(오늘 상태를 알 때만)
         if (com.stepup.android.domain.DailyRewardsBar.offRunNote(bar, allDaySteps, allDayKnown = loaded && hasPermission)) {
-            RewardNote(stringResource(R.string.dr_off_run_note), "home-reward-note-off-run")
+            // 서버 0119(닳은 뒤에도 적립하는 규칙)부터 보상 걸음은 밖에서 경로가 확인된 걸음 모두다 — 신발이 닳았어도 센다.
+            // 그 전 규칙이면 예전 글("닳지 않은 신발로 걸은 걸음만")
+            val anyShoeCounts = com.stepup.android.ui.screens.items.rememberShoeRules().stats.earnsWhenWorn
+            RewardNote(
+                stringResource(if (anyShoeCounts) R.string.roots_off_run_note else R.string.dr_off_run_note),
+                "home-reward-note-off-run",
+            )
         }
         if (overnightRun && bar.known) RewardNote(stringResource(R.string.dr_overnight_note), "home-reward-note-overnight")
     }

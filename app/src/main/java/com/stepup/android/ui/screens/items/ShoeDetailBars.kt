@@ -152,7 +152,9 @@ fun ShoeStatCells(
     val repair = onRepair?.let { StatRepair(it, enabled = repairEnabled, emphasis = repairEmphasis) }
     // ⓘ — 펼친 칸 하나(창 없이 칸 아래 한 줄). 다른 칸을 누르면 앞의 것은 접힌다
     var infoOpen by rememberSaveable(shoe.id) { mutableStateOf<DetailStat?>(null) }
-    val meanings = rows.map { statMeaning(it.stat) }
+    // 서버 0119 의 뜻이면 새 글(효율은 신발 · 에너지도 빨리 쓴다 · 내구도는 가득 수리비 그대로), 예전 서버면 예전 글
+    val newMeaning = newStatMeaning(rules)
+    val meanings = rows.map { statMeaning(it.stat, newMeaning) }
     val showCds = labels.map { stringResource(R.string.shoe_info_show_cd, it) }
     val hideCds = labels.map { stringResource(R.string.shoe_info_hide_cd, it) }
     val notes = rows.map { row -> row.nextLevelPercent?.let { stringResource(R.string.shoe_xp_next, it) } }
@@ -192,13 +194,13 @@ private class StatInfo(val open: Boolean, val meaning: String, val action: Strin
 private val InfoIcon = 16.dp
 private val InfoGap = 4.dp
 
-/** 한 줄 설명 — 효율 · 착화감 · 내구도(레벨은 없다) */
+/** 한 줄 설명 — 효율 · 착화감 · 내구도(레벨은 없다). [newMeaning]([newStatMeaning])이면 서버 0119 의 뜻으로 */
 @Composable
-private fun statMeaning(stat: DetailStat): String? = when (stat) {
+private fun statMeaning(stat: DetailStat, newMeaning: Boolean): String? = when (stat) {
     DetailStat.LEVEL -> null
-    DetailStat.EFFICIENCY -> stringResource(R.string.shoe_info_efficiency)
-    DetailStat.COMFORT -> stringResource(R.string.shoe_info_comfort)
-    DetailStat.DURABILITY -> stringResource(R.string.shoe_info_durability)
+    DetailStat.EFFICIENCY -> stringResource(statMeaningRes(PointStat.EFFICIENCY, newMeaning))
+    DetailStat.COMFORT -> stringResource(statMeaningRes(PointStat.COMFORT, newMeaning))
+    DetailStat.DURABILITY -> stringResource(statMeaningRes(PointStat.DURABILITY, newMeaning))
 }
 
 /** 이름(+ ⓘ) — 펼치면 ⓘ 가 밝아진다. [wrap] 이면(막대를 아래로 내린 좁은 칸) 이름이 줄을 바꿀 수 있다 */

@@ -16,6 +16,7 @@ import com.stepup.android.domain.BoostType
 import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.wearMultOf
 import com.stepup.android.service.RunLap
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
@@ -354,9 +355,15 @@ private fun pendingWearOfRow(row: com.stepup.android.data.local.WalkSessionEntit
  * (판 20 전 · 폰에만 있던 신발 — 서버가 올릴 때 신은 신발로 닳게 한다)의 합.
  */
 data class PendingShoeWear(val byShoe: Map<Long, Int> = emptyMap(), val unknown: Int = 0) {
-    /** 이 신발에서 뺄 닳음 — 서버 신발은 폰 id 가 서버 번호다(EconomySync). 모르는 줄은 지금 신은 신발 몫 */
-    fun of(shoe: Sneaker): Int =
-        (if (shoe.server != null) byShoe[shoe.id] ?: 0 else 0) + if (shoe.equipped) unknown else 0
+    /**
+     * 이 신발에서 뺄 닳음 — 서버 신발은 폰 id 가 서버 번호다(EconomySync). 모르는 줄은 지금 신은 신발 몫.
+     * 줄마다의 닳음은 달린 시간만으로 센 값(1분마다 5)이라, 효율 포인트를 넣은 신발은 그 신발의 닳는 배수를 곱한다
+     * (서버 0119 `economy.wear_mult` — 포인트가 없거나 0119 전 규칙이면 1 이라 예전과 같다)
+     */
+    fun of(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules = com.stepup.android.domain.ShoeRules.FALLBACK): Int {
+        val base = (if (shoe.server != null) byShoe[shoe.id] ?: 0 else 0) + if (shoe.equipped) unknown else 0
+        return if (base <= 0) base else kotlin.math.round(base * rules.wearMultOf(shoe)).toInt()
+    }
 
     val total: Int get() = byShoe.values.sum() + unknown
 

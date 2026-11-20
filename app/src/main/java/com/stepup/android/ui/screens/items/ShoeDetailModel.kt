@@ -1,9 +1,11 @@
 package com.stepup.android.ui.screens.items
 
 import com.stepup.android.data.repo.EconomyOutcome
-import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.lifeSecOf
 import com.stepup.android.domain.nextLevelPercentText
+import com.stepup.android.domain.wearOf
 import java.util.Locale
 
 /*
@@ -90,22 +92,32 @@ fun formatStat(value: Double): String = String.format(Locale.ROOT, "%.2f", value
 fun durabilityPercent(shoe: Sneaker): Int =
     (shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability).coerceIn(0, 100)
 
-/** 달린 1분마다 닳는 내구도 — 서버 0064 `economy.durability_wear_time` 과 같다(2026-10-17 사용자 결정 "1분마다 5씩") */
+/**
+ * 달린 1분마다 닳는 내구도 — 서버 0064 `economy.durability_wear_time` 과 같다(2026-10-17 사용자 결정 "1분마다 5씩").
+ * 효율 포인트를 넣은 신발은 이 값 × 닳는 배수만큼 닳는다(서버 0119 — 신발마다의 값은 신발을 받는 [durabilityWear]).
+ */
 const val DURABILITY_WEAR_PER_MINUTE = 5
 
 /**
  * [activeSec](멈춘 시간 뺀 달린 시간) 동안 닳는 내구도 — 다 채운 1분마다 [DURABILITY_WEAR_PER_MINUTE]. 움직였든 서 있었든, 거리가
- * 0 이어도 같다(2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데", 서버 0068).
+ * 0 이어도 같다(2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데", 서버 0068). 효율 포인트가 없는 신발의 값이다.
  */
 fun durabilityWear(activeSec: Long): Int = (activeSec.coerceAtLeast(0L) / 60 * DURABILITY_WEAR_PER_MINUTE).toInt()
 
 /**
- * 남은 내구도로 보상을 받으며 달릴 수 있는 분(다 채운 분) — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 내구도 1 = 12초.
+ * 이 신발이 [activeSec] 동안 닳는 내구도 — 효율 포인트를 넣은 신발은 그 배수만큼 빨리 닳는다(서버 0119 `economy.wear_mult`:
+ * 1분마다 5 × (1 + 포인트당 비율 × 효율 포인트)). 포인트가 없는 신발 · 0119 전 서버 규칙이면 위 [durabilityWear] 와 같다.
+ */
+fun durabilityWear(shoe: Sneaker, activeSec: Long, rules: ShoeRules = ShoeRules.FALLBACK): Int = rules.wearOf(shoe, activeSec)
+
+/**
+ * 남은 내구도로 가득 적립하며 달릴 수 있는 분(다 채운 분) — 내구도 1 = 12초 ÷ 효율 포인트 배수(서버 0119, 포인트가 없으면 12초).
+ * 이 뒤의 걸음은 일부만 적립된다(0119 — 그 전 서버는 적립하지 않는다, 0066).
  * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 null.
  */
-fun durabilityEarnMinutes(shoe: Sneaker): Int? {
+fun durabilityEarnMinutes(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): Int? {
     val server = shoe.server?.takeIf { it.hasDurabilityMax } ?: return null
-    return (server.durabilityNow.coerceAtLeast(0).toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT / 60).toInt()
+    return (rules.lifeSecOf(shoe, server.durabilityNow) / 60).toInt()
 }
 
 /** 출발 전 점검에서 "약 N분만 보상" 을 알리는 기준(분)의 상한 — 이보다 짧게 남았으면 알린다(짧은 신발은 [lowDurabilityMinutes]) */
@@ -117,32 +129,37 @@ const val LOW_DURABILITY_WARN_MIN = 10
  * 새 일반 신발은 가득 차도 9 ~ 11분이라(최대 45 ~ 55) 예전 10분 기준이면 가득 찬 새 신발에도 알렸고, 수리를 눌러도 "이미 가득"이었다
  * (2026-11-17 점검 #1). 가득 찬 신발은 고칠 것이 없으니 알리지 않는다. 최대 내구도를 모르는 신발도 알리지 않는다.
  */
-fun lowDurabilityMinutes(shoe: Sneaker): Int? {
+fun lowDurabilityMinutes(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): Int? {
     val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 } ?: return null
     if (server.durabilityNow >= server.durabilityMax) return null
-    val left = durabilityEarnMinutes(shoe) ?: return null
-    val full = (server.durabilityMax.toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT / 60).toInt()
+    val left = durabilityEarnMinutes(shoe, rules) ?: return null
+    val full = (rules.lifeSecOf(shoe, server.durabilityMax) / 60).toInt()
     return left.takeIf { it < minOf(LOW_DURABILITY_WARN_MIN, full / 2) }
 }
 
-/** 다 닳았다 — 남은 비율이 0(서버 값). 이 뒤의 걸음은 적립하지 않는다(서버 0066) */
+/**
+ * 다 닳았다 — 남은 비율이 0(서버 값). 이 신발로 걸은 걸음은 일부만 적립된다(서버 0119 worn_rate — 걸음은 그대로 센다).
+ * 0119 전 서버는 적립하지 않는다(0066)
+ */
 fun durabilityWornOut(shoe: Sneaker): Boolean = (shoe.server?.durabilityFactor ?: 1.0) <= 0.0
 
 /**
  * 수리를 앞에 내세울 때 — 다 닳았거나 [lowDurabilityMinutes] 가 알릴 만큼 짧게 남았다.
  * 출발 전 점검(FreeRunStart 의 경고 줄)과 같은 기준이다. 신발 탭 · 상세의 수리 버튼 강조가 이것 하나를 쓴다.
  */
-fun repairUrgent(shoe: Sneaker): Boolean = durabilityWornOut(shoe) || lowDurabilityMinutes(shoe) != null
+fun repairUrgent(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): Boolean =
+    durabilityWornOut(shoe) || lowDurabilityMinutes(shoe, rules) != null
 
 /** 수리할 곳이 있다 — 남은 내구도가 최대보다 적다(수리 시트가 견적을 낼 수 있는 신발) */
 fun repairable(shoe: Sneaker): Boolean = durabilityLeft(shoe) < durabilityMax(shoe)
 
 /**
- * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼([durabilityWear])을 미리 뺀다. 정산 때 서버가 같은 규칙으로 뺀다.
+ * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼(그 신발의 [durabilityWear] — 효율 포인트를 넣었으면 그 배수만큼 더)을 미리 뺀다.
+ * 정산 때 서버가 같은 규칙으로 뺀다. 다 닳으면 0 에서 멈춘다(더 닳지 않는다).
  * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 [durabilityPercent] 그대로다 — 폰에서 닳는 양을 비율로 셀 수 없다.
  */
-fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long): Int {
-    val wear = durabilityWear(activeSec)
+fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long, rules: ShoeRules = ShoeRules.FALLBACK): Int {
+    val wear = durabilityWear(shoe, activeSec, rules)
     val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 }
     if (wear == 0 || server == null) return durabilityPercent(shoe)
     val left = (server.durabilityNow - wear).coerceIn(0, server.durabilityMax)

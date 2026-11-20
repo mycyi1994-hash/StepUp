@@ -34,7 +34,7 @@
     <string name="v4s_repair_partial_done">가진 만큼 고쳤어요. 나머지는 SUP를 모아 고칠 수 있어요.</string>
 
     <string name="v4s_upg_materials_rule">한 등급 아래 이상 · 내구도 %1$d%% 이상 신발 3개</string>
-    <string name="v4s_upg_gain_energy">하루 에너지 +%1$d(가진 신발 중 가장 높은 레벨일 때)</string>
+    <string name="v4s_upg_gain_energy">하루 에너지 +%1$s(가진 신발 중 가장 높은 레벨일 때)</string>
     <string name="v4s_upg_gain_milestone">Lv. %1$d — 내구도 가득 · 상급 상자 1개(이 레벨에 처음 닿으면)</string>
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 내구도 가득(이 레벨의 상급 상자는 이미 받았어요)</string>
     <string name="v4s_upg_repair_note">효율을 올리면 수리비도 효율만큼 올라요.</string>

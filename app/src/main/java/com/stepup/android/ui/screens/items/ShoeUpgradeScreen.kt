@@ -339,8 +339,9 @@ private fun EditingBody(state: ShoeUpgradeState, actions: UpgradeActions) {
             )
             MaterialSlots(state.applied, onAdd = actions.onOpenPicker, onRemove = actions.onRemove)
         }
-        // 성공 시 변화 — 레벨 · 효율 · 착화감 세 줄(내구도 없음). 한 레벨이 주는 것(경제 4판): 스탯 포인트(등급마다) · 하루 에너지 +2 ·
-        // 5의 배수 레벨이면 내구도 가득 · 상급 상자. 효율 · 착화감은 저절로 오르지 않는다(포인트를 나눠야)
+        // 성공 시 변화 — 레벨 · 효율 · 착화감 세 줄(내구도 없음). 한 레벨이 주는 것(경제 4판): 스탯 포인트(등급마다) · 하루 에너지
+        // (규칙이 레벨마다 늘릴 때만 — 서버 0119 부터는 없다) · 5의 배수 레벨이면 내구도 가득 · 상급 상자.
+        // 효율 · 착화감은 저절로 오르지 않는다(포인트를 나눠야)
         if (info != null) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SectionTitle(stringResource(R.string.upg_changes))
@@ -405,10 +406,17 @@ private fun RunningBody(state: ShoeUpgradeState) {
     }
 }
 
-/** 강화로 받는(받은) 스탯 포인트 한 줄 — 나누기는 신발 상세에서 한다 */
+/**
+ * 강화로 받는(받은) 것 한 줄 — 나누기는 신발 상세에서 한다. [strong] 이면 앞세운다(레벨업의 주인공은 포인트 — 2026-11-21)
+ */
 @Composable
-private fun PointsGainLine(text: String, tag: String) {
-    Text(text, style = runTextStyle(14.sp, runTone().label, FontWeight.Medium), modifier = Modifier.testTag(tag))
+private fun PointsGainLine(text: String, tag: String, strong: Boolean = false) {
+    val t = runTone()
+    Text(
+        text,
+        style = if (strong) runTextStyle(17.sp, t.cyan, FontWeight.Bold) else runTextStyle(14.sp, t.label, FontWeight.Medium),
+        modifier = Modifier.testTag(tag),
+    )
 }
 
 /** 지금 값만(실패 · 결과 미확인 · 막힘) — 막대 끝은 그 등급에서 가장 잘 뽑힌 새 신발 */
@@ -428,8 +436,9 @@ private fun rememberBoxStatus(): com.stepup.android.domain.BoxStatus? {
 }
 
 /**
- * "성공하면" 아래 한 줄씩 — 스탯 포인트 +N · 하루 에너지 +2(가진 신발 중 가장 높은 레벨일 때) · Lv5 · 10 …이면 내구도 가득 · 상급 상자,
- * 끝에 "효율이 오르면 수리비도 같은 만큼". 상자는 계정마다 그 레벨에 처음 닿을 때만이라 그렇게 말한다(받는다고 단정하지 않는다).
+ * "성공하면" 아래 한 줄씩 — 스탯 포인트 +N · 하루 에너지(규칙이 레벨마다 늘릴 때만, 가진 신발 중 가장 높은 레벨일 때) · Lv5 · 10 …이면
+ * 내구도 가득 · 상급 상자, 끝에 포인트가 하는 일 한 줄([StatNote]). 상자는 계정마다 그 레벨에 처음 닿을 때만이라 그렇게 말한다
+ * (받는다고 단정하지 않는다).
  */
 @Composable
 private fun ForgeRewardLines(rewards: List<ForgeReward>) {
@@ -438,7 +447,7 @@ private fun ForgeRewardLines(rewards: List<ForgeReward>) {
         rewards.forEach { reward ->
             val (text, tag) = when (reward) {
                 is ForgeReward.Points -> stringResource(R.string.upg_points_gain, reward.count) to "upgrade-points-gain"
-                is ForgeReward.Energy -> stringResource(R.string.v4s_upg_gain_energy, reward.amount) to "upgrade-gain-energy"
+                is ForgeReward.Energy -> stringResource(R.string.v4s_upg_gain_energy, formatEnergy(reward.amount)) to "upgrade-gain-energy"
                 is ForgeReward.Milestone -> stringResource(
                     if (reward.boxAlreadyGot) R.string.v4s_upg_gain_milestone_got else R.string.v4s_upg_gain_milestone, reward.level,
                 ) to "upgrade-gain-milestone"
@@ -446,9 +455,21 @@ private fun ForgeRewardLines(rewards: List<ForgeReward>) {
             Text("· $text", style = runTextStyle(14.sp, if (reward is ForgeReward.Milestone) t.cyan else t.label, FontWeight.Medium),
                 modifier = Modifier.testTag(tag))
         }
-        Text(stringResource(R.string.v4s_upg_repair_note), style = runTextStyle(13.sp, t.label, FontWeight.Medium),
-            modifier = Modifier.testTag("upgrade-repair-note"))
+        StatNote()
     }
+}
+
+/**
+ * 받은 포인트가 하는 일 한 줄 — 서버 0119: 효율에 넣으면 더 빨리 벌고 신발도 빨리 닳는다 · 가득 수리비는 그대로.
+ * 0119 전 서버(규칙 묶음이 없다)면 예전 글 "효율을 올리면 수리비도 효율만큼 올라요"
+ */
+@Composable
+private fun StatNote() {
+    val newMeaning = newStatMeaning(rememberShoeRules())
+    Text(
+        stringResource(if (newMeaning) R.string.ers_upg_stat_note else R.string.v4s_upg_repair_note),
+        style = runTextStyle(13.sp, runTone().label, FontWeight.Medium), modifier = Modifier.testTag("upgrade-repair-note"),
+    )
 }
 
 @Composable
@@ -488,10 +509,15 @@ private fun SuccessBody(state: ShoeUpgradeState, phase: UpgradePhase.Succeeded) 
         if (after != null) {
             val rules = rememberShoeRules()
             val rarity = state.shoe?.rarity ?: com.stepup.android.domain.Rarity.COMMON
-            UpgradeStatRows(forgeRows(before ?: after, after, rarity, rules), after.maxLevel, Modifier.testTag("upgrade-rows"))
             val gained = before?.let { forgePointsGain(it, after, rarity, rules) }
                 ?: com.stepup.android.domain.StatPoints.gainAt(rarity, level, rules)
-            PointsGainLine(stringResource(R.string.upg_points_got, gained), "upgrade-points-got")
+            // 레벨업의 주인공은 포인트 — 맨 앞에, 크게
+            PointsGainLine(stringResource(R.string.upg_points_got, gained), "upgrade-points-got", strong = true)
+            UpgradeStatRows(forgeRows(before ?: after, after, rarity, rules), after.maxLevel, Modifier.testTag("upgrade-rows"))
+            // 5 · 10 · 15 …레벨에 닿았다 — 그 신발 포인트를 한 번 다시 나눌 수 있다(서버 0119)
+            if (respecEarned(before?.level ?: (level - 1), level, respecEveryOf(rules))) {
+                PointsGainLine(stringResource(R.string.ers_upg_respec), "upgrade-got-respec")
+            }
             // 5 · 10 · 15 …레벨 — 서버가 그 신발 내구도를 가득 채웠다. 상급 상자는 이 레벨에 처음 닿은 계정만(단정하지 않는다)
             if (level % 5 == 0 && (before == null || before.level / 5 < level / 5)) {
                 PointsGainLine(stringResource(R.string.v4s_upg_got_milestone), "upgrade-got-milestone")
@@ -1184,7 +1210,9 @@ private fun XpEditingHead(state: ShoeUpgradeState, actions: UpgradeActions) {
                 val boxes = rememberBoxStatus()
                 val points = xpPointsGain(target.rarity, target.level, toLevel, rules)
                 val milestones = ((target.level + 1)..toLevel).filter { it % 5 == 0 }
+                // 하루 에너지 — 견적이 늘어난다고 할 때만(앞뒤가 같으면 줄이 없다). 견적 전에는 규칙이 레벨마다 늘릴 때만(서버 0119 부터 0)
                 val energy = quote?.let { q -> q.energyBefore?.let { b -> q.energyAfter?.takeIf { it > b }?.let { b to it } } }
+                val energyEach = energyPerLevel(rules)
                 Column(Modifier.fillMaxWidth().testTag("upgrade-rewards"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (points > 0) {
                         Text("· " + stringResource(R.string.fxp_points_gain, points), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
@@ -1193,8 +1221,8 @@ private fun XpEditingHead(state: ShoeUpgradeState, actions: UpgradeActions) {
                     if (energy != null) {
                         Text("· " + stringResource(R.string.fxp_energy_up, energy.first, energy.second),
                             style = runTextStyle(14.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-energy"))
-                    } else if (quote == null) {
-                        Text("· " + stringResource(R.string.v4s_upg_gain_energy, ENERGY_PER_LEVEL),
+                    } else if (quote == null && energyEach > 0.0) {
+                        Text("· " + stringResource(R.string.v4s_upg_gain_energy, formatEnergy(energyEach)),
                             style = runTextStyle(14.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-energy"))
                     }
                     milestones.forEach { level ->
@@ -1202,8 +1230,7 @@ private fun XpEditingHead(state: ShoeUpgradeState, actions: UpgradeActions) {
                         Text("· " + stringResource(if (got) R.string.v4s_upg_gain_milestone_got else R.string.v4s_upg_gain_milestone, level),
                             style = runTextStyle(14.sp, t.cyan, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-milestone"))
                     }
-                    Text(stringResource(R.string.v4s_upg_repair_note), style = runTextStyle(13.sp, t.label, FontWeight.Medium),
-                        modifier = Modifier.testTag("upgrade-repair-note"))
+                    StatNote()
                 }
             }
         }
@@ -1472,9 +1499,16 @@ private fun XpDoneBody(state: ShoeUpgradeState, phase: UpgradePhase.XpDone) {
         val before = phase.beforeStats
         if (result.leveledUp && before != null) {
             val after = before.copy(level = result.levelAfter)
-            UpgradeStatRows(forgeRows(before, after, rarity, rules), maxLevel, Modifier.testTag("upgrade-rows"))
+            // 레벨업의 주인공은 포인트 — 맨 앞에, 크게
             val gained = forgePointsGain(before, after, rarity, rules)
-            if (gained > 0) PointsGainLine(stringResource(R.string.upg_points_got, gained), "upgrade-points-got")
+            if (gained > 0) PointsGainLine(stringResource(R.string.upg_points_got, gained), "upgrade-points-got", strong = true)
+            UpgradeStatRows(forgeRows(before, after, rarity, rules), maxLevel, Modifier.testTag("upgrade-rows"))
+        }
+        // 5 · 10 · 15 …레벨을 지났다 — 그 신발 포인트를 한 번 다시 나눌 수 있다(서버 0119)
+        if (result.leveledUp && respecEarned(result.levelBefore, result.levelAfter, respecEveryOf(rules))) {
+            PointsGainLine(stringResource(R.string.ers_upg_respec), "upgrade-got-respec")
+        }
+        if (result.leveledUp && before != null) {
             // 5 · 10 · 15 …레벨을 지났다 — 서버가 그 신발 내구도를 가득 채웠다. 받은 상자는 서버가 알려 준 만큼만
             if (((result.levelBefore + 1)..result.levelAfter).any { it % 5 == 0 }) {
                 PointsGainLine(stringResource(R.string.fxp_done_full), "upgrade-got-milestone")
@@ -1548,8 +1582,12 @@ private fun preciousLabel(reason: ForgePrecious, quote: XpQuote): String = when 
     ForgePrecious.TOP_LEVEL -> {
         val before = quote.energyBefore
         val after = quote.energyAfter
-        if (before != null && after != null && after < before) stringResource(R.string.fxp_why_top_level, before, after)
-        else stringResource(R.string.fxp_why_top_level_plain)
+        when {
+            before != null && after != null && after < before -> stringResource(R.string.fxp_why_top_level, before, after)
+            // 하루 에너지가 레벨과 상관없는 규칙(서버 0119)이면 에너지가 준다고 말하지 않는다
+            energyPerLevel(rememberShoeRules()) <= 0.0 -> stringResource(R.string.ers_why_top_level)
+            else -> stringResource(R.string.fxp_why_top_level_plain)
+        }
     }
     ForgePrecious.TOP_EFFICIENCY -> {
         val before = quote.capBefore

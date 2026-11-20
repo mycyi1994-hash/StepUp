@@ -109,8 +109,11 @@ class RewardEconomyTest {
 
     @Test
     fun `레벨별 최대 에너지와 업그레이드 비용`() {
+        // 0119 전 서버(LEGACY): 레벨마다 +2 · 0119 부터: 레벨과 상관없이 10
+        assertEquals(10.0, RewardEconomy.maxEnergy(1, com.stepup.android.domain.StatRule.LEGACY), 1e-9)
+        assertEquals(14.0, RewardEconomy.maxEnergy(3, com.stepup.android.domain.StatRule.LEGACY), 1e-9)
         assertEquals(10.0, RewardEconomy.maxEnergy(1), 1e-9)
-        assertEquals(14.0, RewardEconomy.maxEnergy(3), 1e-9)
+        assertEquals(10.0, RewardEconomy.maxEnergy(20), 1e-9)
         assertEquals(100.0, RewardEconomy.upgradeCost(1), 1e-9)
         assertEquals(300.0, RewardEconomy.upgradeCost(3), 1e-9)
     }

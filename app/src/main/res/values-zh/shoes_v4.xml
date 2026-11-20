@@ -34,7 +34,7 @@
     <string name="v4s_repair_partial_done">已按现有SUP修理。其余部分可在攒够SUP后修理。</string>
 
     <string name="v4s_upg_materials_rule">3双低一个等级及以上、耐久度%1$d%%以上的鞋子</string>
-    <string name="v4s_upg_gain_energy">每日能量 +%1$d（为你拥有的最高等级鞋子时）</string>
+    <string name="v4s_upg_gain_energy">每日能量 +%1$s（为你拥有的最高等级鞋子时）</string>
     <string name="v4s_upg_gain_milestone">Lv. %1$d — 耐久度回满 · 高级箱子1个（账号首次达到该等级时）</string>
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 耐久度回满（该等级的高级箱子已领取）</string>
     <string name="v4s_upg_repair_note">提升效率后，修理费也会按效率同比上涨。</string>
