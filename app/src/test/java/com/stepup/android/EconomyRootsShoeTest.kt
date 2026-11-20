@@ -397,8 +397,10 @@ class EconomyRootsShoeTest {
         assertFalse(newStatMeaning(legacy))
         // 아직 규칙을 못 읽었으면 예전 글
         assertFalse(newStatMeaning(ShoeRules.FALLBACK))
-        // 운영자가 효율이 닳는 속도를 건드리지 않게 껐으면 예전 글
+        // 운영자가 셋(닳는 속도 · 에너지 · 수리비) 가운데 하나라도 껐으면 예전 글 — 새 글은 셋을 함께 말한다
         assertFalse(newStatMeaning(roots.copy(stats = roots.stats.copy(effWearExp = 0.0))))
+        assertFalse(newStatMeaning(roots.copy(stats = roots.stats.copy(effEnergyExp = 0.0))))
+        assertFalse(newStatMeaning(roots.copy(stats = roots.stats.copy(durRepairExp = 0.0))))
         assertEquals(R.string.shoe_info_efficiency_v2, statMeaningRes(PointStat.EFFICIENCY, true))
         assertEquals(R.string.shoe_info_efficiency, statMeaningRes(PointStat.EFFICIENCY, false))
         assertEquals(R.string.shoe_info_durability_v2, statMeaningRes(PointStat.DURABILITY, true))

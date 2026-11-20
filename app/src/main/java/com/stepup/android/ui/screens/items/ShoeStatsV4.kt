@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
+import com.stepup.android.domain.wearPoints
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.ShoeIndex
 import com.stepup.android.domain.ShoeQuality
@@ -50,7 +51,7 @@ fun formatIndex(index: Double): String = if (index.isFinite()) formatCount(index
 /**
  * 닳는 속도를 정하는 효율 포인트 — 서버 `economy.eff_point_mult` 처럼 폰에서 올린 예전 신발(IMPORT · MINT) · 폰에만 있던 신발은 0
  */
-fun wearPointsOf(shoe: Sneaker): Int = shoe.server?.takeIf { it.upgradable }?.points?.efficiency?.coerceAtLeast(0) ?: 0
+fun wearPointsOf(shoe: Sneaker): Int = shoe.wearPoints
 
 /**
  * 이 신발이 내구도 [units] 로 달리는 분 — 내구도 ÷ (분당 닳음 × 효율 포인트 배수)(서버 0119 — 효율에 포인트를 넣은 만큼 빨리 닳는다).
@@ -82,9 +83,11 @@ fun formatMinutes(shoe: Sneaker, units: Int, rules: ShoeRules): String = formatM
 
 /**
  * 능력치 글을 서버 0119 의 뜻으로 쓰는가 — 효율 = 더 빨리 벌고 그만큼 신발 · 에너지를 빨리 쓴다 · 내구도 = 가득 수리비는 그대로.
- * 서버가 능력치 규칙 묶음(`stats`)을 보냈고 효율 포인트가 닳는 속도를 올릴 때만. 0119 전 서버 · 아직 규칙을 못 읽었으면 예전 글 그대로.
+ * 서버가 능력치 규칙 묶음(`stats`)을 보냈고 그 셋(닳는 속도 · 에너지 · 수리비)이 모두 켜져 있을 때만 — 새 글은 셋을 함께 말한다.
+ * 0119 전 서버 · 아직 규칙을 못 읽었거나 · 운영자가 하나라도 껐으면 예전 글 그대로(숫자는 늘 규칙대로 센다).
  */
-fun newStatMeaning(rules: ShoeRules): Boolean = rules.stats.fromServer && rules.stats.effWearExp > 0.0
+fun newStatMeaning(rules: ShoeRules): Boolean =
+    rules.stats.fromServer && rules.stats.effWearExp > 0.0 && rules.stats.effEnergyExp > 0.0 && rules.stats.durRepairExp > 0.0
 
 /** 한 줄 설명(ⓘ) — 효율 · 착화감 · 내구도가 하는 일. [newMeaning]([newStatMeaning])이면 서버 0119 의 뜻으로 */
 fun statMeaningRes(stat: PointStat, newMeaning: Boolean): Int = when (stat) {
