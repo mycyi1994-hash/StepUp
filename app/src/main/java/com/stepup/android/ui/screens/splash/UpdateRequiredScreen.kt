@@ -45,9 +45,7 @@ import com.stepup.android.ui.background.Spots
 import com.stepup.android.ui.background.TimeOfDay
 import com.stepup.android.ui.background.rememberSpotPhoto
 import com.stepup.android.ui.components.StepUpUi
-import com.stepup.android.ui.components.Wordmark
 import com.stepup.android.ui.screens.onboarding.BluePlainButton
-import com.stepup.android.ui.theme.BrandLogoRole
 import com.stepup.android.ui.theme.StepUpColors
 
 /**
@@ -89,9 +87,8 @@ internal fun UpdateRequiredScreen() {
                     Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = room),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Spacer(Modifier.height(room * 0.44f))
-                    Wordmark(role = BrandLogoRole.Launch)
-                    Spacer(Modifier.height(40.dp))
+                    // 로고는 시작 · 로그인 화면에만 둔다(tools/check_design_contract.py) — 여기는 글과 버튼만
+                    Spacer(Modifier.height(room * 0.38f))
                     Text(
                         stringResource(R.string.tb_update_title),
                         style = StepUpUi.type.section.copy(fontSize = 24.sp), color = if (dark) Color.White else ui.label,
