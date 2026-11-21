@@ -170,6 +170,81 @@ data class StatRule(
     }
 }
 
+/**
+ * 함께 달린 사람의 문턱(서버 0120 `shoe_rules_v4().together` — docs/together-bonus-fix-spec-2026-11-21.md 2 · 3장).
+ * [ACTIVE] 면 크루 · 번개 방의 인원 보너스는 그 방에서 [minMinutes] 분 · 경로로 확인된 걸음 [minSteps] 이상 달리고 방의 목표 거리
+ * (크루는 고른 코스 · 번개는 글의 거리)의 [goalShare] 이상을 채운 사람만 세고, 함께 달린 사람이 러닝을 올릴 때마다 출발 뒤 [topupHours]
+ * 시간 안에 이미 올린 사람의 보너스를 더한다. 화면은 이 값으로 안내 한 줄만 쓰고, 인원 · 금액은 늘 서버 값이다.
+ * 묶음이 없는 서버(0120 전)는 [LEGACY] — 함께 출발한 사람 모두를 출발 2분 뒤에 센다.
+ */
+data class TogetherRule(
+    /** ACTIVE(함께 달린 사람만 · 올릴 때마다 더함) · LEGACY(함께 출발한 모두 · 2분 판정) */
+    val rule: String,
+    val minMinutes: Int,
+    val minSteps: Int,
+    /** 방의 목표 거리 가운데 채워야 하는 몫(0.5 = 절반). 목표가 없는 방은 분 · 걸음만 본다 */
+    val goalShare: Double,
+    val topupHours: Int,
+    val fromServer: Boolean = false,
+) {
+    val active: Boolean get() = rule == ACTIVE
+
+    /** 목표 거리 [goalKm] 에서 채워야 하는 거리(km) — 목표가 없으면(0 이하) null */
+    fun goalKmOf(goalKm: Double?): Double? =
+        goalKm?.takeIf { it > 0.0 && goalShare > 0.0 }?.let { it * goalShare }
+
+    /** 출발 [startedAtMs] 뒤 아직 보너스가 더해질 수 있는가 — [nowMs] 가 더하는 시간 안 */
+    fun topupOpen(startedAtMs: Long, nowMs: Long): Boolean =
+        active && startedAtMs > 0 && nowMs - startedAtMs < topupHours.coerceAtLeast(0) * 3_600_000L
+
+    companion object {
+        const val ACTIVE = "ACTIVE"
+
+        /** 서버 0120 의 기본값 */
+        val FALLBACK = TogetherRule(
+            rule = "ACTIVE", minMinutes = 10, minSteps = 1500, goalShare = 0.5, topupHours = 24,
+        )
+
+        /** 0120 전 서버 — `together` 묶음이 없을 때 */
+        val LEGACY = TogetherRule(
+            rule = "LEGACY", minMinutes = 0, minSteps = 0, goalShare = 0.0, topupHours = 0,
+        )
+    }
+}
+
+/**
+ * 하루 최대 SUP(서버 0120 `shoe_rules_v4().daily_max` — docs/together-bonus-fix-spec-2026-11-21.md 14장). [HOUR] 면 하루에 받는 SUP
+ * (혼자 · 번개 · 크루 · 함께 달린 보너스 · 목표 보너스 모두)의 합은 그 러닝 신발로 1시간([hourSteps] 걸음) 달린 값 × [hourMult] × 적립 배수
+ * (이벤트 · 2배권)까지 — 가입한 지 얼마 안 된 계정은 절반. 신발 화면은 "하루 최대 약 N SUP" 한 줄만 쓰고, 정산은 늘 서버다.
+ * 묶음이 없는 서버(0120 전)는 [LEGACY] — 예전 하루 금액 상한(개인 러닝만).
+ */
+data class DailyMaxRule(
+    /** HOUR(신발 1시간 값 × 배) · CAP(예전 하루 금액 상한) */
+    val rule: String,
+    val hourSteps: Int,
+    val hourMult: Double,
+    /** 목표 보너스도 하루 최대 안에 드는가 */
+    val goalIncluded: Boolean,
+    val fromServer: Boolean = false,
+) {
+    val hour: Boolean get() = rule == HOUR
+
+    companion object {
+        const val HOUR = "HOUR"
+        const val CAP = "CAP"
+
+        /** 서버 0120 의 기본값 */
+        val FALLBACK = DailyMaxRule(
+            rule = "HOUR", hourSteps = 9900, hourMult = 4.0, goalIncluded = true,
+        )
+
+        /** 0120 전 서버 — `daily_max` 묶음이 없을 때 */
+        val LEGACY = DailyMaxRule(
+            rule = "CAP", hourSteps = 0, hourMult = 0.0, goalIncluded = false,
+        )
+    }
+}
+
 data class ShoeRules(
     val pointsPerStep: Double,
     val repairShare: Double,
@@ -190,6 +265,10 @@ data class ShoeRules(
     val goal: GoalRule = GoalRule.FALLBACK,
     /** 능력치 규칙(서버 0119). 서버에 0119 가 없으면 [StatRule.LEGACY] */
     val stats: StatRule = StatRule.FALLBACK,
+    /** 함께 달린 사람의 문턱(서버 0120). 서버에 0120 이 없으면 [TogetherRule.LEGACY] */
+    val together: TogetherRule = TogetherRule.FALLBACK,
+    /** 하루 최대 SUP(서버 0120). 서버에 0120 이 없으면 [DailyMaxRule.LEGACY] */
+    val dailyMax: DailyMaxRule = DailyMaxRule.FALLBACK,
     /** 서버에서 받은 값인가(아니면 [FALLBACK]) */
     val fromServer: Boolean = false,
 ) {
@@ -238,6 +317,19 @@ data class ShoeRules(
     /** 그 신발이 가득에서 달릴 수 있는 분 — 최대 내구도 ÷ (분당 닳음 × 효율 포인트 배수) */
     fun lifeMinutes(durability: Int, rarity: String?, effPoints: Int): Double =
         stats.lifeMinutes(durability, grade(rarity).pointRateBps, effPoints)
+
+    /**
+     * 그 신발로 하루에 받을 수 있는 최대 SUP(적립 배수 1 · 가입한 지 오래된 계정) — 서버 `economy.daily_max_of` 와 같은 식:
+     * [DailyMaxRule.hourMult] × [DailyMaxRule.hourSteps] × [pointsPerStep] × (1 + [efficiencyBps] ÷ 10000). [efficiencyBps] 는 포인트까지 든 효율.
+     * 하루 최대 규칙이 아니면(예전 하루 금액 상한 — CAP) null
+     */
+    fun dailyMaxSup(efficiencyBps: Int): Double? {
+        if (!dailyMax.hour) return null
+        val v = dailyMax.hourMult.coerceAtLeast(0.0) * dailyMax.hourSteps.coerceAtLeast(0) * pointsPerStep *
+            (10000 + efficiencyBps) / 10000.0
+        // 서버도 소수 넷째 자리에서 반올림한다
+        return Math.round(v * 10000) / 10000.0
+    }
 
     companion object {
         /** 서버 0116 · 0118 과 같은 값 — 서버를 아직 못 읽었을 때 */
@@ -299,9 +391,37 @@ data class ShoeRules(
                 goal = (o["goal"] as? JsonObject)?.let(::parseGoal) ?: FALLBACK.goal,
                 // 묶음이 없으면 0119 전 서버다 — 예전 규칙으로 보인다(닳은 뒤 적립 없음 · 레벨마다 에너지 +2)
                 stats = (o["stats"] as? JsonObject)?.let(::parseStats) ?: StatRule.LEGACY,
+                // 묶음이 없으면 0120 전 서버다 — 함께 출발한 모두 · 2분 판정, 예전 하루 금액 상한
+                together = (o["together"] as? JsonObject)?.let(::parseTogether) ?: TogetherRule.LEGACY,
+                dailyMax = (o["daily_max"] as? JsonObject)?.let(::parseDailyMax) ?: DailyMaxRule.LEGACY,
                 fromServer = true,
             )
         }.getOrNull()
+
+        /** `together` 묶음(0120) — 빠진 칸은 기본값. 규칙 글자는 대문자로(ACTIVE 가 아니면 예전 규칙으로 본다) */
+        private fun parseTogether(t: JsonObject): TogetherRule {
+            val d = TogetherRule.FALLBACK
+            return TogetherRule(
+                rule = t.str("rule")?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: d.rule,
+                minMinutes = (t.int("min_minutes") ?: d.minMinutes).coerceAtLeast(0),
+                minSteps = (t.int("min_steps") ?: d.minSteps).coerceAtLeast(0),
+                goalShare = (t.dbl("goal_share") ?: d.goalShare).coerceIn(0.0, 1.0),
+                topupHours = (t.int("topup_hours") ?: d.topupHours).coerceAtLeast(0),
+                fromServer = true,
+            )
+        }
+
+        /** `daily_max` 묶음(0120) — 빠진 칸은 기본값. 규칙 글자는 대문자로(HOUR 가 아니면 예전 하루 금액 상한으로 본다) */
+        private fun parseDailyMax(m: JsonObject): DailyMaxRule {
+            val d = DailyMaxRule.FALLBACK
+            return DailyMaxRule(
+                rule = m.str("rule")?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: d.rule,
+                hourSteps = (m.int("hour_steps") ?: d.hourSteps).coerceAtLeast(0),
+                hourMult = (m.dbl("hour_mult") ?: d.hourMult).coerceAtLeast(0.0),
+                goalIncluded = (m["goal_included"] as? JsonPrimitive)?.booleanOrNull ?: d.goalIncluded,
+                fromServer = true,
+            )
+        }
 
         /** `forge` 묶음(0118) — 빠진 칸은 기본값. 묶음이 없는 서버(0118 전)는 부르지 않는다([FALLBACK] 그대로 · fromServer = false) */
         private fun parseForge(f: JsonObject): ForgeXpRule {

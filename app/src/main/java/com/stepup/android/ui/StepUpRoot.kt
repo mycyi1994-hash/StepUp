@@ -1,5 +1,6 @@
 package com.stepup.android.ui
 
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 import androidx.compose.foundation.layout.RowScope
@@ -410,6 +411,19 @@ fun StepUpRoot() {
         onPauseOrDispose { job.cancel() }
     }
 
+    // 강제 업데이트(서버 0120) — 서버가 이 판을 더는 받지 않으면 업데이트 화면만. 달리는 중 · 저장하는 중에는 러닝 화면을 가리지 않는다
+    // (러닝은 이 폰에 남고 업데이트한 뒤 올라간다) — 러닝이 끝나면 그때 보인다
+    val updateFlow = remember {
+        runCatching { ServiceLocator.server.updateRequired }.getOrNull() ?: kotlinx.coroutines.flow.MutableStateFlow(false)
+    }
+    val updateRequired by updateFlow.collectAsState()
+    val runBusyFlow = remember {
+        com.stepup.android.service.WalkSessionService.state
+            .map { it.isActive || it.saveStatus == com.stepup.android.service.RunSaveStatus.SAVING }
+            .distinctUntilChanged()
+    }
+    val runBusy by runBusyFlow.collectAsState(initial = false)
+
     Box(Modifier.fillMaxSize()) {
         NightCanvas(Modifier.fillMaxSize())
 
@@ -418,6 +432,7 @@ fun StepUpRoot() {
         val accessWaiting = loginMethod == "google" && !accessChecked && !accessFailed && !accessWaitOver && access?.mode != "OPEN"
         val stage = when {
             !ready || loginMethod == null || guideSeen == null || setupSeen == null || !sessionChecked -> 0
+            updateRequired && !runBusy -> 6
             loginMethod!!.isEmpty() -> 1
             accessWaiting -> 5
             blocked -> 4
@@ -434,6 +449,8 @@ fun StepUpRoot() {
             1 -> LoginScreen(onDone = {})
 
             5 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Loading)
+
+            6 -> com.stepup.android.ui.screens.splash.UpdateRequiredScreen()
 
             3 -> com.stepup.android.ui.screens.setup.S2SetupFlow(onDone = {})
 
