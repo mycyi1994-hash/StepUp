@@ -92,6 +92,11 @@ update public.economy_settings set value = v.value
   from (values ('worn_rate', '0'::jsonb), ('eff_wear_exp', '0'::jsonb), ('eff_energy_exp', '0'::jsonb), ('dur_repair_exp', '0'::jsonb),
                ('energy_per_level', '2'::jsonb), ('forge_xp_curve', '"CLASSIC"'::jsonb)) v(key, value)
  where public.economy_settings.key = v.key;
+-- 0120(함께 달린 사람만 · 하루 최대 SUP)도 예전 값으로 — 위의 예전 검사들은 출발한 사람 모두 · 하루 금액 상한으로 셈한다.
+-- 맨 끝 "함께 달리기 보너스(0120)"가 0120 값으로 다시 켠다
+update public.economy_settings set value = v.value
+  from (values ('crew_bonus_rule', '"ALL"'::jsonb), ('party_bonus_rule', '"ALL"'::jsonb), ('daily_max_rule', '"CAP"'::jsonb)) v(key, value)
+ where public.economy_settings.key = v.key;
 
 -- 홈페이지 대기 명단은 제한된 공개 함수만 허용한다.
 do $$
@@ -12724,7 +12729,7 @@ begin
   perform pg_temp.ok((v ->> 'ok')::boolean and v ? 'runs_7d' and v ? 'money_7d' and (v -> 'versions' ->> 'new_app')::int >= 1,
     '경제 현황 — 지난 7일 러닝 · 돈 · 앱 판 (0116)');
   v := public.ops_economy_settings(v_s);
-  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 35, '경제 설정 — 바꿀 수 있는 값 서른다섯 (0116 열아홉 + 0118 강화 경험치 여덟 · 목표 셋 + 0119 다섯)');
+  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 38, '경제 설정 — 바꿀 수 있는 값 서른여덟 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 셋)');
   v := public.ops_economy_set(v_s, 'box_price', '45'::jsonb);
   perform pg_temp.ok(v ->> 'code' = 'confirm_required', '설정은 언제나 키를 한 번 더 (0116)');
   v := public.ops_economy_set(v_s, 'box_price', '"사십"'::jsonb, pg_temp.fx('key116'));

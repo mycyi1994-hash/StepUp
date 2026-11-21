@@ -1,4 +1,4 @@
-# 함께 달리기 보너스 고치기 — 설계 (2026-11-21, 설계만 · 코드 없음)
+# 함께 달리기 보너스 고치기 — 설계 · 만든 것 (2026-11-21, 서버 0120)
 
 점검 [점검-2026-11-21-보너스.md](점검-2026-11-21-보너스.md)의 P1 · P2 · P3 · P5 · P7 · P8 을 고치는 설계. 숫자는 서버와 같은 식으로 셈했다(9장).
 사용자 결정(2026-11-21): **P4(인원 보너스 절벽 6 · 20명) · P6(작은 크루는 이득이 거의 없음)은 의도다 — 러닝 크루로 달리게 거의 강제하는 게임이다.** 인원 표 · 레벨 보너스 · 크루 우선은 그대로 둔다.
@@ -171,3 +171,23 @@
 | B5 | 이벤트 · 부스터가 크루 보너스에도 곱해지나 | **곱한다**(천장이 막는다). 다른 길: 기본 몫에만 |
 | B6 | 새 계정을 인원으로 셀 때 조건 | **조건 없음**(친구 데려오기를 막지 않게) + 운영 현황으로 본다 |
 | B7 | 언제 내보내나 | 지금 운영 중인 서버의 구멍이라 **대격변과 따로 먼저**(서버만으로 된다 — 앱 글은 다음 판) |
+
+## 14. 만든 것 (서버 0120 · 2026-11-21)
+
+사용자 결정으로 규칙을 넷으로 줄였다(0장의 일곱 가운데 R4 · R5 · R6 · R7 을 하나로):
+"하루에 얻을 수 있는 SUP 의 최대량을 정해야" · "1은 4배 · 2번(목표 보너스)은 넣고" · B1 은 맡김(10분 · 1,500보).
+
+| 규칙 | 만든 것 |
+| --- | --- |
+| 함께 달린 사람만 | `economy.together_qualifies`(무효 아님 · 경로가 받쳐 줌 · 확인된 걸음 1,500 · 달린 10분) — 크루 · 번개 모두(`crew_bonus_rule` · `party_bonus_rule` = `'ACTIVE'`, 배포 때 `'ALL'` 이던 값을 한 번 바꾼다) |
+| 올릴 때마다 더하기 | `economy.together_settle(방)` — `record_session` 이 크루 · 번개 방의 러닝을 기록한 뒤 부른다. 원장 `EARN_PARTY` · `ref = 'together:<러닝>:<인원>'`, 러닝의 `points_awarded` · `together_paid` · `together_n` · `party_size`, 크루는 `crew_runs.headcount_sup` · `total_sup` · `bonus_count` · `bonus_pct`(문턱 아래는 `bonus_reason = 'NOT_TOGETHER'`). 2분 판정(`crew_run_bonus_eval`)은 예전 규칙에서만 |
+| 탈주한 사람의 체력 | `economy.crew_pool_held` — 10분을 못 채우고 끝냄 · 멈춤 · 30초 넘게 소식 없음이면 안 쓴 몫을 묶는다(`crew_pool_settle` · `crew_pool_json` 의 `total` · `remaining` · `held`). 다시 달리면 풀리고 0 이던 구간을 닫는다. 계정 삭제는 트리거(`crew_runs_deleted`)가 뺀다 — 카운트다운 돌려받기(`crew_run_release`)는 이미 빼므로 표시로 건너뛴다 |
+| 하루 최대 SUP | `economy.daily_max_of(사람, 효율, 배수)` = 4 × 9,900보 × 걸음당 SUP × 효율 × 적립 배수(가입 7일 안 절반) · `day_earned`(러닝 전부 + 목표 보너스) · `day_room`. 혼자 · 번개 · 크루 러닝 · 더하기 · 목표 보너스(`goal_settle`) 모두 그 안에서. 러닝마다 `walk_sessions.day_max` 에 적는다. `daily_max_rule = 'CAP'` 이면 예전 하루 금액 상한 |
+
+- 설정: `together_min_minutes` 10 · `together_min_steps` 1,500 · `together_topup_hours` 24 · `daily_max_rule` "HOUR" · `daily_max_hour_steps` 9,900 · `daily_max_hour_mult` 4. 운영자 손잡이 서른여덟(셋 더함).
+- `shoe_rules_v4()` 에 `together`(문턱) · `daily_max`(눈금) 묶음 — 앱이 "10분 넘게 함께 달리면 인원에 들어가요" · "하루 최대 약 N SUP"를 보일 때 쓴다(앱은 다음 판).
+- 검사: 장면 `tools/together_sim/16-together-fix.sql`(OK / FAIL 16줄 — CI `test-sql.yml` 이 돌린다) · 서버 검사(예전 절은 `'ALL'` · `'CAP'` 으로 돈다 — 맨 위에서 맞춘다) · 경제 불변식 여덟 · 속도 · 모형 · 쌍둥이 그대로 통과.
+- 장면 15(점검의 재현)는 이제 (나) 약 416 SUP(둘째가 올리면 +5%) — 예전 2,639.7.
+- 함수 모양은 그대로다. `record_session` 은 0120 이 마지막 정의다.
+- 앱(다음 판): 결과 화면의 "함께 달린 사람 N명 · 친구가 올리면 더해져요" · 대기실 한 줄 · 신발 화면 "하루 최대" · 더해질 때 알림. 지금 앱도 서버 값을 그대로 보인다(크루 결과의 인원 · 보너스가 나중에 바뀐다).
+
