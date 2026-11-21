@@ -45422,6 +45422,7 @@ begin
     -- 0120 — 함께 달린 사람의 문턱 · 하루 최대 SUP(신발 화면의 "하루 최대 약 N SUP" — 값은 늘 서버가 정한다)
     'together', jsonb_build_object(
         'rule', case when economy.together_on('CREW') then 'ACTIVE' else 'LEGACY' end,
+        'flash_rule', case when economy.together_on('FLASH') then 'ACTIVE' else 'LEGACY' end,
         'min_minutes', economy.together_min_sec() / 60, 'min_steps', economy.together_min_steps(),
         'goal_share', least(greatest(economy.fx('together_goal_share', 0.5), 0), 1),
         'topup_hours', economy.fx('together_topup_hours', 24)::int),

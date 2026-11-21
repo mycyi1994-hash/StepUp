@@ -22,6 +22,7 @@ import com.stepup.android.R
 import com.stepup.android.domain.CrewRunMath
 import com.stepup.android.domain.CrewRunRules
 import com.stepup.android.domain.CrewRunToday
+import com.stepup.android.domain.TogetherRule
 import com.stepup.android.ui.screens.community.chat.BlueSheet
 import com.stepup.android.ui.screens.community.chat.BlueSheetBody
 import com.stepup.android.ui.screens.community.chat.blueInk
@@ -40,15 +41,27 @@ import com.stepup.android.ui.screens.walk.navyText
  * 대기실(CrewLobby)도 같은 규칙 줄 · 인원 보너스 표를 쓴다([crewRunRuleLines] · [crewHeadcountRows]).
  */
 
-/** 규칙 줄(제목 · 설명) — 신발 각자 · 분당 소모 · 0 이면 적립만 멈춤 · 하루 한 번 · 500m 2분 확인 · 자정 초기화 · 보상 · 방 인원 */
+/**
+ * 규칙 줄(제목 · 설명) — 신발 각자 · 분당 소모 · 0 이면 적립만 멈춤 · 하루 한 번 · 인원 보너스에 드는 사람 · 자정 초기화 · 보상 · 방 인원.
+ * 인원 보너스 줄은 서버 규칙(0120 `together`)이 함께 달린 사람만 셀 때 그 문턱(분 · 걸음 · 코스의 몫 · 더하는 시간)으로, 아니면 예전 글
+ */
 @Composable
-internal fun crewRunRuleLines(rules: CrewRunRules): List<Pair<String, String>> = listOf(
+internal fun crewRunRuleLines(
+    rules: CrewRunRules,
+    together: TogetherRule? = com.stepup.android.ui.screens.items.rememberShoeRules().together,
+): List<Pair<String, String>> = listOf(
     stringResource(R.string.crew_run_rule_shoes_t) to stringResource(R.string.crew_run_rule_shoes_b),
     stringResource(R.string.crew_run_rule_drain_t, CrewRunMath.amount(rules.drainPerMin)) to stringResource(R.string.crew_run_rule_drain_b),
     stringResource(R.string.crew_run_rule_empty_t) to stringResource(R.string.crew_run_rule_empty_b),
     stringResource(R.string.crew_run_rule_once_t) to stringResource(R.string.crew_run_rule_once_b),
-    stringResource(R.string.crew_run_rule_near_t) to
-        stringResource(R.string.crew_run_rule_near_b),
+    if (together != null && together.fromServer && together.active) {
+        stringResource(R.string.tb_rule_together_t) to stringResource(
+            R.string.tb_rule_together_b, together.minMinutes, java.text.NumberFormat.getIntegerInstance().format(together.minSteps),
+            CrewRunMath.percent(together.goalShare), together.topupHours,
+        )
+    } else {
+        stringResource(R.string.crew_run_rule_near_t) to stringResource(R.string.crew_run_rule_near_b)
+    },
     stringResource(R.string.crew_run_rule_reset_t) to stringResource(R.string.crew_run_rule_reset_b),
     stringResource(R.string.crew_run_rule_reward_t) to stringResource(R.string.crew_run_rule_reward_b),
     stringResource(R.string.crew_run_rule_room, rules.roomMax) to "",

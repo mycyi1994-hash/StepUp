@@ -18,4 +18,5 @@
     <string name="tb_update_title">アップデートが必要です</string>
     <string name="tb_update_body">新しいバージョンにアップデートすると引き続き使えます</string>
     <string name="tb_update_action">アップデートする</string>
+    <string name="tb_live_counting">一緒に走った人数は記録をアップした後に決まります · Lv +%1$s%%</string>
 </resources>

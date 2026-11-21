@@ -3,8 +3,8 @@ package com.stepup.android.ui.screens.splash
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.core.net.toUri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -124,19 +124,19 @@ internal fun openUpdate(context: Context) {
 /** Google Play 의 이 앱 쪽 — Play 앱이 있으면 그 앱으로, 없으면 브라우저로 */
 internal fun openStoreListing(context: Context) {
     val id = BuildConfig.APPLICATION_ID
-    val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$id")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    val market = Intent(Intent.ACTION_VIEW, "market://details?id=$id".toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     try {
         context.startActivity(market)
     } catch (_: ActivityNotFoundException) {
         runCatching {
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(storeWebUrl(id))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                Intent(Intent.ACTION_VIEW, storeWebUrl(id).toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         }
     } catch (_: SecurityException) {
         runCatching {
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(storeWebUrl(id))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                Intent(Intent.ACTION_VIEW, storeWebUrl(id).toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         }
     }

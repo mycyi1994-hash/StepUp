@@ -13,7 +13,8 @@
 - **강제 업데이트**: 문지기(`public.access_gate`)가 `app_min_version_code`(스토어 번호, 기본 0 = 끔)보다 낮은 앱을 HTTP 426 `update_required` 로 막는다 — 앱은 머리글 `x-stepup-version`(versionCode % 1000).
   로그인 안 한 요청 · 계정 삭제 · 푸시 끊기는 지나간다. 켜는 것은 새 판이 스토어에 나간 뒤 · 공지 뒤에 운영자 페이지 "경제"에서(사용자 몫).
 - 검사: 장면 `tools/together_sim/16-together-fix.sql`(OK / FAIL — CI) · 서버 검사 "함께 달리기 보너스 · 강제 업데이트(0120)" · 예전 절은 `'ALL'` · `'CAP'` 으로 돈다(맨 위에서 맞춘다).
-  앱(1.21.0): 대기실 "목표의 절반 이상 함께 달려야 인원" · 크루 결과 "친구가 올리면 더해져요" · 신발 "하루 최대 약 N SUP" · "업데이트가 필요해요" 화면 · 규칙 `TogetherRule` · `DailyMaxRule`(`domain/EconomyV4.kt`).
+  앱(1.21.0 — 설계 14.2장): 대기실 "목표의 절반 이상 함께 달려야 인원" · 달리는 중 "인원은 올린 뒤 정해져요" · 크루 결과 "친구가 올리면 더해져요" · 신발 "하루 최대 약 N SUP" · "업데이트가 필요해요" 화면 ·
+  규칙 `TogetherRule`(`rule` 크루 · `flash_rule` 번개) · `DailyMaxRule`(`domain/EconomyV4.kt` — `check-economy-twin.py` 가 0120 과 맞대어 본다).
 
 ## 최신 — 능력치 대격변 설계 중 (2026-11-21, 설계만 · 코드 없음 · 사용자와 하나씩 정하는 중)
 

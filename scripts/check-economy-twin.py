@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""경제 4판 쌍둥이 — 앱의 [ShoeRules.FALLBACK](domain/EconomyV4.kt)이 서버 0116 · 0118 · 0119 와 같은 값인지 맞대어 본다.
+"""경제 4판 쌍둥이 — 앱의 [ShoeRules.FALLBACK](domain/EconomyV4.kt)이 서버 0116 · 0118 · 0119 · 0120 과 같은 값인지 맞대어 본다.
 
 앱은 서버(shoe_rules_v4)를 읽기 전까지 FALLBACK 으로 지수 · 별 · 포인트 미리보기를 센다. 서버만 고치고 앱을 잊으면
 처음 몇 초 동안 다른 숫자가 보인다. 서버 값을 바꾸면 둘을 함께 고친다.
@@ -191,7 +191,43 @@ for name, fn in (('energyBase', 'base_max_energy'), ('stepsPerEnergy', 'steps_pe
     elif float(m.group(1)) != kt_value(stat, name):
         bad.append(f'{fn}: 앱 {kt_value(stat, name)} · 서버 {m.group(1)}')
 
+# ── 0120 함께 달린 사람 · 하루 최대 ────────────────────────────────
+SQL_0120_PATH = ROOT / 'supabase/migrations/0120_together_bonus_fix.sql'
+if not SQL_0120_PATH.exists():
+    sys.exit('서버 0120(supabase/migrations/0120_together_bonus_fix.sql)을 찾지 못했다 — 앱 TogetherRule · DailyMaxRule.FALLBACK 은 0120 과 맞대어 본다')
+SQL_0120 = re.sub(r'--[^\n]*', '', SQL_0120_PATH.read_text())
+s120 = {}
+for block in re.findall(r"insert\s+into\s+public\.economy_settings\s*\(\s*key\s*,\s*value\s*\)\s*values(.*?);", SQL_0120, re.I | re.S):
+    for k, v in SETTING_ROW.findall(block):
+        s120.setdefault(k, v.strip().strip('"'))
+together = fallback_block('TogetherRule')
+daily = fallback_block('DailyMaxRule')
+together_twins = [
+    (together, 'rule', 'crew_bonus_rule'),
+    (together, 'minMinutes', 'together_min_minutes'),
+    (together, 'minSteps', 'together_min_steps'),
+    (together, 'goalShare', 'together_goal_share'),
+    (together, 'topupHours', 'together_topup_hours'),
+    (daily, 'rule', 'daily_max_rule'),
+    (daily, 'hourSteps', 'daily_max_hour_steps'),
+    (daily, 'hourMult', 'daily_max_hour_mult'),
+]
+for block, name, key in together_twins:
+    app_v = kt_value(block, name)
+    if key not in s120:
+        bad.append(f'설정 {key}: 서버 0120 에 없다')
+        continue
+    srv_v = s120[key] if isinstance(app_v, str) else float(s120[key])
+    if app_v != srv_v:
+        bad.append(f'설정 {key}: 앱 {app_v} · 서버 {srv_v}')
+m = re.search(r"'goal_included'\s*,\s*(true|false)", SQL_0120)
+app_goal = re.search(r'goalIncluded\s*=\s*(true|false)', daily)
+if not m or not app_goal:
+    bad.append('goal_included: 서버 0120 의 daily_max 묶음이나 앱 DailyMaxRule.FALLBACK 에서 찾지 못했다')
+elif m.group(1) != app_goal.group(1):
+    bad.append(f'goal_included: 앱 {app_goal.group(1)} · 서버 {m.group(1)}')
+
 if bad:
-    print('앱 FALLBACK 과 서버 0116 · 0118 · 0119 가 다르다:\n  ' + '\n  '.join(bad))
+    print('앱 FALLBACK 과 서버 0116 · 0118 · 0119 · 0120 이 다르다:\n  ' + '\n  '.join(bad))
     sys.exit(1)
-print(f'경제 4판 쌍둥이 — 등급 {len(GRADES)} · 설정 {len(kt_values) + 3} · 강화 · 목표 {len(twins) + 2} · 능력치 규칙 {len(stat_twins) + 4} 모두 같다')
+print(f'경제 4판 쌍둥이 — 등급 {len(GRADES)} · 설정 {len(kt_values) + 3} · 강화 · 목표 {len(twins) + 2} · 능력치 규칙 {len(stat_twins) + 4} · 함께 달리기 · 하루 최대 {len(together_twins) + 1} 모두 같다')

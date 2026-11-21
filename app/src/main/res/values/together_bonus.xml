@@ -8,9 +8,9 @@
     <string name="tb_lobby_km">Run at least %1$s km and %2$d min together to count toward the group</string>
     <string name="tb_lobby_minutes">Run at least %1$d min together to count toward the group</string>
     <string name="tb_rule_together_t">Only crew members who ran together</string>
-    <string name="tb_rule_together_b">Crew members who start from the same lobby and run together for at least %1$d min and %2$s steps count toward the group bonus. With a course, run at least %3$s%% of it. If a friend uploads later, everyone gets the extra within %4$d hours.</string>
+    <string name="tb_rule_together_b">Crew members who start from the same lobby and run together for at least %1$d min and %2$s steps count toward the group bonus. With a course, run at least %3$s%% of it. If a friend uploads later, everyone still gets the extra up to %4$d h after the start.</string>
     <string name="tb_bonus_note">Only crew members who ran together count. With 0–1 runners there is no bonus. The level bonus is added separately.</string>
-    <string name="tb_result_together_n">%1$d ran together · more may be added when friends upload their runs</string>
+    <string name="tb_result_together_n">Ran together: %1$d · more may be added when friends upload their runs</string>
     <string name="tb_result_not_together_goal">You weren\'t counted as running together this time · run at least half the course and %1$d min together to count</string>
     <string name="tb_result_not_together">You weren\'t counted as running together this time · run at least %1$d min together to count</string>
     <string name="tb_result_headcount_none">No group bonus on this run</string>
@@ -18,4 +18,5 @@
     <string name="tb_update_title">Update needed</string>
     <string name="tb_update_body">Update to the new version to keep using the app</string>
     <string name="tb_update_action">Update</string>
+    <string name="tb_live_counting">Runners who ran together are counted after everyone uploads · Lv +%1$s%%</string>
 </resources>

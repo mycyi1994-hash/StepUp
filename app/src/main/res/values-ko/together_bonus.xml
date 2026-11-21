@@ -24,4 +24,5 @@
     <string name="tb_update_title">업데이트가 필요해요</string>
     <string name="tb_update_body">새 판으로 업데이트해야 계속 쓸 수 있어요</string>
     <string name="tb_update_action">업데이트하기</string>
+    <string name="tb_live_counting">함께 달린 인원은 기록을 올린 뒤 정해져요 · Lv +%1$s%%</string>
 </resources>

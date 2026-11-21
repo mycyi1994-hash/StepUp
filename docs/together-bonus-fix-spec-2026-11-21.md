@@ -201,3 +201,20 @@
   **켜는 차례**: 새 판(1.21.0)이 스토어에서 받을 수 있게 된 뒤 → 예전 앱 사용자에게 푸시 · 공지 → 정한 날 운영자 페이지 "경제"에서 `app_min_version_code` 를 30 으로. 그 전에는 0(끔)이다.
 - 검사: 장면 16 에 (아) 5km 코스(2.4km 에서 멈춘 사람은 세지 않고 체력이 묶인다) · 서버 검사 "함께 달리기 보너스 · 강제 업데이트(0120)"(문지기 여섯 · 규칙 묶음 · 손잡이). 운영자 손잡이 마흔.
 
+
+### 14.2 앱 1.21.0 (같은 날)
+
+| 자리 | 보이는 것 | 코드 |
+| --- | --- | --- |
+| 크루 · 번개 대기실 | "코스의 절반(2.5 km) 이상 · 10분 이상 함께 달려야 인원에 들어가요"(목표가 없는 방은 분만) | `walk/TogetherBonusLines.kt` `togetherLobbyLine` · `CrewLobby.kt` · `PartyLobbyScreen.kt` · `CrewRunParts.kt` |
+| 크루 러닝 중 | "함께 달린 인원은 기록을 올린 뒤 정해져요 · Lv +N%"(예전 "N초 뒤 확정" 대신 — 2분 판정이 없다) | `CrewRunLive.kt` `CrewPoolBar` |
+| 크루 결과 | "함께 달린 사람 N명 · 친구가 기록을 올리면 더해질 수 있어요"(24시간 안) · 못 들었으면 차분한 한 줄. 화면에 돌아올 때 · 1분마다 다시 읽는다 | `WalkScreen.kt` · `togetherResultLine` |
+| 러닝 기록 상세 | 0 SUP 까닭 "하루 최대 SUP 에 걸렸습니다" | `domain/RunVerdictReason.kt` `Kind.DAILY_MAX` |
+| 신발 상세 | "하루 최대 약 N SUP" + ⓘ(혼자 · 크루 · 보너스 · 목표 보너스의 합 · 이벤트 날 · 새 계정 절반) | `items/ShoeDailyMax.kt` · `ShoeRules.dailyMaxSup` |
+| 막힌 예전 판 | "업데이트가 필요해요" 화면 하나(스토어 · 테스트 APK 는 스스로 업데이트) | `splash/UpdateRequiredScreen.kt` · `StepUpRoot.kt` |
+
+- 규칙은 서버 `shoe_rules_v4()` 의 `together`(`rule` 크루 · `flash_rule` 번개 — 운영자가 둘 중 하나만 바꿔도 대기실이 맞게) · `daily_max` 묶음 → `domain/EconomyV4.kt` `TogetherRule` · `DailyMaxRule`.
+  묶음이 없는 서버(0120 전)면 예전 글 그대로. 숫자(인원 · 금액)는 늘 서버 값이다.
+- 머리글 `x-stepup-version` 은 모든 요청에(`StepUpServer` · `SupabaseAuth`). 426 / `update_required` 를 받으면 5분 동안 올리기를 멈추고 업데이트 화면.
+- 검사: `TogetherBonusTest`(14) · `scripts/check-economy-twin.py` 가 `TogetherRule` · `DailyMaxRule.FALLBACK` 을 0120 과 맞대어 본다.
+- 글은 `res/values*/together_bonus.xml`(4개 언어).

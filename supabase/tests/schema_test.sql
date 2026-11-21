@@ -13745,7 +13745,7 @@ update public.economy_settings set value = v.value
 do $$
 declare j jsonb := public.shoe_rules_v4();
 begin
-  perform pg_temp.ok(j -> 'together' ->> 'rule' = 'ACTIVE' and (j -> 'together' ->> 'min_minutes')::int = 10 and (j -> 'together' ->> 'min_steps')::int = 1500
+  perform pg_temp.ok(j -> 'together' ->> 'rule' = 'ACTIVE' and j -> 'together' ->> 'flash_rule' = 'ACTIVE' and (j -> 'together' ->> 'min_minutes')::int = 10 and (j -> 'together' ->> 'min_steps')::int = 1500
                      and (j -> 'together' ->> 'goal_share')::numeric = 0.5 and j -> 'daily_max' ->> 'rule' = 'HOUR'
                      and (j -> 'daily_max' ->> 'hour_steps')::int = 9900 and (j -> 'daily_max' ->> 'hour_mult')::numeric = 4,
     format('규칙 묶음에 함께 달린 사람의 문턱 · 하루 최대가 있다 (%s · %s) (0120)', j -> 'together', j -> 'daily_max'));

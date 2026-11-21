@@ -319,6 +319,7 @@ internal fun CrewRunLive(
 /** 공용 체력 한 줄 — "공용 체력" · 막대 · "612 / 816", 아래에 인원 보너스 판정(또는 일시정지 · 얼마 남지 않음) · 지금 쓰는 사람 수 */
 @Composable
 private fun CrewPoolBar(pool: CrewLivePool) {
+    val together = com.stepup.android.ui.screens.items.rememberShoeRules().together.let { it.fromServer && it.active }
     val c = crewColors()
     val t = runTone()
     val tint = when {
@@ -344,6 +345,9 @@ private fun CrewPoolBar(pool: CrewLivePool) {
             when {
                 pool.paused -> stringResource(R.string.crew_live_paused)
                 pool.low -> stringResource(R.string.crew_live_pool_low)
+                // 함께 달린 사람만 세는 규칙(0120)이면 인원은 올린 뒤 정해진다 — 2분 판정은 없다
+                pool.status == com.stepup.android.domain.CrewBonusStatus.PENDING && together ->
+                    stringResource(R.string.tb_live_counting, pool.levelPercent)
                 pool.status == com.stepup.android.domain.CrewBonusStatus.PENDING ->
                     pool.checkLeft?.let { stringResource(R.string.crew_live_checking, it) } ?: stringResource(R.string.crew_live_checking_now)
                 pool.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && pool.bonusCount >= 2 ->

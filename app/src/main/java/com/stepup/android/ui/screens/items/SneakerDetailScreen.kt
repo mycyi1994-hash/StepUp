@@ -589,6 +589,8 @@ private fun DetailBody(
             // 곧 닳는지는 그 신발의 수명으로(효율에 포인트를 넣은 신발은 그만큼 짧다 — 서버 규칙)
             repairEmphasis = repairUrgent(shoe, rememberShoeRules()),
         )
+        // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
+        ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 6.dp))
         // 아이템칸 — 아이템이 생긴다는 가정의 자리만(잠김). 아이템 · 개수를 지어내지 않는다
         Spacer(Modifier.height(18.dp))
         ShoeItemSlots()

@@ -1007,6 +1007,23 @@ fun RunScreen(
                         wait = (wait * 2).coerceAtMost(CREW_OUTCOME_RETRY_MAX_MS)
                     }
                 }
+                // 함께 달린 보너스는 친구가 러닝을 올릴 때마다 서버가 더한다(0120) — 결과로 돌아올 때마다 한 번, 보고 있는 동안은
+                // 출발 뒤 더하는 시간 안에서만 1분마다 다시 읽는다(처음 한 번은 위에서 읽는다)
+                val togetherRule = shoeRules.together
+                var outcomeResumed by remember(session.lastStartedAt) { mutableStateOf(false) }
+                val outcomeScope = androidx.compose.runtime.rememberCoroutineScope()
+                androidx.lifecycle.compose.LifecycleResumeEffect(session.lastStartedAt, groupRun, recorded, togetherRule.active) {
+                    val job = if (groupRun && recorded) outcomeScope.launch {
+                        val crewRunRepo = com.stepup.android.core.ServiceLocator.crewRun
+                        if (outcomeResumed) crewRunRepo.loadOutcome(session.lastStartedAt)
+                        outcomeResumed = true
+                        while (togetherRule.topupOpen(session.lastStartedAt, System.currentTimeMillis())) {
+                            kotlinx.coroutines.delay(CREW_OUTCOME_TOGETHER_REFRESH_MS)
+                            crewRunRepo.loadOutcome(session.lastStartedAt)
+                        }
+                    } else null
+                    onPauseOrDispose { job?.cancel() }
+                }
                 val outcome = outcomeSlot?.value
                 val m = com.stepup.android.domain.CrewRunMath
                 val crewLines = when {
@@ -1018,11 +1035,18 @@ fun RunScreen(
                         // 금액 줄(기본 · 인원 · 레벨 · 합)은 적립이 있을 때만 — 0 이면 아래 까닭 줄만 둔다
                         if (crewMoneyLines(outcome.total)) {
                             val counted = outcome.bonus.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && outcome.bonus.count >= 2
-                            add(stringResource(R.string.crew_result_base, m.sup(outcome.base)))
-                            add(
-                                if (counted) stringResource(R.string.crew_result_headcount, outcome.bonus.count, m.percent(outcome.headcountPct), m.sup(outcome.headcount ?: 0.0))
-                                else stringResource(R.string.crew_result_headcount_none),
+                            // 함께 달린 사람만 세는 규칙(0120) — 인원 · 보너스는 친구가 올릴 때마다 늘 수 있다. 아래 한 줄이 그것을 말한다
+                            val togetherLine = togetherResultText(
+                                togetherResultLine(togetherRule, outcome, session.lastStartedAt, System.currentTimeMillis()),
                             )
+                            add(stringResource(R.string.crew_result_base, m.sup(outcome.base)))
+                            when {
+                                counted -> add(stringResource(R.string.crew_result_headcount, outcome.bonus.count, m.percent(outcome.headcountPct), m.sup(outcome.headcount ?: 0.0)))
+                                // "혼자 출발해"가 아니다 — 함께 출발했지만 아직 · 끝내 함께 달린 사람이 둘이 안 됐다
+                                togetherRule.fromServer && togetherRule.active -> if (togetherLine == null) add(stringResource(R.string.tb_result_headcount_none))
+                                else -> add(stringResource(R.string.crew_result_headcount_none))
+                            }
+                            togetherLine?.let { add(it) }
                             add(stringResource(R.string.crew_result_level_bonus, outcome.levelBefore ?: 1, m.percent(outcome.levelPct), m.sup(outcome.level ?: 0.0)))
                             add(stringResource(R.string.crew_result_total, m.sup(outcome.base), m.percent(outcome.headcountPct), m.percent(outcome.levelPct), m.sup(outcome.total)))
                             // 보상의 운(0116) — 크루 적립에도 곱했다(서버가 준 값)
@@ -2039,6 +2063,9 @@ private const val OFF_COURSE_MS = 15_000L
 private const val CREW_OUTCOME_RETRY_FIRST_MS = 3_000L
 private const val CREW_OUTCOME_RETRY_MAX_MS = 60_000L
 private const val CREW_OUTCOME_RETRY_FOR_MS = 5 * 60_000L
+
+/** 함께 달린 보너스가 더해질 수 있는 동안(0120) 결과를 보고 있으면 다시 읽는 간격 */
+private const val CREW_OUTCOME_TOGETHER_REFRESH_MS = 60_000L
 
 /** "12분 30초" — 마칠까요 · 기록 없이 끝낼까요 · 삭제 확인의 한 줄 */
 @Composable

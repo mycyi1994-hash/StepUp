@@ -18,4 +18,5 @@
     <string name="tb_update_title">需要更新</string>
     <string name="tb_update_body">更新到新版本后才能继续使用</string>
     <string name="tb_update_action">更新</string>
+    <string name="tb_live_counting">一起跑的人数在上传记录后确定 · Lv +%1$s%%</string>
 </resources>

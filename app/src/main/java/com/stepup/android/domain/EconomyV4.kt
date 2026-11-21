@@ -186,8 +186,13 @@ data class TogetherRule(
     val goalShare: Double,
     val topupHours: Int,
     val fromServer: Boolean = false,
+    /** 번개 러닝의 규칙(서버 party_bonus_rule) — 크루([rule], crew_bonus_rule)와 따로 바꿀 수 있다 */
+    val flashRule: String = rule,
 ) {
     val active: Boolean get() = rule == ACTIVE
+
+    /** 번개 대기실이 볼 규칙 — 문턱은 같고 켜짐만 번개 설정을 따른다 */
+    fun forFlash(): TogetherRule = copy(rule = flashRule)
 
     /** 목표 거리 [goalKm] 에서 채워야 하는 거리(km) — 목표가 없으면(0 이하) null */
     fun goalKmOf(goalKm: Double?): Double? =
@@ -403,6 +408,7 @@ data class ShoeRules(
             val d = TogetherRule.FALLBACK
             return TogetherRule(
                 rule = t.str("rule")?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: d.rule,
+                flashRule = (t.str("flash_rule") ?: t.str("rule"))?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: d.rule,
                 minMinutes = (t.int("min_minutes") ?: d.minMinutes).coerceAtLeast(0),
                 minSteps = (t.int("min_steps") ?: d.minSteps).coerceAtLeast(0),
                 goalShare = (t.dbl("goal_share") ?: d.goalShare).coerceIn(0.0, 1.0),
