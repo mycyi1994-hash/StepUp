@@ -22,9 +22,15 @@ object RunVerdictReason {
          * 닳은 뒤 적립이 없는 서버(0119 전 · worn_rate 0)는 [WORN_AFTER] · [WORN] 을 보낸다
          */
         WORN_PARTIAL,
+
+        /**
+         * 하루 최대 SUP(서버 0120 — 혼자 · 번개 · 크루 · 함께 달린 보너스 · 목표 보너스의 합이 그 신발 1시간 값 × 4)에 닿아 일부만 · 하나도
+         * 적립하지 않았다. 예전 하루 금액 상한(0120 전 · daily_max_rule CAP)은 [DAILY_SUP]
+         */
+        DAILY_MAX,
     }
 
-    /** 서버 글(supabase/migrations 0071 · 0089 · 0118 · 0119 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
+    /** 서버 글(supabase/migrations 0071 · 0089 · 0118 · 0119 · 0120 record_session) → 까닭. 서버 글을 바꾸면 여기도 */
     private val KNOWN: Map<String, Kind> = mapOf(
         "가짜 위치가 감지되었습니다" to Kind.MOCK,
         "과속으로 멈춘 뒤 러닝 금지 시간에 시작한 러닝입니다" to Kind.BANNED,
@@ -52,6 +58,8 @@ object RunVerdictReason {
         // 0119 — 닳은 구간이 있던 러닝. 서버 글과 글자까지 같게(docs/economy-roots-contract-2026-11-21.md 2장).
         // 닳은 뒤 적립이 없는 서버는 위의 예전 두 글을 그대로 보낸다 — 둘 다 안다
         "신발이 다 닳은 뒤의 걸음은 일부만 적립했습니다" to Kind.WORN_PARTIAL,
+        // 0120 — 하루 최대 SUP. 서버 글과 글자까지 같게(supabase/migrations/0120_together_bonus_fix.sql record_session)
+        "하루 최대 SUP 에 걸렸습니다" to Kind.DAILY_MAX,
         // 거절(REJECTED) — 서버가 받지 않은 러닝의 까닭(uploadError)
         "너무 오래된 러닝입니다" to Kind.TOO_OLD,
     )

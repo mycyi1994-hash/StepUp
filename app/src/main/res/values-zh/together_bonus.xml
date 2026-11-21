@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 一起跑的人 · 每日最多 SUP · 必须更新（0120，2026-11-21）。四种语言一起修改 -->
+<resources>
+    <string name="tb_daily_max">每天最多约 %1$s SUP</string>
+    <string name="tb_daily_max_info">这是单人 · 跑团 · 加成 · 目标加成全部加起来的值。活动日会按活动倍数增加，刚注册不久的账号减半。</string>
+    <string name="tb_lobby_course_half">一起跑完路线的一半（%1$s 公里）以上 · %2$d 分钟以上才计入人数</string>
+    <string name="tb_lobby_goal_half">一起跑完目标距离的一半（%1$s 公里）以上 · %2$d 分钟以上才计入人数</string>
+    <string name="tb_lobby_km">一起跑 %1$s 公里以上 · %2$d 分钟以上才计入人数</string>
+    <string name="tb_lobby_minutes">一起跑 %1$d 分钟以上才计入人数</string>
+    <string name="tb_rule_together_t">只算一起跑的跑团成员</string>
+    <string name="tb_rule_together_b">从同一个等候室出发、一起跑了 %1$d 分钟 · %2$s 步以上的同一跑团成员才计入人数加成。有路线时需要跑完路线的 %3$s%% 以上。朋友之后才上传记录，只要在 %4$d 小时内，所有人都会加上。</string>
+    <string name="tb_bonus_note">只计算一起跑的同一跑团成员。0~1 人没有加成。等级加成另外计算。</string>
+    <string name="tb_result_together_n">一起跑的人 %1$d 位 · 朋友上传记录后可能会再加上</string>
+    <string name="tb_result_not_together_goal">这次没有计入一起跑的人数 · 一起跑完路线的一半以上、%1$d 分钟以上就会计入</string>
+    <string name="tb_result_not_together">这次没有计入一起跑的人数 · 一起跑 %1$d 分钟以上就会计入</string>
+    <string name="tb_result_headcount_none">这次跑步没有人数加成</string>
+    <string name="run_reason_daily_max">已达到今天能获得的最多 SUP</string>
+    <string name="tb_update_title">需要更新</string>
+    <string name="tb_update_body">更新到新版本后才能继续使用</string>
+    <string name="tb_update_action">更新</string>
+</resources>

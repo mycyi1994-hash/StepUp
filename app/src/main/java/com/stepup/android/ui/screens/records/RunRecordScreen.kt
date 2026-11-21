@@ -259,6 +259,7 @@ private fun reasonText(kind: RunVerdictReason.Kind): Int = when (kind) {
     RunVerdictReason.Kind.TOO_OLD -> R.string.run_reason_too_old
     RunVerdictReason.Kind.NO_ROUTE_REWARD -> R.string.run_reason_no_route_reward
     RunVerdictReason.Kind.WORN_PARTIAL -> R.string.run_reason_worn_partial
+    RunVerdictReason.Kind.DAILY_MAX -> R.string.run_reason_daily_max
 }
 
 @Composable
