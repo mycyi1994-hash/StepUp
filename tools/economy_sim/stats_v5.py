@@ -29,6 +29,10 @@ LUCK_ROLL = {'COMMON': (0, 8), 'RARE': (4, 14), 'EPIC': (8, 20), 'LEGENDARY': (1
 # 행운이 포인트로 다가가는 끝 — 등급마다(다른 능력치처럼 높은 등급일수록 크게). 1.0 이면 기획서 3.2 그대로(모든 등급 100)
 LUCK_MAX = {g: 0.40 + 0.12 * T.ORD[g] for g in T.GRADES}     # 일반 40 · 레어 52 · 에픽 64 · 레전더리 76 · 레드라인 88 · 피니시 100
 # (모든 등급 100 이면 일반 신발은 행운 몰빵이 정답이 된다 — 상자 40 SUP 가 일반 신발 하루의 절반이라)
+# 줍는 것(stat-overhaul 7장): 일반 · 레어 = 상자 조각 5개 = 일반 상자(40 SUP) · 대의 일반 상자.
+# 에픽 이상 = 상급 조각 40개 = 상급 상자(600 SUP) · 대의 상자 대신 상급 조각 10 — 고정 값 상자가 높은 등급에서 쓸모없어지지 않게
+PREMIUM_LOOT = {'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'}
+LOOT_OF = lambda g: dict(box_sup=600.0, shard_per_box=40, box_shards=10) if g in PREMIUM_LOOT else dict(box_sup=40.0, shard_per_box=5, box_shards=None)
 # 하루 남는 SUP 를 맞출 때 쓰는 러너 섞음(분: 몫) — 실제 사용 숫자(tools/economy_sim/usage.sql)가 오면 바꾼다
 MIX = {20: 0.25, 40: 0.40, 60: 0.25, 90: 0.10}
 # 등급마다 두 수 — --fit 이 맞춘 값. 만렙 · 40분 러너(최선 배분)에서
@@ -43,9 +47,6 @@ if os.path.exists(B_FILE):
         B[k], K[k] = float(b), float(kk)
 
 
-RARE_MID_EFF = 1 + T.stat_efficiency('RARE', 0.5) / 10000.0      # 행운 기획서의 기준 신발(레어 가운데)
-
-
 def curve(p, g):
     pmax = T.points_total(g, T.MAX_LEVEL[g])
     return 1 - math.exp(-p / (TAU * pmax)) if p > 0 else 0.0
@@ -56,16 +57,16 @@ _luck = {}
 
 # 행운이 주는 상자 · 수리의 값 — True 면 그 신발 등급의 값(상자는 등급 상자 = 하루 적립에 비례, 수리는 그 신발의 가득 수리비),
 # False 면 기획서 그대로(레어 가운데 신발 기준 고정값 40 · 51.5 SUP — 높은 등급일수록 행운의 값이 작아진다)
-LUCK_SCALES = True
 
 
-def luck_value(lam, energy, run_sup, sup_per_energy, level, box_sup=40.0, repair_sup=51.5):
+def luck_value(lam, energy, run_sup, sup_per_energy, level, repair_sup=51.5, loot=None):
+    loot = loot or LOOT_OF('RARE')
     key = (round(lam * 20) / 20, round(energy * 2) / 2, round(math.log(max(run_sup, 1)) * 20) / 20, round(sup_per_energy, 0), level,
-           round(box_sup), round(repair_sup))
+           round(repair_sup), tuple(sorted((k, v) for k, v in loot.items() if v is not None)))
     if key not in _luck:
         rs = math.exp(key[2])
         o = luck_model.simulate(key[0], max(key[1], 0.1), rs, days=1200, level=level)
-        _luck[key] = luck_model.value(o, rs, key[1], key[3], box_sup=key[5], repair_sup=key[6])['합'] / rs
+        _luck[key] = luck_model.value(o, rs, key[1], key[3], repair_sup=repair_sup, **loot)['합'] / rs
     return _luck[key] * run_sup
 
 
@@ -110,9 +111,8 @@ def day(g, level, minutes, alloc, b=None, with_luck=True, spm=SPM, detail=False,
     gross = base + comfort_gain
     full_repair = T.REPAIR_SHARE * 110 * T.PPS / 5 * s['eff'] * s['dur']                   # 가득 수리비 — 포인트와 상관없다
     repair = min(dmax, 5 * minutes * can / n) * full_repair / dmax
-    scale = (s['eff'] / RARE_MID_EFF) if LUCK_SCALES else 1.0
     luck = luck_value(lam, can / (T.STEPS_PER_ENERGY * spe_mult), gross, T.STEPS_PER_ENERGY * spe_mult * pps, level,
-                      box_sup=40.0 * scale, repair_sup=full_repair if LUCK_SCALES else 51.5) if with_luck else 0.0
+                      repair_sup=full_repair, loot=LOOT_OF(g)) if with_luck else 0.0   # 수리권 = 그 신발 가득 수리(아이템이 하는 일 그대로)
     net = gross + luck - repair
     if detail:
         return dict(net=net, base=base, comfort=comfort_gain, luck=luck, repair=repair, eff=eff, dmax=dmax, comfort_pct=comfort,
