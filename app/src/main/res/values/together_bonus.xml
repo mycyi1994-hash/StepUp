@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Running together · daily SUP maximum · required update (server 0120, 2026-11-21). Keep the four languages in step -->
+<resources>
+    <string name="tb_daily_max">Up to about %1$s SUP a day</string>
+    <string name="tb_daily_max_info">This covers solo, crew, bonuses and goal bonuses together. On event days it grows by the event multiplier, and new accounts get half.</string>
+    <string name="tb_lobby_course_half">Run at least half the course (%1$s km) and %2$d min together to count toward the group</string>
+    <string name="tb_lobby_goal_half">Run at least half the goal distance (%1$s km) and %2$d min together to count toward the group</string>
+    <string name="tb_lobby_km">Run at least %1$s km and %2$d min together to count toward the group</string>
+    <string name="tb_lobby_minutes">Run at least %1$d min together to count toward the group</string>
+    <string name="tb_rule_together_t">Only crew members who ran together</string>
+    <string name="tb_rule_together_b">Crew members who start from the same lobby and run together for at least %1$d min and %2$s steps count toward the group bonus. With a course, run at least %3$s%% of it. If a friend uploads later, everyone still gets the extra up to %4$d h after the start.</string>
+    <string name="tb_bonus_note">Only crew members who ran together count. With 0–1 runners there is no bonus. The level bonus is added separately.</string>
+    <string name="tb_result_together_n">Ran together: %1$d · more may be added when friends upload their runs</string>
+    <string name="tb_result_not_together_goal">You weren\'t counted as running together this time · run at least half the course and %1$d min together to count</string>
+    <string name="tb_result_not_together">You weren\'t counted as running together this time · run at least %1$d min together to count</string>
+    <string name="tb_result_headcount_none">No group bonus on this run</string>
+    <string name="run_reason_daily_max">Reached the most SUP you can earn today</string>
+    <string name="tb_update_title">Update needed</string>
+    <string name="tb_update_body">Update to the new version to keep using the app</string>
+    <string name="tb_update_action">Update</string>
+    <string name="tb_live_counting">Runners who ran together are counted after everyone uploads · Lv +%1$s%%</string>
+    <string name="tb_rule_shoes_blend_b">The max durability of the shoes everyone picks becomes shared stamina, plus the crew level effect. Reward efficiency is %1$s%% your shoe + %2$s%% the average shoe of crew members who ran together.</string>
+    <string name="tb_rule_reward_blend_t">Reward = crew efficiency × (1 + group + level)</string>
+    <string name="tb_rule_reward_daily_b">The group and level bonuses are added together. Solo runs, crew runs and bonuses all count toward your daily max SUP.</string>
+    <string name="tb_blend_note">Efficiency is %1$s%% your shoe + %2$s%% the average shoe of crew members who ran together.</string>
+</resources>

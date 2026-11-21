@@ -57,9 +57,11 @@ fun statBars(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): List<StatBar
     val comfortEnd = comfortBarEnd(shoe, rules)
     val minutes = shoe.server?.hasDurabilityMax == true
     val durability = if (minutes) {
+        // 분 = 내구도 ÷ (5 × 효율 포인트 배수)(서버 0119 — 효율에 포인트를 넣은 신발은 그만큼 빨리 닳는다). 막대 길이는 남은 ÷ 최대 그대로
+        val full = wholeMinutes(shoe, durabilityMax(shoe), rules)
         StatBar(
-            BarStat.DURABILITY, "${wholeMinutes(durabilityLeft(shoe))} / ${wholeMinutes(durabilityMax(shoe))}",
-            durabilityFraction(shoe), "${wholeMinutes(durabilityMax(shoe))}", StatUnit.MINUTES,
+            BarStat.DURABILITY, "${wholeMinutes(shoe, durabilityLeft(shoe), rules)} / $full",
+            durabilityFraction(shoe), "$full", StatUnit.MINUTES,
         )
     } else {
         StatBar(BarStat.DURABILITY, formatDurability(shoe), durabilityFraction(shoe), formatCount(durabilityMax(shoe)))

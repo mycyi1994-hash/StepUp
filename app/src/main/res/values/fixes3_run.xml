@@ -25,4 +25,5 @@
     <string name="run_reason_no_gps_cap">Reached the daily limit for runs without a route</string>
     <string name="run_reason_upload_cap">Reached today\'s upload limit</string>
     <string name="run_reason_too_old">The run is more than 7 days old</string>
+    <string name="run_reason_no_route_reward">The route couldn\'t be confirmed, so these steps didn\'t count toward boxes and your goal</string>
 </resources>

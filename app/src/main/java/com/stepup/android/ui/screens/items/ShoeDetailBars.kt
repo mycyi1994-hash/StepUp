@@ -17,12 +17,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -39,8 +44,10 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -103,6 +110,9 @@ private val LabelStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Sem
 /** 값은 고정폭 숫자 — "5 / 15" 와 "92 / 100" 의 숫자 폭이 같게 */
 private val ValueStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum")
 
+/** 칸 아래 작은 한 줄(다음 레벨까지 % · ⓘ 설명) */
+private val NoteStyle = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum")
+
 /**
  * 레벨 · 효율 · 착화감 · 내구도 네 칸. 이름 열 · 값 열 폭은 네 줄 중 가장 긴 글에 맞춰 같게 둔다 —
  * 값이 긴 줄(내구도)만 막대가 짧아지지 않고 네 막대의 시작 · 끝이 같다. 글자를 키우면 열과 칸 높이가 함께 커진다.
@@ -130,18 +140,31 @@ fun ShoeStatCells(
     val base = LocalTextStyle.current
     val labelStyle = remember(base) { base.merge(LabelStyle) }
     val valueStyle = remember(base) { base.merge(ValueStyle) }
-    val (labelWidth, valueWidth) = remember(labels, values, labelStyle, valueStyle, density) {
-        fun widest(texts: List<String>, style: TextStyle): Dp = with(density) {
-            (texts.maxOf { measurer.measure(it, style, softWrap = false).size.width } + 1).toDp()
+    // 이름 열은 ⓘ 까지 — 레벨 칸(ⓘ 없음)도 같은 폭이라 네 막대의 시작이 같다
+    val explained = rows.map { it.explained }
+    val (labelWidth, valueWidth) = remember(labels, values, explained, labelStyle, valueStyle, density) {
+        fun width(text: String, style: TextStyle): Dp = with(density) {
+            (measurer.measure(text, style, softWrap = false).size.width + 1).toDp()
         }
-        maxOf(LabelMin, widest(labels, labelStyle)) to maxOf(ValueMin, widest(values, valueStyle))
+        val label = labels.indices.maxOf { i -> width(labels[i], labelStyle) + if (explained[i]) InfoGap + InfoIcon else 0.dp }
+        maxOf(LabelMin, label) to maxOf(ValueMin, values.maxOf { width(it, valueStyle) })
     }
     val repair = onRepair?.let { StatRepair(it, enabled = repairEnabled, emphasis = repairEmphasis) }
+    // ⓘ — 펼친 칸 하나(창 없이 칸 아래 한 줄). 다른 칸을 누르면 앞의 것은 접힌다
+    var infoOpen by rememberSaveable(shoe.id) { mutableStateOf<DetailStat?>(null) }
+    // 서버 0119 의 뜻이면 새 글(효율은 신발 · 에너지도 빨리 쓴다 · 내구도는 가득 수리비 그대로), 예전 서버면 예전 글
+    val newMeaning = newStatMeaning(rules)
+    val meanings = rows.map { statMeaning(it.stat, newMeaning) }
+    val showCds = labels.map { stringResource(R.string.shoe_info_show_cd, it) }
+    val hideCds = labels.map { stringResource(R.string.shoe_info_hide_cd, it) }
+    val notes = rows.map { row -> row.nextLevelPercent?.let { stringResource(R.string.shoe_xp_next, it) } }
     BoxWithConstraints(modifier.fillMaxWidth()) {
         // 아주 큰 글씨 · 좁은 화면에서 두 열이 칸을 다 먹으면(막대가 BarMin 보다 짧아지면) 그때만 막대를 글 아래 줄로 내린다
         val stacked = maxWidth - CellPadding * 2 - ColumnGap * 2 - labelWidth - valueWidth < BarMin
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             rows.forEachIndexed { index, row ->
+                val meaning = meanings[index]
+                val open = infoOpen == row.stat
                 StatCell(
                     label = labels[index], value = values[index], fraction = row.fraction, fill = fillOf(row.stat),
                     labelWidth = labelWidth, valueWidth = valueWidth, labelStyle = labelStyle, valueStyle = valueStyle,
@@ -149,6 +172,12 @@ fun ShoeStatCells(
                     description = stringResource(R.string.sdv_bar_cd, labels[index], values[index], ends[index]),
                     tag = "shoe-cell-" + row.stat.name.lowercase(),
                     repair = if (row.stat == DetailStat.DURABILITY) repair else null,
+                    info = if (row.explained && meaning != null) {
+                        StatInfo(open, meaning, if (open) hideCds[index] else showCds[index]) {
+                            infoOpen = if (infoOpen == row.stat) null else row.stat
+                        }
+                    } else null,
+                    note = notes[index],
                 )
             }
         }
@@ -157,6 +186,41 @@ fun ShoeStatCells(
 
 /** 내구도 칸의 수리하기 — 누르면 할 일 · 누를 수 있는지 · 앞세울지 */
 private class StatRepair(val onClick: () -> Unit, val enabled: Boolean, val emphasis: Boolean)
+
+/** 칸의 ⓘ — 펼쳤는가 · 한 줄 설명 · 읽기 도구가 읽는 할 일("효율 설명 보기") · 누르면 */
+private class StatInfo(val open: Boolean, val meaning: String, val action: String, val onToggle: () -> Unit)
+
+/** ⓘ 아이콘 크기 · 이름과의 사이 */
+private val InfoIcon = 16.dp
+private val InfoGap = 4.dp
+
+/** 한 줄 설명 — 효율 · 착화감 · 내구도(레벨은 없다). [newMeaning]([newStatMeaning])이면 서버 0119 의 뜻으로 */
+@Composable
+private fun statMeaning(stat: DetailStat, newMeaning: Boolean): String? = when (stat) {
+    DetailStat.LEVEL -> null
+    DetailStat.EFFICIENCY -> stringResource(statMeaningRes(PointStat.EFFICIENCY, newMeaning))
+    DetailStat.COMFORT -> stringResource(statMeaningRes(PointStat.COMFORT, newMeaning))
+    DetailStat.DURABILITY -> stringResource(statMeaningRes(PointStat.DURABILITY, newMeaning))
+}
+
+/** 이름(+ ⓘ) — 펼치면 ⓘ 가 밝아진다. [wrap] 이면(막대를 아래로 내린 좁은 칸) 이름이 줄을 바꿀 수 있다 */
+@Composable
+private fun CellLabel(label: String, style: TextStyle, info: StatInfo?, modifier: Modifier = Modifier, wrap: Boolean = false) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (wrap) {
+            Text(label, style = style, color = CartoonColors.Text, modifier = Modifier.weight(1f, fill = false))
+        } else {
+            Text(label, style = style, color = CartoonColors.Text, maxLines = 1, softWrap = false)
+        }
+        if (info != null) {
+            Spacer(Modifier.width(InfoGap))
+            Icon(
+                Icons.Outlined.Info, contentDescription = null,
+                tint = if (info.open) CartoonColors.Text else CartoonColors.Number, modifier = Modifier.size(InfoIcon),
+            )
+        }
+    }
+}
 
 @Composable
 private fun statTitle(stat: DetailStat): String = stringResource(
@@ -183,59 +247,64 @@ private fun StatCell(
     stacked: Boolean,
     /** 칸 아래 줄 오른쪽에 붙는 수리하기(내구도 칸) — 막대 줄은 건드리지 않는다 */
     repair: StatRepair? = null,
+    /** ⓘ — 있으면 칸을 누를 때 아래에 한 줄 설명이 펼쳐진다(창 없음) */
+    info: StatInfo? = null,
+    /** 막대 아래 작은 한 줄(레벨 칸 — "다음 레벨까지 65.3%") */
+    note: String? = null,
 ) {
-    val cell = Modifier.fillMaxWidth().heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
-        .semantics(mergeDescendants = true) { contentDescription = description }
+    val spoken = listOfNotNull(description, note, info?.meaning?.takeIf { info.open }, info?.action).joinToString(". ")
+    val noteStyle = LocalTextStyle.current.merge(NoteStyle)
+    // ⓘ 가 있는 칸은 칸 전체가 누르는 자리(칸째 눌림 — 바탕까지 함께 작아지고 어두워진다). 수리하기는 그 안의 따로 누르는 버튼
+    val cell = Modifier.fillMaxWidth()
+        .then(if (info != null) Modifier.clip(CellShape).feedbackClickable(role = Role.Button, onClick = info.onToggle) else Modifier)
+        .heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
+        .semantics(mergeDescendants = true) { contentDescription = spoken }
         .testTag(tag)
         .padding(horizontal = CellPadding, vertical = 6.dp)
-    if (repair != null) {
-        Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (stacked) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(label, style = labelStyle, color = CartoonColors.Text, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(ColumnGap))
-                    Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
-                        modifier = Modifier.testTag("$tag-value"))
-                }
-                CartoonStatBar(fraction, fill, Modifier.fillMaxWidth().height(30.dp).testTag("$tag-bar"))
-            } else {
-                // 다른 칸의 한 줄과 같은 높이(54 − 위아래 6) · 같은 열 폭 — 막대 시작 · 끝이 맞는다
-                Row(Modifier.fillMaxWidth().heightIn(min = 42.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(label, style = labelStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
-                        modifier = Modifier.width(labelWidth))
-                    Spacer(Modifier.width(ColumnGap))
-                    CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
-                    Spacer(Modifier.width(ColumnGap))
-                    Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
-                        modifier = Modifier.width(valueWidth).testTag("$tag-value"))
-                }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                DurabilityRepairButton(repair.onClick, enabled = repair.enabled, emphasis = repair.emphasis)
-            }
+    val extras = repair != null || note != null || info?.open == true
+    if (!stacked && !extras) {
+        Row(cell, verticalAlignment = Alignment.CenterVertically) {
+            CellLabel(label, labelStyle, info, Modifier.width(labelWidth))
+            Spacer(Modifier.width(ColumnGap))
+            CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
+            Spacer(Modifier.width(ColumnGap))
+            Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
+                modifier = Modifier.width(valueWidth).testTag("$tag-value"))
         }
         return
     }
-    if (stacked) {
-        Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (stacked) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = labelStyle, color = CartoonColors.Text, modifier = Modifier.weight(1f))
+                CellLabel(label, labelStyle, info, Modifier.weight(1f), wrap = true)
                 Spacer(Modifier.width(ColumnGap))
                 Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
                     modifier = Modifier.testTag("$tag-value"))
             }
             CartoonStatBar(fraction, fill, Modifier.fillMaxWidth().height(30.dp).testTag("$tag-bar"))
+        } else {
+            // 다른 칸의 한 줄과 같은 높이(54 − 위아래 6) · 같은 열 폭 — 막대 시작 · 끝이 맞는다
+            Row(Modifier.fillMaxWidth().heightIn(min = 42.dp), verticalAlignment = Alignment.CenterVertically) {
+                CellLabel(label, labelStyle, info, Modifier.width(labelWidth))
+                Spacer(Modifier.width(ColumnGap))
+                CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
+                Spacer(Modifier.width(ColumnGap))
+                Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
+                    modifier = Modifier.width(valueWidth).testTag("$tag-value"))
+            }
         }
-        return
-    }
-    Row(cell, verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = labelStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
-            modifier = Modifier.width(labelWidth))
-        Spacer(Modifier.width(ColumnGap))
-        CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
-        Spacer(Modifier.width(ColumnGap))
-        Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
-            modifier = Modifier.width(valueWidth).testTag("$tag-value"))
+        if (note != null) {
+            Text(note, style = noteStyle, color = CartoonColors.Number, modifier = Modifier.padding(bottom = 2.dp).testTag("$tag-note"))
+        }
+        if (info?.open == true) {
+            Text(info.meaning, style = noteStyle, color = CartoonColors.Text,
+                modifier = Modifier.padding(bottom = 2.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag("$tag-info"))
+        }
+        if (repair != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                DurabilityRepairButton(repair.onClick, enabled = repair.enabled, emphasis = repair.emphasis)
+            }
+        }
     }
 }
 

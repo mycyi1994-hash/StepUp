@@ -70,6 +70,10 @@ object ServiceLocator {
     /** 경제 4판(서버 0116) 규칙 · 상자 현황 — 신발 · 수리 · 강화 · 출발 전 점검 · 뽑기가 함께 본다 */
     lateinit var shoeRules: com.stepup.android.data.repo.ShoeRulesRepository
         private set
+
+    /** 러너 레벨(서버 0121) — 내 정보 카드 · 레벨이 올랐다는 알림 · 신발 화면의 하루 에너지 글 · 크루 명단 배지 */
+    lateinit var runnerLevel: com.stepup.android.data.repo.RunnerLevelRepository
+        private set
     lateinit var sneakerRepository: SneakerRepository
         private set
 
@@ -351,9 +355,32 @@ object ServiceLocator {
         )
         territoryApi = TerritoryApi(server)
         economyApi = com.stepup.android.data.remote.EconomyApi(server)
+        val dailyRewardsApi = com.stepup.android.data.remote.DailyRewardsApi(server)
         shoeRules = com.stepup.android.data.repo.ShoeRulesRepository(
             fetchRules = { economyApi.shoeRules() },
             fetchBoxes = { economyApi.boxStatus() },
+            // 오늘의 보상(0118) — 같은 box_status 글로 상자 현황 · 홈 막대를 읽고 폰에도 남긴다(계정마다)
+            fetchBoxesRaw = { dailyRewardsApi.boxStatusRaw() },
+            store = userPrefs.dailyRewardsStore,
+            owner = { sessionHolder.recordingOwner() },
+            // 오늘 목표를 채웠는데 보너스가 없으면(러닝을 기록할 때 서버가 주는 단계가 실패했다) 그날을 한 번 청구한다 — 받으면 잔고를 다시 맞춘다
+            claimGoalDay = { day -> economyApi.goalClaimDay(day) is ServerResult.Ok },
+            onGoalPaid = { refreshEconomyInBackground() },
+        )
+        // 하루 러닝 목표의 범위 · 기본값 — 서버 규칙(shoe_rules_v4 "goal"). 예전 판에서 올라온 설치는 목표 규칙을 한 번 옮기고
+        // 남긴 오늘의 보상을 되살린다(앱을 켜자마자 막대를 그리게 — 한국 날짜가 지났으면 "—")
+        userPrefs.goalRule = { shoeRules.now.goal }
+        economyScope.launch {
+            runCatching { userPrefs.migrateGoalRule() }
+            runCatching { shoeRules.restore() }
+        }
+        // 러너 레벨(0121) — 서버에 함수가 없으면 칸을 숨긴다. 알린 레벨은 계정마다 폰에 남긴다
+        val runnerLevelApi = com.stepup.android.data.remote.RunnerLevelApi(server)
+        runnerLevel = com.stepup.android.data.repo.RunnerLevelRepository(
+            fetchMe = { runnerLevelApi.me() },
+            fetchBadges = { ids -> runnerLevelApi.badges(ids) },
+            store = userPrefs.runnerSeenStore,
+            owner = { sessionHolder.recordingOwner() },
         )
         inviteApi = com.stepup.android.data.remote.InviteApi(server)
         accessApi = com.stepup.android.data.remote.AccessApi(server)
@@ -374,10 +401,16 @@ object ServiceLocator {
                     dailyStepsUploader.upload()
                     shoeRules.refresh()
                     shoeRules.refreshBoxes()
+                    // 러너 레벨(0121) — 러닝을 올린 뒤의 동기화에서도 다시 읽어 레벨이 올랐으면 한 번 알린다
+                    runCatching { runnerLevel.refresh() }
                     // 이 앱의 판(스토어 번호) — 운영자가 아이템을 줄 때 가방이 있는 판인지 본다(0116). 테스트 판은 데이터베이스 판 × 1000 을 뺀다
                     economyApi.reportAppVersion(BuildConfig.VERSION_CODE % 1000, BuildConfig.VERSION_NAME)
                 }
             },
+            // 신발마다 강화 경험치 통(0118 my_shoe_xp) — 신발 카드 · 상세의 "다음 레벨까지 N%"
+            shoeXp = com.stepup.android.data.remote.ShoeXpApi(server),
+            // 서버에 적힌 목표(0118 box_status) — 이 폰에서 바꾼 목표가 닿지 않았을 때가 아니면 폰이 서버 목표를 따른다
+            serverGoal = { shoeRules.refreshGoal() },
         )
         // 서버 주소가 있는 빌드는 언제나 서버 경제다. 없는 빌드(로컬 개발)만 예전처럼 폰 안에서 계산한다.
         val serverEconomy = economyApi.isConfigured
@@ -389,16 +422,32 @@ object ServiceLocator {
                 // AI 코칭 자동 분석(켠 사람만) — 따로 돌아 올리기 · 잔고 맞추기를 늦추거나 막지 않는다
                 coachAfterUpload()
                 if (serverEconomy) {
-                    // 러닝은 시작한 날(한국 시각)의 목표에 든다 — 자정을 넘긴 러닝 · 자정 뒤에 올린 러닝도 그날 보너스를 받게
-                    // 서버가 받는 최근 7일부터 오늘까지, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068).
-                    // 아직 올리지 못한 이 계정의 러닝이 있으면 그날 뒤는 미룬다 — 짧은 연속 일수로 굳지 않게(EconomyApi.goalDays)
-                    val pending = runCatching {
-                        database.walkSessionDao().pendingUploads(GOAL_PENDING_SCAN, sessionHolder.recordingOwner()).map { it.startedAt }
-                    }.getOrDefault(emptyList())
-                    for (day in com.stepup.android.data.remote.EconomyApi.goalDays(signedStartedAt, pending)) {
-                        economyApi.goalClaimDay(day)
+                    // 오늘의 보상(0118)이면 목표 보너스는 서버가 러닝을 기록할 때 준다. 그 단계가 실패했을 때만 남지 않게 확인받은 러닝이
+                    // 시작한 날을 한 번 더 청구한다 — 이미 받은 날(23505) · 못 채운 날(23514)은 서버가 거절할 뿐이다
+                    val serverPays = shoeRules.daily.value?.rule == com.stepup.android.domain.DailyRewards.RULE_REWARD_STEPS
+                    if (serverPays) {
+                        for (day in com.stepup.android.domain.DailyGoalSync.signedRunDays(signedStartedAt)) {
+                            economyApi.goalClaimDay(day)
+                        }
+                    } else {
+                        // 러닝은 시작한 날(한국 시각)의 목표에 든다 — 자정을 넘긴 러닝 · 자정 뒤에 올린 러닝도 그날 보너스를 받게
+                        // 서버가 받는 최근 7일부터 오늘까지, 오래된 날부터(뒷날의 연속 일수가 앞날을 센다) 청구한다(0068).
+                        // 아직 올리지 못한 이 계정의 러닝이 있으면 그날 뒤는 미룬다 — 짧은 연속 일수로 굳지 않게(EconomyApi.goalDays)
+                        val pending = runCatching {
+                            database.walkSessionDao().pendingUploads(GOAL_PENDING_SCAN, sessionHolder.recordingOwner()).map { it.startedAt }
+                        }.getOrDefault(emptyList())
+                        for (day in com.stepup.android.data.remote.EconomyApi.goalDays(signedStartedAt, pending)) {
+                            economyApi.goalClaimDay(day)
+                        }
                     }
                     economySync.refresh()
+                    // 새로 받은 보상(러닝 상자 · 목표 보너스 …)을 한 번 알린다 — 앱이 앞에 있으면 홈의 한 줄, 뒤에 있으면 알림
+                    runCatching {
+                        shoeRules.refreshForNews()?.let { news ->
+                            if (com.stepup.android.service.CrewStartAlert.appInForeground) shoeRules.showNews(news)
+                            else com.stepup.android.push.GoalReminderWorker.showRewards(app, news)
+                        }
+                    }
                 }
             },
             // 다시 로그인해야 올릴 수 있다 — 러닝 결과가 "다시 로그인"을 보이게
@@ -457,20 +506,30 @@ object ServiceLocator {
             prefs = userPrefs,
             tracker = stepTracker,
             rewardRepository = rewardRepository,
-            pushGoal = { goal -> if (serverEconomy) economyApi.setDailyGoal(goal) },
+            // 서버가 적은 목표를 돌려준다(0118 — 4,000 ~ 20,000 · 500 단위로 맞춘다). 닿지 못했으면 null(폰 값 그대로)
+            pushGoal = { goal -> if (serverEconomy) (economyApi.setDailyGoal(goal) as? ServerResult.Ok)?.value else null },
             owner = recordingOwnerFlow(),
             uploadSteps = { if (serverEconomy && sessionHolder.isSignedIn()) dailyStepsUploader.upload() },
+            // 서버 경제에서는 목표 보너스 · 연속을 폰 만보기 걸음으로 정하지 않는다(서버가 러닝 걸음으로)
+            localGoal = !serverEconomy,
+            serverDaily = if (serverEconomy) shoeRules.daily else kotlinx.coroutines.flow.flowOf(null),
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,
             economy = economyApi.takeIf { serverEconomy },
             sync = economySync.takeIf { serverEconomy },
             prefs = userPrefs,
+            // 포인트 미리보기(0119) — 서버에 없으면 포인트 시트가 그 칸만 숨긴다
+            pointsPreviewApi = com.stepup.android.data.remote.ShoePointsPreviewApi(server).takeIf { serverEconomy },
         )
         forgeRepository = com.stepup.android.data.repo.ForgeRepository(
             server = economyApi.takeIf { serverEconomy },
             pendingStore = com.stepup.android.data.repo.PrefsForgePendingStore(userPrefs),
             resync = { economySync.refresh() },
+            // 경험치 강화(0118) — 서버에 없으면 ForgeRepository 가 예전 강화로 돈다
+            xp = com.stepup.android.data.remote.ForgeXpApi(server).takeIf { serverEconomy },
+            // 넣은 뒤의 통을 폰 사본에 바로(my_shoe_xp 를 못 읽어도 경험치 줄이 맞게)
+            onXpDone = { r -> database.sneakerDao().setForgeXp(r.targetId, r.after.xp, r.after.need) },
         )
         avatarRepository = AvatarRepository(userPrefs, sneakerRepository)
         boostRepository = BoostRepository(
@@ -507,7 +566,11 @@ object ServiceLocator {
         // 계정이 바뀌면(다시 로그인 · 계정 삭제 · 새 로그인) 앞 계정의 대기실 · 가입 표시를 지운다 — 옛 방을 새 계정으로
         // 계속 묻거나, 앞 계정이 가입한 크루를 내 크루처럼 보이지 않게
         economyScope.launch {
-            recordingOwnerFlow().drop(1).collect { crewRepository.resetForAccount() }
+            recordingOwnerFlow().drop(1).collect {
+                crewRepository.resetForAccount()
+                // 앞 계정의 러너 레벨 · 알림도(새 계정은 동기화 때 다시 읽는다)
+                runnerLevel.forgetAccount()
+            }
         }
         crewCards = com.stepup.android.data.repo.CrewCardRepository(
             api = crewApi,

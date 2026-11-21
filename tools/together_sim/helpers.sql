@@ -57,8 +57,9 @@ begin
     end loop;
   end loop;
 end $$;
+-- 경도는 사람마다 0.5m 안쪽으로 다르게(동쪽으로만) — 같은 경로 검사가 모든 계정끼리 맞대어 보므로(0118) 함께 출발한 둘째가 무효가 되지 않게
 create or replace function t.track(p_start timestamptz, p_secs int, p_dps numeric default 0.000023706) returns text language sql as $$
-  select string_agg(format('%s,%s,%s', (37.5 + i * p_dps)::numeric(12, 6), 127.000000,
+  select string_agg(format('%s,%s,%s', (37.5 + i * p_dps)::numeric(12, 6), (127 + (abs(hashtext(coalesce(current_setting('request.jwt.claim.sub', true), ''))) % 49 + 1) * 0.0000001)::numeric(12, 7),
            (extract(epoch from p_start) * 1000)::bigint + i * 1000), ';' order by i)
   from generate_series(0, p_secs) i $$;
 -- 러닝을 올린다(사용자 n, 시작, 초, 걸음) — 결과 한 줄
@@ -83,3 +84,6 @@ create or replace function t.cr(n int) returns text language sql as $$
 grant usage on schema t to public; grant all on all tables in schema t to public; grant execute on all functions in schema t to public;
 -- 운을 끈다(값을 맞대어 보려고)
 update public.economy_settings set value = '[1,1,1]' where key in ('reward_luck', 'wear_luck');
+
+-- 러너 레벨(0121)은 계정 에너지를 바꾼다(새 계정 Lv1 = 20분). 이 장면들은 그 전 규칙(하루 에너지 10)으로 맞춰 쓴 것이라 끄고 돌린다
+update public.economy_settings set value = '"OFF"' where key = 'runner_level_rule';

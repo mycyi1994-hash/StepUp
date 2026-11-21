@@ -25,7 +25,7 @@ enum class AchievementCategory(
     /** 러닝 세션 수 */
     SESSIONS("SESSIONS", listOf(1.0, 3.0, 10.0, 25.0, 50.0, 100.0, 180.0, 250.0, 365.0, 500.0)),
 
-    /** 연속 목표 달성일 */
+    /** 연속 목표 달성일 — 서버가 센 러닝 목표 연속(0118 box_status streak_best, [AchievementBook.streakCount]) */
     STREAK("STREAK", listOf(2.0, 3.0, 5.0, 7.0, 14.0, 21.0, 30.0, 60.0)),
 
     /** 누적 적립 SUP */
@@ -37,7 +37,7 @@ enum class AchievementCategory(
     /** 도감 슬롯 수집 (총 52) */
     COLLECTION("COLLECTION", listOf(2.0, 5.0, 9.0, 14.0, 21.0, 30.0, 40.0, 52.0)),
 
-    /** 강화 횟수 */
+    /** 신발 레벨을 올린 수(강화 — 0118 부터 경험치로, 서버가 오른 레벨 수로 센다) */
     UPGRADE("UPGRADE", listOf(1.0, 3.0, 7.0, 15.0, 25.0, 40.0, 60.0, 90.0)),
 
     /** 파티런 완주 */
@@ -193,12 +193,19 @@ object AchievementBook {
         maxOf(paidDraws.coerceAtLeast(0) + grantsUsed.coerceAtLeast(0), drawnShoes - purchases.coerceAtLeast(0), 0)
 
     /**
-     * 업적 "강화 N회 성공"의 수 — 서버가 센 성공한 신발 강화(0110 my_forge_successes — 재료 신발 강화는 원장에 줄이 없다)와
-     * 원장의 예전 SUP 강화 줄(SPEND_UPGRADE) 중 큰 쪽. 둘 다 이 계정의 경제 사본이라 계정이 바뀐 직후에는 믿지 않는다([trusted]).
-     * 서버에 0110 이 없으면 강화 수는 0 이라 예전처럼 원장만 센다.
+     * 업적 "신발 레벨 N번 올리기"의 수 — 서버가 센 강화로 오른 레벨 수(0110 my_forge_successes, 0118 부터 경험치 강화는 오른 레벨 수의 합 —
+     * 한 켤레씩 여러 번 넣어 횟수를 채우지 못하게)와 원장의 예전 SUP 강화 줄(SPEND_UPGRADE) 중 큰 쪽. 둘 다 이 계정의 경제 사본이라
+     * 계정이 바뀐 직후에는 믿지 않는다([trusted]). 서버에 0110 이 없으면 강화 수는 0 이라 예전처럼 원장만 센다.
      */
     fun upgradeCount(ledgerUpgrades: Int, forgeSuccesses: Int): Int =
         maxOf(ledgerUpgrades.coerceAtLeast(0), forgeSuccesses.coerceAtLeast(0))
+
+    /**
+     * 업적 "목표 N일 연속"의 수 — 서버가 센 가장 긴 러닝 목표 연속([serverBest], 0118 box_status streak_best — 지금 계정의 것일 때만)과
+     * 이 폰이 예전에 하루 전체 걸음으로 센 가장 긴 연속([localBest]) 중 큰 쪽. 폰은 서버 경제에서 더는 연속을 세지 않아 [localBest] 는
+     * 예전 판에서 닿은 값 그대로다 — 한 번 연 티어가 다시 잠기지 않게만 남긴다.
+     */
+    fun streakCount(localBest: Int, serverBest: Int?): Int = maxOf(localBest.coerceAtLeast(0), serverBest?.coerceAtLeast(0) ?: 0)
 
     /** 두 최고값을 합친다 — 카테고리마다 큰 쪽 */
     fun mergeBest(now: Map<String, Double>, values: Map<String, Double>): Map<String, Double> {

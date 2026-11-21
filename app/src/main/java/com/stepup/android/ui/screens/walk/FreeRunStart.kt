@@ -112,6 +112,7 @@ import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.experience.LocalMotion
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.items.durabilityPercent
+import com.stepup.android.ui.screens.items.rememberShoeRules
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpNumbers
 import com.stepup.android.ui.theme.StepUpSans
@@ -383,24 +384,21 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
             Box(Modifier.fillMaxWidth(points / 100f).height(7.dp).clip(RoundedCornerShape(8.dp)).background(CheckMeterFill))
         }
     }
-    // 내구도가 다 닳았거나 곧 닳으면 출발 전에 알린다 — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 예전엔 0% 에서도
-    // "달릴 준비가 됐어요"라, 보상 0 의 까닭을 결과에서도 몰랐다(2026-10-17 점검)
+    // 내구도가 다 닳았거나 곧 닳으면 출발 전에 알린다. 예전엔 0% 에서도 "달릴 준비가 됐어요"라, 보상 0 의 까닭을 결과에서도
+    // 몰랐다(2026-10-17 점검)
+    // 서버 0119 — 닳은 신발도 출발을 막지 않는다(막은 적도 없다): 걸음은 그대로 세고 N%만 적립된다. "닳은 신발이에요 · 수리하면 100%,
+    // 그대로 달리면 N% 적립돼요" 한 줄과 아래 "수리하기"만 둔다. 그 전 규칙이면 예전 글(다 닳은 뒤의 걸음은 적립하지 않는다, 0066)
     // 신발 탭 · 상세의 수리 강조(repairUrgent)와 같은 규칙 — 기준은 그 신발 수명의 절반 · 10분 가운데 작은 것, 가득 찬 신발은 알리지 않는다
-    // 경제 4판(2026-11-18) — 넉넉한 신발도 "이 신발은 약 N분 동안 적립돼요"로 늘 분을 알린다(shoeCheckLine)
-    val line = shoeCheckLine(shoe)
+    // 경제 4판(2026-11-18) — 넉넉한 신발도 "이 신발은 약 N분 동안 적립돼요"로 늘 분을 알린다(shoeCheckLine). 분은 효율 포인트를
+    // 넣은 신발이면 그 배수만큼 짧다(0119)
+    val rules = rememberShoeRules()
+    val line = shoeCheckLine(shoe, rules)
     val worn = line == ShoeCheckLine.WornOut
     if (line is ShoeCheckLine.WornOut || line is ShoeCheckLine.Low) {
         Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-low-durability"), verticalAlignment = Alignment.Top) {
             Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
             Spacer(Modifier.width(7.dp))
-            Text(
-                if (line is ShoeCheckLine.Low) {
-                    stringResource(R.string.run_free_check_low_durability_minutes, line.minutes)
-                } else {
-                    stringResource(R.string.run_free_check_low_durability_none)
-                },
-                style = checkText(12.sp, CheckWarnText),
-            )
+            Text(shoeCheckLineText(line, rules), style = checkText(12.sp, CheckWarnText))
         }
         if (worn && onRepair != null) {
             // 글자 단추 — 경고 줄과 같은 들여쓰기. 큰 버튼을 더하지 않는다(주 행동은 "이 신발로 출발" 하나)
@@ -417,8 +415,7 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
             Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = CheckReadyIcon, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(7.dp))
             Text(
-                if (line is ShoeCheckLine.Earns) stringResource(R.string.run_check_earn_minutes, line.minutes)
-                else stringResource(R.string.run_free_check_ready),
+                shoeCheckLineText(line, rules),
                 style = checkText(12.sp, CheckReadyText),
                 modifier = Modifier.testTag("run-shoe-check-earn"),
             )

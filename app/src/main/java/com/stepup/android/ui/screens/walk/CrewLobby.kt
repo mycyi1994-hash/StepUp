@@ -144,6 +144,8 @@ internal fun CrewLobbyContent(
     onAcknowledgeCourse: () -> Unit = {},
     /** 부모가 띄운 시트(준비 전 확인 · 출발 확인 · 알리기)가 있다 — 배경을 멈추고 어둡게 */
     overlay: Boolean = false,
+    /** 함께 달린 사람의 문턱(서버 0120 `together`) — 서버에서 받은 규칙이 함께 달린 사람만 셀 때 대기실 한 줄 · 규칙 글. null 이면 예전 글 */
+    together: com.stepup.android.domain.TogetherRule? = null,
 ) {
     val lobby = party.phase == PartyPhase.LOBBY || party.phase == PartyPhase.IDLE
     // 빈 화면 상태(불러오기 실패 · 나옴 · 닫힘 · 찼음 · 출발함) — 방 화면 대신 앱 바탕의 한 화면(69 · 70)
@@ -233,6 +235,15 @@ internal fun CrewLobbyContent(
                 )
                 // 달리는 방식 · 출발 예정 시각 · 만나는 곳(원격이면 각자의 위치) · 정원 — 방을 만들 때 정한 값(0074, 안내일 뿐)
                 LobbyPlanLine(party)
+                // 함께 달린 사람의 문턱(0120) — 코스가 있으면 코스의 절반 · 분, 자유 코스면 분만. 방을 받기 전에는 두지 않는다
+                if (!loading) {
+                    togetherLobbyText(togetherLobbyLine(together, party.course?.km ?: 0.0, course = true))?.let { line ->
+                        Text(
+                            line, style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium, 1.5f), maxLines = 3, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 6.dp).testTag("party-lobby-together"),
+                        )
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
                 LobbyNotices(party, doneToday, crewToday, room, shoeFailed, courseFailed, onReconnect)
                 if (loading) {
@@ -282,8 +293,8 @@ internal fun CrewLobbyContent(
             },
             onClose = { sheet = LobbySheet.None },
         )
-        LobbySheet.Rules -> RulesSheet(rules, onBonus = { sheet = LobbySheet.Bonus }, onClose = { sheet = LobbySheet.None })
-        LobbySheet.Bonus -> BonusSheet(rules, onClose = { sheet = LobbySheet.None })
+        LobbySheet.Rules -> RulesSheet(rules, together, onBonus = { sheet = LobbySheet.Bonus }, onClose = { sheet = LobbySheet.None })
+        LobbySheet.Bonus -> BonusSheet(rules, together, onClose = { sheet = LobbySheet.None })
         LobbySheet.Stamina -> StaminaSheet(room, crewToday, rules, onClose = { sheet = LobbySheet.None })
         LobbySheet.Goal -> GoalSheet(crewToday, onLevels = { sheet = LobbySheet.Levels }, onClose = { sheet = LobbySheet.None })
         LobbySheet.Levels -> LevelsSheet(crewToday, rules, onClose = { sheet = LobbySheet.None })
@@ -647,6 +658,8 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
     val shown = if (many) ordered.take(CREW_GRID_MAX - 1) else ordered
     // 혼자면 빈 자리와 아래 "크루원 부르기"(12)
     val alone = party.partySize <= 1
+    // 러너 레벨 배지(서버 0121) — 방 사람들을 한 번에 묻고(바뀔 때만), 받기 전에도 칸은 그대로
+    val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(party.members.map { it.id })
     DualRailFrame(
         Modifier.fillMaxWidth().testTag(if (alone) "party-alone" else "party-members"),
         padding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 16.dp),
@@ -673,7 +686,10 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
                         three.forEach { cell ->
                             Box(Modifier.weight(1f)) {
                                 when (cell) {
-                                    is RosterCell.Person -> PersonCell(cell.member, firstRow = row == 0, away = party.phase == PartyPhase.LOBBY && cell.member.away)
+                                    is RosterCell.Person -> PersonCell(
+                                        cell.member, firstRow = row == 0, away = party.phase == PartyPhase.LOBBY && cell.member.away,
+                                        mark = com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[cell.member.id]),
+                                    )
                                     is RosterCell.More -> EmptyCell(stringResource(R.string.crew5_lobby_more, cell.rest), stringResource(R.string.crew5_lobby_all), onRoster, "party-more")
                                     RosterCell.Empty -> EmptyCell("+", stringResource(R.string.crew5_lobby_invite), if (canNotify) onCall else null, "party-empty")
                                 }
@@ -694,7 +710,7 @@ private sealed interface RosterCell {
 
 /** 크루원 한 칸 — 52dp 원(진행자는 파란 면) · 준비면 오른쪽 아래 확인 표시 · 이름(나) · 진행자 */
 @Composable
-private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = false) {
+private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = false, mark: String? = null) {
     val me = stringResource(R.string.crew5_lobby_me)
     val host = stringResource(R.string.run_cr_host)
     val ready = stringResource(R.string.crew5_roster_ready)
@@ -702,7 +718,7 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = f
     Column(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
             contentDescription = listOfNotNull(
-                member.name, me.takeIf { member.isMe }, host.takeIf { member.isHost }, ready.takeIf { member.ready }, awayLabel.takeIf { away },
+                member.name, me.takeIf { member.isMe }, mark, host.takeIf { member.isHost }, ready.takeIf { member.ready }, awayLabel.takeIf { away },
             ).joinToString(", ")
         }.testTag("party-member-${member.id}"),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -733,6 +749,11 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = f
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
             if (member.isHost) Text(host, style = navyText(11.sp, Color(0xFFCEE5F6), FontWeight.Normal, 1.2f))
+            // 러너 레벨 배지 — 색 면 없이 흐린 작은 글자
+            if (mark != null) {
+                Text(mark, style = navyText(11.sp, LobbyInk.Sub, FontWeight.Medium, 1.2f), maxLines = 1,
+                    modifier = Modifier.testTag("party-member-runner-mark"))
+            }
             if (away) Text(awayLabel, style = navyText(11.sp, LobbyInk.Sub, FontWeight.Medium, 1.2f), modifier = Modifier.testTag("party-member-away"))
         }
     }
@@ -1073,6 +1094,7 @@ private fun RosterSheet(
     ) {
         Text(stringResource(R.string.crew5_roster_count, party.partySize, party.readyCount), style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium))
         Spacer(Modifier.height(8.dp))
+        val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(party.members.map { it.id })
         Column(Modifier.fillMaxWidth().testTag("party-roster-list")) {
             crewOrder(party.members).forEachIndexed { i, member ->
                 if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(LobbyInk.RowLine))
@@ -1095,6 +1117,7 @@ private fun RosterSheet(
                         Text(
                             listOfNotNull(
                                 stringResource(R.string.run_cr_host).takeIf { member.isHost },
+                                com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[member.id]),
                                 stringResource(if (member.ready) R.string.crew5_roster_ready else R.string.crew5_roster_waiting),
                             ).joinToString(" · "),
                             style = navyText(11.sp, LobbyInk.Sub, FontWeight.Normal), modifier = Modifier.padding(top = 3.dp),
@@ -1164,9 +1187,9 @@ private fun LeaveSheet(host: Boolean, onStay: () -> Unit, onLeave: () -> Unit) {
 
 /** 크루 러닝 규칙(30) — 다섯 주제 모두(서버 규칙 값) · 인원 보너스 표로 */
 @Composable
-private fun RulesSheet(rules: CrewRunRules, onBonus: () -> Unit, onClose: () -> Unit) {
+private fun RulesSheet(rules: CrewRunRules, together: com.stepup.android.domain.TogetherRule?, onBonus: () -> Unit, onClose: () -> Unit) {
     LobbySheetFrame(stringResource(R.string.crew_run_sheet_title), onClose, Modifier.testTag("party-rule-sheet")) {
-        crewRunRuleLines(rules).forEach { (title, body) ->
+        crewRunRuleLines(rules, together).forEach { (title, body) ->
             Text(title, style = navyText(15.sp, LobbyInk.Text, FontWeight.Bold, 1.4f))
             if (body.isNotEmpty()) Text(body, style = navyText(14.sp, Color(0xFFC4DDEE), FontWeight.Normal, 1.7f), modifier = Modifier.padding(top = 4.dp))
             Spacer(Modifier.height(14.dp))
@@ -1179,9 +1202,21 @@ private fun RulesSheet(rules: CrewRunRules, onBonus: () -> Unit, onClose: () -> 
 
 /** 인원 보너스 표(29) — 2 ~ 20명 모두(구간 하나만). 0 ~ 1명은 없음, 레벨은 따로 더한다 */
 @Composable
-private fun BonusSheet(rules: CrewRunRules, onClose: () -> Unit) {
+private fun BonusSheet(rules: CrewRunRules, together: com.stepup.android.domain.TogetherRule?, onClose: () -> Unit) {
     LobbySheetFrame(stringResource(R.string.crew5_bonus_title), onClose, Modifier.testTag("party-bonus-sheet")) {
-        Text(stringResource(R.string.crew5_bonus_note), style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
+        // 함께 달린 사람만 세는 규칙(0120)이면 "함께 출발한 모두"가 아니다
+        val note = if (together != null && together.fromServer && together.active) R.string.tb_bonus_note else R.string.crew5_bonus_note
+        Text(stringResource(note), style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
+        if (together != null && together.blends) {
+            Text(
+                stringResource(
+                    R.string.tb_blend_note,
+                    com.stepup.android.domain.CrewRunMath.percent(1.0 - together.blendShare),
+                    com.stepup.android.domain.CrewRunMath.percent(together.blendShare),
+                ),
+                style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f), modifier = Modifier.testTag("party-bonus-blend"),
+            )
+        }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.crew5_bonus_people), style = navyText(12.sp, Color(0xFFB2D1E8), FontWeight.Medium), modifier = Modifier.weight(1f))

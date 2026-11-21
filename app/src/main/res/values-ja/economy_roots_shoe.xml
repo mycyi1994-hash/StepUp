@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 能力値の意味が変わったあとのシューズ画面(2026-11-21): 効率 = 早く稼げるかわりにシューズとエネルギーも早く使う · 耐久度 = 満タン修理費はそのまま · 5レベルごとの振り直し · 過去14日のランから見たポイントの目安(いつも「約」) -->
+<resources>
+    <string name="ers_preview_basis_mine">過去14日のラン%1$d回をもとにした目安です</string>
+    <string name="ers_preview_basis_default">まだ記録がないため、%1$d分のランをもとにした目安です</string>
+    <string name="ers_preview_worth">1ポイント = 1日あたり約 +%1$s SUP</string>
+    <string name="ers_preview_worth_none">今の走り方ではこれ以上増えません</string>
+    <string name="ers_preview_comfort_capped">エネルギー%1$d%%節約まで上げきりました</string>
+    <string name="ers_points_life">満タンで%1$s分</string>
+    <string name="ers_points_life_change">満タンで%1$s分 → %2$s分</string>
+    <string name="ers_points_help_efficiency">より早く稼げます · シューズとエネルギーも早く使います</string>
+    <string name="ers_points_help_comfort">エネルギーの消費が減ります · 1日により多く稼げます</string>
+    <string name="ers_points_help_durability">より長く走れます · 満タン修理費は変わりません</string>
+    <string name="ers_points_note_final">振り分けたポイントはすぐには元に戻せません。%1$dレベルごとに一度、振り直せます。</string>
+    <string name="ers_points_note_respec">振り直し 1回 · %1$dレベルごとに一度もらえます。振り分けたポイントを減らすと使います。</string>
+    <string name="ers_points_recommend">おすすめどおりに振り分ける</string>
+    <string name="ers_points_recommend_all">最初からおすすめどおりに</string>
+    <string name="ers_upg_respec">ポイントを一度振り直せます</string>
+    <string name="ers_upg_stat_note">効率にポイントを振ると、より早く稼げるかわりにシューズも早く減ります。満タン修理費は変わりません。</string>
+    <string name="ers_why_top_level">持っているシューズで最もレベルが高いです</string>
+    <string name="ers_basis_efficiency">効率：同じ歩数で稼ぐSUPです。効率200は効率100の2倍を稼ぎます。ポイントで上げた分だけ、シューズとエネルギーも早く使います。バーの端はこのグレードで最も良く引けた新品シューズです。</string>
+    <string name="ers_basis_durability">耐久度：このシューズがすり減るまでに走れる時間（分）です。バーの端は満タンのときです。ポイントで増やしても満タン修理費は変わりません。走ると減り、ランごとに減り方が少しずつ違います。</string>
+</resources>

@@ -344,7 +344,7 @@
     <string name="analytics_title">数据</string>
     <string name="analytics_tab_week">周</string>
     <string name="analytics_tab_quarter">3 个月</string>
-    <string name="analytics_goal_days">达成目标</string>
+    <string name="analytics_goal_days">全天步数达标</string>
     <string name="analytics_days_of">%1$d / %2$d 天</string>
     <string name="analytics_days_count">%1$d 天</string>
     <string name="analytics_active_days">行走天数</string>
@@ -367,7 +367,7 @@
     <string name="analytics_all">全部</string>
     <string name="analytics_daily_avg">日均</string>
     <string name="analytics_best_day">最佳单日</string>
-    <string name="analytics_goal_rate">目标达成率</string>
+    <string name="analytics_goal_rate">全天步数达标率</string>
     <string name="analytics_recent_runs">最近的跑步</string>
     <string name="analytics_no_runs">还没有跑步记录</string>
 
@@ -622,7 +622,7 @@
     <string name="ach_goal_sup">累计赚取 %1$s SUP</string>
     <string name="ach_goal_mint">铸造 %1$s 双球鞋</string>
     <string name="ach_goal_collection">收集图鉴 %1$s 格</string>
-    <string name="ach_goal_upgrade">强化 %1$s 次</string>
+    <string name="ach_goal_upgrade">鞋子升级 %1$s 次</string>
     <string name="ach_goal_party">完成 %1$s 次组队跑</string>
     <string name="ach_goal_event">领取 %1$s 次活动奖励</string>
     <string name="ach_goal_crew">加入 %1$s 个跑团</string>
@@ -1240,7 +1240,7 @@
     <string name="challenge_today_sub">小目标，坚持跑</string>
     <string name="challenge_tag_daily">每日挑战</string>
     <string name="challenge_tag_weekly">每周挑战</string>
-    <string name="challenge_daily_title">完成今日步数目标</string>
+    <string name="challenge_daily_title">完成今日跑步目标</string>
     <string name="challenge_daily_desc">达到目标后奖励会自动到账。</string>
     <string name="challenge_daily_streak_note">连续达成更多</string>
     <string name="challenge_refer_desc">邀请好友加入StepUp。邀请计数功能尚未完成，因此不显示进度。</string>
@@ -1310,7 +1310,7 @@
     <string name="home_goal_suffix"> / %1$s 步</string>
     <string name="home_shortcut_news">资讯</string>
     <string name="home_energy_can">今天还能累积%1$s步</string>
-    <string name="home_energy_empty">今日累积上限已用完</string>
+    <string name="home_energy_empty">今日 SUP 累积上限已用完（跑步步数仍计入箱子和目标）</string>
     <string name="home_start_run">开始跑步</string>
     <string name="items_vault_title">鞋子仓库</string>
     <string name="market_runner_title">跑者市场</string>
@@ -1421,7 +1421,7 @@
     <string name="course_rank_empty">还没有成绩。选择这条路线并跑完，确认路线后会记入排行。</string>
     <string name="course_rank_me">%1$s (我)</string>
     <string name="notification_channel_reminder">目标提醒</string>
-    <string name="reminder_goal_title">距离今日目标还差 %1$d 步</string>
+    <string name="reminder_goal_title">距离今日跑步目标还差 %1$d 步</string>
     <string name="reminder_goal_body">去轻松跑一圈完成目标吧？</string>
     <string name="splash_prepare_failed">未能完成应用准备，请重试。</string>
     <string name="run_location_disabled">位置权限已关闭</string>
@@ -1522,7 +1522,7 @@
     <string name="setup_decrease">减少%1$s</string>
     <string name="setup_goal_kicker">初始设置 · 目标</string>
     <string name="setup_goal_title">请设定目标体重和时长</string>
-    <string name="setup_goal_subtitle">当前每日步数目标为 %1$s 步</string>
+    <string name="setup_goal_subtitle">当前每日跑步目标为 %1$s 步</string>
     <string name="setup_goal_weeks">%1$d周</string>
     <string name="setup_goal_weekly">每周约%1$skg</string>
     <string name="setup_goal_bmi">目标BMI %1$s</string>

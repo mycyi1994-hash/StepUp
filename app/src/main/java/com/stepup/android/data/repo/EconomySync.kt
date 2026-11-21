@@ -44,9 +44,18 @@ class EconomySync(
     private val now: () -> Long = System::currentTimeMillis,
     /** 동기화 때마다 — 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18). 실패해도 동기화는 계속한다 */
     private val afterCheckIn: suspend () -> Unit = {},
+    /** 신발마다 강화 경험치 통(서버 0118 my_shoe_xp). 없으면(로컬 빌드) 통을 모르는 채로 — 경험치 줄이 숨는다 */
+    private val shoeXp: com.stepup.android.data.remote.ShoeXpApi? = null,
+    /**
+     * 서버에 적힌 목표(box_status rule · goal · goal_next, 0118) — 못 읽었으면 null. 이 폰에서 바꾼 목표가 닿지 않았을 때가 아니면 서버 목표를
+     * 폰에 받아 온다(DailyGoalSync). 없으면 예전처럼 폰 목표를 보낸다
+     */
+    private val serverGoal: (suspend () -> com.stepup.android.domain.ServerGoal?)? = null,
 ) {
     private val lock = Mutex()
     private var bootstrapped: String? = null
+    // 목표를 서버와 맞춘 계정(앱이 켜진 동안 한 번 — 아직 닿지 않은 목표가 있으면 동기화 때마다 다시 보낸다)
+    private var goalSynced: String? = null
     private var checkedIn: String? = null
     // 서버 이름을 받아 와 본 계정(이름이 없을 때만 묻는다)
     private var nicknamePulled: String? = null
@@ -108,15 +117,18 @@ class EconomySync(
             // 앞 계정의 프로필 이름을 새 계정 서버 이름으로 올리지 않게
             prefs.setNickname("")
             prefs.setNicknameSynced(null)
+            // 앞 계정에서 바꾸다 못 보낸 목표를 새 계정에 보내지 않게 — 새 계정은 서버 목표를 받아 온다
+            prefs.clearGoalUnsent()
         }
         if (owner != userId) prefs.setEconomyOwner(userId)
 
         if (bootstrapped != userId) {
             api.bootstrap().failure()?.let { return it }
-            // 폰의 하루 목표를 서버에 맞춘다 — 목표 보너스를 서버가 이 값으로 판정한다(0030).
-            // 목표를 바꿀 때 보내지 못했어도(연결 없음) 여기서 따라간다. 실패해도 동기화는 계속한다.
-            api.setDailyGoal(prefs.dailyGoal.first())
             bootstrapped = userId
+        }
+        // 하루 목표를 서버와 맞춘다 — 목표 보너스를 서버가 이 값으로 판정한다(0030 · 0118). 실패해도 동기화는 계속한다
+        if (goalSynced != userId || com.stepup.android.domain.DailyGoalSync.unsentFor(prefs.goalUnsentMark(), userId)) {
+            if (syncGoal(userId)) goalSynced = userId
         }
         // 앱 출석 — 계정 · 한국 날짜에 한 번 부른다(서버도 하루 한 번만 받는다). 실패해도 동기화는 계속한다
         val checkIn = "$userId:${LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))}"
@@ -134,6 +146,16 @@ class EconomySync(
 
         val economy = when (val r = api.economy()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
         val sneakers = when (val r = api.sneakers()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
+        // 신발 목록 다음에 강화 경험치 통(0118) — 서버에 함수가 없으면 비운다(줄이 숨는다), 못 받았으면 지난 값(레벨이 같을 때만)
+        val xp = shoeXp?.takeIf { it.isConfigured }?.let {
+            try {
+                it.mine()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                com.stepup.android.data.remote.ShoeXpResult.Failed
+            }
+        } ?: com.stepup.android.data.remote.ShoeXpResult.Missing
         val grants = when (val r = api.drawGrants()) { is ServerResult.Ok -> r.value; else -> return r.cast() }
         val boosts = when (val r = api.boosts(Instant.ofEpochMilli(now() - BOOST_KEEP_MILLIS).toString())) {
             is ServerResult.Ok -> r.value
@@ -166,7 +188,11 @@ class EconomySync(
         val previous = db.sneakerDao().allNow().associateBy { it.serverId }
         db.withTransaction {
             db.sneakerDao().deleteAll()
-            db.sneakerDao().insertAll(sneakers.map { it.toEntity(acquiredAt(acquired[it.id], previous[it.id]?.acquiredAt, now())) })
+            db.sneakerDao().insertAll(sneakers.map { row ->
+                val (forgeXp, forgeNeed) = forgeXpOf(xp, row.id, row.level, previous[row.id])
+                row.toEntity(acquiredAt(acquired[row.id], previous[row.id]?.acquiredAt, now()))
+                    .copy(forgeXp = forgeXp, forgeNeed = forgeNeed)
+            })
             db.rewardDao().deleteAll()
             db.rewardDao().insertAll(ledgerRows(ledger, economy.balance, complete))
             db.boostDao().deleteAll()
@@ -187,6 +213,47 @@ class EconomySync(
             forgeSuccesses = forgeSuccesses,
         )
         return ServerResult.Ok(Unit)
+    }
+
+    /**
+     * 하루 목표 맞추기(DailyGoalSync) — 이 폰에서 바꾼 목표가 아직 서버에 닿지 않았으면 보내고, 아니면 서버 목표(내일부터 바뀔 목표가 있으면
+     * 그것)를 폰에 받아 온다. 예전엔 동기화마다 폰 목표를 보내 새 폰 · 다시 깐 폰(기본 6,000) · 옛 값의 둘째 폰이 고른 목표를 덮었다.
+     * 예전 서버(rule 없음)는 예전처럼 보낸다. 끝났으면 true — 서버를 못 읽었거나 보내지 못했으면 false(다음 동기화에서 다시)
+     */
+    private suspend fun syncGoal(userId: String): Boolean {
+        val mark = prefs.goalUnsentMark()
+        val unsent = com.stepup.android.domain.DailyGoalSync.unsentFor(mark, userId)
+        val server = when {
+            unsent -> null
+            serverGoal == null -> com.stepup.android.domain.ServerGoal.NO_RULE
+            else -> try {
+                serverGoal.invoke()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
+        }
+        val goal = prefs.dailyGoal.first()
+        return when (val action = com.stepup.android.domain.DailyGoalSync.action(unsent, server, goal)) {
+            com.stepup.android.domain.GoalSyncAction.Push -> {
+                val stored = (api.setDailyGoal(goal) as? ServerResult.Ok)?.value ?: return false
+                // 닿았다 — 그 사이 또 바꾸지 않았으면 표시를 지운다
+                if (mark != null) prefs.clearGoalUnsent(mark)
+                // 서버가 맞춰 적은 값(0118 — 4,000 ~ 20,000 · 500 단위)을 돌려주면 폰도 그 값으로. 그 사이 목표를 또 바꿨으면 건드리지 않는다
+                if (stored > 0 && stored != goal && prefs.dailyGoal.first() == goal) prefs.setDailyGoal(stored)
+                true
+            }
+            is com.stepup.android.domain.GoalSyncAction.Adopt -> {
+                // 받아 오는 사이 이 폰에서 목표를 바꿨으면 건드리지 않는다 — 바꾼 목표는 바꾼 곳이 보낸다
+                if (prefs.dailyGoal.first() == goal && prefs.goalUnsentMark() == null && sessions.currentUserId() == userId) {
+                    prefs.setDailyGoalFromServer(action.goal)
+                }
+                true
+            }
+            com.stepup.android.domain.GoalSyncAction.Keep -> true
+            com.stepup.android.domain.GoalSyncAction.Wait -> false
+        }
     }
 
     /** 계정을 지웠을 때 — 그 계정의 사본(신발 · 원장 · 부스터 · 에너지 · 뽑기 횟수)을 폰에서 지운다 */
@@ -241,6 +308,8 @@ class EconomySync(
         clearCopy()
         // 알림에도 그 계정의 적립 · 구매 금액이 남는다 — 다음에 로그인하는 계정에 보이지 않게
         db.notificationDao().clear()
+        // 이 계정에서 바꾸다 못 보낸 목표를 다음 계정에 보내지 않게
+        prefs.clearGoalUnsent()
         prefs.setEconomyOwner(null)
         _state.value = EconomySyncState.SIGNED_OUT
     }
@@ -256,6 +325,7 @@ class EconomySync(
         }
         prefs.clearServerEconomy()
         bootstrapped = null
+        goalSynced = null
     }
 
     /**
@@ -352,6 +422,22 @@ class EconomySync(
          */
         fun acquiredAt(server: Long?, previous: Long?, now: Long): Long =
             server?.takeIf { it > 0 } ?: previous ?: now
+
+        /**
+         * 이 켤레의 강화 경험치 통(점수 · 통 크기) — 서버 0118 my_shoe_xp 가 정본. 받았는데 이 켤레가 없으면(목록과 사이에 생긴 신발) 모른다(null),
+         * 서버에 함수가 없으면 모른다. 연결이 끊겨 못 받았으면 지난 값을 레벨이 같을 때만 남긴다(레벨이 바뀌면 통이 달라 모른다).
+         */
+        fun forgeXpOf(
+            result: com.stepup.android.data.remote.ShoeXpResult,
+            serverId: Long,
+            level: Int,
+            previous: SneakerEntity?,
+        ): Pair<Int?, Int?> = when (result) {
+            is com.stepup.android.data.remote.ShoeXpResult.Ok -> result.byShoe[serverId]?.let { it.xp to it.need } ?: (null to null)
+            com.stepup.android.data.remote.ShoeXpResult.Missing -> null to null
+            com.stepup.android.data.remote.ShoeXpResult.Failed ->
+                if (previous != null && previous.level == level) previous.forgeXp to previous.forgeNeed else null to null
+        }
     }
 }
 

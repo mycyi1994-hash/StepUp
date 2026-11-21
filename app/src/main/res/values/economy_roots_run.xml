@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Economy roots (server 0119, 2026-11-21) — worn-shoe lines before, during and after a run, and the reward-steps line. Used only when worn
+     shoes still earn (worn_rate > 0); otherwise the earlier lines (run_mechanics.xml · daily_rewards.xml) stay. %d is the worn rate from the
+     rules. Edit all four languages together -->
+<resources>
+    <!-- Pre-run check -->
+    <string name="roots_check_worn">These shoes are worn out · repair them for 100%%, or run as they are and earn %1$d%%</string>
+    <string name="roots_check_low_minutes">These shoes wear out in about %1$d min · steps after that earn %2$d%%. Repair them to keep earning 100%% for longer.</string>
+    <string name="roots_check_earn_minutes">These shoes earn 100%% for about %1$d min · %2$d%% after that</string>
+
+    <!-- During the run -->
+    <string name="roots_run_worn_band">Shoes worn out · steps now earn %1$d%%</string>
+    <string name="roots_run_worn_body" formatted="false">Your steps still count. Repair the shoes to earn 100% again.</string>
+    <string name="roots_notification_shoe_worn">Shoes worn out · earning %1$d%% · steps still count</string>
+
+    <!-- After the run -->
+    <string name="roots_run_worn_result">Steps after the shoes wore out earn %1$d%% · every step still counts. Repair them to get back to 100%%.</string>
+    <string name="run_reason_worn_partial">Steps after the shoes wore out earned only part</string>
+
+    <!-- Rewards today -->
+    <string name="roots_off_run_note">Indoor and no-route steps don\'t count toward boxes or your goal. Every step from an outdoor run with a confirmed route counts.</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 一緒に走った人 · 1日の最大 SUP · 必須アップデート(サーバー 0120, 2026-11-21)。4言語をそろえて直す -->
+<resources>
+    <string name="tb_daily_max">1日の最大 約 %1$s SUP</string>
+    <string name="tb_daily_max_info">ひとり · クルー · ボーナス · 目標ボーナスをすべて合わせた値です。イベントの日はその倍率だけ増え、登録して間もないアカウントは半分です。</string>
+    <string name="tb_lobby_course_half">コースの半分（%1$s km）以上 · %2$d分以上一緒に走ると人数に入ります</string>
+    <string name="tb_lobby_goal_half">目標距離の半分（%1$s km）以上 · %2$d分以上一緒に走ると人数に入ります</string>
+    <string name="tb_lobby_km">%1$s km以上 · %2$d分以上一緒に走ると人数に入ります</string>
+    <string name="tb_lobby_minutes">%1$d分以上一緒に走ると人数に入ります</string>
+    <string name="tb_rule_together_t">一緒に走ったクルーメンバーだけ</string>
+    <string name="tb_rule_together_b">同じ待機室から出発し、%1$d分 · %2$s歩以上一緒に走った同じクルーのメンバーだけが人数ボーナスに入ります。コースがあればコースの%3$s%%以上を走る必要があります。友だちが後から記録を送っても、%4$d時間以内なら全員に加算されます。</string>
+    <string name="tb_bonus_note">一緒に走った同じクルーのメンバーだけを数えます。0〜1人はボーナスがありません。レベルボーナスは別に加算します。</string>
+    <string name="tb_result_together_n">一緒に走った人 %1$d人 · 友だちが記録を送ると加算されることがあります</string>
+    <string name="tb_result_not_together_goal">今回は一緒に走った人数に入りませんでした · コースの半分以上、%1$d分以上一緒に走ると入ります</string>
+    <string name="tb_result_not_together">今回は一緒に走った人数に入りませんでした · %1$d分以上一緒に走ると入ります</string>
+    <string name="tb_result_headcount_none">今回のランには人数ボーナスが付きませんでした</string>
+    <string name="run_reason_daily_max">今日もらえる最大 SUP に達しました</string>
+    <string name="tb_update_title">アップデートが必要です</string>
+    <string name="tb_update_body">新しいバージョンにアップデートすると引き続き使えます</string>
+    <string name="tb_update_action">アップデートする</string>
+    <string name="tb_live_counting">一緒に走った人数は記録をアップした後に決まります · Lv +%1$s%%</string>
+    <string name="tb_rule_shoes_blend_b">出発時に選んだシューズの最大耐久度を合わせて体力にし、クルーレベルの効果を加えます。報酬の効率は自分のシューズ %1$s%% + 一緒に走ったメンバーのシューズ平均 %2$s%% です。</string>
+    <string name="tb_rule_reward_blend_t">報酬 = クルー効率 × (1 + 人数 + レベル)</string>
+    <string name="tb_rule_reward_daily_b">人数ボーナスとレベルボーナスは足して適用します。ソロ・クルーラン・ボーナスを合わせて1日の最大 SUP の範囲で受け取ります。</string>
+    <string name="tb_blend_note">効率は自分のシューズ %1$s%% + 一緒に走ったメンバーのシューズ平均 %2$s%% で計算します。</string>
+</resources>

@@ -171,6 +171,21 @@ fun SneakerDetailScreen(
     var repairOpen by rememberSaveable(sneakerId) { mutableStateOf(false) }
     // 스탯 포인트 시트(0059) — 서버가 받았다고 답한 뒤에만 완료. 화면을 나가면 지운다(같은 초안은 다시 보내도 한 번만 적힌다)
     var pointsPhase by remember(sneakerId) { mutableStateOf<PointsPhase?>(null) }
+    // 포인트 미리보기(서버 0119 — 내 지난 14일 러닝으로 "1포인트 = 하루 약 +N SUP" · 추천). 시트가 열릴 때 · 나눈 값이 바뀌었을 때
+    // 다시 받는다(읽기만). 못 받으면(0119 전 서버 · 연결 끊김) 그 칸만 없고 나누기는 그대로 된다
+    var pointsPreview by remember(sneakerId) { mutableStateOf<com.stepup.android.domain.PointsPreview?>(null) }
+    val previewBasis = pointsPhase?.basis
+    LaunchedEffect(sneakerId, previewBasis?.total, previewBasis?.saved) {
+        pointsPreview = null
+        val basis = previewBasis ?: return@LaunchedEffect
+        pointsPreview = try {
+            ServiceLocator.sneakerRepository.pointsPreview(basis.shoeId)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     // 로그인 화면으로 — 돌아온 뒤 자동으로 착용 · 수리 · 강화하지 않는다. 서버 설정이 없는 빌드는 로그인할 수 없다(버튼 없음)
     val signIn: (() -> Unit)? = if (!ServiceLocator.serverEconomyOn) null else ({
@@ -224,6 +239,9 @@ fun SneakerDetailScreen(
             }
         },
         onClose = { if (pointsPhase !is PointsPhase.Sending) pointsPhase = null },
+        // 추천대로 — 초안만 채운다(보내는 것은 "포인트 나누기" 뒤 확인에서)
+        onRecommend = { pointsPhase = pointsPhase?.recommend(pointsPreview) },
+        onRecommendAll = { pointsPhase = pointsPhase?.recommendAll(pointsPreview) },
     )
 
     ShoeDetailContent(
@@ -254,6 +272,9 @@ fun SneakerDetailScreen(
         onCheckWear = viewModel::reloadOwned,
         points = pointsPhase,
         pointsActions = pointsActions,
+        pointsPreview = pointsPreview,
+        // 처음 포인트가 생긴 사람 — 포인트 ⓘ 에 "나눈 포인트는 되돌릴 수 없어요"를 함께(한 번 나누면 더 보이지 않는다)
+        firstPoints = (owned as? OwnedLoad.Ready)?.shoes?.let(::firstPointsOf) ?: false,
     )
 }
 
@@ -287,6 +308,10 @@ fun ShoeDetailContent(
     /** 스탯 포인트 시트(0059) — 있으면 그 장면으로 띄운다 */
     points: PointsPhase? = null,
     pointsActions: PointsActions = PointsActions(),
+    /** 처음 포인트가 생긴 사람([firstPointsOf]) — 포인트 시트의 ⓘ 가 되돌릴 수 없다는 한 줄을 함께 보인다 */
+    firstPoints: Boolean = false,
+    /** 포인트 미리보기(서버 0119) — 있으면 포인트 시트가 "1포인트 = 하루 약 +N SUP" · 추천대로 나누기를 보인다 */
+    pointsPreview: com.stepup.android.domain.PointsPreview? = null,
 ) {
     var sheet by rememberSaveable { mutableStateOf(initialSheet?.let(DetailSheet::valueOf) ?: DetailSheet.None) }
     var artAttempt by rememberSaveable { mutableIntStateOf(0) }
@@ -429,7 +454,8 @@ fun ShoeDetailContent(
             DetailSheet.None -> Unit
         }
         if (points != null && sheet == DetailSheet.None && repair == null) {
-            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn)
+            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn, firstPoints = firstPoints,
+                preview = pointsPreview)
         }
         if (repair != null && sheet == DetailSheet.None) {
             ShoeRepairSheet(
@@ -560,8 +586,11 @@ private fun DetailBody(
             shoe, Modifier.testTag("shoe-stat-cells"),
             onRepair = onShowRepair,
             repairEnabled = !care.busy && repairable(shoe),
-            repairEmphasis = repairUrgent(shoe),
+            // 곧 닳는지는 그 신발의 수명으로(효율에 포인트를 넣은 신발은 그만큼 짧다 — 서버 규칙)
+            repairEmphasis = repairUrgent(shoe, rememberShoeRules()),
         )
+        // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
+        ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 6.dp))
         // 아이템칸 — 아이템이 생긴다는 가정의 자리만(잠김). 아이템 · 개수를 지어내지 않는다
         Spacer(Modifier.height(18.dp))
         ShoeItemSlots()

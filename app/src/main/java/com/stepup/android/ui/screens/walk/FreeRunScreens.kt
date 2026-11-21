@@ -134,8 +134,8 @@ internal enum class FreeBand { None, Overspeed, LocationOff, MeasureInvalid, Spe
  * 위치를 찾는 동안에도 띠가 없다 — 지도 앱처럼 잡히는 대로 내 점이 뜬다(2026-10-17 "그 글도 없애고").
  * 30초 넘게 서 있으면([still], RunStill) "멈춰 있어요" 띠와 일시정지 알약 — 신호 약함 · 대략 위치보다 앞선다(지금 할 수 있는 일이라서).
  * 과속이 이어지는 동안([overspeed], RunOverspeed)은 "N초 뒤 러닝이 멈춰요" 띠가 가장 앞선다 — 30초를 채우면 러닝이 멈추고 패널티가 있다.
- * 신발 내구도를 다 썼으면([shoeWorn]) "이제 걸음은 보상이 없어요" 띠 — 남은 러닝 내내 이어지므로 다른 문제 띠보다 뒤에 둔다
- * (2026-10-19 "내구도 다 소모하면 따로 안내").
+ * 신발 내구도를 다 썼으면([shoeWorn]) "이제부터 N%만 적립돼요"(서버 0119 — 그 전 규칙이면 "이제 걸음은 보상이 없어요") 띠 —
+ * 남은 러닝 내내 이어지므로 다른 문제 띠보다 뒤에 둔다(2026-10-19 "내구도 다 소모하면 따로 안내").
  */
 internal fun freeBand(
     active: Boolean,
@@ -780,7 +780,8 @@ private fun LiveStatus(
         FreeBand.Weak -> FreeStatusLine(stringResource(R.string.run_free_gps_weak), "run-gps-weak", FreeLineKind.Warn)
         FreeBand.Approx -> FreeStatusLine(stringResource(R.string.run_gps_approx), "run-location-approx", FreeLineKind.Warn,
             action = stringResource(R.string.run_free_settings), onAction = onBandAction)
-        FreeBand.Worn -> FreeStatusLine(stringResource(R.string.run_shoe_worn_band), "run-shoe-worn", FreeLineKind.Warn, onClick = onBandTap)
+        // 닳은 뒤에도 적립하는 규칙(서버 0119)이면 "이제부터 N%만 적립돼요", 아니면 예전 글(shoeWornBandText)
+        FreeBand.Worn -> FreeStatusLine(shoeWornBandText(), "run-shoe-worn", FreeLineKind.Warn, onClick = onBandTap)
     }
 }
 
@@ -924,7 +925,7 @@ internal fun FreeRunResult(
     onDeleteBack: () -> Unit = {},
     /** 과속이 30초 이어져 앱이 멈춘 러닝 — 패널티 안내(내구도 절반 · 10분 러닝 금지) */
     penalty: String? = null,
-    /** 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 보상에 들지 않았다는 안내 */
+    /** 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 일부만 적립된다는 안내(예전 규칙이면 보상에 들지 않았다는 안내) */
     shoeNote: String? = null,
     /** [shoeNote] 아래 "수리하기" 글자 단추 — 신고 있는 신발의 수리 시트를 연다(null 이면 두지 않는다) */
     onShoeRepair: (() -> Unit)? = null,

@@ -12,8 +12,8 @@
     <string name="boxes_premium">上級ボックス</string>
     <string name="boxes_check_in">出席</string>
     <string name="boxes_per_day">1日%1$d個</string>
-    <string name="boxes_run">今日の報酬歩数 %1$s歩</string>
-    <string name="boxes_week">今週の報酬歩数 %1$s歩</string>
+    <string name="boxes_run">今日のラン歩数 %1$s歩</string>
+    <string name="boxes_week">今週のラン歩数 %1$s歩</string>
     <string name="boxes_got">受け取り済み</string>
     <string name="boxes_steps_progress">%1$s / %2$s歩</string>
     <string name="boxes_streak">%1$d日連続で目標達成</string>

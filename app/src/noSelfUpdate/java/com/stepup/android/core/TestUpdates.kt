@@ -1,6 +1,7 @@
 package com.stepup.android.core
 
 import android.app.Application
+import android.content.Context
 import com.stepup.android.BuildConfig
 
 /**
@@ -16,4 +17,8 @@ object TestUpdates {
 
     @Suppress("UNUSED_PARAMETER")
     fun attach(app: Application) = Unit
+
+    /** 강제 업데이트 화면의 "업데이트하기"(서버 0120) — 스토어 판은 Google Play 로 간다(false = 이 빌드에는 다른 길이 없다) */
+    @Suppress("UNUSED_PARAMETER")
+    fun requestUpdate(context: Context): Boolean = false
 }

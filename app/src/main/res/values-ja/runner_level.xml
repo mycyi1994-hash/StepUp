@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ランナーレベル(サーバー 0121, 2026-11-21): ランニングの歩数で上がるアカウントレベル・1日のエネルギー・ボックス・バッジ。4言語を一緒に直す -->
+<resources>
+    <string name="rl_card_title">ランナー Lv %1$d</string>
+    <string name="rl_card_badge">Lv%1$d バッジ</string>
+    <string name="rl_card_to_next">次のレベルまで %1$s歩</string>
+    <string name="rl_card_max">最高レベルです</string>
+    <string name="rl_card_energy">1日のエネルギー %1$d分</string>
+    <string name="rl_card_energy_next">次のレベル %1$d分</string>
+    <string name="rl_card_info">ランナーレベルの説明を見る</string>
+    <string name="rl_name_mark">ランナー Lv%1$d</string>
+    <string name="rl_info_title">ランナーレベル</string>
+    <string name="rl_info_steps">これまで %1$s歩</string>
+    <string name="rl_info_how">ランニングで歩いた歩数がたまるとレベルが上がります。%1$s歩ごとに1レベル、Lv%2$dまでです。</string>
+    <string name="rl_info_counts">エネルギーを使い切った後の歩数とクルーランの歩数も入ります。</string>
+    <string name="rl_info_not_counts">ルートが確認できなかったランや、速度超過などで獲得がないランの歩数は入りません。</string>
+    <string name="rl_info_gives">レベルが上がると</string>
+    <string name="rl_info_energy">1日のエネルギー +%1$d分</string>
+    <string name="rl_info_energy_cap">1日のエネルギー +%1$d分・Lv%2$dまで</string>
+    <string name="rl_info_free">通常ボックス %1$d個</string>
+    <string name="rl_info_gift">%1$dレベルごとに上級ボックスをもう1個</string>
+    <string name="rl_info_badges">Lv%1$s でバッジ・クルー名簿で名前の横に表示されます</string>
+    <string name="rl_info_legacy">以前から使っているアカウントなので、1日のエネルギーは%1$d分より減りません。レベルのエネルギーがこれより大きくなると、そこから増えます。</string>
+    <string name="rl_info_shoes">1日のエネルギーはシューズのレベルではなく、ランナーレベルで増えます。</string>
+    <string name="rl_up_title">ランナーレベルが上がりました</string>
+    <string name="rl_up_levels">Lv %1$d → Lv %2$d</string>
+    <string name="rl_up_energy">1日のエネルギー %1$d分 → %2$d分</string>
+    <string name="rl_up_boxes_both">通常ボックス %1$d個・上級ボックス %2$d個を受け取りました</string>
+    <string name="rl_up_boxes_free">通常ボックス %1$d個を受け取りました</string>
+    <string name="rl_up_boxes_gift">上級ボックス %1$d個を受け取りました</string>
+    <string name="rl_up_badge">Lv%1$d バッジを受け取りました</string>
+    <string name="rl_welcome_title">ランナーレベルができました</string>
+    <string name="rl_welcome_both">これまでのランでランナー Lv %1$d — 通常ボックス %2$d個・上級ボックス %3$d個を受け取りました</string>
+    <string name="rl_welcome_free">これまでのランでランナー Lv %1$d — 通常ボックス %2$d個を受け取りました</string>
+    <string name="rl_welcome_gift">これまでのランでランナー Lv %1$d — 上級ボックス %2$d個を受け取りました</string>
+    <string name="rl_welcome_none">これまでのランでランナー Lv %1$dからスタートします</string>
+    <string name="rl_welcome_note">走るほどレベルが上がり、1日のエネルギーが増えます。「マイ」で確認できます。</string>
+    <string name="rl_shoe_energy_note">1日のエネルギーはシューズのレベルではなく、ランナーレベル(走った歩数)で増えます</string>
+</resources>

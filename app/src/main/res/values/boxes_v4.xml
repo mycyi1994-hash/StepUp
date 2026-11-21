@@ -12,8 +12,8 @@
     <string name="boxes_premium">Premium box</string>
     <string name="boxes_check_in">Daily check-in</string>
     <string name="boxes_per_day">%1$d a day</string>
-    <string name="boxes_run">%1$s rewarded steps today</string>
-    <string name="boxes_week">%1$s rewarded steps this week</string>
+    <string name="boxes_run">%1$s run steps today</string>
+    <string name="boxes_week">%1$s run steps this week</string>
     <string name="boxes_got">Received</string>
     <string name="boxes_steps_progress">%1$s / %2$s steps</string>
     <string name="boxes_streak">Daily goal %1$d days in a row</string>

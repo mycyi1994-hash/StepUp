@@ -33,7 +33,7 @@
     <string name="ca_kind_crew_run">Crew run finished</string>
     <string name="ca_kind_flash">Flash run attended</string>
     <string name="ca_kind_crew_join">Joined a crew</string>
-    <string name="ca_kind_steps">Daily steps</string>
+    <string name="ca_kind_steps">All-day steps</string>
     <string name="ca_kind_check_in">Check-in</string>
     <string name="ca_kind_seed">Draw seed committed</string>
     <string name="ca_kind_reveal">Draw seed revealed</string>
@@ -69,7 +69,7 @@
     <string name="ca_guide_crew_head">Crews — Together tab</string>
     <string name="ca_guide_crew_body">Finished crew runs (distance, time, how many started together), each room’s start roster, flash runs that two or more started together, and joining a crew (once per crew).</string>
     <string name="ca_guide_daily_head">Every day</string>
-    <string name="ca_guide_daily_body">One check-in on each day you open the app, and whether you hit that day’s step goal (after the day ends). Step counts are not recorded.</string>
+    <string name="ca_guide_daily_body">One check-in on each day you open the app, and whether that day’s all-day steps (counted by your phone) reached your goal number (after the day ends). Step counts are not recorded.</string>
     <string name="ca_guide_foot">Not recorded: runs under 200 m or without a route, earning or spending SUP in the app, putting shoes on, wear from running. Never your location, route, name or account. Only a per-person pseudonym is recorded, and once you delete your account it can no longer be linked to you. Each record carries only a salted fingerprint of the original for later checks, and sending is delayed by tens of minutes. Records on the chain cannot be erased.</string>
     <string name="wl_chain_row">Chain records</string>
     <string name="wl_chain_row_sub">Runs, shoes and crew activity — StepUp pays the gas</string>
