@@ -84,3 +84,6 @@ create or replace function t.cr(n int) returns text language sql as $$
 grant usage on schema t to public; grant all on all tables in schema t to public; grant execute on all functions in schema t to public;
 -- 운을 끈다(값을 맞대어 보려고)
 update public.economy_settings set value = '[1,1,1]' where key in ('reward_luck', 'wear_luck');
+
+-- 러너 레벨(0121)은 계정 에너지를 바꾼다(새 계정 Lv1 = 20분). 이 장면들은 그 전 규칙(하루 에너지 10)으로 맞춰 쓴 것이라 끄고 돌린다
+update public.economy_settings set value = '"OFF"' where key = 'runner_level_rule';

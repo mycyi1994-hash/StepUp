@@ -97,6 +97,9 @@ update public.economy_settings set value = v.value
 update public.economy_settings set value = v.value
   from (values ('crew_bonus_rule', '"ALL"'::jsonb), ('party_bonus_rule', '"ALL"'::jsonb), ('daily_max_rule', '"CAP"'::jsonb)) v(key, value)
  where public.economy_settings.key = v.key;
+-- 0121(러너 레벨)도 예전 값으로 — 위의 예전 검사들은 하루 에너지를 가진 신발 레벨로 셈한다(새 계정이 20분이면 숫자가 흔들린다).
+-- 맨 끝 "러너 레벨(0121)"이 다시 켠다
+update public.economy_settings set value = '"OFF"' where key = 'runner_level_rule';
 
 -- 홈페이지 대기 명단은 제한된 공개 함수만 허용한다.
 do $$
@@ -12729,7 +12732,7 @@ begin
   perform pg_temp.ok((v ->> 'ok')::boolean and v ? 'runs_7d' and v ? 'money_7d' and (v -> 'versions' ->> 'new_app')::int >= 1,
     '경제 현황 — 지난 7일 러닝 · 돈 · 앱 판 (0116)');
   v := public.ops_economy_settings(v_s);
-  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 41, '경제 설정 — 바꿀 수 있는 값 마흔하나 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 여섯)');
+  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 45, '경제 설정 — 바꿀 수 있는 값 마흔다섯 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 여섯 + 0121 넷)');
   v := public.ops_economy_set(v_s, 'box_price', '45'::jsonb);
   perform pg_temp.ok(v ->> 'code' = 'confirm_required', '설정은 언제나 키를 한 번 더 (0116)');
   v := public.ops_economy_set(v_s, 'box_price', '"사십"'::jsonb, pg_temp.fx('key116'));
@@ -13789,6 +13792,111 @@ select set_config('request.jwt.claim.sub', '', false);
 select set_config('request.jwt.claims', '', false);
 select set_config('request.path', '', false);
 select set_config('request.headers', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+--  러너 레벨(0121) — 걸음으로 오르는 계정 레벨 · 하루 에너지 · 레벨 상자 · 배지
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 러너 레벨(0121) ─────────────────────'
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+select set_config('request.jwt.claims', '', false);
+update public.economy_settings set value = '"ON"' where key = 'runner_level_rule';
+create or replace function pg_temp.u121(n int) returns uuid language sql immutable as $$
+  select ('a1210000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
+$$;
+-- 그 사람의 러닝 하나 — 한국 날짜 [p_day] 의 [p_hour] 시, 보상 걸음 [p_steps], 판정 [p_verdict]
+create or replace function pg_temp.run121(p_user uuid, p_day date, p_hour int, p_steps int, p_verdict text default 'CLEAN') returns void
+language sql as $$
+  insert into public.walk_sessions (user_id, started_at, ended_at, duration_sec, steps, verified_steps, reward_steps, verdict, gps_backed, energy_pool)
+  values (p_user, economy.game_day_start(p_day) + make_interval(hours => p_hour), economy.game_day_start(p_day) + make_interval(hours => p_hour, mins => 30),
+          1800, p_steps, p_steps, p_steps, p_verdict, true, 'PERSONAL')
+$$;
+create or replace function pg_temp.boxes121(p_user uuid, p_like text) returns int language sql as $$
+  select count(*)::int from economy.box_awards where user_id = p_user and source like p_like
+$$;
+do $$ declare n int; begin
+  for n in 1 .. 4 loop
+    insert into auth.users (id, email) values (pg_temp.u121(n), 'u121_' || n || '@test.invalid') on conflict do nothing;
+  end loop;
+end $$;
+
+do $$
+declare
+  j jsonb;
+  d date := economy.game_day(now());
+begin
+  -- 새 계정 · 러닝 없음: Lv1 · 하루 에너지 5.5(20분)
+  perform pg_temp.ok(economy.energy_max(pg_temp.u121(1)) = 5.5, format('새 계정은 러너 Lv1 하루 에너지 5.5 = 20분 (%s) (0121)', economy.energy_max(pg_temp.u121(1))));
+  perform set_config('request.jwt.claim.sub', pg_temp.u121(1)::text, false);
+  j := public.runner_me();
+  perform pg_temp.ok((j ->> 'enabled')::boolean and (j ->> 'level')::int = 1 and (j ->> 'energy_minutes')::int = 20 and (j ->> 'next_energy_minutes')::int = 22
+                     and (j ->> 'to_next')::int = 10000 and not (j ->> 'legacy_floor')::boolean and (j -> 'boxes' ->> 'free')::int = 0
+                     and (j ->> 'energy_cap_level')::int = 21 and (j -> 'rewards' ->> 'energy_minutes_per_level')::int = 2,
+    format('runner_me — 새 계정 Lv1 · 20분 · 다음 22분 · 1만 걸음 남음 (%s) (0121)', j));
+  perform set_config('request.jwt.claim.sub', '', false);
+
+  -- 하루 48,000 까지 · FLAGGED · VOID 는 빼고 · 다른 날은 더한다 → 48,000 + 12,000 = 60,000 → Lv7
+  perform pg_temp.run121(pg_temp.u121(1), d - 3, 2, 30000);
+  perform pg_temp.run121(pg_temp.u121(1), d - 3, 5, 30000);
+  perform pg_temp.run121(pg_temp.u121(1), d - 2, 2, 12000);
+  perform pg_temp.run121(pg_temp.u121(1), d - 2, 5, 20000, 'FLAGGED');
+  perform pg_temp.run121(pg_temp.u121(1), d - 2, 8, 20000, 'VOID');
+  perform pg_temp.ok(economy.runner_steps_of(pg_temp.u121(1)) = 60000
+                     and (select level from economy.runner_levels where user_id = pg_temp.u121(1)) = 7,
+    format('러너 걸음 = 하루 48,000 까지 · CLEAN 만 — %s걸음 · Lv%s (0121)', economy.runner_steps_of(pg_temp.u121(1)),
+           (select level from economy.runner_levels where user_id = pg_temp.u121(1))));
+  perform pg_temp.ok(economy.energy_max(pg_temp.u121(1)) = 8.8, format('Lv7 하루 에너지 5.5 + 0.55 × 6 = 8.8 (%s) (0121)', economy.energy_max(pg_temp.u121(1))));
+  perform pg_temp.ok(pg_temp.boxes121(pg_temp.u121(1), 'RUNNER:%') = 6 and pg_temp.boxes121(pg_temp.u121(1), 'RUNNER5:%') = 1,
+    format('Lv2 ~ 7 보통 상자 6 · Lv5 상급 1 (%s · %s) (0121)', pg_temp.boxes121(pg_temp.u121(1), 'RUNNER:%'), pg_temp.boxes121(pg_temp.u121(1), 'RUNNER5:%')));
+  -- 레벨이 그대로면 상자는 다시 나오지 않는다
+  perform pg_temp.run121(pg_temp.u121(1), d - 1, 2, 3000);
+  perform economy.runner_refresh(pg_temp.u121(1));
+  perform pg_temp.ok(pg_temp.boxes121(pg_temp.u121(1), 'RUNNER:%') = 6, '같은 레벨의 상자는 한 번만 (0121)');
+  -- Lv10 → 배지 10 · 상급 둘째
+  perform pg_temp.run121(pg_temp.u121(1), d - 1, 5, 27000);
+  perform set_config('request.jwt.claim.sub', pg_temp.u121(1)::text, false);
+  j := public.runner_me();
+  perform pg_temp.ok((j ->> 'level')::int = 10 and (j ->> 'badge')::int = 10 and (j -> 'boxes' ->> 'free')::int = 9 and (j -> 'boxes' ->> 'gift')::int = 2
+                     and (j ->> 'energy_minutes')::int = 38 and (j ->> 'level_from')::int = 90000 and (j ->> 'next_at')::int = 100000,
+    format('Lv10 — 배지 10 · 보통 9 · 상급 2 · 38분 (%s) (0121)', j));
+  perform pg_temp.ok((select count(*) from public.runner_badges(array[pg_temp.u121(1), pg_temp.u121(2)])) = 1
+                     and (select badge from public.runner_badges(array[pg_temp.u121(1)])) = 10,
+    '배지는 Lv10 이 넘은 사람만 (0121)');
+  perform set_config('request.jwt.claim.sub', '', false);
+  perform pg_temp.ok((select count(*) from public.runner_badges(array[pg_temp.u121(1)])) = 0, '로그인하지 않으면 배지를 돌려주지 않는다 (0121)');
+
+  -- 0121 전에 있던 계정: 예전 하루 에너지(10)보다 줄지 않는다 · 레벨은 걸음대로
+  update economy.runner_levels set legacy_energy = 10 where user_id = pg_temp.u121(2);
+  insert into economy.runner_levels (user_id, legacy_energy) values (pg_temp.u121(2), 10) on conflict (user_id) do update set legacy_energy = 10;
+  perform pg_temp.ok(economy.energy_max(pg_temp.u121(2)) = 10, format('예전 계정은 Lv1 이어도 하루 에너지 10 (%s) (0121)', economy.energy_max(pg_temp.u121(2))));
+  perform set_config('request.jwt.claim.sub', pg_temp.u121(2)::text, false);
+  j := public.runner_me();
+  perform pg_temp.ok((j ->> 'level')::int = 1 and (j ->> 'legacy_floor')::boolean and (j ->> 'energy_minutes')::int = 36 and (j ->> 'level_energy_minutes')::int = 20,
+    format('runner_me — 예전 보장이면 legacy_floor · 36분 · 레벨 몫 20분 (%s) (0121)', j));
+  perform set_config('request.jwt.claim.sub', '', false);
+
+  -- 규칙을 끄면 예전 에너지(가진 신발 가운데 가장 높은 레벨) · 상자는 멈추고 걸음은 센다 → 다시 켜면 못 받은 레벨의 상자를 준다
+  update public.economy_settings set value = '"OFF"' where key = 'runner_level_rule';
+  perform pg_temp.ok(economy.energy_max(pg_temp.u121(3)) = economy.energy_max_for_level(1), '규칙을 끄면 하루 에너지는 예전 셈 (0121)');
+  perform pg_temp.run121(pg_temp.u121(3), d - 2, 2, 25000);
+  perform pg_temp.ok((select level from economy.runner_levels where user_id = pg_temp.u121(3)) = 3 and pg_temp.boxes121(pg_temp.u121(3), 'RUNNER%') = 0,
+    '끈 동안에도 걸음 · 레벨은 세고 상자는 주지 않는다 (0121)');
+  update public.economy_settings set value = '"ON"' where key = 'runner_level_rule';
+  perform economy.runner_refresh(pg_temp.u121(3));
+  perform pg_temp.ok(pg_temp.boxes121(pg_temp.u121(3), 'RUNNER:%') = 2, '다시 켜면 그동안 닿은 레벨의 상자를 준다(지난 걸음으로 채운 레벨처럼) (0121)');
+
+  -- 만렙: 이레 × 48,000 = 336,000 → Lv30 · 에너지 가장 많이 16.5(60분) · 다음 없음 · 보통 29 · 상급 6
+  for i in 1 .. 7 loop perform pg_temp.run121(pg_temp.u121(4), d - 10 + i, 3, 48000); end loop;
+  perform set_config('request.jwt.claim.sub', pg_temp.u121(4)::text, false);
+  j := public.runner_me();
+  perform pg_temp.ok((j ->> 'level')::int = 30 and j -> 'next_at' = 'null'::jsonb and (j ->> 'energy_minutes')::int = 60 and (j ->> 'energy_max')::numeric = 16.5
+                     and (j ->> 'badge')::int = 30 and (j -> 'boxes' ->> 'free')::int = 29 and (j -> 'boxes' ->> 'gift')::int = 6,
+    format('만렙 Lv30 — 60분 · 배지 30 · 보통 29 · 상급 6 (%s) (0121)', j));
+  perform set_config('request.jwt.claim.sub', '', false);
+  perform pg_temp.ok((economy.ops_setting_rule('runner_level_steps')).hi = 100000 and (economy.ops_setting_rule('runner_energy_cap')).kind = 'num',
+    '운영자 손잡이에 러너 레벨 넷 (0121)');
+end $$;
+call pg_temp.must_fail($q$ select public.runner_me() $q$, '로그인하지 않으면 runner_me 는 거절 (0121)');
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
