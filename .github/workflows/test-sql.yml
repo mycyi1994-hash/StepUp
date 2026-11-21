@@ -83,6 +83,11 @@ jobs:
           echo "$out" | grep -q '^OK' || { echo '장면이 돌지 않았다'; exit 1; }
           if echo "$out" | grep -Eq '^(FAIL|ERROR)'; then exit 1; fi
 
+      # 대격변 설계의 기준선(docs/stat-overhaul-2026-11-21.md) — 모형(stats_today.py)이 지금 서버의 하루 셈(points_day_net)과 같은가.
+      # 서버 셈을 바꾸면 모형도 함께 고친다(744 경우 · 0.1 SUP 안)
+      - name: 대격변 기준선(모형 = 서버)
+        run: bash tools/together_sim/run.sh tools/together_sim/17-stats-baseline.sql | python3 tools/economy_sim/stats_today.py --verify
+
       # 경제 4판 규칙(0116)은 앱에도 있다(서버를 읽기 전의 값) — 서버만 고쳐 앱과 어긋나지 않게
       - name: 경제 쌍둥이(앱 = 서버)
         run: python3 scripts/check-economy-twin.py

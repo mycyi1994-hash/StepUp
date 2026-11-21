@@ -94,15 +94,17 @@ def simulate(lam, energy_per_day, run_sup, days=20000, seed=7, streak=7, repair_
             if clover >= 3: clover -= 3
     return out
 
-def value(o, run_sup, e_day, sup_per_energy):
-    """하루 기대값(SUP 로 친 값) — 아이템은 그 사람이 한 번 달려 버는 SUP 로 값을 매긴다."""
+def value(o, run_sup, e_day, sup_per_energy, box_sup=None, repair_sup=51.5):
+    """하루 기대값(SUP 로 친 값) — 아이템은 그 사람이 한 번 달려 버는 SUP 로 값을 매긴다.
+    box_sup · repair_sup — 상자 · 수리 한 번의 값(기본 = 레어 가운데 신발. 대격변 모형은 그 신발 등급의 값을 넘긴다)"""
+    BOX_SUP_ = BOX_SUP if box_sup is None else box_sup
     d = o['days']
     v = dict(
         보상행운=(o['sup_bonus'] + o['sup_flat']) / d,
         출발버프=(o['floor_gain'] + o['wear_saved'] + o['energy_saved'] * sup_per_energy * 0.5) / d,
-        상자=(o['shard'] / 5 + o['box']) * BOX_SUP / d,
+        상자=(o['shard'] / 5 + o['box']) * BOX_SUP_ / d,
         아이템=(o['drink'] * 0.25 * run_sup + o['booster'] * 0.5 * run_sup + o['double'] * 1.0 * run_sup
-               + o['repair'] * 51.5 + o['refill'] * min(run_sup, 10 * sup_per_energy) * 0.5) / d,
+               + o['repair'] * repair_sup + o['refill'] * min(run_sup, 10 * sup_per_energy) * 0.5) / d,
         클로버=o['clover_get'] * 10.0 / d,
     )
     v['합'] = sum(v.values())
