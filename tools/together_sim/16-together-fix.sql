@@ -178,3 +178,75 @@ begin
                 coalesce(c.bonus_reason, '-') || ' · 묶음 ' || (select economy.crew_pool_json(t.c(7), c.day) ->> 'held'));
 end $$;
 
+do $$
+declare p bigint; v jsonb; v_start timestamptz; n int; c economy.crew_runs; w public.walk_sessions; r numeric; ok boolean := true; d text := '';
+begin
+  -- (자) 크루 효율 8 : 2 — 셋(효율 배수 1.4 · 5.0 · 1.4)이 15분씩. 평균 2.6 → 약한 신발 0.8 × 1.4 + 0.2 × 2.6 = 1.64(+17%),
+  -- 센 신발 0.8 × 5 + 0.2 × 2.6 = 4.52(−9.6%). 센 신발이 먼저 올려도 처음부터 4.52 로 받고(아래 끝), 약한 신발은 친구가 올리면 1.4 → 1.64 로 더해진다
+  perform t.mk(91, 1000, 4000); perform t.mk(92, 1000, 40000); perform t.mk(93, 1000, 4000);
+  perform t.crew(8, 91, array[92, 93], 1);
+  perform t.login(91);
+  p := public.party_create_v2(t.c(8), '8:2', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p, true);
+  for n in 92 .. 93 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
+  perform t.login(91); perform public.party_start_rev(p, 0);
+  perform t.age(interval '6 seconds');
+  perform t.run(p, array[91, 92, 93], 900);
+  select started_at into v_start from economy.crew_runs where user_id = t.u(91);
+  for n in 91 .. 93 loop perform t.login(n); v := public.crew_run_beat(p, 'ENDED'); end loop;
+  perform t.rec(92, v_start, 900, 2475);
+  select * into w from public.walk_sessions s where s.user_id = t.u(92) and s.party_id = p;
+  perform t.chk('(자) 센 신발은 먼저 올려도 아래 끝(4.52)으로', abs(w.together_base - round(w.together_unit * 4.52, 4)) < 0.001,
+                format('기본 %s = 바탕 %s × %s', w.together_base, round(w.together_unit, 4), round(w.together_base / nullif(w.together_unit, 0), 4)));
+  perform t.rec(91, v_start, 900, 2475);
+  perform t.rec(93, v_start, 900, 2475);
+  for n in 91 .. 93 loop
+    select * into w from public.walk_sessions s where s.user_id = t.u(n) and s.party_id = p;
+    select * into c from economy.crew_runs x where x.user_id = t.u(n) and x.party_id = p;
+    r := round(w.points_awarded / nullif(w.together_unit * case when n = 92 then 4.52 else 1.64 end * 1.10, 0), 4);
+    ok := ok and abs(r - 1) < 0.001 and abs(c.base_sup + c.level_sup + c.headcount_sup - c.total_sup) < 0.001 and c.total_sup = w.points_awarded
+          and (select sum(l.amount) from public.sup_ledger l where l.user_id = t.u(n) and (l.session_id = w.id or l.ref like 'together:' || w.id || ':%')) = w.points_awarded;
+    d := d || format('u%s %s SUP(기본 %s · 인원 %s · 평균 몫 %s) ', n, w.points_awarded, c.base_sup, c.headcount_sup, c.blend_sup);
+  end loop;
+  perform t.chk('(자) 셋 모두 내 신발 80% + 평균 20% × (1 + 인원 10%) · 원장 = 적립 = 결과 줄의 합', ok, d);
+end $$;
+do $$
+declare p bigint; v jsonb; v_start timestamptz; n int; c economy.crew_runs; w public.walk_sessions; ok boolean := true; d text := ''; f numeric;
+begin
+  -- (차) 셋(5.0 · 1.4 · 1.4) 가운데 약한 신발 하나가 5분 만에 그만 — 그 사람은 평균에 들지 않고 내 신발 그대로.
+  -- 센 신발은 처음 4.52(셋 평균) → 그만둔 사람이 올린 뒤 4.64(둘 평균 3.2), 남은 약한 신발은 1.76 · 인원 2명 +5%
+  perform t.mk(84, 1000, 40000); perform t.mk(85, 1000, 4000); perform t.mk(86, 1000, 4000);
+  perform t.crew(9, 84, array[85, 86], 1);
+  perform t.login(84);
+  p := public.party_create_v2(t.c(9), '8:2 탈주', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p, true);
+  for n in 85 .. 86 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
+  perform t.login(84); perform public.party_start_rev(p, 0);
+  perform t.age(interval '6 seconds');
+  perform t.run(p, array[84, 85, 86], 300);
+  perform t.login(86); v := public.crew_run_beat(p, 'ENDED');
+  perform t.run(p, array[84, 85], 600);
+  select started_at into v_start from economy.crew_runs where user_id = t.u(84);
+  for n in 84 .. 85 loop perform t.login(n); v := public.crew_run_beat(p, 'ENDED'); end loop;
+  perform t.rec(84, v_start, 900, 2475);
+  select * into w from public.walk_sessions s where s.user_id = t.u(84) and s.party_id = p;
+  perform t.chk('(차) 센 신발 먼저 — 셋 평균의 아래 끝 4.52', abs(w.points_awarded - round(w.together_unit * 4.52, 4)) < 0.001,
+                format('%s SUP', w.points_awarded));
+  perform t.rec(86, v_start, 300, 825);
+  select * into w from public.walk_sessions s where s.user_id = t.u(84) and s.party_id = p;
+  perform t.chk('(차) 그만둔 사람이 올리면 센 신발은 둘 평균 4.64 로 더해진다', abs(w.points_awarded - round(w.together_unit * 4.64, 4)) < 0.001,
+                format('%s SUP', w.points_awarded));
+  perform t.rec(85, v_start, 900, 2475);
+  for n in 84 .. 86 loop
+    select * into w from public.walk_sessions s where s.user_id = t.u(n) and s.party_id = p;
+    select * into c from economy.crew_runs x where x.user_id = t.u(n) and x.party_id = p;
+    f := case n when 84 then 4.64 * 1.05 when 85 then 1.76 * 1.05 else 1.4 end;
+    ok := ok and abs(w.points_awarded - round(w.together_unit * f, 4)) < 0.002 and c.total_sup = w.points_awarded;
+    d := d || format('u%s %s SUP(기대 %s · %s) ', n, w.points_awarded, round(w.together_unit * f, 2), coalesce(c.bonus_reason, c.bonus_count || '명'));
+  end loop;
+  perform t.chk('(차) 센 신발 4.64 × 1.05 · 남은 약한 신발 1.76 × 1.05 · 그만둔 사람 1.4(인원 없음)', ok, d);
+  -- 끄면(0) 내 신발 그대로 — 예전과 같은 셈
+  update public.economy_settings set value = '0' where key = 'crew_blend_share';
+  perform t.chk('(차) 끄면 내 신발 그대로', economy.crew_blend_mult(p, t.u(85), 1.4) = 1.4, economy.crew_blend_mult(p, t.u(85), 1.4)::text);
+  update public.economy_settings set value = '0.2' where key = 'crew_blend_share';
+end $$;

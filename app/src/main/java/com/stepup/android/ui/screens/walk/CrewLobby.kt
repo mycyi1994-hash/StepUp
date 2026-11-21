@@ -1195,6 +1195,16 @@ private fun BonusSheet(rules: CrewRunRules, together: com.stepup.android.domain.
         // 함께 달린 사람만 세는 규칙(0120)이면 "함께 출발한 모두"가 아니다
         val note = if (together != null && together.fromServer && together.active) R.string.tb_bonus_note else R.string.crew5_bonus_note
         Text(stringResource(note), style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f))
+        if (together != null && together.blends) {
+            Text(
+                stringResource(
+                    R.string.tb_blend_note,
+                    com.stepup.android.domain.CrewRunMath.percent(1.0 - together.blendShare),
+                    com.stepup.android.domain.CrewRunMath.percent(together.blendShare),
+                ),
+                style = navyText(13.sp, LobbyInk.NoteInk, FontWeight.Medium, 1.6f), modifier = Modifier.testTag("party-bonus-blend"),
+            )
+        }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.crew5_bonus_people), style = navyText(12.sp, Color(0xFFB2D1E8), FontWeight.Medium), modifier = Modifier.weight(1f))

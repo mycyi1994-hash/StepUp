@@ -12729,7 +12729,7 @@ begin
   perform pg_temp.ok((v ->> 'ok')::boolean and v ? 'runs_7d' and v ? 'money_7d' and (v -> 'versions' ->> 'new_app')::int >= 1,
     '경제 현황 — 지난 7일 러닝 · 돈 · 앱 판 (0116)');
   v := public.ops_economy_settings(v_s);
-  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 40, '경제 설정 — 바꿀 수 있는 값 마흔 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 다섯)');
+  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 41, '경제 설정 — 바꿀 수 있는 값 마흔하나 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 여섯)');
   v := public.ops_economy_set(v_s, 'box_price', '45'::jsonb);
   perform pg_temp.ok(v ->> 'code' = 'confirm_required', '설정은 언제나 키를 한 번 더 (0116)');
   v := public.ops_economy_set(v_s, 'box_price', '"사십"'::jsonb, pg_temp.fx('key116'));
@@ -13745,7 +13745,7 @@ update public.economy_settings set value = v.value
 do $$
 declare j jsonb := public.shoe_rules_v4();
 begin
-  perform pg_temp.ok(j -> 'together' ->> 'rule' = 'ACTIVE' and j -> 'together' ->> 'flash_rule' = 'ACTIVE' and (j -> 'together' ->> 'min_minutes')::int = 10 and (j -> 'together' ->> 'min_steps')::int = 1500
+  perform pg_temp.ok(j -> 'together' ->> 'rule' = 'ACTIVE' and j -> 'together' ->> 'flash_rule' = 'ACTIVE' and (j -> 'together' ->> 'blend_share')::numeric = 0.2 and (j -> 'together' ->> 'min_minutes')::int = 10 and (j -> 'together' ->> 'min_steps')::int = 1500
                      and (j -> 'together' ->> 'goal_share')::numeric = 0.5 and j -> 'daily_max' ->> 'rule' = 'HOUR'
                      and (j -> 'daily_max' ->> 'hour_steps')::int = 9900 and (j -> 'daily_max' ->> 'hour_mult')::numeric = 4,
     format('규칙 묶음에 함께 달린 사람의 문턱 · 하루 최대가 있다 (%s · %s) (0120)', j -> 'together', j -> 'daily_max'));

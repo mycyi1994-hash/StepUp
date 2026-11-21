@@ -208,6 +208,7 @@ together_twins = [
     (together, 'minSteps', 'together_min_steps'),
     (together, 'goalShare', 'together_goal_share'),
     (together, 'topupHours', 'together_topup_hours'),
+    (together, 'blendShare', 'crew_blend_share'),
     (daily, 'rule', 'daily_max_rule'),
     (daily, 'hourSteps', 'daily_max_hour_steps'),
     (daily, 'hourMult', 'daily_max_hour_mult'),

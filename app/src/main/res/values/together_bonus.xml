@@ -19,4 +19,8 @@
     <string name="tb_update_body">Update to the new version to keep using the app</string>
     <string name="tb_update_action">Update</string>
     <string name="tb_live_counting">Runners who ran together are counted after everyone uploads · Lv +%1$s%%</string>
+    <string name="tb_rule_shoes_blend_b">The max durability of the shoes everyone picks becomes shared stamina, plus the crew level effect. Reward efficiency is %1$s%% your shoe + %2$s%% the average shoe of crew members who ran together.</string>
+    <string name="tb_rule_reward_blend_t">Reward = crew efficiency × (1 + group + level)</string>
+    <string name="tb_rule_reward_daily_b">The group and level bonuses are added together. Solo runs, crew runs and bonuses all count toward your daily max SUP.</string>
+    <string name="tb_blend_note">Efficiency is %1$s%% your shoe + %2$s%% the average shoe of crew members who ran together.</string>
 </resources>

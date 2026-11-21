@@ -25,7 +25,8 @@ insert into public.economy_settings (key, value) values
   ('daily_max_hour_steps', '9900'),      -- "1시간"의 걸음(분당 165보 × 60)
   ('daily_max_hour_mult', '4'),          -- 하루 최대 = 1시간 값 × 이 값
   ('together_goal_share', '0.5'),        -- 함께 달린 사람: 목표 거리(크루 코스 · 번개 글의 거리)의 이 몫 이상
-  ('app_min_version_code', '0')          -- 이 판(스토어 번호 = versionCode % 1000)보다 낮은 앱은 막는다 — 0 이면 끔
+  ('app_min_version_code', '0'),         -- 이 판(스토어 번호 = versionCode % 1000)보다 낮은 앱은 막는다 — 0 이면 끔
+  ('crew_blend_share', '0.2')            -- 크루 러닝 효율: 내 신발 (1 − 이 값) + 함께 달린 크루원 평균 이 값(0.2 = 8 : 2, 0 = 끔)
 on conflict (key) do nothing;
 
 -- 한 번만: 출발한 사람 모두를 세던 규칙(0075 · 0076 'ALL')을 함께 달린 사람만(ACTIVE)으로. 운영자가 'NEAR' 등으로 바꿔 둔 값은 건드리지 않는다
@@ -42,6 +43,10 @@ alter table public.walk_sessions add column if not exists together_base numeric(
 alter table public.walk_sessions add column if not exists together_paid numeric(20, 4) not null default 0;
 alter table public.walk_sessions add column if not exists together_n int;
 alter table public.walk_sessions add column if not exists day_max numeric(20, 4);
+alter table public.walk_sessions add column if not exists together_unit numeric(24, 8);
+comment on column public.walk_sessions.together_unit is '크루 러닝의 효율 뺀 바탕(보상 걸음 × 걸음당 SUP × 적립 배수 × 운) — 크루 효율 8 : 2 를 다시 셀 때 (0120)';
+alter table economy.crew_runs add column if not exists blend_sup numeric(20, 4) not null default 0;
+comment on column economy.crew_runs.blend_sup is '크루 평균 효율로 나중에 더한 몫 — base_sup · level_sup 안에 들어 있다 (0120)';
 comment on column public.walk_sessions.together_base is '함께 달린 보너스의 바탕(크루 B · 번개는 인원 배수 전 적립). null 이면 보너스가 없는 러닝 (0120)';
 comment on column public.walk_sessions.together_paid is '지금까지 더해 준 함께 달린 보너스(points_awarded 에 들어 있다) (0120)';
 comment on column public.walk_sessions.day_max is '이 러닝으로 정한 하루 최대 SUP (0120)';
@@ -80,6 +85,53 @@ returns boolean language sql stable security definer set search_path = public, e
      and coalesce(s.verified_steps, 0) >= economy.together_min_steps()
      and coalesce(s.duration_sec, 0) >= economy.together_min_sec()
      and coalesce(s.gps_credit_m, 0) >= coalesce(economy.together_goal_m(s.party_id, s.user_id), 0)
+$$;
+
+-- 크루 효율 8 : 2 (2026-11-21 사용자 "크루 능력치 8 : 2 오케이") — 함께 달린 사람의 효율 배수 = 내 신발 80% + 함께 달린 크루원 평균 20%.
+-- 크루 규칙이 ACTIVE 일 때만(예전 규칙이면 0 — 내 신발 그대로)
+create or replace function economy.crew_blend_share()
+returns numeric language sql stable security definer set search_path = public, economy as $$
+  select case when economy.together_on('CREW') then least(greatest(economy.fx('crew_blend_share', 0.2), 0), 0.5) else 0 end
+$$;
+-- 크루 평균 효율 배수(1 + bps ÷ 10000)의 아래 끝 — 나 + 이미 올렸고 함께 달린 사람 + 아직 올리지 않은 출발한 사람 가운데 평균을 낮추는 사람.
+-- 아직 올리지 않은 사람은 나중에 함께 달린 사람이 될 수도, 아닐 수도 있다 — 평균을 가장 낮게 만드는 쪽을 골라 두면 실제 평균은 이 값 아래로
+-- 내려가지 않는다(사람이 정해질 때마다 이 값은 오르기만 한다). 그래서 올릴 때는 이 값으로 주고, 정해질 때마다 차이만 더한다 — 되돌려 받는 일이 없다.
+-- 더하는 시간(together_topup_hours)이 지나면 아직 올리지 않은 사람은 빼고 센다
+create or replace function economy.crew_blend_avg(p_party bigint, p_user uuid, p_self_m numeric)
+returns numeric language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_from timestamptz;
+  v_until timestamptz;
+  v_sum numeric := p_self_m;
+  v_n int := 1;
+  m numeric;
+begin
+  select min(c.started_at) into v_from from economy.crew_runs c where c.party_id = p_party;
+  if v_from is null then
+    return p_self_m;
+  end if;
+  v_until := v_from + make_interval(hours => greatest(economy.fx('together_topup_hours', 24), 0)::int);
+  select v_sum + coalesce(sum(1 + c.shoe_eff_bps / 10000.0), 0), v_n + count(*)::int into v_sum, v_n
+    from public.walk_sessions x join economy.crew_runs c on c.session_id = x.id and c.user_id = x.user_id
+   where x.party_id = p_party and x.user_id <> p_user and x.together_base is not null and x.created_at <= v_until
+     and economy.together_qualifies(x);
+  if now() <= v_until then
+    for m in select 1 + c.shoe_eff_bps / 10000.0 as m from economy.crew_runs c
+              where c.party_id = p_party and c.user_id <> p_user and c.session_id is null
+              order by 1 loop
+      exit when m >= v_sum / v_n;
+      v_sum := v_sum + m;
+      v_n := v_n + 1;
+    end loop;
+  end if;
+  return round(v_sum / v_n, 6);
+end $$;
+-- 함께 달린 사람의 효율 배수 — 내 신발 (1 − 몫) + 크루 평균(아래 끝) 몫
+create or replace function economy.crew_blend_mult(p_party bigint, p_user uuid, p_self_m numeric)
+returns numeric language sql stable security definer set search_path = public, economy as $$
+  select case when economy.crew_blend_share() <= 0 then p_self_m
+              else round((1 - economy.crew_blend_share()) * p_self_m
+                         + economy.crew_blend_share() * economy.crew_blend_avg(p_party, p_user, p_self_m), 6) end
 $$;
 
 create or replace function economy.daily_max_on()
@@ -135,6 +187,13 @@ declare
   v_room numeric;
   v_pay numeric;
   v_count int := 0;
+  v_q boolean;
+  v_c economy.crew_runs;
+  v_lvl numeric;
+  v_tbase numeric;
+  v_blend_pay numeric;
+  v_blend_base numeric;
+  v_ref text;
 begin
   select p.crew_id is not null into v_crew from public.parties p where p.id = p_party;
   if not found or not economy.together_on(case when v_crew then 'CREW' else 'FLASH' end) then
@@ -150,43 +209,84 @@ begin
   v_until := v_from + make_interval(hours => greatest(economy.fx('together_topup_hours', 24), 0)::int);
   select count(*)::int into v_n from public.walk_sessions x
    where x.party_id = p_party and x.together_base is not null and x.created_at <= v_until and economy.together_qualifies(x);
+  -- 크루는 올린 러닝 모두(함께 달리지 못한 러닝도 — 효율 8 : 2 의 아래 끝으로 받았으면 내 신발 값으로 돌려준다), 번개는 함께 달린 사람만
   for s in select * from public.walk_sessions x
-            where x.party_id = p_party and x.together_base is not null and economy.together_qualifies(x)
+            where x.party_id = p_party and x.together_base is not null and (v_crew or economy.together_qualifies(x))
             order by x.user_id, x.id for update loop
+    v_q := economy.together_qualifies(s);
     v_nn := case when s.created_at <= v_until then v_n else v_n + 1 end;
-    v_frac := case when v_crew then economy.crew_headcount_bonus(v_nn) else economy.party_multiplier(v_nn) - 1 end;
-    v_target := round(s.together_base * v_frac, 4);
+    v_blend_pay := 0;
+    if v_crew then
+      select * into v_c from economy.crew_runs r where r.user_id = s.user_id and r.party_id = p_party;
+      v_frac := case when v_q then economy.crew_headcount_bonus(v_nn) else 0 end;
+      v_lvl := coalesce(v_c.level_pct, 0);
+      -- 기본 몫: 함께 달린 사람은 내 신발 80% + 함께 달린 크루원 평균 20%(아래 끝), 함께 달리지 못한 사람은 내 신발 그대로
+      -- (경로가 받쳐 준 러닝만 — 경로 없는 러닝은 올릴 때 받은 값 그대로, 경로 없는 러닝 상한을 넘지 않게). 올릴 때 받은 값 아래로는 가지 않는다
+      v_tbase := s.together_base;
+      if s.together_unit is not null and economy.crew_blend_share() > 0 then
+        if v_q then
+          v_tbase := round(s.together_unit * economy.crew_blend_mult(p_party, s.user_id, 1 + coalesce(v_c.shoe_eff_bps, 0) / 10000.0), 4);
+        elsif s.gps_backed then
+          v_tbase := round(s.together_unit * (1 + coalesce(v_c.shoe_eff_bps, 0) / 10000.0), 4);
+        end if;
+      end if;
+      v_tbase := greatest(v_tbase, s.together_base);
+      -- 받을 몫 전체 = 기본 × (1 + 레벨 + 인원) — 올릴 때 이미 받은 기본 × (1 + 레벨)을 뺀 것이 더해 줄 몫
+      v_target := round(v_tbase * (1 + v_lvl + v_frac) - s.together_base * (1 + v_lvl), 4);
+      v_blend_base := greatest(round((v_tbase - s.together_base) * (1 + v_lvl), 4) - coalesce(v_c.blend_sup, 0), 0);
+    else
+      v_frac := economy.party_multiplier(v_nn) - 1;
+      v_target := round(s.together_base * v_frac, 4);
+      v_blend_base := 0;
+    end if;
     v_diff := v_target - s.together_paid;
     if v_diff >= 0.0001 then
       v_room := case when economy.daily_max_on() then economy.day_room(s.user_id, economy.game_day(s.started_at), s.day_max) else v_diff end;
       v_pay := round(least(v_diff, greatest(v_room, 0)), 4);
       if v_pay > 0 then
+        v_blend_pay := least(v_pay, v_blend_base);
+        -- 같은 인원에서도 크루 평균이 오르면 다시 더한다 — 같은 원장 이름이면 차례 번호를 붙인다(정산은 방마다 하나씩이라 겹치지 않는다)
+        v_ref := 'together:' || s.id || ':' || v_nn;
+        if exists (select 1 from public.sup_ledger l where l.user_id = s.user_id and l.ref = v_ref) then
+          v_ref := v_ref || ':' || (select count(*) + 1 from public.sup_ledger l where l.user_id = s.user_id and l.ref like 'together:' || s.id || ':%');
+        end if;
         insert into public.sup_ledger (user_id, kind, amount, description, ref, occurred_at)
-        values (s.user_id, 'EARN_PARTY', v_pay, format('함께 달린 보너스 (%s명)', v_nn), 'together:' || s.id || ':' || v_nn, s.ended_at)
+        values (s.user_id, 'EARN_PARTY', v_pay,
+                case when v_crew and v_pay - v_blend_pay < 0.0001 then format('크루 평균 효율 (함께 달린 %s명)', v_nn)
+                     else format('함께 달린 보너스 (%s명)', v_nn) end,
+                v_ref, s.ended_at)
         on conflict do nothing;
         if found then
           update public.walk_sessions x set points_awarded = x.points_awarded + v_pay, together_paid = x.together_paid + v_pay where x.id = s.id;
           if v_crew then
-            update economy.crew_runs c set headcount_sup = coalesce(c.headcount_sup, 0) + v_pay, total_sup = coalesce(c.total_sup, 0) + v_pay
-             where c.user_id = s.user_id and c.party_id = p_party;
+            -- 크루 평균 효율 몫은 기본 · 레벨 줄에(1 : 레벨), 나머지는 인원 줄에
+            update economy.crew_runs r
+               set base_sup = coalesce(r.base_sup, 0) + round(v_blend_pay / (1 + v_lvl), 4),
+                   level_sup = coalesce(r.level_sup, 0) + (v_blend_pay - round(v_blend_pay / (1 + v_lvl), 4)),
+                   blend_sup = r.blend_sup + v_blend_pay,
+                   headcount_sup = coalesce(r.headcount_sup, 0) + (v_pay - v_blend_pay),
+                   total_sup = coalesce(r.total_sup, 0) + v_pay
+             where r.user_id = s.user_id and r.party_id = p_party;
           end if;
           v_count := v_count + 1;
         end if;
       end if;
     end if;
-    update public.walk_sessions x set together_n = v_nn, party_size = greatest(v_nn, 1) where x.id = s.id;
-    if v_crew then
-      update economy.crew_runs c
-         set bonus_status = 'CONFIRMED', bonus_count = v_nn, bonus_pct = v_frac, bonus_reason = case when v_nn < 2 then 'TOO_FEW' end
-       where c.user_id = s.user_id and c.party_id = p_party;
+    if v_q then
+      update public.walk_sessions x set together_n = v_nn, party_size = greatest(v_nn, 1) where x.id = s.id;
+      if v_crew then
+        update economy.crew_runs r
+           set bonus_status = 'CONFIRMED', bonus_count = v_nn, bonus_pct = v_frac, bonus_reason = case when v_nn < 2 then 'TOO_FEW' end
+         where r.user_id = s.user_id and r.party_id = p_party;
+      end if;
     end if;
   end loop;
   -- 함께 달리지 못한 사람(문턱 아래)은 인원 보너스 없음으로 적는다(결과 화면이 "확인 중"에 머물지 않게)
   if v_crew then
-    update economy.crew_runs c
+    update economy.crew_runs r
        set bonus_status = 'CONFIRMED', bonus_count = 1, bonus_pct = 0, bonus_reason = 'NOT_TOGETHER'
-     where c.party_id = p_party and c.session_id is not null and c.bonus_status = 'PENDING'
-       and not exists (select 1 from public.walk_sessions x where x.id = c.session_id and economy.together_qualifies(x));
+     where r.party_id = p_party and r.session_id is not null and r.bonus_status = 'PENDING'
+       and not exists (select 1 from public.walk_sessions x where x.id = r.session_id and economy.together_qualifies(x));
   end if;
   return v_count;
 end $$;
@@ -663,7 +763,8 @@ begin
         'flash_rule', case when economy.together_on('FLASH') then 'ACTIVE' else 'LEGACY' end,
         'min_minutes', economy.together_min_sec() / 60, 'min_steps', economy.together_min_steps(),
         'goal_share', least(greatest(economy.fx('together_goal_share', 0.5), 0), 1),
-        'topup_hours', economy.fx('together_topup_hours', 24)::int),
+        'topup_hours', economy.fx('together_topup_hours', 24)::int,
+        'blend_share', economy.crew_blend_share()),
     'daily_max', jsonb_build_object(
         'rule', case when economy.daily_max_on() then 'HOUR' else 'CAP' end,
         'hour_steps', economy.fx('daily_max_hour_steps', 9900)::int, 'hour_mult', economy.fx('daily_max_hour_mult', 4),
@@ -712,7 +813,8 @@ returns record language sql immutable as $$
     ('together_min_steps', 'num', 0, 10000, '함께 달린 사람: 경로로 확인된 걸음 이상'),
     ('daily_max_hour_mult', 'num', 1, 20, '하루 최대 SUP = 그 신발 1시간 값 × 이 값'),
     ('together_goal_share', 'num', 0, 1, '함께 달린 사람: 목표 거리의 몫 이상(0.5 = 절반)'),
-    ('app_min_version_code', 'num', 0, 999, '이 판보다 낮은 앱은 업데이트해야 쓴다(스토어 번호 · 0 = 끔)')
+    ('app_min_version_code', 'num', 0, 999, '이 판보다 낮은 앱은 업데이트해야 쓴다(스토어 번호 · 0 = 끔)'),
+    ('crew_blend_share', 'num', 0, 0.5, '크루 러닝 효율 가운데 함께 달린 크루원 평균의 몫(0.2 = 내 신발 8 : 평균 2 · 0 = 끔)')
   ) r(key, kind, lo, hi, label) where r.key = p_key
 $$;
 
@@ -733,7 +835,8 @@ begin
                    ('forge_xp_max_materials', 27), ('goal_min', 28), ('goal_max', 29), ('goal_default', 30),
                    ('worn_rate', 31), ('eff_wear_exp', 32), ('eff_energy_exp', 33), ('energy_per_level', 34),
                    ('forge_xp_level_growth', 35), ('together_min_minutes', 36), ('together_min_steps', 37),
-                   ('daily_max_hour_mult', 38), ('together_goal_share', 39), ('app_min_version_code', 40)) k(key, o)
+                   ('daily_max_hour_mult', 38), ('together_goal_share', 39), ('app_min_version_code', 40),
+                   ('crew_blend_share', 41)) k(key, o)
       left join public.economy_settings s on s.key = k.key));
 end $$;
 
@@ -804,6 +907,9 @@ declare
   -- 이 러닝이 신발을 닳게 하는 양(크루 러닝은 0, 0110)
   v_wear int := 0;
   v_eff int := 0;
+  -- 크루 효율 8 : 2 (0120) — 효율 뺀 바탕 · 이번에 쓴 효율 배수
+  v_unit numeric;
+  v_cmult numeric;
   v_comfort int := 0;
   v_dur numeric := 100;
   v_energy_left numeric;
@@ -1264,7 +1370,16 @@ begin
 
   if v_pool = 'CREW' then
     -- 기본 B(고른 신발) + B × 인원 보너스(구간 하나) + B × 레벨 보너스 — 더하기, 각 몫을 4자리로 정해 합이 원장과 같게 (R08 · R10)
-    v_base := round(v_rewardable * economy.points_per_step() * (1 + v_eff / 10000.0) * v_xp * v_luck, 4);
+    -- 0120 크루 효율 8 : 2 — 효율은 내 신발 80% + 함께 달린 크루원 평균 20%. 올릴 때는 둘 가운데 낮은 값(아래 끝)으로 주고,
+    -- 함께 달린 사람이 정해질 때마다 together_settle 이 차이만 더한다(함께 달리지 못했으면 내 신발 값으로). 경로 없는 러닝은 내 신발 그대로
+    v_unit := v_rewardable * economy.points_per_step() * v_xp * v_luck;
+    v_cmult := 1 + v_eff / 10000.0;
+    if economy.crew_blend_share() > 0 and v_verdict <> 'VOID' and v_gps_m >= economy.gps_check_min_m() then
+      v_cmult := least(v_cmult, economy.crew_blend_mult(v_cr.party_id, v_user, v_cmult));
+    else
+      v_unit := null;
+    end if;
+    v_base := round(v_rewardable * economy.points_per_step() * v_cmult * v_xp * v_luck, 4);
     v_head_sup := round(v_base * v_headcount, 4);
     v_lvl_sup := round(v_base * v_level_bonus, 4);
     v_points := v_base + v_head_sup + v_lvl_sup;
@@ -1402,7 +1517,7 @@ begin
     verdict, verdict_reason, points_awarded, rewarded_steps,
     mock_location, verified_steps, energy_used, sneaker_id,
     gps_backed, backed_steps, gps_credit_m, party_id,
-    crew_id, energy_pool, reward_steps, together_base, day_max
+    crew_id, energy_pool, reward_steps, together_base, day_max, together_unit
   )
   values (
     v_user, p_started_at, p_ended_at, v_elapsed, p_steps,
@@ -1411,7 +1526,7 @@ begin
     v_verdict, v_reason, v_points, v_rewardable,
     coalesce(p_mock_location, false), v_verified, v_energy_used, v_shoe.id,
     v_gps_backed, case when v_gps_backed and not v_held then v_verified else 0 end, v_credit_m, v_party_id,
-    v_crew, v_pool, v_reward_steps, v_tb, v_day_max
+    v_crew, v_pool, v_reward_steps, v_tb, v_day_max, case when v_pool = 'CREW' then round(v_unit, 8) end
   )
   returning id into v_session_id;
 
@@ -1540,6 +1655,9 @@ revoke all on function economy.together_on(text) from public, anon, authenticate
 revoke all on function economy.together_min_sec() from public, anon, authenticated;
 revoke all on function economy.together_min_steps() from public, anon, authenticated;
 revoke all on function economy.together_qualifies(public.walk_sessions) from public, anon, authenticated;
+revoke all on function economy.crew_blend_share() from public, anon, authenticated;
+revoke all on function economy.crew_blend_avg(bigint, uuid, numeric) from public, anon, authenticated;
+revoke all on function economy.crew_blend_mult(bigint, uuid, numeric) from public, anon, authenticated;
 revoke all on function economy.together_goal_m(bigint, uuid) from public, anon, authenticated;
 revoke all on function economy.daily_max_on() from public, anon, authenticated;
 revoke all on function economy.daily_max_of(uuid, int, numeric) from public, anon, authenticated;

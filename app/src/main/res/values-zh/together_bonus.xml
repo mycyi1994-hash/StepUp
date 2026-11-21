@@ -19,4 +19,8 @@
     <string name="tb_update_body">更新到新版本后才能继续使用</string>
     <string name="tb_update_action">更新</string>
     <string name="tb_live_counting">一起跑的人数在上传记录后确定 · Lv +%1$s%%</string>
+    <string name="tb_rule_shoes_blend_b">出发时选的跑鞋最大耐久度合起来作为体力，再加上跑团等级效果。奖励效率为自己的跑鞋 %1$s%% + 一起跑的成员跑鞋平均 %2$s%%。</string>
+    <string name="tb_rule_reward_blend_t">奖励 = 跑团效率 × (1 + 人数 + 等级)</string>
+    <string name="tb_rule_reward_daily_b">人数加成和等级加成相加后适用。单人跑、跑团跑和加成合计，在每日最高 SUP 以内领取。</string>
+    <string name="tb_blend_note">效率按自己的跑鞋 %1$s%% + 一起跑的成员跑鞋平均 %2$s%% 计算。</string>
 </resources>

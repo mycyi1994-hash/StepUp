@@ -25,4 +25,8 @@
     <string name="tb_update_body">새 판으로 업데이트해야 계속 쓸 수 있어요</string>
     <string name="tb_update_action">업데이트하기</string>
     <string name="tb_live_counting">함께 달린 인원은 기록을 올린 뒤 정해져요 · Lv +%1$s%%</string>
+    <string name="tb_rule_shoes_blend_b">출발할 때 고른 신발의 최대 내구도를 합쳐 체력으로 쓰고 크루 레벨 효과를 더해요. 보상 효율은 내 신발 %1$s%% + 함께 달린 크루원 신발 평균 %2$s%%예요.</string>
+    <string name="tb_rule_reward_blend_t">보상 = 크루 효율 × (1 + 인원 + 레벨)</string>
+    <string name="tb_rule_reward_daily_b">인원 보너스와 레벨 보너스는 더해서 적용해요. 혼자 · 크루 러닝 · 보너스를 합쳐 하루 최대 SUP 안에서 받아요.</string>
+    <string name="tb_blend_note">효율은 내 신발 %1$s%% + 함께 달린 크루원 신발 평균 %2$s%%로 셈해요.</string>
 </resources>

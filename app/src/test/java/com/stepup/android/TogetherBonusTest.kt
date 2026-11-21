@@ -78,6 +78,19 @@ class TogetherBonusTest {
         assertTrue(same.forFlash().active)
     }
 
+    @Test fun `크루 효율 8 대 2 — blend_share 를 읽고, 칸이 없으면 섞지 않는다`() {
+        val on = ShoeRules.parse(rulesBody(""","together":{"rule":"ACTIVE","blend_share":0.2}"""))!!.together
+        assertEquals(0.2, on.blendShare, 1e-9)
+        assertTrue(on.blends)
+        val missing = ShoeRules.parse(rulesBody(""","together":{"rule":"ACTIVE"}"""))!!.together
+        assertFalse(missing.blends)
+        val legacy = ShoeRules.parse(rulesBody(""","together":{"rule":"LEGACY","blend_share":0.2}"""))!!.together
+        assertFalse(legacy.blends)
+        assertEquals(0.5, ShoeRules.parse(rulesBody(""","together":{"rule":"ACTIVE","blend_share":0.9}"""))!!.together.blendShare, 1e-9)
+        assertFalse(TogetherRule.FALLBACK.blends)
+        assertEquals(0.2, TogetherRule.FALLBACK.blendShare, 1e-9)
+    }
+
     @Test fun `묶음이 없는 서버(0120 전)는 예전 규칙 — 함께 출발한 모두 · 예전 하루 금액 상한`() {
         val parsed = ShoeRules.parse(rulesBody())!!
         assertEquals(TogetherRule.LEGACY, parsed.together)
@@ -85,7 +98,7 @@ class TogetherBonusTest {
         assertFalse(parsed.together.active)
         assertNull(parsed.dailyMaxSup(4000))
         // 서버를 읽기 전(FALLBACK)은 서버 0120 의 기본값 — 다만 서버 값이 아니라고 적어 둔다
-        assertEquals(TogetherRule("ACTIVE", 10, 1500, 0.5, 24), ShoeRules.FALLBACK.together)
+        assertEquals(TogetherRule("ACTIVE", 10, 1500, 0.5, 24, blendShare = 0.2), ShoeRules.FALLBACK.together)
         assertEquals(DailyMaxRule("HOUR", 9900, 4.0, true), ShoeRules.FALLBACK.dailyMax)
         assertFalse(ShoeRules.FALLBACK.together.fromServer)
         assertFalse(ShoeRules.FALLBACK.dailyMax.fromServer)

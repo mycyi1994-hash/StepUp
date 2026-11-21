@@ -49,8 +49,14 @@ import com.stepup.android.ui.screens.walk.navyText
 internal fun crewRunRuleLines(
     rules: CrewRunRules,
     together: TogetherRule? = com.stepup.android.ui.screens.items.rememberShoeRules().together,
+    dailyMax: com.stepup.android.domain.DailyMaxRule? = com.stepup.android.ui.screens.items.rememberShoeRules().dailyMax,
 ): List<Pair<String, String>> = listOf(
-    stringResource(R.string.crew_run_rule_shoes_t) to stringResource(R.string.crew_run_rule_shoes_b),
+    stringResource(R.string.crew_run_rule_shoes_t) to if (together != null && together.blends) {
+        // 크루 효율 8 : 2(0120) — 내 신발 몫 · 함께 달린 크루원 평균 몫
+        stringResource(R.string.tb_rule_shoes_blend_b, CrewRunMath.percent(1.0 - together.blendShare), CrewRunMath.percent(together.blendShare))
+    } else {
+        stringResource(R.string.crew_run_rule_shoes_b)
+    },
     stringResource(R.string.crew_run_rule_drain_t, CrewRunMath.amount(rules.drainPerMin)) to stringResource(R.string.crew_run_rule_drain_b),
     stringResource(R.string.crew_run_rule_empty_t) to stringResource(R.string.crew_run_rule_empty_b),
     stringResource(R.string.crew_run_rule_once_t) to stringResource(R.string.crew_run_rule_once_b),
@@ -63,7 +69,9 @@ internal fun crewRunRuleLines(
         stringResource(R.string.crew_run_rule_near_t) to stringResource(R.string.crew_run_rule_near_b)
     },
     stringResource(R.string.crew_run_rule_reset_t) to stringResource(R.string.crew_run_rule_reset_b),
-    stringResource(R.string.crew_run_rule_reward_t) to stringResource(R.string.crew_run_rule_reward_b),
+    stringResource(if (together != null && together.blends) R.string.tb_rule_reward_blend_t else R.string.crew_run_rule_reward_t) to
+        // 하루 최대 SUP(0120)이면 "크루 보상 상한이 없어요"가 아니다
+        stringResource(if (dailyMax != null && dailyMax.fromServer && dailyMax.hour) R.string.tb_rule_reward_daily_b else R.string.crew_run_rule_reward_b),
     stringResource(R.string.crew_run_rule_room, rules.roomMax) to "",
 )
 

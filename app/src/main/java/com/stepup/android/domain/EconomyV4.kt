@@ -185,11 +185,16 @@ data class TogetherRule(
     /** 방의 목표 거리 가운데 채워야 하는 몫(0.5 = 절반). 목표가 없는 방은 분 · 걸음만 본다 */
     val goalShare: Double,
     val topupHours: Int,
+    /** 크루 러닝 효율 가운데 함께 달린 크루원 평균의 몫(0.2 = 내 신발 80% · 평균 20%) — 0 이면 내 신발 그대로 */
+    val blendShare: Double = 0.0,
     val fromServer: Boolean = false,
     /** 번개 러닝의 규칙(서버 party_bonus_rule) — 크루([rule], crew_bonus_rule)와 따로 바꿀 수 있다 */
     val flashRule: String = rule,
 ) {
     val active: Boolean get() = rule == ACTIVE
+
+    /** 크루 러닝 효율을 섞는가(함께 달린 사람만 세는 규칙에서만) */
+    val blends: Boolean get() = fromServer && active && blendShare > 0.0
 
     /** 번개 대기실이 볼 규칙 — 문턱은 같고 켜짐만 번개 설정을 따른다 */
     fun forFlash(): TogetherRule = copy(rule = flashRule)
@@ -207,7 +212,7 @@ data class TogetherRule(
 
         /** 서버 0120 의 기본값 */
         val FALLBACK = TogetherRule(
-            rule = "ACTIVE", minMinutes = 10, minSteps = 1500, goalShare = 0.5, topupHours = 24,
+            rule = "ACTIVE", minMinutes = 10, minSteps = 1500, goalShare = 0.5, topupHours = 24, blendShare = 0.2,
         )
 
         /** 0120 전 서버 — `together` 묶음이 없을 때 */
@@ -413,6 +418,8 @@ data class ShoeRules(
                 minSteps = (t.int("min_steps") ?: d.minSteps).coerceAtLeast(0),
                 goalShare = (t.dbl("goal_share") ?: d.goalShare).coerceIn(0.0, 1.0),
                 topupHours = (t.int("topup_hours") ?: d.topupHours).coerceAtLeast(0),
+                // 묶음에 칸이 없으면(0120 앞부분만 올린 서버) 섞지 않는다 — 서버가 섞지 않는데 화면이 8 : 2 라고 하지 않게
+                blendShare = (t.dbl("blend_share") ?: 0.0).coerceIn(0.0, 0.5),
                 fromServer = true,
             )
         }

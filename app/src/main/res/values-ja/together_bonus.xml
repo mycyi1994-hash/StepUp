@@ -19,4 +19,8 @@
     <string name="tb_update_body">新しいバージョンにアップデートすると引き続き使えます</string>
     <string name="tb_update_action">アップデートする</string>
     <string name="tb_live_counting">一緒に走った人数は記録をアップした後に決まります · Lv +%1$s%%</string>
+    <string name="tb_rule_shoes_blend_b">出発時に選んだシューズの最大耐久度を合わせて体力にし、クルーレベルの効果を加えます。報酬の効率は自分のシューズ %1$s%% + 一緒に走ったメンバーのシューズ平均 %2$s%% です。</string>
+    <string name="tb_rule_reward_blend_t">報酬 = クルー効率 × (1 + 人数 + レベル)</string>
+    <string name="tb_rule_reward_daily_b">人数ボーナスとレベルボーナスは足して適用します。ソロ・クルーラン・ボーナスを合わせて1日の最大 SUP の範囲で受け取ります。</string>
+    <string name="tb_blend_note">効率は自分のシューズ %1$s%% + 一緒に走ったメンバーのシューズ平均 %2$s%% で計算します。</string>
 </resources>
