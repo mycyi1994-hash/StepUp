@@ -29,10 +29,14 @@ LUCK_ROLL = {'COMMON': (0, 8), 'RARE': (4, 14), 'EPIC': (8, 20), 'LEGENDARY': (1
 # 행운이 포인트로 다가가는 끝 — 등급마다(다른 능력치처럼 높은 등급일수록 크게). 1.0 이면 기획서 3.2 그대로(모든 등급 100)
 LUCK_MAX = {g: 0.40 + 0.12 * T.ORD[g] for g in T.GRADES}     # 일반 40 · 레어 52 · 에픽 64 · 레전더리 76 · 레드라인 88 · 피니시 100
 # (모든 등급 100 이면 일반 신발은 행운 몰빵이 정답이 된다 — 상자 40 SUP 가 일반 신발 하루의 절반이라)
-# 줍는 것(stat-overhaul 7장): 일반 · 레어 = 상자 조각 5개 = 일반 상자(40 SUP) · 대의 일반 상자.
-# 에픽 이상 = 상급 조각 40개 = 상급 상자(600 SUP) · 대의 상자 대신 상급 조각 10 — 고정 값 상자가 높은 등급에서 쓸모없어지지 않게
-PREMIUM_LOOT = {'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'}
-LOOT_OF = lambda g: dict(box_sup=600.0, shard_per_box=40, box_shards=10) if g in PREMIUM_LOOT else dict(box_sup=40.0, shard_per_box=5, box_shards=None)
+# 줍는 것(stat-overhaul 9장): 일반 · 레어 = 상자 조각 5개 = 일반 상자(40 SUP) · 대의 일반 상자 — 신발을 모으는 행운.
+# 에픽 이상 = 조각 · 상자 대신 그 신발에 바로 드는 강화 경험치 — 소 300 · 중 600(조각 2) · 대 3,100(레어 한 켤레) ·
+#   1,000 경험치 = 24 SUP(서버 forge_xp_sup_per_unit). 만렙 신발이면 가방의 경험치 병(다른 신발에 넣는다).
+#   상급 상자는 쓰지 않는다(사용자 "나중에 갈수록 상급상자는 쓸모없을텐데") · 수명 회복도 쓰지 않는다(대의 상자를 가득 수리로 바꾸면 피니시 수리비의 83 ~ 105% 를 메워 소각이 무너진다)
+XP_LOOT = {'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH'}
+XP_SMALL, XP_BIG, SUP_PER_XP = 300, 3100, 24 / 1000
+LOOT_OF = lambda g: (dict(shard_value=XP_SMALL * SUP_PER_XP, box_value=XP_BIG * SUP_PER_XP) if g in XP_LOOT
+                     else dict(box_sup=40.0, shard_per_box=5, box_shards=None))
 # 하루 남는 SUP 를 맞출 때 쓰는 러너 섞음(분: 몫) — 실제 사용 숫자(tools/economy_sim/usage.sql)가 오면 바꾼다
 MIX = {20: 0.25, 40: 0.40, 60: 0.25, 90: 0.10}
 # 등급마다 두 수 — --fit 이 맞춘 값. 만렙 · 40분 러너(최선 배분)에서
