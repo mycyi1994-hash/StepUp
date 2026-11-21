@@ -14,8 +14,9 @@ P = dict(
     luck_start=(0.03, 0.22), luck_start_cap=0.50,          # 출발: 3% + 22% × Λ
     luck_find=(0.06, 0.30), luck_find_cap=0.70,            # 줍기(에너지 5마다): 6% + 30% × Λ
     luck_reward=(0.015, 0.09), luck_reward_cap=0.25,       # 보상(퍼센트 · 고정 따로 한 번씩): 1.5% + 9% × Λ
-    luck_reward_bonus=0.40,                                # 퍼센트 행운: 이번 러닝 SUP +40%
+    luck_reward_bonus=(0.10, 0.30),                        # 퍼센트 행운: +10 ~ 30%(작은 쪽이 자주 — 평균 17%). 30% 는 드물다
     luck_reward_flat=(8.0, 1.2),                           # 고정 행운: 8 + 1.2 × 신발 레벨 SUP(퍼센트 뒤에 그대로 더한다)
+    luck_flat_cap=0.10,                                    # 고정 SUP 는 그 러닝이 번 SUP 의 10% 를 넘지 않는다
     luck_energy_step=5,                                    # 에너지를 이만큼 쓸 때마다 한 번
     flow_start_find=1.5, flow_find_reward=1.5, flow_find_need=2, flow_afterglow=2.0,   # 흐름
     streak_step=0.03, streak_max=7,                        # 꾸준함: 연속 하루마다 × (1 + 0.03), 7일까지
@@ -84,9 +85,11 @@ def simulate(lam, energy_per_day, run_sup, days=20000, seed=7, streak=7, repair_
             pr = min(prob(p['luck_reward'], lam) * k * (p['flow_find_reward'] if finds_run >= p['flow_find_need'] else 1), p['luck_reward_cap'])
             # 퍼센트 행운 · 고정 행운을 따로 한 번씩 굴린다(둘 다 터질 수도 있다). 고정은 퍼센트를 다 계산한 뒤에 그대로 더한다
             if rng.random() < pr:
-                out['reward'] += 1; out['sup_bonus'] += p['luck_reward_bonus'] * sup * luck_roll; afterglow = True
+                size = p['luck_reward_bonus'][0] + (p['luck_reward_bonus'][1] - p['luck_reward_bonus'][0]) * rng.random() ** 2
+                out['reward'] += 1; out['sup_bonus'] += size * sup * luck_roll; afterglow = True
             if rng.random() < pr:
-                out['reward_flat'] += 1; out['sup_flat'] += p['luck_reward_flat'][0] + p['luck_reward_flat'][1] * level; afterglow = True
+                out['reward_flat'] += 1; afterglow = True
+                out['sup_flat'] += min(p['luck_reward_flat'][0] + p['luck_reward_flat'][1] * level, p['luck_flat_cap'] * sup * luck_roll)
             # 클로버는 모이면 쓴다고 본다(강화 대성공 확정 3개)
             if clover >= 3: clover -= 3
     return out
@@ -133,21 +136,24 @@ def check(rows):
     for name, label, lam, run_sup, o, v in rows:
         pct = 100 * v['합'] / run_sup
         if lam < 0.15 and not (2 <= pct <= 7): bad.append(f'{name} {label}: 행운을 안 올린 신발의 값 {pct:.1f}% (목표 2 ~ 7%)')
-        if lam > 0.95 and not (15 <= pct <= 32): bad.append(f'{name} {label}: 행운을 다 올린 신발의 값 {pct:.1f}% (목표 15 ~ 32%)')
+        if lam > 0.95 and not (12 <= pct <= 30): bad.append(f'{name} {label}: 행운을 다 올린 신발의 값 {pct:.1f}% (목표 12 ~ 30%)')
         if (o['shard'] / 5 + o['box']) / o['days'] > 0.6: bad.append(f'{name} {label}: 상자가 하루 {(o["shard"]/5+o["box"])/o["days"]:.2f}개(0.6 넘음 — 레벨 속도)')
-        if 100 * v['보상행운'] / run_sup > 12: bad.append(f'{name} {label}: 보상 행운의 SUP 가 {100*v["보상행운"]/run_sup:.1f}%(12% 넘음 — 발행량)')
+        if 100 * v['보상행운'] / run_sup > 5: bad.append(f'{name} {label}: 보상 행운의 SUP 가 {100*v["보상행운"]/run_sup:.1f}%(5% 넘음 — 발행량. 고정 SUP 는 짜게)')
     if bad:
         print('\n'.join(bad)); sys.exit(1)
     print('행운 설계 목표 — 모두 안쪽')
 
 # ── 크루 러닝의 행운(사용자 2026-11-21) — 확률이 아니라 늘 발동: 출발 전 버프(효율 · 착화감 +N%) + 끝난 뒤 고정 SUP ──
-CREW = dict(buff=(0.02, 0.12), flat=(2.0, 20.0), s0=3.0, level_buff=0.02, level_flat=0.03, buff_cap=0.15, flat_cap=30.0)
+CREW = dict(buff=(0.02, 0.12), flat=(1.0, 12.0), s0=3.0, level_buff=0.02, level_flat=0.03, buff_cap=0.15,
+            flat_share=(0.10, 0.25, 20))      # 고정 SUP 는 기본 보상의 10% 까지, 인원이 늘수록 올라 20명 이상이면 25%
 
-def crew_luck(lams, crew_level=1, c=CREW):
+def crew_luck(lams, crew_level=1, base_reward=123.0, c=CREW):
     """lams = 함께 출발한 사람들이 고른 신발의 Λ. 합이 클수록(사람이 많을수록 · 행운이 높을수록) 커지되 점점 덜 커진다"""
-    S = sum(lams); g = 1 - math.exp(-S / c['s0'])
+    S = sum(lams); g = 1 - math.exp(-S / c['s0']); n_people = len(lams)
     n = min((c['buff'][0] + (c['buff'][1] - c['buff'][0]) * g) * (1 + c['level_buff'] * (crew_level - 1)), c['buff_cap'])
-    f = min((c['flat'][0] + (c['flat'][1] - c['flat'][0]) * g) * (1 + c['level_flat'] * (crew_level - 1)), c['flat_cap'])
+    lo, hi, full = c['flat_share']
+    share = lo + (hi - lo) * min(max((n_people - 2) / (full - 2), 0), 1)
+    f = min((c['flat'][0] + (c['flat'][1] - c['flat'][0]) * g) * (1 + c['level_flat'] * (crew_level - 1)), share * base_reward)
     return S, n, f
 
 def crew_table():
