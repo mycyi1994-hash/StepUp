@@ -5,12 +5,15 @@
 점검 [docs/점검-2026-11-21-보너스.md](docs/점검-2026-11-21-보너스.md)(20명 출발 · 18명 즉시 종료 · 둘이 3시간 → 첫 신발로 한 번에 2,639.7 SUP) →
 [설계 · 만든 것](docs/together-bonus-fix-spec-2026-11-21.md) 14장. **인원 보너스 절벽(6 · 20명)과 작은 크루가 혼자와 비슷한 것은 의도다**(사용자 — "러닝 크루로 달리라고 거의 강제").
 - **`record_session` 은 0120 이 마지막 정의다**(0119 본문 + 함께 달린 사람 · 하루 최대) — 다시 고칠 때 0120 을 복사한다.
-- 함께 달린 사람 = 그 방 러닝으로 올렸고 · 무효 아님 · 경로가 받쳐 줌 · 확인된 걸음 1,500 · 달린 10분(`economy.together_qualifies`, 크루 · 번개 모두 `'ACTIVE'`).
+- 함께 달린 사람 = 그 방 러닝으로 올렸고 · 무효 아님 · 경로가 받쳐 줌 · 확인된 걸음 1,500 · 달린 10분 · **목표 거리의 50%**(크루 코스 · 번개 글의 거리, 자유 러닝이면 바닥만 — `economy.together_qualifies`, 크루 · 번개 모두 `'ACTIVE'`).
   인원 보너스는 그들이 올릴 때마다 이미 올린 모두에게 차이만큼 더한다(`economy.together_settle` — 24시간 · 줄지 않는다 · 원장 `together:<러닝>:<인원>`).
 - 탈주(10분 전에 끝냄 · 일시정지 · 앱 강제 종료 · 계정 삭제)한 사람의 공용 체력은 묶는다 — 쓴 만큼만 남는다(`economy.crew_pool_held` · 트리거 `crew_runs_deleted`).
 - 하루 최대 SUP = 그 러닝 신발로 1시간(9,900보) 달린 값 × 4 × 적립 배수(가입 7일 안 절반) — 혼자 · 번개 · 크루 · 보너스 · 목표 보너스의 합(`economy.daily_max_of` · `day_earned`).
   예전 하루 금액 상한(`daily_earn_cap`)은 `daily_max_rule = 'CAP'` 일 때만. 되돌리기는 `crew_bonus_rule` · `party_bonus_rule` `'ALL'` + `daily_max_rule` `'CAP'`.
-- 검사: 장면 `tools/together_sim/16-together-fix.sql`(OK / FAIL — CI) · 서버 검사의 예전 절은 `'ALL'` · `'CAP'` 으로 돈다(맨 위에서 맞춘다). 앱 글(결과 · 대기실 · 하루 최대)은 다음 판.
+- **강제 업데이트**: 문지기(`public.access_gate`)가 `app_min_version_code`(스토어 번호, 기본 0 = 끔)보다 낮은 앱을 HTTP 426 `update_required` 로 막는다 — 앱은 머리글 `x-stepup-version`(versionCode % 1000).
+  로그인 안 한 요청 · 계정 삭제 · 푸시 끊기는 지나간다. 켜는 것은 새 판이 스토어에 나간 뒤 · 공지 뒤에 운영자 페이지 "경제"에서(사용자 몫).
+- 검사: 장면 `tools/together_sim/16-together-fix.sql`(OK / FAIL — CI) · 서버 검사 "함께 달리기 보너스 · 강제 업데이트(0120)" · 예전 절은 `'ALL'` · `'CAP'` 으로 돈다(맨 위에서 맞춘다).
+  앱(1.21.0): 대기실 "목표의 절반 이상 함께 달려야 인원" · 크루 결과 "친구가 올리면 더해져요" · 신발 "하루 최대 약 N SUP" · "업데이트가 필요해요" 화면 · 규칙 `TogetherRule` · `DailyMaxRule`(`domain/EconomyV4.kt`).
 
 ## 최신 — 능력치 대격변 설계 중 (2026-11-21, 설계만 · 코드 없음 · 사용자와 하나씩 정하는 중)
 

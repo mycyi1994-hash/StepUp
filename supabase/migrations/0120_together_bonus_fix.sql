@@ -7,6 +7,8 @@
 --   R2 인원 보너스(크루) · 인원 배수(번개)는 함께 달린 사람이 올릴 때마다 이미 올린 모두에게 차이만큼 더한다(24시간 안, 줄지 않는다)
 --   R3 10분을 못 채우고 끝냈거나 소식이 끊긴 사람이 맡긴 공용 체력은 묶어 둔다(쓴 만큼만 남는다, 다시 달리면 풀린다) · 계정을 지우면 뺀다
 --   R4 하루 최대 SUP — 혼자 · 번개 · 크루 · 보너스 · 목표 보너스의 합 ≤ 이 러닝 신발로 1시간(9,900보) 달린 값 × 4 × 적립 배수(가입 7일 안 절반)
+--   R1 의 목표: 크루는 코스 거리 · 번개는 글의 거리의 50% 이상(경로로 인정된 거리) — 목표가 없으면 시간 · 걸음 바닥만(사용자 결정, 길 A)
+--   강제 업데이트: app_min_version_code(0 = 끔)보다 낮은 앱의 요청은 문지기가 426 update_required 로 막는다(앱은 x-stepup-version 머리글)
 --
 -- 함수 모양(인자 · 돌려주는 값)은 바꾸지 않았다. 새 칸: walk_sessions.together_base · together_paid · together_n · day_max, crew_day_pools.held.
 -- 되돌리기: crew_bonus_rule · party_bonus_rule 을 'ALL', daily_max_rule 을 'CAP' 으로 — 0119 와 같이 셈한다.
@@ -21,7 +23,9 @@ insert into public.economy_settings (key, value) values
   ('together_topup_hours', '24'),        -- 출발 뒤 이 시간 안에 올린 러닝까지 서로 더해 준다
   ('daily_max_rule', '"HOUR"'),          -- 'HOUR' = 하루 최대 SUP(신발 1시간 값 × 배) · 'CAP' = 예전 하루 금액 상한(개인 러닝만)
   ('daily_max_hour_steps', '9900'),      -- "1시간"의 걸음(분당 165보 × 60)
-  ('daily_max_hour_mult', '4')           -- 하루 최대 = 1시간 값 × 이 값
+  ('daily_max_hour_mult', '4'),          -- 하루 최대 = 1시간 값 × 이 값
+  ('together_goal_share', '0.5'),        -- 함께 달린 사람: 목표 거리(크루 코스 · 번개 글의 거리)의 이 몫 이상
+  ('app_min_version_code', '0')          -- 이 판(스토어 번호 = versionCode % 1000)보다 낮은 앱은 막는다 — 0 이면 끔
 on conflict (key) do nothing;
 
 -- 한 번만: 출발한 사람 모두를 세던 규칙(0075 · 0076 'ALL')을 함께 달린 사람만(ACTIVE)으로. 운영자가 'NEAR' 등으로 바꿔 둔 값은 건드리지 않는다
@@ -59,12 +63,23 @@ create or replace function economy.together_min_steps()
 returns int language sql stable security definer set search_path = public, economy as $$
   select greatest(economy.fx('together_min_steps', 1500), 0)::int
 $$;
--- 함께 달린 사람의 러닝인가(R1) — 무효가 아니고 · 경로가 받쳐 주고 · 확인된 걸음 · 달린 시간이 문턱 이상
+-- 그 방의 목표 거리(m) 가운데 채워야 하는 몫 — 크루는 출발 때 코스(crew_runs.course_km), 번개 · 옛 방은 글의 거리(posts.distance_km).
+-- 목표가 없으면(자유 러닝 · 거리 0) 0 — 그때는 시간 · 걸음 바닥만 본다(사용자 결정 2026-11-21 "목표의 50% 이상", 길 A)
+create or replace function economy.together_goal_m(p_party bigint, p_user uuid)
+returns numeric language sql stable security definer set search_path = public, economy as $$
+  select round(greatest(coalesce(
+           nullif((select c.course_km from economy.crew_runs c where c.party_id = p_party and c.user_id = p_user), 0),
+           nullif((select p.course_km from public.parties p where p.id = p_party), 0),
+           nullif((select po.distance_km from public.parties p join public.posts po on po.id = p.flash_post_id where p.id = p_party), 0)::numeric,
+           0), 0) * 1000 * least(greatest(economy.fx('together_goal_share', 0.5), 0), 1), 1)
+$$;
+-- 함께 달린 사람의 러닝인가(R1) — 무효가 아니고 · 경로가 받쳐 주고 · 확인된 걸음 · 달린 시간이 바닥 이상 · 목표 거리의 절반 이상(경로로 인정된 거리)
 create or replace function economy.together_qualifies(s public.walk_sessions)
 returns boolean language sql stable security definer set search_path = public, economy as $$
   select s.verdict <> 'VOID' and s.gps_backed
      and coalesce(s.verified_steps, 0) >= economy.together_min_steps()
      and coalesce(s.duration_sec, 0) >= economy.together_min_sec()
+     and coalesce(s.gps_credit_m, 0) >= coalesce(economy.together_goal_m(s.party_id, s.user_id), 0)
 $$;
 
 create or replace function economy.daily_max_on()
@@ -176,13 +191,18 @@ begin
   return v_count;
 end $$;
 
--- 공용 체력에서 묶어 둔 몫(R3) — 10분을 못 채우고 끝냈거나(ENDED) · 멈췄거나(PAUSED) · 30초 넘게 소식이 끊긴 사람이 맡긴 것 가운데 안 쓴 몫
+-- 공용 체력에서 묶어 둔 몫(R3) — 맡긴 것 가운데 안 쓴 몫. 묶는 사람:
+--   ① 10분을 못 채운 채 끝냈거나(ENDED) · 멈췄거나(PAUSED) · 30초 넘게 소식이 끊긴 사람(달리는 동안 — 다시 달리면 풀린다)
+--   ② 러닝을 올렸는데 함께 달린 사람이 아닌 사람(목표의 절반 · 걸음 · 경로를 못 채움) — 그 사람의 체력은 쓴 만큼만 남는다
 create or replace function economy.crew_pool_held(p_crew uuid, p_day date, p_at timestamptz)
 returns numeric language sql stable security definer set search_path = public, economy as $$
   select case when not economy.together_on('CREW') then 0 else coalesce((
     select sum(greatest(r.contribution - r.consumed, 0)) from economy.crew_runs r
-     where r.crew_id = p_crew and r.day = p_day and r.active_sec < economy.together_min_sec()
-       and (r.state <> 'RUNNING' or r.last_beat_at < p_at - interval '30 seconds')), 0) end
+     where r.crew_id = p_crew and r.day = p_day
+       and ((r.active_sec < economy.together_min_sec()
+             and (r.state <> 'RUNNING' or r.last_beat_at < p_at - interval '30 seconds'))
+            or (r.session_id is not null
+                and not exists (select 1 from public.walk_sessions x where x.id = r.session_id and economy.together_qualifies(x))))), 0) end
 $$;
 
 -- 계정을 지워 크루 러닝 줄이 사라지면(cascade) 10분을 못 채운 사람의 안 쓴 몫을 공용 체력에서 뺀다(R3). 카운트다운 돌려받기는 이미 뺐다(표시)
@@ -529,7 +549,57 @@ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════
---  6. 규칙 묶음 · 운영자 손잡이(35 → 38)
+--  5.5. 강제 업데이트 — 문지기(0079 본문 + 판 확인)
+-- ════════════════════════════════════════════════════════════════════
+create or replace function public.access_gate() returns void
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_block boolean := false;
+  v_path text;
+  v_uid uuid;
+  v_min int;
+  v_ver int;
+  v_old boolean := false;
+begin
+  -- 0120: 운영자가 정한 판(app_min_version_code, 스토어 번호)보다 낮은 앱은 막는다 — 앱은 요청마다 머리글 x-stepup-version 을 보낸다(없으면 0 = 예전 앱).
+  -- 로그인한 앱 요청만(홈페이지 · 운영자 페이지는 anon). 계정 삭제 · 푸시 끊기는 막지 않는다. 고장 나도 앱 전체를 멈추지 않는다
+  begin
+    v_min := coalesce(economy.setting_num('app_min_version_code'), 0)::int;
+    if v_min > 0 and coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
+       and coalesce(current_setting('request.path', true), '') !~ '/rpc/(account_delete|push_unregister|is_admin)$' then
+      v_ver := coalesce(nullif(regexp_replace(coalesce(current_setting('request.headers', true)::json ->> 'x-stepup-version', ''), '[^0-9]', '', 'g'), '')::bigint % 1000, 0)::int;
+      v_old := v_ver < v_min;
+    end if;
+  exception when others then
+    v_old := false;
+  end;
+  if v_old then
+    raise exception 'update_required' using errcode = 'PT426', detail = '새 판으로 업데이트해야 합니다', hint = 'update_required';
+  end if;
+  begin
+    if economy.access_mode() <> 'OPEN' then
+      v_uid := auth.uid();
+      v_path := coalesce(current_setting('request.path', true), '');
+      if v_uid is not null
+         and coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
+         and v_path !~ '/rpc/(access_[a-z_]+|account_delete|is_admin)$'
+         and not coalesce(economy.access_ok(v_uid), true) then
+        v_block := true;
+      end if;
+    end if;
+  exception when others then
+    -- 문지기가 고장 나도 앱 전체를 멈추지 않는다
+    v_block := false;
+  end;
+  if v_block then
+    raise exception 'access_required' using errcode = 'PT403',
+      detail = '접속 코드가 필요합니다', hint = 'access_required';
+  end if;
+end $$;
+revoke all on function public.access_gate() from public;
+
+-- ════════════════════════════════════════════════════════════════════
+--  6. 규칙 묶음 · 운영자 손잡이(35 → 40)
 -- ════════════════════════════════════════════════════════════════════
 create or replace function public.shoe_rules_v4()
 returns jsonb language plpgsql stable security definer set search_path = public, economy as $$
@@ -591,6 +661,7 @@ begin
     'together', jsonb_build_object(
         'rule', case when economy.together_on('CREW') then 'ACTIVE' else 'LEGACY' end,
         'min_minutes', economy.together_min_sec() / 60, 'min_steps', economy.together_min_steps(),
+        'goal_share', least(greatest(economy.fx('together_goal_share', 0.5), 0), 1),
         'topup_hours', economy.fx('together_topup_hours', 24)::int),
     'daily_max', jsonb_build_object(
         'rule', case when economy.daily_max_on() then 'HOUR' else 'CAP' end,
@@ -638,7 +709,9 @@ returns record language sql immutable as $$
     ('forge_xp_level_growth', 'num', 0, 0.33, '강화 경험치: 통이 레벨마다 커지는 몫(Lv1 통의 배)'),
     ('together_min_minutes', 'num', 3, 60, '함께 달린 사람: 그 방에서 달린 시간(분) 이상'),
     ('together_min_steps', 'num', 0, 10000, '함께 달린 사람: 경로로 확인된 걸음 이상'),
-    ('daily_max_hour_mult', 'num', 1, 20, '하루 최대 SUP = 그 신발 1시간 값 × 이 값')
+    ('daily_max_hour_mult', 'num', 1, 20, '하루 최대 SUP = 그 신발 1시간 값 × 이 값'),
+    ('together_goal_share', 'num', 0, 1, '함께 달린 사람: 목표 거리의 몫 이상(0.5 = 절반)'),
+    ('app_min_version_code', 'num', 0, 999, '이 판보다 낮은 앱은 업데이트해야 쓴다(스토어 번호 · 0 = 끔)')
   ) r(key, kind, lo, hi, label) where r.key = p_key
 $$;
 
@@ -659,7 +732,7 @@ begin
                    ('forge_xp_max_materials', 27), ('goal_min', 28), ('goal_max', 29), ('goal_default', 30),
                    ('worn_rate', 31), ('eff_wear_exp', 32), ('eff_energy_exp', 33), ('energy_per_level', 34),
                    ('forge_xp_level_growth', 35), ('together_min_minutes', 36), ('together_min_steps', 37),
-                   ('daily_max_hour_mult', 38)) k(key, o)
+                   ('daily_max_hour_mult', 38), ('together_goal_share', 39), ('app_min_version_code', 40)) k(key, o)
       left join public.economy_settings s on s.key = k.key));
 end $$;
 
@@ -1466,6 +1539,7 @@ revoke all on function economy.together_on(text) from public, anon, authenticate
 revoke all on function economy.together_min_sec() from public, anon, authenticated;
 revoke all on function economy.together_min_steps() from public, anon, authenticated;
 revoke all on function economy.together_qualifies(public.walk_sessions) from public, anon, authenticated;
+revoke all on function economy.together_goal_m(bigint, uuid) from public, anon, authenticated;
 revoke all on function economy.daily_max_on() from public, anon, authenticated;
 revoke all on function economy.daily_max_of(uuid, int, numeric) from public, anon, authenticated;
 revoke all on function economy.day_earned(uuid, date) from public, anon, authenticated;

@@ -9,6 +9,8 @@ select t.mk(n) from generate_series(1, 2) n;
 select t.mk(n) from generate_series(11, 30) n;
 select t.mk(n) from generate_series(41, 46) n;
 select t.mk(n) from generate_series(51, 55) n;
+select t.mk(n) from generate_series(71, 73) n;
+select t.crew(7, 71, array[72, 73], 1);
 update public.profiles set created_at = now() where id in (select t.u(n) from generate_series(13, 30) n);
 select t.crew(2, 11, (select array_agg(n) from generate_series(12, 30) n), 20);
 select t.crew(4, 41, array[42, 43], 1);
@@ -104,7 +106,8 @@ begin
   v_first := w.points_awarded;
   perform t.chk('(라) 넷이 출발했어도 혼자 달렸으면 배수 없음(보상 이벤트 × 2 만)', abs(w.points_awarded - round(3200 * 0.0118 * 1.4 * 2, 4)) < 0.01
                 and w.together_n = 1 and w.together_paid = 0, format('%s SUP · %s명', w.points_awarded, w.together_n));
-  perform t.rec(52, v_start, 900, 2400);
+  -- 번개 글의 거리 5km — 절반(2.5km)을 넘게 달려야 함께 달린 사람이다(20분 · 약 3.1km)
+  perform t.rec(52, v_start, 1190, 3200);
   select * into w from public.walk_sessions where user_id = t.u(51) and party_id = p;
   perform t.chk('(라) 함께 달린 둘째가 올리면 첫째에게 × 1.1', abs(w.points_awarded - v_first * 1.1) < 0.02 and w.together_n = 2,
                 format('%s SUP · %s명', w.points_awarded, w.together_n));
@@ -149,3 +152,29 @@ begin
   perform t.login(61); v := public.crew_run_beat(p, 'RUNNING');
   perform t.chk('(사) 다시 달리면 풀린다', (v -> 'pool' ->> 'held')::numeric < 1, 'held ' || (v -> 'pool' ->> 'held'));
 end $$;
+do $$
+declare p bigint; v jsonb; v_start timestamptz; n int; c economy.crew_runs;
+begin
+  -- (아) 5km 코스 — 목표의 절반(2.5km) 이상 함께 달린 사람만 센다. 셋째는 15분(약 2.4km)에 그만 — 10분 · 1,500보는 넘지만 절반은 못 채웠다
+  perform t.login(71);
+  p := public.party_create_v2(t.c(7), '5km', '한강 5km', 5, '37.5,127;37.545,127', gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p, true);
+  for n in 72 .. 73 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
+  perform t.login(71); perform public.party_start_rev(p, (select course_rev from public.parties where id = p));
+  perform t.age(interval '6 seconds');
+  perform t.run(p, array[71, 72, 73], 900);
+  perform t.login(73); v := public.crew_run_beat(p, 'ENDED');
+  select started_at into v_start from economy.crew_runs where user_id = t.u(71);
+  perform t.rec(73, v_start, 900, 2475);
+  perform t.run(p, array[71, 72], 600);
+  select started_at into v_start from economy.crew_runs where user_id = t.u(71);
+  for n in 71 .. 72 loop perform t.login(n); v := public.crew_run_beat(p, 'ENDED'); perform t.rec(n, v_start, 1500, 4125); end loop;
+  select * into c from economy.crew_runs where user_id = t.u(71);
+  perform t.chk('(아) 5km 코스에서 2.5km 넘게 달린 둘만 센다', c.bonus_count = 2,
+                format('%s명 · 셋째 거리 %s m', c.bonus_count, (select round(gps_credit_m) from public.walk_sessions s where s.user_id = t.u(73) and s.party_id = p)));
+  select * into c from economy.crew_runs where user_id = t.u(73);
+  perform t.chk('(아) 절반을 못 채운 사람은 인원 보너스 없음 · 체력은 쓴 만큼만', c.bonus_reason = 'NOT_TOGETHER'
+                and (select (v2 ->> 'held')::numeric from (select economy.crew_pool_json(t.c(7), c.day) v2) q) >= 0,
+                coalesce(c.bonus_reason, '-') || ' · 묶음 ' || (select economy.crew_pool_json(t.c(7), c.day) ->> 'held'));
+end $$;
+

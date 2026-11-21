@@ -12729,7 +12729,7 @@ begin
   perform pg_temp.ok((v ->> 'ok')::boolean and v ? 'runs_7d' and v ? 'money_7d' and (v -> 'versions' ->> 'new_app')::int >= 1,
     '경제 현황 — 지난 7일 러닝 · 돈 · 앱 판 (0116)');
   v := public.ops_economy_settings(v_s);
-  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 38, '경제 설정 — 바꿀 수 있는 값 서른여덟 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 셋)');
+  perform pg_temp.ok(jsonb_array_length(v -> 'settings') = 40, '경제 설정 — 바꿀 수 있는 값 마흔 (0116 열아홉 + 0118 열하나 + 0119 다섯 + 0120 다섯)');
   v := public.ops_economy_set(v_s, 'box_price', '45'::jsonb);
   perform pg_temp.ok(v ->> 'code' = 'confirm_required', '설정은 언제나 키를 한 번 더 (0116)');
   v := public.ops_economy_set(v_s, 'box_price', '"사십"'::jsonb, pg_temp.fx('key116'));
@@ -13732,6 +13732,63 @@ begin
 end $$;
 reset role;
 select set_config('request.jwt.claim.sub', '', false);
+
+-- ════════════════════════════════════════════════════════════════════
+--  함께 달리기 보너스 · 강제 업데이트(0120) — 크루 · 번개의 장면 검사는 tools/together_sim/16-together-fix.sql(CI)
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 함께 달리기 보너스 · 강제 업데이트(0120) ─────────────────────'
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+update public.economy_settings set value = v.value
+  from (values ('crew_bonus_rule', '"ACTIVE"'::jsonb), ('party_bonus_rule', '"ACTIVE"'::jsonb), ('daily_max_rule', '"HOUR"'::jsonb)) v(key, value)
+ where public.economy_settings.key = v.key;
+do $$
+declare j jsonb := public.shoe_rules_v4();
+begin
+  perform pg_temp.ok(j -> 'together' ->> 'rule' = 'ACTIVE' and (j -> 'together' ->> 'min_minutes')::int = 10 and (j -> 'together' ->> 'min_steps')::int = 1500
+                     and (j -> 'together' ->> 'goal_share')::numeric = 0.5 and j -> 'daily_max' ->> 'rule' = 'HOUR'
+                     and (j -> 'daily_max' ->> 'hour_steps')::int = 9900 and (j -> 'daily_max' ->> 'hour_mult')::numeric = 4,
+    format('규칙 묶음에 함께 달린 사람의 문턱 · 하루 최대가 있다 (%s · %s) (0120)', j -> 'together', j -> 'daily_max'));
+  perform pg_temp.ok(economy.daily_max_of(null, 4000, 1) = round(4 * 9900 * economy.points_per_step() * 1.4, 4)
+                     and economy.daily_max_of(null, 4000, 2) = 2 * economy.daily_max_of(null, 4000, 1),
+    format('하루 최대 = 1시간 값 × 4 × 적립 배수 — 가운데 일반 %s SUP (0120)', economy.daily_max_of(null, 4000, 1)));
+  perform pg_temp.ok((economy.ops_setting_rule('app_min_version_code')).hi = 999 and (economy.ops_setting_rule('together_goal_share')).kind = 'num',
+    '운영자 손잡이에 판 · 목표 몫이 있다 (0120)');
+end $$;
+
+-- 강제 업데이트: 정한 판보다 낮은 앱(머리글 없음 = 예전 앱)은 426 update_required, 계정 삭제 · 로그인 안 한 요청은 지나간다
+update public.economy_settings set value = '"OPEN"' where key = 'access_mode';
+update public.economy_settings set value = '30' where key = 'app_min_version_code';
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
+select set_config('request.headers', '{}', false);
+do $$ begin
+  begin
+    perform public.access_gate();
+    perform pg_temp.ok(false, '머리글 없는 예전 앱은 막혀야 한다');
+  exception when others then
+    perform pg_temp.ok(sqlstate = 'PT426' and sqlerrm = 'update_required', format('머리글이 없는 예전 앱은 426 update_required (%s %s) (0120)', sqlstate, sqlerrm));
+  end;
+end $$;
+select set_config('request.headers', '{"x-stepup-version": "29"}', false);
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '정한 판(30)보다 낮은 판(29)은 막힌다 (0120)');
+select set_config('request.headers', '{"x-stepup-version": "30"}', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '정한 판 이상은 지나간다 (0120)'); end $$;
+select set_config('request.headers', '{"x-stepup-version": "23030"}', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '시험 판 번호(DB 판 × 1000 + 스토어 번호)도 스토어 번호로 본다 (0120)'); end $$;
+select set_config('request.headers', '{}', false);
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/account_delete');
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '예전 앱도 계정 삭제는 지나간다 (0120)'); end $$;
+select set_config('request.jwt.claim.sub', '', false);
+select set_config('request.jwt.claims', '{"role":"anon"}', false);
+select set_config('request.path', '/rpc/waitlist_register', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '로그인 안 한 요청(홈페이지)은 판을 보지 않는다 (0120)'); end $$;
+update public.economy_settings set value = '0' where key = 'app_min_version_code';
+call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '판을 0 으로 두면 막지 않는다 (0120)'); end $$;
+select set_config('request.jwt.claim.sub', '', false);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.path', '', false);
+select set_config('request.headers', '', false);
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

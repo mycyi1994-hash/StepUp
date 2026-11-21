@@ -179,9 +179,9 @@
 
 | 규칙 | 만든 것 |
 | --- | --- |
-| 함께 달린 사람만 | `economy.together_qualifies`(무효 아님 · 경로가 받쳐 줌 · 확인된 걸음 1,500 · 달린 10분) — 크루 · 번개 모두(`crew_bonus_rule` · `party_bonus_rule` = `'ACTIVE'`, 배포 때 `'ALL'` 이던 값을 한 번 바꾼다) |
+| 함께 달린 사람만 | `economy.together_qualifies`(무효 아님 · 경로가 받쳐 줌 · 확인된 걸음 1,500 · 달린 10분 · **목표 거리의 50% 이상** — 크루는 출발 때 코스 거리, 번개는 글의 거리, 목표가 없으면 바닥만, `economy.together_goal_m`) — 크루 · 번개 모두(`crew_bonus_rule` · `party_bonus_rule` = `'ACTIVE'`, 배포 때 `'ALL'` 이던 값을 한 번 바꾼다) |
 | 올릴 때마다 더하기 | `economy.together_settle(방)` — `record_session` 이 크루 · 번개 방의 러닝을 기록한 뒤 부른다. 원장 `EARN_PARTY` · `ref = 'together:<러닝>:<인원>'`, 러닝의 `points_awarded` · `together_paid` · `together_n` · `party_size`, 크루는 `crew_runs.headcount_sup` · `total_sup` · `bonus_count` · `bonus_pct`(문턱 아래는 `bonus_reason = 'NOT_TOGETHER'`). 2분 판정(`crew_run_bonus_eval`)은 예전 규칙에서만 |
-| 탈주한 사람의 체력 | `economy.crew_pool_held` — 10분을 못 채우고 끝냄 · 멈춤 · 30초 넘게 소식 없음이면 안 쓴 몫을 묶는다(`crew_pool_settle` · `crew_pool_json` 의 `total` · `remaining` · `held`). 다시 달리면 풀리고 0 이던 구간을 닫는다. 계정 삭제는 트리거(`crew_runs_deleted`)가 뺀다 — 카운트다운 돌려받기(`crew_run_release`)는 이미 빼므로 표시로 건너뛴다 |
+| 탈주한 사람의 체력 | `economy.crew_pool_held` — 10분을 못 채우고 끝냄 · 멈춤 · 30초 넘게 소식 없음, **또는 올린 러닝이 함께 달린 사람이 아니면(목표 절반 등)** 안 쓴 몫을 묶는다(`crew_pool_settle` · `crew_pool_json` 의 `total` · `remaining` · `held`). 다시 달리면 풀리고 0 이던 구간을 닫는다. 계정 삭제는 트리거(`crew_runs_deleted`)가 뺀다 — 카운트다운 돌려받기(`crew_run_release`)는 이미 빼므로 표시로 건너뛴다 |
 | 하루 최대 SUP | `economy.daily_max_of(사람, 효율, 배수)` = 4 × 9,900보 × 걸음당 SUP × 효율 × 적립 배수(가입 7일 안 절반) · `day_earned`(러닝 전부 + 목표 보너스) · `day_room`. 혼자 · 번개 · 크루 러닝 · 더하기 · 목표 보너스(`goal_settle`) 모두 그 안에서. 러닝마다 `walk_sessions.day_max` 에 적는다. `daily_max_rule = 'CAP'` 이면 예전 하루 금액 상한 |
 
 - 설정: `together_min_minutes` 10 · `together_min_steps` 1,500 · `together_topup_hours` 24 · `daily_max_rule` "HOUR" · `daily_max_hour_steps` 9,900 · `daily_max_hour_mult` 4. 운영자 손잡이 서른여덟(셋 더함).
@@ -190,4 +190,14 @@
 - 장면 15(점검의 재현)는 이제 (나) 약 416 SUP(둘째가 올리면 +5%) — 예전 2,639.7.
 - 함수 모양은 그대로다. `record_session` 은 0120 이 마지막 정의다.
 - 앱(다음 판): 결과 화면의 "함께 달린 사람 N명 · 친구가 올리면 더해져요" · 대기실 한 줄 · 신발 화면 "하루 최대" · 더해질 때 알림. 지금 앱도 서버 값을 그대로 보인다(크루 결과의 인원 · 보너스가 나중에 바뀐다).
+
+### 14.1 목표의 절반 · 강제 업데이트 (같은 날 더함)
+
+- 사용자 "목표의 50% 이상 채워야 되는 거지" → 길 A: 크루 방은 코스를 고른 경우 그 거리, 번개는 글의 거리(`posts.distance_km`)의 절반(`together_goal_share` 0.5) 이상을 경로로 인정된 거리(`gps_credit_m`)로 달려야 함께 달린 사람이다.
+  자유 러닝 방(목표 없음)은 10분 · 1,500보 바닥만. 바닥은 목표가 있어도 늘 본다(1km 코스의 절반은 3분이면 끝나므로).
+  공용 체력도 같은 기준 — 올린 러닝이 함께 달린 사람이 아니면 그 사람의 안 쓴 체력은 묶인다(쓴 만큼만 남는다).
+- 사용자 "예전 앱 업데이트 안 하면 못 쓰게"(행운 기획서 15.1): 문지기 `public.access_gate`(0079 본문 + 판 확인)가 `app_min_version_code`(스토어 번호, 0 = 끔)보다 낮은 앱의 요청을 **HTTP 426 `update_required`** 로 막는다.
+  앱은 요청마다 머리글 `x-stepup-version: versionCode % 1000` 을 보낸다 — 없으면 0(예전 앱). 로그인 안 한 요청(홈페이지 · 운영자 페이지) · 계정 삭제 · 푸시 끊기는 막지 않는다. 새 판에 "업데이트가 필요해요" 화면.
+  **켜는 차례**: 새 판(1.21.0)이 스토어에서 받을 수 있게 된 뒤 → 예전 앱 사용자에게 푸시 · 공지 → 정한 날 운영자 페이지 "경제"에서 `app_min_version_code` 를 30 으로. 그 전에는 0(끔)이다.
+- 검사: 장면 16 에 (아) 5km 코스(2.4km 에서 멈춘 사람은 세지 않고 체력이 묶인다) · 서버 검사 "함께 달리기 보너스 · 강제 업데이트(0120)"(문지기 여섯 · 규칙 묶음 · 손잡이). 운영자 손잡이 마흔.
 
