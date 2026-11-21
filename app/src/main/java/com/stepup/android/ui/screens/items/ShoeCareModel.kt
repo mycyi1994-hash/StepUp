@@ -345,18 +345,26 @@ fun energyPerLevel(rules: com.stepup.android.domain.ShoeRules): Double =
     rules.stats.energyPerLevel.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
 
 /**
- * 레벨 [nextLevel] 에 닿으면 받는 것 — 포인트(등급 표, 맨 앞) · 하루 에너지(규칙이 레벨마다 늘릴 때만) · (5의 배수면) 내구도 가득 ·
- * 상급 상자. [levelsGot] 은 상자 현황(box_status)의 이미 상자를 받은 레벨들 — 모르면 null.
+ * 신발 레벨로 늘어나는 하루 에너지 — [runnerEnergy] 면(서버 0121 러너 레벨: 하루 에너지는 걸음으로 오르는 계정 레벨이 정한다) 0.
+ * 러너 레벨을 받지 못했으면 예전 규칙([energyPerLevel]) 그대로
+ */
+fun shoeLevelEnergy(rules: com.stepup.android.domain.ShoeRules, runnerEnergy: Boolean): Double =
+    if (runnerEnergy) 0.0 else energyPerLevel(rules)
+
+/**
+ * 레벨 [nextLevel] 에 닿으면 받는 것 — 포인트(등급 표, 맨 앞) · 하루 에너지(규칙이 레벨마다 늘릴 때만 — 러너 레벨이 에너지를 정하면
+ * [runnerEnergy] 없다) · (5의 배수면) 내구도 가득 · 상급 상자. [levelsGot] 은 상자 현황(box_status)의 이미 상자를 받은 레벨들 — 모르면 null.
  */
 fun forgeRewards(
     rarity: com.stepup.android.domain.Rarity,
     nextLevel: Int,
     rules: com.stepup.android.domain.ShoeRules = com.stepup.android.domain.ShoeRules.FALLBACK,
     levelsGot: List<Int>? = null,
+    runnerEnergy: Boolean = false,
 ): List<ForgeReward> = buildList {
     val points = rules.pointsAt(rarity.id, nextLevel)
     if (points > 0) add(ForgeReward.Points(points))
-    val energy = energyPerLevel(rules)
+    val energy = shoeLevelEnergy(rules, runnerEnergy)
     if (nextLevel > 1 && energy > 0.0) add(ForgeReward.Energy(energy))
     if (nextLevel % 5 == 0) add(ForgeReward.Milestone(nextLevel, boxAlreadyGot = levelsGot?.contains(nextLevel) == true))
 }

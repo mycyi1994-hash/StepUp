@@ -349,11 +349,14 @@ private fun EditingBody(state: ShoeUpgradeState, actions: UpgradeActions) {
                     ?: info.previewNext(rules)
                 UpgradeStatRows(forgeRows(info.stats, next, info.rarity, rules), next.maxLevel, Modifier.testTag("upgrade-rows"))
                 val boxes = rememberBoxStatus()
+                // 러너 레벨(서버 0121)이 하루 에너지를 정하면 신발 레벨로 에너지가 는다고 말하지 않는다
+                val runnerEnergy = com.stepup.android.ui.screens.profile.rememberRunnerEnergy()
                 ForgeRewardLines(
-                    forgeRewards(info.rarity, next.level, rules, boxes?.levelsGot).map { reward ->
+                    forgeRewards(info.rarity, next.level, rules, boxes?.levelsGot, runnerEnergy = runnerEnergy).map { reward ->
                         // 서버 견적이 보낸 포인트가 있으면 그 값
                         if (reward is ForgeReward.Points) ForgeReward.Points(forgePointsGain(info.stats, next, info.rarity, rules)) else reward
                     },
+                    runnerEnergy = runnerEnergy,
                 )
             }
         }
@@ -441,7 +444,7 @@ private fun rememberBoxStatus(): com.stepup.android.domain.BoxStatus? {
  * (받는다고 단정하지 않는다).
  */
 @Composable
-private fun ForgeRewardLines(rewards: List<ForgeReward>) {
+private fun ForgeRewardLines(rewards: List<ForgeReward>, runnerEnergy: Boolean = false) {
     val t = runTone()
     Column(Modifier.fillMaxWidth().testTag("upgrade-rewards"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         rewards.forEach { reward ->
@@ -455,8 +458,18 @@ private fun ForgeRewardLines(rewards: List<ForgeReward>) {
             Text("· $text", style = runTextStyle(14.sp, if (reward is ForgeReward.Milestone) t.cyan else t.label, FontWeight.Medium),
                 modifier = Modifier.testTag(tag))
         }
+        if (runnerEnergy) RunnerEnergyNote()
         StatNote()
     }
+}
+
+/** 하루 에너지는 신발 레벨이 아니라 러너 레벨(걸음)로 는다(서버 0121) — 러너 레벨을 받았을 때만 */
+@Composable
+private fun RunnerEnergyNote() {
+    Text(
+        stringResource(R.string.rl_shoe_energy_note), style = runTextStyle(13.sp, runTone().muted),
+        modifier = Modifier.testTag("upgrade-energy-runner"),
+    )
 }
 
 /**
@@ -1211,8 +1224,11 @@ private fun XpEditingHead(state: ShoeUpgradeState, actions: UpgradeActions) {
                 val points = xpPointsGain(target.rarity, target.level, toLevel, rules)
                 val milestones = ((target.level + 1)..toLevel).filter { it % 5 == 0 }
                 // 하루 에너지 — 견적이 늘어난다고 할 때만(앞뒤가 같으면 줄이 없다). 견적 전에는 규칙이 레벨마다 늘릴 때만(서버 0119 부터 0)
-                val energy = quote?.let { q -> q.energyBefore?.let { b -> q.energyAfter?.takeIf { it > b }?.let { b to it } } }
-                val energyEach = energyPerLevel(rules)
+                // 러너 레벨(서버 0121)이 하루 에너지를 정하면 신발 레벨로 에너지가 는다고 말하지 않는다
+                val runnerEnergy = com.stepup.android.ui.screens.profile.rememberRunnerEnergy()
+                val energy = quote?.takeIf { !runnerEnergy }
+                    ?.let { q -> q.energyBefore?.let { b -> q.energyAfter?.takeIf { it > b }?.let { b to it } } }
+                val energyEach = shoeLevelEnergy(rules, runnerEnergy)
                 Column(Modifier.fillMaxWidth().testTag("upgrade-rewards"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (points > 0) {
                         Text("· " + stringResource(R.string.fxp_points_gain, points), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
@@ -1230,6 +1246,7 @@ private fun XpEditingHead(state: ShoeUpgradeState, actions: UpgradeActions) {
                         Text("· " + stringResource(if (got) R.string.v4s_upg_gain_milestone_got else R.string.v4s_upg_gain_milestone, level),
                             style = runTextStyle(14.sp, t.cyan, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-milestone"))
                     }
+                    if (runnerEnergy) RunnerEnergyNote()
                     StatNote()
                 }
             }
@@ -1583,6 +1600,8 @@ private fun preciousLabel(reason: ForgePrecious, quote: XpQuote): String = when 
         val before = quote.energyBefore
         val after = quote.energyAfter
         when {
+            // 러너 레벨(서버 0121)이 하루 에너지를 정하면 신발을 태워도 에너지는 그대로다 — 에너지가 준다고 말하지 않는다
+            com.stepup.android.ui.screens.profile.rememberRunnerEnergy() -> stringResource(R.string.ers_why_top_level)
             before != null && after != null && after < before -> stringResource(R.string.fxp_why_top_level, before, after)
             // 하루 에너지가 레벨과 상관없는 규칙(서버 0119)이면 에너지가 준다고 말하지 않는다
             energyPerLevel(rememberShoeRules()) <= 0.0 -> stringResource(R.string.ers_why_top_level)

@@ -70,6 +70,10 @@ object ServiceLocator {
     /** 경제 4판(서버 0116) 규칙 · 상자 현황 — 신발 · 수리 · 강화 · 출발 전 점검 · 뽑기가 함께 본다 */
     lateinit var shoeRules: com.stepup.android.data.repo.ShoeRulesRepository
         private set
+
+    /** 러너 레벨(서버 0121) — 내 정보 카드 · 레벨이 올랐다는 알림 · 신발 화면의 하루 에너지 글 · 크루 명단 배지 */
+    lateinit var runnerLevel: com.stepup.android.data.repo.RunnerLevelRepository
+        private set
     lateinit var sneakerRepository: SneakerRepository
         private set
 
@@ -370,6 +374,14 @@ object ServiceLocator {
             runCatching { userPrefs.migrateGoalRule() }
             runCatching { shoeRules.restore() }
         }
+        // 러너 레벨(0121) — 서버에 함수가 없으면 칸을 숨긴다. 알린 레벨은 계정마다 폰에 남긴다
+        val runnerLevelApi = com.stepup.android.data.remote.RunnerLevelApi(server)
+        runnerLevel = com.stepup.android.data.repo.RunnerLevelRepository(
+            fetchMe = { runnerLevelApi.me() },
+            fetchBadges = { ids -> runnerLevelApi.badges(ids) },
+            store = userPrefs.runnerSeenStore,
+            owner = { sessionHolder.recordingOwner() },
+        )
         inviteApi = com.stepup.android.data.remote.InviteApi(server)
         accessApi = com.stepup.android.data.remote.AccessApi(server)
         val stepsApi = EventApi(server)
@@ -389,6 +401,8 @@ object ServiceLocator {
                     dailyStepsUploader.upload()
                     shoeRules.refresh()
                     shoeRules.refreshBoxes()
+                    // 러너 레벨(0121) — 러닝을 올린 뒤의 동기화에서도 다시 읽어 레벨이 올랐으면 한 번 알린다
+                    runCatching { runnerLevel.refresh() }
                     // 이 앱의 판(스토어 번호) — 운영자가 아이템을 줄 때 가방이 있는 판인지 본다(0116). 테스트 판은 데이터베이스 판 × 1000 을 뺀다
                     economyApi.reportAppVersion(BuildConfig.VERSION_CODE % 1000, BuildConfig.VERSION_NAME)
                 }
@@ -552,7 +566,11 @@ object ServiceLocator {
         // 계정이 바뀌면(다시 로그인 · 계정 삭제 · 새 로그인) 앞 계정의 대기실 · 가입 표시를 지운다 — 옛 방을 새 계정으로
         // 계속 묻거나, 앞 계정이 가입한 크루를 내 크루처럼 보이지 않게
         economyScope.launch {
-            recordingOwnerFlow().drop(1).collect { crewRepository.resetForAccount() }
+            recordingOwnerFlow().drop(1).collect {
+                crewRepository.resetForAccount()
+                // 앞 계정의 러너 레벨 · 알림도(새 계정은 동기화 때 다시 읽는다)
+                runnerLevel.forgetAccount()
+            }
         }
         crewCards = com.stepup.android.data.repo.CrewCardRepository(
             api = crewApi,

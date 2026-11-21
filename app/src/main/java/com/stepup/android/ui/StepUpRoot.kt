@@ -1826,6 +1826,12 @@ private fun MainScaffoldContent(
         },
     )
 
+    // 러너 레벨이 올랐다(서버 0121) — 탭 첫 화면에서만 한 번. 첫 사용 안내 · 멈춘 러닝 되살리기가 먼저고, 달리는 동안은 가리지 않는다
+    com.stepup.android.ui.screens.profile.RunnerLevelNoticeHost(
+        allowed = currentRoute in setOf(Screen.Run.route, Screen.Customize.route, Screen.Community.route, Screen.Bag.route, Screen.Profile.route) &&
+            !(startTour && !firstGuideClosed) && pendingRun == null,
+    )
+
     // 첫 사용 안내(시안 02) — 러닝 홈에서만, 먼저 처리할 목적지(초대 링크 · 로그인 뒤 다시 열 초대)나 멈춘 러닝이 없을 때.
     // 목적지가 있으면 그 화면을 먼저 보이고 안내는 다음에 러닝 홈에 올 때로 미룬다. 사람이 고른 뒤에만 "봤음"을 적는다.
     val destinationPending = pendingCrew != null || pendingChat != null || pendingPush != null || reopenInvite?.let { it.requestedAt < scaffoldOpenedAt } == true

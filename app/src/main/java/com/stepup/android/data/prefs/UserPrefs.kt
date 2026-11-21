@@ -261,6 +261,24 @@ class UserPrefs(
         override suspend fun setSeenAt(owner: String, at: Long) = setDailyRewardsSeen(owner, at)
     }
 
+    // ── 러너 레벨(서버 0121) — 마지막으로 알린 레벨 · 받은 상자 · 하루 에너지(계정마다) ──
+
+    private fun runnerSeenKey(owner: String) = stringPreferencesKey("runner_seen:$owner")
+
+    /** [owner] 에게 마지막으로 알린 러너 레벨 — 이 폰에서 처음이면 null */
+    suspend fun runnerSeen(owner: String): com.stepup.android.domain.RunnerSeen? =
+        com.stepup.android.domain.RunnerSeen.decode(store.data.first()[runnerSeenKey(owner)])
+
+    suspend fun setRunnerSeen(owner: String, seen: com.stepup.android.domain.RunnerSeen) {
+        store.edit { it[runnerSeenKey(owner)] = seen.encode() }
+    }
+
+    /** 러너 레벨 알림의 본 값을 남기는 곳 — RunnerLevelRepository 가 쓴다 */
+    val runnerSeenStore: com.stepup.android.data.repo.RunnerSeenStore = object : com.stepup.android.data.repo.RunnerSeenStore {
+        override suspend fun read(owner: String) = runnerSeen(owner)
+        override suspend fun write(owner: String, seen: com.stepup.android.domain.RunnerSeen) = setRunnerSeen(owner, seen)
+    }
+
     // ── 러너 캐릭터 ──────────────────────────────────────────
 
     val avatarGender: Flow<String> = store.data.map { it[Keys.AVATAR_GENDER] ?: "" }

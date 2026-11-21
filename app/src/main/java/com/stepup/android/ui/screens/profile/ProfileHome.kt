@@ -66,7 +66,8 @@ import java.util.Locale
  * 사진(내 사진이 없으면 지금 신은 신발 — 기본 사람 아이콘 · 이니셜을 쓰지 않는다) · 이름 · Lv → 지금까지 달린 거리(큰 숫자) →
  * 기록한 러닝 · 운동 시간 · 최장 거리 → 묶음 목록(지갑 · 프로필 편집 · 기록 보기 · 설정). 챌린지 줄은 2026-10-17 사용자 결정으로 뺐다.
  *
- * 러너 레벨은 계정의 누적 거리(서버 profiles.lifetime_km)로 센 `state.runner.level` 이다. 거리 · 횟수는 저장된 러닝 세션의 합 — 읽는 중엔 "—",
+ * 러너 레벨은 서버의 러너 레벨(0121 `runner_me` — 러닝 걸음, [RunnerLevelCard])을 받았으면 그 값, 아니면 예전처럼 계정의 누적 거리
+ * (서버 profiles.lifetime_km)로 센 `state.runner.level` 이다. 거리 · 횟수는 저장된 러닝 세션의 합 — 읽는 중엔 "—",
  * 못 읽으면 실패 안내와 다시 시도(0 으로 보이지 않는다).
  */
 @Composable
@@ -81,12 +82,19 @@ internal fun ProfileHome(
     longestMeters: Double? = null,
     /** 가장 최근 러닝 — 없으면 줄을 두지 않는다 */
     latest: com.stepup.android.data.local.WalkSessionEntity? = null,
+    /** 러너 레벨(서버 0121) — 서버가 주지 않으면 null(카드를 두지 않고 머리 줄은 예전 레벨) */
+    runnerLevel: com.stepup.android.domain.RunnerLevel? = null,
+    onOpenRunnerLevel: () -> Unit = {},
 ) {
     val c = StepUpUi.colors
     Column(Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(8.dp))
-        ProfileRow(state, onEditProfile)
+        ProfileRow(state, onEditProfile, runnerLevel?.level)
         Spacer(Modifier.height(14.dp))
+        if (runnerLevel != null) {
+            RunnerLevelCard(runnerLevel, onOpenRunnerLevel)
+            Spacer(Modifier.height(14.dp))
+        }
         RecordBlock(records, state, longestMeters, onRetryRecords)
         if (latest != null) {
             Spacer(Modifier.height(18.dp))
@@ -126,9 +134,12 @@ sealed interface RunRecordState {
     data object Failed : RunRecordState
 }
 
-/** 사진(56) · 이름(21 · 아주 굵게) · "Lv.N · 오늘도 좋은 하루예요". 사진을 누르면 프로필 편집 */
+/**
+ * 사진(56) · 이름(21 · 아주 굵게) · "Lv.N · 오늘도 좋은 하루예요". 사진을 누르면 프로필 편집.
+ * [serverLevel] 은 서버의 러너 레벨(0121 — 걸음) — 받았으면 아래 카드와 같은 레벨을, 아니면 예전 레벨(누적 거리)을 보인다
+ */
 @Composable
-private fun ProfileRow(state: ProfileViewModel.UiState, onEditProfile: () -> Unit) {
+private fun ProfileRow(state: ProfileViewModel.UiState, onEditProfile: () -> Unit, serverLevel: Int? = null) {
     val c = StepUpUi.colors
     val edit = stringResource(R.string.profile_row_edit)
     Row(
@@ -151,7 +162,7 @@ private fun ProfileRow(state: ProfileViewModel.UiState, onEditProfile: () -> Uni
             // 러너 레벨 — 읽기 전엔 비운다(1 로 보이지 않게)
             if (state.loaded) {
                 Text(
-                    stringResource(R.string.profile_level_line, state.runner.level),
+                    stringResource(R.string.profile_level_line, serverLevel ?: state.runner.level),
                     style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 4.dp).testTag("profile-level"),
                 )

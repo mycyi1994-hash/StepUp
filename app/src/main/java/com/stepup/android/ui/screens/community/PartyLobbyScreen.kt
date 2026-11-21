@@ -487,10 +487,15 @@ fun PartyLobbyContent(
             else -> if (party.inRoom) {
                 Counts(party)
                 Spacer(Modifier.height(8.dp))
+                // 러너 레벨 배지(서버 0121) — 방 사람들을 한 번에 묻고(바뀔 때만), 받기 전에도 명단은 그대로
+                val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(party.members.map { it.id })
                 RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 4.dp), tag = "party-members") {
                     party.members.forEachIndexed { index, member ->
                         if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(t.divider))
-                        MemberRow(member, canKick = lobby && party.isHost && !member.isMe, onKick = { onKick(member.id) })
+                        MemberRow(
+                            member, canKick = lobby && party.isHost && !member.isMe, onKick = { onKick(member.id) },
+                            mark = com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[member.id]),
+                        )
                     }
                     if (alone) {
                         Box(Modifier.fillMaxWidth().height(1.dp).background(t.divider))
@@ -542,7 +547,7 @@ private fun Counts(party: PartyState) {
 
 /** 크루원 한 줄 — 이니셜 · 이름(· 나) · 진행자 · 준비 상태. 진행자는 대기실에서 내보낼 수 있다 */
 @Composable
-private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit) {
+private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit, mark: String? = null) {
     val t = runTone()
     val name = when {
         member.isMe && member.name.isNotBlank() -> stringResource(R.string.run_cr_me, member.name)
@@ -557,6 +562,12 @@ private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit)
         Spacer(Modifier.width(12.dp))
         Text(name, style = runTextStyle(16.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false))
+        // 러너 레벨 배지 — 색 면 없이 흐린 작은 글자
+        if (mark != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(mark, style = runTextStyle(12.sp, t.label, FontWeight.SemiBold), maxLines = 1,
+                modifier = Modifier.testTag("party-member-runner-mark"))
+        }
         if (member.isHost) {
             Spacer(Modifier.width(8.dp))
             Text(

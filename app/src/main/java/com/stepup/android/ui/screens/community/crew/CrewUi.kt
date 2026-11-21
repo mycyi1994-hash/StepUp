@@ -640,6 +640,8 @@ internal fun CrewPersonRow(
     subColor: Color? = null,
     /** 이름 옆 작은 파란 표시("크루장") */
     badge: String? = null,
+    /** 이름 옆 작은 글자(러너 레벨 배지 "러너 Lv10" — 서버 0121) — 색 면 없이 흐린 글자 */
+    mark: String? = null,
 ) {
     val ink = crewInk()
     Row(
@@ -658,6 +660,13 @@ internal fun CrewPersonRow(
                         if (badge != null) {
                             Spacer(Modifier.width(8.dp))
                             CrewBadge(badge)
+                        }
+                        if (mark != null) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                mark, color = ink.secondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                                modifier = Modifier.testTag("crew-runner-mark"),
+                            )
                         }
                     }
                     Spacer(Modifier.height(4.dp))

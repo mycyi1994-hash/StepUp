@@ -658,6 +658,8 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
     val shown = if (many) ordered.take(CREW_GRID_MAX - 1) else ordered
     // 혼자면 빈 자리와 아래 "크루원 부르기"(12)
     val alone = party.partySize <= 1
+    // 러너 레벨 배지(서버 0121) — 방 사람들을 한 번에 묻고(바뀔 때만), 받기 전에도 칸은 그대로
+    val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(party.members.map { it.id })
     DualRailFrame(
         Modifier.fillMaxWidth().testTag(if (alone) "party-alone" else "party-members"),
         padding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 16.dp),
@@ -684,7 +686,10 @@ private fun RosterFrame(party: PartyState, canNotify: Boolean, onRoster: () -> U
                         three.forEach { cell ->
                             Box(Modifier.weight(1f)) {
                                 when (cell) {
-                                    is RosterCell.Person -> PersonCell(cell.member, firstRow = row == 0, away = party.phase == PartyPhase.LOBBY && cell.member.away)
+                                    is RosterCell.Person -> PersonCell(
+                                        cell.member, firstRow = row == 0, away = party.phase == PartyPhase.LOBBY && cell.member.away,
+                                        mark = com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[cell.member.id]),
+                                    )
                                     is RosterCell.More -> EmptyCell(stringResource(R.string.crew5_lobby_more, cell.rest), stringResource(R.string.crew5_lobby_all), onRoster, "party-more")
                                     RosterCell.Empty -> EmptyCell("+", stringResource(R.string.crew5_lobby_invite), if (canNotify) onCall else null, "party-empty")
                                 }
@@ -705,7 +710,7 @@ private sealed interface RosterCell {
 
 /** 크루원 한 칸 — 52dp 원(진행자는 파란 면) · 준비면 오른쪽 아래 확인 표시 · 이름(나) · 진행자 */
 @Composable
-private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = false) {
+private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = false, mark: String? = null) {
     val me = stringResource(R.string.crew5_lobby_me)
     val host = stringResource(R.string.run_cr_host)
     val ready = stringResource(R.string.crew5_roster_ready)
@@ -713,7 +718,7 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = f
     Column(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
             contentDescription = listOfNotNull(
-                member.name, me.takeIf { member.isMe }, host.takeIf { member.isHost }, ready.takeIf { member.ready }, awayLabel.takeIf { away },
+                member.name, me.takeIf { member.isMe }, mark, host.takeIf { member.isHost }, ready.takeIf { member.ready }, awayLabel.takeIf { away },
             ).joinToString(", ")
         }.testTag("party-member-${member.id}"),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -744,6 +749,11 @@ private fun PersonCell(member: PartyMember, firstRow: Boolean, away: Boolean = f
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
             if (member.isHost) Text(host, style = navyText(11.sp, Color(0xFFCEE5F6), FontWeight.Normal, 1.2f))
+            // 러너 레벨 배지 — 색 면 없이 흐린 작은 글자
+            if (mark != null) {
+                Text(mark, style = navyText(11.sp, LobbyInk.Sub, FontWeight.Medium, 1.2f), maxLines = 1,
+                    modifier = Modifier.testTag("party-member-runner-mark"))
+            }
             if (away) Text(awayLabel, style = navyText(11.sp, LobbyInk.Sub, FontWeight.Medium, 1.2f), modifier = Modifier.testTag("party-member-away"))
         }
     }
@@ -1084,6 +1094,7 @@ private fun RosterSheet(
     ) {
         Text(stringResource(R.string.crew5_roster_count, party.partySize, party.readyCount), style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium))
         Spacer(Modifier.height(8.dp))
+        val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(party.members.map { it.id })
         Column(Modifier.fillMaxWidth().testTag("party-roster-list")) {
             crewOrder(party.members).forEachIndexed { i, member ->
                 if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(LobbyInk.RowLine))
@@ -1106,6 +1117,7 @@ private fun RosterSheet(
                         Text(
                             listOfNotNull(
                                 stringResource(R.string.run_cr_host).takeIf { member.isHost },
+                                com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[member.id]),
                                 stringResource(if (member.ready) R.string.crew5_roster_ready else R.string.crew5_roster_waiting),
                             ).joinToString(" · "),
                             style = navyText(11.sp, LobbyInk.Sub, FontWeight.Normal), modifier = Modifier.padding(top = 3.dp),
