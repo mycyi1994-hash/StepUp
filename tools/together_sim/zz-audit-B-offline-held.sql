@@ -36,3 +36,37 @@ begin
   perform t.say('공용 체력 끝', t.pool(2) || ' · held ' || round(economy.crew_pool_held(t.c(2), c.day, now()), 1));
   perform t.say('16 (가) 박동을 보낸 같은 판', '433.3 SUP (묶은 체력 5,769 은 쓰지 못함)'::text);
 end $$;
+-- (나) 같은 길 + 돌려받기: 부계정 넷은 박동을 한 번도 보내지 않는다(끝냄도 없이). 둘이 2시간 오프라인으로 달려 올린 뒤
+-- 부계정이 crew_run_release 를 부른다 — 출발 전(카운트다운)인지 보지 않으므로 몇 시간 뒤에도 돌려받고, 같은 날 다른 방에 또 맡긴다
+do $$
+declare p bigint; p2 bigint; v jsonb; v_start timestamptz; n int; r text; ok boolean; cap0 numeric; cap1 numeric; cap2 numeric;
+begin
+  perform t.mk(41); perform t.mk(42); perform t.mk(47);
+  for n in 43 .. 46 loop perform t.mk(n, 1000, 4000); end loop;
+  perform t.crew(3, 41, array[42, 43, 44, 45, 46, 47], 1);
+  perform t.login(41);
+  p := public.party_create_v2(t.c(3), '방 1', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p, true);
+  for n in 42 .. 46 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
+  perform t.login(41); perform public.party_start_rev(p, 0);
+  perform t.age(interval '6 seconds');
+  perform t.age(interval '7200 seconds');
+  select started_at into v_start from economy.crew_runs where user_id = t.u(41);
+  perform t.say('(나) u41 올림', t.rec(41, v_start, 7200, 19800));
+  perform t.say('(나) u42 올림', t.rec(42, v_start, 7200, 19800));
+  select capacity into cap0 from economy.crew_day_pools where crew_id = t.c(3);
+  r := '';
+  for n in 43 .. 46 loop perform t.login(n); ok := public.crew_run_release(p); r := r || 'u' || n || '=' || ok || ' '; end loop;
+  select capacity into cap1 from economy.crew_day_pools where crew_id = t.c(3);
+  perform t.say('(나) 2시간 뒤 돌려받기', r || format('· 공용 체력 %s → %s (쓴 것 %s)', cap0, cap1, (select round(consumed, 1) from economy.crew_day_pools where crew_id = t.c(3))));
+  -- 같은 날 같은 크루의 새 방에 다시 맡긴다(u47 진행)
+  perform t.login(47);
+  p2 := public.party_create_v2(t.c(3), '방 2', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p2, true);
+  for n in 43 .. 46 loop perform t.login(n); perform public.party_join(p2); perform public.party_ready(p2, true); end loop;
+  perform t.login(47); perform public.party_start_rev(p2, 0);
+  select capacity into cap2 from economy.crew_day_pools where crew_id = t.c(3);
+  perform t.say('(나) 같은 날 두 번째 방에 다시 맡김', format('공용 체력 %s → %s · 오늘 크루 러닝 줄 u43 %s개 · 방 2 맡긴 것 %s', cap1, cap2,
+                (select count(*) from economy.crew_runs c where c.user_id = t.u(43)),
+                (select string_agg(round(c.contribution) || '', '+') from economy.crew_runs c where c.party_id = p2)));
+end $$;
