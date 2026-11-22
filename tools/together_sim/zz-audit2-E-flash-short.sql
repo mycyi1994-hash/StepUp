@@ -33,6 +33,32 @@ begin
   select coalesce(sum(amount), 0) into l1 from public.sup_ledger where user_id = t.u(1) and ref like 'together:%';
   select coalesce(sum(amount), 0) into l3 from public.sup_ledger where user_id = t.u(3) and ref like 'together:%';
   raise notice 'RESULT room-A 러닝 qualifies=% · u1 방B party=% base=% 보너스 % · u3 n=% 보너스 % (0120: 둘 다 ×1.1)',
-    (select economy.together_qualifies(x) from public.walk_sessions x where x.user_id = t.u(1) and x.started_at = va),
+    (select economy.together_qualifies(x) from public.walk_sessions x where x.user_id = t.u(1) and x.party_id = pa),
     s1.party_id, s1.together_base, l1, s3.together_n, l3;
+end $$;
+
+-- 견줌: 방 A 러닝을 올리지 않은 같은 장면(u4 · u5 · u6) — 방 B 에서 둘 다 ×1.1
+select t.mk(4), t.mk(5), t.mk(6);
+do $$
+declare post bigint; pa bigint; pb bigint; vb timestamptz; l4 numeric; l6 numeric;
+begin
+  perform t.login(4);
+  post := public.post_create('FLASH', null, '번개2', '', '', 5, now() + interval '30 minutes', 5, null, null, gen_random_uuid(), 'REMOTE');
+  perform t.login(5); perform public.join_flash(post);
+  perform t.login(6); perform public.join_flash(post);
+  perform t.login(4); pa := public.party_open(null, post); perform public.party_ready(pa, true);
+  perform t.login(5); perform public.party_open(null, post); perform public.party_ready(pa, true);
+  perform t.login(4); perform public.party_start(pa);
+  perform t.age(interval '5 minutes 10 seconds');
+  perform t.login(4); perform public.party_finish(pa);
+  perform t.login(4); pb := public.party_open(null, post); perform public.party_ready(pb, true);
+  perform t.login(6); perform public.party_open(null, post); perform public.party_ready(pb, true);
+  perform t.login(4); perform public.party_start(pb);
+  perform t.age(interval '20 minutes 4 seconds');
+  select starts_at into vb from public.party_runs where party_id = pb and user_id = t.u(4);
+  perform t.rec(4, vb, 1180, 2400);
+  perform t.rec(6, vb, 1180, 2400);
+  select coalesce(sum(amount), 0) into l4 from public.sup_ledger where user_id = t.u(4) and ref like 'together:%';
+  select coalesce(sum(amount), 0) into l6 from public.sup_ledger where user_id = t.u(6) and ref like 'together:%';
+  raise notice 'CONTROL 방 A 를 올리지 않았으면: u4 보너스 % · u6 보너스 %', l4, l6;
 end $$;

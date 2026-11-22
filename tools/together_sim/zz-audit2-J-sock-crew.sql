@@ -2,8 +2,9 @@
 -- 부계정은 진짜 러닝 경로를 점마다 ±1.5m 흔들어 올린다. 모두 "함께 달린 사람"이 되어 인원 보너스 6명 +50%.
 -- 견줄 것: 같은 사람이 혼자(개인 러닝만). 크루 러닝은 개인 에너지와 따로라 하루에 둘 다 받는다.
 \ir zz-audit2-J-lib.sql
-select t.mk0(n) from generate_series(21, 26) n;
-select t.old(n) from generate_series(21, 26) n;
+-- 진짜 사람(u21)은 오래된 계정, 부계정 다섯(u22 ~ u26)은 오늘 만든 계정
+select t.mk0(21); select t.old(21);
+select t.mk0(n, now()) from generate_series(22, 26) n;
 select t.crew(21, 21, array[22, 23, 24, 25, 26], 1);
 do $$
 declare p bigint; v jsonb; v_start timestamptz; n int; v_t text; w public.walk_sessions; c economy.crew_runs; v_tot numeric := 0;

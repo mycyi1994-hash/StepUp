@@ -25,9 +25,11 @@ begin
   perform t.login(44);
   p2 := public.party_create_v2(t.c(4), '방 2', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
   perform public.party_ready(p2, true);
-  foreach n in array array[45, 43] loop perform t.login(n); perform public.party_join(p2); perform public.party_ready(p2, true); end loop;
+  perform t.login(45); perform public.party_join(p2); perform public.party_ready(p2, true);
+  perform t.login(43);
+  begin perform public.party_join(p2); perform public.party_ready(p2, true); exception when others then err := '43 들어가기 거절: ' || sqlerrm; end;
   perform t.login(44);
-  begin perform public.party_start_rev(p2, 0); exception when others then err := sqlerrm; end;
+  begin perform public.party_start_rev(p2, 0); exception when others then err := err || ' / 출발 ' || sqlerrm; end;
   raise notice 'RESULT 15분 뒤 돌려받기 % · 공용 체력 % → % · 43 의 오늘 크루 러닝 [%] · 방 2 출발 명단에 43 %  %',
     ok, cap0, cap1, c43,
     exists (select 1 from economy.crew_runs c where c.party_id = p2 and c.user_id = t.u(43)), err;

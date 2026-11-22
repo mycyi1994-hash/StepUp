@@ -21,6 +21,8 @@ begin
   select points_awarded into a0 from public.walk_sessions where user_id = t.u(401) and party_id = p;
   select points_awarded into b0 from public.walk_sessions where user_id = t.u(402) and party_id = p;
   perform t.age(interval '25 hours');
+  -- t.age 는 walk_sessions.created_at 을 옮기지 않는다 — 24시간 창(created_at <= 출발 + 24h)이 맞게 함께 옮긴다
+  update public.walk_sessions set created_at = created_at - interval '25 hours' where party_id = p;
   -- 아무도 더 올리지 않는다. 25시간 뒤 누가 정산을 한 번 불렀다면:
   perform economy.together_settle(p);
   select points_awarded into a1 from public.walk_sessions where user_id = t.u(401) and party_id = p;
