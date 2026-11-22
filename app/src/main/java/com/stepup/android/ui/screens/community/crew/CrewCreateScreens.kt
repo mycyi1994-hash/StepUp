@@ -1006,11 +1006,14 @@ private fun CrewScheduleSheet(initial: CrewSchedule, words: CrewWords, onApply: 
             stringResource(if (days != 0) R.string.crew_schedule_time_hint else R.string.crew_schedule_time_days_first),
             {
                 val start = minutes ?: LocalTime.now().hour * 60
-                TimePickerDialog(
-                    context,
-                    { _, hour, minute -> minutes = hour * 60 + minute },
-                    start / 60, start % 60, DateFormat.is24HourFormat(context),
-                ).show()
+                // 잠금 화면 덮개가 덮이면 닫힌다(LockCover)
+                com.stepup.android.ui.components.LockCover.show(
+                    TimePickerDialog(
+                        context,
+                        { _, hour, minute -> minutes = hour * 60 + minute },
+                        start / 60, start % 60, DateFormat.is24HourFormat(context),
+                    ),
+                )
             },
             Modifier.testTag("crew-schedule-time"),
             enabled = days != 0,

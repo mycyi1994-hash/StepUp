@@ -185,7 +185,11 @@ internal fun FreeRunShoeCheck(
     coveredRewardMult: Double = 1.0,
     /** 오늘 적립 한도(에너지)를 다 썼다 — 이 러닝은 적립이 없다는 한 줄(출발은 그대로 된다) */
     energyUsedUp: Boolean = false,
+    /** 오늘 남은 에너지로 이 신발이 적립할 걸음([todayEarnableSteps]) — 모르면 null(신발 줄이 적립 분을 약속하지 않는다) */
+    energySteps: Int? = null,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     Dialog(
         onDismissRequest = onCancel,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),
@@ -196,7 +200,7 @@ internal fun FreeRunShoeCheck(
         FreeRunShoeCheckContent(
             shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair,
             runItems = runItems, pickedItems = pickedItems, onPickItem = onPickItem,
-            coveredRewardMult = coveredRewardMult, energyUsedUp = energyUsedUp,
+            coveredRewardMult = coveredRewardMult, energyUsedUp = energyUsedUp, energySteps = energySteps,
         )
     }
 }
@@ -217,6 +221,7 @@ internal fun FreeRunShoeCheckContent(
     onPickItem: (com.stepup.android.domain.ItemKind) -> Unit = {},
     coveredRewardMult: Double = 1.0,
     energyUsedUp: Boolean = false,
+    energySteps: Int? = null,
 ) {
     val reduced = LocalMotion.current.reduced
     // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
@@ -283,7 +288,7 @@ internal fun FreeRunShoeCheckContent(
                     )
                     if (shoe != null) {
                         CheckShoe(shoe, onClick = if (canChange) ({ picking = true }) else null)
-                        CheckShoeFacts(shoe, onRepair = onRepair?.let { repair -> { repair(shoe.id) } }.takeIf { !wearing })
+                        CheckShoeFacts(shoe, onRepair = onRepair?.let { repair -> { repair(shoe.id) } }.takeIf { !wearing }, energySteps = energySteps)
                     } else {
                         CheckNoShoe()
                     }
@@ -355,7 +360,7 @@ private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
 
 /** 이름 줄(등급 · 레벨) · 남은 내구도 막대 · 준비 줄. 다 닳았으면 경고 줄 아래 "수리하기"([onRepair]) — 주 버튼은 그대로 하나다 */
 @Composable
-private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
+private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null, energySteps: Int? = null) {
     val points = durabilityPercent(shoe)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.run_free_check_equipped), style = checkText(17.sp, Color.White, FontWeight.SemiBold),
@@ -391,10 +396,12 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null) {
     // 신발 탭 · 상세의 수리 강조(repairUrgent)와 같은 규칙 — 기준은 그 신발 수명의 절반 · 10분 가운데 작은 것, 가득 찬 신발은 알리지 않는다
     // 경제 4판(2026-11-18) — 넉넉한 신발도 "이 신발은 약 N분 동안 적립돼요"로 늘 분을 알린다(shoeCheckLine). 분은 효율 포인트를
     // 넣은 신발이면 그 배수만큼 짧다(0119)
+    // 2026-11-22 경제 점검 — 분은 신발 수명과 오늘 남은 에너지 가운데 먼저 끝나는 쪽(runCheckLine). 에너지가 먼저면 "그 뒤 N%"가 아니라
+    // 내일까지 적립이 멈춘다. 에너지를 모르면 적립 분을 말하지 않는다
     val rules = rememberShoeRules()
-    val line = shoeCheckLine(shoe, rules)
-    val worn = line == ShoeCheckLine.WornOut
-    if (line is ShoeCheckLine.WornOut || line is ShoeCheckLine.Low) {
+    val line = runCheckLine(shoe, rules, energySteps)
+    val worn = line == ShoeCheckLine.WornOut || line == ShoeCheckLine.WornNoEnergy
+    if (worn || line is ShoeCheckLine.Low) {
         Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-low-durability"), verticalAlignment = Alignment.Top) {
             Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
             Spacer(Modifier.width(7.dp))

@@ -63,6 +63,8 @@
     <!-- 출발 전 점검 -->
     <string name="run_check_earn_minutes">이 신발은 약 %1$d분 동안 적립돼요</string>
     <string name="run_check_energy_empty">오늘 적립 한도를 다 썼어요 — 이 러닝은 적립이 없어요</string>
+    <!-- 오늘 에너지가 신발보다 먼저 끝난다(2026-11-22 경제 점검) — 그 뒤는 닳은 뒤 비율이 아니라 내일까지 적립 없음 -->
+    <string name="run_check_energy_minutes">오늘은 약 %1$d분 동안 적립돼요 · 그 뒤로는 에너지를 다 써 내일까지 적립이 멈춰요</string>
 
     <!-- 부스터 판매 멈춤(boost_shop_enabled = false) -->
     <string name="items_boosts_paused">부스터는 지금 팔지 않아요. 아이템은 이벤트 · 보상으로 받을 수 있어요.</string>

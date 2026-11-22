@@ -60,6 +60,8 @@ object CrewRunAlerts {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+        // 우리 알림이라는 표(LinkToken — InviteLinks.trustsExtras)
+        com.stepup.android.core.LinkToken.stamp(context, intent)
         val pending = PendingIntent.getActivity(
             context, NOTIFICATION_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

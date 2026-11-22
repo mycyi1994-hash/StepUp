@@ -7,6 +7,7 @@ import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.domain.RunLuck
 import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.energyMultOf
 import com.stepup.android.domain.wornPercent
 import com.stepup.android.ui.screens.items.durabilityEarnMinutes
 import com.stepup.android.ui.screens.items.durabilityWornOut
@@ -33,7 +34,16 @@ sealed interface ShoeCheckLine {
     /** 이 신발은 약 [minutes]분 동안 가득 적립된다 — 새 신발(가득)도 */
     data class Earns(val minutes: Int) : ShoeCheckLine
 
-    /** 남은 분을 모른다(예전 서버 · 폰에만 있던 신발) — "달릴 준비가 됐어요" */
+    /**
+     * 오늘 남은 에너지가 신발보다 먼저(또는 같이) 끝난다 — 약 [minutes]분 적립하고 그 뒤로는 내일까지 적립이 없다(0%, 닳은 뒤 비율이 아니다).
+     * 서버는 에너지로 먼저 자르고 그 안에서 가득 · 닳은 구간을 가른다(record_session) — Lv1 하루 에너지 5.5 = 약 20분(0121)
+     */
+    data class EnergyEnds(val minutes: Int) : ShoeCheckLine
+
+    /** 다 닳았고 오늘 에너지도 없다 — 이번 러닝은 적립이 없다(에너지 줄이 따로 알린다). "그대로 달리면 N%"를 말하지 않고 수리만 알린다 */
+    data object WornNoEnergy : ShoeCheckLine
+
+    /** 남은 분을 모른다(예전 서버 · 폰에만 있던 신발 · 오늘 에너지를 아직 모른다) — "달릴 준비가 됐어요" */
     data object Ready : ShoeCheckLine
 }
 
@@ -47,6 +57,38 @@ fun shoeCheckLine(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): ShoeChe
     lowDurabilityMinutes(shoe, rules)?.let { return ShoeCheckLine.Low(it.coerceAtLeast(1)) }
     val minutes = durabilityEarnMinutes(shoe, rules)
     return if (minutes != null && minutes > 0) ShoeCheckLine.Earns(minutes) else ShoeCheckLine.Ready
+}
+
+/**
+ * 출발 전 점검에 실제로 보일 신발 줄 — 신발 수명과 오늘 남은 에너지 가운데 먼저 끝나는 쪽으로(2026-11-22 경제 점검: 새 Lv1 계정에
+ * 가득 찬 일반 신발로 "약 40분 동안 100% · 그 뒤 30%"라 했지만 에너지 5.5 는 약 20분이고 그 뒤는 0% 다).
+ * [energySteps] 는 오늘 남은 에너지로 이 신발이 적립할 걸음([todayEarnableSteps]) — 모르면 null 이고, 그때는 적립 분을 약속하지 않는다
+ * (닳은 · 곧 닳는 신발의 수리 안내는 그대로). 에너지 분은 [RewardEconomy.RUN_STEPS_PER_MINUTE](분당 165보, 서버 runner_me 와 같은 기준).
+ * 신발이 에너지보다 먼저 닳을 때만 "그 뒤로는 N%"(닳은 뒤 비율)를 말한다.
+ */
+fun runCheckLine(shoe: Sneaker, rules: ShoeRules, energySteps: Int?): ShoeCheckLine {
+    val byShoe = shoeCheckLine(shoe, rules)
+    if (energySteps == null) return if (byShoe is ShoeCheckLine.Earns) ShoeCheckLine.Ready else byShoe
+    // 오늘 에너지를 다 썼다 — 이 러닝은 적립이 없다(점검의 에너지 줄이 알린다). 닳은 신발은 수리 안내만, 나머지는 준비 줄
+    if (energySteps <= 0) return if (byShoe == ShoeCheckLine.WornOut) ShoeCheckLine.WornNoEnergy else ShoeCheckLine.Ready
+    val shoeMinutes = when (byShoe) {
+        is ShoeCheckLine.Low -> byShoe.minutes
+        is ShoeCheckLine.Earns -> byShoe.minutes
+        // 다 닳은 신발(에너지가 남아 있는 동안 N%) · 수명을 모르는 신발 — 신발 줄 그대로
+        else -> return byShoe
+    }
+    val energyMinutes = energySteps / RewardEconomy.RUN_STEPS_PER_MINUTE
+    return if (energyMinutes <= shoeMinutes) ShoeCheckLine.EnergyEnds(energyMinutes.coerceAtLeast(1)) else byShoe
+}
+
+/**
+ * 오늘 남은 에너지 [energy] 로 이 신발이 적립할 걸음 — 착화감 · 효율 포인트의 에너지 배수(0119) · 고른 에너지 드링크([energyFactor] —
+ * 그 비율만큼만 쓴다, 0106 `run_energy_factor`)까지. 서버 record_session 과 같은 차례다. 에너지를 아직 모르면 null.
+ */
+fun todayEarnableSteps(energy: Double?, shoe: Sneaker?, rules: ShoeRules = ShoeRules.FALLBACK, energyFactor: Double = 1.0): Int? {
+    energy ?: return null
+    val factor = energyFactor.takeIf { it > 0.0 && it < 1.0 } ?: 1.0
+    return RewardEconomy.earnableSteps(energy / factor, shoe?.energyEfficiency ?: 1.0, shoe?.let { rules.energyMultOf(it) } ?: 1.0)
 }
 
 /**
@@ -67,6 +109,12 @@ internal fun shoeCheckLineText(line: ShoeCheckLine, rules: ShoeRules): String {
         is ShoeCheckLine.Earns ->
             if (stats.earnsWhenWorn) stringResource(R.string.roots_check_earn_minutes, line.minutes, worn)
             else stringResource(R.string.run_check_earn_minutes, line.minutes)
+        // 에너지가 먼저 끝난다 — "오늘은 약 N분 동안 적립돼요 · 그 뒤로는 에너지를 다 써 내일까지 적립이 멈춰요"
+        is ShoeCheckLine.EnergyEnds -> stringResource(R.string.run_check_energy_minutes, line.minutes)
+        // 다 닳았고 에너지도 없다 — "걸음은 그대로 세요. 수리하면 다시 100% 적립돼요"(예전 규칙이면 예전 글)
+        ShoeCheckLine.WornNoEnergy ->
+            if (stats.earnsWhenWorn) stringResource(R.string.roots_run_worn_body)
+            else stringResource(R.string.run_free_check_low_durability_none)
         ShoeCheckLine.Ready -> stringResource(R.string.run_free_check_ready)
     }
 }

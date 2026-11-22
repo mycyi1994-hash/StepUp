@@ -593,10 +593,19 @@ private fun MainScaffoldContent(
             is InviteLinks.PushTarget.Flash -> navController.openReplacingSame(
                 Routes.flashDetail(target.postId), Routes.FLASH_DETAIL, mapOf("postId" to target.postId),
             )
-            is InviteLinks.PushTarget.Room -> navController.openReplacingSame(
-                Routes.room(target.crewId, target.partyId), Routes.LOBBY,
-                mapOf("crewId" to target.crewId, "party" to target.partyId),
-            )
+            // 대기실은 열리자마자 그 방에 들어간다 — 이 폰이 이미 그 방에 있을 때만 바로 열고, 아니면 그 크루의 열린 대기실 목록
+            // (보기만 — 방을 골라 눌러야 들어간다). 링크 하나로 남의 방에 들어가 내 대기실에서 나오지 않게(2026-11-22 보안 점검)
+            is InviteLinks.PushTarget.Room -> {
+                val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value
+                if (InviteLinks.opensRoomDirectly(target, party.crewId, party.partyId)) {
+                    navController.openReplacingSame(
+                        Routes.room(target.crewId, target.partyId), Routes.LOBBY,
+                        mapOf("crewId" to target.crewId, "party" to target.partyId),
+                    )
+                } else {
+                    navController.openReplacingSame(Routes.crewRooms(target.crewId), Routes.CREW_ROOMS, mapOf("crewId" to target.crewId))
+                }
+            }
             // 아이템 도착(ITEM_GRANTED) · 보상 이벤트 시작(REWARD_EVENT) — 그 탭으로(0106)
             InviteLinks.PushTarget.Bag -> navController.switchTab(Screen.Bag)
             InviteLinks.PushTarget.RunTab -> navController.switchTab(Screen.Run)

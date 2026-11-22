@@ -163,6 +163,25 @@ data class RunnerLevel(
             return next.takeIf { it > now }
         }
 
+    /**
+     * 레벨이 올라 하루 에너지가 더 늘 수 있는가 — 설명 시트의 "하루 에너지 +N분 · LvM까지" 줄은 이때만 둔다.
+     * 상한 레벨([energyCapLevel])에 닿았으면 늘지 않는다. 예전 보장([legacyFloor])이 상한 바로 아래 레벨의 에너지보다 작지 않으면 상한까지
+     * 올라도 늘지 않는다(0122 — 상한 10 = 36분 · Lv9 가 이미 36분 · 예전 보장 10 = 36분). 상한 레벨의 에너지는 상한 바로 아래 레벨보다
+     * 한 레벨 몫 안쪽이라, 그 사이면 늘지 않는 쪽으로 본다("+2분"을 약속하지 않는다). 셈에 쓸 칸을 모르면 예전처럼 둔다(true)
+     */
+    val energyRisesWithLevel: Boolean
+        get() {
+            val cap = energyCapLevel
+            if (cap != null && level >= cap) return false
+            if (!legacyFloor) return true
+            cap ?: return true
+            val now = energyMinutes ?: return true
+            val levelNow = levelEnergyMinutes ?: return true
+            val perLevel = rewards.energyMinutesPerLevel ?: return true
+            val belowCap = levelNow + (cap - 1 - level).coerceAtLeast(0) * perLevel
+            return now < belowCap
+        }
+
     companion object {
         const val DEFAULT_MAX_LEVEL = 30
         const val DEFAULT_LEVEL_STEPS = 10_000L

@@ -2,10 +2,13 @@ package com.stepup.android.ui.screens.rewards
 
 import android.content.ActivityNotFoundException
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.PersistableBundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +43,7 @@ import com.stepup.android.core.ServiceLocator
 import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.WalletApp
 import com.stepup.android.domain.WalletLinkRequest
+import com.stepup.android.domain.shortWalletAddress
 import com.stepup.android.ui.components.RunButton
 import com.stepup.android.ui.components.RunButtonKind
 import com.stepup.android.ui.components.RunCard
@@ -65,6 +69,8 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var phase by rememberSaveable { mutableStateOf(WalletPickPhase.Pick) }
     var picked by rememberSaveable { mutableStateOf<WalletApp?>(null) }
+    // 붙은 지갑 주소(줄인 것) — 서버(my_wallet)가 준 것만. 모르는 지갑이 붙었으면 알아챌 수 있게 "연결했어요"에 보인다
+    var linkedAddress by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun check() {
         phase = WalletPickPhase.Checking
@@ -73,6 +79,9 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
                 is ServerResult.Ok -> if (status.value.walletLinked) WalletPickPhase.Linked.also { onLinked() } else WalletPickPhase.NotYet
                 is ServerResult.SignInRequired -> WalletPickPhase.SignIn
                 else -> WalletPickPhase.Offline
+            }
+            if (phase == WalletPickPhase.Linked) {
+                linkedAddress = (ServiceLocator.economyApi.myWalletAddress() as? ServerResult.Ok)?.value?.let(::shortWalletAddress)
             }
         }
     }
@@ -148,6 +157,14 @@ fun WalletConnectSheet(onDismiss: () -> Unit, onLinked: () -> Unit = {}) {
             }
             WalletPickPhase.Linked -> {
                 RunSheetText(stringResource(R.string.wc_linked_title), body = stringResource(R.string.wc_linked_body))
+                linkedAddress?.let { address ->
+                    Spacer(Modifier.height(12.dp))
+                    androidx.compose.material3.Text(
+                        stringResource(R.string.wc_linked_address, address),
+                        style = runTextStyle(13.sp, runTone().label),
+                        modifier = Modifier.fillMaxWidth().testTag("wallet-connect-address"),
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 RunButton(stringResource(R.string.wc_done), onDismiss, Modifier.fillMaxWidth().testTag("wallet-connect-done"))
             }
@@ -240,10 +257,16 @@ private fun walletTint(app: WalletApp): Color = when (app) {
 /**
  * 지갑 앱을 연다 — 앱 안 브라우저로 바로 여는 링크가 있으면 그것, 없으면(Rabby) 연결 페이지 주소를 복사하고 앱을 연다.
  * 앱이 없으면 플레이 스토어로.
+ *
+ * 연결 페이지 주소에는 일회용 확인 번호가 들어 있다(2026-11-22 보안 점검) — 바로 여는 링크는 그 지갑 앱에만 보내고(패키지를 정한다 —
+ * okx:// · 같은 주소를 받겠다는 다른 앱이 가로채지 않게, 그 앱이 없으면 플레이 스토어로), 복사한 링크는 민감한 값으로 표시한다
+ * (클립보드 미리보기 · 기록에 보이지 않게).
  */
 internal fun openWallet(context: Context, app: WalletApp, page: String): WalletPickPhase {
-    fun view(url: String): Boolean = try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    fun view(url: String, pkg: String? = null): Boolean = try {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (pkg != null) intent.setPackage(pkg)
+        context.startActivity(intent)
         true
     } catch (_: ActivityNotFoundException) {
         false
@@ -252,16 +275,26 @@ internal fun openWallet(context: Context, app: WalletApp, page: String): WalletP
         app.storeUrl()?.let { view(it) }
         return WalletPickPhase.Pick
     }
-    val direct = app.openUrl(page)
-    if (direct != null) return if (view(direct)) WalletPickPhase.Opened else store()
     val pkg = app.packageName ?: return WalletPickPhase.Failed
+    val direct = app.openUrl(page)
+    if (direct != null) return if (view(direct, pkg)) WalletPickPhase.Opened else store()
     val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return store()
     (context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
-        ?.setPrimaryClip(ClipData.newPlainText("STEPUP", page))
+        ?.setPrimaryClip(sensitiveClip(page))
     return try {
         context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         WalletPickPhase.Copied
     } catch (_: ActivityNotFoundException) {
         store()
+    }
+}
+
+/** 클립보드에 넣을 민감한 글(연결 링크) — 안드로이드 13+ 는 미리보기에서 가린다, 그 아래는 같은 이름의 값을 읽는 키보드 · 기기가 가린다 */
+private fun sensitiveClip(text: String): ClipData = ClipData.newPlainText("STEPUP", text).apply {
+    description.extras = PersistableBundle().apply {
+        putBoolean(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE",
+            true,
+        )
     }
 }

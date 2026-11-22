@@ -30,8 +30,9 @@ record_session = lines("0120_together_bonus_fix.sql", 848, 1649)
 record_session = patch(
     record_session,
     "where s.user_id = v_user and x.flash_post_id = v_flash and s.party_size > 1 and s.verdict <> 'VOID')) then",
-    "where s.user_id = v_user and x.flash_post_id = v_flash and (s.party_size > 1 or s.together_base is not null)\n"
-    "              and s.verdict <> 'VOID')) then  -- 0122: 원격 번개는 인원이 나중에 정해져 처음엔 1명으로 적힌다 — 바탕이 있으면 보너스를 받은 러닝",
+    "where s.user_id = v_user and x.flash_post_id = v_flash\n"
+    "              and (s.party_size > 1 or (s.together_base is not null and economy.together_qualifies(s)))\n"
+    "              and s.verdict <> 'VOID')) then  -- 0122: 원격 번개는 인원이 나중에 정해져 처음엔 1명으로 적힌다 — 함께 달린 사람으로 올린 러닝이면 받은 것",
 )
 record_session = patch(
     record_session,
@@ -148,7 +149,8 @@ box_status = patch(
 HEAD = r"""-- 0122 경제 점검 고침 (2026-11-22) — 사용자 "버그는 다 고치고 · a 는 너가 알아서해봐(인플레이션 막게) · b 는 괜찮음 · c 는 한시적"
 -- 점검: docs/점검-2026-11-22-경제.md(네 갈래 — 들어오는 SUP · 여러 계정 · 쓰는 곳 · 튼튼함). tools/build_0122.py 가 만든다(고칠 함수는 마지막 정의를 복사).
 --   1. 예전 앱 market_import 가 IMPORT 신발의 레벨을 올려 상급 상자 6개 — 다시 올려도 레벨을 바꾸지 않고, 레벨 상자는 IMPORT · MINT 를 뺀다
---   2. 크루 러닝: 소식 없이 달린 시간을 올릴 때 묶어 둔 체력까지 썼다 — 남의 묶인 몫은 빼고 · 돌려받기는 출발 10분 안에만
+--   2. 크루 러닝: 소식 없이 달린 시간을 올릴 때 묶어 둔 체력까지 썼다 — 남의 묶인 몫은 빼고 쓴다. 묶는 사람도 넓힌다:
+--      지금 박동을 보내며 달리는 중이 아니고 함께 달린 사람으로 올린 러닝도 없는 사람(10분 가짜 박동 뒤 빠진 부계정 · 박동 없는 사람)
 --   3. 러너 걸음: 상한에 걸려 FLAGGED 가 된 러닝도 센다 — 무효 · 과속으로 멈춘 러닝만 뺀다
 --   4. 하루 최대 SUP 에 닿아도 목표를 채운 날은 남긴다(연속 · 7일 상급 상자)
 --   5. 크루 효율 8 : 2 — 평균에 각자 달린 만큼 무게(남은 내 몫까지), 보상 걸음 0(보류 계정)은 함께 달린 사람이 아니다
@@ -166,10 +168,6 @@ HEAD = r"""-- 0122 경제 점검 고침 (2026-11-22) — 사용자 "버그는 �
 -- ════════════════════════════════════════════════════════════════════
 --  0. 설정 · 칸
 -- ════════════════════════════════════════════════════════════════════
-insert into public.economy_settings (key, value) values
-  ('crew_release_grace_minutes', '10')   -- 크루 러닝 돌려받기는 출발 뒤 이 분 안에만(앱이 러닝을 켜지 못했을 때)
-on conflict (key) do nothing;
-
 alter table economy.goal_days add column if not exists met_at timestamptz;
 comment on column economy.goal_days.met_at is '그 날의 목표를 채운 때 — 하루 최대 SUP 에 막혀 목표 보너스를 못 받아도 연속 · 7일 상자는 이것으로 센다 (0122)';
 
@@ -244,102 +242,41 @@ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════════════
---  2. 크루 러닝 — 남의 묶인 체력 · 돌려받기는 출발 직후만
+--  2. 크루 러닝 — 묶인 체력(묶는 사람을 넓힌다 · 남의 묶인 몫은 쓰지 않는다)
 -- ════════════════════════════════════════════════════════════════════
--- 묶어 둔 몫(0120 crew_pool_held) 가운데 p_user 의 줄은 빼고 — 올리는 사람이 자기 맡긴 몫은 쓴다
+-- 묶어 둔 몫(R3) — 0122: 맡긴 것 가운데 안 쓴 몫을 묶는 사람을 넓힌다. 지금 박동을 보내며 달리는 중(30초 안)이 아니고,
+-- 함께 달린 사람으로 올린 러닝도 없으면 묶는다. 0120 은 "서버가 센 시간 10분 미만"만 묶어, 부계정이 10분 넘게 가짜 박동을 보내고 빠지면
+-- 남은 둘이 그 몫까지 썼다(점검 2차 E1 — 1,217 SUP). 함께 달린 사람으로 올리면 풀린다 · 끝까지 올리지 않으면 쓴 만큼만 남는다
+--   · 올렸다 → 함께 달린 사람이 아니면 묶는다(0120 ②)
+--   · 박동을 보내며 달리는 중(30초 안) → 묶지 않는다
+--   · 끝냈다(ENDED)인데 함께 달린 사람으로 올린 러닝이 없다 → 묶는다(10분 가짜 박동 뒤 끝낸 부계정 — 올리면 풀린다)
+--   · 5분 넘게 소식이 없다 → 묶는다(박동 없는 부계정 · 출발을 놓친 사람 — 올리면 풀린다, 돌려받기는 0120 그대로 언제든)
+--   · 그 밖(일시정지 · 잠깐 끊김) → 0120 ① 그대로(서버가 센 시간 10분 미만만) — 정직한 러너의 짧은 끊김으로 남의 적립이 멈추지 않게
+create or replace function economy.crew_pool_held_where(r economy.crew_runs, p_at timestamptz)
+returns boolean language sql stable security definer set search_path = public, economy as $$
+  select case
+    when r.session_id is not null then
+      not exists (select 1 from public.walk_sessions x where x.id = r.session_id and economy.together_qualifies(x))
+    when r.state = 'RUNNING' and r.last_beat_at >= p_at - interval '30 seconds' then false
+    when r.state = 'ENDED' then true
+    when r.last_beat_at < p_at - interval '5 minutes' and r.state <> 'PAUSED' then true
+    else r.active_sec < economy.together_min_sec()
+  end
+$$;
+create or replace function economy.crew_pool_held(p_crew uuid, p_day date, p_at timestamptz)
+returns numeric language sql stable security definer set search_path = public, economy as $$
+  select case when not economy.together_on('CREW') then 0 else coalesce((
+    select sum(greatest(r.contribution - r.consumed, 0)) from economy.crew_runs r
+     where r.crew_id = p_crew and r.day = p_day and economy.crew_pool_held_where(r, p_at)), 0) end
+$$;
+-- 그 가운데 p_user 의 줄은 빼고 — 올리는 사람이 자기 맡긴 몫은 쓴다
 create or replace function economy.crew_pool_held_except(p_crew uuid, p_day date, p_at timestamptz, p_user uuid)
 returns numeric language sql stable security definer set search_path = public, economy as $$
   select case when not economy.together_on('CREW') then 0 else coalesce((
     select sum(greatest(r.contribution - r.consumed, 0)) from economy.crew_runs r
-     where r.crew_id = p_crew and r.day = p_day and r.user_id <> p_user
-       and ((r.active_sec < economy.together_min_sec()
-             and (r.state <> 'RUNNING' or r.last_beat_at < p_at - interval '30 seconds'))
-            or (r.session_id is not null
-                and not exists (select 1 from public.walk_sessions x where x.id = r.session_id and economy.together_qualifies(x))))), 0) end
+     where r.crew_id = p_crew and r.day = p_day and r.user_id <> p_user and economy.crew_pool_held_where(r, p_at)), 0) end
 $$;
 
--- 돌려받기(0120 본문) + 출발 뒤 crew_release_grace_minutes(10분)가 지나면 돌려주지 않는다 — 출발했는데 폰이 러닝을 켜지 못했을 때만.
--- 예전엔 박동을 한 번도 안 보낸 계정이 몇 시간 뒤에도 돌려받아(쓴 만큼까지 공용 체력을 줄이고) 같은 날 다른 방에 또 맡겼다
-create or replace function public.crew_run_release(p_party bigint)
-returns boolean
-language plpgsql
-security definer
-set search_path = public, economy
-as $$
-declare
-  v_user uuid := auth.uid();
-  r economy.crew_runs;
-  v_other uuid;
-  v_pool economy.crew_day_pools;
-begin
-  if v_user is null then
-    raise exception '로그인이 필요합니다' using errcode = '28000';
-  end if;
-  perform 1 from public.parties p where p.id = p_party for update;
-  select * into r from economy.crew_runs c where c.user_id = v_user and c.party_id = p_party;
-  if not found then
-    return true;
-  end if;
-  if now() > r.started_at + make_interval(mins => greatest(coalesce(economy.fx('crew_release_grace_minutes', 10), 10), 0)::int) then
-    return false;
-  end if;
-  if r.crew_id is not null then
-    perform economy.crew_pool_settle(r.crew_id, r.day, now());
-  end if;
-  -- 공용 체력을 잠근 뒤 다시 본다 — 그사이 닿은 박동 · 올린 러닝이 있으면 그대로 둔다
-  select * into r from economy.crew_runs c where c.user_id = v_user and c.day = r.day and c.party_id = p_party for update;
-  if not found then
-    return true;
-  end if;
-  if r.session_id is not null
-     or r.last_beat_at is distinct from r.started_at
-     or r.terminal_reason = 'USER_END'
-     or exists (select 1 from public.walk_sessions s where s.user_id = v_user and s.party_id = p_party) then
-    return false;
-  end if;
-
-  if r.crew_id is not null then
-    if now() >= r.started_at + interval '2 minutes 15 seconds' then
-      for v_other in
-        select c.user_id from economy.crew_runs c
-         where c.party_id = p_party and c.user_id <> v_user and c.bonus_status = 'PENDING'
-         order by c.user_id
-      loop
-        perform economy.crew_run_bonus_eval(v_other, r.day, true);
-      end loop;
-    end if;
-    update economy.crew_day_pools d
-       set consumed = greatest(d.consumed - r.consumed, 0),
-           capacity = greatest(d.capacity - r.contribution, greatest(d.consumed - r.consumed, 0)),
-           contributors = greatest(d.contributors - 1, 0),
-           version = d.version + 1
-     where d.crew_id = r.crew_id and d.day = r.day
-    returning * into v_pool;
-    if found then
-      if v_pool.capacity > v_pool.consumed then
-        update economy.crew_day_pools d set exhausted_at = null where d.crew_id = r.crew_id and d.day = r.day;
-        update economy.crew_pool_empty x set to_at = now()
-         where x.crew_id = r.crew_id and x.day = r.day and x.to_at is null;
-      elsif v_pool.capacity > 0 then
-        update economy.crew_day_pools d set exhausted_at = coalesce(d.exhausted_at, now()) where d.crew_id = r.crew_id and d.day = r.day;
-        insert into economy.crew_pool_empty (crew_id, day, from_at)
-        select r.crew_id, r.day, now()
-         where not exists (select 1 from economy.crew_pool_empty x
-                            where x.crew_id = r.crew_id and x.day = r.day and x.to_at is null)
-        on conflict do nothing;
-      end if;
-    end if;
-  end if;
-
-  perform set_config('stepup.crew_release', '1', true);
-  delete from economy.crew_runs c where c.user_id = v_user and c.day = r.day and c.party_id = p_party;
-  perform set_config('stepup.crew_release', '', true);
-  delete from public.party_runs x where x.party_id = p_party and x.user_id = v_user;
-  return true;
-end;
-$$;
-revoke all on function public.crew_run_release(bigint) from public, anon;
-grant execute on function public.crew_run_release(bigint) to authenticated;
 
 -- ════════════════════════════════════════════════════════════════════
 --  3. 함께 달린 사람 · 크루 효율 8 : 2 의 무게
@@ -424,7 +361,10 @@ create or replace function economy.together_pending_run(p_user uuid)
 returns int language plpgsql security definer set search_path = public, economy as $$
 declare v_party bigint; v_n int := 0;
 begin
-  for v_party in delete from economy.together_pending q where q.user_id = p_user returning q.party_id loop
+  for v_party in select q.party_id from economy.together_pending q where q.user_id = p_user order by q.party_id loop
+    -- 방 자물쇠는 잡아 보기만 — 바쁘면 다음에(두 사람이 서로 다른 차례로 두 방을 기다려 멈추지 않게)
+    continue when not pg_try_advisory_xact_lock(hashtext('together:' || v_party));
+    delete from economy.together_pending q where q.user_id = p_user and q.party_id = v_party;
     v_n := v_n + coalesce(economy.together_settle(v_party), 0);
   end loop;
   return v_n;
@@ -467,8 +407,8 @@ begin
     return null;
   end if;
   perform pg_advisory_xact_lock(hashtext('ledger:' || p_user::text));
-  if exists (select 1 from public.sup_ledger l where l.user_id = p_user and l.ref = 'goal:' || p_day)
-     or exists (select 1 from economy.goal_days g where g.user_id = p_user and g.day = p_day and g.met_at is not null) then
+  -- 받은 날이면 끝. 채운 날로만 남아 있으면(하루 최대에 막혔다) 남은 몫이 생겼을 때 다시 준다(같은 날 이벤트로 하루 최대가 커질 때)
+  if exists (select 1 from public.sup_ledger l where l.user_id = p_user and l.ref = 'goal:' || p_day) then
     return null;
   end if;
   v_goal := economy.goal_of(p_user, p_day);
@@ -476,8 +416,10 @@ begin
     return null;
   end if;
   v_streak := 1 + economy.goal_streak_before(p_user, p_day, greatest(8, v_need));
-  insert into economy.goal_days (user_id, day, goal, met_at) values (p_user, p_day, v_goal, now())
-  on conflict (user_id, day) do update set met_at = coalesce(economy.goal_days.met_at, now());
+  if not exists (select 1 from economy.goal_days g where g.user_id = p_user and g.day = p_day and g.met_at is not null) then
+    insert into economy.goal_days (user_id, day, goal, met_at) values (p_user, p_day, v_goal, now())
+    on conflict (user_id, day) do update set met_at = coalesce(economy.goal_days.met_at, now());
+  end if;
   v_bonus := round((v_goal / 1000.0) * 2.5 * (1 + 0.1 * least(v_streak - 1, 7)), 2);
   -- 하루 최대 SUP 에 목표 보너스도 든다(0120) — 남은 만큼만
   if economy.daily_max_on() then
@@ -540,6 +482,8 @@ TAIL = r"""
 --  12. 권한
 -- ════════════════════════════════════════════════════════════════════
 revoke all on function economy.crew_pool_held_except(uuid, date, timestamptz, uuid) from public, anon, authenticated;
+revoke all on function economy.crew_pool_held(uuid, date, timestamptz) from public, anon, authenticated;
+revoke all on function economy.crew_pool_held_where(economy.crew_runs, timestamptz) from public, anon, authenticated;
 revoke all on function economy.crew_blend_avg(bigint, uuid, numeric, numeric) from public, anon, authenticated;
 revoke all on function economy.crew_blend_mult(bigint, uuid, numeric, numeric) from public, anon, authenticated;
 revoke all on function economy.together_pending_run(uuid) from public, anon, authenticated;
@@ -570,13 +514,13 @@ begin
     on conflict (user_id, source) do nothing;
     -- 4. 지난 7일 가운데 목표를 채웠는데 하루 최대 SUP 에 막혀 아무것도 남지 않은 날
     insert into economy.goal_days (user_id, day, goal, met_at)
-    select u.id, d.day::date, economy.goal_of(u.id, d.day::date), now()
+    select u.id, d.day::date, economy.goal_peek(u.id, d.day::date), now()
       from auth.users u
      cross join generate_series(economy.game_day(now()) - 7, economy.game_day(now()) - 1, interval '1 day') d(day)
      where economy.daily_max_on()
        and not exists (select 1 from public.sup_ledger l where l.user_id = u.id and l.ref = 'goal:' || d.day::date)
        and exists (select 1 from public.walk_sessions s where s.user_id = u.id and economy.game_day(s.started_at) = d.day::date)
-       and economy.verified_steps_on(u.id, d.day::date) >= economy.goal_of(u.id, d.day::date)
+       and economy.verified_steps_on(u.id, d.day::date) >= economy.goal_peek(u.id, d.day::date)
        and economy.day_room(u.id, d.day::date, null) <= 0
     on conflict (user_id, day) do update set met_at = coalesce(economy.goal_days.met_at, excluded.met_at);
     -- 3. 상한에 걸린 러닝까지 센 걸음으로 레벨을 다시 — 새로 닿은 레벨의 상자를 준다(러너 규칙이 켜져 있을 때만)

@@ -100,6 +100,10 @@ update public.economy_settings set value = v.value
 -- 0121(러너 레벨)도 예전 값으로 — 위의 예전 검사들은 하루 에너지를 가진 신발 레벨로 셈한다(새 계정이 20분이면 숫자가 흔들린다).
 -- 맨 끝 "러너 레벨(0121)"이 다시 켠다
 update public.economy_settings set value = '"OFF"' where key = 'runner_level_rule';
+-- 0123(함께 달린 사람은 가입 24시간 뒤부터)도 끈다 — 위의 검사들은 계정을 방금 만들어 함께 달린다. 맨 끝 "꼼수 · 보안(0123)"이 다시 켠다
+update public.economy_settings set value = '0' where key = 'together_min_account_hours';
+-- 0123(가입하기 전에 시작한 러닝은 무효)도 끈다 — 위의 검사들은 계정을 방금 만들고 지난 시각의 러닝을 올린다
+update public.economy_settings set value = 'false' where key = 'signup_run_guard';
 
 -- 홈페이지 대기 명단은 제한된 공개 함수만 허용한다.
 do $$
@@ -446,8 +450,12 @@ begin
   perform pg_temp.ok((select count(*) from public.walk_sessions) = 0, '남의 세션은 보이지 않는다');
   perform pg_temp.ok((select count(*) from public.profiles) = 3, '프로필은 서로 보인다');
 
-  update public.profiles set display_name = '가로채기'
-   where id = '11111111-1111-1111-1111-111111111111';
+  begin
+    update public.profiles set display_name = '가로채기'
+     where id = '11111111-1111-1111-1111-111111111111';
+  exception when insufficient_privilege then
+    null;  -- 0123: 프로필은 앱 역할이 직접 고칠 수 없다
+  end;
   perform pg_temp.ok(
     (select display_name from public.profiles
       where id = '11111111-1111-1111-1111-111111111111') = 'Ara Kim',
@@ -482,9 +490,13 @@ end $$;
 -- 지운 뒤에 남아 있는지로 확인한다.
 do $$
 begin
-  delete from public.crew_members
-   where crew_id = pg_temp.fx('crew')::uuid
-     and user_id = '11111111-1111-1111-1111-111111111111';
+  begin
+    delete from public.crew_members
+     where crew_id = pg_temp.fx('crew')::uuid
+       and user_id = '11111111-1111-1111-1111-111111111111';
+  exception when insufficient_privilege then
+    null;  -- 0123: 크루 · 글 · 코스 · 댓글은 앱 역할이 직접 지울 수 없다(crew_leave 등 RPC 로만)
+  end;
   perform pg_temp.ok(
     (select count(*) from public.crew_members
       where crew_id = pg_temp.fx('crew')::uuid) = 1,
@@ -2842,13 +2854,10 @@ call pg_temp.must_fail(
   $q$ update public.profiles set lifetime_km = 99999
        where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee' $q$,
   '누적 거리를 직접 고칠 수 없다');
-do $$ begin
-  update public.profiles set display_name = '고친 이름'
-   where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
-  perform pg_temp.ok(
-    (select display_name from public.profiles where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee') = '고친 이름',
-    '이름은 직접 고칠 수 있다');
-end $$;
+call pg_temp.must_fail(
+  $q$ update public.profiles set display_name = '고친 이름'
+       where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee' $q$,
+  '이름도 직접 고칠 수 없다 — profile_name_set 으로만(16자 · 제어 문자 · 목표는 profile_set_daily_goal) (0123)');
 call pg_temp.must_fail(
   $q$ insert into public.daily_steps (user_id, epoch_day, steps, goal)
       values ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 20000, 9999999, 8000) $q$,
@@ -5006,10 +5015,12 @@ declare v_route text;
 begin
   v_route := public.story_route(pg_temp.track(now(), 600, 0.00003));
   perform pg_temp.ok(array_length(string_to_array(v_route, ';'), 1) = 64, '코스 그림은 64점으로 줄인다');
-  perform pg_temp.ok(split_part(v_route, ';', 1) = '37.50000,127.00000' and split_part(v_route, ';', 64) = '37.51800,127.00000',
-    '처음과 끝 점을 남긴다');
-  perform pg_temp.ok(public.story_route('37.5,127.0,1;x,y,2;;37.6,127.1,3') = '37.50000,127.00000;37.60000,127.10000',
-    '읽을 수 없는 조각은 건너뛴다');
+  -- 0123: 크루 러닝 지도처럼 앞뒤 300m 를 자른다(집 · 회사 자리) — 0.00003도/초 × 600초 ≈ 2km 에서 처음 · 끝 점은 300m 안쪽
+  perform pg_temp.ok(split_part(v_route, ';', 1) <> '37.50000,127.00000' and split_part(v_route, ';', 64) <> '37.51800,127.00000'
+                     and economy.haversine_m(37.5, 127.0, split_part(split_part(v_route, ';', 1), ',', 1)::double precision, 127.0) >= 290,
+    '처음과 끝 300m 는 자른다 (0123 — 예전엔 처음과 끝 점을 남겼다)');
+  perform pg_temp.ok(public.story_route('37.5,127.0,1;x,y,2;;37.6,127.1,3') = '',
+    '읽을 수 없는 조각은 건너뛰고, 짧은 경로(600m 미만)는 그림이 없다 (0123)');
   perform pg_temp.ok(public.story_route('37.5,127.0,1') = '' and public.story_route('') = '' and public.story_route(null) = '',
     '점이 둘 미만이면 코스가 없다');
 end $$;
@@ -9501,9 +9512,17 @@ begin
                      and pg_temp.act('a7800000-0000-0000-0000-000000000002', 'DAILY_STEPS') = 0
                      and j.next_at > now() and j.next_at = economy.game_day_start(economy.game_day(now()) + 1) + interval '10 minutes',
     '오늘 걸음 → 하루 하나, 한국 자정 + 10분 뒤에 보낸다(지난 날 · 0걸음은 없다)');
-  perform pg_temp.ok((economy.activity_payload(j) ->> 'goalMet')::boolean and not (economy.activity_payload(j) ? 'steps')
-                     and (economy.activity_payload(j) -> '_audit' ->> 'steps')::int = 8400,
-    '보낼 때 그날의 마지막 값 — 체인에는 목표 달성 여부만, 걸음 수는 대조용 스냅숏에만');
+  -- 0123: 목표 달성은 앱이 보낸 걸음 · 목표가 아니라 서버가 확인한 그날의 보상 걸음 · 그날의 목표로(앱이 goal=1 을 보내면 지어낼 수 있었다).
+  -- 이 계정은 그날 서버가 확인한 걸음이 목표(6,000)에 못 미친다 — 앱이 8,400보라고 해도 달성이 아니다
+  perform pg_temp.ok((economy.activity_payload(j) ->> 'goalMet')::boolean
+                       = (economy.verified_steps_on('a7800000-0000-0000-0000-000000000001', economy.game_day(now()))
+                          >= economy.goal_of('a7800000-0000-0000-0000-000000000001', economy.game_day(now())))
+                     and not (economy.activity_payload(j) ->> 'goalMet')::boolean
+                     and not (economy.activity_payload(j) ? 'steps')
+                     and (economy.activity_payload(j) -> '_audit' ->> 'steps')::int = 8400
+                     and (economy.activity_payload(j) -> '_audit' ->> 'verified')::int
+                         = economy.verified_steps_on('a7800000-0000-0000-0000-000000000001', economy.game_day(now())),
+    '보낼 때 그날의 마지막 값 — 체인에는 목표 달성 여부만(서버가 확인한 걸음으로), 걸음 수는 대조용 스냅숏에만 (0123)');
 end $$;
 
 -- 앱 출석 — 하루 한 번, 로그인한 사람만
@@ -10618,6 +10637,8 @@ end $$;
 reset role;
 
 -- ── 홈페이지 미니게임 StepUp 레이스(0103) — 시작 번호 · 서버 시간보다 빠른 기록 막기 · 한 번만 · 사람마다 최고 기록 ──
+-- 0123 이 예전 레이스를 닫았다(race_open = false — 홈 링크도 없다) — 셈을 보려고 이 절에서만 연다
+update public.economy_settings set value = 'true'::jsonb where key = 'race_open';
 set role anon;
 do $$
 declare r jsonb;
@@ -12229,7 +12250,7 @@ do $$ begin
   perform pg_temp.ok((public.ops_login(pg_temp.fx('key114'))->>'ok')::boolean, '15분이 지나면 다시 들어온다(0114)');
 end $$;
 
--- 로그인 잠금: 모든 곳을 합쳐 10분에 30번 → 모든 로그인 15분
+-- 로그인 잠금: 모든 곳(ALL) 잠금은 0123 에서 뺐다 — 누구나 곳을 바꿔 가며 30번 틀려 운영자 전체를 막을 수 있었다(키는 244비트라 맞혀 볼 수 없다)
 reset role;
 delete from economy.ops_login_fails;
 delete from economy.ops_login_locks;
@@ -12241,16 +12262,14 @@ begin
     perform set_config('request.headers', format('{"cf-connecting-ip": "192.0.2.%s"}', i), false);
     r := public.ops_login('아무 키 ' || i);
   end loop;
-  perform pg_temp.ok(r->>'code' = 'locked', '곳이 달라도 10분에 서른 번 틀리면 모든 로그인을 15분 막는다(0114)');
   perform set_config('request.headers', '{"cf-connecting-ip": "192.0.2.200"}', false);
   r := public.ops_login(pg_temp.fx('key114'));
-  perform pg_temp.ok(r->>'code' = 'locked' and r->>'session' is null, '모두 막힌 동안은 처음 오는 곳 · 맞는 키도 기다린다(0114)');
+  perform pg_temp.ok((r->>'ok')::boolean and r->>'session' is not null,
+    format('곳이 달라도 서른 번 틀린 뒤에 다른 곳의 맞는 키는 들어온다 — 모든 곳 잠금 없음 (%s) (0123)', r));
 end $$;
 reset role;
 do $$ begin
-  perform pg_temp.ok((select count(*) = 30 from economy.ops_login_fails)
-                     and exists (select 1 from public.admin_audit where action = 'ops_login_locked' and target = 'all'),
-    '모든 곳 잠금은 감사 기록에 · 막힌 동안의 시도는 쌓지 않는다(0114)');
+  perform pg_temp.ok(not exists (select 1 from economy.ops_login_locks l where l.scope = 'ALL'), '모든 곳(ALL) 잠금 줄을 만들지 않는다 (0123)');
 end $$;
 delete from economy.ops_login_fails;
 delete from economy.ops_login_locks;
@@ -13992,6 +14011,116 @@ begin
   update public.market_sneakers set level = 30 where id = v_id;
   perform pg_temp.ok(not exists (select 1 from economy.box_awards a where a.user_id = pg_temp.u122(6) and a.source like 'LEVEL:%'),
     'IMPORT 신발은 레벨이 올라도 레벨 상자를 주지 않는다 (0122)');
+end $$;
+
+-- ════════════════════════════════════════════════════════════════════
+--  꼼수 · 보안(0123) — 러닝 쪽(태운 신발 · 사본 경로 · 가입 전 · 과속 · 움직인 시간 · 이벤트 시간 몫 · 크루 아이템)은 장면 tools/together_sim/19-cheat-fixes.sql
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 꼼수 · 보안(0123) ─────────────────────'
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.headers', '', false);
+update public.economy_settings set value = '24' where key = 'together_min_account_hours';
+update public.economy_settings set value = 'true' where key = 'signup_run_guard';
+
+-- 카탈로그 검사 — 새 표 · 함수가 문을 넓히면 여기서 걸린다(2차 점검 I). 목록을 늘릴 때는 까닭을 함께 적는다
+do $$
+declare r record; v_bad text := '';
+  -- 앱 역할이 바로 쓸 수 있는 표 · 명령(권한 + 그 명령의 정책). 신고 · 좋아요 · 차단만 — 나머지는 RPC 로만
+  v_write_ok text[] := array['content_reports:INSERT', 'course_likes:DELETE', 'course_likes:INSERT', 'post_likes:DELETE', 'post_likes:INSERT',
+    'user_blocks:DELETE', 'user_blocks:INSERT', 'user_blocks:UPDATE'];
+  -- economy 의 SECURITY DEFINER 가운데 앱 역할이 부를 수 있어도 되는 것(값만 돌려주는 셈)
+  v_secdef_ok text[] := array['earn_cap_factor', 'energy_max_for_level', 'forge_base_permille', 'free_repair_next',
+    'free_repair_ready', 'points_per_step', 'repair_cost_per_unit', 'repair_unit_of'];
+  v_definer_views_ok text[] := array['running_sources_public'];
+begin
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity loop
+    v_bad := v_bad || ' RLS 없음:' || r.relname;
+  end loop;
+  for r in select n.nspname, p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname in ('public', 'economy', 'coaching') and p.prosecdef
+              and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%') loop
+    v_bad := v_bad || ' search_path 없음:' || r.nspname || '.' || r.proname;
+  end loop;
+  for r in
+    with cmds(cmd, polcmd) as (values ('INSERT', 'a'), ('UPDATE', 'w'), ('DELETE', 'd')),
+    w as (
+      select c.relname || ':' || k.cmd as k
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace cross join cmds k cross join (values ('anon'), ('authenticated')) ro(role)
+       where n.nspname = 'public' and c.relkind in ('r', 'p')
+         and (has_table_privilege(ro.role, c.oid, k.cmd) or (k.cmd <> 'DELETE' and has_any_column_privilege(ro.role, c.oid, k.cmd)))
+         and (not c.relrowsecurity or exists (
+               select 1 from pg_policy pl where pl.polrelid = c.oid and pl.polcmd in (k.polcmd, '*')
+                  and (pl.polroles = '{0}' or (select oid from pg_roles where rolname = ro.role) = any (pl.polroles)))))
+    select distinct k from w where k <> all (v_write_ok) loop
+    v_bad := v_bad || ' 바로 쓰기:' || r.k;
+  end loop;
+  for r in select n.nspname from pg_namespace n where n.nspname in ('economy', 'coaching')
+              and (has_schema_privilege('anon', n.oid, 'USAGE') or has_schema_privilege('authenticated', n.oid, 'USAGE')) loop
+    v_bad := v_bad || ' 스키마 열림:' || r.nspname;
+  end loop;
+  for r in select n.nspname, p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname in ('economy', 'coaching') and p.prosecdef and p.prorettype <> 'trigger'::regtype
+              and has_function_privilege('authenticated', p.oid, 'EXECUTE') and p.proname <> all (v_secdef_ok) loop
+    v_bad := v_bad || ' 부를 수 있음:' || r.nspname || '.' || r.proname;
+  end loop;
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind in ('v', 'm')
+              and not coalesce('security_invoker=true' = any (c.reloptions), false)
+              and (has_table_privilege('anon', c.oid, 'SELECT') or has_table_privilege('authenticated', c.oid, 'SELECT'))
+              and c.relname <> all (v_definer_views_ok) loop
+    v_bad := v_bad || ' 만든 사람 권한 뷰:' || r.relname;
+  end loop;
+  perform pg_temp.ok(v_bad = '', format('카탈로그 — RLS · search_path · 바로 쓰기 · 스키마 · 내부 함수 · 뷰가 목록 밖으로 넓어지지 않았다 [%s] (0123)', v_bad));
+end $$;
+
+do $$
+declare v_t text; v_route text; v_start timestamptz := now() - interval '1 hour'; v_lat0 double precision;
+begin
+  perform pg_temp.ok(not has_function_privilege('authenticated', 'public.admin_economy_set(text, jsonb)', 'execute'),
+    'admin_economy_set 은 앱 역할이 부를 수 없다(범위 없이 아무 설정 — 운영자는 ops_economy_set) (0123)');
+  perform pg_temp.ok(not exists (select 1 from pg_policy where polname in ('post_likes_select_all', 'flash_participants_select_all')),
+    '좋아요 · 번개 참석자는 보이는 글의 것만 (0123)');
+  -- 이야기 지도는 앞뒤 300m 를 자른다
+  select string_agg(format('%s,%s,%s', (37.5 + i * 0.0001)::numeric(12, 6), 127.0, (extract(epoch from v_start) * 1000)::bigint + i * 1000), ';' order by i)
+    into v_t from generate_series(0, 200) i;
+  v_route := public.story_route(v_t);
+  v_lat0 := split_part(split_part(v_route, ';', 1), ',', 1)::double precision;
+  perform pg_temp.ok(v_route <> '' and economy.haversine_m(37.5, 127.0, v_lat0, 127.0) >= 290,
+    format('이야기 지도의 첫 점은 출발에서 300m 떨어져 있다(%sm) (0123)', round(economy.haversine_m(37.5, 127.0, v_lat0, 127.0)::numeric)));
+  -- IP 해시에 비밀 소금
+  perform pg_temp.ok(economy.waitlist_client_of('203.0.113.9') <> encode(sha256(convert_to('stepup-waitlist:203.0.113.9', 'UTF8')), 'hex')
+                     and economy.waitlist_client_of('203.0.113.9') = economy.waitlist_client_of('203.0.113.9'),
+    'IP 해시는 비밀 소금을 친다(고정 문구로는 IPv4 전부를 맞대어 볼 수 있었다) (0123)');
+end $$;
+
+-- 보상 이벤트: 2.995 는 3.00 으로 저장된다 — 키를 한 번 더(예전엔 3 아래라 지나갔다) · 하루 넘게 뒤에 시작하는 것도
+set role anon;
+select set_config('request.headers', '{"cf-connecting-ip": "192.0.2.123"}', false);
+do $$
+declare v_s text := public.ops_login(pg_temp.fx('key114'))->>'session'; r jsonb; r2 jsonb;
+begin
+  r := public.ops_event_start(v_s, gen_random_uuid(), '반올림 검사', 2.995, 2);
+  r2 := public.ops_event_start(v_s, gen_random_uuid(), '먼 이벤트', 1.5, 2, now() + interval '3 days');
+  perform pg_temp.ok(r->>'code' = 'confirm_required' and r2->>'code' = 'confirm_required',
+    format('×2.995(저장 3.00) · 사흘 뒤 시작하는 이벤트는 키를 한 번 더 (%s · %s) (0123)', r->>'code', r2->>'code'));
+end $$;
+reset role;
+select set_config('request.headers', '', false);
+
+-- 홈 목표 줄: 하루 최대에 막혀 보너스 없이 채운 날은 goal_paid 0 (예전엔 null — "확인 중"에 머물렀다)
+do $$
+declare v_u uuid := 'a1230000-0000-0000-0000-000000000001'; j jsonb;
+begin
+  insert into auth.users (id, email) values (v_u, 'u123_1@test.invalid') on conflict do nothing;
+  insert into economy.goal_days (user_id, day, goal, met_at) values (v_u, economy.game_day(now()), 6000, now())
+  on conflict (user_id, day) do update set met_at = now();
+  perform set_config('request.jwt.claim.sub', v_u::text, false);
+  j := public.box_status();
+  perform set_config('request.jwt.claim.sub', '', false);
+  perform pg_temp.ok((j ->> 'goal_paid')::numeric = 0, format('채운 날 · 보너스 없음은 goal_paid 0 (%s) (0123)', j ->> 'goal_paid'));
 end $$;
 
 \echo ''

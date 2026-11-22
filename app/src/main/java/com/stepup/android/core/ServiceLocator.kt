@@ -513,6 +513,8 @@ object ServiceLocator {
             // 서버 경제에서는 목표 보너스 · 연속을 폰 만보기 걸음으로 정하지 않는다(서버가 러닝 걸음으로)
             localGoal = !serverEconomy,
             serverDaily = if (serverEconomy) shoeRules.daily else kotlinx.coroutines.flow.flowOf(null),
+            // 하루 에너지의 정본은 서버 — 받기 전에는 폰 기본값(10)을 숫자로 보이지 않는다
+            serverEnergy = serverEconomy,
         )
         sneakerRepository = SneakerRepository(
             database, rewardRepository,

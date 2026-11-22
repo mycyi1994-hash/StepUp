@@ -35,6 +35,8 @@ fun DialogPanel(
     actions: @Composable ColumnScope.() -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (LockCover.hidesWindows()) return
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.SheetOpen) }
     fun dismiss() {

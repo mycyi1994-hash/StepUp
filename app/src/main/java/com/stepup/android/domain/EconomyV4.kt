@@ -196,6 +196,19 @@ data class TogetherRule(
     /** 크루 러닝 효율을 섞는가(함께 달린 사람만 세는 규칙에서만) */
     val blends: Boolean get() = fromServer && active && blendShare > 0.0
 
+    /**
+     * 서버가 크루 러닝 효율을 섞을 수 있다 — [blends] 와 같되 아직 받지 못한 규칙(기본값 [FALLBACK])도 넣는다. 올릴 때 서버는 내 신발과
+     * 섞은 값 가운데 낮은 쪽으로 주므로, 이 폰이 모르는 방 사람들의 신발로 정해질 금액을 달리는 중에 숫자로 보이지 않는 데 쓴다
+     */
+    val mayBlend: Boolean get() = active && blendShare > 0.0
+
+    /**
+     * 번개 · 옛 방 러닝을 올릴 때 서버가 바로 붙이는 인원 배수 — 함께 달린 사람만 세는 규칙([ACTIVE], 0120)이면 1(인원 배수는 기록한 뒤
+     * 함께 달린 사람이 올릴 때마다 together_settle 이 더한다), 예전 규칙이면 함께 출발한 인원으로 [RewardEconomy.partyMultiplier].
+     * 번개의 규칙은 [forFlash] 로 고른다(서버 record_session: `party_multiplier(case when together_on('FLASH') … then 1 …)`)
+     */
+    fun uploadPartyMultiplier(partySize: Int): Double = if (active) 1.0 else RewardEconomy.partyMultiplier(partySize)
+
     /** 번개 대기실이 볼 규칙 — 문턱은 같고 켜짐만 번개 설정을 따른다 */
     fun forFlash(): TogetherRule = copy(rule = flashRule)
 

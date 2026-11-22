@@ -19,6 +19,7 @@
     <string name="wc_other_wallet">Choose another wallet</string>
     <string name="wc_linked_title">Wallet connected</string>
     <string name="wc_linked_body">Your wallet is linked to this STEPUP account.</string>
+    <string name="wc_linked_address">Linked address: %1$s. Make sure this is your wallet.</string>
     <string name="wc_done">Done</string>
     <string name="wc_error_title">Couldn’t start</string>
     <string name="wc_error_sign_in">Please sign in to STEPUP first.</string>

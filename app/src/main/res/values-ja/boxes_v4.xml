@@ -58,6 +58,7 @@
 
     <string name="run_check_earn_minutes">このシューズは約%1$d分間報酬がたまります</string>
     <string name="run_check_energy_empty">今日の報酬上限を使い切りました — このランは報酬がありません</string>
+    <string name="run_check_energy_minutes">今日は約%1$d分間報酬がたまります・その後はエネルギーを使い切り、明日まで報酬がたまりません</string>
 
     <string name="items_boosts_paused">ブースターは現在販売していません。アイテムはイベントや報酬でもらえます。</string>
 

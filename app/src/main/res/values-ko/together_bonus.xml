@@ -29,4 +29,8 @@
     <string name="tb_rule_reward_blend_t">보상 = 크루 효율 × (1 + 인원 + 레벨)</string>
     <string name="tb_rule_reward_daily_b">인원 보너스와 레벨 보너스는 더해서 적용해요. 혼자 · 크루 러닝 · 보너스를 합쳐 하루 최대 SUP 안에서 받아요.</string>
     <string name="tb_blend_note">효율은 내 신발 %1$s%% + 함께 달린 크루원 신발 평균 %2$s%%로 셈해요.</string>
+    <!-- 번개 · 크루 러닝 — 인원은 올린 뒤 정해진다(2026-11-22 경제 점검): 달리는 중 · 출발 시트의 최대 · 하루 한 번(2분 뒤 확정 없이) -->
+    <string name="tb_live_counting_plain">함께 달린 인원은 기록을 올린 뒤 정해져요</string>
+    <string name="tb_start_bonus_max">최대 합산 보너스</string>
+    <string name="tb_start_once">크루 러닝은 하루 한 번이에요. 일시정지는 가능하지만, 끝내면 오늘 다시 들어올 수 없어요.</string>
 </resources>

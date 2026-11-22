@@ -1130,6 +1130,12 @@ class UserPrefs(
     }
 
     /**
+     * 서버가 준 하루 에너지(my_economy)를 이 폰에 받아 두었는가 — 첫 동기화 전(새 계정) · 계정을 지운 뒤에는 false.
+     * 그동안 [energy] 는 폰 기본값(10)이라, 서버 경제에서는 화면이 그 숫자를 보이지 않는다(새 계정의 실제 값은 러너 레벨 Lv1 5.5 — 0121)
+     */
+    val serverEnergyKnown: Flow<Boolean> = store.data.map { it[Keys.SERVER_ENERGY_MAX] != null }
+
+    /**
      * 에너지가 다시 차는 "오늘". 서버 경제에서는 서버의 하루(한국 시간 자정)를 따른다 —
      * 폰의 자정으로 채우면 해외에서는 서버에 없는 에너지가 가득 찬 것처럼 보인다.
      */

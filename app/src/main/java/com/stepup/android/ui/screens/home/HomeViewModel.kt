@@ -232,6 +232,11 @@ class HomeViewModel(
          * 빈 게이지가 보였다가 채워진다. 도착 전에는 비율을 짓지 않는다.
          */
         val loaded: Boolean = false,
+        /**
+         * 오늘 남은 에너지를 안다 — 서버 경제에서 서버가 준 하루 에너지를 아직 받지 못했으면(새 계정의 첫 동기화 전) false.
+         * 그동안 [energy] 는 폰 기본값(10 = 6,000보)이라 "N걸음 더 적립할 수 있어요"를 보이지 않는다(새 계정은 5.5 = 3,300보, 0121)
+         */
+        val energyKnown: Boolean = true,
     ) {
         val energyPercent: Int
             get() = if (maxEnergy > 0) ((energy / maxEnergy) * 100).toInt().coerceIn(0, 100) else 0
@@ -285,7 +290,7 @@ class HomeViewModel(
         combine(
             stepRepository.todaySteps,
             stepRepository.dailyGoal,
-            stepRepository.energy,
+            stepRepository.energyKnown,
         ) { steps, goal, energy -> Triple(steps, goal, energy) },
         combine(
             rewardRepository.balance,
@@ -302,7 +307,8 @@ class HomeViewModel(
         UiState(
             todaySteps = steps,
             goal = goal,
-            energy = energy,
+            energy = energy ?: 0.0,
+            energyKnown = energy != null,
             maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: wallet.sneakerLevel, com.stepup.android.data.repo.shoeRulesNow().stats),
             balance = wallet.balance,
             streak = wallet.streak,

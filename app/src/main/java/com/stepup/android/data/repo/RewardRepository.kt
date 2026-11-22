@@ -194,6 +194,8 @@ class RewardRepository(
          */
         activeSec: Long = 0L,
         startedAt: Long = System.currentTimeMillis(),
+        /** 크루 대기실에서 출발한 러닝 — 인원 배수는 크루 규칙(crew_bonus_rule)을, 아니면 번개 규칙(party_bonus_rule)을 따른다 */
+        crewRoom: Boolean = false,
     ): SessionReward {
         syncEnergyCap()
         val energyRemaining = prefs.currentEnergy(today)
@@ -205,14 +207,17 @@ class RewardRepository(
         // 신발 수명(남은 내구도 × 12초 ÷ 효율 포인트 배수)까지의 걸음은 다, 그 뒤의 걸음은 서버 규칙의 비율만큼(0119 — 30%, 걸음은
         // 그대로 센다. 그 전 규칙이면 적립하지 않는다 0066). 달리는 중 화면의 예상과 같은 셈이다(RewardEconomy.shoeSessionReward).
         // 걸음당 SUP · 닳은 뒤 비율은 서버 규칙(경제 4판 0116 · 0119) — 앱이 준비되기 전이면 같은 기본값
+        val rules = shoeRulesNow()
         return RewardEconomy.shoeSessionReward(
             steps = steps,
             activeSec = activeSec,
             energyRemaining = energyRemaining,
             shoe = equipped,
-            rules = shoeRulesNow(),
+            rules = rules,
             fallbackMultiplier = if (equipped == null) RewardEconomy.sneakerMultiplier(prefs.sneakerLevel.first()) else 1.0,
-            partyMultiplier = RewardEconomy.partyMultiplier(partySize),
+            // 함께 달린 사람만 세는 규칙(0120 ACTIVE)이면 올릴 때 인원 배수가 없다(× 1 — 함께 달린 사람이 올릴 때마다 서버가 더한다).
+            // 예전 규칙이면 함께 출발한 인원으로. 서버가 확인하기 전 "예상 보상"에 서버가 바로 치르지 않는 배수를 넣지 않는다
+            partyMultiplier = rules.together.let { if (crewRoom) it else it.forFlash() }.uploadPartyMultiplier(partySize),
             boostMultiplier = boostMultiplier,
         )
     }

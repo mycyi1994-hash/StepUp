@@ -44,8 +44,11 @@ class WalkViewModel(
     val energy: StateFlow<Double> = stepRepository.energy
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
-    /** 오늘 남은 에너지 — 아직 읽지 못했으면 null(출발 전 점검이 "적립 한도를 다 썼어요"를 읽기 전 0 으로 단정하지 않게) */
-    val energyKnown: StateFlow<Double?> = stepRepository.energy.map<Double, Double?> { it }
+    /**
+     * 오늘 남은 에너지 — 아직 읽지 못했으면 null(출발 전 점검이 "적립 한도를 다 썼어요"를 읽기 전 0 으로 단정하지 않게).
+     * 서버 경제에서 서버가 준 하루 에너지를 아직 받지 못했어도 null(폰 기본값 10 으로 "약 N분 동안 적립돼요"를 약속하지 않게)
+     */
+    val energyKnown: StateFlow<Double?> = stepRepository.energyKnown
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val sneakerLevel: StateFlow<Int> = rewardRepository.sneakerLevel

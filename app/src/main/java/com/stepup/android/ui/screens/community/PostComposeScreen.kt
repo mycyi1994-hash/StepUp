@@ -270,11 +270,14 @@ private fun FlashTimeField(atMillis: Long, clamped: Boolean, onPick: (FlashMeetT
             Modifier.fillMaxWidth().height(56.dp).clip(shape).background(c.card, shape)
                 .border(1.dp, c.separator, shape)
                 .feedbackClickable {
-                    android.app.TimePickerDialog(
-                        context,
-                        { _, h, m -> onPick(FlashMeetTime.pick(h, m, java.time.ZonedDateTime.now(zone))) },
-                        at.hour, at.minute, is24,
-                    ).show()
+                    // 잠금 화면 덮개가 덮이면 닫힌다(LockCover)
+                    com.stepup.android.ui.components.LockCover.show(
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, h, m -> onPick(FlashMeetTime.pick(h, m, java.time.ZonedDateTime.now(zone))) },
+                            at.hour, at.minute, is24,
+                        ),
+                    )
                 }
                 .padding(horizontal = 16.dp).testTag("post-starts"),
             verticalAlignment = Alignment.CenterVertically,

@@ -23,4 +23,8 @@
     <string name="tb_rule_reward_blend_t">Reward = crew efficiency × (1 + group + level)</string>
     <string name="tb_rule_reward_daily_b">The group and level bonuses are added together. Solo runs, crew runs and bonuses all count toward your daily max SUP.</string>
     <string name="tb_blend_note">Efficiency is %1$s%% your shoe + %2$s%% the average shoe of crew members who ran together.</string>
+    <!-- Flash / crew runs before the group is set (2026-11-22 economy audit) -->
+    <string name="tb_live_counting_plain">Runners who ran together are counted after everyone uploads</string>
+    <string name="tb_start_bonus_max">Max total bonus</string>
+    <string name="tb_start_once">One crew run a day. You can pause, but once you end you can\'t rejoin today.</string>
 </resources>

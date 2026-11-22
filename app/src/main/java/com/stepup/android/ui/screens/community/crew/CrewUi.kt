@@ -753,6 +753,8 @@ internal fun CrewSheet(
     eyebrow: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     val ink = crewInk()
     // confirmValueChange 는 시트 상태를 기억하는 열쇠다 — 보내는 중(dismissible)이 바뀔 때 새 상태로 다시 떠오르지 않게 한 번만 만든다
     val canDismiss by rememberUpdatedState(dismissible)

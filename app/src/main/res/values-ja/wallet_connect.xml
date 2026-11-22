@@ -19,6 +19,7 @@
     <string name="wc_other_wallet">別のウォレットを選ぶ</string>
     <string name="wc_linked_title">ウォレットを接続しました</string>
     <string name="wc_linked_body">このSTEPUPアカウントにウォレットが接続されました。</string>
+    <string name="wc_linked_address">接続したアドレス: %1$s。ご自身のウォレットのアドレスか確認してください。</string>
     <string name="wc_done">OK</string>
     <string name="wc_error_title">開始できませんでした</string>
     <string name="wc_error_sign_in">先にSTEPUPにログインしてください。</string>

@@ -1305,6 +1305,7 @@ class WalkSessionService : Service() {
             ) { energyDay ->
                 ServiceLocator.rewardRepository.calculateSessionReward(
                     creditedSteps, settleSize, energyDay, activeSec = session.elapsedSec, startedAt = session.startedAt,
+                    crewRoom = session.group == RunGroup.CREW,
                 )
             }
             // These legacy follow-ups are not durable yet. A same-process save retry

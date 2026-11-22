@@ -40,32 +40,72 @@ begin
   delete from economy.reward_events;
 end $$;
 
--- (나) 박동을 한 번도 안 보낸 부계정 넷이 2시간 뒤 돌려받기 — 예전엔 true 로 공용 체력을 쓴 만큼까지 줄이고 같은 날 다른 방에 또 맡겼다
+-- (나) 묶인 체력 비켜 가기(2차 점검 E1): 부계정 18명이 달리지 않고 박동만 10분 10초 보내고 끝내며 러닝을 올리지 않는다 — 남은 둘은 3시간 내내 박동.
+-- 0122 첫 판은 "서버가 센 시간 10분 미만"만 묶어 둘이 각자 1,217 SUP. 이제 끝냈는데 함께 달린 사람으로 올리지 않은 사람의 몫은 묶는다
+select t.mk(n) from generate_series(311, 330) n;
+update public.profiles set created_at = now() where id in (select t.u(n) from generate_series(313, 330) n);
+select t.crew(31, 311, (select array_agg(n) from generate_series(312, 330) n), 20);
 do $$
-declare p bigint; v_start timestamptz; n int; ok boolean := true; r text := ''; cap0 numeric; cap1 numeric;
+declare p bigint; v jsonb; v_start timestamptz; n int; i int; w1 public.walk_sessions; w2 public.walk_sessions; d economy.crew_day_pools;
+  arr int[] := (select array_agg(g) from generate_series(313, 330) g);
 begin
-  perform t.mk(41); perform t.mk(42);
-  for n in 43 .. 46 loop perform t.mk(n, 1000, 4000); end loop;
-  perform t.crew(3, 41, array[42, 43, 44, 45, 46], 1);
-  perform t.login(41);
-  p := public.party_create_v2(t.c(3), '방 1', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  insert into economy.reward_events (request_id, title, mult, starts_at, ends_at, actor)
+  values (gen_random_uuid(), '검사 2배', 2, now() - interval '6 hours', now() + interval '6 hours', 'sim');
+  perform t.login(311);
+  p := public.party_create_v2(t.c(31), '가짜 박동', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
   perform public.party_ready(p, true);
-  for n in 42 .. 46 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
-  perform t.login(41); perform public.party_start_rev(p, 0);
-  perform t.age(interval '7206 seconds');
-  select started_at into v_start from economy.crew_runs where user_id = t.u(41);
-  perform t.rec(41, v_start, 7200, 19800);
-  perform t.rec(42, v_start, 7200, 19800);
-  select capacity into cap0 from economy.crew_day_pools where crew_id = t.c(3);
-  for n in 43 .. 46 loop
-    perform t.login(n);
-    ok := ok and not public.crew_run_release(p);
-    r := r || 'u' || n || ' ';
+  for n in 312 .. 330 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
+  perform t.login(311); perform public.party_start_rev(p, 0);
+  perform t.age(interval '6 seconds');
+  for i in 1 .. 25 loop
+    perform t.age(interval '25 seconds');
+    foreach n in array arr || array[311, 312] loop perform t.login(n); v := public.crew_run_beat(p, 'RUNNING'); end loop;
   end loop;
-  select capacity into cap1 from economy.crew_day_pools where crew_id = t.c(3);
-  perform t.chk('(나) 출발 10분이 지나면 돌려받기는 false — 공용 체력 · 오늘 크루 러닝 그대로', ok and cap0 = cap1
-                and (select count(*) from economy.crew_runs c where c.party_id = p) = 6,
-                format('%s· 공용 체력 %s → %s', r, cap0, cap1));
+  for n in 313 .. 330 loop perform t.login(n); v := public.crew_run_beat(p, 'ENDED'); end loop;
+  for i in 1 .. ((10800 - 625) / 25) loop
+    perform t.age(interval '25 seconds');
+    perform t.login(311); v := public.crew_run_beat(p, 'RUNNING');
+    perform t.login(312); v := public.crew_run_beat(p, 'RUNNING');
+  end loop;
+  perform t.login(311); v := public.crew_run_beat(p, 'ENDED');
+  perform t.login(312); v := public.crew_run_beat(p, 'ENDED');
+  select started_at into v_start from economy.crew_runs where user_id = t.u(311);
+  perform t.rec(311, v_start, 10800, 29700);
+  perform t.rec(312, v_start, 10800, 29700);
+  select * into w1 from public.walk_sessions x where x.user_id = t.u(311) and x.party_id = p;
+  select * into w2 from public.walk_sessions x where x.user_id = t.u(312) and x.party_id = p;
+  select * into d from economy.crew_day_pools x where x.crew_id = t.c(31);
+  perform t.chk('(나) 10분 가짜 박동 뒤 끝낸 부계정의 몫은 묶인다 — 박동을 보낸 정직한 판(433)과 비슷하게',
+                w1.points_awarded < 500 and w2.points_awarded < 500,
+                format('u311 %s · u312 %s SUP (0122 첫 판 1,217) · 쓴 체력 %s / %s · 묶인 %s', w1.points_awarded, w2.points_awarded,
+                       round(d.consumed, 1), round(d.capacity, 1), round(economy.crew_pool_held(t.c(31), d.day, now()), 1)));
+  delete from economy.reward_events;
+end $$;
+
+-- (나2) 출발을 놓친 사람(박동 한 번도 없음)은 15분 뒤에도 돌려받아 같은 날 다른 방에서 달릴 수 있다 — 그 몫은 그동안 묶여 쓰이지 않았다
+do $$
+declare p bigint; p2 bigint; v jsonb; n int; ok boolean; cap0 numeric; used0 numeric;
+begin
+  perform t.mk(341); perform t.mk(342); perform t.mk(343, 1000, 4000); perform t.mk(344);
+  perform t.crew(34, 341, array[342, 343, 344], 1);
+  perform t.login(341);
+  p := public.party_create_v2(t.c(34), '방 1', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p, true);
+  for n in 342 .. 343 loop perform t.login(n); perform public.party_join(p); perform public.party_ready(p, true); end loop;
+  perform t.login(341); perform public.party_start_rev(p, 0);
+  perform t.age(interval '6 seconds');
+  perform t.run(p, array[341, 342], 900);
+  select consumed into used0 from economy.crew_day_pools where crew_id = t.c(34);
+  perform t.login(343); ok := public.crew_run_release(p);
+  perform t.login(344);
+  p2 := public.party_create_v2(t.c(34), '방 2', null, null, null, gen_random_uuid(), 'REMOTE', null, null, null, null, null);
+  perform public.party_ready(p2, true);
+  perform t.login(343); perform public.party_join(p2); perform public.party_ready(p2, true);
+  perform t.login(344); perform public.party_start_rev(p2, 0);
+  perform t.chk('(나2) 출발을 놓친 사람은 늦게도 돌려받고 다른 방에서 달린다 · 그동안 그 몫은 쓰이지 않았다',
+                ok and exists (select 1 from economy.crew_runs c where c.user_id = t.u(343) and c.party_id = p2),
+                format('돌려받기 %s · 방 2 출발 %s · 그동안 쓴 체력 %s (방 1 둘의 몫 300 안)', ok,
+                       exists (select 1 from economy.crew_runs c where c.user_id = t.u(343) and c.party_id = p2), round(used0, 1)));
 end $$;
 
 -- (다) 크루 효율 8 : 2 의 무게 — 셋 가운데 둘은 약한 신발(1.4)로 60분, 셋째만 10분.
@@ -195,7 +235,7 @@ create or replace function t.track(p_start timestamptz, p_secs int, p_dps numeri
            (extract(epoch from p_start) * 1000)::bigint + i * 1000), ';' order by i)
   from generate_series(0, p_secs) i $$;
 select t.mk(n) from generate_series(211, 230) n;
-update public.profiles set created_at = now() - interval '1 day' where id = t.u(211);
+update public.profiles set created_at = now() - interval '3 days' where id = t.u(211);  -- 가입 7일 안(하루 최대 절반) · 함께 달린 사람은 24시간 뒤부터(0123)
 select t.crew(21, 211, (select array_agg(n) from generate_series(212, 230) n), 20);
 do $$
 declare p bigint; v_start timestamptz; n int; v_t0 timestamptz; s1 bigint; s2 bigint; f int;

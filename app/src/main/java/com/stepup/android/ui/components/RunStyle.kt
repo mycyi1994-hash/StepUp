@@ -1076,6 +1076,8 @@ fun RunSheet(
     closeTag: String = "run-sheet-close",
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover) — 잠금을 풀면 새 시트 상태로 다시 올라온다
+    if (LockCover.hidesWindows()) return
     val t = runTone()
     // confirmValueChange 는 시트 상태(rememberSaveable)의 키다 — 닫을 수 있음(dismissible)이 바뀔 때마다 새 람다를 넘기면
     // 새 시트 상태가 만들어져 시트가 다시 올라온다(지우는 중 · 보내는 중). 한 번 만든 람다가 지금 값을 읽게 한다
@@ -1170,6 +1172,8 @@ fun RunDialog(
     dismissible: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (LockCover.hidesWindows()) return
     androidx.compose.ui.window.Dialog(
         onDismissRequest = { if (dismissible) onDismiss() },
         properties = androidx.compose.ui.window.DialogProperties(

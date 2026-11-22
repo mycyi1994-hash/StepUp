@@ -221,7 +221,7 @@ fun HomeScreen(
                         onClick = { showDetails = false; onOpenNews() },
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
+                    EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.energyKnown && state.maxEnergy > 0)
                 }
             }
             if (bar != null) {

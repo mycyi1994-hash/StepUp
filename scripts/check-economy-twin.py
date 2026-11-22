@@ -10,6 +10,12 @@
 
 0119(경제의 뿌리, 2026-11-21): `stats` 묶음 — 닳은 뒤 적립 비율 · 효율 포인트가 닳음 / 에너지를 올리는 세기 · 내구도 포인트와 수리비 ·
 레벨마다 에너지 · 분당 닳음 · 다시 나누기 간격([StatRule.FALLBACK]).
+
+2026-11-22 경제 점검: 앱 상수 가운데 서버 규칙을 따라 쓴 것 — `RewardEconomy`(걸음당 SUP · 에너지 1 의 걸음 · 착화감 상한으로 정해지는
+가장 작은 에너지 비율 · 기본 하루 에너지 · 인원 배수 · 내구도 1 의 초 · 에너지를 분으로 옮기는 분당 걸음)와 러너 레벨(0121 · 0122 —
+`RunnerLevel` 의 만렙 · 한 레벨 걸음 · 배지 레벨)도 맞대어 본다. 서버 함수는 마이그레이션 가운데 마지막 정의를, 설정은 0121 부터
+차례대로(처음 넣은 값 → 뒤의 update 가 덮는다 — 0122 가 runner_energy_cap 16.5 → 10) 읽는다. 러너 레벨의 하루 에너지(runner_energy_base ·
+runner_energy_per_level · runner_energy_cap)는 앱이 숫자로 갖고 있지 않고 서버 값(runner_me · my_economy)을 읽는다 — 여기서는 읽은 값만 보인다.
 """
 import re
 import sys
@@ -228,7 +234,111 @@ if not m or not app_goal:
 elif m.group(1) != app_goal.group(1):
     bad.append(f'goal_included: 앱 {app_goal.group(1)} · 서버 {m.group(1)}')
 
+# ── 앱 상수(RewardEconomy) · 러너 레벨(0121 · 0122) ─────────────────
+MIGRATIONS = sorted((ROOT / 'supabase/migrations').glob('[0-9][0-9][0-9][0-9]_*.sql'))
+
+
+def last_fn(schema, name):
+    """마이그레이션 가운데 마지막 `create or replace function schema.name` 의 본문($$ … $$)"""
+    pattern = re.compile(r'create\s+or\s+replace\s+function\s+' + schema + r'\.' + re.escape(name) + r'\s*\(.*?\$\$(.*?)\$\$', re.S | re.I)
+    body = None
+    for path in MIGRATIONS:
+        for m in pattern.finditer(re.sub(r'--[^\n]*', '', path.read_text())):
+            body = m.group(1)
+    if body is None:
+        bad.append(f'서버 함수 {schema}.{name} 를 마이그레이션에서 찾지 못했다')
+    return body or ''
+
+
+def effective_settings(paths):
+    """설정의 마지막 값 — 파일 차례 · 글 차례대로 insert(on conflict do nothing 이면 처음 값만) · update(덮는다)"""
+    out = {}
+    insert = re.compile(r"insert\s+into\s+public\.economy_settings\s*\(\s*key\s*,\s*value\s*\)\s*values(.*?);", re.I | re.S)
+    for path in paths:
+        sql = re.sub(r'--[^\n]*', '', path.read_text())
+        events = [(m.start(), 'insert', m) for m in insert.finditer(sql)] + [(m.start(), 'update', m) for m in SETTING_UPDATE.finditer(sql)]
+        for _, kind, m in sorted(events, key=lambda e: e[0]):
+            if kind == 'insert':
+                overwrite = re.search(r'do\s+update', m.group(1), re.I) is not None
+                for k, v in SETTING_ROW.findall(m.group(1)):
+                    if overwrite:
+                        out[k] = v.strip().strip('"')
+                    else:
+                        out.setdefault(k, v.strip().strip('"'))
+            else:
+                out[m.group(2)] = m.group(1).strip().strip('"')
+    return out
+
+
+def kt_const(src, name):
+    m = re.search(r'\b(?:const\s+)?val\s+' + name + r'\s*(?::\s*[A-Za-z<>]+)?\s*=\s*([0-9_.]+)L?\b', src)
+    if not m:
+        bad.append(f'앱 상수 {name} 를 찾지 못했다')
+        return None
+    return float(m.group(1).replace('_', ''))
+
+
+def sql_number(body, regex, what):
+    m = re.search(regex, body, re.S | re.I)
+    if not m:
+        bad.append(f'{what}: 서버에서 찾지 못했다')
+        return None
+    return [float(g) for g in m.groups()]
+
+
+RE_KT = (ROOT / 'app/src/main/java/com/stepup/android/domain/RewardEconomy.kt').read_text()
+RL_KT = (ROOT / 'app/src/main/java/com/stepup/android/domain/RunnerLevel.kt').read_text()
+const_twins = []
+
+
+def twin(label, app_v, srv_v):
+    const_twins.append(label)
+    if app_v is not None and srv_v is not None and abs(app_v - srv_v) > 1e-9:
+        bad.append(f'{label}: 앱 {app_v:g} · 서버 {srv_v:g}')
+
+
+spe = sql_number(last_fn('economy', 'steps_per_energy'), r'select\s+([0-9.]+)', 'steps_per_energy')
+twin('RewardEconomy.STEPS_PER_ENERGY ↔ economy.steps_per_energy()', kt_const(RE_KT, 'STEPS_PER_ENERGY'), spe and spe[0])
+base = sql_number(last_fn('economy', 'base_max_energy'), r'select\s+([0-9.]+)', 'base_max_energy')
+twin('RewardEconomy.BASE_MAX_ENERGY ↔ economy.base_max_energy()', kt_const(RE_KT, 'BASE_MAX_ENERGY'), base and base[0])
+cap_bps = sql_number(last_fn('economy', 'comfort_cap_bps'), r'select\s+([0-9]+)', 'comfort_cap_bps')
+twin('RewardEconomy.MIN_ENERGY_FACTOR ↔ 1 − economy.comfort_cap_bps() ÷ 10000', kt_const(RE_KT, 'MIN_ENERGY_FACTOR'),
+     cap_bps and round(1 - cap_bps[0] / 10000, 9))
+party = sql_number(last_fn('economy', 'party_multiplier'),
+                   r'select\s+1\s*\+\s*([0-9.]+)\s*\*\s*least\(.*?,\s*([0-9]+)\s*\)\s*$', 'party_multiplier')
+twin('RewardEconomy.PARTY_BONUS_RATE ↔ economy.party_multiplier()', kt_const(RE_KT, 'PARTY_BONUS_RATE'), party and party[0])
+twin('RewardEconomy.PARTY_BONUS_CAP ↔ economy.party_multiplier()', kt_const(RE_KT, 'PARTY_BONUS_CAP'), party and party[1])
+sec = sql_number(last_fn('economy', 'durability_sec_per_point'), r'select\s+([0-9]+)', 'durability_sec_per_point')
+twin('RewardEconomy.DURABILITY_SEC_PER_POINT ↔ economy.durability_sec_per_point()', kt_const(RE_KT, 'DURABILITY_SEC_PER_POINT'), sec and sec[0])
+twin('RewardEconomy.POINTS_PER_STEP ↔ points_per_step', kt_const(RE_KT, 'POINTS_PER_STEP'), float(settings['points_per_step']))
+# 에너지 → 분: runner_me 의 energy_minutes 들이 모두 같은 분당 걸음(÷ 165)으로 나눈다
+runner_me = last_fn('public', 'runner_me')
+per_min = {float(x) for x in re.findall(r'v_spe\s*/\s*([0-9.]+)', runner_me)}
+if len(per_min) != 1:
+    bad.append(f'runner_me 의 분당 걸음: 한 값이 아니다 {sorted(per_min)}')
+else:
+    twin('RewardEconomy.RUN_STEPS_PER_MINUTE ↔ runner_me() energy_minutes ÷ N', kt_const(RE_KT, 'RUN_STEPS_PER_MINUTE'), per_min.pop())
+
+# 러너 레벨 설정 — 0121 부터 차례대로(0122 가 runner_energy_cap 을 16.5 → 10)
+runner = effective_settings([p for p in MIGRATIONS if p.name >= '0121'])
+for key in ('runner_level_steps', 'runner_level_max', 'runner_energy_base', 'runner_energy_per_level', 'runner_energy_cap'):
+    if key not in runner:
+        bad.append(f'설정 {key}: 서버 0121 · 0122 에서 찾지 못했다')
+if 'runner_level_steps' in runner:
+    twin('RunnerLevel.DEFAULT_LEVEL_STEPS ↔ runner_level_steps', kt_const(RL_KT, 'DEFAULT_LEVEL_STEPS'), float(runner['runner_level_steps']))
+if 'runner_level_max' in runner:
+    twin('RunnerLevel.DEFAULT_MAX_LEVEL ↔ runner_level_max', kt_const(RL_KT, 'DEFAULT_MAX_LEVEL'), float(runner['runner_level_max']))
+srv_badges = re.search(r"'badge_levels'\s*,\s*jsonb_build_array\(([^)]*)\)", runner_me)
+app_badges = re.search(r'DEFAULT_BADGE_LEVELS\s*:\s*List<Int>\s*=\s*listOf\(([^)]*)\)', RL_KT)
+const_twins.append('RunnerLevel.DEFAULT_BADGE_LEVELS ↔ runner_me() badge_levels')
+if not srv_badges or not app_badges:
+    bad.append('배지 레벨: runner_me 의 badge_levels 나 앱 RunnerLevel.DEFAULT_BADGE_LEVELS 를 찾지 못했다')
+elif [int(x) for x in srv_badges.group(1).split(',')] != [int(x) for x in app_badges.group(1).split(',')]:
+    bad.append(f'배지 레벨: 앱 {app_badges.group(1)} · 서버 {srv_badges.group(1)}')
+
 if bad:
-    print('앱 FALLBACK 과 서버 0116 · 0118 · 0119 · 0120 이 다르다:\n  ' + '\n  '.join(bad))
+    print('앱과 서버(0116 · 0118 · 0119 · 0120 · 0121 · 0122)가 다르다:\n  ' + '\n  '.join(bad))
     sys.exit(1)
-print(f'경제 4판 쌍둥이 — 등급 {len(GRADES)} · 설정 {len(kt_values) + 3} · 강화 · 목표 {len(twins) + 2} · 능력치 규칙 {len(stat_twins) + 4} · 함께 달리기 · 하루 최대 {len(together_twins) + 1} 모두 같다')
+print(f'경제 4판 쌍둥이 — 등급 {len(GRADES)} · 설정 {len(kt_values) + 3} · 강화 · 목표 {len(twins) + 2} · 능력치 규칙 {len(stat_twins) + 4} · 함께 달리기 · 하루 최대 {len(together_twins) + 1} · 앱 상수 · 러너 레벨 {len(const_twins)} 모두 같다')
+print('  러너 레벨 하루 에너지(서버 값 — 앱은 runner_me · my_economy 를 읽는다): Lv1 ' + runner.get('runner_energy_base', '?')
+      + ' · 레벨마다 ' + runner.get('runner_energy_per_level', '?') + ' · 상한 ' + runner.get('runner_energy_cap', '?'))

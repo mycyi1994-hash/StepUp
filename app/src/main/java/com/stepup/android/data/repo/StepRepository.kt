@@ -49,6 +49,8 @@ class StepRepository(
     private val localGoal: Boolean = true,
     /** 오늘의 보상(서버 0118) — 서버가 센 목표 연속을 화면에 보인다. 서버 경제가 없으면 비어 있다 */
     private val serverDaily: Flow<com.stepup.android.domain.DailyRewards?> = kotlinx.coroutines.flow.flowOf(null),
+    /** 하루 에너지의 정본이 서버다(서버 경제) — 서버 값을 받기 전에는 [energyKnown] 이 null 이다 */
+    private val serverEnergy: Boolean = false,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -85,6 +87,15 @@ class StepRepository(
     /** 가장 길었던 연속 달성 일수 — 업적(연속 목표 달성)은 지금 이어진 값이 아니라 이 값으로 연다 */
     val bestStreak: Flow<Int> = prefs.bestStreak
     val energy: Flow<Double> = prefs.energy
+
+    /**
+     * 화면에 보일 오늘 남은 에너지 — 서버 경제에서 서버가 준 하루 에너지를 아직 받지 못했으면(새 계정의 첫 동기화 전) null.
+     * 그때 [energy] 는 폰 기본값 10(6,000보)이라 새 계정(Lv1 5.5 = 3,300보, 0121)에 실제보다 큰 숫자를 보였다(2026-11-22 경제 점검).
+     * 화면은 null 이면 숫자 대신 "에너지 확인 중"을 보인다. 적립 셈([energy])은 그대로다
+     */
+    val energyKnown: Flow<Double?> =
+        if (!serverEnergy) energy.map<Double, Double?> { it }
+        else combine(energy, prefs.serverEnergyKnown) { left, known -> left.takeIf { known } }
 
     val stepSensorAvailable: Boolean get() = tracker.isAvailable
 

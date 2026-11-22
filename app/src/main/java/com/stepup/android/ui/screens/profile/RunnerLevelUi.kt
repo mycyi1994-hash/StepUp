@@ -157,7 +157,8 @@ internal fun RunnerLevelInfoSheet(level: RunnerLevel, onClose: () -> Unit) {
             InfoParagraph(stringResource(R.string.rl_info_not_counts))
             val r = level.rewards
             val gives = buildList {
-                r.energyMinutesPerLevel?.let { m ->
+                // 레벨이 올라도 하루 에너지가 늘지 않는 계정(상한 레벨에 닿음 · 예전 보장이 이미 상한만큼)에는 "+2분"을 말하지 않는다
+                r.energyMinutesPerLevel?.takeIf { level.energyRisesWithLevel }?.let { m ->
                     add(level.energyCapLevel?.let { cap -> stringResource(R.string.rl_info_energy_cap, m, cap) } ?: stringResource(R.string.rl_info_energy, m))
                 }
                 r.freeEveryLevel?.let { add(stringResource(R.string.rl_info_free, it)) }

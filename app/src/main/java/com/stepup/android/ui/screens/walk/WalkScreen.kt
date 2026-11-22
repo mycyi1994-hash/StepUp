@@ -303,8 +303,9 @@ fun RunScreen(
             shoe = equipped,
             rules = shoeRules,
             fallbackMultiplier = RewardEconomy.sneakerMultiplier(sneakerLevel),
-            // 크루 방에서 크루 러닝이 아니면(오늘 이미 했다) 인원 보너스도 없다
-            partyMultiplier = if (crewRunGroup) 1.0 else RewardEconomy.partyMultiplier(session.partySize),
+            // 크루 방에서 크루 러닝이 아니면(오늘 이미 했다) 인원 보너스도 없다. 번개 · 옛 방은 함께 달린 사람만 세는 규칙(0120 ACTIVE)이면
+            // 올릴 때 인원 배수가 없다(× 1 — 함께 달린 사람이 올릴 때마다 서버가 더한다). 예전 규칙이면 함께 출발한 인원으로
+            partyMultiplier = if (crewRunGroup) 1.0 else shoeRules.together.forFlash().uploadPartyMultiplier(session.partySize),
             boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0,
         )
     }
@@ -315,6 +316,10 @@ fun RunScreen(
         RewardEconomy.earnableSteps(energy, energyEfficiency, equipped?.let { shoeRules.energyMultOf(it) } ?: 1.0)
     }
     val maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: sneakerLevel, shoeRules.stats)
+    // 크루 효율 8 : 2(0120 · 0122) — 서버는 올릴 때 내 신발과 "내 신발 80% + 함께 달린 크루원 평균 20%" 가운데 낮은 쪽으로 주고,
+    // 함께 달린 사람이 정해질 때마다 차이를 더한다. 이 폰은 방 사람들의 신발 효율을 모르니 금액을 보이지 않는다(서버가 치르지 않을 수 있는
+    // 숫자를 보이지 않는다) — 규칙만 한 줄로. 규칙을 아직 못 받았으면(기본값) 섞는 쪽으로 본다
+    val crewBlendRun = crewPoolRun && shoeRules.together.mayBlend
     // 이 러닝의 거리 — 화면 · 결과 · 기록 · 서버와 같은 기준(RunDistance: 경로 100m 부터 GPS, 그 전엔 걸음). 나이트 러너 도전 띠의 이번
     // 러닝 몫도 이것이다(서버가 친 거리로 센다) — 예전엔 걸음 거리라 바깥에서 띠와 서버 진행이 달랐다(2026-10-19 점검)
     val distanceKm = com.stepup.android.domain.RunDistance.liveKm(session.gpsKm, session.steps)
@@ -1544,6 +1549,12 @@ fun RunScreen(
                 energyUsedUp = energyUsedUp(
                     energyNow, checkShoe?.energyEfficiency ?: 1.0, checkShoe?.let { shoeRules.energyMultOf(it) } ?: 1.0,
                 ),
+                // 신발 줄의 "약 N분 동안 적립돼요"는 신발 수명과 오늘 남은 에너지 가운데 먼저 끝나는 쪽(2026-11-22 경제 점검) —
+                // 고른 에너지 드링크(그 비율만큼만 쓴다)까지. 에너지를 모르면 null(분을 약속하지 않는다)
+                energySteps = todayEarnableSteps(
+                    energyNow, checkShoe, shoeRules,
+                    com.stepup.android.domain.RunItemPicks.energyFactor(pickedItems, bag),
+                ),
                 runItems = bag?.runPicks.orEmpty(),
                 pickedItems = pickedItems,
                 onPickItem = itemsRepo::toggle,
@@ -1678,7 +1689,8 @@ fun RunScreen(
                         ((if (freeRunNow) (freeDist as? FreeDistance.Km)?.km ?: 0.0 else liveKm) / detailsGoalKm).toFloat().coerceIn(0f, 1f)
                     } else 0f,
                     // 자유 러닝에는 보상 칸을 두지 않는다(2026-10-14 v2)
-                    estimate = if (freeRunNow) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
+                    // 크루 효율을 섞는 크루 러닝은 금액을 올린 뒤에 정한다 — 보상 칸을 두지 않는다(아래 까닭 줄이 규칙을 말한다)
+                    estimate = if (freeRunNow || crewBlendRun) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
                     speed = (if (freeRunNow) freeSpeed else speedKmh)?.let { "%.1f".format(it) } ?: "—",
                     durability = freeDurability?.toString() ?: "—",
                     // 자유 러닝은 측정 까닭만 — 적립 한도 · 부스터 · 크루 보너스 같은 보상 줄은 두지 않는다
@@ -1697,12 +1709,25 @@ fun RunScreen(
                         }
                         if (xpBoosted) add(context.getString(R.string.run_boost_active))
                         when {
+                            // 크루 효율을 섞으면 숫자 없이 — "함께 달린 인원은 기록을 올린 뒤 정해져요 · Lv +N%" · "효율은 내 신발 80% + 평균 20%"
+                            crewBlendRun -> {
+                                add(context.getString(R.string.tb_live_counting, com.stepup.android.domain.CrewRunMath.percent(crewLevelPct)))
+                                val blend = shoeRules.together.blendShare
+                                add(context.getString(
+                                    R.string.tb_blend_note, com.stepup.android.domain.CrewRunMath.percent(1.0 - blend),
+                                    com.stepup.android.domain.CrewRunMath.percent(blend),
+                                ))
+                            }
                             crewPoolRun -> add(context.getString(
                                 R.string.run_crew_estimate_rule, com.stepup.android.domain.CrewRunMath.percent(crewBonusPct),
                                 com.stepup.android.domain.CrewRunMath.percent(crewLevelPct),
                             ))
                             crewRunGroup -> add(context.getString(R.string.crew_lobby_done_today))
-                            session.partySize > 1 -> add(context.getString(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)))
+                            // 번개 · 옛 방 — 함께 달린 사람만 세는 규칙(0120)이면 인원은 올린 뒤 정해진다("+N%"를 미리 말하지 않는다)
+                            session.partySize > 1 -> add(
+                                if (shoeRules.together.forFlash().active) context.getString(R.string.tb_live_counting_plain)
+                                else context.getString(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)),
+                            )
                         }
                     },
                 ),

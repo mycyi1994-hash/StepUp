@@ -23,4 +23,7 @@
     <string name="tb_rule_reward_blend_t">報酬 = クルー効率 × (1 + 人数 + レベル)</string>
     <string name="tb_rule_reward_daily_b">人数ボーナスとレベルボーナスは足して適用します。ソロ・クルーラン・ボーナスを合わせて1日の最大 SUP の範囲で受け取ります。</string>
     <string name="tb_blend_note">効率は自分のシューズ %1$s%% + 一緒に走ったメンバーのシューズ平均 %2$s%% で計算します。</string>
+    <string name="tb_live_counting_plain">一緒に走った人数は記録をアップした後に決まります</string>
+    <string name="tb_start_bonus_max">最大合計ボーナス</string>
+    <string name="tb_start_once">クルーランは1日1回です。一時停止はできますが、終えると今日はもう入れません。</string>
 </resources>

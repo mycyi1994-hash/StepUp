@@ -336,7 +336,7 @@ internal fun CrewLobbyContent(
         }
         LobbySheet.Start -> if (party.isHost && lobby && party.readyCount >= 2) {
             StartSheet(
-                party, room, shoes,
+                party, room, shoes, together = together,
                 onGo = {
                     sheet = LobbySheet.None
                     onStart()
@@ -522,7 +522,8 @@ private fun LobbyHeader(
                         .semantics { contentDescription = label }.testTag("party-menu"),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.MoreHoriz, contentDescription = null, tint = LobbyInk.Text) }
-                DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = LobbyInk.Sheet) {
+                // 잠금 화면 덮개가 덮고 있으면 펼침 메뉴(따로 된 창)를 그리지 않는다(LockCover — 열린 상태는 남는다)
+                if (!com.stepup.android.ui.components.LockCover.hidesWindows()) DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = LobbyInk.Sheet) {
                     @Composable
                     fun item(res: Int, which: LobbyMenu, tag: String) = DropdownMenuItem(
                         text = { Text(stringResource(res), style = navyText(15.sp, LobbyInk.Text, FontWeight.Medium)) },
@@ -1023,6 +1024,8 @@ internal fun LobbySheetFrame(
     dismissible: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = { if (dismissible) onDismiss() },
@@ -1407,12 +1410,23 @@ private fun ShoeAttr(label: String, value: String, modifier: Modifier) {
 
 /**
  * 출발 전 마지막 확인(33) · 준비된 인원만 출발(34) — 내 신발 · 출발 인원 · 예상 합산 보너스(인원 + 레벨, 서버 미리보기) · 내가 더할 내구도 ·
- * 하루 한 번. 확정은 출발 2분 뒤 서버가 한다. "함께 출발"을 눌러야 서버에 출발을 보낸다(이 시트는 아무것도 쓰지 않는다).
+ * 하루 한 번. 예전 규칙이면 확정은 출발 2분 뒤 서버가 한다. "함께 출발"을 눌러야 서버에 출발을 보낸다(이 시트는 아무것도 쓰지 않는다).
+ * 함께 달린 사람만 세는 규칙([together] ACTIVE, 0120)이면 인원은 기록을 올린 뒤 정해진다 — 준비한 모두로 센 미리보기는 약속이 아니라
+ * 가장 많이 받을 때의 값이라 "최대"로 적고, 문턱(목표의 절반 · N분) 한 줄을 붙이고, "2분 뒤 확정"을 말하지 않는다.
  */
 @Composable
-private fun StartSheet(party: PartyState, room: CrewRunRoom?, shoes: List<Sneaker>, onGo: () -> Unit, onWait: () -> Unit) {
+private fun StartSheet(
+    party: PartyState,
+    room: CrewRunRoom?,
+    shoes: List<Sneaker>,
+    onGo: () -> Unit,
+    onWait: () -> Unit,
+    together: com.stepup.android.domain.TogetherRule? = null,
+) {
     val notReady = party.partySize - party.readyCount
     val partial = notReady > 0
+    // 규칙을 아직 못 받았으면(기본값) 함께 달린 사람만 세는 쪽으로 본다 — 서버가 치르지 않을 수 있는 인원 보너스를 약속하지 않게
+    val counted = together != null && together.active
     LobbySheetFrame(
         if (partial) stringResource(R.string.crew5_partial_title, party.readyCount) else stringResource(R.string.crew5_start_title), onWait,
         Modifier.testTag(if (partial) "party-partial-start" else "party-start-confirm"),
@@ -1427,18 +1441,23 @@ private fun StartSheet(party: PartyState, room: CrewRunRoom?, shoes: List<Sneake
         SheetRow(stringResource(R.string.crew5_start_people), stringResource(R.string.crew5_start_people_n, party.readyCount), tag = "crew-start-people")
         if (room != null) {
             SheetRow(
-                stringResource(R.string.crew5_start_bonus),
+                stringResource(if (counted) R.string.tb_start_bonus_max else R.string.crew5_start_bonus),
                 stringResource(
                     R.string.crew5_start_bonus_value, CrewRunMath.percent(room.bonusPct), room.crewLevel,
                     CrewRunMath.percent(room.rewardBonus), CrewRunMath.percent(room.bonusPct + room.rewardBonus),
                 ),
-                sub = stringResource(R.string.crew_lobby_preview_note),
+                sub = if (counted) {
+                    togetherLobbyText(togetherLobbyLine(together, party.course?.km ?: 0.0, course = true))
+                        ?: stringResource(R.string.tb_bonus_note)
+                } else {
+                    stringResource(R.string.crew_lobby_preview_note)
+                },
                 highlight = true, tag = "crew-start-bonus",
             )
             SheetRow(stringResource(R.string.crew5_start_add), "+" + poolNumber(room.myContribution))
         }
         Spacer(Modifier.height(12.dp))
-        LobbyNotice(stringResource(R.string.crew_start_once))
+        LobbyNotice(stringResource(if (counted) R.string.tb_start_once else R.string.crew_start_once))
         Spacer(Modifier.height(16.dp))
         LobbyPrimaryButton(
             if (partial) stringResource(R.string.crew5_partial_go, party.readyCount) else stringResource(R.string.crew5_start_go), onGo,

@@ -96,7 +96,8 @@ fun BagScreen() {
     LaunchedEffect(Unit) { load() }
 
     val shoe by ServiceLocator.sneakerRepository.equipped.collectAsStateWithLifecycle(initialValue = null)
-    val energy by ServiceLocator.userPrefs.energy.collectAsStateWithLifecycle(initialValue = null)
+    // 서버가 준 하루 에너지를 아직 받지 못했으면 null — 폰 기본값(10)으로 "남은 에너지 N칸"을 보이지 않는다(2026-11-22 경제 점검)
+    val energy by ServiceLocator.stepRepository.energyKnown.collectAsStateWithLifecycle(initialValue = null)
 
     val errFull = stringResource(R.string.bag_err_full)
     val errEnergy = stringResource(R.string.bag_err_no_energy)

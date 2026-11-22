@@ -58,6 +58,8 @@
 
     <string name="run_check_earn_minutes">These shoes earn for about %1$d min</string>
     <string name="run_check_energy_empty">Today\'s earning limit is used up — this run will not earn</string>
+    <!-- Today's energy runs out before the shoes (2026-11-22 economy audit) — then nothing earns until tomorrow, not the worn rate -->
+    <string name="run_check_energy_minutes">You earn for about %1$d min today · after that your energy runs out and earning stops until tomorrow</string>
 
     <string name="items_boosts_paused">Boosters are not on sale right now. Items come from events and rewards.</string>
 

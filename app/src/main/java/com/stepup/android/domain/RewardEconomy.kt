@@ -27,6 +27,13 @@ object RewardEconomy {
     /** 에너지 1칸으로 적립할 수 있는 걸음 수 */
     const val STEPS_PER_ENERGY = 600
 
+    /**
+     * 하루 에너지를 분으로 옮길 때의 걸음 빠르기(분당 걸음) — 서버 `runner_me()` 의 energy_minutes(에너지 × 600 ÷ 165, 0121)와 같은 기준
+     * (Lv1 5.5 = 3,300보 ≈ 20분). 출발 전 점검의 "오늘은 약 N분 동안 적립돼요"도 이 값으로 남은 에너지를 분으로 바꾼다
+     * (`scripts/check-economy-twin.py` 가 서버와 맞대어 본다)
+     */
+    const val RUN_STEPS_PER_MINUTE = 165
+
     /** 기본 최대 에너지 */
     const val BASE_MAX_ENERGY = 10.0
 

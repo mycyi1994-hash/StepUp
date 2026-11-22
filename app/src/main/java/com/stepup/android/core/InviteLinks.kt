@@ -151,34 +151,64 @@ object InviteLinks {
     fun launchedFromHistory(flags: Int): Boolean = (flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
 
     /**
-     * 화면(MainActivity)이 받은 인텐트를 한 번만 읽는다 — 최근 앱 목록에서 다시 연 것이면 읽지 않고, 읽은 뒤에는
-     * 링크 칸(알림 링크 · 주소)을 비워 같은 화면이 다시 읽지 않게 한다.
+     * 인텐트의 링크 칸(`push_link` · `link`)을 믿을까 — 우리 알림이 만든 인텐트만(2026-11-22 보안 점검).
+     *
+     * MainActivity 는 런처 · App Links 때문에 다른 앱에 열려 있어, 아무 앱이나 웹 페이지(`intent://…;S.link=room/…;end`)가 같은 칸을
+     * 실어 보낼 수 있었다 — 한 번 눌러 남의 대기실 · 글 · 채팅이 열렸다. 보기(VIEW) · 브라우저(BROWSABLE) 인텐트는 표가 있어도
+     * 링크 칸을 읽지 않는다(그런 인텐트의 주소 `https://stepupcrew.com/c/…` · `/f/…` 는 [crewIdOf] · [flashIdOf] 가 그대로 읽는다).
+     * 그 밖에는 이 설치의 표([LinkToken] — 우리 알림만 싣는다)가 맞아야 한다.
      */
-    fun handleOnce(intent: Intent?) {
+    fun trustsExtras(action: String?, categories: Set<String>?, token: String?, expected: String?): Boolean {
+        if (action == Intent.ACTION_VIEW) return false
+        if (categories?.contains(Intent.CATEGORY_BROWSABLE) == true) return false
+        if (token.isNullOrEmpty() || expected.isNullOrEmpty()) return false
+        return java.security.MessageDigest.isEqual(token.toByteArray(Charsets.UTF_8), expected.toByteArray(Charsets.UTF_8))
+    }
+
+    /**
+     * 대기실 링크(`room/<크루>/<방>`)로 왔을 때 그 대기실을 바로 열까 — 이 폰이 이미 그 방에 들어가 있을 때만.
+     * 아니면 그 크루의 열린 대기실 목록을 연다(보기만 — 방을 골라 눌러야 들어간다). 링크 하나로 남의 방에 들어가
+     * 내 대기실에서 말없이 나오지 않게(2026-11-22 보안 점검 — 대기실은 열리자마자 그 방에 들어간다).
+     */
+    fun opensRoomDirectly(target: PushTarget.Room, currentCrewId: String?, currentPartyId: Long?): Boolean =
+        currentPartyId != null && currentPartyId == target.partyId && currentCrewId.equals(target.crewId, ignoreCase = true)
+
+    /**
+     * 화면(MainActivity)이 받은 인텐트를 한 번만 읽는다 — 최근 앱 목록에서 다시 연 것이면 읽지 않고, 읽은 뒤에는
+     * 링크 칸(알림 링크 · 주소 · 표)을 비워 같은 화면이 다시 읽지 않게 한다. [expectedToken] 은 이 설치의 표([LinkToken.of]) —
+     * 못 읽었으면 null(링크 칸은 읽지 않고 주소만 읽는다).
+     */
+    fun handleOnce(intent: Intent?, expectedToken: String?) {
         intent ?: return
         if (launchedFromHistory(intent.flags)) return
-        handle(intent)
+        handle(intent, trustsExtras(intent.action, intent.categories, intent.getStringExtra(LinkToken.EXTRA), expectedToken))
         intent.removeExtra(PushService.EXTRA_LINK)
         intent.removeExtra("link")
+        intent.removeExtra(LinkToken.EXTRA)
         if (intent.data != null) intent.data = null
     }
 
-    /** 앱을 연 인텐트를 본다. 초대 링크(크루 · 번개)나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을, 글 · 번개 · 대기실 알림이면 그 자리를 연다. */
-    fun handle(intent: Intent?) {
+    /**
+     * 앱을 연 인텐트를 본다. 초대 링크(크루 · 번개)나 크루 알림이면 그 크루를, 크루 채팅 알림이면 그 방을, 글 · 번개 · 대기실 알림이면 그 자리를 연다.
+     * 알림의 링크 칸은 [trusted]([trustsExtras]) 일 때만 읽는다 — 아니면 우리 주소(App Links)만 본다.
+     */
+    fun handle(intent: Intent?, trusted: Boolean) {
         intent ?: return
-        val target = pushTargetOf(intent.getStringExtra(PushService.EXTRA_LINK)) ?: pushTargetOf(intent.getStringExtra("link"))
+        val pushLink = if (trusted) intent.getStringExtra(PushService.EXTRA_LINK) else null
+        val dataLink = if (trusted) intent.getStringExtra("link") else null
+        val target = pushTargetOf(pushLink) ?: pushTargetOf(dataLink)
             // 번개러닝 공유 링크(https://stepupcrew.com/f/<번호>) — 번개 알림과 같은 자리로
             ?: flashIdOf(intent.dataString)?.let { PushTarget.Flash(it) }
         if (target != null) {
             _pendingPush.value = target
             return
         }
-        val chatId = chatIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK)) ?: chatIdOfPush(intent.getStringExtra("link"))
+        val chatId = chatIdOfPush(pushLink) ?: chatIdOfPush(dataLink)
         if (chatId != null) {
             _pendingChat.value = chatId
             return
         }
-        val requestsId = crewRequestsIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK)) ?: crewRequestsIdOfPush(intent.getStringExtra("link"))
+        val requestsId = crewRequestsIdOfPush(pushLink) ?: crewRequestsIdOfPush(dataLink)
         if (requestsId != null) {
             pendingCrewRequests = true
             _pendingCrew.value = requestsId
@@ -186,9 +216,9 @@ object InviteLinks {
         }
         val crewId = crewIdOf(intent.dataString)
             // 앱이 켜져 있을 때 받은 알림은 PushService 가 이 이름으로 싣는다
-            ?: crewIdOfPush(intent.getStringExtra(PushService.EXTRA_LINK))
-            // 앱이 꺼져 있을 때는 안드로이드가 알림을 띄우고, 누르면 data 칸이 그대로 온다
-            ?: crewIdOfPush(intent.getStringExtra("link"))
+            ?: crewIdOfPush(pushLink)
+            // 앱이 꺼져 있을 때는 안드로이드가 알림을 띄우고, 누르면 data 칸이 그대로 온다(표는 PushService.handleIntent 가 더해 둔다)
+            ?: crewIdOfPush(dataLink)
             ?: return
         pendingCrewRequests = false
         _pendingCrew.value = crewId

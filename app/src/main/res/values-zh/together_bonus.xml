@@ -23,4 +23,7 @@
     <string name="tb_rule_reward_blend_t">奖励 = 跑团效率 × (1 + 人数 + 等级)</string>
     <string name="tb_rule_reward_daily_b">人数加成和等级加成相加后适用。单人跑、跑团跑和加成合计，在每日最高 SUP 以内领取。</string>
     <string name="tb_blend_note">效率按自己的跑鞋 %1$s%% + 一起跑的成员跑鞋平均 %2$s%% 计算。</string>
+    <string name="tb_live_counting_plain">一起跑的人数在上传记录后确定</string>
+    <string name="tb_start_bonus_max">最高合计加成</string>
+    <string name="tb_start_once">团队跑每天一次。可以暂停，但结束后今天不能再加入。</string>
 </resources>

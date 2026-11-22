@@ -30,6 +30,19 @@ class PushService : FirebaseMessagingService() {
         ServiceLocator.pushRegistrar.syncInBackground(token)
     }
 
+    /**
+     * 앱이 뒤에 있을 때 온 알림은 FCM 이 직접 띄우고, 누르면 메시지의 값(link 등)을 그대로 실어 앱을 연다 — 그 인텐트에도 이 설치의
+     * 표(LinkToken)가 실리게 받은 메시지에 더해 둔다(FCM 은 메시지의 값을 알림 인텐트로 옮긴다). 표가 없는 링크 칸은 앱이 읽지 않는다
+     * (InviteLinks.trustsExtras, 2026-11-22 보안 점검). 표를 더하지 못하면(기기를 켜고 아직 잠금을 풀지 않았다) 알림은 그대로 뜨고,
+     * 누르면 앱만 열린다.
+     */
+    override fun handleIntent(intent: Intent) {
+        if (intent.action == ACTION_FCM_RECEIVE) {
+            runCatching { com.stepup.android.core.LinkToken.stamp(applicationContext, intent) }
+        }
+        super.handleIntent(intent)
+    }
+
     override fun onMessageReceived(message: RemoteMessage) {
         // 로그아웃한 폰에는 띄우지 않는다 — 떼기 전에 보낸 앞 계정의 소식이 늦게 와도(일꾼 스레드라 잠깐 기다려도 된다)
         ServiceLocator.init(applicationContext)
@@ -116,6 +129,8 @@ class PushService : FirebaseMessagingService() {
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 if (link.isNotBlank()) putExtra(EXTRA_LINK, link)
             }
+            // 우리 알림이라는 표 — 앱은 표가 맞는 인텐트의 링크만 읽는다(InviteLinks.trustsExtras)
+            com.stepup.android.core.LinkToken.stamp(context, intent)
             val pending = PendingIntent.getActivity(
                 context,
                 link.hashCode(),
@@ -143,6 +158,9 @@ class PushService : FirebaseMessagingService() {
 
         /** 알림을 눌러 들어왔을 때 열 화면. 앱 안 링크 형식(예: crew/<id>) */
         const val EXTRA_LINK = "push_link"
+
+        /** FCM 메시지가 오는 인텐트(FirebaseMessagingService 가 받는 것) */
+        private const val ACTION_FCM_RECEIVE = "com.google.android.c2dm.intent.RECEIVE"
 
         /** 함께 뛰기 출발 푸시의 kind(서버 0117 · push-send) */
         private const val KIND_STARTED = "PARTY_STARTED"
