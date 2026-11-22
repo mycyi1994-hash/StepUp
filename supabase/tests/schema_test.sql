@@ -13993,7 +13993,16 @@ begin
                      and not exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u122(5) and l.ref = 'goal:' || (d - 1))
                      and economy.goal_streak_before(pg_temp.u122(5), d, 60) = 1,
     format('하루 최대에 막혀 목표 보너스 0 — 채운 날은 남고 다음 날 연속 1 (%s) (0122)', economy.goal_streak_before(pg_temp.u122(5), d, 60)));
-  perform pg_temp.ok(economy.goal_settle(pg_temp.u122(5), d - 1) is null, '채운 날은 한 번만 정산한다 (0122)');
+  -- 받은 것이 없으면(하루 최대에 막혀 0) 다시 불러도 0 — 원장 · 채운 날은 하나. 남은 몫이 생기면 그때 한 번 주고, 그 뒤로는 끝
+  perform pg_temp.ok(economy.goal_settle(pg_temp.u122(5), d - 1) = 0
+                     and not exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u122(5) and l.ref = 'goal:' || (d - 1))
+                     and (select count(*) from economy.goal_days where user_id = pg_temp.u122(5) and day = d - 1) = 1,
+    '하루 최대에 막힌 날은 다시 불러도 0 — 원장 없음 · 채운 날 하나 (0122)');
+  update public.walk_sessions set points_awarded = 0 where user_id = pg_temp.u122(5);
+  v_run := coalesce(economy.goal_settle(pg_temp.u122(5), d - 1), -1);
+  perform pg_temp.ok(v_run > 0 and (select count(*) from public.sup_ledger l where l.user_id = pg_temp.u122(5) and l.ref = 'goal:' || (d - 1)) = 1,
+    format('남은 몫이 생기면 목표 보너스를 그때 준다 (%s) (0122)', v_run));
+  perform pg_temp.ok(economy.goal_settle(pg_temp.u122(5), d - 1) is null, '받은 날은 한 번만 정산한다 (0122)');
 
   -- 11. 가입 선물: 러닝 상자가 먼저 와도 무료 뽑기 10개
   perform economy.box_grant(pg_temp.u122(6), 'RUN2000:' || d, 'FREE', d);
