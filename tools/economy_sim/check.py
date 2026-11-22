@@ -33,6 +33,8 @@ update public.economy_settings set value = '0'::jsonb where key = 'free_repair_h
 update public.economy_settings set value = '"ON"'::jsonb where key = 'runner_level_rule';   -- 러너 레벨(0121) 켠 채(새 계정 Lv1 하루 에너지 20분) — 지금 배포되는 규칙으로 잰다
 update public.economy_settings set value = '{reward}'::jsonb where key = 'reward_luck';
 update public.economy_settings set value = '{wear}'::jsonb where key = 'wear_luck';
+-- 모의 계정은 방금 만들고 어제(한국 날짜) 하루를 산다 — 가입 전 러닝 무효(0123)는 끄고 잰다
+update public.economy_settings set value = 'false'::jsonb where key = 'signup_run_guard';
 """
 
 

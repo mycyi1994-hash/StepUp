@@ -106,47 +106,54 @@ begin
 end $$;
 
 -- 경로 지문 — 첫 점 · 끝 점 시각 사이를 23 칸으로 나눠 그 시각의 자리(앞뒤 점 사이를 시간으로 나눠)를 고른다(24점 · 위도 경도 번갈아 48개).
--- 시각 간격은 점이 20개 이상이고 간격이 고르지 않을 때만(1초 고정이면 서로 다른 폰도 같아진다)
+-- 시각 간격은 점이 20개 이상이고 간격이 고르지 않을 때만(1초 고정이면 서로 다른 폰도 같아진다). 경로를 한 번만 훑는다(1시간 경로 몇 ms)
 create or replace function economy.track_sig(p_track text)
 returns table (sig double precision[], dts int[], lat0 double precision, lng0 double precision)
-language sql immutable set search_path = public, economy as $$
-  with parsed as (
-    select u.ord, s.p
-      from unnest(string_to_array(coalesce(p_track, ''), ';')) with ordinality as u(chunk, ord)
-      cross join lateral (select string_to_array(u.chunk, ',') as p) s
-  ), pts as (
-    select row_number() over (order by ord) as n, p[1]::double precision as lat, p[2]::double precision as lng, p[3]::bigint as at
-      from parsed
-     where array_length(p, 1) = 3 and p[1] ~ '^-?[0-9]+(\.[0-9]+)?$' and p[2] ~ '^-?[0-9]+(\.[0-9]+)?$' and p[3] ~ '^[0-9]+$'
-  ), ends as (
-    select min(at) as a0, max(at) as a1, count(*) as c from pts
-  ), want as (
-    select k, ends.a0 + (ends.a1 - ends.a0) * k / 23.0 as t from ends, generate_series(0, 23) k
-     where ends.c >= 2 and ends.a1 > ends.a0
-  ), pick as (
-    select w.k,
-           (select row(p1.lat, p1.lng, p1.at, p2.lat, p2.lng, p2.at)::text from pts p1 join pts p2 on p2.n = p1.n + 1
-             where p1.at <= w.t and p2.at >= w.t order by p1.n limit 1) as seg,
-           w.t
-      from want w
-  ), interp as (
-    select k, t, seg,
-           split_part(trim(both '()' from seg), ',', 1)::double precision as la1, split_part(trim(both '()' from seg), ',', 2)::double precision as ln1,
-           split_part(trim(both '()' from seg), ',', 3)::double precision as t1,
-           split_part(trim(both '()' from seg), ',', 4)::double precision as la2, split_part(trim(both '()' from seg), ',', 5)::double precision as ln2,
-           split_part(trim(both '()' from seg), ',', 6)::double precision as t2
-      from pick where seg is not null
-  )
-  select (select array_agg(v order by k, j) from (
-            select k, 1 as j, la1 + (la2 - la1) * case when t2 > t1 then (t - t1) / (t2 - t1) else 0 end as v from interp
-            union all
-            select k, 2 as j, ln1 + (ln2 - ln1) * case when t2 > t1 then (t - t1) / (t2 - t1) else 0 end from interp) z),
-         -- 간격이 고르지 않을 때만(서로 다른 간격이 5가지 넘게) — 1초 고정 시험 경로 · 고르게 찍는 폰끼리는 견주지 않는다
-         (select case when count(distinct d) > 5 and count(*) >= 20 then (array_agg(d order by n))[1:240] end
-            from (select p1.n, least(greatest(p2.at - p1.at, -2000000000), 2000000000)::int as d from pts p1 join pts p2 on p2.n = p1.n + 1) dd),
-         (select lat from pts where n = 1),
-         (select lng from pts where n = 1)
-$$;
+language plpgsql immutable set search_path = public, economy as $$
+declare
+  v_num constant text := '^-?[0-9]+(\.[0-9]+)?$';
+  v_chunk text; v_parts text[];
+  la double precision[] := '{}'; lo double precision[] := '{}'; ts bigint[] := '{}';
+  n int; a0 bigint; a1 bigint; k int; i int := 1; t double precision; f double precision;
+  v_sig double precision[] := '{}'; v_all int[] := '{}'; v_d int; v_distinct int;
+begin
+  if p_track is null or p_track = '' then
+    return query select null::double precision[], null::int[], null::double precision, null::double precision;
+    return;
+  end if;
+  foreach v_chunk in array string_to_array(p_track, ';') loop
+    v_parts := string_to_array(v_chunk, ',');
+    continue when v_parts is null or array_length(v_parts, 1) <> 3;
+    continue when v_parts[1] !~ v_num or v_parts[2] !~ v_num or v_parts[3] !~ '^[0-9]+$';
+    la := la || v_parts[1]::double precision;
+    lo := lo || v_parts[2]::double precision;
+    ts := ts || v_parts[3]::bigint;
+  end loop;
+  n := coalesce(cardinality(ts), 0);
+  if n = 0 then
+    return query select null::double precision[], null::int[], null::double precision, null::double precision;
+    return;
+  end if;
+  a0 := ts[1]; a1 := ts[n];
+  if n >= 2 and a1 > a0 then
+    for k in 0 .. 23 loop
+      t := a0 + (a1 - a0) * k / 23.0;
+      while i < n - 1 and ts[i + 1] < t loop i := i + 1; end loop;
+      f := case when ts[i + 1] > ts[i] then least(greatest((t - ts[i]) / (ts[i + 1] - ts[i]), 0), 1) else 0 end;
+      v_sig := v_sig || (la[i] + (la[i + 1] - la[i]) * f) || (lo[i] + (lo[i + 1] - lo[i]) * f);
+    end loop;
+  else
+    v_sig := null;
+  end if;
+  for k in 1 .. n - 1 loop
+    v_d := least(greatest(ts[k + 1] - ts[k], -2000000000), 2000000000)::int;
+    v_all := v_all || v_d;
+  end loop;
+  select count(distinct x) into v_distinct from unnest(v_all) x;
+  return query select v_sig,
+                      case when coalesce(v_distinct, 0) > 5 and n - 1 >= 20 then v_all[1:240] end,
+                      la[1], lo[1];
+end $$;
 
 -- 이 경로가 이미 올린 경로(다른 계정 · 내 다른 러닝)의 사본인가 — 첫 점이 약 50m 안 · 경로 거리 ±10% · 30일 안에서 견준다.
 -- 사본 = 점 사이 시각 간격(ms)이 같은 자리에서 90% 넘게 같고, 시간에 맞춰 고른 24점의 가운데 거리가 route_copy_max_m(5m) 안.
