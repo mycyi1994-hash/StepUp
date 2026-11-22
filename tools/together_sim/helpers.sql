@@ -45,12 +45,15 @@ begin
   update economy.crew_pool_empty set from_at = from_at - p, to_at = to_at - p;
   update public.walk_sessions set started_at = started_at - p, ended_at = ended_at - p;
 end $$;
--- 달리는 동안 p_secs 초를 5초마다 박동하며 보낸다(달리는 사람 목록)
-create or replace function t.run(p_party bigint, p_users int[], p_secs int, p_state text default 'RUNNING') returns void language plpgsql as $$
+-- 달리는 동안 p_secs 초를 5초마다 박동하며 보낸다(달리는 사람 목록).
+-- 긴 러닝은 p_every 를 25초로 — 서버는 30초 안의 박동을 달리는 중으로 센다(같은 체력을 쓴다). 장면 하나가 한 트랜잭션이라
+-- t.age 가 모든 줄을 고칠 때마다 죽은 줄이 쌓여 5초 박동 세 시간 남짓이면 CI 에서 10분을 넘긴다
+create or replace function t.run(p_party bigint, p_users int[], p_secs int, p_state text default 'RUNNING', p_every int default 5) returns void language plpgsql as $$
 declare i int; m int; v jsonb;
 begin
-  for i in 1 .. p_secs / 5 loop
-    perform t.age(interval '5 seconds');
+  if p_every < 1 or p_every >= 30 then raise exception 't.run: p_every 는 1 ~ 29초'; end if;
+  for i in 1 .. p_secs / p_every loop
+    perform t.age(make_interval(secs => p_every));
     foreach m in array p_users loop
       perform t.login(m);
       v := public.crew_run_beat(p_party, p_state);

@@ -281,7 +281,7 @@ begin
       perform economy.ledger_apply(t.u(n), 'BONUS_GOAL', 15, '설정: 지난 목표', 'goal:' || (v_day - i));
     end loop;
   end loop;
-  perform t.run(p, array[91, 92], 13800);
+  perform t.run(p, array[91, 92], 13800, 'RUNNING', 25);
   select started_at into v_start from economy.crew_runs where user_id = t.u(91);
   for n in 91 .. 92 loop perform t.login(n); v := public.crew_run_beat(p, 'ENDED'); end loop;
   perform t.rec(91, v_start, 13800, 38000);
