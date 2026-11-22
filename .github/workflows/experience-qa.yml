@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  # 수동 실행 때 검토용 화면 캡처를 qa-captures 사전 배포에 올린다
-  # (아래 마지막 단계). 풀 리퀘스트 실행에서는 쓰기를 하지 않는다.
-  contents: write
+  # 빌드 · 에뮬레이터 작업은 읽기만 — 풀 리퀘스트의 코드가 쓰기 토큰으로 돌지 않게(2026-11-22 점검).
+  # 수동 실행 때 화면 캡처를 qa-captures 사전 배포에 올리는 것은 아래 publish 작업만 쓰기 권한을 받는다
+  contents: read
 
 concurrency:
   group: experience-qa-${{ github.ref }}
@@ -77,8 +77,29 @@ jobs:
       # 아티팩트는 로그인해야 받을 수 있지만, 사전 배포의 첨부 파일은 테스트 APK 와
       # 같은 방식으로 누구나 받는다. 전부(수백 장)가 아니라 한국어 기본·큰 글자,
       # 다크·라이트 한 벌과 하단 탭 이동 캡처, 레이아웃 검사 기록만 묶는다.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StepUp-experience-qa
+          path: |
+            qa-captures/
+            screen-gallery/
+            app/build/reports/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/apk/debug/app-debug.apk
+
+  publish:
+    # 수동 실행에서만 — 위 작업의 아티팩트(qa-captures · screen-gallery)를 받아 qa-captures 사전 배포에 올린다
+    needs: android-experience
+    if: always() && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: StepUp-experience-qa
       - name: Publish review screenshots
-        if: always() && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -127,13 +148,3 @@ jobs:
               --notes "Experience QA 가 에뮬레이터에서 찍은 실제 화면. 수동 실행 때마다 덮어쓴다."
           fi
           gh release edit qa-captures --notes "Experience QA 캡처 · ${GITHUB_REF_NAME} · ${GITHUB_SHA::7}"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: StepUp-experience-qa
-          path: |
-            qa-captures/
-            screen-gallery/
-            app/build/reports/
-            app/build/outputs/androidTest-results/
-            app/build/outputs/apk/debug/app-debug.apk

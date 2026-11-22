@@ -211,6 +211,12 @@ https://pupjzcmybuoyhzfwrsdf.supabase.co/auth/v1/callback
 > 위 값은 저장소에 들어 있는 **개발용 키**의 지문이라 공개해도 안전합니다.
 > 나중에 Play 스토어에 올릴 때는 구글이 주는 **다른 지문**을 하나 더 등록해야
 > 하는데, 그건 Play Console 등록이 끝난 뒤에 알려드리겠습니다.
+>
+> **2026-11-22 점검 — 이 개발용 지문은 운영 OAuth 에서 지운다.** 개발용 키(`app/debug.keystore`, 암호 `android`)는 저장소에 공개돼 있어,
+> 누구나 같은 지문으로 서명한 가짜 `com.stepup.android` 를 만들 수 있다. 그 앱도 구글 로그인 토큰을 받아 진짜 계정으로 들어온다.
+> 운영 Google Cloud 의 Android OAuth 클라이언트에는 **테스트 APK 키(`TEST_APK_SIGNING_KEY`)와 Play 키 지문만** 남긴다.
+> 에뮬레이터 · 개발 빌드용 구글 로그인이 필요하면 따로 만든 시험용 GCP 프로젝트에 둔다. 앱 링크 확인 파일(`web/.well-known/assetlinks.json`)에서도
+> 개발용 키(`90:82:…`)를 뺐다.
 
 > **테스트 APK 전용 키(2026-10-16)**: 폰에 까는 테스트 APK 는 이제 저장소 밖의 키로 서명합니다.
 > 같은 방법으로 Android 클라이언트를 하나 더 만들어 SHA-1 `91:4B:36:0F:54:DD:FA:87:7E:AD:2B:8A:61:A4:03:FF:EC:16:23:16`

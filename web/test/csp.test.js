@@ -35,6 +35,12 @@ test('every inline script on CSP pages is allowed by its hash', () => {
   assert.deepEqual(inlineHashes('11events/index.html'), []);
   assert.match(cspFor('/11events*'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com https:\/\/www\.googletagmanager\.com;/);
   for (const path of ['/privacy*', '/terms*', '/delete-account*']) assert.match(cspFor(path), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
+  // 보너스 뽑기 · 지갑 페이지(2026-11-22): 인라인 스크립트 없이 이 사이트 스크립트만
+  for (const [file, path] of [['draw.html', '/draw*'], ['wallet.html', '/wallet*']]) {
+    assert.deepEqual(inlineHashes(file), [], `${file} 에는 인라인 스크립트를 두지 않는다`);
+    assert.match(cspFor(path), /script-src 'self';/);
+    assert.match(cspFor(path), /frame-ancestors 'none'/);
+  }
   // 미니게임(2026-11-12)도 인라인 스크립트 없이 이 사이트 스크립트만 — 순위표 서버(Supabase)에만 보낸다
   assert.deepEqual(inlineHashes('lab-mja9j66fef/index.html'), []);
   assert.match(cspFor('/lab-mja9j66fef*'), /script-src 'self' https:\/\/static\.cloudflareinsights\.com;/);
