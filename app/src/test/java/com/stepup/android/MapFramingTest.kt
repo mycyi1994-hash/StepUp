@@ -6,6 +6,8 @@ import com.stepup.android.ui.components.MapTiles
 import com.stepup.android.ui.components.TilePlan
 import com.stepup.android.ui.components.followAnchor
 import com.stepup.android.ui.components.followFrame
+import com.stepup.android.ui.components.routeLeftBehind
+import com.stepup.android.ui.components.routeSample
 import com.stepup.android.ui.screens.community.stories.rangeSpan
 import com.stepup.android.ui.screens.profile.historyFocus
 import org.junit.Assert.assertEquals
@@ -31,6 +33,35 @@ class MapFramingTest {
             assertEquals(mapY(here.lat), (mapY(frame.minOf { it.lat }) + mapY(frame.maxOf { it.lat })) / 2, 1e-12)
             assertEquals(here.lng, (frame.minOf { it.lng } + frame.maxOf { it.lng }) / 2, 1e-9)
         }
+    }
+
+    /** 지하철에서 지금 자리만 몇 km 옮겨 가도 걸어온 경로가 따라가는 지도 안에 남는다(2026-11-04 "잠금 화면 다녀오니 루트가 다 없어졌다") */
+    @Test fun routeStaysOnTheFollowMapWhenHereMovedFarAway() {
+        val walked = List(40) { GeoPoint(lat = 37.5260 + it * 0.0001, lng = 126.9260) } // 약 430m 북쪽으로
+        val nearEnd = GeoPoint(lat = walked.last().lat + 0.0003, lng = walked.last().lng) // 약 33m
+        val train = GeoPoint(lat = 37.5560, lng = 126.9720) // 약 5km 떨어진 역
+        assertTrue(!routeLeftBehind(walked, nearEnd))
+        assertTrue(routeLeftBehind(walked, train))
+        val frame = followFrame(train, routeSample(walked))
+        val plan = TilePlan.of(frame, 1080, 1600, density = 3f, zooms = MapTiles.MIN_ZOOM..MapTiles.FOLLOW_ZOOMS.last,
+            magnify = MapTiles.FOLLOW_MAGNIFY)
+        for (p in walked + train) {
+            val at = plan.toScreen(p)
+            assertTrue("$p 이 화면 밖($at)", at.x in 0f..1080f && at.y in 0f..1600f)
+        }
+        // 지금 자리는 여전히 가운데
+        val mid = plan.toScreen(train)
+        assertEquals(540f, mid.x, 2f)
+        assertEquals(800f, mid.y, 2f)
+    }
+
+    @Test fun routeSampleKeepsBothEndsAndStaysSmall() {
+        val long = List(5_000) { GeoPoint(lat = 37.5 + it * 1e-5, lng = 127.0) }
+        val sample = routeSample(long)
+        assertEquals(64, sample.size)
+        assertEquals(long.first(), sample.first())
+        assertEquals(long.last(), sample.last())
+        assertEquals(long.take(10), routeSample(long.take(10)))
     }
 
     @Test fun followAnchorStaysInTheVisibleClearPart() {
