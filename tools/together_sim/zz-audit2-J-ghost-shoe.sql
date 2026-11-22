@@ -19,7 +19,8 @@ begin
   -- u71 정직: 뽑은 신발을 신고 달린다
   perform t.login(71);
   select id into v_new from public.market_sneakers where owner_id = t.u(71) and origin <> 'STARTER';
-  update public.market_sneakers set equipped = (id = v_new) where owner_id = t.u(71);
+  update public.market_sneakers set equipped = false where owner_id = t.u(71);
+  update public.market_sneakers set equipped = true where id = v_new;
   -- u72 부정: 뽑은 신발을 첫 신발의 강화 재료로 태운다
   perform t.login(72);
   select id into v_new from public.market_sneakers where owner_id = t.u(72) and origin <> 'STARTER';
@@ -52,8 +53,8 @@ begin
     end loop;
     perform t.say(format('u%s 5일', n), format('SUP %s · 수리비 %s · 남는 몫 %s (하루 %s)', v_pts, round(v_rep, 2), round(v_pts - v_rep, 2), round((v_pts - v_rep) / 5, 2)));
   end loop;
-  perform t.say('u72 러닝이 쓴 신발', (select string_agg(distinct s.sneaker_id::text || ' ' || m.status || ' dur=' || m.dur_now || '/' || m.dur_max, ', ')
-                                       from public.walk_sessions s join public.market_sneakers m on m.id = s.sneaker_id where s.user_id = t.u(72)));
+  perform t.say('u72 러닝이 쓴 신발', (select string_agg(distinct ws.sneaker_id::text || ' ' || m.status || ' dur=' || m.dur_now || '/' || m.dur_max, ', ')
+                                       from public.walk_sessions ws join public.market_sneakers m on m.id = ws.sneaker_id where ws.user_id = t.u(72)));
   perform t.say('u72 판정', (select string_agg(distinct verdict || ':' || verdict_reason, ' | ') from public.walk_sessions where user_id = t.u(72)));
   perform t.say('u72 첫 신발(대상)', (select format('Lv%s xp=%s dur=%s/%s', level, forge_xp, dur_now, dur_max) from public.market_sneakers where id = v_starter));
 end $$;
