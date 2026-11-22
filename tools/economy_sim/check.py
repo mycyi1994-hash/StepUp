@@ -11,6 +11,8 @@
   8. 예전 앱의 확률 강화가 새 경험치 강화보다 싸지 않다(0119 — 같은 굽이).
 포인트는 네 가지로 나눠 본다(고르게 · 효율만 · 내구도만 · 착화감만) — 1 · 2 · 7 은 넷 모두에서.
 
+1 · 2 · 7 은 하루 에너지 두 가지로 — 새 계정(러너 Lv1 5.5 = 20분에서 그날 오른다)과 고참(10 = 36분 — 0121 전 계정의 보장 ·
+러너 레벨 상한, 0122). 고참은 러너 에너지를 10 에 묶어(base 10 · 레벨마다 0) 그날 레벨이 올라 에너지가 바뀌는 흔들림 없이 잰다.
 무료 수리는 끄고 잰다(가장 나쁜 쪽). 깨지면 1 로 끝난다 — CI(.github/workflows/test-sql.yml)가 돌린다.
 
     python3 tools/economy_sim/check.py
@@ -34,9 +36,16 @@ update public.economy_settings set value = '{wear}'::jsonb where key = 'wear_luc
 """
 
 
-def run(label, reward, wear):
+# 고참(0122): 하루 에너지 10 에 묶는다 — 러너 레벨 상한 · 0121 전 계정의 보장과 같은 값
+VETERAN = """
+update public.economy_settings set value = '10'::jsonb where key = 'runner_energy_base';
+update public.economy_settings set value = '0'::jsonb where key = 'runner_energy_per_level';
+"""
+
+
+def run(label, reward, wear, extra=''):
     with tempfile.NamedTemporaryFile('w', suffix='.sql', delete=False) as f:
-        f.write(BASE.format(reward=reward, wear=wear))
+        f.write(BASE.format(reward=reward, wear=wear) + extra)
         tweak = f.name
     os.chmod(tweak, 0o644)
     out = subprocess.run(['bash', os.path.join(HERE, 'run.sh'), tweak], capture_output=True, text=True)
@@ -48,7 +57,7 @@ def run(label, reward, wear):
     for line in out.stdout.splitlines():
         p = [x.strip() for x in line.split('|')]
         if len(p) >= 13 and p[0] in GRADES:
-            rows.append(dict(rarity=p[0], lvl=int(p[1]), mode=p[2], alloc=p[3], earned=float(p[8]), repair=float(p[9]),
+            rows.append(dict(rarity=p[0], lvl=int(p[1]), mode=p[2], alloc=p[3], energy=float(p[4]), earned=float(p[8]), repair=float(p[9]),
                              net=float(p[10]), reasons=p[13] if len(p) > 13 else ''))
     if len(rows) < 240:
         print(out.stdout[-3000:])
@@ -60,28 +69,36 @@ def main():
     bad = []
     flows, mean = run('평균 운', '[1, 1, 1]', '[1, 1, 1]')
     _, worst = run('가장 나쁜 운', '[0.7, 0.7, 0.7]', '[1.444, 1.444, 1.444]')
+    _, vmean = run('고참 · 평균 운', '[1, 1, 1]', '[1, 1, 1]', VETERAN)
+    _, vworst = run('고참 · 가장 나쁜 운', '[0.7, 0.7, 0.7]', '[1.444, 1.444, 1.444]', VETERAN)
+    for label, rows, want in (('새 계정', mean, None), ('고참', vmean, 10.0)):
+        if want is not None and any(abs(r['energy'] - want) > 0.001 for r in rows):
+            bad.append(f'{label}: 하루 에너지가 {want} 가 아니다 — {sorted({r["energy"] for r in rows})}')
 
-    for label, rows in (('평균 운', mean), ('가장 나쁜 운', worst)):
+    for label, rows in (('평균 운', mean), ('가장 나쁜 운', worst), ('고참 · 평균 운', vmean), ('고참 · 가장 나쁜 운', vworst)):
         for r in rows:
             if r['net'] <= 0:
                 bad.append(f"[1] {label} {r['rarity']} Lv{r['lvl']} {r['mode']} {r['alloc']}: 남는 돈 {r['net']}")
     # 2. Lv1 줄(포인트 없음)은 고르게(EVEN)에만 있다 — 다른 배분의 첫 칸으로도 쓴다.
     #    효율만 넣은 신발은 하루에 버는 양이 같다(같은 돈을 더 짧은 시간에) — 분 단위로 끊겨 생기는 차이 2% 는 봐준다
-    lv1 = {(r['rarity'], r['mode']): r for r in mean if r['lvl'] == 1}
-    by = {}
-    for r in mean:
-        if r['lvl'] > 1:
-            by.setdefault((r['rarity'], r['mode'], r['alloc']), []).append(r)
-    for (rarity, mode, alloc), rs in by.items():
-        rs = [lv1[(rarity, mode)]] + sorted(rs, key=lambda r: r['lvl'])
-        for a, b in zip(rs, rs[1:]):
-            slack = 0.98 if alloc == 'EFF' else 1.0
-            if b['net'] < a['net'] * slack and '상한' not in b['reasons']:
-                bad.append(f"[2] {rarity} {mode} {alloc}: Lv{a['lvl']} {a['net']} → Lv{b['lvl']} {b['net']}")
+    #    상한 · 하루 최대에 닿은 칸은 뺀다(서버 까닭 글 '상한' · '최대')
+    for who, rows_ in (('', mean), ('고참 ', vmean)):
+        lv1 = {(r['rarity'], r['mode']): r for r in rows_ if r['lvl'] == 1}
+        by = {}
+        for r in rows_:
+            if r['lvl'] > 1:
+                by.setdefault((r['rarity'], r['mode'], r['alloc']), []).append(r)
+        for (rarity, mode, alloc), rs in by.items():
+            rs = [lv1[(rarity, mode)]] + sorted(rs, key=lambda r: r['lvl'])
+            for a, b in zip(rs, rs[1:]):
+                slack = 0.98 if alloc == 'EFF' else 1.0
+                if b['net'] < a['net'] * slack and '상한' not in b['reasons'] and '최대' not in b['reasons']:
+                    bad.append(f"[2] {who}{rarity} {mode} {alloc}: Lv{a['lvl']} {a['net']} → Lv{b['lvl']} {b['net']}")
     # 7. 수리하지 않고 다 닳은 신발로 같은 에너지를 쓰면 적립의 30%(worn_rate)를 수리비 없이 번다 — 수리하는 쪽이 그보다 남아야 한다
-    for r in mean:
-        if r['net'] <= WORN_RATE * r['earned'] * 1.1:
-            bad.append(f"[7] {r['rarity']} Lv{r['lvl']} {r['mode']} {r['alloc']}: 수리하며 {r['net']} ≤ 안 고치고 {WORN_RATE * r['earned']:.1f}")
+    for who, rows_ in (('', mean), ('고참 ', vmean)):
+        for r in rows_:
+            if r['net'] <= WORN_RATE * r['earned'] * 1.1:
+                bad.append(f"[7] {who}{r['rarity']} Lv{r['lvl']} {r['mode']} {r['alloc']}: 수리하며 {r['net']} ≤ 안 고치고 {WORN_RATE * r['earned']:.1f}")
 
     if not re.search(r'\[수리\] 됨', flows):
         bad.append('[3] 새 사용자가 첫 러닝 뒤에 수리하지 못한다:\n' + '\n'.join(l for l in flows.splitlines() if l.startswith('[')))
@@ -120,12 +137,13 @@ def main():
     for r in sorted(mean, key=lambda r: (GRADES.index(r['rarity']), r['lvl'], r['mode'], ALLOCS.index(r['alloc']))):
         print(f"{r['rarity']:<9} Lv{r['lvl']:<2} {r['mode']:<4} {r['alloc']:<7} 적립 {r['earned']:>8.1f} 수리 {r['repair']:>7.1f} 남음 {r['net']:>8.1f}")
     print('가장 나쁜 운에서 가장 적게 남는 칸:', min(worst, key=lambda r: r['net']))
+    print('고참(하루 에너지 10) 가장 나쁜 운에서 가장 적게 남는 칸:', min(vworst, key=lambda r: r['net']))
     for mode, mins, got, goal, sup in first:
         print(f'새 사용자 첫날 {mode} {mins}분: 보상 걸음 {got} / 목표 {goal} · +{sup} SUP')
     if bad:
         print('\n'.join(bad))
         sys.exit(1)
-    print('경제 불변식 여덟 — 모두 지켜진다')
+    print('경제 불변식 여덟 — 새 계정 · 고참(하루 에너지 10) 모두 지켜진다')
 
 
 if __name__ == '__main__':

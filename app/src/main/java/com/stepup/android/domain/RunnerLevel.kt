@@ -124,7 +124,7 @@ data class RunnerLevel(
     val levelEnergyMinutes: Int?,
     /** 다음 레벨의 레벨 에너지(분) — 만렙이면 null */
     val nextEnergyMinutes: Int?,
-    /** 하루 에너지가 더 늘지 않는 레벨(Lv21) */
+    /** 하루 에너지가 더 늘지 않는 레벨 — 서버 값(0122 부터 Lv10 · 상한 10 = 36분, 대격변 때 Lv21 · 60분) */
     val energyCapLevel: Int?,
     /** 0121 전부터 있던 계정 — 예전 하루 에너지보다 줄지 않는다 */
     val legacyFloor: Boolean,

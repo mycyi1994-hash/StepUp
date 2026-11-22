@@ -83,6 +83,14 @@ jobs:
           echo "$out" | grep -q '^OK' || { echo '장면이 돌지 않았다'; exit 1; }
           if echo "$out" | grep -Eq '^(FAIL|ERROR)'; then exit 1; fi
 
+      # 경제 점검 고침(0122) — 묶인 체력 · 돌려받기 · 8 : 2 무게 · 번개 한 번 · 규칙 뒤집기 · 러너 걸음 · 크루의 목표 날(docs/점검-2026-11-22-경제.md)
+      - name: 경제 점검 고침(장면 검사)
+        run: |
+          out="$(bash tools/together_sim/run.sh tools/together_sim/18-audit-fixes.sql)"
+          echo "$out"
+          echo "$out" | grep -q '^OK' || { echo '장면이 돌지 않았다'; exit 1; }
+          if echo "$out" | grep -Eq '^(FAIL|ERROR)'; then exit 1; fi
+
       # 대격변 설계의 기준선(docs/stat-overhaul-2026-11-21.md) — 모형(stats_today.py)이 지금 서버의 하루 셈(points_day_net)과 같은가.
       # 서버 셈을 바꾸면 모형도 함께 고친다(744 경우 · 0.1 SUP 안)
       - name: 대격변 기준선(모형 = 서버)

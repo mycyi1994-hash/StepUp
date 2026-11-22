@@ -795,14 +795,14 @@ call pg_temp.login('11111111-1111-1111-1111-111111111111');
 do $$
 declare v_a bigint; v_b bigint;
 begin
-  v_a := public.market_import(1, 'FIRE', 'RARE', 0, 7, 1.2, 1.1, 100);
+  v_a := public.market_import(1, 'FIRE', 'RARE', 0, 9, 1.2, 1.1, 100);
   perform pg_temp.ok(v_a is not null, '폰의 신발을 거래소에 올린다');
 
-  v_b := public.market_import(1, 'FIRE', 'RARE', 0, 9, 1.2, 1.1, 90);
+  v_b := public.market_import(1, 'FIRE', 'RARE', 0, 30, 1.2, 1.1, 90);
   perform pg_temp.ok(v_a = v_b, '같은 신발을 다시 올려도 늘어나지 않는다');
   perform pg_temp.ok(
     (select level from public.market_sneakers where id = v_a) = 9,
-    '다시 올리면 레벨은 최신으로 갱신된다');
+    '다시 올려도 레벨은 그대로다 — 폰이 적은 레벨로 레벨 상자가 나가던 것 (0122, 예전엔 최신으로 갱신)');
   perform pg_temp.ok(
     (select count(*) from public.market_sneakers) = 1,
     '장부에는 한 켤레만 있다');
@@ -13801,6 +13801,8 @@ reset role;
 select set_config('request.jwt.claim.sub', '', false);
 select set_config('request.jwt.claims', '', false);
 update public.economy_settings set value = '"ON"' where key = 'runner_level_rule';
+-- 이 절은 0121 의 셈(에너지 상한 16.5 = 60분)을 본다 — 0122 가 상한을 10 으로 내렸다(아래 0122 절이 다시 본다)
+update public.economy_settings set value = '16.5' where key = 'runner_energy_cap';
 create or replace function pg_temp.u121(n int) returns uuid language sql immutable as $$
   select ('a1210000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
 $$;
@@ -13835,15 +13837,18 @@ begin
     format('runner_me — 새 계정 Lv1 · 20분 · 다음 22분 · 1만 걸음 남음 (%s) (0121)', j));
   perform set_config('request.jwt.claim.sub', '', false);
 
-  -- 하루 48,000 까지 · FLAGGED · VOID 는 빼고 · 다른 날은 더한다 → 48,000 + 12,000 = 60,000 → Lv7
+  -- 하루 48,000 까지 · 과속으로 멈춘 러닝(0122 — 예전엔 FLAGGED 모두) · VOID 는 빼고 · 다른 날은 더한다 → 48,000 + 12,000 = 60,000 → Lv7
   perform pg_temp.run121(pg_temp.u121(1), d - 3, 2, 30000);
   perform pg_temp.run121(pg_temp.u121(1), d - 3, 5, 30000);
   perform pg_temp.run121(pg_temp.u121(1), d - 2, 2, 12000);
+  insert into public.run_penalties (user_id, run_started_at, stopped_at, banned_until)
+  values (pg_temp.u121(1), economy.game_day_start(d - 2) + interval '5 hours', economy.game_day_start(d - 2) + interval '5 hours 20 minutes',
+          economy.game_day_start(d - 2) + interval '5 hours 30 minutes');
   perform pg_temp.run121(pg_temp.u121(1), d - 2, 5, 20000, 'FLAGGED');
   perform pg_temp.run121(pg_temp.u121(1), d - 2, 8, 20000, 'VOID');
   perform pg_temp.ok(economy.runner_steps_of(pg_temp.u121(1)) = 60000
                      and (select level from economy.runner_levels where user_id = pg_temp.u121(1)) = 7,
-    format('러너 걸음 = 하루 48,000 까지 · CLEAN 만 — %s걸음 · Lv%s (0121)', economy.runner_steps_of(pg_temp.u121(1)),
+    format('러너 걸음 = 하루 48,000 까지 · 과속 · 무효는 빼고 — %s걸음 · Lv%s (0121 · 0122)', economy.runner_steps_of(pg_temp.u121(1)),
            (select level from economy.runner_levels where user_id = pg_temp.u121(1))));
   perform pg_temp.ok(economy.energy_max(pg_temp.u121(1)) = 8.8, format('Lv7 하루 에너지 5.5 + 0.55 × 6 = 8.8 (%s) (0121)', economy.energy_max(pg_temp.u121(1))));
   perform pg_temp.ok(pg_temp.boxes121(pg_temp.u121(1), 'RUNNER:%') = 6 and pg_temp.boxes121(pg_temp.u121(1), 'RUNNER5:%') = 1,
@@ -13897,6 +13902,97 @@ begin
     '운영자 손잡이에 러너 레벨 넷 (0121)');
 end $$;
 call pg_temp.must_fail($q$ select public.runner_me() $q$, '로그인하지 않으면 runner_me 는 거절 (0121)');
+
+-- ════════════════════════════════════════════════════════════════════
+--  경제 점검 고침(0122) — 함께 뛰기 쪽(묶인 체력 · 8 : 2 무게 · 번개 · 규칙 뒤집기)은 장면 tools/together_sim/18-audit-fixes.sql
+-- ════════════════════════════════════════════════════════════════════
+\echo '── 경제 점검 고침(0122) ─────────────────────'
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+select set_config('request.jwt.claims', '', false);
+update public.economy_settings set value = '"ON"' where key = 'runner_level_rule';
+update public.economy_settings set value = '10' where key = 'runner_energy_cap';
+create or replace function pg_temp.u122(n int) returns uuid language sql immutable as $$
+  select ('a1220000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
+$$;
+do $$ declare n int; begin
+  for n in 1 .. 6 loop
+    insert into auth.users (id, email) values (pg_temp.u122(n), 'u122_' || n || '@test.invalid') on conflict do nothing;
+  end loop;
+end $$;
+
+do $$
+declare
+  j jsonb;
+  d date := economy.game_day(now());
+  i int;
+  v_id bigint;
+  v_run int;
+begin
+  -- A. 인플레이션: 하루 에너지 상한 10(0121 전 모두의 값) — 새 계정 5.5(20분) · Lv9 9.9 · Lv10 부터 · 만렙도 10(36분)
+  perform pg_temp.ok(economy.energy_max(pg_temp.u122(1)) = 5.5, format('새 계정은 그대로 5.5 = 20분 (%s) (0122)', economy.energy_max(pg_temp.u122(1))));
+  perform pg_temp.run121(pg_temp.u122(2), d - 3, 2, 48000);
+  perform pg_temp.run121(pg_temp.u122(2), d - 2, 2, 32000);
+  perform pg_temp.ok(economy.energy_max(pg_temp.u122(2)) = 9.9, format('Lv9 하루 에너지 9.9 (%s) (0122)', economy.energy_max(pg_temp.u122(2))));
+  for i in 1 .. 7 loop perform pg_temp.run121(pg_temp.u122(1), d - 10 + i, 3, 48000); end loop;
+  perform set_config('request.jwt.claim.sub', pg_temp.u122(1)::text, false);
+  j := public.runner_me();
+  perform pg_temp.ok((j ->> 'level')::int = 30 and (j ->> 'energy_max')::numeric = 10 and (j ->> 'energy_minutes')::int = 36
+                     and (j ->> 'energy_cap_level')::int = 10 and (j -> 'boxes' ->> 'free')::int = 29 and (j -> 'boxes' ->> 'gift')::int = 6,
+    format('만렙도 하루 에너지 10(36분) · 늘어나는 것은 Lv10 까지 · 상자 · 배지는 그대로 (%s) (0122)', j));
+  -- 12. 러너 레벨 상자는 "새로 받은 보상"의 러닝 상자가 아니다
+  j := public.box_status();
+  perform pg_temp.ok((select count(*) from jsonb_array_elements(j -> 'recent') r where r ->> 'kind' = 'RUN_BOX')
+                     = (select count(*) from economy.box_awards a where a.user_id = pg_temp.u122(1) and a.source like 'RUN%' and a.source not like 'RUNNER%'
+                          and a.granted_at > now() - interval '3 days'),
+    '러너 레벨 상자(RUNNER:)는 box_status recent 의 RUN_BOX 에 섞이지 않는다 (0122)');
+  perform set_config('request.jwt.claim.sub', '', false);
+  -- 6. 강화 견적의 하루 에너지 = 러너 레벨 에너지(재료가 모두 "가장 높은 레벨 신발"로 찍히던 것)
+  perform pg_temp.ok((economy.forge_account_after(pg_temp.u122(1), null, 1, '{}'::bigint[])).energy = economy.energy_max(pg_temp.u122(1)),
+    '러너 레벨이 켜져 있으면 강화 견적의 하루 에너지는 energy_max 그대로 (0122)');
+
+  -- 3. 상한 · 자름으로 FLAGGED 가 된 러닝도 러너 걸음에 든다(과속으로 멈춘 러닝 · VOID 만 뺀다)
+  perform pg_temp.run121(pg_temp.u122(3), d - 2, 2, 15000, 'FLAGGED');
+  perform pg_temp.ok(economy.runner_steps_of(pg_temp.u122(3)) = 15000 and (select level from economy.runner_levels where user_id = pg_temp.u122(3)) = 2,
+    format('FLAGGED(상한 · 자름) 러닝의 보상 걸음도 센다 — %s걸음 (0122)', economy.runner_steps_of(pg_temp.u122(3))));
+
+  -- 9. runner_level_steps 는 10,000 아래로 못 낮춘다(낮추면 지난 걸음으로 상자가 나가 되돌릴 수 없다)
+  perform pg_temp.ok((economy.ops_setting_rule('runner_level_steps')).lo = 10000, '운영자 손잡이 runner_level_steps 는 10,000 부터 (0122)');
+
+  -- 10. 코스 완주 · 도전 보상도 하루 받은 SUP(하루 최대의 몫)에 든다
+  perform economy.ledger_apply(pg_temp.u122(4), 'EARN_COURSE', 12, '검사: 코스', 'course:' || d);
+  insert into public.sup_ledger (user_id, kind, amount, description) values (pg_temp.u122(4), 'EARN_EVENT', 250, '검사: 도전');
+  perform pg_temp.ok(economy.day_earned(pg_temp.u122(4), d) = 262, format('코스 12 + 도전 250 이 하루 받은 SUP 에 든다 (%s) (0122)', economy.day_earned(pg_temp.u122(4), d)));
+
+  -- 4. 하루 최대 SUP 에 막혀 목표 보너스가 0 이어도 채운 날 · 연속은 남는다
+  update public.economy_settings set value = '"HOUR"' where key = 'daily_max_rule';
+  perform pg_temp.run121(pg_temp.u122(5), d - 1, 2, 8000);
+  update public.walk_sessions set points_awarded = 100000 where user_id = pg_temp.u122(5);
+  v_run := coalesce(economy.goal_settle(pg_temp.u122(5), d - 1), -1);
+  perform pg_temp.ok(v_run = 0
+                     and (select met_at is not null from economy.goal_days where user_id = pg_temp.u122(5) and day = d - 1)
+                     and not exists (select 1 from public.sup_ledger l where l.user_id = pg_temp.u122(5) and l.ref = 'goal:' || (d - 1))
+                     and economy.goal_streak_before(pg_temp.u122(5), d, 60) = 1,
+    format('하루 최대에 막혀 목표 보너스 0 — 채운 날은 남고 다음 날 연속 1 (%s) (0122)', economy.goal_streak_before(pg_temp.u122(5), d, 60)));
+  perform pg_temp.ok(economy.goal_settle(pg_temp.u122(5), d - 1) is null, '채운 날은 한 번만 정산한다 (0122)');
+
+  -- 11. 가입 선물: 러닝 상자가 먼저 와도 무료 뽑기 10개
+  perform economy.box_grant(pg_temp.u122(6), 'RUN2000:' || d, 'FREE', d);
+  perform set_config('request.jwt.claim.sub', pg_temp.u122(6)::text, false);
+  perform public.economy_bootstrap();
+  perform public.economy_bootstrap();
+  perform set_config('request.jwt.claim.sub', '', false);
+  perform pg_temp.ok((select granted from public.draw_grants where user_id = pg_temp.u122(6) and kind = 'FREE') = 11,
+    format('러닝 상자 1 + 가입 선물 10 — 두 번 불러도 한 번 (%s) (0122)', (select granted from public.draw_grants where user_id = pg_temp.u122(6) and kind = 'FREE')));
+
+  -- 1. 폰에서 올린 신발(IMPORT)은 레벨이 올라도 레벨 상자가 없다
+  select id into v_id from public.market_sneakers where owner_id = pg_temp.u122(6) and origin = 'STARTER';
+  insert into public.market_sneakers (owner_id, faction, rarity, variant, level, luck, comfort, durability)
+  values (pg_temp.u122(6), 'NONE', 'COMMON', 0, 1, 1, 1, 100) returning id into v_id;
+  update public.market_sneakers set level = 30 where id = v_id;
+  perform pg_temp.ok(not exists (select 1 from economy.box_awards a where a.user_id = pg_temp.u122(6) and a.source like 'LEVEL:%'),
+    'IMPORT 신발은 레벨이 올라도 레벨 상자를 주지 않는다 (0122)');
+end $$;
 
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'

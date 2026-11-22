@@ -20,7 +20,7 @@
     <string name="rl_info_free">普通箱子 %1$d个</string>
     <string name="rl_info_gift">每 %1$d级再多 1 个高级箱子</string>
     <string name="rl_info_badges">Lv%1$s 获得徽章・会显示在团队名单的名字旁边</string>
-    <string name="rl_info_legacy">你的账号是老账号，每日能量不会低于%1$d分钟。等级带来的能量超过这个值后才会开始增加。</string>
+    <string name="rl_info_legacy">你的账号是老账号，每日能量不会低于%1$d分钟。</string>
     <string name="rl_info_shoes">每日能量随跑者等级增加，而不是鞋子等级。</string>
     <string name="rl_up_title">跑者等级提升了</string>
     <string name="rl_up_levels">Lv %1$d → Lv %2$d</string>
@@ -34,6 +34,6 @@
     <string name="rl_welcome_free">根据以往的跑步，你是跑者 Lv %1$d — 获得普通箱子 %2$d个</string>
     <string name="rl_welcome_gift">根据以往的跑步，你是跑者 Lv %1$d — 获得高级箱子 %2$d个</string>
     <string name="rl_welcome_none">根据以往的跑步，你从跑者 Lv %1$d 开始</string>
-    <string name="rl_welcome_note">跑得越多，等级越高，每日能量也越多。可以在“我的”里查看。</string>
+    <string name="rl_welcome_note">跑得越多，等级越高，每升一级都能获得箱子。可以在“我的”里查看。</string>
     <string name="rl_shoe_energy_note">每日能量随跑者等级（跑步步数）增加，而不是鞋子等级</string>
 </resources>

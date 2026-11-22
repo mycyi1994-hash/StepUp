@@ -20,7 +20,7 @@
     <string name="rl_info_free">Normal box ×%1$d</string>
     <string name="rl_info_gift">One more premium box every %1$d levels</string>
     <string name="rl_info_badges">Badge at Lv%1$s · shown next to your name in crew lists</string>
-    <string name="rl_info_legacy">Your account was here before, so your daily energy won\'t go below %1$d min. Once your level energy is higher, it starts to grow.</string>
+    <string name="rl_info_legacy">Your account was here before, so your daily energy won\'t go below %1$d min.</string>
     <string name="rl_info_shoes">Daily energy grows with your runner level, not your shoe level.</string>
     <string name="rl_up_title">Runner level up</string>
     <string name="rl_up_levels">Lv %1$d → Lv %2$d</string>
@@ -34,6 +34,6 @@
     <string name="rl_welcome_free">Your past runs make you Runner Lv %1$d — you got normal box ×%2$d</string>
     <string name="rl_welcome_gift">Your past runs make you Runner Lv %1$d — you got premium box ×%2$d</string>
     <string name="rl_welcome_none">Your past runs start you at Runner Lv %1$d</string>
-    <string name="rl_welcome_note">The more you run, the higher your level and the more daily energy you get. See it in Me.</string>
+    <string name="rl_welcome_note">The more you run, the higher your level — every level gives you a box. See it in Me.</string>
     <string name="rl_shoe_energy_note">Daily energy grows with your runner level (steps you run), not your shoe level</string>
 </resources>

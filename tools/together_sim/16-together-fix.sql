@@ -247,6 +247,6 @@ begin
   perform t.chk('(차) 센 신발 4.64 × 1.05 · 남은 약한 신발 1.76 × 1.05 · 그만둔 사람 1.4(인원 없음)', ok, d);
   -- 끄면(0) 내 신발 그대로 — 예전과 같은 셈
   update public.economy_settings set value = '0' where key = 'crew_blend_share';
-  perform t.chk('(차) 끄면 내 신발 그대로', economy.crew_blend_mult(p, t.u(85), 1.4) = 1.4, economy.crew_blend_mult(p, t.u(85), 1.4)::text);
+  perform t.chk('(차) 끄면 내 신발 그대로', economy.crew_blend_mult(p, t.u(85), 1.4, 1) = 1.4, economy.crew_blend_mult(p, t.u(85), 1.4, 1)::text);
   update public.economy_settings set value = '0.2' where key = 'crew_blend_share';
 end $$;
