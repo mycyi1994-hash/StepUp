@@ -9714,7 +9714,7 @@ call pg_temp.login(null);
 select set_config('request.jwt.claims', '', false);
 select public.admin_access_mode_set('CLOSED_BETA');
 create temp table beta_codes as select * from public.admin_access_codes_create(2, 1, 7, '직원 초대');
-select public.admin_access_code_named('stepup-beta', 2, null, '행사');
+select public.admin_access_code_named('qx7-testcode9', 2, null, '행사');
 do $$ begin
   perform pg_temp.ok((select count(*) = 2 and bool_and(code ~ '^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$') from beta_codes),
     '운영자 코드 — 8자(헷갈리는 0 · O · 1 · I · L 없음), XXXX-XXXX');
@@ -9755,7 +9755,7 @@ do $$
 declare c text := (select code from beta_codes order by code limit 1);
 begin
   perform pg_temp.ok(public.access_redeem(c) ->> 'error' = 'used_up', '1인용 코드는 한 번만');
-  perform pg_temp.ok((public.access_redeem('STEPUPBETA') ->> 'ok')::boolean, '정한 글자 공용 코드');
+  perform pg_temp.ok((public.access_redeem('QX7TESTCODE9') ->> 'ok')::boolean, '정한 글자 공용 코드');
 end $$;
 
 -- 하루 N개 만들기
@@ -9806,7 +9806,7 @@ end $$;
 call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
 call pg_temp.must_fail($q$ select public.access_gate() $q$, '차단된 사람은 다시 막힌다');
 do $$ begin
-  perform pg_temp.ok(public.access_redeem('STEPUPBETA') ->> 'error' = 'blocked', '차단된 계정은 코드로 되살리지 못한다');
+  perform pg_temp.ok(public.access_redeem('QX7TESTCODE9') ->> 'error' = 'blocked', '차단된 계정은 코드로 되살리지 못한다');
 end $$;
 call pg_temp.as_app('a7900000-0000-0000-0000-000000000002', '/rpc/access_redeem');
 do $$ begin

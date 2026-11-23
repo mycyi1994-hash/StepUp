@@ -29309,7 +29309,7 @@ begin
                            jsonb_build_object('max_uses', p_max_uses, 'expires_days', p_expires_days, 'note', p_note));
 end $$;
 
--- 정한 글자로 만들기(예: STEPUPBETA) — 공용 행사 코드
+-- 정한 글자로 만들기 — 공용 행사 코드(추측할 수 없는 글자로 — 저장소가 공개)
 create or replace function public.admin_access_code_named(
   p_code text, p_max_uses int default 100, p_expires_days int default null, p_note text default null)
 returns text
@@ -29734,17 +29734,17 @@ $$;
 revoke execute on function public.waitlist_register(text, boolean, text, text) from public, authenticated;
 grant execute on function public.waitlist_register(text, boolean, text, text) to anon;
 
--- 2026-11-02 자동 점검으로 들어온 줄 · 운영자 주소 줄을 한 번만 지운다(사용자 결정).
+-- 2026-11-02 자동 점검으로 들어온 줄 · 운영자 주소 줄을 한 번만 지운다(사용자 결정). 운영에서는 이미 돌았다 — 개인 주소는 목록에서 뺐다(2026-11-24, 공개 저장소).
 -- 다시 붙여넣어도 그 뒤에 운영자가 직접 등록한 줄은 지우지 않는다(표시 waitlist_cleanup_20261102).
 do $$ begin
   if not exists (select 1 from public.economy_settings where key = 'waitlist_cleanup_20261102') then
     update public.waitlist_entries set referred_by = null
      where referred_by in (select w.id from public.waitlist_entries w
                             where w.email ~ '@evil\.com$' or w.email ~ '@example\.(com|net|org)$'
-                               or w.email in ('mycyi1994@gmail.com', 'support@stepupcrew.com', 'stepupofficial@stepupcrew.com'));
+                               or w.email in ('support@stepupcrew.com', 'stepupofficial@stepupcrew.com'));
     delete from public.waitlist_entries
      where email ~ '@evil\.com$' or email ~ '@example\.(com|net|org)$'
-        or email in ('mycyi1994@gmail.com', 'support@stepupcrew.com', 'stepupofficial@stepupcrew.com');
+        or email in ('support@stepupcrew.com', 'stepupofficial@stepupcrew.com');
     insert into public.economy_settings (key, value) values ('waitlist_cleanup_20261102', 'true'::jsonb)
     on conflict (key) do nothing;
   end if;

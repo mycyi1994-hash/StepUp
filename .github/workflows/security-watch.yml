@@ -52,8 +52,7 @@ jobs:
               echo "relayer_low|체인 기록 전송 지갑 잔액 $(python3 -c "print(round($wei/1e18, 5))") ETH — 충전이 필요해요" >> findings.txt
             fi
           fi
-          # 저장소가 공개라 Actions 로그도 공개다 — 내용은 찍지 않고 몇 건인지만
-          echo "알릴 것 $(grep -c . findings.txt || true)건"
+          # 저장소가 공개라 Actions 로그도 공개다 — 내용도 건수도 찍지 않는다
       - name: Send the alert (messenger only)
         # 공개 저장소 — 이슈 · 로그에 남기지 않고 텔레그램 / 디스코드 비밀로만 보낸다(2026-11-24, 예전엔 security-alert 이슈).
         # 받는 곳은 매일 숫자와 같은 비밀(TELEGRAM_BOT_TOKEN · TELEGRAM_CHAT_ID / DISCORD_WEBHOOK_URL). 없으면 작업을 실패로 — 실패 메일에는 내용이 없다

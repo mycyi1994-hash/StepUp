@@ -434,7 +434,7 @@ begin
                            jsonb_build_object('max_uses', p_max_uses, 'expires_days', p_expires_days, 'note', p_note));
 end $$;
 
--- 정한 글자로 만들기(예: STEPUPBETA) — 공용 행사 코드
+-- 정한 글자로 만들기 — 공용 행사 코드(추측할 수 없는 글자로 — 저장소가 공개)
 create or replace function public.admin_access_code_named(
   p_code text, p_max_uses int default 100, p_expires_days int default null, p_note text default null)
 returns text

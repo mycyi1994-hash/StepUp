@@ -38,7 +38,7 @@ select admin_access_mode_set('OPEN');          -- 정식 출시(누구나)
 -- 코드 만들기
 select * from admin_access_codes_create(20);                     -- 1인용 20개(만료 없음)
 select * from admin_access_codes_create(5, 1, 7, '직원 지인');    -- 1인용 5개, 7일 뒤 만료, 메모
-select admin_access_code_named('STEPUPBETA', 100, 30, '런칭 행사'); -- 정한 글자 공용 코드 100명 · 30일
+select admin_access_code_named('<무작위 12자>', 100, 30, '런칭 행사'); -- 정한 글자 공용 코드 100명 · 30일 — 단어 · 연도처럼 추측할 수 있는 글자는 쓰지 않는다(저장소가 공개)
 
 -- 확인
 select * from admin_access_codes();                    -- 전체(상태: OPEN · USED · EXPIRED · REVOKED, 사용 수 / 정원, 만든 사람)
@@ -96,6 +96,6 @@ select created_at, created_at + interval '168 hours' as frees_at, economy.access
 ## 출시 때
 
 - 구글 Play 심사자는 앱을 다 써 볼 수 있어야 한다 — **Play Console › 앱 콘텐츠 › 앱 액세스**에 심사용 계정 · 접속 코드를 적는다
-  (예: `select admin_access_code_named('PLAYREVIEW2026', 20, 60, 'Play 심사');`). 적지 않으면 거절된다.
+  (예: `select admin_access_code_named('<무작위 12자>', 20, 60, 'Play 심사');` — 추측할 수 없는 글자로). 적지 않으면 거절된다.
 - 다른 길: Play 의 비공개 테스트 트랙(이메일 목록에 있는 사람만 설치)은 코드 없이 Play 가 막는다.
 - 정식 출시는 `admin_access_mode_set('OPEN')` 하나 — 코드 · 권한 기록은 그대로 남는다.
