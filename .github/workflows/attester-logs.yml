@@ -29,13 +29,15 @@ jobs:
     if: github.ref == 'refs/heads/main'
     # ubuntu-24.04 고정 — 다른 워크플로와 같다(ubuntu-latest 는 2026-10-19 부터 Ubuntu 26)
     runs-on: ubuntu-24.04
+    # 운영 비밀은 이 환경에만(main 전용 — Settings › Environments, 2026-11-24 보안 점검)
+    environment: production
     timeout-minutes: 20
     defaults:
       run:
         working-directory: attester
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -54,7 +56,12 @@ jobs:
             [ "$sub" = "$WORKER_SUBDOMAIN" ] && acct="$a"
           done
           [ -n "$acct" ] || { echo "::error::$WORKER_SUBDOMAIN.workers.dev 계정을 찾지 못했습니다"; exit 1; }
+          # 입력값을 숫자로만 — 산술식에 그대로 넣으면 명령이 실행된다(2026-11-24 보안 점검)
+          [[ "$SECONDS_TO_TAIL" =~ ^[0-9]{1,4}$ ]] || SECONDS_TO_TAIL=300
           secs=$(( SECONDS_TO_TAIL < 60 ? 60 : (SECONDS_TO_TAIL > 900 ? 900 : SECONDS_TO_TAIL) ))
           CLOUDFLARE_ACCOUNT_ID="$acct" timeout "$secs" npx wrangler tail stepup-attester --format json > tail.jsonl || true
           echo "받은 줄: $(wc -l < tail.jsonl)"
-          jq -c 'select(type=="object") | {t: (.eventTimestamp/1000|floor|todate), cron: .event.cron, path: .event.request.url, outcome, logs: [.logs[]?.message], ex: [.exceptions[]? | {name, message}]}' tail.jsonl || true
+          # 공개 저장소라 로그도 공개다 — 줄마다의 주소 · 메시지는 찍지 않고 결과 · 예외 이름만 센다(2026-11-24)
+          jq -s -c '[.[] | select(type=="object")] | {by_outcome: (group_by(.outcome) | map({outcome: .[0].outcome, n: length})),
+            cron_runs: (map(select(.event.cron != null)) | length), requests: (map(select(.event.request != null)) | length),
+            exceptions: ([.[] | .exceptions[]? | .name] | group_by(.) | map({name: .[0], n: length}))}' tail.jsonl || true

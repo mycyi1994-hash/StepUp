@@ -29309,7 +29309,7 @@ begin
                            jsonb_build_object('max_uses', p_max_uses, 'expires_days', p_expires_days, 'note', p_note));
 end $$;
 
--- 정한 글자로 만들기(예: STEPUPBETA) — 공용 행사 코드
+-- 정한 글자로 만들기 — 공용 행사 코드(추측할 수 없는 글자로 — 저장소가 공개)
 create or replace function public.admin_access_code_named(
   p_code text, p_max_uses int default 100, p_expires_days int default null, p_note text default null)
 returns text
@@ -29734,17 +29734,17 @@ $$;
 revoke execute on function public.waitlist_register(text, boolean, text, text) from public, authenticated;
 grant execute on function public.waitlist_register(text, boolean, text, text) to anon;
 
--- 2026-11-02 자동 점검으로 들어온 줄 · 운영자 주소 줄을 한 번만 지운다(사용자 결정).
+-- 2026-11-02 자동 점검으로 들어온 줄 · 운영자 주소 줄을 한 번만 지운다(사용자 결정). 운영에서는 이미 돌았다 — 개인 주소는 목록에서 뺐다(2026-11-24, 공개 저장소).
 -- 다시 붙여넣어도 그 뒤에 운영자가 직접 등록한 줄은 지우지 않는다(표시 waitlist_cleanup_20261102).
 do $$ begin
   if not exists (select 1 from public.economy_settings where key = 'waitlist_cleanup_20261102') then
     update public.waitlist_entries set referred_by = null
      where referred_by in (select w.id from public.waitlist_entries w
                             where w.email ~ '@evil\.com$' or w.email ~ '@example\.(com|net|org)$'
-                               or w.email in ('mycyi1994@gmail.com', 'support@stepupcrew.com', 'stepupofficial@stepupcrew.com'));
+                               or w.email in ('support@stepupcrew.com', 'stepupofficial@stepupcrew.com'));
     delete from public.waitlist_entries
      where email ~ '@evil\.com$' or email ~ '@example\.(com|net|org)$'
-        or email in ('mycyi1994@gmail.com', 'support@stepupcrew.com', 'stepupofficial@stepupcrew.com');
+        or email in ('support@stepupcrew.com', 'stepupofficial@stepupcrew.com');
     insert into public.economy_settings (key, value) values ('waitlist_cleanup_20261102', 'true'::jsonb)
     on conflict (key) do nothing;
   end if;
@@ -50433,6 +50433,628 @@ begin
                 v_email, v_made, to_char(greatest(v_bal, 50000), 'FM999,999,990'));
 end $$;
 revoke all on function economy.test_account_seed(text) from public, anon, authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0126_email_accounts_gate.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 0126 — 구글 밖의 로그인은 시험 계정 · 워커 계정만 (2026-11-24 보안 점검)
+--
+-- 0125 의 시험 계정은 이메일 · 비밀번호로 들어간다. 그러려면 Supabase 의 이메일 로그인이 켜져 있어야 하고, 그러면 누구나
+-- /auth/v1/signup 으로 이메일 계정을 만들 수 있다(구글 계정보다 싸게 부계정). 막는 곳은 서버 문지기(public.access_gate) —
+-- 구글 로그인이 아닌 계정(이메일 · 익명 · 전화)은 economy.test_accounts 에 있거나 워커 계정(attester_user_id · coaching_worker_user_id)일 때만
+-- 앱 요청이 지나간다(계정 삭제는 지나간다). 워커는 이메일 · 비밀번호로 로그인한다 — 빼면 체인 기록 · 코칭이 멈춘다.
+-- 목록은 economy.test_account_seed(이메일) 가 채운다(SQL 창 · 운영자만). 끄기: email_accounts_rule = 'ALL'.
+-- public.access_gate 는 0126 이 마지막 정의다(0120 본문 + 이메일 계정 줄) — 다시 고칠 때 0126 을 복사한다.
+
+create table if not exists economy.test_accounts (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  added_at timestamptz not null default now()
+);
+alter table economy.test_accounts enable row level security;
+revoke all on economy.test_accounts from public, anon, authenticated;
+
+insert into public.economy_settings (key, value) values ('email_accounts_rule', '"TEST_ONLY"') on conflict (key) do nothing;
+
+-- 0125 로 이미 채운 시험 계정(운영자 권한 ADMIN · 구글이 아닌 계정)을 목록에 넣는다 — 배포하자마자 막히지 않게
+insert into economy.test_accounts (user_id)
+select g.user_id from economy.access_grants g join auth.users u on u.id = g.user_id
+ where g.source = 'ADMIN' and coalesce(u.raw_app_meta_data ->> 'provider', '') not in ('google', '')
+on conflict do nothing;
+
+-- 가입 훅(선택) — Supabase 대시보드 › Authentication › Hooks › "Before User Created" 에 이 함수를 고르면
+-- 구글이 아닌 가입(이메일 · 전화 · 익명)을 가입 단계에서 막는다(확인 메일 폭탄 · 프로필 줄 쌓기). 시험 계정 이메일은 설정
+-- signup_email_allowlist(쉼표로)에 넣어 두면 대시보드 Add user 로 만들 수 있다. 켜기 전에 구글 가입 한 번을 시험한다.
+insert into public.economy_settings (key, value) values ('signup_email_allowlist', '""') on conflict (key) do nothing;
+create or replace function public.hook_before_user_created(event jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_user jsonb := coalesce(event -> 'user', '{}'::jsonb);
+  v_provider text := coalesce(v_user -> 'app_metadata' ->> 'provider', '');
+  v_email text := lower(btrim(coalesce(v_user ->> 'email', '')));
+  v_allow text := lower(replace(coalesce(economy.setting('signup_email_allowlist') #>> '{}', ''), ' ', ''));
+begin
+  if v_provider = 'google' then
+    return '{}'::jsonb;
+  end if;
+  if v_email <> '' and v_email = any (string_to_array(v_allow, ',')) then
+    return '{}'::jsonb;
+  end if;
+  return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'Google 로그인으로만 가입할 수 있어요'));
+end $$;
+revoke all on function public.hook_before_user_created(jsonb) from public, anon, authenticated;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    execute 'grant execute on function public.hook_before_user_created(jsonb) to supabase_auth_admin';
+  end if;
+end $$;
+
+create or replace function public.access_gate() returns void
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_block boolean := false;
+  v_path text;
+  v_uid uuid;
+  v_min int;
+  v_ver int;
+  v_old boolean := false;
+  v_email_blocked boolean := false;
+begin
+  -- 0120: 운영자가 정한 판(app_min_version_code, 스토어 번호)보다 낮은 앱은 막는다 — 앱은 요청마다 머리글 x-stepup-version 을 보낸다(없으면 0 = 예전 앱).
+  -- 로그인한 앱 요청만(홈페이지 · 운영자 페이지는 anon). 계정 삭제 · 푸시 끊기는 막지 않는다. 고장 나도 앱 전체를 멈추지 않는다
+  begin
+    v_min := coalesce(economy.setting_num('app_min_version_code'), 0)::int;
+    if v_min > 0 and coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
+       and coalesce(current_setting('request.path', true), '') !~ '/rpc/(account_delete|push_unregister|is_admin)$' then
+      v_ver := coalesce(nullif(left(regexp_replace(coalesce(current_setting('request.headers', true)::json ->> 'x-stepup-version', ''), '[^0-9]', '', 'g'), 9), '')::bigint % 1000, 0)::int;  -- 0126: 9자리까지(넘치면 예외로 문을 지나가던 것)
+      v_old := v_ver < v_min;
+    end if;
+  exception when others then
+    v_old := false;
+  end;
+  if v_old then
+    raise exception 'update_required' using errcode = 'PT426', detail = '새 판으로 업데이트해야 합니다', hint = 'update_required';
+  end if;
+  -- 0126: 이메일 · 비밀번호 계정은 시험 계정 목록(economy.test_accounts)에 있을 때만 — 시험 계정 때문에 이메일 로그인을 켜 두어도
+  -- 누구나 API 로 이메일 가입해 부계정을 만들지 못하게(2026-11-24 보안 점검). 계정 삭제는 지나간다. 끄기: email_accounts_rule = 'ALL'
+  begin
+    -- 구글 로그인만 그대로. 그 밖(이메일 · 익명 · 전화 …)은 시험 계정 목록 · 워커 계정(어테스터 · 코칭)일 때만
+    if coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
+       -- 구글로 묶인 계정인가: providers 배열(이메일로 시작해 구글을 붙인 계정도 들어온다)이 기준, 배열이 없으면 provider 한 값
+       and (case when jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'providers') = 'array'
+                 then not ((auth.jwt() -> 'app_metadata' -> 'providers') ? 'google')
+                 when auth.jwt() -> 'app_metadata' ? 'provider'
+                 then coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') <> 'google'
+                 else false   -- app_metadata 가 아예 없는 요청(Supabase 로그인은 늘 넣는다) — 아래 줄에서 따로 본다
+            end
+            or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false))
+       and coalesce(economy.setting('email_accounts_rule') #>> '{}', 'TEST_ONLY') = 'TEST_ONLY'
+       and coalesce(current_setting('request.path', true), '') !~ '/rpc/account_delete$'
+       and auth.uid()::text is distinct from (economy.setting('attester_user_id') #>> '{}')
+       and auth.uid()::text is distinct from (economy.setting('coaching_worker_user_id') #>> '{}')
+       and not exists (select 1 from economy.test_accounts t where t.user_id = auth.uid()) then
+      v_email_blocked := true;
+    end if;
+  exception when others then
+    v_email_blocked := false;
+  end;
+  if v_email_blocked then
+    raise exception 'access_required' using errcode = 'PT403', detail = '이 계정으로는 들어갈 수 없습니다', hint = 'email_not_allowed';
+  end if;
+  begin
+    if economy.access_mode() <> 'OPEN' then
+      v_uid := auth.uid();
+      v_path := coalesce(current_setting('request.path', true), '');
+      if v_uid is not null
+         and coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
+         and v_path !~ '/rpc/(access_[a-z_]+|account_delete|is_admin)$'
+         and not coalesce(economy.access_ok(v_uid), true) then
+        v_block := true;
+      end if;
+    end if;
+  exception when others then
+    -- 문지기가 고장 나도 앱 전체를 멈추지 않는다
+    v_block := false;
+  end;
+  if v_block then
+    raise exception 'access_required' using errcode = 'PT403',
+      detail = '접속 코드가 필요합니다', hint = 'access_required';
+  end if;
+end $$;
+revoke all on function public.access_gate() from public;
+
+create or replace function economy.test_account_seed(p_email text) returns text
+language plpgsql security definer set search_path = public, economy as $$
+declare
+  v_user uuid;
+  v_email text := lower(btrim(coalesce(p_email, '')));
+  r record;
+  v_id bigint;
+  v_made int := 0;
+  v_bal numeric;
+  v_ex text;
+begin
+  select u.id into v_user from auth.users u where lower(u.email) = v_email;
+  if v_user is null then
+    raise exception '그 이메일의 계정이 없습니다 — 대시보드 › Authentication › Users › Add user 로 먼저 만드세요' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  perform economy.seed_ensure(v_user);
+
+  -- 이메일 계정이 들어갈 수 있는 목록(0126 문지기)
+  insert into economy.test_accounts (user_id) values (v_user) on conflict do nothing;
+  -- 들어가는 문: 운영자가 준 권한(접속 코드 없이)
+  insert into economy.access_grants (user_id, source) values (v_user, 'ADMIN')
+  on conflict (user_id) do update set source = 'ADMIN', revoked_at = null, revoked_reason = null;
+
+  update public.profiles set display_name = '시험 러너'
+   where id = v_user and coalesce(nullif(btrim(display_name), ''), '러너') = '러너';
+
+  -- 등급마다 신발 한 켤레(가운데 값 — 첫 신발과 같은 셈) · 적당한 레벨
+  for r in select * from (values ('COMMON', 10), ('RARE', 10), ('EPIC', 12), ('LEGENDARY', 13), ('REDLINE', 14), ('FINISH', 15)) t(rarity, lvl) loop
+    if not exists (select 1 from public.market_sneakers s where s.owner_id = v_user and s.rarity = r.rarity and s.origin = 'PAID_DRAW') then
+      insert into public.market_sneakers (
+        owner_id, faction, rarity, variant, level, luck, comfort, durability,
+        origin, efficiency_bps, comfort_bps, durability_pts, withdrawable, dur_base, model_id
+      ) values (
+        v_user, 'NONE', r.rarity, 0, r.lvl, 1, 1 + economy.stat_comfort(r.rarity, 0.5) / 10000.0, 100,
+        'PAID_DRAW', economy.stat_efficiency(r.rarity, 0.5), economy.stat_comfort(r.rarity, 0.5), 100, false,
+        economy.stat_durability(r.rarity, 0.5), economy.draw_model(r.rarity, (v_made * 7919) % 65536)
+      ) returning id into v_id;
+      v_made := v_made + 1;
+    end if;
+  end loop;
+  -- 신은 신발이 없으면 에픽을 신는다
+  if not exists (select 1 from public.market_sneakers where owner_id = v_user and equipped) then
+    update public.market_sneakers set equipped = true
+     where id = (select id from public.market_sneakers where owner_id = v_user and rarity = 'EPIC' order by id limit 1);
+  end if;
+  -- 내구도 가득(트리거가 dur_max 를 맞춘 뒤)
+  update public.market_sneakers set durability = 100, durability_pts = 100 where owner_id = v_user;
+  update public.market_sneakers set dur_now = dur_max where owner_id = v_user and dur_max is not null;
+
+  -- 아이템 종류마다 10개
+  insert into public.user_items (user_id, kind, qty)
+  select v_user, k.kind, 10 from economy.item_kinds k
+  on conflict (user_id, kind) do update set qty = greatest(public.user_items.qty, 10), updated_at = now();
+
+  -- 뽑기: 무료 10 · 상급 선물 3 (남은 것이 그보다 적을 때만 채운다)
+  insert into public.draw_grants as d (user_id, kind, granted) values (v_user, 'FREE', 10), (v_user, 'GIFT', 3)
+  on conflict (user_id, kind) do update
+    set granted = d.used + greatest(d.granted - d.used, excluded.granted);
+
+  -- SUP 50,000 까지
+  v_bal := economy.balance_of(v_user);
+  if v_bal < 50000 then
+    perform economy.ledger_apply(v_user, 'EARN_EVENT', 50000 - v_bal, '시험 계정 채움');
+  end if;
+
+  -- 러너 레벨 12(12만 걸음) — 레벨 상자는 이미 준 것으로(한꺼번에 쏟아지지 않게)
+  insert into economy.runner_levels (user_id, steps, level, boxed_to) values (v_user, 110000, 12, 12)
+  on conflict (user_id) do update set steps = greatest(economy.runner_levels.steps, 110000),
+    level = greatest(economy.runner_levels.level, 12), boxed_to = greatest(economy.runner_levels.boxed_to, 12), updated_at = now();
+
+  -- 매일 숫자에서 뺀다
+  v_ex := coalesce(economy.setting('stats_exclude_emails') #>> '{}', '');
+  if not (v_email = any (string_to_array(lower(replace(v_ex, ' ', '')), ','))) then
+    insert into public.economy_settings (key, value) values ('stats_exclude_emails', to_jsonb(trim(both ',' from v_ex || ',' || v_email)))
+    on conflict (key) do update set value = excluded.value, updated_at = now();
+  end if;
+
+  return format('시험 계정 %s — 새 신발 %s켤레(등급마다 하나) · 아이템 종류마다 10 · 무료 뽑기 10 · 상급 3 · SUP %s · 러너 Lv12',
+                v_email, v_made, to_char(greatest(v_bal, 50000), 'FM999,999,990'));
+end $$;
+revoke all on function economy.test_account_seed(text) from public, anon, authenticated;
+
+-- ══════════════════════════════════════════════════════════════════
+-- 0127_security_audit_fixes.sql
+-- ══════════════════════════════════════════════════════════════════
+
+-- 0127 — 보안 점검 고침(서버 · DB) (2026-11-24, 사용자 "보안 관련해서는 빡세게 3번 이상 점검해서 다 수행")
+--   1. leaderboard: 로그인한 사람만 · 100명까지(익명으로 모든 사용자 · 누적 SUP 를 한 번에 받던 것)
+--   2. 크루 영역: 출발 · 도착 300m 칸은 칠하지 않는다 · 크루원 셋 이상인 크루만 보인다 · 이미 칠한 칸도 한 번 정리
+--   3. 끝난 11.11 워킹데이의 받는 문(초대 링크 · 걸음 인증 · SNS 제출)을 닫는다 — 결과 · 검토는 그대로
+--   4. 같은 곳 횟수(IP 해시)는 IPv6 를 /64 로 묶는다(주소를 바꿔 가며 횟수 제한을 피하던 것)
+--   5. 새 계정 이름: 구글이 준 이름만 · 16자 · 제어 문자 없이(API 가입으로 긴 이름 · 운영자 흉내)
+--   6. market_import: 예전 앱의 네 등급 · 레벨 20 까지만
+--   7. 앱 역할의 TRUNCATE 권한을 거둔다(쓸 길은 없지만 정리)
+
+-- ── 1 ──
+create or replace function public.leaderboard(
+  p_board text default 'TOP_SPEED',
+  p_limit int default 20,
+  p_period text default 'ALL'
+)
+returns table (
+  rank int,
+  user_id uuid,
+  name text,
+  monogram text,
+  top_speed_kmh double precision,
+  active_sec bigint,
+  sup numeric,
+  is_me boolean,
+  total int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with win as (
+    select public.rank_period_start(p_period) as since
+  ),
+  board as (
+    select upper(coalesce(nullif(trim(p_board), ''), 'TOP_SPEED')) as kind
+  ),
+  stats as (
+    select
+      p.id as user_id,
+      p.display_name,
+      -- 창 안의 세션 중 가장 빨랐던 구간. 전체기간일 때만 프로필에 적힌
+      -- 역대 최고와 견준다 — 세션 표가 생기기 전에 세워진 기록도 있다.
+      greatest(
+        coalesce(a.top_speed_kmh, 0),
+        case
+          when (select since from win) = '-infinity'::timestamptz then p.top_speed_kmh
+          else 0
+        end
+      )::double precision as top_speed_kmh,
+      coalesce(a.active_sec, 0)::bigint as active_sec,
+      coalesce(l.earned, 0)::numeric(20, 4) as sup
+    from public.profiles p
+    left join (
+      select
+        s.user_id,
+        max(s.top_speed_kmh) as top_speed_kmh,
+        -- 걸음 하나에 1초까지만 — 걸음 없이 며칠짜리 러닝을 올려 "가장 오래"를 차지하지 못하게
+        sum(least(s.duration_sec, s.steps)) as active_sec
+      from public.walk_sessions s
+      -- 판정에서 떨어진 세션은 순위에 쓰지 않는다. 적립은 막아 놓고 순위는
+      -- 올려 주면, 순위표는 막지 않은 쪽으로 뚫린다.
+      where s.verdict <> 'VOID'
+        and s.started_at >= (select since from win)
+      group by s.user_id
+    ) a on a.user_id = p.id
+    left join (
+      -- 누적 "적립"이다. 잔고가 아니다 — 쓴 사람이 순위에서 밀리면
+      -- 상점은 아무도 안 쓰는 방이 된다.
+      -- 번 것만 센다. 입찰을 걸었다 거두면 ESCROW_UNLOCK(+)이 적히고, 팔면
+      -- TRADE_SELL(+)이 적힌다 — 이것까지 세면 입찰·취소를 되풀이해 공짜로 오른다.
+      select user_id, sum(amount) filter (
+               where amount > 0 and kind in ('EARN_WALK', 'EARN_PARTY', 'EARN_EVENT', 'BONUS_GOAL', 'EARN_COURSE')
+             ) as earned
+        from public.sup_ledger
+       where occurred_at >= (select since from win)
+       group by user_id
+    ) l on l.user_id = p.id
+  ),
+  ranked as (
+    select
+      s.*,
+      count(*) over ()::int as total,
+      rank() over (
+        order by
+          case (select kind from board)
+            when 'LONGEST_TIME' then s.active_sec::numeric
+            when 'TOTAL_SUP' then s.sup
+            else s.top_speed_kmh::numeric
+          end desc,
+          -- 같은 값이면 이름순. 순서가 매번 흔들리면 순위표를 믿지 않게 된다.
+          s.display_name,
+          s.user_id
+      )::int as rnk
+    from stats s
+    -- 이 기간에 아무것도 안 한 사람은 순위에 넣지 않는다. 0 으로 채운 줄이
+    -- 수백 개면 순위표가 아니라 가입자 명단이다.
+    where s.active_sec > 0 or s.sup > 0 or s.top_speed_kmh > 0
+  )
+  select
+    r.rnk,
+    r.user_id,
+    r.display_name,
+    public.monogram_of(r.display_name),
+    r.top_speed_kmh,
+    r.active_sec,
+    r.sup,
+    r.user_id = auth.uid(),
+    r.total
+  from ranked r
+  where r.rnk <= least(greatest(coalesce(p_limit, 20), 1), 100)  -- 0127: 100명까지
+     or r.user_id = auth.uid()
+  order by r.rnk
+$$;
+
+revoke all on function public.leaderboard(text, int, text) from public, anon;
+grant execute on function public.leaderboard(text, int, text) to authenticated;
+
+-- ── 2 ──
+insert into public.economy_settings (key, value) values ('territory_min_members', '3') on conflict (key) do nothing;
+create or replace function economy.near_m(a_lat double precision, a_lng double precision, b_lat double precision, b_lng double precision)
+returns double precision language sql immutable set search_path = '' as $$
+  select sqrt(power((a_lat - b_lat) * 111320.0, 2) + power((a_lng - b_lng) * 111320.0 * cos(radians((a_lat + b_lat) / 2)), 2))
+$$;
+revoke all on function economy.near_m(double precision, double precision, double precision, double precision) from public, anon, authenticated;
+
+-- 경로의 처음 · 마지막 점("위도,경도,…;…") — 읽을 수 없으면 null
+create or replace function economy.track_ends(p_track text, out lat1 double precision, out lng1 double precision,
+                                              out lat2 double precision, out lng2 double precision)
+language plpgsql immutable set search_path = '' as $$
+declare
+  v text[] := string_to_array(coalesce(p_track, ''), ';');
+  p text[];
+  i int;
+  n int := coalesce(array_length(v, 1), 0);
+  num constant text := '^-?[0-9]{1,3}(\.[0-9]{1,15})?$';   -- 위도 · 경도 꼴만(엄청 긴 숫자로 셈이 넘치지 않게)
+begin
+  for i in 1 .. n loop
+    p := string_to_array(v[i], ',');
+    if array_length(p, 1) >= 2 and p[1] ~ num and p[2] ~ num and abs(p[1]::double precision) <= 90 and abs(p[2]::double precision) <= 180 then lat1 := p[1]::double precision; lng1 := p[2]::double precision; exit; end if;
+  end loop;
+  for i in reverse n .. 1 loop
+    p := string_to_array(v[i], ',');
+    if array_length(p, 1) >= 2 and p[1] ~ num and p[2] ~ num and abs(p[1]::double precision) <= 90 and abs(p[2]::double precision) <= 180 then lat2 := p[1]::double precision; lng2 := p[2]::double precision; exit; end if;
+  end loop;
+end $$;
+revoke all on function economy.track_ends(text) from public, anon, authenticated;
+
+create or replace function public.territory_credit(p_session bigint)
+returns int
+language plpgsql
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_s public.walk_sessions%rowtype;
+  v_crew uuid;
+  v_day bigint;
+  v_chunk text;
+  v_parts text[];
+  v_cell text;
+  v_cells text[] := '{}';
+  v_cap int;
+  v_n int := 0;
+  v_lat double precision;
+  v_lng double precision;
+  v_num constant text := '^-?[0-9]+(\.[0-9]+)?$';
+  v_ends record;
+begin
+  select * into v_s from public.walk_sessions where id = p_session;
+  if not found or v_s.verdict = 'VOID' or v_s.track = '' then
+    return 0;
+  end if;
+
+  v_crew := coalesce(v_s.crew_id, public.home_crew(v_s.user_id));
+  if v_crew is null then
+    return 0;
+  end if;
+
+  -- 이미 칠한 러닝이다(크루를 나중에 적은 경우) — 크루만 바꾼다.
+  if exists (select 1 from public.territory_marks t where t.session_id = p_session) then
+    update public.territory_marks set crew_id = v_crew where session_id = p_session;
+    return 0;
+  end if;
+
+  v_day := floor(extract(epoch from v_s.started_at) / 86400)::bigint;
+  -- 칸 수 상한 — 경로 길이로 지날 수 있는 만큼만. 150m 칸이면 100m 마다 한 칸이 넉넉하다.
+  v_cap := greatest(1, (greatest(v_s.gps_distance_m, 0) / 100)::int + 3);
+
+  -- 0127: 출발 · 도착 300m 안의 칸은 칠하지 않는다(이야기 · 크루 러닝 지도와 같은 까닭 — 집 · 회사 자리)
+  select * into v_ends from economy.track_ends(v_s.track);
+  foreach v_chunk in array string_to_array(v_s.track, ';') loop
+    v_parts := string_to_array(v_chunk, ',');
+    continue when v_parts is null or array_length(v_parts, 1) < 2;
+    continue when v_parts[1] !~ v_num or v_parts[2] !~ v_num;
+    v_lat := v_parts[1]::double precision;
+    v_lng := v_parts[2]::double precision;
+    continue when v_lat not between -85 and 85 or v_lng not between -180 and 180;
+    continue when v_ends.lat1 is not null and (economy.near_m(v_lat, v_lng, v_ends.lat1, v_ends.lng1) < 300
+                                               or economy.near_m(v_lat, v_lng, v_ends.lat2, v_ends.lng2) < 300);
+    v_cell := economy.hex_cell(v_lat, v_lng);
+    continue when v_cell = any(v_cells);
+    exit when coalesce(array_length(v_cells, 1), 0) >= v_cap;
+    v_cells := v_cells || v_cell;
+  end loop;
+
+  foreach v_cell in array v_cells loop
+    insert into public.territory_marks (cell, user_id, day, crew_id, session_id, lat, lng)
+    select v_cell, v_s.user_id, v_day, v_crew, p_session, c.lat, c.lng
+      from economy.hex_center(v_cell) c
+    on conflict (cell, user_id, day) do nothing;
+    if found then
+      v_n := v_n + 1;
+    end if;
+  end loop;
+  return v_n;
+end;
+$$;
+
+revoke execute on function public.territory_credit(bigint) from public, anon, authenticated;
+
+create or replace function public.territory_view(
+  p_min_lat double precision,
+  p_min_lng double precision,
+  p_max_lat double precision,
+  p_max_lng double precision
+)
+returns table (
+  cell text,
+  lat double precision,
+  lng double precision,
+  crew_id uuid,
+  crew_name text,
+  score int,
+  mine boolean
+)
+language plpgsql
+stable
+security definer
+set search_path = public, economy
+as $$
+declare
+  v_since bigint := floor(extract(epoch from now()) / 86400)::bigint - economy.territory_window_days();
+begin
+  if auth.uid() is null then
+    raise exception '로그인이 필요합니다' using errcode = '28000';
+  end if;
+  if p_max_lat - p_min_lat > 0.3 or p_max_lng - p_min_lng > 0.3
+     or p_max_lat < p_min_lat or p_max_lng < p_min_lng then
+    raise exception '지도를 더 확대해 주세요' using errcode = '22023';
+  end if;
+
+  return query
+    with counts as (
+      select t.cell, t.crew_id, count(*)::int as n, max(t.day) as last_day,
+             min(t.lat) as lat, min(t.lng) as lng
+        from public.territory_marks t
+       where t.day >= v_since
+         and t.lat between p_min_lat - 0.002 and p_max_lat + 0.002
+         and t.lng between p_min_lng - 0.002 and p_max_lng + 0.002
+         and not public.is_hidden('CREW', t.crew_id::text)
+         -- 0127: 남의 크루는 크루원이 셋 이상일 때만 — 혼자 · 둘인 크루는 칸이 곧 그 사람의 길(집)이다
+         and ((select count(*) from public.crew_members m where m.crew_id = t.crew_id) >= coalesce(economy.setting_num('territory_min_members'), 3)
+              or exists (select 1 from public.crew_members m where m.crew_id = t.crew_id and m.user_id = auth.uid()))  -- 내 크루는 작아도 보인다
+       group by t.cell, t.crew_id
+    ),
+    owner as (
+      select distinct on (k.cell) k.*
+        from counts k
+       order by k.cell, k.n desc, k.last_day desc, k.crew_id
+    )
+    select o.cell, o.lat, o.lng, o.crew_id, c.name, o.n,
+           exists (select 1 from public.crew_members m
+                    where m.crew_id = o.crew_id and m.user_id = auth.uid())
+      from owner o
+      join public.crews c on c.id = o.crew_id
+     limit 3000;
+end;
+$$;
+
+
+-- 한 번만: 이미 칠한 칸 가운데 그 러닝의 출발 · 도착 300m(칸 반지름만큼 넉넉히 375m) 안의 칸을 지운다
+do $$
+begin
+  if not exists (select 1 from public.economy_settings where key = 'territory_trim_20261124') then
+    delete from public.territory_marks t
+     using public.walk_sessions s, lateral economy.track_ends(s.track) e
+     where s.id = t.session_id and s.id in (select distinct m.session_id from public.territory_marks m) and e.lat1 is not null
+       and (economy.near_m(t.lat, t.lng, e.lat1, e.lng1) < 375 or economy.near_m(t.lat, t.lng, e.lat2, e.lng2) < 375);
+    insert into public.economy_settings (key, value) values ('territory_trim_20261124', to_jsonb(now()));
+  end if;
+end $$;
+
+-- ── 3 ── (이벤트 끝 — 결과 · 당첨 · 검토 함수는 그대로)
+revoke all on function public.walkingday_invite_link(text, text, text, boolean) from public, anon, authenticated;
+revoke all on function public.walkingday_proof_submit(text, int, int, text, boolean, text, text) from public, anon, authenticated;
+revoke all on function public.walkingday_sns_submit(text, text, text, boolean, text, text) from public, anon, authenticated;
+
+-- ── 4 ──
+create or replace function economy.waitlist_client_of(p_ip text) returns text
+  language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_ip text := nullif(btrim(coalesce(p_ip, '')), '');
+begin
+  if v_ip is null then
+    return null;
+  end if;
+  -- 0127: IPv6 는 한 집 · 한 기기가 /64 를 통째로 받는다 — 그 안에서 주소를 바꿔 횟수 제한을 피하지 못하게 /64 로 묶는다
+  begin
+    if position(':' in v_ip) > 0 then
+      if lower(host(v_ip::inet)) like '::ffff:%.%' then
+        v_ip := substr(host(v_ip::inet), 8);   -- IPv4 를 IPv6 꼴로 적은 주소(::ffff:1.2.3.4)는 그 IPv4 로
+      else
+        v_ip := host(network(set_masklen(v_ip::inet, 64)));
+      end if;
+    end if;
+  exception when others then
+    null;   -- 읽을 수 없는 값이면 글자 그대로
+  end;
+  return encode(sha256(convert_to(coalesce((select s.value from economy.app_secrets s where s.name = 'client_salt'), '')
+                                  || ':stepup-waitlist:' || v_ip, 'UTF8')), 'hex');
+end $$;
+revoke all on function economy.waitlist_client_of(text) from public;
+
+-- ── 5 ──
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text;
+begin
+  -- 구글 로그인이면 구글이 준 이름(16자 · 제어 문자 없이). 그 밖(이메일 가입 등)은 사용자가 마음대로 적어 보낸 값이라 쓰지 않는다(0127)
+  if coalesce(new.raw_app_meta_data ->> 'provider', '') = 'google' then
+    v_name := left(btrim(regexp_replace(coalesce(new.raw_user_meta_data ->> 'full_name', ''), '[[:cntrl:]]', '', 'g')), 16);
+  end if;
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(nullif(v_name, ''), '러너'))
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+-- ── 6 ──
+create or replace function public.market_import(
+  p_local_id bigint,
+  p_faction text,
+  p_rarity text,
+  p_variant int,
+  p_level int,
+  p_luck numeric,
+  p_comfort numeric,
+  p_durability int
+) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare
+  v_user uuid := public.market_me();
+  v_id bigint;
+  v_count int;
+begin
+  perform pg_advisory_xact_lock(hashtext('ledger:' || v_user::text));
+  -- 0127: 예전 앱이 올리던 신발만 — 네 등급 · 레벨 20 까지(폰이 적은 값을 믿지 않는다)
+  if p_rarity is null or upper(p_rarity) not in ('COMMON', 'RARE', 'EPIC', 'LEGENDARY') then
+    raise exception '올릴 수 없는 신발입니다' using errcode = '22023';
+  end if;
+  p_level := least(greatest(coalesce(p_level, 1), 1), 20);
+  p_rarity := upper(p_rarity);
+  select sneaker_id into v_id from public.market_imports
+   where user_id = v_user and local_id = p_local_id;
+  if v_id is not null then
+    -- 0122: 다시 올려도 레벨을 따라가지 않는다 — 폰이 적은 레벨로 서버 신발의 레벨이 오르면 레벨 상자(0116)가 나갔다(아무 계정이나 상급 6개)
+    return v_id;
+  end if;
+
+  select count(*) into v_count from public.market_imports where user_id = v_user;
+  if v_count >= economy.market_import_cap() then
+    raise exception '올릴 수 있는 수를 넘었습니다 (최대 %)', economy.market_import_cap()
+      using errcode = '22023';
+  end if;
+
+  insert into public.market_sneakers
+    (owner_id, faction, rarity, variant, level, luck, comfort, durability)
+  values
+    (v_user, p_faction, p_rarity, p_variant, p_level, p_luck, p_comfort, p_durability)
+  returning id into v_id;
+
+  insert into public.market_imports (user_id, local_id, sneaker_id)
+  values (v_user, p_local_id, v_id);
+
+  return v_id;
+end $$;
+
+-- ── 7 ──
+do $$
+declare r record;
+begin
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm') loop
+    execute format('revoke truncate on public.%I from anon, authenticated', r.relname);
+  end loop;
+end $$;
+-- 앞으로 만드는 표도(이 배포를 올리는 역할의 기본 권한)
+alter default privileges in schema public revoke truncate on tables from anon, authenticated;
 
 commit;
 

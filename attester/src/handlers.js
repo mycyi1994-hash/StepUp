@@ -188,7 +188,9 @@ async function submit(c, address, abi, functionName, args) {
       throw new HttpError(409, '이미 체인에 보낸 작업입니다. 확정되면 결과가 보입니다')
     }
     if (name && REVERT_TEXT[name]) throw new HttpError(409, REVERT_TEXT[name])
-    throw new HttpError(409, `체인이 거절했습니다: ${name ?? e?.shortMessage ?? '알 수 없는 이유'}`)
+    // RPC 의 원문 오류(주소 · 값이 섞인다)는 사용자에게 돌려주지 않고 워커 기록에만(2026-11-24 보안 점검)
+    console.error('simulate rejected', name ?? e?.shortMessage)
+    throw new HttpError(409, name ? `체인이 거절했습니다: ${name}` : '체인이 거절했습니다. 잠시 뒤에 다시 해 주세요')
   }
   // 보내는 키 하나를 여러 요청이 함께 쓴다. 다른 요청과 같은 번호(nonce)를 잡았으면 새 번호로 다시
   // 보낸다 — 동시에 몰리면 한 번으로는 모자라서, 조금씩 다른 간격으로 세 번까지(서로 또 부딪치지 않게).
@@ -202,7 +204,8 @@ async function submit(c, address, abi, functionName, args) {
         await new Promise((r) => setTimeout(r, nonceBackoffMs(attempt)))
         continue
       }
-      throw new HttpError(409, `체인이 거절했습니다: ${e?.shortMessage ?? '잠시 뒤에 다시 해 주세요'}`)
+      console.error('send rejected', e?.shortMessage)
+      throw new HttpError(409, '체인이 거절했습니다. 잠시 뒤에 다시 해 주세요')
     }
   }
 }

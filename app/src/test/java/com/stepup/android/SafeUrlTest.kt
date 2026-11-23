@@ -53,6 +53,11 @@ class SafeUrlTest {
         assertFalse(SafeUrl.looksSafe("https:///path"))
         // 점이 없는 이름은 바깥 주소가 아니다
         assertFalse(SafeUrl.looksSafe("https://localhost/a"))
+        // 보이는 도메인과 열리는 곳이 다른 주소(2026-11-24)
+        assertFalse(SafeUrl.looksSafe("https://evil.com\\@stepupcrew.com/a"))
+        assertFalse(SafeUrl.looksSafe("https://stepupcrew.com@evil.com/a"))
+        assertFalse(SafeUrl.looksSafe("https://user:pass@example.com/a"))
+        assertTrue(SafeUrl.looksSafe("https://example.com/a@b"))
     }
 
     @Test

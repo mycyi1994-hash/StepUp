@@ -5,7 +5,7 @@
 # 받는 곳(저장소 Settings › Secrets and variables › Actions — 하나 이상):
 #   텔레그램: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID   (봇 만들기는 docs/운영-배포후-할일.md "매일 숫자")
 #   디스코드: DISCORD_WEBHOOK_URL
-# 빼는 계정: 저장소 변수 STATS_EXCLUDE_EMAILS(운영자 · 시험 계정 이메일, 쉼표로).
+# 빼는 계정: 서버 설정 stats_exclude_emails(SQL 창 — 시험 계정은 0125 가 저절로 넣는다).
 # 받는 곳이 없거나 보내지 못하면 작업이 실패한다(실패 메일이 간다 — 숫자는 담지 않는다).
 name: Daily stats
 
@@ -25,40 +25,43 @@ concurrency:
 jobs:
   stats:
     runs-on: ubuntu-24.04
+    # 운영 비밀은 이 환경에만(main 전용 — Settings › Environments, 2026-11-24 보안 점검)
+    environment: production
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Read and send
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          # 운영 DB 주소(최고 권한) 대신 매일 숫자만 읽는 열쇠(서버 0124 — select economy.stats_key_new('actions'))
+          STATS_KEY: ${{ secrets.STATS_KEY }}
+          SUPABASE_URL: https://pupjzcmybuoyhzfwrsdf.supabase.co
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          EXCLUDE: ${{ vars.STATS_EXCLUDE_EMAILS || '' }}
         run: |
           set -euo pipefail
-          if [ -z "$SUPABASE_DB_URL" ]; then echo "::error::SUPABASE_DB_URL 이 없어 읽지 못합니다."; exit 1; fi
+          if [ -z "$STATS_KEY" ]; then echo "::error::STATS_KEY 가 없어 읽지 못합니다(SQL 창: select economy.stats_key_new('actions'))."; exit 1; fi
           if [ -z "$DISCORD_WEBHOOK_URL" ] && { [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; }; then
             echo "::error::받는 곳이 없습니다 — TELEGRAM_BOT_TOKEN · TELEGRAM_CHAT_ID 또는 DISCORD_WEBHOOK_URL 을 넣으세요."; exit 1
           fi
-          command -v psql >/dev/null || { sudo apt-get update -q && sudo apt-get install -yq postgresql-client; }
-          # 숫자는 파일에만 — 화면(로그)에 찍지 않는다
-          PGCONNECT_TIMEOUT=20 psql "$SUPABASE_DB_URL" -q -v exclude="$EXCLUDE" \
-            -f supabase/maintenance/daily-stats.sql > report.md 2> psql-error.txt \
-            || { echo "::error::DB 를 읽지 못했습니다."; sed -E 's/[0-9]{2,}/N/g' psql-error.txt | head -5; exit 1; }
+          # 공개(publishable) 키는 앱 · 홈페이지에도 있는 값이다 — 비밀은 x-stats-key 하나
+          key=$(grep -oE "sb_publishable_[A-Za-z0-9_-]+" web/wallet-config.js | head -1)
+          code=$(curl -s -o out.json -w '%{http_code}' --max-time 60 -X POST "$SUPABASE_URL/rest/v1/rpc/daily_stats" \
+            -H "apikey: $key" -H "authorization: Bearer $key" -H "x-stats-key: $STATS_KEY" -H 'content-type: application/json' -d '{}')
+          if [ "$code" != 200 ]; then echo "::error::숫자를 읽지 못했습니다 (HTTP $code)"; rm -f out.json; exit 1; fi
+          jq -r '.' out.json > report.md; rm -f out.json
           [ -s report.md ] || { echo "::error::결과가 비었습니다."; exit 1; }
           sent=0
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
             # 텔레그램은 마크다운 굵게(**)를 모르므로 지우고 보낸다(4,096자 넘으면 자른다)
-            text=$(sed 's/\*\*//g; s/^## //' report.md | head -c 4000)
+            text=$(sed 's/\*\*//g; s/^## //' report.md | python3 -c 'import sys; print(sys.stdin.read()[:3500])')
             code=$(curl -s -o tg.json -w '%{http_code}' --max-time 20 \
               "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${text}" -d disable_web_page_preview=true)
             if [ "$code" = 200 ]; then sent=$((sent + 1)); echo "텔레그램으로 보냈습니다"; else echo "::warning::텔레그램 보내기 실패 (HTTP $code)"; fi
           fi
           if [ -n "$DISCORD_WEBHOOK_URL" ]; then
-            body=$(head -c 1900 report.md | jq -Rs '{content: .}')
+            body=$(python3 -c 'import sys; print(sys.stdin.read()[:1800])' < report.md | jq -Rs '{content: .}')
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -H 'content-type: application/json' -d "$body" "$DISCORD_WEBHOOK_URL")
             if [ "$code" = 204 ] || [ "$code" = 200 ]; then sent=$((sent + 1)); echo "디스코드로 보냈습니다"; else echo "::warning::디스코드 보내기 실패 (HTTP $code)"; fi
           fi

@@ -223,10 +223,10 @@ update public.economy_settings set value = 'true'::jsonb where key = 'shoe_chain
 \echo '── 준비 ─────────────────────────────────────────────────────────'
 -- ════════════════════════════════════════════════════════════════════
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('11111111-1111-1111-1111-111111111111', 'a@test', '{"full_name":"Ara Kim"}'),
-  ('22222222-2222-2222-2222-222222222222', 'b@test', '{"full_name":"Bo Lee"}'),
-  ('33333333-3333-3333-3333-333333333333', 'c@test', '{"full_name":"Cha Park"}');
+insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values
+  ('11111111-1111-1111-1111-111111111111', 'a@test', '{"full_name":"Ara Kim"}', '{"provider":"google"}'),
+  ('22222222-2222-2222-2222-222222222222', 'b@test', '{"full_name":"Bo Lee"}', '{"provider":"google"}'),
+  ('33333333-3333-3333-3333-333333333333', 'c@test', '{"full_name":"Cha Park"}', '{"provider":"google"}');
 
 do $$
 begin
@@ -2687,6 +2687,8 @@ end $$;
 
 insert into fix (k, v)
   select 'terr_start', (pg_temp.fx('base')::timestamptz + interval '1 hour')::text;
+-- 영역 검사의 크루는 혼자다 — 크루원 수 바닥(0127, 기본 3)을 1 로 두고 센다. 바닥은 0127 절이 따로 본다
+update public.economy_settings set value = '1' where key = 'territory_min_members';
 
 set role authenticated;
 call pg_temp.login('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
@@ -9714,7 +9716,7 @@ call pg_temp.login(null);
 select set_config('request.jwt.claims', '', false);
 select public.admin_access_mode_set('CLOSED_BETA');
 create temp table beta_codes as select * from public.admin_access_codes_create(2, 1, 7, '직원 초대');
-select public.admin_access_code_named('stepup-beta', 2, null, '행사');
+select public.admin_access_code_named('qx7-testcode9', 2, null, '행사');
 do $$ begin
   perform pg_temp.ok((select count(*) = 2 and bool_and(code ~ '^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$') from beta_codes),
     '운영자 코드 — 8자(헷갈리는 0 · O · 1 · I · L 없음), XXXX-XXXX');
@@ -9755,7 +9757,7 @@ do $$
 declare c text := (select code from beta_codes order by code limit 1);
 begin
   perform pg_temp.ok(public.access_redeem(c) ->> 'error' = 'used_up', '1인용 코드는 한 번만');
-  perform pg_temp.ok((public.access_redeem('STEPUPBETA') ->> 'ok')::boolean, '정한 글자 공용 코드');
+  perform pg_temp.ok((public.access_redeem('QX7TESTCODE9') ->> 'ok')::boolean, '정한 글자 공용 코드');
 end $$;
 
 -- 하루 N개 만들기
@@ -9806,7 +9808,7 @@ end $$;
 call pg_temp.as_app('a7900000-0000-0000-0000-000000000001', '/rpc/economy_bootstrap');
 call pg_temp.must_fail($q$ select public.access_gate() $q$, '차단된 사람은 다시 막힌다');
 do $$ begin
-  perform pg_temp.ok(public.access_redeem('STEPUPBETA') ->> 'error' = 'blocked', '차단된 계정은 코드로 되살리지 못한다');
+  perform pg_temp.ok(public.access_redeem('QX7TESTCODE9') ->> 'error' = 'blocked', '차단된 계정은 코드로 되살리지 못한다');
 end $$;
 call pg_temp.as_app('a7900000-0000-0000-0000-000000000002', '/rpc/access_redeem');
 do $$ begin
@@ -10313,6 +10315,10 @@ update public.economy_settings set value = '"2020-01-01T00:00:00+09:00"'::jsonb 
 update public.economy_settings set value = '"2099-01-01T00:00:00+09:00"'::jsonb where key = 'walkingday_open_until';
 -- 전화번호 꼭 받기(0100)는 끄고 시작한다(옛 검사는 번호 없이 낸다). 전화번호는 맨 끝에서 따로 본다
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_require_phone';
+-- 이벤트 중의 받는 문 검사 — 0127 이 닫은 문을 이 절에서만 다시 연다(절 끝에서 다시 닫는다)
+grant execute on function public.walkingday_invite_link(text, text, text, boolean) to anon, authenticated;
+grant execute on function public.walkingday_proof_submit(text, int, int, text, boolean, text, text) to anon, authenticated;
+grant execute on function public.walkingday_sns_submit(text, text, text, boolean, text, text) to anon, authenticated;
 set role anon;
 do $$
 declare
@@ -10590,6 +10596,9 @@ begin
   end if;
 end $$;
 reset role;
+revoke all on function public.walkingday_invite_link(text, text, text, boolean) from public, anon, authenticated;
+revoke all on function public.walkingday_proof_submit(text, int, int, text, boolean, text, text) from public, anon, authenticated;
+revoke all on function public.walkingday_sns_submit(text, text, text, boolean, text, text) from public, anon, authenticated;
 update public.economy_settings set value = 'false'::jsonb where key = 'walkingday_today_only';
 
 -- ── 11.11 워킹데이 당첨자 발표(0102) — 1인 1경품 · 자리 수 · 오타 막기 · 발표 전엔 안 보임 · 가린 이메일만 ──
@@ -14077,6 +14086,111 @@ begin
                      and not has_function_privilege('anon', 'economy.test_account_seed(text)', 'execute'),
     '시험 계정: 앱 역할은 채우기를 부르지 못한다 (0125)');
 end $$;
+
+-- 이메일 계정 문(0126) — 이메일 로그인은 시험 계정 목록에 있을 때만, 구글 로그인은 그대로
+reset role;
+insert into auth.users (id, email) values ('d1260000-0000-0000-0000-000000000001', 'stranger@stepup.test') on conflict do nothing;
+select set_config('request.path', '/rest/v1/rpc/my_economy', false);
+select set_config('request.jwt.claim.sub', 'd1260000-0000-0000-0000-000000000001', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email"}}', false);
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '이메일 계정: 시험 계정 목록에 없으면 막힌다 (0126)');
+select set_config('request.jwt.claim.sub', 'd1250000-0000-0000-0000-000000000001', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '이메일 계정: 시험 계정(0125 채우기)은 지나간다 (0126)'); end $$;
+-- 워커(어테스터 · 코칭)는 이메일로 로그인한다 — 막히면 체인 기록 · 코칭이 멈춘다
+reset role;
+insert into public.economy_settings (key, value) values ('coaching_worker_user_id', '"d1260000-0000-0000-0000-0000000000cc"')
+on conflict (key) do update set value = excluded.value;
+select set_config('request.jwt.claim.sub', 'd1260000-0000-0000-0000-0000000000cc', false);
+select set_config('request.path', '/rest/v1/rpc/coaching_worker_claim', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '이메일 계정: 워커 계정은 지나간다 (0126)'); end $$;
+insert into public.economy_settings (key, value) values ('coaching_worker_user_id', 'null') on conflict (key) do update set value = excluded.value;
+-- 익명 로그인은 구글이 아니다 — 막힌다
+select set_config('request.jwt.claim.sub', 'd1260000-0000-0000-0000-000000000001', false);
+select set_config('request.path', '/rest/v1/rpc/my_economy', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "is_anonymous": true, "app_metadata": {"provider": "anonymous"}}', false);
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '익명 로그인은 막힌다 (0126)');
+-- 구글 로그인은 그대로(문이 열려 있으면)
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "google"}}', false);
+do $$ begin
+  if economy.access_mode() = 'OPEN' then perform public.access_gate(); end if;
+  perform pg_temp.ok(true, '구글 로그인은 이 줄에 걸리지 않는다 (0126)');
+end $$;
+-- 이메일로 시작해 구글을 붙인 계정은 들어온다(providers 배열)
+select set_config('request.path', '/rest/v1/rpc/my_economy', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email", "providers": ["email", "google"]}}', false);
+do $$ begin
+  if economy.access_mode() = 'OPEN' then perform public.access_gate(); end if;
+  perform pg_temp.ok(true, '구글을 붙인 이메일 계정은 이 줄에 걸리지 않는다 (0126)');
+end $$;
+-- 가입 훅(대시보드에서 켜면) — 구글은 받고, 그 밖은 허용 목록의 이메일만
+reset role;
+update public.economy_settings set value = '"qa@stepup.test"' where key = 'signup_email_allowlist';
+do $$ begin
+  perform pg_temp.ok(public.hook_before_user_created('{"user": {"email": "a@b.com", "app_metadata": {"provider": "google"}}}') = '{}'::jsonb
+                     and public.hook_before_user_created('{"user": {"email": "x@b.com", "app_metadata": {"provider": "email"}}}') ? 'error'
+                     and public.hook_before_user_created('{"user": {"email": "QA@stepup.test", "app_metadata": {"provider": "email"}}}') = '{}'::jsonb
+                     and public.hook_before_user_created('{"user": {"is_anonymous": true, "app_metadata": {"provider": "anonymous"}}}') ? 'error',
+    '가입 훅: 구글 · 허용 목록만 가입 (0126)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.hook_before_user_created(jsonb)', 'execute')
+                     and not has_function_privilege('authenticated', 'public.hook_before_user_created(jsonb)', 'execute'),
+    '가입 훅: 앱 역할은 부르지 못한다 (0126)');
+end $$;
+update public.economy_settings set value = '""' where key = 'signup_email_allowlist';
+select set_config('request.path', '/rest/v1/rpc/account_delete', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email"}}', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '이메일 계정: 계정 삭제는 지나간다 (0126)'); end $$;
+select set_config('request.path', '', false);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.jwt.claim.sub', '', false);
+
+-- 보안 점검 고침(0127)
+reset role;
+insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values
+  ('d1270000-0000-0000-0000-000000000001', 'g127@stepup.test', '{"full_name": "아주아주아주아주아주아주긴구글이름입니다"}', '{"provider": "google"}'),
+  ('d1270000-0000-0000-0000-000000000002', 'e127@stepup.test', '{"full_name": "StepUp 운영팀"}', '{"provider": "email"}')
+on conflict do nothing;
+do $$
+declare v_err text;
+begin
+  perform pg_temp.ok((select display_name from public.profiles where id = 'd1270000-0000-0000-0000-000000000001') = left('아주아주아주아주아주아주긴구글이름입니다', 16)
+                     and (select display_name from public.profiles where id = 'd1270000-0000-0000-0000-000000000002') = '러너',
+    '새 계정 이름: 구글 이름은 16자까지, 이메일 가입이 적어 보낸 이름은 쓰지 않는다 (0127)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.leaderboard(text, int, text)', 'execute')
+                     and has_function_privilege('authenticated', 'public.leaderboard(text, int, text)', 'execute'),
+    '순위표는 로그인한 사람만 (0127)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.walkingday_invite_link(text, text, text, boolean)', 'execute')
+                     and not has_function_privilege('anon', 'public.walkingday_proof_submit(text, int, int, text, boolean, text, text)', 'execute')
+                     and has_function_privilege('anon', 'public.walkingday_winners()', 'execute'),
+    '끝난 워킹데이: 받는 문은 닫고 결과는 그대로 (0127)');
+  perform pg_temp.ok(economy.waitlist_client_of('2001:db8:1:2:aaaa::1') = economy.waitlist_client_of('2001:db8:1:2:bbbb::9')
+                     and economy.waitlist_client_of('2001:db8:1:2::1') <> economy.waitlist_client_of('2001:db8:1:3::1')
+                     and economy.waitlist_client_of('203.0.113.9') <> economy.waitlist_client_of('203.0.113.10')
+                     and economy.waitlist_client_of('::ffff:198.51.100.7') = economy.waitlist_client_of('198.51.100.7')
+                     and economy.waitlist_client_of('::ffff:198.51.100.7') <> economy.waitlist_client_of('::ffff:198.51.100.8'),
+    '같은 곳 횟수: IPv6 는 /64 로 묶는다 · IPv4 는 그대로 (0127)');
+  perform pg_temp.ok(round(economy.near_m(37.5, 127.0, 37.5027, 127.0)) between 295 and 305, '거리 셈 300m (0127)');
+  update public.economy_settings set value = '3' where key = 'territory_min_members';
+  perform set_config('request.jwt.claim.sub', 'd1270000-0000-0000-0000-000000000001', true);  -- 크루 밖의 사람
+  perform pg_temp.ok(not exists (select 1 from public.territory_view(37.49, 128.99, 37.53, 129.01)
+                                  where (select count(*) from public.crew_members m where m.crew_id = territory_view.crew_id) < 3),
+    '크루 영역: 셋보다 적은 크루는 남에게 안 보인다(내 크루는 보인다) (0127)');
+  perform set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true);  -- 그 크루의 사람
+  perform pg_temp.ok(exists (select 1 from public.territory_view(37.49, 128.99, 37.53, 129.01) where mine),
+    '크루 영역: 내 크루는 작아도 보인다 (0127)');
+  perform pg_temp.ok(not exists (select 1 from information_schema.table_privileges where table_schema = 'public'
+                                  and grantee in ('anon', 'authenticated') and privilege_type = 'TRUNCATE'),
+    '앱 역할에 TRUNCATE 없음 (0127)');
+end $$;
+set role authenticated;
+call pg_temp.login('d1270000-0000-0000-0000-000000000001');
+call pg_temp.must_fail($q$ select public.market_import(1, 'NONE', 'FINISH', 0, 30, 9.9, 9.9, 100) $q$, 'market_import: 예전 앱에 없던 등급은 거절 (0127)');
+do $$
+declare v bigint;
+begin
+  v := public.market_import(2, 'NONE', 'RARE', 0, 30, 1, 1, 100);
+  perform pg_temp.ok((select level from public.market_sneakers where id = v) <= 20, 'market_import: 레벨은 20 까지 (0127)');
+end $$;
+reset role;
 
 -- 카탈로그 검사 — 새 표 · 함수가 문을 넓히면 여기서 걸린다(2차 점검 I). 목록을 늘릴 때는 까닭을 함께 적는다
 do $$

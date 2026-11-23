@@ -263,9 +263,18 @@ async function send(
   return ["error", `${res.status} ${text}`];
 }
 
+// 비밀 비교는 길이 · 내용과 상관없이 같은 시간에(2026-11-24 보안 점검 — 한 글자씩 맞혀 보는 시간 차 공격을 막는다)
+function sameSecret(given: string, want: string): boolean {
+  const a = new TextEncoder().encode(given);
+  const b = new TextEncoder().encode(want);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++) diff |= (a[i] ?? 0) ^ b[i];
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   const secret = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
-  if (!secret || req.headers.get("x-stepup-secret") !== secret) {
+  if (!secret || !sameSecret(req.headers.get("x-stepup-secret") ?? "", secret)) {
     return new Response("forbidden", { status: 403 });
   }
   const raw = Deno.env.get("FCM_SERVICE_ACCOUNT");

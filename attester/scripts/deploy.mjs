@@ -23,7 +23,7 @@ if (token) {
   let found = ''
   for (const a of (await api('/accounts')) ?? []) {
     const sub = await api(`/accounts/${a.id}/workers/subdomain`).then((r) => r?.subdomain ?? '').catch(() => '')
-    console.log(`계정 ${a.id} → workers.dev: ${sub || '(없음)'}`)
+    // 계정 번호는 찍지 않는다 — CI 로그가 공개다(2026-11-24)
     if (sub === want) found = a.id
   }
   if (!found) {

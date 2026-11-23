@@ -37,10 +37,13 @@ object SafeUrl {
         val scheme = raw.substringBefore("://", missingDelimiterValue = "").lowercase()
         if (scheme !in ALLOWED_SCHEMES) return false
 
+        // 역슬래시는 브라우저마다 '/' 로 읽기도 해 화면에 보인 도메인과 실제로 열리는 곳이 달라진다(2026-11-24 보안 점검)
+        if ('\\' in raw) return false
         val rest = raw.substringAfter("://")
-        val host = rest.substringBefore('/').substringBefore('?').substringBefore('#')
-            .substringAfterLast('@')     // user:pass@ 는 host 가 아니다
-            .substringBefore(':')
+        val authority = rest.substringBefore('/').substringBefore('?').substringBefore('#')
+        // user:pass@ 가 붙은 주소는 받지 않는다 — "stepupcrew.com@evil.com" 처럼 보이는 곳과 가는 곳을 속일 수 있다
+        if ('@' in authority) return false
+        val host = authority.substringBefore(':')
         if (host.isEmpty() || '.' !in host) return false
         return true
     }
