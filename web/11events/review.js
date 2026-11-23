@@ -20,6 +20,12 @@
       });
     });
   }
+  // CSV 칸 — 따옴표 · 쉼표 · 줄바꿈을 감싸고, =+-@ 로 시작하면 앞에 ' 를 붙여 스프레드시트가 수식으로 읽지 않게(2026-11-24 보안 점검)
+  function csvCell(c) {
+    c = String(c == null ? '' : c);
+    if (/^[=+\-@\t\r]/.test(c)) c = "'" + c;
+    return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c;
+  }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function dayName(d) { return '11/' + (7 + d - DAY0); }
   function num(n) { return (+n || 0).toLocaleString('ko-KR'); }
@@ -100,7 +106,7 @@
         head.map(function (h, i) { return '<th' + (i >= 3 && i <= 6 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
       rows.forEach(function (r, i) {
         var cells = [i + 1, r.email, r.phone || '', r.tickets, r.friends, r.approved_days, r.best_steps || '', r.goal_met ? 'O' : '', r.goal_on_1111 ? 'O' : '', r.invited_by || '', when(r.registered_at)];
-        csv.push(cells.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','));
+        csv.push(cells.map(csvCell).join(','));
         html += '<tr>' + cells.map(function (c, j) { return '<td' + (j >= 3 && j <= 6 ? ' class="n"' : '') + '>' + esc(j === 6 && c ? num(c) : c) + '</td>'; }).join('') + '</tr>';
       });
       list.innerHTML = html + '</tbody></table></div>';
@@ -194,7 +200,7 @@
         head.map(function (h, i) { return '<th' + (i === 7 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
       rows.forEach(function (r) {
         var cells = [CHN[r.channel] || r.channel, r.account, r.url, r.email, r.reviewed_by || '', when(r.reviewed_at), '확인됨', r.posts, r.phone || ''];
-        csv.push(cells.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','));
+        csv.push(cells.map(csvCell).join(','));
         html += '<tr>' + cells.map(function (c, j) { return '<td' + (j === 7 ? ' class="n"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>';
       });
       if (!rows.length) html += '<tr><td colspan="9">아직 승인된 게시물이 없어요.</td></tr>';
@@ -225,7 +231,7 @@
     (String(text || '').match(EMAIL_RE) || []).forEach(function (e) { e = e.toLowerCase(); if (!seen[e]) { seen[e] = 1; out.push(e); } });
     return out;
   }
-  function csvCell(c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }
+
   function winners(note) {
     var list = $('list');
     list.innerHTML = '<p class="empty">불러오는 중…</p>';

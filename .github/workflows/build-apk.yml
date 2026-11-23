@@ -27,17 +27,15 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Set up JDK 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
       # 컴파일 오류는 Gradle 스택트레이스 수백 줄에 파묻힌다. 출력을 남겨 두고
       # 실패했을 때 정작 읽어야 할 'e:' 줄만 뽑아 요약에 올린다.
       # 안드로이드 리소스 문법은 빌드 7분을 쓴 뒤에야 터진다. 1초에 끝나는
@@ -109,7 +107,7 @@ jobs:
 
       - name: Upload build log
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: build-output-log
           path: build-output.log
@@ -136,25 +134,25 @@ jobs:
           grep -E "$PATTERN" build-output.log | head -40 || echo "(원인 줄 없음)"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: StepUp-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload qa APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: StepUp-qa-apk
           path: app/build/outputs/apk/qa/app-qa.apk
 
       - name: Upload store preview APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: StepUp-store-preview-apk
           path: app/build/outputs/apk/storePreview/app-storePreview.apk
 
       - name: Preserve generated Room schemas
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: StepUp-room-schemas
           path: app/schemas/
@@ -172,22 +170,25 @@ jobs:
     environment: test-apk
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # 쓰기 토큰을 작업 폴더에 남기지 않는다 — 아래 push 는 토큰을 직접 넘긴다(2026-11-24 보안 점검)
+          persist-credentials: false
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Download qa APK
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: StepUp-qa-apk
           path: built
 
       - name: Download store preview APK
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: StepUp-store-preview-apk
           path: built

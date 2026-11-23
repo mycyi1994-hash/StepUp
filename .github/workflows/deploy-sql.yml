@@ -46,8 +46,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: setup.sql 이 migrations 와 일치하는가
         run: |
           python3 scripts/build-setup-sql.py
@@ -73,12 +72,13 @@ jobs:
     # 손으로 돌려도 main 의 것만 올린다 — 작업 브랜치의 검토 전 스키마가 운영 DB 로 가지 않게
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    # 운영 비밀은 이 환경에만(main 전용 — Settings › Environments, 2026-11-24 보안 점검)
+    environment: production
     # 한 번 올리는 데 5~6분 걸린다(2026-10-04). 세 번 시도와 기다림까지 넣고도 남게 — 멈춘 배포가 운영 DB 연결을 붙잡고 있지 않게
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Supabase 에 적용
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -98,7 +98,8 @@ jobs:
               echo "적용했습니다: $(git log -1 --format=%h -- supabase/setup.sql)"
               exit 0
             fi
-            cat psql-error.txt >&2
+            # 공개 로그 — 오류 줄만, 괄호 안 값(DETAIL 의 행 내용 · 키 값)은 가린다(2026-11-24 보안 점검)
+            grep -E 'ERROR:|FATAL:|could not|timeout|deadlock|connection' psql-error.txt | grep -v -E '^(DETAIL|CONTEXT|HINT)' | sed -E 's/\([^)]*\)/(…)/g' | head -5 >&2 || true
             if ! grep -qiE 'lock timeout|deadlock detected|could not connect|connection to server|server closed the connection|terminating connection|SSL SYSCALL|timeout expired|Connection refused|Connection reset|could not translate host' psql-error.txt; then
               echo "::error::SQL 오류라 다시 올리지 않습니다 — 위 psql 오류를 보세요(잠금 대기 · 연결 문제만 다시 올린다)."
               exit 1

@@ -2,4 +2,6 @@
 <!-- Android 11 이하. 로그인 세션 파일만 백업에서 뺀다 — 나머지(설정 · 기록)는 그대로 백업된다. -->
 <full-backup-content>
     <exclude domain="file" path="datastore/stepup_auth.preferences_pb" />
+    <!-- 알림 링크 비밀 값(LinkToken) — 설치마다 새로 만든다. 다른 폰으로 옮기지 않는다(2026-11-24 보안 점검) -->
+    <exclude domain="sharedpref" path="stepup_link_token.xml" />
 </full-backup-content>

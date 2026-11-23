@@ -53,10 +53,11 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-24.04
+    # 운영 비밀은 이 환경에만(main 전용 — Settings › Environments, 2026-11-24 보안 점검)
+    environment: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # 수집기부터 확인한다. 한 시간마다 도는 일이라 깨진 것을 사람이
       # 알아채기까지 오래 걸린다 — 보내기 전에 여기서 멈추는 편이 낫다.
       - name: 수집기 자체 검사

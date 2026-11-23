@@ -20,8 +20,10 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-24.04
+    # 운영 비밀은 이 환경에만(main 전용 — Settings › Environments, 2026-11-24 보안 점검)
+    environment: production
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Read server signals
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -41,15 +43,17 @@ jobs:
           # 서버를 읽지 못하면 작업이 실패한다(조용히 넘어가지 않는다 — 실패 메일이 간다)
           PGCONNECT_TIMEOUT=20 psql "$SUPABASE_DB_URL" -q \
             -v waitlist_hour="$WAITLIST_HOUR" -v signup_hour="$SIGNUP_HOUR" -v access_fail_hour="$ACCESS_FAIL_HOUR" \
-            -f supabase/maintenance/security-watch.sql > signals.txt
+            -f supabase/maintenance/security-watch.sql > signals.txt 2> psql-error.txt \
+            || { echo "::error::서버를 읽지 못했습니다(오류 내용은 공개 로그에 남기지 않는다)"; exit 1; }
           grep -E '^[a-z_]+\|' signals.txt >> findings.txt || true
           # 체인 기록 전송 지갑 — 잔액이 떨어지면 기록이 멈춘다(워커는 0.003 ETH 아래면 보내지 않는다)
           hex=$(curl -s --max-time 20 https://sepolia-rpc.giwa.io -H 'content-type: application/json' \
             -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getBalance\",\"params\":[\"$RELAYER\",\"latest\"]}" | jq -r '.result // empty')
-          if [ -n "$hex" ]; then
-            wei=$(python3 -c "print(int('$hex', 16))")
-            if python3 -c "import sys; sys.exit(0 if $wei < int('$RELAYER_MIN_WEI') else 1)"; then
-              echo "relayer_low|체인 기록 전송 지갑 잔액 $(python3 -c "print(round($wei/1e18, 5))") ETH — 충전이 필요해요" >> findings.txt
+          # 바깥 RPC 의 답은 믿지 않는다 — 16진수만 받고, 값은 코드에 끼우지 않고 인자로 넘긴다(2026-11-24 보안 점검)
+          if [[ "$hex" =~ ^0x[0-9a-fA-F]{1,64}$ ]] && [[ "$RELAYER_MIN_WEI" =~ ^[0-9]{1,40}$ ]]; then
+            if python3 -c 'import sys; sys.exit(0 if int(sys.argv[1], 16) < int(sys.argv[2]) else 1)' "$hex" "$RELAYER_MIN_WEI"; then
+              eth=$(python3 -c 'import sys; print(round(int(sys.argv[1], 16) / 1e18, 5))' "$hex")
+              echo "relayer_low|체인 기록 전송 지갑 잔액 $eth ETH — 충전이 필요해요" >> findings.txt
             fi
           fi
           # 저장소가 공개라 Actions 로그도 공개다 — 내용도 건수도 찍지 않는다

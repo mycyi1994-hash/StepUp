@@ -14078,6 +14078,24 @@ begin
     '시험 계정: 앱 역할은 채우기를 부르지 못한다 (0125)');
 end $$;
 
+-- 이메일 계정 문(0126) — 이메일 로그인은 시험 계정 목록에 있을 때만, 구글 로그인은 그대로
+reset role;
+insert into auth.users (id, email) values ('d1260000-0000-0000-0000-000000000001', 'stranger@stepup.test') on conflict do nothing;
+select set_config('request.path', '/rest/v1/rpc/my_economy', false);
+select set_config('request.jwt.claim.sub', 'd1260000-0000-0000-0000-000000000001', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email"}}', false);
+call pg_temp.must_fail($q$ select public.access_gate() $q$, '이메일 계정: 시험 계정 목록에 없으면 막힌다 (0126)');
+select set_config('request.jwt.claim.sub', 'd1250000-0000-0000-0000-000000000001', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '이메일 계정: 시험 계정(0125 채우기)은 지나간다 (0126)'); end $$;
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "google"}}', false);
+select set_config('request.jwt.claim.sub', 'd1260000-0000-0000-0000-000000000001', false);
+select set_config('request.path', '/rest/v1/rpc/account_delete', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email"}}', false);
+do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '이메일 계정: 계정 삭제는 지나간다 (0126)'); end $$;
+select set_config('request.path', '', false);
+select set_config('request.jwt.claims', '', false);
+select set_config('request.jwt.claim.sub', '', false);
+
 -- 카탈로그 검사 — 새 표 · 함수가 문을 넓히면 여기서 걸린다(2차 점검 I). 목록을 늘릴 때는 까닭을 함께 적는다
 do $$
 declare r record; v_bad text := '';

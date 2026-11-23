@@ -11,8 +11,10 @@ permissions:
 jobs:
   purge:
     runs-on: ubuntu-24.04
+    # 운영 비밀은 이 환경에만(main 전용 — Settings › Environments, 2026-11-24 보안 점검)
+    environment: production
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Remove expired records
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
