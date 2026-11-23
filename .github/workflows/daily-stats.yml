@@ -54,14 +54,14 @@ jobs:
           sent=0
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
             # 텔레그램은 마크다운 굵게(**)를 모르므로 지우고 보낸다(4,096자 넘으면 자른다)
-            text=$(sed 's/\*\*//g; s/^## //' report.md | head -c 4000)
+            text=$(sed 's/\*\*//g; s/^## //' report.md | python3 -c 'import sys; print(sys.stdin.read()[:3500])')
             code=$(curl -s -o tg.json -w '%{http_code}' --max-time 20 \
               "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${text}" -d disable_web_page_preview=true)
             if [ "$code" = 200 ]; then sent=$((sent + 1)); echo "텔레그램으로 보냈습니다"; else echo "::warning::텔레그램 보내기 실패 (HTTP $code)"; fi
           fi
           if [ -n "$DISCORD_WEBHOOK_URL" ]; then
-            body=$(head -c 1900 report.md | jq -Rs '{content: .}')
+            body=$(python3 -c 'import sys; print(sys.stdin.read()[:1800])' < report.md | jq -Rs '{content: .}')
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -H 'content-type: application/json' -d "$body" "$DISCORD_WEBHOOK_URL")
             if [ "$code" = 204 ] || [ "$code" = 200 ]; then sent=$((sent + 1)); echo "디스코드로 보냈습니다"; else echo "::warning::디스코드 보내기 실패 (HTTP $code)"; fi
           fi

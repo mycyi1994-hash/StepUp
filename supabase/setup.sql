@@ -50456,6 +50456,39 @@ revoke all on economy.test_accounts from public, anon, authenticated;
 
 insert into public.economy_settings (key, value) values ('email_accounts_rule', '"TEST_ONLY"') on conflict (key) do nothing;
 
+-- 0125 로 이미 채운 시험 계정(운영자 권한 ADMIN · 구글이 아닌 계정)을 목록에 넣는다 — 배포하자마자 막히지 않게
+insert into economy.test_accounts (user_id)
+select g.user_id from economy.access_grants g join auth.users u on u.id = g.user_id
+ where g.source = 'ADMIN' and coalesce(u.raw_app_meta_data ->> 'provider', '') not in ('google', '')
+on conflict do nothing;
+
+-- 가입 훅(선택) — Supabase 대시보드 › Authentication › Hooks › "Before User Created" 에 이 함수를 고르면
+-- 구글이 아닌 가입(이메일 · 전화 · 익명)을 가입 단계에서 막는다(확인 메일 폭탄 · 프로필 줄 쌓기). 시험 계정 이메일은 설정
+-- signup_email_allowlist(쉼표로)에 넣어 두면 대시보드 Add user 로 만들 수 있다. 켜기 전에 구글 가입 한 번을 시험한다.
+insert into public.economy_settings (key, value) values ('signup_email_allowlist', '""') on conflict (key) do nothing;
+create or replace function public.hook_before_user_created(event jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_user jsonb := coalesce(event -> 'user', '{}'::jsonb);
+  v_provider text := coalesce(v_user -> 'app_metadata' ->> 'provider', '');
+  v_email text := lower(btrim(coalesce(v_user ->> 'email', '')));
+  v_allow text := lower(replace(coalesce(economy.setting('signup_email_allowlist') #>> '{}', ''), ' ', ''));
+begin
+  if v_provider = 'google' then
+    return '{}'::jsonb;
+  end if;
+  if v_email <> '' and v_email = any (string_to_array(v_allow, ',')) then
+    return '{}'::jsonb;
+  end if;
+  return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'Google 로그인으로만 가입할 수 있어요'));
+end $$;
+revoke all on function public.hook_before_user_created(jsonb) from public, anon, authenticated;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    execute 'grant execute on function public.hook_before_user_created(jsonb) to supabase_auth_admin';
+  end if;
+end $$;
+
 create or replace function public.access_gate() returns void
 language plpgsql stable security definer set search_path = public, economy as $$
 declare
@@ -50487,7 +50520,13 @@ begin
   begin
     -- 구글 로그인만 그대로. 그 밖(이메일 · 익명 · 전화 …)은 시험 계정 목록 · 워커 계정(어테스터 · 코칭)일 때만
     if coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
-       and (coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', 'google') not in ('google', '')
+       -- 구글로 묶인 계정인가: providers 배열(이메일로 시작해 구글을 붙인 계정도 들어온다)이 기준, 배열이 없으면 provider 한 값
+       and (case when jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'providers') = 'array'
+                 then not ((auth.jwt() -> 'app_metadata' -> 'providers') ? 'google')
+                 when auth.jwt() -> 'app_metadata' ? 'provider'
+                 then coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') <> 'google'
+                 else false   -- app_metadata 가 아예 없는 요청(Supabase 로그인은 늘 넣는다) — 아래 줄에서 따로 본다
+            end
             or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false))
        and coalesce(economy.setting('email_accounts_rule') #>> '{}', 'TEST_ONLY') = 'TEST_ONLY'
        and coalesce(current_setting('request.path', true), '') !~ '/rpc/account_delete$'
@@ -50872,8 +50911,9 @@ begin
          and t.lat between p_min_lat - 0.002 and p_max_lat + 0.002
          and t.lng between p_min_lng - 0.002 and p_max_lng + 0.002
          and not public.is_hidden('CREW', t.crew_id::text)
-         -- 0127: 크루원이 셋 이상인 크루만 — 혼자 · 둘인 크루는 칸이 곧 그 사람의 길(집)이다
-         and (select count(*) from public.crew_members m where m.crew_id = t.crew_id) >= coalesce(economy.setting_num('territory_min_members'), 3)
+         -- 0127: 남의 크루는 크루원이 셋 이상일 때만 — 혼자 · 둘인 크루는 칸이 곧 그 사람의 길(집)이다
+         and ((select count(*) from public.crew_members m where m.crew_id = t.crew_id) >= coalesce(economy.setting_num('territory_min_members'), 3)
+              or exists (select 1 from public.crew_members m where m.crew_id = t.crew_id and m.user_id = auth.uid()))  -- 내 크루는 작아도 보인다
        group by t.cell, t.crew_id
     ),
     owner as (
@@ -50897,7 +50937,7 @@ begin
   if not exists (select 1 from public.economy_settings where key = 'territory_trim_20261124') then
     delete from public.territory_marks t
      using public.walk_sessions s, lateral economy.track_ends(s.track) e
-     where s.id = t.session_id and e.lat1 is not null
+     where s.id = t.session_id and s.id in (select distinct m.session_id from public.territory_marks m) and e.lat1 is not null
        and (economy.near_m(t.lat, t.lng, e.lat1, e.lng1) < 375 or economy.near_m(t.lat, t.lng, e.lat2, e.lng2) < 375);
     insert into public.economy_settings (key, value) values ('territory_trim_20261124', to_jsonb(now()));
   end if;
@@ -50920,7 +50960,11 @@ begin
   -- 0127: IPv6 는 한 집 · 한 기기가 /64 를 통째로 받는다 — 그 안에서 주소를 바꿔 횟수 제한을 피하지 못하게 /64 로 묶는다
   begin
     if position(':' in v_ip) > 0 then
-      v_ip := host(network(set_masklen(v_ip::inet, 64)));
+      if lower(host(v_ip::inet)) like '::ffff:%.%' then
+        v_ip := substr(host(v_ip::inet), 8);   -- IPv4 를 IPv6 꼴로 적은 주소(::ffff:1.2.3.4)는 그 IPv4 로
+      else
+        v_ip := host(network(set_masklen(v_ip::inet, 64)));
+      end if;
     end if;
   exception when others then
     null;   -- 읽을 수 없는 값이면 글자 그대로

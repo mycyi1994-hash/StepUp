@@ -259,8 +259,9 @@ begin
          and t.lat between p_min_lat - 0.002 and p_max_lat + 0.002
          and t.lng between p_min_lng - 0.002 and p_max_lng + 0.002
          and not public.is_hidden('CREW', t.crew_id::text)
-         -- 0127: 크루원이 셋 이상인 크루만 — 혼자 · 둘인 크루는 칸이 곧 그 사람의 길(집)이다
-         and (select count(*) from public.crew_members m where m.crew_id = t.crew_id) >= coalesce(economy.setting_num('territory_min_members'), 3)
+         -- 0127: 남의 크루는 크루원이 셋 이상일 때만 — 혼자 · 둘인 크루는 칸이 곧 그 사람의 길(집)이다
+         and ((select count(*) from public.crew_members m where m.crew_id = t.crew_id) >= coalesce(economy.setting_num('territory_min_members'), 3)
+              or exists (select 1 from public.crew_members m where m.crew_id = t.crew_id and m.user_id = auth.uid()))  -- 내 크루는 작아도 보인다
        group by t.cell, t.crew_id
     ),
     owner as (
@@ -284,7 +285,7 @@ begin
   if not exists (select 1 from public.economy_settings where key = 'territory_trim_20261124') then
     delete from public.territory_marks t
      using public.walk_sessions s, lateral economy.track_ends(s.track) e
-     where s.id = t.session_id and e.lat1 is not null
+     where s.id = t.session_id and s.id in (select distinct m.session_id from public.territory_marks m) and e.lat1 is not null
        and (economy.near_m(t.lat, t.lng, e.lat1, e.lng1) < 375 or economy.near_m(t.lat, t.lng, e.lat2, e.lng2) < 375);
     insert into public.economy_settings (key, value) values ('territory_trim_20261124', to_jsonb(now()));
   end if;
@@ -307,7 +308,11 @@ begin
   -- 0127: IPv6 는 한 집 · 한 기기가 /64 를 통째로 받는다 — 그 안에서 주소를 바꿔 횟수 제한을 피하지 못하게 /64 로 묶는다
   begin
     if position(':' in v_ip) > 0 then
-      v_ip := host(network(set_masklen(v_ip::inet, 64)));
+      if lower(host(v_ip::inet)) like '::ffff:%.%' then
+        v_ip := substr(host(v_ip::inet), 8);   -- IPv4 를 IPv6 꼴로 적은 주소(::ffff:1.2.3.4)는 그 IPv4 로
+      else
+        v_ip := host(network(set_masklen(v_ip::inet, 64)));
+      end if;
     end if;
   exception when others then
     null;   -- 읽을 수 없는 값이면 글자 그대로

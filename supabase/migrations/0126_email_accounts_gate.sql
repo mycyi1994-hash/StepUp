@@ -16,6 +16,39 @@ revoke all on economy.test_accounts from public, anon, authenticated;
 
 insert into public.economy_settings (key, value) values ('email_accounts_rule', '"TEST_ONLY"') on conflict (key) do nothing;
 
+-- 0125 로 이미 채운 시험 계정(운영자 권한 ADMIN · 구글이 아닌 계정)을 목록에 넣는다 — 배포하자마자 막히지 않게
+insert into economy.test_accounts (user_id)
+select g.user_id from economy.access_grants g join auth.users u on u.id = g.user_id
+ where g.source = 'ADMIN' and coalesce(u.raw_app_meta_data ->> 'provider', '') not in ('google', '')
+on conflict do nothing;
+
+-- 가입 훅(선택) — Supabase 대시보드 › Authentication › Hooks › "Before User Created" 에 이 함수를 고르면
+-- 구글이 아닌 가입(이메일 · 전화 · 익명)을 가입 단계에서 막는다(확인 메일 폭탄 · 프로필 줄 쌓기). 시험 계정 이메일은 설정
+-- signup_email_allowlist(쉼표로)에 넣어 두면 대시보드 Add user 로 만들 수 있다. 켜기 전에 구글 가입 한 번을 시험한다.
+insert into public.economy_settings (key, value) values ('signup_email_allowlist', '""') on conflict (key) do nothing;
+create or replace function public.hook_before_user_created(event jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public, economy as $$
+declare
+  v_user jsonb := coalesce(event -> 'user', '{}'::jsonb);
+  v_provider text := coalesce(v_user -> 'app_metadata' ->> 'provider', '');
+  v_email text := lower(btrim(coalesce(v_user ->> 'email', '')));
+  v_allow text := lower(replace(coalesce(economy.setting('signup_email_allowlist') #>> '{}', ''), ' ', ''));
+begin
+  if v_provider = 'google' then
+    return '{}'::jsonb;
+  end if;
+  if v_email <> '' and v_email = any (string_to_array(v_allow, ',')) then
+    return '{}'::jsonb;
+  end if;
+  return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'Google 로그인으로만 가입할 수 있어요'));
+end $$;
+revoke all on function public.hook_before_user_created(jsonb) from public, anon, authenticated;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    execute 'grant execute on function public.hook_before_user_created(jsonb) to supabase_auth_admin';
+  end if;
+end $$;
+
 create or replace function public.access_gate() returns void
 language plpgsql stable security definer set search_path = public, economy as $$
 declare
@@ -47,7 +80,13 @@ begin
   begin
     -- 구글 로그인만 그대로. 그 밖(이메일 · 익명 · 전화 …)은 시험 계정 목록 · 워커 계정(어테스터 · 코칭)일 때만
     if coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
-       and (coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', 'google') not in ('google', '')
+       -- 구글로 묶인 계정인가: providers 배열(이메일로 시작해 구글을 붙인 계정도 들어온다)이 기준, 배열이 없으면 provider 한 값
+       and (case when jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'providers') = 'array'
+                 then not ((auth.jwt() -> 'app_metadata' -> 'providers') ? 'google')
+                 when auth.jwt() -> 'app_metadata' ? 'provider'
+                 then coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') <> 'google'
+                 else false   -- app_metadata 가 아예 없는 요청(Supabase 로그인은 늘 넣는다) — 아래 줄에서 따로 본다
+            end
             or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false))
        and coalesce(economy.setting('email_accounts_rule') #>> '{}', 'TEST_ONLY') = 'TEST_ONLY'
        and coalesce(current_setting('request.path', true), '') !~ '/rpc/account_delete$'

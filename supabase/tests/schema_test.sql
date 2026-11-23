@@ -14115,6 +14115,27 @@ do $$ begin
   if economy.access_mode() = 'OPEN' then perform public.access_gate(); end if;
   perform pg_temp.ok(true, '구글 로그인은 이 줄에 걸리지 않는다 (0126)');
 end $$;
+-- 이메일로 시작해 구글을 붙인 계정은 들어온다(providers 배열)
+select set_config('request.path', '/rest/v1/rpc/my_economy', false);
+select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email", "providers": ["email", "google"]}}', false);
+do $$ begin
+  if economy.access_mode() = 'OPEN' then perform public.access_gate(); end if;
+  perform pg_temp.ok(true, '구글을 붙인 이메일 계정은 이 줄에 걸리지 않는다 (0126)');
+end $$;
+-- 가입 훅(대시보드에서 켜면) — 구글은 받고, 그 밖은 허용 목록의 이메일만
+reset role;
+update public.economy_settings set value = '"qa@stepup.test"' where key = 'signup_email_allowlist';
+do $$ begin
+  perform pg_temp.ok(public.hook_before_user_created('{"user": {"email": "a@b.com", "app_metadata": {"provider": "google"}}}') = '{}'::jsonb
+                     and public.hook_before_user_created('{"user": {"email": "x@b.com", "app_metadata": {"provider": "email"}}}') ? 'error'
+                     and public.hook_before_user_created('{"user": {"email": "QA@stepup.test", "app_metadata": {"provider": "email"}}}') = '{}'::jsonb
+                     and public.hook_before_user_created('{"user": {"is_anonymous": true, "app_metadata": {"provider": "anonymous"}}}') ? 'error',
+    '가입 훅: 구글 · 허용 목록만 가입 (0126)');
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.hook_before_user_created(jsonb)', 'execute')
+                     and not has_function_privilege('authenticated', 'public.hook_before_user_created(jsonb)', 'execute'),
+    '가입 훅: 앱 역할은 부르지 못한다 (0126)');
+end $$;
+update public.economy_settings set value = '""' where key = 'signup_email_allowlist';
 select set_config('request.path', '/rest/v1/rpc/account_delete', false);
 select set_config('request.jwt.claims', '{"role": "authenticated", "app_metadata": {"provider": "email"}}', false);
 do $$ begin perform public.access_gate(); perform pg_temp.ok(true, '이메일 계정: 계정 삭제는 지나간다 (0126)'); end $$;
@@ -14143,14 +14164,19 @@ begin
     '끝난 워킹데이: 받는 문은 닫고 결과는 그대로 (0127)');
   perform pg_temp.ok(economy.waitlist_client_of('2001:db8:1:2:aaaa::1') = economy.waitlist_client_of('2001:db8:1:2:bbbb::9')
                      and economy.waitlist_client_of('2001:db8:1:2::1') <> economy.waitlist_client_of('2001:db8:1:3::1')
-                     and economy.waitlist_client_of('203.0.113.9') <> economy.waitlist_client_of('203.0.113.10'),
+                     and economy.waitlist_client_of('203.0.113.9') <> economy.waitlist_client_of('203.0.113.10')
+                     and economy.waitlist_client_of('::ffff:198.51.100.7') = economy.waitlist_client_of('198.51.100.7')
+                     and economy.waitlist_client_of('::ffff:198.51.100.7') <> economy.waitlist_client_of('::ffff:198.51.100.8'),
     '같은 곳 횟수: IPv6 는 /64 로 묶는다 · IPv4 는 그대로 (0127)');
   perform pg_temp.ok(round(economy.near_m(37.5, 127.0, 37.5027, 127.0)) between 295 and 305, '거리 셈 300m (0127)');
   update public.economy_settings set value = '3' where key = 'territory_min_members';
-  perform set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true);
+  perform set_config('request.jwt.claim.sub', 'd1270000-0000-0000-0000-000000000001', true);  -- 크루 밖의 사람
   perform pg_temp.ok(not exists (select 1 from public.territory_view(37.49, 128.99, 37.53, 129.01)
                                   where (select count(*) from public.crew_members m where m.crew_id = territory_view.crew_id) < 3),
-    '크루 영역: 크루원이 셋보다 적은 크루의 칸은 보이지 않는다 (0127)');
+    '크루 영역: 셋보다 적은 크루는 남에게 안 보인다(내 크루는 보인다) (0127)');
+  perform set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true);  -- 그 크루의 사람
+  perform pg_temp.ok(exists (select 1 from public.territory_view(37.49, 128.99, 37.53, 129.01) where mine),
+    '크루 영역: 내 크루는 작아도 보인다 (0127)');
   perform pg_temp.ok(not exists (select 1 from information_schema.table_privileges where table_schema = 'public'
                                   and grantee in ('anon', 'authenticated') and privilege_type = 'TRUNCATE'),
     '앱 역할에 TRUNCATE 없음 (0127)');
