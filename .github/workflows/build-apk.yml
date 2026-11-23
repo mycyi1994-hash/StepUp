@@ -27,16 +27,16 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # 컴파일 오류는 Gradle 스택트레이스 수백 줄에 파묻힌다. 출력을 남겨 두고
       # 실패했을 때 정작 읽어야 할 'e:' 줄만 뽑아 요약에 올린다.
@@ -109,7 +109,7 @@ jobs:
 
       - name: Upload build log
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-output-log
           path: build-output.log
@@ -136,25 +136,25 @@ jobs:
           grep -E "$PATTERN" build-output.log | head -40 || echo "(원인 줄 없음)"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: StepUp-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload qa APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: StepUp-qa-apk
           path: app/build/outputs/apk/qa/app-qa.apk
 
       - name: Upload store preview APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: StepUp-store-preview-apk
           path: app/build/outputs/apk/storePreview/app-storePreview.apk
 
       - name: Preserve generated Room schemas
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: StepUp-room-schemas
           path: app/schemas/
@@ -172,22 +172,22 @@ jobs:
     environment: test-apk
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Download qa APK
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: StepUp-qa-apk
           path: built
 
       - name: Download store preview APK
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: StepUp-store-preview-apk
           path: built
