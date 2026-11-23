@@ -1,5 +1,14 @@
 # StepUp — 작업 메모
 
+## 최신 — 매일 이용자 · 활동 숫자 (2026-11-24, 서버 0124)
+
+사용자 "매일 09:00 기준 실 이용자 수 · 도움될 만한 것 전부" → "그냥 여기다가 해"(Claude 대화로). 셈은 `economy.daily_stats_report(제외 이메일)` 하나 — 어제(한국 날짜)
+활성(앱 출석 CHECK_IN ∪ 러닝, 무효 빼고) · 7 · 30일 · 가입 · 다시 온 사람 · 러닝 · SUP · 한 일 · 앱 판 · 체인. 숫자만.
+- 받는 길 둘: Claude 대화(`public.daily_stats()` — 머리글 `x-stats-key` 가 `economy.stats_keys` 해시와 맞을 때만, 키는 SQL 창 `select economy.stats_key_new('claude');`)
+  · 메신저(`.github/workflows/daily-stats.yml` — 텔레그램 / 디스코드 비밀이 있을 때만). **저장소가 공개라 숫자를 로그 · 이슈에 남기지 않는다.**
+- 빼고 셀 이메일: 설정 `stats_exclude_emails`(쉼표) · 워크플로는 변수 `STATS_EXCLUDE_EMAILS`. 서버 검사 "매일 숫자(0124)".
+- 서버 검사를 한국 시각 0 ~ 3시에 로컬로 돌릴 때: `apt-get install libfaketime` 뒤 테스트 Postgres 를 `LD_PRELOAD=…/libfaketime.so.1 FAKETIME='-14h'` 로 먼저 띄우면 run.sh 가 그것을 쓴다.
+
 ## 최신 — 0118 ~ 0123 나눠 켜기 · 배포 뒤 할 일 한 곳에 (2026-11-23)
 
 [docs/rollout-0118-0123-2026-11-23.md](docs/rollout-0118-0123-2026-11-23.md) — 사용자 "#210 을 나눠서 내보내요". 번호로 자르지 않는다(0122 · 0123 이 0118 ~ 0121 의 구멍을 막는다).
