@@ -1,8 +1,9 @@
--- 0126 — 이메일 계정은 시험 계정만 (2026-11-24 보안 점검)
+-- 0126 — 구글 밖의 로그인은 시험 계정 · 워커 계정만 (2026-11-24 보안 점검)
 --
 -- 0125 의 시험 계정은 이메일 · 비밀번호로 들어간다. 그러려면 Supabase 의 이메일 로그인이 켜져 있어야 하고, 그러면 누구나
 -- /auth/v1/signup 으로 이메일 계정을 만들 수 있다(구글 계정보다 싸게 부계정). 막는 곳은 서버 문지기(public.access_gate) —
--- 이메일 로그인(JWT app_metadata.provider = 'email') 계정은 economy.test_accounts 에 있을 때만 앱 요청이 지나간다(계정 삭제는 지나간다).
+-- 구글 로그인이 아닌 계정(이메일 · 익명 · 전화)은 economy.test_accounts 에 있거나 워커 계정(attester_user_id · coaching_worker_user_id)일 때만
+-- 앱 요청이 지나간다(계정 삭제는 지나간다). 워커는 이메일 · 비밀번호로 로그인한다 — 빼면 체인 기록 · 코칭이 멈춘다.
 -- 목록은 economy.test_account_seed(이메일) 가 채운다(SQL 창 · 운영자만). 끄기: email_accounts_rule = 'ALL'.
 -- public.access_gate 는 0126 이 마지막 정의다(0120 본문 + 이메일 계정 줄) — 다시 고칠 때 0126 을 복사한다.
 
@@ -32,7 +33,7 @@ begin
     v_min := coalesce(economy.setting_num('app_min_version_code'), 0)::int;
     if v_min > 0 and coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
        and coalesce(current_setting('request.path', true), '') !~ '/rpc/(account_delete|push_unregister|is_admin)$' then
-      v_ver := coalesce(nullif(regexp_replace(coalesce(current_setting('request.headers', true)::json ->> 'x-stepup-version', ''), '[^0-9]', '', 'g'), '')::bigint % 1000, 0)::int;
+      v_ver := coalesce(nullif(left(regexp_replace(coalesce(current_setting('request.headers', true)::json ->> 'x-stepup-version', ''), '[^0-9]', '', 'g'), 9), '')::bigint % 1000, 0)::int;  -- 0126: 9자리까지(넘치면 예외로 문을 지나가던 것)
       v_old := v_ver < v_min;
     end if;
   exception when others then
@@ -44,10 +45,14 @@ begin
   -- 0126: 이메일 · 비밀번호 계정은 시험 계정 목록(economy.test_accounts)에 있을 때만 — 시험 계정 때문에 이메일 로그인을 켜 두어도
   -- 누구나 API 로 이메일 가입해 부계정을 만들지 못하게(2026-11-24 보안 점검). 계정 삭제는 지나간다. 끄기: email_accounts_rule = 'ALL'
   begin
+    -- 구글 로그인만 그대로. 그 밖(이메일 · 익명 · 전화 …)은 시험 계정 목록 · 워커 계정(어테스터 · 코칭)일 때만
     if coalesce(auth.jwt() ->> 'role', '') = 'authenticated'
-       and coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') = 'email'
+       and (coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', 'google') not in ('google', '')
+            or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false))
        and coalesce(economy.setting('email_accounts_rule') #>> '{}', 'TEST_ONLY') = 'TEST_ONLY'
        and coalesce(current_setting('request.path', true), '') !~ '/rpc/account_delete$'
+       and auth.uid()::text is distinct from (economy.setting('attester_user_id') #>> '{}')
+       and auth.uid()::text is distinct from (economy.setting('coaching_worker_user_id') #>> '{}')
        and not exists (select 1 from economy.test_accounts t where t.user_id = auth.uid()) then
       v_email_blocked := true;
     end if;

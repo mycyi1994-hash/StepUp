@@ -17,6 +17,8 @@ create table if not exists auth.users (
   created_at timestamptz not null default now()
 );
 -- 휴대폰 인증 — 실제 Supabase auth.users 에 있는 칸(크루 러닝 인원 보너스가 읽는다, 0071)
+-- 로그인 방식(provider) — 실제 Supabase auth.users 에 있는 칸(0127 새 계정 이름이 읽는다)
+alter table auth.users add column if not exists raw_app_meta_data jsonb not null default '{"provider": "google"}'::jsonb;  -- 앱 사용자는 구글 로그인 — 다른 방식은 검사가 직접 적는다
 alter table auth.users add column if not exists phone text;
 alter table auth.users add column if not exists phone_confirmed_at timestamptz;
 
