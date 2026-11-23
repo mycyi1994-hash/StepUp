@@ -14052,6 +14052,32 @@ begin
 end $$;
 select set_config('request.headers', '', false);
 
+-- 시험 계정 채우기(0125) — 등급마다 한 켤레 · 아이템 · SUP · 들어가는 문, 다시 불러도 늘지 않는다 · 앱 역할은 못 부른다
+reset role;
+insert into auth.users (id, email) values ('d1250000-0000-0000-0000-000000000001', 'qa-seed@stepup.test') on conflict do nothing;
+do $$
+declare v_u uuid := 'd1250000-0000-0000-0000-000000000001'; v_n1 int; v_n2 int; v_msg text;
+begin
+  v_msg := economy.test_account_seed('QA-Seed@stepup.test');
+  select count(*) into v_n1 from public.market_sneakers where owner_id = v_u;
+  perform pg_temp.ok((select count(distinct rarity) from public.market_sneakers where owner_id = v_u and origin = 'PAID_DRAW') = 6
+                     and (select count(*) from public.market_sneakers where owner_id = v_u and equipped) = 1
+                     and not exists (select 1 from public.market_sneakers where owner_id = v_u and dur_now < dur_max),
+    '시험 계정: 등급 여섯 모두 한 켤레 · 하나를 신음 · 내구도 가득 (0125)');
+  perform pg_temp.ok((select count(*) from public.user_items where user_id = v_u and qty >= 10) = (select count(*) from economy.item_kinds)
+                     and economy.balance_of(v_u) >= 50000
+                     and (select source from economy.access_grants where user_id = v_u) = 'ADMIN',
+    '시험 계정: 아이템 종류마다 10 · SUP 50,000 · 접속 문 열림 (0125)');
+  perform economy.test_account_seed('qa-seed@stepup.test');
+  select count(*) into v_n2 from public.market_sneakers where owner_id = v_u;
+  perform pg_temp.ok(v_n1 = v_n2 and economy.balance_of(v_u) = 50000
+                     and (economy.setting('stats_exclude_emails') #>> '{}') like '%qa-seed@stepup.test%',
+    '시험 계정: 다시 불러도 신발 · SUP 가 늘지 않고 매일 숫자에서 빠진다 (0125)');
+  perform pg_temp.ok(not has_function_privilege('authenticated', 'economy.test_account_seed(text)', 'execute')
+                     and not has_function_privilege('anon', 'economy.test_account_seed(text)', 'execute'),
+    '시험 계정: 앱 역할은 채우기를 부르지 못한다 (0125)');
+end $$;
+
 -- 카탈로그 검사 — 새 표 · 함수가 문을 넓히면 여기서 걸린다(2차 점검 I). 목록을 늘릴 때는 까닭을 함께 적는다
 do $$
 declare r record; v_bad text := '';

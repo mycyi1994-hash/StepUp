@@ -88,8 +88,15 @@ class SessionHolder(
     }
 
     /** 구글로 로그인한다. */
-    suspend fun signInWithGoogle(idToken: String, nonce: String? = null): TokenResult = mutex.withLock {
-        when (val result = auth.signInWithGoogle(idToken, nonce)) {
+    suspend fun signInWithGoogle(idToken: String, nonce: String? = null): TokenResult =
+        adopt { auth.signInWithGoogle(idToken, nonce) }
+
+    /** 시험 계정(이메일 · 비밀번호)으로 로그인한다 — 테스트 · 개발 빌드의 로그인 화면에서만 부른다. */
+    suspend fun signInWithPassword(email: String, password: String): TokenResult =
+        adopt { auth.signInWithPassword(email, password) }
+
+    private suspend fun adopt(signIn: suspend () -> AuthResult): TokenResult = mutex.withLock {
+        when (val result = signIn()) {
             is AuthResult.Ok -> {
                 val session = result.session
                 refreshFailure = null

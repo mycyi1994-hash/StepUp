@@ -105,6 +105,16 @@ class SupabaseAuth(
         return post("$authUrl/token?grant_type=id_token", body)
     }
 
+    /**
+     * 이메일 · 비밀번호로 들어간다 — 시험 계정 전용(테스트 · 개발 빌드의 로그인 화면에만 길이 있다, 2026-11-24).
+     * 비밀번호는 앱에 넣지 않는다 — 들어가는 사람이 친다. 계정은 대시보드에서 만들고 서버 0125 `economy.test_account_seed` 로 채운다.
+     */
+    suspend fun signInWithPassword(email: String, password: String): AuthResult =
+        post(
+            "$authUrl/token?grant_type=password",
+            """{"email":${email.trim().asJsonString()},"password":${password.asJsonString()}}""",
+        )
+
     private suspend fun post(url: String, body: String): AuthResult {
         if (!isConfigured) return AuthResult.Retry("서버 주소가 설정되지 않았습니다")
 

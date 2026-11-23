@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 최신 — 시험 계정: 구글 없이 들어가기 · 등급별 신발 · 아이템 (2026-11-24, 서버 0125)
+
+사용자 "테스트 버전은 등급별로 신발 다 · 아이템 다 · 적당한 레벨 · 구글 로그인 없이 바로 접속". 로그인 화면 Google 버튼 아래 "시험 계정으로 들어가기"
+(`ui/screens/login/TestAccountLogin.kt` — `BuildConfig.TEST_TOOLS`(debug · qa)에만, 스토어 판에는 길이 없다) → 이메일 · 비밀번호(`SupabaseAuth.signInWithPassword` — grant_type=password).
+**비밀번호는 앱에 넣지 않는다**(테스트 APK · 저장소가 공개). 계정은 대시보드 Add user, 채우기는 SQL 창 `economy.test_account_seed(이메일)`(앱 역할 못 부름 · 다시 부르면 모자란 것만 ·
+접속 `ADMIN` · 운영자 권한 없음 · 매일 숫자에서 뺌). 서버 검사 "시험 계정(0125)". 손일은 docs/운영-배포후-할일.md "시험 계정".
+
 ## 최신 — 매일 이용자 · 활동 숫자 (2026-11-24, 서버 0124)
 
 사용자 "매일 09:00 기준 실 이용자 수 · 도움될 만한 것 전부" → "그냥 여기다가 해"(Claude 대화로). 셈은 `economy.daily_stats_report(제외 이메일)` 하나 — 어제(한국 날짜)
