@@ -1,5 +1,12 @@
 # StepUp — 작업 메모
 
+## 공개 저장소 — 운영 정보를 남기지 않는다 (2026-11-24)
+
+이 저장소는 **공개여야 한다**(GASOK 제출 — 사용자 "비공개로 할 수 없다"). Actions 로그 · 이슈 · 아티팩트도 누구나 본다.
+- 운영 숫자 · 보안 신호는 메신저로만(`daily-stats.yml` · `security-watch.yml` — 비밀 `TELEGRAM_BOT_TOKEN` · `TELEGRAM_CHAT_ID` / `DISCORD_WEBHOOK_URL`). 로그에는 건수만.
+- 새 워크플로가 운영 DB 를 읽으면 결과를 로그 · 이슈 · 아티팩트에 남기지 않는다. 비밀번호 · 키는 앱 · 저장소에 넣지 않는다(시험 계정도 사람이 친다).
+- 꼼수 재현 · 아직 못 막은 공격 방법은 공개 문서에 새로 쓰지 않는다(무엇을 옮길지는 점검 목록 — 사용자 결정).
+
 ## 최신 — 시험 계정: 구글 없이 들어가기 · 등급별 신발 · 아이템 (2026-11-24, 서버 0125)
 
 사용자 "테스트 버전은 등급별로 신발 다 · 아이템 다 · 적당한 레벨 · 구글 로그인 없이 바로 접속". 로그인 화면 Google 버튼 아래 "시험 계정으로 들어가기"
@@ -359,7 +366,7 @@ GA4(2026-11-07, 속성 'StepUp 웹' `G-3D42E2KKG1` — 앱 Firebase 속성과 �
 - 대기 명단 사람 확인(Turnstile): 워커 `/v1/waitlist/register`(attester/src/waitlist.js) → `attester_waitlist_register`. 키 전에는 꺼짐 —
   `TURNSTILE_SITE_KEY`(web/waitlist.js) · 워커 비밀 `TURNSTILE_SECRET` 을 넣은 뒤 `waitlist_require_turnstile = true`. 규칙 · 횟수 · 저장은 `economy.waitlist_register_core` 하나.
 - CSP(web/_headers 홈 · 초대 · 약관): 인라인 `<script>` 를 고치면 해시도 — `web/test/csp.test.js`.
-- 보안 감시 `.github/workflows/security-watch.yml`(한 시간마다 읽기만 → 이슈 `security-alert`), Dependabot `.github/dependabot.yml`.
+- 보안 감시 `.github/workflows/security-watch.yml`(한 시간마다 읽기만 → ~~이슈 `security-alert`~~ 2026-11-24 부터 메신저로만 — 맨 위 "공개 저장소" 절), Dependabot `.github/dependabot.yml`.
 
 ## 최신 — 대기 명단 등록 단단하게 (2026-11-02, 서버 0082)
 
