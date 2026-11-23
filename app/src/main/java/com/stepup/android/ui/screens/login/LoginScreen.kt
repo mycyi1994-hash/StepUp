@@ -94,6 +94,20 @@ fun LoginScreen(onDone: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    // 서버가 세션을 준 뒤 — 구글 · 시험 계정 모두 같은 차례
+    suspend fun afterSignedIn(activity: Activity, method: String) {
+        ServiceLocator.userPrefs.setSignInAgain(false)
+        ServiceLocator.userPrefs.setLoginMethod(method)
+        Analytics.login()
+        // 이제 서버가 받아 준다 — 이 폰으로 알림을 보내도록 적어 둔다
+        ServiceLocator.pushRegistrar.syncInBackground()
+        // 이 계정의 서버 잔고 · 신발을 받아 온다 (첫 신발 · 무료 뽑기 10회 포함)
+        ServiceLocator.refreshEconomyInBackground()
+        // 로그인 전에 끝나 대기열에 남은 러닝을 올린다
+        runCatching { SessionUploadWorker.schedule(activity) }
+        onDone()
+    }
+
     fun signIn() {
         // 한 번에 하나 — 계정 선택 창 · 서버 확인 중에는 다시 누를 수 없다
         if (phase != LoginPhase.Idle) return
@@ -113,18 +127,7 @@ fun LoginScreen(onDone: () -> Unit) {
                         phase = LoginPhase.Verifying
                         val session = ServiceLocator.sessionHolder.signInWithGoogle(picked.idToken, picked.nonce)
                         when (val step = LoginRules.afterServer(session)) {
-                            LoginStep.SignedIn -> {
-                                ServiceLocator.userPrefs.setSignInAgain(false)
-                                ServiceLocator.userPrefs.setLoginMethod("google")
-                                Analytics.login()
-                                // 이제 서버가 받아 준다 — 이 폰으로 알림을 보내도록 적어 둔다
-                                ServiceLocator.pushRegistrar.syncInBackground()
-                                // 이 계정의 서버 잔고 · 신발을 받아 온다 (첫 신발 · 무료 뽑기 10회 포함)
-                                ServiceLocator.refreshEconomyInBackground()
-                                // 로그인 전에 끝나 대기열에 남은 러닝을 올린다
-                                runCatching { SessionUploadWorker.schedule(activity) }
-                                onDone()
-                            }
+                            LoginStep.SignedIn -> afterSignedIn(activity, "google")
                             // 서버가 거절했으면 07(대개 설정 문제 — 클라이언트 ID 가 서버에 등록되지 않은 경우가 가장 흔하다),
                             // 서버에 닿지 못했으면 06
                             is LoginStep.Stay -> result = step.notice
@@ -147,7 +150,18 @@ fun LoginScreen(onDone: () -> Unit) {
         }
     }
 
-    LoginContent(phase = phase, notice = result ?: base, onSignIn = ::signIn)
+    LoginContent(phase = phase, notice = result ?: base, onSignIn = ::signIn) {
+        // 시험 계정(테스트 · 개발 빌드에만 — 스토어 판에는 이 길이 없다)
+        if (com.stepup.android.BuildConfig.TEST_TOOLS) {
+            TestAccountLogin(enabled = phase == LoginPhase.Idle) { email, password ->
+                val activity = context.findActivity() ?: return@TestAccountLogin false
+                when (ServiceLocator.sessionHolder.signInWithPassword(email, password)) {
+                    is com.stepup.android.data.remote.TokenResult.Ok -> { afterSignedIn(activity, "test"); true }
+                    else -> false
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -163,6 +177,7 @@ internal fun LoginContent(
     phase: LoginPhase,
     notice: LoginNotice?,
     onSignIn: () -> Unit,
+    below: @Composable () -> Unit = {},
 ) {
     val t = runTone()
     val largeText = LocalDensity.current.fontScale > 1.2f
@@ -215,6 +230,7 @@ internal fun LoginContent(
             }
             Spacer(Modifier.height(14.dp))
             GoogleSignInButton(phase, onClick = onSignIn)
+            below()
             Spacer(Modifier.height(18.dp))
         }
     }

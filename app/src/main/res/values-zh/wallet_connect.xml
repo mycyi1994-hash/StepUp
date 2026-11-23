@@ -19,6 +19,7 @@
     <string name="wc_other_wallet">选择其他钱包</string>
     <string name="wc_linked_title">钱包已连接</string>
     <string name="wc_linked_body">钱包已连接到此 STEPUP 账号。</string>
+    <string name="wc_linked_address">已连接的地址：%1$s。请确认这是你自己的钱包地址。</string>
     <string name="wc_done">确定</string>
     <string name="wc_error_title">无法开始</string>
     <string name="wc_error_sign_in">请先登录 STEPUP。</string>

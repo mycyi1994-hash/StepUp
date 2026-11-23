@@ -36,7 +36,19 @@ class ProfileViewModel(
     sneakerRepository: SneakerRepository,
     private val prefs: UserPrefs,
     avatarRepository: AvatarRepository,
+    /** 러너 레벨(서버 0121) — 없으면(앱이 준비되지 않음) 카드를 두지 않는다 */
+    private val runnerLevels: com.stepup.android.data.repo.RunnerLevelRepository? = null,
 ) : ViewModel() {
+
+    /** 러너 레벨 — 서버가 켠 값을 받았을 때만, 아니면 null(카드를 숨긴다) */
+    val runnerLevel: StateFlow<com.stepup.android.domain.RunnerLevel?> =
+        runnerLevels?.level ?: MutableStateFlow<com.stepup.android.domain.RunnerLevel?>(null)
+
+    /** 내 정보를 열 때 한 번 다시 읽는다(계속 묻지 않는다) — 레벨이 올랐으면 앱 셸이 한 번 알린다 */
+    fun refreshRunnerLevel() {
+        val repo = runnerLevels ?: return
+        viewModelScope.launch { runCatching { repo.refresh() } }
+    }
 
     /** 캐릭터 — 러닝 홈 · 꾸미기와 같은 값 */
     val look: StateFlow<AvatarLook?> = avatarRepository.look
@@ -197,6 +209,7 @@ class ProfileViewModel(
                     ServiceLocator.sneakerRepository,
                     ServiceLocator.userPrefs,
                     ServiceLocator.avatarRepository,
+                    runCatching { ServiceLocator.runnerLevel }.getOrNull(),
                 )
             }
         }

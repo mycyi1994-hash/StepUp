@@ -160,6 +160,11 @@ class ClaimRepository(
                 }
 
                 is ServerResult.Retry -> {
+                    // 강제 업데이트(서버 0120) — 이 판으로는 어떤 러닝도 올라가지 않는다. 시도 횟수를 올리지 않고 그대로 둔다(업데이트 뒤 그 차례대로)
+                    if (result.reason == com.stepup.android.data.remote.UPDATE_REQUIRED_REASON) {
+                        failed++
+                        break
+                    }
                     sessionDao.update(
                         session.copy(
                             uploadState = UploadState.FAILED.name,

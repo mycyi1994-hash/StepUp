@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 属性含义调整后的鞋子页面(2026-11-21): 效率 = 赚得更快，鞋子和能量也消耗得更快 · 耐久度 = 满修费用不变 · 每5级可重新分配一次 · 根据过去14天跑步给出的属性点估算(始终写“约”) -->
+<resources>
+    <string name="ers_preview_basis_mine">根据你过去14天的%1$d次跑步估算</string>
+    <string name="ers_preview_basis_default">还没有记录，按%1$d分钟跑步估算</string>
+    <string name="ers_preview_worth">1点 = 每天约 +%1$s SUP</string>
+    <string name="ers_preview_worth_none">按你现在的跑法不会再增加</string>
+    <string name="ers_preview_comfort_capped">已提升到节省%1$d%%能量的上限</string>
+    <string name="ers_points_life">满耐久可跑%1$s分钟</string>
+    <string name="ers_points_life_change">满耐久可跑%1$s分钟 → %2$s分钟</string>
+    <string name="ers_points_help_efficiency">赚得更快 · 鞋子和能量也消耗得更快</string>
+    <string name="ers_points_help_comfort">消耗更少能量 · 每天赚得更多</string>
+    <string name="ers_points_help_durability">跑得更久 · 满修费用不变</string>
+    <string name="ers_points_note_final">分配后的点数不能马上收回。每升%1$d级可以重新分配一次。</string>
+    <string name="ers_points_note_respec">可重新分配 1 次 · 每升%1$d级获得一次。减少已分配的点数时会用掉。</string>
+    <string name="ers_points_recommend">按推荐分配</string>
+    <string name="ers_points_recommend_all">从头按推荐分配</string>
+    <string name="ers_upg_respec">可以重新分配一次属性点</string>
+    <string name="ers_upg_stat_note">把点数加到效率上，赚得更快，鞋子也磨损得更快。满修费用不变。</string>
+    <string name="ers_why_top_level">你拥有的等级最高的鞋子</string>
+    <string name="ers_basis_efficiency">效率：同样步数赚取的SUP。效率200赚的是效率100的2倍。用属性点提升的部分，鞋子和能量也会消耗得更快。进度条终点是该等级抽到的最佳新鞋。</string>
+    <string name="ers_basis_durability">耐久度：这双鞋磨损完之前可以跑的时间（分钟）。进度条终点为满耐久。用属性点增加耐久不会提高满修费用。跑步时会减少，每次减少的量略有不同。</string>
+</resources>

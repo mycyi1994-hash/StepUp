@@ -251,9 +251,9 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
-        // 신발 관리는 ⋯ 안에만 있지 않다 — 수리하기는 내구도 칸에(2026-11-07 "신발 수리하는거 버튼 앞으로"), 판매하기 · 신발 기록은 본문 아래.
-        // 다 찬 신발이라 수리하기는 흐리다(누를 수 없음). 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
-        compose.onNodeWithTag("shoe-durability-repair", useUnmergedTree = true).assertExists().assertHasClickAction().assertIsNotEnabled()
+        // 수리하기는 이름 줄 오른쪽의 붉은 버튼(2026-11-24) — 고칠 내구도가 있을 때만. 다 찬 신발이라 없다.
+        // 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
+        compose.onAllNodesWithTag("shoe-durability-repair", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
         // 아이템칸 — 잠긴 자리 셋만(아이템 · 숫자 없음)
         compose.onNodeWithTag("shoe-item-slots", useUnmergedTree = true).assertExists()
@@ -374,8 +374,8 @@ class ShoeDetailDesignTest {
         // 40 ~ 46 — 신발마다 다른 최대 내구도 · 레벨업 스탯 포인트(서버 0059). 값은 이 테스트 화면에만 있는 예시다
         val withPoints = all + POINTS + RESPEC
         show("s40-points-notice", "shoe-points-notice", detail(ready(POINTS, withPoints)))
-        // 내구도는 달릴 수 있는 분(1분마다 5) — 1,180 / 1,330 = 236 / 266분
-        assertCell("durability", string(R.string.v4s_minutes, "236 / 266"))
+        // 내구도는 달릴 수 있는 분 — 1분마다 5 × 효율 포인트 배수(서버 0119: 레어 포인트 2 = × 1.022) → 1,180 / 1,330 = 230 / 260분
+        assertCell("durability", string(R.string.v4s_minutes, "230 / 260"))
         compose.onNodeWithTag("shoe-points-notice").assertExists()
         // 다시 나누기만 남은 신발은 알림 없이 ⋯ 안에만
         show("s40b-points-respec-detail", "shoe-art", detail(ready(RESPEC, withPoints)))

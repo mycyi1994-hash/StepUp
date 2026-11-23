@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoe stat ⓘ · forge XP line (2026-11-19) — what efficiency · comfort · durability do, what 1 point gives this shoe, progress to the next level -->
+<resources>
+    <string name="shoe_info_show_cd">Explain %1$s</string>
+    <string name="shoe_info_hide_cd">Hide the %1$s explanation</string>
+    <string name="shoe_info_efficiency">You get more SUP from the same steps.</string>
+    <string name="shoe_info_comfort">You use less energy, so you earn for longer each day.</string>
+    <string name="shoe_info_durability">You run longer without a repair.</string>
+    <!-- After the 2026-11-21 rebalance (shown only when the rules say so): what each stat means now -->
+    <string name="shoe_info_efficiency_v2">You earn more in the same time. What you add with points also uses up the shoe and energy faster.</string>
+    <string name="shoe_info_comfort_v2">You use less energy, so you earn more each day.</string>
+    <string name="shoe_info_durability_v2">One pair runs longer. Adding points doesn\'t raise the full repair cost, so the same repair earns you more.</string>
+    <string name="shoe_info_point_efficiency">1 point = +%1$s%% earnings</string>
+    <string name="shoe_info_point_comfort">1 point = −%1$s%% energy (up to %2$d%% saved)</string>
+    <string name="shoe_info_point_durability">1 point = +%1$s min</string>
+    <string name="shoe_xp_next">Next level: %1$s%%</string>
+</resources>

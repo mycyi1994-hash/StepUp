@@ -14033,6 +14033,51 @@ select set_config('request.headers', '', false);
 update public.economy_settings set value = '24' where key = 'together_min_account_hours';
 update public.economy_settings set value = 'true' where key = 'signup_run_guard';
 
+-- 매일 숫자 문(0124) — 키가 없거나 틀리면 거절, 맞으면 보고서 · 키 만들기는 SQL 창에서만
+reset role;
+select set_config('stats.key', economy.stats_key_new('test'), false);
+do $$
+declare v text; v_err text;
+begin
+  perform pg_temp.ok(not has_function_privilege('anon', 'economy.stats_key_new(text)', 'execute')
+                     and not has_function_privilege('authenticated', 'economy.daily_stats_report(text)', 'execute'),
+    '매일 숫자: 키 만들기 · 보고서 셈은 앱 역할이 부르지 못한다 (0124)');
+  perform set_config('request.headers', '{"x-stats-key": "wrong"}', true);
+  begin v := public.daily_stats(); exception when others then v_err := sqlstate; end;
+  perform pg_temp.ok(v_err = '42501', '매일 숫자: 틀린 키는 거절 (0124)');
+  perform set_config('request.headers', json_build_object('x-stats-key', current_setting('stats.key'))::text, true);
+  v := public.daily_stats();
+  perform pg_temp.ok(v like '## %이용자 · 활동%' and v like '%**러닝**%' and v like '%**SUP**%', '매일 숫자: 맞는 키는 어제 보고서 (0124)');
+  perform pg_temp.ok((select last_used_at is not null from economy.stats_keys where label = 'test'), '매일 숫자: 쓴 시각을 남긴다 (0124)');
+end $$;
+select set_config('request.headers', '', false);
+
+-- 시험 계정 채우기(0125) — 등급마다 한 켤레 · 아이템 · SUP · 들어가는 문, 다시 불러도 늘지 않는다 · 앱 역할은 못 부른다
+reset role;
+insert into auth.users (id, email) values ('d1250000-0000-0000-0000-000000000001', 'qa-seed@stepup.test') on conflict do nothing;
+do $$
+declare v_u uuid := 'd1250000-0000-0000-0000-000000000001'; v_n1 int; v_n2 int; v_msg text;
+begin
+  v_msg := economy.test_account_seed('QA-Seed@stepup.test');
+  select count(*) into v_n1 from public.market_sneakers where owner_id = v_u;
+  perform pg_temp.ok((select count(distinct rarity) from public.market_sneakers where owner_id = v_u and origin = 'PAID_DRAW') = 6
+                     and (select count(*) from public.market_sneakers where owner_id = v_u and equipped) = 1
+                     and not exists (select 1 from public.market_sneakers where owner_id = v_u and dur_now < dur_max),
+    '시험 계정: 등급 여섯 모두 한 켤레 · 하나를 신음 · 내구도 가득 (0125)');
+  perform pg_temp.ok((select count(*) from public.user_items where user_id = v_u and qty >= 10) = (select count(*) from economy.item_kinds)
+                     and economy.balance_of(v_u) >= 50000
+                     and (select source from economy.access_grants where user_id = v_u) = 'ADMIN',
+    '시험 계정: 아이템 종류마다 10 · SUP 50,000 · 접속 문 열림 (0125)');
+  perform economy.test_account_seed('qa-seed@stepup.test');
+  select count(*) into v_n2 from public.market_sneakers where owner_id = v_u;
+  perform pg_temp.ok(v_n1 = v_n2 and economy.balance_of(v_u) = 50000
+                     and (economy.setting('stats_exclude_emails') #>> '{}') like '%qa-seed@stepup.test%',
+    '시험 계정: 다시 불러도 신발 · SUP 가 늘지 않고 매일 숫자에서 빠진다 (0125)');
+  perform pg_temp.ok(not has_function_privilege('authenticated', 'economy.test_account_seed(text)', 'execute')
+                     and not has_function_privilege('anon', 'economy.test_account_seed(text)', 'execute'),
+    '시험 계정: 앱 역할은 채우기를 부르지 못한다 (0125)');
+end $$;
+
 -- 카탈로그 검사 — 새 표 · 함수가 문을 넓히면 여기서 걸린다(2차 점검 I). 목록을 늘릴 때는 까닭을 함께 적는다
 do $$
 declare r record; v_bad text := '';

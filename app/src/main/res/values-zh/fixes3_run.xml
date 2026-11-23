@@ -25,4 +25,5 @@
     <string name="run_reason_no_gps_cap">已达到无路线跑步的每日上限</string>
     <string name="run_reason_upload_cap">已达到今日可上传上限</string>
     <string name="run_reason_too_old">这次跑步已超过7天</string>
+    <string name="run_reason_no_route_reward">未能确认路线，未计入奖励步数（箱子 · 目标）</string>
 </resources>

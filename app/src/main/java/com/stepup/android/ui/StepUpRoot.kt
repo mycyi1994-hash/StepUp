@@ -1,5 +1,6 @@
 package com.stepup.android.ui
 
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 import androidx.compose.foundation.layout.RowScope
@@ -264,8 +265,11 @@ object Routes {
     const val CHALLENGE_HISTORY = "challenge-history"
     const val SNEAKER = "sneaker/{id}"
 
-    /** 신발 강화(파란 톤 v4 강화 · 재료 신발 3개, 0054) — 상세의 강화하기 · 강화 결과 확인이 같은 화면으로. 뒤로는 상세로 */
-    const val SNEAKER_UPGRADE = "sneaker/{id}/upgrade"
+    /**
+     * 신발 강화(0118 경험치 강화 — 서버에 없으면 예전 재료 3개 강화) — 상세의 강화하기 · 강화 결과 확인이 같은 화면으로. 뒤로는 상세로.
+     * material 은 뽑기 결과의 "재료로 쓰면" 줄에서 왔을 때 골라 둘 신발(0 이면 없음)
+     */
+    const val SNEAKER_UPGRADE = "sneaker/{id}/upgrade?material={material}"
     /** 크루 대기실 — party 는 목록에서 고른(또는 방금 연) 방 번호(0072). 없으면(-1) 예전처럼 크루의 열린 방 하나에 */
     const val LOBBY = "lobby/{crewId}?party={party}"
 
@@ -298,7 +302,8 @@ object Routes {
     const val MARKET_MODEL = "market/{faction}/{rarity}/{variant}?sell={sell}&model={model}"
 
     fun sneaker(id: Long) = "sneaker/$id"
-    fun sneakerUpgrade(id: Long) = "sneaker/$id/upgrade"
+    fun sneakerUpgrade(id: Long, material: Long = 0) =
+        if (material > 0) "sneaker/$id/upgrade?material=$material" else "sneaker/$id/upgrade"
 
     /** 거래소의 한 장 — 도감 모델이 있으면 모델 번호로(0107, 같은 등급의 다른 모델과 섞이지 않는다) */
     fun marketModel(key: com.stepup.android.data.remote.ModelKey, sell: Long = 0) =
@@ -406,6 +411,19 @@ fun StepUpRoot() {
         onPauseOrDispose { job.cancel() }
     }
 
+    // 강제 업데이트(서버 0120) — 서버가 이 판을 더는 받지 않으면 업데이트 화면만. 달리는 중 · 저장하는 중에는 러닝 화면을 가리지 않는다
+    // (러닝은 이 폰에 남고 업데이트한 뒤 올라간다) — 러닝이 끝나면 그때 보인다
+    val updateFlow = remember {
+        runCatching { ServiceLocator.server.updateRequired }.getOrNull() ?: kotlinx.coroutines.flow.MutableStateFlow(false)
+    }
+    val updateRequired by updateFlow.collectAsState()
+    val runBusyFlow = remember {
+        com.stepup.android.service.WalkSessionService.state
+            .map { it.isActive || it.saveStatus == com.stepup.android.service.RunSaveStatus.SAVING }
+            .distinctUntilChanged()
+    }
+    val runBusy by runBusyFlow.collectAsState(initial = false)
+
     Box(Modifier.fillMaxSize()) {
         NightCanvas(Modifier.fillMaxSize())
 
@@ -414,6 +432,7 @@ fun StepUpRoot() {
         val accessWaiting = loginMethod == "google" && !accessChecked && !accessFailed && !accessWaitOver && access?.mode != "OPEN"
         val stage = when {
             !ready || loginMethod == null || guideSeen == null || setupSeen == null || !sessionChecked -> 0
+            updateRequired && !runBusy -> 6
             loginMethod!!.isEmpty() -> 1
             accessWaiting -> 5
             blocked -> 4
@@ -430,6 +449,8 @@ fun StepUpRoot() {
             1 -> LoginScreen(onDone = {})
 
             5 -> com.stepup.android.ui.screens.splash.LaunchScene(com.stepup.android.ui.screens.splash.LaunchStage.Loading)
+
+            6 -> com.stepup.android.ui.screens.splash.UpdateRequiredScreen()
 
             3 -> com.stepup.android.ui.screens.setup.S2SetupFlow(onDone = {})
 
@@ -572,10 +593,19 @@ private fun MainScaffoldContent(
             is InviteLinks.PushTarget.Flash -> navController.openReplacingSame(
                 Routes.flashDetail(target.postId), Routes.FLASH_DETAIL, mapOf("postId" to target.postId),
             )
-            is InviteLinks.PushTarget.Room -> navController.openReplacingSame(
-                Routes.room(target.crewId, target.partyId), Routes.LOBBY,
-                mapOf("crewId" to target.crewId, "party" to target.partyId),
-            )
+            // 대기실은 열리자마자 그 방에 들어간다 — 이 폰이 이미 그 방에 있을 때만 바로 열고, 아니면 그 크루의 열린 대기실 목록
+            // (보기만 — 방을 골라 눌러야 들어간다). 링크 하나로 남의 방에 들어가 내 대기실에서 나오지 않게(2026-11-22 보안 점검)
+            is InviteLinks.PushTarget.Room -> {
+                val party = com.stepup.android.core.ServiceLocator.crewRepository.party.value
+                if (InviteLinks.opensRoomDirectly(target, party.crewId, party.partyId)) {
+                    navController.openReplacingSame(
+                        Routes.room(target.crewId, target.partyId), Routes.LOBBY,
+                        mapOf("crewId" to target.crewId, "party" to target.partyId),
+                    )
+                } else {
+                    navController.openReplacingSame(Routes.crewRooms(target.crewId), Routes.CREW_ROOMS, mapOf("crewId" to target.crewId))
+                }
+            }
             // 아이템 도착(ITEM_GRANTED) · 보상 이벤트 시작(REWARD_EVENT) — 그 탭으로(0106)
             InviteLinks.PushTarget.Bag -> navController.switchTab(Screen.Bag)
             InviteLinks.PushTarget.RunTab -> navController.switchTab(Screen.Run)
@@ -831,6 +861,13 @@ private fun MainScaffoldContent(
                         },
                     )
                 }
+                // 뽑기 결과의 "재료로 쓰면 ○○ +N%" — 그 신발을 골라 둔 강화 화면으로(결과는 닫는다)
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.stepup.android.ui.screens.gacha.LocalOpenForgeWith provides { target: Long, material: Long ->
+                        drawVm.closeResult()
+                        navController.navigate(Routes.sneakerUpgrade(target, material)) { launchSingleTop = true }
+                    },
+                ) {
                 com.stepup.android.ui.screens.gacha.MysteryBoxScreen(
                     modifier = Modifier.weight(1f),
                     boxes = boxStatus,
@@ -884,6 +921,7 @@ private fun MainScaffoldContent(
                         )
                     },
                 )
+                }
                 }
             }
             composable(Screen.Customize.route) { entry ->
@@ -1591,10 +1629,14 @@ private fun MainScaffoldContent(
             }
             composable(
                 route = Routes.SNEAKER_UPGRADE,
-                arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                arguments = listOf(
+                    navArgument("id") { type = NavType.LongType },
+                    navArgument("material") { type = NavType.LongType; defaultValue = 0L },
+                ),
             ) { entry ->
                 com.stepup.android.ui.screens.items.ShoeUpgradeScreen(
                     sneakerId = entry.arguments?.getLong("id") ?: 0L,
+                    material = entry.arguments?.getLong("material") ?: 0L,
                     onBack = { navController.popBackStack() },
                     // UP09 · UP18 보유 신발 보기 — 신발 탭의 최신 목록으로
                     onOpenOwned = {
@@ -1791,6 +1833,12 @@ private fun MainScaffoldContent(
                 if (lobby != null) popUpTo(lobby) { inclusive = true }
             }
         },
+    )
+
+    // 러너 레벨이 올랐다(서버 0121) — 탭 첫 화면에서만 한 번. 첫 사용 안내 · 멈춘 러닝 되살리기가 먼저고, 달리는 동안은 가리지 않는다
+    com.stepup.android.ui.screens.profile.RunnerLevelNoticeHost(
+        allowed = currentRoute in setOf(Screen.Run.route, Screen.Customize.route, Screen.Community.route, Screen.Bag.route, Screen.Profile.route) &&
+            !(startTour && !firstGuideClosed) && pendingRun == null,
     )
 
     // 첫 사용 안내(시안 02) — 러닝 홈에서만, 먼저 처리할 목적지(초대 링크 · 로그인 뒤 다시 열 초대)나 멈춘 러닝이 없을 때.

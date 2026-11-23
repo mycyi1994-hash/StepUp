@@ -2,6 +2,7 @@ package com.stepup.android
 
 import com.stepup.android.domain.WalletApp
 import com.stepup.android.domain.WalletLinkRequest
+import com.stepup.android.domain.shortWalletAddress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -46,5 +47,25 @@ class WalletAppsTest {
         assertNull(WalletApp.RABBY.openUrl(page))
         assertNull(WalletApp.GIWA.openUrl(page))
         assertEquals("https://play.google.com/store/apps/details?id=com.debank.rabbymobile", WalletApp.RABBY.storeUrl())
+    }
+
+    @Test fun `바로 여는 링크가 있는 지갑은 모두 받을 앱의 패키지가 있다 — 일회용 번호를 그 앱에만 보낸다`() {
+        val page = "https://stepupcrew.com/wallet.html?l=$user.$nonce"
+        WalletApp.entries.filter { it.openUrl(page) != null }.forEach { app ->
+            assertTrue("${app.key} 는 패키지 없이 일회용 번호가 든 링크를 연다", !app.packageName.isNullOrBlank())
+        }
+        assertEquals("io.metamask", WalletApp.METAMASK.packageName)
+        assertEquals("com.okinc.okex.gp", WalletApp.OKX.packageName)
+    }
+
+    @Test fun `연결된 지갑 주소는 서버가 준 지갑 주소 꼴만 줄여 보인다`() {
+        assertEquals("0xAbCd…7890", shortWalletAddress("0xAbCdEf0123456789aBcDeF0123456789aBcD7890"))
+        assertEquals("0x1234…cdef", shortWalletAddress(" 0x1234567890abcdef1234567890abcdef1234cdef "))
+        assertNull(shortWalletAddress(null))
+        assertNull(shortWalletAddress(""))
+        assertNull(shortWalletAddress("0x1234"))
+        assertNull(shortWalletAddress("1234567890abcdef1234567890abcdef1234cdef"))
+        assertNull(shortWalletAddress("0x1234567890abcdef1234567890abcdef1234cdeg"))
+        assertNull(shortWalletAddress("0x1234567890abcdef1234567890abcdef1234cdef0"))
     }
 }

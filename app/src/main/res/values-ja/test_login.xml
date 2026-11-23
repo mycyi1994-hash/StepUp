@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시험 계정으로 들어가기 — 테스트 · 개발 빌드(TEST_TOOLS)의 로그인 화면에만 보인다 (2026-11-24) -->
+<resources>
+    <string name="test_login_link">テストアカウントでログイン</string>
+    <string name="test_login_title">テストアカウント</string>
+    <string name="test_login_email">メールアドレス</string>
+    <string name="test_login_password">パスワード</string>
+    <string name="test_login_go">ログイン</string>
+    <string name="test_login_cancel">キャンセル</string>
+    <string name="test_login_failed">メールアドレスまたはパスワードが違います。</string>
+</resources>

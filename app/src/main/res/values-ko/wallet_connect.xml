@@ -19,6 +19,7 @@
     <string name="wc_other_wallet">다른 지갑 고르기</string>
     <string name="wc_linked_title">지갑을 연결했어요</string>
     <string name="wc_linked_body">이 STEPUP 계정에 지갑이 연결됐어요.</string>
+    <string name="wc_linked_address">연결된 주소: %1$s. 내 지갑 주소가 맞는지 확인해 주세요.</string>
     <string name="wc_done">확인</string>
     <string name="wc_error_title">시작하지 못했어요</string>
     <string name="wc_error_sign_in">먼저 STEPUP에 로그인해 주세요.</string>

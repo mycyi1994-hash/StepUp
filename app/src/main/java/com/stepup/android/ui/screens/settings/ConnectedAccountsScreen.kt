@@ -371,6 +371,8 @@ internal suspend fun forgetAccountOnPhone(context: Context) {
     // 이 폰의 하루 걸음을 다음 계정에도 처음부터 다시 올리게
     runCatching { ServiceLocator.dailyStepsUploader.forget() }
     runCatching { ServiceLocator.shoeRules.forgetAccount() }
+    // 러너 레벨 · 알릴 것도 — 다음 계정의 내 정보에 앞 계정의 레벨이 보이지 않게
+    runCatching { ServiceLocator.runnerLevel.forgetAccount() }
     // 쓰다 둔 동네 이야기와 숨긴 글 목록도 지운다
     ServiceLocator.userPrefs.clearStoryData()
     // 쓰다 둔 크루 만들기 초안(사진 파일 포함) · 크루 채팅의 쓰다 만 공지도 지운다

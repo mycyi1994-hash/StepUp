@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 跑鞋属性 ⓘ · 强化经验条(2026-11-19) -->
+<resources>
+    <string name="shoe_info_show_cd">查看%1$s说明</string>
+    <string name="shoe_info_hide_cd">收起%1$s说明</string>
+    <string name="shoe_info_efficiency">同样的步数能获得更多 SUP</string>
+    <string name="shoe_info_comfort">消耗更少能量，每天可以累积更久</string>
+    <string name="shoe_info_durability">无需修理也能跑得更久</string>
+    <!-- 属性含义调整后(2026-11-21 — 仅在规则如此时显示) -->
+    <string name="shoe_info_efficiency_v2">同样的时间能赚更多。用属性点提升的部分，鞋子和能量也会消耗得更快</string>
+    <string name="shoe_info_comfort_v2">消耗更少能量，每天能赚更多</string>
+    <string name="shoe_info_durability_v2">一双鞋能跑得更久。用属性点增加耐久也不会提高满修费用，同样的修理费能赚更多</string>
+    <string name="shoe_info_point_efficiency">1 点 = 收益 +%1$s%%</string>
+    <string name="shoe_info_point_comfort">1 点 = 能量 −%1$s%%（最多节省 %2$d%%）</string>
+    <string name="shoe_info_point_durability">1 点 = +%1$s 分钟</string>
+    <string name="shoe_xp_next">下一级进度 %1$s%%</string>
+</resources>

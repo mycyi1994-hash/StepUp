@@ -350,7 +350,7 @@ private fun MyShoesReady(
         // 다 찬 신발이면 흐리게, 곧 닳으면(출발 전 점검과 같은 기준) 파란 글자 · 테두리로 앞세운다. 주 버튼은 상세 보기 하나 그대로
         BottomActionBar {
             val canRepair = repairable(shown) && !forgePending.holds(shown.id)
-            val urgent = canRepair && repairUrgent(shown)
+            val urgent = canRepair && repairUrgent(shown, com.stepup.android.ui.screens.items.rememberShoeRules())
             val accent = StepUpUi.colors.accentText
             SecondaryButton(
                 stringResource(R.string.care_repair),
@@ -450,21 +450,18 @@ private fun NameBlock(shoe: Sneaker, onRename: () -> Unit) {
                 autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 30.sp, stepSize = 1.sp),
                 modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-hero-name"),
             )
-            // 뽑힌 값의 별 · 유형(경제 4판) · 가득 찼을 때 달리는 시간. 뽑은 값을 모르는 신발은 남은 내구도만
+            // 가득 찼을 때 달리는 시간(별 · 유형은 뺐다 — 2026-11-24 사용자). 가득 값을 모르는 신발은 남은 내구도만
             val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
-            val quality = com.stepup.android.ui.screens.items.shoeQualityOf(shoe, rules)
             val time = if (shoe.server?.hasDurabilityMax == true) {
                 stringResource(R.string.v4s_full_minutes,
-                    com.stepup.android.ui.screens.items.wholeMinutes(com.stepup.android.ui.screens.items.durabilityMax(shoe)))
+                    com.stepup.android.ui.screens.items.wholeMinutes(shoe, com.stepup.android.ui.screens.items.durabilityMax(shoe), rules))
             } else {
                 stringResource(R.string.shoes_durability_left, formatDurability(shoe))
             }
-            val meta = listOfNotNull(quality?.let { com.stepup.android.ui.screens.items.qualityLabel(it) }, time).joinToString(" · ")
-            val metaCd = listOfNotNull(quality?.let { com.stepup.android.ui.screens.items.qualityDescription(it) }, time).joinToString(", ")
             Text(
-                meta,
+                time,
                 style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel, maxLines = 1,
-                modifier = Modifier.padding(top = 4.dp).semantics { contentDescription = metaCd }.testTag("shoe-hero-meta"),
+                modifier = Modifier.padding(top = 4.dp).testTag("shoe-hero-meta"),
             )
         }
         CircleIconButton(
@@ -483,11 +480,13 @@ private fun StatsBlock(shoe: Sneaker, onExplain: () -> Unit) {
     val explain = stringResource(R.string.my_shoes_basis_open)
     // 경제 4판(0116) — 내구도는 남은 분, 효율 · 착화감은 지수(100 = 기준, 2배면 2배). 최대 내구도를 모르는 예전 신발은 남은 비율
     val minutes = shoe.server?.hasDurabilityMax == true
+    // 분 = 내구도 ÷ (5 × 효율 포인트 배수) — 효율에 포인트를 넣은 신발은 그만큼 빨리 닳는다(서버 0119)
+    val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
     StatRow(
         listOf(
             if (minutes) {
                 StatItem(stringResource(R.string.sdv_stat_durability),
-                    "${com.stepup.android.ui.screens.items.wholeMinutes(com.stepup.android.ui.screens.items.durabilityLeft(shoe))}",
+                    "${com.stepup.android.ui.screens.items.wholeMinutes(shoe, com.stepup.android.ui.screens.items.durabilityLeft(shoe), rules)}",
                     stringResource(R.string.v4s_unit_min), tag = "shoe-bar-durability-value")
             } else {
                 StatItem(stringResource(R.string.sdv_stat_durability), "${com.stepup.android.ui.screens.items.durabilityPercent(shoe)}", "%",
@@ -637,15 +636,17 @@ private fun MyShoesLoading(modifier: Modifier) {
 private fun StatBasisSheet(onClose: () -> Unit) {
     val p = shoeInk()
     val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
+    val newMeaning = com.stepup.android.ui.screens.items.newStatMeaning(rules)
     SettingsSheet(
         title = stringResource(R.string.my_shoes_basis_open), onDismiss = onClose,
         modifier = Modifier.testTag("shoe-basis-sheet"),
     ) {
         listOf(
             stringResource(R.string.v4s_basis_intro),
-            stringResource(R.string.v4s_basis_efficiency),
+            // 서버 0119 의 능력치 뜻(효율 포인트는 신발 · 에너지도 빨리 쓴다 · 내구도 포인트는 가득 수리비를 올리지 않는다) — 예전 서버면 예전 글
+            stringResource(if (newMeaning) R.string.ers_basis_efficiency else R.string.v4s_basis_efficiency),
             stringResource(R.string.v4s_basis_comfort, com.stepup.android.ui.screens.items.comfortCapPercent(rules)),
-            stringResource(R.string.v4s_basis_durability),
+            stringResource(if (newMeaning) R.string.ers_basis_durability else R.string.v4s_basis_durability),
             stringResource(R.string.v4s_basis_quality),
         ).forEach { line ->
             Text(line, color = p.text, fontSize = 15.sp, lineHeight = 1.45.em)
@@ -753,7 +754,7 @@ private fun VaultReady(
             items(shown, key = { it.id }) { shoe ->
                 VaultCard(shoe, selected = shoe.id == chosen, onClick = { onOpen(shoe.id) })
             }
-            item(key = "links", span = { GridItemSpan(maxLineSpan) }) { VaultLinks(onOpenDex, onOpenMarket, onOpenItems) }
+            // 도감 보기 · 마켓 · 아이템 줄은 뺐다(2026-11-24 사용자 "다 없애고")
         }
     }
     if (sortSheet) {
@@ -907,27 +908,6 @@ private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
         ShoeMeta(shoe, fontSize = 12.5f, modifier = Modifier.padding(horizontal = 2.dp))
         // 눌림 자리(둥근 18dp)의 아래 모서리 곡선이 마지막 줄 첫 글자("Lv."의 L)를 자르지 않게 — 2026-09-28 기기 캡처
         Spacer(Modifier.height(10.dp))
-    }
-}
-
-/** 격자 아래 작은 줄 — 도감 · 마켓 · 아이템(스토어 · NFT). 보유 격자에 섞지 않고 따로 들어간다(지우지 않음) */
-@Composable
-private fun VaultLinks(onOpenDex: () -> Unit, onOpenMarket: () -> Unit, onOpenItems: () -> Unit) {
-    val p = shoeInk()
-    Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
-        listOf(
-            Triple(R.string.shoes_s2_dex, onOpenDex, "shoe-open-dex"),
-            Triple(R.string.shoes_s2_market, onOpenMarket, "shoe-open-market"),
-            Triple(R.string.market_tab_items, onOpenItems, "shoe-open-vault"),
-        ).forEach { (label, onClick, tag) ->
-            Box(
-                Modifier.heightIn(min = StepUpDesign.TouchTarget).clip(RoundedCornerShape(12.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp).testTag(tag),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(stringResource(label), color = p.secondary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
     }
 }
 

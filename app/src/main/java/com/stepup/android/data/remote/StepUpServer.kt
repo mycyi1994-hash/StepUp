@@ -1,5 +1,9 @@
 package com.stepup.android.data.remote
 
+import com.stepup.android.BuildConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -99,6 +103,10 @@ class StepUpServer(
     private val apiKey: String,
     private val sessions: SessionHolder,
     internal val http: HttpPoster = UrlConnectionPoster(),
+    /** 이 앱의 판(스토어 번호 — [AppVersionHeader.storeNumber]). 요청마다 [AppVersionHeader.NAME] 머리글로 보낸다(서버 0120) */
+    private val appVersion: Int = AppVersionHeader.storeNumber(BuildConfig.VERSION_CODE),
+    /** 단조 시계(ms) — 업데이트가 필요하다고 들은 뒤 다시 물을 때를 잰다 */
+    private val clockMs: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
 
     val isConfigured: Boolean get() = baseUrl.isNotBlank() && apiKey.isNotBlank()
@@ -108,6 +116,33 @@ class StepUpServer(
     /** 접속 코드 문(0079)이 요청을 막았을 때(403 access_required) 부른다 — 권한을 다시 묻게. 앱이 정한다 */
     @Volatile
     var onAccessRequired: (() -> Unit)? = null
+
+    private val _updateRequired = MutableStateFlow(false)
+
+    /**
+     * 강제 업데이트(서버 0120) — 운영자가 정한 가장 낮은 판보다 이 앱이 옛 판이라 서버가 요청을 426 `update_required` 로 막았다.
+     * 앱 전체가 업데이트 화면을 본다. 서버가 다시 받아 주면(2xx) 풀린다 — 업데이트하면 앱이 새로 켜지므로 폰에 적어 두지 않는다.
+     */
+    val updateRequired: StateFlow<Boolean> = _updateRequired.asStateFlow()
+
+    /** 마지막으로 426 을 받은 때([clockMs]) — 그 뒤 [UPDATE_RECHECK_MS] 동안은 서버에 보내지 않는다(같은 답만 온다) */
+    @Volatile
+    private var updateBlockedAtMs = 0L
+
+    /** 업데이트가 필요하다고 들은 지 얼마 안 됐다 — 보내지 않고 "나중에 다시"로 둔다(서버를 두드리지 않게) */
+    internal fun holdingForUpdate(): Boolean =
+        _updateRequired.value && clockMs() - updateBlockedAtMs < UPDATE_RECHECK_MS
+
+    /** 받은 답으로 업데이트 문을 맞춘다 — 426 이면 막혔다고 적고 true, 2xx 면 풀린 것이다 */
+    internal fun noteUpdateGate(response: HttpResponse): Boolean {
+        if (response.isUpdateRequired()) {
+            updateBlockedAtMs = clockMs()
+            _updateRequired.value = true
+            return true
+        }
+        if (response.status in 200..299 && _updateRequired.value) _updateRequired.value = false
+        return false
+    }
 
     /**
      * 러닝 세션을 서버에 기록한다.
@@ -240,6 +275,7 @@ class StepUpServer(
             else -> return AccountDeletion.NotDeleted
         }
         val response = http.post("$restUrl/rpc/account_delete", "{}", headers(token))
+        noteUpdateGate(response)
         return when {
             response.status in 200..299 -> AccountDeletion.Deleted
             // 끊김(0) · 서버 오류(5xx)는 요청이 처리됐는지 알 수 없다
@@ -282,6 +318,8 @@ class StepUpServer(
         "apikey" to apiKey,
         "Authorization" to "Bearer $token",
         "Content-Type" to "application/json",
+        // 이 앱의 판(서버 0120 — 운영자가 정한 판보다 옛 앱은 426 update_required). 없으면 서버는 0(예전 앱)으로 본다
+        AppVersionHeader.NAME to appVersion.toString(),
     )
 
     /** 출입증을 챙겨서 요청하고, 응답을 결말로 옮긴다. */
@@ -303,8 +341,13 @@ class StepUpServer(
             is TokenResult.SignInRequired -> return ServerResult.SignInRequired(t.reason)
         }
 
+        // 서버가 이 판을 더는 받지 않는다고 했다 — 잠시 보내지 않는다(업데이트 화면이 떠 있다)
+        if (holdingForUpdate()) return ServerResult.Retry(UPDATE_REQUIRED_REASON)
+
         val response = call(token)
         return when {
+            // 강제 업데이트(0120) — 거절이 아니라 "나중에 다시"다: 업데이트하면 같은 요청(올리지 못한 러닝 등)이 된다
+            noteUpdateGate(response) -> ServerResult.Retry(UPDATE_REQUIRED_REASON)
             response.status in 200..299 -> ServerResult.Ok(response.body)
             response.status == 0 -> ServerResult.Retry(response.body)
             // 출입증이 방금 만료됐을 수 있다. 다음 차례에 갱신해서 다시 시도한다.
@@ -340,12 +383,14 @@ class StepUpServer(
      */
     internal suspend fun openPost(url: String, body: String): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
+        if (holdingForUpdate()) return ServerResult.Retry(UPDATE_REQUIRED_REASON)
         val token = (sessions.accessToken() as? TokenResult.Ok)?.accessToken
         val response = http.post(
             url,
             body,
             if (token != null) headers(token) else anonHeaders(),
         )
+        noteUpdateGate(response)
         if (response.isAccessRequired()) runCatching { onAccessRequired?.invoke() }
         return response.toResult()
     }
@@ -354,12 +399,30 @@ class StepUpServer(
         "apikey" to apiKey,
         "Authorization" to "Bearer $apiKey",
         "Content-Type" to "application/json",
+        AppVersionHeader.NAME to appVersion.toString(),
     )
 
     internal suspend fun anonGet(url: String): ServerResult<String> {
         if (!isConfigured) return ServerResult.Retry("서버 주소가 설정되지 않았습니다")
-        return http.get(url, anonHeaders()).toResult()
+        if (holdingForUpdate()) return ServerResult.Retry(UPDATE_REQUIRED_REASON)
+        return http.get(url, anonHeaders()).also { noteUpdateGate(it) }.toResult()
     }
+
+    companion object {
+        /** 426 을 받은 뒤 다시 서버에 물어보기까지(5분) — 운영자가 판을 내렸으면 그때 풀린다 */
+        const val UPDATE_RECHECK_MS = 5 * 60_000L
+    }
+}
+
+/** 요청마다 보내는 이 앱의 판(서버 0120 강제 업데이트) — 서버 `public.access_gate` 가 읽는다 */
+object AppVersionHeader {
+    const val NAME = "x-stepup-version"
+
+    /**
+     * 스토어 번호 — versionCode 의 끝 세 자리. 테스트 · 개발 빌드의 versionCode 는 데이터베이스 판 × 1000 + 스토어 번호라 그것을 뺀다
+     * (운영자에게 알리는 판 `app_client_report` 와 같은 규칙)
+     */
+    fun storeNumber(versionCode: Int): Int = Math.floorMod(versionCode, 1000)
 }
 
 /** 서버 응답(JSON 글자)을 화면이 쓰는 값으로. 못 읽으면 나중에 다시 한다. */
@@ -383,6 +446,8 @@ internal fun HttpResponse.toResult(): ServerResult<String> = when {
     status == 0 -> ServerResult.Retry(body)
     status == 401 -> ServerResult.Retry("인증이 만료되었습니다")
     status == 429 || status >= 500 -> ServerResult.Retry("서버가 바쁩니다 ($status)")
+    // 강제 업데이트(0120) — 업데이트하면 된다. 거절로 굳히지 않는다
+    isUpdateRequired() -> ServerResult.Retry(UPDATE_REQUIRED_REASON)
     // 접속 코드 문 — 문이 열리면 된다. 거절로 굳히지 않는다([StepUpServer.authed] 와 같다)
     isAccessRequired() -> ServerResult.Retry(ACCESS_REQUIRED_REASON)
     else -> ServerResult.Rejected(postgrestMessage())
@@ -393,6 +458,21 @@ internal fun HttpResponse.isAccessRequired(): Boolean = status == 403 && body.co
 
 /** 접속 코드 문에 막혔을 때의 [ServerResult.Retry] 까닭 — 문이 열리면 같은 요청을 다시 보낸다 */
 internal const val ACCESS_REQUIRED_REASON = "access_required"
+
+/**
+ * 강제 업데이트(서버 0120 `public.access_gate`)가 막은 답 — 426 이거나, PostgREST 오류 글의 message · hint 가 `update_required` 인 4xx.
+ * 다른 오류 글에 같은 낱말이 섞여도 잘못 읽지 않게 칸 값으로 본다
+ */
+internal fun HttpResponse.isUpdateRequired(): Boolean {
+    if (status == 426) return true
+    if (status !in 400..499) return false
+    if (!body.contains(UPDATE_REQUIRED_REASON)) return false
+    val obj = runCatching { Json.parseToJsonElement(body) }.getOrNull() as? JsonObject ?: return false
+    return listOf("message", "hint").any { key -> (obj[key] as? JsonPrimitive)?.contentOrNull == UPDATE_REQUIRED_REASON }
+}
+
+/** 강제 업데이트에 막혔을 때의 [ServerResult.Retry] 까닭 — 업데이트하면 같은 요청을 다시 보낸다 */
+internal const val UPDATE_REQUIRED_REASON = "update_required"
 
 /**
  * Postgres 가 보낸 실패 이유를 꺼낸다.

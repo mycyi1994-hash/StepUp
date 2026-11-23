@@ -295,6 +295,8 @@ fun CrewRosterScreen(
     val crew = card
     val members = (roster as? CrewLoad.Ready)?.value.orEmpty()
     val shown = if (mode == CrewRosterMode.WEEK) members.filter { it.weekKm > 0 }.sortedByDescending { it.weekKm } else members
+    // 러너 레벨 배지(서버 0121) — 명단마다 한 번에 묻고, 받기 전에도 명단은 그대로 그린다
+    val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(members.map { it.userId })
     CrewPage(Modifier.testTag(if (mode == CrewRosterMode.WEEK) "crew-participants" else if (mode == CrewRosterMode.MANAGE) "crew-members-manage" else "crew-members")) {
         CrewTopBar(
             stringResource(
@@ -359,6 +361,7 @@ fun CrewRosterScreen(
                             onClick = { if (member.owner) onOpenLeader() else onOpenMember(member.userId) },
                             modifier = Modifier.testTag("crew-roster-${member.userId}"),
                             badge = if (member.owner) stringResource(R.string.crew_role_leader) else null,
+                            mark = com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[member.userId]),
                         )
                     }
                     if (mode == CrewRosterMode.WEEK && crew?.goalKm != null) item {

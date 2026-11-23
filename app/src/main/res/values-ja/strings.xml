@@ -345,7 +345,7 @@
     <string name="analytics_title">統計</string>
     <string name="analytics_tab_week">週間</string>
     <string name="analytics_tab_quarter">3か月</string>
-    <string name="analytics_goal_days">目標達成</string>
+    <string name="analytics_goal_days">1日の総歩数で達成</string>
     <string name="analytics_days_of">%1$d / %2$d 日</string>
     <string name="analytics_days_count">%1$d 日</string>
     <string name="analytics_active_days">歩いた日</string>
@@ -368,7 +368,7 @@
     <string name="analytics_all">全期間</string>
     <string name="analytics_daily_avg">1日平均</string>
     <string name="analytics_best_day">ベスト記録</string>
-    <string name="analytics_goal_rate">目標達成率</string>
+    <string name="analytics_goal_rate">1日の総歩数の達成率</string>
     <string name="analytics_recent_runs">最近のラン</string>
     <string name="analytics_no_runs">まだランの記録がありません</string>
 
@@ -623,7 +623,7 @@
     <string name="ach_goal_sup">累計 %1$s SUP を獲得</string>
     <string name="ach_goal_mint">スニーカーを %1$s 回ミント</string>
     <string name="ach_goal_collection">図鑑を %1$s 枠あつめる</string>
-    <string name="ach_goal_upgrade">強化を %1$s 回おこなう</string>
+    <string name="ach_goal_upgrade">シューズのレベルを %1$s 回上げる</string>
     <string name="ach_goal_party">パーティランを %1$s 回完走</string>
     <string name="ach_goal_event">イベント報酬を %1$s 回受け取る</string>
     <string name="ach_goal_crew">クルーに %1$s 件参加</string>
@@ -1241,7 +1241,7 @@ StepUp と走り出そう。</string>
     <string name="challenge_today_sub">小さな目標、続けるラン</string>
     <string name="challenge_tag_daily">デイリー</string>
     <string name="challenge_tag_weekly">ウィークリー</string>
-    <string name="challenge_daily_title">今日の歩数目標を達成</string>
+    <string name="challenge_daily_title">今日のラン目標を達成</string>
     <string name="challenge_daily_desc">目標を超えるとボーナスが自動で入ります。</string>
     <string name="challenge_daily_streak_note">連続達成で増加</string>
     <string name="challenge_refer_desc">友達をStepUpに招待しましょう。招待人数を数える機能がまだないため、進捗は表示しません。</string>
@@ -1311,7 +1311,7 @@ StepUp と走り出そう。</string>
     <string name="home_goal_suffix"> / %1$s 歩</string>
     <string name="home_shortcut_news">ニュース</string>
     <string name="home_energy_can">今日はあと%1$s歩分貯められます</string>
-    <string name="home_energy_empty">今日の獲得上限に達しました</string>
+    <string name="home_energy_empty">今日のSUP獲得上限に達しました(ランの歩数はボックス・目標に引き続き数えます)</string>
     <string name="home_start_run">ラン開始</string>
     <string name="items_vault_title">シューズ保管庫</string>
     <string name="market_runner_title">ランナーマーケット</string>
@@ -1422,7 +1422,7 @@ StepUp と走り出そう。</string>
     <string name="course_rank_empty">まだ記録がありません。このコースを選んで完走すると、ルートを確認してランキングに載せます。</string>
     <string name="course_rank_me">%1$s (自分)</string>
     <string name="notification_channel_reminder">目標リマインダー</string>
-    <string name="reminder_goal_title">今日の目標まであと%1$d歩</string>
+    <string name="reminder_goal_title">今日のラン目標まであと%1$d歩</string>
     <string name="reminder_goal_body">軽くひと走りして目標を達成しましょう</string>
     <string name="splash_prepare_failed">アプリを準備できませんでした。もう一度お試しください。</string>
     <string name="run_location_disabled">位置情報へのアクセスはオフ</string>
@@ -1523,7 +1523,7 @@ StepUp と走り出そう。</string>
     <string name="setup_decrease">%1$sを減らす</string>
     <string name="setup_goal_kicker">初期設定・目標</string>
     <string name="setup_goal_title">目標体重と期間を決めてください</string>
-    <string name="setup_goal_subtitle">1日の歩数目標は現在%1$s歩です</string>
+    <string name="setup_goal_subtitle">1日のラン目標は現在%1$s歩です</string>
     <string name="setup_goal_weeks">%1$d週</string>
     <string name="setup_goal_weekly">週あたり約%1$skg</string>
     <string name="setup_goal_bmi">目標BMI %1$s</string>

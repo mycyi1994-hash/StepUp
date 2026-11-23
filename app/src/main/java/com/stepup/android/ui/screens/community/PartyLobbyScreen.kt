@@ -72,6 +72,8 @@ import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.rememberCurrentLocation
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
+import com.stepup.android.ui.screens.walk.togetherLobbyLine
+import com.stepup.android.ui.screens.walk.togetherLobbyText
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.walk.CrewNotifySheet
 import com.stepup.android.ui.screens.walk.CrewReadyCheckSheet
@@ -272,6 +274,9 @@ fun PartyLobbyScreen(
         courseFailed = courseFailed,
         onAcknowledgeCourse = viewModel::acknowledgeCourse,
         overlay = readyCheck || notify || (confirmStart && !crewRoom),
+        // 함께 달린 사람의 문턱(서버 0120) — 번개는 글의 거리가 목표(글을 못 읽었으면 한 줄을 두지 않는다)
+        together = com.stepup.android.ui.screens.items.rememberShoeRules().together.let { if (crewRoom) it else it.forFlash() },
+        flashGoalKm = flashPost?.distanceKm,
     )
     if (readyCheck && party.phase == PartyPhase.LOBBY) {
         CrewReadyCheckSheet(
@@ -361,6 +366,10 @@ fun PartyLobbyContent(
     courseFailed: Boolean = false,
     onAcknowledgeCourse: () -> Unit = {},
     overlay: Boolean = false,
+    /** 함께 달린 사람의 문턱(서버 0120 `together`) — 크루 · 번개 대기실의 한 줄. null 이면 예전 글 */
+    together: com.stepup.android.domain.TogetherRule? = null,
+    /** 번개러닝 글의 거리(km) — 함께 달린 사람의 목표. 글을 아직 못 읽었으면 null(한 줄을 두지 않는다), 거리가 없는 글이면 0 */
+    flashGoalKm: Double? = null,
 ) {
     val t = runTone()
     // 크루 대기실 · 동시 출발은 크루 달리기 v2 모습(2026-10-16). 번개러닝 대기실은 아래 예전 모습 그대로
@@ -371,7 +380,7 @@ fun PartyLobbyContent(
             onKick = onKick, onNotify = onNotify, onRetry = onRetry, onLeave = onLeave, onDismissResult = onDismissResult,
             onReconnect = onReconnect, crewToday = crewToday, room = room, shoes = shoes, onPickShoe = onPickShoe,
             shoeFailed = shoeFailed, onOtherRooms = onOtherRooms, onChangeCourse = onChangeCourse, courseFailed = courseFailed,
-            onAcknowledgeCourse = onAcknowledgeCourse, overlay = overlay,
+            onAcknowledgeCourse = onAcknowledgeCourse, overlay = overlay, together = together,
         )
         return
     }
@@ -478,10 +487,15 @@ fun PartyLobbyContent(
             else -> if (party.inRoom) {
                 Counts(party)
                 Spacer(Modifier.height(8.dp))
+                // 러너 레벨 배지(서버 0121) — 방 사람들을 한 번에 묻고(바뀔 때만), 받기 전에도 명단은 그대로
+                val runnerBadges = com.stepup.android.ui.screens.profile.rememberRunnerBadges(party.members.map { it.id })
                 RunCard(padding = PaddingValues(horizontal = 14.dp, vertical = 4.dp), tag = "party-members") {
                     party.members.forEachIndexed { index, member ->
                         if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(t.divider))
-                        MemberRow(member, canKick = lobby && party.isHost && !member.isMe, onKick = { onKick(member.id) })
+                        MemberRow(
+                            member, canKick = lobby && party.isHost && !member.isMe, onKick = { onKick(member.id) },
+                            mark = com.stepup.android.ui.screens.profile.runnerNameMark(runnerBadges[member.id]),
+                        )
                     }
                     if (alone) {
                         Box(Modifier.fillMaxWidth().height(1.dp).background(t.divider))
@@ -501,9 +515,15 @@ fun PartyLobbyContent(
                 }
                 // 인원 보너스는 함께 출발한 사람 모두(0076 — 거리 · 원격 상관없이). 이미 출발한 번개의 새 대기실이면 약속하지 않는다 —
                 // 인원 보너스는 번개 글 하나에 한 번이다(서버 0117)
+                // 함께 달린 사람만 세는 규칙(0120)이면 "함께 출발한 모두"가 아니다 — 글의 거리 절반 · 분(거리가 없는 글은 분만)
+                val togetherLine = togetherLobbyText(togetherLobbyLine(together, flashGoalKm, course = false))
                 Text(
-                    stringResource(if (party.reopened) R.string.tlf_flash_bonus_once else R.string.tg_party_rule),
-                    style = runTextStyle(12.sp, t.muted), modifier = Modifier.padding(top = 6.dp),
+                    when {
+                        party.reopened -> stringResource(R.string.tlf_flash_bonus_once)
+                        togetherLine != null -> togetherLine
+                        else -> stringResource(R.string.tg_party_rule)
+                    },
+                    style = runTextStyle(12.sp, t.muted), modifier = Modifier.padding(top = 6.dp).testTag("party-lobby-together"),
                 )
             }
         }
@@ -527,7 +547,7 @@ private fun Counts(party: PartyState) {
 
 /** 크루원 한 줄 — 이니셜 · 이름(· 나) · 진행자 · 준비 상태. 진행자는 대기실에서 내보낼 수 있다 */
 @Composable
-private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit) {
+private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit, mark: String? = null) {
     val t = runTone()
     val name = when {
         member.isMe && member.name.isNotBlank() -> stringResource(R.string.run_cr_me, member.name)
@@ -542,6 +562,12 @@ private fun MemberRow(member: PartyMember, canKick: Boolean, onKick: () -> Unit)
         Spacer(Modifier.width(12.dp))
         Text(name, style = runTextStyle(16.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false))
+        // 러너 레벨 배지 — 색 면 없이 흐린 작은 글자
+        if (mark != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(mark, style = runTextStyle(12.sp, t.label, FontWeight.SemiBold), maxLines = 1,
+                modifier = Modifier.testTag("party-member-runner-mark"))
+        }
         if (member.isHost) {
             Spacer(Modifier.width(8.dp))
             Text(

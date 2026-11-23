@@ -33,7 +33,7 @@
     <string name="ca_kind_crew_run">跑团跑步完成</string>
     <string name="ca_kind_flash">参加闪电跑</string>
     <string name="ca_kind_crew_join">加入跑团</string>
-    <string name="ca_kind_steps">每日步数</string>
+    <string name="ca_kind_steps">全天步数</string>
     <string name="ca_kind_check_in">签到</string>
     <string name="ca_kind_seed">抽取种子承诺</string>
     <string name="ca_kind_reveal">抽取种子公开</string>
@@ -69,7 +69,7 @@
     <string name="ca_guide_crew_head">跑团 — 一起跑页</string>
     <string name="ca_guide_crew_body">跑团跑步完成（距离、时间、一起出发的人数）、每个房间的出发名单、两人以上一起出发的闪电跑、加入跑团（同一跑团只记一次）。</string>
     <string name="ca_guide_daily_head">每天</string>
-    <string name="ca_guide_daily_body">打开应用的日子签到一次，以及当天是否达到步数目标一次（当天结束后）。不会记录步数本身。</string>
+    <string name="ca_guide_daily_body">打开应用的日子签到一次，以及当天全天步数（手机统计）是否达到目标步数一次（当天结束后）。不会记录步数本身。</string>
     <string name="ca_guide_foot">不记录：不足 200 米或没有路线的跑步、应用内 SUP 的获得与使用、穿鞋、跑步造成的耐久度损耗。不会记录位置、路线、名字或账户。只记录每人各不相同的化名，删除账户后该化名就无法再与你关联。每条记录只附带原始数据的指纹（加盐哈希）以便日后核对，发送时间会推迟几十分钟。上链的记录无法删除。</string>
     <string name="wl_chain_row">链上记录</string>
     <string name="wl_chain_row_sub">跑步 · 跑鞋 · 跑团活动 — Gas 费由 StepUp 支付</string>

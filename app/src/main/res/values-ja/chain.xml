@@ -33,7 +33,7 @@
     <string name="ca_kind_crew_run">クルーラン完走</string>
     <string name="ca_kind_flash">フラッシュラン参加</string>
     <string name="ca_kind_crew_join">クルー加入</string>
-    <string name="ca_kind_steps">1日の歩数</string>
+    <string name="ca_kind_steps">1日の総歩数</string>
     <string name="ca_kind_check_in">出席</string>
     <string name="ca_kind_seed">ガチャのシード約束</string>
     <string name="ca_kind_reveal">ガチャのシード公開</string>
@@ -69,7 +69,7 @@
     <string name="ca_guide_crew_head">クルー — 一緒に走るタブ</string>
     <string name="ca_guide_crew_body">クルーランの完走（距離・時間・一緒にスタートした人数）、ルームごとのスタート名簿、2人以上で一緒にスタートしたフラッシュラン、クルー加入（同じクルーは1回）。</string>
     <string name="ca_guide_daily_head">毎日</string>
-    <string name="ca_guide_daily_body">アプリを開いた日の出席1件、その日の歩数目標を達成したかどうか1件（その日が終わった後）。歩数そのものは記録しません。</string>
+    <string name="ca_guide_daily_body">アプリを開いた日の出席1件、その日の1日の総歩数（スマホが数えた歩数）が目標の歩数に届いたかどうか1件（その日が終わった後）。歩数そのものは記録しません。</string>
     <string name="ca_guide_foot">記録しないもの：200m未満またはルートのないラン、アプリ内のSUP獲得・使用、靴の装着、走行による耐久度の減少。位置・ルート・名前・アカウントは記録しません。記録するのは人ごとに異なる仮名だけで、アカウントを削除するとその仮名をあなたと結び付けられなくなります。各記録には後で照合できるよう原本の指紋（ソルト付きハッシュ）だけを載せ、送信時刻は数十分ずらします。チェーンに載った記録は削除できません。</string>
     <string name="wl_chain_row">チェーン記録</string>
     <string name="wl_chain_row_sub">ラン・靴・クルーの活動 — ガス代はStepUpが支払います</string>

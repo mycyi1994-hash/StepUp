@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 러너 레벨(서버 0121, 2026-11-21 — docs/runner-level-contract-2026-11-21.md): 러닝 걸음으로 오르는 계정 레벨 · 하루 에너지 · 상자 · 배지. 네 언어를 함께 고친다 -->
+<resources>
+    <!-- 내 정보 카드 -->
+    <string name="rl_card_title">러너 Lv %1$d</string>
+    <string name="rl_card_badge">Lv%1$d 배지</string>
+    <string name="rl_card_to_next">다음 레벨까지 %1$s걸음</string>
+    <string name="rl_card_max">가장 높은 레벨이에요</string>
+    <string name="rl_card_energy">하루 에너지 %1$d분</string>
+    <string name="rl_card_energy_next">다음 레벨 %1$d분</string>
+    <string name="rl_card_info">러너 레벨 설명 보기</string>
+    <!-- 크루 명단 · 대기실 이름 옆 -->
+    <string name="rl_name_mark">러너 Lv%1$d</string>
+    <!-- 설명 시트 -->
+    <string name="rl_info_title">러너 레벨</string>
+    <string name="rl_info_steps">지금까지 %1$s걸음</string>
+    <string name="rl_info_how">러닝으로 걸은 걸음이 쌓이면 레벨이 올라요. %1$s걸음마다 1레벨, Lv%2$d까지예요.</string>
+    <string name="rl_info_counts">에너지를 다 쓴 뒤 걸은 걸음과 크루 러닝 걸음도 들어가요.</string>
+    <string name="rl_info_not_counts">경로가 확인되지 않았거나 과속 등으로 적립이 없는 러닝의 걸음은 들어가지 않아요.</string>
+    <string name="rl_info_gives">레벨이 오르면</string>
+    <string name="rl_info_energy">하루 에너지 +%1$d분</string>
+    <string name="rl_info_energy_cap">하루 에너지 +%1$d분 · Lv%2$d까지</string>
+    <string name="rl_info_free">일반 상자 %1$d개</string>
+    <string name="rl_info_gift">%1$d레벨마다 상급 상자 1개 더</string>
+    <string name="rl_info_badges">Lv%1$s 배지 · 크루 명단에서 이름 옆에 보여요</string>
+    <string name="rl_info_legacy">예전부터 쓰던 계정이라 하루 에너지는 %1$d분보다 줄지 않아요.</string>
+    <string name="rl_info_shoes">하루 에너지는 신발 레벨이 아니라 러너 레벨로 늘어요.</string>
+    <!-- 레벨이 올랐어요 -->
+    <string name="rl_up_title">러너 레벨이 올랐어요</string>
+    <string name="rl_up_levels">Lv %1$d → Lv %2$d</string>
+    <string name="rl_up_energy">하루 에너지 %1$d분 → %2$d분</string>
+    <string name="rl_up_boxes_both">일반 상자 %1$d개 · 상급 상자 %2$d개를 받았어요</string>
+    <string name="rl_up_boxes_free">일반 상자 %1$d개를 받았어요</string>
+    <string name="rl_up_boxes_gift">상급 상자 %1$d개를 받았어요</string>
+    <string name="rl_up_badge">Lv%1$d 배지를 받았어요</string>
+    <!-- 처음 본 러너 레벨(지난 러닝으로 채운 레벨) -->
+    <string name="rl_welcome_title">러너 레벨이 생겼어요</string>
+    <string name="rl_welcome_both">지난 러닝으로 러너 Lv %1$d — 일반 상자 %2$d개 · 상급 상자 %3$d개를 받았어요</string>
+    <string name="rl_welcome_free">지난 러닝으로 러너 Lv %1$d — 일반 상자 %2$d개를 받았어요</string>
+    <string name="rl_welcome_gift">지난 러닝으로 러너 Lv %1$d — 상급 상자 %2$d개를 받았어요</string>
+    <string name="rl_welcome_none">지난 러닝으로 러너 Lv %1$d부터 시작해요</string>
+    <string name="rl_welcome_note">러닝으로 걸을수록 레벨이 오르고, 레벨마다 상자를 받아요. 내 정보에서 볼 수 있어요.</string>
+    <!-- 신발 강화 -->
+    <string name="rl_shoe_energy_note">하루 에너지는 신발 레벨이 아니라 러너 레벨(달린 걸음)로 늘어요</string>
+</resources>

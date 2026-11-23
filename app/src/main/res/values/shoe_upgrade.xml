@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 신발 강화(지시서 v6 · 파란 톤 v4 강화 전달본, 재료 규칙 2026-10-04 forge-v2 — docs/redesign/shoe-upgrade-2026-10-01) — 강화 화면 · 재료 선택 · 최종 확인 · 결과 -->
 <resources>
+    <!-- 2026-11-19: the 3-shoe · success rate · burn · failure texts here show only on the old chance upgrade (server without 0118, results of requests sent from 1.20.x). XP upgrade texts are in forge_xp.xml -->
     <string name="upg_title">Upgrade shoe</string>
     <string name="upg_action">Upgrade</string>
     <string name="upg_action_check">Check upgrade result</string>

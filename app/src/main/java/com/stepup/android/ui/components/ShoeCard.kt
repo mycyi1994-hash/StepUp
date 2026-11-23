@@ -8,10 +8,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,13 +35,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.stepup.android.R
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.nextLevelPercentText
+import com.stepup.android.domain.nextLevelTenths
 import com.stepup.android.ui.background.Spots
 import com.stepup.android.ui.background.TimeOfDay
 import com.stepup.android.ui.background.rememberSpotPhoto
@@ -46,6 +55,9 @@ import com.stepup.android.ui.experience.LocalFeedback
 import com.stepup.android.ui.experience.LocalMotion
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+
+/** Lv 옆 경험치 줄의 길이 */
+private val XpLineWidth = 44.dp
 
 /** 기울기 값(손가락 위치 −1..1 → 각도 · 빛 · 시차) */
 private class Tilt {
@@ -161,8 +173,25 @@ fun ShoeCard(
             Text("#%04d".format(shoe.mintNumber), color = ink.copy(alpha = .8f),
                 style = StepUpUi.type.numberRow.copy(fontSize = 15.sp),
                 modifier = Modifier.align(Alignment.TopEnd).padding(end = 18.dp, top = 15.dp).testTag("shoe-card-no"))
-            Text("Lv.${shoe.level}", color = ink.copy(alpha = .78f), style = StepUpUi.type.caption.copy(fontSize = 12.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-                modifier = Modifier.align(Alignment.BottomStart).padding(start = 18.dp, bottom = 16.dp).testTag("shoe-card-level"))
+            // Lv 옆 가는 경험치 줄(0118 — 다음 레벨까지 채운 양). 통을 모르거나 만렙이면 줄이 없다(Lv 자리는 그대로)
+            Row(
+                Modifier.align(Alignment.BottomStart).padding(start = 18.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Lv.${shoe.level}", color = ink.copy(alpha = .78f), style = StepUpUi.type.caption.copy(fontSize = 12.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                    modifier = Modifier.testTag("shoe-card-level"))
+                val tenths = shoe.nextLevelTenths
+                if (tenths != null) {
+                    val xpCd = stringResource(R.string.shoe_xp_next, shoe.nextLevelPercentText.orEmpty())
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        Modifier.width(XpLineWidth).height(3.dp).clip(RoundedCornerShape(2.dp)).background(ink.copy(alpha = .22f))
+                            .semantics { contentDescription = xpCd }.testTag("shoe-card-xp"),
+                    ) {
+                        Box(Modifier.fillMaxHeight().fillMaxWidth(tenths / 1000f).clip(RoundedCornerShape(2.dp)).background(ink.copy(alpha = .86f)))
+                    }
+                }
+            }
         }
         // 신발: 카드보다 더 움직여 떠 보임(시차). 보이는 부분만 칸에 맞춘다(비율 그대로)
         ShoeArtThumbnail(

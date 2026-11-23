@@ -657,7 +657,10 @@ internal fun CrewRoomCreateContent(
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(cardShape).background(c.card, cardShape).border(1.dp, c.separator, cardShape)
                         .feedbackClickable(role = Role.Button) {
-                            android.app.TimePickerDialog(context, { _, h, m -> onPlanAt(planAtFor(h, m)) }, at.hour, at.minute, is24).show()
+                            // 잠금 화면 덮개가 덮이면 닫힌다(LockCover)
+                            com.stepup.android.ui.components.LockCover.show(
+                                android.app.TimePickerDialog(context, { _, h, m -> onPlanAt(planAtFor(h, m)) }, at.hour, at.minute, is24),
+                            )
                         }
                         .padding(horizontal = 16.dp).testTag("crew-create-time"),
                     verticalAlignment = Alignment.CenterVertically,
@@ -681,7 +684,8 @@ internal fun CrewRoomCreateContent(
                             color = c.label, modifier = Modifier.weight(1f))
                         Icon(Icons.Outlined.ExpandMore, contentDescription = null, tint = c.label, modifier = Modifier.size(20.dp))
                     }
-                    androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.heightIn(max = 320.dp)) {
+                    // 잠금 화면 덮개가 덮고 있으면 펼침 메뉴(따로 된 창)를 그리지 않는다(LockCover)
+                    if (!com.stepup.android.ui.components.LockCover.hidesWindows()) androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.heightIn(max = 320.dp)) {
                         (CrewRoomRules.CAPACITY_MIN..CrewRunMath.ROOM_MAX).forEach { n ->
                             androidx.compose.material3.DropdownMenuItem(
                                 text = { Text(stringResource(R.string.d26_create_capacity_value, n)) },

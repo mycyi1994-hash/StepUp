@@ -28,6 +28,7 @@ ALLOW = {
     "market_demo_note", "market_demo_toast", "customize_trial_on",
     # 디버그 · 테스트 빌드 전용(TEST_TOOLS · SELF_UPDATE)
     "run_simulate", "finish_simulated", "test_update_body", "test_update_row", "test_update_failed_signature",
+    "test_login_link", "test_login_title",
     # 블록체인 판 전용(스토어 판 WEB3 = false 에서는 숨는다)
     "ca_guide_intro", "about_network_value", "wl_web3_unavailable", "wl_web3_soon",
     # 지갑 고르기의 "준비 중"(GIWA) — 스토어 판은 준비 안 된 지갑 줄을 빼고 보인다(WalletApp.shown(WEB3 = false))

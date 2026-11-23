@@ -46,6 +46,7 @@ import com.stepup.android.domain.TrackFixRule
 import com.stepup.android.domain.TrackPoint
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.simplify
+import com.stepup.android.domain.startLifeSec
 import com.stepup.android.domain.toGeoPoints
 import com.stepup.android.sync.SessionUploadWorker
 import com.stepup.android.core.Analytics
@@ -269,8 +270,9 @@ data class WalkSessionState(
     /** 방금 끝난 러닝을 과속이 30초 이어져 앱이 멈췄다 — 결과 화면이 패널티(내구도 절반 · 10분 러닝 금지)를 알린다 */
     val lastOverspeedStopped: Boolean = false,
     /**
-     * 신은 신발로 보상을 받으며 달릴 수 있는 시간(초) — 러닝을 시작할 때 신발의 남은 내구도 × 12초(달린 1분마다 5, 서버 0064 · 0066).
-     * 이 시간을 넘긴 뒤의 걸음은 서버가 적립하지 않는다. 서버 신발이 아니거나 아직 못 읽었으면 null. 저장본에 남기지 않는다(되살리면 다시 읽는다)
+     * 신은 신발로 가득 적립하며 달릴 수 있는 시간(초) — 러닝을 시작할 때 신발의 남은 내구도 × 12초 ÷ 효율 포인트 배수(달린 1분마다 5 ×
+     * 배수, 서버 0064 · 0119). 이 시간을 넘긴 뒤의 걸음은 세기는 하되 일부만 적립된다(서버 0119 worn_rate — 그 전 서버는 적립하지 않는다,
+     * 0066). 서버 신발이 아니거나 아직 못 읽었으면 null. 저장본에 남기지 않는다(되살리면 다시 읽는다)
      */
     val shoeLifeSec: Long? = null,
     /**
@@ -278,7 +280,10 @@ data class WalkSessionState(
      * 올릴 때 서버에 사실로만 알린다(p_sneaker) — 내 신발이 맞는지 · 얼마나 닳고 얼마를 주는지는 서버가 정한다. 저장본에 남긴다(판 5)
      */
     val startSneakerId: Long = 0,
-    /** 방금 끝난 러닝에서 신발 내구도를 다 썼다 — 결과 화면이 "그 뒤 걸음은 보상에 들지 않았어요"를 알린다 */
+    /**
+     * 방금 끝난 러닝에서 신발 내구도를 다 썼다 — 결과 화면이 "그 뒤 걸음은 N%만 적립돼요"(서버 0119), 예전 규칙이면 "그 뒤 걸음은 보상에
+     * 들지 않았어요"를 알린다
+     */
     val lastShoeWornOut: Boolean = false,
     /**
      * 크루 러닝(서버 0071)의 오늘 공용 체력 — 남은 양 · 총량 · 적립이 멈췄나(0). 크루 러닝이 5초마다 서버에서 받아 알려 준다
@@ -290,7 +295,10 @@ data class WalkSessionState(
     val crewPoolEmpty: Boolean = false,
 ) {
 
-    /** 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다(2026-10-19 사용자 "내구도 다 소모하면 따로 안내") */
+    /**
+     * 신발 내구도를 다 썼다 — 이제부터 걸음은 일부만 적립된다(서버 0119 — 걸음은 그대로 센다. 그 전 규칙이면 보상이 없다).
+     * 화면 · 알림이 따로 알린다(2026-10-19 사용자 "내구도 다 소모하면 따로 안내")
+     */
     val shoeWornOut: Boolean get() = shoeLifeSec != null && elapsedSec >= shoeLifeSec
 
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
@@ -514,16 +522,13 @@ class WalkSessionService : Service() {
     }
 
     /**
-     * 신은 신발로 보상을 받으며 달릴 수 있는 시간(초) — 남은 내구도 × 12초(서버 0066 수명 자르기). 다 닳았으면 0.
-     * 서버 신발이 아니면(폰에만 있던 예전 신발 · 신발 없음) null — 알 수 없다.
+     * 신은 신발로 가득 적립하며 달릴 수 있는 시간(초) — 남은 내구도 × 12초 ÷ 효율 포인트 배수(서버 0119, 포인트가 없으면 예전처럼
+     * × 12초). 다 닳았으면 0. 서버 신발이 아니면(폰에만 있던 예전 신발 · 신발 없음) null — 알 수 없다.
+     * 규칙은 러닝을 시작할 때 앱이 아는 서버 규칙이다(아직 못 읽었으면 0119 기본값).
      */
     private fun equippedShoeLifeSec(equipped: com.stepup.android.data.local.SneakerEntity?): Long? {
-        val server = equipped?.toDomain()?.server ?: return null
-        return when {
-            server.hasDurabilityMax -> server.durabilityNow.coerceAtLeast(0).toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT
-            server.durabilityPts <= 0.0 -> 0L
-            else -> null
-        }
+        val shoe = equipped?.toDomain() ?: return null
+        return com.stepup.android.data.repo.shoeRulesNow().startLifeSec(shoe)
     }
 
     /** 위성 GPS(LocationManager) — 구글 Play 서비스가 없는 휴대폰에서만 쓴다 */
@@ -1019,7 +1024,7 @@ class WalkSessionService : Service() {
         )
         activeMs = (restored?.elapsedSec ?: 0L) * 1000
         lastMoveElapsed = SystemClock.elapsedRealtime()
-        // 신은 신발로 보상을 받으며 달릴 수 있는 시간 — 다 쓰면 화면 · 알림이 알린다(2026-10-19). 되살린 러닝도 다시 읽는다
+        // 신은 신발로 가득 적립하며 달릴 수 있는 시간 — 다 쓰면 화면 · 알림이 알린다(2026-10-19). 되살린 러닝도 다시 읽는다
         val runStartedAt = _state.value.startedAt
         // 출발 전 점검에서 고른 아이템(0106)을 이 러닝에 묶는다 — 새 러닝만(되살린 러닝은 이미 묶였다). 대기실에서 출발하는
         // 크루 · 번개 러닝에는 점검(아이템 고르기)이 없다 — 앞서 고르다 만 것이 그 러닝에 쓰이지 않게 비우기만 한다.
@@ -1300,6 +1305,7 @@ class WalkSessionService : Service() {
             ) { energyDay ->
                 ServiceLocator.rewardRepository.calculateSessionReward(
                     creditedSteps, settleSize, energyDay, activeSec = session.elapsedSec, startedAt = session.startedAt,
+                    crewRoom = session.group == RunGroup.CREW,
                 )
             }
             // These legacy follow-ups are not durable yet. A same-process save retry
@@ -1343,7 +1349,7 @@ class WalkSessionService : Service() {
                 lastGroupSize = session.partySize,
                 lastSimulated = session.simulated,
                 lastOverspeedStopped = session.overspeedStopped,
-                // 무효 러닝은 처음부터 보상이 없다 — "그 뒤 걸음은 보상에 들지 않았어요"를 보이지 않는다
+                // 무효 러닝은 처음부터 보상이 없다 — 닳은 뒤 걸음의 안내("N%만 적립돼요" · 예전 규칙의 "보상에 들지 않았어요")를 보이지 않는다
                 lastShoeWornOut = session.shoeWornOut && verdict.isRewardable,
                 lastVerdict = verdict,
                 lastTopSpeedKmh = session.topSpeedKmh,

@@ -27,6 +27,13 @@ object RewardEconomy {
     /** 에너지 1칸으로 적립할 수 있는 걸음 수 */
     const val STEPS_PER_ENERGY = 600
 
+    /**
+     * 하루 에너지를 분으로 옮길 때의 걸음 빠르기(분당 걸음) — 서버 `runner_me()` 의 energy_minutes(에너지 × 600 ÷ 165, 0121)와 같은 기준
+     * (Lv1 5.5 = 3,300보 ≈ 20분). 출발 전 점검의 "오늘은 약 N분 동안 적립돼요"도 이 값으로 남은 에너지를 분으로 바꾼다
+     * (`scripts/check-economy-twin.py` 가 서버와 맞대어 본다)
+     */
+    const val RUN_STEPS_PER_MINUTE = 165
+
     /** 기본 최대 에너지 */
     const val BASE_MAX_ENERGY = 10.0
 
@@ -62,18 +69,29 @@ object RewardEconomy {
     /** XP 부스터 배율 */
     const val XP_BOOST_MULTIPLIER = 2.0
 
-    /** 내구도 1 로 달릴 수 있는 시간(초) — 달린 1분마다 5 닳는다(서버 0064 · economy.durability_sec_per_point) */
+    /**
+     * 내구도 1 로 달릴 수 있는 시간(초) — 달린 1분마다 5 닳는다(서버 0064 · economy.durability_sec_per_point). 효율 포인트를 넣은 신발은
+     * 그 배수만큼 짧다(서버 0119) — 신발의 수명은 [startLifeSec] · [lifeSecOf] 로 센다.
+     */
     const val DURABILITY_SEC_PER_POINT = 12
 
     /**
-     * 내구도가 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066 record_session) — 남은 내구도로 달릴 수 있던 시간만큼의 걸음만.
-     * [durabilityNow] 는 달리기 전 남은 내구도, [activeSec] 는 멈춘 시간을 뺀 달린 시간(움직였든 서 있었든).
+     * 남은 내구도로 달린 걸음(가득 구간) — 포인트 없는 신발의 수명(내구도 × 12초)으로. [durabilityNow] 는 달리기 전 남은 내구도,
+     * [activeSec] 는 멈춘 시간을 뺀 달린 시간(움직였든 서 있었든). 효율 포인트까지 보려면 [stepsWithinLife] 에 그 신발의 수명을 넘긴다.
      */
-    fun stepsWithinDurability(steps: Int, durabilityNow: Int, activeSec: Long): Int {
+    fun stepsWithinDurability(steps: Int, durabilityNow: Int, activeSec: Long): Int =
+        stepsWithinLife(steps, durabilityNow.coerceAtLeast(0).toLong() * DURABILITY_SEC_PER_POINT, activeSec)
+
+    /**
+     * 신발 수명 [lifeSec](남은 내구도로 달릴 수 있는 초) 안에 걸은 걸음 — 걸음은 달린 시간에 고르게 걸었다고 본다(서버 record_session 과
+     * 같은 셈: 걸음 × 수명 ÷ 달린 시간, 버림). 이 뒤의 걸음은 닳은 구간이다 — 서버 0119 는 일부([StatRule.wornRate])만 적립하고,
+     * 그 전 서버는 적립하지 않는다(0066).
+     */
+    fun stepsWithinLife(steps: Int, lifeSec: Long, activeSec: Long): Int {
         if (steps <= 0 || activeSec <= 0L) return steps
-        val lifeSec = durabilityNow.coerceAtLeast(0).toLong() * DURABILITY_SEC_PER_POINT
-        if (lifeSec >= activeSec) return steps
-        return (steps.toLong() * lifeSec / activeSec).toInt()
+        val life = lifeSec.coerceAtLeast(0L)
+        if (life >= activeSec) return steps
+        return (steps.toLong() * life / activeSec).toInt()
     }
 
     /** 스니커즈 민팅 비용 */
@@ -81,8 +99,11 @@ object RewardEconomy {
 
     // ── 스니커즈 ─────────────────────────────────────────────
 
-    fun maxEnergy(sneakerLevel: Int): Double =
-        BASE_MAX_ENERGY + (sneakerLevel - 1).coerceAtLeast(0) * 2.0
+    /**
+     * 하루 에너지 최대치의 어림(서버가 준 값을 아직 모를 때) — 서버 `economy.energy_max_for_level`.
+     * 0119 부터 레벨과 상관없이 10(레벨마다 늘어나는 양은 규칙 `stats.energyPerLevel`, 0119 전 서버는 2)
+     */
+    fun maxEnergy(sneakerLevel: Int, stats: StatRule = StatRule.FALLBACK): Double = stats.energyMax(sneakerLevel)
 
     fun sneakerMultiplier(sneakerLevel: Int): Double =
         1.0 + 0.15 * (sneakerLevel - 1).coerceAtLeast(0)
@@ -112,6 +133,10 @@ object RewardEconomy {
      * @param partyMultiplier   파티런 보너스
      * @param boostMultiplier   XP 부스터 등 활성 부스트
      * @param pointsPerStep     효율 100 신발의 걸음당 SUP — 서버 규칙(ShoeRules.pointsPerStep)
+     * @param fullSteps         남은 내구도로 달린 걸음(가득 구간, [stepsWithinLife]) — 이 뒤의 걸음(닳은 구간)은 [wornRate] 만큼만
+     *                          적립한다(서버 0119). 기본은 모든 걸음이 가득 구간
+     * @param wornRate          닳은 구간의 적립 비율(0 ~ 1) — 걸음은 그대로 세고 에너지도 그대로 쓴다
+     * @param energyMultiplier  효율 포인트를 넣은 신발이 에너지를 더 쓰는 배수(1 이상, 서버 0119 economy.energy_mult)
      */
     fun sessionReward(
         walkedSteps: Int,
@@ -121,15 +146,75 @@ object RewardEconomy {
         partyMultiplier: Double = 1.0,
         boostMultiplier: Double = 1.0,
         pointsPerStep: Double = POINTS_PER_STEP,
+        fullSteps: Int = Int.MAX_VALUE,
+        wornRate: Double = 0.0,
+        energyMultiplier: Double = 1.0,
     ): SessionReward {
-        val eff = energyEfficiency.coerceIn(MIN_ENERGY_FACTOR, 1.0)
+        val eff = energyEfficiency.coerceIn(MIN_ENERGY_FACTOR, 1.0) * energyMultiplier.coerceAtLeast(1.0)
         val energy = energyRemaining.coerceAtLeast(0.0)
         val earnableSteps = floor(energy * STEPS_PER_ENERGY / eff).toInt()
         val rewardedSteps = walkedSteps.coerceAtLeast(0).coerceAtMost(earnableSteps)
-        val points = rewardedSteps * pointsPerStep *
+        // 에너지로 자른 뒤에 가득 구간 · 닳은 구간으로 가른다(서버 0119 와 같은 차례)
+        val full = rewardedSteps.coerceAtMost(fullSteps.coerceAtLeast(0))
+        val worn = rewardedSteps - full
+        val points = (full + worn * wornRate.coerceIn(0.0, 1.0)) * pointsPerStep *
             earningMultiplier * partyMultiplier * boostMultiplier
         val energyUsed = rewardedSteps.toDouble() * eff / STEPS_PER_ENERGY
         return SessionReward(rewardedSteps, points, energyUsed)
+    }
+
+    /**
+     * 신은 신발 · 서버 규칙으로 본 혼자 러닝 한 번의 예상 적립 — 달리는 중 화면과 러닝을 마칠 때의 예상이 같은 셈을 쓴다.
+     * 예상일 뿐이고 정산은 서버가 한다(record_session).
+     *
+     * - 신발 수명(남은 내구도 × 12초 ÷ 효율 포인트 배수, [startLifeSec])까지의 걸음은 다 적립한다.
+     * - 그 뒤의 걸음은 규칙이 닳은 뒤에도 적립하면([StatRule.earnsWhenWorn], 서버 0119) [StatRule.wornRate] 만큼, 아니면 적립하지
+     *   않는다(0066 — 그때는 다 닳은 신발의 적립 배율도 0 이다).
+     * - 효율 포인트를 넣은 신발은 그 배수만큼 에너지를 더 쓴다(0119).
+     *
+     * @param steps 러닝에서 걸은 걸음
+     * @param activeSec 멈춘 시간을 뺀 달린 시간(초) — 0 이면 수명으로 가르지 않는다
+     * @param shoe 신은 신발 — 없으면 [fallbackMultiplier](레벨 기반 배율)로
+     */
+    fun shoeSessionReward(
+        steps: Int,
+        activeSec: Long,
+        energyRemaining: Double,
+        shoe: Sneaker?,
+        rules: ShoeRules,
+        fallbackMultiplier: Double = 1.0,
+        partyMultiplier: Double = 1.0,
+        boostMultiplier: Double = 1.0,
+    ): SessionReward {
+        val server = shoe?.server
+        val stats = rules.stats
+        val life = if (shoe != null) rules.startLifeSec(shoe) else null
+        // 수명을 아는 신발만 시간으로 가른다. 최대 내구도를 모르는데 다 닳은 신발(예전 서버)은 닳은 뒤에도 적립하는 규칙이면
+        // 처음부터 닳은 구간, 아니면 예전처럼 배율(0)로 치른다
+        val fullSteps = when {
+            life == null -> steps
+            server?.hasDurabilityMax == true -> stepsWithinLife(steps, life, activeSec)
+            stats.earnsWhenWorn -> 0
+            else -> steps
+        }
+        val earning = when {
+            shoe == null -> fallbackMultiplier
+            // 닳은 뒤에도 적립하는 규칙이면 내구도는 배율이 아니라 구간으로 치른다 — 0% 신발도 효율 그대로
+            server != null && stats.earnsWhenWorn -> 1.0 + server.efficiencyBps / 10_000.0
+            else -> shoe.earningMultiplier
+        }
+        return sessionReward(
+            walkedSteps = if (stats.earnsWhenWorn) steps else fullSteps,
+            energyRemaining = energyRemaining,
+            earningMultiplier = earning,
+            energyEfficiency = shoe?.energyEfficiency ?: 1.0,
+            partyMultiplier = partyMultiplier,
+            boostMultiplier = boostMultiplier,
+            pointsPerStep = rules.pointsPerStep,
+            fullSteps = if (stats.earnsWhenWorn) fullSteps else Int.MAX_VALUE,
+            wornRate = stats.wornRate,
+            energyMultiplier = if (shoe != null) rules.energyMultOf(shoe) else 1.0,
+        )
     }
 
     /** 레벨만 아는 경우의 간편 정산 (스니커즈 인벤토리가 없을 때의 폴백) */
@@ -143,10 +228,13 @@ object RewardEconomy {
         earningMultiplier = sneakerMultiplier(sneakerLevel),
     )
 
-    /** 현재 에너지로 더 걸을 수 있는 걸음 수 */
-    fun earnableSteps(energyRemaining: Double, energyEfficiency: Double = 1.0): Int =
+    /**
+     * 현재 에너지로 더 걸을 수 있는 걸음 수. [energyMultiplier] 는 효율 포인트를 넣은 신발이 에너지를 더 쓰는 배수(1 이상,
+     * 서버 0119 economy.energy_mult — [energyMultOf])
+     */
+    fun earnableSteps(energyRemaining: Double, energyEfficiency: Double = 1.0, energyMultiplier: Double = 1.0): Int =
         floor(energyRemaining.coerceAtLeast(0.0) * STEPS_PER_ENERGY /
-            energyEfficiency.coerceIn(MIN_ENERGY_FACTOR, 1.0)).toInt()
+            (energyEfficiency.coerceIn(MIN_ENERGY_FACTOR, 1.0) * energyMultiplier.coerceAtLeast(1.0))).toInt()
 
     /** streak일 연속 달성 시 일일 목표 보너스 (7일 초과분은 가산하지 않음) */
     /**
@@ -165,6 +253,66 @@ object RewardEconomy {
     fun distanceMeters(steps: Int): Double = steps * STRIDE_METERS
 
     fun calories(steps: Int): Double = steps * KCAL_PER_STEP
+}
+
+// ── 신발 수명 · 닳은 구간(서버 0119 — docs/economy-roots-contract-2026-11-21.md) ──────────
+//
+// 효율 포인트를 넣은 신발은 그 배수만큼 빨리 닳고 에너지를 더 쓴다. 다 닳은 뒤의 걸음은 세고, 적립은 일부만 한다.
+// 셈은 서버 규칙([ShoeRules.stats])이 한다 — 0119 전 서버([StatRule.LEGACY])면 배수는 늘 1 이고 닳은 뒤 적립은 없다(예전 그대로).
+
+/** 다 닳은 신발의 적립 비율(%) — 화면 글의 "N%만 적립돼요"(서버 worn_rate 0.30 → 30). 닳은 뒤 적립이 없는 규칙이면 0 */
+val StatRule.wornPercent: Int get() = (wornRate * 100).roundToInt()
+
+/**
+ * 닳는 속도 · 에너지 배수를 정하는 효율 포인트 — 서버 `economy.eff_point_mult` 와 같이 폰에서 올린 예전 신발(IMPORT · MINT) ·
+ * 폰에만 있던 신발은 0(배수 1).
+ */
+/**
+ * 신은 신발의 적립 배수(예상) — (1 + 효율) × 내구도 몫. 다 닳은 신발은 0119 부터 [StatRule.wornRate](30%)만큼 받는다
+ * (예전 규칙 · 0119 전 서버는 0 — [Sneaker.earningMultiplier] 그대로). 실제 적립은 서버가 정한다
+ */
+fun Sneaker.earningMultiplierWith(stats: StatRule): Double {
+    val s = server ?: return earningMultiplier
+    val base = 1.0 + s.efficiencyBps / 10_000.0
+    return if (s.durabilityFactor <= 0.0 && stats.earnsWhenWorn) base * stats.wornRate else base * s.durabilityFactor
+}
+
+val Sneaker.wearPoints: Int get() = server?.takeIf { it.upgradable }?.points?.efficiency?.coerceAtLeast(0) ?: 0
+
+/** 이 신발이 닳는 속도의 배수(서버 `economy.wear_mult`) — 효율 포인트가 없으면 1 */
+fun ShoeRules.wearMultOf(shoe: Sneaker): Double = stats.wearMult(grade(shoe.rarity).pointRateBps, shoe.wearPoints)
+
+/** 이 신발이 에너지를 쓰는 속도의 배수(서버 `economy.energy_mult`) — 효율 포인트가 없으면 1 */
+fun ShoeRules.energyMultOf(shoe: Sneaker): Double = stats.energyMult(grade(shoe.rarity).pointRateBps, shoe.wearPoints)
+
+/**
+ * 내구도 [durability] 로 이 신발이 달릴 수 있는 초(내려서) — 서버 정산과 같은 식: 내구도 × 12초 ÷ 닳는 배수.
+ * 150 · 포인트당 1% · 효율 포인트 50 이면 배수 1.5 → 1,200초.
+ */
+fun ShoeRules.lifeSecOf(shoe: Sneaker, durability: Int): Long =
+    floor(stats.lifeSeconds(durability, grade(shoe.rarity).pointRateBps, shoe.wearPoints) + LIFE_ROUNDING).toLong()
+
+/** 나눗셈의 끝자리 때문에 1,200초가 1,199.999… 로 내려가지 않게 */
+private const val LIFE_ROUNDING = 1e-6
+
+/**
+ * 이 신발이 달린 [activeSec] 초 동안 닳는 내구도(운 전) — 다 채운 1분마다 5 × 닳는 배수(서버 `durability_wear_time` × `wear_mult`).
+ * 포인트가 없으면 예전과 같이 1분마다 5.
+ */
+fun ShoeRules.wearOf(shoe: Sneaker, activeSec: Long): Int =
+    stats.wearFor(activeSec, grade(shoe.rarity).pointRateBps, shoe.wearPoints)
+
+/**
+ * 러닝을 시작할 때 이 신발로 가득 적립하며 달릴 수 있는 시간(초) — 남은 내구도의 [lifeSecOf]. 다 닳았으면 0.
+ * 알 수 없으면 null: 폰에만 있던 신발이거나, 최대 내구도를 보내지 않는 예전 서버의 아직 닳지 않은 신발.
+ */
+fun ShoeRules.startLifeSec(shoe: Sneaker): Long? {
+    val server = shoe.server ?: return null
+    return when {
+        server.hasDurabilityMax -> lifeSecOf(shoe, server.durabilityNow)
+        server.durabilityPts <= 0.0 -> 0L
+        else -> null
+    }
 }
 
 /** 세션 정산 결과 */

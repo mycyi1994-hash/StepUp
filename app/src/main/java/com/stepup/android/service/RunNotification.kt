@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import com.stepup.android.LockRunActivity
 import com.stepup.android.R
 import com.stepup.android.domain.RunNotificationText
+import com.stepup.android.domain.wornPercent
 
 /**
  * 러닝 중 알림(2026-10-18 사용자 "백그라운드에서 재생할 때 잠금화면에 우리 거 나오게").
@@ -68,8 +69,13 @@ internal object RunNotification {
                     R.string.run_notify_crew_pool,
                     com.stepup.android.domain.CrewRunMath.amount(crewLeft), com.stepup.android.domain.CrewRunMath.amount(crewTotal),
                 )
-            // 신발 내구도를 다 썼다 — 잠금화면에서도 보이게(2026-10-19 "내구도 다 소모하면 따로 안내")
-            state.shoeWornOut -> context.getString(R.string.notification_run_shoe_worn)
+            // 신발 내구도를 다 썼다 — 잠금화면에서도 보이게(2026-10-19 "내구도 다 소모하면 따로 안내"). 닳은 뒤에도 적립하는 규칙
+            // (서버 0119)이면 "N%만 적립돼요 · 걸음은 그대로 세요", 아니면 예전 글("보상이 없어요")
+            state.shoeWornOut -> {
+                val stats = com.stepup.android.data.repo.shoeRulesNow().stats
+                if (stats.earnsWhenWorn) context.getString(R.string.roots_notification_shoe_worn, stats.wornPercent)
+                else context.getString(R.string.notification_run_shoe_worn)
+            }
             else -> context.getString(R.string.notification_steps, state.steps)
         }
     }

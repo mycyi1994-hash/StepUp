@@ -668,9 +668,12 @@ internal fun ColumnScope.CrewStartConfirmBody(ready: Int, notReady: Int, onGo: (
             }
         }
     }
-    // 크루 러닝은 하루 한 번(0070) — 출발 전에 한 번 더 알린다
+    // 크루 러닝은 하루 한 번(0070) — 출발 전에 한 번 더 알린다. 함께 달린 사람만 세는 규칙(0120)이면 "출발 2분 뒤 확정"을 말하지 않는다
+    // (인원은 기록을 올린 뒤 정해진다). 규칙을 아직 못 받았으면 기본값(함께 달린 사람만)으로 본다
+    val together = com.stepup.android.ui.screens.items.rememberShoeRules().together.active
     Text(
-        stringResource(R.string.crew_start_once), style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.45f),
+        stringResource(if (together) R.string.tb_start_once else R.string.crew_start_once),
+        style = runTextStyle(14.sp, c.label, FontWeight.Medium, 1.45f),
         modifier = Modifier.padding(bottom = 12.dp).testTag("crew-start-once"),
     )
     FreeRunButton(stringResource(R.string.run_crew_go_n, ready), onGo, Modifier.fillMaxWidth().testTag("crew-start-go"))

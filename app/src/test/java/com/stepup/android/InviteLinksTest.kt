@@ -113,4 +113,44 @@ class InviteLinksTest {
         org.junit.Assert.assertTrue(InviteLinks.launchedFromHistory(fromHistory))
         org.junit.Assert.assertFalse(InviteLinks.launchedFromHistory(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
     }
+
+    @Test
+    fun `알림의 링크 칸은 이 설치의 표가 맞는 우리 인텐트에서만 읽는다`() {
+        val token = "ab".repeat(32)
+        // 우리 알림(PendingIntent — 동작 없음) · 앱이 뒤에 있을 때 FCM 이 띄운 알림(런처 인텐트)
+        org.junit.Assert.assertTrue(InviteLinks.trustsExtras(null, null, token, token))
+        org.junit.Assert.assertTrue(
+            InviteLinks.trustsExtras(android.content.Intent.ACTION_MAIN, setOf(android.content.Intent.CATEGORY_LAUNCHER), token, token),
+        )
+        // 표가 없거나 틀리다 — 다른 앱이 실어 보낸 링크
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(android.content.Intent.ACTION_MAIN, setOf(android.content.Intent.CATEGORY_LAUNCHER), null, token))
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(null, null, "", token))
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(null, null, "cd".repeat(32), token))
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(null, null, token.dropLast(1), token))
+        // 이 폰의 표를 못 읽었다 — 아무것도 믿지 않는다
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(null, null, token, null))
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(null, null, "", ""))
+        // 웹 페이지 · 다른 앱의 링크(intent://… · 보기) — 표가 있어도 링크 칸은 읽지 않는다
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(android.content.Intent.ACTION_VIEW, null, token, token))
+        org.junit.Assert.assertFalse(InviteLinks.trustsExtras(null, setOf(android.content.Intent.CATEGORY_BROWSABLE), token, token))
+        org.junit.Assert.assertFalse(
+            InviteLinks.trustsExtras(
+                android.content.Intent.ACTION_MAIN,
+                setOf(android.content.Intent.CATEGORY_LAUNCHER, android.content.Intent.CATEGORY_BROWSABLE),
+                token, token,
+            ),
+        )
+    }
+
+    @Test
+    fun `대기실 링크는 이 폰이 이미 그 방에 있을 때만 바로 연다 — 아니면 그 크루의 대기실 목록`() {
+        val room = InviteLinks.PushTarget.Room(id, 123L)
+        org.junit.Assert.assertTrue(InviteLinks.opensRoomDirectly(room, id, 123L))
+        org.junit.Assert.assertTrue(InviteLinks.opensRoomDirectly(room, id.uppercase(), 123L))
+        // 방에 없다 · 다른 방에 있다 · 같은 방 번호를 다른 크루로 실어 왔다
+        org.junit.Assert.assertFalse(InviteLinks.opensRoomDirectly(room, null, null))
+        org.junit.Assert.assertFalse(InviteLinks.opensRoomDirectly(room, id, 124L))
+        org.junit.Assert.assertFalse(InviteLinks.opensRoomDirectly(room, "00000000-0000-0000-0000-00000000beef", 123L))
+        org.junit.Assert.assertFalse(InviteLinks.opensRoomDirectly(room, null, 123L))
+    }
 }

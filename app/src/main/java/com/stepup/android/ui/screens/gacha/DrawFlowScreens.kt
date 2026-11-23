@@ -15,9 +15,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +56,7 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.items.formatShoeNumber
 import com.stepup.android.ui.screens.items.shoeName
 import com.stepup.android.ui.theme.StepUpDesign
+import kotlinx.coroutines.flow.first
 
 /*
  * 뽑기를 누른 뒤의 장면(파란 톤 v4) — 결과 확인 중(DRAW10) → 상자 열기(DRAW11) → 결과(DRAW12 · 13 · 14 · 33), 답을 받지 못했을 때의
@@ -59,6 +65,12 @@ import com.stepup.android.ui.theme.StepUpDesign
  * DRAW11 에서는 같은 확정 결과로, 결과에서는 메인으로 간다. 상자를 기다리는 시간과 서버 확인 시간을 섞지 않는다 — 상자는 서버가
  * 신발을 확정한 뒤에만 연다.
  */
+
+/**
+ * 뽑기 결과에서 강화 화면으로 — (대상 = 신은 신발, 재료 = 뽑은 신발). 앱 셸이 길을 준다. 없으면(기기 검사 · 예전 이름의 결과 창)
+ * "재료로 쓰면" 줄을 띄우지 않는다.
+ */
+val LocalOpenForgeWith = staticCompositionLocalOf<((target: Long, material: Long) -> Unit)?> { null }
 
 /** DRAW10 — 서버가 결과를 확인할 때까지. 버튼이 없다(다시 누를 수 없다). 뒤로 → 요청을 둔 채 메인(DRAW26) */
 @Composable
@@ -172,21 +184,13 @@ internal fun DrawResultScreen(
                             style = runTextStyle(16.sp, t.label, FontWeight.SemiBold), textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 4.dp).testTag("draw-result-number"),
                         )
-                        // 뽑힌 값이 이 등급 안에서 얼마나 좋은가(경제 4판 — 별 · 유형). 뽑은 값을 모르면 줄을 두지 않는다
-                        val quality = com.stepup.android.ui.screens.items.shoeQualityOf(
-                            result.shoe, com.stepup.android.ui.screens.items.rememberShoeRules(),
-                        )
-                        if (quality != null) {
-                            Text(
-                                com.stepup.android.ui.screens.items.qualityLabel(quality),
-                                style = runTextStyle(16.sp, t.cyan, FontWeight.SemiBold), textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 4.dp).testTag("draw-result-quality"),
-                            )
-                        }
+                        // 별 · 유형(균형형 …) 줄은 뺐다(2026-11-24 사용자 "아예 없애")
                         Text(
                             stringResource(R.string.dv2_result_added), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
                             textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp),
                         )
+                        // 경험치 강화(0118) — "재료로 쓰면 ○○ +34.7%"(서버 값). 버튼은 그대로, 안내 한 줄만
+                        ForgeHintLine(result.shoe)
                     }
                 },
                 stage = {
@@ -266,6 +270,55 @@ internal fun DrawCheckScreen(checking: DrawFlow.Checking, onCheck: () -> Unit, o
             DrawButton(stringResource(R.string.dv2_to_draw), onBack, Modifier.testTag("draw-check-home"), DrawButtonStyle.Ghost)
         }
     }
+}
+
+/**
+ * "재료로 쓰면 {신은 신발} +34.7%" — 서버가 준 그 재료의 %(대상 = 신은 신발, forge_xp_materials). 누르면 그 신발을 골라 둔 강화 화면.
+ * 띄우지 않는 때: 길이 없다 · 서버에 경험치 강화가 없다 · 걸려 있는 강화가 있다 · 신은 신발이 첫 신발 · 만렙 · 뽑은 신발이 막혔거나 아까운 신발.
+ * 읽는 동안 · 못 읽으면 줄이 없다(숫자를 지어내지 않는다).
+ */
+@Composable
+private fun ForgeHintLine(drawn: com.stepup.android.domain.Sneaker) {
+    val open = LocalOpenForgeWith.current ?: return
+    val t = runTone()
+    val nicknames = com.stepup.android.ui.components.LocalShoeNicknames.current
+    val hint by produceState<Pair<com.stepup.android.domain.Sneaker, Int>?>(null, drawn.id) {
+        value = runCatching { loadForgeHint(drawn.id, nicknames) }.getOrNull()
+    }
+    val (target, tenths) = hint ?: return
+    val name = target.shoeName()
+    val gain = com.stepup.android.domain.ForgeXp.formatGain(tenths)
+    val described = stringResource(R.string.fxp_draw_hint_cd, name, gain)
+    Row(
+        Modifier.padding(top = 6.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp))
+            .feedbackClickable(role = Role.Button) { open(target.id, drawn.id) }
+            .semantics(mergeDescendants = true) { contentDescription = described }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .testTag("draw-result-forge-hint"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.fxp_draw_hint, name, gain), style = runTextStyle(15.sp, t.cyan, FontWeight.SemiBold),
+            textAlign = TextAlign.Center, maxLines = 2,
+        )
+        androidx.compose.material3.Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = t.cyan,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+/** 신은 신발과 서버의 재료 값 — 띄울 수 없으면 null. 서버에 묻기 전에 폰이 아는 것(첫 신발 · 만렙 · 걸린 강화)으로 먼저 거른다 */
+private suspend fun loadForgeHint(drawnId: Long, nicknames: Map<Long, String>): Pair<com.stepup.android.domain.Sneaker, Int>? {
+    val forge = com.stepup.android.core.ServiceLocator.forgeRepository
+    if (!forge.xpAvailable || forge.pending() != null) return null
+    val equipped = com.stepup.android.core.ServiceLocator.sneakerRepository.equipped.first() ?: return null
+    val server = equipped.server ?: return null
+    if (server.origin == "STARTER" || (server.maxLevel > 0 && equipped.level >= server.maxLevel)) return null
+    val catalog = forge.xpCatalog(equipped.id) ?: return null
+    val tenths = com.stepup.android.domain.drawForgeHintTenths(equipped, drawnId, catalog, forgePending = false, nicknames)
+        ?: return null
+    return equipped to tenths
 }
 
 /** 결과 무대의 가장 큰 높이 — 폭 300dp 무대(440:418) */

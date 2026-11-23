@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 신발 강화(지시서 v6 · 파란 톤 v4 강화 전달본, 재료 규칙 2026-10-04 forge-v2 — docs/redesign/shoe-upgrade-2026-10-01) — 강화 화면 · 재료 선택 · 최종 확인 · 결과 -->
 <resources>
+    <!-- 2026-11-19: 这里的3双材料・成功率・销毁・失败文字只用于旧的概率强化（没有 0118 时・1.20.x 发出的请求结果）。经验值强化见 forge_xp.xml -->
     <string name="upg_title">鞋子强化</string>
     <string name="upg_action">强化</string>
     <string name="upg_action_check">查看强化结果</string>

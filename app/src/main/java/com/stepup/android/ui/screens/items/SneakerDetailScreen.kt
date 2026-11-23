@@ -26,6 +26,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Refresh
@@ -171,6 +173,21 @@ fun SneakerDetailScreen(
     var repairOpen by rememberSaveable(sneakerId) { mutableStateOf(false) }
     // 스탯 포인트 시트(0059) — 서버가 받았다고 답한 뒤에만 완료. 화면을 나가면 지운다(같은 초안은 다시 보내도 한 번만 적힌다)
     var pointsPhase by remember(sneakerId) { mutableStateOf<PointsPhase?>(null) }
+    // 포인트 미리보기(서버 0119 — 내 지난 14일 러닝으로 "1포인트 = 하루 약 +N SUP" · 추천). 시트가 열릴 때 · 나눈 값이 바뀌었을 때
+    // 다시 받는다(읽기만). 못 받으면(0119 전 서버 · 연결 끊김) 그 칸만 없고 나누기는 그대로 된다
+    var pointsPreview by remember(sneakerId) { mutableStateOf<com.stepup.android.domain.PointsPreview?>(null) }
+    val previewBasis = pointsPhase?.basis
+    LaunchedEffect(sneakerId, previewBasis?.total, previewBasis?.saved) {
+        pointsPreview = null
+        val basis = previewBasis ?: return@LaunchedEffect
+        pointsPreview = try {
+            ServiceLocator.sneakerRepository.pointsPreview(basis.shoeId)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     // 로그인 화면으로 — 돌아온 뒤 자동으로 착용 · 수리 · 강화하지 않는다. 서버 설정이 없는 빌드는 로그인할 수 없다(버튼 없음)
     val signIn: (() -> Unit)? = if (!ServiceLocator.serverEconomyOn) null else ({
@@ -224,6 +241,9 @@ fun SneakerDetailScreen(
             }
         },
         onClose = { if (pointsPhase !is PointsPhase.Sending) pointsPhase = null },
+        // 추천대로 — 초안만 채운다(보내는 것은 "포인트 나누기" 뒤 확인에서)
+        onRecommend = { pointsPhase = pointsPhase?.recommend(pointsPreview) },
+        onRecommendAll = { pointsPhase = pointsPhase?.recommendAll(pointsPreview) },
     )
 
     ShoeDetailContent(
@@ -254,6 +274,9 @@ fun SneakerDetailScreen(
         onCheckWear = viewModel::reloadOwned,
         points = pointsPhase,
         pointsActions = pointsActions,
+        pointsPreview = pointsPreview,
+        // 처음 포인트가 생긴 사람 — 포인트 ⓘ 에 "나눈 포인트는 되돌릴 수 없어요"를 함께(한 번 나누면 더 보이지 않는다)
+        firstPoints = (owned as? OwnedLoad.Ready)?.shoes?.let(::firstPointsOf) ?: false,
     )
 }
 
@@ -287,6 +310,10 @@ fun ShoeDetailContent(
     /** 스탯 포인트 시트(0059) — 있으면 그 장면으로 띄운다 */
     points: PointsPhase? = null,
     pointsActions: PointsActions = PointsActions(),
+    /** 처음 포인트가 생긴 사람([firstPointsOf]) — 포인트 시트의 ⓘ 가 되돌릴 수 없다는 한 줄을 함께 보인다 */
+    firstPoints: Boolean = false,
+    /** 포인트 미리보기(서버 0119) — 있으면 포인트 시트가 "1포인트 = 하루 약 +N SUP" · 추천대로 나누기를 보인다 */
+    pointsPreview: com.stepup.android.domain.PointsPreview? = null,
 ) {
     var sheet by rememberSaveable { mutableStateOf(initialSheet?.let(DetailSheet::valueOf) ?: DetailSheet.None) }
     var artAttempt by rememberSaveable { mutableIntStateOf(0) }
@@ -429,7 +456,8 @@ fun ShoeDetailContent(
             DetailSheet.None -> Unit
         }
         if (points != null && sheet == DetailSheet.None && repair == null) {
-            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn)
+            ShoePointsSheet(shoe = shoe, phase = points, actions = pointsActions, onSignIn = onSignIn, firstPoints = firstPoints,
+                preview = pointsPreview)
         }
         if (repair != null && sheet == DetailSheet.None) {
             ShoeRepairSheet(
@@ -498,7 +526,9 @@ private fun DetailBody(
             }
         }
         Spacer(Modifier.height(16.dp))
-        // 이름 → 등급 배지 → No. 번호 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다. 착용 여부로 배지를 바꾸지 않는다
+        // 이름 → 등급 배지 → No. 번호 → (오른쪽) 붉은 수리하기 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다. 착용 여부로 배지를 바꾸지 않는다
+        // 수리하기는 고칠 내구도가 있을 때만(2026-11-24 사용자 "수리하기는 No. 오른쪽 버튼") — 내구도 칸 안 버튼 · 다음 레벨 % 는 뺐다
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         ShoeNameWithBadge(
             name = shoe.shoeName(), tier = shoe.tier,
             style = androidx.compose.ui.text.TextStyle(
@@ -510,17 +540,12 @@ private fun DetailBody(
             suffixStyle = androidx.compose.ui.text.TextStyle(
                 color = t.label, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum",
             ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
+            modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
         )
-        // 뽑힌 값의 별 · 유형(경제 4판 — 같은 등급 안에서 얼마나 잘 뽑혔는가). 뽑은 값을 모르는 신발에는 없다
-        val quality = shoeQualityOf(shoe, rememberShoeRules())
-        if (quality != null) {
-            val qualityCd = qualityDescription(quality)
-            Text(
-                qualityLabel(quality), style = runTextStyle(15.sp, t.cyan, FontWeight.SemiBold),
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp)
-                    .semantics { contentDescription = qualityCd }.testTag("shoe-quality"),
-            )
+        if (repairable(shoe)) {
+            Spacer(Modifier.width(8.dp))
+            ShoeRepairPill(onShowRepair, enabled = !care.busy)
+        }
         }
         // 신고 있는 신발의 주 버튼이 수리하기가 되면 "지금 신고 있어요"는 여기 한 줄로(배지 아닌 보조 글자)
         if (repairInPrimary(shoe, care)) {
@@ -554,14 +579,10 @@ private fun DetailBody(
             )
             Spacer(Modifier.height(8.dp))
         }
-        // 수리는 내구도 칸 바로 아래(사용자 "수리하는 곳을 찾을 수가 없었음" → 2026-11-07 "신발 수리하는거 버튼 앞으로").
-        // ⋯ 관리 시트의 수리하기는 그대로 둔다
-        ShoeStatCells(
-            shoe, Modifier.testTag("shoe-stat-cells"),
-            onRepair = onShowRepair,
-            repairEnabled = !care.busy && repairable(shoe),
-            repairEmphasis = repairUrgent(shoe),
-        )
+        // 수리하기는 이름 줄 오른쪽(위) — 칸 안에는 두지 않는다(2026-11-24). ⋯ 관리 시트의 수리하기는 그대로
+        ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
+        // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
+        ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 6.dp))
         // 아이템칸 — 아이템이 생긴다는 가정의 자리만(잠김). 아이템 · 개수를 지어내지 않는다
         Spacer(Modifier.height(18.dp))
         ShoeItemSlots()
@@ -1000,3 +1021,26 @@ internal fun Sneaker.modelShoeName(): String {
 
 /** 한국어 화면이면 목적격 조사를 붙인다("새벽 강변을") — 다른 언어 문장은 조사가 없다 */
 internal fun String.withParticle(korean: Boolean): String = if (korean) withObjectParticle(this) else this
+
+/**
+ * 이름 줄 오른쪽의 붉은 "수리하기"(2026-11-24 사용자 시안 — No. 번호 오른쪽). 고칠 내구도가 있을 때만 그린다.
+ * 높이 44 이상 · 누르면 수리 시트. 결과를 기다리는 동안은 흐리게.
+ */
+@Composable
+private fun ShoeRepairPill(onClick: () -> Unit, enabled: Boolean) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier.alpha(if (enabled) 1f else 0.5f)
+            .heightIn(min = 44.dp)
+            .clip(shape)
+            .background(Color(0xFFE5383B), shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .testTag("shoe-durability-repair")
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(R.string.care_repair), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}

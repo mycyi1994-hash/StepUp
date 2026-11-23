@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shoe stats after the 2026-11-21 rebalance: efficiency earns faster but uses the shoe and energy faster, durability no longer raises the full repair cost, a points re-split every 5 levels, and a points preview from the runner's own last 14 days (always an estimate — "about"). -->
+<resources>
+    <string name="ers_preview_basis_mine">Based on your last 14 days (runs: %1$d) · an estimate</string>
+    <string name="ers_preview_basis_default">No runs yet, so based on a %1$d-minute run · an estimate</string>
+    <string name="ers_preview_worth">1 point = about +%1$s SUP a day</string>
+    <string name="ers_preview_worth_none">Wouldn\'t add more with how you run now</string>
+    <string name="ers_preview_comfort_capped">Already saving the full %1$d%% of energy</string>
+    <string name="ers_points_life">A full shoe runs %1$s min</string>
+    <string name="ers_points_life_change">A full shoe runs %1$s min → %2$s min</string>
+    <string name="ers_points_help_efficiency">Earn faster · uses up the shoe and energy faster too</string>
+    <string name="ers_points_help_comfort">Uses less energy · earn more each day</string>
+    <string name="ers_points_help_durability">Run longer · the full repair cost stays the same</string>
+    <string name="ers_points_note_final">Points can\'t be taken back right away. You get one reset every %1$d levels.</string>
+    <string name="ers_points_note_respec">1 reset available · you get one every %1$d levels. Lowering a stat uses it.</string>
+    <string name="ers_points_recommend">Use suggested split</string>
+    <string name="ers_points_recommend_all">Suggested split from scratch</string>
+    <string name="ers_upg_respec">You can reset this shoe\'s points once</string>
+    <string name="ers_upg_stat_note">Points in efficiency earn faster and wear the shoe faster. The full repair cost stays the same.</string>
+    <string name="ers_why_top_level">Your highest-level shoe</string>
+    <string name="ers_basis_efficiency">Efficiency: SUP earned for the same steps. 200 earns twice as much as 100. What you add with points also uses up the shoe and energy faster. The bar ends at the best new shoe of this grade.</string>
+    <string name="ers_basis_durability">Durability: minutes this shoe runs before it wears out. The bar ends at full. Adding points doesn\'t raise the full repair cost. It goes down as you run, a little differently each run.</string>
+</resources>

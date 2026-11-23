@@ -531,6 +531,8 @@ fun BlueSheet(
     actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover — 계정 삭제 · 로그아웃 시트가 잠금 화면 위에서 눌렸다)
+    if (LockCover.hidesWindows()) return
     val t = runTone()
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.SheetOpen) }
