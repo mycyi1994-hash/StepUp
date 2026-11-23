@@ -14,7 +14,8 @@
 - 받는 길 둘: Claude 대화(`public.daily_stats()` — 머리글 `x-stats-key` 가 `economy.stats_keys` 해시와 맞을 때만, 키는 SQL 창 `select economy.stats_key_new('claude');`)
   · 메신저(`.github/workflows/daily-stats.yml` — 텔레그램 / 디스코드 비밀이 있을 때만). **저장소가 공개라 숫자를 로그 · 이슈에 남기지 않는다.**
 - 빼고 셀 이메일: 설정 `stats_exclude_emails`(쉼표) · 워크플로는 변수 `STATS_EXCLUDE_EMAILS`. 서버 검사 "매일 숫자(0124)".
-- 서버 검사를 한국 시각 0 ~ 3시에 로컬로 돌릴 때: `apt-get install libfaketime` 뒤 테스트 Postgres 를 `LD_PRELOAD=…/libfaketime.so.1 FAKETIME='-14h'` 로 먼저 띄우면 run.sh 가 그것을 쓴다.
+- 검사용 Postgres 는 한국 시각 0 ~ 6시에 시계를 8시간 앞당겨 뜬다(`supabase/tests/run.sh` · `tools/together_sim/run.sh` · `tools/economy_sim/run.sh` 의 `stepup_pg_start` — libfaketime,
+  CI 는 그 시각에만 깐다). "몇 시간 전 러닝"을 오늘로 잡는 절(0116 · 0118)이 새벽에 실패해 배포 검사까지 막던 것. 운영 DB 는 건드리지 않는다.
 
 ## 최신 — 0118 ~ 0123 나눠 켜기 · 배포 뒤 할 일 한 곳에 (2026-11-23)
 

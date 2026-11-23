@@ -57,6 +57,13 @@ jobs:
             exit 1
           fi
 
+      # 한국 시각 0 ~ 6시에만 — 검사용 Postgres 시계를 앞당기는 도구(supabase/tests/run.sh · tools/*/run.sh 가 쓴다)
+      - name: 검사용 시계 도구
+        run: |
+          if [ "$((10#$(TZ=Asia/Seoul date +%H)))" -lt 6 ]; then
+            sudo apt-get update -q >/dev/null && sudo apt-get install -yq libfaketime >/dev/null || echo "::warning::libfaketime 을 깔지 못했다 — 0116 · 0118 절이 실패할 수 있다"
+          fi
+
       - name: 스키마 검사
         run: supabase/tests/run.sh
 
