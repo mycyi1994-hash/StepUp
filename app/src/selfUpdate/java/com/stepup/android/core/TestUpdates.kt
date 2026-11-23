@@ -232,6 +232,18 @@ object TestUpdates {
     }
 
     /**
+     * 강제 업데이트 화면의 "업데이트하기"(서버 0120) — 테스트 APK 는 Play 가 아니라 이 길로 바뀐다. 새 빌드를 바로 묻고, 있으면
+     * 업데이트 창([com.stepup.android.ui.components.TestUpdatePrompt])이 뜬다. 창이 이미 떠 있으면 그대로 둔다.
+     * 이 빌드에서 쓸 수 없으면(스스로 업데이트 꺼짐) false — 부르는 쪽이 Play 로 간다
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun requestUpdate(context: Context): Boolean {
+        if (!enabled) return false
+        startCheck(force = true)
+        return true
+    }
+
+    /**
      * 앱으로 돌아올 때 — "출처를 알 수 없는 앱" 설정에서 허용하고 돌아왔으면 이어서 깔고, 아니면 새 빌드를 묻는다.
      */
     fun onResume(context: Context) {

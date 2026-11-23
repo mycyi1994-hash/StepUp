@@ -640,6 +640,8 @@ internal fun CrewPersonRow(
     subColor: Color? = null,
     /** 이름 옆 작은 파란 표시("크루장") */
     badge: String? = null,
+    /** 이름 옆 작은 글자(러너 레벨 배지 "러너 Lv10" — 서버 0121) — 색 면 없이 흐린 글자 */
+    mark: String? = null,
 ) {
     val ink = crewInk()
     Row(
@@ -658,6 +660,13 @@ internal fun CrewPersonRow(
                         if (badge != null) {
                             Spacer(Modifier.width(8.dp))
                             CrewBadge(badge)
+                        }
+                        if (mark != null) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                mark, color = ink.secondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                                modifier = Modifier.testTag("crew-runner-mark"),
+                            )
                         }
                     }
                     Spacer(Modifier.height(4.dp))
@@ -744,6 +753,8 @@ internal fun CrewSheet(
     eyebrow: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     val ink = crewInk()
     // confirmValueChange 는 시트 상태를 기억하는 열쇠다 — 보내는 중(dismissible)이 바뀔 때 새 상태로 다시 떠오르지 않게 한 번만 만든다
     val canDismiss by rememberUpdatedState(dismissible)

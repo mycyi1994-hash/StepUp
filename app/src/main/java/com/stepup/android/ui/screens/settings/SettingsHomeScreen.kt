@@ -41,7 +41,6 @@ import com.stepup.android.R
 import com.stepup.android.core.AppLocale
 import com.stepup.android.core.AppTheme
 import com.stepup.android.core.ServiceLocator
-import com.stepup.android.data.prefs.UserPrefs
 import com.stepup.android.domain.RewardEconomy
 import com.stepup.android.ui.components.BlueGroup
 import com.stepup.android.ui.components.BlueGroupLabel
@@ -210,18 +209,32 @@ private fun AboutLine(label: String, value: String) {
 }
 
 /**
- * 하루 걸음 목표(설정 v1 24) — 큰 숫자와 −500 · +500. 범위는 기존 그대로 3,000~20,000걸음, 500걸음씩.
+ * 하루 러닝 목표(설정 v1 24 · 오늘의 보상 2026-11-19) — 큰 숫자와 − · + 한 단계. 범위 · 단계는 서버 규칙(ShoeRules.goal — 못 읽었으면
+ * 4,000 ~ 20,000걸음 · 500걸음씩, 서버 0118 과 같다).
  *
- * 누를 때마다 바로 저장한다(기존 저장 길 StepRepository.setDailyGoal — 폰에 적고 서버 목표도 맞춘다).
+ * 누를 때마다 바로 저장한다(StepRepository.setDailyGoal — 폰에 적고 서버 목표도 맞춘다, 서버가 적은 값을 따른다).
  * 빨리 여러 번 눌러도 마지막 값이 남는다(앞선 저장은 새 값이 오면 접는다). 저장하지 못하면 실제로 저장된 목표로
- * 되돌리고 알린다. 목표를 바꾸는 것만으로 SUP 를 주지 않는다 — 예상 거리와 기본 보너스는 기존 계산식의 안내다.
+ * 되돌리고 알린다. 목표를 바꾸는 것만으로 SUP 를 주지 않는다 — 예상 거리와 "하루 +N SUP"(목표 1,000보마다 2.5 SUP)는 안내다.
+ * 서버는 오늘 이미 달렸으면 오늘 목표를 그대로 두고 내일부터 바꾼다 — 서버 상태(오늘 보상 걸음 · goal_next)로 그 말을 고른다.
  */
 @Composable
 fun DailyGoalSheet(
     onDismiss: () -> Unit,
-    save: suspend (Int) -> Unit = { ServiceLocator.stepRepository.setDailyGoal(it) },
+    save: suspend (Int) -> Int? = { goal ->
+        val saved = ServiceLocator.stepRepository.setDailyGoal(goal)
+        // 서버가 바꾼 목표가 오늘부터인지 내일부터인지(goal_next) 다시 읽는다
+        if (ServiceLocator.serverEconomyOn) runCatching { ServiceLocator.shoeRules.refreshBoxes() }
+        saved
+    },
 ) {
     val stored by ServiceLocator.userPrefs.dailyGoal.collectAsStateWithLifecycle(initialValue = null)
+    // 오늘의 보상(서버 0118) — 없으면(예전 서버 · 서버 없는 빌드) 예전 안내
+    val daily by remember {
+        if (ServiceLocator.serverEconomyOn) ServiceLocator.shoeRules.daily else kotlinx.coroutines.flow.MutableStateFlow(null)
+    }.collectAsStateWithLifecycle()
+    // 목표의 범위 · 단위 — 서버 규칙(shoe_rules_v4 "goal"). 못 읽었으면 4,000 ~ 20,000 · 500 단위
+    val rule = remember { runCatching { ServiceLocator.shoeRules.rules }.getOrNull() }
+        ?.collectAsStateWithLifecycle()?.value?.goal ?: com.stepup.android.domain.GoalRule.FALLBACK
     var shown by rememberSaveable { mutableStateOf<Int?>(null) }
     var pending by remember { mutableStateOf<Int?>(null) }
     var failed by remember { mutableStateOf(false) }
@@ -229,7 +242,9 @@ fun DailyGoalSheet(
     LaunchedEffect(Unit) {
         snapshotFlow { pending }.filterNotNull().collectLatest { value ->
             try {
-                save(value)
+                // 서버가 다른 값으로 맞췄으면 그 값을 보인다
+                val adopted = save(value)
+                if (adopted != null && adopted != value) shown = adopted
                 failed = false
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -242,7 +257,7 @@ fun DailyGoalSheet(
     }
     fun change(delta: Int) {
         val base = current ?: return
-        val next = (base + delta).coerceIn(UserPrefs.MIN_GOAL, UserPrefs.MAX_GOAL)
+        val next = rule.fit(base + delta)
         if (next == base) return
         shown = next
         pending = next
@@ -266,20 +281,22 @@ fun DailyGoalSheet(
                 modifier = Modifier.padding(bottom = 10.dp))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val decrease = stringResource(R.string.set_goal_decrease)
-            val increase = stringResource(R.string.set_goal_increase)
+            // 한 번에 바꾸는 걸음 · 범위는 서버 규칙(ShoeRules.goal) 그대로 — 글자에 박지 않는다
+            val step = "%,d".format(rule.step)
+            val decrease = stringResource(R.string.set_goal_decrease, step)
+            val increase = stringResource(R.string.set_goal_increase, step)
             GoalStep(
-                stringResource(R.string.set_goal_minus), onClick = { change(-500) },
-                enabled = current != null && current > UserPrefs.MIN_GOAL,
+                stringResource(R.string.set_goal_minus, step), onClick = { change(-rule.step) },
+                enabled = current != null && current > rule.min,
                 modifier = Modifier.weight(1f).semantics { contentDescription = decrease }.testTag("goal-minus"),
             )
             GoalStep(
-                stringResource(R.string.set_goal_plus), onClick = { change(500) },
-                enabled = current != null && current < UserPrefs.MAX_GOAL,
+                stringResource(R.string.set_goal_plus, step), onClick = { change(rule.step) },
+                enabled = current != null && current < rule.max,
                 modifier = Modifier.weight(1f).semantics { contentDescription = increase }.testTag("goal-plus"),
             )
         }
-        Text(stringResource(R.string.set_goal_range, "%,d".format(UserPrefs.MIN_GOAL), "%,d".format(UserPrefs.MAX_GOAL)),
+        Text(stringResource(R.string.set_goal_range, "%,d".format(rule.min), "%,d".format(rule.max), "%,d".format(rule.step)),
             style = runTextStyle(14.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center)
         // 계산 안내 — 기존 계산식의 예상이며 지급 확정이 아니다. 읽기 전엔 "—"
         BlueSheetDivider()
@@ -287,10 +304,23 @@ fun DailyGoalSheet(
             current?.let { stringResource(R.string.set_goal_distance_value, "%.1f".format(RewardEconomy.distanceMeters(it) / 1000)) } ?: "—")
         BlueSheetDivider()
         GoalFact(stringResource(R.string.set_goal_bonus),
-            current?.let { stringResource(R.string.set_goal_bonus_value, "%,.1f".format(RewardEconomy.goalBaseBonus(it))) } ?: "—")
+            current?.let {
+                stringResource(R.string.dr_goal_day_bonus, com.stepup.android.domain.DailyRewardsBar.supText(RewardEconomy.goalBaseBonus(it)))
+            } ?: "—")
         BlueSheetDivider()
+        // 언제부터 — 서버 상태를 알면: 오늘 달렸으면 내일부터(오늘 목표 그대로), 아직이면 오늘부터. 서버가 내일 목표를 적었으면 그 값
+        val today = com.stepup.android.domain.DailyRewards.gameDay(System.currentTimeMillis())
+        val state = daily
+        val note = when {
+            failed -> stringResource(R.string.set_goal_save_failed)
+            state == null -> stringResource(R.string.set_goal_note)
+            !state.isFor(today) -> stringResource(R.string.dr_goal_rule)
+            state.goalNext != null -> stringResource(R.string.dr_goal_next_saved, "%,d".format(state.goalNext), "%,d".format(state.goal))
+            state.rewardStepsToday > 0 -> stringResource(R.string.dr_goal_from_tomorrow_today, "%,d".format(state.goal))
+            else -> stringResource(R.string.dr_goal_from_today)
+        }
         Text(
-            stringResource(if (failed) R.string.set_goal_save_failed else R.string.set_goal_note),
+            note,
             style = runTextStyle(15.sp, if (failed) t.dangerText else t.label, if (failed) FontWeight.SemiBold else FontWeight.Medium),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }.testTag("goal-note"),

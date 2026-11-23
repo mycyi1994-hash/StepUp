@@ -238,6 +238,8 @@ internal fun DrawSheetFrame(
     actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     val t = runTone()
     val feedback = LocalFeedback.current
     LaunchedEffect(feedback) { feedback?.play(FeedbackCue.SheetOpen) }

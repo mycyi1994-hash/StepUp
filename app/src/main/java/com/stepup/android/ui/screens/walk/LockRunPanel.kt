@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
@@ -55,6 +58,7 @@ import com.stepup.android.service.RunNotification
 import com.stepup.android.service.WalkSessionService
 import com.stepup.android.service.WalkSessionState
 import com.stepup.android.ui.components.PrimaryButton
+import com.stepup.android.ui.components.LockCover
 import com.stepup.android.ui.components.LockScreenWordmark
 import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.pressable
@@ -78,10 +82,23 @@ fun LockRunHost(content: @Composable () -> Unit) {
         onDispose { activity?.showOverLockScreen(false) }
     }
     val locked = rememberDeviceLocked(watch = running)
-    val cover = running && locked
+    val cover = LockCover.covers(running, locked)
+    // 덮이면 입력 칸의 초점 · 키보드를 거두고 띄워 둔 안드로이드 대화 상자(시간 고르기)를 닫는다 — 잠금 화면 위에 남지 않게
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(cover) {
+        if (cover) {
+            focusManager.clearFocus(force = true)
+            keyboard?.hide()
+            LockCover.dismissAll()
+        }
+    }
     Box(Modifier.fillMaxSize()) {
-        // 덮여 있는 동안 앱 화면은 화면 읽기에서도 빠진다
-        Box(if (cover) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) { content() }
+        // 덮여 있는 동안 앱 화면은 화면 읽기에서도 빠진다. 대화 상자 · 시트 · 팝업은 덮개보다 위의 따로 된 창이라
+        // 아예 그리지 않는다(LockCover — 앱 화면 · 길 · 시트를 열어 둔 상태는 그대로 남는다)
+        Box(if (cover) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) {
+            CompositionLocalProvider(LockCover.LocalCovered provides cover) { content() }
+        }
         if (cover) {
             BackHandler { activity?.moveTaskToBack(true) }
             LockRunPanel(

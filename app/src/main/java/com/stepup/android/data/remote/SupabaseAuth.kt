@@ -114,6 +114,8 @@ class SupabaseAuth(
             headers = mapOf(
                 "apikey" to apiKey,
                 "Content-Type" to "application/json",
+                // 이 앱의 판 — 서버의 다른 요청과 같게 늘 보낸다(서버 0120 강제 업데이트는 데이터 요청만 막는다)
+                AppVersionHeader.NAME to AppVersionHeader.storeNumber(com.stepup.android.BuildConfig.VERSION_CODE).toString(),
             ),
         )
 

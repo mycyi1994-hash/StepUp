@@ -374,8 +374,8 @@ class ShoeDetailDesignTest {
         // 40 ~ 46 — 신발마다 다른 최대 내구도 · 레벨업 스탯 포인트(서버 0059). 값은 이 테스트 화면에만 있는 예시다
         val withPoints = all + POINTS + RESPEC
         show("s40-points-notice", "shoe-points-notice", detail(ready(POINTS, withPoints)))
-        // 내구도는 달릴 수 있는 분(1분마다 5) — 1,180 / 1,330 = 236 / 266분
-        assertCell("durability", string(R.string.v4s_minutes, "236 / 266"))
+        // 내구도는 달릴 수 있는 분 — 1분마다 5 × 효율 포인트 배수(서버 0119: 레어 포인트 2 = × 1.022) → 1,180 / 1,330 = 230 / 260분
+        assertCell("durability", string(R.string.v4s_minutes, "230 / 260"))
         compose.onNodeWithTag("shoe-points-notice").assertExists()
         // 다시 나누기만 남은 신발은 알림 없이 ⋯ 안에만
         show("s40b-points-respec-detail", "shoe-art", detail(ready(RESPEC, withPoints)))

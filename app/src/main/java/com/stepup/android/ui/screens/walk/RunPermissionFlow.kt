@@ -368,6 +368,8 @@ internal fun RunPermissionSheetView(
     onDismiss: () -> Unit,
     minimal: Boolean = false,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     if (minimal) {
         MinimalPermissionCard(sheet, onPrimary, onSecondary, onDismiss)
         return
@@ -477,6 +479,8 @@ private fun MinimalPermissionCard(
     onSecondary: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     val spec = specOf(sheet)
     val m = minimalSpecOf(sheet)
     val t = runTone()

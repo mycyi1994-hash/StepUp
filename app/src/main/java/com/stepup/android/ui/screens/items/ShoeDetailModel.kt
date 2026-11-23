@@ -1,8 +1,11 @@
 package com.stepup.android.ui.screens.items
 
 import com.stepup.android.data.repo.EconomyOutcome
-import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.lifeSecOf
+import com.stepup.android.domain.nextLevelPercentText
+import com.stepup.android.domain.wearOf
 import java.util.Locale
 
 /*
@@ -89,22 +92,32 @@ fun formatStat(value: Double): String = String.format(Locale.ROOT, "%.2f", value
 fun durabilityPercent(shoe: Sneaker): Int =
     (shoe.server?.let { kotlin.math.floor(it.durabilityPts).toInt() } ?: shoe.durability).coerceIn(0, 100)
 
-/** 달린 1분마다 닳는 내구도 — 서버 0064 `economy.durability_wear_time` 과 같다(2026-10-17 사용자 결정 "1분마다 5씩") */
+/**
+ * 달린 1분마다 닳는 내구도 — 서버 0064 `economy.durability_wear_time` 과 같다(2026-10-17 사용자 결정 "1분마다 5씩").
+ * 효율 포인트를 넣은 신발은 이 값 × 닳는 배수만큼 닳는다(서버 0119 — 신발마다의 값은 신발을 받는 [durabilityWear]).
+ */
 const val DURABILITY_WEAR_PER_MINUTE = 5
 
 /**
  * [activeSec](멈춘 시간 뺀 달린 시간) 동안 닳는 내구도 — 다 채운 1분마다 [DURABILITY_WEAR_PER_MINUTE]. 움직였든 서 있었든, 거리가
- * 0 이어도 같다(2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데", 서버 0068).
+ * 0 이어도 같다(2026-10-19 사용자 결정 "걍 1분마다 5 닳는거로 바꿔 어떤식으로든간데", 서버 0068). 효율 포인트가 없는 신발의 값이다.
  */
 fun durabilityWear(activeSec: Long): Int = (activeSec.coerceAtLeast(0L) / 60 * DURABILITY_WEAR_PER_MINUTE).toInt()
 
 /**
- * 남은 내구도로 보상을 받으며 달릴 수 있는 분(다 채운 분) — 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066). 내구도 1 = 12초.
+ * 이 신발이 [activeSec] 동안 닳는 내구도 — 효율 포인트를 넣은 신발은 그 배수만큼 빨리 닳는다(서버 0119 `economy.wear_mult`:
+ * 1분마다 5 × (1 + 포인트당 비율 × 효율 포인트)). 포인트가 없는 신발 · 0119 전 서버 규칙이면 위 [durabilityWear] 와 같다.
+ */
+fun durabilityWear(shoe: Sneaker, activeSec: Long, rules: ShoeRules = ShoeRules.FALLBACK): Int = rules.wearOf(shoe, activeSec)
+
+/**
+ * 남은 내구도로 가득 적립하며 달릴 수 있는 분(다 채운 분) — 내구도 1 = 12초 ÷ 효율 포인트 배수(서버 0119, 포인트가 없으면 12초).
+ * 이 뒤의 걸음은 일부만 적립된다(0119 — 그 전 서버는 적립하지 않는다, 0066).
  * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 null.
  */
-fun durabilityEarnMinutes(shoe: Sneaker): Int? {
+fun durabilityEarnMinutes(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): Int? {
     val server = shoe.server?.takeIf { it.hasDurabilityMax } ?: return null
-    return (server.durabilityNow.coerceAtLeast(0).toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT / 60).toInt()
+    return (rules.lifeSecOf(shoe, server.durabilityNow) / 60).toInt()
 }
 
 /** 출발 전 점검에서 "약 N분만 보상" 을 알리는 기준(분)의 상한 — 이보다 짧게 남았으면 알린다(짧은 신발은 [lowDurabilityMinutes]) */
@@ -116,32 +129,37 @@ const val LOW_DURABILITY_WARN_MIN = 10
  * 새 일반 신발은 가득 차도 9 ~ 11분이라(최대 45 ~ 55) 예전 10분 기준이면 가득 찬 새 신발에도 알렸고, 수리를 눌러도 "이미 가득"이었다
  * (2026-11-17 점검 #1). 가득 찬 신발은 고칠 것이 없으니 알리지 않는다. 최대 내구도를 모르는 신발도 알리지 않는다.
  */
-fun lowDurabilityMinutes(shoe: Sneaker): Int? {
+fun lowDurabilityMinutes(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): Int? {
     val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 } ?: return null
     if (server.durabilityNow >= server.durabilityMax) return null
-    val left = durabilityEarnMinutes(shoe) ?: return null
-    val full = (server.durabilityMax.toLong() * RewardEconomy.DURABILITY_SEC_PER_POINT / 60).toInt()
+    val left = durabilityEarnMinutes(shoe, rules) ?: return null
+    val full = (rules.lifeSecOf(shoe, server.durabilityMax) / 60).toInt()
     return left.takeIf { it < minOf(LOW_DURABILITY_WARN_MIN, full / 2) }
 }
 
-/** 다 닳았다 — 남은 비율이 0(서버 값). 이 뒤의 걸음은 적립하지 않는다(서버 0066) */
+/**
+ * 다 닳았다 — 남은 비율이 0(서버 값). 이 신발로 걸은 걸음은 일부만 적립된다(서버 0119 worn_rate — 걸음은 그대로 센다).
+ * 0119 전 서버는 적립하지 않는다(0066)
+ */
 fun durabilityWornOut(shoe: Sneaker): Boolean = (shoe.server?.durabilityFactor ?: 1.0) <= 0.0
 
 /**
  * 수리를 앞에 내세울 때 — 다 닳았거나 [lowDurabilityMinutes] 가 알릴 만큼 짧게 남았다.
  * 출발 전 점검(FreeRunStart 의 경고 줄)과 같은 기준이다. 신발 탭 · 상세의 수리 버튼 강조가 이것 하나를 쓴다.
  */
-fun repairUrgent(shoe: Sneaker): Boolean = durabilityWornOut(shoe) || lowDurabilityMinutes(shoe) != null
+fun repairUrgent(shoe: Sneaker, rules: ShoeRules = ShoeRules.FALLBACK): Boolean =
+    durabilityWornOut(shoe) || lowDurabilityMinutes(shoe, rules) != null
 
 /** 수리할 곳이 있다 — 남은 내구도가 최대보다 적다(수리 시트가 견적을 낼 수 있는 신발) */
 fun repairable(shoe: Sneaker): Boolean = durabilityLeft(shoe) < durabilityMax(shoe)
 
 /**
- * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼([durabilityWear])을 미리 뺀다. 정산 때 서버가 같은 규칙으로 뺀다.
+ * 달리는 중의 남은 비율(%) — 이번 러닝으로 닳을 만큼(그 신발의 [durabilityWear] — 효율 포인트를 넣었으면 그 배수만큼 더)을 미리 뺀다.
+ * 정산 때 서버가 같은 규칙으로 뺀다. 다 닳으면 0 에서 멈춘다(더 닳지 않는다).
  * 최대 내구도를 모르는 신발(예전 서버 · 폰에만 있던 신발)은 [durabilityPercent] 그대로다 — 폰에서 닳는 양을 비율로 셀 수 없다.
  */
-fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long): Int {
-    val wear = durabilityWear(activeSec)
+fun durabilityPercentDuringRun(shoe: Sneaker, activeSec: Long, rules: ShoeRules = ShoeRules.FALLBACK): Int {
+    val wear = durabilityWear(shoe, activeSec, rules)
     val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 }
     if (wear == 0 || server == null) return durabilityPercent(shoe)
     val left = (server.durabilityNow - wear).coerceIn(0, server.durabilityMax)
@@ -197,18 +215,24 @@ data class DetailStatRow(
     val fraction: Float,
     val end: String,
     val unit: com.stepup.android.ui.screens.customize.StatUnit = com.stepup.android.ui.screens.customize.StatUnit.NONE,
+    /** ⓘ — 누르면 칸 아래에 한 줄 설명이 펼쳐진다(효율 · 착화감 · 내구도. 레벨은 없다) */
+    val explained: Boolean = false,
+    /** 레벨 칸 — 다음 레벨까지 채운 양 "65.3"(강화 경험치, 0118). 통을 모르거나 만렙이면 null(줄을 보이지 않는다) */
+    val nextLevelPercent: String? = null,
 )
 
 /**
  * 레벨 · 효율 · 착화감 · 내구도 — 레벨은 [Sneaker.level] ÷ [Sneaker.maxLevel](서버의 양수 상한 우선, 없으면 등급 기본값),
  * 나머지 셋은 내 신발 막대와 같은 값 · 기준(statBars — 효율 · 착화감은 지수, 막대 끝은 그 등급에서 가장 잘 뽑힌 새 신발 ·
  * 내구도는 분, 막대 끝은 그 신발의 최대 내구도). 행운 · 원시 착화감은 넣지 않는다.
+ * 레벨 칸에는 강화 경험치(다음 레벨까지 %)를, 나머지 셋에는 ⓘ 설명을 붙인다(2026-11-19).
  */
 fun detailStatRows(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules = com.stepup.android.domain.ShoeRules.FALLBACK): List<DetailStatRow> {
     val level = DetailStatRow(
         DetailStat.LEVEL, "${shoe.level} / ${shoe.maxLevel}",
         com.stepup.android.ui.screens.customize.barFraction(shoe.level.toDouble(), shoe.maxLevel.toDouble()),
         shoe.maxLevel.toString(),
+        nextLevelPercent = shoe.nextLevelPercentText,
     )
     return listOf(level) + com.stepup.android.ui.screens.customize.statBars(shoe, rules).map { bar ->
         val stat = when (bar.stat) {
@@ -216,7 +240,7 @@ fun detailStatRows(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules = c
             com.stepup.android.ui.screens.customize.BarStat.COMFORT -> DetailStat.COMFORT
             com.stepup.android.ui.screens.customize.BarStat.DURABILITY -> DetailStat.DURABILITY
         }
-        DetailStatRow(stat, bar.value, bar.fraction, bar.end, bar.unit)
+        DetailStatRow(stat, bar.value, bar.fraction, bar.end, bar.unit, explained = true)
     }
 }
 

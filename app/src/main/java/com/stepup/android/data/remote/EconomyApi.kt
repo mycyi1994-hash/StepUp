@@ -100,6 +100,13 @@ class EconomyApi(private val server: StepUpServer) : com.stepup.android.data.rep
     /** 상급 뽑기(0042) — 지갑 첫 연결 선물부터, 그다음 러닝으로 받은 기회. 새 신발의 번호를 돌려준다. */
     suspend fun drawPremium(): ServerResult<Long> = rpc("premium_draw", "{}") { it.trim().toLongOrNull() }
 
+    /**
+     * 이 계정에 붙은 지갑 주소(0025 my_wallet 의 address) — 붙은 지갑이 없으면 빈 글자. 연결을 마친 뒤 주소를 보여
+     * 내가 모르는 지갑이 붙었으면 알아챌 수 있게 한다(2026-11-22 보안 점검). 서버가 준 주소만 쓴다
+     */
+    suspend fun myWalletAddress(): ServerResult<String> =
+        rpc("my_wallet", "{}") { serverJson.decodeFromString<List<MyWalletRow>>(it).firstOrNull()?.address.orEmpty() }
+
     /** 지갑 연결 문장(0025 · 0067) — 계정 번호와 10분짜리 일회용 확인 번호가 들어 있다. 처음 연결은 2단계 인증이 필요 없다 */
     suspend fun walletLinkChallenge(): ServerResult<String> =
         rpc("wallet_link_challenge", "{}") { runCatching { serverJson.decodeFromString<String>(it) }.getOrNull() }
@@ -340,6 +347,10 @@ data class ServerSneakerRow(
     /** 내구도 1(10m) 고치는 값 — [repairCostPerPoint] 는 예전 앱이 읽는 1% 값 */
     @SerialName("repair_cost_per_unit") val repairCostPerUnit: Double = 0.0,
 )
+
+/** my_wallet(0025) 한 줄 — 앱은 붙은 주소만 읽는다 */
+@Serializable
+data class MyWalletRow(val address: String? = null)
 
 @Serializable
 data class ChainSettingsRow(

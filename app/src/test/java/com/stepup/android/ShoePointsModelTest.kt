@@ -79,6 +79,23 @@ class ShoePointsModelTest {
         assertEquals(2, basis.total)
     }
 
+    @Test fun `서버 0119 — 내구도 포인트를 바꿔도 남은 내구도는 같은 비율이다(뺐다 넣어 공짜로 채우지 못한다)`() {
+        // 서버가 능력치 규칙(stats 묶음)을 준 뒤 — sneaker_points_set 이 비율을 지킨다
+        val rules = ShoeRules.FALLBACK.copy(stats = com.stepup.android.domain.StatRule.FALLBACK.copy(fromServer = true))
+        // 일반 · 기본 200 · 내구도 포인트 50(최대 300) · 절반 남음
+        val half = requireNotNull(pointsBasisOf(shoe(level = 20, total = 50, free = 0, durability = 50, respec = true, base = 200, now = 150), rules))
+        assertEquals(300, half.durabilityMax(half.saved))
+        assertEquals(100, half.durabilityNow(PointsDraft(efficiency = 50)))          // 최대 200 · 절반 그대로
+        // 다 닳은 신발은 포인트를 넣어도 0, 가득 찬 신발은 가득
+        val empty = requireNotNull(pointsBasisOf(shoe(level = 20, total = 50, free = 50, base = 200, now = 0), rules))
+        assertEquals(0, empty.durabilityNow(PointsDraft(durability = 50)))
+        val full = requireNotNull(pointsBasisOf(shoe(level = 20, total = 50, free = 50, base = 200, now = 200), rules))
+        assertEquals(300, full.durabilityNow(PointsDraft(durability = 50)))
+        // 0119 전 서버(규칙을 못 받았을 때 포함)는 늘어난 만큼 더한다
+        val old = requireNotNull(pointsBasisOf(shoe(level = 20, total = 50, free = 50, base = 200, now = 0)))
+        assertEquals(100, old.durabilityNow(PointsDraft(durability = 50)))
+    }
+
     @Test fun `등급이 높을수록 포인트 1 의 폭이 크다 — 피니시는 뽑은 값의 +1_8퍼센트`() {
         val rules = ShoeRules.FALLBACK
         val finish = requireNotNull(pointsBasisOf(shoe(level = 2, total = 8, free = 8, effBase = 96_000, rarity = Rarity.FINISH), rules))

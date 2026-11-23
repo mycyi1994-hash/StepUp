@@ -34,10 +34,10 @@
     <string name="v4s_repair_partial_done">Repaired as much as your SUP covered. Repair the rest when you have more SUP.</string>
 
     <string name="v4s_upg_materials_rule">3 shoes, one grade lower or above, %1$d%%+ durability</string>
-    <string name="v4s_upg_gain_energy">+%1$d daily energy (when it\'s your highest-level shoe)</string>
+    <string name="v4s_upg_gain_energy">+%1$s daily energy (when it\'s your highest-level shoe)</string>
     <string name="v4s_upg_gain_milestone">Lv. %1$d — full durability · 1 premium box (the first time your account reaches this level)</string>
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — full durability (this level\'s premium box is already claimed)</string>
     <string name="v4s_upg_repair_note">Raising efficiency raises the repair cost at the same rate.</string>
     <string name="v4s_upg_got_milestone">Durability is full. If this is the first time you reached this level, 1 premium box is added to your draws.</string>
-    <string name="v4s_upg_block_worn" formatted="false">Only shoes with 50% durability or more can be materials</string>
+    <string name="v4s_upg_block_worn">Too worn to use as material — repair it first</string>
 </resources>

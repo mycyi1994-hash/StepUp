@@ -346,7 +346,7 @@
     <string name="analytics_title">Analytics</string>
     <string name="analytics_tab_week">Week</string>
     <string name="analytics_tab_quarter">3 months</string>
-    <string name="analytics_goal_days">Goal met</string>
+    <string name="analytics_goal_days">All-day steps goal met</string>
     <string name="analytics_days_of">%1$d / %2$d days</string>
     <string name="analytics_days_count">%1$d days</string>
     <string name="analytics_active_days">Days walked</string>
@@ -369,7 +369,7 @@
     <string name="analytics_all">All time</string>
     <string name="analytics_daily_avg">Daily average</string>
     <string name="analytics_best_day">Best day</string>
-    <string name="analytics_goal_rate">Goal hit rate</string>
+    <string name="analytics_goal_rate">All-day steps goal rate</string>
     <string name="analytics_recent_runs">Recent runs</string>
     <string name="analytics_no_runs">No runs recorded yet</string>
 
@@ -624,7 +624,7 @@
     <string name="ach_goal_sup">Earn %1$s SUP in total</string>
     <string name="ach_goal_mint">Mint %1$s sneakers</string>
     <string name="ach_goal_collection">Collect %1$s album slots</string>
-    <string name="ach_goal_upgrade">Upgrade sneakers %1$s times</string>
+    <string name="ach_goal_upgrade">Level up sneakers %1$s times</string>
     <string name="ach_goal_party">Finish %1$s party runs</string>
     <string name="ach_goal_event">Claim %1$s event rewards</string>
     <string name="ach_goal_crew">Join %1$s crews</string>
@@ -1242,7 +1242,7 @@ Start running with StepUp.</string>
     <string name="challenge_today_sub">Small goals, steady running</string>
     <string name="challenge_tag_daily">Daily</string>
     <string name="challenge_tag_weekly">Weekly</string>
-    <string name="challenge_daily_title">Hit today\'s step goal</string>
+    <string name="challenge_daily_title">Hit today\'s run goal</string>
     <string name="challenge_daily_desc">The bonus is added automatically when you reach it.</string>
     <string name="challenge_daily_streak_note">More with a streak</string>
     <string name="challenge_refer_desc">Invite friends to StepUp. Invite counting is not ready yet, so no progress is shown.</string>
@@ -1312,7 +1312,7 @@ Start running with StepUp.</string>
     <string name="home_goal_suffix"> / %1$s steps</string>
     <string name="home_shortcut_news">News</string>
     <string name="home_energy_can">You can still earn for %1$s steps today</string>
-    <string name="home_energy_empty">Today\'s earning limit is used up</string>
+    <string name="home_energy_empty">Today\'s SUP earning limit is used up (run steps still count toward boxes and your goal)</string>
     <string name="home_start_run">Start run</string>
     <string name="items_vault_title">Shoe vault</string>
     <string name="market_runner_title">Runner Market</string>
@@ -1423,7 +1423,7 @@ Start running with StepUp.</string>
     <string name="course_rank_empty">No records yet. Pick this course and finish it — we check your route and rank you.</string>
     <string name="course_rank_me">%1$s (me)</string>
     <string name="notification_channel_reminder">Goal reminders</string>
-    <string name="reminder_goal_title">%1$d steps left to today\'s goal</string>
+    <string name="reminder_goal_title">%1$d run steps left to today\'s goal</string>
     <string name="reminder_goal_body">How about a quick run to hit your goal?</string>
     <string name="splash_prepare_failed">Could not prepare the app. Please try again.</string>
     <string name="run_location_disabled">Location access off</string>
@@ -1524,7 +1524,7 @@ Start running with StepUp.</string>
     <string name="setup_decrease">Decrease %1$s</string>
     <string name="setup_goal_kicker">First setup · Goal</string>
     <string name="setup_goal_title">Set a target weight and period</string>
-    <string name="setup_goal_subtitle">Your daily step goal is %1$s steps</string>
+    <string name="setup_goal_subtitle">Your daily run goal is %1$s steps</string>
     <string name="setup_goal_weeks">%1$d weeks</string>
     <string name="setup_goal_weekly">about %1$skg a week</string>
     <string name="setup_goal_bmi">target BMI %1$s</string>

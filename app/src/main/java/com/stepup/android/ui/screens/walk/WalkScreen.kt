@@ -113,6 +113,7 @@ import com.stepup.android.domain.GeoPoint
 import com.stepup.android.domain.RunVerdict
 import com.stepup.android.core.ExternalIntents
 import com.stepup.android.domain.RewardEconomy
+import com.stepup.android.domain.energyMultOf
 import com.stepup.android.domain.RunCourse
 import com.stepup.android.service.RunLap
 import com.stepup.android.service.WalkSessionService
@@ -243,10 +244,6 @@ fun RunScreen(
     val earningMultiplier = equipped?.earningMultiplier
         ?: RewardEconomy.sneakerMultiplier(sneakerLevel)
     val energyEfficiency = equipped?.energyEfficiency ?: 1.0
-    // 신발이 다 닳은 뒤의 걸음은 적립하지 않는다(서버 0066) — 달리는 중 예상도 같은 규칙으로(정산은 RewardRepository)
-    val estimateSteps = equipped?.server?.takeIf { it.hasDurabilityMax }?.let {
-        RewardEconomy.stepsWithinDurability(session.steps, it.durabilityNow, session.elapsedSec)
-    } ?: session.steps
     // 크루 러닝(크루 방에서 2명 이상 출발) — 오늘 크루 공용 체력(서버 0071). 5초마다 서버에 내 상태를 알리고 받은 값(남은 체력 ·
     // 인원 판정 · 레벨)으로 보인다. 예상 보상 = 고른 신발 기준 × (1 + 확정된 인원 보너스 + 레벨 보너스) — 확정은 서버가 정산한 뒤다
     val crewRunGroup = session.isActive && session.group == com.stepup.android.service.RunGroup.CREW &&
@@ -297,21 +294,32 @@ fun RunScreen(
             pointsPerStep = shoeRules.pointsPerStep,
         )
     } else {
-        RewardEconomy.sessionReward(
-            walkedSteps = estimateSteps,
+        // 혼자 러닝 — 신발 수명(남은 내구도 × 12초 ÷ 효율 포인트 배수)까지의 걸음은 다, 그 뒤의 걸음은 서버 규칙의 비율만큼
+        // (0119 — 30%, 걸음은 그대로 센다. 그 전 규칙이면 적립하지 않는다 0066). 러닝을 마칠 때의 예상(RewardRepository)과 같은 셈이다
+        RewardEconomy.shoeSessionReward(
+            steps = session.steps,
+            activeSec = session.elapsedSec,
             energyRemaining = energy,
-            earningMultiplier = earningMultiplier,
-            energyEfficiency = energyEfficiency,
-            // 크루 방에서 크루 러닝이 아니면(오늘 이미 했다) 인원 보너스도 없다
-            partyMultiplier = if (crewRunGroup) 1.0 else RewardEconomy.partyMultiplier(session.partySize),
+            shoe = equipped,
+            rules = shoeRules,
+            fallbackMultiplier = RewardEconomy.sneakerMultiplier(sneakerLevel),
+            // 크루 방에서 크루 러닝이 아니면(오늘 이미 했다) 인원 보너스도 없다. 번개 · 옛 방은 함께 달린 사람만 세는 규칙(0120 ACTIVE)이면
+            // 올릴 때 인원 배수가 없다(× 1 — 함께 달린 사람이 올릴 때마다 서버가 더한다). 예전 규칙이면 함께 출발한 인원으로
+            partyMultiplier = if (crewRunGroup) 1.0 else shoeRules.together.forFlash().uploadPartyMultiplier(session.partySize),
             boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0,
-            pointsPerStep = shoeRules.pointsPerStep,
         )
     }
     val earnableSteps = if (crewPoolRun) {
         if (crewEmpty) 0 else Int.MAX_VALUE
-    } else RewardEconomy.earnableSteps(energy, energyEfficiency)
-    val maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: sneakerLevel)
+    } else {
+        // 효율 포인트를 넣은 신발은 그 배수만큼 에너지를 더 쓴다(0119)
+        RewardEconomy.earnableSteps(energy, energyEfficiency, equipped?.let { shoeRules.energyMultOf(it) } ?: 1.0)
+    }
+    val maxEnergy = RewardEconomy.maxEnergy(equipped?.level ?: sneakerLevel, shoeRules.stats)
+    // 크루 효율 8 : 2(0120 · 0122) — 서버는 올릴 때 내 신발과 "내 신발 80% + 함께 달린 크루원 평균 20%" 가운데 낮은 쪽으로 주고,
+    // 함께 달린 사람이 정해질 때마다 차이를 더한다. 이 폰은 방 사람들의 신발 효율을 모르니 금액을 보이지 않는다(서버가 치르지 않을 수 있는
+    // 숫자를 보이지 않는다) — 규칙만 한 줄로. 규칙을 아직 못 받았으면(기본값) 섞는 쪽으로 본다
+    val crewBlendRun = crewPoolRun && shoeRules.together.mayBlend
     // 이 러닝의 거리 — 화면 · 결과 · 기록 · 서버와 같은 기준(RunDistance: 경로 100m 부터 GPS, 그 전엔 걸음). 나이트 러너 도전 띠의 이번
     // 러닝 몫도 이것이다(서버가 친 거리로 센다) — 예전엔 걸음 거리라 바깥에서 띠와 서버 진행이 달랐다(2026-10-19 점검)
     val distanceKm = com.stepup.android.domain.RunDistance.liveKm(session.gpsKm, session.steps)
@@ -370,7 +378,8 @@ fun RunScreen(
         if (session.still && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
     }
     LaunchedEffect(session.shoeWornOut) {
-        // 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다. 소리 · 진동으로 한 번(2026-10-19 "내구도 다 소모하면 따로 안내")
+        // 신발 내구도를 다 썼다 — 이제부터 걸음은 일부만 적립된다(서버 0119 — 걸음은 그대로 센다. 그 전 규칙이면 보상이 없다).
+        // 소리 · 진동으로 한 번(2026-10-19 "내구도 다 소모하면 따로 안내") — 글은 띠 · 알림이 규칙에 맞게 말한다(shoeWornBandText)
         if (session.shoeWornOut && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
     }
     LaunchedEffect(session.overspeed?.since) {
@@ -663,14 +672,16 @@ fun RunScreen(
         placeAt?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
     }
     // 신은 신발의 남은 비율(%) — 러닝 화면의 작은 칸 · 결과. 달리는 동안은 이번 러닝으로 닳을 만큼(달린 1분마다 5 — 움직였든 서 있었든,
-    // 서버 0064 · 0068)을 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하고 그 뒤 동기화가 신발 사본을 새로 받을 때까지는 미리 뺀 값을
-    // 보인다 — 예전엔 결과에서 러닝 전 값(100%)으로 되돌아가 "안 닳는다"로 보였다(2026-10-17 점검), 확인된 순간 동기화 전에도 그랬다
-    // (2026-11-03 점검). 사본이 새로 온 뒤에는 서버가 정산하며 뺀 값을 그대로 보인다(두 번 빼지 않게). 무효 러닝은 닳지 않는다
+    // 서버 0064 · 0068. 효율 포인트를 넣은 신발은 그 배수만큼 더, 0119)을 미리 뺀다. 끝난 뒤에도 서버가 이 러닝을 확인하고 그 뒤 동기화가
+    // 신발 사본을 새로 받을 때까지는 미리 뺀 값을 보인다 — 예전엔 결과에서 러닝 전 값(100%)으로 되돌아가 "안 닳는다"로 보였다
+    // (2026-10-17 점검), 확인된 순간 동기화 전에도 그랬다(2026-11-03 점검). 사본이 새로 온 뒤에는 서버가 정산하며 뺀 값을 그대로
+    // 보인다(두 번 빼지 않게). 무효 러닝은 닳지 않는다
     val freeDurability = equipped?.let {
         when {
-            session.isActive && !freeVoid -> com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.elapsedSec)
+            session.isActive && !freeVoid ->
+                com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.elapsedSec, shoeRules)
             !session.isActive && session.lastElapsedSec > 0 && session.lastVerdict != RunVerdict.VOID && !lastShoeSettled ->
-                com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.lastElapsedSec)
+                com.stepup.android.ui.screens.items.durabilityPercentDuringRun(it, session.lastElapsedSec, shoeRules)
             else -> com.stepup.android.ui.screens.items.durabilityPercent(it)
         }
     }
@@ -946,7 +957,8 @@ fun RunScreen(
                     onRetryDelete = retryFreeDelete,
                     onDeleteBack = { deleteFailed = null },
                     penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null,
-                    shoeNote = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null,
+                    // 이 러닝에서 신발이 다 닳았다 — 그 뒤 걸음은 N%만 적립되고 걸음은 그대로 센다(0119, 예전 규칙이면 보상 없음)
+                    shoeNote = if (session.lastShoeWornOut) shoeWornResultText(shoeRules) else null,
                     // 보상의 운(0116) — 서버가 이 러닝을 확인하고 적립이 있을 때만 한 줄
                     luckNote = lastLuckText,
                     // 다 쓴 신발을 바로 고칠 수 있게 — 신고 있는 신발의 수리 시트(신발 탭과 같은 수리)
@@ -1000,6 +1012,23 @@ fun RunScreen(
                         wait = (wait * 2).coerceAtMost(CREW_OUTCOME_RETRY_MAX_MS)
                     }
                 }
+                // 함께 달린 보너스는 친구가 러닝을 올릴 때마다 서버가 더한다(0120) — 결과로 돌아올 때마다 한 번, 보고 있는 동안은
+                // 출발 뒤 더하는 시간 안에서만 1분마다 다시 읽는다(처음 한 번은 위에서 읽는다)
+                val togetherRule = shoeRules.together
+                var outcomeResumed by remember(session.lastStartedAt) { mutableStateOf(false) }
+                val outcomeScope = androidx.compose.runtime.rememberCoroutineScope()
+                androidx.lifecycle.compose.LifecycleResumeEffect(session.lastStartedAt, groupRun, recorded, togetherRule.active) {
+                    val job = if (groupRun && recorded) outcomeScope.launch {
+                        val crewRunRepo = com.stepup.android.core.ServiceLocator.crewRun
+                        if (outcomeResumed) crewRunRepo.loadOutcome(session.lastStartedAt)
+                        outcomeResumed = true
+                        while (togetherRule.topupOpen(session.lastStartedAt, System.currentTimeMillis())) {
+                            kotlinx.coroutines.delay(CREW_OUTCOME_TOGETHER_REFRESH_MS)
+                            crewRunRepo.loadOutcome(session.lastStartedAt)
+                        }
+                    } else null
+                    onPauseOrDispose { job?.cancel() }
+                }
                 val outcome = outcomeSlot?.value
                 val m = com.stepup.android.domain.CrewRunMath
                 val crewLines = when {
@@ -1011,11 +1040,18 @@ fun RunScreen(
                         // 금액 줄(기본 · 인원 · 레벨 · 합)은 적립이 있을 때만 — 0 이면 아래 까닭 줄만 둔다
                         if (crewMoneyLines(outcome.total)) {
                             val counted = outcome.bonus.status == com.stepup.android.domain.CrewBonusStatus.CONFIRMED && outcome.bonus.count >= 2
-                            add(stringResource(R.string.crew_result_base, m.sup(outcome.base)))
-                            add(
-                                if (counted) stringResource(R.string.crew_result_headcount, outcome.bonus.count, m.percent(outcome.headcountPct), m.sup(outcome.headcount ?: 0.0))
-                                else stringResource(R.string.crew_result_headcount_none),
+                            // 함께 달린 사람만 세는 규칙(0120) — 인원 · 보너스는 친구가 올릴 때마다 늘 수 있다. 아래 한 줄이 그것을 말한다
+                            val togetherLine = togetherResultText(
+                                togetherResultLine(togetherRule, outcome, session.lastStartedAt, System.currentTimeMillis()),
                             )
+                            add(stringResource(R.string.crew_result_base, m.sup(outcome.base)))
+                            when {
+                                counted -> add(stringResource(R.string.crew_result_headcount, outcome.bonus.count, m.percent(outcome.headcountPct), m.sup(outcome.headcount ?: 0.0)))
+                                // "혼자 출발해"가 아니다 — 함께 출발했지만 아직 · 끝내 함께 달린 사람이 둘이 안 됐다
+                                togetherRule.fromServer && togetherRule.active -> if (togetherLine == null) add(stringResource(R.string.tb_result_headcount_none))
+                                else -> add(stringResource(R.string.crew_result_headcount_none))
+                            }
+                            togetherLine?.let { add(it) }
                             add(stringResource(R.string.crew_result_level_bonus, outcome.levelBefore ?: 1, m.percent(outcome.levelPct), m.sup(outcome.level ?: 0.0)))
                             add(stringResource(R.string.crew_result_total, m.sup(outcome.base), m.percent(outcome.headcountPct), m.percent(outcome.levelPct), m.sup(outcome.total)))
                             // 보상의 운(0116) — 크루 적립에도 곱했다(서버가 준 값)
@@ -1035,6 +1071,18 @@ fun RunScreen(
                 }
                 val levelUp = outcome?.takeIf { recorded && it.levelUp }?.levelAfter
                     ?.let { stringResource(R.string.crew_result_level_up, it) }
+                // 오늘의 보상(0118) — 크루 체력을 다 쓴 뒤 걸음은 보상 걸음(상자 · 목표)에 들지 않는다. 그 러닝의 서버 까닭에 있을 때만 한 줄.
+                // 서버 0119(닳은 뒤에도 적립하는 규칙)부터는 경로로 확인된 걸음을 모두 센다 — 크루 체력이 비었어도. 그때는 이 줄을 두지 않는다
+                val rewardStepsOn by remember {
+                    if (com.stepup.android.core.ServiceLocator.serverEconomyOn) com.stepup.android.core.ServiceLocator.shoeRules.daily
+                    else kotlinx.coroutines.flow.MutableStateFlow(null)
+                }.collectAsStateWithLifecycle()
+                val lastServerReason by viewModel.lastServerReason.collectAsStateWithLifecycle()
+                val staminaCuts = rewardStepsOn != null && !shoeRules.stats.earnsWhenWorn
+                val staminaNote = if (
+                    com.stepup.android.domain.RunVerdictReason.crewStaminaOut(lastServerReason, staminaCuts) ||
+                    com.stepup.android.domain.RunVerdictReason.crewStaminaOut(outcome?.reason?.takeIf { recorded }, staminaCuts)
+                ) stringResource(R.string.dr_crew_stamina_note) else null
                 CrewRunResult(
                     ui = CrewResultUi(
                         crewName = crewTitle,
@@ -1050,6 +1098,7 @@ fun RunScreen(
                         room = outcome?.partyName?.let { room ->
                             listOfNotNull(room, outcome.courseName?.let { c -> outcome.courseKm?.let { "$c ${courseKm(it)}km" } ?: c }).joinToString(" · ")
                         },
+                        rewardStepsNote = staminaNote,
                     ),
                     reward = reward,
                     map = if (geoTrack.size >= 2) ({
@@ -1380,9 +1429,10 @@ fun RunScreen(
                                 kind = RunNoticeKind.Warn, action = stringResource(R.string.run_pause),
                                 onAction = { WalkSessionService.pause(context) }, tag = "run-still")
                         }
-                        // 신발 내구도를 다 썼다 — 이제부터 걸음은 보상이 없다(기록은 그대로 이어진다, 2026-10-19)
+                        // 신발 내구도를 다 썼다 — 이제부터 걸음은 N%만 적립된다(0119 — 걸음은 그대로 센다, 수리하면 다시 100%).
+                        // 예전 규칙이면 보상이 없다(기록은 그대로 이어진다, 2026-10-19)
                         if (session.isActive && session.shoeWornOut && !voidNow) {
-                            RunNotice(stringResource(R.string.run_shoe_worn_band), body = stringResource(R.string.run_shoe_worn_body),
+                            RunNotice(shoeWornBandText(shoeRules), body = shoeWornBodyText(shoeRules),
                                 kind = RunNoticeKind.Warn, tag = "run-shoe-worn")
                         }
                         if (recordingCourse && !readyToSaveCourse) {
@@ -1482,8 +1532,9 @@ fun RunScreen(
             val wearing by viewModel.wearing.collectAsStateWithLifecycle()
             // 아직 서버가 빼지 않은(또는 이 폰 사본에 아직 들지 않은) 러닝의 닳음을 미리 뺀다 — 화면에만(2026-11-03 점검).
             // 러닝 줄에 적힌 출발 신발마다 뺀다(신발 고르기 목록도). 출발 신발을 모르는 예전 줄만 지금 신은 신발에서(2026-11-17 점검 #14)
+            // 효율 포인트를 넣은 신발은 그 배수만큼 더 닳았다(0119) — 신발마다 그 신발의 배수로
             val pendingWear by viewModel.pendingShoeWear.collectAsStateWithLifecycle()
-            val checkShoe = equipped?.let { it.withPendingWear(pendingWear.of(it)) }
+            val checkShoe = equipped?.let { it.withPendingWear(pendingWear.of(it, shoeRules)) }
             // 이번 러닝에 쓸 아이템(0106) — 점검이 열릴 때 가방을 다시 읽고, 지난번에 고르다 만 것은 비운다
             val itemsRepo = com.stepup.android.core.ServiceLocator.itemsRepository
             val bag by itemsRepo.bag.collectAsStateWithLifecycle()
@@ -1495,14 +1546,24 @@ fun RunScreen(
             // 오늘 적립 한도(에너지) — 읽은 값으로만(읽기 전 0 으로 단정하지 않는다). 다 썼어도 출발은 그대로
             val energyNow by viewModel.energyKnown.collectAsStateWithLifecycle()
             FreeRunShoeCheck(
-                energyUsedUp = energyUsedUp(energyNow, checkShoe?.energyEfficiency ?: 1.0),
+                energyUsedUp = energyUsedUp(
+                    energyNow, checkShoe?.energyEfficiency ?: 1.0, checkShoe?.let { shoeRules.energyMultOf(it) } ?: 1.0,
+                ),
+                // 신발 줄의 "약 N분 동안 적립돼요"는 신발 수명과 오늘 남은 에너지 가운데 먼저 끝나는 쪽(2026-11-22 경제 점검) —
+                // 고른 에너지 드링크(그 비율만큼만 쓴다)까지. 에너지를 모르면 null(분을 약속하지 않는다)
+                energySteps = todayEarnableSteps(
+                    energyNow, checkShoe, shoeRules,
+                    com.stepup.android.domain.RunItemPicks.energyFactor(pickedItems, bag),
+                ),
                 runItems = bag?.runPicks.orEmpty(),
                 pickedItems = pickedItems,
                 onPickItem = itemsRepo::toggle,
                 // 보상 이벤트 · 24시간 부스터가 이미 켜져 있으면 그보다 크지 않은 배수 아이템은 고르지 못한다(쓰면 아이템만 사라진다)
                 coveredRewardMult = bag?.activeRewardMult(System.currentTimeMillis()) ?: 1.0,
                 shoe = checkShoe,
-                shoes = shoes.map { if (checkShoe != null && it.id == checkShoe.id) checkShoe else it.withPendingWear(pendingWear.of(it)) },
+                shoes = shoes.map {
+                    if (checkShoe != null && it.id == checkShoe.id) checkShoe else it.withPendingWear(pendingWear.of(it, shoeRules))
+                },
                 wearing = wearing,
                 onWear = viewModel::wear,
                 // 다 닳았으면 수리로 — 신발 탭과 같은 수리 시트를 이 화면에서 연다
@@ -1628,7 +1689,8 @@ fun RunScreen(
                         ((if (freeRunNow) (freeDist as? FreeDistance.Km)?.km ?: 0.0 else liveKm) / detailsGoalKm).toFloat().coerceIn(0f, 1f)
                     } else 0f,
                     // 자유 러닝에는 보상 칸을 두지 않는다(2026-10-14 v2)
-                    estimate = if (freeRunNow) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
+                    // 크루 효율을 섞는 크루 러닝은 금액을 올린 뒤에 정한다 — 보상 칸을 두지 않는다(아래 까닭 줄이 규칙을 말한다)
+                    estimate = if (freeRunNow || crewBlendRun) null else "+" + rewardAmount(estimate.points), courseName = course?.name,
                     speed = (if (freeRunNow) freeSpeed else speedKmh)?.let { "%.1f".format(it) } ?: "—",
                     durability = freeDurability?.toString() ?: "—",
                     // 자유 러닝은 측정 까닭만 — 적립 한도 · 부스터 · 크루 보너스 같은 보상 줄은 두지 않는다
@@ -1647,12 +1709,25 @@ fun RunScreen(
                         }
                         if (xpBoosted) add(context.getString(R.string.run_boost_active))
                         when {
+                            // 크루 효율을 섞으면 숫자 없이 — "함께 달린 인원은 기록을 올린 뒤 정해져요 · Lv +N%" · "효율은 내 신발 80% + 평균 20%"
+                            crewBlendRun -> {
+                                add(context.getString(R.string.tb_live_counting, com.stepup.android.domain.CrewRunMath.percent(crewLevelPct)))
+                                val blend = shoeRules.together.blendShare
+                                add(context.getString(
+                                    R.string.tb_blend_note, com.stepup.android.domain.CrewRunMath.percent(1.0 - blend),
+                                    com.stepup.android.domain.CrewRunMath.percent(blend),
+                                ))
+                            }
                             crewPoolRun -> add(context.getString(
                                 R.string.run_crew_estimate_rule, com.stepup.android.domain.CrewRunMath.percent(crewBonusPct),
                                 com.stepup.android.domain.CrewRunMath.percent(crewLevelPct),
                             ))
                             crewRunGroup -> add(context.getString(R.string.crew_lobby_done_today))
-                            session.partySize > 1 -> add(context.getString(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)))
+                            // 번개 · 옛 방 — 함께 달린 사람만 세는 규칙(0120)이면 인원은 올린 뒤 정해진다("+N%"를 미리 말하지 않는다)
+                            session.partySize > 1 -> add(
+                                if (shoeRules.together.forFlash().active) context.getString(R.string.tb_live_counting_plain)
+                                else context.getString(R.string.crew_boost, RewardEconomy.partyBonusPercent(session.partySize)),
+                            )
                         }
                     },
                 ),
@@ -2013,6 +2088,9 @@ private const val OFF_COURSE_MS = 15_000L
 private const val CREW_OUTCOME_RETRY_FIRST_MS = 3_000L
 private const val CREW_OUTCOME_RETRY_MAX_MS = 60_000L
 private const val CREW_OUTCOME_RETRY_FOR_MS = 5 * 60_000L
+
+/** 함께 달린 보너스가 더해질 수 있는 동안(0120) 결과를 보고 있으면 다시 읽는 간격 */
+private const val CREW_OUTCOME_TOGETHER_REFRESH_MS = 60_000L
 
 /** "12분 30초" — 마칠까요 · 기록 없이 끝낼까요 · 삭제 확인의 한 줄 */
 @Composable
@@ -2788,8 +2866,9 @@ private fun finishReward(session: WalkSessionState, points: Double?, upload: Str
     val reward = stringResource(R.string.result_reward)
     // 과속이 30초 이어져 앱이 멈춘 러닝 — 패널티를 맨 앞에 알린다(보상 규칙은 그대로다)
     val penalty = if (session.lastOverspeedStopped) stringResource(R.string.run_overspeed_result) else null
-    // 이 러닝에서 신발 내구도를 다 썼다 — 그 뒤 걸음은 보상에 들지 않았다(2026-10-19 "내구도 다 소모하면 따로 안내")
-    val shoeWorn = if (session.lastShoeWornOut) stringResource(R.string.run_shoe_worn_result) else null
+    // 이 러닝에서 신발 내구도를 다 썼다(2026-10-19 "내구도 다 소모하면 따로 안내") — 그 뒤 걸음은 N%만 적립되고 걸음은 그대로 센다
+    // (서버 0119). 예전 규칙이면 보상에 들지 않았다
+    val shoeWorn = if (session.lastShoeWornOut) shoeWornResultText() else null
     val extra = listOfNotNull(penalty, shoeWorn)
     return finishRewardLines(session, points, upload, sync, voided, nothingToUpload, noReward, reward).let { r ->
         if (extra.isNotEmpty()) r.copy(notes = extra + r.notes) else r

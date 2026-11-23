@@ -342,20 +342,35 @@ private fun upgradeLabel(stat: DetailStat): String = stringResource(
 /**
  * 강화 화면의 독립된 세 줄 — 각 줄이 둥근 파란 칸 하나, "항목명 · 입체 막대 · 지금 → 다음". 세 줄을 다시 감싸는 카드는 없다.
  * [rows] 의 next 가 없으면(최대 · 결과 미확인) 지금 값만, 막대에 증가 구간을 그리지 않는다. 레벨 분모는 실제 상한([maxLevel]).
+ * 경험치 강화는 한 번에 여러 레벨이 오를 수 있다 — 레벨 줄의 next 는 오른 뒤의 레벨 그대로(3 → 5). 견적은 대성공 없는 최소라
+ * [levelAtLeast] 면 그 레벨 끝에 "+"를 붙인다(3 → 5+ — 읽기 도구는 "5 이상").
  */
 @Composable
-fun UpgradeStatRows(rows: List<UpgradeRow>, maxLevel: Int, modifier: Modifier = Modifier, previewBars: Boolean = true) {
+fun UpgradeStatRows(
+    rows: List<UpgradeRow>,
+    maxLevel: Int,
+    modifier: Modifier = Modifier,
+    previewBars: Boolean = true,
+    levelAtLeast: Boolean = false,
+) {
     val labels = rows.map { upgradeLabel(it.stat) }
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val base = LocalTextStyle.current
     val labelStyle = remember(base) { base.merge(TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold)) }
     val valueStyle = remember(base) { base.merge(TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")) }
-    fun valueText(row: UpgradeRow): String =
+    // 최소값 표시 — 보이는 글은 "5+", 읽기 도구는 "5 이상"(레벨이 최대면 붙이지 않는다)
+    val levelNext = rows.firstOrNull { it.stat == DetailStat.LEVEL }?.next
+    val atLeast = levelAtLeast && levelNext != null && levelNext.toIntOrNull()?.let { it < maxLevel } != false
+    val levelNextShown = if (atLeast) "$levelNext+" else levelNext
+    val levelNextSpoken = if (atLeast) stringResource(R.string.fxp_at_least_cd, levelNext.orEmpty()) else levelNext
+    fun valueText(row: UpgradeRow, spoken: Boolean = false): String =
         if (row.stat == DetailStat.LEVEL) {
-            (if (row.next != null) "${row.now} → ${row.next}" else row.now) + " / $maxLevel"
+            val next = if (spoken) levelNextSpoken else levelNextShown
+            (if (row.next != null) "${row.now} → $next" else row.now) + " / $maxLevel"
         } else if (row.next != null) "${row.now} → ${row.next}" else row.now
-    val texts = rows.map(::valueText)
+    val texts = rows.map { valueText(it) }
+    val spokenTexts = rows.map { valueText(it, spoken = true) }
     val (labelWidth, valueWidth) = remember(labels, texts, labelStyle, valueStyle, density) {
         with(density) {
             (labels.maxOf { measurer.measure(it, labelStyle, softWrap = false).size.width } + 1).toDp() to
@@ -375,7 +390,9 @@ fun UpgradeStatRows(rows: List<UpgradeRow>, maxLevel: Int, modifier: Modifier = 
                     append(row.now)
                     if (row.next != null) {
                         append(" → ")
-                        withStyle(SpanStyle(color = accent, fontWeight = FontWeight.ExtraBold)) { append(row.next) }
+                        withStyle(SpanStyle(color = accent, fontWeight = FontWeight.ExtraBold)) {
+                            append(if (row.stat == DetailStat.LEVEL) levelNextShown ?: row.next else row.next)
+                        }
                     }
                     if (row.stat == DetailStat.LEVEL) {
                         withStyle(SpanStyle(color = CartoonColors.Number)) { append(" / $maxLevel") }
@@ -383,7 +400,7 @@ fun UpgradeStatRows(rows: List<UpgradeRow>, maxLevel: Int, modifier: Modifier = 
                 }
                 val cell = Modifier.fillMaxWidth().heightIn(min = 52.dp)
                     .background(CartoonColors.Cell, RoundedCornerShape(14.dp))
-                    .semantics(mergeDescendants = true) { contentDescription = labels[index] + " " + texts[index] }
+                    .semantics(mergeDescendants = true) { contentDescription = labels[index] + " " + spokenTexts[index] }
                     .testTag("upgrade-row-" + row.stat.name.lowercase())
                     .padding(horizontal = 12.dp, vertical = 6.dp)
                 val bar = @Composable { m: Modifier ->
@@ -415,13 +432,17 @@ fun UpgradeStatRows(rows: List<UpgradeRow>, maxLevel: Int, modifier: Modifier = 
     }
 }
 
-/** 시트 안 내구도 한 줄(수리) — "내구도 · 막대(지금 → 가득 미리보기) · 680 → 1,230"(1 = 10m, 막대 끝은 그 신발의 최대 내구도) */
+/**
+ * 시트 안 내구도 한 줄(수리) — "내구도 · 막대(지금 → 가득 미리보기) · 680 → 1,230"(1 = 12초, 막대 끝은 그 신발의 최대 내구도).
+ * [minutesOf] 가 있으면(최대 내구도를 아는 신발) 내구도를 그 신발이 달리는 분으로 보인다 — 효율에 포인트를 넣은 신발은 그만큼 짧다([lifeMinutes])
+ */
 @Composable
-fun RepairDurabilityRow(now: Int, max: Int, to: Int?, modifier: Modifier = Modifier, minutes: Boolean = false) {
+fun RepairDurabilityRow(now: Int, max: Int, to: Int?, modifier: Modifier = Modifier, minutesOf: ((Int) -> Double)? = null) {
     val shown = now.coerceIn(0, maxOf(max, 0))
     // 최대 내구도를 아는 신발은 달릴 수 있는 분으로(경제 4판) — "28 → 31분", 가진 만큼 수리처럼 작은 차이는 소수 한 자리
-    val text = if (minutes) {
-        minutesText(if (to != null) "${formatMinutes(shown)} → ${formatMinutes(to)}" else "${formatMinutes(shown)} / ${formatMinutes(max)}")
+    val text = if (minutesOf != null) {
+        val minutes = { units: Int -> formatMinutes(minutesOf(units)) }
+        minutesText(if (to != null) "${minutes(shown)} → ${minutes(to)}" else "${minutes(shown)} / ${minutes(max)}")
     } else if (to != null) "${formatCount(shown)} → ${formatCount(to)}" else "${formatCount(shown)} / ${formatCount(max)}"
     val label = stringResource(R.string.sdv_stat_durability)
     Row(

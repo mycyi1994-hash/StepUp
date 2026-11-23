@@ -173,6 +173,8 @@ fun CommentSheet(
         if (index >= 0) listState.animateScrollToItem(index)
     }
 
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),

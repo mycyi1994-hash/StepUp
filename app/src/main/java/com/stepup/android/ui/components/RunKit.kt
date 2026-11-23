@@ -412,6 +412,8 @@ fun KitDialog(
     modifier: Modifier = Modifier,
     actions: @Composable ColumnScope.() -> Unit,
 ) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (LockCover.hidesWindows()) return
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxWidth().padding(RunKit.Gutter), contentAlignment = Alignment.Center) {
             Surface(

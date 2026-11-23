@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 신발 강화(지시서 v6 · 파란 톤 v4 강화 전달본, 재료 규칙 2026-10-04 forge-v2 — docs/redesign/shoe-upgrade-2026-10-01) — 강화 화면 · 재료 선택 · 최종 확인 · 결과 -->
 <resources>
+    <!-- 2026-11-19: 素材3足・成功率・消滅・失敗の文言は以前の確率強化（0118 がないとき・1.20.x で送ったリクエストの結果）だけに表示する。経験値強化は forge_xp.xml -->
     <string name="upg_title">シューズ強化</string>
     <string name="upg_action">強化する</string>
     <string name="upg_action_check">強化結果を確認</string>

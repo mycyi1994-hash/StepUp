@@ -82,6 +82,8 @@ internal data class CrewResultUi(
     val basis: String?,
     /** 그 러닝의 대기실 이름 · 코스(서버가 출발 때 적은 값, 0072) — 없으면 null */
     val room: String? = null,
+    /** 크루 체력을 다 쓴 뒤 걸음은 상자 · 목표 보너스에 들지 않는다는 한 줄(서버 까닭이 있을 때만, 0118) — 없으면 null */
+    val rewardStepsNote: String? = null,
 )
 
 @Composable
@@ -162,6 +164,13 @@ internal fun CrewRunResult(
                     if (ui.note != null) {
                         Spacer(Modifier.height(10.dp))
                         Text(ui.note, style = runTextStyle(13.sp, c.label, FontWeight.Medium, 1.45f), modifier = Modifier.testTag("run-result-note"))
+                    }
+                    if (ui.rewardStepsNote != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            ui.rewardStepsNote, style = runTextStyle(13.sp, c.label, FontWeight.Medium, 1.45f),
+                            modifier = Modifier.testTag("run-result-reward-steps-note"),
+                        )
                     }
                     Spacer(Modifier.height(12.dp))
                 }

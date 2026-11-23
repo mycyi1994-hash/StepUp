@@ -392,14 +392,21 @@ class ShoeCareTest {
         assertNull(forgeRows(stats, null)[0].nextFraction)
     }
 
-    @Test fun `한 레벨이 주는 것 — 등급의 포인트 · 하루 에너지 +2 · 5레벨마다 내구도 가득과 상급 상자`() {
-        // 일반 Lv5: 레벨 2 + 보너스 3
+    @Test fun `한 레벨이 주는 것 — 등급의 포인트 · 5레벨마다 내구도 가득과 상급 상자, 하루 에너지는 규칙이 레벨마다 늘릴 때만`() {
+        // 0119 전 서버(레벨마다 에너지 +2) — 일반 Lv5: 레벨 2 + 보너스 3
+        val legacy = com.stepup.android.domain.ShoeRules.FALLBACK.copy(stats = com.stepup.android.domain.StatRule.LEGACY)
         assertEquals(
-            listOf(ForgeReward.Points(5), ForgeReward.Energy(2), ForgeReward.Milestone(5, boxAlreadyGot = false)),
-            forgeRewards(Rarity.COMMON, 5),
+            listOf(ForgeReward.Points(5), ForgeReward.Energy(2.0), ForgeReward.Milestone(5, boxAlreadyGot = false)),
+            forgeRewards(Rarity.COMMON, 5, legacy),
         )
         // 피니시 Lv11 — 레벨마다 8, 5의 배수가 아니면 상자 없음
-        assertEquals(listOf(ForgeReward.Points(8), ForgeReward.Energy(2)), forgeRewards(Rarity.FINISH, 11))
+        assertEquals(listOf(ForgeReward.Points(8), ForgeReward.Energy(2.0)), forgeRewards(Rarity.FINISH, 11, legacy))
+        // 서버 0119(하루 에너지는 레벨과 상관없다 — energy_per_level 0): 에너지 줄이 없고 포인트가 맨 앞
+        assertEquals(
+            listOf(ForgeReward.Points(5), ForgeReward.Milestone(5, boxAlreadyGot = false)),
+            forgeRewards(Rarity.COMMON, 5),
+        )
+        assertEquals(listOf(ForgeReward.Points(8)), forgeRewards(Rarity.FINISH, 11))
         // 이 계정이 Lv10 상자를 이미 받았으면 그렇게 말한다
         assertEquals(ForgeReward.Milestone(10, boxAlreadyGot = true), forgeRewards(Rarity.RARE, 10, levelsGot = listOf(5, 10)).last())
     }

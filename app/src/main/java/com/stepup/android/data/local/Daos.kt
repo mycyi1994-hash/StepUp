@@ -455,6 +455,13 @@ interface SneakerDao {
     @Query("SELECT * FROM sneakers WHERE id = :id")
     suspend fun byId(id: Long): SneakerEntity?
 
+    /**
+     * 강화 경험치 통만 바꾼다(서버 0118 — my_shoe_xp · forge_xp_add 의 xp_after · need_after). 만렙이면 [need] 는 null.
+     * 서버 번호로 찾는다(서버 신발은 폰 번호 = 서버 번호지만, 거래소로 온 옛 줄은 다를 수 있다). 바뀐 줄 수를 돌려준다
+     */
+    @Query("UPDATE sneakers SET forgeXp = :xp, forgeNeed = :need WHERE serverId = :serverId")
+    suspend fun setForgeXp(serverId: Long, xp: Int?, need: Int?): Int
+
     @Query("UPDATE sneakers SET equipped = 0")
     suspend fun clearEquipped()
 

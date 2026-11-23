@@ -43,6 +43,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -116,6 +118,13 @@ fun HomeScreen(
     val earned by viewModel.todayEarned.collectAsStateWithLifecycle()
     val week by viewModel.weekRuns.collectAsStateWithLifecycle()
     val starts by viewModel.runStarts.collectAsStateWithLifecycle()
+    // 오늘의 보상(서버 0118) — 서버가 주지 않으면 null 이고 홈은 예전 모습(하루 전체 걸음)
+    val bar by viewModel.dailyBar.collectAsStateWithLifecycle()
+    val daily by viewModel.daily.collectAsStateWithLifecycle()
+    val news by viewModel.rewardNews.collectAsStateWithLifecycle()
+    val goalNotice by viewModel.goalRuleNotice.collectAsStateWithLifecycle()
+    val overnightRun by viewModel.overnightRun.collectAsStateWithLifecycle()
+    var goalSheet by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
     var hasPermission by remember {
@@ -129,6 +138,8 @@ fun HomeScreen(
         if (hasPermission) viewModel.onPermissionGranted()
     }
     LifecycleResumeEffect(Unit) {
+        // 홈이 보일 때 오늘의 보상을 다시 묻는다(30초에 한 번까지) — 다른 폰의 러닝 · 자정이 지난 뒤도 맞게
+        viewModel.refreshDaily()
         val granted = StepPermissions.hasActivityRecognition(context)
         if (granted) permissionDenied = false
         if (granted != hasPermission) {
@@ -161,40 +172,63 @@ fun HomeScreen(
         onStartRun = onStartRun,
         onRequestPermission = { requestActivity() }, onOpenDetails = { showDetails = true },
         photoIndex = photoIndex, gps = gps,
+        bar = bar,
+        newsText = news?.let { com.stepup.android.push.rewardNewsText(context, it) },
+        onNewsSeen = { viewModel.consumeRewardNews() },
+        goalNotice = goalNotice && bar != null,
+        onGoalNotice = { viewModel.dismissGoalRuleNotice(); goalSheet = true },
+        overnightRun = overnightRun,
     )
+
+    if (goalSheet) {
+        // 목표 바꾸기 — 설정과 같은 시트(바꾼 목표는 오늘 달렸으면 내일부터). 닫으면 서버 상태(내일 목표)를 다시 읽는다
+        com.stepup.android.ui.screens.settings.DailyGoalSheet(onDismiss = { goalSheet = false; viewModel.refreshDaily(force = true) })
+    }
 
     if (showDetails) {
         // E01 — 오늘의 활동: 걸음 · 목표 · 남은 걸음 · 거리 · 러닝 시간 · 오늘의 SUP(서버 확인 값). 예전 상세 기록
         // (7일 걸음 · 소식 · 에너지)은 지우지 않고 아래 "더 보기"에 둔다
         com.stepup.android.ui.components.RunSheet(onDismiss = { showDetails = false }, modifier = Modifier.testTag("home-details-sheet")) {
-            TodayActivity(
-                steps = state.todaySteps, goal = state.goal, loaded = state.loaded, hasPermission = hasPermission,
-                km = if (state.loaded) RewardEconomyKm(state.todaySteps) else null,
-                runSec = runSec, earned = earned, pending = pending > 0,
-                onRequestPermission = { requestActivity() },
-            )
-            Column(
-                Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()).testTag("home-details"),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Spacer(Modifier.height(4.dp))
-                com.stepup.android.ui.components.RunDivider()
-                Text(stringResource(R.string.home_activity_more), color = Silver, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.testTag("home-records-title"))
-                if (!hasPermission && permissionDenied) {
-                    androidx.compose.material3.TextButton(onClick = {
-                        com.stepup.android.core.ExternalIntents.openAppSettings(context)
-                    }) { Text(stringResource(R.string.cd_open_settings)) }
-                }
-                RecordWeek(state.week, state.todaySteps, state.loaded)
-                ShortcutButton(
-                    icon = Icons.AutoMirrored.Filled.Article,
-                    label = stringResource(R.string.home_shortcut_news),
-                    subtitle = stringResource(R.string.home_shortcut_news_sub),
-                    onClick = { showDetails = false; onOpenNews() },
-                    modifier = Modifier.fillMaxWidth(),
+            val body: @Composable () -> Unit = {
+                TodayActivity(
+                    steps = state.todaySteps, goal = state.goal, loaded = state.loaded, hasPermission = hasPermission,
+                    km = if (state.loaded) RewardEconomyKm(state.todaySteps) else null,
+                    runSec = runSec, earned = earned, pending = pending > 0,
+                    onRequestPermission = { requestActivity() },
+                    bar = bar, daily = daily,
+                    onChangeGoal = { showDetails = false; goalSheet = true },
                 )
-                EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.maxEnergy > 0)
+                Column(
+                    Modifier.fillMaxWidth()
+                        .then(if (bar == null) Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()) else Modifier)
+                        .testTag("home-details"),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Spacer(Modifier.height(4.dp))
+                    com.stepup.android.ui.components.RunDivider()
+                    Text(stringResource(R.string.home_activity_more), color = Silver, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.testTag("home-records-title"))
+                    if (!hasPermission && permissionDenied) {
+                        androidx.compose.material3.TextButton(onClick = {
+                            com.stepup.android.core.ExternalIntents.openAppSettings(context)
+                        }) { Text(stringResource(R.string.cd_open_settings)) }
+                    }
+                    RecordWeek(state.week, state.todaySteps, state.loaded)
+                    ShortcutButton(
+                        icon = Icons.AutoMirrored.Filled.Article,
+                        label = stringResource(R.string.home_shortcut_news),
+                        subtitle = stringResource(R.string.home_shortcut_news_sub),
+                        onClick = { showDetails = false; onOpenNews() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    EnergyLine(earnableSteps = state.earnableSteps, ready = state.loaded && state.energyKnown && state.maxEnergy > 0)
+                }
+            }
+            if (bar != null) {
+                // 오늘의 보상(0118)이 있으면 시트가 길어진다 — 시트 안 전체를 넘긴다(작은 화면 · 큰 글씨)
+                Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) { body() }
+            } else {
+                body()
             }
             Spacer(Modifier.height(14.dp))
             com.stepup.android.ui.components.RunButton(
@@ -226,6 +260,16 @@ internal fun HomeContent(
     onOpenDetails: () -> Unit,
     photoIndex: Int = 0,
     gps: GpsReadiness = GpsReadiness.WAITING,
+    /** 오늘의 보상 막대(서버 0118) — null 이면 예전 모습(하루 전체 걸음 · 목표 고리) */
+    bar: com.stepup.android.domain.DailyBar? = null,
+    /** 러닝이 올라간 뒤 새로 받은 보상 한 줄 — 서버가 받았다고 한 것만 */
+    newsText: String? = null,
+    onNewsSeen: () -> Unit = {},
+    /** 기존 사용자에게 한 번 — 목표가 러닝 걸음 기준으로 바뀌었다 */
+    goalNotice: Boolean = false,
+    onGoalNotice: () -> Unit = {},
+    /** 가장 최근 러닝이 어젯밤 시작해 오늘 끝났다 — 막대 아래 "어제 걸음으로 셌어요"(오늘만) */
+    overnightRun: Boolean = false,
 ) {
     // 본문은 넘기고, 이 화면의 주 행동(러닝 시작)은 늘 아래에 보인다(작은 화면 · 큰 글씨에서도)
     Column(Modifier.fillMaxSize()) {
@@ -240,7 +284,26 @@ internal fun HomeContent(
                 todaySteps = todaySteps, goal = goal, loaded = loaded,
                 hasPermission = hasPermission, firstHome = firstHome,
                 onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
+                bar = bar, overnightRun = overnightRun,
             )
+            if (newsText != null) {
+                // 새로 받은 보상 — 한 번 보이고 잠시 뒤 걷힌다(누르면 바로)
+                LaunchedEffect(newsText) {
+                    delay(12_000)
+                    onNewsSeen()
+                }
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.components.RunNotice(
+                    newsText, kind = com.stepup.android.ui.components.RunNoticeKind.Info,
+                    action = stringResource(R.string.home_activity_ok), onAction = onNewsSeen, tag = "home-reward-news",
+                )
+            } else if (goalNotice) {
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.components.RunNotice(
+                    stringResource(R.string.dr_goal_notice_title), kind = com.stepup.android.ui.components.RunNoticeKind.Info,
+                    action = stringResource(R.string.dr_goal_notice_action), onAction = onGoalNotice, tag = "home-goal-notice",
+                )
+            }
             Spacer(Modifier.height(14.dp))
             RunPhotoCard(photoIndex)
             Spacer(Modifier.height(12.dp))
@@ -286,6 +349,8 @@ private fun StepsHero(
     firstHome: Boolean,
     onRequestPermission: () -> Unit,
     onOpenDetails: () -> Unit,
+    bar: com.stepup.android.domain.DailyBar? = null,
+    overnightRun: Boolean = false,
 ) {
     val c = StepUpUi.colors
     if (firstHome) {
@@ -304,6 +369,14 @@ private fun StepsHero(
         }
         return
     }
+    if (bar != null) {
+        RewardsHero(
+            bar = bar, allDaySteps = todaySteps, loaded = loaded, hasPermission = hasPermission,
+            onRequestPermission = onRequestPermission, onOpenDetails = onOpenDetails,
+            overnightRun = overnightRun,
+        )
+        return
+    }
     val detailsLabel = stringResource(R.string.home_open_details)
     // 둥근 모서리로 자르지 않는다 — 안쪽 여백이 없어 왼쪽 위 "오늘 걸음" 첫 글자가 모서리에 잘렸다(2026-10-27).
     // 누름 효과(살짝 작아짐 · 그린 픽셀만 어둡게)는 자르지 않아도 그대로다
@@ -315,8 +388,9 @@ private fun StepsHero(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
+            // 예전 서버(오늘의 보상 없음) — 이 숫자는 폰이 센 하루 전체 걸음이다
             Text(
-                stringResource(R.string.home_steps_today), style = StepUpUi.type.segment, color = c.secondaryLabel,
+                stringResource(R.string.dr_all_day_label), style = StepUpUi.type.segment, color = c.secondaryLabel,
                 modifier = Modifier.semantics { heading() },
             )
             Spacer(Modifier.height(4.dp))
@@ -366,13 +440,22 @@ internal fun TodayActivity(
     earned: Double?,
     pending: Boolean,
     onRequestPermission: () -> Unit,
+    /** 오늘의 보상(서버 0118) — 있으면 걸음 칸이 러닝 걸음 막대 · 이번 주 · 연속 · 목표 바꾸기가 된다 */
+    bar: com.stepup.android.domain.DailyBar? = null,
+    daily: com.stepup.android.domain.DailyRewards? = null,
+    onChangeGoal: () -> Unit = {},
 ) {
     val t = com.stepup.android.ui.components.runTone()
     Column(Modifier.fillMaxWidth().testTag("home-activity")) {
         Text(stringResource(R.string.home_activity_title), color = t.text, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(12.dp))
-        if (!hasPermission) {
+        if (bar != null) {
+            TodayRewards(
+                bar = bar, daily = daily, allDaySteps = steps, loaded = loaded, hasPermission = hasPermission,
+                onRequestPermission = onRequestPermission, onChangeGoal = onChangeGoal,
+            )
+        } else if (!hasPermission) {
             PermissionStrip(onClick = onRequestPermission)
         } else {
             com.stepup.android.ui.components.RunNumber(
@@ -429,6 +512,365 @@ internal fun TodayActivity(
         }
         Text(stringResource(R.string.home_activity_sup_note), color = t.label, fontSize = 13.sp, textAlign = TextAlign.End,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+    }
+}
+
+// ── 오늘의 보상(서버 0118) ───────────────────────────────────────
+
+/**
+ * 홈 위 — 오늘의 보상 막대(docs/forge-xp-daily-spec-2026-11-19.md 5.3). 큰 숫자는 서버가 확인한 오늘 러닝 걸음, 옆에 작게 하루 전체 걸음
+ * (걸음 권한이 있을 때만 — 막대는 권한이 없어도 보인다). 눈금(상자 · 목표)은 서버가 주고 받은 것만 ✓, 아래 한 줄은 다음 보상까지 · 연속.
+ * 올리는 중 · 달리는 중 걸음은 옅은 구간 + "확인 중"(눈금을 채우지 않는다). 오늘(한국 날짜) 상태를 모르면 숫자 대신 "—". 누르면 오늘의 활동.
+ */
+@Composable
+private fun RewardsHero(
+    bar: com.stepup.android.domain.DailyBar,
+    allDaySteps: Int,
+    loaded: Boolean,
+    hasPermission: Boolean,
+    onRequestPermission: () -> Unit,
+    onOpenDetails: () -> Unit,
+    overnightRun: Boolean = false,
+) {
+    val c = StepUpUi.colors
+    val detailsLabel = stringResource(R.string.home_open_details)
+    Column(
+        Modifier.fillMaxWidth()
+            .feedbackClickable(role = Role.Button, onClick = onOpenDetails)
+            .semantics { onClick(label = detailsLabel) { onOpenDetails(); true } }
+            .testTag("home-steps"),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.home_steps_today), style = StepUpUi.type.segment, color = c.secondaryLabel,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            AllDaySteps(allDaySteps, loaded, hasPermission, onRequestPermission)
+        }
+        Spacer(Modifier.height(4.dp))
+        val shown = countUpFloat(if (bar.known) bar.rewardSteps.toFloat() else 0f).roundToInt()
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                if (bar.known) "%,d".format(shown) else "—",
+                style = StepUpUi.type.numberHero.copy(fontSize = 58.sp, lineHeight = 58.sp, letterSpacing = .005.em),
+                color = c.label, maxLines = 1, softWrap = false,
+                modifier = Modifier.alignByBaseline().popOnChange(bar.rewardSteps / 1000).testTag("home-steps-value"),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                stringResource(R.string.d26_steps_goal, if (bar.goal > 0) "%,d".format(bar.goal) else "—"),
+                style = StepUpUi.type.navTitle.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.02).em),
+                color = c.secondaryLabel, maxLines = 1,
+                modifier = Modifier.alignByBaseline().testTag("home-goal"),
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        RewardTrack(bar, hole = c.background)
+        Spacer(Modifier.height(8.dp))
+        RewardLine(bar)
+        // 보상 걸음에 들지 않은 걸음 · 어젯밤 러닝 — 그럴 때만 작은 한 줄씩(오늘 상태를 알 때만)
+        if (com.stepup.android.domain.DailyRewardsBar.offRunNote(bar, allDaySteps, allDayKnown = loaded && hasPermission)) {
+            // 서버 0119(닳은 뒤에도 적립하는 규칙)부터 보상 걸음은 밖에서 경로가 확인된 걸음 모두다 — 신발이 닳았어도 센다.
+            // 그 전 규칙이면 예전 글("닳지 않은 신발로 걸은 걸음만")
+            val anyShoeCounts = com.stepup.android.ui.screens.items.rememberShoeRules().stats.earnsWhenWorn
+            RewardNote(
+                stringResource(if (anyShoeCounts) R.string.roots_off_run_note else R.string.dr_off_run_note),
+                "home-reward-note-off-run",
+            )
+        }
+        if (overnightRun && bar.known) RewardNote(stringResource(R.string.dr_overnight_note), "home-reward-note-overnight")
+    }
+}
+
+/** 막대 아래 작은 설명 한 줄 — 누를 곳 없이 */
+@Composable
+private fun RewardNote(text: String, tag: String) {
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text, style = StepUpUi.type.caption, color = StepUpUi.colors.secondaryLabel,
+        modifier = Modifier.fillMaxWidth().testTag(tag),
+    )
+}
+
+/** 하루 전체 걸음(폰 만보기) — 작게. 걸음 권한이 없으면 그 자리에 "하루 전체 걸음 보기"(누르면 권한을 묻는다) */
+@Composable
+private fun AllDaySteps(steps: Int, loaded: Boolean, hasPermission: Boolean, onRequestPermission: () -> Unit) {
+    val c = StepUpUi.colors
+    if (hasPermission) {
+        Text(
+            stringResource(R.string.dr_all_day, if (loaded) "%,d".format(steps) else "—"),
+            style = StepUpUi.type.caption, color = c.tertiaryLabel, maxLines = 1,
+            modifier = Modifier.testTag("home-all-day"),
+        )
+    } else {
+        Text(
+            stringResource(R.string.dr_all_day_allow), style = StepUpUi.type.caption, color = c.accentText, maxLines = 1,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).feedbackClickable(onClick = onRequestPermission)
+                .padding(horizontal = 6.dp, vertical = 4.dp).testTag("home-permission"),
+        )
+    }
+}
+
+/**
+ * 막대 — 구간(0 → 상자 → 상자 → 목표)을 같은 너비로, 같은 걸음의 눈금은 하나(목표 4,000 = 둘째 상자). 진한 구간 = 서버가 확인한 걸음,
+ * 옅은 구간 = 확인 중. 눈금은 서버가 받았다고 한 것만 채우고 ✓. [hole] 은 아직 받지 않은 눈금 안쪽(바탕색)
+ */
+@Composable
+internal fun RewardTrack(bar: com.stepup.android.domain.DailyBar, hole: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    val c = StepUpUi.colors
+    val dot = 18.dp
+    Column(modifier.fillMaxWidth().testTag("home-reward-bar")) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(dot)) {
+            val r = dot.toPx() / 2
+            val h = 8.dp.toPx()
+            val left = r
+            val w = (size.width - 2 * r).coerceAtLeast(1f)
+            val top = size.height / 2 - h / 2
+            val corner = androidx.compose.ui.geometry.CornerRadius(h / 2, h / 2)
+            drawRoundRect(c.separator, androidx.compose.ui.geometry.Offset(left, top), androidx.compose.ui.geometry.Size(w, h), corner)
+            if (bar.pendingFraction > bar.confirmedFraction) {
+                drawRoundRect(
+                    c.primary.copy(alpha = 0.3f), androidx.compose.ui.geometry.Offset(left, top),
+                    androidx.compose.ui.geometry.Size(w * bar.pendingFraction, h), corner,
+                )
+            }
+            if (bar.confirmedFraction > 0f) {
+                drawRoundRect(
+                    c.primary, androidx.compose.ui.geometry.Offset(left, top),
+                    androidx.compose.ui.geometry.Size(w * bar.confirmedFraction, h), corner,
+                )
+            }
+            val cy = size.height / 2
+            val stroke = 2.dp.toPx()
+            bar.slots.forEach { slot ->
+                val center = androidx.compose.ui.geometry.Offset(left + w * slot.position, cy)
+                if (slot.got) {
+                    drawCircle(c.primary, r, center)
+                    val check = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(center.x - r * 0.42f, cy + r * 0.02f)
+                        lineTo(center.x - r * 0.1f, cy + r * 0.34f)
+                        lineTo(center.x + r * 0.46f, cy - r * 0.32f)
+                    }
+                    drawPath(
+                        check, c.onPrimary,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                            stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                        ),
+                    )
+                } else {
+                    drawCircle(hole, r, center)
+                    drawCircle(c.tertiaryLabel, r - stroke / 2, center, style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        TickLabels(bar, dot)
+    }
+}
+
+/**
+ * 눈금 아래 글 — 걸음 · 보상(상자 / +N SUP). 구간마다 같은 너비의 칸에 오른쪽으로 붙여 그 눈금에서 끝난다(눈금이 서로 가까워도 글이 겹치지
+ * 않는다). 금액은 서버 값(받았으면 받은 SUP, 아니면 오늘 채우면 받을 SUP)
+ */
+@Composable
+private fun TickLabels(bar: com.stepup.android.domain.DailyBar, dot: Dp) {
+    val c = StepUpUi.colors
+    Row(Modifier.fillMaxWidth().padding(start = dot)) {
+        bar.slots.forEach { slot ->
+            val reward = tickReward(slot, bar)
+            val got = slot.got && bar.known
+            val description = stringResource(if (got) R.string.dr_tick_got_cd else R.string.dr_tick_open_cd, "%,d".format(slot.steps), reward)
+            Column(
+                Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = description }
+                    .testTag("home-reward-tick-${slot.steps}"),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Text(
+                    "%,d".format(slot.steps), style = StepUpUi.type.caption, color = c.secondaryLabel, maxLines = 1,
+                    textAlign = TextAlign.End,
+                )
+                Text(
+                    if (got) "$reward ✓" else reward,
+                    style = StepUpUi.type.caption.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (got) c.accentText else c.label, maxLines = 2, textAlign = TextAlign.End,
+                )
+            }
+        }
+    }
+}
+
+/** 눈금의 보상 글 — 상자 · +N SUP · 둘 다(목표 4,000 = 둘째 상자). 금액을 모르면 "목표" */
+@Composable
+private fun tickReward(slot: com.stepup.android.domain.TickSlot, bar: com.stepup.android.domain.DailyBar): String {
+    val amount = (if (slot.got) bar.goalPaid else null) ?: bar.goalBonus
+    val sup = amount?.let { com.stepup.android.domain.DailyRewardsBar.supText(it) }
+    return when {
+        slot.box && slot.goal -> if (sup != null) stringResource(R.string.dr_tick_box_goal, sup) else stringResource(R.string.dr_tick_box_goal_plain)
+        slot.goal -> if (sup != null) stringResource(R.string.dr_tick_goal, sup) else stringResource(R.string.dr_tick_goal_plain)
+        else -> stringResource(R.string.dr_tick_box)
+    }
+}
+
+/** 막대 아래 한 줄 — 다음 보상까지 남은 걸음 · 연속, 옆에 확인 중 걸음 */
+@Composable
+private fun RewardLine(bar: com.stepup.android.domain.DailyBar) {
+    val c = StepUpUi.colors
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            rewardLineText(bar), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
+            modifier = Modifier.weight(1f).semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
+                .testTag("home-reward-line"),
+        )
+        if (bar.pendingSteps > 0) {
+            Spacer(Modifier.width(8.dp))
+            com.stepup.android.ui.components.RunChip(
+                stringResource(R.string.dr_pending, "%,d".format(bar.pendingSteps)), modifier = Modifier.testTag("home-reward-pending"),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun rewardLineText(bar: com.stepup.android.domain.DailyBar): String {
+    if (!bar.known) return stringResource(R.string.dr_loading)
+    val next = bar.next
+    val head = when {
+        next != null -> {
+            val left = "%,d".format(next.stepsLeft)
+            val sup = next.bonus?.let { com.stepup.android.domain.DailyRewardsBar.supText(it) }
+            when {
+                next.box && next.goal && sup != null -> stringResource(R.string.dr_next_box_goal, left, sup)
+                next.goal && sup != null -> stringResource(R.string.dr_next_goal, left, sup)
+                next.goal -> stringResource(R.string.dr_next_goal_plain, left)
+                else -> stringResource(R.string.dr_next_box, left)
+            }
+        }
+        bar.waiting -> stringResource(R.string.dr_waiting)
+        bar.allGot -> stringResource(R.string.dr_all_got)
+        else -> ""
+    }
+    val streak = bar.streak
+    val tail = when {
+        streak == null -> null
+        bar.goalPaid != null && streak >= 2 -> stringResource(R.string.dr_streak_today, streak)
+        bar.goalPaid == null && streak >= 2 -> stringResource(R.string.dr_streak_if, streak)
+        else -> null
+    }
+    return listOfNotNull(head.takeIf { it.isNotEmpty() }, tail).joinToString(" · ")
+}
+
+/**
+ * 오늘의 활동 시트의 오늘의 보상 — 러닝 걸음 · 목표(내일부터 바뀔 목표) · 막대 · 하루 전체 걸음, 이번 주(주간 상급 상자 · 스텝 서지),
+ * 연속(7일 중 며칠 · 다음 연속 상자까지), 목표 바꾸기. 모든 수는 서버 상태 그대로.
+ */
+@Composable
+private fun TodayRewards(
+    bar: com.stepup.android.domain.DailyBar,
+    daily: com.stepup.android.domain.DailyRewards?,
+    allDaySteps: Int,
+    loaded: Boolean,
+    hasPermission: Boolean,
+    onRequestPermission: () -> Unit,
+    onChangeGoal: () -> Unit,
+) {
+    val t = com.stepup.android.ui.components.runTone()
+    com.stepup.android.ui.components.RunNumber(
+        if (bar.known) "%,d".format(bar.rewardSteps) else "—", unit = stringResource(R.string.home_steps_unit),
+        size = 56.sp, unitSize = 22.sp, align = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth(), valueTag = "home-activity-steps",
+    )
+    Text(
+        stringResource(R.string.dr_sheet_today, if (bar.goal > 0) "%,d".format(bar.goal) else "—"), color = t.label, fontSize = 15.sp,
+        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+    )
+    bar.goalNext?.let { next ->
+        Text(
+            stringResource(R.string.dr_goal_next, "%,d".format(next)), color = t.cyan, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 2.dp).testTag("home-activity-goal-next"),
+        )
+    }
+    Spacer(Modifier.height(12.dp))
+    RewardTrack(bar, hole = t.sheet)
+    Spacer(Modifier.height(6.dp))
+    Text(rewardLineText(bar), color = t.label, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
+    Spacer(Modifier.height(8.dp))
+    Row(Modifier.fillMaxWidth().testTag("home-activity-all-day"), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.dr_all_day_label), color = t.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f))
+        if (hasPermission) {
+            Text(if (loaded) "%,d".format(allDaySteps) else "—", color = t.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        } else {
+            AllDaySteps(allDaySteps, loaded, hasPermission = false, onRequestPermission = onRequestPermission)
+        }
+    }
+    Text(stringResource(R.string.dr_all_day_note), color = t.muted, fontSize = 12.sp, modifier = Modifier.fillMaxWidth())
+
+    // 이번 주 — 주간 상급 상자 · 스텝 서지(서버 값)
+    if (daily != null && bar.known) {
+        Spacer(Modifier.height(12.dp))
+        com.stepup.android.ui.components.RunDivider()
+        Spacer(Modifier.height(10.dp))
+        Text(stringResource(R.string.dr_week_title), color = t.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        if (daily.weekTarget > 0) {
+            WeekRow(
+                label = stringResource(R.string.dr_week_box, "%,d".format(daily.weekTarget)),
+                value = if (daily.weekGot) stringResource(R.string.boxes_got)
+                else stringResource(R.string.boxes_steps_progress, "%,d".format(daily.stepsWeek.coerceAtMost(daily.weekTarget)), "%,d".format(daily.weekTarget)),
+                fraction = if (daily.weekGot) 1f else (daily.stepsWeek.toFloat() / daily.weekTarget).coerceIn(0f, 1f),
+                tag = "home-activity-week",
+            )
+        }
+        daily.surge?.takeIf { it.target > 0 }?.let { surge ->
+            WeekRow(
+                label = stringResource(R.string.dr_surge, "%,d".format(surge.target), com.stepup.android.domain.DailyRewardsBar.supText(surge.reward)),
+                value = if (surge.claimed) stringResource(R.string.boxes_got)
+                else stringResource(R.string.boxes_steps_progress, "%,d".format(surge.steps.coerceAtMost(surge.target)), "%,d".format(surge.target)),
+                fraction = surge.fraction,
+                tag = "home-activity-surge",
+            )
+        }
+        // 연속 — 7일 중 며칠 · 다음 연속 상급 상자까지(서버 값)
+        val streak = daily.streak
+        if (streak != null) {
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.dr_streak_title), color = t.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            val inWeek = com.stepup.android.domain.DailyRewardsBar.streakInWeek(streak, paidToday = daily.goalPaid != null)
+            WeekRow(
+                label = stringResource(R.string.dr_streak_week, inWeek),
+                value = daily.streakBoxIn?.let {
+                    if (it <= 0) stringResource(R.string.dr_streak_box_today) else stringResource(R.string.dr_streak_box_in, it)
+                } ?: "",
+                fraction = inWeek / 7f,
+                tag = "home-activity-streak",
+            )
+            daily.streakBest?.takeIf { it > 0 }?.let { best ->
+                Text(stringResource(R.string.dr_streak_best, best), color = t.label, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
+            }
+        }
+    }
+    Spacer(Modifier.height(10.dp))
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).feedbackClickable(onClick = onChangeGoal)
+            .padding(vertical = 10.dp).testTag("home-activity-change-goal"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.dr_goal_change), color = t.cobaltText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f))
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** 이번 주 · 연속 한 줄 — 이름 · 값(오른쪽) · 가는 막대 */
+@Composable
+private fun WeekRow(label: String, value: String, fraction: Float, tag: String) {
+    val t = com.stepup.android.ui.components.runTone()
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).semantics(mergeDescendants = true) {}.testTag(tag)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = t.text, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+            if (value.isNotEmpty()) Text(value, color = t.label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End)
+        }
+        Spacer(Modifier.height(4.dp))
+        com.stepup.android.ui.components.RunMeter(fraction, height = 6.dp)
     }
 }
 

@@ -34,10 +34,10 @@
     <string name="v4s_repair_partial_done">手持ちの分だけ修理しました。残りはSUPを貯めて修理できます。</string>
 
     <string name="v4s_upg_materials_rule">1つ下のグレード以上・耐久度%1$d%%以上のシューズ3足</string>
-    <string name="v4s_upg_gain_energy">1日のエネルギー +%1$d（持っているシューズで最も高いレベルのとき）</string>
+    <string name="v4s_upg_gain_energy">1日のエネルギー +%1$s（持っているシューズで最も高いレベルのとき）</string>
     <string name="v4s_upg_gain_milestone">Lv. %1$d — 耐久度満タン・上級ボックス1個（このレベルに初めて到達したとき）</string>
     <string name="v4s_upg_gain_milestone_got">Lv. %1$d — 耐久度満タン（このレベルの上級ボックスは受け取り済みです）</string>
     <string name="v4s_upg_repair_note">効率を上げると修理費も効率に合わせて上がります。</string>
     <string name="v4s_upg_got_milestone">耐久度を満タンにしました。このレベルに初めて到達したなら、上級ボックス1個がガチャに追加されます。</string>
-    <string name="v4s_upg_block_worn" formatted="false">耐久度50%以上のシューズだけが素材になります</string>
+    <string name="v4s_upg_block_worn">すり減って素材にできません・修理すると使えます</string>
 </resources>

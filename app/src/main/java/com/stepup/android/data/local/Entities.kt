@@ -245,6 +245,12 @@ data class SneakerEntity(
     /** 이 신발로 달린 거리(km)와 팔 수 있게 되는 거리(km) — 무료 뽑기 신발은 잠금 거리를 달려야 판다(서버 can_withdraw, 판 21) */
     @ColumnInfo(defaultValue = "0") val kmRun: Double = 0.0,
     @ColumnInfo(defaultValue = "0") val lockKm: Double = 0.0,
+    /**
+     * 강화 경험치 통(서버 0118 my_shoe_xp, 판 23) — 통에 든 점수 · 이 레벨의 통 크기(1켤레값 = 1,000점). 모르면(서버에 0118 전 ·
+     * 아직 받지 못함) null, 만렙이면 통 크기가 null. 화면은 둘을 다 알 때만 "다음 레벨까지 N%"를 보인다
+     */
+    val forgeXp: Int? = null,
+    val forgeNeed: Int? = null,
 )
 
 /**

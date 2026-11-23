@@ -1046,6 +1046,8 @@ private fun RulesSheet(board: LeaderBoardKind, pointsReady: Boolean) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LbSheetHost(title: String, tag: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
+    if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,

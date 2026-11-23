@@ -155,6 +155,10 @@ fun ProfileScreen(
     val records by viewModel.records.collectAsStateWithLifecycle()
     val longest by viewModel.longestMeters.collectAsStateWithLifecycle()
     val latest by viewModel.latest.collectAsStateWithLifecycle()
+    val runnerLevel by viewModel.runnerLevel.collectAsStateWithLifecycle()
+    var runnerInfo by rememberSaveable { mutableStateOf(false) }
+    // 러너 레벨(0121) — 내 정보를 열 때 한 번 다시 읽는다
+    LaunchedEffect(Unit) { viewModel.refreshRunnerLevel() }
     var notice by remember { mutableStateOf<String?>(null) }
     val savedText = stringResource(R.string.pe_saved_toast)
     // 받은 표시는 바로 지운다(다시 들어와도 한 번만) — 그러면 이 효과가 다시 시작되므로, 안내를 닫는 기다림은 따로 둔다
@@ -189,8 +193,14 @@ fun ProfileScreen(
                 onOpenSettings = onOpenSettings,
                 longestMeters = longest,
                 latest = latest,
+                runnerLevel = runnerLevel,
+                onOpenRunnerLevel = { runnerInfo = true },
             )
         }
+    }
+    // 러너 레벨 설명 — 서버 값이 사라지면(로그아웃 · 꺼짐) 시트도 닫힌다
+    runnerLevel?.takeIf { runnerInfo }?.let { level ->
+        RunnerLevelInfoSheet(level, onClose = { runnerInfo = false })
     }
     // PRO12 — 실제로 저장된 뒤 한 번만(2.6초)
     com.stepup.android.ui.components.BlueToast(

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 능력치의 뜻이 바뀐 뒤의 신발 화면(2026-11-21 — docs/economy-roots-contract-2026-11-21.md): 효율 = 더 빨리 벌고 신발 · 에너지도 빨리 쓴다 · 내구도 = 가득 수리비는 그대로 · 5레벨마다 다시 나누기 · 내 지난 14일 러닝으로 본 포인트 미리보기(늘 "약" — 어림한 값) -->
+<resources>
+    <string name="ers_preview_basis_mine">지난 14일 러닝 %1$d번 기준 · 어림한 값이에요</string>
+    <string name="ers_preview_basis_default">아직 기록이 없어 %1$d분 달리기 기준 · 어림한 값이에요</string>
+    <string name="ers_preview_worth">1포인트 = 하루 약 +%1$s SUP</string>
+    <string name="ers_preview_worth_none">지금 내 러닝으로는 더 늘지 않아요</string>
+    <string name="ers_preview_comfort_capped">에너지 %1$d%% 절약까지 다 올렸어요</string>
+    <string name="ers_points_life">가득에서 %1$s분</string>
+    <string name="ers_points_life_change">가득에서 %1$s분 → %2$s분</string>
+    <string name="ers_points_help_efficiency">더 빨리 벌어요 · 신발과 에너지도 빨리 써요</string>
+    <string name="ers_points_help_comfort">에너지를 덜 써요 · 하루에 더 많이 벌어요</string>
+    <string name="ers_points_help_durability">더 오래 달려요 · 가득 수리비는 그대로예요</string>
+    <string name="ers_points_note_final">나눈 포인트는 바로 되돌릴 수 없어요. %1$d레벨마다 한 번 다시 나눌 수 있어요.</string>
+    <string name="ers_points_note_respec">다시 나누기 1번 · %1$d레벨마다 한 번 받아요. 나눈 포인트를 줄이면 써요.</string>
+    <string name="ers_points_recommend">추천대로 나누기</string>
+    <string name="ers_points_recommend_all">처음부터 추천대로</string>
+    <string name="ers_upg_respec">포인트를 한 번 다시 나눌 수 있어요</string>
+    <string name="ers_upg_stat_note">효율에 포인트를 넣으면 더 빨리 벌고 신발도 빨리 닳아요. 가득 수리비는 그대로예요.</string>
+    <string name="ers_why_top_level">가진 신발 중 레벨이 가장 높아요</string>
+    <string name="ers_basis_efficiency">효율: 같은 걸음에 버는 SUP예요. 효율 200 이면 효율 100 의 2배를 벌어요. 포인트로 올린 만큼은 신발과 에너지도 빨리 써요. 막대 끝은 이 등급에서 가장 잘 뽑힌 새 신발이에요.</string>
+    <string name="ers_basis_durability">내구도: 이 신발이 다 닳기 전까지 달릴 수 있는 시간(분)이에요. 막대 끝은 가득 찼을 때예요. 포인트로 늘려도 가득 수리비는 그대로예요. 달리면 줄고, 러닝마다 닳는 양이 조금씩 달라요.</string>
+</resources>

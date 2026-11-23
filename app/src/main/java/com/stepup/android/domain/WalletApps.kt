@@ -16,7 +16,10 @@ enum class WalletApp(val key: String, val packageName: String?, val ready: Boole
     /** Rabby 는 앱 브라우저로 바로 여는 공개 링크가 없다 — 링크를 복사하고 앱을 연다(브라우저에 붙여 넣기) */
     RABBY("rabby", "com.debank.rabbymobile", ready = true);
 
-    /** 연결 페이지를 이 지갑의 앱 안 브라우저로 여는 주소. null 이면 링크를 복사해 붙여 넣는 길 */
+    /**
+     * 연결 페이지를 이 지갑의 앱 안 브라우저로 여는 주소. null 이면 링크를 복사해 붙여 넣는 길.
+     * 주소에는 일회용 확인 번호가 들어 있다 — 여는 쪽은 [packageName] 의 앱에만 보낸다(같은 주소 · okx:// 를 받겠다는 다른 앱이 가로채지 않게)
+     */
     fun openUrl(page: String): String? = when (this) {
         // MetaMask 공식 — https://link.metamask.io/dapp/{주소(https:// 뺀)} (docs.metamask.io "Use deeplinks")
         METAMASK -> "https://link.metamask.io/dapp/" + page.removePrefix("https://")
@@ -36,6 +39,18 @@ enum class WalletApp(val key: String, val packageName: String?, val ready: Boole
         fun shown(web3: Boolean): List<WalletApp> = if (web3) entries else entries.filter { it.ready }
     }
 }
+
+/**
+ * 붙은 지갑 주소를 줄여 보인다(`0x1234…abcd`) — 서버가 준 주소만, 지갑 주소(0x + 16진 40자) 꼴이 아니면 null(보이지 않는다).
+ * 연결을 마친 뒤 이 주소를 보여, 내가 모르는 지갑이 붙었으면 알아챌 수 있게 한다(2026-11-22 보안 점검).
+ */
+fun shortWalletAddress(address: String?): String? {
+    val value = address?.trim() ?: return null
+    if (!EVM_ADDRESS.matches(value)) return null
+    return value.take(6) + "…" + value.takeLast(4)
+}
+
+private val EVM_ADDRESS = Regex("^0x[0-9a-fA-F]{40}$")
 
 /** 서버가 준 지갑 연결 문장에서 꺼낸 계정 번호 · 확인 번호 */
 data class WalletLinkRequest(val user: String, val nonce: String) {

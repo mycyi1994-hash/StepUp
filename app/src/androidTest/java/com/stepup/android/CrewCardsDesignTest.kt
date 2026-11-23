@@ -267,6 +267,8 @@ class CrewCardsDesignTest {
             server.gone += goneCrew
             com.stepup.android.core.InviteLinks.handle(
                 android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(com.stepup.android.core.InviteLinks.crewLink(goneCrew))),
+                // 주소(App Links)로 연 초대 링크 — 알림 링크 칸을 믿을 까닭이 없다
+                trusted = false,
             )
             awaitTag("crew-detail-loading")
             shot("67-detail-loading")

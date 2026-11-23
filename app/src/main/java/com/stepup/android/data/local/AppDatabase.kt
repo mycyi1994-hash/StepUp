@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NotificationEntity::class,
         NewsItemEntity::class,
     ],
-    version = 22,
+    version = 23,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -264,10 +264,21 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 강화 경험치 통(2026-11-19, 서버 0118 my_shoe_xp). 예전 줄은 비운다(null) — 다음 동기화가 서버 값으로 채우고, 그 전에는
+         * 경험치 줄을 보이지 않는다(퍼센트를 짓지 않는다). 만렙 신발은 통 크기가 계속 null 이다.
+         */
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sneakers ADD COLUMN forgeXp INTEGER")
+                db.execSQL("ALTER TABLE sneakers ADD COLUMN forgeNeed INTEGER")
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
             MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
-            MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
+            MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
         )
     }
 }

@@ -548,6 +548,12 @@ data class ServerStats(
     /** 이 신발로 달린 거리 · 팔 수 있게 되는 거리(km) — 무료 뽑기 신발은 잠금 거리를 달려야 판다(서버 can_withdraw) */
     val kmRun: Double = 0.0,
     val lockKm: Double = 0.0,
+    /**
+     * 강화 경험치 통(서버 0118 `my_shoe_xp` — 1켤레값 = 1,000점): 통에 든 점수 · 이 레벨의 통 크기. 만렙이면 [forgeNeed] 는 null,
+     * 서버에 0118 이 없거나 아직 받지 못했으면 둘 다 null — 그때는 경험치 줄을 보이지 않는다(폰 DB 판 23)
+     */
+    val forgeXp: Int? = null,
+    val forgeNeed: Int? = null,
 ) {
     /** 내구도 계수 — 남은 비율이 0 보다 크면 1, 다 닳았으면 0 (서버 economy.durability_factor, 0066) */
     val durabilityFactor: Double
@@ -559,6 +565,24 @@ data class ServerStats(
     /** 폰에서 올린 옛 신발(IMPORT · MINT)은 서버가 강화 · 수리를 받지 않는다 */
     val upgradable: Boolean get() = origin !in setOf("IMPORT", "MINT")
 }
+
+/**
+ * 다음 레벨까지 채운 양 — 0.1% 단위 정수(653 = 65.3%). 서버(0118)와 같은 식 `floor(xp × 1000 ÷ need)` 를 버려서 쓴다.
+ * 통이 차면 서버가 바로 레벨을 올리므로 999(99.9%)를 넘기지 않는다 — 100.0% 인데 레벨업이 아닌 줄은 보이지 않는다.
+ * 모르면(서버 값 없음 · 0118 전 서버) · 만렙이면 null.
+ */
+val Sneaker.nextLevelTenths: Int?
+    get() {
+        val s = server ?: return null
+        if (level >= maxLevel) return null
+        val need = s.forgeNeed?.takeIf { it > 0 } ?: return null
+        val xp = s.forgeXp ?: return null
+        return (xp.coerceAtLeast(0).toLong() * 1000 / need).toInt().coerceIn(0, 999)
+    }
+
+/** "65.3" — [nextLevelTenths] 를 소수 한 자리 글로(언어와 상관없이 점). 모르면 null */
+val Sneaker.nextLevelPercentText: String?
+    get() = nextLevelTenths?.let { "${it / 10}.${it % 10}" }
 
 /** 민팅기 */
 object SneakerMint {

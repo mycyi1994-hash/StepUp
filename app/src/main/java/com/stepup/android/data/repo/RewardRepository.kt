@@ -189,36 +189,37 @@ class RewardRepository(
         steps: Int,
         partySize: Int = 1,
         today: Long = LocalDate.now().toEpochDay(),
-        /** 멈춘 시간을 뺀 달린 시간(초) — 신발이 다 닳은 뒤의 걸음을 빼는 데 쓴다(서버 0066). 0 이면 빼지 않는다 */
+        /**
+         * 멈춘 시간을 뺀 달린 시간(초) — 신발 수명 안의 걸음과 다 닳은 뒤의 걸음을 가르는 데 쓴다(서버 0066 · 0119). 0 이면 가르지 않는다
+         */
         activeSec: Long = 0L,
         startedAt: Long = System.currentTimeMillis(),
+        /** 크루 대기실에서 출발한 러닝 — 인원 배수는 크루 규칙(crew_bonus_rule)을, 아니면 번개 규칙(party_bonus_rule)을 따른다 */
+        crewRoom: Boolean = false,
     ): SessionReward {
         syncEnergyCap()
         val energyRemaining = prefs.currentEnergy(today)
         val equipped = sneakerDao.equippedNow()?.toDomain()
-        // 신발이 다 닳은 뒤의 걸음은 서버가 적립하지 않는다 — 예상 보상도 같은 규칙으로
-        val creditedSteps = equipped?.server?.takeIf { it.hasDurabilityMax }
-            ?.let { RewardEconomy.stepsWithinDurability(steps, it.durabilityNow, activeSec) } ?: steps
-
-        val earningMultiplier = equipped?.earningMultiplier
-            ?: RewardEconomy.sneakerMultiplier(prefs.sneakerLevel.first())
-        val energyEfficiency = equipped?.energyEfficiency ?: 1.0
 
         val xpBoosted = boostDao.activeAt(BoostType.XP_BOOSTER.id, startedAt) != null
         val boostMultiplier = if (xpBoosted) RewardEconomy.XP_BOOST_MULTIPLIER else 1.0
 
-        val reward = RewardEconomy.sessionReward(
-            walkedSteps = creditedSteps,
+        // 신발 수명(남은 내구도 × 12초 ÷ 효율 포인트 배수)까지의 걸음은 다, 그 뒤의 걸음은 서버 규칙의 비율만큼(0119 — 30%, 걸음은
+        // 그대로 센다. 그 전 규칙이면 적립하지 않는다 0066). 달리는 중 화면의 예상과 같은 셈이다(RewardEconomy.shoeSessionReward).
+        // 걸음당 SUP · 닳은 뒤 비율은 서버 규칙(경제 4판 0116 · 0119) — 앱이 준비되기 전이면 같은 기본값
+        val rules = shoeRulesNow()
+        return RewardEconomy.shoeSessionReward(
+            steps = steps,
+            activeSec = activeSec,
             energyRemaining = energyRemaining,
-            earningMultiplier = earningMultiplier,
-            energyEfficiency = energyEfficiency,
-            partyMultiplier = RewardEconomy.partyMultiplier(partySize),
+            shoe = equipped,
+            rules = rules,
+            fallbackMultiplier = if (equipped == null) RewardEconomy.sneakerMultiplier(prefs.sneakerLevel.first()) else 1.0,
+            // 함께 달린 사람만 세는 규칙(0120 ACTIVE)이면 올릴 때 인원 배수가 없다(× 1 — 함께 달린 사람이 올릴 때마다 서버가 더한다).
+            // 예전 규칙이면 함께 출발한 인원으로. 서버가 확인하기 전 "예상 보상"에 서버가 바로 치르지 않는 배수를 넣지 않는다
+            partyMultiplier = rules.together.let { if (crewRoom) it else it.forFlash() }.uploadPartyMultiplier(partySize),
             boostMultiplier = boostMultiplier,
-            // 걸음당 SUP 는 서버 규칙(경제 4판 0116) — 앱이 준비되기 전이면 같은 기본값
-            pointsPerStep = shoeRulesNow().pointsPerStep,
         )
-
-        return reward
     }
 
     /**
@@ -320,6 +321,8 @@ fun com.stepup.android.data.local.SneakerEntity.toDomain(): Sneaker {
             repairCostPerUnit = repairCostPerUnit,
             kmRun = kmRun,
             lockKm = lockKm,
+            forgeXp = forgeXp,
+            forgeNeed = forgeNeed,
         ),
         modelId = modelId.takeIf { it > 0 },
         tokenId = tokenId.takeIf { it > 0 },
@@ -368,4 +371,6 @@ fun Sneaker.toEntity(): com.stepup.android.data.local.SneakerEntity =
         repairCostPerUnit = server?.repairCostPerUnit ?: 0.0,
         kmRun = server?.kmRun ?: 0.0,
         lockKm = server?.lockKm ?: 0.0,
+        forgeXp = server?.forgeXp,
+        forgeNeed = server?.forgeNeed,
     )
