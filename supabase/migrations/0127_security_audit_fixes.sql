@@ -133,15 +133,15 @@ declare
   p text[];
   i int;
   n int := coalesce(array_length(v, 1), 0);
-  num constant text := '^-?[0-9]+(\.[0-9]+)?$';
+  num constant text := '^-?[0-9]{1,3}(\.[0-9]{1,15})?$';   -- 위도 · 경도 꼴만(엄청 긴 숫자로 셈이 넘치지 않게)
 begin
   for i in 1 .. n loop
     p := string_to_array(v[i], ',');
-    if array_length(p, 1) >= 2 and p[1] ~ num and p[2] ~ num then lat1 := p[1]::double precision; lng1 := p[2]::double precision; exit; end if;
+    if array_length(p, 1) >= 2 and p[1] ~ num and p[2] ~ num and abs(p[1]::double precision) <= 90 and abs(p[2]::double precision) <= 180 then lat1 := p[1]::double precision; lng1 := p[2]::double precision; exit; end if;
   end loop;
   for i in reverse n .. 1 loop
     p := string_to_array(v[i], ',');
-    if array_length(p, 1) >= 2 and p[1] ~ num and p[2] ~ num then lat2 := p[1]::double precision; lng2 := p[2]::double precision; exit; end if;
+    if array_length(p, 1) >= 2 and p[1] ~ num and p[2] ~ num and abs(p[1]::double precision) <= 90 and abs(p[2]::double precision) <= 180 then lat2 := p[1]::double precision; lng2 := p[2]::double precision; exit; end if;
   end loop;
 end $$;
 revoke all on function economy.track_ends(text) from public, anon, authenticated;
@@ -366,6 +366,7 @@ begin
     raise exception '올릴 수 없는 신발입니다' using errcode = '22023';
   end if;
   p_level := least(greatest(coalesce(p_level, 1), 1), 20);
+  p_rarity := upper(p_rarity);
   select sneaker_id into v_id from public.market_imports
    where user_id = v_user and local_id = p_local_id;
   if v_id is not null then

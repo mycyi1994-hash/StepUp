@@ -1,5 +1,17 @@
 # StepUp — 작업 메모
 
+## 최신 — 보안 점검 세 번 · 서버 0126 · 0127 · CI 정리 (2026-11-24)
+
+사용자 "보안 관련해서는 빡세게 3번 이상 점검해서 다 수행" — 1차(서버 · 앱 · CI/웹/워커 따로) → 고침 → 2차(고친 것만 깨 보기) → 고침 → 3차(배포 안전 GO).
+- **`public.access_gate` 는 0126 이 마지막 정의다** — 구글 로그인(`app_metadata.providers` 에 google)만 그대로, 그 밖(이메일 · 익명 · 전화)은
+  `economy.test_accounts`(시험 계정 — `test_account_seed` 가 넣는다) · 워커 계정(`attester_user_id` · `coaching_worker_user_id` — 둘 다 이메일 로그인)만.
+  끄기 `email_accounts_rule = 'ALL'`. 가입 훅 `public.hook_before_user_created`(대시보드에서 켠다 · 허용 이메일 `signup_email_allowlist`).
+- 0127: 순위표 로그인 · 100명 · 크루 영역 출발 · 도착 300m 안 칠함 · 남의 작은 크루(`territory_min_members` 3) 안 보임 · 끝난 워킹데이 받는 문 닫음 ·
+  IP 해시 IPv6 /64 · 새 계정 이름은 구글 이름만 16자 · `market_import` 네 등급 · Lv20 · 앱 역할 TRUNCATE 없음.
+- CI: 비밀 읽는 작업에 `environment`(production · release — 소유자가 비밀을 옮기고 main 으로 묶는다) · 액션 SHA 고정 · 로그에 운영 값 안 남김 ·
+  매일 숫자는 `public.daily_stats()` + 비밀 `STATS_KEY`. 웹: 검토 페이지 CSP · 지갑 · 뽑기 connect-src(메타마스크 중계 포함) · CSV 수식 막기.
+- 검사용 `auth.users` 대역은 `raw_app_meta_data` 기본 구글 — 다른 로그인은 검사가 직접 적는다. 워킹데이 검사 절은 닫은 문을 그 절에서만 다시 연다.
+
 ## 공개 저장소 — 운영 정보를 남기지 않는다 (2026-11-24)
 
 이 저장소는 **공개여야 한다**(GASOK 제출 — 사용자 "비공개로 할 수 없다"). Actions 로그 · 이슈 · 아티팩트도 누구나 본다.
