@@ -22,12 +22,12 @@ jobs:
     # 디자인 기준 장면(4묶음)까지 도므로 넉넉히
     timeout-minutes: 110
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Enable emulator acceleration
@@ -77,7 +77,7 @@ jobs:
       # 아티팩트는 로그인해야 받을 수 있지만, 사전 배포의 첨부 파일은 테스트 APK 와
       # 같은 방식으로 누구나 받는다. 전부(수백 장)가 아니라 한국어 기본·큰 글자,
       # 다크·라이트 한 벌과 하단 탭 이동 캡처, 레이아웃 검사 기록만 묶는다.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: StepUp-experience-qa
@@ -96,7 +96,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: StepUp-experience-qa
       - name: Publish review screenshots
