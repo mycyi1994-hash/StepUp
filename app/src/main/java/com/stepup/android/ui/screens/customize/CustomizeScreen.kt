@@ -450,21 +450,18 @@ private fun NameBlock(shoe: Sneaker, onRename: () -> Unit) {
                 autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 30.sp, stepSize = 1.sp),
                 modifier = Modifier.fillMaxWidth().semantics { heading() }.testTag("shoe-hero-name"),
             )
-            // 뽑힌 값의 별 · 유형(경제 4판) · 가득 찼을 때 달리는 시간. 뽑은 값을 모르는 신발은 남은 내구도만
+            // 가득 찼을 때 달리는 시간(별 · 유형은 뺐다 — 2026-11-24 사용자). 가득 값을 모르는 신발은 남은 내구도만
             val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
-            val quality = com.stepup.android.ui.screens.items.shoeQualityOf(shoe, rules)
             val time = if (shoe.server?.hasDurabilityMax == true) {
                 stringResource(R.string.v4s_full_minutes,
                     com.stepup.android.ui.screens.items.wholeMinutes(shoe, com.stepup.android.ui.screens.items.durabilityMax(shoe), rules))
             } else {
                 stringResource(R.string.shoes_durability_left, formatDurability(shoe))
             }
-            val meta = listOfNotNull(quality?.let { com.stepup.android.ui.screens.items.qualityLabel(it) }, time).joinToString(" · ")
-            val metaCd = listOfNotNull(quality?.let { com.stepup.android.ui.screens.items.qualityDescription(it) }, time).joinToString(", ")
             Text(
-                meta,
+                time,
                 style = StepUpUi.type.rowSubtitle.copy(fontSize = 14.sp), color = c.secondaryLabel, maxLines = 1,
-                modifier = Modifier.padding(top = 4.dp).semantics { contentDescription = metaCd }.testTag("shoe-hero-meta"),
+                modifier = Modifier.padding(top = 4.dp).testTag("shoe-hero-meta"),
             )
         }
         CircleIconButton(
@@ -757,7 +754,7 @@ private fun VaultReady(
             items(shown, key = { it.id }) { shoe ->
                 VaultCard(shoe, selected = shoe.id == chosen, onClick = { onOpen(shoe.id) })
             }
-            item(key = "links", span = { GridItemSpan(maxLineSpan) }) { VaultLinks(onOpenDex, onOpenMarket, onOpenItems) }
+            // 도감 보기 · 마켓 · 아이템 줄은 뺐다(2026-11-24 사용자 "다 없애고")
         }
     }
     if (sortSheet) {
@@ -911,27 +908,6 @@ private fun VaultCard(shoe: Sneaker, selected: Boolean, onClick: () -> Unit) {
         ShoeMeta(shoe, fontSize = 12.5f, modifier = Modifier.padding(horizontal = 2.dp))
         // 눌림 자리(둥근 18dp)의 아래 모서리 곡선이 마지막 줄 첫 글자("Lv."의 L)를 자르지 않게 — 2026-09-28 기기 캡처
         Spacer(Modifier.height(10.dp))
-    }
-}
-
-/** 격자 아래 작은 줄 — 도감 · 마켓 · 아이템(스토어 · NFT). 보유 격자에 섞지 않고 따로 들어간다(지우지 않음) */
-@Composable
-private fun VaultLinks(onOpenDex: () -> Unit, onOpenMarket: () -> Unit, onOpenItems: () -> Unit) {
-    val p = shoeInk()
-    Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
-        listOf(
-            Triple(R.string.shoes_s2_dex, onOpenDex, "shoe-open-dex"),
-            Triple(R.string.shoes_s2_market, onOpenMarket, "shoe-open-market"),
-            Triple(R.string.market_tab_items, onOpenItems, "shoe-open-vault"),
-        ).forEach { (label, onClick, tag) ->
-            Box(
-                Modifier.heightIn(min = StepUpDesign.TouchTarget).clip(RoundedCornerShape(12.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp).testTag(tag),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(stringResource(label), color = p.secondary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
     }
 }
 

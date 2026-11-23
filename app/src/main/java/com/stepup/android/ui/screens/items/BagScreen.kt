@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -113,10 +114,8 @@ fun BagScreen() {
             contentPadding = PaddingValues(top = 6.dp, bottom = if (selected != null) 120.dp else 28.dp),
         ) {
             item {
-                LargeTitle(
-                    stringResource(R.string.tab_items),
-                    subtitle = current?.let { b -> stringResource(R.string.bag_count, b.items.count { it.qty > 0 }, b.total) },
-                )
+                // "N종 · N개 보유" 줄은 뺐다(2026-11-24 사용자) — 개수는 카드마다 ×N 으로 보인다
+                LargeTitle(stringResource(R.string.tab_items))
             }
             current?.event?.let { event -> item { EventBand(event.mult, event.endsAtMillis) } }
             when {
@@ -139,7 +138,8 @@ fun BagScreen() {
                     item {
                         SectionHead(stringResource(R.string.bag_section_run), stringResource(R.string.bag_section_run_hint))
                         Row(
-                            Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter),
+                            // 카드 줄이 화면 높이를 나눠 채운다 — 아래가 비어 보이지 않게(2026-11-24 사용자 "너무 비어 보인다")
+                            Modifier.fillMaxWidth().fillParentMaxHeight(0.27f).padding(horizontal = StepUpUi.Gutter),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             ItemKind.entries.filter { it.runPick }.forEach { kind ->
@@ -147,7 +147,7 @@ fun BagScreen() {
                                     item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0),
                                     selected = selected == kind,
                                     tall = false,
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).fillMaxHeight(),
                                     onClick = { selected = kind; request = null; message = null },
                                 )
                             }
@@ -156,7 +156,8 @@ fun BagScreen() {
                     item {
                         SectionHead(stringResource(R.string.bag_section_now), null)
                         Row(
-                            Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter),
+                            // 카드 줄이 화면 높이를 나눠 채운다 — 아래가 비어 보이지 않게(2026-11-24 사용자 "너무 비어 보인다")
+                            Modifier.fillMaxWidth().fillParentMaxHeight(0.37f).padding(horizontal = StepUpUi.Gutter),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             ItemKind.entries.filter { !it.runPick }.forEach { kind ->
@@ -164,7 +165,7 @@ fun BagScreen() {
                                     item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0),
                                     selected = selected == kind,
                                     tall = true,
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).fillMaxHeight(),
                                     onClick = { selected = kind; request = null; message = null },
                                 )
                             }
@@ -298,8 +299,9 @@ internal fun ItemTile(item: BagItem, selected: Boolean, tall: Boolean, modifier:
             .testTag("bag-item-${item.kind.id}"),
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 10.dp).alpha(if (item.qty > 0) 1f else .5f),
+            Modifier.fillMaxSize().padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 10.dp).alpha(if (item.qty > 0) 1f else .5f),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Image(
                 painterResource(itemArt(item.kind)), contentDescription = null,

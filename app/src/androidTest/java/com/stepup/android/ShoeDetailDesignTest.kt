@@ -251,9 +251,9 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
-        // 신발 관리는 ⋯ 안에만 있지 않다 — 수리하기는 내구도 칸에(2026-11-07 "신발 수리하는거 버튼 앞으로"), 판매하기 · 신발 기록은 본문 아래.
-        // 다 찬 신발이라 수리하기는 흐리다(누를 수 없음). 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
-        compose.onNodeWithTag("shoe-durability-repair", useUnmergedTree = true).assertExists().assertHasClickAction().assertIsNotEnabled()
+        // 수리하기는 이름 줄 오른쪽의 붉은 버튼(2026-11-24) — 고칠 내구도가 있을 때만. 다 찬 신발이라 없다.
+        // 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
+        compose.onAllNodesWithTag("shoe-durability-repair", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
         // 아이템칸 — 잠긴 자리 셋만(아이템 · 숫자 없음)
         compose.onNodeWithTag("shoe-item-slots", useUnmergedTree = true).assertExists()

@@ -171,7 +171,6 @@ private fun ColumnScope.PointsBody(
     val basis = phase.basis
     val draft = phase.draft
     // 능력치의 뜻(서버 0119) — 효율은 신발 · 에너지도 빨리 쓰고, 내구도는 가득 수리비를 올리지 않는다. 예전 서버면 예전 글
-    val newMeaning = newStatMeaning(basis.rules)
     // 효율 포인트가 닳는 속도를 올리는 규칙이면 가득에서 달리는 분을 따로 보인다(효율로 줄고 내구도로 는다)
     val lifeMoves = basis.rules.stats.effWearExp > 0.0
     // ⓘ — 펼친 줄 하나(창 없이 그 줄 아래). 다른 줄을 펼치면 앞의 것은 접힌다
@@ -185,16 +184,15 @@ private fun ColumnScope.PointsBody(
             val live = preview?.takeIf { basis.accepts(it) }
             CareSheetTitle(stringResource(R.string.points_title), shoe.nameAndNumber())
             FreeLine(basis.free(draft), basis)
-            if (live != null) PreviewBasisLine(live)
+            // 미리보기 기준 줄("아직 기록이 없어 30분 달리기 기준 …")은 뺐다(2026-11-24 사용자 "글이 너무 많다")
             PointStat.entries.forEach { stat ->
                 PointRow(
                     basis, draft, stat, editable = true, info = info(stat),
                     onAdd = { actions.onAdd(stat) }, onRemove = { actions.onRemove(stat) },
-                    help = if (newMeaning) pointHelp(stat) else null,
+                    help = null, // 뜻 한 줄은 ⓘ 에만(2026-11-24)
                     worth = live?.let { pointWorthOf(it, stat) },
                 )
             }
-            if (lifeMoves) LifeLine(basis, draft, showChange = true)
             Text(pointsNote(basis), style = runTextStyle(14.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("points-note"))
             RecommendActions(basis, draft, live, actions)
             val error = phase.error
@@ -271,29 +269,8 @@ private fun FreeLine(free: Int, basis: PointsBasis) {
         Text(stringResource(R.string.points_free), style = runTextStyle(16.sp, t.label, FontWeight.SemiBold))
         Spacer(Modifier.width(10.dp))
         Text("$free", style = runTextStyle(22.sp, t.cyan, FontWeight.ExtraBold), modifier = Modifier.testTag("points-free-value"))
-        Spacer(Modifier.weight(1f))
-        val grade = basis.rules.grade(basis.rarity)
-        Text(stringResource(R.string.v4s_points_per_level, grade.pointsPerLevel, grade.pointsMilestone),
-            style = runTextStyle(13.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("points-per-level"))
     }
 }
-
-/**
- * 미리보기의 기준 한 줄 — "내 지난 14일 러닝 7번 기준 · 어림값이에요" / 기록이 없으면 "30분 달리기 기준". 아래 줄들의 SUP 는 받은 것이
- * 아니라 서버가 지난 러닝으로 셈한 어림값이다. 기준을 모르면 줄이 없다
- */
-@Composable
-private fun PreviewBasisLine(preview: PointsPreview) {
-    val text = when (preview.source) {
-        PointsPreview.Source.MINE -> stringResource(R.string.ers_preview_basis_mine, preview.runs)
-        PointsPreview.Source.DEFAULT -> stringResource(R.string.ers_preview_basis_default, preview.avgMin ?: DEFAULT_PREVIEW_MINUTES)
-        null -> return
-    }
-    Text(text, style = runTextStyle(13.sp, runTone().label, FontWeight.Medium), modifier = Modifier.testTag("points-preview-basis"))
-}
-
-/** 기록이 없을 때 서버가 가정하는 러닝(분) — 서버가 값을 보내지 않았을 때만 쓴다(계약서 3장 "30분 달리기 하루 한 번") */
-private const val DEFAULT_PREVIEW_MINUTES = 30
 
 /**
  * "가득에서 31분 → 29분" — 이 배분으로 신발이 가득에서 달리는 분(서버 0119: 최대 내구도 ÷ (5 × 효율 포인트 배수)). 효율에 넣으면 줄고
@@ -312,16 +289,6 @@ private fun LifeLine(basis: PointsBasis, draft: PointsDraft, showChange: Boolean
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag("points-life"),
     )
 }
-
-/** 줄 아래 뜻 한 줄(서버 0119) — 효율: 더 빨리 벌고 신발 · 에너지도 빨리 쓴다 · 착화감: 하루에 더 많이 · 내구도: 가득 수리비는 그대로 */
-@Composable
-private fun pointHelp(stat: PointStat): String = stringResource(
-    when (stat) {
-        PointStat.EFFICIENCY -> R.string.ers_points_help_efficiency
-        PointStat.COMFORT -> R.string.ers_points_help_comfort
-        PointStat.DURABILITY -> R.string.ers_points_help_durability
-    },
-)
 
 /**
  * 되돌릴 수 없다는 한 줄 — 서버 0119 부터는 5레벨마다 한 번 다시 나눌 수 있다고 함께 말한다(예전 서버 · 규칙을 못 읽었으면 예전 글)

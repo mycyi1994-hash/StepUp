@@ -157,7 +157,8 @@ fun ShoeStatCells(
     val meanings = rows.map { statMeaning(it.stat, newMeaning) }
     val showCds = labels.map { stringResource(R.string.shoe_info_show_cd, it) }
     val hideCds = labels.map { stringResource(R.string.shoe_info_hide_cd, it) }
-    val notes = rows.map { row -> row.nextLevelPercent?.let { stringResource(R.string.shoe_xp_next, it) } }
+    // "다음 레벨까지 N%" 줄은 뺐다(2026-11-24 사용자) — 칸 높이가 넷 모두 같다
+    val notes = rows.map { null as String? }
     BoxWithConstraints(modifier.fillMaxWidth()) {
         // 아주 큰 글씨 · 좁은 화면에서 두 열이 칸을 다 먹으면(막대가 BarMin 보다 짧아지면) 그때만 막대를 글 아래 줄로 내린다
         val stacked = maxWidth - CellPadding * 2 - ColumnGap * 2 - labelWidth - valueWidth < BarMin

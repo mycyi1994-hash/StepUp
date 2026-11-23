@@ -26,6 +26,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Refresh
@@ -524,7 +526,9 @@ private fun DetailBody(
             }
         }
         Spacer(Modifier.height(16.dp))
-        // 이름 → 등급 배지 → No. 번호 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다. 착용 여부로 배지를 바꾸지 않는다
+        // 이름 → 등급 배지 → No. 번호 → (오른쪽) 붉은 수리하기 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다. 착용 여부로 배지를 바꾸지 않는다
+        // 수리하기는 고칠 내구도가 있을 때만(2026-11-24 사용자 "수리하기는 No. 오른쪽 버튼") — 내구도 칸 안 버튼 · 다음 레벨 % 는 뺐다
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         ShoeNameWithBadge(
             name = shoe.shoeName(), tier = shoe.tier,
             style = androidx.compose.ui.text.TextStyle(
@@ -536,17 +540,12 @@ private fun DetailBody(
             suffixStyle = androidx.compose.ui.text.TextStyle(
                 color = t.label, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum",
             ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
+            modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
         )
-        // 뽑힌 값의 별 · 유형(경제 4판 — 같은 등급 안에서 얼마나 잘 뽑혔는가). 뽑은 값을 모르는 신발에는 없다
-        val quality = shoeQualityOf(shoe, rememberShoeRules())
-        if (quality != null) {
-            val qualityCd = qualityDescription(quality)
-            Text(
-                qualityLabel(quality), style = runTextStyle(15.sp, t.cyan, FontWeight.SemiBold),
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp)
-                    .semantics { contentDescription = qualityCd }.testTag("shoe-quality"),
-            )
+        if (repairable(shoe)) {
+            Spacer(Modifier.width(8.dp))
+            ShoeRepairPill(onShowRepair, enabled = !care.busy)
+        }
         }
         // 신고 있는 신발의 주 버튼이 수리하기가 되면 "지금 신고 있어요"는 여기 한 줄로(배지 아닌 보조 글자)
         if (repairInPrimary(shoe, care)) {
@@ -580,15 +579,8 @@ private fun DetailBody(
             )
             Spacer(Modifier.height(8.dp))
         }
-        // 수리는 내구도 칸 바로 아래(사용자 "수리하는 곳을 찾을 수가 없었음" → 2026-11-07 "신발 수리하는거 버튼 앞으로").
-        // ⋯ 관리 시트의 수리하기는 그대로 둔다
-        ShoeStatCells(
-            shoe, Modifier.testTag("shoe-stat-cells"),
-            onRepair = onShowRepair,
-            repairEnabled = !care.busy && repairable(shoe),
-            // 곧 닳는지는 그 신발의 수명으로(효율에 포인트를 넣은 신발은 그만큼 짧다 — 서버 규칙)
-            repairEmphasis = repairUrgent(shoe, rememberShoeRules()),
-        )
+        // 수리하기는 이름 줄 오른쪽(위) — 칸 안에는 두지 않는다(2026-11-24). ⋯ 관리 시트의 수리하기는 그대로
+        ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
         // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
         ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 6.dp))
         // 아이템칸 — 아이템이 생긴다는 가정의 자리만(잠김). 아이템 · 개수를 지어내지 않는다
@@ -1029,3 +1021,26 @@ internal fun Sneaker.modelShoeName(): String {
 
 /** 한국어 화면이면 목적격 조사를 붙인다("새벽 강변을") — 다른 언어 문장은 조사가 없다 */
 internal fun String.withParticle(korean: Boolean): String = if (korean) withObjectParticle(this) else this
+
+/**
+ * 이름 줄 오른쪽의 붉은 "수리하기"(2026-11-24 사용자 시안 — No. 번호 오른쪽). 고칠 내구도가 있을 때만 그린다.
+ * 높이 44 이상 · 누르면 수리 시트. 결과를 기다리는 동안은 흐리게.
+ */
+@Composable
+private fun ShoeRepairPill(onClick: () -> Unit, enabled: Boolean) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier.alpha(if (enabled) 1f else 0.5f)
+            .heightIn(min = 44.dp)
+            .clip(shape)
+            .background(Color(0xFFE5383B), shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .testTag("shoe-durability-repair")
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Outlined.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(R.string.care_repair), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}

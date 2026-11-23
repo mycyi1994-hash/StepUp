@@ -184,17 +184,7 @@ internal fun DrawResultScreen(
                             style = runTextStyle(16.sp, t.label, FontWeight.SemiBold), textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 4.dp).testTag("draw-result-number"),
                         )
-                        // 뽑힌 값이 이 등급 안에서 얼마나 좋은가(경제 4판 — 별 · 유형). 뽑은 값을 모르면 줄을 두지 않는다
-                        val quality = com.stepup.android.ui.screens.items.shoeQualityOf(
-                            result.shoe, com.stepup.android.ui.screens.items.rememberShoeRules(),
-                        )
-                        if (quality != null) {
-                            Text(
-                                com.stepup.android.ui.screens.items.qualityLabel(quality),
-                                style = runTextStyle(16.sp, t.cyan, FontWeight.SemiBold), textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 4.dp).testTag("draw-result-quality"),
-                            )
-                        }
+                        // 별 · 유형(균형형 …) 줄은 뺐다(2026-11-24 사용자 "아예 없애")
                         Text(
                             stringResource(R.string.dv2_result_added), style = runTextStyle(15.sp, t.label, FontWeight.Medium),
                             textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp),
