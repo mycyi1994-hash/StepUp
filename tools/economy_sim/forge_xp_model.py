@@ -5,7 +5,11 @@
 SUP 로 산 상자의 경험치 값 · 레벨 하나의 값어치(효율 포인트 · 에너지)와 본전 뽑는 날.
 
     python3 tools/economy_sim/forge_xp_model.py
+    python3 tools/economy_sim/forge_xp_model.py --check   # 통 크기 · 재료 값이 서버 함수(0118 · 0119)와 같은가 — CI(test-sql.yml)
 """
+import os
+import subprocess
+import sys
 G = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'REDLINE', 'FINISH']
 KO = dict(zip(G, ['일반', '레어', '에픽', '레전더리', '레드라인', '피니시']))
 MAXLV = dict(zip(G, [20, 20, 26, 27, 28, 30]))
@@ -20,9 +24,13 @@ NEED1 = 2.88                                           # Lv1 → 2 에 필요한
 N1 = {g: NEED1 * V[G[max(i - 1, 0)]] for i, g in enumerate(G)}
 
 
+GROWTH = 0.30                                          # 통은 레벨마다 Lv1 통의 30%씩 커진다(0119 — forge_xp_level_growth)
+
+
 def need_pct(level):
-    """그 레벨에서 다음 레벨까지 — Lv1 을 100 으로. 지금 확률 방식의 평균 비용(3 ÷ 성공 확률)과 같은 굽이"""
-    return 100 * 1.03 / (1.06 - 0.03 * level)
+    """그 레벨에서 다음 레벨까지 — Lv1 을 100 으로. 0119: 레벨마다 +30%(예전 확률 강화가 실제로 걸리던 날 수에 맞춘 굽이).
+    0118 의 굽이는 100 × 1.03 ÷ (1.06 − 0.03 × 레벨) — 레어 만렙이 24일 → 9일로 빨라져 바꿨다(docs/economy-roots-2026-11-21.md)"""
+    return 100 * (1 + GROWTH * (level - 1))
 
 
 def units(grade, frm, to):
@@ -39,6 +47,59 @@ PREMIUM = {'RARE': .60, 'EPIC': .28, 'LEGENDARY': .09, 'REDLINE': .025, 'FINISH'
 CRIT = 1.10                                            # 대성공 10% × 2배 → 평균 +10%
 box_units = sum(p * V[g] for g, p in NORMAL.items())
 prem_units = sum(p * V[g] for g, p in PREMIUM.items())
+
+SPEC = (0.7, 1.3)                                      # 재료 값 × (0.7 + 0.6q) — q 는 세 능력치 자리의 평균
+
+
+def need_points(grade, level):
+    """서버 economy.forge_need 와 같은 점수(일반 1켤레값 = 1,000)"""
+    return round(1000 * N1[grade] * need_pct(level) / 100)
+
+
+def own_points(grade, q):
+    return round(1000 * V[grade] * (SPEC[0] + (SPEC[1] - SPEC[0]) * q))
+
+
+def check():
+    """서버 규칙(setup.sql)으로 강화 표를 뽑아(tools/economy_sim/run.sh, ONLY=forge) 이 모형과 맞대어 본다. 다르면 1"""
+    here = os.path.dirname(os.path.abspath(__file__))
+    out = subprocess.run(['bash', os.path.join(here, 'run.sh')], capture_output=True, text=True,
+                         env=dict(os.environ, ONLY='forge'))
+    if out.returncode != 0:
+        print(out.stdout[-3000:], out.stderr[-3000:])
+        sys.exit('강화 표를 뽑지 못했다')
+    bad, seen = [], 0
+    for line in out.stdout.splitlines():
+        p = line.strip().split('|')
+        if p[0] == 'NEED' and len(p) == 4:
+            seen += 1
+            g, lv, server = p[1], int(p[2]), int(p[3])
+            if lv >= MAXLV[g]:
+                bad.append(f'{KO[g]} Lv{lv}: 만렙인데 통이 있다')
+            elif abs(need_points(g, lv) - server) > 1:
+                bad.append(f'{KO[g]} Lv{lv} 통: 모형 {need_points(g, lv)} · 서버 {server}')
+        elif p[0] == 'VAL' and len(p) == 7:
+            seen += 1
+            g, state, own, inherit, repair, q = p[1], p[2], int(p[3]), int(p[4]), int(p[5]), float(p[6])
+            want = max(own_points(g, q) - repair, 0)
+            if abs(want - own) > 1:
+                bad.append(f'{KO[g]} {state} 제 값: 모형 {want} · 서버 {own}')
+            if state == 'LV5':
+                inh = round(0.5 * sum(need_points(g, L) for L in range(1, 5)))
+                if abs(inh - inherit) > 2:
+                    bad.append(f'{KO[g]} Lv5 물려줌: 모형 {inh} · 서버 {inherit}')
+    if seen < 140:
+        print(out.stdout[-3000:])
+        sys.exit(f'강화 표를 읽지 못했다({seen}줄)')
+    if bad:
+        print('\n'.join(bad))
+        sys.exit(1)
+    print(f'모형 = 서버 — 통 크기 · 재료 값 {seen}줄이 같다')
+
+
+if '--check' in sys.argv[1:]:
+    check()
+    sys.exit(0)
 
 print('── 재료 값(일반 1켤레 = 1.00) · Lv1 → 2 에 필요한 값')
 for g in G:
@@ -74,7 +135,7 @@ print('\n── 레벨 하나의 값어치 — 하루 8,000보 러너 · 포인�
 for g in G[:4]:
     for L in (1, 5, 10, 19):
         def gross(level, steps=8000):
-            energy = 10 + 2 * (level - 1)
+            energy = 10                                # 0119: 하루 에너지는 레벨과 상관없다
             s = min(steps, energy * 600)
             pts = PPL[g] * (level - 1)
             return s * PPS * (1 + EFF_MID[g] / 10000) * (1 + RATE[g] * pts)

@@ -8,6 +8,7 @@
 #
 #   tools/economy_sim/run.sh                                  # 지금 규칙
 #   tools/economy_sim/run.sh tools/economy_sim/tweak-2026-11-18.sql   # 규칙을 바꿔서(그 파일의 SQL 을 먼저 실행)
+#   ONLY=forge tools/economy_sim/run.sh                       # 강화 경험치 표만(forge.sql — forge_xp_model.py --check · check.py)
 #
 # 필요한 것: postgresql 16 (initdb/pg_ctl/psql) — supabase/tests/run.sh 와 같다.
 set -euo pipefail
@@ -24,7 +25,7 @@ export PATH="$PGBIN:$PATH"
 stage() {
   mkdir -p "$RUNDIR"
   cp "$ROOT/supabase/setup.sql" "$ROOT/supabase/tests/stub_auth.sql" "$RUNDIR/"
-  cp "$ROOT/tools/economy_sim/day.sql" "$ROOT/tools/economy_sim/flows.sql" "$RUNDIR/"
+  cp "$ROOT/tools/economy_sim/day.sql" "$ROOT/tools/economy_sim/flows.sql" "$ROOT/tools/economy_sim/forge.sql" "$RUNDIR/"
   : > "$RUNDIR/tweak.sql"
   if [ -n "$TWEAK" ]; then cp "$TWEAK" "$RUNDIR/tweak.sql"; fi
 }
@@ -33,7 +34,7 @@ stage() {
 if [ "$(id -u)" = "0" ]; then
   stage
   chown -R postgres "$RUNDIR"
-  exec su postgres -c "RUNDIR='$RUNDIR' PGPORT='$PORT' PGBIN='$PGBIN' STANDALONE=1 bash '$ROOT/tools/economy_sim/run.sh'"
+  exec su postgres -c "RUNDIR='$RUNDIR' PGPORT='$PORT' PGBIN='$PGBIN' ONLY='${ONLY:-}' STANDALONE=1 bash '$ROOT/tools/economy_sim/run.sh'"
 fi
 if [ "${STANDALONE:-0}" != "1" ]; then stage; fi
 
@@ -53,6 +54,9 @@ if [ -s "$RUNDIR/tweak.sql" ]; then
   echo "── 규칙 바꿈: ${TWEAK:-tweak.sql} ──"
   run -f "$RUNDIR/tweak.sql"
 fi
+echo "── 강화 경험치 표 ──"
+run -f "$RUNDIR/forge.sql" 2>&1 | sed -E 's/^psql:[^ ]+ NOTICE: +//'
+if [ "${ONLY:-}" = "forge" ]; then exit 0; fi
 echo "── 흐름: 새 사용자 첫날 · 신발 바꿔 신기 · 부스터 ──"
 run -f "$RUNDIR/flows.sql" 2>&1 | sed -E 's/^psql:[^ ]+ NOTICE: +//'
 echo "── 하루 플레이: 에너지를 다 쓸 때까지 달리고, 닳으면 수리 ──"
