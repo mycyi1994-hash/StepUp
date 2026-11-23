@@ -22,6 +22,7 @@ on:
       - "scripts/check-coaching-twin.py"
       - "scripts/check-economy-twin.py"
       - "tools/economy_sim/**"
+      - "tools/together_sim/**"
       - "app/src/main/java/com/stepup/android/domain/EconomyV4.kt"
       - "coach-worker/**"
       - "app/src/main/java/com/stepup/android/domain/coaching/**"
@@ -59,9 +60,50 @@ jobs:
         run: supabase/tests/run.sh
 
       # 경제 불변식(2026-11-18) — 실제 서버 규칙으로 등급 · 레벨마다 하루를 돌려, 운이 가장 나쁜 날에도 걸어서 남는지 ·
-      # 강화하면 덜 남지 않는지 · 새 사용자가 첫 러닝 뒤 고칠 수 있는지 · 갈아 신어도 에너지가 남는지 본다
+      # 강화하면 덜 남지 않는지 · 새 사용자가 첫 러닝 뒤 고칠 수 있는지 · 갈아 신어도 에너지가 남는지 본다.
+      # 0119: 포인트를 네 가지로 나눠서 · 새 사용자가 첫날 기본 목표를 채우는지 · 수리하는 쪽이 늘 나은지 · 예전 앱 강화가 더 싸지 않은지
       - name: 경제 불변식
         run: python3 tools/economy_sim/check.py
+
+      # 강화 경험치(0118) — 설계 모형(forge_xp_model.py)의 통 크기 · 재료 값이 서버 함수와 같은가
+      - name: 강화 경험치 모형 = 서버
+        run: python3 tools/economy_sim/forge_xp_model.py --check
+
+      # 레벨이 오르는 속도(0119) — 서버 규칙의 통으로 꾸준한 무과금 사용자의 만렙까지 걸리는 날(레어 24일 · 에픽 119일 ±20%).
+      # 0118 이 통의 굽이를 바꾸면서 레어 만렙이 24일 → 9일이 된 것을 아무 검사도 잡지 못했다
+      - name: 레벨 속도(기준 러너)
+        run: python3 tools/economy_sim/pace.py --check
+
+      # 함께 달리기 보너스(0120) — 실제 서버 규칙으로 탈주 · 더하기 · 번개 · 하루 최대 · 계정 삭제 · 소식 끊김을 돌려 본다.
+      # 줄마다 OK / FAIL — 하나라도 FAIL · ERROR 면 멈춘다(점검 docs/점검-2026-11-21-보너스.md 의 구멍이 다시 열리지 않게)
+      - name: 함께 달리기 보너스(장면 검사)
+        run: |
+          out="$(bash tools/together_sim/run.sh tools/together_sim/16-together-fix.sql)"
+          echo "$out"
+          echo "$out" | grep -q '^OK' || { echo '장면이 돌지 않았다'; exit 1; }
+          if echo "$out" | grep -Eq '^(FAIL|ERROR)'; then exit 1; fi
+
+      # 경제 점검 고침(0122) — 묶인 체력 · 돌려받기 · 8 : 2 무게 · 번개 한 번 · 규칙 뒤집기 · 러너 걸음 · 크루의 목표 날(docs/점검-2026-11-22-경제.md)
+      - name: 경제 점검 고침(장면 검사)
+        run: |
+          out="$(bash tools/together_sim/run.sh tools/together_sim/18-audit-fixes.sql)"
+          echo "$out"
+          echo "$out" | grep -q '^OK' || { echo '장면이 돌지 않았다'; exit 1; }
+          if echo "$out" | grep -Eq '^(FAIL|ERROR)'; then exit 1; fi
+
+      # 2차 점검 꼼수 고침(0123) — 태운 신발 · 사본 경로 · 가입 전 · 서버 과속 · 움직인 시간 · 이벤트 시간 몫 · 크루 아이템 · 가입 시간
+      # (docs/점검-2026-11-22-2차-꼼수-보안.md)
+      - name: 꼼수 고침(장면 검사)
+        run: |
+          out="$(bash tools/together_sim/run.sh tools/together_sim/19-cheat-fixes.sql)"
+          echo "$out"
+          echo "$out" | grep -q '^OK' || { echo '장면이 돌지 않았다'; exit 1; }
+          if echo "$out" | grep -Eq '^(FAIL|ERROR)'; then exit 1; fi
+
+      # 대격변 설계의 기준선(docs/stat-overhaul-2026-11-21.md) — 모형(stats_today.py)이 지금 서버의 하루 셈(points_day_net)과 같은가.
+      # 서버 셈을 바꾸면 모형도 함께 고친다(744 경우 · 0.1 SUP 안)
+      - name: 대격변 기준선(모형 = 서버)
+        run: bash tools/together_sim/run.sh tools/together_sim/17-stats-baseline.sql | python3 tools/economy_sim/stats_today.py --verify
 
       # 경제 4판 규칙(0116)은 앱에도 있다(서버를 읽기 전의 값) — 서버만 고쳐 앱과 어긋나지 않게
       - name: 경제 쌍둥이(앱 = 서버)

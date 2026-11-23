@@ -646,6 +646,8 @@
         el('span', { text: '신발이 모두 0% · 잔고가 수리비보다 적고 · 무료 수리도 아직' })]), el('b', { text: num(r.stuck) + '명' })]);
       box.appendChild(stuck);
       box.appendChild(kv('앱 판', '새 판 ' + num(v.new_app) + '명', '판을 알린 사람 ' + num(v.reported) + '명 · 가입 ' + num(v.users) + '명'));
+      var fx = r.forge_7d || {};
+      box.appendChild(kv('강화 경험치(7일)', num(fx.pairs) + '켤레 · ' + num(fx.levels) + '레벨', num(fx.adds) + '번 넣음 · 대성공 ' + num(fx.crits) + '번 · ' + num(fx.people) + '명'));
     }, function (e) { if (e.denied) leave(problem(e)); else { box.textContent = ''; box.appendChild(el('div', { class: 'empty', text: problem(e) })); } });
     rpc('ops_economy_settings', { p_token: token }).then(function (r) {
       var list = $('econSettings'); list.textContent = '';
@@ -661,7 +663,7 @@
     if (busy) return;
     var now = JSON.stringify(x.value);
     var hint = x.kind === 'bool' ? 'true(켬) 또는 false(끔)' : x.kind === 'luck' ? '[가장 작게, 가장 자주, 가장 크게] 예: [0.7, 1, 1.3]'
-      : x.kind === 'steps' ? '걸음 수 목록 예: [2000, 4000]' : '숫자';
+      : x.kind === 'steps' ? '걸음 수 목록 예: [2000, 4000]' : x.kind === 'pair' ? '[가장 낮게, 가장 높게] 예: [0.7, 1.3]' : '숫자';
     var raw = window.prompt((x.label || x.key) + '\n지금: ' + now + '\n새 값(' + hint + ')', now);
     if (raw === null || raw.trim() === now) return;
     var value;

@@ -45,20 +45,24 @@ begin
   update economy.crew_pool_empty set from_at = from_at - p, to_at = to_at - p;
   update public.walk_sessions set started_at = started_at - p, ended_at = ended_at - p;
 end $$;
--- 달리는 동안 p_secs 초를 5초마다 박동하며 보낸다(달리는 사람 목록)
-create or replace function t.run(p_party bigint, p_users int[], p_secs int, p_state text default 'RUNNING') returns void language plpgsql as $$
+-- 달리는 동안 p_secs 초를 5초마다 박동하며 보낸다(달리는 사람 목록).
+-- 긴 러닝은 p_every 를 25초로 — 서버는 30초 안의 박동을 달리는 중으로 센다(같은 체력을 쓴다). 장면 하나가 한 트랜잭션이라
+-- t.age 가 모든 줄을 고칠 때마다 죽은 줄이 쌓여 5초 박동 세 시간 남짓이면 CI 에서 10분을 넘긴다
+create or replace function t.run(p_party bigint, p_users int[], p_secs int, p_state text default 'RUNNING', p_every int default 5) returns void language plpgsql as $$
 declare i int; m int; v jsonb;
 begin
-  for i in 1 .. p_secs / 5 loop
-    perform t.age(interval '5 seconds');
+  if p_every < 1 or p_every >= 30 then raise exception 't.run: p_every 는 1 ~ 29초'; end if;
+  for i in 1 .. p_secs / p_every loop
+    perform t.age(make_interval(secs => p_every));
     foreach m in array p_users loop
       perform t.login(m);
       v := public.crew_run_beat(p_party, p_state);
     end loop;
   end loop;
 end $$;
+-- 경도는 사람마다 0.5m 안쪽으로 다르게(동쪽으로만) — 같은 경로 검사가 모든 계정끼리 맞대어 보므로(0118) 함께 출발한 둘째가 무효가 되지 않게
 create or replace function t.track(p_start timestamptz, p_secs int, p_dps numeric default 0.000023706) returns text language sql as $$
-  select string_agg(format('%s,%s,%s', (37.5 + i * p_dps)::numeric(12, 6), 127.000000,
+  select string_agg(format('%s,%s,%s', (37.5 + i * p_dps)::numeric(12, 6), (127 + (abs(hashtext(coalesce(current_setting('request.jwt.claim.sub', true), ''))) % 49 + 1) * 0.0000001)::numeric(12, 7),
            (extract(epoch from p_start) * 1000)::bigint + i * 1000), ';' order by i)
   from generate_series(0, p_secs) i $$;
 -- 러닝을 올린다(사용자 n, 시작, 초, 걸음) — 결과 한 줄
@@ -83,3 +87,6 @@ create or replace function t.cr(n int) returns text language sql as $$
 grant usage on schema t to public; grant all on all tables in schema t to public; grant execute on all functions in schema t to public;
 -- 운을 끈다(값을 맞대어 보려고)
 update public.economy_settings set value = '[1,1,1]' where key in ('reward_luck', 'wear_luck');
+
+-- 러너 레벨(0121)은 계정 에너지를 바꾼다(새 계정 Lv1 = 20분). 이 장면들은 그 전 규칙(하루 에너지 10)으로 맞춰 쓴 것이라 끄고 돌린다
+update public.economy_settings set value = '"OFF"' where key = 'runner_level_rule';
