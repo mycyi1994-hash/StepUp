@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Favorite
@@ -393,7 +393,7 @@ private fun SheetBack(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.size(38.dp).clip(CircleShape).background(StepUpUi.colors.fill), contentAlignment = Alignment.Center) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = t.text, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = t.text, modifier = Modifier.size(20.dp))
         }
     }
 }
