@@ -1323,6 +1323,8 @@ fun RunTabs(
     StepUpTabs(
         labels, selected, onSelect, modifier.fillMaxWidth(),
         tags = labels.indices.map { tags?.getOrNull(it) ?: "$tagPrefix-$it" },
+        // 재디자인 시안의 전환 칸 높이(2026-11-24)
+        height = 44.dp,
     )
 }
 

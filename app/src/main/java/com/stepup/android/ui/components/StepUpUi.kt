@@ -750,9 +750,9 @@ fun CircleIconButton(
             Modifier
                 .size(size)
                 .clip(CircleShape)
-                .background(if (onPhoto) c.glass else c.fill)
-                // 흰 테두리 원 전체(예전 사진 위 윗부분 빛 한 줄을 대신한다)
-                .stepUpRim(CircleShape, if (onPhoto) RimKind.Glass else RimKind.Control, enabled = enabled),
+                // 2026-11-24 재디자인: 회색 원(track) · 테두리 없음 — 사진 위 유리 원은 그대로
+                .background(if (onPhoto) c.glass else runTone().track)
+                .stepUpRim(CircleShape, RimKind.Glass, enabled = enabled && onPhoto),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -807,9 +807,8 @@ fun StepUpTabs(
     val type = StepUpUi.type
     val feedback = LocalFeedback.current
     BoxWithConstraints(
-        // 2026-10-26: 트랙은 카드 면 + 가는 선, 고른 칸은 진한 판(화이트 남색 · 블랙 흰색)
-        modifier.heightIn(min = height).clip(RoundedCornerShape(11.dp)).background(c.card)
-            .border(StepUpUi.RimWidth, if (StepUpUi.RimOn) c.rim else c.separator, RoundedCornerShape(11.dp)).padding(3.dp),
+        // 2026-11-24 재디자인: 회색 트랙(track) 위 흰 칸(panel, 어둡게는 더 짙은 칸) · 고른 글자 진하게(예전 진한 판 · 테두리는 뺐다)
+        modifier.heightIn(min = height).clip(RoundedCornerShape(height / 3)).background(runTone().track).padding(3.dp),
     ) {
         val count = items.size.coerceAtLeast(1)
         val w = maxWidth / count
@@ -819,14 +818,14 @@ fun StepUpTabs(
         )
         Box(
             Modifier.offset(x = x).width(w).height(height - 6.dp)
-                .clip(RoundedCornerShape(9.dp)).background(c.segmentThumb),
+                .clip(RoundedCornerShape(height / 3 - 2.dp)).background(runTone().panel),
         )
         Row(Modifier.fillMaxWidth()) {
             items.forEachIndexed { i, t ->
                 val on = i == selected
                 Box(
                     Modifier.weight(1f).heightIn(min = height - 6.dp)
-                        .clip(RoundedCornerShape(9.dp))
+                        .clip(RoundedCornerShape(height / 3 - 2.dp))
                         .clickable(role = Role.Tab) { if (!on) { feedback?.play(FeedbackCue.Select); onSelect(i) } }
                         .semantics { this.selected = on }
                         .then(if (tags != null && i < tags.size) Modifier.testTag(tags[i]) else Modifier)
@@ -835,7 +834,7 @@ fun StepUpTabs(
                 ) {
                     Text(
                         t, style = type.segment.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold),
-                        color = if (on) c.segmentOn else c.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                        color = if (on) runTone().text else runTone().label, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                     )
                 }
             }

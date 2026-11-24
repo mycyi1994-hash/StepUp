@@ -3,6 +3,7 @@ package com.stepup.android.ui.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -70,7 +72,9 @@ private val CardShape = RoundedCornerShape(22.dp)
 fun PlainListCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val t = runTone()
     Column(
-        modifier.fillMaxWidth().clip(CardShape).background(t.panel).padding(horizontal = 18.dp),
+        modifier.fillMaxWidth().clip(CardShape).background(t.panel)
+            // 시안 카드는 밝게 · 어둡게 모두 1dp 옅은 테두리
+            .border(1.dp, t.panelEdge, CardShape).padding(horizontal = 18.dp),
         content = content,
     )
 }
@@ -168,6 +172,9 @@ fun PlainEmptyState(
     action: String? = null,
     onAction: (() -> Unit)? = null,
     imageHeight: Dp = 116.dp,
+    /** 글자 버튼 꼬리표(검사가 집는다) · 끝의 › (시안의 빈 · 오류 상태 글자 버튼에는 없다) */
+    actionTag: String? = null,
+    actionChevron: Boolean = false,
 ) {
     val t = runTone()
     Column(modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -185,7 +192,10 @@ fun PlainEmptyState(
         }
         if (action != null && onAction != null) {
             Spacer(Modifier.height(14.dp))
-            RunTextAction(action, onAction, chevron = true)
+            RunTextAction(
+                action, onAction, chevron = actionChevron,
+                modifier = if (actionTag != null) Modifier.testTag(actionTag) else Modifier,
+            )
         }
     }
 }
