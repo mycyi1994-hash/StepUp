@@ -65,6 +65,8 @@ android {
             test.systemProperty("shots", project.findProperty("shots")?.toString() ?: "")
             test.systemProperty("shotsDir", rootProject.layout.buildDirectory.dir("shots").get().asFile.absolutePath)
             test.maxHeapSize = "3g"
+            // 캡처 검사는 -Pshots 일 때만 — 평소(CI)에는 Robolectric 이 안드로이드 이미지를 받으러 가지 않게 아예 빼 둔다
+            if (project.findProperty("shots") == null) test.exclude("**/shots/**")
             // 안드로이드 이미지(android-all)를 미리 받아 둔 곳이 있으면 그것만 쓴다(-ProbolectricDir=...)
             project.findProperty("robolectricDir")?.toString()?.let {
                 test.systemProperty("robolectric.offline", "true")
