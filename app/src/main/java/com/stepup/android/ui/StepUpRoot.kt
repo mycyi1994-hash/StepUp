@@ -1714,7 +1714,14 @@ private fun MainScaffoldContent(
             }
             // 리더보드(2026-10-17 전달본) — 크루 순위 · 개인 러닝 순위 · 주간 포인트. 러닝 시작 메뉴(U01)의 링크 한 줄에서 연다
             composable(Routes.RANKING) {
-                com.stepup.android.ui.screens.leaderboard.LeaderboardScreen(onBack = { navController.popBackStack() })
+                com.stepup.android.ui.screens.leaderboard.LeaderboardScreen(
+                    onBack = { navController.popBackStack() },
+                    // 내 크루가 없을 때 「크루 찾기」 — 함께 뛰기 탭의 크루 칸으로(재디자인 2026-11-24)
+                    onFindCrew = {
+                        com.stepup.android.ui.screens.community.crew.CrewListFocus.requested = true
+                        navController.switchTab(Screen.Community)
+                    },
+                )
             }
             // 예전 "모임 만들기" 길 — 크루 명함형의 만들기(1 / 3 · 크루 소개)를 연다
             composable(Routes.CREW_CREATE) { entry ->

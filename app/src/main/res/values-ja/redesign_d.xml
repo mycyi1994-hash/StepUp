@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-24 재디자인 D(순위 · 내 러닝 기록 · 러닝 통계) -->
+<resources>
+    <string name="rd_d_my_crew">マイクルー</string>
+    <string name="rd_d_find_crew">クルーを探す</string>
+    <string name="rd_d_resets">月曜0時にリセット</string>
+    <plurals name="rd_d_runs_unit">
+        <item quantity="other">回</item>
+    </plurals>
+</resources>

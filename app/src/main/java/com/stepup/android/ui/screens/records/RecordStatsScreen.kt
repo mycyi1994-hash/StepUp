@@ -1,19 +1,18 @@
 package com.stepup.android.ui.screens.records
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,8 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalConfiguration
@@ -53,12 +49,12 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -68,16 +64,18 @@ import com.stepup.android.domain.RunBar
 import com.stepup.android.domain.RunMark
 import com.stepup.android.domain.averagePace
 import com.stepup.android.domain.localDate
+import com.stepup.android.ui.components.PlainDivider
+import com.stepup.android.ui.components.PlainEmptyState
+import com.stepup.android.ui.components.PlainListCard
+import com.stepup.android.ui.components.PlainListRow
 import com.stepup.android.ui.components.RunButton
-import com.stepup.android.ui.components.RunCard
+import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.RunLinkRow
-import com.stepup.android.ui.components.RunNumber
 import com.stepup.android.ui.components.RunSpec
 import com.stepup.android.ui.components.RunTabs
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.theme.StepUpSans
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
@@ -142,11 +140,13 @@ fun RecordStatsContent(
             )
             WindowRow(ui, onPrevious, onNext)
             if (ui.failed) {
-                RecordsState(
-                    stringResource(R.string.run_rec_failed_title), stringResource(R.string.run_rec_failed_body),
-                    Modifier.testTag("stats-failed"), actionLabel = stringResource(R.string.run_rec_reload), onAction = onReload,
-                    actionTag = "stats-reload", refresh = true, scroll = false,
-                )
+                Column(Modifier.fillMaxWidth().padding(top = 32.dp).testTag("stats-failed"), horizontalAlignment = Alignment.CenterHorizontally) {
+                    PlainEmptyState(
+                        R.drawable.mascot_oops, stringResource(R.string.run_rec_failed_title),
+                        body = stringResource(R.string.run_rec_failed_body),
+                    )
+                    RunTextAction(stringResource(R.string.run_rec_reload), onReload, Modifier.testTag("stats-reload"))
+                }
                 return@Column
             }
             val totals = ui.totals ?: return@Column
@@ -156,25 +156,17 @@ fun RecordStatsContent(
             val emptyMessage: (@Composable () -> Unit)? = if (!empty) null else {
                 { EmptyChartMessage(ui, weekly) }
             }
-            if (weekly) {
-                RunCard(Modifier.padding(top = 4.dp), padding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 10.dp)) {
-                    TotalsRow(totals, empty, unknown)
-                    Spacer(Modifier.height(18.dp))
-                    BarChart(ui.bars, weekly = true, pick = chosen, onSelect = { selected = it }, empty = emptyMessage)
+            TotalsLine(totals, empty, unknown)
+            // 막대 칸 — 주간은 날짜별(눈금 있음), 월간은 날짜 구간별 합계
+            PlainListCard(Modifier.padding(top = 14.dp)) {
+                Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.run_rec_week_chart), style = runTextStyle(16.sp, t.text, FontWeight.Bold),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text("km", style = runTextStyle(14.sp, t.label, FontWeight.Medium), maxLines = 1)
                 }
-            } else {
-                RunCard(Modifier.padding(top = 4.dp), padding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)) {
-                    TotalsStack(totals, empty, unknown)
-                }
-                RunCard(Modifier.padding(top = 12.dp), padding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 10.dp)) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.run_rec_week_chart), style = runTextStyle(16.sp, t.text, FontWeight.Bold),
-                            modifier = Modifier.weight(1f))
-                        Text(stringResource(R.string.run_rec_km_axis), style = runTextStyle(12.sp, t.label, FontWeight.Medium))
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    BarChart(ui.bars, weekly = false, pick = chosen, onSelect = { selected = it }, empty = emptyMessage, axis = false)
-                }
+                Spacer(Modifier.height(10.dp))
+                BarChart(ui.bars, weekly = weekly, pick = chosen, onSelect = { selected = it }, empty = emptyMessage, axis = weekly)
+                Spacer(Modifier.height(8.dp))
             }
             when {
                 empty -> {
@@ -218,11 +210,11 @@ private fun WindowRow(ui: StatsUi, onPrevious: () -> Unit, onNext: () -> Unit) {
         }
         is StatWindow.Month -> rememberFormatter(R.string.rec_month_pattern).format(w.month)
     }
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
         ArrowButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft,
             stringResource(if (weekly) R.string.rec_prev_week else R.string.rec_prev_month), true, onPrevious, "stats-prev")
-        Text(label, style = runTextStyle(20.sp, t.text, FontWeight.Bold), textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f).testTag("stats-window"))
+        Text(label, style = runTextStyle(20.sp, t.text, FontWeight.Bold), textAlign = TextAlign.Center, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).padding(horizontal = 6.dp).testTag("stats-window"))
         ArrowButton(Icons.AutoMirrored.Filled.KeyboardArrowRight,
             stringResource(if (weekly) R.string.rec_next_week else R.string.rec_next_month), ui.canGoNext, onNext, "stats-next")
     }
@@ -248,44 +240,18 @@ private fun ArrowButton(
     }
 }
 
-/** 주간 합계(H04) — 총 거리 | 러닝 횟수. 기록이 없으면 "—" */
+/** 기간 합계 한 줄(달 넘기기 밑 가운데) — "8번 · 34.2km". 기록이 없거나 거리를 모르면 거리는 "—" */
 @Composable
-private fun TotalsRow(totals: RecordTotals, empty: Boolean, unknown: Boolean) {
+private fun TotalsLine(totals: RecordTotals, empty: Boolean, unknown: Boolean) {
     val t = runTone()
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1.15f)) {
-            Text(stringResource(R.string.run_rec_total), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
-            RunNumber(
-                if (empty || unknown) "—" else km(totals.meters), unit = "km", size = 58.sp, unitSize = 22.sp,
-                italicUnit = false, valueTag = "stats-distance",
-            )
-        }
-        Box(Modifier.padding(horizontal = 14.dp).width(1.5.dp).height(64.dp).background(t.divider))
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.rec_runs_label), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
-            RunNumber(
-                if (empty) "—" else "${totals.runs}", unit = pluralStringResource(R.plurals.run_rec_runs_unit, totals.runs),
-                size = 52.sp, unitSize = 17.sp, italicUnit = false, valueTag = "stats-runs",
-            )
-        }
+    val style = runTextStyle(15.sp, t.label, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum")
+    Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Text("${totals.runs}", style = style, maxLines = 1, softWrap = false, modifier = Modifier.testTag("stats-runs"))
+        Text(pluralStringResource(R.plurals.rd_d_runs_unit, totals.runs) + " · ", style = style, maxLines = 1, softWrap = false)
+        Text(if (empty || unknown) "—" else km(totals.meters), style = style, maxLines = 1, softWrap = false,
+            modifier = Modifier.testTag("stats-distance"))
+        Text("km", style = style, maxLines = 1, softWrap = false)
     }
-}
-
-/** 월간 합계(H06) — 총 거리 위, 총 러닝 횟수 아래 */
-@Composable
-private fun TotalsStack(totals: RecordTotals, empty: Boolean, unknown: Boolean) {
-    val t = runTone()
-    Text(stringResource(R.string.run_rec_total), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
-    RunNumber(
-        if (empty || unknown) "—" else km(totals.meters), unit = "km", size = 72.sp, unitSize = 26.sp,
-        italicUnit = false, valueTag = "stats-distance",
-    )
-    Box(Modifier.padding(vertical = 10.dp).fillMaxWidth().height(1.dp).background(t.divider))
-    Text(stringResource(R.string.run_rec_total_runs), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
-    RunNumber(
-        if (empty) "—" else "${totals.runs}", unit = pluralStringResource(R.plurals.run_rec_runs_unit, totals.runs),
-        size = 58.sp, unitSize = 19.sp, italicUnit = false, valueTag = "stats-runs",
-    )
 }
 
 /** 빈 축 가운데(H15) — 기록이 하나도 없으면 첫 러닝 안내, 이 기간만 비면 다른 기간 안내 */
@@ -295,10 +261,13 @@ private fun EmptyChartMessage(ui: StatsUi, weekly: Boolean) {
     val month = (ui.window as? StatWindow.Month)?.month
     val monthName = rememberFormatter(R.string.rec_month_name_pattern)
     Column(Modifier.testTag("stats-empty"), horizontalAlignment = Alignment.CenterHorizontally) {
-        BarsGlyph()
+        Image(
+            painterResource(R.drawable.scene_sit_together), contentDescription = null,
+            modifier = Modifier.height(96.dp), contentScale = ContentScale.Fit,
+        )
         Spacer(Modifier.height(10.dp))
         if (!ui.anyRecords) {
-            Text(stringResource(R.string.run_rec_stats_empty), style = runTextStyle(15.sp, t.text, FontWeight.SemiBold, 1.45f),
+            Text(stringResource(R.string.run_rec_stats_empty), style = runTextStyle(16.sp, t.text, FontWeight.Bold, 1.4f),
                 textAlign = TextAlign.Center)
         } else {
             Text(
@@ -307,7 +276,7 @@ private fun EmptyChartMessage(ui: StatsUi, weekly: Boolean) {
                     month == ui.thisMonth -> stringResource(R.string.rec_stats_empty_month)
                     else -> stringResource(R.string.rec_stats_empty_named_month, monthName.format(month))
                 },
-                style = runTextStyle(15.sp, t.text, FontWeight.SemiBold, 1.45f), textAlign = TextAlign.Center,
+                style = runTextStyle(16.sp, t.text, FontWeight.Bold, 1.4f), textAlign = TextAlign.Center,
             )
             Text(stringResource(if (weekly) R.string.rec_stats_empty_week_body else R.string.rec_stats_empty_month_body),
                 style = runTextStyle(13.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center)
@@ -369,10 +338,6 @@ private fun BarChart(
                 }
             },
     ) {
-        if (axis) {
-            Text(stringResource(R.string.run_rec_km_axis), style = runTextStyle(12.sp, t.label, FontWeight.Medium),
-                modifier = Modifier.padding(bottom = 14.dp))
-        }
         Row(Modifier.fillMaxWidth().height(chartHeight + labelHeight)) {
             if (axis) {
                 // 눈금 글자
@@ -414,7 +379,15 @@ private fun BarChart(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Box(Modifier.fillMaxWidth().height(chartHeight)) {
-                                if (empty == null && !bar.future) Bar(bar, top, chartHeight, weekly, on)
+                                if (empty == null && !bar.future) {
+                                    Bar(bar, top, chartHeight, weekly, on, faded = pick != null && !on)
+                                } else if (empty != null && !bar.future) {
+                                    // 빈 칸 — 막대 자리만(값을 지어내지 않는다)
+                                    Box(
+                                        Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 6.dp).height(6.dp)
+                                            .clip(RoundedCornerShape(3.dp)).background(t.track),
+                                    )
+                                }
                             }
                             Box(Modifier.fillMaxWidth().height(labelHeight), contentAlignment = Alignment.Center) {
                                 Text(
@@ -445,7 +418,7 @@ private fun BarChart(
 
 /** 막대 하나 — 막대는 눈금과 같은 높이로, 값(고른 막대는 시안 말풍선)은 막대 위에. 0km 는 바닥의 얇은 막대와 0 */
 @Composable
-private fun BoxScope.Bar(bar: RunBar, top: Double, chartHeight: androidx.compose.ui.unit.Dp, weekly: Boolean, on: Boolean) {
+private fun BoxScope.Bar(bar: RunBar, top: Double, chartHeight: androidx.compose.ui.unit.Dp, weekly: Boolean, on: Boolean, faded: Boolean) {
     val t = runTone()
     val km = bar.meters / 1000.0
     val value = if (km <= 0.0) "0" else String.format(java.util.Locale.ROOT, "%.1f", km)
@@ -453,23 +426,20 @@ private fun BoxScope.Bar(bar: RunBar, top: Double, chartHeight: androidx.compose
     val shape = RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 1.dp, bottomEnd = 1.dp)
     Box(
         Modifier.align(Alignment.BottomCenter).width(if (weekly) 26.dp else 34.dp).height(barHeight).clip(shape)
-            .background(
-                if (on) Brush.verticalGradient(listOf(Color(0xFF7EE8FF), Color(0xFF29BFF0)))
-                else Brush.verticalGradient(listOf(Color(0xFF2E7BFF), Color(0xFF0754FF))),
-            ),
+            .background(if (faded) t.cobalt.copy(alpha = 0.35f) else t.cobalt),
     )
     Column(
         Modifier.align(Alignment.BottomCenter).offset(y = -(barHeight + 4.dp)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (on) {
-            // 고른 막대 — 시안 말풍선 + 아래 꼭지
-            Box(Modifier.clip(RoundedCornerShape(7.dp)).background(t.cyan).padding(horizontal = 8.dp, vertical = 3.dp)) {
-                Text(value, style = runTextStyle(14.sp, Color(0xFF041A33), FontWeight.ExtraBold, 1.1f), modifier = Modifier.testTag("stats-tip"))
+            // 고른 막대 — 파란 말풍선 + 아래 꼭지
+            Box(Modifier.clip(RoundedCornerShape(7.dp)).background(t.cobalt).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                Text(value, style = runTextStyle(14.sp, Color.White, FontWeight.ExtraBold, 1.1f), modifier = Modifier.testTag("stats-tip"))
             }
             Box(
                 Modifier.size(width = 12.dp, height = 6.dp).background(
-                    t.cyan,
+                    t.cobalt,
                     GenericShape { size, _ ->
                         moveTo(0f, 0f)
                         lineTo(size.width, 0f)
@@ -479,112 +449,73 @@ private fun BoxScope.Bar(bar: RunBar, top: Double, chartHeight: androidx.compose
                 ),
             )
         } else {
-            Text(value, style = runTextStyle(13.sp, t.text, FontWeight.Bold, 1.1f))
+            Text(value, style = runTextStyle(13.sp, if (faded) t.label else t.text, FontWeight.Bold, 1.1f))
         }
     }
 }
 
-/** 고른 날짜(H05) — "9월 25일 금요일" · 거리 | 횟수. 그 날 러닝이 하나면 카드를 누르면 그 기록(H11 · H13), 여럿이면 줄마다 */
+/** 고른 날짜(H05) — "9월 25일 금요일" · 횟수 · 거리. 그 날 러닝이 하나면 카드를 누르면 그 기록(H11 · H13), 여럿이면 줄마다 */
 @Composable
 private fun DayCard(bar: RunBar, weekly: Boolean, runs: List<RunMark>, onOpenRun: (Long) -> Unit, zone: ZoneId) {
     val t = runTone()
     val single = runs.singleOrNull()?.id?.takeIf { it > 0 }
     val label = if (weekly) rememberFormatter(R.string.run_rec_day_pattern).format(bar.first)
     else stringResource(R.string.rec_bar_range, bar.first.dayOfMonth, bar.last.dayOfMonth)
-    RunCard(
-        Modifier.padding(top = 12.dp), padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
-        onClick = single?.let { id -> { onOpenRun(id) } }, tag = "stats-day-card",
+    val count = "${bar.runs}" + pluralStringResource(R.plurals.rd_d_runs_unit, bar.runs)
+    PlainListCard(
+        Modifier.padding(top = 12.dp)
+            .then(if (single != null) Modifier.clip(RoundedCornerShape(22.dp)).feedbackClickable { onOpenRun(single) } else Modifier)
+            .testTag("stats-day-card"),
     ) {
-        Row(
-            Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("stats-day"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1.2f)) {
-                Text(label, style = runTextStyle(15.sp, t.text, FontWeight.Bold))
-                RunNumber(km(bar.meters), unit = "km", size = 46.sp, unitSize = 20.sp, color = t.cyan, italicUnit = false)
-            }
-            Box(Modifier.padding(horizontal = 12.dp).width(1.5.dp).height(52.dp).background(t.divider))
-            RunNumber(
-                "${bar.runs}", unit = pluralStringResource(R.plurals.run_rec_runs_unit, bar.runs), size = 40.sp, unitSize = 16.sp,
-                italicUnit = false, modifier = Modifier.weight(1f),
-            )
-            if (single != null) Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(24.dp))
-        }
+        PlainListRow(
+            label, Modifier.semantics(mergeDescendants = true) {}.testTag("stats-day"),
+            value = "${km(bar.meters)} km", valueColor = t.cobaltText, sub = count, chevron = single != null,
+        )
         if (runs.size > 1) {
             val time = rememberFormatter(R.string.rec_time_pattern)
             // 월 통계의 막대는 며칠을 묶는다 — 줄마다 날짜도 적어 다른 날의 같은 시각 러닝을 구분한다
             val day = rememberFormatter(R.string.run_rec_row_date)
-            Spacer(Modifier.height(8.dp))
             runs.sortedBy { it.startedAt }.forEach { mark ->
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
-                        .feedbackClickable { onOpenRun(mark.id) }
-                        .testTag("stats-run-${mark.id}")
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        Instant.ofEpochMilli(mark.startedAt).atZone(zone).let { at ->
-                            if (weekly) time.format(at) else day.format(at) + " " + time.format(at)
-                        },
-                        style = runTextStyle(15.sp, t.label, FontWeight.SemiBold), modifier = Modifier.weight(1f),
-                    )
-                    Text(if (mark.meters > 0) "${km2(mark.meters)} km" else "—", style = runTextStyle(16.sp, t.text, FontWeight.Bold))
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(22.dp))
-                }
+                PlainDivider()
+                PlainListRow(
+                    Instant.ofEpochMilli(mark.startedAt).atZone(zone).let { at ->
+                        if (weekly) time.format(at) else day.format(at) + " " + time.format(at)
+                    },
+                    Modifier.testTag("stats-run-${mark.id}"),
+                    value = if (mark.meters > 0) "${km2(mark.meters)} km" else "—",
+                    onClick = { onOpenRun(mark.id) }, minHeight = 48.dp,
+                )
             }
         }
     }
 }
 
-/** 가장 많이 달린 날(H04 · H06) — 날짜 | 거리(시안 색) */
+/** 가장 많이 달린 날(H04 · H06) — 날짜 · 거리(파랑) */
 @Composable
 private fun BestDayCard(best: RunBar) {
     val t = runTone()
-    RunCard(Modifier.padding(top = 12.dp), padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)) {
-        Row(
-            Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("stats-best"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1.2f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = t.cyan, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.run_rec_best_day), style = runTextStyle(15.sp, t.label, FontWeight.SemiBold))
-                }
-                Text(
-                    rememberFormatter(R.string.date_month_day).format(best.first),
-                    style = TextStyle(
-                        fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontStyle = FontStyle.Italic,
-                        fontSize = 32.sp, letterSpacing = (-0.02).em, color = t.text,
-                    ),
-                    maxLines = 1,
-                )
-            }
-            Box(Modifier.padding(horizontal = 12.dp).width(1.5.dp).height(52.dp).background(t.divider))
-            RunNumber(km(best.meters), unit = "km", size = 44.sp, unitSize = 20.sp, color = t.cyan, italicUnit = false,
-                modifier = Modifier.weight(1f))
-        }
+    PlainListCard(Modifier.padding(top = 12.dp)) {
+        PlainListRow(
+            stringResource(R.string.run_rec_best_day), Modifier.semantics(mergeDescendants = true) {}.testTag("stats-best"),
+            sub = rememberFormatter(R.string.date_month_day).format(best.first),
+            value = "${km(best.meters)} km", valueColor = t.cobaltText,
+        )
     }
 }
 
 /** 달린 시간 · 평균 페이스 — 기간 전체(평균 페이스는 거리 있는 러닝의 시간 합 ÷ 거리 합) */
 @Composable
 private fun TimeAndPace(totals: RecordTotals) {
-    val t = runTone()
-    RunCard(Modifier.padding(top = 12.dp), padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}.testTag("stats-time")) {
-                Text(stringResource(R.string.run_label_time), style = runTextStyle(14.sp, t.label, FontWeight.SemiBold))
-                Text(durationText(totals.seconds), style = runTextStyle(19.sp, t.text, FontWeight.Bold), maxLines = 1)
-            }
-            Box(Modifier.padding(horizontal = 12.dp).width(1.5.dp).height(40.dp).background(t.divider))
-            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}.testTag("stats-pace")) {
-                Text(stringResource(R.string.run_label_pace), style = runTextStyle(14.sp, t.label, FontWeight.SemiBold))
-                Text(paceText(averagePace(totals.pacedSeconds, totals.pacedMeters)) ?: "—",
-                    style = runTextStyle(19.sp, t.text, FontWeight.Bold), maxLines = 1)
-            }
-        }
+    PlainListCard(Modifier.padding(top = 12.dp)) {
+        PlainListRow(
+            stringResource(R.string.run_label_time), Modifier.semantics(mergeDescendants = true) {}.testTag("stats-time"),
+            value = durationText(totals.seconds),
+        )
+        PlainDivider()
+        PlainListRow(
+            stringResource(R.string.run_label_pace), Modifier.semantics(mergeDescendants = true) {}.testTag("stats-pace"),
+            value = paceText(averagePace(totals.pacedSeconds, totals.pacedMeters)) ?: "—",
+        )
     }
 }
 
