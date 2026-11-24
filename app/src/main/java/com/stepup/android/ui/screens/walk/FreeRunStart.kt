@@ -224,7 +224,7 @@ internal fun FreeRunShoeCheckContent(
             onStart()
         }
     }
-    BoxWithConstraints(modifier.fillMaxSize().testTag("run-shoe-check"), contentAlignment = Alignment.BottomCenter) {
+    Box(modifier.fillMaxSize().testTag("run-shoe-check"), contentAlignment = Alignment.BottomCenter) {
         // 뒷면 — 누르면 아무 일도 없다(점검은 버튼 · × 로만 닫는다). 아래 러닝 화면을 누르지 않게 막는다
         Box(
             Modifier.matchParentSize().graphicsLayer { alpha = shown.value }.background(t.scrim)
