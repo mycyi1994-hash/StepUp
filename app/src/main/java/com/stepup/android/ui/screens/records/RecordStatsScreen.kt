@@ -69,9 +69,7 @@ import com.stepup.android.ui.components.PlainEmptyState
 import com.stepup.android.ui.components.PlainListCard
 import com.stepup.android.ui.components.PlainListRow
 import com.stepup.android.ui.components.RunButton
-import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.RunLinkRow
-import com.stepup.android.ui.components.RunSpec
 import com.stepup.android.ui.components.RunTabs
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
@@ -126,9 +124,9 @@ fun RecordStatsContent(
     RecordsFrame(onBack) {
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-                .padding(horizontal = RunSpec.Gutter).padding(top = 2.dp, bottom = 20.dp),
+                .padding(horizontal = RecSpec.Gutter).padding(top = 2.dp, bottom = 20.dp),
         ) {
-            RecordTitle(stringResource(R.string.rec_stats_title))
+            RecScreenTitle(stringResource(R.string.rec_stats_title), Modifier.padding(start = RecSpec.TitleGutter - RecSpec.Gutter))
             if (ui == null) return@Column
             val weekly = ui.window is StatWindow.Week
             RunTabs(
@@ -144,8 +142,8 @@ fun RecordStatsContent(
                     PlainEmptyState(
                         R.drawable.mascot_oops, stringResource(R.string.run_rec_failed_title),
                         body = stringResource(R.string.run_rec_failed_body),
+                        action = stringResource(R.string.run_rec_reload), onAction = onReload, actionTag = "stats-reload",
                     )
-                    RunTextAction(stringResource(R.string.run_rec_reload), onReload, Modifier.testTag("stats-reload"))
                 }
                 return@Column
             }
@@ -156,7 +154,7 @@ fun RecordStatsContent(
             val emptyMessage: (@Composable () -> Unit)? = if (!empty) null else {
                 { EmptyChartMessage(ui, weekly) }
             }
-            TotalsLine(totals, empty, unknown)
+            TotalsLine(totals, noDistance = unknown || !ui.anyRecords)
             // 막대 칸 — 주간은 날짜별(눈금 있음), 월간은 날짜 구간별 합계
             PlainListCard(Modifier.padding(top = 14.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -213,7 +211,7 @@ private fun WindowRow(ui: StatsUi, onPrevious: () -> Unit, onNext: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
         ArrowButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft,
             stringResource(if (weekly) R.string.rec_prev_week else R.string.rec_prev_month), true, onPrevious, "stats-prev")
-        Text(label, style = runTextStyle(20.sp, t.text, FontWeight.Bold), textAlign = TextAlign.Center, maxLines = 1,
+        Text(label, style = runTextStyle(18.sp, t.text, FontWeight.Bold), textAlign = TextAlign.Center, maxLines = 1,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).padding(horizontal = 6.dp).testTag("stats-window"))
         ArrowButton(Icons.AutoMirrored.Filled.KeyboardArrowRight,
             stringResource(if (weekly) R.string.rec_next_week else R.string.rec_next_month), ui.canGoNext, onNext, "stats-next")
@@ -240,15 +238,15 @@ private fun ArrowButton(
     }
 }
 
-/** 기간 합계 한 줄(달 넘기기 밑 가운데) — "8번 · 34.2km". 기록이 없거나 거리를 모르면 거리는 "—" */
+/** 기간 합계 한 줄(달 넘기기 밑 가운데) — "8번 · 34.2km". 기록이 하나도 없거나 거리를 모르면 거리는 "—", 이 기간만 비면 0.0 */
 @Composable
-private fun TotalsLine(totals: RecordTotals, empty: Boolean, unknown: Boolean) {
+private fun TotalsLine(totals: RecordTotals, noDistance: Boolean) {
     val t = runTone()
-    val style = runTextStyle(15.sp, t.label, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum")
+    val style = runTextStyle(16.sp, t.label, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum")
     Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Text("${totals.runs}", style = style, maxLines = 1, softWrap = false, modifier = Modifier.testTag("stats-runs"))
-        Text(pluralStringResource(R.plurals.rd_d_runs_unit, totals.runs) + " · ", style = style, maxLines = 1, softWrap = false)
-        Text(if (empty || unknown) "—" else km(totals.meters), style = style, maxLines = 1, softWrap = false,
+        Text(pluralStringResource(R.plurals.rd_d_times_unit, totals.runs) + " · ", style = style, maxLines = 1, softWrap = false)
+        Text(if (noDistance) "—" else km(totals.meters), style = style, maxLines = 1, softWrap = false,
             modifier = Modifier.testTag("stats-distance"))
         Text("km", style = style, maxLines = 1, softWrap = false)
     }
@@ -265,7 +263,7 @@ private fun EmptyChartMessage(ui: StatsUi, weekly: Boolean) {
             painterResource(R.drawable.scene_sit_together), contentDescription = null,
             modifier = Modifier.height(96.dp), contentScale = ContentScale.Fit,
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
         if (!ui.anyRecords) {
             Text(stringResource(R.string.run_rec_stats_empty), style = runTextStyle(16.sp, t.text, FontWeight.Bold, 1.4f),
                 textAlign = TextAlign.Center)
@@ -273,13 +271,11 @@ private fun EmptyChartMessage(ui: StatsUi, weekly: Boolean) {
             Text(
                 when {
                     month == null -> stringResource(R.string.rec_stats_empty_week)
-                    month == ui.thisMonth -> stringResource(R.string.rec_stats_empty_month)
+                    month == ui.thisMonth -> stringResource(R.string.rd_d_this_month_empty)
                     else -> stringResource(R.string.rec_stats_empty_named_month, monthName.format(month))
                 },
-                style = runTextStyle(16.sp, t.text, FontWeight.Bold, 1.4f), textAlign = TextAlign.Center,
+                style = runTextStyle(17.sp, t.text, FontWeight.Bold, 1.4f), textAlign = TextAlign.Center,
             )
-            Text(stringResource(if (weekly) R.string.rec_stats_empty_week_body else R.string.rec_stats_empty_month_body),
-                style = runTextStyle(13.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center)
         }
     }
 }
@@ -306,8 +302,10 @@ private fun BarChart(
     val dayFormat = rememberFormatter(R.string.date_month_day)
     val rangeLabel = @Composable { bar: RunBar -> stringResource(R.string.rec_bar_range, bar.first.dayOfMonth, bar.last.dayOfMonth) }
     val locale = LocalConfiguration.current.locales[0]
+    // 축 글자는 "1–7"(달 이름이 위에 있다), 읽어 주는 글은 "1–7일"
     val labels = bars.map { bar ->
-        if (weekly) bar.first.dayOfWeek.getDisplayName(DateTextStyle.SHORT, locale) else rangeLabel(bar)
+        if (weekly) bar.first.dayOfWeek.getDisplayName(DateTextStyle.SHORT, locale)
+        else stringResource(R.string.rd_d_bar_range, bar.first.dayOfMonth, bar.last.dayOfMonth)
     }
     val spoken = bars.map { bar -> if (weekly) dayFormat.format(bar.first) else rangeLabel(bar) }
     val cds = bars.mapIndexed { i, bar ->
@@ -319,7 +317,7 @@ private fun BarChart(
     val past = bars.indices.filter { !bars[it].future }
     val chartHeight = 196.dp
     val labelHeight = 34.dp
-    val axisWidth = if (axis) 26.dp else 0.dp
+    val axisWidth = if (axis && empty == null) 26.dp else 0.dp
     Column(
         Modifier.fillMaxWidth().testTag("stats-chart")
             .semantics {
@@ -339,7 +337,7 @@ private fun BarChart(
             },
     ) {
         Row(Modifier.fillMaxWidth().height(chartHeight + labelHeight)) {
-            if (axis) {
+            if (axis && empty == null) {
                 // 눈금 글자
                 Box(Modifier.width(axisWidth).fillMaxHeight()) {
                     ticks.forEach { value ->
@@ -353,7 +351,8 @@ private fun BarChart(
                 }
             }
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                Canvas(Modifier.fillMaxWidth().height(chartHeight)) {
+                // 빈 칸은 눈금선 없이 바닥 막대 자리만(시안 11)
+                if (empty == null) Canvas(Modifier.fillMaxWidth().height(chartHeight)) {
                     val dash = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))
                     ticks.forEach { value ->
                         val y = size.height * (1f - (value / top).toFloat())
@@ -381,7 +380,7 @@ private fun BarChart(
                             Box(Modifier.fillMaxWidth().height(chartHeight)) {
                                 if (empty == null && !bar.future) {
                                     Bar(bar, top, chartHeight, weekly, on, faded = pick != null && !on)
-                                } else if (empty != null && !bar.future) {
+                                } else if (empty != null) {
                                     // 빈 칸 — 막대 자리만(값을 지어내지 않는다)
                                     Box(
                                         Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 6.dp).height(6.dp)
@@ -395,7 +394,7 @@ private fun BarChart(
                                     style = runTextStyle(
                                         13.sp,
                                         when {
-                                            bar.future -> t.muted.copy(alpha = 0.55f)
+                                            bar.future && empty == null -> t.muted.copy(alpha = 0.55f)
                                             on -> t.text
                                             else -> t.label
                                         },

@@ -53,7 +53,7 @@ import com.stepup.android.ui.experience.feedbackClickable
  */
 
 internal object Lb {
-    val Gutter = 16.dp
+    val Gutter = 18.dp
 }
 
 /** 값 + 단위 — km 는 소수 한 자리, 포인트는 정수. 단위는 숫자 뒤 작은 보조 글자 */
@@ -130,13 +130,13 @@ internal fun LbRow(
     ) {
         Text(
             entry.rank?.toString() ?: "—",
-            style = runNumberStyle(if (podium) 22.sp else 19.sp, lbRankColor(t, entry.rank, me), if (podium || me) FontWeight.Bold else FontWeight.SemiBold),
-            textAlign = TextAlign.Start, maxLines = 1, softWrap = false, modifier = Modifier.widthIn(min = 34.dp),
+            style = runNumberStyle(if (podium) 24.sp else 20.sp, lbRankColor(t, entry.rank, me), FontWeight.Bold),
+            textAlign = TextAlign.Center, maxLines = 1, softWrap = false, modifier = Modifier.widthIn(min = 24.dp),
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                entry.name, style = runTextStyle(16.sp, if (me) t.cobaltText else t.text, FontWeight.SemiBold, 1.25f),
+                entry.name, style = runTextStyle(17.sp, if (me) t.cobaltText else t.text, FontWeight.Bold, 1.25f),
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = if (nameTag != null) Modifier.testTag(nameTag) else Modifier,
             )

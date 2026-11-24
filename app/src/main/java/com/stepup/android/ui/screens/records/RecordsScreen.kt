@@ -28,7 +28,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
@@ -52,6 +51,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -155,16 +155,16 @@ fun RecordsContent(
     val bare = firstEmpty || load == RecordsLoad.Failed
     RecordsFrame(onBack, Modifier.testTag("records-screen")) {
         Row(
-            Modifier.fillMaxWidth().padding(start = RunSpec.Gutter, end = RunSpec.Gutter - 10.dp, top = 2.dp),
+            Modifier.fillMaxWidth().padding(start = RecSpec.TitleGutter, end = RecSpec.TitleGutter - 10.dp, top = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            RecordTitle(
+            RecScreenTitle(
                 stringResource(if (period == RecordPeriod.All && !bare) R.string.run_rec_title_all else R.string.rec_title),
                 Modifier.weight(1f),
             )
             if (!bare) RunTextAction(stringResource(R.string.rec_stats), onOpenStats, Modifier.testTag("records-stats"), chevron = true)
         }
-        if (!bare) PeriodChips(period, onOpenPeriod, onShowAll, Modifier.padding(horizontal = RunSpec.Gutter).padding(top = 8.dp))
+        if (!bare) PeriodChips(period, onOpenPeriod, onShowAll, Modifier.padding(horizontal = RecSpec.TitleGutter).padding(top = 8.dp))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (load) {
                 RecordsLoad.Loading -> RecordsSkeleton()
@@ -172,8 +172,8 @@ fun RecordsContent(
                     PlainEmptyState(
                         R.drawable.mascot_oops, stringResource(R.string.run_rec_failed_title),
                         body = stringResource(R.string.run_rec_failed_body),
+                        action = stringResource(R.string.run_rec_reload), onAction = onReload, actionTag = "records-reload",
                     )
-                    RunTextAction(stringResource(R.string.run_rec_reload), onReload, Modifier.testTag("records-reload"))
                 }
                 is RecordsLoad.Ready -> when {
                     firstEmpty -> CenteredState(Modifier.testTag("records-empty")) {
@@ -186,15 +186,19 @@ fun RecordsContent(
                         Modifier.testTag("records-period-empty"),
                         header = { Summary(load.totals, tagged = false) },
                     ) {
+                        // "11월엔 아직 기록이 없어요" · "지난 기록 보기"(전체 기간으로 — 예전 "전체 기록 보기"와 같은 일)
+                        val month = (period as? RecordPeriod.Month)?.month
                         PlainEmptyState(
-                            R.drawable.scene_blanket, stringResource(R.string.run_rec_period_empty_title),
-                            body = stringResource(R.string.run_rec_period_empty_body), imageHeight = 120.dp,
+                            R.drawable.scene_blanket,
+                            if (month != null) stringResource(R.string.rd_d_month_empty_title, shortMonth(month))
+                            else stringResource(R.string.run_rec_period_empty_title),
+                            body = stringResource(R.string.rd_d_month_empty_body), imageHeight = 120.dp,
+                            action = stringResource(R.string.rd_d_past_records), onAction = onShowAll, actionTag = "records-show-all",
                         )
-                        RunTextAction(stringResource(R.string.rec_show_all), onShowAll, Modifier.testTag("records-show-all"))
                     }
                     else -> LazyColumn(
                         state = listState, modifier = Modifier.fillMaxSize().testTag("records-list"),
-                        contentPadding = PaddingValues(start = RunSpec.Gutter, end = RunSpec.Gutter, top = 0.dp, bottom = 12.dp),
+                        contentPadding = PaddingValues(start = RecSpec.Gutter, end = RecSpec.Gutter, top = 0.dp, bottom = 12.dp),
                     ) {
                         item(key = "summary") { Summary(load.totals) }
                         if (load.stale) item(key = "stale") { StaleNotice(onReload) }
@@ -215,9 +219,9 @@ fun RecordsContent(
         if (load != RecordsLoad.Failed) {
             RunButton(
                 stringResource(R.string.run_rec_start), onStartRun,
-                Modifier.padding(horizontal = RunSpec.Gutter).padding(top = 6.dp, bottom = 14.dp)
+                Modifier.padding(horizontal = RecSpec.Gutter).padding(top = 6.dp, bottom = 14.dp)
                     .testTag(if (firstEmpty) "records-start-run" else "records-hero-start"),
-                icon = Icons.Filled.PlayArrow, hero = true,
+                hero = true,
             )
         }
     }
@@ -233,7 +237,7 @@ private fun CenteredState(
     BoxWithConstraints(modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight)
-                .padding(horizontal = RunSpec.Gutter).padding(bottom = 24.dp),
+                .padding(horizontal = RecSpec.Gutter).padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (header != null) header()
@@ -243,6 +247,29 @@ private fun CenteredState(
         }
     }
 }
+
+/** 재디자인(2026-11-24) 여백 — 제목 · 기간 칩 · 합계는 20dp, 목록 · 카드 · 주 버튼은 18dp(시안 10 · 11) */
+internal object RecSpec {
+    val TitleGutter = 20.dp
+    val Gutter = 18.dp
+}
+
+/** 화면 제목 — 30sp Bold, 자간 −2.5%(재디자인 2-5) */
+@Composable
+internal fun RecScreenTitle(text: String, modifier: Modifier = Modifier) {
+    val t = runTone()
+    Text(
+        text,
+        style = runTextStyle(30.sp, t.text, FontWeight.Bold, 1.25f).copy(letterSpacing = (-0.025).em),
+        maxLines = 2, overflow = TextOverflow.Ellipsis,
+        modifier = modifier.semantics { heading() },
+    )
+}
+
+/** "11월" · "Nov" — 이 기기 언어의 짧은 달 이름 */
+@Composable
+internal fun shortMonth(month: YearMonth): String =
+    month.month.getDisplayName(java.time.format.TextStyle.SHORT, androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
 
 @Composable
 private fun periodLabel(period: RecordPeriod): String = when (period) {
@@ -268,7 +295,7 @@ private fun PeriodChips(period: RecordPeriod, onOpenSheet: () -> Unit, onShowAll
         )
         if (period is RecordPeriod.Month) {
             PeriodChip(
-                stringResource(R.string.rec_period_all), selected = false, onClick = onShowAll,
+                stringResource(R.string.rd_d_all), selected = false, onClick = onShowAll,
                 modifier = Modifier.testTag("records-period-all"),
             )
         }
@@ -302,8 +329,8 @@ private fun PeriodChip(label: String, selected: Boolean, onClick: () -> Unit, mo
 private fun Summary(totals: RecordTotals, tagged: Boolean = true) {
     val t = runTone()
     val unknown = totals.runs > 0 && totals.measured == 0
-    val style = runTextStyle(15.sp, t.label, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum")
-    Column(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp).then(if (tagged) Modifier.testTag("records-summary") else Modifier)) {
+    val style = runTextStyle(16.sp, t.label, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum")
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp).then(if (tagged) Modifier.testTag("records-summary") else Modifier)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${totals.runs}", style = style, maxLines = 1, softWrap = false,
                 modifier = if (tagged) Modifier.testTag("records-runs") else Modifier)
@@ -397,7 +424,7 @@ private fun StaleNotice(onRetry: () -> Unit) {
 private fun RecordsSkeleton() {
     val t = runTone()
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = RunSpec.Gutter).testTag("records-loading"),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = RecSpec.Gutter).testTag("records-loading"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         RunSpinner(Modifier.padding(top = 8.dp).size(40.dp))

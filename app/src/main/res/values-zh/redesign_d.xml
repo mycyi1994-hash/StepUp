@@ -7,4 +7,14 @@
     <plurals name="rd_d_runs_unit">
         <item quantity="other">次</item>
     </plurals>
+    <string name="rd_d_none">还没有</string>
+    <string name="rd_d_week_of_month">%1$s第%2$d周</string>
+    <string name="rd_d_all">全部</string>
+    <string name="rd_d_month_empty_title">%1$s还没有记录</string>
+    <string name="rd_d_month_empty_body">记录跑步后会显示在这里</string>
+    <string name="rd_d_past_records">查看以往记录</string>
+    <plurals name="rd_d_times_unit">
+        <item quantity="other">次</item>
+    </plurals>
+    <string name="rd_d_this_month_empty">本月还没有记录</string>
 </resources>

@@ -191,7 +191,8 @@ fun PlainEmptyState(
             Text(body, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.45f), textAlign = TextAlign.Center)
         }
         if (action != null && onAction != null) {
-            Spacer(Modifier.height(14.dp))
+            // 글자 버튼 칸(최소 48dp)의 위 여백이 이미 띄움 노릇을 한다 — 시안의 설명 ↔ 버튼 사이 약 17dp
+            Spacer(Modifier.height(2.dp))
             RunTextAction(
                 action, onAction, chevron = actionChevron,
                 modifier = if (actionTag != null) Modifier.testTag(actionTag) else Modifier,

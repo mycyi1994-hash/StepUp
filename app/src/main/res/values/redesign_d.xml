@@ -8,4 +8,16 @@
         <item quantity="one">run</item>
         <item quantity="other">runs</item>
     </plurals>
+    <string name="rd_d_none">Not yet</string>
+    <string name="rd_d_week_of_month">%1$s week %2$d</string>
+    <string name="rd_d_all">All</string>
+    <string name="rd_d_month_empty_title">No runs in %1$s yet</string>
+    <string name="rd_d_month_empty_body">Runs you record will show up here</string>
+    <string name="rd_d_past_records">See past runs</string>
+    <string name="rd_d_bar_range" translatable="false">%1$d–%2$d</string>
+    <plurals name="rd_d_times_unit">
+        <item quantity="one">run</item>
+        <item quantity="other">runs</item>
+    </plurals>
+    <string name="rd_d_this_month_empty">No runs this month yet</string>
 </resources>

@@ -7,4 +7,14 @@
     <plurals name="rd_d_runs_unit">
         <item quantity="other">회</item>
     </plurals>
+    <string name="rd_d_none">아직 없어요</string>
+    <string name="rd_d_week_of_month">%1$s %2$d주</string>
+    <string name="rd_d_all">전체</string>
+    <string name="rd_d_month_empty_title">%1$s엔 아직 기록이 없어요</string>
+    <string name="rd_d_month_empty_body">러닝을 기록하면 여기에 쌓여요</string>
+    <string name="rd_d_past_records">지난 기록 보기</string>
+    <plurals name="rd_d_times_unit">
+        <item quantity="other">번</item>
+    </plurals>
+    <string name="rd_d_this_month_empty">이번 달엔 기록이 없어요</string>
 </resources>

@@ -7,4 +7,14 @@
     <plurals name="rd_d_runs_unit">
         <item quantity="other">回</item>
     </plurals>
+    <string name="rd_d_none">まだありません</string>
+    <string name="rd_d_week_of_month">%1$s第%2$d週</string>
+    <string name="rd_d_all">すべて</string>
+    <string name="rd_d_month_empty_title">%1$sはまだ記録がありません</string>
+    <string name="rd_d_month_empty_body">ランを記録するとここにたまります</string>
+    <string name="rd_d_past_records">過去の記録を見る</string>
+    <plurals name="rd_d_times_unit">
+        <item quantity="other">回</item>
+    </plurals>
+    <string name="rd_d_this_month_empty">今月はまだ記録がありません</string>
 </resources>

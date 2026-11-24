@@ -192,7 +192,14 @@ fun LeaderboardScreen(
             onDismiss = { sheet = null },
         ) {
             when (open) {
-                LbSheet.RULES -> RulesSheet(board, pointsReady = points is LeaderLoad.Ready)
+                LbSheet.RULES -> RulesSheet(
+                    board, pointsReady = points is LeaderLoad.Ready,
+                    period = when (board) {
+                        LeaderBoardKind.CREW -> (crew as? LeaderLoad.Ready)?.value?.period
+                        LeaderBoardKind.PERSONAL -> (runners as? LeaderLoad.Ready)?.value?.period
+                        LeaderBoardKind.POINTS -> (points as? LeaderLoad.Ready)?.value?.period
+                    },
+                )
                 LbSheet.CREW_NEARBY -> (crew as? LeaderLoad.Ready)?.value?.let { CrewNearbySheet(it) }
                 LbSheet.MY_RUNS -> (runners as? LeaderLoad.Ready)?.value?.let { MyRunsSheet(it) }
                 LbSheet.POINT_NEARBY -> (points as? LeaderLoad.Ready)?.value?.let { PointNearbySheet(it) }
@@ -214,7 +221,7 @@ private fun LbMeta(period: LeaderPeriod?, criterion: String) {
     ) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                (if (period == null) stringResource(R.string.lb_period_pending) else stringResource(R.string.lb_period, periodLabel(period))) + " · ",
+                (if (period == null) stringResource(R.string.lb_period_pending) else weekLabel(period)) + " · ",
                 style = style, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false).testTag("lb-period"),
             )
@@ -225,8 +232,16 @@ private fun LbMeta(period: LeaderPeriod?, criterion: String) {
     }
 }
 
-/** "10.12–10.18" — 서버가 준 주의 첫날 · 마지막 날 */
-private fun periodLabel(period: LeaderPeriod): String =
+/** "11월 4주" — 서버가 준 주의 첫날(월요일)이 그 달의 몇째 월요일인가. 날짜 범위는 순위 기준 시트에 있다 */
+@Composable
+private fun weekLabel(period: LeaderPeriod): String {
+    val locale = LocalConfiguration.current.locales[0]
+    val month = period.startDate.month.getDisplayName(JavaTextStyle.SHORT, locale)
+    return stringResource(R.string.rd_d_week_of_month, month, (period.startDate.dayOfMonth - 1) / 7 + 1)
+}
+
+/** "11.23–11.29" — 서버가 준 주의 첫날 · 마지막 날 */
+private fun periodRange(period: LeaderPeriod): String =
     "${period.startDate.monthValue}.${period.startDate.dayOfMonth}–${period.lastDate.monthValue}.${period.lastDate.dayOfMonth}"
 
 /** 불러오는 중 · 실패 · 로그인 · 준비 중 — 지어낸 숫자 대신 이 칸을 보인다. 그 밖의 상태(Ready)면 false */
@@ -244,8 +259,8 @@ private fun <T> LbLoadState(state: LeaderLoad<T>, onRetry: () -> Unit, unavailab
             PlainEmptyState(
                 R.drawable.mascot_oops, stringResource(R.string.lb_failed_title),
                 body = if (state.offline) stringResource(R.string.lb_failed_offline) else null,
+                action = stringResource(R.string.lb_retry), onAction = onRetry, actionTag = "lb-failed-action",
             )
-            RunTextAction(stringResource(R.string.lb_retry), onRetry, Modifier.testTag("lb-failed-action"))
         }
         LeaderLoad.SignedOut -> PlainEmptyState(
             null, stringResource(R.string.lb_signed_out_title), Modifier.padding(top = 48.dp).testTag("lb-signed-out"),
@@ -312,7 +327,8 @@ private fun CrewPage(
         tag = "lb-crew",
         footer = ready?.let { b -> { CrewFooter(b, onOpenNearby, onFindCrew) } },
     ) {
-        item(key = "head") { LbMeta(ready?.period, stringResource(R.string.lb_criterion_crew)) }
+        // 불러오지 못했으면 기간 줄 없이 빈 화면만(09b)
+        if (state !is LeaderLoad.Failed) item(key = "head") { LbMeta(ready?.period, stringResource(R.string.lb_criterion_crew)) }
         item(key = "state") { LbLoadState(state, onRetry) }
         if (ready == null) return@LbPage
         if (ready.top.isEmpty()) {
@@ -364,11 +380,12 @@ private fun CrewFooter(board: CrewBoard, onOpenNearby: () -> Unit, onFindCrew: (
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    stringResource(R.string.rd_d_my_crew), style = runTextStyle(12.5.sp, ink.label, FontWeight.Medium, 1.25f),
+                    stringResource(R.string.rd_d_my_crew), style = runTextStyle(13.sp, ink.label, FontWeight.Medium, 1.25f),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    stringResource(R.string.lb_crew_none_title), style = runTextStyle(16.sp, ink.text, FontWeight.Bold, 1.25f),
+                    // "내 크루 · 아직 없어요"(시안) — 크루 찾기 길이 없으면 예전 글 "아직 크루가 없어요" + 설명
+                    stringResource(if (onFindCrew != null) R.string.rd_d_none else R.string.lb_crew_none_title), style = runTextStyle(17.sp, ink.text, FontWeight.Bold, 1.25f),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (onFindCrew == null) {
@@ -448,7 +465,8 @@ private fun PersonalPage(
         tag = "lb-personal",
         footer = ready?.let { b -> { PersonalFooter(b, onOpenRuns) } },
     ) {
-        item(key = "head") { LbMeta(ready?.period, stringResource(R.string.lb_criterion_personal)) }
+        // 불러오지 못했으면 기간 줄 없이 빈 화면만(09b)
+        if (state !is LeaderLoad.Failed) item(key = "head") { LbMeta(ready?.period, stringResource(R.string.lb_criterion_personal)) }
         item(key = "state") { LbLoadState(state, onRetry) }
         if (ready == null) return@LbPage
         val me = ready.me
@@ -655,7 +673,8 @@ private fun PointsPage(
         tag = "lb-points",
         footer = ready?.let { b -> { PointsFooter(b, onOpenNearby) } },
     ) {
-        item(key = "head") { LbMeta(ready?.period, stringResource(R.string.lb_criterion_points)) }
+        // 불러오지 못했으면 기간 줄 없이 빈 화면만(09b)
+        if (state !is LeaderLoad.Failed) item(key = "head") { LbMeta(ready?.period, stringResource(R.string.lb_criterion_points)) }
         item(key = "state") {
             LbLoadState(
                 state, onRetry,
@@ -787,8 +806,10 @@ private fun PointNearbySheet(board: PointsBoard) {
 // ── 순위 기준 시트 ────────────────────────────────────────────────
 
 @Composable
-private fun RulesSheet(board: LeaderBoardKind, pointsReady: Boolean) {
+private fun RulesSheet(board: LeaderBoardKind, pointsReady: Boolean, period: LeaderPeriod?) {
     val t = runTone()
+    // 목록 위 "11월 4주" 의 날짜 범위(예전 머리 줄의 "이번 주 11.23–11.29")
+    if (period != null) LbSheetNote(stringResource(R.string.lb_period, periodRange(period)), Modifier.testTag("lb-rules-period"))
     val rules = when (board) {
         LeaderBoardKind.CREW -> listOf(
             R.string.lb_rules_crew_title to R.string.lb_rules_crew_body,
