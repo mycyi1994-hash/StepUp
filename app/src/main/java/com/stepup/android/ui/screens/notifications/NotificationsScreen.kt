@@ -23,7 +23,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
+import com.stepup.android.ui.components.PlainEmptyState
+import com.stepup.android.ui.components.RunTextAction
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,7 +43,6 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material.icons.outlined.Redeem
 import androidx.compose.material.icons.outlined.Shield
@@ -392,11 +394,7 @@ private fun InboxPane(
             onAction = onReload, modifier = Modifier.testTag("inbox-failed"),
         )
         is InboxLoad.Ready -> if (load.items.isEmpty()) {
-            PaneState(
-                icon = Icons.Outlined.NotificationsActive, title = stringResource(R.string.inbox_empty_title),
-                body = stringResource(R.string.inbox_empty_body), actionLabel = stringResource(R.string.inbox_open_settings),
-                onAction = onOpenSettings, modifier = Modifier.testTag("inbox-empty"),
-            )
+            InboxEmpty(onOpenSettings, Modifier.testTag("inbox-empty"))
         } else {
             val groups = remember(load.items, ui.now, zone) {
                 load.items.groupBy { dayGroup(it.timestamp, ui.now, zone) }.toSortedMap().toList()
@@ -495,6 +493,24 @@ private fun NotificationRow(entity: NotificationEntity, now: Long, zone: ZoneId,
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.label, modifier = Modifier.size(28.dp))
         }
         BlueRule(strong = true)
+    }
+}
+
+/**
+ * 빈 내 알림(2026-11-24 재디자인 13_알림함) — 캐릭터(scene_sofa_phone) · 제목 · 한 줄 · 글자 버튼 「알림 설정 보기」.
+ * 큰 글씨 · 작은 화면에서는 넘긴다.
+ */
+@Composable
+private fun InboxEmpty(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 120.dp, bottom = 24.dp, start = 8.dp, end = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        PlainEmptyState(
+            R.drawable.scene_sofa_phone, stringResource(R.string.inbox_empty_title),
+            body = stringResource(R.string.inbox_empty_body), imageHeight = 120.dp,
+        )
+        RunTextAction(stringResource(R.string.inbox_open_settings), onOpenSettings, Modifier.offset(y = (-14).dp).testTag("pane-action"))
     }
 }
 

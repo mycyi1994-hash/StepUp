@@ -11,15 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,10 +26,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,13 +47,16 @@ import com.stepup.android.data.remote.ServerResult
 import com.stepup.android.domain.BagItem
 import com.stepup.android.domain.ItemKind
 import com.stepup.android.ui.components.ButtonState
-import com.stepup.android.ui.components.EmptyLine
-import com.stepup.android.ui.components.ErrorNote
+import com.stepup.android.ui.components.KoreanLineBreak
 import com.stepup.android.ui.components.LargeTitle
+import com.stepup.android.ui.components.PlainEmptyState
 import com.stepup.android.ui.components.PrimaryButton
-import com.stepup.android.ui.components.SecondaryButton
+import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.StepUpSpinner
 import com.stepup.android.ui.components.StepUpUi
+import com.stepup.android.ui.components.runNumberStyle
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -113,9 +110,10 @@ fun BagScreen() {
             contentPadding = PaddingValues(top = 6.dp, bottom = if (selected != null) 120.dp else 28.dp),
         ) {
             item {
+                // 아무것도 없으면 개수 줄은 아래 빈 카드가 대신한다(2026-11-24 재디자인)
                 LargeTitle(
                     stringResource(R.string.tab_items),
-                    subtitle = current?.let { b -> stringResource(R.string.bag_count, b.items.count { it.qty > 0 }, b.total) },
+                    subtitle = current?.takeIf { it.total > 0 }?.let { b -> stringResource(R.string.bag_count, b.items.count { it.qty > 0 }, b.total) },
                 )
             }
             current?.event?.let { event -> item { EventBand(event.mult, event.endsAtMillis) } }
@@ -124,17 +122,21 @@ fun BagScreen() {
                     Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) { StepUpSpinner() }
                 }
                 current == null && failed -> item {
-                    Column(Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 40.dp)) {
-                        ErrorNote(stringResource(R.string.bag_load_failed), null)
-                        SecondaryButton(
+                    // 불러오기 실패 — 빈 · 오류 상태 한 모양(캐릭터 · 제목 · 글자 버튼)
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter, vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        PlainEmptyState(R.drawable.mascot_oops, stringResource(R.string.bag_load_failed))
+                        RunTextAction(
                             stringResource(R.string.bag_retry), { scope.launch { load() } },
-                            Modifier.fillMaxWidth().padding(top = 14.dp).testTag("bag-retry"),
+                            Modifier.testTag("bag-retry"), chevron = true,
                         )
                     }
                 }
                 current != null -> {
                     if (current.total == 0) {
-                        item { EmptyLine(stringResource(R.string.bag_empty), Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 12.dp)) }
+                        item { EmptyCard(Modifier.padding(start = StepUpUi.Gutter, end = StepUpUi.Gutter, top = 12.dp)) }
                     }
                     item {
                         SectionHead(stringResource(R.string.bag_section_run), stringResource(R.string.bag_section_run_hint))
@@ -193,15 +195,15 @@ fun BagScreen() {
             }
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp)
-                    .clip(RoundedCornerShape(26.dp)).background(StepUpUi.colors.elevated)
-                    .border(1.dp, StepUpUi.colors.rim, RoundedCornerShape(26.dp))
+                    .clip(RoundedCornerShape(26.dp)).background(runTone().panel)
+                    .border(1.dp, runTone().panelEdge, RoundedCornerShape(26.dp))
                     .padding(start = 18.dp, end = 10.dp, top = 12.dp, bottom = 12.dp)
                     .testTag("bag-use-bar"),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f).padding(end = 10.dp)) {
-                        Text(itemName(pick), style = StepUpUi.type.rowTitle, color = StepUpUi.colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(detail, style = StepUpUi.type.rowSubtitle, color = StepUpUi.colors.secondaryLabel, modifier = Modifier.padding(top = 2.dp))
+                        Text(itemName(pick), style = StepUpUi.type.rowTitle, color = runTone().text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(detail, style = StepUpUi.type.rowSubtitle, color = runTone().label, modifier = Modifier.padding(top = 2.dp))
                     }
                     if (!pick.runPick) {
                         PrimaryButton(
@@ -247,85 +249,113 @@ fun BagScreen() {
 
 @Composable
 private fun SectionHead(title: String, hint: String?) {
+    val t = runTone()
     Row(
         Modifier.fillMaxWidth().padding(start = StepUpUi.TitleGutter, end = StepUpUi.TitleGutter, top = 22.dp, bottom = 10.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
-        Text(title, style = StepUpUi.type.rowTitle, color = StepUpUi.colors.label, modifier = Modifier.weight(1f).semantics { heading() })
-        if (hint != null) Text(hint, style = StepUpUi.type.caption, color = StepUpUi.colors.tertiaryLabel)
+        Text(
+            title, style = runTextStyle(17.sp, t.text, FontWeight.Bold, 1.3f),
+            modifier = Modifier.weight(1f).semantics { heading() }, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        if (hint != null) {
+            Text(hint, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.3f), maxLines = 1, softWrap = false, modifier = Modifier.padding(start = 8.dp))
+        }
     }
 }
 
-/** 보상 이벤트 띠 — 운영자가 연 이벤트가 켜져 있을 때만(0106). 누르는 곳은 없다 */
+private val CardShape = RoundedCornerShape(22.dp)
+
+/** 아이템이 하나도 없을 때 — 흰 카드 한 줄 + 캐릭터(재디자인 3장: 아이템 없음 안내 줄 · mascot_bored) */
+@Composable
+private fun EmptyCard(modifier: Modifier = Modifier) {
+    val t = runTone()
+    Row(
+        modifier.fillMaxWidth().clip(CardShape).background(t.panel).border(1.dp, t.panelEdge, CardShape)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painterResource(R.drawable.mascot_bored), contentDescription = null,
+            modifier = Modifier.height(64.dp), contentScale = ContentScale.Fit,
+        )
+        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(stringResource(R.string.rd_c_bag_empty_title), style = runTextStyle(16.5.sp, t.text, FontWeight.Bold, 1.3f).copy(lineBreak = KoreanLineBreak))
+            Text(
+                stringResource(R.string.rd_c_bag_empty_body),
+                style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.4f).copy(lineBreak = KoreanLineBreak),
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+/** 보상 이벤트 줄 — 운영자가 연 이벤트가 켜져 있을 때만(0106). 누르는 곳은 없다. 흰 카드 · 배수 숫자만 파랑 */
 @Composable
 private fun EventBand(mult: Double, endsAt: Long) {
+    val t = runTone()
     val until = remember(endsAt) {
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).format(Instant.ofEpochMilli(endsAt).atZone(ZoneId.systemDefault()))
     }
     Row(
         Modifier.padding(start = StepUpUi.Gutter, end = StepUpUi.Gutter, top = 14.dp).fillMaxWidth().heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFF2A62F2), Color(0xFF4D83FF), Color(0xFF7FA8FF))))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(CardShape).background(t.panel).border(1.dp, t.panelEdge, CardShape)
+            .padding(horizontal = 18.dp, vertical = 12.dp)
             .testTag("bag-event"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("×" + formatValue(mult), style = StepUpUi.type.numberRow.copy(fontSize = 30.sp), color = Color.White)
-        Column(Modifier.padding(start = 12.dp)) {
-            Text(stringResource(R.string.bag_event_title, formatValue(mult)), color = Color.White, style = StepUpUi.type.rowTitle.copy(fontSize = 15.5.sp))
-            Text(stringResource(R.string.bag_event_until, until), color = Color(0xFFE4EDFF), style = StepUpUi.type.caption)
+        Text("×" + formatValue(mult), style = runNumberStyle(30.sp, t.cobaltText), maxLines = 1, softWrap = false)
+        Column(Modifier.weight(1f).padding(start = 14.dp)) {
+            Text(stringResource(R.string.bag_event_title, formatValue(mult)), style = runTextStyle(15.5.sp, t.text, FontWeight.SemiBold, 1.3f))
+            Text(stringResource(R.string.bag_event_until, until), style = runTextStyle(13.sp, t.label, FontWeight.Medium, 1.3f))
         }
     }
 }
 
 /**
- * 아이템 칸 — 그림 · 이름 · 효과 · 개수. 그림이 어두운 바탕에 맞춰 그려져 칸은 두 테마 모두 어두운 남색이다(시안 D 와 같다).
- * 개수가 0 이면 흐리게(고를 수는 있다 — 설명을 보려고).
+ * 아이템 칸(2026-11-24 재디자인) — 흰 카드 안에 회색 칸(그림) · 이름 · 효과. 개수 배지는 없다 —
+ * 가진 개수는 1개 이상일 때만 효과 아래 파란 숫자로(×N), 위 제목 줄에 종류 · 개수 합계. 고르면 테두리만 파랗게 굵어진다.
  */
 @Composable
 internal fun ItemTile(item: BagItem, selected: Boolean, tall: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(22.dp)
-    val glow = itemGlow(item.kind)
-    Box(
+    val t = runTone()
+    Column(
         modifier
             .heightIn(min = if (tall) 166.dp else 150.dp)
-            .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF141C32), Color(0xFF080C18))))
-            .background(Brush.radialGradient(listOf(glow.copy(alpha = if (selected) .55f else .32f), Color.Transparent)))
-            .border(if (selected) 2.dp else 1.dp, if (selected) Color(0xFF6C9BFF) else Color(0x33FFFFFF), shape)
+            .clip(CardShape)
+            .background(t.panel)
+            .border(if (selected) 2.dp else 1.dp, if (selected) t.cobalt else t.panelEdge, CardShape)
             .feedbackClickable(role = Role.Button, onClick = onClick)
             .semantics { this.selected = selected }
-            .testTag("bag-item-${item.kind.id}"),
+            .testTag("bag-item-${item.kind.id}")
+            .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 10.dp).alpha(if (item.qty > 0) 1f else .5f),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Box(
+            Modifier.fillMaxWidth().aspectRatio(if (tall) 1.45f else 1.05f).clip(RoundedCornerShape(16.dp)).background(t.inset),
+            contentAlignment = Alignment.Center,
         ) {
             Image(
                 painterResource(itemArt(item.kind)), contentDescription = null,
-                modifier = Modifier.fillMaxWidth(if (tall) .82f else .9f).aspectRatio(1f),
-            )
-            Text(
-                itemName(item.kind), color = Color.White, textAlign = TextAlign.Center, maxLines = 2,
-                style = StepUpUi.type.rowTitle.copy(fontSize = if (tall) 15.sp else 13.5.sp, lineHeight = if (tall) 19.sp else 17.sp),
-            )
-            Text(
-                effectText(item.kind, item.value), color = glow.copy(alpha = 1f).let { lighten(it) }, textAlign = TextAlign.Center,
-                style = StepUpUi.type.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp), maxLines = 1,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.fillMaxSize().padding(if (tall) 10.dp else 6.dp), contentScale = ContentScale.Fit,
             )
         }
         Text(
-            stringResource(R.string.item_qty, item.qty),
-            color = Color.White, style = StepUpUi.type.numberRow.copy(fontSize = 17.sp),
-            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
-                .clip(RoundedCornerShape(12.dp)).background(Color(0x8C000000)).padding(horizontal = 8.dp, vertical = 3.dp),
+            itemName(item.kind), textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            style = runTextStyle(if (tall) 16.sp else 15.sp, t.text, FontWeight.Bold, 1.25f).copy(lineBreak = KoreanLineBreak),
+            modifier = Modifier.padding(top = 12.dp),
         )
-        if (selected) {
-            Box(
-                Modifier.align(Alignment.TopStart).padding(8.dp).size(24.dp).clip(CircleShape).background(Color.White),
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Check, contentDescription = null, tint = Color(0xFF1B5BF0), modifier = Modifier.size(15.dp)) }
+        Text(
+            effectText(item.kind, item.value), textAlign = TextAlign.Center, maxLines = 3,
+            style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = KoreanLineBreak),
+            modifier = Modifier.padding(top = 3.dp),
+        )
+        if (item.qty > 0) {
+            Text(
+                stringResource(R.string.item_qty, item.qty), maxLines = 1, softWrap = false,
+                style = runTextStyle(14.sp, t.cobaltText, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
     }
 }
@@ -337,19 +367,6 @@ internal fun itemArt(kind: ItemKind): Int = when (kind) {
     ItemKind.DURABILITY_RESET -> R.drawable.item_durability_reset
     ItemKind.ENERGY_RESET -> R.drawable.item_energy_reset
 }
-
-private fun itemGlow(kind: ItemKind): Color = when (kind) {
-    ItemKind.RUN_BOOSTER -> Color(0xFFAAF03C)
-    ItemKind.REWARD_DOUBLE -> Color(0xFFFFBE3C)
-    ItemKind.ENERGY_DRINK -> Color(0xFF2882FF)
-    ItemKind.DURABILITY_RESET -> Color(0xFFFF5050)
-    ItemKind.ENERGY_RESET -> Color(0xFF5A78FF)
-}
-
-/** 효과 글자색 — 빛 색을 밝게(어두운 칸 위에서 읽히게) */
-private fun lighten(c: Color): Color = Color(
-    red = c.red + (1f - c.red) * .45f, green = c.green + (1f - c.green) * .45f, blue = c.blue + (1f - c.blue) * .45f,
-)
 
 @Composable
 internal fun itemName(kind: ItemKind): String = stringResource(

@@ -1,21 +1,42 @@
 package com.stepup.android.ui.screens.gacha
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import com.stepup.android.ui.components.KoreanLineBreak
+import com.stepup.android.ui.components.PlainNumber
+import com.stepup.android.ui.components.cachedPainterResource
+import com.stepup.android.ui.components.label
+import com.stepup.android.ui.components.runNumberStyle
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,7 +48,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +55,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -46,10 +65,6 @@ import com.stepup.android.R
 import com.stepup.android.domain.DrawDistance
 import com.stepup.android.domain.DrawKind
 import com.stepup.android.domain.DrawStatus
-import com.stepup.android.ui.components.RunDivider
-import com.stepup.android.ui.components.RunNumber
-import com.stepup.android.ui.components.RunPillKind
-import com.stepup.android.ui.components.RunStatusPill
 import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
@@ -57,16 +72,16 @@ import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.theme.StepUpDesign
 
 /*
- * 신발 뽑기 메인(2026-10-03 파란 톤 통합 전달본 v4 · DRAW01 · 02 · 15 · 18 · 22 · 24 · 26 · 28 · 29 · 32) — 제목 "신발 뽑기"와 한 줄 →
- * 무료 패널 → 상급 패널 → "기회 받는 방법". 예전 무료 / 상급 글자 탭 대신 두 패널을 함께 보인다(각 패널의 상태 · 버튼은
- * 같은 규칙 [drawHomeCard] 를 종류마다 한 번씩 부른 것이다). 공통 머리(로고 · 잔액)와 하단 탭은 앱 셸이 그린다.
- * 상자는 왼쪽, 횟수 · 상태는 오른쪽, 주 버튼은 패널 아래. 작은 화면 · 큰 글씨에서는 넘긴다(버튼이 하단 탭 뒤로 숨지 않는다).
- * 수 · 연결 상태는 서버 값만 — 모르는 수는 "—", 결과를 모르는 요청은 "확인 중"(0 이 아니다). 가격 · 확률 · 나올 신발 목록은 없다.
+ * 신발 뽑기 메인(2026-11-24 재디자인 08_뽑기 — 예전 v4 의 두 패널을 대신한다). 위 글자 탭 「무료 뽑기 · 상급 뽑기」(숫자 없이) →
+ * 고른 종류의 흰 카드 하나(가운데: 남은 수 · 상자 그림 · 출처 한 줄 · 기회 내역) → 카드 밑 확률 한 줄 + 「기회 받는 방법」 →
+ * 상자 받는 곳 → 아래에 그 종류의 주 버튼 하나. 공통 머리(로고 · 잔액)와 하단 탭은 앱 셸이 그린다.
+ * 상급 탭은 [premiumPanelShown] 일 때만(스토어 판은 선물로 받은 상급 뽑기가 남았거나 상급 요청 결과를 기다릴 때만 — 0112).
+ * 수 · 연결 상태는 서버 값만 — 모르는 수는 "—", 결과를 모르는 요청은 "확인 중"(0 이 아니다). 확률은 서버 표(0077)를 읽었을 때만.
  */
 
 /**
- * 메인 한 화면. [premiumFocus] 가 늘 때마다 상급 패널을 화면 안으로 옮긴다(무료 소진 안내의 "상급 뽑기 보기" · 지갑 연결 확인 ·
- * 상급 요청의 결과 확인 — 예전에는 상급 탭을 고르던 자리).
+ * 메인 한 화면. [premiumFocus] 가 늘 때마다 상급 탭을 고른다(무료 소진 안내의 "상급 뽑기 보기" · 지갑 연결 확인 ·
+ * 상급 요청의 결과 확인).
  */
 @Composable
 internal fun DrawHome(
@@ -84,77 +99,116 @@ internal fun DrawHome(
     /** 상자 현황(0116) — 있으면 "상자 받는 곳" 줄 */
     boxes: com.stepup.android.domain.BoxStatus? = null,
 ) {
-    val free = drawHomeCard(status, DrawKind.FREE, pending?.kind, loading, signedOut, web3)
-    val premium = drawHomeCard(status, DrawKind.PREMIUM, pending?.kind, loading, signedOut, web3)
-    val premiumView = remember { BringIntoViewRequester() }
+    val t = runTone()
+    // 상급 뽑기는 지갑 연결 혜택이다 — 블록체인 기능이 없는 스토어 판(WEB3 = false)은 선물로 받은 상급 뽑기가 남았을 때만(0112)
+    val premiumShown = premiumPanelShown(web3, status, pending?.kind)
+    var picked by rememberSaveable { mutableStateOf(DrawKind.FREE) }
     LaunchedEffect(premiumFocus) {
-        if (premiumFocus > 0) runCatching { premiumView.bringIntoView() }
+        if (premiumFocus > 0) picked = DrawKind.PREMIUM
     }
+    val kind = if (premiumShown) picked else DrawKind.FREE
+    val card = drawHomeCard(status, kind, pending?.kind, loading, signedOut, web3)
+    val key = if (kind == DrawKind.FREE) "free" else "premium"
     val subtitle = when {
         status != null -> stringResource(R.string.draw_blue_subtitle_ready)
         signedOut -> stringResource(R.string.dv3_signed_out_title)
         loading -> stringResource(R.string.draw_blue_subtitle_loading)
         else -> stringResource(R.string.draw_blue_subtitle_failed)
     }
-    Box(Modifier.fillMaxSize().padding(bottom = bottomInset).testTag("draw-home")) {
+    // 등급별 확률 — 뽑기가 쓰는 서버 표 그대로(0077, 기회 받는 방법 창과 같은 값). 읽지 못하면 줄을 두지 않는다
+    val odds by produceState<com.stepup.android.domain.DrawOdds?>(null, status != null) {
+        if (status != null && value == null) {
+            value = runCatching {
+                (com.stepup.android.core.ServiceLocator.economyApi.drawOdds() as? com.stepup.android.data.remote.ServerResult.Ok)?.value
+            }.getOrNull()
+        }
+    }
+    Column(Modifier.fillMaxSize().padding(bottom = bottomInset).testTag("draw-home")) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("draw-scroll")
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).testTag("draw-scroll")
                 .padding(horizontal = StepUpDesign.Gutter),
         ) {
-            Spacer(Modifier.height(4.dp))
-            DrawHomeTitle(subtitle)
+            Spacer(Modifier.height(6.dp))
+            DrawKindTabs(kind, premiumShown, onPick = { picked = it })
             Spacer(Modifier.height(14.dp))
-            DrawKindPanel(free, status, actions, onSheet, pendingAny = pending != null, web3 = web3)
-            // 상급 뽑기는 지갑 연결 혜택이다 — 블록체인 기능이 없는 스토어 판(WEB3 = false)은 선물로 받은 상급 뽑기가 남았을 때만(0112)
-            if (premiumPanelShown(web3, status, pending?.kind)) {
-                Spacer(Modifier.height(12.dp))
-                DrawKindPanel(
-                    premium, status, actions, onSheet, pendingAny = pending != null, web3 = web3,
-                    modifier = Modifier.bringIntoViewRequester(premiumView),
-                )
+            DrawKindPanel(card, status, onSheet, pendingAny = pending != null, web3 = web3, modifier = Modifier.testTag("draw-$key"))
+            if (status != null) {
+                // 카드 밑 한 줄 — 왼쪽 확률(그 종류의 표), 오른쪽 「기회 받는 방법」(DRAW05)
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val line = odds?.let { o -> if (kind == DrawKind.FREE) o.free else o.premium }?.takeIf { it.isNotEmpty() }
+                    if (line != null) {
+                        Text(
+                            line.map { (rarity, permille) -> rarity.label() + " " + com.stepup.android.domain.DrawOdds.percent(permille) + "%" }
+                                .joinToString(" · "),
+                            style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.3f),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(start = 4.dp).testTag("draw-odds-line"),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    RunTextAction(
+                        stringResource(R.string.dv2_rules_title), { onSheet(DrawSheet.Rules) },
+                        Modifier.testTag("draw-rules"),
+                    )
+                }
             }
             if (status != null && boxes != null) {
                 // 상자 받는 곳(경제 4판) — 출석 · 러닝 · 주간 걸음 · 연속 · 신발 레벨 · SUP 로 사기. 서버 값 한 줄, 누르면 시트
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 BoxSourcesEntry(boxes, onOpen = { onSheet(DrawSheet.Boxes) }, Modifier.testTag("draw-boxes"))
             }
-            if (status != null) {
-                // 기회 받는 방법 — 서버 값으로 회원에게 해당하는 규칙만(DRAW05)
-                RunTextAction(
-                    stringResource(R.string.dv2_rules_title), { onSheet(DrawSheet.Rules) },
-                    Modifier.fillMaxWidth().padding(top = 6.dp).testTag("draw-rules"),
-                )
-            }
+            // 상태 한 줄(모두 무료 · 불러오는 중 · 실패 · 로그인 전) — 예전 제목 밑 줄을 여기로
+            Text(
+                subtitle, style = runTextStyle(13.5.sp, t.muted, FontWeight.Medium, 1.35f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 14.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag("draw-subtitle"),
+            )
             Spacer(Modifier.height(16.dp))
+        }
+        // 주 버튼 하나 — 고른 종류의 행동. 스크롤 밖 아래에 두어 하단 탭 뒤로 숨지 않는다
+        DrawMainButton(
+            card, status, actions, onSheet,
+            Modifier.padding(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 8.dp, bottom = 12.dp).testTag("draw-$key-action"),
+        )
+    }
+}
+
+/** 위 글자 탭 「무료 뽑기 · 상급 뽑기」 — 숫자 없이, 고른 탭만 굵고 밑줄. 상급 칸이 없으면 무료 하나만 */
+@Composable
+private fun DrawKindTabs(selected: DrawKind, premiumShown: Boolean, onPick: (DrawKind) -> Unit) {
+    Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+        DrawKindTab(stringResource(R.string.dv2_free), selected == DrawKind.FREE, { onPick(DrawKind.FREE) }, "draw-tab-free")
+        if (premiumShown) {
+            DrawKindTab(stringResource(R.string.dv2_premium), selected == DrawKind.PREMIUM, { onPick(DrawKind.PREMIUM) }, "draw-tab-premium")
         }
     }
 }
 
-/** 제목 "신발 뽑기"(굵게 기울인) · 상태 한 줄 */
 @Composable
-private fun DrawHomeTitle(subtitle: String) {
+private fun DrawKindTab(label: String, selected: Boolean, onClick: () -> Unit, tag: String) {
     val t = runTone()
-    Column(Modifier.fillMaxWidth()) {
+    Column(
+        Modifier.width(IntrinsicSize.Max).heightIn(min = 44.dp)
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .testTag(tag),
+    ) {
         Text(
-            stringResource(R.string.dv2_title), style = drawTitleStyle(34.sp, t.text),
-            modifier = Modifier.semantics { heading() }.testTag("draw-title"),
+            label, style = runTextStyle(17.sp, if (selected) t.text else t.label, FontWeight.Bold, 1.3f),
+            maxLines = 1, softWrap = false, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
         )
-        Text(
-            subtitle, style = runTextStyle(15.sp, t.label, FontWeight.Medium),
-            modifier = Modifier.padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag("draw-subtitle"),
-        )
+        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (selected) t.text else Color.Transparent))
     }
 }
 
 /**
- * 한 종류의 패널 — 왼쪽 상자 무대, 오른쪽 이름 · 상태 · 수 · 한 줄 · 기회 내역 링크, 아래 주 버튼 하나.
- * 태그는 종류마다(draw-free · draw-free-left · draw-free-action / draw-premium …).
+ * 고른 종류의 카드 — 흰 카드(어두운 테마 panel) 가운데 정렬: 이름 아래 상태 · 남은 수 · 상자 그림 · 출처 한 줄 · 기회 내역 링크.
+ * 태그는 종류마다(draw-free · draw-free-left · draw-free-detail / draw-premium …).
  */
 @Composable
 private fun DrawKindPanel(
     card: DrawHomeCard,
     status: DrawStatus?,
-    actions: DrawActions,
     onSheet: (DrawSheet) -> Unit,
     pendingAny: Boolean,
     web3: Boolean,
@@ -162,44 +216,49 @@ private fun DrawKindPanel(
 ) {
     val t = runTone()
     val key = if (card.kind == DrawKind.FREE) "free" else "premium"
-    DrawPanel(modifier.testTag("draw-$key")) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            DrawBoxStage(card.kind, Modifier.weight(0.5f).height(146.dp), dim = card.dim)
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(0.5f)) {
-                Text(
-                    stringResource(if (card.kind == DrawKind.FREE) R.string.dv2_free else R.string.dv2_premium),
-                    style = drawTitleStyle(27.sp, t.text), maxLines = 2,
-                    modifier = Modifier.semantics { heading() }.testTag("draw-$key-title"),
-                )
-                val sub = panelSub(card, status, web3)
-                if (sub != null) {
-                    Text(sub, style = runTextStyle(14.sp, t.label, FontWeight.SemiBold), modifier = Modifier.padding(top = 2.dp).testTag("draw-$key-sub"))
-                }
-                PanelValue(card, key, Modifier.padding(top = 8.dp))
-                val detail = panelDetail(card, status, web3)
-                if (detail != null) {
-                    Text(
-                        detail, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.35f),
-                        modifier = Modifier.padding(top = 2.dp).testTag("draw-$key-detail"),
-                    )
-                }
-                if (card.sub == DrawCardSub.Paused) {
-                    RunStatusPill(stringResource(R.string.dv3_state_paused), RunPillKind.Paused, Modifier.padding(top = 6.dp).testTag("draw-premium-paused"))
-                }
-                // 기회 내역 — 서버 값을 아는 동안만. 결과를 모르는 요청이 있거나 지갑을 연결한 적이 없으면 두지 않는다
-                val history = status != null && !pendingAny && card.action != DrawCardAction.Connect
-                if (history) {
-                    RunDivider(Modifier.padding(top = 8.dp))
-                    HistoryLink(
-                        { onSheet(if (card.kind == DrawKind.FREE) DrawSheet.FreeChances else DrawSheet.PremiumChances) },
-                        Modifier.testTag("draw-$key-history"),
-                    )
-                }
-            }
+    val shape = RoundedCornerShape(22.dp)
+    Column(
+        modifier.fillMaxWidth().clip(shape).background(t.panel).border(1.dp, t.panelEdge, shape)
+            .padding(horizontal = 18.dp, vertical = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val sub = panelSub(card, status, web3)
+        if (sub != null) {
+            Text(
+                sub, style = runTextStyle(14.sp, t.cobaltText, FontWeight.SemiBold, 1.3f), textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 4.dp).testTag("draw-$key-sub"),
+            )
         }
-        Spacer(Modifier.height(12.dp))
-        DrawMainButton(card, status, actions, onSheet, Modifier.testTag("draw-$key-action"))
+        PanelValue(card, key)
+        Image(
+            cachedPainterResource(if (card.kind == DrawKind.PREMIUM) R.drawable.draw_box_closed_premium else R.drawable.draw_box_closed_free),
+            contentDescription = stringResource(R.string.draw_box_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.padding(top = 10.dp).fillMaxWidth().widthIn(max = 236.dp).heightIn(max = 170.dp)
+                .alpha(if (card.dim) 0.45f else 1f),
+        )
+        val detail = panelDetail(card, status, web3)
+        if (detail != null) {
+            Text(
+                detail, style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = KoreanLineBreak),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 10.dp).testTag("draw-$key-detail"),
+            )
+        }
+        if (card.sub == DrawCardSub.Paused) {
+            Text(
+                stringResource(R.string.dv3_state_paused), style = runTextStyle(14.sp, t.gold, FontWeight.SemiBold, 1.3f),
+                modifier = Modifier.padding(top = 6.dp).testTag("draw-premium-paused"),
+            )
+        }
+        // 기회 내역 — 서버 값을 아는 동안만. 결과를 모르는 요청이 있거나 지갑을 연결한 적이 없으면 두지 않는다
+        val history = status != null && !pendingAny && card.action != DrawCardAction.Connect
+        if (history) {
+            HistoryLink(
+                { onSheet(if (card.kind == DrawKind.FREE) DrawSheet.FreeChances else DrawSheet.PremiumChances) },
+                Modifier.padding(top = 4.dp).testTag("draw-$key-history"),
+            )
+        }
     }
 }
 
@@ -214,9 +273,9 @@ private fun panelSub(card: DrawHomeCard, status: DrawStatus?, web3: Boolean): St
     else -> null
 }
 
-/** 작은 이름과 큰 수 — 남은 횟수 · 처음 연결하면 받을 수 · 보유한 상급 기회 · 뽑은 신발 확인 중 · 모르는 수 "—" */
+/** 작은 이름과 큰 수(가운데) — 남은 횟수 · 처음 연결하면 받을 수 · 보유한 상급 기회 · 뽑은 신발 확인 중 · 모르는 수 "—" */
 @Composable
-private fun PanelValue(card: DrawHomeCard, key: String, modifier: Modifier) {
+private fun PanelValue(card: DrawHomeCard, key: String) {
     val t = runTone()
     val label = when (val row = card.row) {
         is DrawRow.Gift -> stringResource(R.string.draw_blue_on_first_link)
@@ -226,23 +285,38 @@ private fun PanelValue(card: DrawHomeCard, key: String, modifier: Modifier) {
     }
     val tag = if (card.row is DrawRow.Gift) "draw-premium-gift" else "draw-$key-value"
     // 이름과 수를 한 번에 읽는다("남은 횟수 13회")
-    Column(modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag(tag)) {
-        Text(label, style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+    Column(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag(tag),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(label, style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.3f), textAlign = TextAlign.Center)
         when (val row = card.row) {
-            is DrawRow.Count -> RunNumber(
-                stringResource(R.string.dv2_count, row.value), size = 40.sp, color = t.cyan,
-                modifier = Modifier.fillMaxWidth(), valueTag = "draw-$key-left",
+            is DrawRow.Count -> CountNumber(row.value, Modifier.padding(top = 4.dp), valueTag = "draw-$key-left")
+            is DrawRow.Gift -> CountNumber(row.value, Modifier.padding(top = 4.dp))
+            DrawRow.Pending -> Text(
+                stringResource(R.string.dv2_pending_value), style = runNumberStyle(36.sp, t.text), maxLines = 1, softWrap = false,
+                modifier = Modifier.padding(top = 6.dp).testTag("draw-pending"),
             )
-            is DrawRow.Gift -> RunNumber(
-                stringResource(R.string.dv2_count, row.value), size = 40.sp, color = t.cyan, modifier = Modifier.fillMaxWidth(),
-            )
-            DrawRow.Pending -> RunNumber(
-                stringResource(R.string.dv2_pending_value), size = 32.sp, color = t.cyan,
-                modifier = Modifier.fillMaxWidth(), valueTag = "draw-pending",
-            )
-            is DrawRow.Unknown -> DrawUnknownValue("draw-$key-unknown", Modifier.padding(top = 4.dp))
+            is DrawRow.Unknown -> DrawUnknownValue("draw-$key-unknown", Modifier.padding(top = 6.dp))
         }
     }
+}
+
+/**
+ * 큰 수 + 단위 — 「16 회」 단위는 6dp 띄운다([PlainNumber]). 읽기 · 찾기용 글은 한 덩어리 그대로("16회" — [valueTag] 가 붙은 줄).
+ * 단위는 서버 수를 넣은 문구(dv2_count)에서 수를 뺀 나머지다(영어는 단위 없음).
+ */
+@Composable
+private fun CountNumber(value: Int, modifier: Modifier = Modifier, valueTag: String? = null) {
+    val whole = stringResource(R.string.dv2_count, value)
+    val number = value.toString()
+    val unit = whole.replaceFirst(number, "").trim()
+    PlainNumber(
+        number, unit.ifEmpty { null },
+        modifier.clearAndSetSemantics { text = AnnotatedString(whole) }
+            .then(if (valueTag != null) Modifier.testTag(valueTag) else Modifier),
+        size = 56.sp, unitSize = 22.sp,
+    )
 }
 
 /** 수 아래 한 줄 — 무료는 출처별 남은 수, 상급은 다음 1회까지의 거리(서버 값) · 오늘 한도 · 연결 규칙 · 다시 연결 · 결과 대기 */

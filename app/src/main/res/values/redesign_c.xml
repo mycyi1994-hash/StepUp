@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 2026-11-24 재디자인(그룹 C) — 아이템 탭 빈 카드: 예전 bag_empty 한 줄을 제목 · 설명 둘로 -->
+    <string name="rd_c_bag_empty_title">No items yet</string>
+    <string name="rd_c_bag_empty_body">You can get them from event rewards</string>
+</resources>
