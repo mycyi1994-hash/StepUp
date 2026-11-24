@@ -322,13 +322,20 @@ private fun CheckTextButton(text: String, onClick: () -> Unit, tag: String, enab
 private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
     val t = runTone()
     Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        ShoeArtThumbnail(
-            shoe,
-            Modifier.fillMaxWidth(0.72f).height(112.dp)
+        // 신발 그림 — 상자 없이 바탕 위 가운데, 높이 112 · 비율 그대로(안내 2-4 ProductImage). 그림이 없는 모델이면 예전 작은 그림
+        val art = com.stepup.android.ui.components.sneakerArtRes(shoe)
+        Box(
+            Modifier.height(112.dp)
                 .then(if (onClick != null) Modifier.clip(RoundedCornerShape(18.dp)).feedbackClickable(onClick = onClick) else Modifier)
                 .testTag("run-shoe-check-art"),
-            failedTint = t.muted, sample = ShoeArtFull,
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            if (art != null) {
+                com.stepup.android.ui.components.ProductImage(art, height = 112.dp)
+            } else {
+                ShoeArtThumbnail(shoe, Modifier.fillMaxWidth(0.72f).height(112.dp), failedTint = t.muted, sample = ShoeArtFull)
+            }
+        }
         Spacer(Modifier.height(10.dp))
         Text(
             shoe.shoeName(), style = runTextStyle(20.sp, t.text, FontWeight.Bold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -390,14 +397,21 @@ private fun CheckShoeFacts(shoe: Sneaker, energySteps: Int? = null) {
         Spacer(Modifier.height(9.dp))
         val text = shoeCheckLineText(line, rules)
         if (worn || low) {
-            Text(text, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.4f), modifier = Modifier.testTag("run-shoe-check-low-durability"))
+            Text(text, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.4f).copy(lineBreak = CheckPhraseBreak), modifier = Modifier.testTag("run-shoe-check-low-durability"))
         } else {
             Box(Modifier.testTag("run-shoe-check-ready")) {
-                Text(text, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.4f), modifier = Modifier.testTag("run-shoe-check-earn"))
+                Text(text, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.4f).copy(lineBreak = CheckPhraseBreak), modifier = Modifier.testTag("run-shoe-check-earn"))
             }
         }
     }
 }
+
+/** 한글은 낱말 단위로 줄을 바꾼다 — 「적립 / 돼요」처럼 낱말 가운데서 끊지 않게(Type.kt 와 같은 규칙) */
+private val CheckPhraseBreak = androidx.compose.ui.text.style.LineBreak(
+    strategy = androidx.compose.ui.text.style.LineBreak.Strategy.Balanced,
+    strictness = androidx.compose.ui.text.style.LineBreak.Strictness.Strict,
+    wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
+)
 
 /** 오늘 적립 한도를 다 썼다 — 이 러닝은 적립이 없다(기록은 남는다). 카드 밑 한 줄(주의 색), 버튼은 더하지 않는다 */
 @Composable

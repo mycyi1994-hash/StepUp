@@ -4,7 +4,7 @@
     <string name="rd_a_activity_line">%1$skm · %2$s分 · 今日 +%3$s SUP</string>
     <string name="rd_a_first_box">あと%1$s歩走ると最初のボックス</string>
     <string name="rd_a_week_box">今週 · 上級ボックス</string>
-    <string name="rd_a_surge">ステップサージ · %1$s SUP</string>
+    <string name="rd_a_surge">ステップサージ · %1$s\u00A0SUP</string>
     <string name="rd_a_streak_title">連続ランニング</string>
     <string name="rd_a_today">今日</string>
     <string name="rd_a_menu_coach_sub">ランニング中の音声コーチ</string>

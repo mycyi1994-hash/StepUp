@@ -325,8 +325,8 @@ private fun HomeNoteLine(text: String, action: String, onAction: () -> Unit, tag
     val t = runTone()
     Row(Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp).testTag(tag), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f), maxLines = 2, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+            text, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = PhraseBreak), maxLines = 2,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
         Box(
@@ -338,6 +338,13 @@ private fun HomeNoteLine(text: String, action: String, onAction: () -> Unit, tag
         }
     }
 }
+
+/** 한글은 낱말(띄어쓰기) 단위로 줄을 바꾼다 — 「바뀌 / 었어요」처럼 낱말 가운데서 끊지 않게(Type.kt 와 같은 규칙) */
+private val PhraseBreak = androidx.compose.ui.text.style.LineBreak(
+    strategy = androidx.compose.ui.text.style.LineBreak.Strategy.Balanced,
+    strictness = androidx.compose.ui.text.style.LineBreak.Strictness.Strict,
+    wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
+)
 
 /** 사진 카드 밑 한 줄 — 오늘 거리 · 적립 · 이번 주 러닝(숫자만 굵게). 모르는 값은 "—" */
 @Composable
@@ -401,10 +408,14 @@ private fun HomeCard(onTap: (() -> Unit)?, modifier: Modifier = Modifier, conten
 private fun HomeMascot(done: Boolean) {
     androidx.compose.foundation.Image(
         painterResource(if (done) R.drawable.mascot_finish else R.drawable.mascot_go), contentDescription = null,
-        modifier = Modifier.height(54.dp).testTag(if (done) "home-mascot-finish" else "home-mascot-go"),
+        modifier = Modifier.height(58.dp).testTag(if (done) "home-mascot-finish" else "home-mascot-go"),
         contentScale = ContentScale.Fit,
     )
 }
+
+/** 큰 숫자(안내 2-5) — 페이퍼로지 ExtraBold 56 · 숫자 폭 고정 */
+private fun heroNumberStyle(color: androidx.compose.ui.graphics.Color) =
+    runTextStyle(56.sp, color, FontWeight.ExtraBold, 1.05f).copy(fontFeatureSettings = "tnum", letterSpacing = (-0.02).em)
 
 /** 큰 걸음 숫자(올라가며 바뀔 때 살짝 튄다) + "/ 목표 걸음" */
 @Composable
@@ -413,14 +424,14 @@ private fun HeroNumber(value: String, popKey: Int, goalText: String) {
     Row(verticalAlignment = Alignment.Bottom) {
         Text(
             value,
-            style = StepUpUi.type.numberHero.copy(fontSize = 56.sp, lineHeight = 58.sp, letterSpacing = .005.em),
-            color = t.text, maxLines = 1, softWrap = false,
+            style = heroNumberStyle(t.text),
+            maxLines = 1, softWrap = false,
             modifier = Modifier.alignByBaseline().popOnChange(popKey).testTag("home-steps-value"),
         )
         Spacer(Modifier.width(6.dp))
         Text(
             goalText,
-            style = runTextStyle(19.sp, t.label, FontWeight.Medium, 1.2f),
+            style = runTextStyle(21.sp, t.label, FontWeight.SemiBold, 1.2f),
             maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.alignByBaseline().testTag("home-goal"),
         )
@@ -586,7 +597,7 @@ private fun CenterNumber(value: String, goalText: String, tag: String) {
     val t = runTone()
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
         Text(
-            value, style = StepUpUi.type.numberHero.copy(fontSize = 56.sp, lineHeight = 58.sp), color = t.text,
+            value, style = heroNumberStyle(t.text),
             maxLines = 1, softWrap = false, modifier = Modifier.alignByBaseline().testTag(tag),
         )
         Spacer(Modifier.width(6.dp))
@@ -640,15 +651,18 @@ private fun RewardsHero(
 ) {
     val t = runTone()
     HomeCard(onTap = onOpenDetails, modifier = Modifier.testTag("home-steps")) {
+        // 위 줄 — 왼쪽 "오늘 러닝 걸음", 오른쪽 작게 "하루 전체 N ›"
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.home_steps_today), style = runTextStyle(15.5.sp, t.label, FontWeight.Medium, 1.3f),
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            Spacer(Modifier.width(8.dp))
+            AllDaySteps(allDaySteps, loaded, hasPermission, onRequestPermission)
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        stringResource(R.string.home_steps_today), style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.3f),
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).semantics { heading() },
-                    )
-                }
+            Box(Modifier.weight(1f)) {
                 val shown = countUpFloat(if (bar.known) bar.rewardSteps.toFloat() else 0f).roundToInt()
                 HeroNumber(
                     if (bar.known) "%,d".format(shown) else "—", bar.rewardSteps / 1000,
@@ -656,11 +670,7 @@ private fun RewardsHero(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                AllDaySteps(allDaySteps, loaded, hasPermission, onRequestPermission)
-                Spacer(Modifier.height(4.dp))
-                HomeMascot(done = bar.known && bar.goal > 0 && bar.rewardSteps >= bar.goal)
-            }
+            HomeMascot(done = bar.known && bar.goal > 0 && bar.rewardSteps >= bar.goal)
         }
         Spacer(Modifier.height(12.dp))
         RewardTrack(bar)
@@ -769,18 +779,31 @@ private fun RewardTrack(bar: com.stepup.android.domain.DailyBar, modifier: Modif
 @Composable
 private fun TickLabels(bar: com.stepup.android.domain.DailyBar, dot: Dp) {
     val t = runTone()
-    Row(Modifier.fillMaxWidth().padding(start = dot / 2)) {
-        bar.slots.forEach { slot ->
-            val reward = tickReward(slot, bar)
-            val got = slot.got && bar.known
-            val description = stringResource(if (got) R.string.dr_tick_got_cd else R.string.dr_tick_open_cd, "%,d".format(slot.steps), reward)
-            Text(
-                "%,d".format(slot.steps) + " · " + if (got) "$reward ✓" else reward,
-                style = runTextStyle(12.5.sp, if (got) t.cobaltText else t.label, FontWeight.Medium, 1.3f),
-                maxLines = 2, textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = description }
-                    .testTag("home-reward-tick-${slot.steps}"),
-            )
+    val labels = bar.slots.map { slot ->
+        val reward = tickReward(slot, bar)
+        val got = slot.got && bar.known
+        Triple(slot, got, "%,d".format(slot.steps) + " · " + if (got) "$reward ✓" else reward)
+    }
+    val descriptions = labels.map { (slot, got, _) ->
+        stringResource(if (got) R.string.dr_tick_got_cd else R.string.dr_tick_open_cd, "%,d".format(slot.steps), tickReward(slot, bar))
+    }
+    val base = runTextStyle(12.5.sp, t.label, FontWeight.Medium, 1.3f)
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = dot / 2)) {
+        // 한 줄 · 모든 칸 같은 크기 — 좁은 폰 · 큰 글씨면 가장 긴 글이 칸에 들어갈 때까지 함께 줄인다(「+20 / SUP」처럼 떨어지지 않게)
+        val cell = constraints.maxWidth / labels.size.coerceAtLeast(1)
+        val scale = labels.maxOfOrNull { measurer.measure(it.third, base, maxLines = 1, softWrap = false).size.width }
+            ?.let { widest -> if (widest > cell && widest > 0) (cell.toFloat() / widest).coerceAtLeast(0.6f) else 1f } ?: 1f
+        Row(Modifier.fillMaxWidth()) {
+            labels.forEachIndexed { i, (slot, got, text) ->
+                Text(
+                    text,
+                    style = base.copy(color = if (got) t.cobaltText else t.label, fontSize = base.fontSize * scale),
+                    maxLines = 1, softWrap = false, textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = descriptions[i] }
+                        .testTag("home-reward-tick-${slot.steps}"),
+                )
+            }
         }
     }
 }

@@ -158,7 +158,8 @@ internal fun RunStartMenuContent(
         modifier = Modifier.testTag("run-menu"),
         title = stringResource(R.string.runflow_menu_title),
         subtitle = stringResource(R.string.run_menu_sub),
-        display = true,
+        // 화면 제목 30sp(안내 2-5)
+        display = false,
         // SUP 잔액은 홈과 이 화면에만(시안)
         trailing = { SupPill(balance, onOpenWallet) },
     ) {
@@ -239,6 +240,13 @@ internal fun RunStartMenuContent(
 
 private val MenuCellShape = RoundedCornerShape(22.dp)
 
+/** 한글은 낱말 단위로 줄을 바꾼다 — 「출 / 발」처럼 낱말 가운데서 끊지 않게(Type.kt 와 같은 규칙) */
+private val MenuPhraseBreak = androidx.compose.ui.text.style.LineBreak(
+    strategy = androidx.compose.ui.text.style.LineBreak.Strategy.Balanced,
+    strictness = androidx.compose.ui.text.style.LineBreak.Strictness.Strict,
+    wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
+)
+
 /** 큰 칸(자유 러닝 · 크루 달리기) — 흰 카드, 위에 파란 픽토그램 34, 아래 이름 19 · 부제 · › */
 @Composable
 private fun MenuMainCell(
@@ -252,7 +260,7 @@ private fun MenuMainCell(
 ) {
     val t = runTone()
     Column(
-        modifier.heightIn(min = 148.dp).clip(MenuCellShape).background(t.panel, MenuCellShape).border(1.dp, t.panelEdge, MenuCellShape)
+        modifier.heightIn(min = 130.dp).clip(MenuCellShape).background(t.panel, MenuCellShape).border(1.dp, t.panelEdge, MenuCellShape)
             .feedbackClickable(enabled = enabled, onClick = onClick).semantics(mergeDescendants = true) {}
             .padding(start = 18.dp, end = 10.dp, top = 18.dp, bottom = 16.dp),
     ) {
@@ -269,7 +277,8 @@ private fun MenuMainCell(
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    subtitle, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    subtitle, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = MenuPhraseBreak),
+                    maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
             }
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted, modifier = Modifier.size(22.dp))
@@ -290,7 +299,7 @@ private fun MenuSmallCell(
     val t = runTone()
     val open = soon == null
     Column(
-        modifier.heightIn(min = 104.dp).clip(MenuCellShape)
+        modifier.heightIn(min = 92.dp).clip(MenuCellShape)
             .then(if (open) Modifier.background(t.panel, MenuCellShape).border(1.dp, t.panelEdge, MenuCellShape) else Modifier.background(t.inset, MenuCellShape))
             .feedbackClickable(onClick = onClick).semantics(mergeDescendants = true) {}
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -305,7 +314,10 @@ private fun MenuSmallCell(
             title, style = runTextStyle(16.sp, if (open) t.text else t.label, FontWeight.Bold, 1.25f),
             maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
-        Text(subtitle, style = runTextStyle(12.5.sp, t.muted, FontWeight.Medium, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(
+            subtitle, style = runTextStyle(12.5.sp, t.muted, FontWeight.Medium, 1.3f).copy(lineBreak = MenuPhraseBreak),
+            maxLines = 2, overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
