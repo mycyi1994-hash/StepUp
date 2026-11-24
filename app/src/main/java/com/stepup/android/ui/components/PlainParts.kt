@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
 import com.stepup.android.ui.experience.feedbackClickable
@@ -179,9 +181,12 @@ fun PlainEmptyState(
     val t = runTone()
     Column(modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         if (image != null) {
+            val painter = painterResource(image)
+            val ratio = painter.intrinsicSize.let { if (it.height > 0f && it.width > 0f) it.width / it.height else 1f }
+            // 높이만 주면 작은 그림 파일은 제 픽셀 크기에서 멈춘다 — 비율을 함께 줘 늘 [imageHeight] 높이로
             Image(
-                painterResource(image), contentDescription = null,
-                modifier = Modifier.height(imageHeight), contentScale = ContentScale.Fit,
+                painter, contentDescription = null,
+                modifier = Modifier.height(imageHeight).aspectRatio(ratio), contentScale = ContentScale.Fit,
             )
             Spacer(Modifier.height(16.dp))
         }
@@ -212,7 +217,8 @@ fun ProductImage(@DrawableRes res: Int, height: Dp, modifier: Modifier = Modifie
         val r = OpaqueBounds.of(res, bitmap)
         BitmapPainter(bitmap, IntOffset(r.left, r.top), IntSize(r.width, r.height))
     }
-    Image(painter, contentDescription, modifier.height(height), contentScale = ContentScale.Fit)
+    val ratio = painter.intrinsicSize.let { if (it.height > 0f && it.width > 0f) it.width / it.height else 1f }
+    Image(painter, contentDescription, modifier.height(height).aspectRatio(ratio), contentScale = ContentScale.Fit)
 }
 
 private object OpaqueBounds {
@@ -264,7 +270,12 @@ fun PlainNumber(
 ) {
     val t = runTone()
     Row(modifier, verticalAlignment = Alignment.Bottom) {
-        Text(number, style = runNumberStyle(size, color ?: t.text), maxLines = 1, softWrap = false)
+        // 시안의 큰 숫자는 페이퍼로지 ExtraBold · 숫자 폭 고정(안내 2-5) — 콘덴스드 숫자 글꼴이 아니다
+        Text(
+            number,
+            style = runTextStyle(size, color ?: t.text, FontWeight.ExtraBold, 1.0f).copy(fontFeatureSettings = "tnum", letterSpacing = (-0.02).em),
+            maxLines = 1, softWrap = false,
+        )
         if (!unit.isNullOrEmpty()) {
             Spacer(Modifier.width(6.dp))
             Text(

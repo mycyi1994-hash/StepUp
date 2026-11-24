@@ -19,10 +19,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.stepup.android.ui.components.KoreanLineBreak
-import com.stepup.android.ui.components.PlainNumber
 import com.stepup.android.ui.components.cachedPainterResource
 import com.stepup.android.ui.components.label
 import com.stepup.android.ui.components.runNumberStyle
@@ -43,7 +43,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +59,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.domain.DrawDistance
@@ -98,6 +98,8 @@ internal fun DrawHome(
     web3: Boolean = com.stepup.android.BuildConfig.WEB3,
     /** 상자 현황(0116) — 있으면 "상자 받는 곳" 줄 */
     boxes: com.stepup.android.domain.BoxStatus? = null,
+    /** 확률 표를 이미 알면(캡처 검사) — 없으면 서버 표(0077)를 읽는다 */
+    knownOdds: com.stepup.android.domain.DrawOdds? = null,
 ) {
     val t = runTone()
     // 상급 뽑기는 지갑 연결 혜택이다 — 블록체인 기능이 없는 스토어 판(WEB3 = false)은 선물로 받은 상급 뽑기가 남았을 때만(0112)
@@ -116,7 +118,7 @@ internal fun DrawHome(
         else -> stringResource(R.string.draw_blue_subtitle_failed)
     }
     // 등급별 확률 — 뽑기가 쓰는 서버 표 그대로(0077, 기회 받는 방법 창과 같은 값). 읽지 못하면 줄을 두지 않는다
-    val odds by produceState<com.stepup.android.domain.DrawOdds?>(null, status != null) {
+    val odds by produceState(knownOdds, status != null) {
         if (status != null && value == null) {
             value = runCatching {
                 (com.stepup.android.core.ServiceLocator.economyApi.drawOdds() as? com.stepup.android.data.remote.ServerResult.Ok)?.value
@@ -140,8 +142,9 @@ internal fun DrawHome(
                         Text(
                             line.map { (rarity, permille) -> rarity.label() + " " + com.stepup.android.domain.DrawOdds.percent(permille) + "%" }
                                 .joinToString(" · "),
-                            style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.3f),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            // 큰 글씨 · 좁은 폭에서는 두 줄로 — 등급을 말줄임으로 잃지 않는다
+                            style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.3f).copy(lineBreak = KoreanLineBreak),
+                            maxLines = 2, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f).padding(start = 4.dp).testTag("draw-odds-line"),
                         )
                     } else {
@@ -234,13 +237,13 @@ private fun DrawKindPanel(
             cachedPainterResource(if (card.kind == DrawKind.PREMIUM) R.drawable.draw_box_closed_premium else R.drawable.draw_box_closed_free),
             contentDescription = stringResource(R.string.draw_box_description),
             contentScale = ContentScale.Fit,
-            modifier = Modifier.padding(top = 10.dp).fillMaxWidth().widthIn(max = 236.dp).heightIn(max = 170.dp)
+            modifier = Modifier.padding(top = 18.dp).widthIn(max = 236.dp).fillMaxWidth().heightIn(max = 170.dp)
                 .alpha(if (card.dim) 0.45f else 1f),
         )
         val detail = panelDetail(card, status, web3)
         if (detail != null) {
             Text(
-                detail, style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = KoreanLineBreak),
+                boldNumbers(detail, t.text), style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = KoreanLineBreak),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 10.dp).testTag("draw-$key-detail"),
             )
@@ -280,7 +283,11 @@ private fun PanelValue(card: DrawHomeCard, key: String) {
     val label = when (val row = card.row) {
         is DrawRow.Gift -> stringResource(R.string.draw_blue_on_first_link)
         DrawRow.Pending -> stringResource(R.string.dv2_pending_label)
-        is DrawRow.Count -> if (row.label == DrawRowLabel.PremiumKept) stringResource(R.string.dv2_kept_premium) else stringResource(R.string.draw_blue_left_label)
+        is DrawRow.Count -> when {
+            row.label == DrawRowLabel.PremiumKept -> stringResource(R.string.dv2_kept_premium)
+            card.kind == DrawKind.FREE -> stringResource(R.string.rd_c_draw_free_left)
+            else -> stringResource(R.string.draw_blue_left_label)
+        }
         is DrawRow.Unknown -> stringResource(R.string.draw_blue_left_label)
     }
     val tag = if (card.row is DrawRow.Gift) "draw-premium-gift" else "draw-$key-value"
@@ -311,12 +318,25 @@ private fun CountNumber(value: Int, modifier: Modifier = Modifier, valueTag: Str
     val whole = stringResource(R.string.dv2_count, value)
     val number = value.toString()
     val unit = whole.replaceFirst(number, "").trim()
-    PlainNumber(
-        number, unit.ifEmpty { null },
+    val t = runTone()
+    // 시안 08 — 큰 수는 본문 글꼴(페이퍼로지) ExtraBold · 숫자 폭 고정, 단위는 6dp 띄우고 같은 색 굵게
+    Row(
         modifier.clearAndSetSemantics { text = AnnotatedString(whole) }
             .then(if (valueTag != null) Modifier.testTag(valueTag) else Modifier),
-        size = 56.sp, unitSize = 22.sp,
-    )
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(
+            number, style = runTextStyle(64.sp, t.text, FontWeight.ExtraBold, 1.1f).copy(fontFeatureSettings = "tnum", letterSpacing = (-0.02).em),
+            maxLines = 1, softWrap = false,
+        )
+        if (unit.isNotEmpty()) {
+            Spacer(Modifier.width(6.dp))
+            Text(
+                unit, style = runTextStyle(22.sp, t.text, FontWeight.ExtraBold, 1.2f), maxLines = 1, softWrap = false,
+                modifier = Modifier.padding(bottom = 9.dp),
+            )
+        }
+    }
 }
 
 /** 수 아래 한 줄 — 무료는 출처별 남은 수, 상급은 다음 1회까지의 거리(서버 값) · 오늘 한도 · 연결 규칙 · 다시 연결 · 결과 대기 */
@@ -347,6 +367,17 @@ private fun panelDetail(card: DrawHomeCard, status: DrawStatus?, web3: Boolean):
     }
 }
 
+/** 한 줄 안의 수만 굵게 · 본문 색(시안 08 「받아 둔 상자 **15**회」) — 글자는 그대로 */
+private fun boldNumbers(text: String, color: Color): AnnotatedString = androidx.compose.ui.text.buildAnnotatedString {
+    var last = 0
+    Regex("[0-9][0-9.,]*").findAll(text).forEach { m ->
+        append(text.substring(last, m.range.first))
+        withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, color = color)) { append(m.value) }
+        last = m.range.last + 1
+    }
+    append(text.substring(last))
+}
+
 /** "기회 내역 보기 ›" — 왼쪽 정렬 글자 링크, 누르는 곳 48dp */
 @Composable
 private fun HistoryLink(onClick: () -> Unit, modifier: Modifier) {
@@ -367,7 +398,7 @@ private fun DrawMainButton(card: DrawHomeCard, status: DrawStatus?, actions: Dra
     when (card.action) {
         DrawCardAction.Draw -> DrawButton(
             stringResource(if (card.kind == DrawKind.FREE) R.string.dv2_action_free else R.string.dv2_action_premium),
-            { actions.onDraw(card.kind) }, modifier, icon = Icons.Filled.PlayArrow,
+            { actions.onDraw(card.kind) }, modifier,
         )
         DrawCardAction.FreeInfo -> DrawButton(stringResource(R.string.dv2_action_free_info), { onSheet(DrawSheet.FreeEmpty) }, modifier)
         DrawCardAction.RunInfo -> DrawButton(stringResource(R.string.dv2_action_run), { onSheet(DrawSheet.RunChances) }, modifier)

@@ -7,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,10 +22,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import com.stepup.android.ui.components.PlainEmptyState
-import com.stepup.android.ui.components.RunTextAction
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -101,7 +98,8 @@ import com.stepup.android.ui.experience.FeedbackCue
 import com.stepup.android.ui.experience.feedbackClickable
 import com.stepup.android.ui.screens.onboarding.BlueHeaderText
 import com.stepup.android.ui.screens.onboarding.BlueRule
-import com.stepup.android.ui.screens.onboarding.BlueTitleBar
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.text.style.TextOverflow
 import com.stepup.android.ui.theme.StepUpDesign
 import java.time.Instant
 import java.time.ZoneId
@@ -314,8 +312,8 @@ fun NotificationsContent(
     Box(Modifier.fillMaxSize()) {
         RunBackdrop(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
-            BlueTitleBar(
-                stringResource(R.string.notif_title), onBack = onBack, backTag = "inbox-back",
+            InboxTitleBar(
+                stringResource(R.string.notif_title), onBack = onBack,
                 trailing = {
                     BlueHeaderText(stringResource(R.string.inbox_settings), onOpenSettings, Modifier.testTag("inbox-settings"))
                 },
@@ -331,6 +329,27 @@ fun NotificationsContent(
         val message = ui.toast?.let { stringResource(it.message) }
         BlueToast(message, Modifier.align(Alignment.BottomCenter).padding(horizontal = StepUpDesign.Gutter, vertical = 16.dp),
             success = ui.toast?.success != false)
+    }
+}
+
+/** 머리 — 왼쪽 회색 원 뒤로 가기(←) · 가운데 제목 · 오른쪽 글자 행동(시안 13) */
+@Composable
+private fun InboxTitleBar(title: String, onBack: () -> Unit, trailing: @Composable () -> Unit) {
+    val t = runTone()
+    Box(Modifier.fillMaxWidth().heightIn(min = 60.dp), contentAlignment = Alignment.Center) {
+        Text(
+            title, style = runTextStyle(19.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 64.dp).semantics { heading() },
+        )
+        com.stepup.android.ui.components.CircleIconButton(
+            Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterStart).testTag("inbox-back"), size = 40.dp, tint = t.text,
+            cue = FeedbackCue.Back,
+        )
+        Box(Modifier.align(Alignment.CenterEnd).heightIn(min = 48.dp).widthIn(min = 48.dp), contentAlignment = Alignment.CenterEnd) {
+            trailing()
+        }
     }
 }
 
@@ -355,17 +374,17 @@ private fun InboxTabs(selected: NotifTab, onSelect: (NotifTab) -> Unit) {
                         .testTag("inbox-tab-${tab.name.lowercase()}"),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
-                    Column(Modifier.width(IntrinsicSize.Max), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.padding(top = 12.dp, bottom = 10.dp, start = 18.dp, end = 18.dp)) {
+                    Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.padding(top = 8.dp, bottom = 13.dp, start = 18.dp, end = 18.dp)) {
                             // 굵은 글자의 폭을 미리 잡아 둔다 — 고를 때 밑줄이 흔들리지 않는다
                             Text(stringResource(label), style = runTextStyle(19.sp, Color.Transparent, FontWeight.Bold),
                                 modifier = Modifier.clearAndSetSemantics { })
-                            Text(stringResource(label), style = runTextStyle(19.sp, if (on) t.cyan else t.label,
+                            Text(stringResource(label), style = runTextStyle(19.sp, if (on) t.text else t.label,
                                 if (on) FontWeight.Bold else FontWeight.SemiBold))
                         }
-                        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
-                            .background(if (on) t.cyan else Color.Transparent))
                     }
+                    // 시안 13 — 고른 칸 폭 전체에 검정(어두운 테마 흰) 밑줄
+                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (on) t.text else Color.Transparent))
                 }
             }
         }
@@ -509,8 +528,8 @@ private fun InboxEmpty(onOpenSettings: () -> Unit, modifier: Modifier = Modifier
         PlainEmptyState(
             R.drawable.scene_sofa_phone, stringResource(R.string.inbox_empty_title),
             body = stringResource(R.string.inbox_empty_body), imageHeight = 120.dp,
+            action = stringResource(R.string.inbox_open_settings), onAction = onOpenSettings, actionTag = "pane-action",
         )
-        RunTextAction(stringResource(R.string.inbox_open_settings), onOpenSettings, Modifier.offset(y = (-14).dp).testTag("pane-action"))
     }
 }
 

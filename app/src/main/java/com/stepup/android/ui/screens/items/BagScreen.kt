@@ -51,7 +51,6 @@ import com.stepup.android.ui.components.KoreanLineBreak
 import com.stepup.android.ui.components.LargeTitle
 import com.stepup.android.ui.components.PlainEmptyState
 import com.stepup.android.ui.components.PrimaryButton
-import com.stepup.android.ui.components.RunTextAction
 import com.stepup.android.ui.components.StepUpSpinner
 import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.runNumberStyle
@@ -103,6 +102,55 @@ fun BagScreen() {
     val errGeneric = stringResource(R.string.bag_err_generic)
     val usedFormat = stringResource(R.string.bag_used)
 
+    BagContent(
+        bag = bag, loading = loading, failed = failed, selected = selected,
+        onSelect = { selected = it; request = null; message = null },
+        onRetry = { scope.launch { load() } },
+        // 남은 비율(%) — 서버 신발이면 서버 값(durabilityPts), 아니면 폰 사본의 %
+        shoePercent = shoe?.let { worn -> (worn.server?.durabilityPts ?: worn.durability.toDouble()).toInt().coerceIn(0, 100) },
+        energy = energy, message = message, using = using,
+        onUse = use@{ pick ->
+            if (using) return@use
+            using = true
+            val id = request ?: UUID.randomUUID().toString().also { request = it }
+            scope.launch {
+                val result = items.use(pick, id, null)
+                using = false
+                message = when (result) {
+                    is ServerResult.Ok -> { request = null; usedFormat.format(result.value) }
+                    is ServerResult.Rejected -> {
+                        request = null
+                        when {
+                            "가득" in result.reason -> errFull
+                            "에너지" in result.reason -> errEnergy
+                            "신발" in result.reason -> errShoe
+                            "없습니다" in result.reason -> errNone
+                            else -> errGeneric
+                        }
+                    }
+                    // 끊겼다 — 같은 번호를 두고 다시 누르면 서버가 한 번만 쓴다
+                    else -> errGeneric
+                }
+            }
+        },
+    )
+}
+
+/** 아이템 탭의 그림 — 상태만 받는다(캡처 검사도 이것을 그린다). 동작은 [BagScreen] 이 잇는다 */
+@Composable
+internal fun BagContent(
+    bag: com.stepup.android.domain.Bag?,
+    loading: Boolean,
+    failed: Boolean,
+    selected: ItemKind?,
+    onSelect: (ItemKind) -> Unit,
+    onRetry: () -> Unit,
+    shoePercent: Int?,
+    energy: Double?,
+    message: String?,
+    using: Boolean,
+    onUse: (ItemKind) -> Unit,
+) {
     Box(Modifier.fillMaxSize().testTag("bag-screen")) {
         val current = bag
         LazyColumn(
@@ -127,10 +175,9 @@ fun BagScreen() {
                         Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter, vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        PlainEmptyState(R.drawable.mascot_oops, stringResource(R.string.bag_load_failed))
-                        RunTextAction(
-                            stringResource(R.string.bag_retry), { scope.launch { load() } },
-                            Modifier.testTag("bag-retry"), chevron = true,
+                        PlainEmptyState(
+                            R.drawable.mascot_oops, stringResource(R.string.bag_load_failed),
+                            action = stringResource(R.string.bag_retry), onAction = onRetry, actionTag = "bag-retry",
                         )
                     }
                 }
@@ -143,6 +190,8 @@ fun BagScreen() {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            // 시안 07 — 글이 긴 칸(에너지 드링크)만 키가 크고, 나머지는 그 가운데에 맞춘다
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             ItemKind.entries.filter { it.runPick }.forEach { kind ->
                                 ItemTile(
@@ -150,7 +199,7 @@ fun BagScreen() {
                                     selected = selected == kind,
                                     tall = false,
                                     modifier = Modifier.weight(1f),
-                                    onClick = { selected = kind; request = null; message = null },
+                                    onClick = { onSelect(kind) },
                                 )
                             }
                         }
@@ -167,7 +216,7 @@ fun BagScreen() {
                                     selected = selected == kind,
                                     tall = true,
                                     modifier = Modifier.weight(1f),
-                                    onClick = { selected = kind; request = null; message = null },
+                                    onClick = { onSelect(kind) },
                                 )
                             }
                         }
@@ -180,14 +229,12 @@ fun BagScreen() {
         val pick = selected
         if (current != null && pick != null) {
             val qty = current.qty(pick)
-            val worn = shoe
             val left = energy
             val note = message
             val detail = when {
                 note != null -> note
-                // 남은 비율(%) — 서버 신발이면 서버 값(durabilityPts), 아니면 폰 사본의 %
-                pick == ItemKind.DURABILITY_RESET && worn != null ->
-                    stringResource(R.string.bag_use_durability_detail, (worn.server?.durabilityPts ?: worn.durability.toDouble()).toInt().coerceIn(0, 100))
+                pick == ItemKind.DURABILITY_RESET && shoePercent != null ->
+                    stringResource(R.string.bag_use_durability_detail, shoePercent)
                 pick == ItemKind.ENERGY_RESET && left != null ->
                     stringResource(R.string.bag_use_energy_detail, formatValue(Math.round(left * 10) / 10.0))
                 pick.runPick -> stringResource(R.string.bag_run_item_note)
@@ -208,30 +255,7 @@ fun BagScreen() {
                     if (!pick.runPick) {
                         PrimaryButton(
                             stringResource(R.string.bag_use),
-                            onClick = {
-                                if (using) return@PrimaryButton
-                                using = true
-                                val id = request ?: UUID.randomUUID().toString().also { request = it }
-                                scope.launch {
-                                    val result = items.use(pick, id, null)
-                                    using = false
-                                    message = when (result) {
-                                        is ServerResult.Ok -> { request = null; usedFormat.format(result.value) }
-                                        is ServerResult.Rejected -> {
-                                            request = null
-                                            when {
-                                                "가득" in result.reason -> errFull
-                                                "에너지" in result.reason -> errEnergy
-                                                "신발" in result.reason -> errShoe
-                                                "없습니다" in result.reason -> errNone
-                                                else -> errGeneric
-                                            }
-                                        }
-                                        // 끊겼다 — 같은 번호를 두고 다시 누르면 서버가 한 번만 쓴다
-                                        else -> errGeneric
-                                    }
-                                }
-                            },
+                            onClick = { onUse(pick) },
                             state = when {
                                 using -> ButtonState.Loading
                                 qty <= 0 -> ButtonState.Disabled

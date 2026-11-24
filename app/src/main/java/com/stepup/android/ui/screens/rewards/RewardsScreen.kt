@@ -1,19 +1,18 @@
 package com.stepup.android.ui.screens.rewards
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.stepup.android.ui.components.KoreanLineBreak
 import com.stepup.android.ui.components.PlainDivider
-import com.stepup.android.ui.components.PlainNumber
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import com.stepup.android.ui.components.RunTextAction
-import com.stepup.android.ui.components.runNumberStyle
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import androidx.compose.foundation.layout.Arrangement
@@ -43,7 +42,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -166,9 +164,11 @@ fun WalletContent(
             onBack = onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.wl_title),
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
             trailing = {
-                IconButton(onClick = { sheet = WalletSheet.Info }, modifier = Modifier.size(48.dp).testTag("wl-info")) {
-                    Icon(Icons.Outlined.Info, stringResource(R.string.wl_info_cd), tint = p.text)
-                }
+                // 시안 12 — 뒤로 가기와 같은 회색 원
+                com.stepup.android.ui.components.CircleIconButton(
+                    Icons.Outlined.Info, stringResource(R.string.wl_info_cd), onClick = { sheet = WalletSheet.Info },
+                    modifier = Modifier.testTag("wl-info"), size = 40.dp, tint = p.text,
+                )
             },
         )
         if (totals == TotalsLoad.Failed) {
@@ -202,6 +202,7 @@ fun WalletContent(
                         },
                         onRetry = onRetryWeb3,
                         linkOnly = linkOnly,
+                        giftOnLink = status?.giftOnLink ?: 0,
                     )
                     if (web3Enabled) {
                         PlainDivider()
@@ -294,31 +295,38 @@ private fun BalanceCard(totals: TotalsLoad) {
     val ready = (totals as? TotalsLoad.Ready)?.totals
     val balance = ready?.let { amountText(it.balance, signed = false) }
     val size: TextUnit = when {
-        balance == null -> 56.sp
-        balance.length > 10 -> 38.sp
-        balance.length > 7 -> 46.sp
-        else -> 56.sp
+        balance == null -> 50.sp
+        balance.length > 10 -> 34.sp
+        balance.length > 7 -> 42.sp
+        else -> 50.sp
     }
     WalletCard(Modifier.padding(top = 8.dp).testTag("wl-balance-card")) {
-        Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 18.dp)) {
+        Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 22.dp, bottom = 18.dp)) {
             Text(stringResource(R.string.wl_balance), style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.3f))
             if (balance != null) {
-                PlainNumber(
-                    balance, stringResource(R.string.wl_unit),
-                    Modifier.padding(top = 4.dp).semantics(mergeDescendants = true) {}.testTag("wl-balance"),
-                    size = size, unitSize = 21.sp,
-                )
+                // 시안 12 — 큰 수는 본문 글꼴(페이퍼로지) ExtraBold · 숫자 폭 고정, 단위는 6dp 띄운 회색
+                Row(
+                    Modifier.padding(top = 2.dp).semantics(mergeDescendants = true) {}.testTag("wl-balance"),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    Text(balance, style = bigNumber(size, t.text), maxLines = 1, softWrap = false)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.wl_unit), style = runTextStyle(22.sp, t.label, FontWeight.Bold, 1.2f),
+                        maxLines = 1, softWrap = false, modifier = Modifier.padding(bottom = (size.value * 0.14f).dp),
+                    )
+                }
             } else {
                 Box(Modifier.padding(top = 10.dp).size(width = 170.dp, height = 48.dp).clip(RoundedCornerShape(12.dp))
                     .background(t.inset).testTag("wl-balance-loading"))
             }
-            Box(Modifier.padding(top = 16.dp).fillMaxWidth().height(1.dp).background(t.divider))
+            Box(Modifier.padding(top = 14.dp).fillMaxWidth().height(1.dp).background(t.divider))
             Row(Modifier.fillMaxWidth().padding(top = 14.dp).height(IntrinsicSize.Min)) {
                 TotalColumn(stringResource(R.string.wl_earned), ready?.let { amountText(it.earned, signed = false) }, "wl-earned", Modifier.weight(1f))
                 Box(Modifier.fillMaxHeight().width(1.dp).background(t.divider))
                 TotalColumn(
                     stringResource(R.string.wl_spent), ready?.let { amountText(it.spent, signed = false) }, "wl-spent",
-                    Modifier.weight(1f).padding(start = 22.dp),
+                    Modifier.weight(1f).padding(start = 16.dp),
                 )
             }
         }
@@ -332,8 +340,8 @@ private fun TotalColumn(label: String, value: String?, tag: String, modifier: Mo
         Text(label, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.3f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (value != null) {
             Text(
-                value, style = runNumberStyle(22.sp, t.text), maxLines = 1, softWrap = false,
-                modifier = Modifier.padding(top = 4.dp),
+                value, style = bigNumber(21.sp, t.text), maxLines = 1, softWrap = false,
+                modifier = Modifier.padding(top = 2.dp),
             )
         } else {
             Box(Modifier.padding(top = 8.dp).size(width = 72.dp, height = 14.dp).clip(RoundedCornerShape(6.dp)).background(t.inset))
@@ -351,7 +359,7 @@ private fun LinkCard(content: @Composable ColumnScope.() -> Unit) {
 
 /** WEB3 지갑 줄 — 실제로 되는 것만 누를 수 있다 */
 @Composable
-private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit, linkOnly: Boolean = false) {
+private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit, linkOnly: Boolean = false, giftOnLink: Int = 0) {
     val t = runTone()
     val clickable = web3 == Web3State.NotLinked || web3 == Web3State.Linked
     Column(Modifier.fillMaxWidth()) {
@@ -371,7 +379,9 @@ private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit, l
                         Spacer(Modifier.width(6.dp))
                     }
                     Text(
-                        stringResource(
+                        // 연결 전 — 서버가 알려 준 첫 연결 선물 수가 있으면 「연결하면 상급 뽑기 N회」(시안 12)
+                        if (web3 == Web3State.NotLinked && !linkOnly && giftOnLink > 0) stringResource(R.string.rd_c_wl_web3_unlinked_count, giftOnLink)
+                        else stringResource(
                             when (web3) {
                                 Web3State.Checking -> R.string.wl_web3_checking
                                 Web3State.Unavailable -> R.string.wl_web3_unavailable
@@ -429,10 +439,10 @@ private fun HistoryHead(filter: LedgerFilter, onFilter: (LedgerFilter) -> Unit) 
     val p = settingsPalette()
     Column(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.wl_history), color = p.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.wl_recent_first), color = p.secondary, fontSize = 13.sp)
+            Text(stringResource(R.string.wl_history), style = runTextStyle(19.sp, runTone().text, FontWeight.Bold, 1.3f), modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.wl_recent_first), style = runTextStyle(14.sp, runTone().label, FontWeight.Medium, 1.3f))
         }
-        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(
                 LedgerFilter.ALL to R.string.wl_filter_all,
                 LedgerFilter.EARNED to R.string.wl_filter_earned,
@@ -449,12 +459,12 @@ private fun HistoryHead(filter: LedgerFilter, onFilter: (LedgerFilter) -> Unit) 
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
-                        Modifier.widthIn(min = 76.dp).clip(RoundedCornerShape(18.dp))
-                            .background(if (on) chipOn() else chipOff()).padding(horizontal = 20.dp, vertical = 8.dp),
+                        Modifier.widthIn(min = 54.dp).clip(RoundedCornerShape(18.dp))
+                            .background(if (on) chipOn() else chipOff()).padding(horizontal = 16.dp, vertical = 7.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(stringResource(label), color = if (on) chipOnText() else runTone().label, fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(label), style = runTextStyle(15.sp, if (on) chipOnText() else runTone().label, FontWeight.Bold, 1.3f),
+                            maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -525,14 +535,14 @@ internal fun WalletState(
 ) {
     val t = runTone()
     Column(
-        modifier.fillMaxWidth().padding(top = if (compact) 28.dp else 110.dp, bottom = 16.dp),
+        modifier.fillMaxWidth().padding(top = if (compact) 14.dp else 110.dp, bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (image != null) {
-            Image(
-                painterResource(image), contentDescription = null,
-                modifier = Modifier.height(116.dp), contentScale = ContentScale.Fit,
-            )
+            // 높이 110dp(시안 12) · 너비는 그림 비율대로 — 작은 그림 파일도 키워 그린다(height 만 주면 원래 크기에서 멈춘다)
+            val art = painterResource(image)
+            val ratio = art.intrinsicSize.let { if (it.height > 0f && it.width > 0f) it.width / it.height else 1f }
+            Image(art, contentDescription = null, modifier = Modifier.height(110.dp).aspectRatio(ratio), contentScale = ContentScale.Fit)
         } else {
             Icon(icon, contentDescription = null, tint = t.cobaltText, modifier = Modifier.size(32.dp))
         }
@@ -770,6 +780,10 @@ private fun rememberWalletFormatter(pattern: Int): DateTimeFormatter {
     val locale = LocalConfiguration.current.locales[0]
     return remember(text, locale) { DateTimeFormatter.ofPattern(text, locale) }
 }
+
+/** 큰 숫자 — 본문 글꼴 ExtraBold · 숫자 폭 고정(README 2-5) */
+private fun bigNumber(size: TextUnit, color: Color) =
+    runTextStyle(size, color, FontWeight.ExtraBold, 1.1f).copy(fontFeatureSettings = "tnum", letterSpacing = (-0.02).em)
 
 @Composable
 private fun chipOn(): Color = runTone().text
