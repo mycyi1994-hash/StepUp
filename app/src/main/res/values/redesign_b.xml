@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-24 재디자인 B(내 신발 탭 · 신발 상세 · 스탯 포인트 시트) -->
+<resources>
+    <string name="rd_b_dur_full_1">It\'s full</string>
+    <string name="rd_b_dur_full_2">Earns 100%% for %1$s min</string>
+    <string name="rd_b_dur_left_1">Wears out after %1$s more min</string>
+    <string name="rd_b_dur_left_2">After that, steps earn only %1$d%%</string>
+    <string name="rd_b_dur_left_2_none">After that, steps earn nothing</string>
+    <string name="rd_b_dur_worn_1">Worn out</string>
+    <string name="rd_b_dur_worn_2">Steps earn only %1$d%% for now</string>
+    <string name="rd_b_dur_worn_2_none">Steps earn nothing for now</string>
+    <string name="rd_b_points_split">Split %1$d</string>
+    <string name="rd_b_daily_max_title">Daily max</string>
+    <string name="rd_b_daily_max_value">About %1$s SUP</string>
+    <string name="rd_b_rec_lead">From your runs, your %1$d points go</string>
+    <string name="rd_b_rec_lead_all">From your runs, starting over</string>
+    <string name="rd_b_rec_split">%2$d to %1$s</string>
+    <string name="rd_b_rec_part">%1$s %2$d</string>
+    <string name="rd_b_rec_gain">About +%1$s SUP more a day</string>
+    <string name="rd_b_manual">Split myself</string>
+    <string name="rd_b_show_rec">See suggestion</string>
+    <string name="rd_b_now">Now %1$s</string>
+    <string name="rd_b_points_unit">left</string>
+</resources>

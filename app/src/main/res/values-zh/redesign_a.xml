@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rd_a_home_summary">%1$skm · 获得 +%2$s SUP · 本周 %3$s次</string>
+    <string name="rd_a_activity_line">%1$skm · %2$s分钟 · 今天 +%3$s SUP</string>
+    <string name="rd_a_first_box">再跑%1$s步获得第一个箱子</string>
+    <string name="rd_a_week_box">本周 · 高级箱子</string>
+    <string name="rd_a_surge">步数狂飙 · %1$s SUP</string>
+    <string name="rd_a_streak_title">连续跑步</string>
+    <string name="rd_a_today">今天</string>
+    <string name="rd_a_menu_coach_sub">跑步时的语音教练</string>
+    <string name="rd_a_check_title">出发前检查跑鞋</string>
+    <string name="rd_a_check_repair_go">修理后出发</string>
+    <string name="rd_a_check_go_anyway">直接出发</string>
+    <string name="rd_a_steps">%1$s步</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 2026-11-24 redesign, group A: run home · today sheet · run start menu · shoe check -->
+    <string name="rd_a_home_summary">%1$skm · earned +%2$s SUP · %3$s runs this week</string>
+    <string name="rd_a_activity_line">%1$skm · %2$s min · +%3$s SUP today</string>
+    <string name="rd_a_first_box">Run %1$s more steps for your first box</string>
+    <string name="rd_a_week_box">This week · premium box</string>
+    <string name="rd_a_surge">Step Surge · %1$s SUP</string>
+    <string name="rd_a_streak_title">Running streak</string>
+    <string name="rd_a_today">Today</string>
+    <string name="rd_a_menu_coach_sub">Voice coach while you run</string>
+    <string name="rd_a_check_title">Check your shoes before you go</string>
+    <string name="rd_a_check_repair_go">Repair and go</string>
+    <string name="rd_a_check_go_anyway">Go as is</string>
+    <string name="rd_a_steps">%1$s steps</string>
+</resources>

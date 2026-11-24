@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-24 재디자인 B(내 신발 탭 · 신발 상세 · 스탯 포인트 시트) -->
+<resources>
+    <string name="rd_b_dur_full_1">가득 차 있어요</string>
+    <string name="rd_b_dur_full_2">%1$s분 동안 100%% 적립</string>
+    <string name="rd_b_dur_left_1">%1$s분 더 달리면 다 닳아요</string>
+    <string name="rd_b_dur_left_2">그 뒤로는 걸음의 %1$d%%만 적립</string>
+    <string name="rd_b_dur_left_2_none">그 뒤로는 적립되지 않아요</string>
+    <string name="rd_b_dur_worn_1">다 닳았어요</string>
+    <string name="rd_b_dur_worn_2">지금은 걸음의 %1$d%%만 적립</string>
+    <string name="rd_b_dur_worn_2_none">지금은 적립되지 않아요</string>
+    <string name="rd_b_points_split">%1$d개 나누기</string>
+    <string name="rd_b_daily_max_title">하루 최대</string>
+    <string name="rd_b_daily_max_value">약 %1$s SUP</string>
+    <string name="rd_b_rec_lead">내 러닝으로 보면 남은 %1$d개는</string>
+    <string name="rd_b_rec_lead_all">내 러닝으로 보면 처음부터</string>
+    <string name="rd_b_rec_split">%1$s에 %2$d개</string>
+    <string name="rd_b_rec_part">%1$s %2$d</string>
+    <string name="rd_b_rec_gain">하루 약 +%1$s SUP 더</string>
+    <string name="rd_b_manual">직접 나누기</string>
+    <string name="rd_b_show_rec">추천 보기</string>
+    <string name="rd_b_now">지금 %1$s</string>
+    <string name="rd_b_points_unit">개</string>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-24 재디자인 B(내 신발 탭 · 신발 상세 · 스탯 포인트 시트) -->
+<resources>
+    <string name="rd_b_dur_full_1">満タンです</string>
+    <string name="rd_b_dur_full_2">%1$s分間 100%% 獲得</string>
+    <string name="rd_b_dur_left_1">あと%1$s分走るとすり減ります</string>
+    <string name="rd_b_dur_left_2">その後は歩数の%1$d%%だけ獲得</string>
+    <string name="rd_b_dur_left_2_none">その後は獲得できません</string>
+    <string name="rd_b_dur_worn_1">すり減りました</string>
+    <string name="rd_b_dur_worn_2">今は歩数の%1$d%%だけ獲得</string>
+    <string name="rd_b_dur_worn_2_none">今は獲得できません</string>
+    <string name="rd_b_points_split">%1$d個を振り分け</string>
+    <string name="rd_b_daily_max_title">1日の上限</string>
+    <string name="rd_b_daily_max_value">約 %1$s SUP</string>
+    <string name="rd_b_rec_lead">あなたのランから見ると残り%1$d個は</string>
+    <string name="rd_b_rec_lead_all">あなたのランから見ると最初から</string>
+    <string name="rd_b_rec_split">%1$sに%2$d個</string>
+    <string name="rd_b_rec_part">%1$s %2$d</string>
+    <string name="rd_b_rec_gain">1日 約 +%1$s SUP 多く</string>
+    <string name="rd_b_manual">自分で振り分け</string>
+    <string name="rd_b_show_rec">おすすめを見る</string>
+    <string name="rd_b_now">現在 %1$s</string>
+    <string name="rd_b_points_unit">個</string>
+</resources>

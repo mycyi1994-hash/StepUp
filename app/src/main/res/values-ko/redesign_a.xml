@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rd_a_home_summary">%1$skm · 적립 +%2$s SUP · 이번 주 %3$s회</string>
+    <string name="rd_a_activity_line">%1$skm · %2$s분 · 오늘 +%3$s SUP</string>
+    <string name="rd_a_first_box">%1$s보 더 달리면 첫 상자</string>
+    <string name="rd_a_week_box">이번 주 · 상급 상자</string>
+    <string name="rd_a_surge">스텝 서지 · %1$s SUP</string>
+    <string name="rd_a_streak_title">연속 러닝</string>
+    <string name="rd_a_today">오늘</string>
+    <string name="rd_a_menu_coach_sub">러닝 중 음성 코치</string>
+    <string name="rd_a_check_title">출발 전, 신발 확인</string>
+    <string name="rd_a_check_repair_go">수리하고 출발</string>
+    <string name="rd_a_check_go_anyway">그대로 출발</string>
+    <string name="rd_a_steps">%1$s보</string>
+</resources>

@@ -2,9 +2,7 @@ package com.stepup.android.ui.screens.items
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,14 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -41,7 +33,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -49,16 +40,25 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
+import com.stepup.android.domain.ShoeRules
 import com.stepup.android.domain.Sneaker
+import com.stepup.android.domain.wornPercent
+import com.stepup.android.ui.components.PlainBar
+import com.stepup.android.ui.components.PlainDivider
+import com.stepup.android.ui.components.PlainListCard
+import com.stepup.android.ui.components.runTextStyle
+import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
+import com.stepup.android.ui.theme.StepUpNumbers
 
 /*
  * 신발 상세의 능력치 네 칸 — 카툰 입체형(2026-09-30 사용자 확정안 1번, docs/redesign/shoe-detail-cartoon-2026-09-30).
@@ -90,133 +90,187 @@ object CartoonColors {
     val UpgradeEfficiency = CartoonFill(Color(0xFF48D9FA), Color(0xFFB0F1FF), Color(0xFF1287B0))
 }
 
-private fun fillOf(stat: DetailStat): CartoonFill = when (stat) {
-    DetailStat.LEVEL -> CartoonColors.Level
-    DetailStat.EFFICIENCY -> CartoonColors.Efficiency
-    DetailStat.COMFORT -> CartoonColors.Comfort
-    DetailStat.DURABILITY -> CartoonColors.Durability
-}
+/*
+ * 2026-11-24 재디자인(docs/redesign/plain-2026-11-24 — 05 신발 상세 · 14 내 신발 탭).
+ * 능력치는 흰 카드(panel) 한 장에 줄로 — 이름 · 값 · 가는 막대(효율 eff · 착화감 com · 내구도 dur). 줄을 누르면 그 줄 아래에
+ * 한 줄 설명이 펼쳐진다(ⓘ 대신). 내구도가 줄었으면 내구도는 따로 큰 칸([ShoeDurabilityCard]) — 남은 분 · 막대 · 두 줄 설명.
+ * 위의 카툰 입체 막대([CartoonStatBar] · [CartoonColors])는 강화 화면이 그대로 쓴다.
+ */
 
-private val CellShape = RoundedCornerShape(14.dp)
-private val LabelMin = 52.dp
-private val ValueMin = 64.dp
-private val ColumnGap = 8.dp
-private val CellPadding = 12.dp
-
-/** 한 줄 배치를 지키는 막대의 가장 짧은 폭 — 이보다 좁아지면 막대를 글 아래로 내린다 */
-private val BarMin = 56.dp
-private val LabelStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-
-/** 값은 고정폭 숫자 — "5 / 15" 와 "92 / 100" 의 숫자 폭이 같게 */
-private val ValueStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum")
-
-/** 칸 아래 작은 한 줄(다음 레벨까지 % · ⓘ 설명) */
-private val NoteStyle = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum")
+/** 내구도 칸의 숫자 · 막대 · 설명 두 줄 — 신발 탭과 상세가 같은 값을 쓴다 */
+internal class DurabilityView(
+    /** "13 / 31분"(가득이면 상세 줄은 "31분") · 최대를 모르는 예전 신발은 "92 / 100" */
+    val text: String,
+    /** [text] 안에서 크게 · 색으로 쓸 앞 숫자("13") */
+    val lead: String,
+    val fraction: Float,
+    val color: Color,
+    val full: Boolean,
+    val lines: List<String>,
+)
 
 /**
- * 레벨 · 효율 · 착화감 · 내구도 네 칸. 이름 열 · 값 열 폭은 네 줄 중 가장 긴 글에 맞춰 같게 둔다 —
- * 값이 긴 줄(내구도)만 막대가 짧아지지 않고 네 막대의 시작 · 끝이 같다. 글자를 키우면 열과 칸 높이가 함께 커진다.
- *
- * [onRepair] 가 있으면 내구도 칸 아래 줄 오른쪽에 "수리하기"를 붙인다(2026-11-07 "신발 수리하는거 버튼 앞으로" —
- * 남은 내구도를 보는 바로 그 자리에서 수리 시트로). 막대 줄은 그대로라 네 막대의 시작 · 끝이 같다.
- * [repairEnabled] 가 아니면 흐리게(결과 미확인 · 다 찬 내구도), [repairEmphasis] 면 파란 면으로 앞세운다([repairUrgent]).
+ * 남은 분(서버 규칙의 수명 — [wholeMinutes]) · 가득에서의 분 · 다 닳은 뒤 적립 비율([com.stepup.android.domain.StatRule.wornRate]).
+ * 색은 가득 dur · 줄었음 gold · 다 닳음 dangerText. 숫자를 지어내지 않는다 — 최대 내구도를 모르는 신발은 설명 줄이 없다.
  */
 @Composable
-fun ShoeStatCells(
-    shoe: Sneaker,
+internal fun durabilityView(shoe: Sneaker, rules: ShoeRules): DurabilityView {
+    val t = runTone()
+    val full = !repairable(shoe)
+    val worn = durabilityWornOut(shoe)
+    val color = when {
+        full -> t.dur
+        worn -> t.dangerText
+        else -> t.gold
+    }
+    val fraction = durabilityFraction(shoe)
+    if (shoe.server?.hasDurabilityMax != true) {
+        val left = formatCount(durabilityLeft(shoe))
+        return DurabilityView(formatDurability(shoe), left, fraction, color, full, emptyList())
+    }
+    val left = wholeMinutes(shoe, durabilityLeft(shoe), rules).toString()
+    val max = wholeMinutes(shoe, durabilityMax(shoe), rules).toString()
+    val stats = rules.stats
+    val lines = when {
+        full -> listOf(stringResource(R.string.rd_b_dur_full_1), stringResource(R.string.rd_b_dur_full_2, max))
+        worn -> listOf(
+            stringResource(R.string.rd_b_dur_worn_1),
+            if (stats.earnsWhenWorn) stringResource(R.string.rd_b_dur_worn_2, stats.wornPercent)
+            else stringResource(R.string.rd_b_dur_worn_2_none),
+        )
+        else -> listOf(
+            stringResource(R.string.rd_b_dur_left_1, left),
+            if (stats.earnsWhenWorn) stringResource(R.string.rd_b_dur_left_2, stats.wornPercent)
+            else stringResource(R.string.rd_b_dur_left_2_none),
+        )
+    }
+    return DurabilityView(minutesText("$left / $max"), left, fraction, color, full, lines)
+}
+
+/** "13 / 31분" — 앞 숫자만 크게 · 색으로, 나머지는 보조 글자. 한 줄(줄바꿈 없음) */
+@Composable
+internal fun DurabilityNumber(view: DurabilityView, modifier: Modifier = Modifier, size: TextUnit = 30.sp) {
+    val t = runTone()
+    val start = view.text.indexOf(view.lead).coerceAtLeast(0)
+    val end = (start + view.lead.length).coerceAtMost(view.text.length)
+    val text = buildAnnotatedString {
+        append(view.text)
+        if (view.lead.isNotEmpty() && view.text.startsWith(view.lead, start)) {
+            addStyle(
+                SpanStyle(fontFamily = StepUpNumbers, fontSize = size, fontWeight = FontWeight.ExtraBold, color = view.color),
+                start, end,
+            )
+        }
+    }
+    Text(
+        text, style = runTextStyle(16.sp, t.label, FontWeight.SemiBold, 1.15f).copy(fontFeatureSettings = "tnum"),
+        maxLines = 1, softWrap = false, modifier = modifier,
+    )
+}
+
+/**
+ * 내구도 큰 칸 — "내구도" · 오른쪽 "13 / 31분" → 막대([barHeight]) → 설명 두 줄. [onRepair] 가 있으면 설명 오른쪽에 "수리하기"
+ * 알약(밝게 검정 · 어둡게 흰색, 높이 40). [numberTag] · [barTag] 는 기기 검사가 값 · 막대를 찾는 이름이다.
+ */
+@Composable
+internal fun ShoeDurabilityCard(
+    view: DurabilityView,
     modifier: Modifier = Modifier,
+    barHeight: Dp = 8.dp,
+    numberTag: String,
+    barTag: String,
     onRepair: (() -> Unit)? = null,
     repairEnabled: Boolean = true,
-    repairEmphasis: Boolean = false,
 ) {
-    val rules = rememberShoeRules()
-    val rows = remember(shoe, rules) { detailStatRows(shoe, rules) }
-    val labels = rows.map { statTitle(it.stat) }
-    // 내구도는 분 — "28 / 31분"(단위는 언어마다 다르다)
-    val values = rows.map { if (it.unit == com.stepup.android.ui.screens.customize.StatUnit.MINUTES) minutesText(it.value) else it.value }
-    val ends = rows.map { if (it.unit == com.stepup.android.ui.screens.customize.StatUnit.MINUTES) minutesText(it.end) else it.end }
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val base = LocalTextStyle.current
-    val labelStyle = remember(base) { base.merge(LabelStyle) }
-    val valueStyle = remember(base) { base.merge(ValueStyle) }
-    // 이름 열은 ⓘ 까지 — 레벨 칸(ⓘ 없음)도 같은 폭이라 네 막대의 시작이 같다
-    val explained = rows.map { it.explained }
-    val (labelWidth, valueWidth) = remember(labels, values, explained, labelStyle, valueStyle, density) {
-        fun width(text: String, style: TextStyle): Dp = with(density) {
-            (measurer.measure(text, style, softWrap = false).size.width + 1).toDp()
+    val t = runTone()
+    val title = stringResource(R.string.sdv_stat_durability)
+    Column(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.panel).padding(horizontal = 18.dp, vertical = 18.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title, style = runTextStyle(17.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(12.dp))
+            DurabilityNumber(view, Modifier.testTag(numberTag))
         }
-        val label = labels.indices.maxOf { i -> width(labels[i], labelStyle) + if (explained[i]) InfoGap + InfoIcon else 0.dp }
-        maxOf(LabelMin, label) to maxOf(ValueMin, values.maxOf { width(it, valueStyle) })
-    }
-    val repair = onRepair?.let { StatRepair(it, enabled = repairEnabled, emphasis = repairEmphasis) }
-    // ⓘ — 펼친 칸 하나(창 없이 칸 아래 한 줄). 다른 칸을 누르면 앞의 것은 접힌다
-    var infoOpen by rememberSaveable(shoe.id) { mutableStateOf<DetailStat?>(null) }
-    // 서버 0119 의 뜻이면 새 글(효율은 신발 · 에너지도 빨리 쓴다 · 내구도는 가득 수리비 그대로), 예전 서버면 예전 글
-    val newMeaning = newStatMeaning(rules)
-    val meanings = rows.map { statMeaning(it.stat, newMeaning) }
-    val showCds = labels.map { stringResource(R.string.shoe_info_show_cd, it) }
-    val hideCds = labels.map { stringResource(R.string.shoe_info_hide_cd, it) }
-    val notes = rows.map { row -> row.nextLevelPercent?.let { stringResource(R.string.shoe_xp_next, it) } }
-    BoxWithConstraints(modifier.fillMaxWidth()) {
-        // 아주 큰 글씨 · 좁은 화면에서 두 열이 칸을 다 먹으면(막대가 BarMin 보다 짧아지면) 그때만 막대를 글 아래 줄로 내린다
-        val stacked = maxWidth - CellPadding * 2 - ColumnGap * 2 - labelWidth - valueWidth < BarMin
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            rows.forEachIndexed { index, row ->
-                val meaning = meanings[index]
-                val open = infoOpen == row.stat
-                StatCell(
-                    label = labels[index], value = values[index], fraction = row.fraction, fill = fillOf(row.stat),
-                    labelWidth = labelWidth, valueWidth = valueWidth, labelStyle = labelStyle, valueStyle = valueStyle,
-                    stacked = stacked,
-                    description = stringResource(R.string.sdv_bar_cd, labels[index], values[index], ends[index]),
-                    tag = "shoe-cell-" + row.stat.name.lowercase(),
-                    repair = if (row.stat == DetailStat.DURABILITY) repair else null,
-                    info = if (row.explained && meaning != null) {
-                        StatInfo(open, meaning, if (open) hideCds[index] else showCds[index]) {
-                            infoOpen = if (infoOpen == row.stat) null else row.stat
-                        }
-                    } else null,
-                    note = notes[index],
-                )
+        Spacer(Modifier.height(14.dp))
+        PlainBar(view.fraction, view.color, Modifier.fillMaxWidth().testTag(barTag), height = barHeight)
+        if (view.lines.isNotEmpty() || onRepair != null) {
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    view.lines.forEach { line ->
+                        Text(line, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.4f))
+                    }
+                }
+                if (onRepair != null) {
+                    Spacer(Modifier.width(12.dp))
+                    RepairPill(onRepair, repairEnabled)
+                }
             }
         }
     }
 }
 
-/** 내구도 칸의 수리하기 — 누르면 할 일 · 누를 수 있는지 · 앞세울지 */
-private class StatRepair(val onClick: () -> Unit, val enabled: Boolean, val emphasis: Boolean)
-
-/** 칸의 ⓘ — 펼쳤는가 · 한 줄 설명 · 읽기 도구가 읽는 할 일("효율 설명 보기") · 누르면 */
-private class StatInfo(val open: Boolean, val meaning: String, val action: String, val onToggle: () -> Unit)
-
-/** ⓘ 아이콘 크기 · 이름과의 사이 */
-private val InfoIcon = 16.dp
-private val InfoGap = 4.dp
-
-/** 한 줄 설명 — 효율 · 착화감 · 내구도(레벨은 없다). [newMeaning]([newStatMeaning])이면 서버 0119 의 뜻으로 */
+/** 내구도 칸 안의 "수리하기" — 검정(어둡게 흰색) 알약 40dp. 누를 수 없으면 흐리게 */
 @Composable
-private fun statMeaning(stat: DetailStat, newMeaning: Boolean): String? = when (stat) {
-    DetailStat.LEVEL -> null
-    DetailStat.EFFICIENCY -> stringResource(statMeaningRes(PointStat.EFFICIENCY, newMeaning))
-    DetailStat.COMFORT -> stringResource(statMeaningRes(PointStat.COMFORT, newMeaning))
-    DetailStat.DURABILITY -> stringResource(statMeaningRes(PointStat.DURABILITY, newMeaning))
+private fun RepairPill(onClick: () -> Unit, enabled: Boolean) {
+    val t = runTone()
+    val shape = RoundedCornerShape(20.dp)
+    Box(
+        Modifier.alpha(if (enabled) 1f else 0.4f)
+            .heightIn(min = 40.dp).clip(shape).background(t.text, shape)
+            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .testTag("shoe-durability-repair")
+            .padding(horizontal = 18.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            stringResource(R.string.care_repair), style = runTextStyle(15.sp, t.panel, FontWeight.Bold, 1.2f),
+            maxLines = 1, softWrap = false,
+        )
+    }
 }
 
-/** 이름(+ ⓘ) — 펼치면 ⓘ 가 밝아진다. [wrap] 이면(막대를 아래로 내린 좁은 칸) 이름이 줄을 바꿀 수 있다 */
+/**
+ * 상세의 능력치 카드 — 효율 · 착화감(+ [withDurability] 면 내구도 "31분") 줄. 줄 = 이름 · 값 · 가는 막대(3dp, 능력치 색).
+ * 줄을 누르면 한 줄 설명(서버 0119 의 뜻이면 새 글)이 펼쳐지고, 다시 누르면 접힌다. 다른 줄을 누르면 앞의 것은 접힌다.
+ */
 @Composable
-private fun CellLabel(label: String, style: TextStyle, info: StatInfo?, modifier: Modifier = Modifier, wrap: Boolean = false) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        if (wrap) {
-            Text(label, style = style, color = CartoonColors.Text, modifier = Modifier.weight(1f, fill = false))
-        } else {
-            Text(label, style = style, color = CartoonColors.Text, maxLines = 1, softWrap = false)
-        }
-        if (info != null) {
-            Spacer(Modifier.width(InfoGap))
-            Icon(
-                Icons.Outlined.Info, contentDescription = null,
-                tint = if (info.open) CartoonColors.Text else CartoonColors.Number, modifier = Modifier.size(InfoIcon),
+fun ShoeStatListCard(shoe: Sneaker, withDurability: Boolean, modifier: Modifier = Modifier) {
+    val t = runTone()
+    val rules = rememberShoeRules()
+    val rows = remember(shoe, rules) { detailStatRows(shoe, rules).filter { it.stat != DetailStat.LEVEL } }
+    val durability = durabilityView(shoe, rules)
+    var infoOpen by rememberSaveable(shoe.id) { mutableStateOf<DetailStat?>(null) }
+    val newMeaning = newStatMeaning(rules)
+    val shown = rows.filter { withDurability || it.stat != DetailStat.DURABILITY }
+    PlainListCard(modifier) {
+        shown.forEachIndexed { index, row ->
+            if (index > 0) PlainDivider()
+            val stat = row.stat
+            val pointStat = when (stat) {
+                DetailStat.EFFICIENCY -> PointStat.EFFICIENCY
+                DetailStat.COMFORT -> PointStat.COMFORT
+                else -> PointStat.DURABILITY
+            }
+            val value = if (stat == DetailStat.DURABILITY) {
+                // 가득이면 "31분"(남은 · 최대가 같다), 최대를 모르는 예전 신발은 "100 / 100"
+                if (durability.full && shoe.server?.hasDurabilityMax == true) minutesText(row.end) else durability.text
+            } else row.value
+            val color = when (stat) {
+                DetailStat.EFFICIENCY -> t.eff
+                DetailStat.COMFORT -> t.com
+                else -> t.dur
+            }
+            StatLine(
+                title = statTitle(stat), value = value, fraction = row.fraction, color = color,
+                meaning = stringResource(statMeaningRes(pointStat, newMeaning)),
+                open = infoOpen == stat,
+                onToggle = { infoOpen = if (infoOpen == stat) null else stat },
+                tag = "shoe-cell-" + stat.name.lowercase(),
             )
         }
     }
@@ -232,107 +286,44 @@ private fun statTitle(stat: DetailStat): String = stringResource(
     },
 )
 
+/** 능력치 한 줄 — 이름(15.5 SemiBold) · 값(16 Bold, 숫자 폭 고정) → 막대 3dp. 누르면 설명이 그 아래에 */
 @Composable
-private fun StatCell(
-    label: String,
+private fun StatLine(
+    title: String,
     value: String,
     fraction: Float,
-    fill: CartoonFill,
-    labelWidth: Dp,
-    valueWidth: Dp,
-    labelStyle: TextStyle,
-    valueStyle: TextStyle,
-    description: String,
+    color: Color,
+    meaning: String,
+    open: Boolean,
+    onToggle: () -> Unit,
     tag: String,
-    stacked: Boolean,
-    /** 칸 아래 줄 오른쪽에 붙는 수리하기(내구도 칸) — 막대 줄은 건드리지 않는다 */
-    repair: StatRepair? = null,
-    /** ⓘ — 있으면 칸을 누를 때 아래에 한 줄 설명이 펼쳐진다(창 없음) */
-    info: StatInfo? = null,
-    /** 막대 아래 작은 한 줄(레벨 칸 — "다음 레벨까지 65.3%") */
-    note: String? = null,
 ) {
-    val spoken = listOfNotNull(description, note, info?.meaning?.takeIf { info.open }, info?.action).joinToString(". ")
-    val noteStyle = LocalTextStyle.current.merge(NoteStyle)
-    // ⓘ 가 있는 칸은 칸 전체가 누르는 자리(칸째 눌림 — 바탕까지 함께 작아지고 어두워진다). 수리하기는 그 안의 따로 누르는 버튼
-    val cell = Modifier.fillMaxWidth()
-        .then(if (info != null) Modifier.clip(CellShape).feedbackClickable(role = Role.Button, onClick = info.onToggle) else Modifier)
-        .heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
-        .semantics(mergeDescendants = true) { contentDescription = spoken }
-        .testTag(tag)
-        .padding(horizontal = CellPadding, vertical = 6.dp)
-    val extras = repair != null || note != null || info?.open == true
-    if (!stacked && !extras) {
-        Row(cell, verticalAlignment = Alignment.CenterVertically) {
-            CellLabel(label, labelStyle, info, Modifier.width(labelWidth))
-            Spacer(Modifier.width(ColumnGap))
-            CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
-            Spacer(Modifier.width(ColumnGap))
-            Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
-                modifier = Modifier.width(valueWidth).testTag("$tag-value"))
+    val t = runTone()
+    val action = stringResource(if (open) R.string.shoe_info_hide_cd else R.string.shoe_info_show_cd, title)
+    Column(
+        Modifier.fillMaxWidth()
+            .feedbackClickable(role = Role.Button, onClick = onToggle)
+            .semantics(mergeDescendants = true) { contentDescription = listOfNotNull("$title $value", meaning.takeIf { open }, action).joinToString(". ") }
+            .testTag(tag)
+            .padding(vertical = 15.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = runTextStyle(15.5.sp, t.text, FontWeight.SemiBold, 1.3f), maxLines = 1,
+                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
+            Text(value, style = runTextStyle(16.sp, t.text, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
+                maxLines = 1, softWrap = false, modifier = Modifier.testTag("$tag-value"))
         }
-        return
-    }
-    Column(cell, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (stacked) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CellLabel(label, labelStyle, info, Modifier.weight(1f), wrap = true)
-                Spacer(Modifier.width(ColumnGap))
-                Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false,
-                    modifier = Modifier.testTag("$tag-value"))
-            }
-            CartoonStatBar(fraction, fill, Modifier.fillMaxWidth().height(30.dp).testTag("$tag-bar"))
-        } else {
-            // 다른 칸의 한 줄과 같은 높이(54 − 위아래 6) · 같은 열 폭 — 막대 시작 · 끝이 맞는다
-            Row(Modifier.fillMaxWidth().heightIn(min = 42.dp), verticalAlignment = Alignment.CenterVertically) {
-                CellLabel(label, labelStyle, info, Modifier.width(labelWidth))
-                Spacer(Modifier.width(ColumnGap))
-                CartoonStatBar(fraction, fill, Modifier.weight(1f).height(30.dp).testTag("$tag-bar"))
-                Spacer(Modifier.width(ColumnGap))
-                Text(value, style = valueStyle, color = CartoonColors.Text, maxLines = 1, softWrap = false, textAlign = TextAlign.End,
-                    modifier = Modifier.width(valueWidth).testTag("$tag-value"))
-            }
-        }
-        if (note != null) {
-            Text(note, style = noteStyle, color = CartoonColors.Number, modifier = Modifier.padding(bottom = 2.dp).testTag("$tag-note"))
-        }
-        if (info?.open == true) {
-            Text(info.meaning, style = noteStyle, color = CartoonColors.Text,
-                modifier = Modifier.padding(bottom = 2.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag("$tag-info"))
-        }
-        if (repair != null) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                DurabilityRepairButton(repair.onClick, enabled = repair.enabled, emphasis = repair.emphasis)
-            }
+        Spacer(Modifier.height(9.dp))
+        PlainBar(fraction, color, Modifier.fillMaxWidth().testTag("$tag-bar"), height = 3.dp)
+        if (open) {
+            Spacer(Modifier.height(8.dp))
+            Text(meaning, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.4f),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag("$tag-info"))
         }
     }
 }
 
-/**
- * 내구도 칸의 "수리하기" — 칸 안의 작은 버튼(높이 44 이상). 평소에는 흰 테두리만, 급하면([repairUrgent]) 파란 면 · 밝은 테두리.
- * 색 배지가 아니라 누르는 버튼이다. 못 누르면 흐리게.
- */
-@Composable
-private fun DurabilityRepairButton(onClick: () -> Unit, enabled: Boolean, emphasis: Boolean) {
-    val shape = RoundedCornerShape(10.dp)
-    val strong = emphasis && enabled
-    Row(
-        Modifier.alpha(if (enabled) 1f else 0.5f)
-            .heightIn(min = 44.dp)
-            .clip(shape)
-            .background(if (strong) CartoonColors.Frame else Color.Transparent, shape)
-            .border(1.dp, if (strong) CartoonColors.FrameTop else CartoonColors.Text.copy(alpha = 0.28f), shape)
-            .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .testTag("shoe-durability-repair")
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Outlined.Build, contentDescription = null, tint = CartoonColors.Text, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(stringResource(R.string.care_repair), style = LocalTextStyle.current.merge(TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)),
-            color = CartoonColors.Text, maxLines = 1)
-    }
-}
 
 /**
  * 카툰 입체 막대 하나 — 아래 순서로 겹친다.
@@ -429,27 +420,22 @@ private fun DrawScope.drawCartoonBar(fraction: Float, fill: CartoonFill, preview
 }
 
 /**
- * SD08 조회 중 — 네 칸의 이름만 두고 막대는 빈 트랙, 값은 "—". 읽지 못한 값을 0 으로 보이지 않는다.
+ * SD08 조회 중 — 능력치 카드의 이름만 두고 막대는 빈 바탕, 값은 "—". 읽지 못한 값을 0 으로 보이지 않는다.
  */
 @Composable
 fun ShoeStatCellsPlaceholder(modifier: Modifier = Modifier) {
-    val base = LocalTextStyle.current
-    val labelStyle = remember(base) { base.merge(LabelStyle) }
-    val valueStyle = remember(base) { base.merge(ValueStyle) }
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DetailStat.entries.forEach { stat ->
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 54.dp).background(CartoonColors.Cell, CellShape)
-                    .padding(horizontal = CellPadding, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(statTitle(stat), style = labelStyle, color = CartoonColors.Text.copy(alpha = 0.7f), maxLines = 1,
-                    softWrap = false, modifier = Modifier.width(LabelMin + 16.dp))
-                Spacer(Modifier.width(ColumnGap))
-                CartoonStatBar(0f, fillOf(stat), Modifier.weight(1f).height(30.dp))
-                Spacer(Modifier.width(ColumnGap))
-                Text("—", style = valueStyle, color = CartoonColors.Number, textAlign = TextAlign.End,
-                    modifier = Modifier.width(ValueMin))
+    val t = runTone()
+    PlainListCard(modifier) {
+        listOf(DetailStat.EFFICIENCY, DetailStat.COMFORT, DetailStat.DURABILITY).forEachIndexed { index, stat ->
+            if (index > 0) PlainDivider()
+            Column(Modifier.fillMaxWidth().padding(vertical = 15.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(statTitle(stat), style = runTextStyle(15.5.sp, t.label, FontWeight.SemiBold, 1.3f), maxLines = 1,
+                        modifier = Modifier.weight(1f))
+                    Text("—", style = runTextStyle(16.sp, t.muted, FontWeight.Bold, 1.2f))
+                }
+                Spacer(Modifier.height(9.dp))
+                PlainBar(0f, t.track, Modifier.fillMaxWidth(), height = 3.dp)
             }
         }
     }

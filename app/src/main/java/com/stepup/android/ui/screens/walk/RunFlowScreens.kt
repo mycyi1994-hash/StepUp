@@ -7,6 +7,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.ui.text.style.TextOverflow
+import com.stepup.android.ui.components.PlainDivider
+import com.stepup.android.ui.components.PlainListCard
+import com.stepup.android.ui.components.PlainListRow
+import com.stepup.android.ui.experience.feedbackClickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -50,7 +63,6 @@ import com.stepup.android.ui.components.RunButton
 import com.stepup.android.ui.components.RunCard
 import com.stepup.android.ui.components.RunDivider
 import com.stepup.android.ui.components.RunLinkRow
-import com.stepup.android.ui.components.RunModeCard
 import com.stepup.android.ui.components.RunNumber
 import com.stepup.android.ui.components.RunPage
 import com.stepup.android.ui.components.RunPillKind
@@ -66,9 +78,9 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 
 /**
- * 러닝 시작(시안 U01) — 홈의 "러닝 시작"과 첫 안내의 "러닝 시작"에서 연다. 자유 러닝 · 크루 달리기 · 러닝 챌린지 ·
- * 추천 코스 · 다이어트 모드 다섯 가지를 같은 크기의 가로 버튼으로, 아래에 내 러닝 기록 · AI 코칭(2026-10-16 사용자 결정 — 코칭의 입구) ·
- * 이번 주 순위(리더보드, 2026-10-17).
+ * 러닝 시작(시안 U01, 2026-11-24 재디자인 03) — 홈의 "러닝 시작"과 첫 안내의 "러닝 시작"에서 연다. 자유 러닝 · 크루 달리기는
+ * 큰 두 칸, 러닝 챌린지 · 추천 코스 · 다이어트 모드 · AI 코칭(2026-10-16 사용자 결정 — 코칭의 입구)은 작은 칸 2 × 2,
+ * 아래 목록 카드에 내 러닝 기록 · 이번 주 순위(리더보드, 2026-10-17).
  *
  * 자유 러닝을 누르면 그 뜻을 한 번 기억하고 필요한 권한 안내를 이 화면 위에 차례로 보인다 — 홈을 보는 것만으로는
  * 묻지 않는다. 안내를 닫으면 아무것도 시작하지 않고 이 메뉴에 남는다. 준비가 끝나야 한 번만 [onFreeRun](3-2-1)으로 간다.
@@ -150,58 +162,157 @@ internal fun RunStartMenuContent(
         // SUP 잔액은 홈과 이 화면에만(시안)
         trailing = { SupPill(balance, onOpenWallet) },
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            RunModeCard(
-                stringResource(R.string.runflow_free), stringResource(R.string.run_mode_free_sub),
-                Icons.AutoMirrored.Filled.DirectionsRun, onFreeRun, modifier = Modifier.testTag("run-menu-free"),
-            )
-            RunModeCard(
-                stringResource(R.string.run_mode_crew), stringResource(R.string.run_mode_crew_sub),
-                Icons.Filled.Groups, onCrew ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
-                enabled = onCrew != null, badge = if (onCrew == null) stringResource(R.string.runflow_soon) else null,
-                modifier = Modifier.testTag("run-menu-crew"),
-            )
-            // 러닝 챌린지 · 추천 코스 · 다이어트 · 코칭은 아직 열지 않는다(2026-10-27 사용자 "크루 · 혼자 러닝 빼면 비활성화 ·
-            // 준비 중 · 자물쇠") — 누르면 곧 열린다는 안내만. 다시 열려면 RunMenuLocks 의 값을 끈다
-            val locked = { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() }
-            val soonBadge = stringResource(R.string.runflow_soon)
-            RunModeCard(
-                stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
-                Icons.Filled.EmojiEvents, if (RunMenuLocks.CHALLENGE) locked else onGoals,
-                enabled = !RunMenuLocks.CHALLENGE, locked = RunMenuLocks.CHALLENGE,
-                badge = soonBadge.takeIf { RunMenuLocks.CHALLENGE }, modifier = Modifier.testTag("run-menu-goals"),
-            )
-            val courseOpen = onCourse != null && !RunMenuLocks.COURSE
-            RunModeCard(
-                stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
-                Icons.Filled.Route, onCourse.takeIf { courseOpen } ?: locked,
-                enabled = courseOpen, locked = !courseOpen, badge = soonBadge.takeIf { !courseOpen },
-                modifier = Modifier.testTag("run-menu-course"),
-            )
-            val dietOpen = onDiet != null && !RunMenuLocks.DIET
-            RunModeCard(
-                stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),
-                ImageVector.vectorResource(R.drawable.ic_tab_shoes),
-                onDiet.takeIf { dietOpen } ?: locked,
-                enabled = dietOpen, locked = !dietOpen, badge = soonBadge.takeIf { !dietOpen },
-                modifier = Modifier.testTag("run-menu-diet"),
-            )
-            Spacer(Modifier.height(4.dp))
-            RunDivider()
-            Spacer(Modifier.height(4.dp))
-            RunLinkRow(stringResource(R.string.run_menu_records), onRecords, Modifier.testTag("run-menu-records"))
-            if (onCoaching != null) {
-                RunLinkRow(
-                    stringResource(R.string.coach_menu_entry), if (RunMenuLocks.COACHING) locked else onCoaching,
-                    Modifier.testTag("run-menu-coaching"), trailing = soonBadge.takeIf { RunMenuLocks.COACHING },
-                    locked = RunMenuLocks.COACHING,
+        // 2026-11-24 재디자인(03) — 자유 러닝 · 크루 달리기는 큰 두 칸, 아직 열지 않은 넷은 작은 회색 칸 2 × 2(자물쇠 없이 "준비 중"),
+        // 아래 목록 카드에 내 러닝 기록 · 이번 주 순위
+        // 러닝 챌린지 · 추천 코스 · 다이어트 · 코칭은 아직 열지 않는다(2026-10-27 사용자 "크루 · 혼자 러닝 빼면 비활성화 ·
+        // 준비 중 · 자물쇠") — 누르면 곧 열린다는 안내만. 다시 열려면 RunMenuLocks 의 값을 끈다
+        val locked = { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() }
+        val soonBadge = stringResource(R.string.runflow_soon)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MenuMainCell(
+                    stringResource(R.string.runflow_free), stringResource(R.string.run_mode_free_sub),
+                    Icons.AutoMirrored.Filled.DirectionsRun, onFreeRun, Modifier.weight(1f).fillMaxHeight().testTag("run-menu-free"),
+                )
+                MenuMainCell(
+                    stringResource(R.string.run_mode_crew), stringResource(R.string.run_mode_crew_sub),
+                    Icons.Filled.Groups, onCrew ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
+                    Modifier.weight(1f).fillMaxHeight().testTag("run-menu-crew"),
+                    enabled = onCrew != null, badge = if (onCrew == null) soonBadge else null,
                 )
             }
-            if (onLeaderboard != null) {
-                RunLinkRow(stringResource(R.string.lb_menu_entry), onLeaderboard, Modifier.testTag("run-menu-leaderboard"))
+            val courseOpen = onCourse != null && !RunMenuLocks.COURSE
+            val dietOpen = onDiet != null && !RunMenuLocks.DIET
+            val cells = buildList<@Composable (Modifier) -> Unit> {
+                add { m ->
+                    MenuSmallCell(
+                        stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
+                        Icons.Filled.EmojiEvents, if (RunMenuLocks.CHALLENGE) locked else onGoals,
+                        m.testTag("run-menu-goals"), soon = soonBadge.takeIf { RunMenuLocks.CHALLENGE },
+                    )
+                }
+                add { m ->
+                    MenuSmallCell(
+                        stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
+                        Icons.Filled.Route, onCourse.takeIf { courseOpen } ?: locked,
+                        m.testTag("run-menu-course"), soon = soonBadge.takeIf { !courseOpen },
+                    )
+                }
+                add { m ->
+                    MenuSmallCell(
+                        stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),
+                        ImageVector.vectorResource(R.drawable.ic_tab_shoes), onDiet.takeIf { dietOpen } ?: locked,
+                        m.testTag("run-menu-diet"), soon = soonBadge.takeIf { !dietOpen },
+                    )
+                }
+                if (onCoaching != null) add { m ->
+                    MenuSmallCell(
+                        stringResource(R.string.coach_menu_entry), stringResource(R.string.rd_a_menu_coach_sub),
+                        Icons.Outlined.ChatBubbleOutline, if (RunMenuLocks.COACHING) locked else onCoaching,
+                        m.testTag("run-menu-coaching"), soon = soonBadge.takeIf { RunMenuLocks.COACHING },
+                    )
+                }
+            }
+            cells.chunked(2).forEach { pair ->
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    pair.forEach { cell -> cell(Modifier.weight(1f).fillMaxHeight()) }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            PlainListCard {
+                PlainListRow(
+                    stringResource(R.string.run_menu_records), onClick = onRecords, minHeight = 60.dp,
+                    leading = { MenuRowIcon(Icons.Outlined.BarChart) }, modifier = Modifier.testTag("run-menu-records"),
+                )
+                if (onLeaderboard != null) {
+                    PlainDivider()
+                    PlainListRow(
+                        stringResource(R.string.lb_menu_entry), onClick = onLeaderboard, minHeight = 60.dp,
+                        leading = { MenuRowIcon(Icons.Outlined.EmojiEvents) }, modifier = Modifier.testTag("run-menu-leaderboard"),
+                    )
+                }
             }
         }
     }
+}
+
+private val MenuCellShape = RoundedCornerShape(22.dp)
+
+/** 큰 칸(자유 러닝 · 크루 달리기) — 흰 카드, 위에 파란 픽토그램 34, 아래 이름 19 · 부제 · › */
+@Composable
+private fun MenuMainCell(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean = true,
+    badge: String? = null,
+) {
+    val t = runTone()
+    Column(
+        modifier.heightIn(min = 148.dp).clip(MenuCellShape).background(t.panel, MenuCellShape).border(1.dp, t.panelEdge, MenuCellShape)
+            .feedbackClickable(enabled = enabled, onClick = onClick).semantics(mergeDescendants = true) {}
+            .padding(start = 18.dp, end = 10.dp, top = 18.dp, bottom = 16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Icon(icon, contentDescription = null, tint = if (enabled) t.cobalt else t.muted, modifier = Modifier.size(34.dp))
+            Spacer(Modifier.weight(1f))
+            if (badge != null) Text(badge, style = runTextStyle(11.5.sp, t.muted, FontWeight.SemiBold), maxLines = 1, softWrap = false)
+        }
+        Spacer(Modifier.weight(1f).heightIn(min = 18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title, style = runTextStyle(19.sp, if (enabled) t.text else t.muted, FontWeight.Bold, 1.25f),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    subtitle, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.muted, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+/** 작은 회색 칸(아직 열지 않은 방법) — 회색 픽토그램 20 · 오른쪽 위 "준비 중" · 이름 · 부제. 누르면 곧 열린다는 안내 */
+@Composable
+private fun MenuSmallCell(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    soon: String?,
+) {
+    val t = runTone()
+    val open = soon == null
+    Column(
+        modifier.heightIn(min = 104.dp).clip(MenuCellShape)
+            .then(if (open) Modifier.background(t.panel, MenuCellShape).border(1.dp, t.panelEdge, MenuCellShape) else Modifier.background(t.inset, MenuCellShape))
+            .feedbackClickable(onClick = onClick).semantics(mergeDescendants = true) {}
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Icon(icon, contentDescription = null, tint = if (open) t.cobalt else t.muted, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.weight(1f))
+            if (soon != null) Text(soon, style = runTextStyle(11.5.sp, t.muted, FontWeight.SemiBold), maxLines = 1, softWrap = false)
+        }
+        Spacer(Modifier.weight(1f).heightIn(min = 12.dp))
+        Text(
+            title, style = runTextStyle(16.sp, if (open) t.text else t.label, FontWeight.Bold, 1.25f),
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        Text(subtitle, style = runTextStyle(12.5.sp, t.muted, FontWeight.Medium, 1.3f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** 목록 줄 앞 픽토그램(21) — 색 원 · 네모 없이 글자색으로 */
+@Composable
+private fun MenuRowIcon(icon: ImageVector) {
+    Icon(icon, contentDescription = null, tint = runTone().text, modifier = Modifier.size(21.dp))
 }
 
 /** 러닝 시작 메뉴에서 아직 열지 않은 곳(2026-10-27) — 혼자 러닝 · 크루만 연다. false 로 바꾸면 다시 열린다 */
