@@ -58,6 +58,20 @@ val roomSchemaVersion: Int = Regex("""(?m)^\s*version\s*=\s*(\d+)\s*,?\s*$""")
 check(releaseVersionCode in 1..999) { "versionCode 는 1~999 — 테스트 빌드는 데이터베이스 판 × 1000 을 더한다" }
 
 android {
+    // 화면 캡처 검사(RedesignShotsTest)는 Robolectric 이 앱 리소스 · 글꼴을 읽어야 한다. -Pshots 로 켠다
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            test.systemProperty("shots", project.findProperty("shots")?.toString() ?: "")
+            test.systemProperty("shotsDir", rootProject.layout.buildDirectory.dir("shots").get().asFile.absolutePath)
+            test.maxHeapSize = "3g"
+            // 안드로이드 이미지(android-all)를 미리 받아 둔 곳이 있으면 그것만 쓴다(-ProbolectricDir=...)
+            project.findProperty("robolectricDir")?.toString()?.let {
+                test.systemProperty("robolectric.offline", "true")
+                test.systemProperty("robolectric.dependency.dir", it)
+            }
+        }
+    }
     namespace = "com.stepup.android"
     compileSdk = 36
 
@@ -321,6 +335,10 @@ dependencies {
     implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
+    // 화면 캡처(재디자인 확인, 2026-11-24) — 에뮬레이터 없이 Robolectric 으로 그린다. -Pshots 일 때만 돈다(RedesignShotsTest)
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)

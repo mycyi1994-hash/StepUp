@@ -295,6 +295,8 @@ object StepUpUi {
     val TitleGutter = 20.dp
     val RowMinHeight = 64.dp
     val ButtonHeight = 54.dp
+    /** 주 버튼(블루 알약 + 원 화살표 44) — 재디자인 2026-11-24 안내 2-2장: 58dp · 모서리 29dp */
+    val PrimaryButtonHeight = 58.dp
     val SmallButtonHeight = 32.dp
     val PosterRadius = 24.dp
     val GroupedRadius = 16.dp
@@ -489,7 +491,7 @@ fun PrimaryButton(
         (tappableWhenDone && (shown == ButtonState.Done || shown == ButtonState.Waiting))
     Box(
         modifier
-            .heightIn(min = StepUpUi.ButtonHeight)
+            .heightIn(min = StepUpUi.PrimaryButtonHeight)
             .pressable(enabled = clickable, cue = cue, onClick = onClick)
             .clip(CircleShape)
             .background(bg)
@@ -523,7 +525,7 @@ fun PrimaryButton(
                     Text(waitingText ?: text, style = type.button, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 ButtonState.Idle -> if (withArrow) {
-                    Row(Modifier.fillMaxWidth().heightIn(min = StepUpUi.ButtonHeight), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = StepUpUi.PrimaryButtonHeight), verticalAlignment = Alignment.CenterVertically) {
                         if (icon != null) {
                             Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp))
@@ -536,6 +538,7 @@ fun PrimaryButton(
                         ArrowCircle(
                             circle = if (onPhoto) c.photoArrowCircle else Color.White,
                             arrow = if (onPhoto) Color.White else c.primary,
+                            size = 44.dp,
                         )
                     }
                 } else {
