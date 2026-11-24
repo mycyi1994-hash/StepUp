@@ -202,6 +202,12 @@ class RunTone(
     val mapShade: Float = 0.30f,
     /** 길만 밝히는 두 번째 겹(더하기, [mapFilter] 와 짝). null 이면 한 겹 */
     val mapRoads: ColorFilter? = null,
+    /** 능력치 색(2026-11-24 재디자인) — 숫자 · 막대 · 글자 버튼에만, 면에는 쓰지 않는다 */
+    val eff: Color = Color(0xFF1F5EFF),
+    val com: Color = Color(0xFF7B5CFF),
+    val dur: Color = Color(0xFF14B08A),
+    /** 보상 · 주의 — 내구도가 줄었을 때 · 스텝 서지 · SUP */
+    val gold: Color = Color(0xFFE8930C),
 )
 
 // UI 최종 통합안(2026-10-25) — 러닝 화면도 앱과 같은 다크블루 · 화이트블루 한 벌이다. 예전 남색 무대(바닥 그라데이션 · 파란 빛 ·
@@ -229,6 +235,7 @@ val NavyRunTone = RunTone(
     errorFace = Color(0xFF2A1219), errorEdge = Color.Transparent, errorIcon = Color(0xFFFF453A),
     // 지도 — 다크블루는 앱 테마의 어두운 지도(시안 러닝 화면 다크 판), 화이트블루는 밝은 거리 지도
     mapFilter = null, mapShade = 0.30f, mapRoads = null,
+    eff = Color(0xFF4A7DFF), com = Color(0xFF9A80FF), dur = Color(0xFF2FCB9F), gold = Color(0xFFFFB938),
 )
 
 val LightRunTone = RunTone(
@@ -245,7 +252,7 @@ val LightRunTone = RunTone(
     dangerFace = Color(0xFFFF3B30), dangerBase = Color.Transparent, dangerInk = Color.White,
     dangerText = Color(0xFFFF3B30),
     disabledFace = Color(0xFFE8E8ED), disabledInk = Color(0xFFA9A9AE), disabledBase = Color.Transparent,
-    divider = Color(0x293C3C43), track = Color(0xFFE3E3E8),
+    divider = Color(0x293C3C43), track = Color(0xFFE6E6EB),
     barFill = listOf(Color(0xFF1F5EFF), Color(0xFF1F5EFF)),
     sheetTop = Color.White, sheet = Color.White, sheetEdge = Color.Transparent,
     handle = Color(0x4D3C3C43), scrim = Color(0x40000000),

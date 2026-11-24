@@ -501,7 +501,8 @@ fun PrimaryButton(
                     onPhoto -> RimKind.Photo
                     else -> RimKind.Primary
                 },
-                enabled = shown != ButtonState.Disabled,
+                // 2026-11-24 재디자인 — 파란 주 버튼 바깥의 빛 테두리는 뺀다(사진 위 · 회색 상태 테두리는 그대로)
+                enabled = shown != ButtonState.Disabled && !(asPrimary && !onPhoto),
             )
             // 로딩은 스피너만 보이지만 글("저장 중…")은 읽기 도구 · 검사에 그대로 남긴다
             .semantics { if (shown == ButtonState.Loading) { contentDescription = text; this.text = androidx.compose.ui.text.AnnotatedString(text) } }
