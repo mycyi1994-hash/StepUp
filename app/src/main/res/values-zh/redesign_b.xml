@@ -21,4 +21,7 @@
     <string name="rd_b_show_rec">查看推荐</string>
     <string name="rd_b_now">当前 %1$s</string>
     <string name="rd_b_points_unit">个</string>
+    <string name="rd_b_quality_title">抽到的属性</string>
+    <string name="rd_b_final_lead">分配的点数无法立即撤回。</string>
+    <string name="rd_b_respec_every">每 %1$d 级可重新分配一次</string>
 </resources>

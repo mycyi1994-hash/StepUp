@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
+import androidx.compose.ui.unit.em
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -58,7 +60,7 @@ import com.stepup.android.ui.components.PlainListCard
 import com.stepup.android.ui.components.runTextStyle
 import com.stepup.android.ui.components.runTone
 import com.stepup.android.ui.experience.feedbackClickable
-import com.stepup.android.ui.theme.StepUpNumbers
+import com.stepup.android.ui.theme.StepUpSans
 
 /*
  * 신발 상세의 능력치 네 칸 — 카툰 입체형(2026-09-30 사용자 확정안 1번, docs/redesign/shoe-detail-cartoon-2026-09-30).
@@ -149,7 +151,7 @@ internal fun durabilityView(shoe: Sneaker, rules: ShoeRules): DurabilityView {
 
 /** "13 / 31분" — 앞 숫자만 크게 · 색으로, 나머지는 보조 글자. 한 줄(줄바꿈 없음) */
 @Composable
-internal fun DurabilityNumber(view: DurabilityView, modifier: Modifier = Modifier, size: TextUnit = 30.sp) {
+internal fun DurabilityNumber(view: DurabilityView, modifier: Modifier = Modifier, size: TextUnit = 27.sp) {
     val t = runTone()
     val start = view.text.indexOf(view.lead).coerceAtLeast(0)
     val end = (start + view.lead.length).coerceAtMost(view.text.length)
@@ -157,13 +159,13 @@ internal fun DurabilityNumber(view: DurabilityView, modifier: Modifier = Modifie
         append(view.text)
         if (view.lead.isNotEmpty() && view.text.startsWith(view.lead, start)) {
             addStyle(
-                SpanStyle(fontFamily = StepUpNumbers, fontSize = size, fontWeight = FontWeight.ExtraBold, color = view.color),
+                SpanStyle(fontFamily = StepUpSans, fontSize = size, fontWeight = FontWeight.ExtraBold, color = view.color, letterSpacing = (-0.02).em),
                 start, end,
             )
         }
     }
     Text(
-        text, style = runTextStyle(16.sp, t.label, FontWeight.SemiBold, 1.15f).copy(fontFeatureSettings = "tnum"),
+        text, style = runTextStyle(18.sp, t.label, FontWeight.SemiBold, 1.15f).copy(fontFeatureSettings = "tnum"),
         maxLines = 1, softWrap = false, modifier = modifier,
     )
 }
@@ -185,7 +187,8 @@ internal fun ShoeDurabilityCard(
     val t = runTone()
     val title = stringResource(R.string.sdv_stat_durability)
     Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.panel).padding(horizontal = 18.dp, vertical = 18.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.panel).plainCardEdge()
+            .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -195,14 +198,15 @@ internal fun ShoeDurabilityCard(
             Spacer(Modifier.width(12.dp))
             DurabilityNumber(view, Modifier.testTag(numberTag))
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
         PlainBar(view.fraction, view.color, Modifier.fillMaxWidth().testTag(barTag), height = barHeight)
         if (view.lines.isNotEmpty() || onRepair != null) {
             Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     view.lines.forEach { line ->
-                        Text(line, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.4f))
+                        Text(line, style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.3f)
+                            .copy(lineBreak = com.stepup.android.ui.components.KoreanLineBreak))
                     }
                 }
                 if (onRepair != null) {
@@ -305,16 +309,16 @@ private fun StatLine(
             .feedbackClickable(role = Role.Button, onClick = onToggle)
             .semantics(mergeDescendants = true) { contentDescription = listOfNotNull("$title $value", meaning.takeIf { open }, action).joinToString(". ") }
             .testTag(tag)
-            .padding(vertical = 15.dp),
+            .padding(top = 13.dp, bottom = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = runTextStyle(15.5.sp, t.text, FontWeight.SemiBold, 1.3f), maxLines = 1,
+            Text(title, style = runTextStyle(16.5.sp, t.text, FontWeight.SemiBold, 1.25f), maxLines = 1,
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             Spacer(Modifier.width(12.dp))
-            Text(value, style = runTextStyle(16.sp, t.text, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
+            Text(value, style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold, 1.2f).copy(fontFeatureSettings = "tnum"),
                 maxLines = 1, softWrap = false, modifier = Modifier.testTag("$tag-value"))
         }
-        Spacer(Modifier.height(9.dp))
+        Spacer(Modifier.height(8.dp))
         PlainBar(fraction, color, Modifier.fillMaxWidth().testTag("$tag-bar"), height = 3.dp)
         if (open) {
             Spacer(Modifier.height(8.dp))
@@ -440,3 +444,7 @@ fun ShoeStatCellsPlaceholder(modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** 흰 카드의 1dp 둘레 — 목록 카드([com.stepup.android.ui.components.PlainListCard])와 같은 선. 내구도 칸 · 내 신발 탭의 한 줄 카드가 쓴다 */
+@Composable
+internal fun Modifier.plainCardEdge(): Modifier = this.border(1.dp, runTone().panelEdge, RoundedCornerShape(22.dp))

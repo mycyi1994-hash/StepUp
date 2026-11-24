@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.stepup.android.R
 import com.stepup.android.core.ServiceLocator
@@ -65,7 +67,6 @@ import com.stepup.android.data.repo.EconomyOutcome
 import com.stepup.android.domain.PointsPreview
 import com.stepup.android.domain.Sneaker
 import com.stepup.android.ui.components.PlainDivider
-import com.stepup.android.ui.components.PlainNumber
 import com.stepup.android.ui.components.ProductImage
 import com.stepup.android.ui.components.RunButton
 import com.stepup.android.ui.components.RunButtonKind
@@ -160,9 +161,24 @@ fun ShoePointsSheet(
         dismissible = !sending,
         closeTag = "points-close",
     ) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag(phase.sceneTag())) {
-            PointsBody(shoe, phase, actions, onSignIn, firstPoints, preview)
-        }
+        ShoePointsSheetBody(shoe, phase, actions, onSignIn, firstPoints, preview)
+    }
+}
+
+/** 시트 안 — 창 없이 그리는 캡처(시안 맞대기)도 이것을 그린다 */
+@Composable
+internal fun ShoePointsSheetBody(
+    shoe: Sneaker,
+    phase: PointsPhase,
+    actions: PointsActions,
+    onSignIn: (() -> Unit)?,
+    firstPoints: Boolean = false,
+    preview: PointsPreview? = null,
+    /** 캡처용 — 직접 나누기 장면에서 시작 */
+    startManual: Boolean = false,
+) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag(phase.sceneTag())) {
+        PointsBody(shoe, phase, actions, onSignIn, firstPoints, preview, startManual)
     }
 }
 
@@ -181,10 +197,11 @@ private fun ColumnScope.PointsBody(
     onSignIn: (() -> Unit)?,
     firstPoints: Boolean,
     preview: PointsPreview?,
+    startManual: Boolean = false,
 ) {
     val basis = phase.basis
     // 직접 나누기를 골랐는가 — 확인으로 갔다 "취소"로 돌아와도 그대로(장면 밖에 둔다)
-    var manual by rememberSaveable(basis.shoeId) { mutableStateOf(false) }
+    var manual by rememberSaveable(basis.shoeId) { mutableStateOf(startManual) }
     when (phase) {
         is PointsPhase.Editing -> {
             // 미리보기는 서버가 본 값이 이 시트의 값과 같을 때만 쓴다(낡은 사본이면 숨긴다)
@@ -238,36 +255,40 @@ private fun ColumnScope.RecommendView(
     val gain = target?.dayNet?.let { next -> live.now?.dayNet?.let { now -> next - now } }?.takeIf { it.isFinite() && it >= 0.005 }
     val art = sneakerArtRes(shoe)
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.cobalt)
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(t.cobalt)
             .semantics(mergeDescendants = true) {}
             .testTag("points-recommend-card")
-            .padding(start = 20.dp, end = 14.dp, top = 18.dp, bottom = 18.dp),
+            .padding(start = 20.dp, end = 12.dp, top = 22.dp, bottom = 22.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(lead, style = runTextStyle(14.sp, Color.White.copy(alpha = 0.86f), FontWeight.SemiBold, 1.35f))
-            Spacer(Modifier.height(4.dp))
-            Text(headline, style = runTextStyle(28.sp, Color.White, FontWeight.ExtraBold, 1.2f), maxLines = 2,
+            Text(lead, style = runTextStyle(15.sp, Color.White.copy(alpha = 0.86f), FontWeight.SemiBold, 1.3f)
+                .copy(lineBreak = com.stepup.android.ui.components.KoreanLineBreak))
+            Spacer(Modifier.height(2.dp))
+            Text(headline, style = runTextStyle(32.sp, Color.White, FontWeight.ExtraBold, 1.2f), maxLines = 2,
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("points-recommend-headline"))
             if (gain != null) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.rd_b_rec_gain, formatApproxSup(gain)),
-                    style = runTextStyle(15.sp, Color.White, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum"),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    style = runTextStyle(17.sp, Color.White.copy(alpha = 0.92f), FontWeight.SemiBold, 1.3f)
+                        .copy(fontFeatureSettings = "tnum", lineBreak = com.stepup.android.ui.components.KoreanLineBreak),
+                    maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
         if (art != null) {
-            Spacer(Modifier.width(10.dp))
-            ProductImage(art, height = 58.dp, modifier = Modifier.width(96.dp))
+            Spacer(Modifier.width(8.dp))
+            // 큰 글씨면 그림을 줄여 글 칸을 넓힌다(카드 안에 다 들어가게)
+            val big = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.1f
+            ProductImage(art, height = if (big) 52.dp else 66.dp, modifier = Modifier.width(if (big) 92.dp else 118.dp))
         }
     }
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(8.dp))
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(pointsNote(basis), style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f),
+        Text(sceneNote(basis), style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = com.stepup.android.ui.components.KoreanLineBreak),
             modifier = Modifier.weight(1f).testTag("points-note"))
         RunTextAction(stringResource(R.string.rd_b_manual), onManual, chevron = true, modifier = Modifier.testTag("points-manual"))
     }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(8.dp))
     RunButton(
         stringResource(R.string.ers_points_recommend),
         onClick = {
@@ -297,8 +318,6 @@ private fun ColumnScope.ManualView(
     val basis = phase.basis
     val draft = phase.draft
     var selected by rememberSaveable(basis.shoeId) { mutableStateOf(PointStat.EFFICIENCY) }
-    // 효율 포인트가 닳는 속도를 올리는 규칙이면 가득에서 달리는 분이 바뀐다(효율로 줄고 내구도로 는다)
-    val lifeMoves = basis.rules.stats.effWearExp > 0.0
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (onShowRecommend != null) {
             SheetBack(onShowRecommend)
@@ -315,27 +334,17 @@ private fun ColumnScope.ManualView(
     StatSwitcher(basis, draft, selected, onSelect = { selected = it })
     Spacer(Modifier.height(12.dp))
     StatEditor(basis, draft, selected, live, actions)
-    val help = if (newStatMeaning(basis.rules)) pointHelp(selected) else stringResource(statMeaningRes(selected, false))
+    // 2026-11-24 재디자인(06 ②) — 고른 능력치의 뜻 · 가득에서 달리는 분은 확인(③)의 줄로, 등급의 레벨당 포인트는 완료(④)로 옮겼다
     Spacer(Modifier.height(10.dp))
-    Text(help, style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.4f), textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().testTag("points-help-" + selected.name.lowercase()))
-    if (lifeMoves && selected != PointStat.DURABILITY) {
-        Spacer(Modifier.height(4.dp))
-        LifeLine(basis, draft)
-    }
-    if (live != null) {
-        Spacer(Modifier.height(4.dp))
-        PreviewBasisLine(live)
-    }
-    Spacer(Modifier.height(8.dp))
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            if (firstPoints && !basis.respec) finalNote(basis.rules) else pointsNote(basis),
-            style = runTextStyle(13.5.sp, t.label, FontWeight.Medium, 1.35f),
+            if (firstPoints && !basis.respec) finalNote(basis.rules) else sceneNote(basis),
+            style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.35f).copy(lineBreak = com.stepup.android.ui.components.KoreanLineBreak),
             modifier = Modifier.weight(1f).testTag("points-note"),
         )
         if (onShowRecommend != null) {
             RunTextAction(stringResource(R.string.rd_b_show_rec), onShowRecommend, modifier = Modifier.testTag("points-show-recommend"))
+            Spacer(Modifier.width(4.dp))
         }
     }
     if (all != null) {
@@ -368,7 +377,7 @@ private fun ColumnScope.ManualView(
             modifier = Modifier.testTag("points-error").semantics { liveRegion = LiveRegionMode.Polite },
         )
     }
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(8.dp))
     when {
         error == PointsError.SIGN_IN && onSignIn != null ->
             RunButton(stringResource(R.string.care_sign_in), onSignIn, modifier = Modifier.testTag("points-sign-in"))
@@ -408,32 +417,24 @@ private fun FreeLine(free: Int, basis: PointsBasis) {
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("points-free"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(R.string.points_free), style = runTextStyle(14.5.sp, t.label, FontWeight.SemiBold), maxLines = 1)
+        Text(stringResource(R.string.points_free), style = runTextStyle(16.sp, t.label, FontWeight.SemiBold), maxLines = 1)
         Spacer(Modifier.width(10.dp))
         if (!basis.respec && start in 1..10) {
             repeat(start) { i ->
                 val on = i < free
                 Box(
-                    Modifier.padding(end = 5.dp).size(11.dp).clip(CircleShape)
+                    Modifier.padding(end = 6.dp).size(14.dp).clip(CircleShape)
                         .background(if (on) t.cobalt else Color.Transparent, CircleShape)
                         .then(if (on) Modifier else Modifier.border(1.5.dp, t.track, CircleShape)),
                 )
             }
             Spacer(Modifier.width(5.dp))
         }
-        Text("$free", style = runTextStyle(16.sp, t.cobaltText, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
+        Text("$free", style = runTextStyle(18.sp, t.cobaltText, FontWeight.ExtraBold, 1.2f).copy(fontFeatureSettings = "tnum"),
             maxLines = 1, softWrap = false, modifier = Modifier.testTag("points-free-value"))
         if (unit.isNotBlank()) {
-            Spacer(Modifier.width(2.dp))
-            Text(unit, style = runTextStyle(16.sp, t.cobaltText, FontWeight.Bold, 1.2f), maxLines = 1, softWrap = false)
+            Text(unit, style = runTextStyle(18.sp, t.cobaltText, FontWeight.ExtraBold, 1.2f), maxLines = 1, softWrap = false)
         }
-        Spacer(Modifier.width(10.dp))
-        val grade = basis.rules.grade(basis.rarity)
-        Text(
-            stringResource(R.string.v4s_points_per_level, grade.pointsPerLevel, grade.pointsMilestone),
-            style = runTextStyle(12.5.sp, t.muted, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End, modifier = Modifier.weight(1f).testTag("points-per-level"),
-        )
     }
 }
 
@@ -442,7 +443,7 @@ private fun FreeLine(free: Int, basis: PointsBasis) {
 private fun StatSwitcher(basis: PointsBasis, draft: PointsDraft, selected: PointStat, onSelect: (PointStat) -> Unit) {
     val t = runTone()
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(t.inset).padding(4.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(t.inset).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         PointStat.entries.forEach { stat ->
@@ -452,27 +453,46 @@ private fun StatSwitcher(basis: PointsBasis, draft: PointsDraft, selected: Point
             val countCd = stringResource(R.string.points_count_cd, label, draft[stat])
             val moved = draft[stat] != basis.saved[stat]
             Row(
-                Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp))
+                // 고른 칸은 이름 옆에 알약이 붙어 조금 넓게(시안 06 ②)
+                Modifier.weight(if (on) 1.4f else 1f).heightIn(min = 52.dp).clip(RoundedCornerShape(16.dp))
                     .background(if (on) t.panel else Color.Transparent)
                     .feedbackClickable(role = Role.Tab, onClick = { onSelect(stat) })
                     .semantics { this.selected = on }
                     .testTag("points-tab-$key")
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
-                Icon(statIcon(stat, filled = false), contentDescription = null, tint = if (on) statColor(stat) else t.label,
-                    modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(label, style = runTextStyle(14.5.sp, if (on) t.text else t.label, FontWeight.SemiBold, 1.2f),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                Spacer(Modifier.width(5.dp))
-                Text(
-                    "${draft[stat]}",
-                    style = runTextStyle(14.sp, if (moved) t.cobaltText else t.muted, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
-                    maxLines = 1, softWrap = false,
-                    modifier = Modifier.semantics { contentDescription = countCd }.testTag("points-count-$key"),
+                Icon(statIcon(stat, filled = on), contentDescription = null, tint = if (on) statColor(stat) else t.label,
+                    modifier = Modifier.size(19.dp))
+                Spacer(Modifier.width(6.dp))
+                // 좁은 폭 · 큰 글씨에서는 이름을 줄여 다 보인다(… 로 자르지 않는다)
+                androidx.compose.foundation.text.BasicText(
+                    label, style = runTextStyle(16.sp, if (on) t.text else t.label, if (on) FontWeight.Bold else FontWeight.SemiBold, 1.2f),
+                    maxLines = 1,
+                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 16.sp, stepSize = 0.5.sp),
+                    modifier = Modifier.weight(1f, fill = false),
                 )
+                // 이 능력치에 든 포인트 — 이번에 바꿨으면 파란 알약(처음 넣는 것이면 "+1"), 이미 든 것만 있으면 흐린 숫자, 0 이면 없음
+                val count = draft[stat]
+                if (moved || count > 0) {
+                    Spacer(Modifier.width(6.dp))
+                    val countStyle = runTextStyle(13.sp, if (moved) Color.White else t.muted, FontWeight.ExtraBold, 1.2f)
+                        .copy(fontFeatureSettings = "tnum")
+                    Row(
+                        Modifier.then(
+                            if (moved) Modifier.clip(RoundedCornerShape(50)).background(t.cobalt).padding(horizontal = 7.dp, vertical = 2.dp)
+                            else Modifier,
+                        ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (moved && basis.saved[stat] == 0) Text("+", style = countStyle, maxLines = 1)
+                        Text(
+                            "$count", style = countStyle, maxLines = 1, softWrap = false,
+                            modifier = Modifier.semantics { contentDescription = countCd }.testTag("points-count-$key"),
+                        )
+                    }
+                }
             }
         }
     }
@@ -502,19 +522,25 @@ private fun StatEditor(basis: PointsBasis, draft: PointsDraft, stat: PointStat, 
         else -> stringResource(R.string.v4s_points_hint, rate)
     }
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.inset)
-            .testTag("points-row-$key").padding(horizontal = 16.dp, vertical = 18.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(t.inset)
+            .testTag("points-row-$key").padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, style = runTextStyle(14.sp, color, FontWeight.Bold, 1.2f), maxLines = 1)
-        Spacer(Modifier.height(4.dp))
+        Text(label, style = runTextStyle(15.sp, color, FontWeight.Bold, 1.2f), maxLines = 1)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             StepButton(Icons.Filled.Remove, stringResource(R.string.points_remove_cd, label), basis.canRemove(draft, stat),
                 { actions.onRemove(stat) }, "points-remove-$key", filled = false)
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 // 긴 값("1,063" · "29.5분")은 조금 작게 — 360dp · 큰 글씨에서도 −/+ 사이에 한 줄로
-                PlainNumber(
-                    next, unit, size = if (next.length > 4 || unit != null) 44.sp else 52.sp, color = color, unitColor = color,
+                // 큰 값 — 앱 글꼴 ExtraBold(시안 06 ②), 긴 값("1,063" · "29.5분")은 조금 작게 — 360dp · 큰 글씨에서도 −/+ 사이에 한 줄로
+                Text(
+                    buildAnnotatedString {
+                        append(next)
+                        if (unit != null) withStyle(SpanStyle(fontSize = 26.sp)) { append(unit) }
+                    },
+                    style = runTextStyle(if (next.length > 4 || unit != null) 50.sp else 60.sp, color, FontWeight.ExtraBold, 1.1f)
+                        .copy(fontFeatureSettings = "tnum", letterSpacing = (-0.03).em),
+                    maxLines = 1, softWrap = false,
                     modifier = Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
                         .testTag("points-value-$key"),
                 )
@@ -522,22 +548,26 @@ private fun StatEditor(basis: PointsBasis, draft: PointsDraft, stat: PointStat, 
             StepButton(Icons.Filled.Add, stringResource(R.string.points_add_cd, label), basis.canAdd(draft, stat),
                 { actions.onAdd(stat) }, "points-add-$key", filled = true)
         }
-        Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.rd_b_now, now + (unit ?: "")), style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.3f)
+        Text(stringResource(R.string.rd_b_now, now + (unit ?: "")), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.3f)
             .copy(fontFeatureSettings = "tnum"), maxLines = 1)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (worth is PointWorth.Gain) {
-                Icon(Icons.Filled.Bolt, contentDescription = null, tint = t.cobaltText, modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(4.dp))
+                Icon(Icons.Filled.Bolt, contentDescription = null, tint = t.cobaltText, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(6.dp))
             }
             Text(
                 worthText ?: hint,
-                style = runTextStyle(14.5.sp, if (worth is PointWorth.Gain) t.text else t.label, FontWeight.SemiBold, 1.35f)
+                style = runTextStyle(16.5.sp, if (worth is PointWorth.Gain) t.text else t.label, FontWeight.SemiBold, 1.35f)
                     .copy(fontFeatureSettings = "tnum"),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(if (worthText != null) "points-worth-$key" else "points-hint-$key"),
             )
+        }
+        // 위 "하루 약 +N SUP" 가 무엇으로 셈한 어림값인지(서버 0119 미리보기의 기준)
+        if (live != null && worthText != null) {
+            Spacer(Modifier.height(4.dp))
+            PreviewBasisLine(live)
         }
     }
 }
@@ -567,23 +597,37 @@ private fun ColumnScope.ConfirmView(shoe: Sneaker, phase: PointsPhase, actions: 
     val basis = phase.basis
     val draft = phase.draft
     CareSheetTitle(stringResource(R.string.points_confirm_title), shoe.nameAndNumber())
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(16.dp))
     PlainDivider()
-    PointStat.entries.forEach { stat ->
+    PointStat.entries.forEachIndexed { index, stat ->
+        if (index > 0) PlainDivider()
         ChangeRow(basis, draft, stat, withIcon = true)
-        PlainDivider()
+    }
+    // 바뀌는 능력치의 뜻(② 에서 옮김) — 효율이면 "더 빨리 벌어요 · 신발과 에너지도 빨리 써요"
+    val changed = PointStat.entries.filter { draft[it] != basis.saved[it] }
+    if (changed.isNotEmpty()) {
+        Spacer(Modifier.height(14.dp))
+        val helps = changed.map { stat ->
+            if (newStatMeaning(basis.rules)) pointHelp(stat) else stringResource(statMeaningRes(stat, false))
+        }
+        Text(helps.joinToString("\n"), style = runTextStyle(14.5.sp, t.label, FontWeight.Medium, 1.45f),
+            modifier = Modifier.fillMaxWidth().testTag("points-help"))
     }
     Spacer(Modifier.height(14.dp))
+    val every = respecEveryOf(basis.rules)
     Text(
         when {
             basis.lowers(draft) -> stringResource(R.string.points_confirm_respec)
-            // 서버 0119 — 되돌릴 수 없지만 5레벨마다 한 번 다시 나눌 수 있다고 함께 말한다
-            respecEveryOf(basis.rules) > 0 -> finalNote(basis.rules)
+            every > 0 -> stringResource(R.string.rd_b_final_lead)
             else -> stringResource(R.string.points_confirm_body)
         },
-        style = runTextStyle(14.5.sp, t.text, FontWeight.SemiBold, 1.45f), modifier = Modifier.testTag("points-confirm-note"),
+        style = runTextStyle(15.5.sp, t.text, FontWeight.Bold, 1.45f), modifier = Modifier.testTag("points-confirm-note"),
     )
-    Spacer(Modifier.height(18.dp))
+    // 서버 0119 — 되돌릴 수 없지만 5레벨마다 한 번 다시 나눌 수 있다(흐린 둘째 줄)
+    if (!basis.lowers(draft) && every > 0) {
+        Text(stringResource(R.string.rd_b_respec_every, every), style = runTextStyle(15.5.sp, t.label, FontWeight.Medium, 1.45f))
+    }
+    Spacer(Modifier.height(20.dp))
     if (phase is PointsPhase.Sending) {
         RunButton(stringResource(R.string.points_sending), {}, busy = true, modifier = Modifier.testTag("points-send"))
     } else {
@@ -602,17 +646,17 @@ private fun ColumnScope.DoneView(shoe: Sneaker, phase: PointsPhase.Done, actions
     val draft = phase.draft
     Image(
         painterResource(R.drawable.scene_on_shoe), contentDescription = null, contentScale = ContentScale.Fit,
-        modifier = Modifier.align(Alignment.CenterHorizontally).height(116.dp),
+        modifier = Modifier.align(Alignment.CenterHorizontally).height(120.dp),
     )
     Spacer(Modifier.height(14.dp))
     Text(
-        stringResource(R.string.points_done_title), style = runTextStyle(22.sp, t.text, FontWeight.ExtraBold, 1.3f),
+        stringResource(R.string.points_done_title), style = runTextStyle(25.sp, t.text, FontWeight.ExtraBold, 1.25f),
         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().semantics { heading() },
     )
     Spacer(Modifier.height(4.dp))
-    Text(shoe.nameAndNumber(), style = runTextStyle(14.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,
+    Text(shoe.nameAndNumber(), style = runTextStyle(15.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth())
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(18.dp))
     PointStat.entries.forEachIndexed { index, stat ->
         if (index > 0) PlainDivider()
         ChangeRow(basis, draft, stat, withIcon = false)
@@ -622,9 +666,15 @@ private fun ColumnScope.DoneView(shoe: Sneaker, phase: PointsPhase.Done, actions
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.points_manage_free, free), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
             modifier = Modifier.testTag("points-free"))
+        // 등급의 레벨당 포인트(② 의 남은 포인트 줄에서 옮김) — 남은 포인트가 있을 때 다음에 받을 몫과 함께
+        val grade = basis.rules.grade(basis.rarity)
+        Text(
+            stringResource(R.string.v4s_points_per_level, grade.pointsPerLevel, grade.pointsMilestone),
+            style = runTextStyle(13.sp, t.muted, FontWeight.Medium), modifier = Modifier.testTag("points-per-level"),
+        )
     }
-    Spacer(Modifier.height(18.dp))
-    RunButton(stringResource(R.string.care_done), actions.onClose, modifier = Modifier.testTag("points-done"))
+    Spacer(Modifier.height(22.dp))
+    RunButton(stringResource(R.string.common_ok), actions.onClose, modifier = Modifier.testTag("points-done"))
 }
 
 /**
@@ -641,21 +691,24 @@ private fun ChangeRow(basis: PointsBasis, draft: PointsDraft, stat: PointStat, w
     val delta = draft[stat] - basis.saved[stat]
     val changed = delta != 0 || now != next
     Row(
-        Modifier.fillMaxWidth().heightIn(min = if (withIcon) 62.dp else 56.dp)
+        Modifier.fillMaxWidth().heightIn(min = if (withIcon) 58.dp else 50.dp)
             .semantics(mergeDescendants = true) {}.testTag("points-row-$key"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (withIcon) {
-            Icon(statIcon(stat, filled = true), contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(14.dp))
+            Icon(statIcon(stat, filled = true), contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(16.dp))
         }
-        Text(statLabel(stat), style = runTextStyle(16.sp, t.text, FontWeight.SemiBold, 1.25f), maxLines = 1,
-            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-        if (delta != 0) {
-            Spacer(Modifier.width(8.dp))
-            Text(if (delta > 0) "+$delta" else "−${-delta}", style = runTextStyle(15.sp, color, FontWeight.Bold, 1.2f), maxLines = 1)
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(statLabel(stat), style = runTextStyle(17.sp, t.text, if (withIcon) FontWeight.Bold else FontWeight.SemiBold, 1.25f),
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            // 몇 개를 넣는지는 확인(③)에만 — 완료(④)는 바뀐 값만(시안 06 ④)
+            if (delta != 0 && withIcon) {
+                Spacer(Modifier.width(14.dp))
+                Text(if (delta > 0) "+$delta" else "−${-delta}", style = runTextStyle(16.5.sp, color, FontWeight.ExtraBold, 1.2f), maxLines = 1)
+            }
         }
-        Spacer(Modifier.weight(1f).width(12.dp))
+        Spacer(Modifier.width(12.dp))
         Text(
             buildAnnotatedString {
                 if (changed) {
@@ -665,7 +718,7 @@ private fun ChangeRow(basis: PointsBasis, draft: PointsDraft, stat: PointStat, w
                     append("$next$unit")
                 }
             },
-            style = runTextStyle(17.sp, if (withIcon) t.label else t.text, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
+            style = runTextStyle(20.sp, if (withIcon) t.label else t.text, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
             maxLines = 1, softWrap = false, modifier = Modifier.testTag("points-value-$key"),
         )
     }
@@ -702,7 +755,7 @@ private fun statColor(stat: PointStat): Color {
 private fun statIcon(stat: PointStat, filled: Boolean): ImageVector = when (stat) {
     PointStat.EFFICIENCY -> Icons.Filled.Bolt
     PointStat.COMFORT -> if (filled) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder
-    PointStat.DURABILITY -> Icons.Outlined.Timer
+    PointStat.DURABILITY -> if (filled) Icons.Filled.Timer else Icons.Outlined.Timer
 }
 
 /**
@@ -723,22 +776,6 @@ private fun PreviewBasisLine(preview: PointsPreview) {
 /** 기록이 없을 때 서버가 가정하는 러닝(분) — 서버가 값을 보내지 않았을 때만 쓴다(계약서 3장 "30분 달리기 하루 한 번") */
 private const val DEFAULT_PREVIEW_MINUTES = 30
 
-/** "가득에서 31분 → 29분" — 이 배분으로 신발이 가득에서 달리는 분(서버 0119). 효율에 넣으면 줄고 내구도에 넣으면 는다 */
-@Composable
-private fun LifeLine(basis: PointsBasis, draft: PointsDraft) {
-    val t = runTone()
-    val now = formatMinutes(basis.lifeMinutes(basis.saved))
-    val next = formatMinutes(basis.lifeMinutes(draft))
-    val moved = now != next
-    Text(
-        if (moved) stringResource(R.string.ers_points_life_change, now, next) else stringResource(R.string.ers_points_life, next),
-        style = runTextStyle(13.5.sp, if (moved) t.text else t.label, if (moved) FontWeight.SemiBold else FontWeight.Medium)
-            .copy(fontFeatureSettings = "tnum"),
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }.testTag("points-life"),
-    )
-}
-
 /** 고른 능력치의 뜻 한 줄(서버 0119) — 효율: 더 빨리 벌고 신발 · 에너지도 빨리 쓴다 · 착화감: 하루에 더 많이 · 내구도: 가득 수리비는 그대로 */
 @Composable
 private fun pointHelp(stat: PointStat): String = stringResource(
@@ -756,6 +793,16 @@ private fun pointHelp(stat: PointStat): String = stringResource(
 private fun finalNote(rules: com.stepup.android.domain.ShoeRules): String {
     val every = respecEveryOf(rules)
     return if (every > 0) stringResource(R.string.ers_points_note_final, every) else stringResource(R.string.points_note_final)
+}
+
+/**
+ * 추천(①) · 직접 나누기(②) 아래 한 줄 — 서버 0119 처럼 5레벨마다 다시 나눌 수 있으면 그 한 줄만("되돌릴 수 없어요"는 확인 ③ 에서 굵게),
+ * 아니면 [pointsNote] 그대로
+ */
+@Composable
+private fun sceneNote(basis: PointsBasis): String {
+    val every = respecEveryOf(basis.rules)
+    return if (!basis.respec && every > 0) stringResource(R.string.rd_b_respec_every, every) else pointsNote(basis)
 }
 
 /** 나누는 장면의 안내 — 다시 나누기가 남았으면 "다시 나누기 1번 · 5레벨마다 한 번", 아니면 되돌릴 수 없다는 한 줄 */

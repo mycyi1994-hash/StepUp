@@ -485,7 +485,6 @@ private fun DetailBody(
     val shoe = state.shoe
     val rules = rememberShoeRules()
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(4.dp))
         // 신발 그림 — 바탕 위 가운데, 높이만 고정. 이 앱에 그림이 없는 모델이면 다른 신발로 채우지 않고 다시 불러오기만
         val art = sneakerArtRes(shoe)
         androidx.compose.runtime.key(artAttempt) {
@@ -497,7 +496,7 @@ private fun DetailBody(
                 }
             }
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
         val wearingText = stringResource(R.string.sdv_status_wearing)
         val meta = listOfNotNull(
             shoe.tier.label(), "Lv.${shoe.level}", formatShoeNumber(shoe.mintNumber), wearingText.takeIf { shoe.equipped },
@@ -514,23 +513,14 @@ private fun DetailBody(
                 ),
                 maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                meta, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.35f).copy(fontFeatureSettings = "tnum"),
+                meta, style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.35f)
+                    .copy(fontFeatureSettings = "tnum", lineBreak = com.stepup.android.ui.components.KoreanLineBreak),
                 textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.testTag("shoe-detail-meta"),
             )
         }
-        // 뽑힌 값의 별 · 유형(경제 4판 — 같은 등급 안에서 얼마나 잘 뽑혔는가). 뽑은 값을 모르는 신발에는 없다
-        val quality = shoeQualityOf(shoe, rules)
-        if (quality != null) {
-            val qualityCd = qualityDescription(quality)
-            Text(
-                qualityLabel(quality), style = runTextStyle(13.5.sp, t.label, FontWeight.Medium),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 2.dp).semantics { contentDescription = qualityCd }.testTag("shoe-quality"),
-            )
-        }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(16.dp))
         // SD18 · SD19 — 결과가 안 정해진 강화 · 수리. 아래 값은 마지막으로 확인한 값이다
         if (care.upgradePending) {
             RunNotice(
@@ -599,10 +589,11 @@ private fun CareList(
                 trailing = if (split) ({
                     Text(
                         stringResource(R.string.rd_b_points_split, entry.free),
-                        style = runTextStyle(16.sp, t.cobaltText, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
+                        style = runTextStyle(18.sp, t.cobaltText, FontWeight.Bold, 1.2f).copy(fontFeatureSettings = "tnum"),
                         maxLines = 1, softWrap = false, modifier = Modifier.testTag("shoe-points-notice"),
                     )
                 }) else null,
+                minHeight = 48.dp,
                 modifier = Modifier.alpha(if (enabled) 1f else 0.5f).testTag("shoe-care-points"),
             )
             PlainDivider()
@@ -613,9 +604,10 @@ private fun CareList(
             title = stringResource(R.string.item_slots_title),
             onClick = { Toast.makeText(context, slotsToast, Toast.LENGTH_SHORT).show() },
             trailing = if (!ItemSlots.OPEN) ({
-                Text(stringResource(R.string.item_slots_soon), style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.2f),
+                Text(stringResource(R.string.item_slots_soon), style = runTextStyle(16.sp, t.label, FontWeight.Medium, 1.2f),
                     maxLines = 1, softWrap = false)
             }) else null,
+            minHeight = 48.dp,
             modifier = Modifier.testTag("shoe-item-slots"),
         )
         PlainDivider()
@@ -625,14 +617,20 @@ private fun CareList(
             var open by rememberSaveable(shoe.id) { mutableStateOf(false) }
             PlainListRow(
                 title = stringResource(R.string.rd_b_daily_max_title),
-                value = stringResource(R.string.rd_b_daily_max_value, dailyMaxNumber(dailyMax)),
                 sub = if (open) stringResource(R.string.tb_daily_max_info) else null,
-                onClick = { open = !open }, chevron = false,
+                onClick = { open = !open }, chevron = false, minHeight = 48.dp,
+                trailing = {
+                    Text(
+                        stringResource(R.string.rd_b_daily_max_value, dailyMaxNumber(dailyMax)),
+                        style = runTextStyle(18.sp, t.text, FontWeight.ExtraBold, 1.2f).copy(fontFeatureSettings = "tnum"),
+                        maxLines = 1, softWrap = false,
+                    )
+                },
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag("shoe-daily-max"),
             )
             PlainDivider()
         }
-        PlainListRow(title = stringResource(R.string.care_record), onClick = onRecord, modifier = Modifier.testTag("shoe-care-record"))
+        PlainListRow(title = stringResource(R.string.care_record), onClick = onRecord, minHeight = 48.dp, modifier = Modifier.testTag("shoe-care-record"))
     }
 }
 
@@ -702,6 +700,11 @@ private fun RecordSheet(shoe: Sneaker, zone: ZoneId, onClose: () -> Unit) {
                 ShoeGradeBadge(shoe.tier, decorative = true)
             }
             CareInfoRow(stringResource(R.string.sdv_info_level), "${shoe.level} / ${shoe.maxLevel}", "shoe-info-level")
+            // 뽑힌 값의 별 · 유형(경제 4판) — 2026-11-24 재디자인으로 상세 본문에서 여기로 옮겼다. 뽑은 값을 모르는 신발에는 없다
+            val quality = shoeQualityOf(shoe, rememberShoeRules())
+            if (quality != null) {
+                CareInfoRow(stringResource(R.string.rd_b_quality_title), qualityLabel(quality), "shoe-quality")
+            }
             // 속성은 예전 52종에만 있다 — 새 도감 신발에 자리 값을 보이지 않는다
             CareInfoRow(stringResource(R.string.care_record_received), received, "shoe-info-received")
             // 체인 등록 줄은 블록체인 기능이 있는 판에만(스토어 판은 지갑 · 체인 기록 화면이 없다 — 2026-10-27 출시 점검)

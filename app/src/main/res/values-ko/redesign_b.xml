@@ -21,4 +21,7 @@
     <string name="rd_b_show_rec">추천 보기</string>
     <string name="rd_b_now">지금 %1$s</string>
     <string name="rd_b_points_unit">개</string>
+    <string name="rd_b_quality_title">뽑은 능력치</string>
+    <string name="rd_b_final_lead">나눈 포인트는 바로 되돌릴 수 없어요.</string>
+    <string name="rd_b_respec_every">%1$d레벨마다 한 번 다시 나눌 수 있어요</string>
 </resources>

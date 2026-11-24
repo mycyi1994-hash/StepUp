@@ -21,4 +21,7 @@
     <string name="rd_b_show_rec">See suggestion</string>
     <string name="rd_b_now">Now %1$s</string>
     <string name="rd_b_points_unit">left</string>
+    <string name="rd_b_quality_title">Rolled stats</string>
+    <string name="rd_b_final_lead">Points you spend can\'t be taken back right away.</string>
+    <string name="rd_b_respec_every">You can split them again once every %1$d levels.</string>
 </resources>

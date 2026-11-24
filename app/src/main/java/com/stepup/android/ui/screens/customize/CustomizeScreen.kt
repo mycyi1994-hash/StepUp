@@ -52,6 +52,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
+import com.stepup.android.ui.screens.items.plainCardEdge
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -328,9 +330,9 @@ private fun MyShoesReady(
                         Icon(StepUpIcons.Shoe, contentDescription = null, tint = runTone().muted, modifier = Modifier.size(56.dp))
                     }
                 }
-                Spacer(Modifier.height(if (tight) 8.dp else 12.dp))
+                Spacer(Modifier.height(if (tight) 6.dp else 10.dp))
                 NameLine(shown, onRename = { renaming = true })
-                Spacer(Modifier.height(if (tight) 12.dp else 18.dp))
+                Spacer(Modifier.height(if (tight) 12.dp else 16.dp))
                 com.stepup.android.ui.screens.items.ShoeDurabilityCard(
                     com.stepup.android.ui.screens.items.durabilityView(shown, rules),
                     numberTag = "shoe-bar-durability-value", barTag = "shoe-bar-durability",
@@ -409,8 +411,14 @@ private fun NameLine(shoe: Sneaker, onRename: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 44.dp).semantics { heading() }.testTag("shoe-hero-name"),
         )
         val renameCd = stringResource(R.string.home_shoe_rename)
+        // 연필은 이름 줄의 높이를 늘리지 않는다(시안 14 — 이름과 아래 줄 사이가 벌어지지 않게) — 누르는 자리 44 는 그대로
         Box(
-            Modifier.align(Alignment.CenterEnd).size(44.dp).clip(CircleShape)
+            Modifier.align(Alignment.CenterEnd)
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(minHeight = 0))
+                    layout(placeable.width, 0) { placeable.place(0, -placeable.height / 2) }
+                }
+                .size(44.dp).clip(CircleShape)
                 .feedbackClickable(role = Role.Button, onClick = onRename)
                 .semantics { contentDescription = renameCd }.testTag("shoe-rename"),
             contentAlignment = Alignment.Center,
@@ -422,7 +430,7 @@ private fun NameLine(shoe: Sneaker, onRename: () -> Unit) {
     val meta = listOfNotNull(shoe.tier.label(), "Lv.${shoe.level}", stringResource(R.string.my_shoes_wearing).takeIf { shoe.equipped })
         .joinToString(" · ")
     Text(
-        meta, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.3f), textAlign = TextAlign.Center, maxLines = 1,
+        meta, style = runTextStyle(15.sp, t.label, FontWeight.Medium, 1.3f), textAlign = TextAlign.Center, maxLines = 1,
         overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth().testTag("shoe-card-tag"),
     )
 }
@@ -440,7 +448,8 @@ private fun StatsLine(shoe: Sneaker, onExplain: () -> Unit, onDetail: (() -> Uni
     val eff = com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.efficiencyIndex(shoe))
     val comfort = com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.comfortIndex(shoe))
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 60.dp).clip(RoundedCornerShape(22.dp)).background(t.panel)
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(22.dp)).background(t.panel)
+            .then(Modifier.plainCardEdge())
             .feedbackClickable(role = Role.Button, onClick = onExplain)
             .semantics { onClick(label = explain) { onExplain(); true } }
             .testTag("shoe-stats")
@@ -454,7 +463,7 @@ private fun StatsLine(shoe: Sneaker, onExplain: () -> Unit, onDetail: (() -> Uni
                 append(" · $comLabel ")
                 withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) { append(comfort) }
             },
-            style = runTextStyle(16.sp, t.text, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum"),
+            style = runTextStyle(17.5.sp, t.text, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum"),
             maxLines = 2, modifier = Modifier.weight(1f).padding(vertical = 12.dp).testTag("shoe-stats-line"),
         )
         if (onDetail != null) {
@@ -479,9 +488,12 @@ private fun OwnedCard(
     onOpenVault: () -> Unit,
 ) {
     val t = runTone()
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.panel)) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(t.panel)
+            .then(Modifier.plainCardEdge()),
+    ) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 60.dp)
+            Modifier.fillMaxWidth().heightIn(min = 56.dp)
                 .feedbackClickable(role = Role.Button, onClick = onOpenVault)
                 .semantics(mergeDescendants = true) {}
                 .testTag("shoe-owned-head")
@@ -495,7 +507,7 @@ private fun OwnedCard(
                         append(pluralStringResource(R.plurals.sdv_pairs, row.size, row.size))
                     }
                 },
-                style = runTextStyle(16.sp, t.text, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum"),
+                style = runTextStyle(17.sp, t.text, FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum"),
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).semantics { heading() }.testTag("shoe-owned-count"),
             )

@@ -21,4 +21,7 @@
     <string name="rd_b_show_rec">おすすめを見る</string>
     <string name="rd_b_now">現在 %1$s</string>
     <string name="rd_b_points_unit">個</string>
+    <string name="rd_b_quality_title">引いた能力値</string>
+    <string name="rd_b_final_lead">振り分けたポイントはすぐには戻せません。</string>
+    <string name="rd_b_respec_every">%1$dレベルごとに1回振り直せます</string>
 </resources>
