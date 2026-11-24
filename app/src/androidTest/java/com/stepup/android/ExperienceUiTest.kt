@@ -321,7 +321,7 @@ class ExperienceUiTest {
         val candidateId = runBlocking {
             dao.insert(original.copy(id = 0, mintNumber = dao.maxMintNumber() + 1,
                 equipped = false, acquiredAt = System.currentTimeMillis(), serverId = 0,
-                // 내구도는 가득 — 신은 신발이 닳았으면 상세 주 버튼이 수리하기(detail-primary-repair)로 바뀐다(2026-11-07)
+                // 내구도는 가득 — 내 신발 탭의 주 버튼이 상세 보기(shoe-manage)이게(닳았으면 수리하기 — 2026-11-24 재디자인)
                 durability = 100, durabilityPts = 100.0, durabilityNow = original.durabilityMax))
         }
         var detailId by mutableStateOf<Long?>(null)
@@ -347,9 +347,11 @@ class ExperienceUiTest {
                 runBlocking { dao.equippedNow()?.id })
             compose.onNodeWithTag("detail-primary-action").performClick()
             compose.waitUntil(5_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
-            compose.waitUntil(5_000) {
-                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
-            }
+            // 신은 뒤(2026-11-24 재디자인) — "이 신발 신기"는 사라지고 주 버튼은 강화하기 하나, 신고 있다는 표시는 이름 아래 글
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithTag("shoe-upgrade-open").assertIsEnabled()
+            compose.onNodeWithTag("shoe-detail-meta", useUnmergedTree = true)
+                .assertTextContains(compose.activity.getString(R.string.sdv_status_wearing), substring = true)
             // 뒤로 — 착용 체크가 같은 id 로 옮겨 가 있다(보는 켤레도 그대로 — "착용 중")
             compose.runOnIdle { detailId = null }
             compose.waitUntil(5_000) {
@@ -368,7 +370,7 @@ class ExperienceUiTest {
     }
 
     @Test fun shoeDrawRespectsReadinessAndTabs() {
-        // 뽑기 파란 톤(2026-10-03 v4) — 가격 · 결제 확인이 없고, 무료 · 상급 두 패널에 패널마다 버튼 하나(글자 탭 없음)
+        // 뽑기(2026-11-24 재디자인) — 가격 · 결제 확인이 없고, 위 글자 탭 「무료 뽑기 · 상급 뽑기」로 고른 종류의 카드와 주 버튼 하나
         var state by mutableStateOf<DrawScreenState>(DrawScreenState.SignedOut)
         var canSignIn by mutableStateOf(false)
         val draws = mutableListOf<DrawKind>()
@@ -384,15 +386,21 @@ class ExperienceUiTest {
             )
         } } }
         // 로그인 전 — 수는 "—"(0 이 아니다). 로그인할 수 없는 빌드면 버튼을 누를 수 없다
-        compose.onAllNodesWithTag("draw-tab-free").assertCountEquals(0)
+        compose.onNodeWithTag("draw-tab-free").assertIsSelected()
+        compose.onAllNodesWithTag("draw-premium-action").assertCountEquals(0)
         compose.onNodeWithTag("draw-free-action").assertIsNotEnabled().performTouchInput { click() }
         compose.onNodeWithTag("draw-free-unknown", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("draw-premium-unknown", useUnmergedTree = true).assertExists()
         compose.onAllNodesWithText("0회").assertCountEquals(0)
         compose.onNodeWithTag("draw-free-history").assertDoesNotExist()
         compose.onNodeWithTag("draw-rules").assertDoesNotExist()
         compose.runOnIdle { assertTrue(draws.isEmpty()) }
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
+        // 상급 탭(debug · qa 는 WEB3 판이라 늘 있다) — 그 카드 · 주 버튼으로 바뀐다
+        compose.onNodeWithTag("draw-tab-premium").performScrollTo().performClick()
+        compose.onNodeWithTag("draw-tab-premium").assertIsSelected()
+        compose.onAllNodesWithTag("draw-free-action").assertCountEquals(0)
+        compose.onNodeWithTag("draw-premium-unknown", useUnmergedTree = true).assertExists()
+        compose.onAllNodesWithText("0회").assertCountEquals(0)
         compose.onNodeWithTag("draw-premium-action").performScrollTo().assertIsNotEnabled()
         // 로그인할 수 있으면 로그인 화면으로 — 뽑지 않는다
         compose.runOnIdle { canSignIn = true }
@@ -402,9 +410,13 @@ class ExperienceUiTest {
             giftOnLink = 10, giftLeft = 0, runLeft = 0, genesisLeft = 0, runProgressMeters = 0.0, runStepMeters = 1000,
             runToday = 0, runDailyCap = 10, chainPaused = false)
         compose.runOnIdle { state = DrawScreenState.Ready(fresh) }
+        compose.onNodeWithTag("draw-tab-free").performScrollTo().performClick()
         compose.onNodeWithTag("draw-free-action").performScrollTo().assertIsEnabled().performClick()
         compose.runOnIdle { assertEquals(listOf(DrawKind.FREE), draws) }
-        // 상급 패널 — 지갑 전이면 버튼은 연결 혜택(DRAW06), 그 안의 "WEB3 지갑 연결하기"가 지갑 페이지다. 연결만으로 뽑지 않는다
+        // 상자 무대는 누르는 곳이 아니다
+        compose.onNodeWithTag("draw-free").assertHasNoClickAction()
+        compose.onNodeWithTag("draw-tab-premium").performScrollTo().performClick()
+        // 상급 탭 — 지갑 전이면 버튼은 연결 혜택(DRAW06), 그 안의 "WEB3 지갑 연결하기"가 지갑 페이지다. 연결만으로 뽑지 않는다
         compose.onNodeWithTag("draw-premium-gift").assertExists()
         compose.onNodeWithTag("draw-premium-action").performScrollTo().performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-sheet-connect").fetchSemanticsNodes().isNotEmpty() }
@@ -415,7 +427,6 @@ class ExperienceUiTest {
         compose.runOnIdle { assertEquals(listOf(DrawKind.FREE, DrawKind.PREMIUM), draws) }
         // 상자 무대는 누르는 곳이 아니다
         compose.onNodeWithTag("draw-premium").assertHasNoClickAction()
-        compose.onNodeWithTag("draw-free").assertHasNoClickAction()
     }
 
     /**

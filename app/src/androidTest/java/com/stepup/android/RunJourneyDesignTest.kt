@@ -143,6 +143,14 @@ class RunJourneyDesignTest {
             awaitTag("home-start-run")
             awaitTag("home-spot")
             compose.onNodeWithTag("home-stats").assertExists()
+            // 숫자 줄(오늘 거리 · 적립 · 이번 주 러닝)은 사진 카드 밑 한 줄 글 — 주 버튼 뒤로 잘리지 않는다(2026-11-24 재디자인 01)
+            run {
+                compose.onNodeWithTag("home-stats").performScrollTo().assertIsDisplayed()
+                val stats = compose.onNodeWithTag("home-stats", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                val start = compose.onNodeWithTag("home-start-run", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                assertTrue("home stats line sits above the start button: $stats / $start", stats.height > 0f && stats.bottom <= start.top + 1)
+            }
+            compose.onAllNodesWithTag("home-stat-km", useUnmergedTree = true).assertCountEquals(0)
             // 신발 전시장 · 신발 줄은 홈에 없다(신발 탭으로)
             compose.onAllNodesWithTag("home-shoe-name", useUnmergedTree = true).assertCountEquals(0)
             shot("HOME")

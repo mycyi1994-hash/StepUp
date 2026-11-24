@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -93,13 +95,30 @@ class MysteryDesignTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty()
         }
-        // 뽑기 파란 톤(2026-10-03 v4) — 글자 탭 없이 무료 · 상급 두 패널을 한 화면에, 패널마다 실행 버튼 하나. 가격 · SUP 안내는 없다
-        compose.onAllNodesWithTag("draw-tab-free").assertCountEquals(0)
-        compose.onAllNodesWithTag("draw-tab-premium").assertCountEquals(0)
+        // 뽑기(2026-11-24 재디자인 08_뽑기) — 위 글자 탭 「무료 뽑기 · 상급 뽑기」, 고른 종류의 카드 하나와 그 주 버튼 하나. 가격 · SUP 안내는 없다
+        compose.onNodeWithTag("draw-tab-free").assertIsDisplayed().assertIsSelected()
         compose.onNodeWithTag("draw-free").assertIsDisplayed()
         compose.onNodeWithTag("draw-free-action").assertExists()
-        compose.onNodeWithTag("draw-premium").assertExists()
-        compose.onNodeWithTag("draw-premium-action").assertExists()
+        compose.onAllNodesWithTag("draw-premium").assertCountEquals(0)
+        compose.onAllNodesWithTag("draw-premium-action").assertCountEquals(0)
+        if (com.stepup.android.BuildConfig.WEB3) {
+            // 서버를 읽지 못한 기기면 불러오기 실패 시트가 탭을 덮는다 — 탭을 누르기 전에 시트만 닫는다
+            if (compose.onAllNodesWithTag("draw-sheet-load-failed", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+                InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                compose.waitForIdle()
+            }
+            // 상급 탭을 고르면 상급 카드 · 주 버튼으로 바뀐다(무료 카드는 사라진다)
+            compose.onNodeWithTag("draw-tab-premium").assertIsDisplayed().assertIsNotSelected().performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("draw-tab-premium").assertIsSelected()
+            compose.onNodeWithTag("draw-premium").assertIsDisplayed()
+            compose.onNodeWithTag("draw-premium-action").assertExists()
+            compose.onAllNodesWithTag("draw-free").assertCountEquals(0)
+            compose.onAllNodesWithTag("draw-free-action").assertCountEquals(0)
+            compose.onNodeWithTag("draw-tab-free").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("draw-free").assertIsDisplayed()
+        }
         compose.onAllNodesWithText("500 SUP", substring = true).assertCountEquals(0)
         compose.onNodeWithText(compose.activity.getString(R.string.mystery_draw_outfit)).assertDoesNotExist()
         captureDisplay(File(out, "mystery-01-normal.png"))

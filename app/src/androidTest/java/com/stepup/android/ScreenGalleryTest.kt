@@ -278,11 +278,15 @@ class ScreenGalleryTest {
                 compose.onNodeWithTag("analytics-week-details").assertDoesNotExist()
             }
             if (index == 20) {
-                // 주 버튼 — 신고 있는 신발이 닳았으면 수리하기(detail-primary-repair, 2026-11-07)라 둘 중 하나
-                val primary = hasTestTag("detail-primary-action") or hasTestTag("detail-primary-repair")
-                compose.onNode(primary).assertIsDisplayed()
+                // 주 버튼 하나(2026-11-24 재디자인) — 신고 있는 신발은 "강화하기"(shoe-upgrade-open, 닳았어도 — 수리는 내구도 칸 안),
+                // 안 신은 신발은 "이 신발 신기"(detail-primary-action)
                 val before = runBlocking { ServiceLocator.sneakerRepository.inventory.first() }
                 check(before.any { it.id == sneakerId })
+                val worn = before.first { it.id == sneakerId }.equipped
+                val primary = if (worn) hasTestTag("shoe-upgrade-open") else hasTestTag("detail-primary-action")
+                compose.waitUntil(5_000) { compose.onAllNodes(primary).fetchSemanticsNodes().isNotEmpty() }
+                compose.onNode(primary).assertIsDisplayed()
+                if (worn) compose.onAllNodesWithTag("detail-primary-action").assertCountEquals(0)
                 // 신발 강화(재료 신발 3개 · 확률, 0054) — 상세 아래 "강화하기"가 독립 강화 화면을 연다. 여는 것만으로 보유 신발은 바뀌지 않는다
                 compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-upgrade-open").fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithTag("shoe-upgrade-open").performClick()

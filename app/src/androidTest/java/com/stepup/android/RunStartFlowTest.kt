@@ -319,7 +319,10 @@ class RunStartFlowTest {
         assertEquals(0, starts)
     }
 
-    /** 신발 점검 — 신고 있는 신발의 실제 등급 · 레벨 · 내구도. 출발은 연타해도 한 번, 돌아가기 · 닫기는 시작하지 않는다 */
+    /**
+     * 신발 점검 — 신고 있는 신발의 실제 등급 · 레벨 · 내구도. 출발은 연타해도 한 번, 시트 × 는 시작하지 않는다
+     * (2026-11-24 재디자인 — "돌아가기" 버튼은 빼고 시트 × 하나로 닫는다).
+     */
     @Test fun shoeCheckShowsTheEquippedShoeAndStartsOnce() {
         var starts = 0
         var cancels = 0
@@ -334,10 +337,10 @@ class RunStartFlowTest {
         )
         compose.onNodeWithTag("run-shoe-check-grade", useUnmergedTree = true).assertTextEquals(grade)
         compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("68%")
-        compose.onNodeWithTag("run-shoe-check-back").performClick()
-        compose.onNodeWithTag("run-shoe-check-close").performClick()
-        assertEquals(2, cancels)
-        assertEquals("돌아가기 · 닫기는 시작하지 않는다", 0, starts)
+        compose.onAllNodesWithTag("run-shoe-check-back").assertCountEquals(0)
+        compose.onNodeWithTag("run-shoe-check-close").assertIsDisplayed().performClick()
+        assertEquals(1, cancels)
+        assertEquals("닫기는 시작하지 않는다", 0, starts)
         compose.onNodeWithTag("run-shoe-check-go").performClick()
         compose.onNodeWithTag("run-shoe-check-go").performClick()
         assertEquals("출발 연타는 한 번", 1, starts)

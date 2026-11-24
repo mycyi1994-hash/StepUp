@@ -137,6 +137,8 @@ class MyShoesDesignTest {
                 awaitHero(tier)
                 assertBadge(tier)
                 assertFitsWithoutScrolling()
+                // 가득인 일반 · 레드라인은 상세 보기, 나머지(줄었다)는 수리하기가 주 버튼
+                assertPrimary(full = tier == ShoeTier.COMMON || tier == ShoeTier.REDLINE)
                 shot("03-tier-${tier.key}")
             }
             assertEquals("Picking pairs must not change the stored equipment", seeded.worn, runBlocking { dao.equippedNow()?.id })
@@ -318,24 +320,51 @@ class MyShoesDesignTest {
         awaitTag("shoe-hero")
     }
 
-    /** 세로 스크롤 거리 0 — 신발 카드 · 이름 · 숫자 줄 · 보유 목록이 창 안, 아래 두 버튼 위에(UI 최종 통합안 shoes) */
+    /**
+     * 세로 스크롤 거리 0 — 신발 그림 · 이름 · 내구도 칸 · 능력치 줄 · 보유 목록이 창 안, 아래 주 버튼 위에(2026-11-24 재디자인 14 내신발탭).
+     * 주 버튼은 하나 — 내구도가 가득이면 "상세 보기"(shoe-manage), 줄었으면 "수리하기"(shoe-repair-quick)이고 상세 보기는 능력치 줄의 글자 버튼.
+     */
     private fun assertFitsWithoutScrolling() {
         compose.waitForIdle()
         val scroll = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
         assertEquals("my shoes must not scroll at ${viewport.label}", 0f, scroll.maxValue(), 1f)
         val nav = bounds(BOTTOM_NAV_TAG)
         val frame = bounds(VIEWPORT)
-        val manage = bounds("shoe-manage")
-        for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-stats", "shoe-owned-row")) {
+        val primaryTag = if (exists("shoe-repair-quick")) "shoe-repair-quick" else "shoe-manage"
+        val primary = bounds(primaryTag)
+        for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-bar-durability", "shoe-stats", "shoe-owned-row")) {
             val b = bounds(tag)
             assertTrue("$tag inside the screen at ${viewport.label}: $b in $frame", b.top >= frame.top - 1 && b.bottom <= frame.bottom + 1)
-            assertTrue("$tag above the bottom buttons at ${viewport.label}: $b / ${manage.top}", b.bottom <= manage.top + 1)
+            assertTrue("$tag above the bottom button at ${viewport.label}: $b / ${primary.top}", b.bottom <= primary.top + 1)
         }
-        assertTrue("detail button above the bottom tabs at ${viewport.label}: $manage / nav ${nav.top}", manage.bottom <= nav.top + 1)
-        val card = bounds("shoe-hero")
-        assertTrue("the shoe card keeps 361:236 at ${viewport.label}: $card",
-            abs(card.width / card.height - 361f / 236f) < 0.03f)
+        assertTrue("$primaryTag above the bottom tabs at ${viewport.label}: $primary / nav ${nav.top}", primary.bottom <= nav.top + 1)
+        // 신발 그림은 상자 없이 높이만 고정(ProductImage — 탭 120dp, 빠듯하면 100dp), 가운데, 창 폭을 넘지 않는다
+        val dp = frame.height / viewport.height
+        val hero = bounds("shoe-hero")
+        val heroDp = hero.height / dp
+        assertTrue("the shoe art keeps its fixed height at ${viewport.label}: ${heroDp}dp",
+            abs(heroDp - 120f) < 1.5f || abs(heroDp - 100f) < 1.5f)
+        assertTrue("the shoe art stays inside the width at ${viewport.label}: $hero in $frame",
+            hero.left >= frame.left - 1 && hero.right <= frame.right + 1)
+        assertEquals("the shoe art is centred at ${viewport.label}", frame.center.x, hero.center.x, 2f * dp)
     }
+
+    /**
+     * 주 버튼 하나(2026-11-24 재디자인) — 가득이면 "상세 보기"가 주 버튼이고 수리하기는 없다. 줄었으면 "수리하기"가 주 버튼이고
+     * "상세 보기"는 능력치 줄 안의 글자 버튼이다.
+     */
+    private fun assertPrimary(full: Boolean) {
+        compose.waitForIdle()
+        if (full) {
+            compose.onAllNodesWithTag("shoe-repair-quick").assertCountEquals(0)
+            compose.onNode(hasTestTag("shoe-manage") and hasAnyAncestor(hasTestTag("my-shoes")).not()).assertIsEnabled()
+        } else {
+            compose.onNodeWithTag("shoe-repair-quick").assertIsEnabled().assertTextEquals(string(R.string.care_repair))
+            compose.onNode(hasTestTag("shoe-manage") and hasAnyAncestor(hasTestTag("shoe-stats"))).assertHasClickAction()
+        }
+    }
+
+    private fun exists(tag: String): Boolean = compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
 
     /** 카드 아래 큰 이름 — 이름 글에 [name] 이 있다 */
     private fun assertName(name: String) {

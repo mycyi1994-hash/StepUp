@@ -254,6 +254,9 @@ class NotificationsDesignTest {
             list(ui.copy(toast = InboxToast(R.string.inbox_mark_all_failed, success = false, seq = 2))))
         compose.onNodeWithTag("inbox-summary").assertTextEquals(korean(R.string.inbox_new_count).format(3))
         show("10-empty-inbox", "inbox-empty", list(ui.copy(inbox = InboxLoad.Ready(emptyList(), 0), unread = 0)))
+        // 2026-11-24 재디자인(13_알림함) — 캐릭터 빈 화면 · 「알림 설정 보기」는 주 버튼이 아니라 글자 버튼 하나
+        compose.onNode(hasTestTag("pane-action") and hasAnyAncestor(hasTestTag("inbox-empty")))
+            .assertHasClickAction().assertTextContains(korean(R.string.inbox_open_settings), substring = true)
         show("11-inbox-loading", "inbox-loading", list(ui.copy(inbox = InboxLoad.Loading)))
         compose.onAllNodesWithTag("inbox-empty").assertCountEquals(0)
         show("12-inbox-error", "inbox-failed", list(ui.copy(inbox = InboxLoad.Failed)))

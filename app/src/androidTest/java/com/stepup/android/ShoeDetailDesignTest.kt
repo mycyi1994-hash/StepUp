@@ -118,12 +118,18 @@ class ShoeDetailDesignTest {
             assertEquals("Picking a tile must not change the stored equipment", original, runBlocking { dao.equippedNow()?.id })
             shot("01b-in-app-picked")
 
-            // 07 — 같은 모델 두 켤레는 각자 한 칸(소유 id) — 번호로 구분. 고르는 것만으로 착용은 그대로
+            // 07 — 같은 모델 두 켤레는 각자 한 칸(소유 id) — 칸마다 자기 번호를 읽는다(2026-11-24 재디자인 — 번호는 신발 상세 · 칸 설명에).
+            // 고르는 것만으로 착용은 그대로
             pick(seeded.pairA)
-            val numberA = metaText()
+            val numberA = tileDescription(seeded.pairA)
             pick(seeded.pairB)
-            val numberB = metaText()
+            val numberB = tileDescription(seeded.pairB)
             assertTrue("the two pairs of 1201 show their own numbers: $numberA / $numberB", numberA != numberB)
+            listOf(seeded.pairA, seeded.pairB).forEach { id ->
+                val mint = requireNotNull(runBlocking { dao.byId(id)?.mintNumber })
+                assertTrue("tile $id names its own number $mint: ${tileDescription(id)}",
+                    tileDescription(id).contains(String.format(java.util.Locale.ROOT, "%04d", mint)))
+            }
             compose.onNodeWithTag("shoe-choice-${seeded.pairA}").assertIsNotSelected()
             shot("07-in-app-pairs")
             assertEquals(original, runBlocking { dao.equippedNow()?.id })
@@ -133,16 +139,17 @@ class ShoeDetailDesignTest {
             tap("shoe-manage")
             awaitWearEnabled()
             awaitTag("shoe-art")
-            // 이름 끝에 공통 등급 배지(2026-09-29) — 이름 글 뒤에 배지 자리(" 레어")가 붙는다
+            // 2026-11-24 재디자인 — 가운데 이름 아래 한 줄 "레어 · Lv.1 · No. 0012"(등급 배지 · 레벨 줄 대신). 번호는 이 켤레의 민팅 번호
             compose.onNode(hasText(modelName(1107), substring = true) and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
                 .assertExists()
-            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
-                .assertExists()
-            // 카툰 입체형 네 칸 — 실제 켤레의 값(레벨 1 / 20 — 레어 최대 20, 0066 · 번호는 이 켤레의 민팅 번호)
-            compose.onNodeWithTag("shoe-cell-level-value", useUnmergedTree = true).assertTextEquals("1 / 20")
-            val mint = runBlocking { dao.byId(seeded.single)?.mintNumber }
-            assertNameHas(String.format(java.util.Locale.ROOT, "No. %04d", mint))
+            compose.onAllNodes(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertCountEquals(0)
+            compose.onAllNodesWithTag("shoe-cell-level", useUnmergedTree = true).assertCountEquals(0)
+            val mint = requireNotNull(runBlocking { dao.byId(seeded.single)?.mintNumber })
+            assertMeta(string(R.string.shoe_tier_rare), "Lv.1", String.format(java.util.Locale.ROOT, "No. %04d", mint))
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
+            // 안 신은 신발 — 강화하기는 주 버튼 위 글자 버튼
+            compose.onNodeWithTag("shoe-upgrade-open").assertExists()
             shot("02-in-app-detail")
 
             // 파란 톤 v4 SD15 — 신발 기록(⋯ 관리 안): 신발 번호 · 획득일 · 체인 등록(이 기기에서 넣은 신발이라 등록 없음)
@@ -174,10 +181,10 @@ class ShoeDetailDesignTest {
             awaitTag("shoe-worn-toast")
             compose.onNodeWithTag("shoe-worn-toast").assertTextContains(modelName(1107), substring = true)
             shot("10-in-app-equipped", settle = 250)
-            compose.waitUntil(5_000) {
-                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
-            }
-            compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_status_wearing))
+            // 신은 뒤 — 누를 수 없던 "지금 신고 있어요" 버튼 대신 이름 아래 글, 주 버튼은 강화하기 하나(2026-11-24 재디자인)
+            awaitGone("detail-primary-action")
+            assertMeta(string(R.string.shoe_tier_rare), "Lv.1", String.format(java.util.Locale.ROOT, "No. %04d", mint), string(R.string.sdv_status_wearing))
+            compose.onNodeWithTag("shoe-upgrade-open").assertIsEnabled().assertTextEquals(string(R.string.care_upgrade_open))
             assertEquals(1, runBlocking { dao.allNow().count { it.equipped } })
 
             // 12 — 뒤로: 목록의 체크가 같은 id 로 옮겨 가고, 보던 켤레는 그대로("착용 중")
@@ -243,7 +250,7 @@ class ShoeDetailDesignTest {
         // 01 — 보는 신발(칸 테두리) · 신고 있는 신발(작은 체크)을 가른다. 켤레 수는 4 — 같은 모델 두 켤레도 각자 한 칸
         show("s01-owned-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
         assertMetaWearing(false)
-        compose.onNodeWithTag("shoe-owned-count", useUnmergedTree = true).assertTextEquals("4")
+        compose.onNodeWithTag("shoe-owned-count", useUnmergedTree = true).assertTextEquals(ownedCountText(4))
         compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${WORN.id}")), useUnmergedTree = true)
             .assertExists()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsSelected()
@@ -251,49 +258,59 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
         // 02 — 다른 신발 구경: 보유 중 · 이 신발 신기 · +0.45% · 7.5%
         show("s02-shoe-detail", "shoe-art", detail(ready(PAIR_A)))
-        // 신발 관리는 ⋯ 안에만 있지 않다 — 수리하기는 내구도 칸에(2026-11-07 "신발 수리하는거 버튼 앞으로"), 판매하기 · 신발 기록은 본문 아래.
-        // 다 찬 신발이라 수리하기는 흐리다(누를 수 없음). 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
-        compose.onNodeWithTag("shoe-durability-repair", useUnmergedTree = true).assertExists().assertHasClickAction().assertIsNotEnabled()
+        // 2026-11-24 재디자인 — 다 찬 신발이라 내구도는 능력치 카드의 한 줄이고 칸 안의 수리하기는 없다(줄었을 때만 — s00).
+        // 수리하기 · 판매하기는 ⋯ 신발 관리 안(s19), 본문 목록 카드는 스탯 포인트 · 아이템칸 · 하루 최대 · 신발 기록
+        compose.onAllNodesWithTag("shoe-durability-repair", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
-        // 아이템칸 — 잠긴 자리 셋만(아이템 · 숫자 없음)
-        compose.onNodeWithTag("shoe-item-slots", useUnmergedTree = true).assertExists()
-        compose.onAllNodesWithTag("shoe-item-slot-2", useUnmergedTree = true).assertCountEquals(1)
-        compose.onAllNodesWithTag("shoe-item-slot-3", useUnmergedTree = true).assertCountEquals(0)
-        compose.onNodeWithTag("shoe-care-sell", useUnmergedTree = true).assertExists()
+        compose.onAllNodesWithTag("shoe-care-sell", useUnmergedTree = true).assertCountEquals(0)
+        // 아이템칸 — 목록의 한 줄("곧 열려요" — 아이템 · 숫자 없음), 누르면 안내만
+        compose.onNodeWithTag("shoe-item-slots").assertHasClickAction()
+            .assert(hasAnyDescendant(hasText(string(R.string.item_slots_soon))) or hasText(string(R.string.item_slots_soon), substring = true))
+        compose.onAllNodesWithTag("shoe-item-slot-1", useUnmergedTree = true).assertCountEquals(0)
         compose.onNodeWithTag("shoe-care-record", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
-        // 효율 · 착화감은 지수(경제 4판) — 효율 +45bps = 100, 착화감 절약 7.5% = 108
+        // 효율 · 착화감은 지수(경제 4판) — 효율 +45bps = 100, 착화감 절약 7.5% = 108. 레벨은 줄이 아니라 이름 아래 한 줄에
         assertCell("efficiency", "100")
         assertCell("comfort", "108")
         assertCell("durability", "100 / 100")
-        assertCell("level", "1 / 15")
+        assertMeta(string(R.string.shoe_tier_epic), "Lv.1", "No. 0002")
+        compose.onAllNodesWithTag("shoe-cell-level", useUnmergedTree = true).assertCountEquals(0)
         // 설명 문구 · 예전 두 칸 · 본문 링크가 없다(능력치 자세히 · 신발 정보는 ⋯ 안)
         compose.onAllNodesWithTag("shoe-key-bonus").assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-row-stats").assertCountEquals(0)
         compose.onAllNodesWithText(string(R.string.sdv_stat_bonus), substring = true).assertCountEquals(0)
         compose.onAllNodesWithText(string(R.string.sdv_stat_luck), substring = true).assertCountEquals(0)
-        // 네 막대는 시작점 · 끝점이 같다
+        // 세 막대는 시작점 · 끝점이 같다
         assertBarsAligned()
-        // 카툰 입체형 확정안(approved.png)과 같은 예시 — 레어 1107 · Lv 5 / 15 · No. 0007 · +8.0% · 5.8% · 92 / 100.
+        // 확정안과 같은 예시 — 레어 1107 · Lv 5 · No. 0007 · +8.0% · 5.8% · 92 / 100(줄었다).
         // 이 값은 이 테스트 화면에만 있는 예시다(계정 데이터가 아니다)
         show("s00-cartoon-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
-        assertCell("level", "5 / 15")
+        assertMeta(string(R.string.shoe_tier_rare), "Lv.5", "No. 0007")
         assertCell("efficiency", "108")
         assertCell("comfort", "106")
         assertCell("durability", "92 / 100")
-        assertNameHas("No. 0007")
+        // 05b — 내구도가 줄었으면 내구도 칸이 능력치 카드 위로 올라오고, 칸 안에 "수리하기"(⋯ 관리의 수리하기도 그대로). 주 버튼은 그대로
+        compose.onNodeWithTag("shoe-durability-repair", useUnmergedTree = true).assertHasClickAction().assertIsEnabled()
+        assertTrue("the durability card sits above the stat card",
+            bounds("shoe-cell-durability").bottom <= bounds("shoe-stat-cells").top + 1)
+        compose.onAllNodes(hasTestTag("shoe-cell-durability") and hasAnyAncestor(hasTestTag("shoe-stat-cells")), useUnmergedTree = true)
+            .assertCountEquals(0)
+        compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
         assertBarsAligned()
         // 막대 끝값 — 0% · 아주 작은 양수 · 100% · 레벨 끝(레전더리 30) · 긴 번호
         show("s00b-cartoon-edges", "shoe-art", detail(ready(EDGES, all + EDGES)))
-        assertCell("level", "30 / 30")
+        assertNameHas("Lv.30")
         assertCell("efficiency", "100")
         assertCell("comfort", "100")
         assertCell("durability", "100 / 100")
         assertNameHas("No. 12345")
         assertBarsAligned()
-        // 03 — 신고 있는 신발: 버튼은 강화가 아니라 "지금 신고 있어요"(누를 수 없음)
+        // 03 — 신고 있는 신발(2026-11-24 재디자인): 누를 수 없던 "지금 신고 있어요" 버튼은 빼고 이름 아래 글로, 주 버튼은 강화하기 하나
         show("s03-equipped-detail", "shoe-art", detail(ready(WORN)))
-        compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_status_wearing))
+        compose.onAllNodesWithTag("detail-primary-action").assertCountEquals(0)
+        compose.onNodeWithTag("shoe-upgrade-open").assertIsEnabled().assertTextEquals(string(R.string.care_upgrade_open))
+        compose.onNodeWithTag("shoe-detail-meta", useUnmergedTree = true)
+            .assert(hasText(string(R.string.sdv_status_wearing), substring = true))
         // 파란 톤 v4 — 예전 능력치 자세히 · 설명 시트(04 · 05)는 본문 네 줄로 바뀌어 없다(전달본 07-기존화면-대응표)
         // SD15 · SD17 신발 기록 — 체인 등록: 없음 · v3 금고. 민팅 번호와 체인 번호를 합치지 않는다
         show("s06-shoe-information", "shoe-info-sheet", detail(ready(PAIR_A), sheet = "Record"))
@@ -306,9 +323,11 @@ class ShoeDetailDesignTest {
         show("s06c-shoe-information-legacy", "shoe-info-sheet", detail(ready(WORN), sheet = "Record"))
         // 속성 줄은 없앴다(2026-10-17) — 예전 신발에도 없다
         compose.onAllNodesWithTag("shoe-info-faction").assertCountEquals(0)
-        // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
+        // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 칸은 자기 번호를 읽는다(2026-11-24 재디자인 — 탭의 번호 글은 빼고 상세 · 칸 설명에)
         show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
-        compose.onNodeWithTag("shoe-card-no", useUnmergedTree = true).assertTextContains("#0004", substring = true)
+        compose.onAllNodesWithTag("shoe-card-no", useUnmergedTree = true).assertCountEquals(0)
+        assertTrue(tileDescription(PAIR_B.id).contains(string(R.string.sdv_level_no_cd, PAIR_B.level, PAIR_B.mintNumber)))
+        assertTrue(tileDescription(PAIR_A.id).contains(string(R.string.sdv_level_no_cd, PAIR_A.level, PAIR_A.mintNumber)))
         compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsSelected()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
@@ -389,8 +408,18 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("points-count-efficiency", useUnmergedTree = true).assertTextEquals("3")
         compose.onNodeWithTag("points-count-durability", useUnmergedTree = true).assertTextEquals("2")
         compose.onNodeWithTag("points-save").assertIsEnabled()
-        // 이미 나눈 효율 2 아래로는 못 뺀다
+        // 2026-11-24 재디자인 — 고른 능력치 하나만 −/+(처음은 효율). 전환 칸으로 착화감을 고르면 착화감의 −/+ 로 바뀐다
+        compose.onNodeWithTag("points-tab-efficiency").assertIsSelected()
+        compose.onNodeWithTag("points-remove-efficiency").assertExists()
+        compose.onAllNodesWithTag("points-remove-comfort").assertCountEquals(0)
+        compose.onNodeWithTag("points-tab-comfort").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("points-tab-comfort").assertIsSelected()
+        compose.onAllNodesWithTag("points-remove-efficiency").assertCountEquals(0)
+        // 이미 나눈 착화감 1 아래로는 못 뺀다
         compose.onNodeWithTag("points-remove-comfort").assertIsNotEnabled()
+        compose.onNodeWithTag("points-tab-efficiency").performClick()
+        compose.waitForIdle()
         val confirm = editing.review()
         show("s43-points-confirm", "points-confirm", detail(ready(POINTS, withPoints), points = confirm))
         compose.onNodeWithTag("points-confirm-note", useUnmergedTree = true).assertTextEquals(string(R.string.points_confirm_body))
@@ -431,7 +460,7 @@ class ShoeDetailDesignTest {
         compose.runOnIdle { large = true }
         show("s33-narrow-large-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
         assertBarsAligned()
-        listOf("level", "efficiency", "comfort", "durability").forEach { stat ->
+        listOf("efficiency", "comfort", "durability").forEach { stat ->
             val width = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().size.width
             assertTrue("$stat bar keeps a visible width: $width", width > 100)
         }
@@ -474,10 +503,10 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-cell-$stat-value", useUnmergedTree = true).assertTextEquals(value)
     }
 
-    /** 네 막대의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다).
-     *  큰 글씨에선 아래 칸이 화면 밖일 수 있어 잘리지 않은 위치 · 크기로 잰다 */
+    /** 세 막대(효율 · 착화감 · 내구도 — 2026-11-24 재디자인에 레벨 줄은 없다)의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다).
+     *  내구도가 줄었으면 내구도 막대는 위의 내구도 칸에 있다. 큰 글씨에선 아래 칸이 화면 밖일 수 있어 잘리지 않은 위치 · 크기로 잰다 */
     private fun assertBarsAligned() {
-        val spans = listOf("level", "efficiency", "comfort", "durability").map { stat ->
+        val spans = listOf("efficiency", "comfort", "durability").map { stat ->
             val node = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode()
             node.positionInRoot.x to node.positionInRoot.x + node.size.width
         }
@@ -512,11 +541,26 @@ class ShoeDetailDesignTest {
         hasText(name, substring = true) and hasTestTag("shoe-hero-name"), useUnmergedTree = true,
     ).fetchSemanticsNodes().isNotEmpty()
 
-    /** 신발 카드 위 줄 — "착용 중 · 레어" + 번호 "#0002"(UI 최종 통합안 신발 카드) */
-    private fun metaText(): String = listOf("shoe-card-tag", "shoe-card-no").joinToString(" ") { tag ->
-        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
+    /** 신발 탭 이름 아래 한 줄 — "레어 · Lv.1 · 착용 중"(2026-11-24 재디자인 — 번호는 신발 상세에) */
+    private fun metaText(): String =
+        compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).fetchSemanticsNode()
             .config[androidx.compose.ui.semantics.SemanticsProperties.Text].joinToString { it.text }
+
+    /** 신발 상세 이름 아래 한 줄 — 등급 · Lv.N · No. 번호 · (신고 있으면) 지금 신고 있어요 */
+    private fun assertMeta(vararg parts: String) {
+        compose.onNodeWithTag("shoe-detail-meta", useUnmergedTree = true).assertTextEquals(parts.joinToString(" · "))
     }
+
+    /** 내 신발의 보유 칸이 읽는 설명(이름 · 등급 · 레벨 · 신발 번호) */
+    private fun tileDescription(id: Long): String =
+        compose.onNodeWithTag("shoe-choice-$id", useUnmergedTree = true).fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsProperties.ContentDescription].joinToString()
+
+    /** "보유 신발 4켤레" — 보유 줄의 글(2026-11-24 재디자인) */
+    private fun ownedCountText(n: Int): String =
+        string(R.string.my_shoes_owned) + " " + compose.activity.resources.getQuantityString(R.plurals.sdv_pairs, n, n)
+
+    private fun bounds(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
 
     private fun assertMetaWearing(wearing: Boolean) {
         val text = metaText()
@@ -567,7 +611,7 @@ class ShoeDetailDesignTest {
                 id = 0, rarity = requireNotNull(ShoeCatalog.of(model)).rarity.id, variant = 0, level = level,
                 mintNumber = dao.maxMintNumber() + 1, equipped = false, acquiredAt = now, serverId = 0, origin = "",
                 modelId = model, tokenId = 0,
-                // 내구도는 가득 — 신은 신발이 닳았으면 주 버튼이 수리하기(detail-primary-repair)로 바뀌어 아래 착용 흐름이 기기 상태에 따라 달라진다
+                // 내구도는 가득 — 닳았으면 내 신발 탭의 주 버튼이 수리하기(shoe-repair-quick)로 바뀌어 아래 흐름이 기기 상태에 따라 달라진다
                 durability = 100, durabilityPts = 100.0, durabilityNow = base.durabilityMax,
             ),
         )

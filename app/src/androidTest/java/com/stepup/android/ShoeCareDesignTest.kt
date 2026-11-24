@@ -15,6 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -106,17 +109,22 @@ class ShoeCareDesignTest {
         compose.onNodeWithTag("shoe-upgrade-open").assertTextContains(string(R.string.upg_action_check))
         show("SD19-repair-pending", "shoe-repair-pending", detail(care = ShoeCareStatus(repairPending = true)))
         compose.onNodeWithTag("shoe-upgrade-open").assertIsNotEnabled()
-        // 신고 있는 신발이 닳았으면 — 비어 있던 주 버튼 자리("지금 신고 있어요")가 수리하기, 신고 있다는 표시는 이름 아래 한 줄(2026-11-07)
+        // 신고 있는 신발이 닳았으면(2026-11-24 재디자인 05b) — 수리하기는 맨 위로 올라온 내구도 칸 안의 알약, 주 버튼은 그대로 강화하기.
+        // 신고 있다는 표시는 이름 아래 한 줄(누를 수 없던 "지금 신고 있어요" 버튼은 없다)
         val wornDown = WORN_DOWN.copy(equipped = true)
-        show("SD20-worn-repair-primary", "detail-primary-repair", detail(state = ShoeDetailState.Ready(wornDown, wornDown)))
-        compose.onNodeWithTag("detail-primary-repair").assertIsEnabled().assertTextEquals(string(R.string.care_repair))
+        show("SD20-worn-repair-primary", "shoe-durability-repair", detail(state = ShoeDetailState.Ready(wornDown, wornDown)))
+        compose.onNodeWithTag("shoe-durability-repair").assertIsEnabled().assertHasClickAction()
+            .assertTextEquals(string(R.string.care_repair))
+        compose.onNodeWithTag("shoe-upgrade-open").assertIsEnabled().assertTextEquals(string(R.string.care_upgrade_open))
         compose.onAllNodesWithTag("detail-primary-action").assertCountEquals(0)
-        compose.onNodeWithTag("shoe-detail-wearing").assertTextEquals(string(R.string.sdv_status_wearing))
-        compose.onNodeWithTag("shoe-durability-repair", useUnmergedTree = true).assertIsEnabled()
-        // 결과를 모르는 수리가 있으면 예전처럼 "지금 신고 있어요"(누를 수 없음)
+        compose.onAllNodesWithTag("detail-primary-repair").assertCountEquals(0)
+        compose.onNodeWithTag("shoe-detail-meta", useUnmergedTree = true)
+            .assert(hasText(string(R.string.sdv_status_wearing), substring = true))
+        // 결과를 모르는 수리가 있으면 수리하기 · 강화하기 모두 누를 수 없다
         show("SD20b-worn-repair-pending", "shoe-repair-pending",
             detail(state = ShoeDetailState.Ready(wornDown, wornDown), care = ShoeCareStatus(repairPending = true)))
-        compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled()
+        compose.onAllNodesWithTag("detail-primary-action").assertCountEquals(0)
+        compose.onNodeWithTag("shoe-upgrade-open").assertIsNotEnabled()
         compose.onNodeWithTag("shoe-durability-repair", useUnmergedTree = true).assertIsNotEnabled()
         // SD05 · SD06 · SD07
         show("SD05-rejected", "shoe-equip-error",

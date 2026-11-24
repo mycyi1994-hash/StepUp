@@ -47,9 +47,10 @@ import org.junit.Test
 /**
  * 신발 등급 프레임 v8(docs/redesign/shoe-grade-frames) — 앱의 네 등급(일반 · 레어 · 에픽 · 레전더리)을 실제 화면에서 찍는다.
  *
- * 신발 화면 확정안(2026-09-28)부터 내 신발의 큰 신발은 등급 프레임 무대다 — 신발 탭에서 네 등급을 차례로 골라 무대가 창 안에
- * 온전히 · 440:418 그대로 · 세로 스크롤 없이 보유 목록과 함께 서는지, 보유 칸 · 신발 보관함 2열 격자의 무대가 비율 그대로인지,
- * 뽑기 결과와 받침 무대의 상세(보유 신발 상세 v1), 밝은 테마 · 좁은 폭 · 큰 글씨를 본다.
+ * 2026-11-24 재디자인(docs/redesign/plain-2026-11-24)부터 내 신발 탭 · 신발 상세의 큰 신발은 등급 무대 · 카드가 아니라 상자 없는 신발 그림
+ * (ProductImage — 높이만 고정: 탭 120dp(빠듯하면 100dp) · 상세 128dp)이고 등급은 이름 아래 글이다. 신발 탭에서 네 등급을 차례로 골라 그림이
+ * 창 안에 온전히 · 세로 스크롤 없이 보유 목록과 함께 서는지, 보유 칸 · 신발 보관함 2열 격자의 등급 무대가 비율 그대로인지,
+ * 뽑기 결과의 등급 무대, 밝은 테마 · 좁은 폭 · 큰 글씨를 본다.
  * 신발은 기존 52종 그림이고, 이 테스트가 넣은 신발은 끝나면 지우고 원래 신던 신발을 다시 신긴다.
  */
 class ShoeGradeFrameTest {
@@ -115,21 +116,26 @@ class ShoeGradeFrameTest {
             assertTrue("two columns: ${cards[0]} · ${cards[1]}", abs(cards[0].top - cards[1].top) < 2f && cards[1].left > cards[0].right)
             shot("07-vault-grid")
 
-            // 09 — 레전더리 칸 → 상세(카툰 입체형 확정안 — 등급 무대, 비율 그대로, 실제 신발 그림)
+            // 09 — 레전더리 칸 → 상세(2026-11-24 재디자인 05 — 등급 무대 없이 신발 그림 128dp, 등급은 이름 아래 "레전더리 · Lv.1 · No. …")
             val legendary = shoes.getValue(Rarity.LEGENDARY)
             grid().performScrollToNode(hasTestTag("vault-card-$legendary"))
             compose.onNodeWithTag("vault-card-$legendary").performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("vault-grid").fetchSemanticsNodes().isEmpty() }
-            awaitSingle("grade-stage-legendary")
             awaitSingle("shoe-art")
-            keepsRatio(stageBounds("grade-stage-legendary"), "detail stage")
+            compose.onAllNodesWithTag("grade-stage-legendary", useUnmergedTree = true).assertCountEquals(0)
+            val art = stageBounds("shoe-art")
+            val window = compose.onRoot().fetchSemanticsNode().boundsInRoot
+            assertEquals("detail art keeps its fixed height", 128f, art.height / compose.density.density, 1.5f)
+            assertTrue("detail art inside the window: $art in $window", art.left >= window.left - 1 && art.right <= window.right + 1)
+            compose.onNodeWithTag("shoe-detail-meta", useUnmergedTree = true)
+                .assertTextContains(compose.activity.getString(R.string.shoe_tier_legendary), substring = true)
             shot("09-detail-legendary")
         } finally {
             restore(shoes)
         }
     }
 
-    /** 밝은 테마 · 좁은 폭(320dp) · 큰 글씨 — 무대가 첫 화면 안에 온전히, 찌그러지지 않게 */
+    /** 밝은 테마 · 좁은 폭(320dp) · 큰 글씨 — 신발 그림이 첫 화면 안에 온전히, 찌그러지지 않게 */
     @Test fun gradeFramesAcrossThemesAndSizes() {
         val shoes = seedGrades()
         var light by mutableStateOf(true)
@@ -232,10 +238,10 @@ class ShoeGradeFrameTest {
     }
 
     /**
-     * 신발 카드(UI 최종 통합안 2026-10-25 — 신발 탭 큰 그림은 등급 무대가 아니라 장소 사진 카드다) — 카드가 창 안에 온전히(잘리지 않게),
-     * 361:236 비율 그대로, 왼쪽 위 줄이 보이는 갈래 [tier] 의 등급이다.
+     * 신발 그림(2026-11-24 재디자인 — 상자 · 카드 없이 높이만 고정한 그림, 탭 120dp · 빠듯하면 100dp) — 그림 칸이 창 안에 온전히(잘리지 않게),
+     * 가운데, 이름 아래 줄이 보이는 갈래 [tier] 의 등급이다.
      * [firstView] 면 넘기지 않은 첫 화면에서 본다 — 세로 스크롤 거리가 0 이고 보유 목록 줄이 창 안에 있다(보통 글씨).
-     * 아니면 카드까지 넘긴 뒤에 본다(큰 글씨).
+     * 아니면 그림까지 넘긴 뒤에 본다(큰 글씨).
      */
     private fun stageFullyVisible(tier: String, firstView: Boolean = true) {
         awaitSingle("shoe-hero")
@@ -247,12 +253,15 @@ class ShoeGradeFrameTest {
         compose.waitForIdle()
         val viewport = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().boundsInRoot
         val card = stageBounds("shoe-hero")
-        keepsRatio(card, "shoe card", expected = 361f / 236f)
-        assertTrue("shoe card fully inside the window: $card in $viewport",
+        val heightDp = card.height / compose.density.density
+        assertTrue("shoe art keeps its fixed height (120 or 100dp): ${heightDp}dp",
+            abs(heightDp - 120f) < 1.5f || abs(heightDp - 100f) < 1.5f)
+        assertTrue("shoe art fully inside the window: $card in $viewport",
             card.top >= viewport.top - 1 && card.bottom <= viewport.bottom + 1 &&
                 card.left >= viewport.left - 1 && card.right <= viewport.right + 1)
-        val minHeight = with(compose.density) { 112.dp.toPx() }
-        assertTrue("shoe card keeps the shoe visible: ${card.height}", card.height >= minHeight)
+        assertEquals("shoe art is centred", viewport.center.x, card.center.x, 2f * compose.density.density)
+        compose.onAllNodes(hasTestTagPrefix("grade-stage-") and hasAnyAncestor(hasTestTag("shoe-hero")), useUnmergedTree = true)
+            .assertCountEquals(0)
         if (firstView) {
             val range = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
             assertEquals("my shoes fits without vertical scrolling", 0f, range.maxValue(), 1f)

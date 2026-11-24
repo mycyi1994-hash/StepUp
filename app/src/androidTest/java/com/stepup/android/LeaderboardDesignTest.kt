@@ -43,10 +43,12 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * 리더보드(2026-10-17 전달본) — 크루 · 개인 · 주간 포인트 세 판과 시트 · 상태를 실제로 그려 본다.
+ * 리더보드 — 크루 · 개인 · 주간 포인트 세 판과 시트 · 상태를 실제로 그려 본다. 2026-11-24 재디자인(09 크루순위 · 09b 불러오기실패)부터
+ * 앱 테마를 따르고(예전의 늘 남색 · 흐르는 배경 · 제목 띠 없음), 크루 순위는 시상대 칸 대신 흰 카드 하나의 줄(1~3위도 같은 카드),
+ * 아래에 "내 크루" 줄이 고정된다(크루가 없으면 캐릭터 · "크루 찾기 ›"). 불러오기 실패는 캐릭터 빈 화면 + "다시 시도" 글자 버튼.
  *
  * 순위는 개발용 고정 값([FixtureLeaderboards] — 시안의 예시 이름 · 수치)이다. 주간 포인트의 실제 앱 상태는 '준비 중'(서버 순위 없음)이고
- * 고정 값 화면은 모양만 확인한다. 장면은 leaderboard/ 에 남는다(L01~ 장면, M01~ 배경이 흐르는 프레임).
+ * 고정 값 화면은 모양만 확인한다. 장면은 leaderboard/ 에 남는다(L01~ 장면, M01~ 움직임을 켠 채 시계를 넘긴 프레임).
  */
 class LeaderboardDesignTest {
     // 앞 검사가 앱 언어를 바꿔 두었을 수 있다 — 한국어로 찍고 끝나면 되돌린다(RunJourneyDesignTest 와 같은 방식)
@@ -77,10 +79,19 @@ class LeaderboardDesignTest {
     private var reduced by mutableStateOf(true)
     private var scene by mutableStateOf<(@Composable () -> Unit)?>(null)
 
-    private fun open(source: FixtureLeaderboards, initial: LeaderBoardKind = LeaderBoardKind.CREW, tag: String) {
+    private fun open(
+        source: FixtureLeaderboards,
+        initial: LeaderBoardKind = LeaderBoardKind.CREW,
+        tag: String,
+        onFindCrew: (() -> Unit)? = null,
+    ) {
         compose.runOnIdle {
             val model = LeaderboardViewModel(source)
-            scene = { androidx.compose.runtime.key(model) { LeaderboardScreen(onBack = {}, initial = initial, viewModel = model) } }
+            scene = {
+                androidx.compose.runtime.key(model) {
+                    LeaderboardScreen(onBack = {}, initial = initial, viewModel = model, onFindCrew = onFindCrew)
+                }
+            }
         }
         awaitTag(tag)
     }
@@ -89,16 +100,24 @@ class LeaderboardDesignTest {
         edgeToEdge()
         compose.setContent { Frame { scene?.invoke() } }
 
-        // L01 크루 — 1위 블루 면 · 2 · 3위 나란히 · 4위부터 목록 · 아래 우리 크루
+        // L01 크루 — 흰 카드 하나에 1위부터 차례로(1 · 2 · 3위도 같은 카드의 줄, 시상대 칸 없음) · 아래 고정된 우리 크루
         open(FixtureLeaderboards(), tag = "lb-crew-winner")
         awaitTag("lb-crew-podium-2")
         awaitTag("lb-crew-podium-3")
         awaitTag("lb-crew-footer")
+        val winner = bounds("lb-crew-winner")
+        val second = bounds("lb-crew-podium-2")
+        val third = bounds("lb-crew-podium-3")
+        check(second.top >= winner.bottom - 1 && third.top >= second.bottom - 1) { "1 · 2 · 3위는 위에서 아래로 한 줄씩: $winner $second $third" }
+        check(kotlin.math.abs(winner.left - second.left) < 1f && kotlin.math.abs(winner.width - second.width) < 1f) {
+            "1 · 2위는 같은 카드의 같은 폭 줄: $winner $second"
+        }
+        check(!exists("lb-backdrop") && !exists("lb-title")) { "흐르는 배경 · 제목 띠는 없다(2026-11-24 재디자인)" }
         compose.onNodeWithTag("lb-crew-winner-name", useUnmergedTree = true).assertTextContains("서울러닝클럽")
         compose.onNodeWithTag("lb-crew-footer-rank", useUnmergedTree = true).assertTextContains("12")
         compose.onNodeWithTag("lb-criterion", useUnmergedTree = true).assertTextContains(text(com.stepup.android.R.string.lb_criterion_crew))
         shot("L01-crew")
-        // L02 우리 크루 앞뒤 — 시트가 열린 동안 배경은 멈춘다
+        // L02 우리 크루 앞뒤 — 아래 고정된 우리 크루 줄을 누르면
         tap("lb-crew-footer")
         awaitTag("lb-sheet-crew_nearby")
         awaitTag("lb-row-me")
@@ -175,17 +194,30 @@ class LeaderboardDesignTest {
         open(FixtureLeaderboards(runners = LeaderLoad.Ready(LeaderboardSamples.runners(ranked = false))), LeaderBoardKind.PERSONAL, "lb-personal-unranked")
         check(!exists("lb-personal-hero") && !exists("lb-runner-list-0")) { "순위가 없으면 큰 순위 · 내 주변이 없다" }
         shot("L11-personal-unranked")
-        // L12 크루 없음
+        // L12 크루 없음 — 아래 줄은 캐릭터 · "크루가 없어요"(크루 찾기 길이 없으면 설명 글)
         open(FixtureLeaderboards(crews = LeaderLoad.Ready(LeaderboardSamples.crews(mine = false))), tag = "lb-crew-footer")
         compose.onNodeWithTag("lb-crew-footer")
             .assertTextContains(text(com.stepup.android.R.string.lb_crew_none_title), substring = true)
+        check(!exists("lb-crew-find")) { "크루 찾기 길이 없으면 글자 버튼도 없다" }
         shot("L12-crew-no-crew")
-        // L13 통신 실패 — 다시 시도
+        // L12b 크루 없음 · 크루 찾기 길이 있다 — 줄 오른쪽 "크루 찾기 ›"가 그 길을 연다
+        var finds = 0
+        open(FixtureLeaderboards(crews = LeaderLoad.Ready(LeaderboardSamples.crews(mine = false))), tag = "lb-crew-footer",
+            onFindCrew = { finds++ })
+        compose.onNodeWithTag("lb-crew-find")
+            .assertTextContains(text(com.stepup.android.R.string.rd_d_find_crew), substring = true)
+        tap("lb-crew-find")
+        compose.runOnIdle { check(finds == 1) { "크루 찾기는 한 번 눌러 한 번 연다: $finds" } }
+        shot("L12b-crew-no-crew-find")
+        // L13 통신 실패 — 캐릭터 빈 화면 · "다시 시도" 글자 버튼(숫자 · 우리 크루 줄 없음)
         open(FixtureLeaderboards(crews = LeaderLoad.Failed(offline = true)), tag = "lb-failed")
         awaitTag("lb-failed-action")
+        compose.onNodeWithTag("lb-failed-action")
+            .assertTextContains(text(com.stepup.android.R.string.lb_retry), substring = true)
+        check(!exists("lb-crew-footer") && !exists("lb-crew-winner")) { "실패한 판에 순위 · 우리 크루 줄이 보이면 안 된다" }
         shot("L13-crew-failed")
 
-        // L14 작은 화면 · L15 큰 글씨 · L16 밝은 테마(리더보드는 늘 남색)
+        // L14 작은 화면 · L15 큰 글씨 · L16 밝은 테마(2026-11-24 재디자인부터 리더보드도 앱 테마를 따른다)
         compose.runOnIdle { viewport = Viewport(360, 740) }
         open(FixtureLeaderboards(), tag = "lb-crew-winner")
         shot("L14-crew-360")
@@ -197,30 +229,27 @@ class LeaderboardDesignTest {
         shot("L16-points-light-theme")
     }
 
-    /** 배경이 흐르는 프레임 — 시계를 손으로 넘겨 같은 화면의 빛 · 1위 띠가 움직이는지 본다(M01~M04) */
-    @Test fun motionFrames() {
+    /**
+     * 움직임을 켜도(모션 줄이기 끔) 화면은 가만히 있다 — 2026-11-24 재디자인에 흐르는 배경 · 1위 띠가 없다. 끝없이 도는 움직임이 있으면
+     * 시계를 스스로 넘기는 waitForIdle 이 끝나지 않는다. 시계를 넘겨 찍은 프레임(M01~M02)은 같은 화면이어야 한다.
+     */
+    @Test fun staysStillWithMotionOn() {
         edgeToEdge()
-        compose.mainClock.autoAdvance = false
         reduced = false
         compose.setContent { Frame { scene?.invoke() } }
-        compose.runOnUiThread {
-            val model = LeaderboardViewModel(FixtureLeaderboards())
-            scene = { LeaderboardScreen(onBack = {}, viewModel = model) }
-        }
-        // 시계를 멈춰 두었으니(배경이 끝없이 돈다) 기다림도 시계를 손으로 넘기며 — 순위가 오면 다음 프레임에 그려진다
-        var ready = false
-        repeat(150) {
-            if (!ready) {
-                compose.mainClock.advanceTimeBy(100)
-                ready = exists("lb-crew-winner")
-            }
-        }
-        check(ready) { "크루 1위 면이 그려지지 않았다" }
-        listOf(0L, 1_500L, 1_500L, 1_500L).forEachIndexed { i, step ->
+        open(FixtureLeaderboards(), tag = "lb-crew-winner")
+        compose.waitForIdle()
+        check(!exists("lb-backdrop")) { "흐르는 배경은 없다" }
+        compose.mainClock.autoAdvance = false
+        val before = compose.onNodeWithTag("lb-crew-winner", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        listOf(0L, 1_500L).forEachIndexed { i, step ->
             compose.mainClock.advanceTimeBy(step)
             awaitFrameOnScreen(compose.activity)
-            captureDisplay(File(directory, "M0${i + 1}-crew-motion.png"))
+            captureDisplay(File(directory, "M0${i + 1}-crew-still.png"))
         }
+        val after = compose.onNodeWithTag("lb-crew-winner", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        check(before == after) { "1위 줄은 제자리에 있다: $before → $after" }
+        compose.mainClock.autoAdvance = true
     }
 
     @Composable private fun Frame(content: @Composable () -> Unit) {
@@ -237,6 +266,8 @@ class LeaderboardDesignTest {
             }
         }
     }
+
+    private fun bounds(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
 
     private fun exists(tag: String): Boolean = compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
 
