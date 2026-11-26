@@ -354,7 +354,7 @@ private fun MyShoesReady(
                             shoe, showStats = true,
                             efficiency = com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.efficiencyIndex(shoe)),
                             comfort = com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.comfortIndex(shoe)),
-                            onClick = { onOpenSneaker(shoe.id) }, clickLabel = manage,
+                            onClick = { onOpenSneaker(shoe.id) }, clickLabel = manage, hero = shoe.id == shown.id,
                             modifier = Modifier.width(cardWidth).graphicsLayer {
                                 val s = 1f - .12f * away
                                 scaleX = s
@@ -397,8 +397,14 @@ private fun MyShoesReady(
                                 .testTag("shoe-choice-${shoe.id}"),
                             contentAlignment = Alignment.Center,
                         ) {
+                            // 신고 있는 켤레의 점은 파랑(착용 표시 — 예전 보유 목록의 체크와 같은 이름 shoe-worn-badge)
                             Box(Modifier.height(6.dp).width(if (on) 20.dp else 6.dp).clip(CircleShape)
-                                .background(if (on) StepUpUi.colors.label else StepUpUi.colors.separator))
+                                .background(when {
+                                    shoe.equipped -> StepUpUi.colors.primary
+                                    on -> StepUpUi.colors.label
+                                    else -> StepUpUi.colors.separator
+                                })
+                                .then(if (shoe.equipped) Modifier.testTag("shoe-worn-badge") else Modifier))
                         }
                     }
                 }

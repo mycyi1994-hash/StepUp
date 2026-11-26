@@ -136,8 +136,9 @@ class ShoeDetailDesignTest {
             // 이름 끝에 공통 등급 배지(2026-09-29) — 이름 글 뒤에 배지 자리(" 레어")가 붙는다
             compose.onNode(hasText(modelName(1107), substring = true) and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
                 .assertExists()
-            compose.onNode(hasTestTag("tier-badge-rare") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
-                .assertExists()
+            // v12(2026-11-26) — 등급은 카드 왼쪽 위 칩(shoe-card-tag)
+            compose.onNode(hasTestTag("shoe-card-tag") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertTextContains(string(R.string.shoe_tier_rare), substring = true)
             // 카툰 입체형 네 칸 — 실제 켤레의 값(레벨 1 / 20 — 레어 최대 20, 0066 · 번호는 이 켤레의 민팅 번호)
             compose.onNodeWithTag("shoe-cell-level-value", useUnmergedTree = true).assertTextEquals("1 / 20")
             val mint = runBlocking { dao.byId(seeded.single)?.mintNumber }
@@ -145,27 +146,21 @@ class ShoeDetailDesignTest {
             compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_wear))
             shot("02-in-app-detail")
 
-            // 파란 톤 v4 SD15 — 신발 기록(⋯ 관리 안): 신발 번호 · 획득일 · 체인 등록(이 기기에서 넣은 신발이라 등록 없음)
-            tap("shoe-more")
-            awaitTag("shoe-manage-sheet")
-            tap("shoe-row-info")
+            // 파란 톤 v4 SD15 — 신발 기록(v12: 화면 아래 "신발 기록" 글 링크): 신발 번호 · 획득일 · 체인 등록(이 기기에서 넣은 신발이라 등록 없음)
+            tap("shoe-care-record")
             awaitTag("shoe-info-sheet")
             compose.onNodeWithTag("shoe-info-chain").assertTextContains(string(R.string.care_chain_none))
             shot("06-in-app-info")
             tap("shoe-info-ok")
             awaitGone("shoe-info-sheet")
 
-            // SD13 — ⋯ 신발 관리: 수리하기 · 판매하기 · 신발 기록(강화는 본문 아래 직접 버튼). 보기만 하고 닫는다
-            tap("shoe-more")
-            awaitTag("shoe-manage-sheet")
-            awaitTag("shoe-manage-repair")
+            // SD13 — v12(2026-11-26): ⋯ 관리 시트 대신 화면에 신발 기록 · 판매 · 이름 바꾸기 글 링크(수리는 내구도 줄의 칩)
             // 거래를 멈춘 동안(0108 · MarketFeature.TRADING)은 판매하기를 누를 수 없다
-            if (com.stepup.android.domain.MarketFeature.TRADING) compose.onNodeWithTag("shoe-manage-sell").assertIsEnabled()
-            else compose.onNodeWithTag("shoe-manage-sell").assertIsNotEnabled()
-            compose.onAllNodesWithTag("shoe-manage-enhance").assertCountEquals(0)
+            if (com.stepup.android.domain.MarketFeature.TRADING) compose.onNodeWithTag("shoe-care-sell").assertIsEnabled()
+            else compose.onNodeWithTag("shoe-care-sell").assertIsNotEnabled()
+            compose.onNodeWithTag("shoe-rename").assertExists()
+            compose.onAllNodesWithTag("shoe-manage-sheet").assertCountEquals(0)
             shot("19-in-app-manage")
-            back()
-            awaitGone("shoe-manage-sheet")
             assertEquals(original, runBlocking { dao.equippedNow()?.id })
 
             // 09 → 10 — 이 신발 신기: 기존 착용 길(equipExclusively)로 저장되고, 저장된 착용이 바뀐 뒤에만 완료 알림
@@ -174,10 +169,10 @@ class ShoeDetailDesignTest {
             awaitTag("shoe-worn-toast")
             compose.onNodeWithTag("shoe-worn-toast").assertTextContains(modelName(1107), substring = true)
             shot("10-in-app-equipped", settle = 250)
-            compose.waitUntil(5_000) {
-                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
-            }
-            compose.onNodeWithTag("detail-primary-action").assertTextEquals(string(R.string.sdv_status_wearing))
+            // v12 — 신은 신발: 신기 버튼은 없어지고 주 버튼은 강화하기 하나, 머리에 "✓ 착용 중"
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isEmpty() }
+            awaitTag("shoe-upgrade-open")
+            compose.onNodeWithTag("shoe-detail-wearing", useUnmergedTree = true).assertExists()
             assertEquals(1, runBlocking { dao.allNow().count { it.equipped } })
 
             // 12 — 뒤로: 목록의 체크가 같은 id 로 옮겨 가고, 보던 켤레는 그대로("착용 중")
@@ -243,7 +238,8 @@ class ShoeDetailDesignTest {
         // 01 — 보는 신발(칸 테두리) · 신고 있는 신발(작은 체크)을 가른다. 켤레 수는 4 — 같은 모델 두 켤레도 각자 한 칸
         show("s01-owned-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
         assertMetaWearing(false)
-        compose.onNodeWithTag("shoe-owned-count", useUnmergedTree = true).assertTextEquals("4")
+        // v12 — "보유 4켤레"
+        compose.onNodeWithTag("shoe-owned-head", useUnmergedTree = true).assertTextContains("4", substring = true)
         compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${WORN.id}")), useUnmergedTree = true)
             .assertExists()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsSelected()
@@ -255,10 +251,8 @@ class ShoeDetailDesignTest {
         // 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
         compose.onAllNodesWithTag("shoe-durability-repair", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
-        // 아이템칸 — 잠긴 자리 셋만(아이템 · 숫자 없음)
-        compose.onNodeWithTag("shoe-item-slots", useUnmergedTree = true).assertExists()
-        compose.onAllNodesWithTag("shoe-item-slot-2", useUnmergedTree = true).assertCountEquals(1)
-        compose.onAllNodesWithTag("shoe-item-slot-3", useUnmergedTree = true).assertCountEquals(0)
+        // 아이템칸(잠긴 자리)은 v12 상세에서 뺐다(2026-11-26)
+        compose.onAllNodesWithTag("shoe-item-slots", useUnmergedTree = true).assertCountEquals(0)
         compose.onNodeWithTag("shoe-care-sell", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("shoe-care-record", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
@@ -291,9 +285,11 @@ class ShoeDetailDesignTest {
         assertCell("durability", "100 / 100")
         assertNameHas("No. 12345")
         assertBarsAligned()
-        // 03 — 신고 있는 신발: 버튼은 강화가 아니라 "지금 신고 있어요"(누를 수 없음)
+        // 03 — 신고 있는 신발(v12): 주 버튼은 강화하기 하나 · 머리에 "✓ 착용 중"
         show("s03-equipped-detail", "shoe-art", detail(ready(WORN)))
-        compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled().assertTextEquals(string(R.string.sdv_status_wearing))
+        compose.onAllNodesWithTag("detail-primary-action").assertCountEquals(0)
+        compose.onNodeWithTag("shoe-upgrade-open").assertIsEnabled()
+        compose.onNodeWithTag("shoe-detail-wearing", useUnmergedTree = true).assertExists()
         // 파란 톤 v4 — 예전 능력치 자세히 · 설명 시트(04 · 05)는 본문 네 줄로 바뀌어 없다(전달본 07-기존화면-대응표)
         // SD15 · SD17 신발 기록 — 체인 등록: 없음 · v3 금고. 민팅 번호와 체인 번호를 합치지 않는다
         show("s06-shoe-information", "shoe-info-sheet", detail(ready(PAIR_A), sheet = "Record"))
@@ -308,7 +304,7 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-info-faction").assertCountEquals(0)
         // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
         show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
-        compose.onNodeWithTag("shoe-card-no", useUnmergedTree = true).assertTextContains("#0004", substring = true)
+        compose.onNodeWithTag("shoe-card-no", useUnmergedTree = true).assertTextContains("0004", substring = true)
         compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsSelected()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
@@ -373,13 +369,13 @@ class ShoeDetailDesignTest {
 
         // 40 ~ 46 — 신발마다 다른 최대 내구도 · 레벨업 스탯 포인트(서버 0059). 값은 이 테스트 화면에만 있는 예시다
         val withPoints = all + POINTS + RESPEC
-        show("s40-points-notice", "shoe-points-notice", detail(ready(POINTS, withPoints)))
+        // v12 — 포인트 알림 대신 늘 보이는 포인트 줄(shoe-care-points, 나눌 포인트 수)
+        show("s40-points-notice", "shoe-care-points", detail(ready(POINTS, withPoints)))
         // 내구도는 달릴 수 있는 분 — 1분마다 5 × 효율 포인트 배수(서버 0119: 레어 포인트 2 = × 1.022) → 1,180 / 1,330 = 230 / 260분
         assertCell("durability", string(R.string.v4s_minutes, "230 / 260"))
-        compose.onNodeWithTag("shoe-points-notice").assertExists()
-        // 다시 나누기만 남은 신발은 알림 없이 ⋯ 안에만
-        show("s40b-points-respec-detail", "shoe-art", detail(ready(RESPEC, withPoints)))
-        compose.onAllNodesWithTag("shoe-points-notice").assertCountEquals(0)
+        compose.onNodeWithTag("shoe-care-points").assertIsEnabled()
+        // 다시 나누기만 남은 신발도 같은 줄에서
+        show("s40b-points-respec-detail", "shoe-care-points", detail(ready(RESPEC, withPoints)))
         show("s41-manage-points", "shoe-manage-sheet", detail(ready(POINTS, withPoints), sheet = "Manage"))
         compose.onNodeWithTag("shoe-manage-points").assertIsEnabled()
         val basis = requireNotNull(pointsBasisOf(POINTS))
@@ -431,7 +427,7 @@ class ShoeDetailDesignTest {
         compose.runOnIdle { large = true }
         show("s33-narrow-large-approved", "shoe-art", detail(ready(APPROVED, all + APPROVED)))
         assertBarsAligned()
-        listOf("level", "efficiency", "comfort", "durability").forEach { stat ->
+        listOf("efficiency", "comfort", "durability").forEach { stat ->
             val width = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode().size.width
             assertTrue("$stat bar keeps a visible width: $width", width > 100)
         }
@@ -474,10 +470,11 @@ class ShoeDetailDesignTest {
         compose.onNodeWithTag("shoe-cell-$stat-value", useUnmergedTree = true).assertTextEquals(value)
     }
 
-    /** 네 막대의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다).
+    /** 아래 세 막대의 시작점 · 끝점이 같다(값이 긴 줄만 짧아지지 않는다).
      *  큰 글씨에선 아래 칸이 화면 밖일 수 있어 잘리지 않은 위치 · 크기로 잰다 */
     private fun assertBarsAligned() {
-        val spans = listOf("level", "efficiency", "comfort", "durability").map { stat ->
+        // v12(2026-11-26) — 레벨 막대는 이름 줄 안의 짧은 막대, 효율 · 착화감 · 내구도 셋이 같은 폭
+        val spans = listOf("efficiency", "comfort", "durability").map { stat ->
             val node = compose.onNodeWithTag("shoe-cell-$stat-bar", useUnmergedTree = true).fetchSemanticsNode()
             node.positionInRoot.x to node.positionInRoot.x + node.size.width
         }

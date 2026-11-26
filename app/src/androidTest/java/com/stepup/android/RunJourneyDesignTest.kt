@@ -150,6 +150,8 @@ class RunJourneyDesignTest {
             val shoeId = requireNotNull(added)
             compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
             awaitTag("shoe-hero-name")
+            // v12(2026-11-26) — 이름 바꾸기는 신발 상세의 "이름 바꾸기"로 옮겼다
+            tap("shoe-manage")
             tap("shoe-rename")
             awaitTag("shoe-rename-sheet")
             compose.onNodeWithTag("shoe-rename-field").performTextClearance()
@@ -173,6 +175,8 @@ class RunJourneyDesignTest {
             tap("shoe-rename-reset")
             awaitGone("shoe-rename-sheet")
             compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] } == null }
+            back()
+            awaitTag("my-shoes")
             compose.onNodeWithTag("nav-label-${Screen.Run.route}", useUnmergedTree = true).performClick()
             awaitTag("home-start-run")
             tap("home-steps")
@@ -561,7 +565,8 @@ class RunJourneyDesignTest {
                 compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true)
                     .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
                 assertTrue("${next.label}: the whole name shows (${layouts.map { it.lineCount }})", layouts.none { it.hasVisualOverflow })
-                compose.onNodeWithTag("shoe-rename").assertIsDisplayed()
+                // 이름 바꾸기는 신발 상세로(v12 2026-11-26) — 신발 탭에서는 상세로 가는 주 버튼이 보인다
+                compose.onNodeWithTag("shoe-manage").assertIsDisplayed()
                 shot("SHOES-long-name-${next.label}")
             }
         } finally {
@@ -1896,7 +1901,10 @@ class RunJourneyDesignTest {
     private fun assertResultFits(where: String) {
         compose.waitForIdle()
         val done = bounds("run-result-done")
-        val share = bounds("run-result-share")
+        // 공유는 ⋯ 안으로(v12 2026-11-26) — ⋯ 버튼이 화면 안 · 완료보다 위
+        val share = bounds(
+            if (compose.onAllNodesWithTag("run-result-share").fetchSemanticsNodes().isNotEmpty()) "run-result-share" else "run-result-more",
+        )
         val frame = bounds(FRAME)
         assertTrue("done inside the screen at $where: $done / $frame", done.top >= frame.top - 1 && done.bottom <= frame.bottom + 1)
         assertTrue("share inside the screen at $where: $share / $frame", share.top >= frame.top - 1 && share.bottom <= frame.bottom + 1)

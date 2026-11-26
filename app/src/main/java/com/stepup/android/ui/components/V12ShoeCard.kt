@@ -18,6 +18,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +35,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -71,6 +77,11 @@ fun V12ShoeCard(
     comfort: String? = null,
     onClick: (() -> Unit)? = null,
     clickLabel: String? = null,
+    /**
+     * 화면의 주인공 카드 — 위 줄 · 번호 · 이름에 예전 신발 카드와 같은 테스트 이름(shoe-card-tag · shoe-card-no · shoe-hero-name)을 붙인다.
+     * 카드 넘기기의 양옆 카드는 false(같은 이름이 둘 생기지 않게)
+     */
+    hero: Boolean = true,
 ) {
     val shape = RoundedCornerShape(22.dp)
     val rim = v12TierRim(shoe.tier)
@@ -94,15 +105,21 @@ fun V12ShoeCard(
             .then(if (clickLabel != null) Modifier.semantics { contentDescription = clickLabel } else Modifier),
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            // 화면 읽기 · 검사는 "착용 중 · 레어"로 읽는다(눈에는 등급 칩만 — 착용 중은 카드 아래 줄)
+            val tierText = shoe.tier.label()
+            val meta = if (shoe.equipped) androidx.compose.ui.res.stringResource(R.string.my_shoes_wearing) + " · " + tierText else tierText
             Text(
-                shoe.tier.label(), color = Color(0xFF1B2433), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                tierText, color = Color(0xFF1B2433), fontSize = 13.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = .82f))
-                    .padding(horizontal = 7.dp, vertical = 2.dp).testTag("v12-card-tier"),
+                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                    // 이름표가 먼저 — clearAndSetSemantics 는 그 뒤(안쪽) 의미를 지운다
+                    .testTag(if (hero) "shoe-card-tag" else "v12-card-tier")
+                    .then(if (hero) Modifier.clearAndSetSemantics { text = androidx.compose.ui.text.AnnotatedString(meta) } else Modifier),
             )
             Spacer(Modifier.weight(1f))
             Text(
-                String.format(java.util.Locale.ROOT, "No.%04d", shoe.mintNumber), color = Color.White.copy(alpha = .78f), fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold, maxLines = 1,
+                com.stepup.android.ui.screens.items.formatShoeNumber(shoe.mintNumber), color = Color.White.copy(alpha = .78f), fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = if (hero) Modifier.testTag("shoe-card-no") else Modifier,
             )
         }
         ShoeArtThumbnail(
@@ -113,9 +130,14 @@ fun V12ShoeCard(
         )
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // 긴 이름(별명 20자)도 늘 다 보인다 — 세 줄까지, 넘치면 글자를 줄인다(2026-10-17 "이름은 늘 다 보이게")
+                val name = shoe.shoeName()
+                var nameSize by remember(name) { mutableFloatStateOf(24f) }
                 Text(
-                    shoe.shoeName(), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).testTag("v12-card-name"),
+                    name, color = Color.White, fontSize = nameSize.sp, lineHeight = (nameSize * 1.18f).sp, fontWeight = FontWeight.ExtraBold,
+                    maxLines = 3, overflow = TextOverflow.Clip,
+                    onTextLayout = { if (it.hasVisualOverflow && nameSize > 12f) nameSize -= 1f },
+                    modifier = Modifier.weight(1f).testTag(if (hero) "shoe-hero-name" else "v12-card-name"),
                 )
                 if (showStats) {
                     Spacer(Modifier.width(8.dp))

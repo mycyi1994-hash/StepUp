@@ -91,10 +91,10 @@ class ShoeGradeFrameTest {
             }
             // "신발 자세히 보기" 글 링크는 없다(신발 화면 확정안 2026-09-28)
             compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
-            // 05 — 보유 칸(가로 목록): 작은 프레임 비율 그대로
+            // 05 — v12(2026-11-26): 보유 칸은 카드 아래 점 — 켤레마다 하나
             GRADES.forEach { rarity ->
                 showTile(shoes.getValue(rarity))
-                thumbKeepsRatio(rarity)
+                compose.onNodeWithTag("shoe-choice-${shoes.getValue(rarity)}").assertExists()
             }
             shot("05-owned-row")
 
@@ -120,9 +120,11 @@ class ShoeGradeFrameTest {
             grid().performScrollToNode(hasTestTag("vault-card-$legendary"))
             compose.onNodeWithTag("vault-card-$legendary").performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("vault-grid").fetchSemanticsNodes().isEmpty() }
-            awaitSingle("grade-stage-legendary")
+            // v12 — 상세 무대는 등급 테두리 카드(세로 0.72), 왼쪽 위 칩이 등급
             awaitSingle("shoe-art")
-            keepsRatio(stageBounds("grade-stage-legendary"), "detail stage")
+            compose.onNode(hasTestTag("shoe-card-tag") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertTextContains(compose.activity.getString(R.string.shoe_tier_legendary), substring = true)
+            keepsRatio(stageBounds("shoe-name"), "detail card", com.stepup.android.ui.components.V12ShoeCardRatio)
             shot("09-detail-legendary")
         } finally {
             restore(shoes)
@@ -158,7 +160,6 @@ class ShoeGradeFrameTest {
             pick(shoes.getValue(Rarity.EPIC))
             stageFullyVisible("epic")
             showTile(shoes.getValue(Rarity.RARE))
-            thumbKeepsRatio(Rarity.RARE)
             shot("11-light-owned")
 
             compose.runOnIdle { light = false; narrow = true }
@@ -170,7 +171,6 @@ class ShoeGradeFrameTest {
             stageFullyVisible("epic", firstView = false)
             shot("13-large-font")
             showTile(shoes.getValue(Rarity.LEGENDARY))
-            thumbKeepsRatio(Rarity.LEGENDARY)
             shot("14-large-font-owned")
         } finally {
             restore(shoes)
@@ -242,7 +242,8 @@ class ShoeGradeFrameTest {
         val label = compose.activity.getString(tierLabel(ShoeTier.valueOf(tier.uppercase(Locale.ROOT))))
         compose.waitUntil(10_000) {
             // v12 시제품(2026-11-26) — 카드 넘기기: 고른 켤레의 카드 등급 칩(옆 카드들도 있어 아무 카드에 그 등급이 있으면 된다)
-            compose.onAllNodesWithTag("v12-card-tier", useUnmergedTree = true).fetchSemanticsNodes().any { node ->
+            (compose.onAllNodesWithTag("shoe-card-tag", useUnmergedTree = true).fetchSemanticsNodes() +
+                compose.onAllNodesWithTag("v12-card-tier", useUnmergedTree = true).fetchSemanticsNodes()).any { node ->
                 node.config.getOrNull(SemanticsProperties.Text)?.any { it.text.contains(label) } == true
             }
         }
@@ -271,14 +272,6 @@ class ShoeGradeFrameTest {
         ShoeTier.LEGENDARY -> R.string.shoe_tier_legendary
         ShoeTier.REDLINE -> R.string.shoe_tier_redline
         ShoeTier.FINISH -> R.string.shoe_tier_finish
-    }
-
-    /** 목록 칸 — 눌리는 카드가 안쪽을 합치므로 합치기 전 나무에서 찾는다. 하나도 없으면 실패다 */
-    private fun thumbKeepsRatio(rarity: Rarity) {
-        compose.waitForIdle()
-        val thumbs = compose.onAllNodesWithTag("grade-thumb-${rarity.key}", useUnmergedTree = true).fetchSemanticsNodes()
-        assertTrue("${rarity.key} thumb is on screen", thumbs.isNotEmpty())
-        thumbs.forEach { keepsRatio(it.boundsInRoot, "${rarity.key} thumb") }
     }
 
     /** 무대 — 보관함 착용 카드처럼 눌리는 카드 안에 있으면 카드가 합치므로 합치기 전 나무에서 잰다 */

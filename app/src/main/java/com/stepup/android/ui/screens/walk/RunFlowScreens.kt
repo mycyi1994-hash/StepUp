@@ -170,8 +170,7 @@ internal fun RunStartMenuContent(
             if (onLeaderboard != null) MenuRow(stringResource(R.string.lb_menu_entry), onLeaderboard, "run-menu-leaderboard")
         }
         Spacer(Modifier.height(22.dp))
-        Text(stringResource(R.string.runflow_soon), style = StepUpUi.type.rowSubtitle, color = StepUpUi.colors.secondaryLabel,
-            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+        // 잠긴 묶음 — 줄마다 "준비 중"(묶음 머리글을 따로 두면 같은 말이 두 번)
         MenuGroup {
             MenuRow(stringResource(R.string.runflow_goal), if (RunMenuLocks.CHALLENGE) locked else onGoals, "run-menu-goals",
                 chevron = !RunMenuLocks.CHALLENGE)
@@ -208,7 +207,12 @@ private fun MenuRow(title: String, onClick: () -> Unit, tag: String, chevron: Bo
     ) {
         Text(title, style = StepUpUi.type.rowTitle.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
             color = if (chevron) c.label else c.label.copy(alpha = .75f), modifier = Modifier.weight(1f))
-        if (chevron) Icon(Icons.Filled.ChevronRight, null, tint = c.tertiaryLabel, modifier = Modifier.size(22.dp))
+        if (chevron) {
+            Icon(Icons.Filled.ChevronRight, null, tint = c.tertiaryLabel, modifier = Modifier.size(22.dp))
+        } else {
+            // 잠긴 줄 — 줄마다 "준비 중"(화면 읽기가 줄만 읽어도 알게, 2026-10-27 자물쇠 결정)
+            Text(stringResource(R.string.runflow_soon), style = StepUpUi.type.caption, color = c.tertiaryLabel)
+        }
     }
 }
 

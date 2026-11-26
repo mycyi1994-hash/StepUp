@@ -141,13 +141,7 @@ class MyShoesDesignTest {
             }
             assertEquals("Picking pairs must not change the stored equipment", seeded.worn, runBlocking { dao.equippedNow()?.id })
 
-            // 04 — 막대 기준(모든 신발에 같은 기준) — 능력치 덩어리를 누르면
-            compose.onNodeWithTag("shoe-stats").performClick()
-            awaitTag("shoe-basis-sheet")
-            compose.onNodeWithTag("shoe-basis-note", useUnmergedTree = true).assertExists()
-            shot("04-stat-basis", whole = true)
-            back()
-            awaitGone("shoe-basis-sheet")
+            // 04 — v12(2026-11-26): 능력치 막대 줄은 신발 상세로 옮겼다(카드에는 효율 · 착화감 두 값만) — 능력치 설명은 상세의 ⓘ
 
             // 05 — 관리(⋯): 그 켤레의 기존 상세(신기 · 강화 · 수리 · 판매). 여는 것만으로 착용은 그대로
             pick(seeded.byTier.getValue(ShoeTier.EPIC))
@@ -326,15 +320,16 @@ class MyShoesDesignTest {
         val nav = bounds(BOTTOM_NAV_TAG)
         val frame = bounds(VIEWPORT)
         val manage = bounds("shoe-manage")
-        for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-stats", "shoe-owned-row")) {
+        for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-owned-row")) {
             val b = bounds(tag)
             assertTrue("$tag inside the screen at ${viewport.label}: $b in $frame", b.top >= frame.top - 1 && b.bottom <= frame.bottom + 1)
             assertTrue("$tag above the bottom buttons at ${viewport.label}: $b / ${manage.top}", b.bottom <= manage.top + 1)
         }
         assertTrue("detail button above the bottom tabs at ${viewport.label}: $manage / nav ${nav.top}", manage.bottom <= nav.top + 1)
+        // v12 카드(세로 0.72) — 카드 넘기기 안에서 화면 너비를 넘지 않는다
         val card = bounds("shoe-hero")
-        assertTrue("the shoe card keeps 361:236 at ${viewport.label}: $card",
-            abs(card.width / card.height - 361f / 236f) < 0.03f)
+        assertTrue("the shoe cards stay inside the screen width at ${viewport.label}: $card / $frame",
+            card.left >= frame.left - 1 && card.right <= frame.right + 1)
     }
 
     /** 카드 아래 큰 이름 — 이름 글에 [name] 이 있다 */

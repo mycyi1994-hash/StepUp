@@ -347,8 +347,10 @@ class ExperienceUiTest {
                 runBlocking { dao.equippedNow()?.id })
             compose.onNodeWithTag("detail-primary-action").performClick()
             compose.waitUntil(5_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
+            // 신은 뒤 — 신기 버튼은 없어지고(v12 2026-11-26: 신은 신발의 주 버튼은 강화하기 하나) 다시 신을 수 없다
             compose.waitUntil(5_000) {
-                runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
+                compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isEmpty() ||
+                    runCatching { compose.onNodeWithTag("detail-primary-action").assertIsNotEnabled() }.isSuccess
             }
             // 뒤로 — 착용 체크가 같은 id 로 옮겨 가 있다(보는 켤레도 그대로 — "착용 중")
             compose.runOnIdle { detailId = null }
