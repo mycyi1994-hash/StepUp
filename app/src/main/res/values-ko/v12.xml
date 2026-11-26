@@ -7,4 +7,7 @@
     <string name="v12_repair_short">수리</string>
     <string name="v12_home_run_item">러닝 아이템</string>
     <string name="v12_home_run_item_owned">%1$d개 있어요</string>
+    <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
+    <string name="run_battery_hint">화면을 꺼도 기록이 끊기지 않게 배터리 사용을 「제한 없음」으로 바꿔 주세요.</string>
+    <string name="run_battery_open">설정 열기</string>
 </resources>

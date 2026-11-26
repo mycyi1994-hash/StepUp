@@ -7,4 +7,7 @@
     <string name="v12_repair_short">Repair</string>
     <string name="v12_home_run_item">Run item</string>
     <string name="v12_home_run_item_owned">%1$d owned</string>
+    <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
+    <string name="run_battery_hint">So recording keeps going with the screen off, set battery use to “Unrestricted”.</string>
+    <string name="run_battery_open">Open settings</string>
 </resources>

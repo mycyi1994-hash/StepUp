@@ -294,6 +294,8 @@ internal fun FreeRunShoeCheckContent(
                     }
                     // 오늘 적립 한도를 다 썼다(경제 4판 — 에너지 최대치는 가진 신발 가운데 가장 높은 레벨). 출발은 그대로 된다
                     if (energyUsedUp) CheckEnergyUsedUp()
+                    // 배터리 절전이 켜져 있으면 화면을 끈 뒤 기록이 끊길 수 있다(2026-11-26 테스터) — 한 줄과 설정 열기
+                    CheckBatteryHint()
                     // 이번 러닝에 쓸 아이템(0106) — 가진 것만, 같은 묶음(적립 배수 · 에너지)은 하나만. 출발하면 그 러닝에 묶여 빠진다
                     if (runItems.isNotEmpty()) {
                         RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing, coveredRewardMult = coveredRewardMult)
@@ -427,6 +429,42 @@ private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null, energy
                 modifier = Modifier.testTag("run-shoe-check-earn"),
             )
         }
+    }
+}
+
+/** 이 앱이 배터리 최적화(절전) 대상인가 — 그러면 폰에 따라(삼성 · 샤오미 등) 화면이 꺼진 뒤 위치 · 걸음이 늦게 오거나 끊긴다 */
+internal fun batteryRestricted(context: android.content.Context): Boolean =
+    runCatching {
+        val pm = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+        pm.isIgnoringBatteryOptimizations(context.packageName).not()
+    }.getOrDefault(false)
+
+/**
+ * 배터리 안내(2026-11-26 테스터 "화면을 띄운 상태에서 껐더니 측정이 안 됐다 · 백그라운드 설정 문제 같다") — 절전 대상이면
+ * "화면을 꺼도 끊기지 않게 배터리 사용을 「제한 없음」으로" 한 줄과 "설정 열기"(앱 정보 › 배터리). 앱으로 돌아오면 다시 읽어,
+ * 바꿨으면 줄이 사라진다. 출발을 막지 않는다. 예외 요청 권한(REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)은 쓰지 않는다(Play 정책).
+ */
+@Composable
+private fun CheckBatteryHint() {
+    val context = LocalContext.current
+    var restricted by remember { mutableStateOf(batteryRestricted(context)) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        restricted = batteryRestricted(context)
+        onPauseOrDispose { }
+    }
+    if (!restricted) return
+    Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-battery"), verticalAlignment = Alignment.Top) {
+        Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
+        Spacer(Modifier.width(7.dp))
+        Text(stringResource(R.string.run_battery_hint), style = checkText(12.sp, CheckWarnText))
+    }
+    Box(
+        Modifier.padding(start = 16.dp, top = 2.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+            .feedbackClickable { com.stepup.android.core.ExternalIntents.openAppSettings(context) }
+            .padding(horizontal = 6.dp).testTag("run-shoe-check-battery-open"),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(stringResource(R.string.run_battery_open), style = checkText(13.sp, CheckValue, FontWeight.SemiBold), maxLines = 1)
     }
 }
 
@@ -688,7 +726,8 @@ private fun Modifier.bleed(by: Dp): Modifier = layout { measurable, constraints 
  *
  * - 시각은 앱이 화면에 있을 때만 흐른다. 멈췄다 돌아오면 그 자리부터 잇는다(백그라운드에서 러닝 서비스를 켜지 않는다 —
  *   안드로이드 12+ 가 막는다). 화면을 돌려도 시각 · 시작 요청을 기억해 다시 세거나 두 번 시작하지 않는다.
- * - 러닝 기록은 REVEAL 진입(3,760ms)에서 한 번만 [onStartSession] 으로 시작한다. 러닝이 실제로 켜진 것을 본 뒤에 지도를 펼친다.
+ * - 러닝 기록은 이 화면이 뜨는 순간(시작을 누른 순간) 한 번만 [onStartSession] 으로 시작한다(2026-11-26 — 예전엔 3·2·1 뒤 펼침에서).
+ *   연출은 StepUP! 부터([FreeRunStartMotion.QUICK_START_AT]) 보이고, 러닝이 실제로 켜진 것을 본 뒤에 지도를 펼친다.
  *   시작이 거절되면(끝나지 않은 러닝 · 저장 공간) · 오래 켜지지 않으면 [onFailed] — 기존 안내로 돌아간다.
  * - 기록 전 시스템 뒤로 가기는 [onCancel](아무것도 시작하지 않는다). 시작을 요청한 뒤로는 달리는 중으로 본다 —
  *   뒤로 가기는 기존 러닝 화면의 규칙(일시정지)을 따른다.
@@ -707,7 +746,7 @@ internal fun FreeRunStartSequence(
     val motion = LocalMotion.current
     // 시작할 때의 모션 설정으로 끝까지 — 도중에 바뀌어도 한 흐름이다
     val reduced = rememberSaveable { motion.reduced }
-    var clock by rememberSaveable { mutableLongStateOf(0L) }
+    var clock by rememberSaveable { mutableLongStateOf(FreeRunStartMotion.QUICK_START_AT) }
     var requestedAt by rememberSaveable { mutableLongStateOf(-1L) }
     var refusalsAtRequest by rememberSaveable { mutableIntStateOf(0) }
     var revealAt by rememberSaveable { mutableLongStateOf(-1L) }
@@ -723,6 +762,16 @@ internal fun FreeRunStartSequence(
             finished()
             return@LaunchedEffect
         }
+        // 누른 순간 기록을 켠다 — 이 화면은 "이 신발로 출발"을 누른 바로 뒤라 앱이 앞에 있다(러닝 서비스를 켤 수 있다).
+        // 그 뒤로 화면을 끄거나 다른 앱으로 넘어가도 기록은 이어진다. 연출은 앱이 보일 때만 나아간다
+        if (requestedAt < 0) {
+            requestedAt = clock
+            refusalsAtRequest = refusals
+            if (!start()) {
+                failed()
+                return@LaunchedEffect
+            }
+        }
         var last = withFrameNanos { it }
         while (true) {
             val now = withFrameNanos { it }
@@ -731,16 +780,8 @@ internal fun FreeRunStartSequence(
             if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) continue
             clock += step
             when {
-                requestedAt < 0 -> if (clock >= FreeRunStartMotion.REVEAL_AT) {
-                    requestedAt = clock
-                    refusalsAtRequest = refusals
-                    if (!start()) {
-                        failed()
-                        return@LaunchedEffect
-                    }
-                }
                 revealAt < 0 -> when {
-                    active -> revealAt = clock
+                    active && clock >= FreeRunStartMotion.REVEAL_AT -> revealAt = clock
                     refusals != refusalsAtRequest || clock - requestedAt >= FreeRunStartMotion.START_TIMEOUT_MS -> {
                         failed()
                         return@LaunchedEffect
@@ -848,8 +889,10 @@ internal fun FreeRunStartStage(
                 )
             }
         }
-        // 숫자 · 원호 묶음 — 원호는 3 부터 로고 교차까지 한 번 이어 돈다(숫자마다 다시 돌지 않는다)
-        Box(
+        // 숫자 · 원호 묶음 — 원호는 3 부터 로고 교차까지 한 번 이어 돈다(숫자마다 다시 돌지 않는다). 다 빠진 뒤로는 그리지 않는다 —
+        // 누르자마자 시작(2026-11-26)은 StepUP! 부터 보여, 투명한 숫자를 화면 읽기가 "0"으로 읽지 않게
+        val countGone by remember { derivedStateOf { clock() >= FreeRunStartMotion.LAUNCH_AT + FreeRunStartMotion.LAUNCH_MS } }
+        if (!countGone) Box(
             Modifier.align(Alignment.Center).size(diameter).graphicsLayer {
                 val look = FreeRunStartMotion.countExit(clock() - FreeRunStartMotion.LAUNCH_AT, reduced)
                 alpha = look.alpha

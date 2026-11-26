@@ -210,10 +210,10 @@ class RunStartFlowTest {
     }
 
     /**
-     * 자유러닝 시작(2026-10-17 전달본) — 3·2·1·0 → StepUP! → 지도 펼침. 러닝 기록은 펼침에 들어갈 때(3,760ms) 한 번만 시작하고,
-     * 러닝이 실제로 켜진 것을 본 뒤에 펼친다. 프레임이 쌓이고 다시 그려져도 시작은 한 번이다.
+     * 자유러닝 시작 — 누른 순간 러닝 기록을 한 번 시작하고(2026-11-26 테스터 "누르자마자 측정되게"), 3·2·1 숫자 없이 StepUP! →
+     * 지도 펼침. 러닝이 실제로 켜진 것을 본 뒤에 펼친다. 프레임이 쌓이고 다시 그려져도 시작은 한 번이다.
      */
-    @Test fun freeStartSequenceStartsOnceAtReveal() {
+    @Test fun freeStartSequenceStartsOnceImmediately() {
         var starts = 0
         var finished = 0
         var failed = 0
@@ -234,47 +234,35 @@ class RunStartFlowTest {
             } }
         }
         compose.mainClock.advanceTimeByFrame()
-        // 숫자와 원호만 — 제목 · 안내 · 취소 버튼이 없다
-        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("3")
+        assertEquals("누른 순간 기록을 시작한다", 1, starts)
+        // 3 · 2 · 1 · 0 숫자는 보이지 않는다
+        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertDoesNotExist()
         compose.onAllNodesWithTag("run-countdown-cancel").assertCountEquals(0)
-        compose.onAllNodesWithTag("run-countdown-kicker", useUnmergedTree = true).assertCountEquals(0)
-        compose.mainClock.advanceTimeBy(1_050)
-        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("2")
-        compose.mainClock.advanceTimeBy(2_000)
-        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("0")
-        compose.mainClock.advanceTimeBy(600)
-        assertEquals("StepUP! 까지는 기록을 시작하지 않는다", 0, starts)
-        compose.mainClock.advanceTimeBy(200)
-        assertEquals("펼침에 들어가며 한 번 시작한다", 1, starts)
         compose.mainClock.advanceTimeBy(2_000)
         assertEquals("다시 그려져도 시작은 한 번", 1, starts)
         assertEquals(1, finished)
         assertEquals(0, failed)
     }
 
-    /** 기록 전 뒤로 가기 — 시작 취소. 아무것도 시작하지 않는다 */
-    @Test fun freeStartBackBeforeRevealNeverStarts() {
+    /** 시작한 뒤 뒤로 가기 — 기록은 이미 시작했다(취소하지 않는다). 시작은 한 번 */
+    @Test fun freeStartBackAfterTapKeepsTheRun() {
         var starts = 0
         var cancels = 0
-        var shown by mutableStateOf(true)
         compose.mainClock.autoAdvance = false
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
-                if (shown) {
-                    FreeRunStartSequence(
-                        sessionActive = false, startRefusals = 0,
-                        onStartSession = { starts++; true }, onFinished = {}, onFailed = {},
-                        onCancel = { cancels++; shown = false },
-                    )
-                }
+                FreeRunStartSequence(
+                    sessionActive = false, startRefusals = 0,
+                    onStartSession = { starts++; true }, onFinished = {}, onFailed = {},
+                    onCancel = { cancels++ },
+                )
             } }
         }
-        compose.mainClock.advanceTimeBy(2_000)
+        compose.mainClock.advanceTimeByFrame()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.mainClock.advanceTimeBy(5_000)
-        compose.onNodeWithTag("run-start-sequence").assertDoesNotExist()
-        assertEquals(1, cancels)
-        assertEquals("취소한 카운트다운은 시작하지 않는다", 0, starts)
+        compose.mainClock.advanceTimeBy(500)
+        assertEquals(0, cancels)
+        assertEquals(1, starts)
     }
 
     /** 시작이 거절됐다(끝나지 않은 러닝 · 저장 공간) — 지도를 펼치지 않고 거둔다. 실패한 러닝을 시작한 것처럼 보이지 않는다 */

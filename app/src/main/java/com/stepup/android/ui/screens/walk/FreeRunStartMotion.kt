@@ -23,6 +23,13 @@ internal object FreeRunStartMotion {
     const val LAUNCH_TOTAL_MS = 580L
     const val REVEAL_AT = LAUNCH_AT + LAUNCH_TOTAL_MS
 
+    /**
+     * 시작을 누른 순간 기록을 켜고(2026-11-26 테스터 "3·2·1 뒤에야 측정된다 · 누르자마자 측정되게") 연출은 StepUP! 가 다 들어온 자리부터 —
+     * 3 · 2 · 1 · 0 숫자는 보이지 않는다. 예전엔 3.76초 뒤 펼침에서 기록을 켜, 그 사이 화면을 끄거나 다른 러닝 앱으로 넘어가면
+     * 연출이 멈춰(앱이 뒤에 있으면 안드로이드 12+ 가 러닝 서비스를 막는다) 기록이 아예 시작되지 않았다.
+     */
+    const val QUICK_START_AT = LAUNCH_AT + LAUNCH_MS
+
     /** 숫자마다 다시 돌지 않는 한 번의 회전 — 3.5초에 1260도(1초에 한 바퀴) */
     const val ARC_MS = 3_500L
     const val ARC_DEGREES = 1_260f

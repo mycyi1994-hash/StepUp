@@ -1629,7 +1629,7 @@ fun RunScreen(
         // 3-2-1 을 시작한 순간의 러닝 종류로 끝까지 — 기록이 시작된 뒤 모습이 바뀌어도(챌린지로 묶임 등) 연출이 끊기지 않게
         val freeLaunch = rememberSaveable(countingDown) { countingDown && freeRunNow }
         if (countingDown && freeLaunch) {
-            // 자유러닝 3·2·1·0 → StepUP! → 지도 펼침(2026-10-17 전달본). 러닝 기록은 펼침에 들어갈 때 한 번 시작한다
+            // 자유러닝 StepUP! → 지도 펼침(2026-10-17 전달본 — 3·2·1 숫자는 2026-11-26 에 뺐다). 러닝 기록은 누른 순간 한 번 시작한다
             val refusals by WalkSessionService.startRefusals.collectAsStateWithLifecycle()
             FreeRunStartSequence(
                 sessionActive = session.isActive,
@@ -1652,19 +1652,12 @@ fun RunScreen(
                 },
             )
         } else if (countingDown && !session.isActive) {
-            val servicesOn = remember { locationServicesOn(context) }
-            RunCountdown(
-                courseName = course?.name,
-                locationAllowed = locationAllowed,
-                locationServicesOn = servicesOn,
-                title = planTitle(plan),
-                onGo = {
-                    countingDown = false
-                    if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
-                },
-                // 시작 취소 — 이 러닝을 연 화면(시작 메뉴 · 챌린지)으로 돌아간다(시안 R01)
-                onCancel = { countingDown = false; onBack() },
-            )
+            // 챌린지 · 코스 · 다이어트도 누른 순간 기록을 켠다(2026-11-26 테스터 "누르자마자 측정되게") — 예전 3-2-1(RunCountdown)은
+            // 앱이 뒤로 가면 멈춰, 그 사이 화면을 끄거나 다른 러닝 앱으로 넘어가면 기록이 시작되지 않았다
+            LaunchedEffect(Unit) {
+                countingDown = false
+                if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
+            }
         }
     }
 

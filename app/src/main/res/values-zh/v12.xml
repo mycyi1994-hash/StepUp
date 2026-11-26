@@ -7,4 +7,7 @@
     <string name="v12_repair_short">修理</string>
     <string name="v12_home_run_item">跑步道具</string>
     <string name="v12_home_run_item_owned">有%1$d个</string>
+    <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
+    <string name="run_battery_hint">为了熄屏后也能持续记录，请将电池使用设为“无限制”。</string>
+    <string name="run_battery_open">打开设置</string>
 </resources>
