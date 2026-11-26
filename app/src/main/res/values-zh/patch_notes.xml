@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 업데이트 소식 · 내역(2026-11-26 v12 전달 S-337 · S-339) — domain/PatchNotes.kt -->
+<resources>
+    <string name="pn_update_label">%1$s 更新</string>
+    <string name="pn_title">本次更新</string>
+    <string name="pn_ok">确定</string>
+    <string name="pn_history_all">查看全部更新记录</string>
+    <string name="pn_history_title">更新记录</string>
+    <string name="pn_current">当前版本</string>
+    <string name="pn_new">新功能</string>
+    <string name="pn_settings_row">更新记录</string>
+    <string name="pn_122_run">一按开始就记录的跑步</string>
+    <string name="pn_122_run_body">点开始立即记录，熄屏后也会继续记录</string>
+    <string name="pn_122_shoe">跑鞋变成等级卡片</string>
+    <string name="pn_122_shoe_body">在跑鞋页左右滑动浏览，详情在深蓝舞台上</string>
+    <string name="pn_122_pup">养育斯当伊</string>
+    <string name="pn_122_pup_body">靠跑步喂饭养大的小狗，7个阶段(预览)</string>
+    <string name="pn_122_repair">在耐久度旁直接修理</string>
+    <string name="pn_122_repair_body">首页・跑鞋页・跑鞋详情・出发前都可以</string>
+    <string name="pn_122_design">全新界面设计・浅色・深色</string>
+    <string name="pn_122_battery">出发前的电池“无限制”提示</string>
+    <string name="pn_122_more">另外还有全新界面设计、深色模式配色整理</string>
+    <string name="pn_121_forge">强化改为经验值 — 不再失败</string>
+    <string name="pn_121_daily">今日奖励条・宝箱・目标・连续</string>
+    <string name="pn_121_runner">跑者等级 — 每1万步升一级</string>
+    <string name="pn_121_info">能力值 ⓘ 说明</string>
+    <string name="pn_1201_crew">修复团队跑出发和等候室</string>
+    <string name="pn_1201_alone">只剩自己时提醒1分钟</string>
+    <string name="pn_120_stats">能力值指数・星级・类型</string>
+    <string name="pn_120_luck">跑步运气・每48小时免费修理一次</string>
+    <string name="pn_120_box">宝箱</string>
+    <string name="pn_119_items">道具页・出发前选择道具</string>
+    <string name="pn_119_codes">测试邀请码每天1个</string>
+    <string name="pn_118_reason">跑步记录显示0 SUP的原因</string>
+    <string name="pn_118_crew">团队跑出发提醒</string>
+    <string name="pn_118_flash">闪电跑分享链接</string>
+</resources>

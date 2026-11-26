@@ -30,6 +30,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.stepup.android.ui.experience.feedbackClickable
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.ColumnScope
+import com.stepup.android.ui.components.stepUpRim
+import com.stepup.android.ui.components.StepUpUi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -141,66 +149,66 @@ internal fun RunStartMenuContent(
 ) {
     val context = LocalContext.current
     val soon = stringResource(R.string.runflow_soon_toast)
+    val locked = { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() }
+    // v12 시제품(2026-11-26) — "← 러닝 시작" · 목록 묶음(크루 달리기 · 내 러닝 기록 · 이번 주 순위) · "준비 중" 묶음(챌린지 · 코스 · 다이어트 · AI 코칭) ·
+    // 아래 주 버튼 "자유 러닝". 잠긴 곳은 누르면 곧 열린다는 안내만(RunMenuLocks — 2026-10-27 사용자 결정 그대로)
     RunPage(
         onBack = onBack,
         modifier = Modifier.testTag("run-menu"),
-        title = stringResource(R.string.runflow_menu_title),
-        subtitle = stringResource(R.string.run_menu_sub),
-        display = true,
-        // SUP 잔액은 홈과 이 화면에만(시안)
+        crumb = stringResource(R.string.runflow_menu_title),
         trailing = { SupPill(balance, onOpenWallet) },
+        bottom = {
+            com.stepup.android.ui.components.PrimaryButton(
+                stringResource(R.string.runflow_free), onFreeRun, modifier = Modifier.fillMaxWidth().testTag("run-menu-free"),
+            )
+        },
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            RunModeCard(
-                stringResource(R.string.runflow_free), stringResource(R.string.run_mode_free_sub),
-                Icons.AutoMirrored.Filled.DirectionsRun, onFreeRun, modifier = Modifier.testTag("run-menu-free"),
-            )
-            RunModeCard(
-                stringResource(R.string.run_mode_crew), stringResource(R.string.run_mode_crew_sub),
-                Icons.Filled.Groups, onCrew ?: { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() },
-                enabled = onCrew != null, badge = if (onCrew == null) stringResource(R.string.runflow_soon) else null,
-                modifier = Modifier.testTag("run-menu-crew"),
-            )
-            // 러닝 챌린지 · 추천 코스 · 다이어트 · 코칭은 아직 열지 않는다(2026-10-27 사용자 "크루 · 혼자 러닝 빼면 비활성화 ·
-            // 준비 중 · 자물쇠") — 누르면 곧 열린다는 안내만. 다시 열려면 RunMenuLocks 의 값을 끈다
-            val locked = { Toast.makeText(context, soon, Toast.LENGTH_SHORT).show() }
-            val soonBadge = stringResource(R.string.runflow_soon)
-            RunModeCard(
-                stringResource(R.string.runflow_goal), stringResource(R.string.run_mode_challenge_sub),
-                Icons.Filled.EmojiEvents, if (RunMenuLocks.CHALLENGE) locked else onGoals,
-                enabled = !RunMenuLocks.CHALLENGE, locked = RunMenuLocks.CHALLENGE,
-                badge = soonBadge.takeIf { RunMenuLocks.CHALLENGE }, modifier = Modifier.testTag("run-menu-goals"),
-            )
+        Spacer(Modifier.height(6.dp))
+        MenuGroup {
+            MenuRow(stringResource(R.string.run_mode_crew), onCrew ?: locked, "run-menu-crew")
+            MenuRow(stringResource(R.string.run_menu_records), onRecords, "run-menu-records")
+            if (onLeaderboard != null) MenuRow(stringResource(R.string.lb_menu_entry), onLeaderboard, "run-menu-leaderboard")
+        }
+        Spacer(Modifier.height(22.dp))
+        Text(stringResource(R.string.runflow_soon), style = StepUpUi.type.rowSubtitle, color = StepUpUi.colors.secondaryLabel,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+        MenuGroup {
+            MenuRow(stringResource(R.string.runflow_goal), if (RunMenuLocks.CHALLENGE) locked else onGoals, "run-menu-goals",
+                chevron = !RunMenuLocks.CHALLENGE)
             val courseOpen = onCourse != null && !RunMenuLocks.COURSE
-            RunModeCard(
-                stringResource(R.string.runflow_course), stringResource(R.string.run_mode_course_sub),
-                Icons.Filled.Route, onCourse.takeIf { courseOpen } ?: locked,
-                enabled = courseOpen, locked = !courseOpen, badge = soonBadge.takeIf { !courseOpen },
-                modifier = Modifier.testTag("run-menu-course"),
-            )
+            MenuRow(stringResource(R.string.runflow_course), onCourse.takeIf { courseOpen } ?: locked, "run-menu-course", chevron = courseOpen)
             val dietOpen = onDiet != null && !RunMenuLocks.DIET
-            RunModeCard(
-                stringResource(R.string.runflow_diet), stringResource(R.string.run_mode_diet_sub),
-                ImageVector.vectorResource(R.drawable.ic_tab_shoes),
-                onDiet.takeIf { dietOpen } ?: locked,
-                enabled = dietOpen, locked = !dietOpen, badge = soonBadge.takeIf { !dietOpen },
-                modifier = Modifier.testTag("run-menu-diet"),
-            )
-            Spacer(Modifier.height(4.dp))
-            RunDivider()
-            Spacer(Modifier.height(4.dp))
-            RunLinkRow(stringResource(R.string.run_menu_records), onRecords, Modifier.testTag("run-menu-records"))
+            MenuRow(stringResource(R.string.runflow_diet), onDiet.takeIf { dietOpen } ?: locked, "run-menu-diet", chevron = dietOpen)
             if (onCoaching != null) {
-                RunLinkRow(
-                    stringResource(R.string.coach_menu_entry), if (RunMenuLocks.COACHING) locked else onCoaching,
-                    Modifier.testTag("run-menu-coaching"), trailing = soonBadge.takeIf { RunMenuLocks.COACHING },
-                    locked = RunMenuLocks.COACHING,
-                )
-            }
-            if (onLeaderboard != null) {
-                RunLinkRow(stringResource(R.string.lb_menu_entry), onLeaderboard, Modifier.testTag("run-menu-leaderboard"))
+                MenuRow(stringResource(R.string.coach_menu_entry), if (RunMenuLocks.COACHING) locked else onCoaching, "run-menu-coaching",
+                    chevron = !RunMenuLocks.COACHING)
             }
         }
+    }
+}
+
+/** 흰 묶음(v12) — 반지름 18, 줄 사이 가는 선 */
+@Composable
+private fun MenuGroup(content: @Composable ColumnScope.() -> Unit) {
+    val c = StepUpUi.colors
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card)
+            .stepUpRim(RoundedCornerShape(18.dp), com.stepup.android.ui.components.RimKind.Surface),
+        content = content,
+    )
+}
+
+/** 목록 한 줄 — 16 · 600 글 · 오른쪽 꺾쇠(잠긴 줄은 꺾쇠 없이) */
+@Composable
+private fun MenuRow(title: String, onClick: () -> Unit, tag: String, chevron: Boolean = true) {
+    val c = StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 54.dp).feedbackClickable(onClick = onClick).padding(horizontal = 18.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = StepUpUi.type.rowTitle.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+            color = if (chevron) c.label else c.label.copy(alpha = .75f), modifier = Modifier.weight(1f))
+        if (chevron) Icon(Icons.Filled.ChevronRight, null, tint = c.tertiaryLabel, modifier = Modifier.size(22.dp))
     }
 }
 

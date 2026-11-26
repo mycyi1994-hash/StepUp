@@ -96,6 +96,8 @@ object AppChromePolicy {
         Destination(Routes.ACHIEVEMENTS, Screen.Profile, Header.Detail),
         // 스댕이 키우기 미리보기 — 방 그림이 머리까지 덮는다(자기 머리 · 하단 탭 없이)
         Destination(Routes.PUP, Screen.Run, Header.Form),
+        // 업데이트 내역 — 내 정보 탭 밑(하단 탭 그대로)
+        Destination(Routes.UPDATE_HISTORY, Screen.Profile, Header.Detail),
         Destination(Routes.ANALYTICS, Screen.Profile, Header.Detail),
         // 프로필 수정 — 하단 탭 없이 자기 머리(뒤로 가면 내 정보)
         Destination(Routes.PROFILE_EDIT, Screen.Profile, Header.Form),

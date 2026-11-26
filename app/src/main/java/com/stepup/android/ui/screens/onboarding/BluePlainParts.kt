@@ -129,19 +129,25 @@ internal fun BlueTitleBar(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val t = runTone()
-    Box(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) {
-        if (title != null) {
-            Text(
-                title, style = runTextStyle(19.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 64.dp).semantics { heading() },
-            )
-        }
+    // v12 시제품(2026-11-26) — "← 제목"(왼쪽 정렬 22 · 800)
+    androidx.compose.foundation.layout.Row(
+        modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (onBack != null) {
-            com.stepup.android.ui.components.RunBackButton(onBack, Modifier.align(Alignment.CenterStart), tag = backTag, tint = t.text)
+            com.stepup.android.ui.components.RunBackButton(onBack, tag = backTag, tint = t.text)
+        } else {
+            androidx.compose.foundation.layout.Spacer(Modifier.widthIn(min = 12.dp))
+        }
+        Box(Modifier.weight(1f)) {
+            if (title != null) {
+                Text(
+                    title, style = runTextStyle(21.sp, t.text, FontWeight.ExtraBold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
         }
         if (trailing != null) {
-            Box(Modifier.align(Alignment.CenterEnd).heightIn(min = 48.dp).widthIn(min = 48.dp), contentAlignment = Alignment.CenterEnd) {
+            Box(Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp), contentAlignment = Alignment.CenterEnd) {
                 trailing()
             }
         }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 업데이트 소식 · 내역(2026-11-26 v12 전달 S-337 · S-339) — domain/PatchNotes.kt -->
+<resources>
+    <string name="pn_update_label">%1$s update</string>
+    <string name="pn_title">What\'s new</string>
+    <string name="pn_ok">OK</string>
+    <string name="pn_history_all">See all updates</string>
+    <string name="pn_history_title">Update history</string>
+    <string name="pn_current">Current</string>
+    <string name="pn_new">New</string>
+    <string name="pn_settings_row">Update history</string>
+    <string name="pn_122_run">Runs record the moment you tap</string>
+    <string name="pn_122_run_body">Recording starts right away and keeps going with the screen off</string>
+    <string name="pn_122_shoe">Shoes as tier cards</string>
+    <string name="pn_122_shoe_body">Swipe through your shoes, details on a navy stage</string>
+    <string name="pn_122_pup">Raise Sdaengi</string>
+    <string name="pn_122_pup_body">A pup you feed by running, 7 stages (preview)</string>
+    <string name="pn_122_repair">Repair right next to durability</string>
+    <string name="pn_122_repair_body">Home, shoe tab, shoe details and before you start</string>
+    <string name="pn_122_design">All-new screens · light and dark</string>
+    <string name="pn_122_battery">Battery “Unrestricted” tip before you start</string>
+    <string name="pn_122_more">Plus an all-new design and cleaner dark mode colors</string>
+    <string name="pn_121_forge">Upgrades use XP — no more failures</string>
+    <string name="pn_121_daily">Daily reward bar · boxes · goal · streak</string>
+    <string name="pn_121_runner">Runner level — level up every 10,000 steps</string>
+    <string name="pn_121_info">Stat ⓘ explanations</string>
+    <string name="pn_1201_crew">Crew run start and lobby fixes</string>
+    <string name="pn_1201_alone">A 1-minute alert when you are left alone</string>
+    <string name="pn_120_stats">Stat index · stars · types</string>
+    <string name="pn_120_luck">Run luck · free repair every 48 hours</string>
+    <string name="pn_120_box">Boxes</string>
+    <string name="pn_119_items">Items tab · pick items before you start</string>
+    <string name="pn_119_codes">One beta invite code a day</string>
+    <string name="pn_118_reason">Why a run earned 0 SUP</string>
+    <string name="pn_118_crew">Crew run start alert</string>
+    <string name="pn_118_flash">Flash run share link</string>
+</resources>

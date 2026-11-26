@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 업데이트 소식 · 내역(2026-11-26 v12 전달 S-337 · S-339) — domain/PatchNotes.kt -->
+<resources>
+    <string name="pn_update_label">%1$s アップデート</string>
+    <string name="pn_title">今回の変更</string>
+    <string name="pn_ok">OK</string>
+    <string name="pn_history_all">アップデート履歴をすべて見る</string>
+    <string name="pn_history_title">アップデート履歴</string>
+    <string name="pn_current">現在のバージョン</string>
+    <string name="pn_new">新機能</string>
+    <string name="pn_settings_row">アップデート履歴</string>
+    <string name="pn_122_run">押した瞬間から記録するラン</string>
+    <string name="pn_122_run_body">スタートですぐ記録し、画面を消しても記録を続けます</string>
+    <string name="pn_122_shoe">シューズがランクカードに</string>
+    <string name="pn_122_shoe_body">シューズタブで左右にめくり、詳細は紺色のステージで</string>
+    <string name="pn_122_pup">スデンイを育てる</string>
+    <string name="pn_122_pup_body">走ってごはんをあげて育てる子犬、7段階(プレビュー)</string>
+    <string name="pn_122_repair">耐久度の横ですぐ修理</string>
+    <string name="pn_122_repair_body">ホーム・シューズタブ・シューズ詳細・出発前どこでも</string>
+    <string name="pn_122_design">全画面の新デザイン・ライト・ダーク</string>
+    <string name="pn_122_battery">出発前のバッテリー「制限なし」案内</string>
+    <string name="pn_122_more">ほかに全画面の新デザイン、ダークモードの色を整理</string>
+    <string name="pn_121_forge">強化は経験値で — 失敗なし</string>
+    <string name="pn_121_daily">今日の報酬バー・ボックス・目標・連続</string>
+    <string name="pn_121_runner">ランナーレベル — 1万歩ごとにレベルアップ</string>
+    <string name="pn_121_info">能力値 ⓘ の説明</string>
+    <string name="pn_1201_crew">クルーランの出発・待機室を修正</string>
+    <string name="pn_1201_alone">一人残ると1分間お知らせ</string>
+    <string name="pn_120_stats">能力値の指数・星・タイプ</string>
+    <string name="pn_120_luck">ランの運・48時間ごとに無料修理</string>
+    <string name="pn_120_box">ボックス</string>
+    <string name="pn_119_items">アイテムタブ・出発前にアイテムを選ぶ</string>
+    <string name="pn_119_codes">ベータ招待コードは1日1つ</string>
+    <string name="pn_118_reason">ランが0 SUPだった理由を一行で</string>
+    <string name="pn_118_crew">クルーラン出発のお知らせ</string>
+    <string name="pn_118_flash">ゲリラランの共有リンク</string>
+</resources>

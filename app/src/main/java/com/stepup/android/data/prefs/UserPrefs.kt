@@ -79,6 +79,8 @@ class UserPrefs(
         val RUNNER_UID = stringPreferencesKey("runner_uid")
         val NICKNAME = stringPreferencesKey("nickname")
         val NICKNAME_SYNCED = stringPreferencesKey("nickname_synced")
+        /** 업데이트 소식 창을 마지막으로 보인 앱 판(versionName) — 2026-11-26 */
+        val PATCH_NOTES_SEEN = stringPreferencesKey("patch_notes_seen")
 
         // ── 핫글 ──
         /** 이번 주 핫글 목록 (순서 있는 글 id) */
@@ -600,6 +602,13 @@ class UserPrefs(
 
     /** 서버에 마지막으로 적은 이름 — "계정:이름". 다르면 다음 동기화 때 다시 적는다(0084) */
     suspend fun nicknameSynced(): String? = store.data.map { it[Keys.NICKNAME_SYNCED] }.first()
+
+    /** 업데이트 소식 창을 마지막으로 보인 판 — 없으면 null */
+    suspend fun patchNotesSeen(): String? = store.data.map { it[Keys.PATCH_NOTES_SEEN] }.first()
+
+    suspend fun setPatchNotesSeen(version: String) {
+        store.edit { it[Keys.PATCH_NOTES_SEEN] = version }
+    }
 
     suspend fun setNicknameSynced(mark: String?) {
         store.edit { if (mark == null) it.remove(Keys.NICKNAME_SYNCED) else it[Keys.NICKNAME_SYNCED] = mark }

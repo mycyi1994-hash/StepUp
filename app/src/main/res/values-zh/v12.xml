@@ -26,4 +26,7 @@
     <string name="v12_achievements">成就</string>
     <string name="v12_minutes">%1$d分钟</string>
     <string name="v12_recent_date_pattern">M月d日 (E)</string>
+    <string name="v12_run_steps">%1$s步</string>
+    <string name="v12_run_lock">锁定</string>
+    <string name="v12_run_shoe_worn">穿着的跑鞋</string>
 </resources>

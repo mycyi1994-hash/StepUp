@@ -962,7 +962,10 @@ fun RunScreen(
                     // 보상의 운(0116) — 서버가 이 러닝을 확인하고 적립이 있을 때만 한 줄
                     luckNote = lastLuckText,
                     // 다 쓴 신발을 바로 고칠 수 있게 — 신고 있는 신발의 수리 시트(신발 탭과 같은 수리)
-                    onShoeRepair = equipped?.takeIf { session.lastShoeWornOut }?.let { shoe -> { repairShoeId = shoe.id } },
+                    // v12 — 결과의 "신은 신발" 칸 · 고칠 내구도가 있으면 "수리"(예전엔 다 닳았을 때만 글자 단추)
+                    shoe = equipped,
+                    onShoeRepair = equipped?.takeIf { com.stepup.android.ui.screens.items.repairable(it) || session.lastShoeWornOut }
+                        ?.let { shoe -> { repairShoeId = shoe.id } },
                     startedAt = session.lastStartedAt,
                     place = remember(session.track.firstOrNull()) {
                         session.track.firstOrNull()?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
@@ -1368,6 +1371,8 @@ fun RunScreen(
                     onHoldEnd = { if (canAskEnd) WalkSessionService.stop(context) },
                     gpsOk = locationAllowed && session.locationOn && !session.gpsLost && session.here != null,
                     place = freePlace,
+                    shoe = equipped.takeIf { session.isActive },
+                    steps = session.steps.takeIf { session.isActive },
                     onBandTap = { showDetails = true },
                     onBandAction = {
                         when (freeBandNow) {

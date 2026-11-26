@@ -176,8 +176,8 @@ internal fun ChatRoomHeader(card: CrewCard?, memberCount: Int?, onBack: () -> Un
         if (card == null) {
             // 36 — 방 정보가 아직 없다: 가짜 크루 이름 · 인원 없이 "크루 채팅"만
             Text(
-                stringResource(R.string.chat_ended_bar), style = blueText(19.sp, ink.text, FontWeight.Bold, 1.25f),
-                textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.weight(1f).testTag("chat-room-title"),
+                stringResource(R.string.chat_ended_bar), style = blueText(20.sp, ink.text, FontWeight.ExtraBold, 1.25f),
+                maxLines = 1, modifier = Modifier.weight(1f).testTag("chat-room-title"),
             )
         } else {
             Row(

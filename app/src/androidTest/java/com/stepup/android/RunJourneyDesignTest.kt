@@ -397,6 +397,8 @@ class RunJourneyDesignTest {
             }
 
             // E05 — 공유 미리보기: 경로 포함은 처음에 꺼져 있다(그림에 길 · 지도가 없다). 보상(SUP)은 그림 · 글에 없다
+            // v12 — 기록 공유는 ⋯ 시트 안
+            tap("run-result-more")
             tap("run-result-share")
             awaitTag("run-share")
             compose.onNodeWithTag("run-share-route").assertIsOff()

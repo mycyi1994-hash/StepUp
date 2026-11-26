@@ -79,6 +79,8 @@ fun SettingsHomeScreen(
     onOpenExperience: () -> Unit = {},
     onOpenConnected: () -> Unit = {},
     onOpenSupport: () -> Unit = {},
+    /** 업데이트 내역(2026-11-26 v12 S-338) — 「계정과 도움말」 맨 아래 줄 */
+    onOpenUpdates: () -> Unit = {},
     onOpenInbox: () -> Unit = {},
     onOpenAchievements: () -> Unit = {},
     onOpenInvite: () -> Unit = {},
@@ -125,6 +127,8 @@ fun SettingsHomeScreen(
                     modifier = Modifier.testTag("settings-connected"))
                 BlueNavRow(stringResource(R.string.set_support), onClick = onOpenSupport,
                     modifier = Modifier.testTag("settings-support"))
+                BlueNavRow(stringResource(R.string.pn_settings_row), onClick = onOpenUpdates,
+                    modifier = Modifier.testTag("settings-updates"))
             }
         }
         // SET29 — 예전 설정 목록에만 있던 길(덜 쓰는 기능은 안쪽으로, 지우지 않는다)

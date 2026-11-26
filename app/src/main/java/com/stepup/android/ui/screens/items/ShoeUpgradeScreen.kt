@@ -659,7 +659,8 @@ private fun CenteredTarget(shoe: Sneaker?, level: Int?) {
     if (shoe == null) return
     val t = runTone()
     Column(Modifier.fillMaxWidth().testTag("upgrade-target"), horizontalAlignment = Alignment.CenterHorizontally) {
-        SneakerGradeStage(shoe, Modifier.widthIn(max = 280.dp).fillMaxWidth(0.7f))
+        // v12 시제품(2026-11-26) — 신발 탭 · 상세와 같은 남색 카드
+        com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.widthIn(max = 220.dp).fillMaxWidth(0.55f))
         Spacer(Modifier.height(12.dp))
         ShoeNameWithBadge(
             name = shoe.shoeName(), tier = shoe.tier,

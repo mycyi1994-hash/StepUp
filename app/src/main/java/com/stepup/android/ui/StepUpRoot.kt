@@ -233,6 +233,9 @@ object Routes {
     const val NOTICE = "notice/{id}"
     const val ACHIEVEMENTS = "achievements"
 
+    /** 업데이트 내역(2026-11-26 v12 S-339) — 설정 맨 아래 줄 · 업데이트 소식 창 「전체 보기」 */
+    const val UPDATE_HISTORY = "settings/updates"
+
     /** 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, 테스트 판에만) — 러닝 홈 · 내 정보의 한 줄에서 */
     const val PUP = "pup"
     /** 예전 기록 · 분석(걸음 통계 · 기록 지도) — 러닝 통계의 "걸음 통계와 기록 지도"에서 */
@@ -1163,6 +1166,7 @@ private fun MainScaffoldContent(
                     onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
                     onOpenSupport = { navController.navigate(Routes.SETTINGS_SUPPORT) },
+                    onOpenUpdates = { navController.navigate(Routes.UPDATE_HISTORY) },
                     onOpenInbox = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenAchievements = { navController.navigate(Routes.ACHIEVEMENTS) },
                     onOpenInvite = { navController.navigate(Routes.INVITE) },
@@ -1505,6 +1509,9 @@ private fun MainScaffoldContent(
             composable(Routes.ACHIEVEMENTS) {
                 AchievementsScreen(onBack = { navController.popBackStack() })
             }
+            composable(Routes.UPDATE_HISTORY) {
+                com.stepup.android.ui.screens.settings.UpdateHistoryScreen(onBack = { navController.popBackStack() })
+            }
             composable(Routes.PUP) {
                 com.stepup.android.ui.screens.pup.PupScreen(onBack = { navController.popBackStack() })
             }
@@ -1844,6 +1851,13 @@ private fun MainScaffoldContent(
                 if (lobby != null) popUpTo(lobby) { inclusive = true }
             }
         },
+    )
+
+    // 업데이트 소식(2026-11-26 v12 S-337) — 업데이트한 뒤 처음 러닝 홈에서 한 번(판마다). 첫 사용 안내 · 멈춘 러닝 · 가야 할 화면이 먼저
+    com.stepup.android.ui.screens.settings.UpdateNewsHost(
+        allowed = currentRoute == Screen.Run.route && !(startTour && !firstGuideClosed) && pendingRun == null &&
+            pendingCrew == null && pendingChat == null && pendingPush == null,
+        onOpenHistory = { navController.navigate(Routes.UPDATE_HISTORY) { launchSingleTop = true } },
     )
 
     // 러너 레벨이 올랐다(서버 0121) — 탭 첫 화면에서만 한 번. 첫 사용 안내 · 멈춘 러닝 되살리기가 먼저고, 달리는 동안은 가리지 않는다

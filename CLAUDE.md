@@ -19,6 +19,9 @@
 - 둘째 판(같은 날): 머리 일곱 가지 "← 제목" · 시트 글 왼쪽 · 신발 탭 카드 넘기기(`V12ShoeCard`) · 신발 상세 남색 무대 + 얇은 막대(`ShoeStatsV12`) ·
   포인트 · 수리 시트 · 아이템 탭(`BagList`) · 지갑 잔액 카드 · 내 정보. 남은 것(러닝 중 · 결과 · 함께 뛰기 · 설정 세부 · 강화 화면)은 문서 표.
   신발 탭 점 = 예전 보유 목록 이름(shoe-owned-row · shoe-choice-N). 이름 바꾸기는 상세로. 시제품 원본은 Drive 링크(사용자) — 화면은 그림이라 코드로 다시 짠다.
+- 셋째 판: 러닝 시작 메뉴 · 달리는 중(지도 위 · 아래 판 v12 · `RunShoeStrip`) · 결과(신은 신발 · 처음 화면으로) · 알림 · 크루 대기실 머리 · 강화 카드 ·
+  **업데이트 소식 창 · 업데이트 내역**(`domain/PatchNotes.kt` · `screens/settings/PatchNotesUi.kt` — 판을 올릴 때 맨 위에 그 판의 줄을 더한다, 새로 설치한 사람에겐 안 띄움) ·
+  판 1.22.0(31).
 - 로컬 화면 확인: 클라우드 세션에 SDK 를 깔았으면(`/opt/android-sdk`) Robolectric 으로 Compose 를 PNG 로 그려 시안과 맞대어 볼 수 있다(저장소 밖 init 스크립트 —
   `decorView.draw` 로 캡처, `captureToImage` 는 Robolectric 에서 멈춘다).
 

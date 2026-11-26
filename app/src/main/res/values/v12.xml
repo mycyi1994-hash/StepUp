@@ -26,4 +26,7 @@
     <string name="v12_achievements">Achievements</string>
     <string name="v12_minutes">%1$d min</string>
     <string name="v12_recent_date_pattern">MMM d (E)</string>
+    <string name="v12_run_steps">%1$s steps</string>
+    <string name="v12_run_lock">Lock</string>
+    <string name="v12_run_shoe_worn">Shoes you wore</string>
 </resources>

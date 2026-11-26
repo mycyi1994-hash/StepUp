@@ -26,4 +26,7 @@
     <string name="v12_achievements">업적</string>
     <string name="v12_minutes">%1$d분</string>
     <string name="v12_recent_date_pattern">M월 d일 (E)</string>
+    <string name="v12_run_steps">%1$s걸음</string>
+    <string name="v12_run_lock">잠금</string>
+    <string name="v12_run_shoe_worn">신은 신발</string>
 </resources>

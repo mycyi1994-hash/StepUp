@@ -296,7 +296,8 @@ fun CareShoeHeader(
 ) {
     val t = runTone()
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        SneakerGradeStage(shoe, Modifier.width(stageWidth))
+        // v12 시제품(2026-11-26) — 남색 카드(신발 탭 · 상세와 같은 부품)
+        com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.width(stageWidth * 0.72f))
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             ShoeNameWithBadge(

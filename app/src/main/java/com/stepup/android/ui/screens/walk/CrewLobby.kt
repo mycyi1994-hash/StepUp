@@ -510,8 +510,8 @@ private fun LobbyHeader(
     Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         com.stepup.android.ui.components.RunBackButton(onBack, tag = "kit-back", tint = LobbyInk.Text)
         Text(
-            stringResource(R.string.crew5_lobby_header), style = navyText(18.sp, LobbyInk.Text, FontWeight.Bold, 1.33f),
-            textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() }.testTag("crew-header-title"),
+            stringResource(R.string.crew5_lobby_header), style = navyText(20.sp, LobbyInk.Text, FontWeight.ExtraBold, 1.33f),
+            modifier = Modifier.weight(1f).semantics { heading() }.testTag("crew-header-title"),
         )
         if (host) {
             var open by rememberSaveable { mutableStateOf(false) }
