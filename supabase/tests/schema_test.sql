@@ -14291,6 +14291,38 @@ begin
   perform pg_temp.ok((j ->> 'goal_paid')::numeric = 0, format('채운 날 · 보너스 없음은 goal_paid 0 (%s) (0123)', j ->> 'goal_paid'));
 end $$;
 
+-- 하루 걸음 상자(0128) — 그날 하루 걸음이 기준을 넘으면 일반 상자 하나, 하루 한 번 · 새 계정은 24시간 뒤 · 끄면 없음
+do $$
+declare v_u uuid := 'a1280000-0000-0000-0000-000000000001'; v_n uuid := 'a1280000-0000-0000-0000-000000000002';
+  v_epoch bigint := economy.game_day(now()) - date '1970-01-01'; j jsonb; j2 jsonb; v_free0 int; v_free1 int;
+begin
+  insert into auth.users (id, email) values (v_u, 'u128_1@test.invalid'), (v_n, 'u128_2@test.invalid') on conflict do nothing;
+  insert into public.profiles (id) values (v_u), (v_n) on conflict do nothing;
+  update public.profiles set created_at = now() - interval '3 days' where id = v_u;
+  update public.profiles set created_at = now() - interval '1 hour' where id = v_n;
+  insert into public.daily_steps (user_id, epoch_day, steps, goal, updated_at) values (v_u, v_epoch, 5000, 6000, now()), (v_n, v_epoch, 9000, 6000, now())
+  on conflict (user_id, epoch_day) do update set steps = excluded.steps;
+  perform set_config('request.jwt.claim.sub', v_u::text, false);
+  j := public.step_box_claim();
+  perform pg_temp.ok((j ->> 'got')::boolean = false and (j ->> 'need')::int = 6000, format('걸음 상자: 기준 아래면 없음 (%s) (0128)', j));
+  update public.daily_steps set steps = 6500 where user_id = v_u and epoch_day = v_epoch;
+  v_free0 := coalesce((select granted from public.draw_grants where user_id = v_u and kind = 'FREE'), 0);
+  j := public.step_box_claim();
+  j2 := public.step_box_claim();
+  v_free1 := coalesce((select granted from public.draw_grants where user_id = v_u and kind = 'FREE'), 0);
+  perform pg_temp.ok((j ->> 'new')::boolean and not (j2 ->> 'new')::boolean and (j2 ->> 'got')::boolean and v_free1 = v_free0 + 1,
+    format('걸음 상자: 기준을 넘으면 상자 하나 · 두 번 불러도 하나 (%s → %s) (0128)', v_free0, v_free1));
+  perform set_config('request.jwt.claim.sub', v_n::text, false);
+  j := public.step_box_claim();
+  perform pg_temp.ok(not (j ->> 'got')::boolean and (j ->> 'account_new')::boolean, format('걸음 상자: 가입 24시간 전에는 없음 (%s) (0128)', j));
+  update public.economy_settings set value = '"OFF"' where key = 'step_box_rule';
+  j := public.step_box_claim();
+  perform pg_temp.ok(j = '{"on": false}'::jsonb, '걸음 상자: 끄면 없음 (0128)');
+  update public.economy_settings set value = '"ON"' where key = 'step_box_rule';
+  perform set_config('request.jwt.claim.sub', '', false);
+  perform pg_temp.ok(not has_function_privilege('anon', 'public.step_box_claim()', 'execute'), '걸음 상자: 로그인 안 한 사람은 부를 수 없다 (0128)');
+end $$;
+
 \echo ''
 \echo '════════════════════════════════════════════════════════════════'
 \echo ' 전부 통과했습니다.'

@@ -315,6 +315,8 @@ dependencies {
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.google.id)
     implementation(libs.play.services.location)
+    // 앱을 켜지 않은 날의 걸음 — 구글 Play 서비스가 걸음을 기록해 둔다(Recording API, 2026-11-26)
+    implementation(libs.play.services.fitness)
     // 스댕이 키우기 미리보기(2026-11-26 v12 시제품) — 강아지 Lottie
     implementation(libs.lottie.compose)
 

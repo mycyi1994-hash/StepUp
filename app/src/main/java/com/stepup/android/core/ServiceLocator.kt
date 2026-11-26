@@ -66,6 +66,8 @@ object ServiceLocator {
 
     /** 하루 걸음 올리기(체인 하루 걸음 기록, 2026-11-18) */
     lateinit var dailyStepsUploader: com.stepup.android.data.repo.DailyStepsUploader
+    /** 하루 걸음 상자(서버 0128) 받기 — 걸음 일꾼 · 동기화가 하루 걸음을 올린 뒤 부른다 */
+    lateinit var stepBoxClaim: suspend () -> ServerResult<com.stepup.android.data.remote.StepBox>
 
     /** 경제 4판(서버 0116) 규칙 · 상자 현황 — 신발 · 수리 · 강화 · 출발 전 점검 · 뽑기가 함께 본다 */
     lateinit var shoeRules: com.stepup.android.data.repo.ShoeRulesRepository
@@ -390,6 +392,7 @@ object ServiceLocator {
             send = { days -> stepsApi.syncSteps(days) },
             account = { runCatching { sessionHolder.recordingOwner() }.getOrNull() },
         )
+        stepBoxClaim = { stepsApi.stepBoxClaim() }
         economySync = com.stepup.android.data.repo.EconomySync(
             api = economyApi,
             market = MarketApi(server),
@@ -399,6 +402,8 @@ object ServiceLocator {
             afterCheckIn = {
                 if (economyApi.isConfigured) {
                     dailyStepsUploader.upload()
+                    // 하루 걸음 상자(0128) — 올린 하루 걸음이 기준을 넘었으면 받고, 처음이면 알린다
+                    runCatching { com.stepup.android.sensor.DailyStepsWorker.claimStepBox(app) }
                     shoeRules.refresh()
                     shoeRules.refreshBoxes()
                     // 러너 레벨(0121) — 러닝을 올린 뒤의 동기화에서도 다시 읽어 레벨이 올랐으면 한 번 알린다

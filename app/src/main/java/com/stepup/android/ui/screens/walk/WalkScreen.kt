@@ -380,7 +380,10 @@ fun RunScreen(
     LaunchedEffect(session.shoeWornOut) {
         // 신발 내구도를 다 썼다 — 이제부터 걸음은 일부만 적립된다(서버 0119 — 걸음은 그대로 센다. 그 전 규칙이면 보상이 없다).
         // 소리 · 진동으로 한 번(2026-10-19 "내구도 다 소모하면 따로 안내") — 글은 띠 · 알림이 규칙에 맞게 말한다(shoeWornBandText)
-        if (session.shoeWornOut && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+        // 알림을 띄울 수 있으면 소리 · 진동은 서비스의 신발 알림(ShoeDurabilityAlerts)이 낸다 — 두 번 울리지 않게
+        if (session.shoeWornOut && running && !com.stepup.android.service.ShoeDurabilityAlerts.canAlert(context)) {
+            cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+        }
     }
     LaunchedEffect(session.overspeed?.since) {
         // 과속이 시작됐다(RunOverspeed) — 소리 · 진동으로 한 번. 30초 이어지면 러닝이 멈추고 패널티가 있다(2026-10-17)

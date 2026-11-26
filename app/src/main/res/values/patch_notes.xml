@@ -34,4 +34,8 @@
     <string name="pn_118_reason">Why a run earned 0 SUP</string>
     <string name="pn_118_crew">Crew run start alert</string>
     <string name="pn_118_flash">Flash run share link</string>
+    <string name="pn_122_lock">Shoe durability bar on the lock screen · alert sound at 20% and 10%</string>
+    <string name="pn_122_steps">Daily steps count even when the app is closed</string>
+    <string name="pn_122_stepbox">Walk enough in a day to get a step box</string>
+    <string name="pn_122_gps">Fixed GPS route and distance while the screen is off</string>
 </resources>

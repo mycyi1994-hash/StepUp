@@ -47,6 +47,7 @@ import com.stepup.android.domain.TrackPoint
 import com.stepup.android.domain.haversineMeters
 import com.stepup.android.domain.simplify
 import com.stepup.android.domain.startLifeSec
+import com.stepup.android.domain.wearMultOf
 import com.stepup.android.domain.toGeoPoints
 import com.stepup.android.sync.SessionUploadWorker
 import com.stepup.android.core.Analytics
@@ -276,6 +277,13 @@ data class WalkSessionState(
      */
     val shoeLifeSec: Long? = null,
     /**
+     * 출발 때 신은 신발의 내구도(남은 · 최대 · 1분마다 닳는 양) — 잠금화면 막대 · 20% / 10% 알림(2026-11-26)이 지금 남은 %를 센다.
+     * [shoeLifeSec] 와 함께 채우고 함께 비운다(크루 러닝 · 최대 내구도를 모르는 신발이면 null). 저장본에 남기지 않는다
+     */
+    val shoeWear: com.stepup.android.domain.ShoeWearSnapshot? = null,
+    /** 이미 알린 가장 낮은 기준(%) — 출발 때 지난 기준도 여기에 든다([com.stepup.android.domain.ShoeLowAlert.startFloor]) */
+    val shoeLowFloor: Int = com.stepup.android.domain.ShoeLowAlert.NONE,
+    /**
      * 출발 때 신은 신발의 서버 번호(market_sneakers.id) — 폰에만 있던 신발 · 신발 없음 · 아직 못 읽음이면 0.
      * 올릴 때 서버에 사실로만 알린다(p_sneaker) — 내 신발이 맞는지 · 얼마나 닳고 얼마를 주는지는 서버가 정한다. 저장본에 남긴다(판 5)
      */
@@ -300,6 +308,9 @@ data class WalkSessionState(
      * 화면 · 알림이 따로 알린다(2026-10-19 사용자 "내구도 다 소모하면 따로 안내")
      */
     val shoeWornOut: Boolean get() = shoeLifeSec != null && elapsedSec >= shoeLifeSec
+
+    /** 신은 신발의 지금 남은 %(달린 만큼 미리 뺌) — 모르면 null(크루 러닝 · 최대 내구도를 모르는 신발) */
+    val shoePercent: Int? get() = shoeWear?.percentAt(elapsedSec)?.let { if (shoeWornOut) 0 else it }
 
     /** 지도에 그리거나 코스로 저장할 때 쓰는 모양만 남긴 경로 */
     val geoTrack: List<GeoPoint> get() = track.toGeoPoints()
@@ -362,7 +373,12 @@ class WalkSessionService : Service() {
             return
         }
         val p = GeoPoint(location.latitude, location.longitude)
-        val now = System.currentTimeMillis()
+        // 받은 시각이 아니라 잰 시각 — 화면이 꺼져 위치가 묶여 오면 점 사이 시간이 0초로 읽혀 경로가 곧은 줄 · 과속이 됐다(FixClock)
+        val now = com.stepup.android.domain.FixClock.wallTime(
+            System.currentTimeMillis(), SystemClock.elapsedRealtime(), location.elapsedRealtimeNanos,
+        )
+        // 기준점보다 먼저 잰 위치(다른 공급원이 늦게 넘긴 것)는 거꾸로 간 구간이 되니 버린다
+        if (speedAnchorAt != 0L && now < speedAnchorAt) return
         val satellite = location.provider == LocationManager.GPS_PROVIDER
         val accuracy = if (location.hasAccuracy()) location.accuracy else null
         // 위성 GPS 가 잡혔으면 와이파이 · 기지국 위치는 그만 받는다 — 둘을 섞으면 점이 튄다. 와이파이 · 기지국 위치로 잡은 기준점에서
@@ -529,6 +545,18 @@ class WalkSessionService : Service() {
     private fun equippedShoeLifeSec(equipped: com.stepup.android.data.local.SneakerEntity?): Long? {
         val shoe = equipped?.toDomain() ?: return null
         return com.stepup.android.data.repo.shoeRulesNow().startLifeSec(shoe)
+    }
+
+    /** 신은 신발의 내구도 — 최대 내구도를 아는 서버 신발만 */
+    private fun equippedShoeWear(equipped: com.stepup.android.data.local.SneakerEntity?): com.stepup.android.domain.ShoeWearSnapshot? {
+        val shoe = equipped?.toDomain() ?: return null
+        val server = shoe.server?.takeIf { it.hasDurabilityMax && it.durabilityMax > 0 } ?: return null
+        val rules = com.stepup.android.data.repo.shoeRulesNow()
+        return com.stepup.android.domain.ShoeWearSnapshot(
+            durabilityNow = server.durabilityNow,
+            durabilityMax = server.durabilityMax,
+            wearPerMinute = com.stepup.android.ui.screens.items.DURABILITY_WEAR_PER_MINUTE * rules.wearMultOf(shoe),
+        )
     }
 
     /** 위성 GPS(LocationManager) — 구글 Play 서비스가 없는 휴대폰에서만 쓴다 */
@@ -1036,6 +1064,7 @@ class WalkSessionService : Service() {
         scope.launch {
             val equipped = runCatching { ServiceLocator.database.sneakerDao().equippedNow() }.getOrNull()
             val life = runCatching { equippedShoeLifeSec(equipped) }.getOrNull()
+            val wear = runCatching { equippedShoeWear(equipped) }.getOrNull()
             _state.update {
                 if (!it.isActive || it.startedAt != runStartedAt) {
                     it
@@ -1043,6 +1072,11 @@ class WalkSessionService : Service() {
                     it.copy(
                         // 크루 러닝이면 개인 신발은 닳지 않는다 — 신발 다 씀 안내를 걸지 않는다
                         shoeLifeSec = if (it.group != RunGroup.CREW) life else it.shoeLifeSec,
+                        shoeWear = if (it.group != RunGroup.CREW && life != null) wear else it.shoeWear,
+                        // 출발 때(되살린 러닝은 되살린 때) 이미 지난 기준은 알리지 않는다
+                        shoeLowFloor = if (it.group != RunGroup.CREW && life != null && wear != null) {
+                            com.stepup.android.domain.ShoeLowAlert.startFloor(wear.percentAt(it.elapsedSec))
+                        } else it.shoeLowFloor,
                         // 출발 때 신은 신발(서버 번호) — 올릴 때 서버에 알려 그 신발로 닳고 적립되게(서버 0089 p_sneaker).
                         // 되살린 러닝은 저장본에 남은 번호를 그대로 쓴다(그사이 신발을 바꿨어도 출발 때 신발로)
                         startSneakerId = if (it.startSneakerId > 0) it.startSneakerId else equipped?.serverId ?: 0L,
@@ -1118,8 +1152,19 @@ class WalkSessionService : Service() {
                         overspeed = RunOverspeed.live(it.overspeed, System.currentTimeMillis()),
                     )
                 }
-                // 화면이 꺼져 있어도 알림 줄에서 보이게 — 멈춤 · 신발 다 씀이 바뀌면 바로, 거리 · 페이스는 몇 초마다(잠금화면 알림)
-                if (stillNow != current.still || _state.value.shoeWornOut != current.shoeWornOut) {
+                // 신발 내구도 20% · 10% · 다 씀 — 소리 · 진동 알림(화면을 보지 않고 달리는 사람도 알게, 2026-11-26)
+                val after = _state.value
+                val low = after.shoePercent?.let { com.stepup.android.domain.ShoeLowAlert.crossed(after.shoeLowFloor, it) }
+                if (low != null && after.isActive) {
+                    _state.update { if (it.startedAt == after.startedAt) it.copy(shoeLowFloor = low) else it }
+                    ShoeDurabilityAlerts.low(this@WalkSessionService, low, after.shoeLifeSec?.let { (it - after.elapsedSec) / 60 })
+                }
+                if (after.shoeWornOut && !current.shoeWornOut && after.isActive && (after.shoeLifeSec ?: 0L) > 0L) {
+                    ShoeDurabilityAlerts.wornOut(this@WalkSessionService)
+                }
+                val lowChanged = low != null || after.shoePercent != current.shoePercent
+                // 화면이 꺼져 있어도 알림 줄에서 보이게 — 멈춤 · 신발 다 씀 · 신발 %가 바뀌면 바로, 거리 · 페이스는 몇 초마다(잠금화면 알림)
+                if (stillNow != current.still || after.shoeWornOut != current.shoeWornOut || lowChanged) {
                     updateNotification(force = true)
                 } else {
                     updateNotification()
@@ -1371,6 +1416,7 @@ class WalkSessionService : Service() {
             // 저장까지 끝났다 — 저장본을 지운다(실패해도 다음 실행이 같은 러닝을 다시 저장할 뿐이다)
             runCatching { ServiceLocator.runCheckpoints.clear(session.startedAt, session.recordingOwner) }
             settling = false
+            ShoeDurabilityAlerts.clear(this@WalkSessionService)
             ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
           } catch (cancelled: CancellationException) {
@@ -1414,6 +1460,7 @@ class WalkSessionService : Service() {
                 timerJob?.cancel()
                 stopLocation()
                 _state.value = WalkSessionState()
+                ShoeDurabilityAlerts.clear(this@WalkSessionService)
                 ServiceCompat.stopForeground(this@WalkSessionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                 stopSelf()
             } finally {
@@ -1465,7 +1512,7 @@ class WalkSessionService : Service() {
                 if (it.isActive && it.startedAt == startedAt &&
                     (it.crewPoolRemaining != remaining || it.crewPoolTotal != total || it.crewPoolEmpty != empty || it.shoeLifeSec != null)
                 ) {
-                    it.copy(crewPoolRemaining = remaining, crewPoolTotal = total, crewPoolEmpty = empty, shoeLifeSec = null)
+                    it.copy(crewPoolRemaining = remaining, crewPoolTotal = total, crewPoolEmpty = empty, shoeLifeSec = null, shoeWear = null)
                 } else it
             }
         }

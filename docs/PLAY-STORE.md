@@ -150,7 +150,7 @@ AI 코칭은 지금 꺼져 있다(`coaching_enabled=false`). 켜서 외부 AI �
 - 잠금 화면: 러닝 중에만 앱(덮개 `LockRunHost`)을 잠금 위에 띄우고, 다른 앱 뒤에서 잠갔으면 러닝 알림 → 잠금 위 현황 화면(`LockRunActivity` — 매니페스트 `showWhenLocked` 는 이 화면에만, 내보내지 않음) · 안드로이드 16 실시간 알림(`POST_PROMOTED_NOTIFICATIONS`)
 - 포그라운드 서비스 선언은 **위치 · 건강 두 종류 모두** 시연 영상이 필요하다. 건강 · 피트니스 카테고리면 Play Console › 앱 콘텐츠 › **건강 앱 선언**도 낸다
 - 스토어 빌드에는 테스트 APK 의 스스로 업데이트 권한(`REQUEST_INSTALL_PACKAGES` · `UPDATE_PACKAGES_WITHOUT_USER_ACTION`)이 **없다**(`src/debug` 매니페스트에만)
-- 신체 활동: 걸음 수 집계
+- 신체 활동: 걸음 수 집계(2026-11-26 — 앱을 켜지 않은 동안의 걸음은 구글 Play 서비스의 걸음 기록 Recording API 로 읽는다. 기기 안에만 남고 구글 계정 · 서버로 가지 않는다. 하루 합만 앱 기록 · steps_sync 로)
 
 ### 금융 기능 · 블록체인
 - Play Console › 앱 콘텐츠 › **금융 기능** 신고: 스토어 판은 지갑 · 출금이 없으므로 **"금융 기능 없음"**. SUP 는 현금으로 바꿀 수 없는 앱 포인트, 거래소는 SUP 로만 신발을 주고받는다.

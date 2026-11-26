@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_shoe_alert">신발 내구도 알림</string>
+    <string name="shoe_alert_low_title">신발 내구도 %1$d%% 남았어요</string>
+    <string name="shoe_alert_low_body_min">가득 적립하며 약 %1$d분 더 달릴 수 있어요</string>
+    <string name="shoe_alert_low_body">곧 다 닳아요 · 수리하면 다시 가득 적립돼요</string>
+    <string name="shoe_alert_worn_title">신발 내구도를 다 썼어요</string>
+    <string name="notification_steps_shoe">%1$,d걸음 · 신발 %2$d%%</string>
+    <string name="lock_run_shoe">신발 내구도</string>
+</resources>

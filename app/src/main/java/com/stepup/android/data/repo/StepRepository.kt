@@ -177,6 +177,26 @@ class StepRepository(
         return clamped
     }
 
+    /**
+     * 앱이 꺼진 동안 구글 Play 서비스가 기록해 둔 날마다 걸음([com.stepup.android.sensor.StepHistory])을 폰 기록에 채운다 —
+     * 이미 적힌 값보다 클 때만(하루 걸음은 줄지 않는다). 오늘 값이면 걸음 센서가 그 값부터 이어 센다. 바뀐 날 수를 돌려준다.
+     */
+    suspend fun mergeHistory(days: Map<Long, Int>): Int {
+        if (days.isEmpty()) return 0
+        val goal = runCatching { prefs.dailyGoal.first() }.getOrDefault(0)
+        var changed = 0
+        val today = LocalDate.now().toEpochDay()
+        for ((day, steps) in days) {
+            if (steps <= 0 || day > today) continue
+            val stored = stepDao.byDay(day)
+            if (stored != null && stored.steps >= steps) continue
+            stepDao.upsert(DailyStepsEntity(day, steps, stored?.goal ?: goal, System.currentTimeMillis()))
+            changed++
+            if (day == today) tracker.raiseFloor(day, steps)
+        }
+        return changed
+    }
+
     /** 지난 7일(오늘 포함) 기록 */
     fun observeWeek(): Flow<List<DailyStepsEntity>> {
         val from = LocalDate.now().toEpochDay() - 6

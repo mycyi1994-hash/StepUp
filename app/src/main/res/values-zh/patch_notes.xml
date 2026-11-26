@@ -34,4 +34,8 @@
     <string name="pn_118_reason">跑步记录显示0 SUP的原因</string>
     <string name="pn_118_crew">团队跑出发提醒</string>
     <string name="pn_118_flash">闪电跑分享链接</string>
+    <string name="pn_122_lock">锁屏显示跑鞋耐久度条 · 20% · 10% 时提示音</string>
+    <string name="pn_122_steps">不打开应用也能统计每日步数</string>
+    <string name="pn_122_stepbox">每日步数达标即可获得步数宝箱</string>
+    <string name="pn_122_gps">修正息屏期间的 GPS 路线与距离</string>
 </resources>

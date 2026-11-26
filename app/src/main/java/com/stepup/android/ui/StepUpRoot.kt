@@ -516,6 +516,9 @@ private fun MainScaffoldContent(
     LaunchedEffect(Unit) {
         if (StepPermissions.hasActivityRecognition(context)) {
             ServiceLocator.stepRepository.startTracking()
+            // 앱이 꺼진 동안의 걸음(구글 Play 서비스 기록)을 오늘 · 지난 날에 채운다 — 걸음 기록을 처음 켜는 것도 여기
+            com.stepup.android.sensor.DailyStepsWorker.schedule(context)
+            launch(kotlinx.coroutines.Dispatchers.IO) { runCatching { com.stepup.android.sensor.DailyStepsWorker.sync(context.applicationContext) } }
         }
     }
 

@@ -151,10 +151,48 @@ class StepTracker(
                 savedBaseline
             }
         }
-        val sensorSteps = (cumulative - baseline).toInt().coerceAtLeast(0)
+        // 오늘 이미 적힌 걸음(앱이 꺼진 동안 구글 Play 서비스가 기록해 둔 것을 걸음 일꾼이 채운 값 — StepHistory)보다 작게 세지 않는다.
+        // 기준점을 내려 센서가 그 값부터 이어 세게 한다(예전엔 작은 값은 버려져 앱을 연 뒤 걸음이 그 값을 넘을 때까지 멈춰 보였다)
+        lastCumulative = cumulative
+        val floor = floorOf(today) - simulatedSteps
+        val base = if (floor > 0 && cumulative - baseline < floor) {
+            val lowered = cumulative - floor
+            prefs.setBaseline(today, lowered, boot)
+            lowered
+        } else {
+            baseline
+        }
+        val sensorSteps = (cumulative - base).toInt().coerceAtLeast(0)
         _todaySteps.value = sensorSteps + simulatedSteps
         _reading.value = StepReading(today, _todaySteps.value)
         hasReading = true
+    }
+
+    /** 마지막 센서 누적값 — 바닥이 오르면 다시 센다. 아직 못 받았으면 -1 */
+    @Volatile private var lastCumulative = -1L
+    @Volatile private var floorDay = Long.MIN_VALUE
+    @Volatile private var floorSteps = 0
+
+    /** 오늘 걸음의 바닥 — 이 프로세스에서 처음 볼 때 폰 기록에서 읽고, [raiseFloor] 가 올린다 */
+    private suspend fun floorOf(today: Long): Int {
+        if (floorDay != today) {
+            floorSteps = todayPersistedSteps(today).coerceAtLeast(0)
+            floorDay = today
+        }
+        return floorSteps
+    }
+
+    /**
+     * 오늘([day]) 걸음이 적어도 [steps] 라고 알린다(앱이 꺼진 동안의 기록 — [StepHistory]). 지금 센 값보다 크면 센서가 그 값부터 이어 센다.
+     * 오늘이 아니면 무시한다.
+     */
+    fun raiseFloor(day: Long, steps: Int) {
+        if (day != LocalDate.now().toEpochDay() || steps <= 0) return
+        if (floorDay == day && steps <= floorSteps) return
+        floorSteps = if (floorDay == day) maxOf(floorSteps, steps) else steps
+        floorDay = day
+        val last = lastCumulative
+        if (last >= 0) events.trySend(last)
     }
 
     /**

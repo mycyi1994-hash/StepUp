@@ -44,7 +44,7 @@ fi
 stepup_pg_start() {
   local hour lib
   hour=$(TZ=Asia/Seoul date +%H)
-  lib=$(ls /usr/lib/*/faketime/libfaketime.so.1 2>/dev/null | head -1)
+  lib=$(ls /usr/lib/*/faketime/libfaketime.so.1 2>/dev/null | head -1 || true)
   if [ "$((10#$hour))" -lt 6 ] && [ -n "$lib" ]; then
     echo "── 한국 시각 ${hour}시 — 검사용 Postgres 시계를 8시간 앞당겨 띄운다(libfaketime)" >&2
     LD_PRELOAD="$lib" FAKETIME="-8h" "$@"

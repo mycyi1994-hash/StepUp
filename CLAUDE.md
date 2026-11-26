@@ -1,5 +1,15 @@
 # StepUp — 작업 메모
 
+## 최신 — 잠금화면 내구도 · 화면 끈 GPS · 하루 걸음 · 걸음 상자 (2026-11-26, 서버 0128)
+
+[docs/점검-2026-11-26-피드백2.md](docs/점검-2026-11-26-피드백2.md) — 테스터 둘째 피드백 → 사용자 "묻지 말고 전부 완본".
+- 잠금화면 신발 내구도 막대 · 20% / 10% · 다 씀 소리 알림(`domain/ShoeLowAlert.kt` · `WalkSessionState.shoeWear` · `shoePercent` · `service/ShoeDurabilityAlerts.kt`, 채널 `run_shoe_alert`).
+- **위치는 잰 시각으로 잰다**(`domain/FixClock.kt` — 화면이 꺼져 위치가 묶여 오면 받은 시각으로는 점 사이가 0초라 거리가 빠지고 경로가 곧은 줄이었다).
+  `onFix` 의 `now` 를 다시 받은 시각으로 바꾸지 않는다.
+- 하루 걸음: 구글 Play 서비스의 걸음 기록(Recording API, `sensor/StepHistory.kt`) + 걸음 일꾼(`sensor/DailyStepsWorker.kt`, 한 시간마다) → `StepRepository.mergeHistory`(큰 값만)
+  · `StepTracker.raiseFloor`(센서가 그 값부터). 러닝 보상 · 목표 · 연속은 그대로 보상 걸음(0118).
+- 걸음 상자(0128 `step_box_claim` — 하루 걸음 6,000 넘으면 일반 상자 하나 · 하루 한 번 · 가입 24시간 뒤, 끄기 `step_box_rule` "OFF"). 쉬는 날 SUP 는 주지 않는다(인플레이션).
+
 ## 최신 — 러닝은 누르자마자 기록 · 3·2·1 뺌 · 배터리 안내 (2026-11-26)
 
 [docs/점검-2026-11-26-러닝-시작-화면꺼짐.md](docs/점검-2026-11-26-러닝-시작-화면꺼짐.md) — 테스터 "화면을 껐더니 측정 안 됨 · 1·2·3 뒤에야 측정 · 다른 러닝 앱과 겹침".

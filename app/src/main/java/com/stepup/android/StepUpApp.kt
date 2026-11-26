@@ -38,6 +38,8 @@ class StepUpApp : Application() {
         // 목표 알림 — 매일 저녁 한 번. 켜고 끄는 것은 일꾼이 알림 설정을 읽어 정한다.
         GoalReminderWorker.createChannel(this)
         runCatching { GoalReminderWorker.schedule(this) }
+        // 걸음 일꾼 — 앱을 켜지 않아도 한 시간마다 하루 걸음을 채우고 올린다(구글 Play 서비스의 걸음 기록, 2026-11-26)
+        runCatching { com.stepup.android.sensor.DailyStepsWorker.schedule(this) }
         // 올리지 못한 러닝이 남아 있으면 다시 올린다. 로그아웃 중이었거나 끝난 직후
         // 앱이 죽었으면, 다음 러닝을 끝낼 때까지 아무도 이 일을 예약하지 않는다.
         runCatching { SessionUploadWorker.schedule(this) }

@@ -40,6 +40,14 @@ class EventApi(private val server: StepUpServer) {
     }
 
     /**
+     * 하루 걸음 상자(서버 0128) — 오늘(한국 날짜) 올린 하루 걸음이 기준을 넘었으면 일반 상자 하나를 받는다(하루 한 번).
+     * [StepBox.isNew] 는 이번에 처음 받았다. 서버에 0128 이 없거나 꺼져 있으면 [StepBox.on] 이 false.
+     */
+    suspend fun stepBoxClaim(): ServerResult<StepBox> =
+        server.authed { token -> server.http.post("${server.restUrl}/rpc/step_box_claim", "{}", server.headers(token)) }
+            .mapBody { StepBox.parse(it) }
+
+    /**
      * 서버가 잰 도전 진행값 — 주간 걸음은 이번 주(한국 시각) 경로가 받쳐 준 러닝 걸음,
      * 나이트 러너는 밤에 시작한 러닝 거리(km). 받기 판정도 이 값으로 한다.
      */
@@ -73,4 +81,16 @@ class EventApi(private val server: StepUpServer) {
                 server.headers(token),
             )
         }.mapBody { it.trim().toDoubleOrNull() }
+}
+
+/** 하루 걸음 상자(0128)의 답 */
+data class StepBox(val on: Boolean, val need: Int, val steps: Int, val got: Boolean, val isNew: Boolean) {
+    companion object {
+        fun parse(body: String): StepBox? = runCatching {
+            val o = kotlinx.serialization.json.Json.parseToJsonElement(body) as kotlinx.serialization.json.JsonObject
+            fun b(k: String) = (o[k] as? kotlinx.serialization.json.JsonPrimitive)?.content == "true"
+            fun i(k: String) = (o[k] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull() ?: 0
+            StepBox(on = b("on"), need = i("need"), steps = i("steps"), got = b("got"), isNew = b("new"))
+        }.getOrNull()
+    }
 }

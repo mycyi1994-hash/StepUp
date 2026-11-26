@@ -34,4 +34,8 @@
     <string name="pn_118_reason">러닝 기록에 0 SUP 까닭 한 줄</string>
     <string name="pn_118_crew">크루 러닝 출발 알림</string>
     <string name="pn_118_flash">번개 공유 링크</string>
+    <string name="pn_122_lock">잠금화면에 신발 내구도 막대 · 20% · 10%에서 알림음</string>
+    <string name="pn_122_steps">앱을 켜지 않아도 하루 걸음을 세요</string>
+    <string name="pn_122_stepbox">하루 걸음을 채우면 걸음 상자</string>
+    <string name="pn_122_gps">화면을 끈 동안의 GPS 경로 · 거리 바로잡음</string>
 </resources>

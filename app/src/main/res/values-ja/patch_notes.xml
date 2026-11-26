@@ -34,4 +34,8 @@
     <string name="pn_118_reason">ランが0 SUPだった理由を一行で</string>
     <string name="pn_118_crew">クルーラン出発のお知らせ</string>
     <string name="pn_118_flash">ゲリラランの共有リンク</string>
+    <string name="pn_122_lock">ロック画面にシューズ耐久度バー · 20% · 10%で通知音</string>
+    <string name="pn_122_steps">アプリを開かなくても1日の歩数をカウント</string>
+    <string name="pn_122_stepbox">1日の歩数を達成すると歩数ボックス</string>
+    <string name="pn_122_gps">画面オフ中のGPSルート · 距離を修正</string>
 </resources>
