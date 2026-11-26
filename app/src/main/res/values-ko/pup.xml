@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, ui/screens/pup/PupScreen.kt) -->
+<resources>
+    <string name="pup_title">스댕이 키우기</string>
+    <string name="pup_soon">곧 열려요</string>
+    <string name="pup_stages">단계 보기</string>
+    <string name="pup_next_stage">%1$s까지</string>
+    <string name="pup_last_stage">마지막 단계</string>
+    <string name="pup_food">밥</string>
+    <string name="pup_walk">산책</string>
+    <string name="pup_pet">쓰다듬기</string>
+    <string name="pup_week_stamps">이번 주 도장</string>
+    <string name="pup_week_days">월,화,수,목,금,토,일</string>
+    <string name="pup_deco">꾸미기</string>
+    <string name="pup_feed">밥 주기</string>
+    <string name="pup_stage_1">갓난 강아지</string>
+    <string name="pup_stage_2">눈 뜬 아기</string>
+    <string name="pup_stage_3">꼬물이</string>
+    <string name="pup_stage_4">꼬마 강아지</string>
+    <string name="pup_stage_5">청소년 강아지</string>
+    <string name="pup_stage_6">러너 강아지</string>
+    <string name="pup_stage_7">다 큰 스댕이</string>
+</resources>

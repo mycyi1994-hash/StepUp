@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v12 디자인 시제품 적용(2026-11-26) — docs/redesign/v12-2026-11-26 -->
+<resources>
+    <string name="v12_home_shoe_title">今履いているシューズ</string>
+    <string name="v12_home_shoe_none">まだシューズを履いていません</string>
+    <string name="v12_home_shoe_pick">シューズを選ぶ</string>
+    <string name="v12_repair_short">修理</string>
+    <string name="v12_home_run_item">ランアイテム</string>
+    <string name="v12_home_run_item_owned">%1$d個あります</string>
+</resources>

@@ -185,10 +185,11 @@ class StepUpUiColors(
 
 /** 블랙(2026-10-26 디자인 자료) — 예전 다크블루(#070B14)를 대신한다. 이름은 그대로 둔다 */
 val DarkBlueUi = StepUpUiColors(
-    background = Color(0xFF000000), card = Color(0xFF101216), elevated = Color(0xFF171A20),
-    fill = Color(0xFF1E2128), fillSecondary = Color(0xFF15181D),
+    // v12 시제품(2026-11-26) — 카드 · 채움은 남색이 도는 면(예전 #101216 · #171A20 · #1E2128 · #15181D · 선 #292E37)
+    background = Color(0xFF000000), card = Color(0xFF0F1829), elevated = Color(0xFF152036),
+    fill = Color(0xFF172236), fillSecondary = Color(0xFF121C2E),
     label = Color(0xFFF6F7FA), secondaryLabel = Color(0xFFA7AFBC), tertiaryLabel = Color(0x80A7AFBC),
-    onDisabled = Color(0x80A7AFBC), separator = Color(0xFF292E37),
+    onDisabled = Color(0x80A7AFBC), separator = Color(0xFF20283D),
     primary = Color(0xFF3D74FA), primaryPressed = Color(0xFF3A6AE6), onPrimary = Color.White,
     accentText = Color(0xFF7DA2FF), segmentThumb = Color(0xFFF6F7FA), segmentOn = Color(0xFF000000),
     live = Color(0xFFFF8B9A), success = Color(0xFF32D74B),

@@ -232,6 +232,9 @@ object Routes {
     /** 앱 공지 상세(알림·공지 v1) — 알림 화면의 "공지"에서. 바깥 소식(NEWS)과 다른 것이다 */
     const val NOTICE = "notice/{id}"
     const val ACHIEVEMENTS = "achievements"
+
+    /** 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, 테스트 판에만) — 러닝 홈 · 내 정보의 한 줄에서 */
+    const val PUP = "pup"
     /** 예전 기록 · 분석(걸음 통계 · 기록 지도) — 러닝 통계의 "걸음 통계와 기록 지도"에서 */
     const val ANALYTICS = "analytics"
 
@@ -809,6 +812,9 @@ private fun MainScaffoldContent(
                     // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
                     onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
+                    onOpenShoe = { id -> navController.navigate(Routes.sneaker(id)) },
+                    onOpenItems = { navController.switchTab(Screen.Bag) },
+                    onOpenPup = if (com.stepup.android.ui.screens.pup.PupFeature.SHOWN) ({ navController.navigate(Routes.PUP) }) else null,
                 )
             }
             composable(Routes.MYSTERY_BOX) {
@@ -1496,6 +1502,9 @@ private fun MainScaffoldContent(
             }
             composable(Routes.ACHIEVEMENTS) {
                 AchievementsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.PUP) {
+                com.stepup.android.ui.screens.pup.PupScreen(onBack = { navController.popBackStack() })
             }
             // 내 러닝 기록 — 목록(기간 · 스크롤은 상세 · 통계에 다녀와도 그대로) → 통계 · 지난 러닝 상세 → 경로 확대
             composable(Routes.RECORDS) {

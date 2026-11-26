@@ -315,6 +315,8 @@ dependencies {
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.google.id)
     implementation(libs.play.services.location)
+    // 스댕이 키우기 미리보기(2026-11-26 v12 시제품) — 강아지 Lottie
+    implementation(libs.lottie.compose)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

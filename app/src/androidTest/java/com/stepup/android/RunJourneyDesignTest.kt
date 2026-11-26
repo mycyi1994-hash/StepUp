@@ -139,12 +139,12 @@ class RunJourneyDesignTest {
             edgeToEdge()
             compose.setContent { DeviceFrame { MainScaffold() } }
 
-            // HOME · E01 — 러닝 홈(UI 최종 통합안: 오늘 걸음 · 자주 달리는 곳 사진 카드 · 숫자 줄 · 둥근 러닝 시작)과 오늘의 활동 시트
+            // HOME · E01 — 러닝 홈(v12 시제품 2026-11-26: 오늘 걸음 · 지금 신은 신발 카드 · 러닝 시작)과 오늘의 활동 시트
             awaitTag("home-start-run")
-            awaitTag("home-spot")
-            compose.onNodeWithTag("home-stats").assertExists()
-            // 신발 전시장 · 신발 줄은 홈에 없다(신발 탭으로)
-            compose.onAllNodesWithTag("home-shoe-name", useUnmergedTree = true).assertCountEquals(0)
+            awaitTag("home-shoe")
+            // 예전 사진 카드 · 숫자 줄은 없다
+            compose.onAllNodesWithTag("home-spot", useUnmergedTree = true).assertCountEquals(0)
+            compose.onAllNodesWithTag("home-stats", useUnmergedTree = true).assertCountEquals(0)
             shot("HOME")
             // 신발 이름 바꾸기(2026-10-17) — 신발 탭 연필로 옮겼다. 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
             val shoeId = requireNotNull(added)

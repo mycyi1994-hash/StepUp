@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, ui/screens/pup/PupScreen.kt) -->
+<resources>
+    <string name="pup_title">养育斯当伊</string>
+    <string name="pup_soon">即将开放</string>
+    <string name="pup_stages">查看阶段</string>
+    <string name="pup_next_stage">距离%1$s</string>
+    <string name="pup_last_stage">最后阶段</string>
+    <string name="pup_food">饭</string>
+    <string name="pup_walk">散步</string>
+    <string name="pup_pet">抚摸</string>
+    <string name="pup_week_stamps">本周印章</string>
+    <string name="pup_week_days">一,二,三,四,五,六,日</string>
+    <string name="pup_deco">装扮</string>
+    <string name="pup_feed">喂饭</string>
+    <string name="pup_stage_1">新生小狗</string>
+    <string name="pup_stage_2">睁眼宝宝</string>
+    <string name="pup_stage_3">小蠕虫</string>
+    <string name="pup_stage_4">小小狗</string>
+    <string name="pup_stage_5">少年狗</string>
+    <string name="pup_stage_6">跑步狗</string>
+    <string name="pup_stage_7">长大的斯当伊</string>
+</resources>

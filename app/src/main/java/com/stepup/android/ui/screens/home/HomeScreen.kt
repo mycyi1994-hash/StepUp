@@ -90,6 +90,7 @@ import com.stepup.android.ui.theme.VoltText
 import java.time.LocalTime
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /*
  * 러닝 탭 첫 화면 — UI 최종 통합안(2026-10-25) `home`. 아치 · 신발 전시장 없음(클라이언트 요청).
@@ -110,6 +111,10 @@ fun HomeScreen(
     onOpenRecords: () -> Unit = {},
     /** 코스 찾기 — 코스 목록 */
     onOpenCourses: () -> Unit = {},
+    /** 지금 신은 신발 카드(v12 시제품) — 이름 › 신발 상세 · 러닝 아이템 › 아이템 탭 · 신발이 없으면 신발 탭 · 스댕이 줄 */
+    onOpenShoe: (Long) -> Unit = {},
+    onOpenItems: () -> Unit = {},
+    onOpenPup: (() -> Unit)? = null,
     /** 시안 검사(OnboardingDesignTest)만 쓴다 — 첫 러닝 홈(시안 11)을 그려 본다. null 이면 실제 권한 · 기록으로 판단한다 */
     firstRunPreview: Boolean? = null,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
@@ -125,6 +130,10 @@ fun HomeScreen(
     val goalNotice by viewModel.goalRuleNotice.collectAsStateWithLifecycle()
     val overnightRun by viewModel.overnightRun.collectAsStateWithLifecycle()
     var goalSheet by rememberSaveable { mutableStateOf(false) }
+    var repairShoeId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val repairScope = androidx.compose.runtime.rememberCoroutineScope()
+    val bag by com.stepup.android.core.ServiceLocator.itemsRepository.bag.collectAsStateWithLifecycle()
+    val picks by com.stepup.android.core.ServiceLocator.itemsRepository.picks.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var hasPermission by remember {
@@ -178,7 +187,41 @@ fun HomeScreen(
         goalNotice = goalNotice && bar != null,
         onGoalNotice = { viewModel.dismissGoalRuleNotice(); goalSheet = true },
         overnightRun = overnightRun,
+        shoe = state.equipped,
+        runItem = HomeRunItem.of(bag, picks),
+        onOpenShoe = { state.equipped?.let { onOpenShoe(it.id) } },
+        onRepair = { repairShoeId = state.equipped?.id },
+        onOpenItems = onOpenItems,
+        onOpenShoes = onOpenCustomize,
+        onOpenPup = onOpenPup,
     )
+
+    // 수리 — 신발 탭 · 러닝 점검과 같은 시트(ShoeCareStore). 여는 것만으로 수리하지 않는다
+    repairShoeId?.let { id ->
+        val careStore = com.stepup.android.ui.screens.items.ShoeCareStore.shared
+        val repairs by careStore.repair.collectAsStateWithLifecycle()
+        val repairShoe = state.equipped?.takeIf { it.id == id }
+        LaunchedEffect(id) { if (careStore.repair.value[id] == null) careStore.openRepair(id) }
+        val closeRepair = {
+            repairShoeId = null
+            careStore.closeRepair(id)
+        }
+        if (repairShoe == null || session.isActive) {
+            LaunchedEffect(Unit) { closeRepair() }
+        } else {
+            com.stepup.android.ui.screens.items.ShoeRepairSheet(
+                shoe = repairShoe,
+                phase = repairs[id] ?: com.stepup.android.ui.screens.items.RepairPhase.Loading,
+                onConfirm = { careStore.confirmRepair(id) },
+                onRecheck = { careStore.recheckRepair(id) },
+                onReload = { careStore.reloadRepair(id) },
+                onSignIn = if (!com.stepup.android.core.ServiceLocator.serverEconomyOn) null else ({
+                    repairScope.launch { runCatching { com.stepup.android.ui.components.returnToSignIn(context) } }
+                }),
+                onClose = closeRepair,
+            )
+        }
+    }
 
     if (goalSheet) {
         // 목표 바꾸기 — 설정과 같은 시트(바꾼 목표는 오늘 달렸으면 내일부터). 닫으면 서버 상태(내일 목표)를 다시 읽는다
@@ -270,6 +313,15 @@ internal fun HomeContent(
     onGoalNotice: () -> Unit = {},
     /** 가장 최근 러닝이 어젯밤 시작해 오늘 끝났다 — 막대 아래 "어제 걸음으로 셌어요"(오늘만) */
     overnightRun: Boolean = false,
+    /** 지금 신은 신발(v12 시제품 2026-11-26) — 사진 카드 · 숫자 줄 자리. null 이면 신발 탭으로 가는 한 줄 */
+    shoe: com.stepup.android.domain.Sneaker? = null,
+    runItem: HomeRunItem? = null,
+    onOpenShoe: () -> Unit = {},
+    onRepair: () -> Unit = {},
+    onOpenItems: () -> Unit = {},
+    onOpenShoes: () -> Unit = {},
+    /** 스댕이 키우기 줄(기획 전 — 테스트 판에서만) */
+    onOpenPup: (() -> Unit)? = null,
 ) {
     // 본문은 넘기고, 이 화면의 주 행동(러닝 시작)은 늘 아래에 보인다(작은 화면 · 큰 글씨에서도)
     Column(Modifier.fillMaxSize()) {
@@ -278,8 +330,12 @@ internal fun HomeContent(
                 .testTag("home-content"),
         ) {
             Spacer(Modifier.height(if (largeText) 8.dp else 14.dp))
-            RunTabTitle(stringResource(R.string.d26_title_run))
-            Spacer(Modifier.height(if (largeText) 14.dp else 18.dp))
+            // 제목 오른쪽에 GPS 준비(v12 시제품 — 사진 카드 아래에서 올렸다)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                RunTabTitle(stringResource(R.string.d26_title_run), Modifier.weight(1f))
+                GpsLine(gps)
+            }
+            Spacer(Modifier.height(if (largeText) 14.dp else 22.dp))
             StepsHero(
                 todaySteps = todaySteps, goal = goal, loaded = loaded,
                 hasPermission = hasPermission, firstHome = firstHome,
@@ -304,21 +360,17 @@ internal fun HomeContent(
                     action = stringResource(R.string.dr_goal_notice_action), onAction = onGoalNotice, tag = "home-goal-notice",
                 )
             }
-            Spacer(Modifier.height(14.dp))
-            RunPhotoCard(photoIndex)
-            Spacer(Modifier.height(12.dp))
-            GpsLine(gps)
-            Spacer(Modifier.height(14.dp))
-            StatRow(
-                listOf(
-                    StatItem(stringResource(R.string.d26_stat_km), km?.let { "%.2f".format(it) } ?: "—", "km", tag = "home-stat-km"),
-                    StatItem(stringResource(R.string.d26_stat_sup),
-                        earned?.let { "+" + com.stepup.android.ui.components.formatSupDown(it, 2) } ?: "—", "SUP", tag = "home-stat-sup"),
-                    StatItem(stringResource(R.string.d26_stat_week), weekRuns?.toString() ?: "—",
-                        stringResource(R.string.pf_runs_unit), tag = "home-stat-runs"),
-                ),
-                modifier = Modifier.testTag("home-stats"),
+            // 지금 신은 신발 · 스댕이 키우기(v12 시제품 2026-11-26) — 예전 사진 카드 · 오늘 거리 / 적립 / 이번 주 러닝 줄을 대신한다.
+            // 오늘 거리 · 적립은 걸음 칸을 누르면 여는 오늘의 활동 시트에 그대로 있다
+            Spacer(Modifier.height(28.dp))
+            HomeShoeSection(
+                shoe = shoe, runItem = runItem, onOpenShoe = onOpenShoe, onRepair = onRepair,
+                onOpenItems = onOpenItems, onOpenShoes = onOpenShoes,
             )
+            if (onOpenPup != null) {
+                Spacer(Modifier.height(10.dp))
+                com.stepup.android.ui.screens.pup.PupEntryRow(onOpenPup)
+            }
             Spacer(Modifier.height(16.dp))
         }
         Box(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).padding(top = 8.dp, bottom = 12.dp)) {

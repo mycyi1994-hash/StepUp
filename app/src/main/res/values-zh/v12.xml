@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v12 디자인 시제품 적용(2026-11-26) — docs/redesign/v12-2026-11-26 -->
+<resources>
+    <string name="v12_home_shoe_title">当前穿着的跑鞋</string>
+    <string name="v12_home_shoe_none">还没有穿跑鞋</string>
+    <string name="v12_home_shoe_pick">选择跑鞋</string>
+    <string name="v12_repair_short">修理</string>
+    <string name="v12_home_run_item">跑步道具</string>
+    <string name="v12_home_run_item_owned">有%1$d个</string>
+</resources>
