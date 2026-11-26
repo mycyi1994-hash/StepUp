@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -160,31 +161,33 @@ fun BluePageHeader(
     backEnabled: Boolean = true,
 ) {
     val t = runTone()
+    // v12 시제품(2026-11-26) — "← 제목" 한 줄(곧은 화살표 · 왼쪽 굵은 제목), 설명은 제목 아래 왼쪽
     Column(modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 60.dp), contentAlignment = Alignment.Center) {
-            Text(
-                title, style = runTextStyle(21.sp, t.text, FontWeight.Bold, 1.25f), textAlign = TextAlign.Center,
-                maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 52.dp).semantics { heading() }.testTag("blue-page-title"),
-            )
+        Row(Modifier.fillMaxWidth().heightIn(min = 60.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) {
                 Box(
-                    Modifier.align(Alignment.CenterStart).offset(x = (-8).dp).size(48.dp).clip(CircleShape)
+                    Modifier.offset(x = (-12).dp).size(48.dp).clip(CircleShape)
                         .feedbackClickable(enabled = backEnabled, cue = FeedbackCue.Back, onClick = onBack)
                         .testTag("blue-back"),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back),
-                        tint = if (backEnabled) t.text else t.muted, modifier = Modifier.size(22.dp).offset(x = 4.dp),
+                        Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back),
+                        tint = if (backEnabled) t.text else t.muted, modifier = Modifier.size(24.dp),
                     )
                 }
             }
+            Text(
+                title, style = runTextStyle(21.sp, t.text, FontWeight.ExtraBold, 1.25f),
+                maxLines = 2, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).offset(x = if (onBack != null) (-8).dp else 0.dp).semantics { heading() }
+                    .testTag("blue-page-title"),
+            )
         }
         if (subtitle != null) {
             Text(
-                subtitle, style = runTextStyle(15.sp, t.label, FontWeight.Medium), textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).padding(bottom = 4.dp),
+                subtitle, style = runTextStyle(15.sp, t.label, FontWeight.Medium),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
             )
         }
     }

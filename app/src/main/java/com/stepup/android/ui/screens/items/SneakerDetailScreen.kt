@@ -27,6 +27,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.ui.graphics.Color
+import com.stepup.android.ui.components.StepUpUi
+import com.stepup.android.ui.components.bleedX
+import com.stepup.android.ui.components.RunBackButton
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -347,15 +352,25 @@ fun ShoeDetailContent(
         DetailButtons(upgradeLabel, upgradeEnabled = false, onUpgrade = {},
             wearLabel = stringResource(R.string.sdv_checking), wearEnabled = false, wearBusy = true, onWear = {})
     }
-    val wearBar: @Composable ColumnScope.() -> Unit = {
+    val wearBar: @Composable ColumnScope.() -> Unit = wearBar@{
         val worn = shoe?.equipped == true
         // 신고 있는 신발이 닳았으면 비어 있던 주 버튼 자리("지금 신고 있어요", 누를 수 없음)를 수리하기가 쓴다(2026-11-07 "신발 수리하는거 버튼 앞으로").
         // 신고 있다는 표시는 이름 아래 한 줄로 남는다(DetailBody)
-        val repairPrimary = shoe != null && repairInPrimary(shoe, care) && !equipping
+        // v12 시제품(2026-11-26) — 수리는 내구도 줄의 "수리" 칩. 주 버튼은 곧 닳는 신발([repairUrgent])일 때만 수리하기가 쓴다
+        val repairPrimary = shoe != null && repairInPrimary(shoe, care) && repairUrgent(shoe, rememberShoeRules()) && !equipping
         WornToast(toast, Modifier.fillMaxWidth().padding(bottom = 10.dp))
         if (toast == null && !worn && wearing == null && !equipping) {
             Text(stringResource(R.string.care_first_hint), style = runTextStyle(14.sp, runTone().label, androidx.compose.ui.text.font.FontWeight.Medium),
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).testTag("shoe-first-hint"))
+        }
+        if (worn && !repairPrimary && !equipping) {
+            // v12 시제품 — 신고 있는 신발은 주 버튼 하나 "강화하기"(신고 있다는 표시는 남색 무대 오른쪽 위 "✓ 착용 중")
+            com.stepup.android.ui.components.PrimaryButton(
+                upgradeLabel, onEnhance,
+                state = if (!care.repairPending) com.stepup.android.ui.components.ButtonState.Idle else com.stepup.android.ui.components.ButtonState.Disabled,
+                modifier = Modifier.fillMaxWidth().testTag("shoe-upgrade-open"),
+            )
+            return@wearBar
         }
         DetailButtons(
             upgradeLabel = upgradeLabel,
@@ -374,9 +389,14 @@ fun ShoeDetailContent(
         )
     }
 
+    var renaming by rememberSaveable { mutableStateOf(false) }
     DetailPage(
         title = stringResource(R.string.sdv_title),
         onBack = onBack,
+        // v12 시제품 — 신발이 있으면 머리는 남색 무대 안("← 신발 상세 · ✓ 착용 중"), 바닥은 카드색
+        showHeader = ready == null,
+        topPadding = if (ready == null) 12.dp else 0.dp,
+        background = if (ready != null) StepUpUi.colors.card else null,
         trailing = {
             if (ready != null) {
                 DarkIconButton(Icons.Filled.MoreHoriz, stringResource(R.string.sdv_more), onClick = { sheet = DetailSheet.Manage },
@@ -426,11 +446,14 @@ fun ShoeDetailContent(
                     onOpenPoints = pointsActions.onOpen,
                     onSell = { onSell(state.shoe) },
                     onOpenRecord = { sheet = DetailSheet.Record },
+                    onBack = onBack,
+                    onRename = { renaming = true },
                 )
             }
         }
     }
 
+    if (shoe != null && renaming) ShoeRenameSheet(shoe, onDone = { renaming = false })
     if (shoe != null) {
         when (sheet) {
             DetailSheet.Record -> RecordSheet(shoe, zone, onClose = { sheet = DetailSheet.None })
@@ -502,93 +525,101 @@ private fun DetailBody(
     onOpenPoints: () -> Unit,
     onSell: () -> Unit = {},
     onOpenRecord: () -> Unit = {},
+    onBack: () -> Unit = {},
+    onRename: () -> Unit = {},
 ) {
-    val t = runTone()
     val shoe = state.shoe
     val art by rememberShoeArt(shoe, ShoeArtFull, artAttempt)
     val failed = art == ShoeArtLoad.Failed
-    // 무대는 남는 높이만큼 — 이름 · 네 줄과 내구도 칸의 수리하기까지 첫 화면에 들도록(2026-11-07 수리는 신발 관리 첫 줄에서
-    // 내구도 칸으로 옮겼다 — 칸이 약 50 커지고 관리 첫 줄 약 104 가 빠져 같은 값이면 수리하기가 예전보다 위에 든다).
-    // 아이템칸 · 나머지 신발 관리는 그 아래로 넘어간다. 그래도 모자라면 목록이 넘어간다
+    val c = StepUpUi.colors
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val stageMaxHeight = (screenHeight - 610.dp).coerceAtLeast(170.dp)
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        // 무대 — 기존 등급 무대(무대 면 → 뒤 효과 → 신발 → 앞 효과 → 프레임)
-        Box(
-            Modifier.widthIn(max = stageMaxHeight * GradeArtRatio).fillMaxWidth().aspectRatio(GradeArtRatio)
-                .then(if (art is ShoeArtLoad.Ready) Modifier.testTag("shoe-art") else Modifier),
+    // v12 시제품(2026-11-26) — 위는 남색 무대(머리 · 카드), 아래는 카드색 면(능력치 · 포인트 · 기록 · 판매 · 이름)
+    Column(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.bleedX(StepUpDesign.Gutter)
+                .background(Brush.verticalGradient(listOf(Color(0xFF0B193C), Color(0xFF10234E))))
+                .padding(bottom = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            SneakerGradeStage(shoe, Modifier.fillMaxSize(), showShoe = !failed)
-            if (failed) {
-                Box(Modifier.fillMaxSize().testTag("shoe-art-failed")) {
-                    ArtFailed(onRetryArt, Modifier.align(Alignment.Center))
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                RunBackButton(onBack, tag = "shoe-detail-back", tint = Color.White)
+                Text(
+                    stringResource(R.string.sdv_title), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                if (shoe.equipped) {
+                    Row(Modifier.padding(end = 12.dp).testTag("shoe-detail-wearing"), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Check, null, tint = Color(0xFF8FB4FF), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.my_shoes_wearing), color = Color(0xFF8FB4FF), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            Box(
+                Modifier.padding(top = 6.dp).fillMaxWidth(.66f).heightIn(max = (screenHeight * .42f).coerceAtLeast(240.dp))
+                    .then(if (art is ShoeArtLoad.Ready) Modifier.testTag("shoe-art") else Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.testTag("shoe-name"))
+                if (failed) {
+                    Box(Modifier.matchParentSize().testTag("shoe-art-failed")) {
+                        ArtFailed(onRetryArt, Modifier.align(Alignment.Center))
+                    }
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
-        // 이름 → 등급 배지 → No. 번호 → (오른쪽) 붉은 수리하기 한 줄. 이름이 길면 두 줄까지, 배지와 번호는 함께 남는다. 착용 여부로 배지를 바꾸지 않는다
-        // 수리하기는 고칠 내구도가 있을 때만(2026-11-24 사용자 "수리하기는 No. 오른쪽 버튼") — 내구도 칸 안 버튼 · 다음 레벨 % 는 뺐다
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        ShoeNameWithBadge(
-            name = shoe.shoeName(), tier = shoe.tier,
-            style = androidx.compose.ui.text.TextStyle(
-                color = t.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
-                lineHeight = 1.24.em, letterSpacing = (-0.02).em,
-            ),
-            maxLines = 2,
-            suffix = formatShoeNumber(shoe.mintNumber),
-            suffixStyle = androidx.compose.ui.text.TextStyle(
-                color = t.label, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum",
-            ),
-            modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() }.testTag("shoe-name"),
-        )
-        if (repairable(shoe)) {
-            Spacer(Modifier.width(8.dp))
-            ShoeRepairPill(onShowRepair, enabled = !care.busy)
+        Column(
+            Modifier.bleedX(StepUpDesign.Gutter).offset(y = (-24).dp)
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(c.card)
+                .padding(horizontal = StepUpDesign.Gutter + 4.dp).padding(top = 24.dp),
+        ) {
+            // SD18 · SD19 — 결과가 안 정해진 강화 · 수리. 아래 값은 마지막으로 확인한 값이다
+            if (care.upgradePending) {
+                RunNotice(
+                    stringResource(R.string.care_pending_upgrade_title), body = stringResource(R.string.care_pending_upgrade_body),
+                    action = stringResource(R.string.care_check_result), onAction = onShowUpgrade, tag = "shoe-upgrade-pending",
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            if (care.repairPending) {
+                RunNotice(
+                    stringResource(R.string.care_pending_repair_title), body = stringResource(R.string.care_pending_repair_body),
+                    action = stringResource(R.string.care_check_result), onAction = onShowRepair, tag = "shoe-repair-pending",
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            V12ShoeStats(shoe, Modifier.testTag("shoe-stat-cells"), onRepair = onShowRepair, repairEnabled = !care.busy)
+            // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
+            ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 8.dp))
+            // 스탯 포인트(0059) — 나눌 포인트 · 다시 나누기 · 다 나눔. 판매 중 · 체인 · 결과 미확인 중에는 흐리게(까닭 한 줄)
+            val entry = pointsEntryOf(shoe)
+            if (entry != PointsEntry.None) {
+                val available = pointsAvailable(shoe)
+                Spacer(Modifier.height(18.dp))
+                V12PointsRow(
+                    title = stringResource(R.string.points_title),
+                    count = (entry as? PointsEntry.Free)?.free,
+                    action = stringResource(if (entry == PointsEntry.Respec) R.string.v12_points_respec else R.string.v12_points_split),
+                    note = when {
+                        care.busy -> stringResource(R.string.care_busy_note)
+                        !available -> careBlockText(if (shoe.server?.status != "OWNED") CareBlock.LISTED else CareBlock.ON_CHAIN)
+                        entry == PointsEntry.Done -> stringResource(R.string.v4s_points_manage_done, rememberShoeRules().grade(shoe.rarity).pointsPerLevel)
+                        else -> null
+                    },
+                    enabled = !care.busy && available && (entry is PointsEntry.Free || entry == PointsEntry.Respec),
+                    onClick = onOpenPoints,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                V12LinkText(stringResource(R.string.care_record), true, "shoe-care-record", onOpenRecord)
+                V12LinkText(stringResource(R.string.care_sell), sellRowEnabled(shoe, care.busy), "shoe-care-sell", onSell)
+                V12LinkText(stringResource(R.string.v12_rename), true, "shoe-rename", onRename)
+            }
+            sellRowNote(shoe)?.let {
+                Text(it, color = c.tertiaryLabel, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp).testTag("shoe-sell-note"))
+            }
         }
-        }
-        // 신고 있는 신발의 주 버튼이 수리하기가 되면 "지금 신고 있어요"는 여기 한 줄로(배지 아닌 보조 글자)
-        if (repairInPrimary(shoe, care)) {
-            Text(
-                stringResource(R.string.sdv_status_wearing), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp).testTag("shoe-detail-wearing"),
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        // SD18 · SD19 — 결과가 안 정해진 강화 · 수리. 아래 값은 마지막으로 확인한 값이다
-        if (care.upgradePending) {
-            RunNotice(
-                stringResource(R.string.care_pending_upgrade_title), body = stringResource(R.string.care_pending_upgrade_body),
-                action = stringResource(R.string.care_check_result), onAction = onShowUpgrade, tag = "shoe-upgrade-pending",
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        if (care.repairPending) {
-            RunNotice(
-                stringResource(R.string.care_pending_repair_title), body = stringResource(R.string.care_pending_repair_body),
-                action = stringResource(R.string.care_check_result), onAction = onShowRepair, tag = "shoe-repair-pending",
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        // 레벨업으로 받은 스탯 포인트(0059)가 남았으면 — 나누기는 시트에서. 판매 중 · 체인 · 결과 미확인 중에는 띄우지 않는다
-        val entry = pointsEntryOf(shoe)
-        if (entry is PointsEntry.Free && pointsAvailable(shoe) && !care.busy && !care.upgradePending) {
-            RunNotice(
-                stringResource(R.string.points_notice_title, entry.free), body = stringResource(R.string.points_notice_body),
-                action = stringResource(R.string.points_open), onAction = onOpenPoints, tag = "shoe-points-notice",
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        // 수리하기는 이름 줄 오른쪽(위) — 칸 안에는 두지 않는다(2026-11-24). ⋯ 관리 시트의 수리하기는 그대로
-        ShoeStatCells(shoe, Modifier.testTag("shoe-stat-cells"))
-        // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
-        ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 6.dp))
-        // 아이템칸 — 아이템이 생긴다는 가정의 자리만(잠김). 아이템 · 개수를 지어내지 않는다
-        Spacer(Modifier.height(18.dp))
-        ShoeItemSlots()
-        // 신발 관리 — 포인트 · 판매 · 기록을 ⋯ 안에만 두지 않고 화면에 바로
-        Spacer(Modifier.height(18.dp))
-        CareActions(shoe, busy = care.busy, onPoints = onOpenPoints, onSell = onSell, onRecord = onOpenRecord)
     }
 }
 

@@ -122,8 +122,8 @@ class MysteryDesignTest {
         compose.waitForIdle()
         captureDisplay(File(out, "mystery-03-after-run.png"))
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty() }
-        // 러닝 탭(2026-10-26) — 사람 없는 배경 사진 카드(15장 중 하나)와 아래 고정된 러닝 시작
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-spot", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        // 러닝 탭(v12 시제품 2026-11-26) — 지금 신은 신발 카드와 아래 고정된 러닝 시작
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("home-shoe", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("home-start-run").assertIsDisplayed()
         captureDisplay(File(out, "home-01-background-next.png"))
     }

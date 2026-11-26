@@ -10,4 +10,20 @@
     <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
     <string name="run_battery_hint">화면을 꺼도 기록이 끊기지 않게 배터리 사용을 「제한 없음」으로 바꿔 주세요.</string>
     <string name="run_battery_open">설정 열기</string>
+    <string name="v12_points_split">나누기</string>
+    <string name="v12_points_respec">다시 나누기</string>
+    <string name="v12_rename">이름 바꾸기</string>
+    <string name="v12_prev_shoe">이전 신발</string>
+    <string name="v12_next_shoe">다음 신발</string>
+    <string name="v12_shoe_stored">보관 중</string>
+    <string name="v12_shoe_detail">신발 상세</string>
+    <string name="v12_bag_next">다음 러닝에 쓸 아이템</string>
+    <string name="v12_bag_none">아직 고른 아이템 없음</string>
+    <string name="v12_bag_pick_hint">출발 전 신발 확인에서 골라 써요</string>
+    <string name="v12_bag_zero">없음</string>
+    <string name="v12_bag_use">쓰기</string>
+    <string name="v12_sup_info">SUP 안내</string>
+    <string name="v12_achievements">업적</string>
+    <string name="v12_minutes">%1$d분</string>
+    <string name="v12_recent_date_pattern">M월 d일 (E)</string>
 </resources>

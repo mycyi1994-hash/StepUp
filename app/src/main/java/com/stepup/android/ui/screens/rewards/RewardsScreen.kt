@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -176,7 +177,7 @@ fun WalletContent(
             modifier = Modifier.weight(1f).fillMaxWidth().testTag("wl-list"),
             contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 4.dp, bottom = 28.dp),
         ) {
-            item(key = "balance") { BalanceCard(totals) }
+            item(key = "balance") { BalanceCard(totals, onInfo = { sheet = WalletSheet.Info }) }
             if (web3Enabled || linkOnly) item(key = "web3") {
                 Web3Row(
                     web3,
@@ -259,38 +260,52 @@ fun WalletContent(
     }
 }
 
-/** 잔액 카드 — 러닝 패스 카드의 면과 장식. 읽기 전에는 자리만(0 으로 보이지 않는다) */
+/**
+ * 잔액 카드(v12 디자인 시제품 2026-11-26) — 남색 카드 · "보유" · 큰 숫자 SUP · 오른쪽 위 "SUP 안내 ›"(안내 시트).
+ * 누적 적립 · 사용은 작은 한 줄로 남긴다. 읽기 전에는 자리만(0 으로 보이지 않는다)
+ */
 @Composable
-private fun BalanceCard(totals: TotalsLoad) {
+private fun BalanceCard(totals: TotalsLoad, onInfo: () -> Unit = {}) {
     val ready = (totals as? TotalsLoad.Ready)?.totals
     val balance = ready?.let { amountText(it.balance, signed = false) }
     val size: TextUnit = when {
-        balance == null -> 55.sp
-        balance.length > 10 -> 38.sp
-        balance.length > 7 -> 46.sp
-        else -> 55.sp
+        balance == null -> 50.sp
+        balance.length > 10 -> 36.sp
+        balance.length > 7 -> 44.sp
+        else -> 50.sp
     }
-    RunningPathCard(Modifier.padding(top = 8.dp).testTag("wl-balance-card"), textEnd = 230.dp, minHeight = 176.dp) {
-        Column(Modifier.padding(start = 22.dp, end = 18.dp)) {
-            Text(stringResource(R.string.wl_balance), color = RunningPathColors.title, fontSize = 15.sp,
-                modifier = Modifier.paddingFromBaseline(top = 36.dp))
-            if (balance != null) {
-                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.semantics(mergeDescendants = true) {}.testTag("wl-balance")) {
-                    Text(balance, color = RunningPathColors.number, fontSize = size, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                        modifier = Modifier.alignByBaseline().paddingFromBaseline(top = 62.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.wl_unit), color = RunningPathColors.unit, fontSize = 19.sp, fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.alignByBaseline())
-                }
-            } else {
-                Box(Modifier.padding(top = 18.dp).size(width = 170.dp, height = 44.dp).clip(RoundedCornerShape(12.dp))
-                    .background(Color(0x33A6BCDD)).testTag("wl-balance-loading"))
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        Modifier.padding(top = 8.dp).fillMaxWidth().clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF13285A), Color(0xFF0B193C))))
+            .padding(horizontal = 22.dp, vertical = 18.dp).testTag("wl-balance-card"),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.wl_balance), color = Color(0xFFB9C6E4), fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Row(
+                Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onInfo).padding(horizontal = 4.dp, vertical = 4.dp)
+                    .testTag("wl-sup-info"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.v12_sup_info), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.White, modifier = Modifier.size(16.dp))
             }
-            Box(Modifier.padding(top = 16.dp).fillMaxWidth().height(1.dp).background(Color(0x33A6BCDD)))
-            Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 16.dp)) {
-                TotalColumn(stringResource(R.string.wl_earned), ready?.let { amountText(it.earned, signed = false) }, "wl-earned", Modifier.weight(1f))
-                TotalColumn(stringResource(R.string.wl_spent), ready?.let { amountText(it.spent, signed = false) }, "wl-spent", Modifier.weight(1f))
+        }
+        if (balance != null) {
+            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 6.dp).semantics(mergeDescendants = true) {}.testTag("wl-balance")) {
+                Text(balance, color = Color.White, fontSize = size, fontWeight = FontWeight.ExtraBold, maxLines = 1,
+                    modifier = Modifier.alignByBaseline())
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.wl_unit), color = Color(0xFFB9C6E4), fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.alignByBaseline())
             }
+        } else {
+            Box(Modifier.padding(top = 12.dp).size(width = 170.dp, height = 44.dp).clip(RoundedCornerShape(12.dp))
+                .background(Color(0x33A6BCDD)).testTag("wl-balance-loading"))
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp)) {
+            TotalColumn(stringResource(R.string.wl_earned), ready?.let { amountText(it.earned, signed = false) }, "wl-earned", Modifier.weight(1f))
+            TotalColumn(stringResource(R.string.wl_spent), ready?.let { amountText(it.spent, signed = false) }, "wl-spent", Modifier.weight(1f))
         }
     }
 }

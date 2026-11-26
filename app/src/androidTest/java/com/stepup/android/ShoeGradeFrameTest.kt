@@ -241,13 +241,16 @@ class ShoeGradeFrameTest {
         awaitSingle("shoe-hero")
         val label = compose.activity.getString(tierLabel(ShoeTier.valueOf(tier.uppercase(Locale.ROOT))))
         compose.waitUntil(10_000) {
-            runCatching { compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(label, substring = true) }.isSuccess
+            // v12 시제품(2026-11-26) — 카드 넘기기: 고른 켤레의 카드 등급 칩(옆 카드들도 있어 아무 카드에 그 등급이 있으면 된다)
+            compose.onAllNodesWithTag("v12-card-tier", useUnmergedTree = true).fetchSemanticsNodes().any { node ->
+                node.config.getOrNull(SemanticsProperties.Text)?.any { it.text.contains(label) } == true
+            }
         }
         if (!firstView) compose.onNodeWithTag("shoe-hero").performScrollTo()
         compose.waitForIdle()
         val viewport = compose.onNodeWithTag("my-shoes").fetchSemanticsNode().boundsInRoot
         val card = stageBounds("shoe-hero")
-        keepsRatio(card, "shoe card", expected = 361f / 236f)
+        // 카드 비율은 v12 카드(V12ShoeCardRatio) — 넘기기 판 전체(shoe-hero)는 화면 폭이라 비율을 보지 않는다
         assertTrue("shoe card fully inside the window: $card in $viewport",
             card.top >= viewport.top - 1 && card.bottom <= viewport.bottom + 1 &&
                 card.left >= viewport.left - 1 && card.right <= viewport.right + 1)

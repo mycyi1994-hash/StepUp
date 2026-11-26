@@ -907,25 +907,33 @@ fun NavHeader(
     backTag: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Box(
+    // v12 시제품(2026-11-26) — "← 제목"(왼쪽 정렬). 사진 위(onPhoto)는 유리 원 뒤로 그대로
+    Row(
         modifier.fillMaxWidth().then(if (statusBar) Modifier.statusBarsPadding() else Modifier)
-            .heightIn(min = 52.dp).padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center,
+            .heightIn(min = 52.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (title != null) {
-            Text(
-                title, style = StepUpUi.type.navTitle, color = if (onPhoto) Color.White else StepUpUi.colors.label,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 64.dp).semantics { heading() },
-            )
-        }
         if (onBack != null) {
-            BackButton(
-                onBack, contentDescription = backDescription, onPhoto = onPhoto,
-                modifier = Modifier.align(Alignment.CenterStart).then(if (backTag != null) Modifier.testTag(backTag) else Modifier),
-            )
+            val tagged = if (backTag != null) Modifier.testTag(backTag) else Modifier
+            if (onPhoto) {
+                BackButton(onBack, contentDescription = backDescription, onPhoto = true, modifier = tagged)
+            } else {
+                RunBackButton(onBack, tagged, tint = StepUpUi.colors.label)
+            }
+        } else {
+            Spacer(Modifier.width(12.dp))
         }
-        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically, content = actions)
+        Box(Modifier.weight(1f)) {
+            if (title != null) {
+                Text(
+                    title, style = StepUpUi.type.navTitle.copy(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold),
+                    color = if (onPhoto) Color.White else StepUpUi.colors.label,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, content = actions)
     }
 }
 

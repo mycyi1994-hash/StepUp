@@ -16,7 +16,9 @@
 - 이 판: 러닝 홈의 사진 카드 · 숫자 줄 → "지금 신은 신발" 카드(`home/HomeShoeCard.kt` — 내구도 분 · 수리 시트 · 러닝 아이템) · GPS 는 제목 오른쪽.
   스댕이 키우기 미리보기 `screens/pup/PupScreen.kt`(길 `pup`, Lottie `assets/pup/lv*/` · 방 그림 `pup_room_N` · 어두운 판 `_N_d` — 앱 테마는 앱 설정이라
   drawable-night 를 쓰지 않는다, 테스트 판에만 `PupFeature.SHOWN`). 어두운 테마 카드 · 채움 · 선은 남색 면(#0F1829 · #172236 · #20283D), 버튼 파랑은 대비 때문에 그대로.
-- 남은 차례는 문서 "화면 묶음과 차례"(공통 머리 → 신발 → 아이템 · 지갑 → 러닝 중 → 함께 뛰기 → 내 정보). 시제품 원본은 Drive 링크(사용자) — 화면은 그림이라 코드로 다시 짠다.
+- 둘째 판(같은 날): 머리 일곱 가지 "← 제목" · 시트 글 왼쪽 · 신발 탭 카드 넘기기(`V12ShoeCard`) · 신발 상세 남색 무대 + 얇은 막대(`ShoeStatsV12`) ·
+  포인트 · 수리 시트 · 아이템 탭(`BagList`) · 지갑 잔액 카드 · 내 정보. 남은 것(러닝 중 · 결과 · 함께 뛰기 · 설정 세부 · 강화 화면)은 문서 표.
+  신발 탭 점 = 예전 보유 목록 이름(shoe-owned-row · shoe-choice-N). 이름 바꾸기는 상세로. 시제품 원본은 Drive 링크(사용자) — 화면은 그림이라 코드로 다시 짠다.
 - 로컬 화면 확인: 클라우드 세션에 SDK 를 깔았으면(`/opt/android-sdk`) Robolectric 으로 Compose 를 PNG 로 그려 시안과 맞대어 볼 수 있다(저장소 밖 init 스크립트 —
   `decorView.draw` 로 캡처, `captureToImage` 는 Robolectric 에서 멈춘다).
 

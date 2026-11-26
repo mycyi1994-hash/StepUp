@@ -10,4 +10,20 @@
     <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
     <string name="run_battery_hint">So recording keeps going with the screen off, set battery use to “Unrestricted”.</string>
     <string name="run_battery_open">Open settings</string>
+    <string name="v12_points_split">Split</string>
+    <string name="v12_points_respec">Redistribute</string>
+    <string name="v12_rename">Rename</string>
+    <string name="v12_prev_shoe">Previous shoe</string>
+    <string name="v12_next_shoe">Next shoe</string>
+    <string name="v12_shoe_stored">In storage</string>
+    <string name="v12_shoe_detail">Shoe details</string>
+    <string name="v12_bag_next">Item for your next run</string>
+    <string name="v12_bag_none">No item picked yet</string>
+    <string name="v12_bag_pick_hint">Pick it on the shoe check before you start</string>
+    <string name="v12_bag_zero">None</string>
+    <string name="v12_bag_use">Use</string>
+    <string name="v12_sup_info">SUP guide</string>
+    <string name="v12_achievements">Achievements</string>
+    <string name="v12_minutes">%1$d min</string>
+    <string name="v12_recent_date_pattern">MMM d (E)</string>
 </resources>

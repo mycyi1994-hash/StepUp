@@ -544,7 +544,7 @@ internal fun CrewTopBar(title: String, onBack: () -> Unit, modifier: Modifier = 
     ) {
         com.stepup.android.ui.components.RunBackButton(onBack, Modifier, tint = ink.text)
         Text(
-            title, color = ink.text, fontSize = 19.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            title, color = ink.text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() },
         )

@@ -144,12 +144,10 @@ fun FocusHeader(title: String, onBack: () -> Unit, action: (@Composable () -> Un
         Modifier.fillMaxWidth().heightIn(min = StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
-            cue = FeedbackCue.Back)
+        RunBackButton(onBack, tint = Snow)
         Text(
-            title, modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-            fontSize = StepUpDesign.PrimaryLabel, fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center, color = Snow,
+            title, modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+            fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Snow,
         )
         if (action != null) action() else Spacer(Modifier.size(StepUpDesign.TouchTarget))
     }
@@ -272,13 +270,13 @@ fun SecondaryHeader(
             .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack,
-            cue = FeedbackCue.Back)
-        Box(Modifier.weight(1f), contentAlignment = if (titleContent != null) Alignment.CenterStart else Alignment.Center) {
+        // v12 시제품(2026-11-26) — 곧은 화살표(원 없음) · 제목은 화살표 옆 왼쪽(로고만 가운데)
+        RunBackButton(onBack, tint = Snow)
+        Box(Modifier.weight(1f), contentAlignment = if (titleContent != null || title != null) Alignment.CenterStart else Alignment.Center) {
             when {
                 titleContent != null -> titleContent()
                 title == null -> Wordmark()
-                else -> Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                else -> Text(title, color = Snow, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
                     maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }

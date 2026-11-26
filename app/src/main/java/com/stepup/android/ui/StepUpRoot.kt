@@ -1136,6 +1136,8 @@ private fun MainScaffoldContent(
                     onOpenAnalytics = { navController.navigate(Routes.RECORDS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                    onOpenAchievements = { navController.navigate(Routes.ACHIEVEMENTS) },
+                    onOpenPup = if (com.stepup.android.ui.screens.pup.PupFeature.SHOWN) ({ navController.navigate(Routes.PUP) }) else null,
                     nicknameSaved = nicknameSaved,
                     onNicknameNoticeShown = { entry.savedStateHandle[Routes.NICKNAME_SAVED] = false },
                 )

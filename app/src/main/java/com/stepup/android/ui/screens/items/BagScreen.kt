@@ -68,6 +68,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.UUID
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import com.stepup.android.domain.Bag
 
 /**
  * 아이템 탭(2026-11-17, 서버 0106 — 시안 "B 확정 · 아이템 탭"). 위에서부터 보상 이벤트 띠(켜져 있을 때) · 러닝할 때 고르는 아이템 ·
@@ -109,71 +113,12 @@ fun BagScreen() {
 
     Box(Modifier.fillMaxSize().testTag("bag-screen")) {
         val current = bag
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 6.dp, bottom = if (selected != null) 120.dp else 28.dp),
-        ) {
-            item {
-                // "N종 · N개 보유" 줄은 뺐다(2026-11-24 사용자) — 개수는 카드마다 ×N 으로 보인다
-                LargeTitle(stringResource(R.string.tab_items))
-            }
-            current?.event?.let { event -> item { EventBand(event.mult, event.endsAtMillis) } }
-            when {
-                current == null && loading -> item {
-                    Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) { StepUpSpinner() }
-                }
-                current == null && failed -> item {
-                    Column(Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 40.dp)) {
-                        ErrorNote(stringResource(R.string.bag_load_failed), null)
-                        SecondaryButton(
-                            stringResource(R.string.bag_retry), { scope.launch { load() } },
-                            Modifier.fillMaxWidth().padding(top = 14.dp).testTag("bag-retry"),
-                        )
-                    }
-                }
-                current != null -> {
-                    if (current.total == 0) {
-                        item { EmptyLine(stringResource(R.string.bag_empty), Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 12.dp)) }
-                    }
-                    item {
-                        SectionHead(stringResource(R.string.bag_section_run), stringResource(R.string.bag_section_run_hint))
-                        Row(
-                            // 카드 줄이 화면 높이를 나눠 채운다 — 아래가 비어 보이지 않게(2026-11-24 사용자 "너무 비어 보인다")
-                            Modifier.fillMaxWidth().fillParentMaxHeight(0.27f).padding(horizontal = StepUpUi.Gutter),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            ItemKind.entries.filter { it.runPick }.forEach { kind ->
-                                ItemTile(
-                                    item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0),
-                                    selected = selected == kind,
-                                    tall = false,
-                                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                                    onClick = { selected = kind; request = null; message = null },
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        SectionHead(stringResource(R.string.bag_section_now), null)
-                        Row(
-                            // 카드 줄이 화면 높이를 나눠 채운다 — 아래가 비어 보이지 않게(2026-11-24 사용자 "너무 비어 보인다")
-                            Modifier.fillMaxWidth().fillParentMaxHeight(0.37f).padding(horizontal = StepUpUi.Gutter),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            ItemKind.entries.filter { !it.runPick }.forEach { kind ->
-                                ItemTile(
-                                    item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0),
-                                    selected = selected == kind,
-                                    tall = true,
-                                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                                    onClick = { selected = kind; request = null; message = null },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        BagList(
+            current = current, loading = loading, failed = failed, selected = selected,
+            bottomRoom = if (selected != null) 120.dp else 28.dp,
+            onSelect = { kind -> selected = kind; request = null; message = null },
+            onRetry = { scope.launch { load() } },
+        )
 
         // 고른 아이템 — 바로 쓰는 것은 "사용하기"(주 버튼 하나), 러닝 아이템은 출발 전 점검 안내만
         val pick = selected
@@ -242,6 +187,152 @@ fun BagScreen() {
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 아이템 탭 본문(v12 디자인 시제품 2026-11-26) — 위 하늘색 칸(고른 러닝 아이템을 크게 · 출발 전 점검에서 골라 쓴다는 한 줄),
+ * "러닝할 때 고르는 아이템" 흰 카드 셋(그림 · ×개수 · 아래 이름 · 효과), "바로 쓰는 아이템" 줄(그림 · 이름 ×개수 · 효과 · 쓰기).
+ * 고르기 · 쓰기는 예전 그대로 — 러닝 아이템은 출발 전 점검에서 고르고, 바로 쓰는 것은 아래 "사용하기" 줄로 쓴다.
+ */
+@Composable
+internal fun BagList(
+    current: Bag?,
+    loading: Boolean,
+    failed: Boolean,
+    selected: ItemKind?,
+    bottomRoom: androidx.compose.ui.unit.Dp,
+    onSelect: (ItemKind) -> Unit,
+    onRetry: () -> Unit,
+) {
+    val c = StepUpUi.colors
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomRoom)) {
+        item {
+            // 하늘색 칸 — 제목 · 고른(없으면 가진 첫) 러닝 아이템
+            val heroKind = selected?.takeIf { it.runPick }
+                ?: current?.runPicks?.firstOrNull()?.kind
+            Box(
+                Modifier.fillMaxWidth().background(if (c.dark) Color(0xFF16294A) else Color(0xFFDCECFB))
+                    .padding(horizontal = StepUpUi.Gutter + 4.dp).padding(top = 10.dp, bottom = 22.dp).testTag("bag-hero"),
+            ) {
+                Column(Modifier.fillMaxWidth(.58f)) {
+                    Text(stringResource(R.string.tab_items), style = StepUpUi.type.largeTitle.copy(fontSize = 30.sp), color = c.label,
+                        modifier = Modifier.semantics { heading() })
+                    Spacer(Modifier.height(18.dp))
+                    Text(stringResource(R.string.v12_bag_next), color = c.secondaryLabel, fontSize = 14.sp)
+                    Spacer(Modifier.height(4.dp))
+                    if (heroKind != null) {
+                        Text(itemName(heroKind), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(effectText(heroKind, current?.value(heroKind)), color = c.secondaryLabel, fontSize = 14.sp)
+                    } else {
+                        Text(stringResource(R.string.v12_bag_none), color = c.label, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.v12_bag_pick_hint), color = c.accentText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
+                if (heroKind != null) {
+                    Image(
+                        painterResource(itemArt(heroKind)), null,
+                        Modifier.align(Alignment.CenterEnd).fillMaxWidth(.4f).aspectRatio(1f),
+                    )
+                }
+            }
+        }
+        current?.event?.let { event -> item { EventBand(event.mult, event.endsAtMillis) } }
+        when {
+            current == null && loading -> item {
+                Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) { StepUpSpinner() }
+            }
+            current == null && failed -> item {
+                Column(Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 40.dp)) {
+                    ErrorNote(stringResource(R.string.bag_load_failed), null)
+                    SecondaryButton(stringResource(R.string.bag_retry), onRetry, Modifier.fillMaxWidth().padding(top = 14.dp).testTag("bag-retry"))
+                }
+            }
+            current != null -> {
+                if (current.total == 0) {
+                    item { EmptyLine(stringResource(R.string.bag_empty), Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 12.dp)) }
+                }
+                item {
+                    SectionHead(stringResource(R.string.bag_section_run), null)
+                    Row(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ItemKind.entries.filter { it.runPick }.forEach { kind ->
+                            val item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0)
+                            Column(Modifier.weight(1f)) {
+                                V12ItemCard(item, selected == kind) { onSelect(kind) }
+                                Spacer(Modifier.height(8.dp))
+                                Text(itemName(kind), color = c.label, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text(effectText(kind, item.value), color = c.secondaryLabel, fontSize = 12.sp, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+                item {
+                    SectionHead(stringResource(R.string.bag_section_now), null)
+                    Column(Modifier.padding(horizontal = StepUpUi.Gutter)) {
+                        ItemKind.entries.filter { !it.runPick }.forEach { kind ->
+                            val item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0)
+                            V12InstantRow(item, selected == kind) { onSelect(kind) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 러닝 아이템 흰 카드 — 그림 · 오른쪽 아래 ×개수. 고르면 파란 테두리, 없으면 흐리게 */
+@Composable
+private fun V12ItemCard(item: BagItem, selected: Boolean, onClick: () -> Unit) {
+    val c = StepUpUi.colors
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        Modifier.fillMaxWidth().aspectRatio(.9f).clip(shape).background(if (c.dark) Color(0xFF172236) else Color(0xFFEFF2F7))
+            .border(if (selected) 2.dp else 0.dp, if (selected) c.primary else Color.Transparent, shape)
+            .feedbackClickable(role = Role.Button, onClick = onClick)
+            .semantics { this.selected = selected }.testTag("bag-item-${item.kind.id}"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(painterResource(itemArt(item.kind)), null, Modifier.fillMaxWidth(.82f).aspectRatio(1f).alpha(if (item.qty > 0) 1f else .4f))
+        Text(
+            if (item.qty > 0) stringResource(R.string.item_qty, item.qty) else stringResource(R.string.v12_bag_zero),
+            color = c.label, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+        )
+    }
+}
+
+/** 바로 쓰는 아이템 한 줄 — 그림 · 이름 ×개수 · 효과 · 오른쪽 "쓰기"(없으면 "없음") */
+@Composable
+private fun V12InstantRow(item: BagItem, selected: Boolean, onClick: () -> Unit) {
+    val c = StepUpUi.colors
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(RoundedCornerShape(14.dp))
+            .background(if (selected) c.primary.copy(alpha = .08f) else Color.Transparent)
+            .feedbackClickable(role = Role.Button, onClick = onClick).padding(vertical = 8.dp, horizontal = 4.dp)
+            .testTag("bag-item-${item.kind.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(painterResource(itemArt(item.kind)), null, Modifier.size(54.dp).alpha(if (item.qty > 0) 1f else .4f))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(itemName(item.kind), color = c.label, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                if (item.qty > 0) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.item_qty, item.qty), color = c.secondaryLabel, fontSize = 14.sp)
+                }
+            }
+            Text(effectText(item.kind, item.value), color = c.secondaryLabel, fontSize = 13.sp, maxLines = 1)
+        }
+        if (item.qty > 0) {
+            Text(
+                stringResource(R.string.v12_bag_use), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(c.primary).padding(horizontal = 16.dp, vertical = 7.dp),
+            )
+        } else {
+            Text(stringResource(R.string.v12_bag_zero), color = c.tertiaryLabel, fontSize = 14.sp)
         }
     }
 }
