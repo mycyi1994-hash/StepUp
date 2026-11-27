@@ -84,6 +84,8 @@ fun V12ShoeCard(
     hero: Boolean = true,
     /** 작은 카드(목록 · 시트의 76 ~ 110dp) — 등급 칩만 작게, 번호 · 이름은 빼고 그림을 가운데에 */
     mini: Boolean = false,
+    /** 작은 카드의 등급 칩 · 레벨 동전 — 격자 칸은 따로 "Lv" 를 그리므로 끈다 */
+    miniLabels: Boolean = true,
 ) {
     val shape = RoundedCornerShape(if (mini) 12.dp else 22.dp)
     val rim = v12TierRim(shoe.tier)
@@ -106,7 +108,7 @@ fun V12ShoeCard(
             .then(if (clickLabel != null) Modifier.semantics { contentDescription = clickLabel } else Modifier),
     ) {
         if (mini) {
-            Text(
+            if (miniLabels) Text(
                 shoe.tier.label(), color = Color(0xFF1B2433), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                 modifier = Modifier.padding(6.dp).clip(RoundedCornerShape(4.dp)).background(Color.White.copy(alpha = .82f))
                     .padding(horizontal = 4.dp, vertical = 1.dp),
@@ -115,7 +117,7 @@ fun V12ShoeCard(
                 shoe, Modifier.align(Alignment.Center).fillMaxWidth(.92f).aspectRatio(1.45f),
                 failedTint = Color.White.copy(alpha = .4f), sample = ShoeArtFull,
             )
-            LevelCoin(shoe.level, 18.dp, Modifier.align(Alignment.BottomEnd).padding(6.dp))
+            if (miniLabels) LevelCoin(shoe.level, 18.dp, Modifier.align(Alignment.BottomEnd).padding(6.dp))
             return@Box
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {

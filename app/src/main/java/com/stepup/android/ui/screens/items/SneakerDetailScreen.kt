@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.ui.graphics.Color
 import com.stepup.android.ui.components.StepUpUi
 import com.stepup.android.ui.components.bleedX
@@ -372,6 +373,20 @@ fun ShoeDetailContent(
             )
             return@wearBar
         }
+        if (!worn && !repairPrimary) {
+            // 13차(S-379) — 안 신은 신발은 주 버튼 하나 "이 신발 신기"(강화는 신은 뒤 — 신발 탭의 신은 신발에서)
+            com.stepup.android.ui.components.PrimaryButton(
+                stringResource(if (equipping) R.string.sdv_wear_busy else R.string.sdv_wear), onWear,
+                state = when {
+                    equipping -> com.stepup.android.ui.components.ButtonState.Loading
+                    care.busy -> com.stepup.android.ui.components.ButtonState.Disabled
+                    else -> com.stepup.android.ui.components.ButtonState.Idle
+                },
+                arrow = false,
+                modifier = Modifier.fillMaxWidth().testTag("detail-primary-action"),
+            )
+            return@wearBar
+        }
         DetailButtons(
             upgradeLabel = upgradeLabel,
             upgradeEnabled = !equipping && !care.repairPending,
@@ -560,7 +575,10 @@ private fun DetailBody(
                     .then(if (art is ShoeArtLoad.Ready) Modifier.testTag("shoe-art") else Modifier),
                 contentAlignment = Alignment.Center,
             ) {
-                com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.testTag("shoe-name"))
+                // 13차 — 이름 바꾸기는 카드(이름)를 누르면 신발 이름 시트(S-111)
+                com.stepup.android.ui.components.V12ShoeCard(
+                    shoe, Modifier.testTag("shoe-name"), onClick = onRename, clickLabel = stringResource(R.string.v12_rename),
+                )
                 if (failed) {
                     Box(Modifier.matchParentSize().testTag("shoe-art-failed")) {
                         ArtFailed(onRetryArt, Modifier.align(Alignment.Center))
@@ -588,9 +606,14 @@ private fun DetailBody(
                 )
                 Spacer(Modifier.height(12.dp))
             }
-            V12ShoeStats(shoe, Modifier.testTag("shoe-stat-cells"), onRepair = onShowRepair, repairEnabled = !care.busy)
-            // 하루 최대 SUP(서버 0120) — 서버 규칙이 하루 최대일 때만 조용한 한 줄 · ⓘ
-            ShoeDailyMaxLine(shoe, rememberShoeRules(), Modifier.padding(top = 8.dp))
+            // 13차(S-352) — 능력치 줄 아무 데나 누르면 "능력치" 시트 하나(S-353). 하루 최대 SUP 줄은 뺐다
+            var statsSheet by rememberSaveable { mutableStateOf(false) }
+            V12ShoeStats(shoe, Modifier.testTag("shoe-stat-cells"), onRepair = onShowRepair, repairEnabled = !care.busy,
+                onInfo = { statsSheet = true })
+            if (statsSheet) V13StatsSheet(shoe, onClose = { statsSheet = false })
+            // 아이템칸(처음 빌드에 있었고 12차에서 빠짐 — 13차에서 다시) — 자물쇠 칸 셋 · 곧 열려요
+            Spacer(Modifier.height(18.dp))
+            V13ItemSlotsRow()
             // 스탯 포인트(0059) — 나눌 포인트 · 다시 나누기 · 다 나눔. 판매 중 · 체인 · 결과 미확인 중에는 흐리게(까닭 한 줄)
             val entry = pointsEntryOf(shoe)
             if (entry != PointsEntry.None) {
@@ -613,10 +636,15 @@ private fun DetailBody(
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 V12LinkText(stringResource(R.string.care_record), true, "shoe-care-record", onOpenRecord)
-                V12LinkText(stringResource(R.string.care_sell), sellRowEnabled(shoe, care.busy), "shoe-care-sell", onSell)
-                V12LinkText(stringResource(R.string.v12_rename), true, "shoe-rename", onRename)
+                // 거래를 쉬는 동안은 "판매하기 · 거래 쉬는 중" 흐리게 · 화살표 없음(13차 — 둘째 줄 빼기)
+                V12LinkText(
+                    if (!MarketFeature.TRADING) stringResource(R.string.care_sell) + " · " + stringResource(R.string.v13_trading_paused)
+                    else stringResource(R.string.care_sell),
+                    sellRowEnabled(shoe, care.busy), "shoe-care-sell", onSell, chevron = MarketFeature.TRADING,
+                )
             }
-            sellRowNote(shoe)?.let {
+            // 거래가 열려 있는데 이 신발만 못 파는 까닭(첫 신발 · 무료 뽑기 거리 등)은 한 줄 그대로
+            if (MarketFeature.TRADING) sellRowNote(shoe)?.let {
                 Text(it, color = c.tertiaryLabel, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp).testTag("shoe-sell-note"))
             }
         }
@@ -1073,5 +1101,59 @@ private fun ShoeRepairPill(onClick: () -> Unit, enabled: Boolean) {
         Icon(Icons.Outlined.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
         Text(stringResource(R.string.care_repair), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+/** 아이템칸 한 줄(13차 S-352) — "아이템칸 🔒 🔒 🔒 … 곧 열려요". 누르면 아직 쓸 수 없다는 짧은 안내 */
+@Composable
+private fun V13ItemSlotsRow() {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val toast = stringResource(R.string.item_slots_toast)
+    Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).testTag("shoe-item-slots"), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.item_slots_title), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(12.dp))
+        repeat(3) { index ->
+            Box(
+                Modifier.padding(end = 8.dp).size(36.dp).clip(RoundedCornerShape(10.dp)).background(c.fill)
+                    .feedbackClickable { android.widget.Toast.makeText(context, toast, android.widget.Toast.LENGTH_SHORT).show() }
+                    .testTag("shoe-item-slot-$index"),
+                contentAlignment = Alignment.Center,
+            ) { Icon(androidx.compose.material.icons.Icons.Filled.Lock, null, tint = c.tertiaryLabel, modifier = Modifier.size(16.dp)) }
+        }
+        Spacer(Modifier.weight(1f))
+        Text(stringResource(R.string.item_slots_soon), color = c.secondaryLabel, fontSize = 14.sp)
+    }
+}
+
+/**
+ * 능력치 시트(13차 S-353) — 효율 · 착화감 · 내구도 · 레벨 뜻을 한 시트에. 앞 셋은 서버 규칙 묶음이 주는 글([statMeaningRes]),
+ * 레벨은 그 신발 등급의 레벨마다 포인트(서버 economy.points_per_level_of — 일반 2 · 레어 3 · 에픽 4 · 레전더리 5 · 레드라인 6 · 피니시 8)
+ */
+@Composable
+private fun V13StatsSheet(shoe: Sneaker, onClose: () -> Unit) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val rules = rememberShoeRules()
+    val newMeaning = newStatMeaning(rules)
+    RunSheet(onDismiss = onClose, modifier = Modifier.testTag("shoe-stats-sheet")) {
+        Text(stringResource(R.string.v13_stats_title), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(end = 40.dp).semantics { heading() })
+        Spacer(Modifier.height(10.dp))
+        listOf(
+            stringResource(R.string.my_shoes_stat_efficiency) to stringResource(statMeaningRes(PointStat.EFFICIENCY, newMeaning)),
+            stringResource(R.string.sdv_stat_comfort) to stringResource(statMeaningRes(PointStat.COMFORT, newMeaning)),
+            stringResource(R.string.sdv_stat_durability) to stringResource(statMeaningRes(PointStat.DURABILITY, newMeaning)),
+            stringResource(R.string.sdv_info_level) to stringResource(R.string.v13_stats_level, rules.grade(shoe.rarity).pointsPerLevel),
+        ).forEachIndexed { i, (name, body) ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.separator))
+            Column(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                Text(name, color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(body, color = c.secondaryLabel, fontSize = 14.sp)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        com.stepup.android.ui.components.PrimaryButton(stringResource(R.string.v13_items_done), onClose, arrow = false,
+            modifier = Modifier.fillMaxWidth().testTag("shoe-stats-sheet-ok"))
     }
 }

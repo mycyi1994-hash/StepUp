@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_shoes_wearing_now">Shoes you\'re wearing</string>
+    <string name="v13_sort_title">Sort</string>
+    <string name="v13_shoe_line">Lv.%1$d · Efficiency %2$s · Comfort %3$s</string>
+    <string name="v13_shoe_worn">Worn</string>
+    <string name="v13_sort_durability">Lowest durability</string>
+    <string name="v13_trading_paused">trading paused</string>
+    <string name="v13_stats_title">Stats</string>
+    <string name="v13_stats_level">Each level gives %1$d stat points</string>
+    <string name="v13_upg_when_level">When it reaches Lv.%1$d</string>
+    <string name="v13_upg_points">Stat points</string>
+    <string name="v13_upg_points_value">+%1$d</string>
+    <string name="v13_upg_where">Spend on</string>
+    <string name="v13_upg_where_value">Efficiency · Comfort · Durability</string>
+    <string name="v13_upg_burn">Added shoes are used up · never fails</string>
+    <string name="v13_upg_pairs">%1$d pairs</string>
+    <string name="v13_upg_after_level">Lv.%1$d · %2$s</string>
+</resources>

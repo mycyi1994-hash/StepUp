@@ -62,6 +62,8 @@ fun V12ShoeStats(
     modifier: Modifier = Modifier,
     onRepair: (() -> Unit)? = null,
     repairEnabled: Boolean = true,
+    /** 13차 — 줄을 누르면 능력치 시트 하나(줄마다 ⓘ 대신). null 이면 예전처럼 줄마다 한 줄 설명을 펼친다 */
+    onInfo: (() -> Unit)? = null,
 ) {
     val rules = rememberShoeRules()
     val rows = remember(shoe, rules) { detailStatRows(shoe, rules) }
@@ -95,7 +97,8 @@ fun V12ShoeStats(
                 Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), verticalAlignment = Alignment.CenterVertically) {
                     Row(
                         Modifier.weight(1f).then(
-                            if (meaning != null) Modifier.clip(RoundedCornerShape(8.dp))
+                            if (onInfo != null) Modifier.clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = onInfo)
+                            else if (meaning != null) Modifier.clip(RoundedCornerShape(8.dp))
                                 .feedbackClickable(role = Role.Button) { infoOpen = if (open) null else row.stat } else Modifier,
                         ),
                         verticalAlignment = Alignment.CenterVertically,
@@ -105,7 +108,7 @@ fun V12ShoeStats(
                             color = c.label, fontSize = if (row.stat == DetailStat.LEVEL) 18.sp else 16.sp,
                             fontWeight = if (row.stat == DetailStat.LEVEL) FontWeight.ExtraBold else FontWeight.SemiBold,
                         )
-                        if (meaning != null) {
+                        if (meaning != null && onInfo == null) {
                             Spacer(Modifier.width(4.dp))
                             Icon(Icons.Outlined.Info, null, tint = if (open) c.label else c.tertiaryLabel, modifier = Modifier.size(15.dp))
                         }
@@ -197,7 +200,7 @@ fun V12PointsRow(title: String, count: Int?, action: String, note: String?, enab
 
 /** 작은 글자 링크 "신발 기록 ›" */
 @Composable
-fun V12LinkText(text: String, enabled: Boolean, tag: String, onClick: () -> Unit) {
+fun V12LinkText(text: String, enabled: Boolean, tag: String, onClick: () -> Unit, chevron: Boolean = true) {
     val c = StepUpUi.colors
     Row(
         Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(8.dp))
@@ -206,6 +209,6 @@ fun V12LinkText(text: String, enabled: Boolean, tag: String, onClick: () -> Unit
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text, color = c.secondaryLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = c.secondaryLabel, modifier = Modifier.size(18.dp))
+        if (chevron) Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = c.secondaryLabel, modifier = Modifier.size(18.dp))
     }
 }

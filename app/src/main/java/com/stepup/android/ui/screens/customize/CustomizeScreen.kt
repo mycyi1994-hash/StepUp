@@ -1,5 +1,15 @@
 package com.stepup.android.ui.screens.customize
 
+import androidx.compose.ui.draw.alpha
+
+import androidx.compose.ui.semantics.text
+
+import androidx.compose.ui.semantics.clearAndSetSemantics
+
+import com.stepup.android.ui.components.RimKind
+
+import com.stepup.android.ui.components.stepUpRim
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -185,7 +195,8 @@ fun CustomizeScreen(
     }
     LaunchedEffect(openSection) {
         if (openSection != null && openSection != ShoeSection.DRAW) {
-            section = openSection
+            // 보관함은 내 신발로 합쳤다(13차)
+            section = ShoeSection.MINE
             onOpenSectionShown()
         }
     }
@@ -300,162 +311,106 @@ private fun MyShoesReady(
     }.collectAsStateWithLifecycle(initialValue = null)
     val row = remember(shoes) { ownedRow(shoes) }
     val selected = resolvePair(row, selectedId) ?: return
-    // 카드에 보이는 켤레 — 새로 고른 켤레의 그림을 먼저 읽은 뒤 이름 · 능력치와 함께 바꾼다(글만 앞서 바뀌지 않게)
-    var shownId by rememberSaveable { mutableStateOf<Long?>(null) }
-    LaunchedEffect(selected.id) {
-        if (shownId != null && shownId != selected.id) preloadShoeArt(context, selected)
-        shownId = selected.id
-    }
-    val shown = shoes.firstOrNull { it.id == shownId } ?: selected
+    val shown = selected
     var basisOpen by rememberSaveable { mutableStateOf(initialBasis) }
     var renaming by rememberSaveable { mutableStateOf(false) }
-    val rowState = rememberLazyListState()
-    // 처음 한 번만 — 고른 칸이 보이게 가로 목록을 둔다. 돌아왔을 때는 사용자가 둔 자리를 그대로 쓴다
-    var rowPlaced by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(row.isNotEmpty()) {
-        if (!rowPlaced && row.isNotEmpty()) {
-            val index = row.indexOfFirst { it.id == selected.id }
-            if (index > 1) rowState.scrollToItem(index - 1)
-            rowPlaced = true
-        }
-    }
-    val manage = stringResource(R.string.my_shoes_manage)
-    // v12 시제품(2026-11-26) — 카드를 옆으로 넘긴다(양옆 카드가 조금 보이고 화살표 · 점). 넘긴 카드가 고른 켤레가 된다.
-    // 아래: "✓ 착용 중" / "보관 중" · 보유 N켤레, 내구도(남은 / 가득 분) · 수리, 주 버튼 "신발 상세". 이름 바꾸기는 신발 상세로 옮겼다
-    val pager = androidx.compose.foundation.pager.rememberPagerState(
-        initialPage = row.indexOfFirst { it.id == selected.id }.coerceAtLeast(0), pageCount = { row.size },
-    )
-    LaunchedEffect(pager.settledPage, row) {
-        row.getOrNull(pager.settledPage)?.let { if (it.id != selected.id) onSelect(it.id) }
-    }
-    LaunchedEffect(selected.id) {
-        val index = row.indexOfFirst { it.id == selected.id }
-        if (index >= 0 && index != pager.currentPage && !pager.isScrollInProgress) pager.animateScrollToPage(index)
-    }
-    val canRepair = repairable(shown) && !forgePending.holds(shown.id)
+    var sort by rememberSaveable { mutableStateOf(ItemSort.RECENT) }
+    var filterKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var sortOpen by rememberSaveable { mutableStateOf(false) }
     val rules = com.stepup.android.ui.screens.items.rememberShoeRules()
-    Column(modifier.fillMaxWidth()) {
-        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
-            val cardWidth = minOf(maxWidth * .74f, (maxHeight - 170.dp) * com.stepup.android.ui.components.V12ShoeCardRatio)
-                .coerceAtLeast(180.dp)
-            val side = (maxWidth - cardWidth) / 2
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("my-shoes")) {
-                Spacer(Modifier.height(14.dp))
-                Box(Modifier.fillMaxWidth()) {
-                    androidx.compose.foundation.pager.HorizontalPager(
-                        state = pager,
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = side),
-                        pageSpacing = 14.dp,
-                        modifier = Modifier.fillMaxWidth().guideTarget(GuideTour.Targets.CUSTOMIZE_PREVIEW).testTag("shoe-hero"),
-                    ) { page ->
-                        val shoe = row[page]
-                        val away = kotlin.math.abs((pager.currentPage - page) + pager.currentPageOffsetFraction).coerceIn(0f, 1f)
-                        com.stepup.android.ui.components.V12ShoeCard(
-                            shoe, showStats = true,
-                            efficiency = com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.efficiencyIndex(shoe)),
-                            comfort = com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.comfortIndex(shoe)),
-                            onClick = { onOpenSneaker(shoe.id) }, clickLabel = manage, hero = shoe.id == shown.id,
-                            modifier = Modifier.width(cardWidth).graphicsLayer {
-                                val s = 1f - .12f * away
-                                scaleX = s
-                                scaleY = s
-                                alpha = 1f - .45f * away
-                            },
-                        )
-                    }
-                    if (row.size > 1) {
-                        val scope2 = rememberCoroutineScope()
-                        PagerArrow(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.v12_prev_shoe),
-                            Modifier.align(Alignment.CenterStart).padding(start = side - 22.dp).testTag("shoe-prev"),
-                            enabled = pager.currentPage > 0) { scope2.launch { pager.animateScrollToPage(pager.currentPage - 1) } }
-                        PagerArrow(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.v12_next_shoe),
-                            Modifier.align(Alignment.CenterEnd).padding(end = side - 22.dp).testTag("shoe-next"),
-                            enabled = pager.currentPage < row.size - 1) { scope2.launch { pager.animateScrollToPage(pager.currentPage + 1) } }
-                    }
-                }
-                // 점 — 켤레마다 하나(고른 켤레는 긴 점). 누르면 그 카드로 넘긴다. 예전 보유 목록과 같은 이름(shoe-owned-row · shoe-choice-N)
-                Spacer(Modifier.height(10.dp))
-                val dotsScope = rememberCoroutineScope()
-                androidx.compose.foundation.lazy.LazyRow(
-                    state = rowState,
-                    modifier = Modifier.fillMaxWidth().testTag("shoe-owned-row"),
-                    horizontalArrangement = Arrangement.Center,
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = StepUpUi.Gutter),
-                ) {
-                    items(row.size, key = { row[it].id }) { i ->
-                        val shoe = row[i]
-                        val on = shoe.id == selected.id
-                        val label = shoe.shoeName()
-                        Box(
-                            Modifier.size(width = if (on) 28.dp else 16.dp, height = 24.dp)
-                                .clip(CircleShape)
-                                .feedbackClickable(role = Role.Button) {
-                                    onSelect(shoe.id)
-                                    dotsScope.launch { pager.animateScrollToPage(i) }
-                                }
-                                .semantics { this.selected = on; contentDescription = label }
-                                .testTag("shoe-choice-${shoe.id}"),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            // 신고 있는 켤레의 점은 파랑(착용 표시 — 예전 보유 목록의 체크와 같은 이름 shoe-worn-badge)
-                            Box(Modifier.height(6.dp).width(if (on) 20.dp else 6.dp).clip(CircleShape)
-                                .background(when {
-                                    shoe.equipped -> StepUpUi.colors.primary
-                                    on -> StepUpUi.colors.label
-                                    else -> StepUpUi.colors.separator
-                                })
-                                .then(if (shoe.equipped) Modifier.testTag("shoe-worn-badge") else Modifier))
-                        }
-                    }
-                }
-                Spacer(Modifier.height(18.dp))
-                Column(Modifier.padding(horizontal = StepUpUi.Gutter + 4.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (shown.equipped) {
-                            Icon(Icons.Filled.Check, null, tint = StepUpUi.colors.accentText, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.my_shoes_wearing), color = StepUpUi.colors.accentText, fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold, modifier = Modifier.testTag("shoe-tab-wearing"))
-                        } else {
-                            Text(stringResource(R.string.v12_shoe_stored), color = StepUpUi.colors.secondaryLabel, fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        Text(stringResource(R.string.shoes_s2_owned, shoes.size), color = StepUpUi.colors.secondaryLabel, fontSize = 15.sp,
-                            modifier = Modifier.testTag("shoe-owned-head"))
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    val urgent = canRepair && repairUrgent(shown, rules)
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.sdv_stat_durability), color = StepUpUi.colors.label, fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        Text(com.stepup.android.ui.screens.items.durabilityText(shown, rules),
-                            color = if (urgent) StepUpUi.colors.live else StepUpUi.colors.label, fontSize = 17.sp, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.testTag("shoe-bar-durability-value"))
-                        if (repairable(shown)) {
-                            Spacer(Modifier.width(8.dp))
-                            com.stepup.android.ui.screens.items.V12RepairChip(urgent, canRepair) {
-                                repairId = shown.id
-                                ShoeCareStore.shared.openRepair(shown.id)
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    val fraction = com.stepup.android.ui.screens.items.durabilityPercent(shown) / 100f
-                    Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(StepUpUi.colors.fill)) {
-                        if (fraction > 0f) Box(Modifier.fillMaxWidth(fraction).height(6.dp).clip(CircleShape)
-                            .background(if (urgent) androidx.compose.ui.graphics.Color(0xFFFF7A1A) else StepUpUi.colors.secondaryLabel.copy(alpha = .8f)))
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
+    val c = StepUpUi.colors
+    val worn = shoes.firstOrNull { it.equipped }
+    val filter = activeFilter(shoes, filterKey)
+    val grid = remember(shoes, filter, sort) { vaultShown(shoes, filter, sort) }
+    // 13차(2026-11-26 S-345 · S-346) — 넘기기 없이 한 화면: 위 "✓ 신고 있는 신발 … 신발 상세 ›" + 카드 한 줄, 아래 "보유 신발 … 정렬 ⌄" + 등급 칩 +
+    // 보유 신발 전부 4칸 격자. 칸을 누르면 그 신발 상세(안 신은 신발이면 주 버튼 "이 신발 신기")
+    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag("my-shoes")) {
+        Spacer(Modifier.height(14.dp))
+        if (worn != null) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Check, null, tint = c.label, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.v13_shoes_wearing_now), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f).testTag("shoe-tab-wearing"))
+                Text(
+                    stringResource(R.string.v12_shoe_detail) + " ›", color = c.accentText, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button) { onOpenSneaker(worn.id) }
+                        .padding(6.dp).testTag("shoe-manage"),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            WornShoeCard(worn, rules, canRepair = repairable(worn) && !forgePending.holds(worn.id),
+                onOpen = { onOpenSneaker(worn.id) },
+                onRepair = {
+                    repairId = worn.id
+                    ShoeCareStore.shared.openRepair(worn.id)
+                })
+            Spacer(Modifier.height(26.dp))
+        }
+        Row(Modifier.fillMaxWidth().padding(start = StepUpUi.Gutter, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.my_shoes_owned), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f).semantics { heading() }.testTag("shoe-owned-head"))
+            Row(
+                Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button) { sortOpen = true }
+                    .padding(horizontal = 10.dp).testTag("vault-sort"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(itemSortRes(sort)), color = c.secondaryLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Filled.KeyboardArrowDown, null, tint = c.secondaryLabel, modifier = Modifier.size(20.dp))
             }
         }
-        // 주 버튼 하나 — 신발 상세(신기 · 강화 · 수리 · 포인트 · 판매 · 기록 · 이름)
-        BottomActionBar {
-            PrimaryButton(
-                stringResource(R.string.v12_shoe_detail), onClick = { onOpenSneaker(selected.id) },
-                modifier = Modifier.weight(1f).testTag("shoe-manage"),
-            )
+        // 등급 칩 — 전체 + 가진 갈래(실제 수)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = StepUpUi.Gutter, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            tierCounts(shoes).forEach { entry ->
+                val on = entry.tier == filter
+                val label = (entry.tier?.label() ?: stringResource(R.string.vault_filter_all)) + " " + entry.count
+                Text(
+                    label, color = if (on) Color.White else c.secondaryLabel, fontSize = 15.sp,
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (on) c.primary else c.fill)
+                        .feedbackClickable(role = Role.Tab) { filterKey = entry.tier?.key }
+                        .semantics { this.selected = on }
+                        .padding(horizontal = 16.dp, vertical = 9.dp).testTag("vault-filter-${entry.tier?.key ?: "all"}"),
+                )
+            }
+        }
+        // 4칸 격자 — 등급은 테두리 색, 왼쪽 위 Lv, 아래 이름 · 내구도 막대 + 남은 분. 30% 아래 주황, 0분은 흐리게 + "닳음". 신은 신발은 블루 테두리 + 체크
+        Column(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter).testTag("shoe-owned-row"),
+            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            grid.chunked(4).forEach { line ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    line.forEach { shoe ->
+                        GridShoe(shoe, rules, selected = shoe.id == selectedId, modifier = Modifier.weight(1f)) {
+                            onSelect(shoe.id)
+                            onOpenSneaker(shoe.id)
+                        }
+                    }
+                    repeat(4 - line.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+    }
+    if (sortOpen) {
+        com.stepup.android.ui.components.RunSheet(onDismiss = { sortOpen = false }, modifier = Modifier.testTag("vault-sort-sheet")) {
+            Text(stringResource(R.string.v13_sort_title), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(Modifier.height(10.dp))
+            VaultSorts.forEach { key ->
+                val on = key == sort
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(10.dp))
+                        .feedbackClickable(role = Role.RadioButton) { sort = key; sortOpen = false }
+                        .semantics { this.selected = on }.testTag("vault-sort-$key"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(itemSortRes(key)), color = if (on) c.accentText else c.label, fontSize = 16.sp,
+                        fontWeight = if (on) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.weight(1f))
+                    if (on) Icon(Icons.Filled.Check, null, tint = c.accentText, modifier = Modifier.size(20.dp))
+                }
+            }
         }
     }
     if (basisOpen) StatBasisSheet(onClose = { basisOpen = false })
@@ -1030,5 +985,120 @@ private fun PagerArrow(icon: androidx.compose.ui.graphics.vector.ImageVector, la
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, null, tint = androidx.compose.ui.graphics.Color(0xFF1B2433), modifier = Modifier.size(26.dp))
+    }
+}
+
+/** 신고 있는 신발 카드 한 줄(13차 S-345) — 작은 카드 96 · 이름 · 등급 칩 · Lv · 효율 · 착화감 · 내구도 막대 + 수리 */
+@Composable
+private fun WornShoeCard(
+    shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules, canRepair: Boolean, onOpen: () -> Unit, onRepair: () -> Unit,
+) {
+    val c = StepUpUi.colors
+    val shape = RoundedCornerShape(18.dp)
+    val urgent = canRepair && repairUrgent(shoe, rules)
+    Row(
+        Modifier.padding(horizontal = StepUpUi.Gutter).fillMaxWidth().clip(shape).background(c.card).stepUpRim(shape, RimKind.Surface)
+            .feedbackClickable(role = Role.Button, onClick = onOpen).padding(14.dp).testTag("shoe-hero"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.width(96.dp), hero = false, mini = true)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(shoe.shoeName(), color = c.label, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).testTag("shoe-hero-name"))
+                Spacer(Modifier.width(6.dp))
+                val meta = shoeMeta(shoe)
+                Text(
+                    shoe.tier.label(), color = c.label, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(c.fill).padding(horizontal = 6.dp, vertical = 2.dp)
+                        .testTag("shoe-card-tag")
+                        .clearAndSetSemantics { text = androidx.compose.ui.text.AnnotatedString(meta) },
+                )
+            }
+            Text(
+                stringResource(R.string.v13_shoe_line, shoe.level,
+                    com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.efficiencyIndex(shoe)),
+                    com.stepup.android.ui.screens.items.formatIndex(com.stepup.android.ui.screens.items.comfortIndex(shoe))),
+                color = c.secondaryLabel, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp),
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.sdv_stat_durability), color = c.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f))
+                Text(com.stepup.android.ui.screens.items.durabilityText(shoe, rules), color = if (urgent) c.live else c.label,
+                    fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("shoe-bar-durability-value"))
+                if (repairable(shoe)) {
+                    Spacer(Modifier.width(6.dp))
+                    com.stepup.android.ui.screens.items.V12RepairChip(urgent, canRepair, onRepair)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            DurabilityBar(com.stepup.android.ui.screens.items.durabilityPercent(shoe))
+        }
+    }
+}
+
+/** "착용 중 · 레어" — 화면 읽기 · 검사가 읽는 카드 이름표(예전 신발 카드와 같은 글) */
+@Composable
+private fun shoeMeta(shoe: Sneaker): String =
+    if (shoe.equipped) stringResource(R.string.my_shoes_wearing) + " · " + shoe.tier.label() else shoe.tier.label()
+
+/** 격자 한 칸(13차 S-345) — 카드(등급 테두리) · Lv · 이름 · 내구도 막대 + 남은 분 */
+@Composable
+private fun GridShoe(shoe: Sneaker, rules: com.stepup.android.domain.ShoeRules, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val c = StepUpUi.colors
+    val pct = com.stepup.android.ui.screens.items.durabilityPercent(shoe)
+    val worn = com.stepup.android.ui.screens.items.durabilityWornOut(shoe)
+    val minutes = com.stepup.android.ui.screens.items.durabilityEarnMinutes(shoe, rules)
+    val name = shoe.shoeName()
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp)).feedbackClickable(role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { this.selected = selected; contentDescription = name }
+            .testTag("shoe-choice-${shoe.id}"),
+    ) {
+        Box {
+            Box(
+                Modifier.fillMaxWidth().then(if (shoe.equipped) Modifier.border(2.dp, c.primary, RoundedCornerShape(12.dp)).padding(2.dp) else Modifier)
+                    .alpha(if (worn) .5f else 1f),
+            ) {
+                com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.fillMaxWidth(), hero = false, mini = true, miniLabels = false)
+            }
+            Text("Lv.${shoe.level}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 8.dp, top = 7.dp))
+            if (shoe.equipped) {
+                Box(
+                    Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp).size(20.dp).clip(CircleShape).background(c.primary)
+                        .testTag("shoe-worn-badge"),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(13.dp)) }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(name, color = c.label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { DurabilityBar(pct, height = 4.dp) }
+            Spacer(Modifier.width(4.dp))
+            Text(
+                if (worn) stringResource(R.string.v13_shoe_worn) else minutes?.let { stringResource(R.string.v4s_minutes, it.toString()) } ?: "$pct%",
+                color = when {
+                    worn -> c.live
+                    pct < 30 -> Color(0xFFFF7A1A)
+                    else -> c.secondaryLabel
+                },
+                fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DurabilityBar(percent: Int, height: androidx.compose.ui.unit.Dp = 6.dp) {
+    val c = StepUpUi.colors
+    val f = (percent / 100f).coerceIn(0f, 1f)
+    Box(Modifier.fillMaxWidth().height(height).clip(CircleShape).background(c.fill)) {
+        if (f > 0f) Box(Modifier.fillMaxWidth(f).height(height).clip(CircleShape)
+            .background(if (percent < 30) Color(0xFFFF7A1A) else c.secondaryLabel.copy(alpha = .85f)))
     }
 }

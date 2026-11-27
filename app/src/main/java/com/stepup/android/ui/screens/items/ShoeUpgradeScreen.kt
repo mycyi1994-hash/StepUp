@@ -282,15 +282,17 @@ fun ShoeUpgradeContent(state: ShoeUpgradeState, actions: UpgradeActions) {
         val catalog = state.xp
         if (xpEditing && catalog != null) {
             val selected = state.xpSelection.ids
-            items(catalog.items, key = { "xp-${it.id}" }) { material ->
-                XpMaterialRow(
-                    material = material,
-                    selected = material.id in selected,
-                    full = state.xpSelection.full,
-                    max = catalog.maxMaterials,
-                    precious = material.preciousWith(state.nicknames).isNotEmpty(),
-                    onClick = { actions.onXpToggle(material.id) },
-                )
+            // 13차(S-342 · S-343) — 재료는 4칸 격자: 고르면 블루 테두리 + 체크, 못 넣는 신발(닳음 등)은 흐리게 + 까닭
+            items(catalog.items.chunked(4), key = { line -> "xp-line-${line.first().id}" }) { line ->
+                Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    line.forEach { material ->
+                        V13MaterialCell(
+                            material = material, selected = material.id in selected, full = state.xpSelection.full,
+                            modifier = Modifier.weight(1f), onClick = { actions.onXpToggle(material.id) },
+                        )
+                    }
+                    repeat(4 - line.size) { Spacer(Modifier.weight(1f)) }
+                }
             }
             item(key = "xp-foot") { XpEditingFoot(state) }
         }
@@ -1205,76 +1207,51 @@ private fun XpEditingHead(state: ShoeUpgradeState, actions: UpgradeActions) {
     val picked = state.xpSelection.ids
     val preview = catalog.preview(picked)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TargetHeader(state.shoe, stringResource(R.string.upg_level_of, target.level, target.maxLevel))
+        // 13차(S-342) — 작은 카드 + 이름 + 등급 칩 + "Lv. 1 / 20"(큰 카드 · 큰 Lv 글씨 없음)
+        V13TargetRow(state.shoe, stringResource(R.string.upg_level_of, target.level, target.maxLevel))
         if (state.notice == UpgradeNotice.QuoteChanged) {
             RunNotice(stringResource(R.string.fxp_quote_changed), kind = com.stepup.android.ui.components.RunNoticeKind.Warn,
                 action = stringResource(R.string.common_close), onAction = actions.onDismissNotice, tag = "upgrade-quote-changed")
         }
-        XpBarPanel(target.bar, target.maxLevel, quote, preview, picked.isNotEmpty())
-        // 레벨이 오르면 — 견적이 레벨업이면 그 레벨까지(최소), 아니면 다음 한 레벨. 효율 · 착화감은 저절로 오르지 않는다(포인트를 나눠야)
-        val before = targetStats(state.shoe, target.level, target.maxLevel)
-        if (before != null && !target.bar.maxed) {
-            val levels = quote?.levels?.takeIf { it > 0 }
-            val toLevel = (target.level + (levels ?: 1)).coerceAtMost(target.maxLevel)
-            val after = before.copy(level = toLevel)
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionTitle(stringResource(if (levels != null) R.string.fxp_changes_levels else R.string.fxp_changes_next))
-                UpgradeStatRows(forgeRows(before, after, target.rarity, rules), target.maxLevel, Modifier.testTag("upgrade-rows"),
-                    levelAtLeast = levels != null)
-                val boxes = rememberBoxStatus()
-                val points = xpPointsGain(target.rarity, target.level, toLevel, rules)
-                val milestones = ((target.level + 1)..toLevel).filter { it % 5 == 0 }
-                // 하루 에너지 — 견적이 늘어난다고 할 때만(앞뒤가 같으면 줄이 없다). 견적 전에는 규칙이 레벨마다 늘릴 때만(서버 0119 부터 0)
-                // 러너 레벨(서버 0121)이 하루 에너지를 정하면 신발 레벨로 에너지가 는다고 말하지 않는다
-                val runnerEnergy = com.stepup.android.ui.screens.profile.rememberRunnerEnergy()
-                val energy = quote?.takeIf { !runnerEnergy }
-                    ?.let { q -> q.energyBefore?.let { b -> q.energyAfter?.takeIf { it > b }?.let { b to it } } }
-                val energyEach = shoeLevelEnergy(rules, runnerEnergy)
-                Column(Modifier.fillMaxWidth().testTag("upgrade-rewards"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (points > 0) {
-                        Text("· " + stringResource(R.string.fxp_points_gain, points), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
-                            modifier = Modifier.testTag("upgrade-points-gain"))
-                    }
-                    if (energy != null) {
-                        Text("· " + stringResource(R.string.fxp_energy_up, energy.first, energy.second),
-                            style = runTextStyle(14.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-energy"))
-                    } else if (quote == null && energyEach > 0.0) {
-                        Text("· " + stringResource(R.string.v4s_upg_gain_energy, formatEnergy(energyEach)),
-                            style = runTextStyle(14.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-energy"))
-                    }
-                    milestones.forEach { level ->
-                        val got = boxes?.levelsGot?.contains(level) == true
-                        Text("· " + stringResource(if (got) R.string.v4s_upg_gain_milestone_got else R.string.v4s_upg_gain_milestone, level),
-                            style = runTextStyle(14.sp, t.cyan, FontWeight.Medium), modifier = Modifier.testTag("upgrade-gain-milestone"))
-                    }
-                    if (runnerEnergy) RunnerEnergyNote()
-                    StatNote()
+        V13XpBar(target.bar, target.maxLevel, quote, preview)
+        // 레벨이 오르면(견적 · 미리 보기) — "Lv.2가 되면" 스탯 포인트 +N · 나눌 곳(효율 · 착화감 · 내구도). 빛나는 막대 셋은 뺐다(13차)
+        val levels = quote?.levels?.takeIf { it > 0 } ?: if (preview?.fills == true) 1 else null
+        if (levels != null && !target.bar.maxed) {
+            val toLevel = (target.level + levels).coerceAtMost(target.maxLevel)
+            val points = xpPointsGain(target.rarity, target.level, toLevel, rules)
+            val boxes = rememberBoxStatus()
+            val milestones = ((target.level + 1)..toLevel).filter { it % 5 == 0 }
+            val c = com.stepup.android.ui.components.StepUpUi.colors
+            Column(Modifier.fillMaxWidth().testTag("upgrade-rewards")) {
+                Text(stringResource(R.string.v13_upg_when_level, toLevel), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                if (points > 0) {
+                    V13UpgRow(stringResource(R.string.v13_upg_points), stringResource(R.string.v13_upg_points_value, points), "upgrade-points-gain")
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(c.separator))
+                    V13UpgRow(stringResource(R.string.v13_upg_where), stringResource(R.string.v13_upg_where_value), null)
+                }
+                milestones.forEach { level ->
+                    val got = boxes?.levelsGot?.contains(level) == true
+                    Text(stringResource(if (got) R.string.v4s_upg_gain_milestone_got else R.string.v4s_upg_gain_milestone, level),
+                        color = c.accentText, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp).testTag("upgrade-gain-milestone"))
                 }
             }
         }
-        RunDivider()
-        // 재료 머리 — 고른 수 / 한 번에 넣는 상한 · 남는 신발 넣기 · 대성공 확률(서버 값)
-        SectionTitle(
-            title = stringResource(R.string.fxp_materials_title),
-            subtitle = stringResource(R.string.fxp_materials_rule, catalog.maxMaterials),
-            trailing = stringResource(R.string.fxp_count, picked.size, catalog.maxMaterials),
-            trailingTag = "upgrade-count",
-        )
-        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            catalog.crit?.let { crit ->
-                Row(Modifier.align(Alignment.CenterVertically).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Info, contentDescription = null, tint = t.label, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        stringResource(R.string.fxp_crit_line, ForgeXp.formatChance(crit.chance), ForgeXp.formatMult(crit.mult)),
-                        style = runTextStyle(13.sp, t.label, FontWeight.Medium), modifier = Modifier.testTag("upgrade-crit-odds"),
-                    )
-                }
-            }
+        // 재료 머리(13차) — "재료 신발 2 / 10" · 오른쪽 "남는 신발 넣기 ›"(자동 고르기)
+        val c = com.stepup.android.ui.components.StepUpUi.colors
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.fxp_materials_title), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.fxp_count, picked.size, catalog.maxMaterials), color = c.secondaryLabel, fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).testTag("upgrade-count"))
             val canBulk = !target.bar.maxed && !state.xpSelection.full &&
                 catalog.items.any { it.usable && it.id !in picked && it.preciousWith(state.nicknames).isEmpty() }
-            RunTextAction(stringResource(R.string.fxp_bulk), actions.onXpBulk, enabled = canBulk,
-                modifier = Modifier.testTag("upgrade-bulk"))
+            Text(
+                stringResource(R.string.fxp_bulk) + " ›", color = if (canBulk) c.accentText else c.tertiaryLabel, fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).feedbackClickable(enabled = canBulk, role = Role.Button, onClick = actions.onXpBulk)
+                    .padding(6.dp).testTag("upgrade-bulk"),
+            )
         }
         if (catalog.items.none { it.usable } && picked.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(vertical = 16.dp).testTag("upgrade-xp-empty"),
@@ -1293,7 +1270,7 @@ private fun XpEditingFoot(state: ShoeUpgradeState) {
         if (state.liveXpQuote?.overflowPossible == true) {
             RunNotice(stringResource(R.string.fxp_overflow), kind = com.stepup.android.ui.components.RunNoticeKind.Warn, tag = "upgrade-overflow")
         }
-        Text(stringResource(R.string.fxp_burn_note), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
+        Text(stringResource(R.string.v13_upg_burn), style = runTextStyle(14.sp, t.label, FontWeight.Medium),
             modifier = Modifier.testTag("upgrade-burn-note"))
     }
 }
@@ -1430,8 +1407,8 @@ private fun XpEditingButton(state: ShoeUpgradeState, actions: UpgradeActions) {
         count == 0 -> stringResource(R.string.fxp_need_pick)
         state.quoting -> stringResource(R.string.upg_quoting)
         quote == null -> stringResource(R.string.fxp_action_retry)
-        quote.levels > 0 -> stringResource(R.string.fxp_action_level_up)
-        else -> stringResource(R.string.fxp_action_add)
+        quote.levels > 0 -> stringResource(R.string.fxp_action_level_up) + "  ·  " + stringResource(R.string.v13_upg_pairs, count)
+        else -> stringResource(R.string.fxp_action_add) + "  ·  " + stringResource(R.string.v13_upg_pairs, count)
     }
     RunButton(label, actions.onXpPrimary, enabled = count > 0 && !state.quoting, busy = state.quoting,
         modifier = Modifier.testTag("upgrade-primary"))
@@ -1664,5 +1641,105 @@ private fun RejectedSheet(code: String, xpMax: Int?, actions: UpgradeActions) {
         RunSheetText(stringResource(R.string.fxp_rejected_title), body = body, note = stringResource(R.string.fxp_rejected_note))
         Spacer(Modifier.height(20.dp))
         RunButton(stringResource(R.string.upg_back), actions.onCloseSheet, modifier = Modifier.testTag("rejected-back"))
+    }
+}
+
+/** 강화 대상 한 줄(13차) — 작은 카드 · 이름 · 등급 칩 · "Lv. 1 / 20" */
+@Composable
+private fun V13TargetRow(shoe: Sneaker?, levelText: String) {
+    if (shoe == null) return
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Row(Modifier.fillMaxWidth().testTag("upgrade-target"), verticalAlignment = Alignment.CenterVertically) {
+        com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.width(64.dp), hero = false, mini = true, miniLabels = false)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(shoe.shoeName(), color = c.label, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1,
+                    modifier = Modifier.weight(1f, fill = false).testTag("care-shoe-name"))
+                Spacer(Modifier.width(6.dp))
+                Text(shoe.tier.label(), color = c.label, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(c.fill).padding(horizontal = 6.dp, vertical = 2.dp))
+            }
+            Text(levelText, color = c.secondaryLabel, fontSize = 15.sp, modifier = Modifier.padding(top = 2.dp).testTag("care-shoe-level"))
+        }
+    }
+}
+
+/** 경험치 막대(13차) — "경험치 · 0% → Lv.2 · 35%" · 6px 막대 하나(넣을 몫은 옅은 블루로 미리) */
+@Composable
+private fun V13XpBar(bar: ForgeBar, maxLevel: Int, quote: XpQuote?, preview: com.stepup.android.domain.XpPreview?) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val nowText = bar.shownTenths?.let(ForgeXp::formatPct) ?: stringResource(R.string.upg_rate_unknown)
+    val (after, afterFraction) = when {
+        quote != null && quote.levels > 0 ->
+            (if (quote.after.maxed) stringResource(R.string.upg_level_of, quote.after.level, maxLevel)
+            else stringResource(R.string.v13_upg_after_level, quote.after.level, ForgeXp.formatPct(quote.after.shownTenths ?: 0))) to 1f
+        quote != null -> quote.after.shownTenths?.let(ForgeXp::formatPct) to quote.after.fraction
+        preview != null -> (if (preview.fills) stringResource(R.string.fxp_bar_level_up) else ForgeXp.formatPct(preview.afterTenths)) to
+            (if (preview.fills) 1f else preview.afterTenths / 1000f)
+        else -> null to null
+    }
+    val label = stringResource(R.string.fxp_bar_title)
+    val value = if (after != null) "$nowText → $after" else nowText
+    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "$label $value" }.testTag("upgrade-xp-bar")) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(value, color = c.label, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.testTag("upgrade-xp-value"))
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.fill)) {
+            afterFraction?.let { f -> Box(Modifier.fillMaxWidth(f.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp))
+                .background(c.primary.copy(alpha = .38f))) }
+            if (bar.fraction > 0f) Box(Modifier.fillMaxWidth(bar.fraction.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp))
+                .background(c.primary))
+        }
+    }
+}
+
+@Composable
+private fun V13UpgRow(name: String, value: String, tag: String?) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).then(if (tag != null) Modifier.testTag(tag) else Modifier),
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(name, color = c.label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(value, color = c.label, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** 재료 한 칸(13차) — 작은 카드 · 아래 Lv(못 넣으면 까닭) · 고르면 블루 테두리 + 체크 */
+@Composable
+private fun V13MaterialCell(material: XpMaterial, selected: Boolean, full: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val shoe = material.shoe
+    val usable = material.usable
+    val blockText = if (!usable) blockLabel(material.block ?: ForgeMaterialBlock.NO_VALUE) else null
+    val description = stringResource(R.string.fxp_row_cd, shoe.shoeName(), shoe.tier.label(), shoe.level,
+        if (usable) ForgeXp.formatGain(material.tenths) else blockText.orEmpty())
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp))
+            .feedbackClickable(enabled = (usable && !full) || selected, role = Role.Checkbox, onClick = onClick)
+            .semantics(mergeDescendants = true) { this.selected = selected; contentDescription = description }
+            .testTag("xp-row-${shoe.id}"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box {
+            Box(
+                Modifier.fillMaxWidth()
+                    .then(if (selected) Modifier.border(2.dp, c.primary, RoundedCornerShape(12.dp)).padding(2.dp) else Modifier)
+                    .alpha(if (usable || selected) 1f else .4f),
+            ) { com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.fillMaxWidth(), hero = false, mini = true, miniLabels = false) }
+            if (selected) {
+                Box(
+                    Modifier.align(Alignment.TopEnd).padding(5.dp).size(18.dp).clip(CircleShape).background(c.primary),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(12.dp)) }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            blockText ?: stringResource(R.string.upg_level, shoe.level), color = if (blockText != null) c.tertiaryLabel else c.label,
+            fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+            modifier = if (blockText != null) Modifier.testTag("xp-block-${shoe.id}") else Modifier,
+        )
     }
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_shoes_wearing_now">신고 있는 신발</string>
+    <string name="v13_sort_title">정렬</string>
+    <string name="v13_shoe_line">Lv.%1$d · 효율 %2$s · 착화감 %3$s</string>
+    <string name="v13_shoe_worn">닳음</string>
+    <string name="v13_sort_durability">내구도 낮은순</string>
+    <string name="v13_trading_paused">거래 쉬는 중</string>
+    <string name="v13_stats_title">능력치</string>
+    <string name="v13_stats_level">오를 때마다 스탯 포인트 %1$d개</string>
+    <string name="v13_upg_when_level">Lv.%1$d가 되면</string>
+    <string name="v13_upg_points">스탯 포인트</string>
+    <string name="v13_upg_points_value">+%1$d개</string>
+    <string name="v13_upg_where">나눌 곳</string>
+    <string name="v13_upg_where_value">효율 · 착화감 · 내구도</string>
+    <string name="v13_upg_burn">넣은 신발은 사라짐 · 실패 없음</string>
+    <string name="v13_upg_pairs">%1$d켤레</string>
+    <string name="v13_upg_after_level">Lv.%1$d · %2$s</string>
+</resources>
