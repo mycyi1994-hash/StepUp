@@ -13,4 +13,9 @@
     <string name="v13_ca_t_check">출석</string>
     <string name="v13_ca_private">위치 · 이름 · 걸음 수는 안 올림</string>
     <string name="v13_ca_forever">올린 기록은 지울 수 없음</string>
+    <string name="v13_crew_invite_title">크루 초대</string>
+    <string name="v13_members_n">멤버 %1$d명</string>
+    <string name="v13_flash_invite_title">친구 부르기</string>
+    <string name="v13_flash_card_head">번개러닝 · %1$s</string>
+    <string name="v13_flash_seats">%1$d / %2$d명</string>
 </resources>

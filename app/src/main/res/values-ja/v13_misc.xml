@@ -13,4 +13,9 @@
     <string name="v13_ca_t_check">出席</string>
     <string name="v13_ca_private">位置・名前・歩数は記録しません</string>
     <string name="v13_ca_forever">記録したものは消せません</string>
+    <string name="v13_crew_invite_title">クルー招待</string>
+    <string name="v13_members_n">メンバー%1$d人</string>
+    <string name="v13_flash_invite_title">友達を呼ぶ</string>
+    <string name="v13_flash_card_head">フラッシュラン · %1$s</string>
+    <string name="v13_flash_seats">%1$d / %2$d人</string>
 </resources>

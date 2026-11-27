@@ -207,11 +207,13 @@ private fun CrewDetailContent(
     val ink = crewInk()
     val c = com.stepup.android.ui.components.StepUpUi.colors
     val words = rememberCrewWords()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    // 13차 S-410 — 크루 초대는 공유 시트(카드 미리보기 · 보낼 곳 · 링크 복사)
+    var sharing by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (sharing) CrewInviteShareSheet(card, onDismiss = { sharing = false })
     CrewPage(Modifier.testTag("crew-detail")) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             CrewPoster(card, onBack = actions.onBack, onImage = actions.onOpenImage, onMore = onMore,
-                onShare = { shareCrew(context, card) })
+                onShare = { sharing = true })
             card.unseenResult?.let { result ->
                 Row(
                     Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().heightIn(min = 52.dp)
@@ -339,16 +341,23 @@ private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, 
     }
 }
 
-/** 크루 공유 — 초대 글(이름 · 초대 링크, 링크를 누르면 앱이 이 크루를 연다)을 앱 밖 공유 창으로 */
-private fun shareCrew(context: android.content.Context, card: CrewCard) {
-    val text = context.getString(R.string.crew_invite_message, card.name, com.stepup.android.core.InviteLinks.crewLink(card.id))
-    runCatching {
-        context.startActivity(
-            android.content.Intent.createChooser(
-                android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, text), null,
-            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
+/** 크루 초대 공유(13차 S-410) — 보내는 글은 예전 그대로(이름 · 초대 링크 — 링크를 누르면 앱이 이 크루를 연다) */
+@Composable
+private fun CrewInviteShareSheet(card: CrewCard, onDismiss: () -> Unit) {
+    val link = com.stepup.android.core.InviteLinks.crewLink(card.id)
+    val text = stringResource(R.string.crew_invite_message, card.name, link)
+    val title = stringResource(R.string.v13_crew_invite_title)
+    val members = card.capacity?.let { stringResource(R.string.crew_members_of, card.memberCount, it) }
+        ?: stringResource(R.string.v13_members_n, card.memberCount)
+    val lines = listOfNotNull(card.area.takeIf { it.isNotBlank() }, members)
+    com.stepup.android.ui.components.StepUpShareSheet(
+        options = listOf(
+            com.stepup.android.ui.components.ShareCardOption("crew", title) { ctx ->
+                com.stepup.android.ui.components.ShareCards.invite(ctx, title, card.name, lines, null)
+            },
+        ),
+        text = text, fileName = "StepUp-crew-${card.id.take(8)}", onDismiss = onDismiss, title = title, link = link,
+    )
 }
 
 @Composable

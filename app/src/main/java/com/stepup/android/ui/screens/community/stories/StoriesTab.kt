@@ -776,30 +776,33 @@ private fun StoryListHead(
     onSetRange: (StoryRange) -> Unit,
 ) {
     val t = runTone()
-    Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                Modifier.weight(1f, fill = false).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-                    .feedbackClickable(role = Role.Button, onClick = onOpenRange).padding(horizontal = 4.dp)
-                    .testTag("stories-area"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Outlined.LocationOn, null, tint = t.cobaltText, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(
+    // 13차 S-168 — 한 줄: 지역(▾) · 거리(▾). 둘 다 범위 시트(S-367 — 안에 지역 변경)를 연다. 정렬은 서버가 주는 순서 그대로
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.weight(1f, fill = false).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+                .feedbackClickable(role = Role.Button, onClick = onOpenRange).padding(horizontal = 4.dp)
+                .testTag("stories-area"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Outlined.LocationOn, null, tint = t.cobaltText, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(
+                origin.label.ifBlank {
                     stringResource(if (origin.manual) R.string.story_range_from_region else R.string.story_range_from_me, rangeLabel(range))
-                        .let { if (origin.label.isNotBlank()) "${origin.label} · $it" else it },
-                    style = runTextStyle(14.sp, t.label, FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-                Icon(Icons.Filled.KeyboardArrowDown, null, tint = t.label, modifier = Modifier.size(18.dp))
-            }
+                },
+                style = runTextStyle(15.sp, t.text, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = t.label, modifier = Modifier.size(18.dp))
         }
-        com.stepup.android.ui.components.TextTabs(
-            items = StoryRange.entries.map { rangeLabel(it) },
-            selected = StoryRange.entries.indexOf(range),
-            onSelect = { onSetRange(StoryRange.entries[it]) },
-            tags = StoryRange.entries.map { "stories-range-${it.name.lowercase()}" },
-            modifier = Modifier.padding(start = 4.dp).testTag("stories-range"),
-        )
+        Spacer(Modifier.width(10.dp))
+        Row(
+            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
+                .feedbackClickable(role = Role.Button, onClick = onOpenRange).padding(horizontal = 4.dp)
+                .testTag("stories-distance"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(rangeLabel(range), style = runTextStyle(15.sp, t.text, FontWeight.Bold), maxLines = 1)
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = t.label, modifier = Modifier.size(18.dp))
+        }
     }
 }

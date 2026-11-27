@@ -13,4 +13,9 @@
     <string name="v13_ca_t_check">签到</string>
     <string name="v13_ca_private">不上传位置、名字和步数</string>
     <string name="v13_ca_forever">已上传的记录无法删除</string>
+    <string name="v13_crew_invite_title">跑团邀请</string>
+    <string name="v13_members_n">成员%1$d人</string>
+    <string name="v13_flash_invite_title">叫上朋友</string>
+    <string name="v13_flash_card_head">闪电跑 · %1$s</string>
+    <string name="v13_flash_seats">%1$d / %2$d人</string>
 </resources>

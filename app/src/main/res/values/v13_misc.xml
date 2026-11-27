@@ -13,4 +13,9 @@
     <string name="v13_ca_t_check">Check-in</string>
     <string name="v13_ca_private">Location, name and step counts aren\'t uploaded</string>
     <string name="v13_ca_forever">Uploaded records can\'t be deleted</string>
+    <string name="v13_crew_invite_title">Crew invite</string>
+    <string name="v13_members_n">%1$d members</string>
+    <string name="v13_flash_invite_title">Invite friends</string>
+    <string name="v13_flash_card_head">Flash run · %1$s</string>
+    <string name="v13_flash_seats">%1$d / %2$d joined</string>
 </resources>
