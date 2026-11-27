@@ -563,7 +563,20 @@ private fun FreeRunMapLive(
                     top()
                 }
             }
-            // 13차 — 지도 위 ••• · 지도 크게 버튼은 뺐다(러닝 정보는 알림 띠를 누르면)
+            // 러닝 정보(목표 · 코스 · 저장하지 않고 종료) · 지도 크게 — 13차 시안에는 없지만 기능이라 지도 오른쪽 아래에 작게 둔다
+            Column(
+                Modifier.align(Alignment.BottomEnd).padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (onDetails != null && !locked) {
+                    CircleIconButton(Icons.Rounded.MoreHoriz, stringResource(R.string.run_details), onDetails,
+                        modifier = Modifier.testTag("run-details-open"))
+                }
+                if (onExpandMap != null && !locked) {
+                    CircleIconButton(Icons.Outlined.Map, stringResource(R.string.run_map_short), onExpandMap,
+                        modifier = Modifier.testTag("run-map-expand"))
+                }
+            }
         }
         // v12 시제품(2026-11-26) — 지도 아래 판: 큰 거리 · 걸음 · 시간 · 페이스 · 속도 · 신발 칸 · 큰 일시정지 · "길게 눌러 종료 · 잠금"
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 22.dp).padding(top = 14.dp, bottom = 10.dp)) {

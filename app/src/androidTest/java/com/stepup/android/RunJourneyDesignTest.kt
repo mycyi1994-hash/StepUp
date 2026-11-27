@@ -276,7 +276,7 @@ class RunJourneyDesignTest {
 
             // R03 — 일시정지(일시정지 띠 · 다시 시작). 멈춰 있으니 속도 0.0, 페이스는 "—"
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true))
-            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.run_resume_short)) }
+            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.v13_run_resume)) }
             awaitTag("run-paused-band")
             compose.onNodeWithTag("run-pace-value", useUnmergedTree = true).assertTextEquals("—")
             compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("0.0")
