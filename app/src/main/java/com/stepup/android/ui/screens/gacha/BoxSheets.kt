@@ -18,6 +18,8 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,7 +104,17 @@ internal fun BoxSourcesSheet(
     onCancel: () -> Unit,
     onReload: () -> Unit,
     onClose: () -> Unit,
+    /** 하루 걸음 상자(0128 step_box_claim)의 기준 걸음 — 꺼졌거나 모르면 null(줄이 없다) */
+    stepBoxNeed: Int? = null,
+    /** 러너 레벨(0121)이 켜져 있는가 — 레벨마다 일반 · 5레벨마다 상급 상자 줄 */
+    runnerOn: Boolean = false,
 ) {
+    // 13차 S-347 — 먼저 두 묶음 한눈에, "SUP로 사기 ›"를 누르면 진행 막대 · 사기가 있는 자세한 시트
+    var detail by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (step is BoxStep.Home && step.note == null && !detail && boxes != null) {
+        BoxSummarySheet(boxes, stepBoxNeed, runnerOn, onBuy = { detail = true }, onClose = onClose)
+        return
+    }
     when (step) {
         is BoxStep.Confirm -> if (boxes != null) {
             BoxConfirmSheet(boxes, step.kind, retry = step.retry, buying = false, onConfirm = onConfirm, onCancel = onCancel)
@@ -177,6 +189,61 @@ internal fun BoxSourcesSheet(
 
         RunDivider(Modifier.padding(vertical = 2.dp))
         SheetLine(stringResource(R.string.boxes_balance), stringResource(R.string.price_sup, sup(boxes.balance)), tag = "boxes-balance")
+    }
+}
+
+/**
+ * 상자 받는 곳 한눈에(S-347) — 일반 상자(무료 뽑기 1회) · 상급 상자(상급 뽑기 1회)가 어디서 오는지 한 줄씩. 모든 숫자는 서버 값
+ * (box_status · step_box_claim · 러너 레벨 켜짐). 아래 "SUP로도 살 수 있음 · SUP로 사기 ›" 와 "확인".
+ */
+@Composable
+private fun BoxSummarySheet(boxes: BoxStatus, stepBoxNeed: Int?, runnerOn: Boolean, onBuy: () -> Unit, onClose: () -> Unit) {
+    val t = runTone()
+    val normal = buildList {
+        if (boxes.dailyFree > 0) add(stringResource(R.string.v13_boxes_check_in))
+        val runs = boxes.runBoxViews()
+        if (runs.isNotEmpty()) add(stringResource(R.string.v13_boxes_run, runs.joinToString(" · ") { steps(it.steps) }))
+        if (stepBoxNeed != null) add(stringResource(R.string.v13_boxes_day_steps, steps(stepBoxNeed)))
+        if (runnerOn) add(stringResource(R.string.v13_boxes_runner))
+    }.joinToString(", ")
+    val premium = buildList {
+        if (boxes.weekTarget > 0) add(stringResource(R.string.v13_boxes_week, steps(boxes.weekTarget)))
+        if (boxes.streakDays > 0) add(stringResource(R.string.v13_boxes_streak, boxes.streakDays))
+        add(stringResource(R.string.v13_boxes_shoe_levels, "5 · 10 · 15 · 20"))
+        if (runnerOn) add(stringResource(R.string.v13_boxes_runner5))
+    }.joinToString(", ")
+    DrawSheetFrame(
+        title = stringResource(R.string.v13_boxes_where), onDismiss = onClose,
+        modifier = Modifier.testTag("draw-sheet-boxes"),
+        actions = { SheetActions(stringResource(R.string.dv2_ok), onClose, "boxes-ok") },
+    ) {
+        SummaryGroup(stringResource(R.string.boxes_normal), stringResource(R.string.v13_boxes_normal_reward), normal, "boxes-sum-normal")
+        RunDivider()
+        SummaryGroup(stringResource(R.string.boxes_premium), stringResource(R.string.v13_boxes_premium_reward), premium, "boxes-sum-premium")
+        RunDivider()
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.v13_boxes_buy_note), style = runTextStyle(15.sp, t.label, FontWeight.Medium), modifier = Modifier.weight(1f))
+            Row(
+                Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button, onClick = onBuy)
+                    .padding(start = 8.dp).testTag("boxes-buy-link"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.v13_boxes_buy_link), style = runTextStyle(15.sp, t.cyan, FontWeight.Bold))
+                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = t.cyan, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryGroup(name: String, reward: String, sources: String, tag: String) {
+    val t = runTone()
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp).semantics(mergeDescendants = true) {}.testTag(tag)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(name, style = runTextStyle(17.sp, t.text, FontWeight.Bold), modifier = Modifier.weight(1f))
+            Text(reward, style = runTextStyle(15.sp, t.text, FontWeight.Bold))
+        }
+        Text(sources, style = runTextStyle(14.sp, t.label, FontWeight.Medium, 1.45f), modifier = Modifier.padding(top = 4.dp))
     }
 }
 

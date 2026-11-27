@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_draw_n">%1$d回引く</string>
+    <string name="v13_draw_drawing">引いています</string>
+    <string name="v13_draw_drawing_cd">%2$d回中%1$d回目</string>
+    <string name="v13_draw_batch_title">%1$d回引いた結果</string>
+    <string name="v13_draw_best">最高ランク</string>
+    <string name="v13_draw_again_n">もう一度%1$d回</string>
+    <string name="v13_draw_ok">OK</string>
+    <string name="v13_draw_stopped">%1$d回中%2$d回引きました · 残りの回数は使っていません</string>
+    <string name="v13_draw_unsure">最後の1回は確認中です · 引く画面で見られます</string>
+    <string name="v13_draw_left">残り%1$d回</string>
+    <string name="v13_draw_tier_count">%1$s %2$d</string>
+    <string name="v13_draw_cell_cd">%1$s、%2$s</string>
+    <string name="v13_draw_share">共有</string>
+    <string name="v13_draw_new_shoe">新しいシューズ</string>
+    <string name="v13_draw_share_new">StepUpで新しいシューズを引きました — %1$s</string>
+    <string name="v13_draw_share_ten">StepUp %1$d回引き — 最高ランク %2$s</string>
+    <string name="v13_draw_share_line">%1$s · %2$s</string>
+    <string name="v13_draw_keep">マイシューズに置く</string>
+    <string name="v13_draw_wear">このシューズを履く</string>
+    <string name="v13_draw_history">回数の履歴</string>
+    <string name="v13_draw_odds">回数と確率</string>
+    <string name="v13_boxes_where">ボックスがもらえる所</string>
+    <string name="v13_boxes_normal_reward">無料で1回</string>
+    <string name="v13_boxes_premium_reward">上級で1回</string>
+    <string name="v13_boxes_check_in">出席</string>
+    <string name="v13_boxes_run">今日のラン%1$s歩</string>
+    <string name="v13_boxes_day_steps">1日の歩数%1$s歩</string>
+    <string name="v13_boxes_runner">ランナーレベルごと</string>
+    <string name="v13_boxes_runner5">ランナーレベル5ごと</string>
+    <string name="v13_boxes_week">1週間のラン%1$s歩</string>
+    <string name="v13_boxes_streak">%1$d日連続目標</string>
+    <string name="v13_boxes_shoe_levels">シューズLv%1$s</string>
+    <string name="v13_boxes_buy_note">SUPでも買えます</string>
+    <string name="v13_boxes_buy_link">SUPで買う</string>
+    <string name="v13_boxes_entry_runs">今日のランボックス %1$d/%2$d</string>
+</resources>

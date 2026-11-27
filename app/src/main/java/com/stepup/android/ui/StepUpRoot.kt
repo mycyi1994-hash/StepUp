@@ -892,6 +892,7 @@ private fun MainScaffoldContent(
                             // 불러오기 실패 시트의 "내 신발로 돌아가기" — 신발 탭으로(뽑기는 이제 하단 탭이라 뒤로 쌓이지 않는다)
                             onBack = { navController.switchTab(Screen.Customize) },
                             onDraw = drawVm::draw,
+                            onDrawMany = drawVm::drawMany,
                             // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로.
                             // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
                             onConnectWallet = {

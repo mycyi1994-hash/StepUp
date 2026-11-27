@@ -291,10 +291,27 @@ private fun HistoryLink(onClick: () -> Unit, modifier: Modifier) {
 @Composable
 private fun DrawMainButton(card: DrawHomeCard, status: DrawStatus?, actions: DrawActions, onSheet: (DrawSheet) -> Unit, modifier: Modifier) {
     when (card.action) {
-        DrawCardAction.Draw -> DrawButton(
-            stringResource(if (card.kind == DrawKind.FREE) R.string.dv2_action_free else R.string.dv2_action_premium),
-            { actions.onDraw(card.kind) }, modifier, icon = Icons.Filled.PlayArrow,
-        )
+        DrawCardAction.Draw -> {
+            // 13차 — 남은 수(서버 값)가 둘 이상이면 왼쪽에 "10회 뽑기"(남은 수까지). 하나면 한 번 뽑기만
+            val many = status?.shownLeft(card.kind, com.stepup.android.BuildConfig.WEB3)?.coerceAtMost(DrawViewModel.BATCH) ?: 0
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (many >= 2) {
+                    val key = if (card.kind == DrawKind.FREE) "free" else "premium"
+                    val t = runTone()
+                    Box(
+                        Modifier.heightIn(min = 56.dp).clip(RoundedCornerShape(50)).background(t.panel)
+                            .border(1.dp, t.panelEdge, RoundedCornerShape(50))
+                            .feedbackClickable(role = Role.Button) { actions.onDrawMany(card.kind, many) }
+                            .padding(horizontal = 16.dp).testTag("draw-$key-many"),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(stringResource(R.string.v13_draw_n, many), style = runTextStyle(15.sp, t.cyan, FontWeight.Bold), maxLines = 1) }
+                }
+                DrawButton(
+                    stringResource(if (card.kind == DrawKind.FREE) R.string.dv2_action_free else R.string.dv2_action_premium),
+                    { actions.onDraw(card.kind) }, modifier.weight(1f), icon = Icons.Filled.PlayArrow,
+                )
+            }
+        }
         DrawCardAction.FreeInfo -> DrawButton(stringResource(R.string.dv2_action_free_info), { onSheet(DrawSheet.FreeEmpty) }, modifier)
         DrawCardAction.RunInfo -> DrawButton(stringResource(R.string.dv2_action_run), { onSheet(DrawSheet.RunChances) }, modifier)
         DrawCardAction.Connect -> DrawButton(

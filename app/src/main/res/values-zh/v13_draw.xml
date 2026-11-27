@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_draw_n">抽%1$d次</string>
+    <string name="v13_draw_drawing">抽取中</string>
+    <string name="v13_draw_drawing_cd">第%1$d次，共%2$d次</string>
+    <string name="v13_draw_batch_title">抽%1$d次结果</string>
+    <string name="v13_draw_best">最高等级</string>
+    <string name="v13_draw_again_n">再抽%1$d次</string>
+    <string name="v13_draw_ok">确定</string>
+    <string name="v13_draw_stopped">%1$d次中抽了%2$d次 · 其余次数没有使用</string>
+    <string name="v13_draw_unsure">最后一次还在确认 · 可在抽取页面查看</string>
+    <string name="v13_draw_left">剩余%1$d次</string>
+    <string name="v13_draw_tier_count">%1$s %2$d</string>
+    <string name="v13_draw_cell_cd">%1$s，%2$s</string>
+    <string name="v13_draw_share">分享</string>
+    <string name="v13_draw_new_shoe">新鞋</string>
+    <string name="v13_draw_share_new">我在 StepUp 抽到了新鞋 — %1$s</string>
+    <string name="v13_draw_share_ten">StepUp 抽%1$d次 — 最高等级 %2$s</string>
+    <string name="v13_draw_share_line">%1$s · %2$s</string>
+    <string name="v13_draw_keep">放进我的鞋</string>
+    <string name="v13_draw_wear">穿这双鞋</string>
+    <string name="v13_draw_history">次数记录</string>
+    <string name="v13_draw_odds">次数与概率</string>
+    <string name="v13_boxes_where">领取宝箱</string>
+    <string name="v13_boxes_normal_reward">免费抽1次</string>
+    <string name="v13_boxes_premium_reward">高级抽1次</string>
+    <string name="v13_boxes_check_in">签到</string>
+    <string name="v13_boxes_run">今日跑步%1$s步</string>
+    <string name="v13_boxes_day_steps">每日步数%1$s步</string>
+    <string name="v13_boxes_runner">每升一级跑者等级</string>
+    <string name="v13_boxes_runner5">跑者等级每5级</string>
+    <string name="v13_boxes_week">一周跑步%1$s步</string>
+    <string name="v13_boxes_streak">连续%1$d天达成目标</string>
+    <string name="v13_boxes_shoe_levels">鞋子Lv%1$s</string>
+    <string name="v13_boxes_buy_note">也可以用SUP购买</string>
+    <string name="v13_boxes_buy_link">用SUP购买</string>
+    <string name="v13_boxes_entry_runs">今日跑步宝箱 %1$d/%2$d</string>
+</resources>

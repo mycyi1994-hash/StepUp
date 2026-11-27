@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -155,10 +156,14 @@ internal fun DrawResultScreen(
     val name = result.shoe.variantLabel()
     // 읽기 도구가 읽는 등급 — 이름 끝 배지와 같은 이름(레드라인 · 피니시 포함)
     val grade = result.shoe.tier.label()
+    // 13차 S-406 · S-407 — 새 신발 공유(오른쪽 위)
+    var share by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (share) DrawShoeShareSheet(result.shoe, onDismiss = { share = false })
     Column(Modifier.fillMaxSize().testTag("draw-result")) {
         DrawFlowBar(
             stringResource(if (result.kind == DrawKind.FREE) R.string.dv2_result_free else R.string.dv2_result_premium),
             onBack = onClose, backTag = "draw-result-close",
+            trailing = { ShareIconButton({ share = true }, "draw-result-share") },
         )
         // 신발 무대는 남은 높이만큼(150–286dp) — 작은 폰에서도 이름 · 신발 · 남은 수 · 버튼이 한 화면에. 모자라면 가운데만 넘긴다
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
