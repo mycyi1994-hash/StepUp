@@ -18,4 +18,6 @@
     <string name="v13_flash_invite_title">Invite friends</string>
     <string name="v13_flash_card_head">Flash run · %1$s</string>
     <string name="v13_flash_seats">%1$d / %2$d joined</string>
+    <string name="v13_upg_level">Level</string>
+    <string name="v13_upg_energy">Daily energy</string>
 </resources>

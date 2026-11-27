@@ -18,4 +18,6 @@
     <string name="v13_flash_invite_title">친구 부르기</string>
     <string name="v13_flash_card_head">번개러닝 · %1$s</string>
     <string name="v13_flash_seats">%1$d / %2$d명</string>
+    <string name="v13_upg_level">레벨</string>
+    <string name="v13_upg_energy">하루 에너지</string>
 </resources>

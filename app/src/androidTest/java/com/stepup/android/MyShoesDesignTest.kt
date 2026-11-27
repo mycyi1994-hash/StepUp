@@ -261,7 +261,7 @@ class MyShoesDesignTest {
         show("s07-vault", "vault-grid", vault(OwnedLoad.Ready(SAMPLES)))
         assertEquals("${SAMPLES.size}", text("vault-count"))
         show("s08-vault-filter-finish", "vault-grid", vault(OwnedLoad.Ready(SAMPLES), filter = ShoeTier.FINISH.key))
-        assertEquals(1, cards().size)
+        assertEquals(1, vaultCards().size)
         show("s09-vault-empty", "vault-empty", vault(OwnedLoad.Ready(emptyList())))
         show("s10-vault-loading", "vault-loading", vault(OwnedLoad.Loading))
         show("s11-vault-failed", "vault-failed", vault(OwnedLoad.Failed))
@@ -377,6 +377,12 @@ class MyShoesDesignTest {
         assertTrue("at most one worn check", compose.onAllNodes(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-owned-row")),
             useUnmergedTree = true).fetchSemanticsNodes().size <= 1)
     }
+
+    /** 예전 보관함 격자(ShoeVaultContent)의 칸 */
+    private fun vaultCards() = compose.onAllNodes(
+        SemanticsMatcher("vault card") { it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("vault-card-") == true },
+        useUnmergedTree = true,
+    ).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced }
 
     /** 격자에 놓인 칸 */
     private fun cards() = compose.onAllNodes(

@@ -204,7 +204,7 @@ class WalletDesignTest {
         show("s02-wallet-linked", "wl-row-7", wallet(web3 = Web3State.Linked))
         // 스토어 판(BuildConfig.WEB3 = false) — 체인 줄 · 뽑기 혜택 없이 SUP 잔액 · 내역 + 지갑 주소 연결 줄만(2026-10-29)
         show("s02-store-wallet", "wl-row-7", wallet(web3Enabled = false))
-        compose.onNodeWithTag("wl-web3-state").assertTextEquals(compose.activity.getString(R.string.wl_web3_unlinked_plain))
+        compose.onNodeWithTag("wl-web3-state", useUnmergedTree = true).assertTextEquals(compose.activity.getString(R.string.wl_web3_unlinked_plain))
         compose.onAllNodesWithTag("wl-chain").assertCountEquals(0)
         show("s02-store-wallet-linked", "wl-web3", wallet(web3Enabled = false, web3 = Web3State.Linked, sheet = "Linked"))
         compose.onAllNodesWithTag("wl-open-draw").assertCountEquals(0)

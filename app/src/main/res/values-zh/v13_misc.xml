@@ -18,4 +18,6 @@
     <string name="v13_flash_invite_title">叫上朋友</string>
     <string name="v13_flash_card_head">闪电跑 · %1$s</string>
     <string name="v13_flash_seats">%1$d / %2$d人</string>
+    <string name="v13_upg_level">等级</string>
+    <string name="v13_upg_energy">每日能量</string>
 </resources>
