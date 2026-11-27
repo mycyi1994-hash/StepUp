@@ -289,7 +289,6 @@ class ExperienceUiTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoes-section-mine").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("draw-home").assertDoesNotExist()
         compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
-        compose.onNodeWithTag("shoes-section-vault").assertIsNotSelected()
         compose.onNodeWithTag("shoes-section-draw").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("draw-home").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("draw-home").assertIsDisplayed()

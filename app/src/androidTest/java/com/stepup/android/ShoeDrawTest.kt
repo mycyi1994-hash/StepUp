@@ -214,7 +214,7 @@ class ShoeDrawTest {
             compose.onNodeWithTag("draw-result-shoes").performClick()
             awaitTag("my-shoes")
             compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
-            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
+            compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
             compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("shoe-choice-${shoe.id}").assertIsSelected() }.isSuccess }
             assertEquals("seeing the new shoe does not equip it", equipped, DrawSamples.equippedId())
             shot("23-my-shoes-with-the-new-shoe")

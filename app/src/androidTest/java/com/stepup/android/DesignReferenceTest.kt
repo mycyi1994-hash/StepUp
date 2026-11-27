@@ -448,7 +448,7 @@ class DesignReferenceTest {
             compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true)
                 .assertTextContains(korean(R.string.my_shoes_wearing), substring = true)
             compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
-            compose.onNodeWithTag("shoes-section-vault").assertExists()
+            compose.onNodeWithTag("shoes-section-draw").assertExists()
         }
         // 자유 러닝 중 지도 위 — 문제가 없으면 "러닝 중" 칩, 멈추면 일시정지 띠. 위치를 찾는 중에도 글 · 띠가 없다(2026-10-17 지도 앱처럼)
         if (s == Scene.RUN_ACTIVE) compose.onNodeWithTag("run-status", useUnmergedTree = true).assertExists()

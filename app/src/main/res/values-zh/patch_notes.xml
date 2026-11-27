@@ -38,4 +38,7 @@
     <string name="pn_122_steps">不打开应用也能统计每日步数</string>
     <string name="pn_122_stepbox">每日步数达标即可获得步数宝箱</string>
     <string name="pn_122_gps">修正息屏期间的 GPS 路线与距离</string>
+    <string name="pn_122_draw10">抽10次 — 从小卡片开始一张张翻开</string>
+    <string name="pn_122_share">分享 — 跑步、排名、新鞋、跑团、闪电跑、邀请码都用同一个分享窗口</string>
+    <string name="pn_122_items">道具与钱包新设计 — 大道具卡片、钱包标志</string>
 </resources>

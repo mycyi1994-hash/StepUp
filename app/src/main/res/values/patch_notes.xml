@@ -38,4 +38,7 @@
     <string name="pn_122_steps">Daily steps count even when the app is closed</string>
     <string name="pn_122_stepbox">Walk enough in a day to get a step box</string>
     <string name="pn_122_gps">Fixed GPS route and distance while the screen is off</string>
+    <string name="pn_122_draw10">10 draws at once — cards flip one by one</string>
+    <string name="pn_122_share">Share sheet for runs, rankings, new shoes, crews, flash runs and invite codes</string>
+    <string name="pn_122_items">Items and wallet redesigned — big item cards, wallet logos</string>
 </resources>

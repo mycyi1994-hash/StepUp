@@ -38,4 +38,7 @@
     <string name="pn_122_steps">앱을 켜지 않아도 하루 걸음을 세요</string>
     <string name="pn_122_stepbox">하루 걸음을 채우면 걸음 상자</string>
     <string name="pn_122_gps">화면을 끈 동안의 GPS 경로 · 거리 바로잡음</string>
+    <string name="pn_122_draw10">10회 뽑기 — 작은 카드부터 한 장씩 뒤집어요</string>
+    <string name="pn_122_share">자랑하기 — 러닝 · 순위 · 새 신발 · 크루 · 번개러닝 · 초대 코드를 같은 공유 창으로</string>
+    <string name="pn_122_items">아이템 · 지갑 새 그림 — 큰 아이템 카드 · 지갑 로고</string>
 </resources>
