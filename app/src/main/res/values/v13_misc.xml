@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_code_share_title">Send invite code</string>
+    <string name="v13_code_card_title">StepUp beta invite</string>
+    <string name="v13_ca_uploaded">Records put on %1$s</string>
+    <string name="v13_ca_unit">records</string>
+    <string name="v13_ca_recent">Recent records</string>
+    <string name="v13_ca_what">What gets recorded</string>
+    <string name="v13_ca_t_run">Runs</string>
+    <string name="v13_ca_t_badge">Badges</string>
+    <string name="v13_ca_t_shoe">Shoes</string>
+    <string name="v13_ca_t_crew">Crews</string>
+    <string name="v13_ca_t_check">Check-in</string>
+    <string name="v13_ca_private">Location, name and step counts aren\'t uploaded</string>
+    <string name="v13_ca_forever">Uploaded records can\'t be deleted</string>
+</resources>

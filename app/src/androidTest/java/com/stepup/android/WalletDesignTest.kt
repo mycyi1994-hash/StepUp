@@ -132,7 +132,7 @@ class WalletDesignTest {
             shot("03-in-app-earned")
 
             // 13 — SUP 안내, 뒤로 가기는 시트만 닫는다
-            tap("wl-info")
+            tap("wl-sup-info")
             awaitTag("wl-info-sheet")
             shot("13-in-app-info")
             back()

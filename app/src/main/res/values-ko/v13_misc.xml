@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_code_share_title">초대 코드 보내기</string>
+    <string name="v13_code_card_title">StepUp 베타 초대</string>
+    <string name="v13_ca_uploaded">%1$s에 올린 기록</string>
+    <string name="v13_ca_unit">건</string>
+    <string name="v13_ca_recent">최근 기록</string>
+    <string name="v13_ca_what">기록되는 것</string>
+    <string name="v13_ca_t_run">러닝</string>
+    <string name="v13_ca_t_badge">배지</string>
+    <string name="v13_ca_t_shoe">신발</string>
+    <string name="v13_ca_t_crew">크루</string>
+    <string name="v13_ca_t_check">출석</string>
+    <string name="v13_ca_private">위치 · 이름 · 걸음 수는 안 올림</string>
+    <string name="v13_ca_forever">올린 기록은 지울 수 없음</string>
+</resources>

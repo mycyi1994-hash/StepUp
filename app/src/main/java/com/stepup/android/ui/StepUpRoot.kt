@@ -1129,7 +1129,16 @@ private fun MainScaffoldContent(
                 )
             }
             composable(Screen.Bag.route) {
-                com.stepup.android.ui.screens.items.BagScreen()
+                com.stepup.android.ui.screens.items.BagScreen(
+                    // 13차 S-357 — 러닝 아이템 시트의 "러닝 시작": 자유 러닝 시작(출발 전 신발 확인에서 아이템을 고른다)
+                    onStartRun = {
+                        if (!com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                        }
+                        navController.navigate(Routes.RUN_NOW)
+                    },
+                )
             }
             composable(Screen.Profile.route) { entry ->
                 val nicknameSaved by entry.savedStateHandle.getStateFlow(Routes.NICKNAME_SAVED, false).collectAsState()

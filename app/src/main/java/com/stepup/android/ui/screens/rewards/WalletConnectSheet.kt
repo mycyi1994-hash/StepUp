@@ -201,13 +201,8 @@ private fun WalletRow(app: WalletApp, busy: Boolean, enabled: Boolean, onClick: 
         tag = "wallet-option-${app.key}",
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // 지갑 표시 — 머리글자 타일(지갑 회사 로고 그림은 앱에 넣지 않았다)
-            Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(walletTint(app)),
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.Text(walletInitial(app), style = runTextStyle(18.sp, Color.White, FontWeight.ExtraBold))
-            }
+            // 지갑 표시 — 각 회사 공식 로고(13차 지갑로고 — MetaMask · Rabby 는 공식 깃허브, OKX 는 공식 사이트 아이콘, GIWA 는 기호만)
+            WalletLogo(app, 40.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 androidx.compose.material3.Text(walletName(app),
@@ -240,18 +235,27 @@ private fun walletName(app: WalletApp): String = stringResource(
     },
 )
 
-private fun walletInitial(app: WalletApp): String = when (app) {
-    WalletApp.GIWA -> "G"
-    WalletApp.METAMASK -> "M"
-    WalletApp.OKX -> "O"
-    WalletApp.RABBY -> "R"
+internal fun walletLogoRes(app: WalletApp): Int = when (app) {
+    WalletApp.GIWA -> R.drawable.wallet_logo_giwa
+    WalletApp.METAMASK -> R.drawable.wallet_logo_metamask
+    WalletApp.OKX -> R.drawable.wallet_logo_okx
+    WalletApp.RABBY -> R.drawable.wallet_logo_rabby
 }
 
-private fun walletTint(app: WalletApp): Color = when (app) {
-    WalletApp.GIWA -> Color(0xFF4A5A73)
-    WalletApp.METAMASK -> Color(0xFFE2761B)
-    WalletApp.OKX -> Color(0xFF111111)
-    WalletApp.RABBY -> Color(0xFF7084FF)
+/** 지갑 로고 타일 — GIWA 기호는 흰 그림이라 남색 칸, OKX 는 검은 칸, 나머지는 흰 칸 */
+@Composable
+internal fun WalletLogo(app: WalletApp, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val bg = when (app) {
+        WalletApp.GIWA -> Color(0xFF1B2433)
+        WalletApp.OKX -> Color.Black
+        else -> Color.White
+    }
+    Box(modifier.size(size).clip(RoundedCornerShape(size * 0.3f)).background(bg), contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(walletLogoRes(app)), contentDescription = null,
+            modifier = Modifier.size(if (app == WalletApp.OKX) size else size * 0.72f),
+        )
+    }
 }
 
 /**

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_code_share_title">发送邀请码</string>
+    <string name="v13_code_card_title">StepUp 测试邀请</string>
+    <string name="v13_ca_uploaded">已上传到%1$s的记录</string>
+    <string name="v13_ca_unit">条</string>
+    <string name="v13_ca_recent">最近记录</string>
+    <string name="v13_ca_what">会记录的内容</string>
+    <string name="v13_ca_t_run">跑步</string>
+    <string name="v13_ca_t_badge">徽章</string>
+    <string name="v13_ca_t_shoe">鞋子</string>
+    <string name="v13_ca_t_crew">跑团</string>
+    <string name="v13_ca_t_check">签到</string>
+    <string name="v13_ca_private">不上传位置、名字和步数</string>
+    <string name="v13_ca_forever">已上传的记录无法删除</string>
+</resources>
