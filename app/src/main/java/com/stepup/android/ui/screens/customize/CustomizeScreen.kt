@@ -1005,7 +1005,10 @@ private fun WornShoeCard(
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(shoe.shoeName(), color = c.label, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2,
+                // 긴 이름(20자까지)은 글자를 줄이고 세 줄까지 — 잘리지 않게
+                val name = shoe.shoeName()
+                Text(name, color = c.label, fontSize = if (name.length > 12) 16.sp else 20.sp, lineHeight = if (name.length > 12) 20.sp else 24.sp,
+                    fontWeight = FontWeight.ExtraBold, maxLines = 3,
                     overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).testTag("shoe-hero-name"))
                 Spacer(Modifier.width(6.dp))
                 val meta = shoeMeta(shoe)

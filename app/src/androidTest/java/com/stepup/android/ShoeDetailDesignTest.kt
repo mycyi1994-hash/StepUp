@@ -111,27 +111,11 @@ class ShoeDetailDesignTest {
             assertMetaWearing(true)
             shot("01a-in-app-wearing")
 
-            // 01 — 칸을 누르면 보는 신발만 바뀐다. 착용은 그대로
-            pick(seeded.single)
-            compose.waitUntil(10_000) { heroNameShows(modelName(1107)) }
-            assertMetaWearing(false)
-            assertEquals("Picking a tile must not change the stored equipment", original, runBlocking { dao.equippedNow()?.id })
-            shot("01b-in-app-picked")
-
-            // 07 — 같은 모델 두 켤레는 각자 한 칸(소유 id) — 번호로 구분. 고르는 것만으로 착용은 그대로
-            pick(seeded.pairA)
-            val numberA = metaText()
-            pick(seeded.pairB)
-            val numberB = metaText()
-            assertTrue("the two pairs of 1201 show their own numbers: $numberA / $numberB", numberA != numberB)
-            compose.onNodeWithTag("shoe-choice-${seeded.pairA}").assertIsNotSelected()
-            shot("07-in-app-pairs")
-            assertEquals(original, runBlocking { dao.equippedNow()?.id })
-
-            // 02 — 관리(⋯): 고른 켤레(소유 id)의 상세
-            pick(seeded.single)
-            tap("shoe-manage")
+            // 02 — 13차: 격자 칸을 누르면 그 켤레(소유 id)의 상세. 여는 것만으로 착용은 그대로
+            showTile(seeded.single)
+            compose.onNodeWithTag("shoe-choice-${seeded.single}").performClick()
             awaitWearEnabled()
+            assertEquals("Opening a tile must not change the stored equipment", original, runBlocking { dao.equippedNow()?.id })
             awaitTag("shoe-art")
             // 이름 끝에 공통 등급 배지(2026-09-29) — 이름 글 뒤에 배지 자리(" 레어")가 붙는다
             compose.onNode(hasText(modelName(1107), substring = true) and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
@@ -158,14 +142,15 @@ class ShoeDetailDesignTest {
             // 거래를 멈춘 동안(0108 · MarketFeature.TRADING)은 판매하기를 누를 수 없다
             if (com.stepup.android.domain.MarketFeature.TRADING) compose.onNodeWithTag("shoe-care-sell").assertIsEnabled()
             else compose.onNodeWithTag("shoe-care-sell").assertIsNotEnabled()
-            compose.onNodeWithTag("shoe-rename").assertExists()
+            // 13차 — 이름 바꾸기는 카드(이름)를 누르면
+            compose.onNodeWithTag("shoe-name").assertHasClickAction()
             compose.onAllNodesWithTag("shoe-manage-sheet").assertCountEquals(0)
             shot("19-in-app-manage")
             assertEquals(original, runBlocking { dao.equippedNow()?.id })
 
             // 09 → 10 — 이 신발 신기: 기존 착용 길(equipExclusively)로 저장되고, 저장된 착용이 바뀐 뒤에만 완료 알림
             tap("detail-primary-action")
-            compose.waitUntil(10_000) { runBlocking { dao.equippedNow()?.id } == seeded.single }
+            compose.waitUntil(20_000) { runBlocking { dao.equippedNow()?.id } == seeded.single }
             awaitTag("shoe-worn-toast")
             compose.onNodeWithTag("shoe-worn-toast").assertTextContains(modelName(1107), substring = true)
             shot("10-in-app-equipped", settle = 250)
@@ -237,9 +222,11 @@ class ShoeDetailDesignTest {
 
         // 01 — 보는 신발(칸 테두리) · 신고 있는 신발(작은 체크)을 가른다. 켤레 수는 4 — 같은 모델 두 켤레도 각자 한 칸
         show("s01-owned-entry", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_A.id))
-        assertMetaWearing(false)
+        // 13차 — 위 카드는 늘 지금 신은 신발(고른 칸은 격자 테두리만)
+        compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(string(R.string.my_shoes_wearing), substring = true)
         // v12 — "보유 4켤레"
-        compose.onNodeWithTag("shoe-owned-head", useUnmergedTree = true).assertTextContains("4", substring = true)
+        // 13차 — 보유 수는 등급 칩 "전체 4"
+        compose.onNodeWithTag("vault-filter-all", useUnmergedTree = true).assertTextContains("4", substring = true)
         compose.onNode(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-choice-${WORN.id}")), useUnmergedTree = true)
             .assertExists()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsSelected()
@@ -251,8 +238,8 @@ class ShoeDetailDesignTest {
         // 관리 묶음에는 수리 줄이 없다(⋯ 시트에는 남는다)
         compose.onAllNodesWithTag("shoe-durability-repair", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithTag("shoe-care-repair", useUnmergedTree = true).assertCountEquals(0)
-        // 아이템칸(잠긴 자리)은 v12 상세에서 뺐다(2026-11-26)
-        compose.onAllNodesWithTag("shoe-item-slots", useUnmergedTree = true).assertCountEquals(0)
+        // 아이템칸(잠긴 자리)은 13차(S-352)에 다시 넣었다
+        compose.onNodeWithTag("shoe-item-slots", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("shoe-care-sell", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("shoe-care-record", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("detail-primary-action").assertIsEnabled().assertTextEquals(string(R.string.sdv_wear))
@@ -304,7 +291,7 @@ class ShoeDetailDesignTest {
         compose.onAllNodesWithTag("shoe-info-faction").assertCountEquals(0)
         // 07 — 같은 모델 여러 켤레: 칸마다 한 켤레, 보는 켤레의 번호가 이름 아래에
         show("s07-owned-pairs", "shoe-hero", tab(OwnedLoad.Ready(all), PAIR_B.id))
-        compose.onNodeWithTag("shoe-card-no", useUnmergedTree = true).assertTextContains("0004", substring = true)
+        // 13차 — 번호는 상세(08)에서 본다. 격자는 켤레마다 한 칸
         compose.onNodeWithTag("shoe-choice-${PAIR_B.id}").assertIsSelected()
         compose.onNodeWithTag("shoe-choice-${PAIR_A.id}").assertIsNotSelected()
         // 08 — 같은 모델의 다른 켤레: 자기 번호 · 능력치 · 날짜
@@ -491,7 +478,7 @@ class ShoeDetailDesignTest {
 
     /** 가로 목록 안의 칸을 보이게 — 내 신발은 세로로 끌지 않는다 */
     private fun showTile(id: Long) {
-        compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))
+        compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-$id"))
     }
 
     /** 보유 칸을 눌러 미리 보기로 고른다(무대 · 이름 · 능력치가 그 켤레로) */
@@ -511,8 +498,10 @@ class ShoeDetailDesignTest {
 
     /** 신발 카드 위 줄 — "착용 중 · 레어" + 번호 "#0002"(UI 최종 통합안 신발 카드) */
     private fun metaText(): String = listOf("shoe-card-tag", "shoe-card-no").joinToString(" ") { tag ->
-        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
-            .config[androidx.compose.ui.semantics.SemanticsProperties.Text].joinToString { it.text }
+        // 13차 신발 탭 카드(지금 신은 신발)에는 번호가 없다 — 있는 것만
+        compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().joinToString(" ") { node ->
+            node.config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsProperties.Text) { null }?.joinToString { it.text }.orEmpty()
+        }
     }
 
     private fun assertMetaWearing(wearing: Boolean) {

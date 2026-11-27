@@ -11,6 +11,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -321,7 +324,8 @@ class RunStartFlowTest {
             R.string.run_free_check_grade_level, compose.activity.getString(tierLabel(shoe.tier)), shoe.level,
         )
         compose.onNodeWithTag("run-shoe-check-grade", useUnmergedTree = true).assertTextEquals(grade)
-        compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("68%")
+        // 13차 — 보이는 값은 남은 분, 읽기 도구는 "%"
+        compose.onNodeWithTag("run-shoe-check-durability").assert(hasContentDescription("68%", substring = true))
         // 13차 S-398 — 아래 시트: 닫기(✕)는 시트(RunSheet)에만 있다 — 본문에는 돌아가기 버튼이 없다
         compose.onAllNodesWithTag("run-shoe-check-back").assertCountEquals(0)
         assertEquals(0, cancels)
@@ -348,12 +352,12 @@ class RunStartFlowTest {
         }
         compose.onNodeWithTag("run-shoe-check-change").assertIsDisplayed().performClick()
         compose.onNodeWithTag("run-shoe-pick-title").assertIsDisplayed()
-        compose.onNodeWithTag("run-shoe-pick-${other.id}").performClick()
+        // 13차(S-400) — 줄을 눌러 고르고 아래 "○○로 교체"로 신는다. 고르기만으로는 바뀌지 않는다
+        compose.onNodeWithTag("run-shoe-pick-${other.id}").performClick().assertIsSelected()
         compose.waitForIdle()
-        assertEquals("짧게 누르면 바뀌지 않는다", 0, worn.size)
-        compose.onNodeWithTag("run-shoe-pick-hint").assertTextEquals(compose.activity.getString(R.string.run_shoe_pick_hint))
+        assertEquals("고르기만으로는 바뀌지 않는다", 0, worn.size)
         capture("run-shoe-pick.png")
-        compose.onNodeWithTag("run-shoe-pick-${other.id}").performTouchInput { longClick(durationMillis = 1_300) }
+        compose.onNodeWithTag("run-shoe-pick-confirm").performClick()
         compose.waitUntil(3_000) { worn.isNotEmpty() }
         assertEquals(listOf(other.id), worn)
         // 착용이 확인되면 점검으로 돌아온다

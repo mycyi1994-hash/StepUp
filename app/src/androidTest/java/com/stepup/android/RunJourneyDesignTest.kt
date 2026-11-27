@@ -152,7 +152,7 @@ class RunJourneyDesignTest {
             awaitTag("shoe-hero-name")
             // v12(2026-11-26) — 이름 바꾸기는 신발 상세의 "이름 바꾸기"로 옮겼다
             tap("shoe-manage")
-            tap("shoe-rename")
+            tap("shoe-name") // 13차 — 카드(이름)를 누르면 이름 바꾸기
             awaitTag("shoe-rename-sheet")
             compose.onNodeWithTag("shoe-rename-field").performTextClearance()
             compose.onNodeWithTag("shoe-rename-field").performTextInput("나의 아주 긴 첫 레이싱화 이름이에요 정말로")
@@ -170,7 +170,7 @@ class RunJourneyDesignTest {
                 .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertTrue("long shoe names stay whole: ${layouts.map { it.lineCount }}", layouts.none { it.hasVisualOverflow })
             shot("SHOES-renamed")
-            tap("shoe-rename")
+            tap("shoe-name") // 13차 — 카드(이름)를 누르면 이름 바꾸기
             awaitTag("shoe-rename-reset")
             tap("shoe-rename-reset")
             awaitGone("shoe-rename-sheet")
@@ -833,7 +833,8 @@ class RunJourneyDesignTest {
             show("F01-shoe-check", "run-shoe-check") {
                 com.stepup.android.ui.screens.walk.FreeRunShoeCheckContent(checkShoe, {}, {})
             }
-            compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("92%")
+            // 13차 — 보이는 값은 남은 분, 읽기 도구는 "%"
+            compose.onNodeWithTag("run-shoe-check-durability").assert(hasContentDescription("92%", substring = true))
             fun stage(name: String, clock: Long, reveal: Long? = null, reduced: Boolean = false) = show(name, "run-start-sequence") {
                 Box(Modifier.fillMaxSize()) {
                     // 펼침 아래의 러닝 화면 자리 — 실제 지도(지금 자리)
@@ -1887,11 +1888,10 @@ class RunJourneyDesignTest {
         compose.waitForIdle()
         val hero = bounds("run-hero-value")
         val action = bounds("run-primary-action")
-        val map = bounds("run-map-expand")
         val limit = frameBottom()
         assertTrue("run time above the buttons at $where: $hero / $action", hero.bottom <= action.top)
         assertTrue("pause inside the screen at $where: $action / $limit", action.bottom <= limit + 1)
-        assertTrue("map button inside the screen at $where: $map / $limit", map.bottom <= limit + 1)
+        // 13차(S-362) — 지도 크게 보기 버튼은 뺐다(지도가 늘 위에 있다)
     }
 
     /**
