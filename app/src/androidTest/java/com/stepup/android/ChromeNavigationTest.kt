@@ -180,7 +180,8 @@ class ChromeNavigationTest {
             compose.onNodeWithTag("run-live").assertExists()
             compose.onNodeWithTag("run-paused-band", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertHasClickAction()
-                .assertTextContains(compose.activity.getString(R.string.run_resume_short))
+                // 13차(S-365) — 멈춘 동안 주 버튼은 "다시 달리기"
+                .assertTextContains(compose.activity.getString(R.string.v13_run_resume))
             compose.onNodeWithTag("run-finish").assertIsDisplayed().assertHasClickAction()
             capture("${next.width}-${next.font}-${next.mode}-run-paused")
             // 짧게 누르면 마치지 않고 "길게 눌러 종료해요" — 확인창은 없다

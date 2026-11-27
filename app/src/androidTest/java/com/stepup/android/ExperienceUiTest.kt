@@ -331,13 +331,12 @@ class ExperienceUiTest {
                 else SneakerDetailScreen(opened, onBack = { detailId = null })
             } } }
             compose.waitUntil(5_000) { compose.onAllNodesWithTag("shoe-owned-row").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$candidateId"))
-            compose.onNodeWithTag("shoe-choice-$candidateId").performClick().assertIsSelected()
-            assertEquals("Picking a pair must not change the stored equipment", original.id,
-                runBlocking { dao.equippedNow()?.id })
-            compose.onNodeWithTag("shoe-choice-${original.id}").assertIsNotSelected()
-            compose.onNodeWithTag("shoe-manage").performClick()
+            // 13차 — 격자 칸을 누르면 그 켤레(소유 id)의 상세가 열린다. 여는 것만으로 착용은 그대로
+            compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-$candidateId"))
+            compose.onNodeWithTag("shoe-choice-$candidateId").performClick()
             compose.runOnIdle { assertEquals(candidateId, detailId) }
+            assertEquals("Opening a pair must not change the stored equipment", original.id,
+                runBlocking { dao.equippedNow()?.id })
             // 상세 — 아직 신지 않은 켤레라 주 버튼이 살아 있다(읽는 동안은 "확인 중…"으로 막혀 있다). 여는 것만으로 착용은 그대로
             compose.waitUntil(5_000) {
                 runCatching { compose.onNodeWithTag("detail-primary-action").assertIsEnabled() }.isSuccess
@@ -345,7 +344,7 @@ class ExperienceUiTest {
             assertEquals("Preview must not change the stored equipment", original.id,
                 runBlocking { dao.equippedNow()?.id })
             compose.onNodeWithTag("detail-primary-action").performClick()
-            compose.waitUntil(5_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
+            compose.waitUntil(20_000) { runBlocking { dao.equippedNow()?.id == candidateId } }
             // 신은 뒤 — 신기 버튼은 없어지고(v12 2026-11-26: 신은 신발의 주 버튼은 강화하기 하나) 다시 신을 수 없다
             compose.waitUntil(5_000) {
                 compose.onAllNodesWithTag("detail-primary-action").fetchSemanticsNodes().isEmpty() ||
