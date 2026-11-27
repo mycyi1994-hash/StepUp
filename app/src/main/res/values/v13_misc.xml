@@ -20,4 +20,12 @@
     <string name="v13_flash_seats">%1$d / %2$d joined</string>
     <string name="v13_upg_level">Level</string>
     <string name="v13_upg_energy">Daily energy</string>
+    <string name="v13_bag_used_toast">Used %1$s · %2$d left</string>
+    <string name="v13_bag_use_failed">Couldn\'t use the item</string>
+    <string name="v13_bag_load_failed">Couldn\'t load</string>
+    <string name="v13_bag_no_shoe">No shoe on</string>
+    <string name="v13_bag_pick_shoe">Pick a shoe</string>
+    <string name="v13_bag_event">Run rewards ×%2$s until %1$s</string>
+    <string name="v13_bag_event_date">MMM d</string>
+    <string name="v13_check_go_anyway">Start anyway</string>
 </resources>

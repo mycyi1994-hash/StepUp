@@ -329,11 +329,30 @@ internal fun FreeRunShoeCheckContent(
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                com.stepup.android.ui.components.PrimaryButton(
-                    stringResource(if (shoe != null) R.string.run_free_check_go else R.string.home_start_run), start,
-                    state = if (wearing) com.stepup.android.ui.components.ButtonState.Disabled else com.stepup.android.ui.components.ButtonState.Idle,
-                    modifier = Modifier.fillMaxWidth().testTag("run-shoe-check-go"),
-                )
+                // 13차 S-424 · S-425 — 다 닳은 신발이면 주 버튼은 수리하기(값은 수리 창이 서버 견적으로), 아래 "그대로 출발"(출발은 막지 않는다)
+                val rules = rememberShoeRules()
+                val wornOut = shoe != null && onRepair != null && com.stepup.android.ui.screens.items.repairable(shoe) &&
+                    runCheckLine(shoe, rules, energySteps).let { it == ShoeCheckLine.WornOut || it == ShoeCheckLine.WornNoEnergy }
+                if (wornOut && shoe != null && onRepair != null) {
+                    com.stepup.android.ui.components.PrimaryButton(
+                        stringResource(R.string.care_repair), { onRepair(shoe.id) },
+                        state = if (wearing) com.stepup.android.ui.components.ButtonState.Disabled else com.stepup.android.ui.components.ButtonState.Idle,
+                        modifier = Modifier.fillMaxWidth().testTag("run-shoe-check-repair-primary"),
+                    )
+                    Text(
+                        stringResource(R.string.v13_check_go_anyway), color = c.secondaryLabel, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp).clip(RoundedCornerShape(10.dp))
+                            .feedbackClickable(enabled = !wearing, role = androidx.compose.ui.semantics.Role.Button, onClick = start)
+                            .padding(vertical = 12.dp).testTag("run-shoe-check-go"),
+                    )
+                } else {
+                    com.stepup.android.ui.components.PrimaryButton(
+                        stringResource(if (shoe != null) R.string.run_free_check_go else R.string.home_start_run), start,
+                        state = if (wearing) com.stepup.android.ui.components.ButtonState.Disabled else com.stepup.android.ui.components.ButtonState.Idle,
+                        modifier = Modifier.fillMaxWidth().testTag("run-shoe-check-go"),
+                    )
+                }
             }
         }
     }

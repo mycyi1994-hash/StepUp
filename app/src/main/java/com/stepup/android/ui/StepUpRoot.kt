@@ -1138,6 +1138,8 @@ private fun MainScaffoldContent(
                         }
                         navController.navigate(Routes.RUN_NOW)
                     },
+                    // 13차 S-439 — 신은 신발이 없으면 "신발 고르기" → 신발 탭
+                    onOpenShoes = { navController.switchTab(Screen.Customize) },
                 )
             }
             composable(Screen.Profile.route) { entry ->

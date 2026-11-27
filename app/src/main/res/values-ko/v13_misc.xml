@@ -20,4 +20,12 @@
     <string name="v13_flash_seats">%1$d / %2$d명</string>
     <string name="v13_upg_level">레벨</string>
     <string name="v13_upg_energy">하루 에너지</string>
+    <string name="v13_bag_used_toast">%1$s 사용 · 남은 %2$d개</string>
+    <string name="v13_bag_use_failed">아이템 사용 실패</string>
+    <string name="v13_bag_load_failed">불러오기 실패</string>
+    <string name="v13_bag_no_shoe">신은 신발 없음</string>
+    <string name="v13_bag_pick_shoe">신발 고르기</string>
+    <string name="v13_bag_event">%1$s까지 러닝 보상 ×%2$s</string>
+    <string name="v13_bag_event_date">M월 d일</string>
+    <string name="v13_check_go_anyway">그대로 출발</string>
 </resources>

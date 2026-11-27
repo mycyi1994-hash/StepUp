@@ -20,4 +20,12 @@
     <string name="v13_flash_seats">%1$d / %2$d人</string>
     <string name="v13_upg_level">レベル</string>
     <string name="v13_upg_energy">1日のエネルギー</string>
+    <string name="v13_bag_used_toast">%1$sを使用 · 残り%2$d個</string>
+    <string name="v13_bag_use_failed">アイテムを使えませんでした</string>
+    <string name="v13_bag_load_failed">読み込めませんでした</string>
+    <string name="v13_bag_no_shoe">履いているシューズなし</string>
+    <string name="v13_bag_pick_shoe">シューズを選ぶ</string>
+    <string name="v13_bag_event">%1$sまでラン報酬 ×%2$s</string>
+    <string name="v13_bag_event_date">M月d日</string>
+    <string name="v13_check_go_anyway">そのまま出発</string>
 </resources>

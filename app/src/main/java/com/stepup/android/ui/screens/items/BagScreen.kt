@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +82,7 @@ import com.stepup.android.domain.Bag
  * 쓰면 어떻게 되는지와 "내구도 채우기 · 1개" 같은 주 버튼 하나. 개수 · 효과 값은 서버 값 그대로다(못 읽으면 다시 시도).
  */
 @Composable
-fun BagScreen(onStartRun: () -> Unit = {}) {
+fun BagScreen(onStartRun: () -> Unit = {}, onOpenShoes: () -> Unit = {}) {
     val items = ServiceLocator.itemsRepository
     val bag by items.bag.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -91,6 +93,9 @@ fun BagScreen(onStartRun: () -> Unit = {}) {
     var message by remember { mutableStateOf<String?>(null) }
     // 한 번 누른 사용 — 응답을 잃고 다시 눌러도 같은 번호면 서버가 한 번만 쓴다. 다른 아이템을 고르면 새 번호
     var request by remember { mutableStateOf<String?>(null) }
+    // 13차 S-440 · S-441 — 쓴 뒤 아래 알림(쓴 것 · 남은 수 / 실패 · 다시 시도). 다시 시도는 같은 요청 번호로
+    var toast by remember { mutableStateOf<BagToast?>(null) }
+    LaunchedEffect(toast) { if (toast != null) { kotlinx.coroutines.delay(if (toast?.retry != null) 6_000 else 3_000); toast = null } }
 
     suspend fun load() {
         loading = bag == null
@@ -110,7 +115,8 @@ fun BagScreen(onStartRun: () -> Unit = {}) {
     val errShoe = stringResource(R.string.bag_err_no_shoe)
     val errNone = stringResource(R.string.bag_err_none)
     val errGeneric = stringResource(R.string.bag_err_generic)
-    val usedFormat = stringResource(R.string.bag_used)
+    val usedToast = stringResource(R.string.v13_bag_used_toast)
+    val failedToast = stringResource(R.string.v13_bag_use_failed)
 
     Box(Modifier.fillMaxSize().testTag("bag-screen")) {
         val current = bag
@@ -119,13 +125,21 @@ fun BagScreen(onStartRun: () -> Unit = {}) {
             bottomRoom = 28.dp,
             onSelect = { kind -> selected = kind; request = null; message = null },
             onRetry = { scope.launch { load() } },
+            hasShoe = shoe != null, onOpenShoes = onOpenShoes,
         )
+        toast?.let { t ->
+            BagToastBar(t, Modifier.align(Alignment.BottomCenter).padding(horizontal = StepUpUi.Gutter).padding(bottom = 14.dp)) {
+                toast = null
+                t.retry?.invoke()
+            }
+        }
     }
 
     val pick = selected
     val current = bag
     if (current != null && pick != null) {
         val qty = current.qty(pick)
+        val itemNameText = itemName(pick)
         val close = { if (!using) { selected = null; message = null } }
         com.stepup.android.ui.components.RunSheet(onDismiss = close, modifier = Modifier.testTag("bag-sheet"), dismissible = !using) {
             BagSheetHead(pick, current.value(pick))
@@ -175,25 +189,38 @@ fun BagScreen(onStartRun: () -> Unit = {}) {
                         if (using) return@PrimaryButton
                         using = true
                         val id = request ?: UUID.randomUUID().toString().also { request = it }
-                        scope.launch {
-                            val result = items.use(pick, id, null)
-                            using = false
-                            message = when (result) {
-                                is ServerResult.Ok -> { request = null; usedFormat.format(result.value) }
-                                is ServerResult.Rejected -> {
-                                    request = null
-                                    when {
-                                        "가득" in result.reason -> errFull
-                                        "에너지" in result.reason -> errEnergy
-                                        "신발" in result.reason -> errShoe
-                                        "없습니다" in result.reason -> errNone
-                                        else -> errGeneric
+                        val kind = pick
+                        val name = itemNameText
+                        fun send(key: String) {
+                            scope.launch {
+                                val result = items.use(kind, key, null)
+                                using = false
+                                when (result) {
+                                    is ServerResult.Ok -> {
+                                        request = null
+                                        selected = null
+                                        message = null
+                                        toast = BagToast(usedToast.format(name, result.value))
+                                    }
+                                    is ServerResult.Rejected -> {
+                                        request = null
+                                        message = when {
+                                            "가득" in result.reason -> errFull
+                                            "에너지" in result.reason -> errEnergy
+                                            "신발" in result.reason -> errShoe
+                                            "없습니다" in result.reason -> errNone
+                                            else -> errGeneric
+                                        }
+                                    }
+                                    // 끊겼다 — 같은 번호로 다시 보내면 서버가 한 번만 쓴다
+                                    else -> {
+                                        selected = null
+                                        toast = BagToast(failedToast, retry = { using = true; send(key) })
                                     }
                                 }
-                                // 끊겼다 — 같은 번호를 두고 다시 누르면 서버가 한 번만 쓴다
-                                else -> errGeneric
                             }
                         }
+                        send(id)
                     },
                     state = when {
                         using -> ButtonState.Loading
@@ -250,6 +277,9 @@ internal fun BagList(
     bottomRoom: androidx.compose.ui.unit.Dp,
     onSelect: (ItemKind) -> Unit,
     onRetry: () -> Unit,
+    /** 신은 신발이 있는가 — 없으면 내구도 초기화권 칸이 "신은 신발 없음 · 신발 고르기"(S-439) */
+    hasShoe: Boolean = true,
+    onOpenShoes: () -> Unit = {},
 ) {
     val c = StepUpUi.colors
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomRoom)) {
@@ -267,28 +297,34 @@ internal fun BagList(
                     )
                 }
             }
+            current?.event?.let { event -> EventLine(event.mult, event.endsAtMillis) }
             if (current != null && current.total == 0) {
                 Text(stringResource(R.string.v13_bag_empty), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
                     modifier = Modifier.padding(horizontal = StepUpUi.TitleGutter).padding(top = 4.dp).testTag("bag-empty"))
             }
+            if (current == null && failed && !loading) {
+                // S-438 — 못 읽었다: 제목 아래 한 줄 + 다시 시도, 칸은 수 없이("–")
+                Row(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.TitleGutter).padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.v13_bag_load_failed), style = StepUpUi.type.rowSubtitle, color = c.label,
+                        modifier = Modifier.weight(1f).testTag("bag-load-failed"))
+                    Text(stringResource(R.string.bag_retry), color = c.accentText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(c.fill).feedbackClickable(role = Role.Button, onClick = onRetry)
+                            .padding(horizontal = 14.dp, vertical = 7.dp).testTag("bag-retry"))
+                }
+            }
         }
-        current?.event?.let { event -> item { EventBand(event.mult, event.endsAtMillis) } }
         when {
             current == null && loading -> item {
                 Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) { StepUpSpinner() }
             }
-            current == null && failed -> item {
-                Column(Modifier.padding(horizontal = StepUpUi.Gutter, vertical = 40.dp)) {
-                    ErrorNote(stringResource(R.string.bag_load_failed), null)
-                    SecondaryButton(stringResource(R.string.bag_retry), onRetry, Modifier.fillMaxWidth().padding(top = 14.dp).testTag("bag-retry"))
-                }
-            }
-            current != null -> {
+            current != null || failed -> {
+                // 못 읽었으면 칸만(수 "–", 누르지 못함)
+                fun itemOf(kind: ItemKind): BagItem = current?.items?.firstOrNull { it.kind == kind } ?: BagItem(kind, null, if (current == null) -1 else 0)
                 item {
                     SectionHead(stringResource(R.string.v13_bag_section_run), stringResource(R.string.bag_section_run_hint))
                     Row(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ItemKind.entries.filter { it.runPick }.forEach { kind ->
-                            val item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0)
+                            val item = itemOf(kind)
                             V13ItemCard(item, selected == kind, wide = false, Modifier.weight(1f)) { onSelect(kind) }
                         }
                     }
@@ -297,8 +333,9 @@ internal fun BagList(
                     SectionHead(stringResource(R.string.bag_section_now), null)
                     Row(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.Gutter), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ItemKind.entries.filter { !it.runPick }.forEach { kind ->
-                            val item = current.items.firstOrNull { it.kind == kind } ?: BagItem(kind, null, 0)
-                            V13ItemCard(item, selected == kind, wide = true, Modifier.weight(1f)) { onSelect(kind) }
+                            val item = itemOf(kind)
+                            val noShoe = kind == ItemKind.DURABILITY_RESET && !hasShoe && item.qty > 0
+                            V13ItemCard(item, selected == kind, wide = true, Modifier.weight(1f), noShoe = noShoe, onOpenShoes = onOpenShoes) { onSelect(kind) }
                         }
                     }
                 }
@@ -312,18 +349,31 @@ internal fun BagList(
  * 그림이 어두운 바탕에 맞춰 그려져 카드는 두 테마 모두 남색이다.
  */
 @Composable
-private fun V13ItemCard(item: BagItem, selected: Boolean, wide: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun V13ItemCard(
+    item: BagItem,
+    selected: Boolean,
+    wide: Boolean,
+    modifier: Modifier,
+    noShoe: Boolean = false,
+    onOpenShoes: () -> Unit = {},
+    onClick: () -> Unit,
+) {
     val shape = RoundedCornerShape(18.dp)
     val has = item.qty > 0
+    val unknown = item.qty < 0
     Box(
         modifier.aspectRatio(if (wide) .98f else .7f).clip(shape)
             .background(Brush.verticalGradient(listOf(Color(0xFF22346A), Color(0xFF131D42))))
             .border(if (selected) 2.dp else 1.dp, if (selected) Color(0xFF6C9BFF) else Color(0x33FFFFFF), shape)
-            .feedbackClickable(role = Role.Button, onClick = onClick)
+            .feedbackClickable(enabled = !unknown, role = Role.Button, onClick = onClick)
             .semantics { this.selected = selected }.testTag("bag-item-${item.kind.id}"),
     ) {
         Text(
-            if (has) stringResource(R.string.item_qty, item.qty) else stringResource(R.string.v12_bag_zero),
+            when {
+                unknown -> "–"
+                has -> stringResource(R.string.item_qty, item.qty)
+                else -> stringResource(R.string.v12_bag_zero)
+            },
             color = Color.White.copy(alpha = if (has) 1f else .6f), fontSize = 12.sp, fontWeight = FontWeight.Bold,
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
         )
@@ -340,9 +390,20 @@ private fun V13ItemCard(item: BagItem, selected: Boolean, wide: Boolean, modifie
                         itemName(item.kind), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2,
                         lineHeight = 17.sp,
                     )
-                    Text(effectText(item.kind, item.value), color = Color(0xFFB8C4E0), fontSize = 11.sp, maxLines = 1)
+                    Text(
+                        if (noShoe) stringResource(R.string.v13_bag_no_shoe) else effectText(item.kind, item.value),
+                        color = Color(0xFFB8C4E0), fontSize = 11.sp, maxLines = 1,
+                    )
                 }
-                if (wide && has) {
+                if (noShoe) {
+                    Text(
+                        stringResource(R.string.v13_bag_pick_shoe), color = Color(0xFF13204A), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color.White)
+                            .feedbackClickable(role = Role.Button, onClick = onOpenShoes)
+                            .padding(horizontal = 10.dp, vertical = 5.dp).testTag("bag-pick-shoe"),
+                    )
+                } else if (wide && has) {
                     Text(
                         stringResource(R.string.v12_bag_use), color = Color(0xFF13204A), fontSize = 13.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color.White).padding(horizontal = 12.dp, vertical = 5.dp),
@@ -364,24 +425,41 @@ private fun SectionHead(title: String, hint: String?) {
     }
 }
 
-/** 보상 이벤트 띠 — 운영자가 연 이벤트가 켜져 있을 때만(0106). 누르는 곳은 없다 */
+/** 보상 이벤트 한 줄(13차 S-437) — "⚡ 11월 30일까지 러닝 보상 ×1.5". 운영자가 연 이벤트가 켜져 있을 때만(0106) */
 @Composable
-private fun EventBand(mult: Double, endsAt: Long) {
-    val until = remember(endsAt) {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).format(Instant.ofEpochMilli(endsAt).atZone(ZoneId.systemDefault()))
+private fun EventLine(mult: Double, endsAt: Long) {
+    val pattern = stringResource(R.string.v13_bag_event_date)
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val until = remember(endsAt, pattern, locale) {
+        DateTimeFormatter.ofPattern(pattern, locale).format(Instant.ofEpochMilli(endsAt).atZone(ZoneId.systemDefault()))
     }
     Row(
-        Modifier.padding(start = StepUpUi.Gutter, end = StepUpUi.Gutter, top = 14.dp).fillMaxWidth().heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFF2A62F2), Color(0xFF4D83FF), Color(0xFF7FA8FF))))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag("bag-event"),
+        Modifier.padding(horizontal = StepUpUi.TitleGutter).padding(top = 4.dp).testTag("bag-event"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("×" + formatValue(mult), style = StepUpUi.type.numberRow.copy(fontSize = 30.sp), color = Color.White)
-        Column(Modifier.padding(start = 12.dp)) {
-            Text(stringResource(R.string.bag_event_title, formatValue(mult)), color = Color.White, style = StepUpUi.type.rowTitle.copy(fontSize = 15.5.sp))
-            Text(stringResource(R.string.bag_event_until, until), color = Color(0xFFE4EDFF), style = StepUpUi.type.caption)
+        Icon(androidx.compose.material.icons.Icons.Filled.Bolt, null, tint = StepUpUi.colors.accentText, modifier = Modifier.size(16.dp))
+        Text(stringResource(R.string.v13_bag_event, until, formatValue(mult)), color = StepUpUi.colors.accentText,
+            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp))
+    }
+}
+
+/** 아래 알림 한 줄 — [retry] 가 있으면 오른쪽 "다시 시도" */
+internal data class BagToast(val text: String, val retry: (() -> Unit)? = null)
+
+@Composable
+private fun BagToastBar(toast: BagToast, modifier: Modifier, onAction: () -> Unit) {
+    val c = StepUpUi.colors
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(c.elevated)
+            .border(1.dp, c.separator, RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }.testTag("bag-toast"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(toast.text, color = c.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        if (toast.retry != null) {
+            Text(stringResource(R.string.bag_retry), color = c.accentText, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).feedbackClickable(role = Role.Button, onClick = onAction)
+                    .padding(6.dp).testTag("bag-toast-retry"))
         }
     }
 }
