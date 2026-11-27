@@ -82,15 +82,16 @@ fun V12ShoeCard(
      * 카드 넘기기의 양옆 카드는 false(같은 이름이 둘 생기지 않게)
      */
     hero: Boolean = true,
+    /** 작은 카드(목록 · 시트의 76 ~ 110dp) — 등급 칩만 작게, 번호 · 이름은 빼고 그림을 가운데에 */
+    mini: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(if (mini) 12.dp else 22.dp)
     val rim = v12TierRim(shoe.tier)
     Box(
         modifier
             .aspectRatio(V12ShoeCardRatio)
             // 바깥 옅은 테 — 시제품의 카드 둘레 빛(밝은 바탕에서도 카드가 떠 보이게)
-            .border(6.dp, rim.copy(alpha = .28f), RoundedCornerShape(26.dp))
-            .padding(5.dp)
+            .then(if (mini) Modifier else Modifier.border(6.dp, rim.copy(alpha = .28f), RoundedCornerShape(26.dp)).padding(5.dp))
             .clip(shape)
             .drawBehind {
                 drawRect(Brush.verticalGradient(listOf(CardTop, CardBottom)))
@@ -100,10 +101,23 @@ fun V12ShoeCard(
                     radius = size.width * .7f, center = Offset(size.width / 2, size.height * .42f),
                 )
             }
-            .border(3.dp, rim, shape)
+            .border(if (mini) 2.dp else 3.dp, rim, shape)
             .then(if (onClick != null) Modifier.feedbackClickable(role = Role.Button, onClick = onClick) else Modifier)
             .then(if (clickLabel != null) Modifier.semantics { contentDescription = clickLabel } else Modifier),
     ) {
+        if (mini) {
+            Text(
+                shoe.tier.label(), color = Color(0xFF1B2433), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                modifier = Modifier.padding(6.dp).clip(RoundedCornerShape(4.dp)).background(Color.White.copy(alpha = .82f))
+                    .padding(horizontal = 4.dp, vertical = 1.dp),
+            )
+            ShoeArtThumbnail(
+                shoe, Modifier.align(Alignment.Center).fillMaxWidth(.92f).aspectRatio(1.45f),
+                failedTint = Color.White.copy(alpha = .4f), sample = ShoeArtFull,
+            )
+            LevelCoin(shoe.level, 18.dp, Modifier.align(Alignment.BottomEnd).padding(6.dp))
+            return@Box
+        }
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             // 화면 읽기 · 검사는 "착용 중 · 레어"로 읽는다(눈에는 등급 칩만 — 착용 중은 카드 아래 줄)
             val tierText = shoe.tier.label()
@@ -168,9 +182,9 @@ private fun CardStat(label: String, value: String) {
 
 /** 은빛 동전 위 레벨 숫자 */
 @Composable
-fun LevelCoin(level: Int, size: Dp) {
+fun LevelCoin(level: Int, size: Dp, modifier: Modifier = Modifier) {
     Box(
-        Modifier.size(size).clip(CircleShape)
+        modifier.size(size).clip(CircleShape)
             .background(Brush.linearGradient(listOf(Color(0xFFF2F5FA), Color(0xFFA9B4C6), Color(0xFFE4E9F1))))
             .border(1.dp, Color.White.copy(alpha = .7f), CircleShape),
         contentAlignment = Alignment.Center,

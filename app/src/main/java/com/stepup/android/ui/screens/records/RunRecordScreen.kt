@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.LocationOff
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,11 +88,25 @@ fun RunRecordScreen(
         session != null && session.crewId.isNotEmpty() -> stringResource(R.string.run_rec_kind_crew)
         else -> null
     }
+    var sharing by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     RunRecordContent(
         record = record, route = route, delete = delete, onBack = onBack, onOpenMap = onOpenMap,
         onAskDelete = viewModel::askDelete, onCloseDelete = viewModel::closeDelete,
         onConfirmDelete = { viewModel.confirmDelete(onDeleted) }, kind = kind,
+        onShare = { sharing = true },
     )
+    // 13차(S-415 · S-416) — 지난 러닝도 같은 공유 시트(지도 · 기록 카드). 어느 신발로 달렸는지는 폰 기록에 없어 신발 카드는 없다
+    if (sharing && session != null) {
+        com.stepup.android.ui.screens.walk.RunShareSheet(
+            km = (session.distanceMeters / 1000.0).takeIf { it > 0 },
+            elapsedSec = session.durationSec,
+            startedAt = session.startedAt,
+            steps = session.steps,
+            track = route.orEmpty(),
+            shoe = null,
+            onDismiss = { sharing = false },
+        )
+    }
 }
 
 @Composable
@@ -107,6 +122,8 @@ fun RunRecordContent(
     zone: ZoneId = ZoneId.systemDefault(),
     /** 러닝 종류(챌린지 이름 · 크루 러닝) — 모르면 null. 시간만 남은 러닝은 "시간 기록" */
     kind: String? = null,
+    /** 머리 오른쪽 공유(13차 S-415) — null 이면 두지 않는다 */
+    onShare: (() -> Unit)? = null,
 ) {
     val t = runTone()
     val session = (record as? RecordLookup.Found)?.session
@@ -115,10 +132,15 @@ fun RunRecordContent(
         onBack,
         trailing = if (session == null || failed) null else {
             {
-                RunHeaderAction(
-                    stringResource(R.string.rec_delete), onAskDelete, Modifier.testTag("run-delete"),
-                    danger = true, enabled = delete != DeleteState.Deleting,
-                )
+                androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (onShare != null) {
+                        RunHeaderAction(stringResource(R.string.share_sheet_title), onShare, Modifier.testTag("run-record-share"))
+                    }
+                    RunHeaderAction(
+                        stringResource(R.string.rec_delete), onAskDelete, Modifier.testTag("run-delete"),
+                        danger = true, enabled = delete != DeleteState.Deleting,
+                    )
+                }
             }
         },
     ) {

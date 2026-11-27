@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_run_free_sub">Start now</string>
+    <string name="v13_run_crew_sub">Start with your crew</string>
+    <string name="v13_run_last">%1$s %2$s km</string>
+    <string name="v13_run_crew_rank">Our crew #%1$d</string>
+    <string name="v13_items_done">Done</string>
+    <string name="v13_check_shoe_caption">Shoes for this run</string>
+    <string name="v13_check_change">Change shoes</string>
+    <string name="v13_check_items">Items</string>
+    <string name="v13_check_items_none">None</string>
+    <string name="v13_check_change_to">Switch to %1$s</string>
+    <string name="v13_battery_title">Keep recording with the screen off</string>
+    <string name="v13_battery_later">Later</string>
+    <string name="v13_run_locked">Locked</string>
+    <string name="v13_run_unlock_hold">Hold to unlock</string>
+    <string name="v13_run_earn_steps">Earning %1$s steps</string>
+    <string name="v13_run_end">End</string>
+    <string name="v13_check_title">Check your shoes</string>
+    <string name="v13_run_recording">Recording</string>
+    <string name="v13_run_resume">Keep running</string>
+</resources>

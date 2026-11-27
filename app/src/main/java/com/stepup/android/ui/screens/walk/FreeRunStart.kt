@@ -29,6 +29,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Warning
@@ -190,13 +191,8 @@ internal fun FreeRunShoeCheck(
 ) {
     // 잠금 화면 덮개가 덮고 있으면 창을 띄우지 않는다(LockCover)
     if (com.stepup.android.ui.components.LockCover.hidesWindows()) return
-    Dialog(
-        onDismissRequest = onCancel,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),
-    ) {
-        // 창이 깔아 주는 회색 대신 시안의 뒷면(#020B16 · 73%)을 직접 그린다
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setDimAmount(0f) }
+    // 13차(2026-11-26 S-399) — 가운데 팝업 대신 아래에서 올라오는 시트(지도 판 위로). 닫기는 손잡이 · X
+    com.stepup.android.ui.components.RunSheet(onDismiss = onCancel, closeTag = "run-shoe-check-close") {
         FreeRunShoeCheckContent(
             shoe, onStart, onCancel, shoes = shoes, wearing = wearing, onWear = onWear, onRepair = onRepair,
             runItems = runItems, pickedItems = pickedItems, onPickItem = onPickItem,
@@ -223,19 +219,15 @@ internal fun FreeRunShoeCheckContent(
     energyUsedUp: Boolean = false,
     energySteps: Int? = null,
 ) {
-    val reduced = LocalMotion.current.reduced
-    // 신발 고르기를 열었나 — 같은 카드 안에서 목록으로 바뀐다. 뒤로 가기는 점검으로 돌아온다
+    // 신발 교체(S-400) · 아이템 고르기(S-401)는 같은 시트 안에서 바뀐다. 뒤로 가기는 확인으로 돌아온다
     var picking by rememberSaveable { mutableStateOf(false) }
+    var itemsOpen by rememberSaveable { mutableStateOf(false) }
     var pickFailed by remember { mutableStateOf(false) }
     val canChange = shoes.isNotEmpty()
-    BackHandler(enabled = picking) { picking = false }
-    val shown = remember { Animatable(if (reduced) 1f else 0f) }
+    BackHandler(enabled = picking || itemsOpen) { picking = false; itemsOpen = false }
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        // 카운트다운 전에 StepUP! 그림을 뒤에서 풀어 둔다(전환 중에 풀지 않게)
-        prewarmRunStartWordmark(context)
-        shown.animateTo(1f, tween(250, easing = FreeRunStartMotion.ExitEnter))
-    }
+    // StepUP! 그림을 뒤에서 풀어 둔다(전환 중에 풀지 않게)
+    LaunchedEffect(Unit) { prewarmRunStartWordmark(context) }
     // 출발은 한 번만 — 연타 · 겹친 누름에도 시작 요청은 하나다
     var fired by remember { mutableStateOf(false) }
     val start = {
@@ -244,97 +236,177 @@ internal fun FreeRunShoeCheckContent(
             onStart()
         }
     }
-    BoxWithConstraints(modifier.fillMaxSize().testTag("run-shoe-check"), contentAlignment = Alignment.Center) {
-        val compact = maxWidth < 380.dp
-        // 뒷면 — 누르면 아무 일도 없다(점검은 버튼으로만 닫는다). 아래 러닝 화면을 누르지 않게 막는다
-        Box(
-            Modifier.matchParentSize().graphicsLayer { alpha = shown.value }.background(CheckBackdrop)
-                .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } },
-        )
-        Box(
-            Modifier.safeDrawingPadding().padding(if (compact) 16.dp else 22.dp)
-                .widthIn(max = 316.dp).fillMaxWidth().heightIn(max = maxHeight)
-                .graphicsLayer {
-                    alpha = shown.value
-                    val s = if (reduced) 1f else 0.96f + 0.04f * shown.value
-                    scaleX = s
-                    scaleY = s
-                }
-                .clip(CheckShape).background(CheckFace, CheckShape).border(1.dp, CheckEdge, CheckShape),
-        ) {
-            val side = if (compact) 19.dp else 22.dp
-            Column(
-                Modifier.verticalScroll(rememberScrollState())
-                    .padding(start = side, end = side, top = 27.dp, bottom = 21.dp),
-            ) {
-                if (picking) {
-                    ShoePickList(
-                        shoes = shoes, current = shoe?.id, wearing = wearing, failed = pickFailed,
-                        onPick = { id ->
-                            if (id == shoe?.id) {
-                                picking = false
-                            } else {
-                                pickFailed = false
-                                onWear(id) { worn -> if (worn) picking = false else pickFailed = true }
-                            }
-                        },
-                        onBack = { picking = false },
-                    )
-                } else {
-                    Text(
-                        stringResource(R.string.run_free_check_title),
-                        style = checkText(if (compact) 24.sp else 25.sp, Color.White, FontWeight.Bold, 1.33f, (-0.036).em),
-                        modifier = Modifier.padding(end = 36.dp).semantics { heading() }.testTag("run-shoe-check-title"),
-                    )
-                    if (shoe != null) {
-                        CheckShoe(shoe, onClick = if (canChange) ({ picking = true }) else null)
-                        CheckShoeFacts(shoe, onRepair = onRepair?.let { repair -> { repair(shoe.id) } }.takeIf { !wearing }, energySteps = energySteps)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Column(modifier.fillMaxWidth().testTag("run-shoe-check")) {
+        when {
+            picking -> V13ShoePick(
+                shoes = shoes, current = shoe?.id, wearing = wearing, failed = pickFailed,
+                onPick = { id ->
+                    if (id == shoe?.id) {
+                        picking = false
                     } else {
-                        CheckNoShoe()
+                        pickFailed = false
+                        onWear(id) { worn -> if (worn) picking = false else pickFailed = true }
                     }
-                    // 오늘 적립 한도를 다 썼다(경제 4판 — 에너지 최대치는 가진 신발 가운데 가장 높은 레벨). 출발은 그대로 된다
-                    if (energyUsedUp) CheckEnergyUsedUp()
-                    // 배터리 절전이 켜져 있으면 화면을 끈 뒤 기록이 끊길 수 있다(2026-11-26 테스터) — 한 줄과 설정 열기
-                    CheckBatteryHint()
-                    // 이번 러닝에 쓸 아이템(0106) — 가진 것만, 같은 묶음(적립 배수 · 에너지)은 하나만. 출발하면 그 러닝에 묶여 빠진다
-                    if (runItems.isNotEmpty()) {
-                        RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing, coveredRewardMult = coveredRewardMult)
-                    }
-                    // 이 신발로 출발(주 버튼) — 아래 돌아가기 · 신발 교체
-                    Box(
-                        Modifier.padding(top = 29.dp).fillMaxWidth().heightIn(min = 54.dp).clip(CheckButtonShape)
-                            .background(if (wearing) CheckMeterTrack else StartAccent, CheckButtonShape)
-                            .feedbackClickable(enabled = !wearing, onClick = start).padding(horizontal = 12.dp, vertical = 8.dp)
-                            .testTag("run-shoe-check-go"),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            stringResource(if (shoe != null) R.string.run_free_check_go else R.string.home_start_run),
-                            style = checkText(16.sp, Color.White, FontWeight.SemiBold), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                },
+            )
+            itemsOpen -> {
+                Text(stringResource(R.string.run_items_title), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.semantics { heading() })
+                RunItemPicker(runItems, pickedItems, onPickItem, enabled = !wearing, coveredRewardMult = coveredRewardMult)
+                Spacer(Modifier.height(20.dp))
+                com.stepup.android.ui.components.PrimaryButton(
+                    stringResource(R.string.v13_items_done), { itemsOpen = false }, arrow = false,
+                    modifier = Modifier.fillMaxWidth().testTag("run-items-done"),
+                )
+            }
+            else -> {
+                Text(
+                    stringResource(R.string.v13_check_title), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(end = 40.dp).semantics { heading() }.testTag("run-shoe-check-title"),
+                )
+                Spacer(Modifier.height(16.dp))
+                if (shoe != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        com.stepup.android.ui.components.V12ShoeCard(
+                            shoe, Modifier.width(104.dp).testTag("run-shoe-check-card"), hero = false, mini = true,
+                            onClick = if (canChange) ({ picking = true }) else null,
                         )
-                    }
-                    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        CheckSecondaryButton(stringResource(R.string.run_free_check_back), onCancel, "run-shoe-check-back", Modifier.weight(1f))
-                        if (canChange) {
-                            CheckSecondaryButton(
-                                stringResource(R.string.run_free_check_change), { picking = true }, "run-shoe-check-change", Modifier.weight(1f),
-                                outlined = true,
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.v13_check_shoe_caption), color = c.secondaryLabel, fontSize = 14.sp)
+                            Text(shoe.shoeName(), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2,
+                                overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("run-shoe-check-name"))
+                            Text(
+                                stringResource(R.string.run_free_check_grade_level, shoe.tier.label(), shoe.level),
+                                color = c.secondaryLabel, fontSize = 13.sp, modifier = Modifier.testTag("run-shoe-check-grade"),
                             )
+                            if (canChange) {
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    stringResource(R.string.v13_check_change) + " ›", color = c.accentText, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).feedbackClickable(enabled = !wearing) { picking = true }
+                                        .padding(vertical = 6.dp).testTag("run-shoe-check-change"),
+                                )
+                            }
                         }
                     }
+                    Spacer(Modifier.height(18.dp))
+                    CheckShoeFacts(shoe, onRepair = onRepair?.let { repair -> { repair(shoe.id) } }.takeIf { !wearing }, energySteps = energySteps)
+                } else {
+                    CheckNoShoe()
                 }
-            }
-            val closeLabel = stringResource(R.string.run_free_check_close)
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp).size(44.dp)
-                    .clip(RoundedCornerShape(22.dp)).feedbackClickable(onClick = onCancel)
-                    .semantics { contentDescription = closeLabel }.testTag("run-shoe-check-close"),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = null, tint = CheckClose, modifier = Modifier.size(20.dp))
+                // 오늘 적립 한도를 다 썼다 — 출발은 그대로 된다
+                if (energyUsedUp) CheckEnergyUsedUp()
+                // 이번 러닝에 쓸 아이템(0106) — 한 줄, 누르면 고르기(S-401)
+                if (runItems.isNotEmpty()) {
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().padding(top = 14.dp).height(1.dp).background(c.separator))
+                    val picked = runItems.filter { it.kind in pickedItems }
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(10.dp))
+                            .feedbackClickable(enabled = !wearing) { itemsOpen = true }.testTag("run-items-row"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(stringResource(R.string.v13_check_items), color = c.label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f))
+                        picked.firstOrNull()?.let { item ->
+                            androidx.compose.foundation.Image(
+                                androidx.compose.ui.res.painterResource(com.stepup.android.ui.screens.items.itemArt(item.kind)),
+                                contentDescription = null, modifier = Modifier.size(32.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                        }
+                        Text(
+                            when {
+                                picked.isEmpty() -> stringResource(R.string.v13_check_items_none)
+                                picked.size == 1 -> com.stepup.android.ui.screens.items.itemName(picked.first().kind)
+                                else -> com.stepup.android.ui.screens.items.itemName(picked.first().kind) + " +" + (picked.size - 1)
+                            },
+                            color = if (picked.isEmpty()) c.secondaryLabel else c.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                        )
+                        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = c.tertiaryLabel, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                com.stepup.android.ui.components.PrimaryButton(
+                    stringResource(if (shoe != null) R.string.run_free_check_go else R.string.home_start_run), start,
+                    state = if (wearing) com.stepup.android.ui.components.ButtonState.Disabled else com.stepup.android.ui.components.ButtonState.Idle,
+                    modifier = Modifier.fillMaxWidth().testTag("run-shoe-check-go"),
+                )
             }
         }
     }
+}
+
+/**
+ * 신발 교체(13차 S-400) — 내 신발 줄(작은 카드 · 이름 · 내구도 막대 · 남은 / 가득 분), 신고 있는 신발은 "✓ 착용 중".
+ * 줄을 눌러 고르고 아래 "○○로 교체"로 신는다(예전 1초 꾹 누르기 대신 — 고른 뒤 한 번 더 누르니 스치듯 바뀌지 않는다).
+ */
+@Composable
+private fun V13ShoePick(shoes: List<Sneaker>, current: Long?, wearing: Boolean, failed: Boolean, onPick: (Long) -> Unit) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val rules = rememberShoeRules()
+    var chosen by rememberSaveable { mutableStateOf(current) }
+    Text(stringResource(R.string.run_shoe_pick_title), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold,
+        modifier = Modifier.padding(end = 40.dp).semantics { heading() }.testTag("run-shoe-pick-title"))
+    if (failed) {
+        Text(stringResource(R.string.run_shoe_pick_failed), color = c.live, fontSize = 13.sp,
+            modifier = Modifier.padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite }.testTag("run-shoe-pick-hint"))
+    }
+    Spacer(Modifier.height(12.dp))
+    Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+        shoes.forEach { item ->
+            val on = item.id == chosen
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                    .feedbackClickable(enabled = !wearing, role = androidx.compose.ui.semantics.Role.RadioButton) { chosen = item.id }
+                    .semantics { selected = on }
+                    .padding(vertical = 10.dp).testTag("run-shoe-pick-${item.id}"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                androidx.compose.foundation.layout.Box(
+                    if (on) Modifier.border(2.dp, c.primary, RoundedCornerShape(12.dp)).padding(2.dp) else Modifier.padding(4.dp),
+                ) {
+                    com.stepup.android.ui.components.V12ShoeCard(item, Modifier.width(76.dp), hero = false, mini = true)
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(item.shoeName(), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        if (item.id == current) {
+                            Text("✓ " + stringResource(R.string.run_shoe_pick_wearing), color = c.accentText, fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val f = durabilityPercent(item) / 100f
+                        androidx.compose.foundation.layout.Box(Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.fill)) {
+                            if (f > 0f) androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(f).height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)).background(c.secondaryLabel))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(com.stepup.android.ui.screens.items.durabilityText(item, rules), color = c.label, fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(16.dp))
+    val target = shoes.firstOrNull { it.id == chosen }
+    val changing = target != null && target.id != current
+    com.stepup.android.ui.components.PrimaryButton(
+        if (changing) stringResource(R.string.v13_check_change_to, withRo(target!!.shoeName())) else stringResource(R.string.v13_items_done),
+        { chosen?.let(onPick) },
+        state = when {
+            wearing -> com.stepup.android.ui.components.ButtonState.Loading
+            else -> com.stepup.android.ui.components.ButtonState.Idle
+        },
+        modifier = Modifier.fillMaxWidth().testTag("run-shoe-pick-confirm"),
+    )
 }
 
 /** 신발 그림 — 카드 안쪽 여백까지 조금 넓혀(좌우 12dp) 그림자 위에 놓는다. 그림의 보이는 부분만 맞춘다 */
@@ -363,73 +435,42 @@ private fun CheckShoe(shoe: Sneaker, onClick: (() -> Unit)?) {
 /** 이름 줄(등급 · 레벨) · 남은 내구도 막대 · 준비 줄. 다 닳았으면 경고 줄 아래 "수리하기"([onRepair]) — 주 버튼은 그대로 하나다 */
 @Composable
 private fun CheckShoeFacts(shoe: Sneaker, onRepair: (() -> Unit)? = null, energySteps: Int? = null) {
+    // 13차(S-399) — 내구도 줄("18 / 31분" + 수리) · 막대 · 한 줄("18분 뒤부터 보상 30%" — 신발 수명과 오늘 에너지 가운데 먼저 끝나는 쪽, runCheckLine)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    val rules = rememberShoeRules()
     val points = durabilityPercent(shoe)
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(R.string.run_free_check_equipped), style = checkText(17.sp, Color.White, FontWeight.SemiBold),
-            modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.width(10.dp))
-        Text(
-            stringResource(R.string.run_free_check_grade_level, shoe.tier.label(), shoe.level),
-            style = checkText(12.sp, CheckSubtle, FontWeight.Medium), maxLines = 1,
-            modifier = Modifier.testTag("run-shoe-check-grade"),
-        )
-    }
+    val line = runCheckLine(shoe, rules, energySteps)
+    val worn = line == ShoeCheckLine.WornOut || line == ShoeCheckLine.WornNoEnergy
+    val urgent = worn || line is ShoeCheckLine.Low
     val durabilityLabel = stringResource(R.string.run_free_check_durability)
     Column(
-        Modifier.fillMaxWidth().padding(top = 26.dp).semantics(mergeDescendants = true) {
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
             contentDescription = "$durabilityLabel $points%"
             progressBarRangeInfo = ProgressBarRangeInfo(points / 100f, 0f..1f)
         }.testTag("run-shoe-check-durability"),
     ) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(durabilityLabel, style = checkText(13.sp, CheckLabel), modifier = Modifier.weight(1f))
-            Text("$points%", style = TextStyle(fontFamily = StepUpNumbers, fontWeight = FontWeight.SemiBold, fontSize = 22.sp,
-                color = CheckValue, lineHeight = 1.em, fontFeatureSettings = "tnum"),
-                modifier = Modifier.testTag("run-shoe-check-durability-value"))
-        }
-        Box(Modifier.fillMaxWidth().height(7.dp).clip(RoundedCornerShape(8.dp)).background(CheckMeterTrack)) {
-            Box(Modifier.fillMaxWidth(points / 100f).height(7.dp).clip(RoundedCornerShape(8.dp)).background(CheckMeterFill))
-        }
-    }
-    // 내구도가 다 닳았거나 곧 닳으면 출발 전에 알린다. 예전엔 0% 에서도 "달릴 준비가 됐어요"라, 보상 0 의 까닭을 결과에서도
-    // 몰랐다(2026-10-17 점검)
-    // 서버 0119 — 닳은 신발도 출발을 막지 않는다(막은 적도 없다): 걸음은 그대로 세고 N%만 적립된다. "닳은 신발이에요 · 수리하면 100%,
-    // 그대로 달리면 N% 적립돼요" 한 줄과 아래 "수리하기"만 둔다. 그 전 규칙이면 예전 글(다 닳은 뒤의 걸음은 적립하지 않는다, 0066)
-    // 신발 탭 · 상세의 수리 강조(repairUrgent)와 같은 규칙 — 기준은 그 신발 수명의 절반 · 10분 가운데 작은 것, 가득 찬 신발은 알리지 않는다
-    // 경제 4판(2026-11-18) — 넉넉한 신발도 "이 신발은 약 N분 동안 적립돼요"로 늘 분을 알린다(shoeCheckLine). 분은 효율 포인트를
-    // 넣은 신발이면 그 배수만큼 짧다(0119)
-    // 2026-11-22 경제 점검 — 분은 신발 수명과 오늘 남은 에너지 가운데 먼저 끝나는 쪽(runCheckLine). 에너지가 먼저면 "그 뒤 N%"가 아니라
-    // 내일까지 적립이 멈춘다. 에너지를 모르면 적립 분을 말하지 않는다
-    val rules = rememberShoeRules()
-    val line = runCheckLine(shoe, rules, energySteps)
-    val worn = line == ShoeCheckLine.WornOut || line == ShoeCheckLine.WornNoEnergy
-    if (worn || line is ShoeCheckLine.Low) {
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-low-durability"), verticalAlignment = Alignment.Top) {
-            Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
-            Spacer(Modifier.width(7.dp))
-            Text(shoeCheckLineText(line, rules), style = checkText(12.sp, CheckWarnText))
-        }
-        if (worn && onRepair != null) {
-            // 글자 단추 — 경고 줄과 같은 들여쓰기. 큰 버튼을 더하지 않는다(주 행동은 "이 신발로 출발" 하나)
-            Box(
-                Modifier.padding(start = 16.dp, top = 2.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-                    .feedbackClickable(onClick = onRepair).padding(horizontal = 6.dp).testTag("run-shoe-check-repair"),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Text(stringResource(R.string.care_repair), style = checkText(13.sp, CheckValue, FontWeight.SemiBold), maxLines = 1)
+        Row(Modifier.fillMaxWidth().heightIn(min = 36.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.sdv_stat_durability), color = c.label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f))
+            Text(com.stepup.android.ui.screens.items.durabilityText(shoe, rules), color = if (urgent) c.live else c.label, fontSize = 16.sp,
+                fontWeight = FontWeight.Bold, modifier = Modifier.testTag("run-shoe-check-durability-value"))
+            if (onRepair != null && com.stepup.android.ui.screens.items.repairable(shoe)) {
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.foundation.layout.Box(Modifier.testTag("run-shoe-check-repair")) {
+                    com.stepup.android.ui.screens.items.V12RepairChip(urgent, true, onRepair)
+                }
             }
         }
-    } else {
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-ready"), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = CheckReadyIcon, modifier = Modifier.size(15.dp))
-            Spacer(Modifier.width(7.dp))
-            Text(
-                shoeCheckLineText(line, rules),
-                style = checkText(12.sp, CheckReadyText),
-                modifier = Modifier.testTag("run-shoe-check-earn"),
-            )
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.fill)) {
+            if (points > 0) androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(points / 100f).height(6.dp).clip(RoundedCornerShape(3.dp))
+                .background(if (urgent) Color(0xFFFF7A1A) else c.secondaryLabel))
         }
     }
+    Text(
+        shoeCheckLineText(line, rules), color = if (urgent) c.live else c.secondaryLabel, fontSize = 14.sp,
+        modifier = Modifier.padding(top = 10.dp).testTag(if (urgent) "run-shoe-check-low-durability" else "run-shoe-check-earn"),
+    )
 }
 
 /** 이 앱이 배터리 최적화(절전) 대상인가 — 그러면 폰에 따라(삼성 · 샤오미 등) 화면이 꺼진 뒤 위치 · 걸음이 늦게 오거나 끊긴다 */
@@ -444,27 +485,32 @@ internal fun batteryRestricted(context: android.content.Context): Boolean =
  * "화면을 꺼도 끊기지 않게 배터리 사용을 「제한 없음」으로" 한 줄과 "설정 열기"(앱 정보 › 배터리). 앱으로 돌아오면 다시 읽어,
  * 바꿨으면 줄이 사라진다. 출발을 막지 않는다. 예외 요청 권한(REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)은 쓰지 않는다(Play 정책).
  */
+/**
+ * 배터리 안내(13차 — 처음 한 번, 출발 전 신발 확인 앞에서). 이 앱이 절전 대상일 때만 뜬다: "화면을 꺼도 기록이 끊기지 않게 배터리 사용을
+ * 「제한 없음」으로" + "설정 열기"(앱 정보) · "다음에". 어느 쪽이든 다시 띄우지 않는다. 출발을 막지 않는다 — 닫으면 [onDone] 으로 이어진다.
+ * 예외 요청 권한(REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)은 쓰지 않는다(Play 정책).
+ */
 @Composable
-private fun CheckBatteryHint() {
+internal fun BatteryOnceSheet(onDone: () -> Unit) {
     val context = LocalContext.current
-    var restricted by remember { mutableStateOf(batteryRestricted(context)) }
-    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
-        restricted = batteryRestricted(context)
-        onPauseOrDispose { }
-    }
-    if (!restricted) return
-    Row(Modifier.fillMaxWidth().padding(top = 14.dp).testTag("run-shoe-check-battery"), verticalAlignment = Alignment.Top) {
-        Icon(Icons.Outlined.Warning, contentDescription = null, tint = CheckWarnIcon, modifier = Modifier.padding(top = 2.dp).size(15.dp))
-        Spacer(Modifier.width(7.dp))
-        Text(stringResource(R.string.run_battery_hint), style = checkText(12.sp, CheckWarnText))
-    }
-    Box(
-        Modifier.padding(start = 16.dp, top = 2.dp).heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp))
-            .feedbackClickable { com.stepup.android.core.ExternalIntents.openAppSettings(context) }
-            .padding(horizontal = 6.dp).testTag("run-shoe-check-battery-open"),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(stringResource(R.string.run_battery_open), style = checkText(13.sp, CheckValue, FontWeight.SemiBold), maxLines = 1)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    com.stepup.android.ui.components.RunSheet(onDismiss = onDone, modifier = Modifier.testTag("run-battery-sheet")) {
+        Text(stringResource(R.string.v13_battery_title), color = c.label, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(end = 40.dp).semantics { heading() })
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.run_battery_hint), color = c.secondaryLabel, fontSize = 15.sp)
+        Spacer(Modifier.height(20.dp))
+        com.stepup.android.ui.components.PrimaryButton(
+            stringResource(R.string.run_battery_open), {
+                com.stepup.android.core.ExternalIntents.openAppSettings(context)
+                onDone()
+            }, arrow = false, modifier = Modifier.fillMaxWidth().testTag("run-battery-open"),
+        )
+        Text(
+            stringResource(R.string.v13_battery_later), color = c.secondaryLabel, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp).clip(RoundedCornerShape(10.dp))
+                .feedbackClickable(onClick = onDone).padding(horizontal = 16.dp, vertical = 12.dp).testTag("run-battery-later"),
+        )
     }
 }
 
@@ -984,4 +1030,15 @@ internal suspend fun prefetchRunMapTiles(context: Context, here: GeoPoint, width
     for (chunk in wanted.chunked(4)) {
         coroutineScope { chunk.map { (tx, ty) -> async { MapTiles.load(context, plan.zoom, tx, ty) } }.awaitAll() }
     }
+}
+
+/** 한국어 "로 / 으로" — 받침이 없거나 ㄹ 받침이면 "로". 한국어 화면에서만 붙인다(다른 언어는 문자열이 문장을 짠다) */
+@Composable
+private fun withRo(word: String): String {
+    val korean = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]?.language == "ko"
+    if (!korean) return word
+    val last = word.trim().lastOrNull() ?: return word
+    if (last !in '가'..'힣') return word + "(으)로"
+    val jong = (last - '가') % 28
+    return word + if (jong == 0 || jong == 8) "로" else "으로"
 }

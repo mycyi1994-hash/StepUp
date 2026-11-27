@@ -38,6 +38,10 @@
              (getLaunchIntentForPackage, Android 11+ 는 이 줄이 없으면 못 찾는다). MetaMask 는 https · OKX 는 okx 링크로 연다.
              MetaMask · OKX 패키지 찾기는 테스트 판(src/debug 매니페스트 — debug · qa)에만 -->
         <package android:name="com.debank.rabbymobile" />
+        <!-- 13차 공유 시트 — 깔린 앱만 보낼 곳으로 보이고, 아이콘은 그 앱의 공식 아이콘을 읽는다 -->
+        <package android:name="com.instagram.android" />
+        <package android:name="com.kakao.talk" />
+        <package android:name="com.twitter.android" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />

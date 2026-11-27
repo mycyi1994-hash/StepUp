@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_run_free_sub">바로 시작</string>
+    <string name="v13_run_crew_sub">크루와 함께 출발</string>
+    <string name="v13_run_last">%1$s %2$skm</string>
+    <string name="v13_run_crew_rank">우리 크루 %1$d위</string>
+    <string name="v13_items_done">확인</string>
+    <string name="v13_check_shoe_caption">신고 갈 신발</string>
+    <string name="v13_check_change">신발 교체</string>
+    <string name="v13_check_items">아이템</string>
+    <string name="v13_check_items_none">고르지 않음</string>
+    <string name="v13_check_change_to">%1$s 교체</string>
+    <string name="v13_battery_title">화면을 꺼도 계속 기록되게</string>
+    <string name="v13_battery_later">다음에</string>
+    <string name="v13_run_locked">잠김</string>
+    <string name="v13_run_unlock_hold">길게 눌러 해제</string>
+    <string name="v13_run_earn_steps">적립 %1$s걸음</string>
+    <string name="v13_run_end">종료</string>
+    <string name="v13_check_title">출발 전 신발 확인</string>
+    <string name="v13_run_recording">기록 중</string>
+    <string name="v13_run_resume">이어 달리기</string>
+</resources>

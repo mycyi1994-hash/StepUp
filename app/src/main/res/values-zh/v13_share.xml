@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_sheet_title">分享</string>
+    <string name="share_to_instagram">Instagram</string>
+    <string name="share_to_kakao">KakaoTalk</string>
+    <string name="share_to_x">X</string>
+    <string name="share_to_save">保存图片</string>
+    <string name="share_to_more">更多</string>
+    <string name="share_link_copy">复制</string>
+    <string name="share_link_copied">已复制链接</string>
+    <string name="share_card_failed">无法生成图片</string>
+    <string name="share_run_date_pattern">M月d日</string>
+    <string name="share_daypart_morning">早晨</string>
+    <string name="share_daypart_day">白天</string>
+    <string name="share_daypart_evening">傍晚</string>
+    <string name="share_daypart_night">夜间</string>
+    <string name="share_run_title">%1$s %2$s跑步</string>
+    <string name="share_run_text">用 StepUp 跑了 %1$s km · %2$s</string>
+    <string name="share_card_steps">步数</string>
+    <string name="share_card_shoe">跑鞋</string>
+    <string name="share_chip_map">地图</string>
+    <string name="share_chip_record">记录</string>
+    <string name="share_chip_shoe">跑鞋</string>
+    <string name="share_run_with_shoe">与%1$s一起</string>
+    <string name="v13_rank_share_title">本周团队排名</string>
+    <string name="v13_rank_value">第%1$d名</string>
+    <string name="v13_rank_up">比上周上升%1$d名</string>
+    <string name="v13_rank_down">比上周下降%1$d名</string>
+    <string name="v13_rank_same">与上周排名相同</string>
+    <string name="v13_rank_members">人数</string>
+    <string name="v13_rank_members_value">%1$d人</string>
+    <string name="v13_rank_share_text">StepUp 本周团队排名 · %1$s 第%2$d名</string>
+</resources>

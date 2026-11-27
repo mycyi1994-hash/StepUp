@@ -39,7 +39,7 @@ object AppChromePolicy {
         // 신발 뽑기 — 신발 탭의 뽑기 글자 탭(2026-10-26). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
         Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
-        Destination(Routes.RUN_MENU, Screen.Run, Header.Focus),
+        Destination(Routes.RUN_MENU, Screen.Run, Header.Detail),
         Destination(Routes.RUN_GOALS, Screen.Run, Header.Focus),
         Destination(Routes.RUN_GOAL_HISTORY, Screen.Run, Header.Focus),
         Destination(Routes.RUN_COURSE, Screen.Run, Header.Focus),

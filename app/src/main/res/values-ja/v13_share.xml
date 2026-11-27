@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_sheet_title">共有</string>
+    <string name="share_to_instagram">Instagram</string>
+    <string name="share_to_kakao">カカオトーク</string>
+    <string name="share_to_x">X</string>
+    <string name="share_to_save">画像を保存</string>
+    <string name="share_to_more">その他</string>
+    <string name="share_link_copy">コピー</string>
+    <string name="share_link_copied">リンクをコピーしました</string>
+    <string name="share_card_failed">画像を作れませんでした</string>
+    <string name="share_run_date_pattern">M月d日</string>
+    <string name="share_daypart_morning">朝</string>
+    <string name="share_daypart_day">昼</string>
+    <string name="share_daypart_evening">夕方</string>
+    <string name="share_daypart_night">夜</string>
+    <string name="share_run_title">%1$s %2$sのラン</string>
+    <string name="share_run_text">StepUpで %1$s km · %2$s 走りました</string>
+    <string name="share_card_steps">歩数</string>
+    <string name="share_card_shoe">シューズ</string>
+    <string name="share_chip_map">地図</string>
+    <string name="share_chip_record">記録</string>
+    <string name="share_chip_shoe">シューズ</string>
+    <string name="share_run_with_shoe">%1$sと一緒に</string>
+    <string name="v13_rank_share_title">今週のクルー順位</string>
+    <string name="v13_rank_value">%1$d位</string>
+    <string name="v13_rank_up">先週より%1$d位アップ</string>
+    <string name="v13_rank_down">先週より%1$d位ダウン</string>
+    <string name="v13_rank_same">先週と同じ順位</string>
+    <string name="v13_rank_members">人数</string>
+    <string name="v13_rank_members_value">%1$d人</string>
+    <string name="v13_rank_share_text">StepUp 今週のクルー順位 · %1$s %2$d位</string>
+</resources>

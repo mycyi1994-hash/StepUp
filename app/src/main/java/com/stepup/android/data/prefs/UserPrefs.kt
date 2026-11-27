@@ -81,6 +81,8 @@ class UserPrefs(
         val NICKNAME_SYNCED = stringPreferencesKey("nickname_synced")
         /** 업데이트 소식 창을 마지막으로 보인 앱 판(versionName) — 2026-11-26 */
         val PATCH_NOTES_SEEN = stringPreferencesKey("patch_notes_seen")
+        /** 배터리 「제한 없음」 안내를 한 번 보였다(13차 — 처음 러닝 전에 한 번) */
+        val BATTERY_HINT_SEEN = androidx.datastore.preferences.core.booleanPreferencesKey("battery_hint_seen")
 
         // ── 핫글 ──
         /** 이번 주 핫글 목록 (순서 있는 글 id) */
@@ -608,6 +610,12 @@ class UserPrefs(
 
     suspend fun setPatchNotesSeen(version: String) {
         store.edit { it[Keys.PATCH_NOTES_SEEN] = version }
+    }
+
+    suspend fun batteryHintSeen(): Boolean = store.data.map { it[Keys.BATTERY_HINT_SEEN] ?: false }.first()
+
+    suspend fun setBatteryHintSeen() {
+        store.edit { it[Keys.BATTERY_HINT_SEEN] = true }
     }
 
     suspend fun setNicknameSynced(mark: String?) {

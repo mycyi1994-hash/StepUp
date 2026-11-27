@@ -389,7 +389,7 @@ internal fun FreeRunLive(
     val title = when (mode) {
         FreeLiveMode.Idle -> stringResource(R.string.runflow_free)
         FreeLiveMode.Saving -> stringResource(R.string.run_saving_title)
-        FreeLiveMode.Live -> stringResource(if (paused) R.string.run_paused_title else R.string.run_free_chip_running)
+        FreeLiveMode.Live -> stringResource(if (paused) R.string.run_paused_title else R.string.v13_run_recording)
         FreeLiveMode.Failed, FreeLiveMode.DiscardFailed -> stringResource(R.string.run_paused_title)
     }
     val titleTag = when {
@@ -412,7 +412,7 @@ internal fun FreeRunLive(
                 onBack = onBack, onDetails = onDetails, onExpandMap = onExpandMap,
                 paused = paused, onPrimary = onPrimary, onLock = { locked = true },
                 onHoldEnd = onHoldEnd, onHint = { tip = it }, onHolding = { holding -> tip = null; heldTip = holding },
-                shoe = shoe, steps = steps,
+                shoe = shoe, steps = steps, locked = locked, onUnlock = { locked = false },
             )
         } else FreeRunScaffold(
             rootTag = if (mode == FreeLiveMode.Saving) "run-saving" else "run-live",
@@ -488,7 +488,8 @@ internal fun FreeRunLive(
         if (bubble != null && live) {
             HoldBubble(bubble, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 100.dp).testTag("run-hold-tip"))
         }
-        if (locked) LockOverlay(onUnlock = { locked = false })
+        // 달리는 중(지도 판)은 판 안에서 잠근다(13차 S-386 — 주 버튼이 "길게 눌러 해제"), 그 밖의 화면만 예전 덮개
+        if (locked && !live) LockOverlay(onUnlock = { locked = false })
     }
 }
 
@@ -519,9 +520,13 @@ private fun FreeRunMapLive(
     onHolding: (Boolean) -> Unit,
     shoe: com.stepup.android.domain.Sneaker? = null,
     steps: Int? = null,
+    locked: Boolean = false,
+    onUnlock: () -> Unit = {},
 ) {
     val c = StepUpUi.colors
     val t = runTone()
+    if (locked) androidx.activity.compose.BackHandler { }
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(c.background).testTag("run-live")) {
         Box(Modifier.fillMaxWidth().weight(1f).background(c.mapBackground)) {
             CompositionLocalProvider(LocalMapTone provides MapTone(t.mapFilter, t.mapShade, t.mapRoads)) {
@@ -533,17 +538,19 @@ private fun FreeRunMapLive(
                         com.stepup.android.ui.components.BackButton(onBack, modifier = Modifier.testTag("run-back"))
                         Spacer(Modifier.width(8.dp))
                     }
-                    Column(
-                        Modifier.clip(RoundedCornerShape(16.dp)).background(c.card.copy(alpha = .94f))
-                            .stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface).padding(horizontal = 14.dp, vertical = 8.dp),
+                    // 13차(S-362) — 상태 알약 "● 기록 중"(빨간 점) · "● 일시정지"(회색) · 잠그면 "● 기록 중 · 잠김"
+                    Row(
+                        Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(50)).background(c.card.copy(alpha = .94f))
+                            .stepUpRim(RoundedCornerShape(50), RimKind.Surface).padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(if (paused) c.tertiaryLabel else c.live))
+                        Spacer(Modifier.width(7.dp))
                         Text(
-                            title, style = StepUpUi.type.rowTitle.copy(fontWeight = FontWeight.ExtraBold), color = c.label, maxLines = 1,
+                            if (locked) title + " · " + stringResource(R.string.v13_run_locked) else title,
+                            style = StepUpUi.type.rowTitle.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold), color = c.label, maxLines = 1,
                             modifier = Modifier.semantics { heading() }.then(if (titleTag != null) Modifier.testTag(titleTag) else Modifier),
                         )
-                        if (place != null) {
-                            Text(place, style = StepUpUi.type.caption, color = c.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
                     }
                     Spacer(Modifier.weight(1f))
                     when {
@@ -556,19 +563,7 @@ private fun FreeRunMapLive(
                     top()
                 }
             }
-            Column(
-                Modifier.align(Alignment.BottomEnd).padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                if (onDetails != null) {
-                    CircleIconButton(Icons.Rounded.MoreHoriz, stringResource(R.string.run_details), onDetails,
-                        modifier = Modifier.testTag("run-details-open"))
-                }
-                if (onExpandMap != null) {
-                    CircleIconButton(Icons.Outlined.Map, stringResource(R.string.run_map_short), onExpandMap,
-                        modifier = Modifier.testTag("run-map-expand"))
-                }
-            }
+            // 13차 — 지도 위 ••• · 지도 크게 버튼은 뺐다(러닝 정보는 알림 띠를 누르면)
         }
         // v12 시제품(2026-11-26) — 지도 아래 판: 큰 거리 · 걸음 · 시간 · 페이스 · 속도 · 신발 칸 · 큰 일시정지 · "길게 눌러 종료 · 잠금"
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 22.dp).padding(top = 14.dp, bottom = 10.dp)) {
@@ -585,7 +580,7 @@ private fun FreeRunMapLive(
                     modifier = Modifier.alignByBaseline())
             }
             if (steps != null) {
-                Text(stringResource(R.string.v12_run_steps, "%,d".format(steps)), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
+                Text(stringResource(R.string.v13_run_earn_steps, "%,d".format(steps)), style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel,
                     modifier = Modifier.testTag("run-steps-line"))
             }
             Spacer(Modifier.height(10.dp))
@@ -599,16 +594,21 @@ private fun FreeRunMapLive(
                 RunShoeStrip(shoe, numbers.durability)
             }
             Spacer(Modifier.height(14.dp))
+            if (locked) {
+                // 자리만 — 위 덮개 위에 "길게 눌러 해제"를 같은 자리에 그린다
+                Spacer(Modifier.height(58.dp + 50.dp))
+            } else {
             LivePrimaryPill(
                 if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                stringResource(if (paused) R.string.run_resume_short else R.string.run_pause),
+                stringResource(if (paused) R.string.v13_run_resume else R.string.run_pause),
                 onPrimary, Modifier.fillMaxWidth().testTag("run-primary-action"),
             )
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically) {
-                HoldEndPill(onHoldEnd, onHint, onHolding, Modifier, compact = true)
-                Row(
+                // 멈춘 동안은 "■ 종료"(여전히 1초 길게 — 실수로 끝내지 않게) · 잠금 없음
+                HoldEndPill(onHoldEnd, onHint, onHolding, Modifier, compact = true, label = if (paused) stringResource(R.string.v13_run_end) else null)
+                if (!paused) Row(
                     Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(10.dp)).feedbackClickable(onClick = onLock)
                         .padding(horizontal = 8.dp).testTag("run-lock"),
                     verticalAlignment = Alignment.CenterVertically,
@@ -618,6 +618,54 @@ private fun FreeRunMapLive(
                     Text(stringResource(R.string.v12_run_lock), style = LiveActionLabel, color = c.label)
                 }
             }
+            }
+        }
+    }
+    // 잠긴 동안 — 판 위 누름을 모두 막는다(아래 "길게 눌러 해제"만 받는다 — 같은 자리에 다시 그린다)
+    if (locked) {
+        Box(Modifier.fillMaxSize().pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } } }
+            .testTag("run-locked"))
+        LiveHoldPill(
+            stringResource(R.string.v13_run_unlock_hold), onUnlock,
+            Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 22.dp).padding(bottom = 60.dp).fillMaxWidth()
+                .testTag("run-unlock"),
+        )
+    }
+    }
+}
+
+/** 길게 눌러 푸는 블루 알약(13차 S-386) — 1초 누르는 동안 흰 막이 차오르고, 다 차면 [onDone]. 짧게 누르면 아무 일도 없다 */
+@Composable
+private fun LiveHoldPill(label: String, onDone: () -> Unit, modifier: Modifier) {
+    val c = StepUpUi.colors
+    val progress = remember { androidx.compose.animation.core.Animatable(0f) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val done by androidx.compose.runtime.rememberUpdatedState(onDone)
+    Row(
+        modifier.height(58.dp).clip(RoundedCornerShape(29.dp)).background(c.primary)
+            .drawBehind { drawRect(Color.White.copy(alpha = .28f), size = size.copy(width = size.width * progress.value)) }
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    val job = scope.launch {
+                        progress.animateTo(1f, androidx.compose.animation.core.tween(1_000, easing = androidx.compose.animation.core.LinearEasing))
+                        done()
+                    }
+                    tryAwaitRelease()
+                    job.cancel()
+                    scope.launch { progress.animateTo(0f, androidx.compose.animation.core.tween(160)) }
+                })
+            }
+            .semantics {
+                contentDescription = label
+                role = androidx.compose.ui.semantics.Role.Button
+                onLongClick(label = label) { done(); true }
+            }
+            .padding(start = 22.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = StepUpUi.type.button, color = c.onPrimary, modifier = Modifier.weight(1f))
+        Box(Modifier.size(42.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Lock, null, tint = c.primary, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -716,7 +764,7 @@ private fun LiveCell(label: String, value: String, unit: String?, tag: String, m
         Text(label, style = StepUpUi.type.rowSubtitle, color = c.secondaryLabel, maxLines = 1)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                value, style = StepUpUi.type.numberStat.copy(fontSize = 38.sp, lineHeight = 40.sp), color = c.label, maxLines = 1, softWrap = false,
+                value, style = StepUpUi.type.numberStat.copy(fontSize = 28.sp, lineHeight = 32.sp), color = c.label, maxLines = 1, softWrap = false,
                 modifier = Modifier.alignByBaseline().testTag(tag),
             )
             if (unit != null) {
@@ -750,10 +798,14 @@ private fun LivePill(icon: ImageVector, label: String, primary: Boolean, onClick
 
 /** 정지 — 1초 길게 누르면 마친다. 누르는 동안 버튼이 왼쪽부터 빨갛게 차고 살짝 작아진다. 짧게 누르면 말풍선 안내 */
 @Composable
-private fun HoldEndPill(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: (Boolean) -> Unit, modifier: Modifier, compact: Boolean = false) {
+private fun HoldEndPill(
+    onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: (Boolean) -> Unit, modifier: Modifier, compact: Boolean = false,
+    /** 글자 단추의 글 — 없으면 "길게 눌러 종료"(멈춘 동안은 "종료" — 13차 S-365, 누르는 법은 그대로 1초 길게) */
+    label: String? = null,
+) {
     val c = StepUpUi.colors
     val hint = stringResource(R.string.run_hold_end_hint)
-    val label = stringResource(R.string.run_stop)
+    val stopLabel = stringResource(R.string.run_stop)
     val scope = rememberCoroutineScope()
     val progress = remember { androidx.compose.animation.core.Animatable(0f) }
     var done by remember { mutableStateOf(false) }
@@ -765,9 +817,9 @@ private fun HoldEndPill(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: 
             .clip(shape).then(if (compact) Modifier else Modifier.background(c.card).stepUpRim(shape, RimKind.Surface))
             .semantics {
                 role = androidx.compose.ui.semantics.Role.Button
-                contentDescription = label
+                contentDescription = stopLabel
                 onClick(label = hint) { onHint(hint); true }
-                onLongClick(label = label) { if (!done) { done = true; end() }; true }
+                onLongClick(label = stopLabel) { if (!done) { done = true; end() }; true }
             }
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
@@ -796,12 +848,12 @@ private fun HoldEndPill(onEnd: () -> Unit, onHint: (String) -> Unit, onHolding: 
             Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(11.dp).background(c.label, RoundedCornerShape(2.dp)))
                 Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.run_hold_end), style = LiveActionLabel, color = c.label, maxLines = 1)
+                Text(label ?: stringResource(R.string.run_hold_end), style = LiveActionLabel, color = c.label, maxLines = 1)
             }
         } else Column(Modifier.padding(horizontal = 6.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.padding(3.dp).size(16.dp).border(2.dp, c.label, RoundedCornerShape(3.dp)))
             Spacer(Modifier.height(4.dp))
-            Text(label, style = LiveActionLabel, color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stopLabel, style = LiveActionLabel, color = c.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
