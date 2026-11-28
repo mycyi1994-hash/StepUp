@@ -623,7 +623,10 @@ class CrewCardsDesignTest {
             shot("59-transfer-confirm")
             tapTag("crew-transfer-confirm-yes")
             awaitTag("crew-detail")
-            awaitText("크루장 민수")
+            // 크루장 줄(v12 — "크루장" · 이름 두 칸)
+            compose.waitUntil(20_000) {
+                runCatching { compose.onNodeWithTag("crew-detail-leader").assertTextContains("민수", substring = true) }.isSuccess
+            }
             shot("86-after-transfer")
         }
     }

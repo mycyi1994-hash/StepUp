@@ -133,6 +133,7 @@ fun FlashRunDetailScreen(
     }
     // 이 번개의 대기실이 이미 출발했으면 번개 취소를 두지 않는다 — 지우면 달리는 사람들의 방 · 인원 보너스가 사라진다(#9)
     val party by com.stepup.android.core.ServiceLocator.crewRepository.party.collectAsStateWithLifecycle()
+    var sharing by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize().background(c.background).testTag("flash-detail")) {
         if (post == null) {
@@ -143,7 +144,9 @@ fun FlashRunDetailScreen(
             }
             return@Box
         }
-        val share = { shareFlash(context, post) }
+        // 13차 S-419 — 친구 부르기는 공유 시트(카드 미리보기 · 보낼 곳 · 링크 복사)
+        val share = { sharing = true }
+        if (sharing) FlashInviteShareSheet(post, onDismiss = { sharing = false })
         // 참가한 사람(쓴 사람)은 모이는 시각이 지나도 한동안 대기실로 간다(Post.lobbyOpen) — 다른 사람에게는 마감 그대로
         val lobby = post.lobbyOpen()
         Column(Modifier.fillMaxSize()) {
@@ -254,6 +257,9 @@ fun FlashRunDetailScreen(
 private fun meetClock(meetAt: Long): String =
     Instant.ofEpochMilli(meetAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))
 
+/** 포스터의 LIVE 표시 — 모이는 시각 10분 전부터 */
+internal const val FLASH_LIVE_WINDOW_MS = 10 * 60 * 1000L
+
 /** 사진 포스터(시안 393 × 420) — 모이는 곳 사진 · 날씨 효과 · 아래로 어둡게, 위 유리 원 버튼, 아래 LIVE · 시각 · 제목 */
 @Composable
 internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, onMore: () -> Unit) {
@@ -278,7 +284,8 @@ internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, on
                 // 원격 뛰기(0076)는 모이는 곳 대신 방식을 적는다
                 listOf(status, if (post.remote) stringResource(R.string.d26_mode_remote) else post.place.ifBlank { null })
                     .filterNotNull().joinToString(" · "),
-                live = !post.isClosed,
+                // LIVE 는 곧 출발할 때(10분 안)만 — "1시간 뒤 출발"에 LIVE 가 붙으면 이미 달리는 모임처럼 읽혔다(2026-11-28 디자인 점검)
+                live = !post.isClosed && post.meetAt - System.currentTimeMillis() <= FLASH_LIVE_WINDOW_MS,
             )
             Spacer(Modifier.height(8.dp))
             Text(
@@ -378,15 +385,26 @@ internal fun FlashJoined(post: Post, onClose: () -> Unit, onInvite: () -> Unit, 
     }
 }
 
-/** 친구 부르기 · 공유 — 제목 · 시각 · 장소를 글로, 아래 줄에 그 번개 링크(`/f/<글 번호>` — 앱이 있으면 그 번개가 열린다) */
-private fun shareFlash(context: android.content.Context, post: Post) {
-    val where = if (post.remote) context.getString(R.string.d26_room_remote_line) else post.place.ifBlank { "—" }
-    val text = context.getString(R.string.flash_share_text, post.title, meetClock(post.meetAt), where) +
-        "\n" + com.stepup.android.core.InviteLinks.flashLink(post.id)
-    runCatching {
-        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
+/** 친구 부르기 · 공유(13차 S-419) — 보내는 글은 예전 그대로(제목 · 시각 · 장소, 아래 줄에 그 번개 링크 `/f/<글 번호>`) */
+@Composable
+private fun FlashInviteShareSheet(post: Post, onDismiss: () -> Unit) {
+    val where = if (post.remote) stringResource(R.string.d26_room_remote_line) else post.place.ifBlank { "—" }
+    val link = com.stepup.android.core.InviteLinks.flashLink(post.id)
+    val text = stringResource(R.string.flash_share_text, post.title, meetClock(post.meetAt), where) + "\n" + link
+    val title = stringResource(R.string.v13_flash_invite_title)
+    val head = stringResource(R.string.v13_flash_card_head, meetClock(post.meetAt))
+    val lines = listOfNotNull(
+        where,
+        if (post.capacity > 0) stringResource(R.string.v13_flash_seats, post.joinedCount, post.capacity) else null,
+    )
+    com.stepup.android.ui.components.StepUpShareSheet(
+        options = listOf(
+            com.stepup.android.ui.components.ShareCardOption("flash", title) { ctx ->
+                com.stepup.android.ui.components.ShareCards.invite(ctx, head, post.title, lines, null)
+            },
+        ),
+        text = text, fileName = "StepUp-flash-${post.id}", onDismiss = onDismiss, title = title, link = link,
+    )
 }
 
 /** 캘린더에 넣기 — 기기 캘린더 앱의 새 일정 화면(집결 시각부터 1시간 · 장소 · 제목). 저장은 사용자가 그 앱에서 한다 */

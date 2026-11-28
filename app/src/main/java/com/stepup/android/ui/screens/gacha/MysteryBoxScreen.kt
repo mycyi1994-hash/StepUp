@@ -41,6 +41,8 @@ class DrawActions(
     /** 불러오기 실패 시트의 "내 신발로 돌아가기" — 신발 탭(내 신발)으로 */
     val onBack: () -> Unit = {},
     val onDraw: (DrawKind) -> Unit = {},
+    /** 13차 "10회 뽑기" — 한 번 뽑기를 차례로(DrawViewModel.drawMany) */
+    val onDrawMany: (DrawKind, Int) -> Unit = { _, _ -> },
     /** 기존 웹 지갑 페이지(서명 · 2단계 인증)에서 연결한다. 앱이 아는 것은 돌아와 읽은 서버의 연결 여부뿐이다 */
     val onConnectWallet: () -> Unit = {},
     val onRetry: () -> Unit = {},
@@ -107,7 +109,9 @@ fun MysteryBoxScreen(
         when (flow) {
             is DrawFlow.Requesting, is DrawFlow.Checking -> actions.onLeaveFlow()
             is DrawFlow.Opening -> actions.onFinishOpening()
-            is DrawFlow.Result -> actions.onCloseResult()
+            is DrawFlow.Result, is DrawFlow.BatchResult -> actions.onCloseResult()
+            // 다 받았으면 결과로, 받는 중이면 요청을 둔 채 메인으로(끝나면 "결과 확인")
+            is DrawFlow.Batch -> if (flow.done) actions.onFinishOpening() else actions.onLeaveFlow()
             DrawFlow.Home -> Unit
         }
     }
@@ -156,6 +160,21 @@ fun MysteryBoxScreen(
                     onClose = actions.onCloseResult,
                 )
                 is DrawFlow.Checking -> DrawCheckScreen(current, onCheck = actions.onCheckPending, onBack = actions.onLeaveFlow)
+                is DrawFlow.Batch -> DrawBatchScreen(
+                    current, onBack = if (current.done) actions.onFinishOpening else actions.onLeaveFlow, onDone = actions.onFinishOpening,
+                )
+                is DrawFlow.BatchResult -> {
+                    // "한 번 더 N회" — 남은 수(서버 값)가 둘 이상일 때만, 누른 수까지
+                    val again = if (pending == null && status?.canDraw(current.kind, web3) == true) {
+                        minOf(current.asked, status.shownLeft(current.kind, web3))
+                    } else 0
+                    DrawBatchResultScreen(
+                        current, againCount = again,
+                        onAgain = { actions.onDrawMany(current.kind, again) },
+                        onOpenShoe = { actions.onOpenShoes(it) },
+                        onClose = actions.onCloseResult,
+                    )
+                }
             }
         }
         LaunchedEffect(notice) {
@@ -241,7 +260,15 @@ fun MysteryBoxScreen(
             val shopStep by shop.step.collectAsStateWithLifecycle()
             val shopLoading by shop.loading.collectAsStateWithLifecycle()
             val shopFailed by shop.failed.collectAsStateWithLifecycle()
+            // 하루 걸음 상자(0128) 기준 · 러너 레벨 켜짐 — 서버 값. 못 읽으면 그 줄이 없다
+            val stepBoxNeed by androidx.compose.runtime.produceState<Int?>(null) {
+                value = runCatching { com.stepup.android.core.ServiceLocator.stepBoxClaim() }.getOrNull()
+                    ?.let { (it as? com.stepup.android.data.remote.ServerResult.Ok)?.value }
+                    ?.takeIf { it.on }?.need
+            }
+            val runnerOn = remember { runCatching { com.stepup.android.core.ServiceLocator.runnerLevel.now != null }.getOrDefault(false) }
             BoxSourcesSheet(
+                stepBoxNeed = stepBoxNeed, runnerOn = runnerOn,
                 boxes = shopBoxes, step = shopStep, loading = shopLoading, failed = shopFailed,
                 onAsk = shop::ask, onConfirm = { shop.confirm(actions.onBoxesBought) }, onCancel = shop::cancel,
                 onReload = shop::reload,

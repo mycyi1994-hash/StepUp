@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_run_free_sub">すぐにスタート</string>
+    <string name="v13_run_crew_sub">クルーと一緒に出発</string>
+    <string name="v13_run_last">%1$s %2$skm</string>
+    <string name="v13_run_crew_rank">マイクルー %1$d位</string>
+    <string name="v13_items_done">完了</string>
+    <string name="v13_check_shoe_caption">履いていくシューズ</string>
+    <string name="v13_check_change">シューズ変更</string>
+    <string name="v13_check_items">アイテム</string>
+    <string name="v13_check_items_none">なし</string>
+    <string name="v13_check_change_to">%1$sに変更</string>
+    <string name="v13_battery_title">画面を消しても記録を続けるには</string>
+    <string name="v13_battery_later">あとで</string>
+    <string name="v13_run_locked">ロック中</string>
+    <string name="v13_run_unlock_hold">長押しで解除</string>
+    <string name="v13_run_earn_steps">獲得 %1$s歩</string>
+    <string name="v13_run_end">終了</string>
+    <string name="v13_check_title">出発前のシューズ確認</string>
+    <string name="v13_run_recording">記録中</string>
+    <string name="v13_run_resume">ランを再開</string>
+</resources>

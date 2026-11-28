@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,7 +83,15 @@ import com.stepup.android.ui.theme.VoltText
 @Composable
 fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val ui = StepUpUi.colors
-    val amount = balance?.let { formatSupDown(it, 2) } ?: "—"
+    // 로그인 전에는 잔액을 모른다 — 폰 장부의 0 을 "0.00 SUP" 로 보이면 실제 잔액처럼 읽힌다(2026-11-28 디자인 점검).
+    // 서버 경제를 쓰지 않는 판(폰 장부가 곧 잔액)은 그대로 보인다
+    val signedOut by androidx.compose.runtime.produceState(initialValue = false) {
+        value = runCatching {
+            com.stepup.android.core.ServiceLocator.serverEconomyOn &&
+                !com.stepup.android.core.ServiceLocator.sessionHolder.isSignedIn()
+        }.getOrDefault(false)
+    }
+    val amount = balance?.takeUnless { signedOut }?.let { formatSupDown(it, 2) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
     Box(
         modifier = modifier
@@ -144,12 +153,10 @@ fun FocusHeader(title: String, onBack: () -> Unit, action: (@Composable () -> Un
         Modifier.fillMaxWidth().heightIn(min = StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
-            cue = FeedbackCue.Back)
+        RunBackButton(onBack, tint = Snow)
         Text(
-            title, modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-            fontSize = StepUpDesign.PrimaryLabel, fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center, color = Snow,
+            title, modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+            fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Snow,
         )
         if (action != null) action() else Spacer(Modifier.size(StepUpDesign.TouchTarget))
     }
@@ -272,13 +279,13 @@ fun SecondaryHeader(
             .heightIn(min = com.stepup.android.ui.theme.StepUpDesign.HeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DarkIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onClick = onBack,
-            cue = FeedbackCue.Back)
-        Box(Modifier.weight(1f), contentAlignment = if (titleContent != null) Alignment.CenterStart else Alignment.Center) {
+        // v12 시제품(2026-11-26) — 곧은 화살표(원 없음) · 제목은 화살표 옆 왼쪽(로고만 가운데)
+        RunBackButton(onBack, tint = Snow)
+        Box(Modifier.weight(1f), contentAlignment = if (titleContent != null || title != null) Alignment.CenterStart else Alignment.Center) {
             when {
                 titleContent != null -> titleContent()
                 title == null -> Wordmark()
-                else -> Text(title, color = Snow, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                else -> Text(title, color = Snow, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
                     maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }

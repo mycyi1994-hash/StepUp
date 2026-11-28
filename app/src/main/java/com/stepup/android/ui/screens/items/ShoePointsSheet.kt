@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.stepup.android.ui.components.StepUpUi
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
@@ -386,23 +388,21 @@ private fun PointRow(
         PointWorth.ComfortCapped -> stringResource(R.string.ers_preview_comfort_capped, basis.comfortCapBps / 100)
         null -> null
     }
-    val accent = when (stat) {
-        PointStat.EFFICIENCY -> CartoonColors.Efficiency.top
-        PointStat.COMFORT -> CartoonColors.Comfort.top
-        PointStat.DURABILITY -> CartoonColors.Durability.top
-    }
+    // v12 시제품(2026-11-26) — 흰 줄 · 바뀐 값은 파란 굵은 글자 · 아래 얇은 구분선(남색 칸 없음)
+    val tone = runTone()
+    val accent = StepUpUi.colors.accentText
     val key = stat.name.lowercase()
     val countCd = stringResource(R.string.points_count_cd, label, draft[stat])
     Column(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).background(CartoonColors.Cell, RoundedCornerShape(14.dp))
-            .testTag("points-row-$key").padding(horizontal = 14.dp, vertical = if (info != null) 4.dp else 10.dp),
+        Modifier.fillMaxWidth().heightIn(min = 64.dp)
+            .testTag("points-row-$key").padding(horizontal = 2.dp, vertical = if (info != null) 4.dp else 10.dp),
         verticalArrangement = Arrangement.spacedBy(if (info != null) 0.dp else 6.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             if (info != null) {
                 InfoLabel(label, info, "points-info-$key")
             } else {
-                Text(label, style = runTextStyle(16.sp, CartoonColors.Text, FontWeight.SemiBold), maxLines = 1)
+                Text(label, style = runTextStyle(16.sp, tone.text, FontWeight.SemiBold), maxLines = 1)
             }
             Spacer(Modifier.width(8.dp))
             Text(
@@ -415,7 +415,7 @@ private fun PointRow(
                     }
                     append(unit)
                 },
-                style = runTextStyle(15.sp, CartoonColors.Text, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),
+                style = runTextStyle(15.sp, tone.text, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),
                 modifier = Modifier.weight(1f).testTag("points-value-$key"),
                 textAlign = androidx.compose.ui.text.style.TextAlign.End,
             )
@@ -423,15 +423,15 @@ private fun PointRow(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (help != null) {
-                    Text(help, style = runTextStyle(13.sp, CartoonColors.Text, FontWeight.Medium, 1.3f),
+                    Text(help, style = runTextStyle(13.sp, tone.text, FontWeight.Medium, 1.3f),
                         modifier = Modifier.testTag("points-help-$key"))
                 }
                 if (worthText != null) {
                     // 어림값 — 늘 "약". 늘어나는 값이 있을 때만 능력치 색으로 앞세운다
-                    Text(worthText, style = runTextStyle(13.sp, if (worth is PointWorth.Gain) accent else CartoonColors.Number,
+                    Text(worthText, style = runTextStyle(13.sp, if (worth is PointWorth.Gain) accent else tone.label,
                         FontWeight.SemiBold, 1.3f).copy(fontFeatureSettings = "tnum"), modifier = Modifier.testTag("points-worth-$key"))
                 } else {
-                    Text(hint, style = runTextStyle(13.sp, CartoonColors.Number, FontWeight.Medium))
+                    Text(hint, style = runTextStyle(13.sp, tone.label, FontWeight.Medium))
                 }
             }
             if (editable) {
@@ -440,7 +440,7 @@ private fun PointRow(
             }
             Text(
                 "${draft[stat]}",
-                style = runTextStyle(18.sp, CartoonColors.Text, FontWeight.ExtraBold).copy(fontFeatureSettings = "tnum"),
+                style = runTextStyle(18.sp, tone.text, FontWeight.ExtraBold).copy(fontFeatureSettings = "tnum"),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.widthIn(min = 40.dp).semantics { contentDescription = countCd }.testTag("points-count-$key"),
             )
@@ -450,6 +450,8 @@ private fun PointRow(
             }
         }
         if (info?.open == true) PointInfoLines(basis, stat, info.firstPoints, key)
+        Spacer(Modifier.height(6.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(tone.divider))
     }
 }
 
@@ -512,7 +514,6 @@ private fun StepButton(
     onClick: () -> Unit,
     tag: String,
 ) {
-    val t = runTone()
     Box(
         Modifier.size(48.dp).clip(CircleShape)
             .feedbackClickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -520,12 +521,12 @@ private fun StepButton(
             .testTag(tag),
         contentAlignment = Alignment.Center,
     ) {
+        // v12 시제품 — 옅은 회색 원 위 짙은 ± (누를 수 없으면 흐리게)
         Box(
-            Modifier.size(36.dp).clip(CircleShape).background(t.cobalt, CircleShape)
-                .border(1.dp, CartoonColors.FrameTop, CircleShape).alpha(if (enabled) 1f else 0.35f),
+            Modifier.size(34.dp).clip(CircleShape).background(StepUpUi.colors.fill, CircleShape).alpha(if (enabled) 1f else 0.35f),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = StepUpUi.colors.label, modifier = Modifier.size(20.dp))
         }
     }
 }

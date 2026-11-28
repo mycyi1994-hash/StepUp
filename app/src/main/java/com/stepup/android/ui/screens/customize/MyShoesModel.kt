@@ -89,7 +89,7 @@ fun resolvePair(shoes: List<Sneaker>, selectedId: Long?): Sneaker? =
     shoes.firstOrNull { it.id == selectedId } ?: shoes.firstOrNull { it.equipped } ?: ownedRow(shoes).firstOrNull()
 
 /** 보관함 정렬 — 기본은 최근 획득순(시안 02). 착용은 순서를 바꾸지 않는다(체크로만 보인다) */
-val VaultSorts: List<String> = listOf(ItemSort.RECENT, ItemSort.RARITY, ItemSort.LEVEL)
+val VaultSorts: List<String> = listOf(ItemSort.RECENT, ItemSort.RARITY, ItemSort.LEVEL, ItemSort.DURABILITY)
 
 /**
  * 보관함 순서. 등급 높은순은 서버 등급(넷)으로 매기고 같은 등급 안에서는 보이는 갈래(레전더리 · 레드라인 · 피니시)끼리 모은다 —
@@ -103,6 +103,9 @@ fun vaultSorted(shoes: List<Sneaker>, sort: String): List<Sneaker> {
         )
         ItemSort.LEVEL -> shoes.sortedWith(
             compareByDescending<Sneaker> { it.level }.thenByDescending { it.rarity.ordinal }.then(recent),
+        )
+        ItemSort.DURABILITY -> shoes.sortedWith(
+            compareBy<Sneaker> { com.stepup.android.ui.screens.items.durabilityPercent(it) }.then(recent),
         )
         else -> shoes.sortedWith(recent)
     }

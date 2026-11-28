@@ -130,6 +130,8 @@ fun LeaderboardScreen(
     val points by viewModel.points.collectAsStateWithLifecycle()
     val scope by viewModel.scope.collectAsStateWithLifecycle()
     val more by viewModel.more.collectAsStateWithLifecycle()
+    val myCrew = (crew as? LeaderLoad.Ready)?.value?.mine
+    var sharing by rememberSaveable { mutableStateOf(false) }
 
     val reduced = LocalMotion.current.reduced
     // 시계 하나 — 판을 바꾸거나 목록이 새로 와도 처음부터 다시 돌지 않는다. 시트를 읽는 동안 · 모션 감소면 멈춘다
@@ -145,7 +147,15 @@ fun LeaderboardScreen(
             RunTopBar(
                 onBack = onBack,
                 onNavy = true,
-                trailing = { LbIconButton(LbIcons.Info, stringResource(R.string.lb_rules_open), "lb-info") { sheet = LbSheet.RULES } },
+                trailing = {
+                    Row {
+                        // 13차(S-417) — 우리 크루 순위가 있으면 공유(순위 카드)
+                        if (myCrew?.rank != null) {
+                            LbIconButton(LbIcons.Share, stringResource(R.string.share_sheet_title), "lb-share") { sharing = true }
+                        }
+                        LbIconButton(LbIcons.Info, stringResource(R.string.lb_rules_open), "lb-info") { sheet = LbSheet.RULES }
+                    }
+                },
             )
             LbUnderlineTabs(
                 labels = boards.map {
@@ -188,6 +198,7 @@ fun LeaderboardScreen(
         }
     }
 
+    myCrew?.takeIf { sharing && it.rank != null }?.let { mine -> RankShareSheet(mine, onDismiss = { sharing = false }) }
     // 시트는 그 내용이 있을 때만(되살린 화면에서 아직 불러오는 중이면 열지 않는다)
     val openSheet = sheet?.takeIf { open ->
         when (open) {
@@ -1125,6 +1136,7 @@ internal object LbIcons {
     val Minus = icon("minus", "M5 12h14")
     val Info = icon("info", "M22 12A10 10 0 1 1 2 12A10 10 0 1 1 22 12z", "M12 16v-4", "M12 8h.01")
     val Close = icon("x", "M18 6 6 18", "m6 6 12 12")
+    val Share = icon("share", "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8", "M16 6l-4-4-4 4", "M12 2v13")
 
     private fun icon(name: String, vararg paths: String): ImageVector =
         ImageVector.Builder(name = "lb-$name", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
@@ -1137,4 +1149,38 @@ internal object LbIcons {
                 }
             }
             .build()
+}
+
+/** 순위 공유(13차 S-418) — "이번 주 크루 순위 7위 · 지난주보다 1계단 위 · 크루 이름 · 거리 · 인원" 카드 하나 */
+@Composable
+private fun RankShareSheet(mine: com.stepup.android.domain.LeaderEntry, onDismiss: () -> Unit) {
+    val rank = mine.rank ?: return
+    val title = stringResource(R.string.v13_rank_share_title)
+    val rankText = stringResource(R.string.v13_rank_value, rank)
+    val change = mine.previousRank?.let { prev ->
+        when {
+            prev > rank -> stringResource(R.string.v13_rank_up, prev - rank)
+            prev < rank -> stringResource(R.string.v13_rank_down, rank - prev)
+            else -> stringResource(R.string.v13_rank_same)
+        }
+    }
+    val distLabel = stringResource(R.string.share_card_distance)
+    val membersLabel = stringResource(R.string.v13_rank_members)
+    val dist = "%.1f km".format(java.util.Locale.ROOT, mine.metric)
+    val members = mine.participants?.let { stringResource(R.string.v13_rank_members_value, it) }
+    val text = stringResource(R.string.v13_rank_share_text, mine.name, rank)
+    com.stepup.android.ui.components.StepUpShareSheet(
+        options = listOf(
+            com.stepup.android.ui.components.ShareCardOption("rank", title) { ctx ->
+                com.stepup.android.ui.components.ShareCards.ranking(
+                    ctx, title, rankText, change, mine.name,
+                    listOfNotNull(
+                        com.stepup.android.ui.components.ShareCards.Stat(distLabel, dist),
+                        members?.let { com.stepup.android.ui.components.ShareCards.Stat(membersLabel, it) },
+                    ),
+                )
+            },
+        ),
+        text = text, fileName = "StepUp-rank-$rank", onDismiss = onDismiss,
+    )
 }

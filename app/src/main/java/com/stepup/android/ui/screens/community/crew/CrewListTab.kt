@@ -132,6 +132,9 @@ fun CrewListTab(
 
     var sheet by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
+    // 새 가입 결과(승인 · 미승인)가 오면 맨 위 알림 줄이 보이게 올린다 — 목록을 내려 둔 채면 맨 위 줄이 그려지지 않아 결과를 못 본다
+    val resultIds = results.map { it.id }
+    LaunchedEffect(resultIds) { if (resultIds.isNotEmpty()) listState.animateScrollToItem(0) }
 
     fun startCreate() {
         if (draft != null) sheet = SHEET_DRAFT_RESUME else actions.onCreate(false)

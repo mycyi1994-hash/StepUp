@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_shoes_wearing_now">履いているシューズ</string>
+    <string name="v13_sort_title">並べ替え</string>
+    <string name="v13_shoe_line">Lv.%1$d · 効率 %2$s · 履き心地 %3$s</string>
+    <string name="v13_shoe_worn">摩耗</string>
+    <string name="v13_sort_durability">耐久度が低い順</string>
+    <string name="v13_trading_paused">取引休止中</string>
+    <string name="v13_stats_title">能力値</string>
+    <string name="v13_stats_level">上がるたびにステータスポイント%1$d</string>
+    <string name="v13_upg_when_level">Lv.%1$dになると</string>
+    <string name="v13_upg_points">ステータスポイント</string>
+    <string name="v13_upg_points_value">+%1$d</string>
+    <string name="v13_upg_where">振り分け先</string>
+    <string name="v13_upg_where_value">効率 · 履き心地 · 耐久度</string>
+    <string name="v13_upg_burn">入れたシューズは消えます · 失敗なし</string>
+    <string name="v13_upg_pairs">%1$d足</string>
+    <string name="v13_upg_after_level">Lv.%1$d · %2$s</string>
+</resources>

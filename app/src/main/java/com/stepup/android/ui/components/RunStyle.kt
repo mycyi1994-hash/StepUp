@@ -208,7 +208,8 @@ class RunTone(
 // 모서리 깎은 흰 버튼)는 없앴다. 주 버튼은 블루 알약 + 원 화살표([PrimaryButton]), 보조는 회색 채움 알약([SecondaryButton]).
 val NavyRunTone = RunTone(
     dark = true,
-    screenTop = Color(0xFF070B14), screen = Color(0xFF070B14), screenBottom = Color(0xFF070B14),
+    // 바탕은 앱 바탕과 같은 검정 — 예전 남색(#070B14)은 이 바탕을 쓰는 화면(앱 사용 안내 · 기록 등)만 남색으로 보였다(2026-11-28 디자인 점검)
+    screenTop = Color(0xFF000000), screen = Color(0xFF000000), screenBottom = Color(0xFF000000),
     glow = Color.Transparent,
     panelTop = Color(0xFF0E1424), panel = Color(0xFF0E1424), panelEdge = Color(0x24FFFFFF), // 흰 테두리(2026-11-07) — 예전 0x17FFFFFF
     inset = Color(0xFF151C2D),
@@ -286,6 +287,8 @@ fun runTextStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.N
     TextStyle(
         fontFamily = StepUpSans, fontWeight = weight, fontSize = size, color = color,
         letterSpacing = (if (size.value <= 13f) -0.02 else -0.03).em, lineHeight = height.em,
+        // 한글은 낱말 단위로 줄을 바꾼다(통합안 글자와 같게) — 빠져 있어 "반복해 / 요."처럼 끊겼다(2026-11-28 디자인 점검)
+        lineBreak = KoreanLineBreak,
     )
 
 // ── 바닥 ───────────────────────────────────────────────────────────
@@ -423,27 +426,29 @@ fun RunTopBar(
     title: String? = null,
 ) {
     val t = runTone()
-    Box(
-        modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center,
+    // v12 시제품(2026-11-26) — "← 제목": 곧은 화살표(원 없음) · 왼쪽 굵은 제목 · 오른쪽 행동
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        val center = title ?: crumb
-        if (center != null) {
-            Text(
-                center, style = StepUpUi.type.navTitle, color = if (onNavy) Color.White else t.text, maxLines = 1,
-                overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 64.dp).semantics { heading() }
-                    .then(if (crumb != null && title == null) Modifier.testTag("run-crumb") else Modifier),
-            )
-        }
         if (onBack != null) {
-            CircleIconButton(
-                Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), onBack,
-                modifier = Modifier.align(Alignment.CenterStart).testTag(backTag), onPhoto = onNavy, cue = FeedbackCue.Back,
-            )
+            RunBackButton(onBack, tag = backTag, tint = if (onNavy) Color.White else t.text)
+        } else {
+            Spacer(Modifier.width(12.dp))
+        }
+        val center = title ?: crumb
+        Box(Modifier.weight(1f)) {
+            if (center != null) {
+                Text(
+                    center, style = StepUpUi.type.navTitle.copy(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold),
+                    color = if (onNavy) Color.White else t.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() }
+                        .then(if (crumb != null && title == null) Modifier.testTag("run-crumb") else Modifier),
+                )
+            }
         }
         if (trailing != null) {
-            Box(Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)) { trailing() }
+            Box(Modifier.padding(end = 4.dp)) { trailing() }
         }
     }
 }
@@ -1143,21 +1148,22 @@ fun RunSheetPanel(
 @Composable
 fun RunSheetText(title: String, modifier: Modifier = Modifier, body: String? = null, note: String? = null) {
     val t = runTone()
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    // v12 시제품(2026-11-26) — 시트 · 창의 글은 왼쪽 정렬(제목 24 · 800). 오른쪽 위 닫기(✕)와 겹치지 않게 제목 끝을 비운다
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         Text(
             title, style = TextStyle(
-                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, lineHeight = 1.3.em,
+                fontFamily = StepUpSans, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 1.3.em,
                 letterSpacing = (-0.04).em, color = t.text,
             ),
-            textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() }.padding(horizontal = 28.dp),
+            modifier = Modifier.semantics { heading() }.padding(end = 40.dp),
         )
         if (body != null) {
             Spacer(Modifier.height(8.dp))
-            Text(body, style = runTextStyle(15.sp, t.text, FontWeight.Normal, 1.45f), textAlign = TextAlign.Center)
+            Text(body, style = runTextStyle(15.sp, t.text, FontWeight.Normal, 1.45f))
         }
         if (note != null) {
             Spacer(Modifier.height(4.dp))
-            Text(note, style = runTextStyle(13.5.sp, t.label, FontWeight.Normal, 1.45f), textAlign = TextAlign.Center)
+            Text(note, style = runTextStyle(13.5.sp, t.label, FontWeight.Normal, 1.45f))
         }
     }
 }

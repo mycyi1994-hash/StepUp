@@ -146,6 +146,9 @@ fun ProfileScreen(
     onChangeBackground: () -> Unit = {},
     /** 프로필 수정(v1) — 사진 · 닉네임 편집 화면. 예전의 작은 창을 바꿨다 */
     onOpenProfileEdit: () -> Unit = {},
+    /** v12 시제품 — 목록의 업적 · 스댕이 키우기(테스트 판) */
+    onOpenAchievements: () -> Unit = {},
+    onOpenPup: (() -> Unit)? = null,
     /** 편집 화면에서 닉네임을 실제로 저장하고 돌아왔다 — 짧은 안내를 한 번 보인다 */
     nicknameSaved: Boolean = false,
     onNicknameNoticeShown: () -> Unit = {},
@@ -195,6 +198,8 @@ fun ProfileScreen(
                 latest = latest,
                 runnerLevel = runnerLevel,
                 onOpenRunnerLevel = { runnerInfo = true },
+                onOpenAchievements = onOpenAchievements,
+                onOpenPup = onOpenPup,
             )
         }
     }

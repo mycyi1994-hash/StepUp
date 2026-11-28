@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 업데이트 소식 · 내역(2026-11-26 v12 전달 S-337 · S-339) — domain/PatchNotes.kt -->
+<resources>
+    <string name="pn_update_label">%1$s 업데이트</string>
+    <string name="pn_title">이번에 바뀐 것</string>
+    <string name="pn_ok">확인</string>
+    <string name="pn_history_all">업데이트 내역 전체 보기</string>
+    <string name="pn_history_title">업데이트 내역</string>
+    <string name="pn_current">지금 버전</string>
+    <string name="pn_new">새 기능</string>
+    <string name="pn_settings_row">업데이트 내역</string>
+    <string name="pn_122_run">누르자마자 기록되는 러닝</string>
+    <string name="pn_122_run_body">시작을 누르면 바로 기록하고, 화면을 꺼도 이어서 기록해요</string>
+    <string name="pn_122_shoe">신발이 등급 카드로</string>
+    <string name="pn_122_shoe_body">신발 탭에서 좌우로 넘겨 보고, 상세는 남색 무대에서</string>
+    <string name="pn_122_pup">스댕이 키우기</string>
+    <string name="pn_122_pup_body">러닝하고 밥 주며 키우는 강아지, 7단계 성장(미리보기)</string>
+    <string name="pn_122_repair">내구도 옆에서 바로 수리</string>
+    <string name="pn_122_repair_body">홈 · 신발 탭 · 신발 상세 · 출발 전 어디서나</string>
+    <string name="pn_122_design">화면 전체 새 디자인 · 밝게 · 어둡게</string>
+    <string name="pn_122_battery">출발 전 배터리 「제한 없음」 안내</string>
+    <string name="pn_122_more">그 밖에 화면 전체 새 디자인, 어두운 모드 색 정리</string>
+    <string name="pn_121_forge">강화는 경험치로, 실패 없이</string>
+    <string name="pn_121_daily">오늘의 보상 막대 · 상자 · 목표 · 연속</string>
+    <string name="pn_121_runner">러너 레벨: 1만 걸음마다 Lv 업</string>
+    <string name="pn_121_info">능력치 ⓘ 설명</string>
+    <string name="pn_1201_crew">크루 러닝 출발 · 대기실 고침</string>
+    <string name="pn_1201_alone">혼자 남으면 1분 동안 알림</string>
+    <string name="pn_120_stats">능력치 지수 · 별 · 유형</string>
+    <string name="pn_120_luck">러닝 운 · 48시간마다 무료 수리</string>
+    <string name="pn_120_box">상자 받기</string>
+    <string name="pn_119_items">아이템 탭 · 출발 전에 아이템 고르기</string>
+    <string name="pn_119_codes">베타 초대 코드 하루 1개</string>
+    <string name="pn_118_reason">러닝 기록에 0 SUP 까닭 한 줄</string>
+    <string name="pn_118_crew">크루 러닝 출발 알림</string>
+    <string name="pn_118_flash">번개 공유 링크</string>
+    <string name="pn_122_lock">잠금화면에 신발 내구도 막대 · 20% · 10%에서 알림음</string>
+    <string name="pn_122_steps">앱을 켜지 않아도 하루 걸음을 세요</string>
+    <string name="pn_122_stepbox">하루 걸음을 채우면 걸음 상자</string>
+    <string name="pn_122_gps">화면을 끈 동안의 GPS 경로 · 거리 바로잡음</string>
+    <string name="pn_122_draw10">10회 뽑기: 작은 카드부터 한 장씩 뒤집어요</string>
+    <string name="pn_122_share">자랑하기: 러닝 · 순위 · 새 신발 · 크루 · 번개러닝 · 초대 코드를 같은 공유 창으로</string>
+    <string name="pn_122_items">아이템 · 지갑 새 그림: 큰 아이템 카드 · 지갑 로고</string>
+</resources>

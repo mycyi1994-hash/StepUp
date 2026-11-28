@@ -56,7 +56,7 @@ internal object RunNotification {
     }
 
     /** 상태 한 줄 — 알림과 잠금화면 러닝 현황([com.stepup.android.ui.screens.walk.LockRunHost])이 같은 글을 쓴다 */
-    fun status(context: Context, state: WalkSessionState): String {
+    fun status(context: Context, state: WalkSessionState, withShoe: Boolean = true): String {
         val crewLeft = state.crewPoolRemaining
         val crewTotal = state.crewPoolTotal
         return when {
@@ -76,7 +76,9 @@ internal object RunNotification {
                 if (stats.earnsWhenWorn) context.getString(R.string.roots_notification_shoe_worn, stats.wornPercent)
                 else context.getString(R.string.notification_run_shoe_worn)
             }
-            else -> context.getString(R.string.notification_steps, state.steps)
+            // 신은 신발의 남은 %도 함께(2026-11-26 — 잠금화면에서 내구도를 보게)
+            else -> state.shoePercent?.takeIf { withShoe }?.let { context.getString(R.string.notification_steps_shoe, state.steps, it) }
+                ?: context.getString(R.string.notification_steps, state.steps)
         }
     }
 

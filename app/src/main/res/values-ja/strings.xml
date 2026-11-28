@@ -28,7 +28,7 @@
     <string name="feed_run_weekly_title">週間チャレンジは月曜にリセットされます</string>
     <string name="feed_run_weekly_body">歩数の合計は毎週月曜に0から始まります。達成報酬はイベントタブで待っています。</string>
     <string name="feed_run_crew_title">クルーランはクルー順位に積まれます</string>
-    <string name="feed_run_crew_body">クルーロビーから始めたランの距離がそのクルーの合計に加わります。ランキング → クルーで自分たちの位置を確認できます。</string>
+    <string name="feed_run_crew_body">クルー待機室から始めたランの距離がそのクルーの合計に加わります。ランキング → クルーで自分たちの位置を確認できます。</string>
     <string name="feed_run_flash_title">フラッシュランもクルーランと同じ手順です</string>
     <string name="feed_run_flash_body">掲示板から参加して準備を押すと、ホストが全員を一斉にスタートさせます。人数が多いほど獲得量が上がります。</string>
     <string name="feed_note_runs">公開ニュースフィードから1日1回集めています。見出し・媒体・日付だけを保存し、本文は元記事で読みます — タップで元記事へ。報酬と進捗はイベントタブにあります。</string>
@@ -155,8 +155,8 @@
     <string name="community_no_results">「%1$s」に一致するクルーはありません</string>
 
     <!-- Crew party run -->
-    <string name="crew_lobby">パーティーランロビー</string>
-    <string name="crew_open_lobby">ロビーを開く</string>
+    <string name="crew_lobby">クルー待機室</string>
+    <string name="crew_open_lobby">待機室を開く</string>
     <string name="crew_invite_share">招待リンクを共有</string>
     <string name="crew_invite_message">StepUpで%1$sと一緒に走ろう 👟
 %2$s</string>
@@ -175,11 +175,11 @@
     <string name="crew_state_ready">準備完了</string>
     <string name="crew_state_waiting">待機中</string>
     <string name="crew_go">スタート！</string>
-    <string name="crew_boost">パーティーブースト +%1$d%%</string>
+    <string name="crew_boost">一緒に走ると最大 +%1$d%%</string>
     <string name="crew_boost_hint" formatted="false">クルーメイト1人につき獲得量が+10%、最大+50%までアップします。</string>
     <string name="crew_running_together">%1$d人のランナーと一緒に走行中</string>
     <string name="crew_result_title">パーティーラン完了！ 🎉</string>
-    <string name="crew_leave_lobby">ロビーを出る</string>
+    <string name="crew_leave_lobby">待機室を出る</string>
     <string name="crew_join_first">一緒に走るにはクルーに参加してね</string>
 
     <!-- Items -->
@@ -574,9 +574,9 @@
     <string name="party_host_badge">ホスト</string>
     <string name="party_start">パーティランを開始</string>
     <string name="party_kick">外す</string>
-    <string name="party_join_hint">クルーメンバーがこのロビーを開くと同じルームに入ります。フラッシュランは投稿に参加したランナーが入れます。</string>
+    <string name="party_join_hint">クルーメンバーがこの待機室を開くと同じルームに入ります。フラッシュランは投稿に参加したランナーが入れます。</string>
     <string name="party_wait_host">ホストのスタートを待っています…</string>
-    <string name="party_leave">ロビーを出る</string>
+    <string name="party_leave">待機室を出る</string>
     <string name="party_problem_sign_in">パーティーランにはログインが必要です。</string>
     <string name="party_problem_removed">クルーメンバーかこのフラッシュランの参加者だけが入れます。またはホストに退出させられました。</string>
     <string name="party_problem_network">接続が切れました。再接続中…</string>
@@ -792,7 +792,7 @@ StepUp と走り出そう。</string>
     <string name="guide4_body">近い順のフラッシュランに参加して、お役立ち情報や雑談を投稿。ランキングカードで今週の順位もチェック。</string>
     <string name="guide4_tip">ヒント: ＋ボタンで新規投稿。</string>
     <string name="guide5_title">クルーとパーティラン</string>
-    <string name="guide5_body" formatted="false">クルーに参加または作成してロビーへ。全員準備完了でホストがスタート、1人につき+10%ブースト。</string>
+    <string name="guide5_body" formatted="false">クルーに参加または作成して待機室へ。全員準備完了でホストがスタート、一緒に走った1人につき+10%。</string>
     <string name="guide5_tip">ヒント: 一緒に出発して互いに200m以内で走ると、一緒に走った人数に数えられます!</string>
     <string name="guide6_title">イベントと報酬</string>
     <string name="guide6_body">週間キャンペーンや招待報酬で SUP をゲット。通知からそのまま受け取りもできます。</string>
@@ -887,7 +887,7 @@ StepUp と走り出そう。</string>
     <string name="flash_est_distance">走る距離</string>
     <string name="flash_members">参加者</string>
     <string name="flash_view_members">メンバーを見る</string>
-    <string name="flash_chat">パーティーチャット</string>
+    <string name="flash_chat">フラッシュランチャット</string>
     <string name="flash_chat_latest">最新メッセージ</string>
     <string name="flash_enter_chat">チャットに入る</string>
     <string name="flash_join_cta">パーティーに参加</string>

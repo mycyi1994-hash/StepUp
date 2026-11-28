@@ -42,7 +42,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import com.stepup.android.domain.WalletApp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -156,11 +159,7 @@ fun WalletContent(
         SecondaryHeader(
             onBack = onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.wl_title),
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
-            trailing = {
-                IconButton(onClick = { sheet = WalletSheet.Info }, modifier = Modifier.size(48.dp).testTag("wl-info")) {
-                    Icon(Icons.Outlined.Info, stringResource(R.string.wl_info_cd), tint = p.text)
-                }
-            },
+            // 13차 S-137 — 머리의 ⓘ 는 뺐다(잔액 카드의 "SUP 안내 ›"가 같은 시트)
         )
         if (totals == TotalsLoad.Failed) {
             // 10 — 확인한 잔액이 없다. 0 으로 보이지 않고 다시 불러오게
@@ -176,7 +175,7 @@ fun WalletContent(
             modifier = Modifier.weight(1f).fillMaxWidth().testTag("wl-list"),
             contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 4.dp, bottom = 28.dp),
         ) {
-            item(key = "balance") { BalanceCard(totals) }
+            item(key = "balance") { BalanceCard(totals, onInfo = { sheet = WalletSheet.Info }) }
             if (web3Enabled || linkOnly) item(key = "web3") {
                 Web3Row(
                     web3,
@@ -259,40 +258,71 @@ fun WalletContent(
     }
 }
 
-/** 잔액 카드 — 러닝 패스 카드의 면과 장식. 읽기 전에는 자리만(0 으로 보이지 않는다) */
+/**
+ * 잔액 카드(v12 디자인 시제품 2026-11-26) — 남색 카드 · "보유" · 큰 숫자 SUP · 오른쪽 위 "SUP 안내 ›"(안내 시트).
+ * 누적 적립 · 사용은 작은 한 줄로 남긴다. 읽기 전에는 자리만(0 으로 보이지 않는다)
+ */
 @Composable
-private fun BalanceCard(totals: TotalsLoad) {
+private fun BalanceCard(totals: TotalsLoad, onInfo: () -> Unit = {}) {
     val ready = (totals as? TotalsLoad.Ready)?.totals
     val balance = ready?.let { amountText(it.balance, signed = false) }
     val size: TextUnit = when {
-        balance == null -> 55.sp
-        balance.length > 10 -> 38.sp
-        balance.length > 7 -> 46.sp
-        else -> 55.sp
+        balance == null -> 50.sp
+        balance.length > 10 -> 36.sp
+        balance.length > 7 -> 44.sp
+        else -> 50.sp
     }
-    RunningPathCard(Modifier.padding(top = 8.dp).testTag("wl-balance-card"), textEnd = 230.dp, minHeight = 176.dp) {
-        Column(Modifier.padding(start = 22.dp, end = 18.dp)) {
-            Text(stringResource(R.string.wl_balance), color = RunningPathColors.title, fontSize = 15.sp,
-                modifier = Modifier.paddingFromBaseline(top = 36.dp))
-            if (balance != null) {
-                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.semantics(mergeDescendants = true) {}.testTag("wl-balance")) {
-                    Text(balance, color = RunningPathColors.number, fontSize = size, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                        modifier = Modifier.alignByBaseline().paddingFromBaseline(top = 62.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.wl_unit), color = RunningPathColors.unit, fontSize = 19.sp, fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.alignByBaseline())
-                }
-            } else {
-                Box(Modifier.padding(top = 18.dp).size(width = 170.dp, height = 44.dp).clip(RoundedCornerShape(12.dp))
-                    .background(Color(0x33A6BCDD)).testTag("wl-balance-loading"))
-            }
-            Box(Modifier.padding(top = 16.dp).fillMaxWidth().height(1.dp).background(Color(0x33A6BCDD)))
-            Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 16.dp)) {
-                TotalColumn(stringResource(R.string.wl_earned), ready?.let { amountText(it.earned, signed = false) }, "wl-earned", Modifier.weight(1f))
-                TotalColumn(stringResource(R.string.wl_spent), ready?.let { amountText(it.spent, signed = false) }, "wl-spent", Modifier.weight(1f))
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        Modifier.padding(top = 8.dp).fillMaxWidth().clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF13285A), Color(0xFF0B193C))))
+            .drawBehind { routeArt() }
+            .padding(horizontal = 22.dp, vertical = 18.dp).testTag("wl-balance-card"),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.wl_balance), color = Color(0xFFB9C6E4), fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Row(
+                Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onInfo).padding(horizontal = 4.dp, vertical = 4.dp)
+                    .testTag("wl-sup-info"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.v12_sup_info), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.White, modifier = Modifier.size(16.dp))
             }
         }
+        if (balance != null) {
+            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 6.dp).semantics(mergeDescendants = true) {}.testTag("wl-balance")) {
+                Text(balance, color = Color.White, fontSize = size, fontWeight = FontWeight.ExtraBold, maxLines = 1,
+                    modifier = Modifier.alignByBaseline())
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.wl_unit), color = Color(0xFFB9C6E4), fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.alignByBaseline())
+            }
+        } else {
+            Box(Modifier.padding(top = 12.dp).size(width = 170.dp, height = 44.dp).clip(RoundedCornerShape(12.dp))
+                .background(Color(0x33A6BCDD)).testTag("wl-balance-loading"))
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp)) {
+            TotalColumn(stringResource(R.string.wl_earned), ready?.let { amountText(it.earned, signed = false) }, "wl-earned", Modifier.weight(1f))
+            TotalColumn(stringResource(R.string.wl_spent), ready?.let { amountText(it.spent, signed = false) }, "wl-spent", Modifier.weight(1f))
+        }
     }
+}
+
+/** 잔액 카드 오른쪽의 경로 그림(13차 S-137) — 달린 길처럼 굽은 선과 출발 · 도착 점. 꾸밈일 뿐 실제 경로가 아니다 */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.routeArt() {
+    val w = size.width
+    val h = size.height
+    val path = androidx.compose.ui.graphics.Path().apply {
+        moveTo(w * .80f, h * .34f)
+        cubicTo(w * .92f, h * .32f, w * .93f, h * .46f, w * .85f, h * .52f)
+        cubicTo(w * .77f, h * .58f, w * .76f, h * .66f, w * .86f, h * .70f)
+        cubicTo(w * .93f, h * .74f, w * .90f, h * .80f, w * .84f, h * .84f)
+    }
+    val line = Color(0x66D3E0FF)
+    drawPath(path, line, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    drawCircle(Color(0xCCFFFFFF), radius = 3.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(w * .80f, h * .34f))
+    drawCircle(Color(0xCCFFFFFF), radius = 3.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(w * .84f, h * .84f))
 }
 
 @Composable
@@ -345,6 +375,14 @@ private fun Web3Row(web3: Web3State, onClick: () -> Unit, onRetry: () -> Unit, l
                     )
                 }
             }
+            // 13차 — 연결할 수 있는 지갑 로고 셋(겹쳐서)
+            if (web3 != Web3State.Unavailable) {
+                Box(Modifier.padding(end = 6.dp).size(width = 52.dp, height = 22.dp)) {
+                    listOf(WalletApp.METAMASK, WalletApp.OKX, WalletApp.RABBY).forEachIndexed { i, app ->
+                        WalletLogo(app, 22.dp, Modifier.padding(start = (i * 15).dp))
+                    }
+                }
+            }
             when {
                 web3 == Web3State.Unavailable -> Text(stringResource(R.string.wl_web3_soon), color = p.secondary, fontSize = 13.sp)
                 clickable -> Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = p.secondary)
@@ -377,7 +415,7 @@ private fun ChainLinkRow(onClick: () -> Unit) {
             Spacer(Modifier.width(18.dp))
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.wl_chain_row), color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                Text(stringResource(R.string.wl_chain_row_sub), color = p.secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                // 13차 — 가스비 같은 기술 설명 한 줄은 뺐다
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = p.secondary)
         }

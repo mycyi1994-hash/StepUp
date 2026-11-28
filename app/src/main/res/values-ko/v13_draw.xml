@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_draw_n">%1$d회 뽑기</string>
+    <string name="v13_draw_drawing">뽑는 중</string>
+    <string name="v13_draw_drawing_cd">%2$d번 중 %1$d번 뽑는 중</string>
+    <string name="v13_draw_batch_title">%1$d회 뽑기 결과</string>
+    <string name="v13_draw_best">최고 등급</string>
+    <string name="v13_draw_again_n">한 번 더 %1$d회</string>
+    <string name="v13_draw_ok">확인</string>
+    <string name="v13_draw_stopped">%1$d번 중 %2$d번 뽑았어요 · 나머지는 기회를 쓰지 않았어요</string>
+    <string name="v13_draw_unsure">마지막 한 번은 확인하고 있어요 · 뽑기 화면에서 볼 수 있어요</string>
+    <string name="v13_draw_left">남은 %1$d회</string>
+    <string name="v13_draw_tier_count">%1$s %2$d</string>
+    <string name="v13_draw_cell_cd">%1$s, %2$s</string>
+    <string name="v13_draw_share">공유</string>
+    <string name="v13_draw_new_shoe">새 신발</string>
+    <string name="v13_draw_share_new">StepUp 에서 새 신발을 뽑았어요 — %1$s</string>
+    <string name="v13_draw_share_ten">StepUp %1$d회 뽑기 — 최고 등급 %2$s</string>
+    <string name="v13_draw_share_line">%1$s · %2$s</string>
+    <string name="v13_draw_keep">내 신발에 두기</string>
+    <string name="v13_draw_wear">이 신발 신기</string>
+    <string name="v13_draw_history">기회 내역</string>
+    <string name="v13_draw_odds">횟수와 확률</string>
+    <string name="v13_boxes_where">상자 받는 곳</string>
+    <string name="v13_boxes_normal_reward">무료 뽑기 1회</string>
+    <string name="v13_boxes_premium_reward">상급 뽑기 1회</string>
+    <string name="v13_boxes_check_in">출석</string>
+    <string name="v13_boxes_run">오늘 러닝 %1$s보</string>
+    <string name="v13_boxes_day_steps">하루 걸음 %1$s보</string>
+    <string name="v13_boxes_runner">러너 레벨마다</string>
+    <string name="v13_boxes_runner5">러너 레벨 5마다</string>
+    <string name="v13_boxes_week">한 주 러닝 %1$s보</string>
+    <string name="v13_boxes_streak">%1$d일 연속 목표</string>
+    <string name="v13_boxes_shoe_levels">신발 Lv%1$s</string>
+    <string name="v13_boxes_buy_note">SUP로도 살 수 있음</string>
+    <string name="v13_boxes_buy_link">SUP로 사기</string>
+    <string name="v13_boxes_entry_runs">오늘 러닝 상자 %1$d/%2$d</string>
+</resources>

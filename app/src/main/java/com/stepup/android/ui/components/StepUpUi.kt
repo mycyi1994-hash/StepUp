@@ -185,10 +185,11 @@ class StepUpUiColors(
 
 /** 블랙(2026-10-26 디자인 자료) — 예전 다크블루(#070B14)를 대신한다. 이름은 그대로 둔다 */
 val DarkBlueUi = StepUpUiColors(
-    background = Color(0xFF000000), card = Color(0xFF101216), elevated = Color(0xFF171A20),
-    fill = Color(0xFF1E2128), fillSecondary = Color(0xFF15181D),
+    // v12 시제품(2026-11-26) — 카드 · 채움은 남색이 도는 면(예전 #101216 · #171A20 · #1E2128 · #15181D · 선 #292E37)
+    background = Color(0xFF000000), card = Color(0xFF0F1829), elevated = Color(0xFF152036),
+    fill = Color(0xFF172236), fillSecondary = Color(0xFF121C2E),
     label = Color(0xFFF6F7FA), secondaryLabel = Color(0xFFA7AFBC), tertiaryLabel = Color(0x80A7AFBC),
-    onDisabled = Color(0x80A7AFBC), separator = Color(0xFF292E37),
+    onDisabled = Color(0x80A7AFBC), separator = Color(0xFF20283D),
     primary = Color(0xFF3D74FA), primaryPressed = Color(0xFF3A6AE6), onPrimary = Color.White,
     accentText = Color(0xFF7DA2FF), segmentThumb = Color(0xFFF6F7FA), segmentOn = Color(0xFF000000),
     live = Color(0xFFFF8B9A), success = Color(0xFF32D74B),
@@ -484,7 +485,8 @@ fun PrimaryButton(
         onPhoto -> Color.White
         else -> c.label
     }
-    val withArrow = arrow && shown == ButtonState.Idle
+    // 앞 아이콘이 있으면 끝 원 화살표는 두지 않는다 — 둘 다 있으면 표시가 두 개였다(▶ … →, 2026-11-28 디자인 점검)
+    val withArrow = arrow && icon == null && shown == ButtonState.Idle
     val clickable = shown == ButtonState.Idle ||
         (tappableWhenDone && (shown == ButtonState.Done || shown == ButtonState.Waiting))
     Box(
@@ -523,10 +525,6 @@ fun PrimaryButton(
                 }
                 ButtonState.Idle -> if (withArrow) {
                     Row(Modifier.fillMaxWidth().heightIn(min = StepUpUi.ButtonHeight), verticalAlignment = Alignment.CenterVertically) {
-                        if (icon != null) {
-                            Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                        }
                         Text(
                             text, style = type.button, color = fg, modifier = Modifier.weight(1f).padding(vertical = 8.dp),
                             maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -906,25 +904,33 @@ fun NavHeader(
     backTag: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Box(
+    // v12 시제품(2026-11-26) — "← 제목"(왼쪽 정렬). 사진 위(onPhoto)는 유리 원 뒤로 그대로
+    Row(
         modifier.fillMaxWidth().then(if (statusBar) Modifier.statusBarsPadding() else Modifier)
-            .heightIn(min = 52.dp).padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center,
+            .heightIn(min = 52.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (title != null) {
-            Text(
-                title, style = StepUpUi.type.navTitle, color = if (onPhoto) Color.White else StepUpUi.colors.label,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 64.dp).semantics { heading() },
-            )
-        }
         if (onBack != null) {
-            BackButton(
-                onBack, contentDescription = backDescription, onPhoto = onPhoto,
-                modifier = Modifier.align(Alignment.CenterStart).then(if (backTag != null) Modifier.testTag(backTag) else Modifier),
-            )
+            val tagged = if (backTag != null) Modifier.testTag(backTag) else Modifier
+            if (onPhoto) {
+                BackButton(onBack, contentDescription = backDescription, onPhoto = true, modifier = tagged)
+            } else {
+                RunBackButton(onBack, tagged, tint = StepUpUi.colors.label)
+            }
+        } else {
+            Spacer(Modifier.width(12.dp))
         }
-        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically, content = actions)
+        Box(Modifier.weight(1f)) {
+            if (title != null) {
+                Text(
+                    title, style = StepUpUi.type.navTitle.copy(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold),
+                    color = if (onPhoto) Color.White else StepUpUi.colors.label,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, content = actions)
     }
 }
 

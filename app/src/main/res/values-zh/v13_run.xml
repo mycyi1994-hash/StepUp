@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_run_free_sub">立即开始</string>
+    <string name="v13_run_crew_sub">和团队一起出发</string>
+    <string name="v13_run_last">%1$s %2$s 公里</string>
+    <string name="v13_run_crew_rank">我的团队 第%1$d名</string>
+    <string name="v13_items_done">完成</string>
+    <string name="v13_check_shoe_caption">本次穿的跑鞋</string>
+    <string name="v13_check_change">更换跑鞋</string>
+    <string name="v13_check_items">道具</string>
+    <string name="v13_check_items_none">未选择</string>
+    <string name="v13_check_change_to">换成%1$s</string>
+    <string name="v13_battery_title">息屏也能持续记录</string>
+    <string name="v13_battery_later">以后再说</string>
+    <string name="v13_run_locked">已锁定</string>
+    <string name="v13_run_unlock_hold">长按解锁</string>
+    <string name="v13_run_earn_steps">计入 %1$s 步</string>
+    <string name="v13_run_end">结束</string>
+    <string name="v13_check_title">出发前确认跑鞋</string>
+    <string name="v13_run_recording">记录中</string>
+    <string name="v13_run_resume">继续跑步</string>
+</resources>

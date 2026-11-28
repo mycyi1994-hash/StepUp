@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v12 디자인 시제품 적용(2026-11-26) — docs/redesign/v12-2026-11-26 -->
+<resources>
+    <string name="v12_home_shoe_title">今履いているシューズ</string>
+    <string name="v12_home_shoe_none">まだシューズを履いていません</string>
+    <string name="v12_home_shoe_pick">シューズを選ぶ</string>
+    <string name="v12_repair_short">修理</string>
+    <string name="v12_home_run_item">ランアイテム</string>
+    <string name="v12_home_run_item_owned">%1$d個あります</string>
+    <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
+    <string name="run_battery_hint">画面を消しても記録が止まらないよう、バッテリー使用を「制限なし」にしてください。</string>
+    <string name="run_battery_open">設定を開く</string>
+    <string name="v12_points_split">割り振る</string>
+    <string name="v12_points_respec">振り直す</string>
+    <string name="v12_rename">名前を変える</string>
+    <string name="v12_prev_shoe">前のシューズ</string>
+    <string name="v12_next_shoe">次のシューズ</string>
+    <string name="v12_shoe_stored">保管中</string>
+    <string name="v12_shoe_detail">シューズ詳細</string>
+    <string name="v12_bag_next">次のランで使うアイテム</string>
+    <string name="v12_bag_none">まだ選んだアイテムはありません</string>
+    <string name="v12_bag_pick_hint">出発前のシューズ確認で選んで使います</string>
+    <string name="v12_bag_zero">なし</string>
+    <string name="v12_bag_use">使う</string>
+    <string name="v12_sup_info">SUPについて</string>
+    <string name="v12_achievements">実績</string>
+    <string name="v12_minutes">%1$d分</string>
+    <string name="v12_recent_date_pattern">M月d日 (E)</string>
+    <string name="v12_run_steps">%1$s歩</string>
+    <string name="v12_run_lock">ロック</string>
+    <string name="v12_run_shoe_worn">履いたシューズ</string>
+</resources>

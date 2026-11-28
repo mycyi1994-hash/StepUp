@@ -231,6 +231,7 @@ fun RunScreen(
     var locationOffGate by rememberSaveable { mutableStateOf(false) }
     // 자유러닝 — 시작 전에 신고 있는 신발을 확인하는 중(2026-10-17 전달본 SHOE_CHECK). 닫으면 아무것도 시작하지 않는다
     var shoeCheck by rememberSaveable { mutableStateOf(false) }
+    var batteryOnce by rememberSaveable { mutableStateOf(false) }
     // 수리 시트를 연 신발(신고 있는 신발) — 출발 전 점검 · 러닝 완료의 "수리"에서 연다. 열려 있는 동안 점검창은 잠깐 숨긴다
     var repairShoeId by rememberSaveable { mutableStateOf<Long?>(null) }
     val startScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -380,7 +381,10 @@ fun RunScreen(
     LaunchedEffect(session.shoeWornOut) {
         // 신발 내구도를 다 썼다 — 이제부터 걸음은 일부만 적립된다(서버 0119 — 걸음은 그대로 센다. 그 전 규칙이면 보상이 없다).
         // 소리 · 진동으로 한 번(2026-10-19 "내구도 다 소모하면 따로 안내") — 글은 띠 · 알림이 규칙에 맞게 말한다(shoeWornBandText)
-        if (session.shoeWornOut && running) cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+        // 알림을 띄울 수 있으면 소리 · 진동은 서비스의 신발 알림(ShoeDurabilityAlerts)이 낸다 — 두 번 울리지 않게
+        if (session.shoeWornOut && running && !com.stepup.android.service.ShoeDurabilityAlerts.canAlert(context)) {
+            cues?.play(com.stepup.android.ui.experience.FeedbackCue.Error)
+        }
     }
     LaunchedEffect(session.overspeed?.since) {
         // 과속이 시작됐다(RunOverspeed) — 소리 · 진동으로 한 번. 30초 이어지면 러닝이 멈추고 패널티가 있다(2026-10-17)
@@ -551,7 +555,11 @@ fun RunScreen(
             ).show()
         } else if (!startPending && !countingDown && !locationOffGate && !shoeCheck) {
             if (freeRunNow) {
-                shoeCheck = true
+                // 13차 — 배터리 안내는 처음 한 번만(절전 대상일 때), 그 뒤 출발 전 신발 확인
+                startScope.launch {
+                    val prefs = com.stepup.android.core.ServiceLocator.userPrefs
+                    if (batteryRestricted(context) && !prefs.batteryHintSeen()) batteryOnce = true else shoeCheck = true
+                }
             } else {
                 // 점검(아이템 고르기)이 없는 러닝 — 앞서 고르다 만 아이템이 이 러닝에 쓰이지 않게 비운다
                 com.stepup.android.core.ServiceLocator.itemsRepository.clearPicks()
@@ -920,8 +928,6 @@ fun RunScreen(
             onHome()
         }
         when {
-            finishing && showShare && freeRunResult -> FreeRunShareScreen(session, onClose = { showShare = false })
-            finishing && showShare -> RunShareScreen(session, lastServerPoints, lastUpload, onClose = { showShare = false })
             finishing && crewShare && crewShareId != null -> CrewShareFor(
                 session, crewShareId, crewTitle, onClose = { crewShare = false }, onOpenChat = { onOpenCrewChat(crewShareId) },
             )
@@ -962,7 +968,10 @@ fun RunScreen(
                     // 보상의 운(0116) — 서버가 이 러닝을 확인하고 적립이 있을 때만 한 줄
                     luckNote = lastLuckText,
                     // 다 쓴 신발을 바로 고칠 수 있게 — 신고 있는 신발의 수리 시트(신발 탭과 같은 수리)
-                    onShoeRepair = equipped?.takeIf { session.lastShoeWornOut }?.let { shoe -> { repairShoeId = shoe.id } },
+                    // v12 — 결과의 "신은 신발" 칸 · 고칠 내구도가 있으면 "수리"(예전엔 다 닳았을 때만 글자 단추)
+                    shoe = equipped,
+                    onShoeRepair = equipped?.takeIf { com.stepup.android.ui.screens.items.repairable(it) || session.lastShoeWornOut }
+                        ?.let { shoe -> { repairShoeId = shoe.id } },
                     startedAt = session.lastStartedAt,
                     place = remember(session.track.firstOrNull()) {
                         session.track.firstOrNull()?.let { com.stepup.android.ui.background.Spots.nearest(context, it.lat, it.lng)?.name }
@@ -1368,6 +1377,8 @@ fun RunScreen(
                     onHoldEnd = { if (canAskEnd) WalkSessionService.stop(context) },
                     gpsOk = locationAllowed && session.locationOn && !session.gpsLost && session.here != null,
                     place = freePlace,
+                    shoe = equipped.takeIf { session.isActive },
+                    steps = session.steps.takeIf { session.isActive },
                     onBandTap = { showDetails = true },
                     onBandAction = {
                         when (freeBandNow) {
@@ -1483,6 +1494,18 @@ fun RunScreen(
                 )
             }
         }
+        // 13차 공유(자랑하기) 시트 — 결과 화면 위로(지도 · 기록 · 신발 카드 · 보낼 곳). 예전 전면 공유 화면을 대신한다
+        if (finishing && showShare && !(crewShare && crewShareId != null)) {
+            RunShareSheet(
+                km = if (freeRunResult) freeResultKm(session.lastGpsKm) else finishKm(session),
+                elapsedSec = session.lastElapsedSec,
+                startedAt = session.lastStartedAt,
+                steps = session.lastSessionSteps,
+                track = session.geoTrack,
+                shoe = equipped,
+                onDismiss = { showShare = false },
+            )
+        }
         if (startPending && !session.isActive) {
             RunPermissionFlow(
                 minimal = freeRunNow,
@@ -1526,6 +1549,13 @@ fun RunScreen(
                 onBack = leave,
                 onOpenSettings = { ExternalIntents.openLocationSettings(context) },
             )
+        }
+        if (batteryOnce && !session.isActive) {
+            BatteryOnceSheet(onDone = {
+                batteryOnce = false
+                startScope.launch { com.stepup.android.core.ServiceLocator.userPrefs.setBatteryHintSeen() }
+                shoeCheck = true
+            })
         }
         if (shoeCheck && !session.isActive && repairShoeId == null) {
             val shoes by viewModel.shoes.collectAsStateWithLifecycle()
@@ -1629,7 +1659,7 @@ fun RunScreen(
         // 3-2-1 을 시작한 순간의 러닝 종류로 끝까지 — 기록이 시작된 뒤 모습이 바뀌어도(챌린지로 묶임 등) 연출이 끊기지 않게
         val freeLaunch = rememberSaveable(countingDown) { countingDown && freeRunNow }
         if (countingDown && freeLaunch) {
-            // 자유러닝 3·2·1·0 → StepUP! → 지도 펼침(2026-10-17 전달본). 러닝 기록은 펼침에 들어갈 때 한 번 시작한다
+            // 자유러닝 StepUP! → 지도 펼침(2026-10-17 전달본 — 3·2·1 숫자는 2026-11-26 에 뺐다). 러닝 기록은 누른 순간 한 번 시작한다
             val refusals by WalkSessionService.startRefusals.collectAsStateWithLifecycle()
             FreeRunStartSequence(
                 sessionActive = session.isActive,
@@ -1652,19 +1682,12 @@ fun RunScreen(
                 },
             )
         } else if (countingDown && !session.isActive) {
-            val servicesOn = remember { locationServicesOn(context) }
-            RunCountdown(
-                courseName = course?.name,
-                locationAllowed = locationAllowed,
-                locationServicesOn = servicesOn,
-                title = planTitle(plan),
-                onGo = {
-                    countingDown = false
-                    if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
-                },
-                // 시작 취소 — 이 러닝을 연 화면(시작 메뉴 · 챌린지)으로 돌아간다(시안 R01)
-                onCancel = { countingDown = false; onBack() },
-            )
+            // 챌린지 · 코스 · 다이어트도 누른 순간 기록을 켠다(2026-11-26 테스터 "누르자마자 측정되게") — 예전 3-2-1(RunCountdown)은
+            // 앱이 뒤로 가면 멈춰, 그 사이 화면을 끄거나 다른 러닝 앱으로 넘어가면 기록이 시작되지 않았다
+            LaunchedEffect(Unit) {
+                countingDown = false
+                if (!WalkSessionService.state.value.isActive) WalkSessionService.start(context)
+            }
         }
     }
 
@@ -2909,41 +2932,6 @@ private fun finishRewardLines(
     }
 }
 
-/**
- * 결과 이미지 저장(E05 "이미지 저장") — 공유 미리보기에 보이는 바로 그 그림을 사진(Pictures/StepUp)에 넣는다.
- * Android 9 이하는 저장 권한을 먼저 묻는다(10 부터는 권한 없이 사진에 넣을 수 있다).
- */
-@Composable
-private fun rememberCardSave(card: android.graphics.Bitmap?, name: String): () -> Unit {
-    val context = LocalContext.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val savedText = stringResource(R.string.result_saved)
-    val failedText = stringResource(R.string.result_save_failed)
-    val save: () -> Unit = {
-        val bitmap = card
-        scope.launch {
-            val saved = bitmap != null && kotlinx.coroutines.withContext(Dispatchers.IO) {
-                runCatching { RunImageStore.save(context, bitmap, name) }.getOrDefault(false)
-            }
-            kotlinx.coroutines.withContext(Dispatchers.Main.immediate) {
-                android.widget.Toast.makeText(context, if (saved) savedText else failedText, android.widget.Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-    val permission = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) save() else android.widget.Toast.makeText(context, failedText, android.widget.Toast.LENGTH_SHORT).show()
-    }
-    return {
-        if (RunImageStore.needsPermission(context)) {
-            permission.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        } else {
-            save()
-        }
-    }
-}
-
 /** 러닝 중 위 판 — 계획마다 두 칸의 이름 · 값과 아래 한두 줄(자유 러닝: 러닝 시간 | 달린 거리만) */
 @Composable
 private fun RunPlanPanel(
@@ -3030,135 +3018,6 @@ private fun CrewShareFor(session: WalkSessionState, crewId: String, crewName: St
         hasRoute = session.geoTrack.size >= 2,
         onClose = onClose,
         onOpenChat = onOpenChat,
-    )
-}
-
-@Composable
-private fun RunShareScreen(session: WalkSessionState, points: Double?, upload: String?, onClose: () -> Unit) {
-    val context = LocalContext.current
-    var includeRoute by rememberSaveable { mutableStateOf(false) }
-    val km = finishKm(session)
-    val elapsed = formatDuration(session.lastElapsedSec)
-    val pace = finishPace(session)?.let { formatPace(it) } ?: "—"
-    val labels = RunShareCard.Labels(
-        distance = stringResource(R.string.share_card_distance),
-        time = stringResource(R.string.share_card_time),
-        pace = stringResource(R.string.share_card_pace),
-        footer = stringResource(R.string.share_card_footer),
-    )
-    val shareText = if (finishConfirmed(session, points, upload) && points != null) {
-        stringResource(R.string.finish_share_text, "%.1f".format(km), elapsed, com.stepup.android.ui.components.formatSupDown(points))
-    } else {
-        stringResource(R.string.finish_share_activity, "%.1f".format(km), elapsed)
-    }
-    val datePattern = stringResource(R.string.result_date_pattern)
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    val date = remember(session.lastStartedAt, datePattern, locale) {
-        if (session.lastStartedAt > 0L) {
-            runCatching { java.text.SimpleDateFormat(datePattern, locale).format(java.util.Date(session.lastStartedAt)) }.getOrNull()
-        } else null
-    }
-    // 경로를 끄면 빈 경로로 그린다 — 지도 · 출발 · 도착이 그림에 남지 않는다
-    var card by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    LaunchedEffect(includeRoute, session.lastStartedAt) {
-        card = null
-        val track = if (includeRoute) session.geoTrack else emptyList()
-        card = kotlinx.coroutines.withContext(Dispatchers.Default) {
-            runCatching { RunShareCard.render(context, km, elapsed, pace, track, labels, date) }.getOrNull()
-        }
-    }
-    val preview = remember(card) { card?.asImageBitmap() }
-    val save = rememberCardSave(card, "StepUp-run-${session.lastStartedAt}")
-    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
-    RunSharePreviewContent(
-        title = stringResource(R.string.run_share_title),
-        subtitle = stringResource(R.string.run_share_sub),
-        preview = preview,
-        includeRoute = includeRoute,
-        onRouteChange = { includeRoute = it },
-        onShare = { card?.let { shot -> shareScope.launch { RunShareCard.share(context, shot, shareText, null) } } },
-        onCancel = onClose,
-        shareLabel = stringResource(R.string.run_share),
-        onSaveImage = save,
-    )
-}
-
-/**
- * 자유 러닝 공유(전달본 10) — 그림과 함께 보내는 글 모두 보상(SUP) 없이 거리 · 시간만. 받은 값으로 글이 바뀌지 않는다(보상 흐름을 읽지 않는다).
- * 그림을 만들지 못하면 글만 보낼 수 있고, 그림 공유가 실패해도 글로 다시 연다. 경로 포함은 기본 꺼짐(그대로).
- */
-@Composable
-private fun FreeRunShareScreen(session: WalkSessionState, onClose: () -> Unit) {
-    val context = LocalContext.current
-    var includeRoute by rememberSaveable { mutableStateOf(false) }
-    val km = freeResultKm(session.lastGpsKm)
-    val elapsed = formatDuration(session.lastElapsedSec)
-    val pace = freeAveragePaceSec(km, session.lastElapsedSec)?.let { formatPacePrime(it) } ?: "—"
-    val textRes = freeShareTextRes(session.lastGpsKm)
-    val shareText = if (km != null) stringResource(textRes, "%.1f".format(km), elapsed) else stringResource(textRes, elapsed)
-    val labels = RunShareCard.Labels(
-        distance = stringResource(R.string.share_card_distance),
-        time = stringResource(R.string.share_card_time),
-        pace = stringResource(R.string.run_label_pace),
-        footer = "",
-    )
-    val datePattern = stringResource(R.string.run_free_share_date_pattern)
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    val date = remember(session.lastStartedAt, datePattern, locale) {
-        if (session.lastStartedAt > 0L) {
-            runCatching { java.text.SimpleDateFormat(datePattern, locale).format(java.util.Date(session.lastStartedAt)) }.getOrNull()
-        } else null
-    }
-    // 경로를 끄면 빈 자리로 그린다 — 지도 · 출발 · 도착이 그림에 남지 않는다
-    var card by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    var renderFailed by remember { mutableStateOf(false) }
-    LaunchedEffect(includeRoute, session.lastStartedAt) {
-        card = null
-        renderFailed = false
-        val track = if (includeRoute) session.geoTrack else emptyList()
-        val shot = kotlinx.coroutines.withContext(Dispatchers.Default) {
-            runCatching {
-                RunShareCard.render(
-                    context, km ?: 0.0, elapsed, pace, track, labels, date,
-                    style = RunShareCard.Style.Free, distance = km?.let { "%.2f".format(it) } ?: "—",
-                )
-            }.getOrNull()
-        }
-        card = shot
-        renderFailed = shot == null
-    }
-    val preview = remember(card) { card?.asImageBitmap() }
-    val save = rememberCardSave(card, "StepUp-run-${session.lastStartedAt}")
-    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
-    RunSharePreviewContent(
-        title = stringResource(R.string.run_share_title),
-        subtitle = stringResource(R.string.run_share_sub),
-        preview = preview,
-        includeRoute = includeRoute,
-        onRouteChange = { includeRoute = it },
-        onShare = {
-            val shot = card
-            if (shot == null) {
-                RunShareCard.shareText(context, shareText)
-            } else {
-                shareScope.launch {
-                    val sent = try {
-                        RunShareCard.share(context, shot, shareText, null)
-                        true
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        throw e
-                    } catch (_: Exception) {
-                        false
-                    }
-                    if (!sent) RunShareCard.shareText(context, shareText)
-                }
-            }
-        },
-        onCancel = onClose,
-        shareLabel = stringResource(R.string.run_share),
-        onSaveImage = if (renderFailed) null else save,
-        shareEnabled = card != null || renderFailed,
-        failedNote = if (renderFailed) stringResource(R.string.run_free_share_image_failed) else null,
     )
 }
 

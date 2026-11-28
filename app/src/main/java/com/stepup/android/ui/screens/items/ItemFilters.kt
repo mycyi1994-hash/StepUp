@@ -39,6 +39,8 @@ object ItemSort {
     const val RARITY = "RARITY"
     const val RECENT = "RECENT"
     const val LEVEL = "LEVEL"
+    /** 내구도 낮은순(13차 내 신발 정렬) */
+    const val DURABILITY = "DURABILITY"
 
     val values = listOf(RARITY, RECENT, LEVEL)
 }
@@ -47,6 +49,7 @@ object ItemSort {
 fun itemSortRes(key: String): Int = when (key) {
     ItemSort.RECENT -> R.string.items_sort_recent
     ItemSort.LEVEL -> R.string.items_sort_level
+    ItemSort.DURABILITY -> R.string.v13_sort_durability
     else -> R.string.items_sort_rarity
 }
 

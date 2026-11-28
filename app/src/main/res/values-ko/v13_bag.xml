@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_bag_count">%1$d종 · %2$d개</string>
+    <string name="v13_bag_empty">아직 없음 · 이벤트 보상으로 받아요</string>
+    <string name="v13_bag_section_run">러닝할 때 쓰는 아이템</string>
+    <string name="v13_bag_have">보유</string>
+    <string name="v13_bag_where">쓰는 곳</string>
+    <string name="v13_bag_where_run">출발 전 신발 확인</string>
+    <string name="v13_bag_per_run">한 러닝에</string>
+    <string name="v13_bag_per_run_value">종류마다 1개</string>
+    <string name="v13_bag_start_run">러닝 시작</string>
+    <string name="v13_bag_after">쓴 뒤 남는 %1$s %2$d개</string>
+    <string name="v13_bag_fill_durability">내구도 채우기</string>
+    <string name="v13_bag_fill_energy">에너지 채우기</string>
+    <string name="v13_bag_n">%1$d개</string>
+</resources>

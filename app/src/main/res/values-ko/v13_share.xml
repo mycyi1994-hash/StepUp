@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_sheet_title">공유</string>
+    <string name="share_to_instagram">인스타그램</string>
+    <string name="share_to_kakao">카카오톡</string>
+    <string name="share_to_x">X</string>
+    <string name="share_to_save">이미지 저장</string>
+    <string name="share_to_more">더보기</string>
+    <string name="share_link_copy">복사</string>
+    <string name="share_link_copied">링크를 복사했어요</string>
+    <string name="share_card_failed">그림을 만들지 못했어요</string>
+    <string name="share_run_date_pattern">M월 d일</string>
+    <string name="share_daypart_morning">아침</string>
+    <string name="share_daypart_day">낮</string>
+    <string name="share_daypart_evening">저녁</string>
+    <string name="share_daypart_night">밤</string>
+    <string name="share_run_title">%1$s %2$s 러닝</string>
+    <string name="share_run_text">StepUp 으로 %1$s km · %2$s 달렸어요</string>
+    <string name="share_card_steps">걸음</string>
+    <string name="share_card_shoe">신발</string>
+    <string name="share_chip_map">지도</string>
+    <string name="share_chip_record">기록</string>
+    <string name="share_chip_shoe">신발</string>
+    <string name="share_run_with_shoe">%1$s</string>
+    <string name="v13_rank_share_title">이번 주 크루 순위</string>
+    <string name="v13_rank_value">%1$d위</string>
+    <string name="v13_rank_up">지난주보다 %1$d계단 위</string>
+    <string name="v13_rank_down">지난주보다 %1$d계단 아래</string>
+    <string name="v13_rank_same">지난주와 같은 순위</string>
+    <string name="v13_rank_members">인원</string>
+    <string name="v13_rank_members_value">%1$d명</string>
+    <string name="v13_rank_share_text">StepUp 이번 주 크루 순위 · %1$s %2$d위</string>
+</resources>

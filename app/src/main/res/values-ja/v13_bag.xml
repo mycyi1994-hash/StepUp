@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_bag_count">%1$d種 · %2$d個</string>
+    <string name="v13_bag_empty">まだありません · イベント報酬でもらえます</string>
+    <string name="v13_bag_section_run">ランで使うアイテム</string>
+    <string name="v13_bag_have">所持</string>
+    <string name="v13_bag_where">使う所</string>
+    <string name="v13_bag_where_run">出発前のシューズ確認</string>
+    <string name="v13_bag_per_run">1回のランで</string>
+    <string name="v13_bag_per_run_value">種類ごとに1個</string>
+    <string name="v13_bag_start_run">ランを始める</string>
+    <string name="v13_bag_after">使った後に残る%1$s %2$d個</string>
+    <string name="v13_bag_fill_durability">耐久度を満たす</string>
+    <string name="v13_bag_fill_energy">エネルギーを満たす</string>
+    <string name="v13_bag_n">%1$d個</string>
+</resources>

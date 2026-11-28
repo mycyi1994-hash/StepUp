@@ -417,6 +417,7 @@ private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
         "https://${com.stepup.android.core.InviteLinks.HOST}"
     }
     val share = stringResource(R.string.beta_code_share_text, row.code, appLink)
+    var sharing by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(16.dp)).background(c.card)
             .stepUpRim(RoundedCornerShape(16.dp), RimKind.Surface)
@@ -436,15 +437,21 @@ private fun BetaCodeRow(row: AccessCodeRow, context: Context) {
             }, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Filled.ContentCopy, stringResource(R.string.beta_code_copy), tint = c.secondaryLabel)
             }
-            IconButton(onClick = {
-                runCatching {
-                    context.startActivity(
-                        Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, share), null)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
-                }
-            }, modifier = Modifier.size(48.dp)) {
+            // 13차 S-420 — 공유 시트(카드 미리보기 · 보낼 곳). 보내는 글은 예전 그대로(코드 · 받는 주소)
+            IconButton(onClick = { sharing = true }, modifier = Modifier.size(48.dp).testTag("beta-code-share-${row.code}")) {
                 Icon(Icons.Filled.Share, stringResource(R.string.beta_code_share), tint = c.secondaryLabel)
+            }
+            if (sharing) {
+                val cardTitle = stringResource(R.string.v13_code_card_title)
+                com.stepup.android.ui.components.StepUpShareSheet(
+                    options = listOf(
+                        com.stepup.android.ui.components.ShareCardOption("code", stringResource(R.string.beta_code_share)) { ctx ->
+                            com.stepup.android.ui.components.ShareCards.invite(ctx, cardTitle, row.code, listOf(statusText), row.code)
+                        },
+                    ),
+                    text = share, fileName = "StepUp-code-${row.code}", onDismiss = { sharing = false },
+                    title = stringResource(R.string.v13_code_share_title), link = appLink,
+                )
             }
         }
     }

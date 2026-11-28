@@ -192,12 +192,13 @@ val LightPalette = StepUpPalette(
 // 블랙(2026-10-26 디자인 자료 — 사용자 결정 "시안처럼 검게"): 바닥 #000 · 면 #101216 · 선 #292E37 · 글자 #F6F7FA · 보조 #A7AFBC · 블루 #477DFF(버튼 바닥은 흰 글자 4:1 이 되게 #3D74FA)
 val DarkPalette = StepUpPalette(
     night = Color(0xFF000000),
-    carbon = Color(0xFF101216),
+    // v12 시제품(2026-11-26) — 면은 남색이 도는 #0F1829(예전 #101216)
+    carbon = Color(0xFF0F1829),
     // fill rgba(130,150,190,.20) 을 카드 위에 얹은 값 — 보조 버튼 · 입력칸 · 세그먼트 트랙
-    carbonHigh = Color(0xFF1E2128),
+    carbonHigh = Color(0xFF172236),
     // 흰 테두리(2026-11-07 「흰색 덧 붙히기」) — 예전 불투명 회색 #292E37 대신 흰 18%. 구분선은 [hairline] 이 예전 값을 지킨다
     edge = Color(0x2EFFFFFF),
-    hairline = Color(0xFF292E37),
+    hairline = Color(0xFF20283D),
     volt = Color(0xFF3D74FA),
     voltDeep = Color(0xFF3A6AE6),
     // 막 위 패널 테두리 · 스포트라이트 — 시안 #6E9BFF 를 55% 로 얹으면 막과 2.9:1 이라 한 단계 밝게(3:1, PaletteContrastTest)
@@ -212,11 +213,11 @@ val DarkPalette = StepUpPalette(
     scrim = Color(0xFF000000),
     scrimAlpha = 0.78f,
     // 시트 · 막 위 패널 — groupedBackground
-    overlay = Color(0xFF101216),
+    overlay = Color(0xFF0F1829),
     voltText = Color(0xFF7DA2FF),
     cyan = Color(0xFF24D8FF),
-    cardTop = Color(0xFF101216),
-    cardBottom = Color(0xFF101216),
+    cardTop = Color(0xFF0F1829),
+    cardBottom = Color(0xFF0F1829),
     backdropTop = Color(0xFF000000),
     backdropBottom = Color(0xFF000000),
     // 밝은 타일을 어두운 지도로 옮긴다(2026-10-14 "지도가 너무 어둡다") — 땅 #22324A 쯤 · 물 파랑(예전에는 뒤집혀 갈색이었다) ·

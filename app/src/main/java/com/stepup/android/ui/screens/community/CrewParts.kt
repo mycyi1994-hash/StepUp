@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import com.stepup.android.ui.experience.feedbackClickable
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -204,11 +207,27 @@ fun CrewManageCard(
                     fontSize = 14.sp,
                     color = Silver,
                 )
-                CrewRequestsState.Failed -> GhostButton(
-                    text = stringResource(R.string.crew_retry),
-                    onClick = onRetry,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // 못 읽었다 — 까닭 한 줄 + 작은 다시 시도(큰 버튼 하나만 남으면 관리 칸 전체가 고장처럼 보였다, 2026-11-28 디자인 점검)
+                CrewRequestsState.Failed -> Row(
+                    modifier = Modifier.fillMaxWidth().testTag("crew-requests-failed"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.crew_pending_load_failed),
+                        fontSize = 14.sp,
+                        color = Silver,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = stringResource(R.string.crew_retry),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = com.stepup.android.ui.components.StepUpUi.colors.accentText,
+                        modifier = Modifier.heightIn(min = 44.dp)
+                            .feedbackClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onRetry)
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                    )
+                }
                 is CrewRequestsState.Ready ->
                     if (requests.requests.isEmpty()) {
                         Text(

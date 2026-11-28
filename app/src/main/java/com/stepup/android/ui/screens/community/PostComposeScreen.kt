@@ -106,11 +106,10 @@ fun PostComposeScreen(
     BoardNoticeToast(viewModel)
 
     Column(Modifier.fillMaxSize().imePadding().testTag("post-compose")) {
-        Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
-            com.stepup.android.ui.components.BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart))
-            Text(stringResource(if (flash) R.string.d26_flash_header else R.string.post_write), style = StepUpUi.type.navTitle, color = c.label,
-                modifier = Modifier.align(Alignment.Center).semantics { heading() })
-        }
+        // v12 "← 제목"(왼쪽 정렬, 2026-11-28 디자인 점검 — 예전 원 뒤로 · 가운데 제목)
+        com.stepup.android.ui.components.NavHeader(
+            stringResource(if (flash) R.string.d26_flash_header else R.string.post_write), onBack = onBack,
+        )
         if (inCrew) {
             val categories = PostCategory.entries
             StepUpTabs(

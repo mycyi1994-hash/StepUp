@@ -16,6 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
@@ -95,16 +97,14 @@ class ProfileRunningPathTest {
             compose.waitUntil(10_000) {
                 runCatching { compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals(km) }.isSuccess
             }
-            // 파란 톤 v4 러닝 패스(PF01) — 총 러닝은 큰 수 하나와 "회" 단위
-            compose.onNodeWithTag("profile-runs", useUnmergedTree = true)
-                .assertTextEquals(String.format(Locale.ROOT, "%,d", runs))
+            // v12 시제품(2026-11-26) — 기록한 러닝 · 운동 시간 · 최장 거리 줄은 뺐다(내 러닝 기록에 있다)
+            compose.onAllNodesWithTag("profile-runs", useUnmergedTree = true).assertCountEquals(0)
             if (before.runs == 0) {
                 // 앞선 기록이 없으면 시안과 같은 값이다
                 compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("34.2")
-                compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("8")
             }
             // 순서(UI 최종 통합안 me): 프로필 → 기록 카드 → 지갑 · 프로필 수정 · 내 러닝 기록 · 설정(챌린지 줄은 2026-10-17 뺐다)
-            val order = listOf("profile-name", "profile-record-card", "profile-wallet", "profile-edit", "profile-records", "profile-settings")
+            val order = listOf("profile-name", "profile-record-card", "profile-wallet", "profile-edit", "profile-records", "profile-achievements", "profile-settings")
                 .map { compose.onNodeWithTag(it).fetchSemanticsNode().positionInRoot.y }
             assertTrue("running-path order $order", order == order.sorted())
             shot("01-profile")
@@ -185,15 +185,13 @@ class ProfileRunningPathTest {
         }
         state("11-empty") {
             compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("0.0")
-            // PF04 — 실제 0건은 0.0 km · 0 회와 첫 러닝 안내(레벨 · 잔액은 그대로)
-            compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("0")
+            // PF04 — 실제 0건은 0.0 km 와 첫 러닝 안내(레벨 · 잔액은 그대로)
             compose.onNodeWithTag("profile-first-run", useUnmergedTree = true).assertIsDisplayed()
         }
         compose.runOnIdle { records = RunRecordState.Loading }
         state("12-loading") {
             // 읽기 전에는 0 을 보이지 않는다
             compose.onNodeWithTag("profile-distance", useUnmergedTree = true).assertTextEquals("—")
-            compose.onNodeWithTag("profile-runs", useUnmergedTree = true).assertTextEquals("—")
             compose.onNodeWithTag("profile-record-loading", useUnmergedTree = true).assertIsDisplayed()
         }
         compose.runOnIdle { records = RunRecordState.Failed }

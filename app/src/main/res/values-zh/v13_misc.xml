@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_code_share_title">发送邀请码</string>
+    <string name="v13_code_card_title">StepUp 测试邀请</string>
+    <string name="v13_ca_uploaded">已上传到%1$s的记录</string>
+    <string name="v13_ca_unit">条</string>
+    <string name="v13_ca_recent">最近记录</string>
+    <string name="v13_ca_what">会记录的内容</string>
+    <string name="v13_ca_t_run">跑步</string>
+    <string name="v13_ca_t_badge">徽章</string>
+    <string name="v13_ca_t_shoe">鞋子</string>
+    <string name="v13_ca_t_crew">跑团</string>
+    <string name="v13_ca_t_check">签到</string>
+    <string name="v13_ca_private">不上传位置、名字和步数</string>
+    <string name="v13_ca_forever">已上传的记录无法删除</string>
+    <string name="v13_crew_invite_title">跑团邀请</string>
+    <string name="v13_members_n">成员%1$d人</string>
+    <string name="v13_flash_invite_title">叫上朋友</string>
+    <string name="v13_flash_card_head">闪电跑 · %1$s</string>
+    <string name="v13_flash_seats">%1$d / %2$d人</string>
+    <string name="v13_upg_level">等级</string>
+    <string name="v13_upg_energy">每日能量</string>
+    <string name="v13_bag_used_toast">已使用%1$s · 剩余%2$d个</string>
+    <string name="v13_bag_use_failed">道具使用失败</string>
+    <string name="v13_bag_load_failed">加载失败</string>
+    <string name="v13_bag_no_shoe">未穿鞋</string>
+    <string name="v13_bag_pick_shoe">选鞋</string>
+    <string name="v13_bag_event">%1$s前跑步奖励 ×%2$s</string>
+    <string name="v13_bag_event_date">M月d日</string>
+    <string name="v13_check_go_anyway">直接出发</string>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v12 디자인 시제품 적용(2026-11-26) — docs/redesign/v12-2026-11-26 -->
+<resources>
+    <string name="v12_home_shoe_title">当前穿着的跑鞋</string>
+    <string name="v12_home_shoe_none">还没有穿跑鞋</string>
+    <string name="v12_home_shoe_pick">选择跑鞋</string>
+    <string name="v12_repair_short">修理</string>
+    <string name="v12_home_run_item">跑步道具</string>
+    <string name="v12_home_run_item_owned">有%1$d个</string>
+    <!-- 출발 전 신발 확인의 배터리 안내(2026-11-26 테스터 피드백) -->
+    <string name="run_battery_hint">为了熄屏后也能持续记录，请将电池使用设为“无限制”。</string>
+    <string name="run_battery_open">打开设置</string>
+    <string name="v12_points_split">分配</string>
+    <string name="v12_points_respec">重新分配</string>
+    <string name="v12_rename">改名</string>
+    <string name="v12_prev_shoe">上一双</string>
+    <string name="v12_next_shoe">下一双</string>
+    <string name="v12_shoe_stored">保管中</string>
+    <string name="v12_shoe_detail">跑鞋详情</string>
+    <string name="v12_bag_next">下次跑步使用的道具</string>
+    <string name="v12_bag_none">还没有选择道具</string>
+    <string name="v12_bag_pick_hint">出发前在跑鞋确认中选择使用</string>
+    <string name="v12_bag_zero">没有</string>
+    <string name="v12_bag_use">使用</string>
+    <string name="v12_sup_info">SUP 说明</string>
+    <string name="v12_achievements">成就</string>
+    <string name="v12_minutes">%1$d分钟</string>
+    <string name="v12_recent_date_pattern">M月d日 (E)</string>
+    <string name="v12_run_steps">%1$s步</string>
+    <string name="v12_run_lock">锁定</string>
+    <string name="v12_run_shoe_worn">穿着的跑鞋</string>
+</resources>

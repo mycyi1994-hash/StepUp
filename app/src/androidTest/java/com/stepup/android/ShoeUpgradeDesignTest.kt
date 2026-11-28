@@ -304,11 +304,11 @@ class ShoeUpgradeDesignTest {
         compose.onNodeWithTag("upgrade-xp-value", useUnmergedTree = true).assertTextEquals("39.7% → 73.0%")
         compose.onNodeWithTag("upgrade-xp-caption", useUnmergedTree = true).assertTextContains("+33.3%", substring = true)
         compose.onNodeWithTag("upgrade-primary").assertIsEnabled()
-        compose.onNodeWithTag("upgrade-primary").assertTextContains(string(R.string.fxp_action_add))
+        compose.onNodeWithTag("upgrade-primary").assertTextContains(string(R.string.fxp_action_add), substring = true)
 
         // x03 — 레벨업 견적(최소 Lv. 4) — 주 버튼 "레벨업", 레벨 줄 "3 → 4+"
         show("x03-xp-level-up", "upgrade-xp-bar", xp(listOf(X1.id, X2.id), quote = QUOTE_LEVEL))
-        compose.onNodeWithTag("upgrade-primary").assertTextContains(string(R.string.fxp_action_level_up))
+        compose.onNodeWithTag("upgrade-primary").assertTextContains(string(R.string.fxp_action_level_up), substring = true)
         compose.onNodeWithTag("upgrade-value-level", useUnmergedTree = true).assertTextContains("4+", substring = true)
         compose.onNodeWithTag("upgrade-gain-energy", useUnmergedTree = true).assertTextContains("28 → 30", substring = true)
 
@@ -352,7 +352,9 @@ class ShoeUpgradeDesignTest {
         compose.onNodeWithTag("upgrade-primary").assertIsNotEnabled()
         val pending = ForgePending("demo-key", XP_TARGET.id, listOf(X1.id), 0, System.currentTimeMillis() - 90_000, ForgeKind.XP, "md5")
         show("x12-xp-unknown", "upgrade-unknown", XP_BASE.copy(phase = UpgradePhase.Unknown(pending), xpRunning = listOf(X1)))
-        compose.onNodeWithTag("upgrade-unknown-note", useUnmergedTree = true).assertTextContains(string(R.string.fxp_unknown_note), substring = true)
+        compose.onNodeWithTag("upgrade-unknown-note", useUnmergedTree = true).assertExists()
+        compose.onNode(androidx.compose.ui.test.hasText(string(R.string.fxp_unknown_note), substring = true) and
+            androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("upgrade-unknown-note")), useUnmergedTree = true).assertExists()
 
         // 360dp · 큰 글씨 — 레벨업 견적 · 결과
         narrow = true

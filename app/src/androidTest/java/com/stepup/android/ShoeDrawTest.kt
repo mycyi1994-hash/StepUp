@@ -214,7 +214,7 @@ class ShoeDrawTest {
             compose.onNodeWithTag("draw-result-shoes").performClick()
             awaitTag("my-shoes")
             compose.onNodeWithTag("shoes-section-mine").assertIsSelected()
-            compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
+            compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-${shoe.id}"))
             compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("shoe-choice-${shoe.id}").assertIsSelected() }.isSuccess }
             assertEquals("seeing the new shoe does not equip it", equipped, DrawSamples.equippedId())
             shot("23-my-shoes-with-the-new-shoe")
@@ -266,6 +266,56 @@ class ShoeDrawTest {
             awaitTag("draw-result", 15_000)
             assertEquals("the lost answer is checked, not drawn again", 1, server.draws.get())
             shot("31-checked-result", settle = 1_200)
+        } finally {
+            ServiceLocator.useDrawForTest(null)
+        }
+    }
+
+    /** 13차 "10회 뽑기" — 한 번 뽑기를 열 번 차례로 보내고, 서버가 준 신발만 결과 격자에. 확인하면 메인 · 수를 다시 읽는다 */
+    @Test fun tenDrawSendsTenSingleDraws() {
+        prepare()
+        val server = FakeDrawSource(DrawSamples.shoe())
+        ServiceLocator.useDrawForTest(server)
+        try {
+            edgeToEdge()
+            compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
+            openDrawTab()
+            awaitTag("draw-free-left")
+            compose.waitUntil(10_000) { runCatching { text("draw-free-left", "13회") }.isSuccess }
+            compose.onNodeWithTag("draw-free-many").assertTextContains("10회", substring = true).performClick()
+            awaitTag("draw-batch-result", 20_000)
+            assertEquals("ten taps on the server, one each", 10, server.draws.get())
+            compose.onNodeWithTag("draw-batch-shoe-9").assertExists()
+            compose.onAllNodesWithTag("draw-batch-note").assertCountEquals(0)
+            compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("draw-batch-left").assert(hasText("3회", substring = true)) }.isSuccess }
+            shot("50-ten-result", settle = 1_000)
+            compose.onNodeWithTag("draw-batch-ok").performClick()
+            awaitTag("draw-home")
+            compose.waitUntil(5_000) { runCatching { text("draw-free-left", "3회") }.isSuccess }
+        } finally {
+            ServiceLocator.useDrawForTest(null)
+        }
+    }
+
+    /** 여러 번 뽑기 중 서버가 거절하면 거기서 멈춘다 — 받은 것만 보이고, 나머지는 기회를 쓰지 않았다고 말한다 */
+    @Test fun tenDrawStopsAtTheFirstRefusal() {
+        prepare()
+        val server = FakeDrawSource(DrawSamples.shoe())
+        server.refuseFrom = 4
+        ServiceLocator.useDrawForTest(server)
+        try {
+            edgeToEdge()
+            compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
+            openDrawTab()
+            awaitTag("draw-free-left")
+            compose.waitUntil(10_000) { runCatching { text("draw-free-left", "13회") }.isSuccess }
+            compose.onNodeWithTag("draw-free-many").performClick()
+            awaitTag("draw-batch-result", 20_000)
+            assertEquals("stops at the refusal", 4, server.draws.get())
+            compose.onNodeWithTag("draw-batch-shoe-2").assertExists()
+            compose.onAllNodesWithTag("draw-batch-shoe-3").assertCountEquals(0)
+            compose.onNodeWithTag("draw-batch-note").assertExists()
+            shot("51-ten-stopped", settle = 1_000)
         } finally {
             ServiceLocator.useDrawForTest(null)
         }

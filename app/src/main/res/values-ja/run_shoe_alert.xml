@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_shoe_alert">シューズ耐久度のお知らせ</string>
+    <string name="shoe_alert_low_title">シューズ耐久度 残り%1$d%%</string>
+    <string name="shoe_alert_low_body_min">満額獲得であと約%1$d分走れます</string>
+    <string name="shoe_alert_low_body">もうすぐすり減ります · 修理すると満額に戻ります</string>
+    <string name="shoe_alert_worn_title">シューズ耐久度を使い切りました</string>
+    <string name="notification_steps_shoe">%1$,d歩 · シューズ %2$d%%</string>
+    <string name="lock_run_shoe">シューズ耐久度</string>
+</resources>

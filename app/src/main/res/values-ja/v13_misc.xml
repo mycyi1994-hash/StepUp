@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_code_share_title">招待コードを送る</string>
+    <string name="v13_code_card_title">StepUp ベータ招待</string>
+    <string name="v13_ca_uploaded">%1$sに記録した件数</string>
+    <string name="v13_ca_unit">件</string>
+    <string name="v13_ca_recent">最近の記録</string>
+    <string name="v13_ca_what">記録されるもの</string>
+    <string name="v13_ca_t_run">ラン</string>
+    <string name="v13_ca_t_badge">バッジ</string>
+    <string name="v13_ca_t_shoe">シューズ</string>
+    <string name="v13_ca_t_crew">クルー</string>
+    <string name="v13_ca_t_check">出席</string>
+    <string name="v13_ca_private">位置・名前・歩数は記録しません</string>
+    <string name="v13_ca_forever">記録したものは消せません</string>
+    <string name="v13_crew_invite_title">クルー招待</string>
+    <string name="v13_members_n">メンバー%1$d人</string>
+    <string name="v13_flash_invite_title">友達を呼ぶ</string>
+    <string name="v13_flash_card_head">フラッシュラン · %1$s</string>
+    <string name="v13_flash_seats">%1$d / %2$d人</string>
+    <string name="v13_upg_level">レベル</string>
+    <string name="v13_upg_energy">1日のエネルギー</string>
+    <string name="v13_bag_used_toast">%1$sを使用 · 残り%2$d個</string>
+    <string name="v13_bag_use_failed">アイテムを使えませんでした</string>
+    <string name="v13_bag_load_failed">読み込めませんでした</string>
+    <string name="v13_bag_no_shoe">履いているシューズなし</string>
+    <string name="v13_bag_pick_shoe">シューズを選ぶ</string>
+    <string name="v13_bag_event">%1$sまでラン報酬 ×%2$s</string>
+    <string name="v13_bag_event_date">M月d日</string>
+    <string name="v13_check_go_anyway">そのまま出発</string>
+</resources>

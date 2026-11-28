@@ -186,7 +186,18 @@ internal fun CrewRoomsContent(
         ),
         bottom = {
             when (ui) {
-                is RoomsUi.Failed -> FreeRunButton(stringResource(R.string.crew5_rooms_reload), onRetry, Modifier.fillMaxWidth().testTag("crew-rooms-retry"))
+                // 로그인이 필요하면 다시 불러와도 소용없다 — 다시 로그인(2026-11-28 디자인 점검)
+                is RoomsUi.Failed -> if (ui.signIn) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val scope = rememberCoroutineScope()
+                    FreeRunButton(
+                        stringResource(R.string.session_sign_in_again),
+                        { scope.launch { runCatching { com.stepup.android.ui.components.returnToSignIn(context) } } },
+                        Modifier.fillMaxWidth().testTag("crew-rooms-sign-in"),
+                    )
+                } else {
+                    FreeRunButton(stringResource(R.string.crew5_rooms_reload), onRetry, Modifier.fillMaxWidth().testTag("crew-rooms-retry"))
+                }
                 // 주 행동 하나 — 새 대기실. 오늘 이미 했으면 막는다(이유는 위 안내)
                 else -> FreeRunButton(
                     stringResource(R.string.crew5_rooms_new), onCreate, Modifier.fillMaxWidth().testTag("crew-rooms-new"),

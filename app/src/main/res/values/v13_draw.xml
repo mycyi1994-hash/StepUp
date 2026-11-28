@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_draw_n">%1$d draws</string>
+    <string name="v13_draw_drawing">Drawing</string>
+    <string name="v13_draw_drawing_cd">Drawing %1$d of %2$d</string>
+    <string name="v13_draw_batch_title">%1$d-draw results</string>
+    <string name="v13_draw_best">Top grade</string>
+    <string name="v13_draw_again_n">%1$d more</string>
+    <string name="v13_draw_ok">OK</string>
+    <string name="v13_draw_stopped">Drew %2$d of %1$d · the rest weren\'t used</string>
+    <string name="v13_draw_unsure">Still checking the last one · see it on the draw screen</string>
+    <string name="v13_draw_left">%1$d left</string>
+    <string name="v13_draw_tier_count">%1$s %2$d</string>
+    <string name="v13_draw_cell_cd">%1$s, %2$s</string>
+    <string name="v13_draw_share">Share</string>
+    <string name="v13_draw_new_shoe">New shoe</string>
+    <string name="v13_draw_share_new">I got a new shoe on StepUp — %1$s</string>
+    <string name="v13_draw_share_ten">StepUp %1$d draws — top grade %2$s</string>
+    <string name="v13_draw_share_line">%1$s · %2$s</string>
+    <string name="v13_draw_keep">Keep in my shoes</string>
+    <string name="v13_draw_wear">Wear this shoe</string>
+    <string name="v13_draw_history">Chance history</string>
+    <string name="v13_draw_odds">Counts &amp; odds</string>
+    <string name="v13_boxes_where">Where to get boxes</string>
+    <string name="v13_boxes_normal_reward">1 free draw</string>
+    <string name="v13_boxes_premium_reward">1 premium draw</string>
+    <string name="v13_boxes_check_in">Check-in</string>
+    <string name="v13_boxes_run">today\'s run %1$s steps</string>
+    <string name="v13_boxes_day_steps">%1$s steps a day</string>
+    <string name="v13_boxes_runner">each runner level</string>
+    <string name="v13_boxes_runner5">every 5 runner levels</string>
+    <string name="v13_boxes_week">%1$s run steps a week</string>
+    <string name="v13_boxes_streak">%1$d-day goal streak</string>
+    <string name="v13_boxes_shoe_levels">shoe Lv %1$s</string>
+    <string name="v13_boxes_buy_note">You can also buy them with SUP</string>
+    <string name="v13_boxes_buy_link">Buy with SUP</string>
+    <string name="v13_boxes_entry_runs">Today\'s run boxes %1$d/%2$d</string>
+</resources>

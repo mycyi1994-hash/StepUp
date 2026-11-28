@@ -190,21 +190,19 @@ internal fun BlueTopBar(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val ink = blueInk()
-    Box(modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 6.dp)) {
-        BlueBackButton(onBack, Modifier.align(Alignment.CenterStart))
-        Column(
-            Modifier.align(Alignment.Center).padding(horizontal = 64.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    // v12 시제품(2026-11-26) — "← 제목"(왼쪽 정렬)
+    Row(modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        BlueBackButton(onBack)
+        Column(Modifier.weight(1f)) {
             Text(
-                title, style = blueText(19.sp, ink.text, FontWeight.Bold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
+                title, style = blueText(20.sp, ink.text, FontWeight.ExtraBold, 1.25f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.semantics { heading() },
             )
             if (subtitle != null) {
-                Text(subtitle, style = blueText(13.sp, ink.secondary, FontWeight.Medium, 1.3f), maxLines = 1, textAlign = TextAlign.Center)
+                Text(subtitle, style = blueText(13.sp, ink.secondary, FontWeight.Medium, 1.3f), maxLines = 1)
             }
         }
-        Box(Modifier.align(Alignment.CenterEnd)) {
+        Box {
             when {
                 trailing != null -> trailing()
                 onMore != null -> BlueMoreButton(onMore, Modifier.testTag("crew-more"))

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_bag_count">%1$d种 · %2$d个</string>
+    <string name="v13_bag_empty">还没有 · 可通过活动奖励获得</string>
+    <string name="v13_bag_section_run">跑步时使用的道具</string>
+    <string name="v13_bag_have">持有</string>
+    <string name="v13_bag_where">使用位置</string>
+    <string name="v13_bag_where_run">出发前确认鞋子</string>
+    <string name="v13_bag_per_run">每次跑步</string>
+    <string name="v13_bag_per_run_value">每种1个</string>
+    <string name="v13_bag_start_run">开始跑步</string>
+    <string name="v13_bag_after">使用后剩余%1$s %2$d个</string>
+    <string name="v13_bag_fill_durability">补满耐久度</string>
+    <string name="v13_bag_fill_energy">补满能量</string>
+    <string name="v13_bag_n">%1$d个</string>
+</resources>

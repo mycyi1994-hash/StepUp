@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_shoe_alert">Shoe durability alerts</string>
+    <string name="shoe_alert_low_title">Shoe durability %1$d%% left</string>
+    <string name="shoe_alert_low_body_min">About %1$d min of full earning left</string>
+    <string name="shoe_alert_low_body">Repair soon to keep earning in full</string>
+    <string name="shoe_alert_worn_title">Shoe durability used up</string>
+    <string name="notification_steps_shoe">%1$,d steps · shoe %2$d%%</string>
+    <string name="lock_run_shoe">Shoe durability</string>
+</resources>

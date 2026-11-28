@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -36,9 +37,10 @@ fun RunBackButton(
             .then(if (tag != null) Modifier.testTag(tag) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
+        // v12 시제품(2026-11-26) — 꺾쇠 대신 곧은 화살표 ←
         Icon(
-            Icons.AutoMirrored.Filled.ArrowBackIos, stringResource(R.string.cd_back), tint = tint,
-            modifier = Modifier.size(20.dp).offset(x = 3.dp),
+            Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = tint,
+            modifier = Modifier.size(24.dp),
         )
     }
 }

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Speed
@@ -232,11 +233,14 @@ fun ChainActivityContent(
         SecondaryHeader(
             onBack = onBack, balance = null, onOpenWallet = null, title = stringResource(R.string.ca_title),
             modifier = Modifier.padding(horizontal = StepUpDesign.Gutter),
-            trailing = {
-                IconButton(onClick = { guide = true }, modifier = Modifier.size(48.dp).testTag("ca-guide")) {
-                    Icon(Icons.Outlined.Info, stringResource(R.string.ca_guide_cd), tint = p.text)
+            // 13차 S-158 — 목록이 있으면 "기록되는 것"은 목록 머리 줄에, 못 읽은 · 로그인 전 화면에서만 머리 ⓘ
+            trailing = if (state == ChainActivityLoad.Failed || state == ChainActivityLoad.SignedOut) {
+                {
+                    IconButton(onClick = { guide = true }, modifier = Modifier.size(48.dp).testTag("ca-guide")) {
+                        Icon(Icons.Outlined.Info, stringResource(R.string.ca_guide_cd), tint = p.text)
+                    }
                 }
-            },
+            } else null,
         )
         when (state) {
             ChainActivityLoad.Failed -> WalletState(
@@ -254,12 +258,14 @@ fun ChainActivityContent(
                 contentPadding = PaddingValues(start = StepUpDesign.Gutter, end = StepUpDesign.Gutter, top = 4.dp, bottom = 28.dp),
             ) {
                 item(key = "summary") { ChainSummary(state as? ChainActivityLoad.Ready) }
-                if (walletRecipient != null) {
-                    item(key = "recipient") {
-                        SettingsSwitchRow(
-                            title = stringResource(R.string.ca_recipient_title), description = stringResource(R.string.ca_recipient_body),
-                            checked = walletRecipient, onCheckedChange = onWalletRecipient,
-                            modifier = Modifier.padding(top = 8.dp).testTag("ca-recipient"),
+                item(key = "head") {
+                    Row(Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.v13_ca_recent), color = p.text, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f))
+                        Text(
+                            stringResource(R.string.v13_ca_what), color = p.accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).feedbackClickable(role = Role.Button) { guide = true }
+                                .padding(horizontal = 6.dp, vertical = 12.dp).testTag("ca-guide"),
                         )
                     }
                 }
@@ -279,27 +285,39 @@ fun ChainActivityContent(
                     }
                     else -> item(key = "loading") { ChainSkeleton() }
                 }
+                // 내 지갑으로 기록 받기 — 13차는 목록 아래(S-158 · S-414)
+                if (walletRecipient != null) {
+                    item(key = "recipient") {
+                        SettingsSwitchRow(
+                            title = stringResource(R.string.ca_recipient_title), description = stringResource(R.string.ca_recipient_body),
+                            checked = walletRecipient, onCheckedChange = onWalletRecipient,
+                            modifier = Modifier.padding(top = 12.dp).testTag("ca-recipient"),
+                        )
+                    }
+                }
             }
         }
     }
     if (guide) ChainGuideSheet(onClose = { guide = false })
 }
 
-/** 맨 위 — 어디에 올라가는지 · 누가 가스비를 내는지 · 기록됨 · 대기 수(읽기 전에는 숫자를 보이지 않는다) */
+/** 맨 위(13차 S-158) — "GIWA 테스트넷에 올린 기록" · 큰 수 N건, 아래 기록됨 · 대기 수(읽기 전에는 숫자를 보이지 않는다) */
 @Composable
 private fun ChainSummary(ready: ChainActivityLoad.Ready?) {
     val p = settingsPalette()
-    Column(
-        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(20.dp)).background(p.surface)
-            .padding(horizontal = 20.dp, vertical = 18.dp).testTag("ca-summary"),
-    ) {
-        Text(stringResource(R.string.ca_summary_head, ChainNetwork.NAME), color = p.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(stringResource(R.string.ca_summary_body), color = p.secondary, fontSize = 13.5.sp, lineHeight = 1.45.em,
-            modifier = Modifier.padding(top = 6.dp))
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("ca-summary")) {
+        Text(stringResource(R.string.v13_ca_uploaded, ChainNetwork.NAME), color = p.secondary, fontSize = 14.sp)
         if (ready != null) {
+            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp).semantics(mergeDescendants = true) {}.testTag("ca-total")) {
+                Text("${ready.records.size}", color = p.text, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.alignByBaseline())
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.v13_ca_unit), color = p.secondary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.alignByBaseline())
+            }
             val confirmed = ready.records.count { it.status == ChainRecord.Status.CONFIRMED }
             val pending = ready.records.count { it.status == ChainRecord.Status.PENDING }
-            Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+            Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                 SummaryCount(stringResource(R.string.ca_count_confirmed), confirmed, "ca-count-confirmed")
                 SummaryCount(stringResource(R.string.ca_count_pending), pending, "ca-count-pending")
             }
@@ -473,33 +491,38 @@ private fun ChainSkeleton() {
 @Composable
 fun ChainGuideSheet(onClose: () -> Unit) {
     val p = settingsPalette()
+    // 13차 S-162 — 긴 설명 대신 기록되는 것 다섯 칸과 두 줄
     SettingsSheet(
-        title = stringResource(R.string.ca_guide_title), onDismiss = onClose, modifier = Modifier.testTag("ca-guide-sheet"),
+        title = stringResource(R.string.v13_ca_what), onDismiss = onClose, modifier = Modifier.testTag("ca-guide-sheet"),
         actions = { SettingsPrimaryButton(stringResource(R.string.wl_ok), onClose, Modifier.fillMaxWidth()) },
     ) {
-        Text(stringResource(R.string.ca_guide_intro), color = p.secondary, fontSize = 14.5.sp, lineHeight = 1.45.em)
-        listOf(
-            Triple(Icons.AutoMirrored.Filled.DirectionsRun, R.string.ca_guide_run_head, R.string.ca_guide_run_body),
-            Triple(Icons.Outlined.MilitaryTech, R.string.ca_guide_badge_head, R.string.ca_guide_badge_body),
-            Triple(Icons.Outlined.Flag, R.string.ca_guide_course_head, R.string.ca_guide_course_body),
-            Triple(Icons.Outlined.Token, R.string.ca_guide_mint_head, R.string.ca_guide_mint_body),
-            Triple(Icons.Outlined.Sync, R.string.ca_guide_sync_head, R.string.ca_guide_sync_body),
-            Triple(Icons.Outlined.ReceiptLong, R.string.ca_guide_settle_head, R.string.ca_guide_settle_body),
-            Triple(Icons.Outlined.Casino, R.string.ca_guide_game_head, R.string.ca_guide_game_body),
-            Triple(Icons.Outlined.Groups, R.string.ca_guide_crew_head, R.string.ca_guide_crew_body),
-            Triple(Icons.Outlined.EventAvailable, R.string.ca_guide_daily_head, R.string.ca_guide_daily_body),
-            Triple(Icons.Outlined.Link, R.string.ca_guide_wallet_head, R.string.ca_guide_wallet_body),
-        ).forEach { (icon, head, body) ->
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.Top) {
-                Icon(icon, contentDescription = null, tint = p.accent, modifier = Modifier.padding(top = 2.dp).size(20.dp))
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(head), color = p.text, fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(body), color = p.secondary, fontSize = 13.5.sp, lineHeight = 1.4.em, modifier = Modifier.padding(top = 3.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                Icons.AutoMirrored.Filled.DirectionsRun to R.string.v13_ca_t_run,
+                Icons.Outlined.MilitaryTech to R.string.v13_ca_t_badge,
+                Icons.Outlined.Token to R.string.v13_ca_t_shoe,
+                Icons.Outlined.Groups to R.string.v13_ca_t_crew,
+                Icons.Outlined.EventAvailable to R.string.v13_ca_t_check,
+            ).forEach { (icon, label) ->
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(p.surface).padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(icon, contentDescription = null, tint = p.accent, modifier = Modifier.size(22.dp))
+                    Text(stringResource(label), color = p.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 6.dp), maxLines = 1)
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().padding(vertical = 8.dp).height(1.dp).background(p.divider))
-        Text(stringResource(R.string.ca_guide_foot), color = p.secondary, fontSize = 13.sp, lineHeight = 1.45.em)
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Lock, contentDescription = null, tint = p.secondary, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.v13_ca_private), color = p.secondary, fontSize = 14.sp)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Info, contentDescription = null, tint = p.secondary, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.v13_ca_forever), color = p.secondary, fontSize = 14.sp)
+        }
     }
 }

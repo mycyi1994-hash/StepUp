@@ -39,7 +39,7 @@ object AppChromePolicy {
         // 신발 뽑기 — 신발 탭의 뽑기 글자 탭(2026-10-26). 결과 확인 · 상자 열기 · 결과 동안은 [immersive] 로 하단 탭을 걷는다
         Destination(Routes.MYSTERY_BOX, Screen.Customize, Header.Main),
         Destination(Routes.RUN_ROUTE, Screen.Run, Header.Focus),
-        Destination(Routes.RUN_MENU, Screen.Run, Header.Focus),
+        Destination(Routes.RUN_MENU, Screen.Run, Header.Detail),
         Destination(Routes.RUN_GOALS, Screen.Run, Header.Focus),
         Destination(Routes.RUN_GOAL_HISTORY, Screen.Run, Header.Focus),
         Destination(Routes.RUN_COURSE, Screen.Run, Header.Focus),
@@ -94,6 +94,10 @@ object AppChromePolicy {
         Destination(Routes.NOTIFICATIONS, Screen.Profile, Header.Detail),
         Destination(Routes.NOTICE, Screen.Profile, Header.Detail),
         Destination(Routes.ACHIEVEMENTS, Screen.Profile, Header.Detail),
+        // 스댕이 키우기 미리보기 — 방 그림이 머리까지 덮는다(자기 머리 · 하단 탭 없이)
+        Destination(Routes.PUP, Screen.Run, Header.Form),
+        // 업데이트 내역 — 내 정보 탭 밑(하단 탭 그대로)
+        Destination(Routes.UPDATE_HISTORY, Screen.Profile, Header.Detail),
         Destination(Routes.ANALYTICS, Screen.Profile, Header.Detail),
         // 프로필 수정 — 하단 탭 없이 자기 머리(뒤로 가면 내 정보)
         Destination(Routes.PROFILE_EDIT, Screen.Profile, Header.Form),

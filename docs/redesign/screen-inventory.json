@@ -264,6 +264,20 @@
       "verification": "Android 14/15 record captures on final source; see stage 8 report for limits"
     },
     {
+      "id": "Routes.UPDATE_HISTORY",
+      "parent": "Profile",
+      "chrome": "Detail",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
+      "id": "Routes.PUP",
+      "parent": "Run",
+      "chrome": "Form",
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "Routes.RECORDS",
       "parent": "Profile",
       "chrome": "Detail",
@@ -856,7 +870,7 @@
     {
       "id": "BetaCodesScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt",
-      "line": 275,
+      "line": 291,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -930,7 +944,7 @@
     {
       "id": "PartyLobbyScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PartyLobbyScreen.kt",
-      "line": 95,
+      "line": 99,
       "implementation": "S2 batch A hero + batch B countdown overlay (PR #29): see docs/redesign/s2/STATUS.md",
       "verification": "S2 lobby hero from batch A; batch B party countdown overlay not captured (needs a live party reaching COUNTDOWN); Experience QA run 36234135671 passed",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -938,7 +952,7 @@
     {
       "id": "PostComposeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/PostComposeScreen.kt",
-      "line": 63,
+      "line": 65,
       "implementation": "S2 batch A (PR #28): see docs/redesign/s2/STATUS.md",
       "verification": "871f4fd: Experience QA run 36230985549 passed (Android 15); guest community home and crew-create/post-compose keyboard captures reviewed by Claude",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1052,7 +1066,7 @@
     {
       "id": "CrewCreatedScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewCreateScreens.kt",
-      "line": 1086,
+      "line": 1089,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1178,7 +1192,7 @@
     {
       "id": "CrewTransferScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewPeopleScreens.kt",
-      "line": 387,
+      "line": 390,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1304,7 +1318,7 @@
     {
       "id": "CustomizeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/customize/CustomizeScreen.kt",
-      "line": 151,
+      "line": 154,
       "implementation": "신발 화면 확정안(2026-09-28): see docs/redesign/shoes-ui-2026-09-28/README.md — MyShoesContent · ShoeVaultContent",
       "verification": "MyShoesDesignTest + ShoeDetailDesignTest (Experience QA community suite) + MyShoesModelTest (unit): device run pending",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -1345,7 +1359,7 @@
     {
       "id": "DrawRequestScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 65,
+      "line": 77,
       "implementation": "신발 뽑기 디자인 — 04 결과 확인 중(머리 아래 \"← 뽑기 결과 확인\", 닫힌 상자 · 막대 도는 표시, 버튼 없음, 뒤로 가면 20) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1353,7 +1367,7 @@
     {
       "id": "DrawOpeningScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 91,
+      "line": 103,
       "implementation": "신발 뽑기 디자인 — 05 상자 열기(결과를 받은 뒤에만 · 제목 줄의 건너뛰기 · 뚜껑 색 무료 라벤더 / 상급 오프화이트 · 동작 줄이기 0.2초) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1361,7 +1375,7 @@
     {
       "id": "DrawResultScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 133,
+      "line": 145,
       "implementation": "신발 뽑기 디자인 — 06 · 07 · 08 결과(서버가 준 신발, 등급 프레임 무대는 남은 높이만큼, 이름 끝 작은 등급 배지, 뽑은 뒤 서버에서 다시 읽은 남은 수) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1369,7 +1383,7 @@
     {
       "id": "DrawCheckScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawFlowScreens.kt",
-      "line": 227,
+      "line": 242,
       "implementation": "신발 뽑기 디자인 — 19 결과 확인 지연(시계 배지, 새로 뽑지 않고 서버 목록 · 현황을 다시 읽는다) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (screen-gallery/shoe-draw-v3/) + ShoeDrawTest; emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1377,7 +1391,7 @@
     {
       "id": "MysteryBoxScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/MysteryBoxScreen.kt",
-      "line": 75,
+      "line": 78,
       "implementation": "신발 뽑기 디자인 26장(2026-09-28 전달본): 무료 · 상급 글자 탭 하나씩의 메인(DrawHome.kt), 안내창(DrawSheets.kt), 흐름(DrawFlowScreens.kt), 하단 탭 위 짧은 알림 — 수 · 연결 상태 · 결과는 서버 값만(v2 규칙 그대로) — see docs/redesign/shoe-draw-v3/README.md",
       "verification": "ShoeDrawTabsDesignTest (Experience QA community suite, screen-gallery/shoe-draw-v3/: in-app example server 03→01→15→17→09→10→02→16→04→06, 12 · 23 · 13 · 14 · 26 · 20, 22→21, device sizes 360×800 · 390×844 · 412×915 · font 1.3 · light with zero-scroll checks, direct scenes 05 · 07 · 08 · 11 · 18 · 19 · 22 · 24 · 25 · 26 + light · large font · 320dp) + ShoeDrawTest (rules, screen-gallery/shoe-draw/) + ShoeDrawHomeTest · ShoeDrawFlowTest (unit); local compile only — emulator run pending CI",
       "evidence": "docs/redesign/shoe-draw-v3/README.md"
@@ -1385,7 +1399,7 @@
     {
       "id": "HomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/home/HomeScreen.kt",
-      "line": 102,
+      "line": 105,
       "implementation": "S2 batch 1 (PR #27): see docs/redesign/s2/STATUS.md",
       "verification": "443d4fb: Experience QA run 36298258448 passed (Android 15); home 390dp normal and home background-next captures reviewed by Claude — both show new home_bg photos (Gamcheon, Jamsil haze); the 30-photo set replaced the six s2_bg scenes (design/home-photos/README.md)",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -1401,7 +1415,7 @@
     {
       "id": "BagScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/BagScreen.kt",
-      "line": 77,
+      "line": 82,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1416,14 +1430,14 @@
     {
       "id": "ShoeUpgradeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ShoeUpgradeScreen.kt",
-      "line": 127,
+      "line": 150,
       "implementation": "신발 강화 — 파란 톤 v4 강화 전달본 UP01–UP15 · UP18(UP16 없음, UP17 은 2026-10-04 재료 규칙으로 없어짐): see docs/redesign/blue-v4-2026-10/IMPLEMENTATION-REPORT.md · docs/redesign/shoe-upgrade-2026-10-01/README.md — 재료 신발 3개 · 확률(0054 forge_*, 규칙 forge-v2)",
       "verification": "ShoeUpgradeDesignTest (Experience QA community suite, screen-gallery/shoe-upgrade/) + ShoeForgeTest (unit) + supabase/tests forge block: device run pending"
     },
     {
       "id": "SneakerDetailScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/SneakerDetailScreen.kt",
-      "line": 142,
+      "line": 150,
       "implementation": "보유 신발 상세 v1(2026-09-28 전달본): see docs/redesign/shoe-detail-v1/README.md — detail (ShoeDetailContent)",
       "verification": "ShoeDetailDesignTest (Experience QA community suite, screen-gallery/shoe-detail-v1/) + ShoeDetailModelTest (unit): device run pending",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1492,7 +1506,7 @@
     {
       "id": "AchievementsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/profile/AchievementsScreen.kt",
-      "line": 239,
+      "line": 251,
       "implementation": "record/wallet visual pass; see CHARACTER-FREE-STAGE8-2026-09-25-KO.md",
       "verification": "Android 14/15 record captures on final source; see stage 8 report for limits",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
@@ -1528,6 +1542,13 @@
       "verification": "ProfileRunningPathTest (Experience QA community suite, screen-gallery/profile-running-path/): five buttons and states 11-17 — see README 상태",
       "evidence": "docs/redesign/profile-running-path/README.md",
       "notes": "Settings tab unchanged; running-path card decoration is not a real route."
+    },
+    {
+      "id": "PupScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/pup/PupScreen.kt",
+      "line": 119,
+      "implementation": "pending",
+      "verification": "pending"
     },
     {
       "id": "RecordStatsScreen",
@@ -1567,7 +1588,7 @@
     {
       "id": "WalletScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/rewards/RewardsScreen.kt",
-      "line": 97,
+      "line": 98,
       "implementation": "지갑 v1(2026-09-28 전달본): scenes 01–14 · 16 (15 not applicable — no reconnect state in the service) — see docs/redesign/wallet-v1/README.md",
       "verification": "WalletDesignTest (Experience QA community suite, screen-gallery/wallet-v1/) + WalletLedgerTest: Experience QA run 36350039338 (e8a1021) passed (PR #49)"
     },
@@ -1596,10 +1617,17 @@
     {
       "id": "NotificationSettingsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/NotificationSettingsScreen.kt",
-      "line": 89,
+      "line": 90,
       "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
       "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48)",
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
+    },
+    {
+      "id": "UpdateHistoryScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PatchNotesUi.kt",
+      "line": 238,
+      "implementation": "pending",
+      "verification": "pending"
     },
     {
       "id": "PrivacyScreen",
@@ -1612,7 +1640,7 @@
     {
       "id": "SettingsHomeScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/settings/SettingsHomeScreen.kt",
-      "line": 74,
+      "line": 73,
       "implementation": "설정 v1(2026-09-28): see docs/redesign/settings-v1/README.md",
       "verification": "SettingsDesignTest (Experience QA community suite, screen-gallery/settings-v1/): Experience QA 147 · 148 passed (PR #48)",
       "evidence": [],
@@ -1655,6 +1683,13 @@
       "notes": "shared component finish; see SHARED-COMPONENT-FINISH-2026-09-24-KO.md; native verification pending"
     },
     {
+      "id": "UpdateRequiredScreen",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/splash/UpdateRequiredScreen.kt",
+      "line": 58,
+      "implementation": "pending",
+      "verification": "pending"
+    },
+    {
       "id": "CourseHubScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CourseHubScreen.kt",
       "line": 124,
@@ -1672,7 +1707,7 @@
     {
       "id": "CrewRoomCreateScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRooms.kt",
-      "line": 390,
+      "line": 410,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1686,7 +1721,7 @@
     {
       "id": "CrewShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRunScreens.kt",
-      "line": 795,
+      "line": 798,
       "implementation": "pending",
       "verification": "pending"
     },
@@ -1714,28 +1749,28 @@
     {
       "id": "RunStartMenuScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 77,
+      "line": 85,
       "implementation": "시작·로그인·첫 사용 v1(2026-09-28 전달본): see docs/redesign/onboarding-v1/README.md — scene 12 + run permission sheets 13~19",
       "verification": "OnboardingDesignTest (Experience QA secondary suite, screen-gallery/onboarding-v1/) + OnboardingRulesTest (unit) — compiled locally; device run pending; RunStartFlowTest"
     },
     {
       "id": "RunGoalsScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 217,
+      "line": 225,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunGoalHistoryScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunFlowScreens.kt",
-      "line": 272,
+      "line": 280,
       "implementation": "Designer handoff part A (PR #41): see design/handoff-2026-09-27/IMPLEMENTATION.md",
       "verification": "f8c207f: Experience QA run 36309869227 passed (Android 15); explore 360/390/390-large captures reviewed by Claude (390 normal: menu, goals, 10-min/1-km runs, past challenges, diet input/keypad, plan, walk part, routine done). Dialogs are asserted by tag but live in their own window, so the Compose captures do not show them."
     },
     {
       "id": "RunScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 168,
+      "line": 169,
       "implementation": "character-free native layout implemented; see CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
       "verification": "29bb16b: build and Android 14/15 primary-scene tests/captures passed; four required review fixes verified by Claude; see CHARACTER-FREE-STAGE6-2026-09-25-KO.md",
       "evidence": "CHARACTER-FREE-STAGE2-2026-09-25-KO.md",
@@ -1744,14 +1779,14 @@
     {
       "id": "RunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 2888,
+      "line": 3038,
       "implementation": "pending",
       "verification": "pending"
     },
     {
       "id": "FreeRunShareScreen",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/WalkScreen.kt",
-      "line": 2942,
+      "line": 3092,
       "implementation": "pending",
       "verification": "pending"
     }
@@ -1761,42 +1796,42 @@
       "kind": "Dialog",
       "owner": "AccessCodeModal",
       "source": "app/src/main/java/com/stepup/android/ui/screens/access/AccessScreens.kt",
-      "line": 135,
+      "line": 137,
       "verification": "pending"
     },
     {
       "kind": "AlertDialog",
       "owner": "ReportDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/BoardParts.kt",
-      "line": 138,
+      "line": 140,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "CommentSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/CommentSheet.kt",
-      "line": 176,
+      "line": 178,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "CrewSheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/community/crew/CrewUi.kt",
-      "line": 753,
+      "line": 764,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "InviteDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/events/EventsScreen.kt",
-      "line": 426,
+      "line": 427,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "DrawSheetFrame",
       "source": "app/src/main/java/com/stepup/android/ui/screens/gacha/DrawBlueParts.kt",
-      "line": 248,
+      "line": 250,
       "verification": "pending"
     },
     {
@@ -1810,77 +1845,91 @@
       "kind": "DialogPanel",
       "owner": "CopiesDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/items/ItemsScreen.kt",
-      "line": 518,
+      "line": 533,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "LbSheetHost",
       "source": "app/src/main/java/com/stepup/android/ui/screens/leaderboard/LeaderboardScreen.kt",
-      "line": 1050,
+      "line": 1052,
+      "verification": "pending"
+    },
+    {
+      "kind": "AlertDialog",
+      "owner": "TestAccountDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/login/TestAccountLogin.kt",
+      "line": 54,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "BidDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 362,
+      "line": 365,
       "verification": "pending"
     },
     {
       "kind": "DialogPanel",
       "owner": "AskDialog",
       "source": "app/src/main/java/com/stepup/android/ui/screens/market/MarketModelScreen.kt",
-      "line": 389,
+      "line": 392,
+      "verification": "pending"
+    },
+    {
+      "kind": "Dialog",
+      "owner": "UpdateNewsDialog",
+      "source": "app/src/main/java/com/stepup/android/ui/screens/settings/PatchNotesUi.kt",
+      "line": 123,
       "verification": "pending"
     },
     {
       "kind": "DropdownMenu",
       "owner": "LobbyHeader",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewLobby.kt",
-      "line": 484,
+      "line": 526,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "LobbySheetFrame",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewLobby.kt",
-      "line": 951,
+      "line": 1030,
       "verification": "pending"
     },
     {
       "kind": "ModalBottomSheet",
       "owner": "NavySheet",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewNavyKit.kt",
-      "line": 217,
+      "line": 219,
       "verification": "pending"
     },
     {
       "kind": "DropdownMenu",
       "owner": "CrewRoomCreateContent",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/CrewRooms.kt",
-      "line": 660,
+      "line": 688,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "FreeRunShoeCheck",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/FreeRunStart.kt",
-      "line": 185,
+      "line": 193,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "RunPermissionSheetView",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt",
-      "line": 412,
+      "line": 414,
       "verification": "pending"
     },
     {
       "kind": "Dialog",
       "owner": "MinimalPermissionCard",
       "source": "app/src/main/java/com/stepup/android/ui/screens/walk/RunPermissionFlow.kt",
-      "line": 483,
+      "line": 487,
       "verification": "pending"
     }
   ],

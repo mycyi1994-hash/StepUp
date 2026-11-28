@@ -203,15 +203,19 @@ fun StoryHeader(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val t = runTone()
-    Box(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp)) {
-        com.stepup.android.ui.components.RunBackButton(onBack, Modifier.align(Alignment.CenterStart), tag = "story-back", tint = t.text)
+    // v12 "← 제목"(왼쪽 정렬) — 예전 가운데 제목은 다른 화면의 머리와 달라 보였다(2026-11-28 디자인 점검)
+    androidx.compose.foundation.layout.Row(
+        modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        com.stepup.android.ui.components.RunBackButton(onBack, tag = "story-back", tint = t.text)
         Text(
             title,
-            style = runTextStyle(19.sp, t.text, FontWeight.ExtraBold),
-            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-            modifier = Modifier.align(Alignment.Center).padding(horizontal = 56.dp).semantics { heading() },
+            style = runTextStyle(20.sp, t.text, FontWeight.ExtraBold),
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).semantics { heading() },
         )
-        if (trailing != null) Box(Modifier.align(Alignment.CenterEnd)) { trailing() }
+        if (trailing != null) trailing()
     }
 }
 

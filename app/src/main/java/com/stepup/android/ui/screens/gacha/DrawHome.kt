@@ -248,7 +248,8 @@ private fun PanelValue(card: DrawHomeCard, key: String, modifier: Modifier) {
 /** 수 아래 한 줄 — 무료는 출처별 남은 수, 상급은 다음 1회까지의 거리(서버 값) · 오늘 한도 · 연결 규칙 · 다시 연결 · 결과 대기 */
 @Composable
 private fun panelDetail(card: DrawHomeCard, status: DrawStatus?, web3: Boolean): String? {
-    if (card.action == DrawCardAction.SignIn) return stringResource(R.string.dv3_signed_out_title)
+    // 로그인 전 — 위 소개 줄이 이미 "로그인하면 볼 수 있어요."다. 칸마다 또 쓰면 한 화면에 세 번이었다(2026-11-28 디자인 점검)
+    if (card.action == DrawCardAction.SignIn) return null
     if (status == null) return null
     if (card.row == DrawRow.Pending) return stringResource(R.string.draw_blue_pending_hint)
     return if (card.kind == DrawKind.FREE) {
@@ -291,10 +292,27 @@ private fun HistoryLink(onClick: () -> Unit, modifier: Modifier) {
 @Composable
 private fun DrawMainButton(card: DrawHomeCard, status: DrawStatus?, actions: DrawActions, onSheet: (DrawSheet) -> Unit, modifier: Modifier) {
     when (card.action) {
-        DrawCardAction.Draw -> DrawButton(
-            stringResource(if (card.kind == DrawKind.FREE) R.string.dv2_action_free else R.string.dv2_action_premium),
-            { actions.onDraw(card.kind) }, modifier, icon = Icons.Filled.PlayArrow,
-        )
+        DrawCardAction.Draw -> {
+            // 13차 — 남은 수(서버 값)가 둘 이상이면 왼쪽에 "10회 뽑기"(남은 수까지). 하나면 한 번 뽑기만
+            val many = status?.shownLeft(card.kind, com.stepup.android.BuildConfig.WEB3)?.coerceAtMost(DrawViewModel.BATCH) ?: 0
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (many >= 2) {
+                    val key = if (card.kind == DrawKind.FREE) "free" else "premium"
+                    val t = runTone()
+                    Box(
+                        Modifier.heightIn(min = 56.dp).clip(RoundedCornerShape(50)).background(t.panel)
+                            .border(1.dp, t.panelEdge, RoundedCornerShape(50))
+                            .feedbackClickable(role = Role.Button) { actions.onDrawMany(card.kind, many) }
+                            .padding(horizontal = 16.dp).testTag("draw-$key-many"),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(stringResource(R.string.v13_draw_n, many), style = runTextStyle(15.sp, t.cyan, FontWeight.Bold), maxLines = 1) }
+                }
+                DrawButton(
+                    stringResource(if (card.kind == DrawKind.FREE) R.string.dv2_action_free else R.string.dv2_action_premium),
+                    { actions.onDraw(card.kind) }, modifier.weight(1f), icon = Icons.Filled.PlayArrow,
+                )
+            }
+        }
         DrawCardAction.FreeInfo -> DrawButton(stringResource(R.string.dv2_action_free_info), { onSheet(DrawSheet.FreeEmpty) }, modifier)
         DrawCardAction.RunInfo -> DrawButton(stringResource(R.string.dv2_action_run), { onSheet(DrawSheet.RunChances) }, modifier)
         DrawCardAction.Connect -> DrawButton(

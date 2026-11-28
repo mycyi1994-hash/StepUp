@@ -63,27 +63,26 @@ class ShoeCatalogDesignTest {
             edgeToEdge()
             compose.setContent { StepUpTheme(ThemeMode.DARK) { ExperienceProvider { MainScaffold(initialTab = Screen.Customize) } } }
             awaitTag("my-shoes")
-            PICKS.forEachIndexed { index, model ->
+            // 13차 — 격자 칸마다 그 모델 이름(읽기 도구), 마지막 켤레를 누르면 상세 카드에 이름 · 등급
+            PICKS.forEach { model ->
                 val id = shoes.getValue(model)
                 showTile(id)
-                compose.onNodeWithTag("shoe-choice-$id").performClick().assertIsSelected()
                 val name = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(model)!!)
-                // 이름 칸 — UI 최종 통합안(2026-10-25)부터 이름 글 자체가 꼬리표를 단다(예전엔 글 · 배지를 감싼 칸이었다). 어느 쪽이든 본다
-                compose.waitUntil(10_000) {
-                    compose.onAllNodes(
-                        hasText(name, substring = true) and (hasTestTag("shoe-hero-name") or hasAnyAncestor(hasTestTag("shoe-hero-name"))),
-                        useUnmergedTree = true,
-                    ).fetchSemanticsNodes().isNotEmpty()
-                }
-                // 신발 탭 큰 그림은 UI 최종 통합안(2026-10-25)부터 등급 무대가 아닌 신발 카드 — 왼쪽 위 줄이 보이는 갈래의 등급이다
-                val tier = compose.activity.getString(TIER_LABELS[index])
-                compose.waitUntil(10_000) {
-                    runCatching { compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true).assertTextContains(tier, substring = true) }.isSuccess
-                }
-                shot("0${index + 1}-stage-$model")
+                compose.onNodeWithTag("shoe-choice-$id").assert(hasContentDescription(name, substring = true))
             }
-            showTile(shoes.getValue(PICKS.last()))
-            shot("04-owned-row")
+            shot("01-grid-models")
+            val lastModel = PICKS.last()
+            showTile(shoes.getValue(lastModel))
+            compose.onNodeWithTag("shoe-choice-${shoes.getValue(lastModel)}").performClick()
+            val lastName = compose.activity.getString(com.stepup.android.ui.components.shoeModelNameRes(lastModel)!!)
+            compose.waitUntil(10_000) {
+                compose.onAllNodes(hasText(lastName, substring = true) and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+            val tier = compose.activity.getString(TIER_LABELS[PICKS.lastIndex])
+            compose.onNode(hasTestTag("shoe-card-tag") and hasAnyAncestor(hasTestTag("shoe-name")), useUnmergedTree = true)
+                .assertTextContains(tier, substring = true)
+            shot("03-detail-$lastModel")
         } finally {
             restore(shoes)
         }
@@ -139,7 +138,7 @@ class ShoeCatalogDesignTest {
 
     /** 보유 칸(가로 목록)을 보이게 — 내 신발은 세로로 끌지 않는다. 가로 목록만 그 칸까지 */
     private fun showTile(id: Long) {
-        compose.onNodeWithTag("shoe-owned-row").performScrollToNode(hasTestTag("shoe-choice-$id"))
+        compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-$id"))
     }
 
     /** 새 도감 모델 세 켤레를 넣는다 — 레어 · 에픽 · 레전더리(레드라인) */

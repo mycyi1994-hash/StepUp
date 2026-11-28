@@ -1,5 +1,6 @@
 package com.stepup.android.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -29,27 +30,34 @@ fun DetailPage(
      * 있으면 [primaryActionLabel] 의 원형 버튼 대신 이것을 둔다. 목록만 넘어가고 이 줄은 제자리다.
      */
     bottomBar: (@Composable ColumnScope.() -> Unit)? = null,
+    /** 목록 위 여백 — 본문이 자기 머리를 그리면(v12 신발 상세의 남색 무대) 0 */
+    topPadding: androidx.compose.ui.unit.Dp = 12.dp,
+    /** 화면 바닥색 — 비우면 앱 바닥 그대로 */
+    background: androidx.compose.ui.graphics.Color? = null,
     content: LazyListScope.() -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().padding(horizontal = StepUpDesign.Gutter)) {
+    Column(
+        Modifier.fillMaxSize()
+            .then(if (background != null) Modifier.background(background) else Modifier)
+            .padding(horizontal = StepUpDesign.Gutter),
+    ) {
         if (showHeader) SecondaryHeader(onBack = onBack, balance = null, onOpenWallet = null, title = title, trailing = trailing)
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(top = 12.dp, bottom = 22.dp),
+            contentPadding = PaddingValues(top = topPadding, bottom = 22.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             content = content,
         )
         if (bottomBar != null) {
             Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), content = bottomBar)
         } else if (primaryActionLabel != null && onPrimaryAction != null) {
-            // S2 — 화면의 주 행동 하나는 가운데 흰 원 + 이름
-            S2RoundAction(
-                icon = primaryActionIcon ?: Icons.AutoMirrored.Filled.ArrowForward,
-                label = primaryActionLabel,
+            // 화면의 주 행동 하나 — 다른 화면과 같은 화면 폭 파란 버튼(예전 S2 흰 원 + 이름은 하단 탭 위에 떠 보였다, 2026-11-28 디자인 점검)
+            PrimaryButton(
+                text = primaryActionLabel,
                 onClick = onPrimaryAction,
-                enabled = primaryActionEnabled,
-                modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
-                    .padding(vertical = 8.dp).testTag("detail-primary-action"),
+                state = if (primaryActionEnabled) ButtonState.Idle else ButtonState.Disabled,
+                icon = primaryActionIcon,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp).testTag("detail-primary-action"),
             )
         }
     }

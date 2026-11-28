@@ -40,6 +40,25 @@ sealed interface DrawFlow {
 
     /** 20 — [busy] 면 서버를 다시 읽는 중, [tried] 면 한 번 읽었는데 아직 모른다 */
     data class Checking(val kind: DrawKind, val busy: Boolean, val tried: Boolean = false) : DrawFlow
+
+    /**
+     * 13차 S-408 — 여러 번 뽑는 중. 한 번 뽑기를 차례로 보내고(하나씩 기록 · 확인 — [DrawViewModel.drawMany]) [got] 은 지금까지 서버가 준 신발.
+     * [done] 이면 다 받았다 — 화면이 뒤집기를 마치고 결과로 넘긴다.
+     */
+    data class Batch(val kind: DrawKind, val total: Int, val got: List<DrawnShoe>, val done: Boolean = false) : DrawFlow
+
+    /**
+     * S-364 — 여러 번 뽑기 결과. [asked] 는 누른 수, [left] 는 뽑은 뒤 남은 수(못 읽었으면 null).
+     * [stop] 은 중간에 멈춘 까닭(나머지는 기회를 쓰지 않았다), [unsure] 면 마지막 한 번의 답을 받지 못해 확인 중이다.
+     */
+    data class BatchResult(
+        val kind: DrawKind,
+        val asked: Int,
+        val got: List<DrawnShoe>,
+        val left: Int? = null,
+        val stop: DrawStop? = null,
+        val unsure: Boolean = false,
+    ) : DrawFlow
 }
 
 /** 결과를 아직 보지 않은 요청(26) — 메인의 버튼이(두 탭 모두) "결과 확인"이 되고 새 뽑기는 막힌다. [ready] 면 결과를 이미 받았다 */
@@ -126,6 +145,9 @@ class DrawViewModel(
 
     /** 뒤로 간 사이에 받은 결과 — "결과 확인"을 누르면 보인다 */
     private var readyResult: DrawnShoe? = null
+
+    /** 여러 번 뽑기 — 뒤로 간 사이에 끝났으면 "결과 확인"으로, 보고 있으면 뒤집기가 끝난 뒤 보일 결과 */
+    private var readyBatch: DrawFlow.BatchResult? = null
     private var sending: Job? = null
     private var checking: Job? = null
 
@@ -167,6 +189,12 @@ class DrawViewModel(
     fun checkPending() {
         val pending = _pending.value ?: return
         if (pending.ready) {
+            readyBatch?.let { batch ->
+                readyBatch = null
+                _pending.value = null
+                _flow.value = batch
+                return
+            }
             val result = readyResult ?: return
             readyResult = null
             _pending.value = null
@@ -185,20 +213,56 @@ class DrawViewModel(
 
     /** 10 · 20 에서 뒤로 — 요청은 그대로 두고 메인으로(26) */
     fun leaveFlow() {
-        if (_flow.value is DrawFlow.Requesting || _flow.value is DrawFlow.Checking) _flow.value = DrawFlow.Home
+        val current = _flow.value
+        if (current is DrawFlow.Requesting || current is DrawFlow.Checking || current is DrawFlow.Batch) _flow.value = DrawFlow.Home
     }
 
-    /** 상자 열기가 끝났거나 건너뛰었다 — 이미 확정된 결과로만 */
+    /** 상자 열기 · 여러 장 뒤집기가 끝났거나 건너뛰었다 — 이미 확정된 결과로만 */
     fun finishOpening() {
-        val opening = _flow.value as? DrawFlow.Opening ?: return
-        _flow.value = DrawFlow.Result(opening.result)
+        when (val current = _flow.value) {
+            is DrawFlow.Opening -> _flow.value = DrawFlow.Result(current.result)
+            is DrawFlow.Batch -> if (current.done) {
+                val batch = readyBatch ?: DrawFlow.BatchResult(current.kind, current.total, current.got)
+                readyBatch = null
+                _flow.value = batch
+            }
+            else -> Unit
+        }
+    }
+
+    /**
+     * 13차 "10회 뽑기" — 한 번 뽑기를 [count] 번(남은 수까지) 차례로 보낸다. 묶어 보내는 서버 함수는 없다 — 한 번마다 보내기 전에 적고
+     * 답을 받은 뒤 지우는 한 번 뽑기의 규칙을 그대로 따른다. 서버가 거절하면 거기서 멈추고(나머지는 기회를 쓰지 않았다),
+     * 답을 받지 못하면 멈추고 그 한 번을 확인한다(20 과 같다). 하나도 못 뽑았으면 한 번 뽑기와 같은 안내(19 · 20)로 간다.
+     */
+    fun drawMany(kind: DrawKind, count: Int = BATCH) {
+        if (sending != null || checking != null || _pending.value != null) return
+        val status = (_state.value as? DrawScreenState.Ready)?.status ?: return
+        if (!status.canDraw(kind, web3)) return
+        val n = count.coerceAtMost(status.shownLeft(kind, web3))
+        if (n < 2) {
+            draw(kind)
+            return
+        }
+        readyResult = null
+        readyBatch = null
+        replied = false
+        _pending.value = DrawPending(kind, ready = false)
+        _flow.value = DrawFlow.Batch(kind, n, emptyList())
+        sending = viewModelScope.launch {
+            try {
+                sendMany(kind, n, status.left(kind))
+            } finally {
+                sending = null
+            }
+        }
     }
 
     /** 결과에서 뒤로 · "뽑기 화면으로" · "내 신발 보기" — 메인은 최신 수로 */
     fun closeResult() {
         when (val current = _flow.value) {
             is DrawFlow.Opening -> _flow.value = DrawFlow.Result(current.result)
-            is DrawFlow.Result -> {
+            is DrawFlow.Result, is DrawFlow.BatchResult -> {
                 _flow.value = DrawFlow.Home
                 refresh()
             }
@@ -219,13 +283,32 @@ class DrawViewModel(
 
     // ── 보내기 · 확인 ────────────────────────────────────────────────
 
+    /** 보낸 한 번의 끝 — 받음 · 시작 안 됨(기회를 쓰지 않았다) · 모름(적어 둔 요청을 확인한다) */
+    private sealed interface Once {
+        data class Got(val result: DrawnShoe) : Once
+        data class Stop(val stop: DrawStop) : Once
+        data object Lost : Once
+    }
+
     private suspend fun send(kind: DrawKind, leftBefore: Int) {
+        when (val once = sendOnce(kind, leftBefore)) {
+            is Once.Got -> delivered(once.result)
+            is Once.Stop -> stopped(kind, once.stop)
+            Once.Lost -> unresolved(kind)
+        }
+    }
+
+    /**
+     * 한 번 보낸다. [knownBase] 는 기준을 이미 아는 때(여러 번 뽑기의 둘째부터 — 앞에서 받은 신발 번호)만 — 서버 번호는 늘기만 하니
+     * 그 뒤에 생긴 신발이 이번 것이다.
+     */
+    private suspend fun sendOnce(kind: DrawKind, leftBefore: Int, knownBase: Long? = null): Once {
         val account = account()
         // 1) 기준 — 보내기 직전 서버의 내 신발 번호. 읽지 못하면 보내지 않는다(기회를 쓰지 않은 것이 확실하다)
-        val base = when (val newest = attempt { source.newestShoeId() }) {
+        val base = knownBase ?: when (val newest = attempt { source.newestShoeId() }) {
             is ServerResult.Ok -> newest.value
-            is ServerResult.SignInRequired -> return stopped(kind, DrawStop.SignIn)
-            else -> return stopped(kind, DrawStop.Network)
+            is ServerResult.SignInRequired -> return Once.Stop(DrawStop.SignIn)
+            else -> return Once.Stop(DrawStop.Network)
         }
         val marker = PendingDraw(kind, base, leftBefore, clock(), account)
         // 2) 보내기 전에 적는다 — 뒤로 가거나 앱이 죽어도 다시 열면 이 요청부터 확인한다
@@ -238,19 +321,72 @@ class DrawViewModel(
             DrawReply.Unknown
         }
         replied = true
-        when (reply) {
+        return when (reply) {
             is DrawReply.Drawn -> if (reply.shoe != null) {
-                delivered(DrawnShoe(kind, reply.shoe))
+                Once.Got(DrawnShoe(kind, reply.shoe))
             } else {
                 // 뽑기는 됐다(번호를 받았다) — 목록만 못 받았다. 번호로 다시 찾는다
                 source.memory.keep(marker.copy(shoeId = reply.shoeId))
-                unresolved(kind)
+                Once.Lost
             }
             is DrawReply.Refused -> {
                 source.memory.forget()
-                stopped(kind, reply.outcome.toDrawStop())
+                Once.Stop(reply.outcome.toDrawStop())
             }
-            DrawReply.Unknown -> unresolved(kind)
+            DrawReply.Unknown -> Once.Lost
+        }
+    }
+
+    private suspend fun sendMany(kind: DrawKind, total: Int, leftStart: Int) {
+        val got = mutableListOf<DrawnShoe>()
+        var base: Long? = null
+        var stop: DrawStop? = null
+        var lost = false
+        for (i in 0 until total) {
+            when (val once = sendOnce(kind, leftStart - i, base)) {
+                is Once.Got -> {
+                    source.memory.forget()
+                    got += once.result
+                    base = once.result.shoe.id
+                    (_flow.value as? DrawFlow.Batch)?.let { _flow.value = it.copy(got = got.toList()) }
+                }
+                is Once.Stop -> {
+                    stop = once.stop
+                    break
+                }
+                Once.Lost -> {
+                    lost = true
+                    break
+                }
+            }
+        }
+        if (got.isEmpty()) {
+            // 하나도 못 뽑았다 — 한 번 뽑기와 같은 길(19 · 20)
+            if (_flow.value is DrawFlow.Batch) _flow.value = DrawFlow.Requesting(kind)
+            if (lost) unresolved(kind) else stopped(kind, stop ?: DrawStop.Network)
+            return
+        }
+        val status = load()
+        val result = DrawFlow.BatchResult(
+            kind, total, got.toList(), left = status?.shownLeft(kind, web3), stop = if (lost) null else stop, unsure = lost,
+        )
+        if (lost) {
+            // 마지막 한 번은 확인한다 — 찾으면 메인의 "결과 확인"으로 남는다
+            _pending.value = DrawPending(kind, ready = false)
+            startCheck()
+        } else {
+            _pending.value = null
+        }
+        when (val current = _flow.value) {
+            is DrawFlow.Batch -> {
+                readyBatch = result
+                _flow.value = current.copy(got = got.toList(), done = true)
+            }
+            else -> if (!lost) {
+                // 뒤로 간 사이에 끝났다 — 메인의 "결과 확인"으로
+                readyBatch = result
+                _pending.value = DrawPending(kind, ready = true)
+            }
         }
     }
 
@@ -454,6 +590,9 @@ class DrawViewModel(
 
         /** 이 화면이 답을 받지 못한 요청은 연결 · 읽기 시간 초과(20초씩)를 넘길 때까지 "시작 안 됨"이라 하지 않는다 */
         const val ORPHAN_MILLIS = 45_000L
+
+        /** "10회 뽑기" 한 번에 보내는 수 */
+        const val BATCH = 10
 
         /** 하루가 지난 요청은 버린다(백업에서 되살아난 기록 등) */
         const val MAX_PENDING_AGE_MILLIS = 24 * 60 * 60 * 1000L

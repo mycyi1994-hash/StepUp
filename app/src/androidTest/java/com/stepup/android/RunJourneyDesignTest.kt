@@ -139,18 +139,20 @@ class RunJourneyDesignTest {
             edgeToEdge()
             compose.setContent { DeviceFrame { MainScaffold() } }
 
-            // HOME · E01 — 러닝 홈(UI 최종 통합안: 오늘 걸음 · 자주 달리는 곳 사진 카드 · 숫자 줄 · 둥근 러닝 시작)과 오늘의 활동 시트
+            // HOME · E01 — 러닝 홈(v12 시제품 2026-11-26: 오늘 걸음 · 지금 신은 신발 카드 · 러닝 시작)과 오늘의 활동 시트
             awaitTag("home-start-run")
-            awaitTag("home-spot")
-            compose.onNodeWithTag("home-stats").assertExists()
-            // 신발 전시장 · 신발 줄은 홈에 없다(신발 탭으로)
-            compose.onAllNodesWithTag("home-shoe-name", useUnmergedTree = true).assertCountEquals(0)
+            awaitTag("home-shoe")
+            // 예전 사진 카드 · 숫자 줄은 없다
+            compose.onAllNodesWithTag("home-spot", useUnmergedTree = true).assertCountEquals(0)
+            compose.onAllNodesWithTag("home-stats", useUnmergedTree = true).assertCountEquals(0)
             shot("HOME")
             // 신발 이름 바꾸기(2026-10-17) — 신발 탭 연필로 옮겼다. 이 폰에만 적고, 원래 이름으로 돌릴 수 있다
             val shoeId = requireNotNull(added)
             compose.onNodeWithTag("nav-label-${Screen.Customize.route}", useUnmergedTree = true).performClick()
             awaitTag("shoe-hero-name")
-            tap("shoe-rename")
+            // v12(2026-11-26) — 이름 바꾸기는 신발 상세의 "이름 바꾸기"로 옮겼다
+            tap("shoe-manage")
+            tap("shoe-name") // 13차 — 카드(이름)를 누르면 이름 바꾸기
             awaitTag("shoe-rename-sheet")
             compose.onNodeWithTag("shoe-rename-field").performTextClearance()
             compose.onNodeWithTag("shoe-rename-field").performTextInput("나의 아주 긴 첫 레이싱화 이름이에요 정말로")
@@ -168,11 +170,13 @@ class RunJourneyDesignTest {
                 .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertTrue("long shoe names stay whole: ${layouts.map { it.lineCount }}", layouts.none { it.hasVisualOverflow })
             shot("SHOES-renamed")
-            tap("shoe-rename")
+            tap("shoe-name") // 13차 — 카드(이름)를 누르면 이름 바꾸기
             awaitTag("shoe-rename-reset")
             tap("shoe-rename-reset")
             awaitGone("shoe-rename-sheet")
             compose.waitUntil(5_000) { runBlocking { ServiceLocator.userPrefs.shoeNicknames.first()[shoeId] } == null }
+            back()
+            awaitTag("my-shoes")
             compose.onNodeWithTag("nav-label-${Screen.Run.route}", useUnmergedTree = true).performClick()
             awaitTag("home-start-run")
             tap("home-steps")
@@ -206,7 +210,7 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("run-distance-value", useUnmergedTree = true).assertTextEquals("1.56")
             compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertExists()
             // 신발 내구도(seed — 92)는 러닝 정보(E03)에서 본다 — 러닝 화면 숫자 줄은 시간 · 페이스 · 속도(UI 최종 통합안)
-            compose.onNodeWithTag("run-status", useUnmergedTree = true).assertTextEquals(label(R.string.run_free_chip_running))
+            compose.onNodeWithTag("run-status", useUnmergedTree = true).assertTextEquals(label(R.string.v13_run_recording))
             compose.onNodeWithTag("run-primary-action").assertIsDisplayed().assertTextContains(label(R.string.run_pause))
             // 달리는 중 버튼 셋 — 일시정지 · 정지(1초 길게) · 화면 잠금(2026-10-26 — 정지가 멈춘 뒤에만 있어 끝내는 법을 몰랐다)
             compose.onNodeWithTag("run-finish").assertIsDisplayed()
@@ -272,7 +276,7 @@ class RunJourneyDesignTest {
 
             // R03 — 일시정지(일시정지 띠 · 다시 시작). 멈춰 있으니 속도 0.0, 페이스는 "—"
             WalkSessionService.showStateForTest(running(now).copy(isPaused = true))
-            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.run_resume_short)) }
+            eventually { compose.onNodeWithTag("run-primary-action").assertTextContains(label(R.string.v13_run_resume)) }
             awaitTag("run-paused-band")
             compose.onNodeWithTag("run-pace-value", useUnmergedTree = true).assertTextEquals("—")
             compose.onNodeWithTag("run-speed-value", useUnmergedTree = true).assertTextEquals("0.0")
@@ -397,6 +401,8 @@ class RunJourneyDesignTest {
             }
 
             // E05 — 공유 미리보기: 경로 포함은 처음에 꺼져 있다(그림에 길 · 지도가 없다). 보상(SUP)은 그림 · 글에 없다
+            // v12 — 기록 공유는 ⋯ 시트 안
+            tap("run-result-more")
             tap("run-result-share")
             awaitTag("run-share")
             compose.onNodeWithTag("run-share-route").assertIsOff()
@@ -559,7 +565,8 @@ class RunJourneyDesignTest {
                 compose.onNodeWithTag("shoe-hero-name", useUnmergedTree = true)
                     .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
                 assertTrue("${next.label}: the whole name shows (${layouts.map { it.lineCount }})", layouts.none { it.hasVisualOverflow })
-                compose.onNodeWithTag("shoe-rename").assertIsDisplayed()
+                // 이름 바꾸기는 신발 상세로(v12 2026-11-26) — 신발 탭에서는 상세로 가는 주 버튼이 보인다
+                compose.onNodeWithTag("shoe-manage").assertIsDisplayed()
                 shot("SHOES-long-name-${next.label}")
             }
         } finally {
@@ -826,7 +833,8 @@ class RunJourneyDesignTest {
             show("F01-shoe-check", "run-shoe-check") {
                 com.stepup.android.ui.screens.walk.FreeRunShoeCheckContent(checkShoe, {}, {})
             }
-            compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("92%")
+            // 13차 — 보이는 값은 남은 분, 읽기 도구는 "%"
+            compose.onNodeWithTag("run-shoe-check-durability").assert(hasContentDescription("92%", substring = true))
             fun stage(name: String, clock: Long, reveal: Long? = null, reduced: Boolean = false) = show(name, "run-start-sequence") {
                 Box(Modifier.fillMaxSize()) {
                     // 펼침 아래의 러닝 화면 자리 — 실제 지도(지금 자리)
@@ -1102,7 +1110,12 @@ class RunJourneyDesignTest {
             repo.showPartyForTest(together)
             WalkSessionService.showStateForTest(crewRun)
             compose.runOnIdle { scene = { MainScaffold() } }
-            tap("home-start-run")
+            // 달리는 중이면 앱이 러닝 화면을 바로 연다 — 홈이 먼저 보일 때만 "이어 달리기"를 누른다
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithTag("run-together-row", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() ||
+                    compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty()
+            }
+            if (compose.onAllNodesWithTag("run-together-row", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) tap("home-start-run")
             awaitTag("run-together-row")
             compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("crew-header-title", useUnmergedTree = true).assertTextEquals(name)
@@ -1110,10 +1123,10 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("crew-header-sub", useUnmergedTree = true).assertTextEquals(label(R.string.run_cr_joined, 4))
             assertRunFits("CR09")
             shot("CR09", settle = 2_500)
-            // 예상 보상 · 내구도는 정상 화면에 두지 않고 러닝 정보(E03)에서 본다
+            // 크루 러닝은 예상 숫자를 두지 않는다(2026-11-22 2차 점검 — 인원 · 함께 달린 사람은 올린 뒤 정해진다)
             tap("run-details-open")
             awaitTag("run-details")
-            compose.onNodeWithTag("run-details-estimate", useUnmergedTree = true).assertExists()
+            compose.onAllNodesWithTag("run-details-estimate", useUnmergedTree = true).assertCountEquals(0)
             shot("CR09-details")
             tap("run-details-close")
             awaitGone("run-details")
@@ -1880,11 +1893,10 @@ class RunJourneyDesignTest {
         compose.waitForIdle()
         val hero = bounds("run-hero-value")
         val action = bounds("run-primary-action")
-        val map = bounds("run-map-expand")
         val limit = frameBottom()
         assertTrue("run time above the buttons at $where: $hero / $action", hero.bottom <= action.top)
         assertTrue("pause inside the screen at $where: $action / $limit", action.bottom <= limit + 1)
-        assertTrue("map button inside the screen at $where: $map / $limit", map.bottom <= limit + 1)
+        // 13차(S-362) — 지도 크게 보기 버튼은 뺐다(지도가 늘 위에 있다)
     }
 
     /**
@@ -1894,7 +1906,10 @@ class RunJourneyDesignTest {
     private fun assertResultFits(where: String) {
         compose.waitForIdle()
         val done = bounds("run-result-done")
-        val share = bounds("run-result-share")
+        // 공유는 ⋯ 안으로(v12 2026-11-26) — ⋯ 버튼이 화면 안 · 완료보다 위
+        val share = bounds(
+            if (compose.onAllNodesWithTag("run-result-share").fetchSemanticsNodes().isNotEmpty()) "run-result-share" else "run-result-more",
+        )
         val frame = bounds(FRAME)
         assertTrue("done inside the screen at $where: $done / $frame", done.top >= frame.top - 1 && done.bottom <= frame.bottom + 1)
         assertTrue("share inside the screen at $where: $share / $frame", share.top >= frame.top - 1 && share.bottom <= frame.bottom + 1)

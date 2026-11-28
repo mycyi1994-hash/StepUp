@@ -77,6 +77,9 @@ class FakeDrawSource(private val shoe: Sneaker) : DrawSource {
     @Volatile var free = 13
     @Volatile var premium = 10
     @Volatile var nextReply: DrawReply? = null
+
+    /** 이 번째 뽑기부터 서버가 거절한다(여러 번 뽑기가 중간에 멈추는지) */
+    @Volatile var refuseFrom: Int = Int.MAX_VALUE
     @Volatile var signedIn = true
     @Volatile var statusGate: CompletableDeferred<Unit>? = null
     @Volatile var statusFails = false
@@ -106,6 +109,7 @@ class FakeDrawSource(private val shoe: Sneaker) : DrawSource {
         kinds += kind
         gate?.await()
         gate = null
+        if (draws.get() >= refuseFrom) return DrawReply.Refused(com.stepup.android.data.repo.EconomyOutcome.NoFreeDraws)
         val reply = nextReply
         nextReply = null
         if (reply is DrawReply.Refused) return reply

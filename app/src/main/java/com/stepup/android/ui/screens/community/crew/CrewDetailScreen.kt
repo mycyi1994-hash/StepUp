@@ -1,5 +1,9 @@
 package com.stepup.android.ui.screens.community.crew
 
+import androidx.compose.ui.graphics.Color
+
+import androidx.compose.ui.semantics.liveRegion
+
 import com.stepup.android.ui.components.RimKind
 import com.stepup.android.ui.components.stepUpRim
 
@@ -207,11 +211,13 @@ private fun CrewDetailContent(
     val ink = crewInk()
     val c = com.stepup.android.ui.components.StepUpUi.colors
     val words = rememberCrewWords()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    // 13차 S-410 — 크루 초대는 공유 시트(카드 미리보기 · 보낼 곳 · 링크 복사)
+    var sharing by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (sharing) CrewInviteShareSheet(card, onDismiss = { sharing = false })
     CrewPage(Modifier.testTag("crew-detail")) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             CrewPoster(card, onBack = actions.onBack, onImage = actions.onOpenImage, onMore = onMore,
-                onShare = { shareCrew(context, card) })
+                onShare = { sharing = true })
             card.unseenResult?.let { result ->
                 Row(
                     Modifier.padding(horizontal = 16.dp).padding(top = 16.dp).fillMaxWidth().heightIn(min = 52.dp)
@@ -339,16 +345,23 @@ private fun CrewPoster(card: CrewCard, onBack: () -> Unit, onImage: () -> Unit, 
     }
 }
 
-/** 크루 공유 — 초대 글(이름 · 초대 링크, 링크를 누르면 앱이 이 크루를 연다)을 앱 밖 공유 창으로 */
-private fun shareCrew(context: android.content.Context, card: CrewCard) {
-    val text = context.getString(R.string.crew_invite_message, card.name, com.stepup.android.core.InviteLinks.crewLink(card.id))
-    runCatching {
-        context.startActivity(
-            android.content.Intent.createChooser(
-                android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, text), null,
-            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
+/** 크루 초대 공유(13차 S-410) — 보내는 글은 예전 그대로(이름 · 초대 링크 — 링크를 누르면 앱이 이 크루를 연다) */
+@Composable
+private fun CrewInviteShareSheet(card: CrewCard, onDismiss: () -> Unit) {
+    val link = com.stepup.android.core.InviteLinks.crewLink(card.id)
+    val text = stringResource(R.string.crew_invite_message, card.name, link)
+    val title = stringResource(R.string.v13_crew_invite_title)
+    val members = card.capacity?.let { stringResource(R.string.crew_members_of, card.memberCount, it) }
+        ?: stringResource(R.string.v13_members_n, card.memberCount)
+    val lines = listOfNotNull(card.area.takeIf { it.isNotBlank() }, members)
+    com.stepup.android.ui.components.StepUpShareSheet(
+        options = listOf(
+            com.stepup.android.ui.components.ShareCardOption("crew", title) { ctx ->
+                com.stepup.android.ui.components.ShareCards.invite(ctx, title, card.name, lines, null)
+            },
+        ),
+        text = text, fileName = "StepUp-crew-${card.id.take(8)}", onDismiss = onDismiss, title = title, link = link,
+    )
 }
 
 @Composable
@@ -451,18 +464,33 @@ private fun CrewDetailLoading(onBack: () -> Unit) {
     }
 }
 
-/** 처음 읽기 실패(캐시 없음 · 일시 통신 실패) — 접근 불가(66)와 다르게 다시 읽기 */
+/**
+ * 처음 읽기 실패(캐시 없음 · 일시 통신 실패) — 접근 불가(66)와 다르게 다시 읽기. 13차 S-436: 위 사진 자리(남색 면 · 이름 자리 막대)와
+ * 그 아래 "불러오기 실패 · 다시 시도" 한 줄
+ */
 @Composable
 private fun CrewDetailFailed(onBack: () -> Unit, onRetry: () -> Unit) {
+    val c = com.stepup.android.ui.components.StepUpUi.colors
     CrewPage(Modifier.testTag("crew-detail-error")) {
-        CrewTopBar(stringResource(R.string.crew_title), onBack)
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-            Spacer(Modifier.height(120.dp))
-            CrewEmptyState(
-                icon = { CrewStateIcon(Icons.Filled.Refresh) },
-                title = stringResource(R.string.crew_detail_error_title),
-                body = stringResource(R.string.crew_list_error_body),
-            ) { CrewButton(stringResource(R.string.crew_list_reload), onRetry, Modifier.testTag("crew-detail-retry")) }
+        Box(
+            Modifier.fillMaxWidth().height(240.dp)
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF1B2C5C), Color(0xFF101A3A)))),
+        ) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp)) {
+                com.stepup.android.ui.components.BackButton(onBack, onPhoto = true)
+            }
+            Column(Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 20.dp)) {
+                Box(Modifier.size(width = 180.dp, height = 22.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = .16f)))
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.size(width = 120.dp, height = 12.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = .12f)))
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.v13_bag_load_failed), color = c.label, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f).semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
+            Text(stringResource(R.string.bag_retry), color = c.accentText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(c.fill).feedbackClickable(role = Role.Button, onClick = onRetry)
+                    .padding(horizontal = 14.dp, vertical = 7.dp).testTag("crew-detail-retry"))
         }
     }
 }

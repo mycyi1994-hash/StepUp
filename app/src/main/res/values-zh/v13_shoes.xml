@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="v13_shoes_wearing_now">正在穿的跑鞋</string>
+    <string name="v13_sort_title">排序</string>
+    <string name="v13_shoe_line">Lv.%1$d · 效率 %2$s · 舒适度 %3$s</string>
+    <string name="v13_shoe_worn">已磨损</string>
+    <string name="v13_sort_durability">耐久度从低到高</string>
+    <string name="v13_trading_paused">交易暂停中</string>
+    <string name="v13_stats_title">属性</string>
+    <string name="v13_stats_level">每升一级获得 %1$d 个属性点</string>
+    <string name="v13_upg_when_level">升到 Lv.%1$d 时</string>
+    <string name="v13_upg_points">属性点</string>
+    <string name="v13_upg_points_value">+%1$d</string>
+    <string name="v13_upg_where">可分配到</string>
+    <string name="v13_upg_where_value">效率 · 舒适度 · 耐久度</string>
+    <string name="v13_upg_burn">放入的跑鞋会消失 · 不会失败</string>
+    <string name="v13_upg_pairs">%1$d 双</string>
+    <string name="v13_upg_after_level">Lv.%1$d · %2$s</string>
+</resources>

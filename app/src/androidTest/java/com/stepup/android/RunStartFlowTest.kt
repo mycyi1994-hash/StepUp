@@ -11,6 +11,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -210,10 +213,10 @@ class RunStartFlowTest {
     }
 
     /**
-     * 자유러닝 시작(2026-10-17 전달본) — 3·2·1·0 → StepUP! → 지도 펼침. 러닝 기록은 펼침에 들어갈 때(3,760ms) 한 번만 시작하고,
-     * 러닝이 실제로 켜진 것을 본 뒤에 펼친다. 프레임이 쌓이고 다시 그려져도 시작은 한 번이다.
+     * 자유러닝 시작 — 누른 순간 러닝 기록을 한 번 시작하고(2026-11-26 테스터 "누르자마자 측정되게"), 3·2·1 숫자 없이 StepUP! →
+     * 지도 펼침. 러닝이 실제로 켜진 것을 본 뒤에 펼친다. 프레임이 쌓이고 다시 그려져도 시작은 한 번이다.
      */
-    @Test fun freeStartSequenceStartsOnceAtReveal() {
+    @Test fun freeStartSequenceStartsOnceImmediately() {
         var starts = 0
         var finished = 0
         var failed = 0
@@ -234,47 +237,35 @@ class RunStartFlowTest {
             } }
         }
         compose.mainClock.advanceTimeByFrame()
-        // 숫자와 원호만 — 제목 · 안내 · 취소 버튼이 없다
-        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("3")
+        assertEquals("누른 순간 기록을 시작한다", 1, starts)
+        // 3 · 2 · 1 · 0 숫자는 보이지 않는다
+        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertDoesNotExist()
         compose.onAllNodesWithTag("run-countdown-cancel").assertCountEquals(0)
-        compose.onAllNodesWithTag("run-countdown-kicker", useUnmergedTree = true).assertCountEquals(0)
-        compose.mainClock.advanceTimeBy(1_050)
-        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("2")
-        compose.mainClock.advanceTimeBy(2_000)
-        compose.onNodeWithTag("run-countdown-digit", useUnmergedTree = true).assertTextEquals("0")
-        compose.mainClock.advanceTimeBy(600)
-        assertEquals("StepUP! 까지는 기록을 시작하지 않는다", 0, starts)
-        compose.mainClock.advanceTimeBy(200)
-        assertEquals("펼침에 들어가며 한 번 시작한다", 1, starts)
         compose.mainClock.advanceTimeBy(2_000)
         assertEquals("다시 그려져도 시작은 한 번", 1, starts)
         assertEquals(1, finished)
         assertEquals(0, failed)
     }
 
-    /** 기록 전 뒤로 가기 — 시작 취소. 아무것도 시작하지 않는다 */
-    @Test fun freeStartBackBeforeRevealNeverStarts() {
+    /** 시작한 뒤 뒤로 가기 — 기록은 이미 시작했다(취소하지 않는다). 시작은 한 번 */
+    @Test fun freeStartBackAfterTapKeepsTheRun() {
         var starts = 0
         var cancels = 0
-        var shown by mutableStateOf(true)
         compose.mainClock.autoAdvance = false
         compose.setContent {
             StepUpTheme(ThemeMode.DARK) { ExperienceProvider {
-                if (shown) {
-                    FreeRunStartSequence(
-                        sessionActive = false, startRefusals = 0,
-                        onStartSession = { starts++; true }, onFinished = {}, onFailed = {},
-                        onCancel = { cancels++; shown = false },
-                    )
-                }
+                FreeRunStartSequence(
+                    sessionActive = false, startRefusals = 0,
+                    onStartSession = { starts++; true }, onFinished = {}, onFailed = {},
+                    onCancel = { cancels++ },
+                )
             } }
         }
-        compose.mainClock.advanceTimeBy(2_000)
+        compose.mainClock.advanceTimeByFrame()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.mainClock.advanceTimeBy(5_000)
-        compose.onNodeWithTag("run-start-sequence").assertDoesNotExist()
-        assertEquals(1, cancels)
-        assertEquals("취소한 카운트다운은 시작하지 않는다", 0, starts)
+        compose.mainClock.advanceTimeBy(500)
+        assertEquals(0, cancels)
+        assertEquals(1, starts)
     }
 
     /** 시작이 거절됐다(끝나지 않은 러닝 · 저장 공간) — 지도를 펼치지 않고 거둔다. 실패한 러닝을 시작한 것처럼 보이지 않는다 */
@@ -333,11 +324,12 @@ class RunStartFlowTest {
             R.string.run_free_check_grade_level, compose.activity.getString(tierLabel(shoe.tier)), shoe.level,
         )
         compose.onNodeWithTag("run-shoe-check-grade", useUnmergedTree = true).assertTextEquals(grade)
-        compose.onNodeWithTag("run-shoe-check-durability-value", useUnmergedTree = true).assertTextEquals("68%")
-        compose.onNodeWithTag("run-shoe-check-back").performClick()
-        compose.onNodeWithTag("run-shoe-check-close").performClick()
-        assertEquals(2, cancels)
-        assertEquals("돌아가기 · 닫기는 시작하지 않는다", 0, starts)
+        // 13차 — 보이는 값은 남은 분, 읽기 도구는 "%"
+        compose.onNodeWithTag("run-shoe-check-durability").assert(hasContentDescription("68%", substring = true))
+        // 13차 S-398 — 아래 시트: 닫기(✕)는 시트(RunSheet)에만 있다 — 본문에는 돌아가기 버튼이 없다
+        compose.onAllNodesWithTag("run-shoe-check-back").assertCountEquals(0)
+        assertEquals(0, cancels)
+        assertEquals(0, starts)
         compose.onNodeWithTag("run-shoe-check-go").performClick()
         compose.onNodeWithTag("run-shoe-check-go").performClick()
         assertEquals("출발 연타는 한 번", 1, starts)
@@ -360,12 +352,12 @@ class RunStartFlowTest {
         }
         compose.onNodeWithTag("run-shoe-check-change").assertIsDisplayed().performClick()
         compose.onNodeWithTag("run-shoe-pick-title").assertIsDisplayed()
-        compose.onNodeWithTag("run-shoe-pick-${other.id}").performClick()
+        // 13차(S-400) — 줄을 눌러 고르고 아래 "○○로 교체"로 신는다. 고르기만으로는 바뀌지 않는다
+        compose.onNodeWithTag("run-shoe-pick-${other.id}").performClick().assertIsSelected()
         compose.waitForIdle()
-        assertEquals("짧게 누르면 바뀌지 않는다", 0, worn.size)
-        compose.onNodeWithTag("run-shoe-pick-hint").assertTextEquals(compose.activity.getString(R.string.run_shoe_pick_hint))
+        assertEquals("고르기만으로는 바뀌지 않는다", 0, worn.size)
         capture("run-shoe-pick.png")
-        compose.onNodeWithTag("run-shoe-pick-${other.id}").performTouchInput { longClick(durationMillis = 1_300) }
+        compose.onNodeWithTag("run-shoe-pick-confirm").performClick()
         compose.waitUntil(3_000) { worn.isNotEmpty() }
         assertEquals(listOf(other.id), worn)
         // 착용이 확인되면 점검으로 돌아온다

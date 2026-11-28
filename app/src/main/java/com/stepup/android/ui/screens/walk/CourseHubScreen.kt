@@ -200,10 +200,16 @@ fun CourseHubScreen(
         RunBackdrop(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             // 머리 — ← · "러닝 코스"(시안 courses) → 세그먼트 선택 · 만들기 · 게시판
-            Box(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp)) {
-                BackButton(onBack, modifier = Modifier.align(Alignment.CenterStart).testTag("kit-back"))
-                Text(stringResource(R.string.courses_hub_title), style = StepUpUi.type.navTitle, color = StepUpUi.colors.label,
-                    modifier = Modifier.align(Alignment.Center).semantics { heading() }.testTag("courses-title"))
+            // v12 "← 제목"(왼쪽 정렬, 2026-11-28 디자인 점검 — 예전 원 뒤로 · 가운데 제목)
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                com.stepup.android.ui.components.RunBackButton(onBack, tag = "kit-back", tint = StepUpUi.colors.label)
+                Text(stringResource(R.string.courses_hub_title),
+                    style = StepUpUi.type.navTitle.copy(fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold),
+                    color = StepUpUi.colors.label,
+                    modifier = Modifier.semantics { heading() }.testTag("courses-title"))
             }
             RunTabs(
                 labels = listOf(
@@ -238,14 +244,14 @@ fun CourseHubScreen(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     ) {
                                         SecondaryButton(stringResource(R.string.courses_rank_button), onClick = { openRanking(hero) },
-                                            icon = Icons.Outlined.EmojiEvents, modifier = Modifier.weight(.36f).testTag("course-rank-${hero.id}"))
+                                            icon = Icons.Outlined.EmojiEvents, modifier = Modifier.weight(.45f).testTag("course-rank-${hero.id}"))
                                         if (heroSelected && onRunCourse != null) {
                                             PrimaryButton(stringResource(R.string.run_course_run_this), onClick = onRunCourse,
-                                                modifier = Modifier.weight(.64f).testTag("courses-run"))
+                                                modifier = Modifier.weight(.55f).testTag("courses-run"))
                                         } else {
                                             PrimaryButton(
                                                 stringResource(if (heroSelected) R.string.run_course_clear_do else R.string.courses_pick_this),
-                                                onClick = { pendingId = hero.id }, modifier = Modifier.weight(.64f).testTag("course-pick-hero"),
+                                                onClick = { pendingId = hero.id }, modifier = Modifier.weight(.55f).testTag("course-pick-hero"),
                                             )
                                         }
                                     }

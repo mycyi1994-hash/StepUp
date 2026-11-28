@@ -232,6 +232,12 @@ object Routes {
     /** 앱 공지 상세(알림·공지 v1) — 알림 화면의 "공지"에서. 바깥 소식(NEWS)과 다른 것이다 */
     const val NOTICE = "notice/{id}"
     const val ACHIEVEMENTS = "achievements"
+
+    /** 업데이트 내역(2026-11-26 v12 S-339) — 설정 맨 아래 줄 · 업데이트 소식 창 「전체 보기」 */
+    const val UPDATE_HISTORY = "settings/updates"
+
+    /** 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, 테스트 판에만) — 러닝 홈 · 내 정보의 한 줄에서 */
+    const val PUP = "pup"
     /** 예전 기록 · 분석(걸음 통계 · 기록 지도) — 러닝 통계의 "걸음 통계와 기록 지도"에서 */
     const val ANALYTICS = "analytics"
 
@@ -510,6 +516,9 @@ private fun MainScaffoldContent(
     LaunchedEffect(Unit) {
         if (StepPermissions.hasActivityRecognition(context)) {
             ServiceLocator.stepRepository.startTracking()
+            // 앱이 꺼진 동안의 걸음(구글 Play 서비스 기록)을 오늘 · 지난 날에 채운다 — 걸음 기록을 처음 켜는 것도 여기
+            com.stepup.android.sensor.DailyStepsWorker.schedule(context)
+            launch(kotlinx.coroutines.Dispatchers.IO) { runCatching { com.stepup.android.sensor.DailyStepsWorker.sync(context.applicationContext) } }
         }
     }
 
@@ -809,6 +818,9 @@ private fun MainScaffoldContent(
                     // 기록 보기 · 코스 찾기(2026-09-29 메인 시안) — 기존 내 러닝 기록 · 코스 목록
                     onOpenRecords = { navController.navigate(Routes.RECORDS) { launchSingleTop = true } },
                     onOpenCourses = { navController.navigate(Routes.COURSES) { launchSingleTop = true } },
+                    onOpenShoe = { id -> navController.navigate(Routes.sneaker(id)) },
+                    onOpenItems = { navController.switchTab(Screen.Bag) },
+                    onOpenPup = if (com.stepup.android.ui.screens.pup.PupFeature.SHOWN) ({ navController.navigate(Routes.PUP) }) else null,
                 )
             }
             composable(Routes.MYSTERY_BOX) {
@@ -880,6 +892,7 @@ private fun MainScaffoldContent(
                             // 불러오기 실패 시트의 "내 신발로 돌아가기" — 신발 탭으로(뽑기는 이제 하단 탭이라 뒤로 쌓이지 않는다)
                             onBack = { navController.switchTab(Screen.Customize) },
                             onDraw = drawVm::draw,
+                            onDrawMany = drawVm::drawMany,
                             // 상급 뽑기의 지갑 연결은 웹 지갑 페이지에서 한다(서명 · 2단계 인증). 주소가 없으면 지갑 화면으로.
                             // 돌아와서 서버의 연결 여부가 바뀐 것을 읽었을 때만 연결 완료(08)를 보인다
                             onConnectWallet = {
@@ -1116,7 +1129,18 @@ private fun MainScaffoldContent(
                 )
             }
             composable(Screen.Bag.route) {
-                com.stepup.android.ui.screens.items.BagScreen()
+                com.stepup.android.ui.screens.items.BagScreen(
+                    // 13차 S-357 — 러닝 아이템 시트의 "러닝 시작": 자유 러닝 시작(출발 전 신발 확인에서 아이템을 고른다)
+                    onStartRun = {
+                        if (!com.stepup.android.service.WalkSessionService.state.value.isActive) {
+                            com.stepup.android.ui.screens.events.ChallengeRunFocus.clear()
+                            com.stepup.android.domain.RunPlans.set(com.stepup.android.domain.RunPlan.Free)
+                        }
+                        navController.navigate(Routes.RUN_NOW)
+                    },
+                    // 13차 S-439 — 신은 신발이 없으면 "신발 고르기" → 신발 탭
+                    onOpenShoes = { navController.switchTab(Screen.Customize) },
+                )
             }
             composable(Screen.Profile.route) { entry ->
                 val nicknameSaved by entry.savedStateHandle.getStateFlow(Routes.NICKNAME_SAVED, false).collectAsState()
@@ -1130,6 +1154,8 @@ private fun MainScaffoldContent(
                     onOpenAnalytics = { navController.navigate(Routes.RECORDS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                    onOpenAchievements = { navController.navigate(Routes.ACHIEVEMENTS) },
+                    onOpenPup = if (com.stepup.android.ui.screens.pup.PupFeature.SHOWN) ({ navController.navigate(Routes.PUP) }) else null,
                     nicknameSaved = nicknameSaved,
                     onNicknameNoticeShown = { entry.savedStateHandle[Routes.NICKNAME_SAVED] = false },
                 )
@@ -1155,6 +1181,7 @@ private fun MainScaffoldContent(
                     onOpenExperience = { navController.navigate(Routes.SETTINGS_EXPERIENCE) },
                     onOpenConnected = { navController.navigate(Routes.SETTINGS_CONNECTED) },
                     onOpenSupport = { navController.navigate(Routes.SETTINGS_SUPPORT) },
+                    onOpenUpdates = { navController.navigate(Routes.UPDATE_HISTORY) },
                     onOpenInbox = { navController.navigate(Routes.NOTIFICATIONS) },
                     onOpenAchievements = { navController.navigate(Routes.ACHIEVEMENTS) },
                     onOpenInvite = { navController.navigate(Routes.INVITE) },
@@ -1497,6 +1524,12 @@ private fun MainScaffoldContent(
             composable(Routes.ACHIEVEMENTS) {
                 AchievementsScreen(onBack = { navController.popBackStack() })
             }
+            composable(Routes.UPDATE_HISTORY) {
+                com.stepup.android.ui.screens.settings.UpdateHistoryScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.PUP) {
+                com.stepup.android.ui.screens.pup.PupScreen(onBack = { navController.popBackStack() })
+            }
             // 내 러닝 기록 — 목록(기간 · 스크롤은 상세 · 통계에 다녀와도 그대로) → 통계 · 지난 러닝 상세 → 경로 확대
             composable(Routes.RECORDS) {
                 com.stepup.android.ui.screens.records.RecordsScreen(
@@ -1833,6 +1866,13 @@ private fun MainScaffoldContent(
                 if (lobby != null) popUpTo(lobby) { inclusive = true }
             }
         },
+    )
+
+    // 업데이트 소식(2026-11-26 v12 S-337) — 업데이트한 뒤 처음 러닝 홈에서 한 번(판마다). 첫 사용 안내 · 멈춘 러닝 · 가야 할 화면이 먼저
+    com.stepup.android.ui.screens.settings.UpdateNewsHost(
+        allowed = currentRoute == Screen.Run.route && !(startTour && !firstGuideClosed) && pendingRun == null &&
+            pendingCrew == null && pendingChat == null && pendingPush == null,
+        onOpenHistory = { navController.navigate(Routes.UPDATE_HISTORY) { launchSingleTop = true } },
     )
 
     // 러너 레벨이 올랐다(서버 0121) — 탭 첫 화면에서만 한 번. 첫 사용 안내 · 멈춘 러닝 되살리기가 먼저고, 달리는 동안은 가리지 않는다

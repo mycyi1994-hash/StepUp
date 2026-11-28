@@ -398,15 +398,15 @@ enum class ShoeSection { MINE, VAULT, DRAW }
 /** 내 신발 · 신발 보관함 · 뽑기 — UI 최종 통합안 세그먼트(시안 shoes 위, 361 × 34 · 바 6dp 아래) */
 @Composable
 fun S2ShoesSections(section: ShoeSection, onSelect: (ShoeSection) -> Unit, modifier: Modifier = Modifier) {
+    // 13차(2026-11-26) — 신발 보관함은 내 신발(4칸 격자)과 같은 일이라 합쳤다: 위 칸은 "내 신발 · 뽑기" 두 개
     StepUpTabs(
         items = listOf(
             androidx.compose.ui.res.stringResource(R.string.shoes_section_mine),
-            androidx.compose.ui.res.stringResource(R.string.shoes_section_vault),
             androidx.compose.ui.res.stringResource(R.string.tab_draw),
         ),
-        selected = section.ordinal,
-        onSelect = { onSelect(ShoeSection.entries[it]) },
-        tags = listOf("shoes-section-mine", "shoes-section-vault", "shoes-section-draw"),
+        selected = if (section == ShoeSection.DRAW) 1 else 0,
+        onSelect = { onSelect(if (it == 1) ShoeSection.DRAW else ShoeSection.MINE) },
+        tags = listOf("shoes-section-mine", "shoes-section-draw"),
         modifier = modifier.fillMaxWidth().padding(horizontal = StepUpDesign.Gutter).padding(top = 6.dp),
     )
 }

@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community.crew
 
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import com.stepup.android.ui.components.RimKind
 import com.stepup.android.ui.components.stepUpRim
 
@@ -522,7 +523,17 @@ private fun CrewIdentityForm(draft: CrewDraft, card: CrewCard?, problem: CrewPro
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).feedbackClickable(role = Role.Button, onClick = onImage).testTag("crew-draft-image")) {
-            CrewDraftImage(draft, 60.dp, 14.dp, card = card)
+            // 이름도 사진도 아직 없으면 이름 첫 글자 대신 사진 아이콘 — 빈 이름의 점 하나만 보였다(2026-11-28 디자인 점검)
+            if (draft.name.isBlank() && card == null && draft.image !is CrewImageChoice.Photo) {
+                Box(Modifier.matchParentSize().background(c.fill), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Outlined.AddPhotoAlternate, null,
+                        tint = c.secondaryLabel, modifier = Modifier.size(28.dp),
+                    )
+                }
+            } else {
+                CrewDraftImage(draft, 60.dp, 14.dp, card = card)
+            }
         }
         Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
             Text(stringResource(R.string.crew_image_row_title), style = com.stepup.android.ui.components.StepUpUi.type.rowTitle, color = c.label)

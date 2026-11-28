@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, ui/screens/pup/PupScreen.kt) -->
+<resources>
+    <string name="pup_title">スデンイを育てる</string>
+    <string name="pup_soon">もうすぐ公開</string>
+    <string name="pup_stages">段階を見る</string>
+    <string name="pup_next_stage">%1$sまで</string>
+    <string name="pup_last_stage">最終段階</string>
+    <string name="pup_food">ごはん</string>
+    <string name="pup_walk">散歩</string>
+    <string name="pup_pet">なでる</string>
+    <string name="pup_week_stamps">今週のスタンプ</string>
+    <string name="pup_week_days">月,火,水,木,金,土,日</string>
+    <string name="pup_deco">きせかえ</string>
+    <string name="pup_feed">ごはんをあげる</string>
+    <string name="pup_stage_1">生まれたての子犬</string>
+    <string name="pup_stage_2">目が開いた赤ちゃん</string>
+    <string name="pup_stage_3">もぞもぞ</string>
+    <string name="pup_stage_4">ちびわんこ</string>
+    <string name="pup_stage_5">少年わんこ</string>
+    <string name="pup_stage_6">ランナーわんこ</string>
+    <string name="pup_stage_7">大人のスデンイ</string>
+</resources>

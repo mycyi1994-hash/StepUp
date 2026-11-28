@@ -450,6 +450,8 @@ fun StepUpMap(
     onTap: ((Offset, TilePlan) -> Unit)? = null,
     onViewport: ((Double, Double, Double, Double) -> Unit)? = null,
     controlLabels: MapControlLabels? = null,
+    /** ± 버튼을 위에서 더 내릴 만큼 — 지도 위에 떠 있는 머리(← · 제목 알약)가 버튼을 덮지 않게 */
+    controlsTop: androidx.compose.ui.unit.Dp = 0.dp,
     zooms: IntRange = MapTiles.MIN_ZOOM..MapTiles.MAX_ZOOM,
     anchorY: Float = 0.5f,
     /** 타일 색 — null 이면 앱 테마의 지도 색(러닝 화면의 지도 틀은 [LocalMapTone] 으로 남색 시안 색을 넣는다) */
@@ -646,7 +648,8 @@ fun StepUpMap(
             Column(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .padding(top = controlsTop),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 MapButton(Icons.Filled.Add, label = controlLabels?.zoomIn) {

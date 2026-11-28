@@ -34,6 +34,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -192,9 +195,15 @@ internal fun LockRunPanel(state: WalkSessionState, onToggle: () -> Unit, onOpen:
                 LockStat(stringResource(R.string.run_notif_distance_label), RunNotificationText.distance(km), "km")
                 LockStat(stringResource(R.string.run_notif_pace_label), pace ?: "—", null)
             }
+            // 신은 신발의 남은 내구도 막대(2026-11-26 테스터 "잠금화면에서 몇 % 남았는지 막대로") — 크루 러닝 · 모르는 신발이면 없음
+            state.shoePercent?.let { percent ->
+                Spacer(Modifier.height(24.dp))
+                LockShoeBar(percent)
+            }
             Spacer(Modifier.height(20.dp))
             Text(
-                RunNotification.status(context, state),
+                // 신발 %는 위 막대가 보인다 — 상태 줄에 다시 쓰지 않는다
+                RunNotification.status(context, state, withShoe = false),
                 style = type.caption, color = LockMuted, textAlign = TextAlign.Center, maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -232,7 +241,38 @@ private fun LockStat(label: String, value: String, unit: String?) {
     }
 }
 
+/** 신발 내구도 막대 — 20% 아래면 주황, 다 쓰면 빨강 */
+@Composable
+private fun LockShoeBar(percent: Int) {
+    val color = when {
+        percent <= 0 -> LockWorn
+        percent <= com.stepup.android.domain.ShoeLowAlert.THRESHOLDS.first() -> LockLow
+        else -> LockAccent
+    }
+    val label = stringResource(R.string.lock_run_shoe)
+    Column(
+        Modifier.fillMaxWidth(.82f).semantics(mergeDescendants = true) { }.testTag("lock-run-shoe"),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = StepUpUi.type.caption, color = LockMuted, modifier = Modifier.weight(1f))
+            Text(
+                "$percent%", style = StepUpUi.type.rowTitle, color = if (percent <= 20) color else Color.White,
+                modifier = Modifier.testTag("lock-run-shoe-percent"),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color.White.copy(alpha = .16f)),
+        ) {
+            val f = (percent / 100f).coerceIn(0f, 1f)
+            if (f > 0f) Box(Modifier.fillMaxWidth(f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(color))
+        }
+    }
+}
+
 private val LockAccent = Color(0xFF7DA2FF)
+private val LockLow = Color(0xFFFF8A2A)
+private val LockWorn = Color(0xFFFF5A5F)
 private val LockMuted = Color(0xFFA7AFBC)
 
 private fun Context.hostActivity(): Activity? {

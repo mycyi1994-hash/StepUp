@@ -296,7 +296,8 @@ fun CareShoeHeader(
 ) {
     val t = runTone()
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        SneakerGradeStage(shoe, Modifier.width(stageWidth))
+        // v12 시제품(2026-11-26) — 남색 카드(신발 탭 · 상세와 같은 부품)
+        com.stepup.android.ui.components.V12ShoeCard(shoe, Modifier.width(stageWidth * 0.72f))
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             ShoeNameWithBadge(
@@ -445,23 +446,25 @@ fun RepairDurabilityRow(now: Int, max: Int, to: Int?, modifier: Modifier = Modif
         minutesText(if (to != null) "${minutes(shown)} → ${minutes(to)}" else "${minutes(shown)} / ${minutes(max)}")
     } else if (to != null) "${formatCount(shown)} → ${formatCount(to)}" else "${formatCount(shown)} / ${formatCount(max)}"
     val label = stringResource(R.string.sdv_stat_durability)
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 52.dp).background(CartoonColors.Cell, RoundedCornerShape(14.dp))
+    // v12 시제품(2026-11-26) — "내구도   18 → 31분" 한 줄 + 얇은 막대(지금은 회색, 고친 뒤까지는 살구색)
+    val c = com.stepup.android.ui.components.StepUpUi.colors
+    Column(
+        modifier.fillMaxWidth()
             .semantics(mergeDescendants = true) { contentDescription = "$label $text" }
-            .testTag("repair-durability")
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .testTag("repair-durability"),
     ) {
-        Text(label, style = runTextStyle(16.sp, CartoonColors.Text, FontWeight.SemiBold), maxLines = 1, softWrap = false)
-        Spacer(Modifier.width(10.dp))
-        CartoonStatBar(
-            com.stepup.android.ui.screens.customize.barFraction(shown.toDouble(), max.toDouble()),
-            CartoonColors.Durability, Modifier.weight(1f).height(28.dp),
-            preview = to?.let { com.stepup.android.ui.screens.customize.barFraction(it.toDouble(), max.toDouble()) },
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(text, style = runTextStyle(15.sp, CartoonColors.Text, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"),
-            maxLines = 1, softWrap = false, modifier = Modifier.testTag("repair-durability-value"))
+        Row(Modifier.fillMaxWidth().heightIn(min = 32.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = runTextStyle(17.sp, c.label, FontWeight.Bold), maxLines = 1, softWrap = false, modifier = Modifier.weight(1f))
+            Text(text, style = runTextStyle(17.sp, c.label, FontWeight.Bold).copy(fontFeatureSettings = "tnum"),
+                maxLines = 1, softWrap = false, modifier = Modifier.testTag("repair-durability-value"))
+        }
+        Spacer(Modifier.height(10.dp))
+        val nowF = com.stepup.android.ui.screens.customize.barFraction(shown.toDouble(), max.toDouble())
+        val toF = to?.let { com.stepup.android.ui.screens.customize.barFraction(it.toDouble(), max.toDouble()) }
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.fill)) {
+            if (toF != null && toF > nowF) Box(Modifier.fillMaxWidth(toF).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFF6C3A4)))
+            if (nowF > 0f) Box(Modifier.fillMaxWidth(nowF).height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.secondaryLabel.copy(alpha = .85f)))
+        }
     }
 }
 

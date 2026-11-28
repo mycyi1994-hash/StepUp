@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스댕이 키우기 미리보기(2026-11-26 v12 시제품 — 기획 전, ui/screens/pup/PupScreen.kt) -->
+<resources>
+    <string name="pup_title">Raise Sdaengi</string>
+    <string name="pup_soon">Opens soon</string>
+    <string name="pup_stages">Stages</string>
+    <string name="pup_next_stage">Next: %1$s</string>
+    <string name="pup_last_stage">Final stage</string>
+    <string name="pup_food">Food</string>
+    <string name="pup_walk">Walk</string>
+    <string name="pup_pet">Pet</string>
+    <string name="pup_week_stamps">This week\'s stamps</string>
+    <string name="pup_week_days">M,T,W,T,F,S,S</string>
+    <string name="pup_deco">Dress up</string>
+    <string name="pup_feed">Feed</string>
+    <string name="pup_stage_1">Newborn pup</string>
+    <string name="pup_stage_2">Eyes open</string>
+    <string name="pup_stage_3">Wiggly</string>
+    <string name="pup_stage_4">Little pup</string>
+    <string name="pup_stage_5">Teen pup</string>
+    <string name="pup_stage_6">Runner pup</string>
+    <string name="pup_stage_7">Grown-up Sdaengi</string>
+</resources>

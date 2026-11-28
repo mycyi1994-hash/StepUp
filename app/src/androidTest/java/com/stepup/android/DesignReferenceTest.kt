@@ -436,7 +436,8 @@ class DesignReferenceTest {
         }
         when (s) {
             Scene.RUN_ACTIVE, Scene.RUN_PAUSED, Scene.RUN_NO_GPS, Scene.RUN_FINISH, Scene.LOGIN, Scene.POST_COMPOSE, Scene.CREW_CREATE,
-            Scene.RUN_MENU, Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
+            // 러닝 시작 메뉴는 13차(S-361)부터 하단 탭이 보인다 — else 가지
+            Scene.RUN_GOALS, Scene.RUN_GOAL_TIME, Scene.RUN_GOAL_KM, Scene.RUN_GOAL_HISTORY,
             Scene.RUN_DIET_INPUT, Scene.RUN_DIET_PLAN, Scene.RUN_DIET_ACTIVE, Scene.RUN_DIET_DONE, Scene.RUN_GPS_LOST, Scene.COURSES,
             // 리더보드(2026-10-17)는 하단 탭 없는 남색 전면 화면
             Scene.RANKING ->
@@ -448,7 +449,7 @@ class DesignReferenceTest {
             compose.onNodeWithTag("shoe-card-tag", useUnmergedTree = true)
                 .assertTextContains(korean(R.string.my_shoes_wearing), substring = true)
             compose.onAllNodesWithTag("shoe-detail").assertCountEquals(0)
-            compose.onNodeWithTag("shoes-section-vault").assertExists()
+            compose.onNodeWithTag("shoes-section-draw").assertExists()
         }
         // 자유 러닝 중 지도 위 — 문제가 없으면 "러닝 중" 칩, 멈추면 일시정지 띠. 위치를 찾는 중에도 글 · 띠가 없다(2026-10-17 지도 앱처럼)
         if (s == Scene.RUN_ACTIVE) compose.onNodeWithTag("run-status", useUnmergedTree = true).assertExists()

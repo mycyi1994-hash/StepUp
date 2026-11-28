@@ -109,6 +109,10 @@ class MyShoesDesignTest {
 
     private var viewport by mutableStateOf(Viewport(360, 800))
 
+    /**
+     * 13차(S-345 · S-346 · S-363) — 내 신발: 위 "지금 신은 신발" 카드 + 아래 보유 4칸 격자(등급 칩 · 정렬). 보관함 탭은 내 신발로 합쳤다.
+     * 칸을 누르면 그 켤레의 상세(착용은 그대로).
+     */
     @Test fun inTheAppAtDeviceSizes() {
         val seeded = seed()
         val dao = ServiceLocator.database.sneakerDao()
@@ -118,84 +122,66 @@ class MyShoesDesignTest {
             val owned = runBlocking { dao.allNow().size }
             for (next in listOf(Viewport(360, 800), Viewport(390, 844), Viewport(412, 915))) {
                 show(next)
-                // 01 — 내 신발: 신고 있는 레어(1107)가 이름 끝의 레어 배지와 함께, 세로로 끌지 않고 다 보인다
+                // 01 — 지금 신은 레어(1107)가 위 카드, 등급은 카드 왼쪽 위 줄
                 assertName(modelName(1107))
                 assertBadge(ShoeTier.RARE)
-                assertFitsWithoutScrolling()
                 shot("01-my-shoes-${next.label}")
-                // 02 — 신발 보관함: 보유 수 · 2열 · 착용 체크는 한 켤레
-                openVault(owned)
-                shot("02-vault-${next.label}")
-                compose.onNodeWithTag("shoes-section-mine").performClick()
-                awaitTag("my-shoes")
+                // 02 — 보유 격자: 전체 칩의 수 · 4칸 · 착용 체크는 한 켤레
+                openGrid(owned)
+                shot("02-grid-${next.label}")
             }
 
-            // 03 — 여섯 갈래를 차례로(390×844): 무대 프레임 · 배지가 같은 갈래, 여전히 스크롤 없음
+            // 03 — 여섯 갈래가 모두 격자에 있다
             show(Viewport(390, 844))
-            for ((tier, id) in seeded.byTier) {
-                pick(id)
-                awaitHero(tier)
-                assertBadge(tier)
-                assertFitsWithoutScrolling()
-                shot("03-tier-${tier.key}")
+            for ((_, id) in seeded.byTier) {
+                compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-$id"))
+                compose.onNodeWithTag("shoe-choice-$id").assertExists()
             }
-            assertEquals("Picking pairs must not change the stored equipment", seeded.worn, runBlocking { dao.equippedNow()?.id })
+            shot("03-grid-tiers")
+            assertEquals("Looking at the grid must not change the stored equipment", seeded.worn, runBlocking { dao.equippedNow()?.id })
 
-            // 04 — 막대 기준(모든 신발에 같은 기준) — 능력치 덩어리를 누르면
-            compose.onNodeWithTag("shoe-stats").performClick()
-            awaitTag("shoe-basis-sheet")
-            compose.onNodeWithTag("shoe-basis-note", useUnmergedTree = true).assertExists()
-            shot("04-stat-basis", whole = true)
-            back()
-            awaitGone("shoe-basis-sheet")
-
-            // 05 — 관리(⋯): 그 켤레의 기존 상세(신기 · 강화 · 수리 · 판매). 여는 것만으로 착용은 그대로
-            pick(seeded.byTier.getValue(ShoeTier.EPIC))
-            compose.onNodeWithTag("shoe-manage").performClick()
+            // 05 — 칸을 누르면 그 켤레의 상세(신기 · 강화 · 수리). 여는 것만으로 착용은 그대로
+            val epic = seeded.byTier.getValue(ShoeTier.EPIC)
+            compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-choice-$epic"))
+            compose.onNodeWithTag("shoe-choice-$epic").performClick()
             awaitTag("detail-primary-action")
-            shot("05-manage-detail")
+            shot("05-grid-detail")
             assertEquals(seeded.worn, runBlocking { dao.equippedNow()?.id })
             back()
             awaitTag("my-shoes")
 
-            // 06 — 보관함 거르기(실제 수) · 정렬
-            openVault(owned)
+            // 06 — 등급 칩(실제 수) · 정렬
+            openGrid(owned)
             compose.onNodeWithTag("vault-filter-epic").performScrollTo().performClick().assertIsSelected()
             compose.waitForIdle()
-            val epicCards = cards()
             val epicOwned = runBlocking { ownedTiers() }.count { it == ShoeTier.EPIC }
-            assertEquals("epic filter shows every epic pair and nothing else", epicOwned, epicCards.size)
-            shot("06-vault-filter-epic")
+            assertEquals("epic filter shows every epic pair and nothing else", epicOwned, cards().size)
+            shot("06-grid-filter-epic")
             compose.onNodeWithTag("vault-filter-all").performScrollTo().performClick().assertIsSelected()
             compose.waitForIdle()
-            // 거르기를 바꾸면 격자는 맨 위(새 목록의 첫 켤레)부터
             assertEquals("back to all starts at the first pair", firstOf(ItemSort.RECENT), topLeftCard())
-            compose.onNodeWithTag("vault-sort").performClick()
+            compose.onNodeWithTag("vault-sort").performScrollTo().performClick()
+            awaitTag("vault-sort-sheet")
+            shot("07-grid-sort-sheet", whole = true)
+            compose.onNodeWithTag("vault-sort-${ItemSort.RARITY}").performClick()
             compose.waitForIdle()
-            shot("07-vault-sort-sheet", whole = true)
-            compose.onNodeWithText(string(R.string.items_sort_rarity)).performClick()
-            compose.waitForIdle()
-            // 정렬을 바꾸면 격자는 맨 위(새 순서의 첫 켤레)부터 — 왼쪽 위 칸이 등급 높은순의 첫 켤레(피니시)
             val firstId = topLeftCard()
             assertEquals("the grid starts at the first pair of the new order", firstOf(ItemSort.RARITY), firstId)
             assertEquals("highest rarity first", Rarity.FINISH.id, runBlocking { dao.byId(firstId)?.rarity })
-            shot("08-vault-sorted-rarity")
+            shot("08-grid-sorted-rarity")
 
-            // 09 · 10 — 큰 글씨(1.3) 360×800: 무대부터 줄이고, 모자라면 그때만 넘긴다 — 글자는 잘리지 않는다
+            // 09 · 10 — 큰 글씨(1.3) 360×800: 글자는 잘리지 않고 넘겨 본다
             show(Viewport(360, 800, font = 1.3f))
             assertName(modelName(1107))
             shot("09-my-shoes-large-font-top")
-            compose.onNodeWithTag("shoe-owned-row").performScrollTo()
-            shot("10-my-shoes-large-font-bottom")
-            openVault(owned)
-            shot("11-vault-large-font")
+            openGrid(owned)
+            shot("10-grid-large-font")
 
             // 12 · 13 — 밝은 테마 390×844
             show(Viewport(390, 844, mode = ThemeMode.LIGHT))
-            assertFitsWithoutScrolling()
             shot("12-my-shoes-light")
-            openVault(owned)
-            shot("13-vault-light")
+            openGrid(owned)
+            shot("13-grid-light")
         } finally {
             restore(seeded)
         }
@@ -275,7 +261,7 @@ class MyShoesDesignTest {
         show("s07-vault", "vault-grid", vault(OwnedLoad.Ready(SAMPLES)))
         assertEquals("${SAMPLES.size}", text("vault-count"))
         show("s08-vault-filter-finish", "vault-grid", vault(OwnedLoad.Ready(SAMPLES), filter = ShoeTier.FINISH.key))
-        assertEquals(1, cards().size)
+        assertEquals(1, vaultCards().size)
         show("s09-vault-empty", "vault-empty", vault(OwnedLoad.Ready(emptyList())))
         show("s10-vault-loading", "vault-loading", vault(OwnedLoad.Loading))
         show("s11-vault-failed", "vault-failed", vault(OwnedLoad.Failed))
@@ -326,15 +312,16 @@ class MyShoesDesignTest {
         val nav = bounds(BOTTOM_NAV_TAG)
         val frame = bounds(VIEWPORT)
         val manage = bounds("shoe-manage")
-        for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-stats", "shoe-owned-row")) {
+        for (tag in listOf("shoe-hero-name", "shoe-hero", "shoe-owned-row")) {
             val b = bounds(tag)
             assertTrue("$tag inside the screen at ${viewport.label}: $b in $frame", b.top >= frame.top - 1 && b.bottom <= frame.bottom + 1)
             assertTrue("$tag above the bottom buttons at ${viewport.label}: $b / ${manage.top}", b.bottom <= manage.top + 1)
         }
         assertTrue("detail button above the bottom tabs at ${viewport.label}: $manage / nav ${nav.top}", manage.bottom <= nav.top + 1)
+        // v12 카드(세로 0.72) — 카드 넘기기 안에서 화면 너비를 넘지 않는다
         val card = bounds("shoe-hero")
-        assertTrue("the shoe card keeps 361:236 at ${viewport.label}: $card",
-            abs(card.width / card.height - 361f / 236f) < 0.03f)
+        assertTrue("the shoe cards stay inside the screen width at ${viewport.label}: $card / $frame",
+            card.left >= frame.left - 1 && card.right <= frame.right + 1)
     }
 
     /** 카드 아래 큰 이름 — 이름 글에 [name] 이 있다 */
@@ -377,30 +364,37 @@ class MyShoesDesignTest {
         }
     }
 
-    private fun openVault(owned: Int) {
-        compose.onNodeWithTag("shoes-section-vault").performClick()
-        awaitTag("vault-grid")
+    /** 보유 격자까지 넘긴다 — 전체 칩의 수가 실제 켤레 수, 첫 줄은 네 칸이 한 줄, 착용 체크는 한 켤레 */
+    private fun openGrid(owned: Int) {
+        compose.onNodeWithTag("my-shoes").performScrollToNode(hasTestTag("shoe-owned-row"))
         compose.waitForIdle()
-        assertEquals("vault count is the real number of pairs", "$owned", text("vault-count"))
+        compose.onNodeWithTag("vault-filter-all").assertTextContains("$owned", substring = true)
         val shown = cards().map { it.boundsInRoot }.sortedWith(compareBy({ it.top }, { it.left }))
         if (shown.size >= 2) {
-            assertTrue("two columns at ${viewport.label}: ${shown[0]} · ${shown[1]}",
+            assertTrue("one row at ${viewport.label}: ${shown[0]} · ${shown[1]}",
                 abs(shown[0].top - shown[1].top) < 2f && shown[1].left > shown[0].right)
         }
-        assertTrue("at most one worn check", compose.onAllNodes(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("vault-grid")),
+        assertTrue("at most one worn check", compose.onAllNodes(hasTestTag("shoe-worn-badge") and hasAnyAncestor(hasTestTag("shoe-owned-row")),
             useUnmergedTree = true).fetchSemanticsNodes().size <= 1)
     }
 
-    /** 격자에 놓인 칸 — 미리 만들어 두고 아직 놓지 않은 칸(넘길 때의 준비분)은 빼고 */
-    private fun cards() = compose.onAllNodes(
+    /** 예전 보관함 격자(ShoeVaultContent)의 칸 */
+    private fun vaultCards() = compose.onAllNodes(
         SemanticsMatcher("vault card") { it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("vault-card-") == true },
         useUnmergedTree = true,
     ).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced }
 
-    /** 격자 왼쪽 위(보이는 첫 칸)의 켤레 id */
+    /** 격자에 놓인 칸 */
+    private fun cards() = compose.onAllNodes(
+        SemanticsMatcher("grid cell") { it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("shoe-choice-") == true } and
+            hasAnyAncestor(hasTestTag("shoe-owned-row")),
+        useUnmergedTree = true,
+    ).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced }
+
+    /** 격자 왼쪽 위(첫 칸)의 켤레 id */
     private fun topLeftCard(): Long =
         cards().minWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
-            .config[SemanticsProperties.TestTag].removePrefix("vault-card-").toLong()
+            .config[SemanticsProperties.TestTag].removePrefix("shoe-choice-").toLong()
 
     /** 이 기기의 보유 신발을 [sort] 로 늘어놓았을 때의 첫 켤레 — 앱과 같은 정렬(vaultSorted) */
     private fun firstOf(sort: String): Long = runBlocking {
