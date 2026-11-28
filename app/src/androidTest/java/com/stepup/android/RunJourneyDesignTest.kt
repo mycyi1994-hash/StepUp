@@ -1110,7 +1110,12 @@ class RunJourneyDesignTest {
             repo.showPartyForTest(together)
             WalkSessionService.showStateForTest(crewRun)
             compose.runOnIdle { scene = { MainScaffold() } }
-            tap("home-start-run")
+            // 달리는 중이면 앱이 러닝 화면을 바로 연다 — 홈이 먼저 보일 때만 "이어 달리기"를 누른다
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithTag("run-together-row", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() ||
+                    compose.onAllNodesWithTag("home-start-run").fetchSemanticsNodes().isNotEmpty()
+            }
+            if (compose.onAllNodesWithTag("run-together-row", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) tap("home-start-run")
             awaitTag("run-together-row")
             compose.onNodeWithTag("crew-badge", useUnmergedTree = true).assertExists()
             compose.onNodeWithTag("crew-header-title", useUnmergedTree = true).assertTextEquals(name)
@@ -1118,10 +1123,10 @@ class RunJourneyDesignTest {
             compose.onNodeWithTag("crew-header-sub", useUnmergedTree = true).assertTextEquals(label(R.string.run_cr_joined, 4))
             assertRunFits("CR09")
             shot("CR09", settle = 2_500)
-            // 예상 보상 · 내구도는 정상 화면에 두지 않고 러닝 정보(E03)에서 본다
+            // 크루 러닝은 예상 숫자를 두지 않는다(2026-11-22 2차 점검 — 인원 · 함께 달린 사람은 올린 뒤 정해진다)
             tap("run-details-open")
             awaitTag("run-details")
-            compose.onNodeWithTag("run-details-estimate", useUnmergedTree = true).assertExists()
+            compose.onAllNodesWithTag("run-details-estimate", useUnmergedTree = true).assertCountEquals(0)
             shot("CR09-details")
             tap("run-details-close")
             awaitGone("run-details")

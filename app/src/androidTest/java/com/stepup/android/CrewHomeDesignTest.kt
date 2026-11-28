@@ -139,7 +139,7 @@ class CrewHomeDesignTest {
             // 03 레벨 — 승급 기준은 준비 중(계산하지 않는다)
             tapTag("home-level")
             awaitTag("home-level-page")
-            awaitText("승급 기준 준비 중")
+            awaitText(compose.activity.getString(R.string.crewhome_level_pending))
             awaitText("126km")
             shot("03-level")
             pressBack()

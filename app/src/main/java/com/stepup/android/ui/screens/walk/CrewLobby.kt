@@ -239,12 +239,12 @@ internal fun CrewLobbyContent(
                 if (!loading) {
                     togetherLobbyText(togetherLobbyLine(together, party.course?.km ?: 0.0, course = true))?.let { line ->
                         Text(
-                            line, style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium, 1.5f), maxLines = 3, overflow = TextOverflow.Ellipsis,
+                            line, style = navyText(13.sp, LobbyInk.Sub, FontWeight.Medium, 1.4f), maxLines = 2, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(top = 6.dp).testTag("party-lobby-together"),
                         )
                     }
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 LobbyNotices(party, doneToday, crewToday, room, shoeFailed, courseFailed, onReconnect)
                 if (loading) {
                     LobbyLoading()
@@ -254,8 +254,8 @@ internal fun CrewLobbyContent(
                         onRoster = { sheet = LobbySheet.Roster },
                         onCall = onNotify,
                     )
-                    // 간격은 버튼 아래 글자 한 줄(준비 취소 · 크루원 부르기)이 있어도 390 × 844 에서 내 신발 카드가 다 보이게(시안 10 · 12 · 23)
-                    Spacer(Modifier.height(14.dp))
+                    // 간격은 버튼 아래 글자 한 줄(준비 취소 · 크루원 부르기)과 함께 달린 사람 줄(0120)이 있어도 390 × 844 에서 내 신발 카드가 다 보이게(시안 10 · 12 · 23)
+                    Spacer(Modifier.height(10.dp))
                     Overview(
                         party, crewToday, room,
                         onStamina = { sheet = LobbySheet.Stamina },
@@ -263,7 +263,7 @@ internal fun CrewLobbyContent(
                         onCourse = openCourse,
                         canSetCourse = party.isHost && lobby,
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(8.dp))
                     ShoeFrame(room, shoes, onChange = { sheet = LobbySheet.Shoes }, enabled = lobby && room != null)
                     Spacer(Modifier.height(18.dp))
                 }

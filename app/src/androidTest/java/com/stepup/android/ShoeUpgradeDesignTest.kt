@@ -352,7 +352,9 @@ class ShoeUpgradeDesignTest {
         compose.onNodeWithTag("upgrade-primary").assertIsNotEnabled()
         val pending = ForgePending("demo-key", XP_TARGET.id, listOf(X1.id), 0, System.currentTimeMillis() - 90_000, ForgeKind.XP, "md5")
         show("x12-xp-unknown", "upgrade-unknown", XP_BASE.copy(phase = UpgradePhase.Unknown(pending), xpRunning = listOf(X1)))
-        compose.onNodeWithTag("upgrade-unknown-note", useUnmergedTree = true).assertTextContains(string(R.string.fxp_unknown_note), substring = true)
+        compose.onNodeWithTag("upgrade-unknown-note", useUnmergedTree = true).assertExists()
+        compose.onNode(androidx.compose.ui.test.hasText(string(R.string.fxp_unknown_note), substring = true) and
+            androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("upgrade-unknown-note")), useUnmergedTree = true).assertExists()
 
         // 360dp · 큰 글씨 — 레벨업 견적 · 결과
         narrow = true
