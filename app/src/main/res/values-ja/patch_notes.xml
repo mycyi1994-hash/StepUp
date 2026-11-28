@@ -20,9 +20,9 @@
     <string name="pn_122_design">全画面の新デザイン・ライト・ダーク</string>
     <string name="pn_122_battery">出発前のバッテリー「制限なし」案内</string>
     <string name="pn_122_more">ほかに全画面の新デザイン、ダークモードの色を整理</string>
-    <string name="pn_121_forge">強化は経験値で — 失敗なし</string>
+    <string name="pn_121_forge">強化は経験値で：失敗なし</string>
     <string name="pn_121_daily">今日の報酬バー・ボックス・目標・連続</string>
-    <string name="pn_121_runner">ランナーレベル — 1万歩ごとにレベルアップ</string>
+    <string name="pn_121_runner">ランナーレベル：1万歩ごとにレベルアップ</string>
     <string name="pn_121_info">能力値 ⓘ の説明</string>
     <string name="pn_1201_crew">クルーランの出発・待機室を修正</string>
     <string name="pn_1201_alone">一人残ると1分間お知らせ</string>
@@ -38,7 +38,7 @@
     <string name="pn_122_steps">アプリを開かなくても1日の歩数をカウント</string>
     <string name="pn_122_stepbox">1日の歩数を達成すると歩数ボックス</string>
     <string name="pn_122_gps">画面オフ中のGPSルート · 距離を修正</string>
-    <string name="pn_122_draw10">10回引き — 小さいカードから1枚ずつめくります</string>
-    <string name="pn_122_share">共有 — ラン・順位・新しいシューズ・クルー・フラッシュラン・招待コードを同じ共有画面で</string>
-    <string name="pn_122_items">アイテム・ウォレットの新デザイン — 大きいアイテムカード・ウォレットのロゴ</string>
+    <string name="pn_122_draw10">10回引き：小さいカードから1枚ずつめくります</string>
+    <string name="pn_122_share">共有：ラン・順位・新しいシューズ・クルー・フラッシュラン・招待コードを同じ共有画面で</string>
+    <string name="pn_122_items">アイテム・ウォレットの新デザイン：大きいアイテムカード・ウォレットのロゴ</string>
 </resources>

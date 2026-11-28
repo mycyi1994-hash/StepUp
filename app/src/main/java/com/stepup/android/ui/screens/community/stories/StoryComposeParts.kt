@@ -390,7 +390,8 @@ fun StoryRecordCardView(card: StoryRecordCard, words: StoryWords, actions: Story
             icon = Icons.Filled.Refresh,
             title = stringResource(R.string.story_card_error_title),
             sub = stringResource(R.string.story_blue_error_body), modifier = base.testTag("story-record-error"),
-            side = { CardPillButton(stringResource(R.string.story_card_reload), actions.onRetry, Modifier.testTag("story-record-retry")) },
+            // 다시 불러오기는 아래 줄로 — 옆에 두면 제목이 "못 / 했어요"로 끊겼다(2026-11-28 디자인 점검)
+            buttons = { CardPillButton(stringResource(R.string.story_card_reload), actions.onRetry, Modifier.testTag("story-record-retry")) },
         )
         StoryRecordCard.ActiveRun -> TextCard(
             icon = Icons.AutoMirrored.Outlined.DirectionsRun,

@@ -150,6 +150,8 @@ fun MapScreen(
             focus = focus,
             modifier = Modifier.fillMaxSize(),
             interactive = true,
+            // ± 는 위의 ← · "지도" 알약 아래로 — 예전엔 "+" 가 알약에 덮여 "−" 만 보였다(2026-11-28 디자인 점검)
+            controlsTop = 52.dp,
             onViewport = viewModel::onViewport,
             onTap = { at, plan ->
                 if (mode == MapMode.NEARBY) {

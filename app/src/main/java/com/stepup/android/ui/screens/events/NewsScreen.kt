@@ -123,18 +123,9 @@ fun NewsScreen(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.spacedBy(13.dp),
     ) {
+        // "← 소식" 한 줄 — 예전 로고 머리 아래 큰 "소식"이 또 있어 머리가 두 겹이었다(2026-11-28 디자인 점검)
         item {
-            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet)
-        }
-
-        item {
-            Text(
-                text = stringResource(R.string.news_title),
-                color = com.stepup.android.ui.theme.Snow,
-                fontSize = 31.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-            )
+            SecondaryHeader(onBack = onBack, balance = balance, onOpenWallet = onOpenWallet, title = stringResource(R.string.news_title))
         }
 
         item {

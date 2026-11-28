@@ -208,7 +208,8 @@ class RunTone(
 // 모서리 깎은 흰 버튼)는 없앴다. 주 버튼은 블루 알약 + 원 화살표([PrimaryButton]), 보조는 회색 채움 알약([SecondaryButton]).
 val NavyRunTone = RunTone(
     dark = true,
-    screenTop = Color(0xFF070B14), screen = Color(0xFF070B14), screenBottom = Color(0xFF070B14),
+    // 바탕은 앱 바탕과 같은 검정 — 예전 남색(#070B14)은 이 바탕을 쓰는 화면(앱 사용 안내 · 기록 등)만 남색으로 보였다(2026-11-28 디자인 점검)
+    screenTop = Color(0xFF000000), screen = Color(0xFF000000), screenBottom = Color(0xFF000000),
     glow = Color.Transparent,
     panelTop = Color(0xFF0E1424), panel = Color(0xFF0E1424), panelEdge = Color(0x24FFFFFF), // 흰 테두리(2026-11-07) — 예전 0x17FFFFFF
     inset = Color(0xFF151C2D),
@@ -286,6 +287,8 @@ fun runTextStyle(size: TextUnit, color: Color, weight: FontWeight = FontWeight.N
     TextStyle(
         fontFamily = StepUpSans, fontWeight = weight, fontSize = size, color = color,
         letterSpacing = (if (size.value <= 13f) -0.02 else -0.03).em, lineHeight = height.em,
+        // 한글은 낱말 단위로 줄을 바꾼다(통합안 글자와 같게) — 빠져 있어 "반복해 / 요."처럼 끊겼다(2026-11-28 디자인 점검)
+        lineBreak = KoreanLineBreak,
     )
 
 // ── 바닥 ───────────────────────────────────────────────────────────

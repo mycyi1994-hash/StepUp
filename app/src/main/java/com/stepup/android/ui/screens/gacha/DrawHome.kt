@@ -248,7 +248,8 @@ private fun PanelValue(card: DrawHomeCard, key: String, modifier: Modifier) {
 /** 수 아래 한 줄 — 무료는 출처별 남은 수, 상급은 다음 1회까지의 거리(서버 값) · 오늘 한도 · 연결 규칙 · 다시 연결 · 결과 대기 */
 @Composable
 private fun panelDetail(card: DrawHomeCard, status: DrawStatus?, web3: Boolean): String? {
-    if (card.action == DrawCardAction.SignIn) return stringResource(R.string.dv3_signed_out_title)
+    // 로그인 전 — 위 소개 줄이 이미 "로그인하면 볼 수 있어요."다. 칸마다 또 쓰면 한 화면에 세 번이었다(2026-11-28 디자인 점검)
+    if (card.action == DrawCardAction.SignIn) return null
     if (status == null) return null
     if (card.row == DrawRow.Pending) return stringResource(R.string.draw_blue_pending_hint)
     return if (card.kind == DrawKind.FREE) {

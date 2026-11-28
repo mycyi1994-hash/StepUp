@@ -51,14 +51,13 @@ fun DetailPage(
         if (bottomBar != null) {
             Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp), content = bottomBar)
         } else if (primaryActionLabel != null && onPrimaryAction != null) {
-            // S2 — 화면의 주 행동 하나는 가운데 흰 원 + 이름
-            S2RoundAction(
-                icon = primaryActionIcon ?: Icons.AutoMirrored.Filled.ArrowForward,
-                label = primaryActionLabel,
+            // 화면의 주 행동 하나 — 다른 화면과 같은 화면 폭 파란 버튼(예전 S2 흰 원 + 이름은 하단 탭 위에 떠 보였다, 2026-11-28 디자인 점검)
+            PrimaryButton(
+                text = primaryActionLabel,
                 onClick = onPrimaryAction,
-                enabled = primaryActionEnabled,
-                modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
-                    .padding(vertical = 8.dp).testTag("detail-primary-action"),
+                state = if (primaryActionEnabled) ButtonState.Idle else ButtonState.Disabled,
+                icon = primaryActionIcon,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp).testTag("detail-primary-action"),
             )
         }
     }

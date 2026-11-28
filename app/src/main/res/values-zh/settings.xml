@@ -37,7 +37,7 @@
     <string name="set_notif_blocked_body">要接收下面选择的通知，请在手机设置中允许。</string>
     <string name="set_open_phone_settings">打开手机设置</string>
     <string name="set_sync_pending">已保存在手机上</string>
-    <string name="set_sync_pending_body">尚未保存。可能仍会按之前的通知设置发送。</string>
+    <string name="set_sync_pending_body">尚未同步到账号。通知可能仍按之前的设置发送。</string>
     <string name="set_sync_retry">重新同步</string>
     <string name="set_sync_sending">正在同步…</string>
     <string name="set_stored_info">保存的信息</string>
@@ -110,7 +110,7 @@
     <string name="set_theme_system">跟随设备</string>
     <string name="set_theme_system_desc">跟随手机的主题。</string>
     <string name="set_theme_dark">深色</string>
-    <string name="set_theme_dark_desc">以深蓝色背景显示。</string>
+    <string name="set_theme_dark_desc">以深色背景显示。</string>
     <string name="set_theme_light">浅色</string>
     <string name="set_theme_light_desc">以浅色背景显示。</string>
     <string name="set_theme_note">选择后立即生效，下次也会保留。</string>

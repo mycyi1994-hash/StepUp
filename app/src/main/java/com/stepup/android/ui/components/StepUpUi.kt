@@ -485,7 +485,8 @@ fun PrimaryButton(
         onPhoto -> Color.White
         else -> c.label
     }
-    val withArrow = arrow && shown == ButtonState.Idle
+    // 앞 아이콘이 있으면 끝 원 화살표는 두지 않는다 — 둘 다 있으면 표시가 두 개였다(▶ … →, 2026-11-28 디자인 점검)
+    val withArrow = arrow && icon == null && shown == ButtonState.Idle
     val clickable = shown == ButtonState.Idle ||
         (tappableWhenDone && (shown == ButtonState.Done || shown == ButtonState.Waiting))
     Box(
@@ -524,10 +525,6 @@ fun PrimaryButton(
                 }
                 ButtonState.Idle -> if (withArrow) {
                     Row(Modifier.fillMaxWidth().heightIn(min = StepUpUi.ButtonHeight), verticalAlignment = Alignment.CenterVertically) {
-                        if (icon != null) {
-                            Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                        }
                         Text(
                             text, style = type.button, color = fg, modifier = Modifier.weight(1f).padding(vertical = 8.dp),
                             maxLines = 2, overflow = TextOverflow.Ellipsis,

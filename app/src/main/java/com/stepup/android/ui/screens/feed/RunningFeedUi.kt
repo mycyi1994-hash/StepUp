@@ -172,7 +172,10 @@ fun FeedSearchField(
     filterCount: Int = 0,
 ) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FormField(label = hint, value = value, onValueChange = onValueChange, modifier = Modifier.weight(1f))
+        // 돋보기 · 안쪽 안내 글(이야기 · 지역 검색과 같은 칸) — 예전 입력 칸은 안내가 위에 붙고 칸이 높았다(2026-11-28 디자인 점검)
+        com.stepup.android.ui.screens.community.stories.StorySearchField(
+            value = value, onValueChange = onValueChange, placeholder = hint, modifier = Modifier.weight(1f), tag = "feed-search",
+        )
         if (onFilter != null) {
             val label = stringResource(R.string.filter_button)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

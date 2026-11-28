@@ -257,6 +257,9 @@ fun FlashRunDetailScreen(
 private fun meetClock(meetAt: Long): String =
     Instant.ofEpochMilli(meetAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))
 
+/** 포스터의 LIVE 표시 — 모이는 시각 10분 전부터 */
+internal const val FLASH_LIVE_WINDOW_MS = 10 * 60 * 1000L
+
 /** 사진 포스터(시안 393 × 420) — 모이는 곳 사진 · 날씨 효과 · 아래로 어둡게, 위 유리 원 버튼, 아래 LIVE · 시각 · 제목 */
 @Composable
 internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, onMore: () -> Unit) {
@@ -281,7 +284,8 @@ internal fun FlashPoster(post: Post, onBack: () -> Unit, onShare: () -> Unit, on
                 // 원격 뛰기(0076)는 모이는 곳 대신 방식을 적는다
                 listOf(status, if (post.remote) stringResource(R.string.d26_mode_remote) else post.place.ifBlank { null })
                     .filterNotNull().joinToString(" · "),
-                live = !post.isClosed,
+                // LIVE 는 곧 출발할 때(10분 안)만 — "1시간 뒤 출발"에 LIVE 가 붙으면 이미 달리는 모임처럼 읽혔다(2026-11-28 디자인 점검)
+                live = !post.isClosed && post.meetAt - System.currentTimeMillis() <= FLASH_LIVE_WINDOW_MS,
             )
             Spacer(Modifier.height(8.dp))
             Text(

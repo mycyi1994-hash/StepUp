@@ -27,7 +27,7 @@
     <string name="feed_run_weekly_title">每周挑战在周一重置</string>
     <string name="feed_run_weekly_body">步数合计每周一从零开始。完成奖励在活动标签等着你。</string>
     <string name="feed_run_crew_title">跑团活动计入跑团排名</string>
-    <string name="feed_run_crew_body">从跑团房间出发的距离会加进该跑团的总数。排行榜 → 跑团可以看到你们的位置。</string>
+    <string name="feed_run_crew_body">从跑团等候室出发的距离会加进该跑团的总数。排行榜 → 跑团可以看到你们的位置。</string>
     <string name="feed_run_flash_title">闪跑和跑团活动的流程一样</string>
     <string name="feed_run_flash_body">在论坛报名并点准备，房主会让大家一起出发。人越多，收益越高。</string>
     <string name="feed_note_runs">每天从公开新闻源汇总一次。这里只保存标题、来源和日期，正文请到原文阅读 — 点击即可打开原文。奖励和进度在活动标签里。</string>
@@ -154,8 +154,8 @@
     <string name="community_no_results">没有匹配 \"%1$s\" 的跑团</string>
 
     <!-- Crew party run -->
-    <string name="crew_lobby">组队跑大厅</string>
-    <string name="crew_open_lobby">打开大厅</string>
+    <string name="crew_lobby">跑团等候室</string>
+    <string name="crew_open_lobby">打开等候室</string>
     <string name="crew_invite_share">分享邀请链接</string>
     <string name="crew_invite_message">在 StepUp 和 %1$s 一起跑步 👟
 %2$s</string>
@@ -174,11 +174,11 @@
     <string name="crew_state_ready">已准备</string>
     <string name="crew_state_waiting">等待中</string>
     <string name="crew_go">出发！</string>
-    <string name="crew_boost">组队加成 +%1$d%%</string>
+    <string name="crew_boost">一起跑最多 +%1$d%%</string>
     <string name="crew_boost_hint" formatted="false">每多一位队友，收益 +10%，最高叠到 +50%。</string>
     <string name="crew_running_together">正和 %1$d 位跑者一起跑</string>
     <string name="crew_result_title">组队跑完成！🎉</string>
-    <string name="crew_leave_lobby">离开大厅</string>
+    <string name="crew_leave_lobby">离开等候室</string>
     <string name="crew_join_first">先加入跑团才能一起跑</string>
 
     <!-- Items -->
@@ -573,9 +573,9 @@
     <string name="party_host_badge">队长</string>
     <string name="party_start">开始组队跑</string>
     <string name="party_kick">移出</string>
-    <string name="party_join_hint">队员打开这个大厅就会进入同一个房间。闪电跑则是报名该帖子的跑者可以进入。</string>
+    <string name="party_join_hint">队员打开这个等候室就会进入同一个房间。闪电跑则是报名该帖子的跑者可以进入。</string>
     <string name="party_wait_host">等待房主出发…</string>
-    <string name="party_leave">离开大厅</string>
+    <string name="party_leave">离开等候室</string>
     <string name="party_problem_sign_in">登录后才能加入组队跑。</string>
     <string name="party_problem_removed">只有队员或报名这次闪电跑的跑者可以进入，或者你已被房主移出。</string>
     <string name="party_problem_network">连接已断开，正在重连…</string>
@@ -791,7 +791,7 @@
     <string name="guide4_body">参加按距离排序的闪电跑，分享干货和日常。排行卡片显示你本周的名次。</string>
     <string name="guide4_tip">提示：点 + 按钮发新帖。</string>
     <string name="guide5_title">跑团与组队跑</string>
-    <string name="guide5_body" formatted="false">加入或创建跑团，然后打开组队大厅。全员准备好后队长开跑，每名成员 +10% 加成。</string>
+    <string name="guide5_body" formatted="false">加入或创建跑团，然后打开等候室。全员准备好后队长开跑，每位一起跑的跑者 +10%。</string>
     <string name="guide5_tip">提示：一起出发并彼此保持在 200 米以内，才会计入一起跑的人数！</string>
     <string name="guide6_title">活动与奖励</string>
     <string name="guide6_body">每周步数活动和邀请奖励都发真 SUP。在通知里就能直接领取奖励。</string>
@@ -886,7 +886,7 @@
     <string name="flash_est_distance">跑步距离</string>
     <string name="flash_members">参与者</string>
     <string name="flash_view_members">查看成员</string>
-    <string name="flash_chat">队伍聊天</string>
+    <string name="flash_chat">闪电跑聊天</string>
     <string name="flash_chat_latest">最新消息</string>
     <string name="flash_enter_chat">进入聊天室</string>
     <string name="flash_join_cta">加入队伍</string>

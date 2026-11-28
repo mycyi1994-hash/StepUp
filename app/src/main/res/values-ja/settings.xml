@@ -37,7 +37,7 @@
     <string name="set_notif_blocked_body">下で選んだ通知を受け取るには、スマホの設定で許可してください。</string>
     <string name="set_open_phone_settings">スマホの設定を開く</string>
     <string name="set_sync_pending">スマホには保存しました</string>
-    <string name="set_sync_pending_body">まだ保存されていません。以前の通知設定が適用される場合があります。</string>
+    <string name="set_sync_pending_body">アカウントにはまだ反映されていません。通知は以前の設定で届く場合があります。</string>
     <string name="set_sync_retry">もう一度反映</string>
     <string name="set_sync_sending">反映しています…</string>
     <string name="set_stored_info">保存する情報</string>
@@ -110,7 +110,7 @@
     <string name="set_theme_system">端末の設定に従う</string>
     <string name="set_theme_system_desc">スマホの画面テーマに合わせます。</string>
     <string name="set_theme_dark">ダーク</string>
-    <string name="set_theme_dark_desc">濃紺の背景で表示します。</string>
+    <string name="set_theme_dark_desc">暗い背景で表示します。</string>
     <string name="set_theme_light">ライト</string>
     <string name="set_theme_light_desc">明るい背景で表示します。</string>
     <string name="set_theme_note">選ぶとすぐに変わり、次回も保たれます。</string>

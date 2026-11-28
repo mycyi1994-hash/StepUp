@@ -122,8 +122,10 @@ private fun ShoeCard(shoe: Sneaker, runItem: HomeRunItem?, onOpenShoe: () -> Uni
             Modifier.fillMaxWidth().clip(shape).background(c.card).stepUpRim(shape, RimKind.Surface)
                 .padding(horizontal = 22.dp, vertical = 20.dp),
         ) {
+            // 이름 칸은 신발 그림이 차지한 오른쪽을 비운다 — 예전 절반 너비는 좁은 폰에서 그림이 "›"를 덮었다(2026-11-28 디자인 점검)
+            Row(Modifier.fillMaxWidth()) {
             Column(
-                Modifier.fillMaxWidth(0.5f).heightIn(min = 84.dp).clip(RoundedCornerShape(12.dp))
+                Modifier.weight(1f).heightIn(min = 84.dp).clip(RoundedCornerShape(12.dp))
                     .feedbackClickable(role = Role.Button, onClick = onOpenShoe).testTag("home-shoe-name"),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -135,6 +137,8 @@ private fun ShoeCard(shoe: Sneaker, runItem: HomeRunItem?, onOpenShoe: () -> Uni
                 }
                 Spacer(Modifier.height(10.dp))
                 ShoeGradeBadge(shoe.tier)
+            }
+            Spacer(Modifier.width(ShoeArtReserve))
             }
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth().testTag("home-shoe-durability"), verticalAlignment = Alignment.CenterVertically) {
@@ -163,13 +167,16 @@ private fun ShoeCard(shoe: Sneaker, runItem: HomeRunItem?, onOpenShoe: () -> Uni
         }
         ShoeArtThumbnail(
             shoe,
-            Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-50).dp).width(200.dp).height(132.dp).testTag("home-shoe-art"),
+            Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-46).dp).width(176.dp).height(116.dp).testTag("home-shoe-art"),
             failedTint = c.tertiaryLabel, sample = ShoeArtFull,
         )
     }
 }
 
 private val RepairOrange = Color(0xFFFF7A1A)
+
+/** 이름 칸 오른쪽에 비워 두는 너비 — 신발 그림(176dp, 카드 밖으로 4dp)이 카드 안쪽 여백(22dp) 너머로 차지하는 몫 */
+private val ShoeArtReserve = 152.dp
 
 @Composable
 private fun RepairChip(urgent: Boolean, onClick: () -> Unit) {

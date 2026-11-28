@@ -20,9 +20,9 @@
     <string name="pn_122_design">All-new screens · light and dark</string>
     <string name="pn_122_battery">Battery “Unrestricted” tip before you start</string>
     <string name="pn_122_more">Plus an all-new design and cleaner dark mode colors</string>
-    <string name="pn_121_forge">Upgrades use XP — no more failures</string>
+    <string name="pn_121_forge">Upgrades use XP, no more failures</string>
     <string name="pn_121_daily">Daily reward bar · boxes · goal · streak</string>
-    <string name="pn_121_runner">Runner level — level up every 10,000 steps</string>
+    <string name="pn_121_runner">Runner level: level up every 10,000 steps</string>
     <string name="pn_121_info">Stat ⓘ explanations</string>
     <string name="pn_1201_crew">Crew run start and lobby fixes</string>
     <string name="pn_1201_alone">A 1-minute alert when you are left alone</string>
@@ -38,7 +38,7 @@
     <string name="pn_122_steps">Daily steps count even when the app is closed</string>
     <string name="pn_122_stepbox">Walk enough in a day to get a step box</string>
     <string name="pn_122_gps">Fixed GPS route and distance while the screen is off</string>
-    <string name="pn_122_draw10">10 draws at once — cards flip one by one</string>
+    <string name="pn_122_draw10">10 draws at once: cards flip one by one</string>
     <string name="pn_122_share">Share sheet for runs, rankings, new shoes, crews, flash runs and invite codes</string>
-    <string name="pn_122_items">Items and wallet redesigned — big item cards, wallet logos</string>
+    <string name="pn_122_items">Items and wallet redesigned: big item cards, wallet logos</string>
 </resources>

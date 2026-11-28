@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,7 +83,15 @@ import com.stepup.android.ui.theme.VoltText
 @Composable
 fun SupPill(balance: Double?, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val ui = StepUpUi.colors
-    val amount = balance?.let { formatSupDown(it, 2) } ?: "—"
+    // 로그인 전에는 잔액을 모른다 — 폰 장부의 0 을 "0.00 SUP" 로 보이면 실제 잔액처럼 읽힌다(2026-11-28 디자인 점검).
+    // 서버 경제를 쓰지 않는 판(폰 장부가 곧 잔액)은 그대로 보인다
+    val signedOut by androidx.compose.runtime.produceState(initialValue = false) {
+        value = runCatching {
+            com.stepup.android.core.ServiceLocator.serverEconomyOn &&
+                !com.stepup.android.core.ServiceLocator.sessionHolder.isSignedIn()
+        }.getOrDefault(false)
+    }
+    val amount = balance?.takeUnless { signedOut }?.let { formatSupDown(it, 2) } ?: "—"
     val label = stringResource(R.string.cd_sup_balance, amount)
     Box(
         modifier = modifier

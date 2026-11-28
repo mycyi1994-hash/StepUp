@@ -169,11 +169,14 @@ fun qualityDescription(quality: ShoeQuality): String =
 @Composable
 fun minutesText(value: String): String = stringResource(R.string.v4s_minutes, value)
 
-/** 남은 · 최대 내구도 글 — 최대 내구도를 아는 신발은 "28 / 31분", 모르는 예전 신발은 "92 / 100" */
+/**
+ * 남은 · 최대 내구도 글 — 최대 내구도를 아는 신발은 "28 / 31분", 모르는 예전 신발은 "92%"
+ * (예전엔 "92 / 100" — 같은 화면의 격자 "92%" 와 단위가 달라 보였다, 2026-11-28 디자인 점검)
+ */
 @Composable
 fun durabilityText(shoe: Sneaker, rules: ShoeRules = rememberShoeRules()): String =
     if (shoe.server?.hasDurabilityMax == true) {
         minutesText("${wholeMinutes(shoe, durabilityLeft(shoe), rules)} / ${wholeMinutes(shoe, durabilityMax(shoe), rules)}")
     } else {
-        formatDurability(shoe)
+        "${durabilityPercent(shoe)}%"
     }

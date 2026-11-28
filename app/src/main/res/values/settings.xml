@@ -39,7 +39,7 @@
     <string name="set_notif_blocked_body">To get the notifications below, allow them in your phone settings.</string>
     <string name="set_open_phone_settings">Open phone settings</string>
     <string name="set_sync_pending">Saved on this phone</string>
-    <string name="set_sync_pending_body">Not saved yet. Your previous notification settings may still apply.</string>
+    <string name="set_sync_pending_body">Not applied to your account yet. Notifications may still follow your previous settings.</string>
     <string name="set_sync_retry">Sync again</string>
     <string name="set_sync_sending">Syncing…</string>
     <string name="set_stored_info">What we store</string>
@@ -112,7 +112,7 @@
     <string name="set_theme_system">Follow device</string>
     <string name="set_theme_system_desc">Uses your phone\'s theme.</string>
     <string name="set_theme_dark">Dark</string>
-    <string name="set_theme_dark_desc">Deep navy background.</string>
+    <string name="set_theme_dark_desc">Dark background.</string>
     <string name="set_theme_light">Light</string>
     <string name="set_theme_light_desc">Light background.</string>
     <string name="set_theme_note">Changes apply right away and stay next time.</string>

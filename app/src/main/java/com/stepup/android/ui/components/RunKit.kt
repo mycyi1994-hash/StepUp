@@ -84,7 +84,7 @@ object RunKit {
 
 private fun kitText(size: TextUnit, weight: FontWeight = FontWeight.Normal, tracking: Double = -0.2) = TextStyle(
     fontFamily = StepUpSans, fontWeight = weight, fontSize = size, letterSpacing = tracking.sp,
-    fontFeatureSettings = "tnum", lineHeight = 1.4.em,
+    fontFeatureSettings = "tnum", lineHeight = 1.4.em, lineBreak = KoreanLineBreak,
 )
 
 enum class KitTone { Primary, Secondary, Ghost, Danger }

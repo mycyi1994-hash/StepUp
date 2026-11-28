@@ -88,6 +88,8 @@ fun BagScreen(onStartRun: () -> Unit = {}, onOpenShoes: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var loading by remember { mutableStateOf(bag == null) }
     var failed by remember { mutableStateOf(false) }
+    // 로그인하지 않아 못 읽었다 — "불러오기 실패 · 다시 시도"가 아니라 다시 로그인(2026-11-28 디자인 점검)
+    var signIn by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<ItemKind?>(null) }
     var using by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -103,6 +105,7 @@ fun BagScreen(onStartRun: () -> Unit = {}, onOpenShoes: () -> Unit = {}) {
         val result = items.refresh()
         loading = false
         failed = result !is ServerResult.Ok && bag == null
+        signIn = failed && result is ServerResult.SignInRequired
     }
     LaunchedEffect(Unit) { load() }
 
@@ -121,7 +124,7 @@ fun BagScreen(onStartRun: () -> Unit = {}, onOpenShoes: () -> Unit = {}) {
     Box(Modifier.fillMaxSize().testTag("bag-screen")) {
         val current = bag
         BagList(
-            current = current, loading = loading, failed = failed, selected = selected,
+            current = current, loading = loading, failed = failed, selected = selected, signIn = signIn,
             bottomRoom = 28.dp,
             onSelect = { kind -> selected = kind; request = null; message = null },
             onRetry = { scope.launch { load() } },
@@ -280,8 +283,12 @@ internal fun BagList(
     /** 신은 신발이 있는가 — 없으면 내구도 초기화권 칸이 "신은 신발 없음 · 신발 고르기"(S-439) */
     hasShoe: Boolean = true,
     onOpenShoes: () -> Unit = {},
+    /** 로그인하지 않아 못 읽었다 — 다시 시도 대신 다시 로그인 */
+    signIn: Boolean = false,
 ) {
     val c = StepUpUi.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val signInScope = rememberCoroutineScope()
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomRoom)) {
         item {
             Row(
@@ -305,11 +312,17 @@ internal fun BagList(
             if (current == null && failed && !loading) {
                 // S-438 — 못 읽었다: 제목 아래 한 줄 + 다시 시도, 칸은 수 없이("–")
                 Row(Modifier.fillMaxWidth().padding(horizontal = StepUpUi.TitleGutter).padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.v13_bag_load_failed), style = StepUpUi.type.rowSubtitle, color = c.label,
-                        modifier = Modifier.weight(1f).testTag("bag-load-failed"))
-                    Text(stringResource(R.string.bag_retry), color = c.accentText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clip(RoundedCornerShape(50)).background(c.fill).feedbackClickable(role = Role.Button, onClick = onRetry)
-                            .padding(horizontal = 14.dp, vertical = 7.dp).testTag("bag-retry"))
+                    Text(stringResource(if (signIn) R.string.v13_bag_sign_in else R.string.v13_bag_load_failed),
+                        style = StepUpUi.type.rowSubtitle, color = c.label,
+                        modifier = Modifier.weight(1f).testTag(if (signIn) "bag-sign-in" else "bag-load-failed"))
+                    Text(stringResource(if (signIn) R.string.session_sign_in_again else R.string.bag_retry),
+                        color = c.accentText, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(c.fill)
+                            .feedbackClickable(role = Role.Button, onClick = {
+                                if (signIn) signInScope.launch { runCatching { com.stepup.android.ui.components.returnToSignIn(context) } }
+                                else onRetry()
+                            })
+                            .padding(horizontal = 14.dp, vertical = 7.dp).testTag(if (signIn) "bag-sign-in-again" else "bag-retry"))
                 }
             }
         }

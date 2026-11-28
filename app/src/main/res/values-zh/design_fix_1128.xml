@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-11-28 디자인 점검 고침 -->
+<resources>
+    <string name="v13_bag_sign_in">登录后即可查看道具</string>
+</resources>

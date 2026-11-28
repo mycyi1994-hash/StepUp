@@ -20,9 +20,9 @@
     <string name="pn_122_design">全新界面设计・浅色・深色</string>
     <string name="pn_122_battery">出发前的电池“无限制”提示</string>
     <string name="pn_122_more">另外还有全新界面设计、深色模式配色整理</string>
-    <string name="pn_121_forge">强化改为经验值 — 不再失败</string>
+    <string name="pn_121_forge">强化改为经验值：不再失败</string>
     <string name="pn_121_daily">今日奖励条・宝箱・目标・连续</string>
-    <string name="pn_121_runner">跑者等级 — 每1万步升一级</string>
+    <string name="pn_121_runner">跑者等级：每1万步升一级</string>
     <string name="pn_121_info">能力值 ⓘ 说明</string>
     <string name="pn_1201_crew">修复团队跑出发和等候室</string>
     <string name="pn_1201_alone">只剩自己时提醒1分钟</string>
@@ -38,7 +38,7 @@
     <string name="pn_122_steps">不打开应用也能统计每日步数</string>
     <string name="pn_122_stepbox">每日步数达标即可获得步数宝箱</string>
     <string name="pn_122_gps">修正息屏期间的 GPS 路线与距离</string>
-    <string name="pn_122_draw10">抽10次 — 从小卡片开始一张张翻开</string>
-    <string name="pn_122_share">分享 — 跑步、排名、新鞋、跑团、闪电跑、邀请码都用同一个分享窗口</string>
-    <string name="pn_122_items">道具与钱包新设计 — 大道具卡片、钱包标志</string>
+    <string name="pn_122_draw10">抽10次：从小卡片开始一张张翻开</string>
+    <string name="pn_122_share">分享：跑步、排名、新鞋、跑团、闪电跑、邀请码都用同一个分享窗口</string>
+    <string name="pn_122_items">道具与钱包新设计：大道具卡片、钱包标志</string>
 </resources>

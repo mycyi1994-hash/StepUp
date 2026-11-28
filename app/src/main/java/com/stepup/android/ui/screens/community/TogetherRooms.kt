@@ -1,5 +1,6 @@
 package com.stepup.android.ui.screens.community
 
+import kotlinx.coroutines.launch
 import com.stepup.android.ui.components.RimKind
 import com.stepup.android.ui.components.stepUpRim
 
@@ -175,6 +176,7 @@ internal fun TogetherRoomsSegment(
     // 달리지 않은 오늘 크루 러닝을 돌려받고 목록을 다시 읽는다. 하루 한 번은 크루를 가리지 않으니 한 크루로 물으면 된다(2026-11-18 점검)
     val doneCrew = crews.firstOrNull { (id, _) -> doneToday[id] == true }?.first
     val context = androidx.compose.ui.platform.LocalContext.current
+    val signInScope = androidx.compose.runtime.rememberCoroutineScope()
     val givenBack = stringResource(R.string.tlf_unrun_given_back)
     LaunchedEffect(doneCrew) {
         val crewId = doneCrew ?: return@LaunchedEffect
@@ -203,7 +205,15 @@ internal fun TogetherRoomsSegment(
                         Icons.Outlined.CloudOff,
                         stringResource(if (failed.signIn) R.string.crew5_sign_in_title else R.string.crew5_rooms_failed),
                         null, tag = "crew-rooms-failed",
-                        action = stringResource(R.string.crew5_rooms_reload) to { rooms.clear(); reload++ },
+                        // 로그인이 필요하면 다시 불러와도 소용없다 — 위 줄이 이미 "다시 로그인"이면 행동을 두지 않는다(2026-11-28 디자인 점검)
+                        action = when {
+                            !failed.signIn -> stringResource(R.string.crew5_rooms_reload) to { rooms.clear(); reload++ }
+                            sync == BoardSyncState.SignInRequired -> null
+                            else -> stringResource(R.string.session_sign_in_again) to {
+                                signInScope.launch { runCatching { com.stepup.android.ui.components.returnToSignIn(context) } }
+                                Unit
+                            }
+                        },
                     )
                 }
                 crewRuns.isEmpty() -> item {

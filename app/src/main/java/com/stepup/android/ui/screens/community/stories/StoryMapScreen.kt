@@ -132,7 +132,7 @@ fun StoryMapScreen(
                                 stringResource(R.string.story_blue_nearby_title), style = runTextStyle(23.sp, t.text, FontWeight.ExtraBold),
                                 modifier = Modifier.weight(1f).semantics { heading() },
                             )
-                            Text(stringResource(R.string.story_blue_latest), style = runTextStyle(14.sp, t.label, FontWeight.Medium))
+                            // "최신순"은 뺐다 — 고를 수 있는 정렬이 없는데(서버에 없음) 누르는 글자처럼 보였다(2026-11-28 디자인 점검)
                         }
                     }
                     val sub = if (chosen != null) {
